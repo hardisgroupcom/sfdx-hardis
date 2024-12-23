@@ -17,7 +17,7 @@ import {
 import { GitProvider } from '../gitProvider/index.js';
 import { Ticket, TicketProvider } from '../ticketProvider/index.js';
 import { DefaultLogFields, ListLogLine } from 'simple-git';
-import { flowDiffToMarkdown } from '../gitProvider/utilsMarkdown.js';
+import { flowDiffToMarkdownForPullRequest } from '../gitProvider/utilsMarkdown.js';
 import { MessageAttachment } from '@slack/types';
 import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from './notifUtils.js';
 import { NotifProvider, UtilsNotifs } from '../notifProvider/index.js';
@@ -192,7 +192,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
       }
     }
     const flowListUnique = [...new Set(flowList)].sort();
-    flowDiffMarkdown = await flowDiffToMarkdown(flowListUnique, previousTargetBranchCommit, (logResults.at(-1) || logResults[0]).hash);
+    flowDiffMarkdown = await flowDiffToMarkdownForPullRequest(flowListUnique, previousTargetBranchCommit, (logResults.at(-1) || logResults[0]).hash);
   }
 
   return {

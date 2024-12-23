@@ -54,6 +54,11 @@ export class BitbucketProvider extends GitProviderRoot {
     return null;
   }
 
+  // Bitbucket does not supports mermaid in PR markdown
+  public async supportsMermaidInPrMarkdown(): Promise<boolean> {
+    return false;
+  }
+
   // Find pull request info
   public async getPullRequestInfo(): Promise<any> {
     const pullRequestIdStr = process.env.BITBUCKET_PR_ID || null;

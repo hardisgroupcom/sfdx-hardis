@@ -3,6 +3,7 @@ import fs from "fs-extra"
 import { MetadataUtils } from "../metadata-utils/index.js";
 import { uxLog } from "../utils/index.js";
 import { generateFlowVisualGitDiff } from "../utils/mermaidUtils.js";
+import { GitProvider } from "./index.js";
 
 export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
   let md = "## Deployment errors\n\n";
@@ -75,20 +76,22 @@ export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTar
   }
 }
 
-export async function flowDiffToMarkdown(flowNames: string[], fromCommit: string, toCommit: string): Promise<any> {
+export async function flowDiffToMarkdownForPullRequest(flowNames: string[], fromCommit: string, toCommit: string): Promise<any> {
   if (flowNames.length === 0) {
     return "";
   }
+  const supportsMermaidInPrMarkdown = await GitProvider.supportsMermaidInPrMarkdown();
   const flowDiffMarkdownList: any = [];
   let flowDiffFilesSummary = "## Flow changes\n\n";
   for (const flowName of flowNames) {
     flowDiffFilesSummary += `- [${flowName}](#${flowName})\n`;
     const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("Flow", flowName);
     try {
-      const diffMdFile = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, debug: false });
-      if (diffMdFile) {
-        const flowDiffMarkdownMermaid = await fs.readFile(diffMdFile + ".mermaid.md", "utf8");
-        flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownMermaid });
+      if (supportsMermaidInPrMarkdown) {
+        await generateMarkdownWithMermaid(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
+      }
+      else {
+        await generateMarkdownWithSvg(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }
     } catch (e: any) {
       uxLog(this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff: ${e.message}`));
@@ -103,6 +106,19 @@ Error while generating Flows visual git diff
     markdownSummary: flowDiffFilesSummary,
     flowDiffMarkdownList: flowDiffMarkdownList
   }
+}
+
+async function generateMarkdownWithMermaid(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
+  const diffMdFile = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, debug: false });
+  if (diffMdFile) {
+    const flowDiffMarkdownMermaid = await fs.readFile(diffMdFile + ".mermaid.md", "utf8");
+    flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownMermaid });
+  }
+}
+
+async function generateMarkdownWithSvg(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
+  const diffMdFile = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: true, debug: false });
+  flowDiffMarkdownList.push({ name: flowName, markdown: diffMdFile });
 }
 
 function getAiPromptResponseMarkdown(title, message) {

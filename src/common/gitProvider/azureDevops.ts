@@ -98,6 +98,11 @@ ${this.getPipelineVariablesConfig()}
     return null;
   }
 
+  // Azure does not supports mermaid in PR markdown
+  public async supportsMermaidInPrMarkdown(): Promise<boolean> {
+    return false;
+  }
+
   // Find pull request info
   public async getPullRequestInfo(): Promise<any> {
     // Case when PR is found in the context
