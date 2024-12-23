@@ -27,6 +27,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Display warning message in case package.xml has wrong format
   - Allow to override package-no-overwrite from a branch .sfdx-hardis.yml config file
 
+- Doc
+  - Update Microsoft Teams notifications integration User Guide
+
 ## [5.10.1] 2024-12-12
 
 - Fix sfdx-hardis docker image build by adding coreutils in dependencies
