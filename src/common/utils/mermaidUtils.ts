@@ -77,7 +77,7 @@ export async function generateMarkdownFileWithMermaidDocker(outputFlowMdFile: st
     return true;
   } catch (e: any) {
     uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation with Docker: ${e.message}`) + "\n" + c.grey(e.stack));
-    if (JSON.stringify(e).includes("Cannot connect to the Docker daemon")) {
+    if (JSON.stringify(e).includes("Cannot connect to the Docker daemon") || JSON.stringify(e).includes("daemon is not running")) {
       globalThis.mermaidUnavailableTools = (globalThis.mermaidUnavailableTools || []).concat("docker");
       uxLog(this, c.yellow("[Mermaid] Docker unavailable: do not try again"));
     }
