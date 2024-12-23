@@ -15,6 +15,7 @@ import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
 import { listFlowFiles } from '../../../common/utils/projectUtils.js';
 import { generateFlowMarkdownFile, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
+import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -54,6 +55,10 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
   ];
 
   public static flags: any = {
+    "diff-only": Flags.boolean({
+      default: false,
+      description: "Generate documentation only for changed files (used for monitoring)",
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -70,6 +75,7 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
 
+  protected diffOnly: boolean = false;
   protected packageXmlCandidates: any[];
   protected outputMarkdownRoot = "docs"
   protected outputMarkdownIndexFile = path.join(this.outputMarkdownRoot, "index.md")
@@ -81,6 +87,7 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Project2Markdown);
+    this.diffOnly = flags["diff-only"] === true ? true : false;
     this.debugMode = flags.debug || false;
     this.packageXmlCandidates = this.listPackageXmlCandidates();
 
@@ -116,7 +123,8 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
     }
 
     // Footer
-    this.mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`);
+    const currentBranch = await getCurrentGitBranch()
+    this.mdLines.push(`_Documentation generated from branch ${currentBranch} with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`);
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
     await fs.writeFile(this.outputMarkdownIndexFile, this.mdLines.join("\n") + "\n");
@@ -143,21 +151,30 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
     uxLog(this, c.cyan("Generating Flows Visual documentation... (if you don't want it, define GENERATE_FLOW_DOC=false in your environment variables)"));
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const packageDirs = this.project?.getPackageDirectories();
+    const updatedFlowNames = !this.diffOnly ?
+      [] :
+      (await MetadataUtils.listChangedFiles()).filter(f => f?.path?.endsWith(".flow-meta.xml")).map(f => path.basename(f.path, ".flow-meta.xml"));
     const flowFiles = await listFlowFiles(packageDirs);
     const flowErrors: string[] = [];
     const flowWarnings: string[] = [];
+    const flowSkips: string[] = [];
     const flowDescriptions: any[] = [];
     for (const flowFile of flowFiles) {
+      const flowName = path.basename(flowFile, ".flow-meta.xml");
       uxLog(this, c.grey(`Generating markdown for Flow ${flowFile}...`));
       const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
       const flowContent = await parseXmlFile(flowFile);
       flowDescriptions.push({
-        name: path.basename(flowFile).replace(".flow-meta.xml", ""),
+        name: flowName,
         description: flowContent?.Flow?.description?.[0] || "",
         type: flowContent?.Flow?.processType?.[0] === "Flow" ? "ScreenFlow" : flowContent?.Flow?.start?.[0]?.triggerType?.[0] ?? (flowContent?.Flow?.processType?.[0] || "ERROR (Unknown)"),
         object: flowContent?.Flow?.start?.[0]?.object?.[0] || flowContent?.Flow?.processMetadataValues?.filter(pmv => pmv.name[0] === "ObjectType")?.[0]?.value?.[0]?.stringValue?.[0] || ""
       });
-      const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", path.basename(flowFile).replace(".flow-meta.xml", ".md"));
+      if (this.diffOnly && !updatedFlowNames.includes(flowName)) {
+        flowSkips.push(flowFile);
+        continue;
+      }
+      const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", flowName + ".md");
       const genRes = await generateFlowMarkdownFile(flowFile, flowXml, outputFlowMdFile);
       if (!genRes) {
         flowErrors.push(flowFile);
@@ -172,18 +189,21 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
         continue;
       }
     }
+    if (flowSkips.length > 0) {
+      uxLog(this, c.yellow(`Skipped generation for ${flowSkips.length} Flows that have not been updated: ${this.humanDisplay(flowSkips)}`));
+    }
     uxLog(this, c.green(`Successfully generated ${flowFiles.length - flowWarnings.length - flowErrors.length} Flows documentation`));
     if (flowWarnings.length > 0) {
-      uxLog(this, c.yellow(`Partially generated documentation (Markdown with mermaidJs but without SVG) for ${flowWarnings.length} Flows: ${flowWarnings.join(", ")}`));
+      uxLog(this, c.yellow(`Partially generated documentation (Markdown with mermaidJs but without SVG) for ${flowWarnings.length} Flows: ${this.humanDisplay(flowWarnings)}`));
     }
     if (flowErrors.length > 0) {
-      uxLog(this, c.yellow(`Error generating documentation for ${flowErrors.length} Flows: ${flowErrors.join(", ")}`));
+      uxLog(this, c.yellow(`Error generating documentation for ${flowErrors.length} Flows: ${this.humanDisplay(flowErrors)}`));
     }
 
     // Write table on doc index
     const flowTableLines = await this.buildFlowsTable(flowDescriptions, 'flows/');
     this.mdLines.push(...flowTableLines);
-    this.mdLines.push(...["___", ""])
+    this.mdLines.push(...["___", ""]);
 
     // Write index file for flow folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
@@ -191,6 +211,10 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
     const flowIndexFile = path.join(this.outputMarkdownRoot, "flows", "index.md");
     await fs.writeFile(flowIndexFile, flowTableLinesForIndex.join("\n") + "\n");
     uxLog(this, c.green(`Successfully generated doc index for Flows at ${flowIndexFile}`));
+  }
+
+  private humanDisplay(flows) {
+    return flows.map(flow => path.basename(flow, ".flow-meta.xml")).join(", ");
   }
 
   private async buildFlowsTable(flowDescriptions: any[], prefix: string) {

@@ -112,6 +112,11 @@ export class GithubProvider extends GitProviderRoot {
     return null;
   }
 
+  // GitHub supports mermaid in PR markdown
+  public async supportsMermaidInPrMarkdown(): Promise<boolean> {
+    return true;
+  }
+
   // Find pull request info
   public async getPullRequestInfo(): Promise<any> {
     // Case when PR is found in the context

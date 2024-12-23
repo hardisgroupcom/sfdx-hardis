@@ -184,6 +184,14 @@ export abstract class GitProvider {
     return gitProvider.getCurrentJobUrl();
   }
 
+  static async supportsMermaidInPrMarkdown(): Promise<boolean> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return false;
+    }
+    return gitProvider.supportsMermaidInPrMarkdown();
+  }
+
   static async getPullRequestInfo(): Promise<any> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
