@@ -41,6 +41,11 @@ export class GitlabProvider extends GitProviderRoot {
     return null;
   }
 
+  // Gitlab supports mermaid in PR markdown
+  public async supportsMermaidInPrMarkdown(): Promise<boolean> {
+    return true;
+  }
+
   // Find pull request info
   public async getPullRequestInfo(): Promise<any> {
     // Case when MR is found in the context

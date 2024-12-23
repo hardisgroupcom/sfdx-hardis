@@ -116,7 +116,8 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
     }
 
     // Footer
-    this.mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`);
+    const currentBranch = await getCurrentGitBranch()
+    this.mdLines.push(`_Documentation generated from branch ${currentBranch} with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`);
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
     await fs.writeFile(this.outputMarkdownIndexFile, this.mdLines.join("\n") + "\n");
