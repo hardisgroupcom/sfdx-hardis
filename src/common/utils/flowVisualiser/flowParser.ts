@@ -212,20 +212,17 @@ async function generateMermaidContent(flowMap: FlowMap, options: any): Promise<s
 
 async function getMermaidBody(flowMap: FlowMap): Promise<string> {
     let bodyStr = "";
-    let endNumber = 0;
     const endNodeIds: string[] = [];
     for (const property in flowMap) {
         const node = flowMap[property];
         const type = node.type;
         let nextNode = node.nextNode ? node.nextNode : "END"
         if (nextNode === "END") {
-            nextNode = "END" + endNumber;
-            endNumber++;
+            nextNode = "END_" + node.name;
         }
         let faultNode = node.faultPath ? node.faultPath : "END"
         if (faultNode === "END") {
-            faultNode = "END" + endNumber;
-            endNumber++;
+            faultNode = "END_" + node.name;
         }
         let loopNextNode;
         switch (type) {
@@ -281,7 +278,7 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
                 manageAddEndNode(nextNode, endNodeIds);
         }
     }
-    for (const endNodeId of endNodeIds) {
+    for (const endNodeId of [...new Set(endNodeIds)]) {
         bodyStr += `${endNodeId}(( END )):::endClass\n`;
     }
     return (bodyStr);
