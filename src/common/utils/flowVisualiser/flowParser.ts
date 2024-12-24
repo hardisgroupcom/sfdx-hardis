@@ -157,7 +157,7 @@ function getFlowType(flowMap: FlowMap): string {
     else {
         switch (flowMap.start.triggerType) {
             case "Scheduled":
-                return "Scheduled Flow;"
+                return "Scheduled Flow"
             case "RecordAfterSave":
                 return "Record Triggered Flow: After Save (" + flowMap.start.object + ")";
             case "RecordBeforeSave":

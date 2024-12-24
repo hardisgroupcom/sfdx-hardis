@@ -5,7 +5,7 @@ export const NODE_CONFIG = {
 	'actionCalls': {
 		background: "#344568",
 		color: "white",
-		label: "Action",
+		label: "",
 		icon: "<&pulse>",
 		mermaidIcon: {
 			"apex": "⚙️",
@@ -19,7 +19,7 @@ export const NODE_CONFIG = {
 	'assignments': {
 		background: "#F97924",
 		color: "white",
-		label: "Assignment",
+		label: "",
 		icon: "<&menu>",
 		mermaidIcon: "🟰",
 		mermaidClose: ")",
@@ -43,7 +43,7 @@ export const NODE_CONFIG = {
 	'customErrors': {
 		background: "#032D60",
 		color: "white",
-		label: "Custom Error",
+		label: "",
 		icon: "<&pencil>",
 		mermaidIcon: "🚫",
 		mermaidClose: ")",
@@ -52,7 +52,7 @@ export const NODE_CONFIG = {
 	'decisions': {
 		background: "#DD7A00",
 		color: "white",
-		label: "Decision",
+		label: "",
 		icon: "<&fork>",
 		mermaidIcon: "🔀",
 		mermaidClose: "}",
@@ -60,7 +60,7 @@ export const NODE_CONFIG = {
 	},
 	'loops': {
 		background: "#E07D1C",
-		label: "Loop",
+		label: "",
 		mermaidIcon: "🔁",
 		mermaidClose: "/]",
 		mermaidOpen: "[/"
@@ -68,7 +68,7 @@ export const NODE_CONFIG = {
 	'recordCreates': {
 		background: "#F9548A",
 		color: "white",
-		label: "Create Records",
+		label: "",
 		icon: "<&medical-cross>",
 		mermaidIcon: "➕",
 		mermaidClose: ")]",
@@ -77,7 +77,7 @@ export const NODE_CONFIG = {
 	'recordDeletes': {
 		background: "#F9548A",
 		color: "white",
-		label: "Delete Records",
+		label: "",
 		icon: "<&medical-cross>",
 		mermaidIcon: "🗑️",
 		mermaidClose: ")]",
@@ -86,7 +86,7 @@ export const NODE_CONFIG = {
 	'recordLookups': {
 		background: "#F9548A",
 		color: "white",
-		label: "Get Records",
+		label: "",
 		icon: "<&medical-cross>",
 		mermaidIcon: "🔍",
 		mermaidClose: ")]",
@@ -95,7 +95,7 @@ export const NODE_CONFIG = {
 	'recordUpdates': {
 		background: "#F9548A",
 		color: "white",
-		label: "Update Records",
+		label: "",
 		icon: "<&pencil>",
 		mermaidIcon: "🛠️",
 		mermaidClose: ")]",
@@ -104,7 +104,7 @@ export const NODE_CONFIG = {
 	'screens': {
 		background: "#1B96FF",
 		color: "white",
-		label: "Screen",
+		label: "",
 		icon: "<&pencil>",
 		mermaidIcon: "💻",
 		mermaidClose: ")",
