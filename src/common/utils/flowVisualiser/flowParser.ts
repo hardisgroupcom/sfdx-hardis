@@ -1,17 +1,10 @@
-/**
- * index.ts
- * TODO
- * - Move FlowMap to a class
- * - Move each language to their own file
- * - Handle options
- */
-
 import { NODE_CONFIG } from "./renderConfig.js";
 
-import * as yaml from 'js-yaml';
 import { XMLParser } from "fast-xml-parser";
 import { CONSTANTS } from "../../../config/index.js";
 import { getCurrentGitBranch } from "../index.js";
+import farmhash from 'farmhash';
+import { flowNodeToMarkdown, simplifyNode } from "./nodeFormatUtils.js";
 
 interface FlowMap {
     "description"?: string;
@@ -134,6 +127,7 @@ async function createFlowMap(flowObj: any): Promise<FlowMap> {
                             flowNodeDescription: el
                         }
                         flowMap[el.name] = mappedEl;
+                        flowMap[el.name].flowNodeDescription.type = property;
                     } else if (property === 'variables') {
                         flowMap.variables = flowObj[property];
                     } else if (property === 'constants') {
@@ -296,7 +290,7 @@ async function getNodeDefStr(flowMap: FlowMap, flowType: string, options: any): 
         const type = flowMap[property].type;
         let label: string = ((<any>NODE_CONFIG)[type]) ? (<any>NODE_CONFIG)[type].label : "";
         let icon: string = ((<any>NODE_CONFIG)[type]) ? (<any>NODE_CONFIG)[type].mermaidIcon : null;
-        let nodeCopy;
+        let nodeSimplified;
         let tooltipClassMermaid;
         if (type === 'actionCalls') {
             icon = ((<any>NODE_CONFIG)[type].mermaidIcon[flowMap[property].actionType]) ?
@@ -314,20 +308,15 @@ async function getNodeDefStr(flowMap: FlowMap, flowType: string, options: any): 
         }
         // Create Mermaid Lines
         if (['actionCalls', 'assignments', 'customErrors', 'collectionProcessors', 'decisions', 'loops', 'recordCreates', 'recordDeletes', 'recordLookups', 'recordUpdates', 'screens', 'subflows'].includes(type)) {
+            // Mermaid node
             nodeDefStr += property + (<any>NODE_CONFIG)[type].mermaidOpen + '"' + icon + " <em>" + label + "</em><br/>" + flowMap[property].label + '"' + (<any>NODE_CONFIG)[type].mermaidClose + ':::' + type + "\n"
             // Remove not relevant properties from node display
-            nodeCopy = Object.assign({}, flowMap[property]?.flowNodeDescription || flowMap[property]);
-            for (const nodeKey of Object.keys(nodeCopy)) {
-                if (["locationX", "locationY"].includes(nodeKey)) {
-                    delete nodeCopy[nodeKey]
-                }
-                else if (nodeCopy[nodeKey] === null || nodeCopy[nodeKey] === undefined) {
-                    delete nodeCopy[nodeKey]
-                }
-            }
-            tooltipClassMermaid = `click ${property} "#${property}" "${yaml.dump(nodeCopy).replace(/"/gm, "").split("\n").join("<br/>")}"`;
-            nodeDetailMd += `### ${property}\n\n${yaml.dump(nodeCopy).replace(/"/gm, "").replace(/^(\s+)/gm, match => '&nbsp;'.repeat(match.length)).split("\n").join("<br/>\n")}\n\n`
+            nodeSimplified = simplifyNode(flowMap[property]?.flowNodeDescription || flowMap[property]);
+            // Mermaid compare node
+            tooltipClassMermaid = `click ${property} "#${property}" "${farmhash.fingerprint32(JSON.stringify(nodeSimplified))}"`;
             nodeDefStr += tooltipClassMermaid + "\n\n"
+            // Markdown details
+            nodeDetailMd += `### ${property}\n\n` + flowNodeToMarkdown(nodeSimplified);
         }
     }
     if (options?.collapsedDetails) {
