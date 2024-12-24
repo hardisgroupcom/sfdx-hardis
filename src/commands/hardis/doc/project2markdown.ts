@@ -16,6 +16,8 @@ import { glob } from 'glob';
 import { listFlowFiles } from '../../../common/utils/projectUtils.js';
 import { generateFlowMarkdownFile, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
+import { PACKAGE_ROOT_DIR } from '../../../settings.js';
+import yaml from 'js-yaml';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -82,22 +84,44 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
   protected mdLines: string[] = [];
   protected sfdxHardisConfig: any = {};
   protected outputPackageXmlMarkdownFiles: any[] = [];
+  protected mkDocsNavNodes: any = { "Home": "index.md" };
   protected debugMode = false;
+  protected htmlInstructions: string;
+  protected footer: string;
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Project2Markdown);
     this.diffOnly = flags["diff-only"] === true ? true : false;
     this.debugMode = flags.debug || false;
-    this.packageXmlCandidates = this.listPackageXmlCandidates();
+
+    await fs.ensureDir(this.outputMarkdownRoot);
+    const currentBranch = await getCurrentGitBranch()
+    this.footer = `_Documentation generated from branch ${currentBranch} with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`;
+    this.htmlInstructions = `## Doc HTML Pages
+
+To read the documentation as HTML pages, run the following code (you need python on your computer)
+
+\`\`\`python
+pip install mkdocs-material mdx_truly_sane_lists
+mkdocs serve
+\`\`\`
+`
 
     if (fs.existsSync("config/.sfdx-hardis.yml")) {
       this.sfdxHardisConfig = await getConfig("project");
-      this.mdLines.push(...[
-        `## ${this.sfdxHardisConfig?.projectName?.toUpperCase() || "SFDX Project"} CI/CD configuration`,
-        ""]);
-      this.buildSfdxHardisParams();
-      await this.buildMajorBranchesAndOrgs();
+
+      // General sfdx-hardis config
+      const sfdxHardisParamsLines = this.buildSfdxHardisParams();
+      this.mdLines.push(...sfdxHardisParamsLines);
+      await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-params.md"), sfdxHardisParamsLines.join("\n") + `\n${this.footer}\n`);
+      this.mkDocsNavNodes["SFDX-Hardis Config"] = "sfdx-hardis-params.md";
+
+      // Branches & orgs
+      const branchesAndOrgsLines = await this.buildMajorBranchesAndOrgs();
+      this.mdLines.push(...branchesAndOrgsLines);
+      await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-branches-and-orgs.md"), branchesAndOrgsLines.join("\n") + `\n${this.footer}\n`);
+      this.mkDocsNavNodes["Branches & Orgs"] = "sfdx-hardis-branches-and-orgs.md";
     }
     else {
       const repoName = (await getGitRepoName() || "").replace(".git", "");
@@ -109,37 +133,47 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
     }
 
     // List SFDX packages and generate a manifest for each of them, except if there is only force-app with a package.xml
+    this.packageXmlCandidates = this.listPackageXmlCandidates();
     await this.manageLocalPackages();
-    // List all packageXml files and generate related markdown
     await this.generatePackageXmlMarkdown(this.packageXmlCandidates);
-    await this.writePackagesInIndex();
+    const packageLines = await this.buildPackagesIndex();
+    this.mdLines.push(...packageLines);
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), packageLines.join("\n") + `\n${this.footer}\n`);
 
     // List managed packages
-    await this.writeInstalledPackages();
+    const installedPackages = await this.buildInstalledPackages();
+    this.mdLines.push(...installedPackages);
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "installed-packages.md"), installedPackages.join("\n") + `\n${this.footer}\n`);
+    this.mkDocsNavNodes["Installed Packages"] = "installed-packages.md";
 
     // List flows & generate doc
     if (!(process?.env?.GENERATE_FLOW_DOC === 'false')) {
       await this.generateFlowsDocumentation();
     }
 
-    // Footer
-    const currentBranch = await getCurrentGitBranch()
-    this.mdLines.push(`_Documentation generated from branch ${currentBranch} with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`);
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
-    await fs.writeFile(this.outputMarkdownIndexFile, this.mdLines.join("\n") + "\n");
+    await fs.writeFile(this.outputMarkdownIndexFile, this.mdLines.join("\n") + "\n\n" + this.htmlInstructions + `\n\n${this.footer}\n`);
     uxLog(this, c.green(`Successfully generated doc index at ${this.outputMarkdownIndexFile}`));
 
     const readmeFile = path.join(process.cwd(), "README.md");
     if (fs.existsSync(readmeFile)) {
       let readme = await fs.readFile(readmeFile, "utf8");
       if (!readme.includes("docs/index.md")) {
-        readme += "\n\n## Documentation\n\n[Read auto-generated documentation of the SFDX project](docs/index.md)\n";
+        readme += `
+        
+## Documentation
+
+[Read auto-generated documentation of the SFDX project](docs/index.md)
+
+${this.htmlInstructions}
+`;
         await fs.writeFile(readmeFile, readme);
         uxLog(this, c.green(`Updated README.md to add link to docs/index.md`));
       }
     }
 
+    await this.buildMkDocsYml();
 
     // Open file in a new VsCode tab if available
     WebSocketClient.requestOpenFile(this.outputMarkdownIndexFile);
@@ -147,8 +181,59 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
     return { outputPackageXmlMarkdownFiles: this.outputPackageXmlMarkdownFiles };
   }
 
+  private async buildMkDocsYml() {
+    // Copy default files (mkdocs.yml and other files can be updated by the SF Cli plugin developer later)
+    const mkdocsYmlFile = path.join(process.cwd(), 'mkdocs.yml');
+    const mkdocsYmlFileExists = fs.existsSync(mkdocsYmlFile);
+    await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/mkdocs-project-doc', '.'), process.cwd(), { overwrite: false });
+    if (!mkdocsYmlFileExists) {
+      uxLog(this, c.blue('Base mkdocs files copied in your Salesforce project repo'));
+      uxLog(
+        this,
+        c.yellow(
+          'You should probably manually update mkdocs.yml to add your own configuration, like theme, site_name, etc.'
+        )
+      );
+    }
+    // Update mkdocs nav items
+    const mkdocsYml: any = yaml.load(
+      fs
+        .readFileSync(mkdocsYmlFile, 'utf-8')
+        .replace('!!python/name:materialx.emoji.twemoji', "'!!python/name:materialx.emoji.twemoji'")
+        .replace('!!python/name:materialx.emoji.to_svg', "'!!python/name:materialx.emoji.to_svg'")
+    );
+    if (!mkdocsYml.nav) {
+      mkdocsYml.nav = {}
+    }
+    for (const menuName of Object.keys(this.mkDocsNavNodes)) {
+      let pos = 0;
+      let found = false;
+      for (const navItem of mkdocsYml.nav) {
+        if (navItem[menuName]) {
+          found = true;
+          break;
+        }
+        pos++;
+      }
+      const navMenu = {};
+      navMenu[menuName] = this.mkDocsNavNodes[menuName];
+      if (found) {
+        mkdocsYml.nav[pos] = navMenu;
+      } else {
+        mkdocsYml.nav.push(navMenu);
+      }
+    }
+    const mkdocsYmlStr = yaml
+      .dump(mkdocsYml)
+      .replace("'!!python/name:materialx.emoji.twemoji'", '!!python/name:materialx.emoji.twemoji')
+      .replace("'!!python/name:materialx.emoji.to_svg'", '!!python/name:materialx.emoji.to_svg');
+    await fs.writeFile(mkdocsYmlFile, mkdocsYmlStr);
+    uxLog(this, c.cyan(`Updated ${c.green(mkdocsYmlFile)}`));
+  }
+
   private async generateFlowsDocumentation() {
     uxLog(this, c.cyan("Generating Flows Visual documentation... (if you don't want it, define GENERATE_FLOW_DOC=false in your environment variables)"));
+    const flowsForMenu: any = { "All flows": "flows/index.md" }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const packageDirs = this.project?.getPackageDirectories();
     const updatedFlowNames = !this.diffOnly ?
@@ -170,12 +255,13 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
         type: flowContent?.Flow?.processType?.[0] === "Flow" ? "ScreenFlow" : flowContent?.Flow?.start?.[0]?.triggerType?.[0] ?? (flowContent?.Flow?.processType?.[0] || "ERROR (Unknown)"),
         object: flowContent?.Flow?.start?.[0]?.object?.[0] || flowContent?.Flow?.processMetadataValues?.filter(pmv => pmv.name[0] === "ObjectType")?.[0]?.value?.[0]?.stringValue?.[0] || ""
       });
+      flowsForMenu[flowName] = "flows/" + flowName + ".md";
       if (this.diffOnly && !updatedFlowNames.includes(flowName)) {
         flowSkips.push(flowFile);
         continue;
       }
       const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", flowName + ".md");
-      const genRes = await generateFlowMarkdownFile(flowFile, flowXml, outputFlowMdFile);
+      const genRes = await generateFlowMarkdownFile(flowFile, flowXml, outputFlowMdFile, { collapsedDetails: false });
       if (!genRes) {
         flowErrors.push(flowFile);
         continue;
@@ -209,7 +295,9 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const flowTableLinesForIndex = await this.buildFlowsTable(flowDescriptions, '');
     const flowIndexFile = path.join(this.outputMarkdownRoot, "flows", "index.md");
-    await fs.writeFile(flowIndexFile, flowTableLinesForIndex.join("\n") + "\n");
+    await fs.writeFile(flowIndexFile, flowTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
+
+    this.mkDocsNavNodes["Flows"] = flowsForMenu;
     uxLog(this, c.green(`Successfully generated doc index for Flows at ${flowIndexFile}`));
   }
 
@@ -234,10 +322,11 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
     return lines;
   }
 
-  private async writeInstalledPackages() {
+  private async buildInstalledPackages() {
     // CI/CD context
     const packages = this.sfdxHardisConfig.installedPackages || [];
     // Monitoring context
+    const installedPackagesLines: string[] = [];
     const packageFolder = path.join(process.cwd(), 'installedPackages');
     if (packages.length === 0 && fs.existsSync(packageFolder)) {
       const findManagedPattern = "**/*.json";
@@ -253,43 +342,50 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
     }
     // Write packages table
     if (packages && packages.length > 0) {
-      this.mdLines.push(...[
+      installedPackagesLines.push(...[
         "## Installed packages",
         "",
         "| Name  | Namespace | Version | Version Name |",
         "| :---- | :-------- | :------ | :----------: | "
       ]);
       for (const pckg of sortArray(packages, { by: ['SubscriberPackageNamespace', 'SubscriberPackageName'], order: ['asc', 'asc'] }) as any[]) {
-        this.mdLines.push(...[
+        installedPackagesLines.push(...[
           `| ${pckg.SubscriberPackageName} | ${pckg.SubscriberPackageNamespace || ""} | [${pckg.SubscriberPackageVersionNumber}](https://test.salesforce.com/packaging/installPackage.apexp?p0=${pckg.SubscriberPackageVersionId}) | ${pckg.SubscriberPackageVersionName} |`
         ]);
       }
-      this.mdLines.push("");
-      this.mdLines.push("___");
-      this.mdLines.push("");
+      installedPackagesLines.push("");
+      installedPackagesLines.push("___");
+      installedPackagesLines.push("");
     }
+    return installedPackagesLines;
   }
 
-  private buildSfdxHardisParams() {
-    this.mdLines.push(...[
+  private buildSfdxHardisParams(): string[] {
+    const sfdxParamsTableLines: string[] = [];
+    sfdxParamsTableLines.push(...[
+      `## ${this.sfdxHardisConfig?.projectName?.toUpperCase() || "SFDX Project"} CI/CD configuration`,
+      ""]);
+    sfdxParamsTableLines.push(...[
       "| Sfdx-hardis Parameter | Value | Description & doc link |",
       "| :--------- | :---- | :---------- |"
     ]);
     const installPackagesDuringCheckDeploy = this.sfdxHardisConfig?.installPackagesDuringCheckDeploy ?? false;
-    this.mdLines.push(`| installPackagesDuringCheckDeploy | ${bool2emoji(installPackagesDuringCheckDeploy)} ${installPackagesDuringCheckDeploy} | [Install 1GP & 2GP packages during deployment check CI/CD job](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#packages-installation) |`);
+    sfdxParamsTableLines.push(`| installPackagesDuringCheckDeploy | ${bool2emoji(installPackagesDuringCheckDeploy)} ${installPackagesDuringCheckDeploy} | [Install 1GP & 2GP packages during deployment check CI/CD job](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#packages-installation) |`);
     const useDeltaDeployment = this.sfdxHardisConfig?.useDeltaDeployment ?? false;
-    this.mdLines.push(`| useDeltaDeployment | ${bool2emoji(useDeltaDeployment)} ${useDeltaDeployment} | [Deploys only updated metadatas , only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-mode) |`);
+    sfdxParamsTableLines.push(`| useDeltaDeployment | ${bool2emoji(useDeltaDeployment)} ${useDeltaDeployment} | [Deploys only updated metadatas , only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-mode) |`);
     const useSmartDeploymentTests = this.sfdxHardisConfig?.useSmartDeploymentTests ?? false;
-    this.mdLines.push(`| useSmartDeploymentTests | ${bool2emoji(useSmartDeploymentTests)} ${useSmartDeploymentTests} | [Skip Apex test cases if delta metadatas can not impact them, only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests) |`);
-    this.mdLines.push("");
-    this.mdLines.push("___");
-    this.mdLines.push("");
+    sfdxParamsTableLines.push(`| useSmartDeploymentTests | ${bool2emoji(useSmartDeploymentTests)} ${useSmartDeploymentTests} | [Skip Apex test cases if delta metadatas can not impact them, only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests) |`);
+    sfdxParamsTableLines.push("");
+    sfdxParamsTableLines.push("___");
+    sfdxParamsTableLines.push("");
+    return sfdxParamsTableLines;
   }
 
   private async buildMajorBranchesAndOrgs() {
+    const branchesOrgsLines: string[] = [];
     const majorOrgs = await listMajorOrgs();
     if (majorOrgs.length > 0) {
-      this.mdLines.push(...[
+      branchesOrgsLines.push(...[
         "## Major branches and orgs",
         "",
         "| Git branch | Salesforce Org | Deployment Username |",
@@ -297,12 +393,13 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
       ]);
       for (const majorOrg of majorOrgs) {
         const majorOrgLine = `| ${majorOrg.branchName} | ${majorOrg.instanceUrl} | ${majorOrg.targetUsername} |`;
-        this.mdLines.push(majorOrgLine);
+        branchesOrgsLines.push(majorOrgLine);
       }
-      this.mdLines.push("");
-      this.mdLines.push("___");
-      this.mdLines.push("");
+      branchesOrgsLines.push("");
+      branchesOrgsLines.push("___");
+      branchesOrgsLines.push("");
     }
+    return branchesOrgsLines;
   }
 
   private async manageLocalPackages() {
@@ -331,8 +428,10 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
     }
   }
 
-  private async writePackagesInIndex() {
-    this.mdLines.push(...[
+  private async buildPackagesIndex() {
+    const packageLines: string[] = [];
+    const packagesForMenu: any = { "All manifests": "manifests.md" }
+    packageLines.push(...[
       "## Package XML files",
       "",
       "| Package name | Description |",
@@ -344,11 +443,14 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
       const packageMdFile = path.basename(outputPackageXmlDef.path) + ".md";
       const label = outputPackageXmlDef.name ? `Package folder: ${outputPackageXmlDef.name}` : path.basename(outputPackageXmlDef.path);
       const packageTableLine = `| [${label}](${packageMdFile}) (${metadataNb}) | ${outputPackageXmlDef.description} |`;
-      this.mdLines.push(packageTableLine);
+      packageLines.push(packageTableLine);
+      packagesForMenu[label] = packageMdFile;
     }
-    this.mdLines.push("");
-    this.mdLines.push("___");
-    this.mdLines.push("");
+    packageLines.push("");
+    packageLines.push("___");
+    packageLines.push("");
+    this.mkDocsNavNodes["Manifests"] = packagesForMenu;
+    return packageLines;
   }
 
   private async generatePackageXmlMarkdown(packageXmlCandidates) {

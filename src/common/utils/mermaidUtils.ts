@@ -33,9 +33,9 @@ export async function isDockerAvailable() {
   return IS_DOCKER_AVAILABLE;
 }
 
-export async function generateFlowMarkdownFile(flowName: string, flowXml: string, outputFlowMdFile: string): Promise<boolean> {
+export async function generateFlowMarkdownFile(flowName: string, flowXml: string, outputFlowMdFile: string, options: { collapsedDetails: boolean } = { collapsedDetails: true }): Promise<boolean> {
   try {
-    const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true });
+    const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true, collapsedDetails: options.collapsedDetails });
     const flowMarkdownDoc = flowDocGenResult.uml;
     await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
     uxLog(this, c.grey(`Written ${flowName} documentation in ${outputFlowMdFile}`));
@@ -223,7 +223,6 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     if (positions.removed.length > 0) {
       compareMdLines.push("linkStyle " + positions.removed.join(",") + " stroke:#ff0000,stroke-width:4px,color:red;");
     }
-
     isMermaid = false
   }
   let styledLine = currentLine;
