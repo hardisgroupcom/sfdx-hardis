@@ -212,11 +212,21 @@ async function generateMermaidContent(flowMap: FlowMap, options: any): Promise<s
 
 async function getMermaidBody(flowMap: FlowMap): Promise<string> {
     let bodyStr = "";
+    let endNumber = 0;
+    const endNodeIds: string[] = [];
     for (const property in flowMap) {
         const node = flowMap[property];
         const type = node.type;
-        const nextNode = (node.nextNode) ? node.nextNode : "END"
-        const faultNode = (node.faultPath) ? node.faultPath : "END"
+        let nextNode = node.nextNode ? node.nextNode : "END"
+        if (nextNode === "END") {
+            nextNode = "END" + endNumber;
+            endNumber++;
+        }
+        let faultNode = node.faultPath ? node.faultPath : "END"
+        if (faultNode === "END") {
+            faultNode = "END" + endNumber;
+            endNumber++;
+        }
         let loopNextNode;
         switch (type) {
             case 'actionCalls':
@@ -229,12 +239,14 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
             case 'recordUpdates':
             case 'screens':
                 bodyStr += node.name + " --> " + nextNode + "\n";
+                manageAddEndNode(nextNode, endNodeIds);
                 if (node.faultPath) {
                     bodyStr += node.name + " -. Fault .->" + faultNode + "\n";
+                    manageAddEndNode(faultNode, endNodeIds);
                 }
                 break;
             case 'start':
-                if (nextNode !== "END") {
+                if (!nextNode.startsWith("END")) {
                     // 'start' may not have a default path 
                     const defaultPathLabel = (node.scheduledPaths.length > 0) ? "|Run Immediately|" : "";
                     bodyStr += "START(( START )) --> " + defaultPathLabel + nextNode + "\n";
@@ -257,21 +269,28 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
 
                 // default
                 bodyStr += node.name + " --> |" + node.nextNodeLabel + "| " + nextNode + "\n";
+                manageAddEndNode(nextNode, endNodeIds);
                 break;
             case 'loops':
                 loopNextNode = node.nextValueConnector;
-                bodyStr += node.name + " --> " + loopNextNode + "\n";
-                bodyStr += node.name + " ---> " + node.nextNode + "\n";
+                bodyStr += node.name + " --> |For Each|" + loopNextNode + "\n";
+                bodyStr += node.name + " ---> |After Last|" + node.nextNode + "\n";
                 break;
             case 'subflows':
                 bodyStr += node.name + " --> " + nextNode + "\n";
-                break;
-            default:
-                // do nothing
-                break;
+                manageAddEndNode(nextNode, endNodeIds);
         }
     }
+    for (const endNodeId of endNodeIds) {
+        bodyStr += `${endNodeId}(( END )):::endClass\n`;
+    }
     return (bodyStr);
+}
+
+function manageAddEndNode(nextOrFaultNode: string, endNodeIds: string[]) {
+    if (nextOrFaultNode.startsWith("END")) {
+        endNodeIds.push(nextOrFaultNode);
+    }
 }
 
 async function getNodeDefStr(flowMap: FlowMap): Promise<any> {
@@ -316,7 +335,7 @@ async function getNodeDefStr(flowMap: FlowMap): Promise<any> {
         }
     }
     return {
-        nodeDefStr: nodeDefStr + "END(( END )):::endClass\n\n",
+        nodeDefStr: nodeDefStr,
         nodeDetailMd: nodeDetailMd + "</details>\n\n"
     };
 }
