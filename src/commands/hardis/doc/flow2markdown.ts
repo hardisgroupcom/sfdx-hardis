@@ -69,7 +69,7 @@ export default class Flow2Markdown extends SfCommand<any> {
 
     uxLog(this, c.grey(`Generating markdown for Flow ${this.inputFile}...`));
     const flowXml = (await fs.readFile(this.inputFile, "utf8")).toString();
-    const genRes = await generateFlowMarkdownFile(this.inputFile, flowXml, this.outputFile);
+    const genRes = await generateFlowMarkdownFile(this.inputFile, flowXml, this.outputFile, { collapsedDetails: false });
     if (!genRes) {
       throw new Error("Error generating markdown file");
     }

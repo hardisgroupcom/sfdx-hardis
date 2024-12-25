@@ -231,7 +231,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     mixedLines.shift();
   }
   // Skip table block if there are no updated lines within
-  if (styledLine.startsWith("## ") && !styledLine.startsWith("## Flow")) {
+  if (styledLine.startsWith("## ") && !styledLine.startsWith("## Flow Diagram")) {
     let updatedInBlock = false;
     let nextBlockPos = 0;
     for (const nextLine of mixedLines) {
@@ -301,19 +301,25 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   else if (!isMermaid && status === "added" && styledLine.startsWith("|") && !styledLine.startsWith("|:-")) {
     styledLine = "|🟩" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: green;"><b>${col}</b></span>`).join("|") + "|";
   }
-
+  // Normal lines header 3
+  else if (!isMermaid && status === "removed" && styledLine.startsWith("#### ")) {
+    styledLine = `#### 🟥${styledLine.replace("#### ", "")}`;
+  }
+  else if (!isMermaid && status === "added" && styledLine.startsWith("#### ")) {
+    styledLine = `#### 🟩${styledLine.replace("#### ", "")}`;
+  }
   // Normal lines header 2
-  else if (!isMermaid && status === "removed" && styledLine.startsWith("###")) {
+  else if (!isMermaid && status === "removed" && styledLine.startsWith("### ")) {
     styledLine = `### 🟥${styledLine.replace("### ", "")}`;
   }
-  else if (!isMermaid && status === "added" && styledLine.startsWith("###")) {
+  else if (!isMermaid && status === "added" && styledLine.startsWith("### ")) {
     styledLine = `### 🟩${styledLine.replace("### ", "")}`;
   }
   // Normal lines header 3
-  else if (!isMermaid && status === "removed" && styledLine.startsWith("##")) {
+  else if (!isMermaid && status === "removed" && styledLine.startsWith("## ")) {
     styledLine = `## 🟥${styledLine.replace("## ", "")}`;
   }
-  else if (!isMermaid && status === "added" && styledLine.startsWith("##")) {
+  else if (!isMermaid && status === "added" && styledLine.startsWith("## ")) {
     styledLine = `## 🟩${styledLine.replace("## ", "")}`;
   }
   // Normal lines

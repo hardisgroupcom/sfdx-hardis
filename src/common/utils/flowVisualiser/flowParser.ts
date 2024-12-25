@@ -185,7 +185,7 @@ async function generateMermaidContent(flowMap: FlowMap, options: any): Promise<s
     const constants = getConstantsMd(flowMap.constants || []) + "\n";
     const formulas = getFormulasMd(flowMap.formulas || []) + "\n";
     const textTemplates = getTemplatesMd(flowMap.textTemplates || []) + "\n";
-    const mdStart = "## Flow diagram\n\n```mermaid\n";
+    const mdStart = "## Flow Diagram\n\n```mermaid\n";
     const { nodeDefStr, nodeDetailMd } = await getNodeDefStr(flowMap, flowType, options);
     const mdClasses = getMermaidClasses() + "\n\n";
     const mdBody = await getMermaidBody(flowMap) + "\n\n";
@@ -281,7 +281,7 @@ function manageAddEndNode(nextOrFaultNode: string, endNodeIds: string[]) {
 }
 
 async function getNodeDefStr(flowMap: FlowMap, flowType: string, options: any): Promise<any> {
-    let nodeDetailMd = "## More details\n\n"
+    let nodeDetailMd = "## Flow Nodes Details\n\n"
     if (options?.collapsedDetails) {
         nodeDetailMd += "<details><summary>NODES CONTENT (expand to view)</summary>\n\n"
     }
