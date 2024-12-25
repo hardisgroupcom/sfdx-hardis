@@ -286,7 +286,8 @@ async function getNodeDefStr(flowMap: FlowMap, flowType: string, options: any): 
         nodeDetailMd += "<details><summary>NODES CONTENT (expand to view)</summary>\n\n"
     }
     let nodeDefStr = flowType !== "Workflow" ? "START(( START )):::startClass\n" : "";
-    for (const property in flowMap) {
+    const allproperties = Object.keys(flowMap);
+    for (const property of allproperties) {
         const type = flowMap[property].type;
         let label: string = ((<any>NODE_CONFIG)[type]) ? (<any>NODE_CONFIG)[type].label : "";
         let icon: string = ((<any>NODE_CONFIG)[type]) ? (<any>NODE_CONFIG)[type].mermaidIcon : null;
@@ -313,10 +314,10 @@ async function getNodeDefStr(flowMap: FlowMap, flowType: string, options: any): 
             // Remove not relevant properties from node display
             nodeSimplified = simplifyNode(flowMap[property]?.flowNodeDescription || flowMap[property]);
             // Mermaid compare node
-            tooltipClassMermaid = `click ${property} "#${property}" "${farmhash.fingerprint32(JSON.stringify(nodeSimplified))}"`;
+            tooltipClassMermaid = `click ${property} "#${property.toLowerCase()}" "${farmhash.fingerprint32(JSON.stringify(nodeSimplified))}"`;
             nodeDefStr += tooltipClassMermaid + "\n\n"
             // Markdown details
-            nodeDetailMd += `### ${property}\n\n` + flowNodeToMarkdown(nodeSimplified);
+            nodeDetailMd += `### ${property}\n\n` + flowNodeToMarkdown(nodeSimplified, allproperties);
         }
     }
     if (options?.collapsedDetails) {
