@@ -56,6 +56,8 @@ export function flowNodeToMarkdown(flowNodeIn: any, allProperties: string[]): st
   additionalTables.push(inputAssignmentsTable);
   const assignmentItemsTable = handleAssignmentItems(flowNode, allProperties);
   additionalTables.push(assignmentItemsTable);
+  const scheduledPathsTable = handleScheduledPaths(flowNode, allProperties);
+  additionalTables.push(scheduledPathsTable);
 
   // Special case of decisions
   if (flowNode.type === "decisions") {
@@ -171,6 +173,15 @@ function handleAssignmentItems(flowNode: any, allProperties: string[]) {
   });
   delete flowNode.assignmentItems;
   return buildCustomMarkdownTable(assignmentItemsValues, ["assignToReference", "operator", "value"], "#### Assignments", allProperties);
+}
+
+function handleScheduledPaths(flowNode: any, allProperties: string[]) {
+  const scheduledPaths = getElementAsArray(flowNode, "scheduledPaths");
+  if (scheduledPaths.length === 0) {
+    return "";
+  }
+  delete flowNode.scheduledPaths;
+  return buildCustomMarkdownTable(scheduledPaths, ["label", "name", "offsetNumber", "offsetUnit", "recordField", "timeSource", "connector"], "#### Scheduled Paths", allProperties);
 }
 
 export function handleInputParameters(flowNode: any, allProperties: string[]) {
