@@ -9,9 +9,11 @@ theme:
   name: material
   custom_dir: docs/overrides
   features:
+    - content.code.copy
     - navigation.instant
-#  logo: assets/images/salesforce-logo.png
-#  favicon: assets/images/salesforce-icon.png
+    - navigation.footer
+  #  logo: assets/images/salesforce-logo.png
+  #  favicon: assets/images/salesforce-icon.png
   palette:
     primary: "light blue"
 markdown_extensions:

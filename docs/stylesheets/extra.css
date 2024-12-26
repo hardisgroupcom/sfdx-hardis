@@ -7,6 +7,26 @@
   display: table;
 }
 
+/* light mode table header bgcolor */
+.md-typeset__table th {
+  background-color: #f2edfe;
+}
+
+/* dark mode table header bgcolor */
+[data-md-color-scheme="slate"] .md-typeset__table th {
+  background-color: hsla(var(--md-hue), 25%, 25%, 1)
+}
+
+/* light mode alternating table bg colors */
+.md-typeset__table tr:nth-child(2n) {
+  background-color: #f8f8f8;
+}
+
+/* dark mode alternating table bg colors */
+[data-md-color-scheme="slate"] .md-typeset__table tr:nth-child(2n) {
+  background-color: hsla(var(--md-hue), 25%, 25%, 1)
+}
+
 :root>* {
   --md-primary-fg-color: #1B1464;
   --md-footer-bg-color: #1B1464;

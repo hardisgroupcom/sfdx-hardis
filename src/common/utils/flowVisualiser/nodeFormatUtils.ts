@@ -240,7 +240,7 @@ export function stringifyValue(valueIn: any, field: string, allProperties: strin
   if (allProperties.includes(valueStringified)) {
     valueStringified = `[${valueStringified}](#${valueStringified.toLowerCase()})`
   }
-  else if (["fieldType", "inputsOnNextNavToAssocScrn", "regionContainerType", "runInMode", "type"].includes(field)) {
+  else if (["actionName", "actionType", "fieldType", "inputsOnNextNavToAssocScrn", "regionContainerType", "runInMode", "type"].includes(field)) {
     valueStringified = prettifyFieldName(valueStringified);
     if (field === "type" && valueStringified.endsWith("s")) {
       valueStringified = valueStringified.slice(0, -1);

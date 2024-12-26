@@ -10,10 +10,11 @@ theme:
   custom_dir: docs/overrides
   features:
     - navigation.instant
-  #  logo: assets/images/salesforce-logo.png
-  #  favicon: assets/images/salesforce-icon.png
+    - navigation.footer
+  # logo: assets/images/cloudity-text-logo.svg
+  # favicon: assets/images/cloudity-logo.svg
   palette:
-    primary: "light blue"
+    primary: indigo
 markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
