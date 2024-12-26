@@ -1,5 +1,32 @@
 import * as yaml from 'js-yaml';
 
+const FIELDS_WITH_VALUES_TO_FORMAT = [
+  "actionType",
+  "fieldType",
+  "inputsOnNextNavToAssocScrn",
+  "recordTriggerType",
+  "triggerType",
+  "regionContainerType",
+  "runInMode",
+  "type"
+];
+
+const FIELDS_PREFERRED_ORDER_START = [
+  "type",
+  "label",
+  "object",
+  "triggerType",
+  "recordTriggerType",
+  "actionType",
+  "actionName"
+];
+
+const FIELDS_PREFERRED_ORDER_END = [
+  "connector",
+  "conditionLogic",
+  "filterLogic"
+];
+
 export function simplifyNode(flowNode: any): any {
   const nodeCopy = Object.assign({}, flowNode);
   for (const nodeKey of Object.keys(nodeCopy)) {
@@ -23,12 +50,12 @@ export function flowNodeToMarkdown(flowNodeIn: any, allProperties: string[]): st
   handleInputParameters(flowNode, allProperties);
   const conditionsTable = handleConditions(flowNode, allProperties);
   additionalTables.push(conditionsTable);
+  const filterItemsTable = handleFilterItems(flowNode, allProperties);
+  additionalTables.push(filterItemsTable);
   const inputAssignmentsTable = handleInputAssignments(flowNode, allProperties);
   additionalTables.push(inputAssignmentsTable);
   const assignmentItemsTable = handleAssignmentItems(flowNode, allProperties);
   additionalTables.push(assignmentItemsTable);
-  const filterItemsTable = handleFilterItems(flowNode, allProperties);
-  additionalTables.push(filterItemsTable);
 
   // Special case of decisions
   if (flowNode.type === "decisions") {
@@ -113,7 +140,7 @@ function handleInputAssignments(flowNode: any, allProperties: string[]): string 
   return buildCustomMarkdownTable(inputAssignmentsItemsValues, ["field", "value"], "#### Input Assignments", allProperties);
 }
 
-function handleFilterItems(flowNode: any, allProperties: string[]): string {
+export function handleFilterItems(flowNode: any, allProperties: string[]): string {
   const filterItems = getElementAsArray(flowNode, "filters");
   if (filterItems.length === 0) {
     return ""
@@ -167,6 +194,19 @@ export function handleprocessMetadataValues(flowNode: any, allProperties: string
 export function buildGenericMarkdownTable(item: any, fields: string[], title: string = "", allProperties: string[]): string {
   if (fields[0] === "allFields") {
     fields = Object.keys(item);
+    // Reorder fields according to preferences
+    for (const field of FIELDS_PREFERRED_ORDER_START.reverse()) {
+      if (fields.includes(field)) {
+        fields.splice(fields.indexOf(field), 1);
+        fields.unshift(field);
+      }
+    }
+    for (const field of FIELDS_PREFERRED_ORDER_END) {
+      if (fields.includes(field)) {
+        fields.splice(fields.indexOf(field), 1);
+        fields.push(field);
+      }
+    }
     // Put label second
     const labelPos = fields.indexOf("label");
     if (labelPos !== -1) {
@@ -240,7 +280,7 @@ export function stringifyValue(valueIn: any, field: string, allProperties: strin
   if (allProperties.includes(valueStringified)) {
     valueStringified = `[${valueStringified}](#${valueStringified.toLowerCase()})`
   }
-  else if (["actionName", "actionType", "fieldType", "inputsOnNextNavToAssocScrn", "regionContainerType", "runInMode", "type"].includes(field)) {
+  else if (FIELDS_WITH_VALUES_TO_FORMAT.includes(field)) {
     valueStringified = prettifyFieldName(valueStringified);
     if (field === "type" && valueStringified.endsWith("s")) {
       valueStringified = valueStringified.slice(0, -1);

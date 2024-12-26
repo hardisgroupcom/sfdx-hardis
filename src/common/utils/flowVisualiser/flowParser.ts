@@ -348,8 +348,13 @@ function getGeneralInfoMd(flowObj: any, flowMap: FlowMap): string {
     }
     handleInputParameters(flowObjCopy, Object.keys(flowMap));
     handleprocessMetadataValues(flowObjCopy, Object.keys(flowMap));
-    const generalInfoMd = buildGenericMarkdownTable(flowObjCopy, ["allFields"], "## General Information", Object.keys(flowMap));
-    return mdEndSection(generalInfoMd);
+    let generalInfoMd = mdEndSection(buildGenericMarkdownTable(flowObjCopy, ["allFields"], "## General Information", Object.keys(flowMap)));
+    if (flowObj.start) {
+        const startObjCopy = simplifyNode(Object.assign({}, flowObj.start.flowNodeDescription || flowObj.start));
+        delete startObjCopy.flowNodeDescription;
+        generalInfoMd += mdEndSection(`## Start\n\n` + flowNodeToMarkdown(startObjCopy, Object.keys(flowMap)));
+    }
+    return generalInfoMd;
 }
 
 function getVariablesMd(vars: any[]): string {
