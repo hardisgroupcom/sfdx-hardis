@@ -14,19 +14,34 @@ const FIELDS_WITH_VALUES_TO_FORMAT = [
 
 const FIELDS_PREFERRED_ORDER_START = [
   "type",
-  "label",
   "object",
+  "processType",
   "triggerType",
   "recordTriggerType",
+  "label",
   "actionType",
-  "actionName"
+  "actionName",
+  "dataType",
+  "objectType"
 ];
 
 const FIELDS_PREFERRED_ORDER_END = [
   "connector",
+  "nextNode",
   "conditionLogic",
   "filterLogic"
 ];
+
+const FIELDS_WITH_COLUMN_CENTERED = [
+  "dataType",
+  "objectType",
+  "operator",
+  "isCollection",
+  "isInput",
+  "isOutput",
+  "rightValue",
+  "value"
+]
 
 export function simplifyNode(flowNode: any): any {
   const nodeCopy = Object.assign({}, flowNode);
@@ -124,14 +139,14 @@ function handleConditions(ruleNode: any, allProperties: string[]) {
   const conditionsValues = conditions.map((item: any) => {
     id++;
     return {
-      id: id,
+      conditionId: id,
       leftValueReference: item.leftValueReference,
       operator: stringifyOperator(item.operator),
-      rightValue: stringifyValue(item.rightValue, "", allProperties)
+      rightValue: (item.operator === "IsNull" && item.rightValue === "false") ? "<!-- -->" : stringifyValue(item.rightValue, "", allProperties)
     };
   });
   delete ruleNode.conditions;
-  return buildCustomMarkdownTable(conditionsValues, ["id", "leftValueReference", "operator", "rightValue"], "", allProperties);
+  return buildCustomMarkdownTable(conditionsValues, ["conditionId", "leftValueReference", "operator", "rightValue"], "", allProperties);
 }
 
 function handleInputAssignments(flowNode: any, allProperties: string[]): string {
@@ -158,7 +173,7 @@ export function handleFilterItems(flowNode: any, allProperties: string[]): strin
     return {
       field: item.field,
       operator: stringifyOperator(item.operator),
-      value: stringifyValue(item.value, item.field, allProperties)
+      value: item.operator === "IsNull" ? "<!-- -->" : stringifyValue(item.value, item.field, allProperties)
     };
   });
   delete flowNode.filters;
@@ -182,12 +197,12 @@ function handleAssignmentItems(flowNode: any, allProperties: string[]) {
   return buildCustomMarkdownTable(assignmentItemsValues, ["assignToReference", "operator", "value"], "#### Assignments", allProperties);
 }
 
-function handleScheduledPaths(flowNode: any, allProperties: string[]) {
+export function handleScheduledPaths(flowNode: any, allProperties: string[]) {
   const scheduledPaths = getElementAsArray(flowNode, "scheduledPaths");
+  delete flowNode.scheduledPaths;
   if (scheduledPaths.length === 0) {
     return "";
   }
-  delete flowNode.scheduledPaths;
   return buildCustomMarkdownTable(scheduledPaths, ["label", "name", "offsetNumber", "offsetUnit", "recordField", "timeSource", "connector"], "#### Scheduled Paths", allProperties);
 }
 
@@ -225,19 +240,6 @@ export function buildGenericMarkdownTable(item: any, fields: string[], title: st
         fields.push(field);
       }
     }
-    // Put label second
-    const labelPos = fields.indexOf("label");
-    if (labelPos !== -1) {
-      fields.splice(labelPos, 1);
-      fields.unshift("label");
-    }
-    // Put type first
-    const typePos = fields.indexOf("type");
-    if (typePos !== -1) {
-      fields.splice(typePos, 1);
-      fields.unshift("type");
-    }
-
   }
   let table = title ? `${title}\n\n` : ''
   table += `|<!-- -->|<!-- -->|\n|:---|:---|\n`;
@@ -252,7 +254,7 @@ export function buildGenericMarkdownTable(item: any, fields: string[], title: st
 export function buildCustomMarkdownTable(items: any, fields: string[], title: string = "", allProperties: string[]): string {
   let table = title ? `${title}\n\n` : ''
   table += "|" + fields.map(field => prettifyFieldName(field)).join("|") + "|\n";
-  table += "|" + fields.map(field => ["operator"].includes(field) ? ":--:" : ":-- ").join("|") + " |\n";
+  table += "|" + fields.map(field => FIELDS_WITH_COLUMN_CENTERED.includes(field) ? ":--:" : ":-- ").join("|") + " |\n";
   for (const item of items) {
     const fieldValues = fields.map(field => stringifyValue(item[field], field, allProperties));
     table += "|" + fieldValues.join("|") + "|\n";

@@ -4,7 +4,7 @@ import { XMLParser } from "fast-xml-parser";
 import { CONSTANTS } from "../../../config/index.js";
 import { getCurrentGitBranch } from "../index.js";
 import farmhash from 'farmhash';
-import { buildCustomMarkdownTable, buildGenericMarkdownTable, flowNodeToMarkdown, handleInputParameters, handleprocessMetadataValues, mdEndSection, simplifyNode } from "./nodeFormatUtils.js";
+import { buildCustomMarkdownTable, buildGenericMarkdownTable, flowNodeToMarkdown, handleFilterItems, handleInputParameters, handleprocessMetadataValues, handleScheduledPaths, mdEndSection, simplifyNode } from "./nodeFormatUtils.js";
 
 interface FlowMap {
     "description"?: string;
@@ -335,7 +335,7 @@ async function getNodeDefStr(flowMap: FlowMap, flowType: string, options: any): 
 }
 
 function getGeneralInfoMd(flowObj: any, flowMap: FlowMap): string {
-    const flowObjCopy = Object.assign({}, flowObj);
+    let flowObjCopy = Object.assign({}, flowObj);
     // Remove sections that are somewhere else
     for (const nodeKey of [...["constants", "formulas", "variables"], ...FLOW_NODE_TYPES]) {
         delete flowObjCopy[nodeKey];
@@ -348,12 +348,17 @@ function getGeneralInfoMd(flowObj: any, flowMap: FlowMap): string {
     }
     handleInputParameters(flowObjCopy, Object.keys(flowMap));
     handleprocessMetadataValues(flowObjCopy, Object.keys(flowMap));
-    let generalInfoMd = mdEndSection(buildGenericMarkdownTable(flowObjCopy, ["allFields"], "## General Information", Object.keys(flowMap)));
+    let detailTablesMd = ""
     if (flowObj.start) {
         const startObjCopy = simplifyNode(Object.assign({}, flowObj.start.flowNodeDescription || flowObj.start));
         delete startObjCopy.flowNodeDescription;
-        generalInfoMd += mdEndSection(`## Start\n\n` + flowNodeToMarkdown(startObjCopy, Object.keys(flowMap)));
+        flowObjCopy = Object.assign({}, startObjCopy, flowObjCopy);
+        delete flowObjCopy.start
+        delete flowObjCopy.type
+        detailTablesMd += handleScheduledPaths(flowObjCopy, Object.keys(flowMap));
+        detailTablesMd += handleFilterItems(flowObjCopy, Object.keys(flowMap));
     }
+    const generalInfoMd = mdEndSection(buildGenericMarkdownTable(flowObjCopy, ["allFields"], "## General Information", Object.keys(flowMap)) + detailTablesMd);
     return generalInfoMd;
 }
 
