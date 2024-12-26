@@ -32,7 +32,7 @@ export function flowNodeToMarkdown(flowNodeIn: any, allProperties: string[]): st
 
   // Special case of decisions
   if (flowNode.type === "decisions") {
-    const rules = Array.isArray(flowNode.rules) ? flowNode.rules : typeof flowNode.rules === "object" ? [flowNode.rules] : [];
+    const rules = getElementAsArray(flowNode, "rules");
     delete flowNode.rules;
     delete flowNode.rules2;
     for (const rule of rules) {
@@ -58,7 +58,7 @@ export function flowNodeToMarkdown(flowNodeIn: any, allProperties: string[]): st
 }
 
 function handleFields(flowNode: any, allProperties: string[], parentField: string = "", additionalTables: any[]) {
-  const fields = Array.isArray(flowNode.fields) ? flowNode.fields : typeof flowNode.fields === "object" ? [flowNode.fields] : [];
+  const fields = getElementAsArray(flowNode, "fields");
   delete flowNode.fields;
   for (const field of fields) {
     const fieldNode = Object.assign({}, field);
@@ -69,7 +69,7 @@ function handleFields(flowNode: any, allProperties: string[], parentField: strin
       allProperties.push(parentField);
     }
     handleInputParameters(fieldNode, allProperties);
-    const fieldsBefore = Array.isArray(fieldNode.fields) ? fieldNode.fields : typeof fieldNode.fields === "object" ? [fieldNode.fields] : [];
+    const fieldsBefore = getElementAsArray(fieldNode, "fields");
     delete fieldNode.fields;
     const fieldTable = buildGenericMarkdownTable(fieldNode, ["allFields"], `#### ${fieldName}`, allProperties);
     // Handle recursive loop
@@ -83,7 +83,7 @@ function handleFields(flowNode: any, allProperties: string[], parentField: strin
 }
 
 function handleConditions(ruleNode: any, allProperties: string[]) {
-  const conditions = Array.isArray(ruleNode.conditions) ? ruleNode.conditions : typeof ruleNode.conditions === "object" ? [ruleNode.conditions] : [];
+  const conditions = getElementAsArray(ruleNode, "conditions");
   if (conditions.length === 0) {
     return ""
   }
@@ -99,7 +99,7 @@ function handleConditions(ruleNode: any, allProperties: string[]) {
 }
 
 function handleInputAssignments(flowNode: any, allProperties: string[]): string {
-  const inputAssignmentsItems = Array.isArray(flowNode.inputAssignments) ? flowNode.inputAssignments : typeof flowNode.inputAssignments === "object" ? [flowNode.inputAssignments] : [];
+  const inputAssignmentsItems = getElementAsArray(flowNode, "inputAssignments");
   if (inputAssignmentsItems.length === 0) {
     return ""
   }
@@ -114,7 +114,7 @@ function handleInputAssignments(flowNode: any, allProperties: string[]): string 
 }
 
 function handleFilterItems(flowNode: any, allProperties: string[]): string {
-  const filterItems = Array.isArray(flowNode.filters) ? flowNode.filters : typeof flowNode.filters === "object" ? [flowNode.filters] : [];
+  const filterItems = getElementAsArray(flowNode, "filters");
   if (filterItems.length === 0) {
     return ""
   }
@@ -130,7 +130,7 @@ function handleFilterItems(flowNode: any, allProperties: string[]): string {
 }
 
 function handleAssignmentItems(flowNode: any, allProperties: string[]) {
-  const assignmentItems = Array.isArray(flowNode.assignmentItems) ? flowNode.assignmentItems : typeof flowNode.assignmentItems === "object" ? [flowNode.assignmentItems] : [];
+  const assignmentItems = getElementAsArray(flowNode, "assignmentItems");
   if (assignmentItems.length === 0) {
     return "";
   }
@@ -147,7 +147,7 @@ function handleAssignmentItems(flowNode: any, allProperties: string[]) {
 }
 
 export function handleInputParameters(flowNode: any, allProperties: string[]) {
-  const inputParameters = Array.isArray(flowNode.inputParameters) ? flowNode.inputParameters : typeof flowNode.inputParameters === "object" ? [flowNode.inputParameters] : [];
+  const inputParameters = getElementAsArray(flowNode, "inputParameters");
   for (const inputParam of inputParameters) {
     const inputParamName = `${inputParam.name} (input)`;
     flowNode[inputParamName] = stringifyValue(inputParam.value, inputParam.name, allProperties);
@@ -156,7 +156,7 @@ export function handleInputParameters(flowNode: any, allProperties: string[]) {
 }
 
 export function handleprocessMetadataValues(flowNode: any, allProperties: string[]) {
-  const processMetadataValues = Array.isArray(flowNode.processMetadataValues) ? flowNode.processMetadataValues : typeof flowNode.processMetadataValues === "object" ? [flowNode.processMetadataValues] : [];
+  const processMetadataValues = getElementAsArray(flowNode, "processMetadataValues");
   for (const processMetadataValue of processMetadataValues) {
     const inputParamName = `${processMetadataValue.name} (PM)`;
     flowNode[inputParamName] = stringifyValue(processMetadataValue.value, processMetadataValue.name, allProperties);
@@ -260,4 +260,8 @@ export function mdEndSection(sectionString: string) {
   if (!sectionString)
     return sectionString + "\n\n___\n\n";
   return sectionString;
+}
+
+export function getElementAsArray(node: any, key: string) {
+  return Array.isArray(node[key]) ? node[key] : typeof node[key] === "object" ? [node[key]] : [];
 }

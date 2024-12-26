@@ -3,8 +3,8 @@
  */
 export const NODE_CONFIG = {
 	'actionCalls': {
-		background: "#344568",
-		color: "white",
+		background: "#b6dafa",
+		color: "black",
 		label: "",
 		icon: "<&pulse>",
 		mermaidIcon: {
@@ -17,8 +17,8 @@ export const NODE_CONFIG = {
 		mermaidOpen: "("
 	},
 	'assignments': {
-		background: "#F97924",
-		color: "white",
+		background: "#befadb",
+		color: "black",
 		label: "",
 		icon: "<&menu>",
 		mermaidIcon: "🟰",
@@ -27,7 +27,7 @@ export const NODE_CONFIG = {
 	},
 	'collectionProcessors': {
 		background: "#DD7A00",
-		color: "white",
+		color: "black",
 		label: {
 			"FilterCollectionProcessor": "Collection Filter",
 			"SortCollectionProcessor": "Collection Sort",
@@ -42,7 +42,7 @@ export const NODE_CONFIG = {
 	},
 	'customErrors': {
 		background: "#032D60",
-		color: "white",
+		color: "black",
 		label: "",
 		icon: "<&pencil>",
 		mermaidIcon: "🚫",
@@ -50,8 +50,8 @@ export const NODE_CONFIG = {
 		mermaidOpen: "("
 	},
 	'decisions': {
-		background: "#DD7A00",
-		color: "white",
+		background: "#f7e1e4",
+		color: "black",
 		label: "",
 		icon: "<&fork>",
 		mermaidIcon: "🔀",
@@ -59,15 +59,15 @@ export const NODE_CONFIG = {
 		mermaidOpen: "{"
 	},
 	'loops': {
-		background: "#E07D1C",
+		background: "#e0f5c6",
 		label: "",
 		mermaidIcon: "🔁",
 		mermaidClose: "/]",
 		mermaidOpen: "[/"
 	},
 	'recordCreates': {
-		background: "#F9548A",
-		color: "white",
+		background: "#d5def5",
+		color: "black",
 		label: "",
 		icon: "<&medical-cross>",
 		mermaidIcon: "➕",
@@ -75,8 +75,8 @@ export const NODE_CONFIG = {
 		mermaidOpen: "[("
 	},
 	'recordDeletes': {
-		background: "#F9548A",
-		color: "white",
+		background: "#d5def5",
+		color: "black",
 		label: "",
 		icon: "<&medical-cross>",
 		mermaidIcon: "🗑️",
@@ -84,8 +84,8 @@ export const NODE_CONFIG = {
 		mermaidOpen: "[("
 	},
 	'recordLookups': {
-		background: "#F9548A",
-		color: "white",
+		background: "#f5facd",
+		color: "black",
 		label: "",
 		icon: "<&medical-cross>",
 		mermaidIcon: "🔍",
@@ -93,8 +93,8 @@ export const NODE_CONFIG = {
 		mermaidOpen: "[("
 	},
 	'recordUpdates': {
-		background: "#F9548A",
-		color: "white",
+		background: "#d5def5",
+		color: "black",
 		label: "",
 		icon: "<&pencil>",
 		mermaidIcon: "🛠️",
@@ -102,8 +102,8 @@ export const NODE_CONFIG = {
 		mermaidOpen: "[("
 	},
 	'screens': {
-		background: "#1B96FF",
-		color: "white",
+		background: "#cdf1fa",
+		color: "black",
 		label: "",
 		icon: "<&pencil>",
 		mermaidIcon: "💻",
@@ -112,7 +112,7 @@ export const NODE_CONFIG = {
 	},
 	'subflows': {
 		background: "#032D60",
-		color: "white",
+		color: "black",
 		label: "Subflow",
 		icon: "<&pencil>",
 		mermaidIcon: "🔗",
@@ -120,11 +120,11 @@ export const NODE_CONFIG = {
 		mermaidOpen: "[["
 	},
 	"startClass": {
-		background: "#0b827c",
-		color: "white"
+		background: "#bbfacb",
+		color: "black"
 	},
 	"endClass": {
-		background: "#ea001e",
-		color: "white"
+		background: "#faacbb",
+		color: "black"
 	}
 };

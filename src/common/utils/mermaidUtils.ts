@@ -103,44 +103,44 @@ export async function generateMarkdownFileWithMermaidCli(outputFlowMdFile: strin
 }
 
 export function getMermaidExtraClasses() {
-  return `classDef actionCallsAdded fill:#344568,color:white,stroke:#00ff00,stroke-width:12px;
-classDef assignmentsAdded fill:#F97924,color:white,stroke:#00ff00,stroke-width:12px;
-classDef collectionProcessorsAdded fill:#DD7A00,color:white,stroke:#00ff00,stroke-width:12px;
-classDef customErrorsAdded fill:#032D60,color:white,stroke:#00ff00,stroke-width:12px;
-classDef decisionsAdded fill:#DD7A00,color:white,stroke:#00ff00,stroke-width:12px;
-classDef loopsAdded fill:#E07D1C,color:undefined,stroke:#00ff00,stroke-width:12px;
-classDef recordCreatesAdded fill:#F9548A,color:white,stroke:#00ff00,stroke-width:12px;
-classDef recordDeletesAdded fill:#F9548A,color:white,stroke:#00ff00,stroke-width:12px;
-classDef recordLookupsAdded fill:#F9548A,color:white,stroke:#00ff00,stroke-width:12px;
-classDef recordUpdatesAdded fill:#F9548A,color:white,stroke:#00ff00,stroke-width:12px;
-classDef screensAdded fill:#1B96FF,color:white,stroke:#00ff00,stroke-width:12px;
-classDef subflowsAdded fill:#032D60,color:white,stroke:#00ff00,stroke-width:12px;
+  return `classDef actionCallsAdded fill:green,color:white
+classDef assignmentsAdded fill:green,color:white
+classDef collectionProcessorsAdded fill:green,color:white
+classDef customErrorsAdded fill:green,color:white
+classDef decisionsAdded fill:green,color:white
+classDef loopsAdded fill:green,color:white
+classDef recordCreatesAdded fill:green,color:white
+classDef recordDeletesAdded fill:green,color:white
+classDef recordLookupsAdded fill:green,color:white
+classDef recordUpdatesAdded fill:green,color:white
+classDef screensAdded fill:green,color:white
+classDef subflowsAdded fill:green,color:white
   
-classDef actionCallsRemoved fill:#344568,color:white,stroke:#ff0000,stroke-width:12px;
-classDef assignmentsRemoved fill:#F97924,color:white,stroke:#ff0000,stroke-width:12px;
-classDef collectionProcessorsRemoved fill:#DD7A00,color:white,stroke:#ff0000,stroke-width:12px;
-classDef customErrorsRemoved fill:#032D60,color:white,stroke:#ff0000,stroke-width:12px;
-classDef decisionsRemoved fill:#DD7A00,color:white,stroke:#ff0000,stroke-width:12px;
-classDef loopsRemoved fill:#E07D1C,color:undefined,stroke:#ff0000,stroke-width:12px;
-classDef recordCreatesRemoved fill:#F9548A,color:white,stroke:#ff0000,stroke-width:12px;
-classDef recordDeletesRemoved fill:#F9548A,color:white,stroke:#ff0000,stroke-width:12px;
-classDef recordLookupsRemoved fill:#F9548A,color:white,stroke:#ff0000,stroke-width:12px;
-classDef recordUpdatesRemoved fill:#F9548A,color:white,stroke:#ff0000,stroke-width:12px;
-classDef screensRemoved fill:#1B96FF,color:white,stroke:#ff0000,stroke-width:12px;
-classDef subflowsRemoved fill:#032D60,color:white,stroke:#ff0000,stroke-width:12px;
+classDef actionCallsRemoved fill:red,color:white
+classDef assignmentsRemoved fill:red,color:white
+classDef collectionProcessorsRemoved fill:red,color:white
+classDef customErrorsRemoved fill:red,color:white
+classDef decisionsRemoved fill:red,color:white
+classDef loopsRemoved fill:red,color:white
+classDef recordCreatesRemoved fill:red,color:white
+classDef recordDeletesRemoved fill:red,color:white
+classDef recordLookupsRemoved fill:red,color:white
+classDef recordUpdatesRemoved fill:red,color:white
+classDef screensRemoved fill:red,color:white
+classDef subflowsRemoved fill:red,color:white
 
-classDef actionCallsChanged fill:#344568,color:white,stroke:#FFA500,stroke-width:12px;
-classDef assignmentsChanged fill:#F97924,color:white,stroke:#FFA500,stroke-width:12px;
-classDef collectionProcessorsChanged fill:#DD7A00,color:white,stroke:#FFA500,stroke-width:12px;
-classDef customErrorsChanged fill:#032D60,color:white,stroke:#FFA500,stroke-width:12px;
-classDef decisionsChanged fill:#DD7A00,color:white,stroke:#FFA500,stroke-width:12px;
-classDef loopsChanged fill:#E07D1C,color:undefined,stroke:#FFA500,stroke-width:12px;
-classDef recordCreatesChanged fill:#F9548A,color:white,stroke:#FFA500,stroke-width:12px;
-classDef recordDeletesChanged fill:#F9548A,color:white,stroke:#FFA500,stroke-width:12px;
-classDef recordLookupsChanged fill:#F9548A,color:white,stroke:#FFA500,stroke-width:12px;
-classDef recordUpdatesChanged fill:#F9548A,color:white,stroke:#FFA500,stroke-width:12px;
-classDef screensChanged fill:#1B96FF,color:white,stroke:#FFA500,stroke-width:12px;
-classDef subflowsChanged fill:#032D60,color:white,stroke:#FFA500,stroke-width:12px;
+classDef actionCallsChanged fill:orange,color:white
+classDef assignmentsChanged fill:orange,color:white
+classDef collectionProcessorsChanged fill:orange,color:white
+classDef customErrorsChanged fill:orange,color:white
+classDef decisionsChanged fill:orange,color:white
+classDef loopsChanged fill:orange,color:white
+classDef recordCreatesChanged fill:orange,color:white
+classDef recordDeletesChanged fill:orange,color:white
+classDef recordLookupsChanged fill:orange,color:white
+classDef recordUpdatesChanged fill:orange,color:white
+classDef screensChanged fill:orange,color:white
+classDef subflowsChanged fill:orange,color:white
 `
 }
 
