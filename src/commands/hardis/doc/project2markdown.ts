@@ -25,6 +25,18 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class Project2Markdown extends SfCommand<any> {
   public static title = 'SFDX Project to Markdown';
 
+  public static htmlInstructions = `## Doc HTML Pages
+
+To read the documentation as HTML pages, run the following code (you need python on your computer)
+
+\`\`\`python
+pip install mkdocs-material mdx_truly_sane_lists
+mkdocs serve
+\`\`\`
+
+To just generate HTML pages that you can host anywhere, run \`mkdocs build\`
+`
+
   public static description = `Generates a markdown documentation from a SFDX project
 
 - Package.xml files
@@ -50,6 +62,8 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc.jpg)
 
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc-2.jpg)
+
+${this.htmlInstructions}
 `;
 
   public static examples = [
@@ -86,7 +100,6 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
   protected outputPackageXmlMarkdownFiles: any[] = [];
   protected mkDocsNavNodes: any = { "Home": "index.md" };
   protected debugMode = false;
-  protected htmlInstructions: string;
   protected footer: string;
   /* jscpd:ignore-end */
 
@@ -98,15 +111,6 @@ _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/pu
     await fs.ensureDir(this.outputMarkdownRoot);
     const currentBranch = await getCurrentGitBranch()
     this.footer = `_Documentation generated from branch ${currentBranch} with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`;
-    this.htmlInstructions = `## Doc HTML Pages
-
-To read the documentation as HTML pages, run the following code (you need python on your computer)
-
-\`\`\`python
-pip install mkdocs-material mdx_truly_sane_lists
-mkdocs serve
-\`\`\`
-`
 
     if (fs.existsSync("config/.sfdx-hardis.yml")) {
       this.sfdxHardisConfig = await getConfig("project");
@@ -153,7 +157,7 @@ mkdocs serve
 
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
-    await fs.writeFile(this.outputMarkdownIndexFile, this.mdLines.join("\n") + "\n\n" + this.htmlInstructions + `\n\n${this.footer}\n`);
+    await fs.writeFile(this.outputMarkdownIndexFile, this.mdLines.join("\n") + "\n\n" + Project2Markdown.htmlInstructions + `\n\n${this.footer}\n`);
     uxLog(this, c.green(`Successfully generated doc index at ${this.outputMarkdownIndexFile}`));
 
     const readmeFile = path.join(process.cwd(), "README.md");
@@ -166,7 +170,7 @@ mkdocs serve
 
 [Read auto-generated documentation of the SFDX project](docs/index.md)
 
-${this.htmlInstructions}
+${Project2Markdown.htmlInstructions}
 `;
         await fs.writeFile(readmeFile, readme);
         uxLog(this, c.green(`Updated README.md to add link to docs/index.md`));
@@ -229,6 +233,7 @@ ${this.htmlInstructions}
       .replace("'!!python/name:materialx.emoji.to_svg'", '!!python/name:materialx.emoji.to_svg');
     await fs.writeFile(mkdocsYmlFile, mkdocsYmlStr);
     uxLog(this, c.cyan(`Updated ${c.green(mkdocsYmlFile)}`));
+    uxLog(this, c.cyan(`To generate a HTML WebSite with this documentation with a single command, see instructions at ${CONSTANTS.DOC_URL_ROOT}/hardis/doc/project2markdown/`));
   }
 
   private async generateFlowsDocumentation() {
