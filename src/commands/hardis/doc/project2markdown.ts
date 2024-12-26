@@ -370,11 +370,11 @@ ${this.htmlInstructions}
       "| :--------- | :---- | :---------- |"
     ]);
     const installPackagesDuringCheckDeploy = this.sfdxHardisConfig?.installPackagesDuringCheckDeploy ?? false;
-    sfdxParamsTableLines.push(`| installPackagesDuringCheckDeploy | ${bool2emoji(installPackagesDuringCheckDeploy)} ${installPackagesDuringCheckDeploy} | [Install 1GP & 2GP packages during deployment check CI/CD job](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#packages-installation) |`);
+    sfdxParamsTableLines.push(`| installPackagesDuringCheckDeploy | ${bool2emoji(installPackagesDuringCheckDeploy)} | [Install 1GP & 2GP packages during deployment check CI/CD job](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#packages-installation) |`);
     const useDeltaDeployment = this.sfdxHardisConfig?.useDeltaDeployment ?? false;
-    sfdxParamsTableLines.push(`| useDeltaDeployment | ${bool2emoji(useDeltaDeployment)} ${useDeltaDeployment} | [Deploys only updated metadatas , only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-mode) |`);
+    sfdxParamsTableLines.push(`| useDeltaDeployment | ${bool2emoji(useDeltaDeployment)} | [Deploys only updated metadatas , only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-mode) |`);
     const useSmartDeploymentTests = this.sfdxHardisConfig?.useSmartDeploymentTests ?? false;
-    sfdxParamsTableLines.push(`| useSmartDeploymentTests | ${bool2emoji(useSmartDeploymentTests)} ${useSmartDeploymentTests} | [Skip Apex test cases if delta metadatas can not impact them, only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests) |`);
+    sfdxParamsTableLines.push(`| useSmartDeploymentTests | ${bool2emoji(useSmartDeploymentTests)} | [Skip Apex test cases if delta metadatas can not impact them, only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests) |`);
     sfdxParamsTableLines.push("");
     sfdxParamsTableLines.push("___");
     sfdxParamsTableLines.push("");

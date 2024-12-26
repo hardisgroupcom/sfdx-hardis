@@ -4,7 +4,7 @@ import { XMLParser } from "fast-xml-parser";
 import { CONSTANTS } from "../../../config/index.js";
 import { getCurrentGitBranch } from "../index.js";
 import farmhash from 'farmhash';
-import { flowNodeToMarkdown, simplifyNode } from "./nodeFormatUtils.js";
+import { buildCustomMarkdownTable, buildGenericMarkdownTable, flowNodeToMarkdown, handleInputParameters, handleprocessMetadataValues, mdEndSection, simplifyNode } from "./nodeFormatUtils.js";
 
 interface FlowMap {
     "description"?: string;
@@ -38,19 +38,33 @@ interface FlowObj {
  * E X P O R T E D
  *=================================================================*/
 
+const FLOW_NODE_TYPES = [
+    'actionCalls',
+    'assignments',
+    'customErrors',
+    'collectionProcessors',
+    'decisions',
+    'loops',
+    'recordCreates',
+    'recordDeletes',
+    'recordLookups',
+    'recordUpdates',
+    'screens',
+    'subflows'
+];
+
 export async function parseFlow(xml: string, renderAs: "mermaid" | "plantuml" = "mermaid", options: any = {}): Promise<{ flowMap: FlowMap, uml: string }> {
     try {
         const parser = new XMLParser();
         const flowObj = parser.parse(xml).Flow;
         const flowMap = await createFlowMap(flowObj);
-        // console.log("flowMap", flowMap);
         if (Object.keys(flowMap).length === 0) {
             throw new Error("no-renderable-content-found");
         }
         if (renderAs === "mermaid") {
             return {
                 flowMap: flowMap,
-                uml: await generateMermaidContent(flowMap, options)
+                uml: await generateMermaidContent(flowMap, flowObj, options)
             };
         }
         throw new Error("unknown-renderAs-" + renderAs);
@@ -167,24 +181,15 @@ function getFlowType(flowMap: FlowMap): string {
 /*===================================================================
  * M E R M A I D
  *=================================================================*/
-async function generateMermaidContent(flowMap: FlowMap, options: any): Promise<string> {
+async function generateMermaidContent(flowMap: FlowMap, flowObj: any, options: any): Promise<string> {
     // console.log("options", options)
     const flowType = getFlowType(flowMap);
-    const title = `# ${flowMap['label']}
-
-## General Information
-
-- Type: **${flowType}**
-- Description: **${flowMap['description'] || "None"}**
-- Interview Label: **${flowMap['interviewLabel'] || "None"}**
-- Environment: **${flowMap['environments'] || "None"}**
-- Status: **${flowMap['status']}**
-
-`;
-    const variables = getVariablesMd(flowMap.variables || []) + "\n";
-    const constants = getConstantsMd(flowMap.constants || []) + "\n";
-    const formulas = getFormulasMd(flowMap.formulas || []) + "\n";
-    const textTemplates = getTemplatesMd(flowMap.textTemplates || []) + "\n";
+    const title = `# ${flowMap['label']}\n\n`;
+    const generalInfo = getGeneralInfoMd(flowObj, flowMap);
+    const variables = getVariablesMd(flowMap.variables || []);
+    const constants = getConstantsMd(flowMap.constants || []);
+    const formulas = getFormulasMd(flowMap.formulas || []);
+    const textTemplates = getTemplatesMd(flowMap.textTemplates || []);
     const mdStart = "## Flow Diagram\n\n```mermaid\n";
     const { nodeDefStr, nodeDetailMd } = await getNodeDefStr(flowMap, flowType, options);
     const mdClasses = getMermaidClasses() + "\n\n";
@@ -196,7 +201,7 @@ async function generateMermaidContent(flowMap: FlowMap, options: any): Promise<s
     if (options.wrapInMarkdown === false) {
         return (mdDiagram);
     } else {
-        return (title + mdStart + mdDiagram + mdEnd + variables + formulas + constants + textTemplates + nodeDetailMd + footer);
+        return (title + generalInfo + mdStart + mdDiagram + mdEnd + variables + formulas + constants + textTemplates + nodeDetailMd + footer);
     }
 }
 
@@ -288,7 +293,7 @@ async function getNodeDefStr(flowMap: FlowMap, flowType: string, options: any): 
     let nodeDefStr = flowType !== "Workflow" ? "START(( START )):::startClass\n" : "";
     const allproperties = Object.keys(flowMap);
     for (const property of allproperties) {
-        const type = flowMap[property].type;
+        const type = flowMap?.[property]?.type;
         let label: string = ((<any>NODE_CONFIG)[type]) ? (<any>NODE_CONFIG)[type].label : "";
         let icon: string = ((<any>NODE_CONFIG)[type]) ? (<any>NODE_CONFIG)[type].mermaidIcon : null;
         let nodeSimplified;
@@ -308,7 +313,7 @@ async function getNodeDefStr(flowMap: FlowMap, flowType: string, options: any): 
                 (<any>NODE_CONFIG)[type].label;
         }
         // Create Mermaid Lines
-        if (['actionCalls', 'assignments', 'customErrors', 'collectionProcessors', 'decisions', 'loops', 'recordCreates', 'recordDeletes', 'recordLookups', 'recordUpdates', 'screens', 'subflows'].includes(type)) {
+        if (FLOW_NODE_TYPES.includes(type)) {
             // Mermaid node
             nodeDefStr += property + (<any>NODE_CONFIG)[type].mermaidOpen + '"' + icon + " <em>" + label + "</em><br/>" + flowMap[property].label + '"' + (<any>NODE_CONFIG)[type].mermaidClose + ':::' + type + "\n"
             // Remove not relevant properties from node display
@@ -329,47 +334,48 @@ async function getNodeDefStr(flowMap: FlowMap, flowType: string, options: any): 
     };
 }
 
+function getGeneralInfoMd(flowObj: any, flowMap: FlowMap): string {
+    const flowObjCopy = Object.assign({}, flowObj);
+    // Remove sections that are somewhere else
+    for (const nodeKey of [...["constants", "formulas", "variables"], ...FLOW_NODE_TYPES]) {
+        delete flowObjCopy[nodeKey];
+    }
+    // Remove nodes that will be processed after
+    for (const nodeKey of Object.keys(flowObjCopy)) {
+        if (typeof flowObjCopy?.[nodeKey] === "object" && flowObjCopy?.[nodeKey]?.name !== 'null') {
+            delete flowObjCopy[nodeKey];
+        }
+    }
+    handleInputParameters(flowObjCopy, Object.keys(flowMap));
+    handleprocessMetadataValues(flowObjCopy, Object.keys(flowMap));
+    const generalInfoMd = buildGenericMarkdownTable(flowObjCopy, ["allFields"], "## General Information", Object.keys(flowMap));
+    return mdEndSection(generalInfoMd);
+}
+
 function getVariablesMd(vars: any[]): string {
     if (vars && vars.length > 0) {
-        let vStr = "## Variables\n\n|Name|DataType|Collection|Input|Output|objectType|\n|:-|:-:|:-:|:-:|:-:|:-|\n";
-        for (const v of vars) {
-            vStr += "|" + v.name + "|" + v.dataType + "|" + v.isCollection + "|" + v.isInput + "|" + v.isOutput + "|" + ((v.objectType) ? v.objectType : "") + "\n";
-        }
-        return vStr;
+        return mdEndSection(buildCustomMarkdownTable(vars, ["name", "dataType", "isCollection", "isInput", "isOutput", "objectType"], "## Variables", []));
     }
     return "";
 }
 
 function getConstantsMd(constants: any[]): string {
     if (constants && constants.length > 0) {
-        let vStr = "## Constants\n\n|Name|DataType|Value|\n|:-|:-:|:-|\n";
-        for (const v of constants) {
-            const val = v?.value?.stringValue || v?.value?.numberValue || v?.value?.booleanValue || JSON.stringify(v.value)
-            vStr += "|" + v.name + "|" + v.dataType + "|" + val + "|\n";
-        }
-        return vStr;
+        return mdEndSection(buildCustomMarkdownTable(constants, ["name", "dataType", "value"], "## Constants", []));
     }
     return "";
 }
 
 function getFormulasMd(formulas: any[]): string {
     if (formulas && formulas.length > 0) {
-        let vStr = "## Formulas\n\n|Name|DataType|Expression|\n|:-|:-:|:-|\n";
-        for (const f of formulas) {
-            vStr += "|" + f.name + "|" + f.dataType + "|" + f.expression.replace(/"/gm, "\"").split("\n").join("<br/>") + "|\n";
-        }
-        return vStr;
+        return mdEndSection(buildCustomMarkdownTable(formulas, ["name", "dataType", "expression"], "## Formulas", []));
     }
     return "";
 }
 
 function getTemplatesMd(textTemplates: any[]): string {
     if (textTemplates && textTemplates.length > 0) {
-        let vStr = "## Text Templates\n\n|Name|Text|\n|:-|:-|\n";
-        for (const v of textTemplates) {
-            vStr += "|" + v.name + "|" + v.text + "|\n";
-        }
-        return vStr;
+        return mdEndSection(buildCustomMarkdownTable(textTemplates, ["name", "text"], "## Text Templates", []));
     }
     return "";
 }

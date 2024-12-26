@@ -323,10 +323,10 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     styledLine = `## 🟩${styledLine.replace("## ", "")}`;
   }
   // Normal lines
-  else if (!isMermaid && status === "removed" && styledLine !== "" && !styledLine.startsWith("|:-")) {
+  else if (!isMermaid && status === "removed" && styledLine !== "" && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
     styledLine = `<span style="background-color: red;"><i>🟥${styledLine}</i></span>`;
   }
-  else if (!isMermaid && status === "added" && styledLine !== "" && !styledLine.startsWith("|:-")) {
+  else if (!isMermaid && status === "added" && styledLine !== "" && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
     styledLine = `<span style="background-color: green;"><b>🟩${styledLine}</b></span>`;
   }
   // Boxes lines
