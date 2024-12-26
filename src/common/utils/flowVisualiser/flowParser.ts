@@ -201,7 +201,7 @@ async function generateMermaidContent(flowMap: FlowMap, flowObj: any, options: a
     if (options.wrapInMarkdown === false) {
         return (mdDiagram);
     } else {
-        return (title + generalInfo + mdStart + mdDiagram + mdEnd + variables + formulas + constants + textTemplates + nodeDetailMd + footer);
+        return (title + mdStart + mdDiagram + mdEnd + generalInfo + variables + formulas + constants + textTemplates + nodeDetailMd + footer);
     }
 }
 
