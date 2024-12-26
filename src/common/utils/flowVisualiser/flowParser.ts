@@ -290,7 +290,7 @@ async function getNodeDefStr(flowMap: FlowMap, flowType: string, options: any): 
     if (options?.collapsedDetails) {
         nodeDetailMd += "<details><summary>NODES CONTENT (expand to view)</summary>\n\n"
     }
-    let nodeDefStr = flowType !== "Workflow" ? "START(( START )):::startClass\n" : "";
+    let nodeDefStr = !["InvocableProcess", "Workflow"].includes(flowType) ? "START(( START )):::startClass\n" : "";
     const allproperties = Object.keys(flowMap);
     for (const property of allproperties) {
         const type = flowMap?.[property]?.type;

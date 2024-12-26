@@ -4,6 +4,7 @@ const FIELDS_WITH_VALUES_TO_FORMAT = [
   "actionType",
   "fieldType",
   "inputsOnNextNavToAssocScrn",
+  "processType",
   "recordTriggerType",
   "triggerType",
   "regionContainerType",
@@ -76,6 +77,9 @@ export function flowNodeToMarkdown(flowNodeIn: any, allProperties: string[]): st
   else if (flowNode.type === "screens") {
     handleFields(flowNode, allProperties, "", additionalTables);
   }
+  else if (flowNode.type === "start") {
+    delete flowNode.type;
+  }
   // Build final markdown for Node
   let table = buildGenericMarkdownTable(flowNode, ["allFields"], "", allProperties);
   for (const additionalTable of additionalTables) {
@@ -116,15 +120,18 @@ function handleConditions(ruleNode: any, allProperties: string[]) {
   if (conditions.length === 0) {
     return ""
   }
+  let id = 0;
   const conditionsValues = conditions.map((item: any) => {
+    id++;
     return {
+      id: id,
       leftValueReference: item.leftValueReference,
       operator: stringifyOperator(item.operator),
       rightValue: stringifyValue(item.rightValue, "", allProperties)
     };
   });
   delete ruleNode.conditions;
-  return buildCustomMarkdownTable(conditionsValues, ["leftValueReference", "operator", "rightValue"], "", allProperties);
+  return buildCustomMarkdownTable(conditionsValues, ["id", "leftValueReference", "operator", "rightValue"], "", allProperties);
 }
 
 function handleInputAssignments(flowNode: any, allProperties: string[]): string {
@@ -254,10 +261,7 @@ export function buildCustomMarkdownTable(items: any, fields: string[], title: st
 }
 
 export function stringifyOperator(operatorIn): string {
-  return operatorIn == "Assign" ? "=" :
-    operatorIn == "EqualTo" ? "==" :
-      operatorIn == "NotEqualTo" ? "!=" :
-        operatorIn
+  return prettifyFieldName(operatorIn);
 }
 
 export function stringifyValue(valueIn: any, field: string, allProperties: string[]): string {
@@ -280,7 +284,8 @@ export function stringifyValue(valueIn: any, field: string, allProperties: strin
             // Element reference
             (valueType === "object" && valueIn.elementReference && Object.keys(valueIn).length === 1) ?
               valueIn.elementReference :
-              (valueType === "undefined") ?
+              // Undefined or empty array or empty object
+              (valueType === "undefined" || (Array.isArray(valueIn) && valueIn.length === 0) || (valueType === "object" && Object.keys(valueIn).length === 0)) ?
                 '<!-- -->' :
                 // Default YAML for array & object
                 (Array.isArray(valueIn) || valueType === "object") ?
