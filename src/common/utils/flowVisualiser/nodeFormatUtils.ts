@@ -1,4 +1,5 @@
 import * as yaml from 'js-yaml';
+import moment from 'moment';
 
 const FIELDS_WITH_VALUES_TO_FORMAT = [
   "actionType",
@@ -40,6 +41,8 @@ const FIELDS_WITH_COLUMN_CENTERED = [
   "isInput",
   "isOutput",
   "rightValue",
+  "startDate",
+  "startTime",
   "value"
 ]
 
@@ -162,6 +165,24 @@ function handleInputAssignments(flowNode: any, allProperties: string[]): string 
   });
   delete flowNode.inputAssignments;
   return buildCustomMarkdownTable(inputAssignmentsItemsValues, ["field", "value"], "#### Input Assignments", allProperties);
+}
+
+export function handleSchedule(flowNode: any, allProperties: string[]): string {
+  const scheduleItems = getElementAsArray(flowNode, "schedule");
+  if (scheduleItems.length === 0) {
+    return ""
+  }
+  const scheduleItemsValues = scheduleItems.map((item: any) => {
+    const startDateFormatted = moment(item.startDate).format("ll");
+    const startTimeFormatted = item?.startTime?.endsWith("Z") ? item.startTime.slice(0, 5) : item.startTime;
+    return {
+      frequency: item.frequency,
+      startDate: !startDateFormatted.includes("Invalid") ? startDateFormatted : item.startDate,
+      startTime: !startTimeFormatted.includes("Invalid") ? startTimeFormatted : item.startTime,
+    };
+  });
+  delete flowNode.schedule;
+  return buildCustomMarkdownTable(scheduleItemsValues, ["frequency", "startDate", "startTime"], "#### Schedules", allProperties);
 }
 
 export function handleFilterItems(flowNode: any, allProperties: string[]): string {

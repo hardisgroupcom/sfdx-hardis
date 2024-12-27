@@ -4,7 +4,7 @@ import { XMLParser } from "fast-xml-parser";
 import { CONSTANTS } from "../../../config/index.js";
 import { getCurrentGitBranch } from "../index.js";
 import farmhash from 'farmhash';
-import { buildCustomMarkdownTable, buildGenericMarkdownTable, flowNodeToMarkdown, handleFilterItems, handleInputParameters, handleprocessMetadataValues, handleScheduledPaths, mdEndSection, simplifyNode } from "./nodeFormatUtils.js";
+import { buildCustomMarkdownTable, buildGenericMarkdownTable, flowNodeToMarkdown, handleFilterItems, handleInputParameters, handleprocessMetadataValues, handleSchedule, handleScheduledPaths, mdEndSection, simplifyNode, stringifyValue } from "./nodeFormatUtils.js";
 
 interface FlowMap {
     "description"?: string;
@@ -185,13 +185,13 @@ async function generateMermaidContent(flowMap: FlowMap, flowObj: any, options: a
     // console.log("options", options)
     const flowType = getFlowType(flowMap);
     const title = `# ${flowMap['label']}\n\n`;
-    const generalInfo = getGeneralInfoMd(flowObj, flowMap);
+    const { generalInfoMd, startFingerPrint, startNodeLabel } = getGeneralInfoMd(flowObj, flowMap);
     const variables = getVariablesMd(flowMap.variables || []);
     const constants = getConstantsMd(flowMap.constants || []);
     const formulas = getFormulasMd(flowMap.formulas || []);
     const textTemplates = getTemplatesMd(flowMap.textTemplates || []);
     const mdStart = "## Flow Diagram\n\n```mermaid\n";
-    const { nodeDefStr, nodeDetailMd } = await getNodeDefStr(flowMap, flowType, options);
+    const { nodeDefStr, nodeDetailMd } = await getNodeDefStr(flowMap, flowType, startFingerPrint, startNodeLabel, options);
     const mdClasses = getMermaidClasses() + "\n\n";
     const mdBody = await getMermaidBody(flowMap) + "\n\n";
     const mdEnd = "```\n\n";
@@ -201,7 +201,7 @@ async function generateMermaidContent(flowMap: FlowMap, flowObj: any, options: a
     if (options.wrapInMarkdown === false) {
         return (mdDiagram);
     } else {
-        return (title + mdStart + mdDiagram + mdEnd + generalInfo + variables + formulas + constants + textTemplates + nodeDetailMd + footer);
+        return (title + mdStart + mdDiagram + mdEnd + generalInfoMd + variables + formulas + constants + textTemplates + nodeDetailMd + footer);
     }
 }
 
@@ -240,13 +240,13 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
             case 'start':
                 if (!nextNode.startsWith("END")) {
                     // 'start' may not have a default path 
-                    const defaultPathLabel = (node.scheduledPaths.length > 0) ? "|Run Immediately|" : "";
-                    bodyStr += "START(( START )) --> " + defaultPathLabel + nextNode + "\n";
+                    const defaultPathLabel = (node.scheduledPaths.length > 0) ? '|"Run Immediately"|' : "";
+                    bodyStr += "START --> " + defaultPathLabel + nextNode + "\n";
                 }
                 // scheduled paths
                 for (const path of node.scheduledPaths) {
                     path.label = (path.label) ? path.label : 'Run Immediately';
-                    bodyStr += "START(( START )) --> |" + path.label + "| " + path.connector.targetReference + "\n";
+                    bodyStr += 'START --> |"' + path.label + '"| ' + path.connector.targetReference + "\n";
                     // bodyStr += "START(( START )) --> |" + (path.label) ?  path.label : 'Run Immediately' + "| " + path.connector.targetReference + "\n";
                 }
 
@@ -255,18 +255,18 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
                 // rules
                 for (const rule of node.rules) {
                     if (rule.nextNode?.targetReference) {
-                        bodyStr += node.name + " --> |" + rule.label + "| " + rule.nextNode.targetReference + "\n";
+                        bodyStr += node.name + ' --> |"' + rule.label + '"| ' + rule.nextNode.targetReference + "\n";
                     }
                 }
 
                 // default
-                bodyStr += node.name + " --> |" + node.nextNodeLabel + "| " + nextNode + "\n";
+                bodyStr += node.name + ' --> |"' + node.nextNodeLabel + '"| ' + nextNode + "\n";
                 manageAddEndNode(nextNode, endNodeIds);
                 break;
             case 'loops':
                 loopNextNode = node.nextValueConnector;
-                bodyStr += node.name + " --> |For Each|" + loopNextNode + "\n";
-                bodyStr += node.name + " ---> |After Last|" + node.nextNode + "\n";
+                bodyStr += node.name + ' --> |"For Each"|' + loopNextNode + "\n";
+                bodyStr += node.name + ' ---> |"After Last"|' + node.nextNode + "\n";
                 break;
             case 'subflows':
                 bodyStr += node.name + " --> " + nextNode + "\n";
@@ -285,12 +285,16 @@ function manageAddEndNode(nextOrFaultNode: string, endNodeIds: string[]) {
     }
 }
 
-async function getNodeDefStr(flowMap: FlowMap, flowType: string, options: any): Promise<any> {
+async function getNodeDefStr(flowMap: FlowMap, flowType: string, startFingerPrint: number, startNodeLabel: string, options: any): Promise<any> {
     let nodeDetailMd = "## Flow Nodes Details\n\n"
     if (options?.collapsedDetails) {
         nodeDetailMd += "<details><summary>NODES CONTENT (expand to view)</summary>\n\n"
     }
-    let nodeDefStr = !["InvocableProcess", "Workflow"].includes(flowType) ? "START(( START )):::startClass\n" : "";
+    let nodeDefStr = "";
+    if (!["InvocableProcess", "Workflow"].includes(flowType)) {
+        nodeDefStr += `START(["${startNodeLabel}"]):::startClass\n`
+        nodeDefStr += `click START "#general-information" "${startFingerPrint}"\n\n`;
+    }
     const allproperties = Object.keys(flowMap);
     for (const property of allproperties) {
         const type = flowMap?.[property]?.type;
@@ -334,7 +338,7 @@ async function getNodeDefStr(flowMap: FlowMap, flowType: string, options: any): 
     };
 }
 
-function getGeneralInfoMd(flowObj: any, flowMap: FlowMap): string {
+function getGeneralInfoMd(flowObj: any, flowMap: FlowMap) {
     let flowObjCopy = Object.assign({}, flowObj);
     // Remove sections that are somewhere else
     for (const nodeKey of [...["constants", "formulas", "variables"], ...FLOW_NODE_TYPES]) {
@@ -346,8 +350,10 @@ function getGeneralInfoMd(flowObj: any, flowMap: FlowMap): string {
             delete flowObjCopy[nodeKey];
         }
     }
+    const startFingerPrint = farmhash.fingerprint32(JSON.stringify(flowObjCopy));
     handleInputParameters(flowObjCopy, Object.keys(flowMap));
     handleprocessMetadataValues(flowObjCopy, Object.keys(flowMap));
+    let startNodeLabel = "START";
     let detailTablesMd = ""
     if (flowObj.start) {
         const startObjCopy = simplifyNode(Object.assign({}, flowObj.start.flowNodeDescription || flowObj.start));
@@ -355,11 +361,32 @@ function getGeneralInfoMd(flowObj: any, flowMap: FlowMap): string {
         flowObjCopy = Object.assign({}, startObjCopy, flowObjCopy);
         delete flowObjCopy.start
         delete flowObjCopy.type
+        detailTablesMd += handleSchedule(flowObjCopy, Object.keys(flowMap));
         detailTablesMd += handleScheduledPaths(flowObjCopy, Object.keys(flowMap));
         detailTablesMd += handleFilterItems(flowObjCopy, Object.keys(flowMap));
+        if (flowObjCopy.processType === "Flow") {
+            startNodeLabel = "START<br/>" + "<b>Screen Flow</b>"
+        }
+        else if (flowObjCopy.processType === "AutoLaunchedFlow") {
+            startNodeLabel = "START<br/>" + "<b>AutoLaunched Flow</b></br>" +
+                (flowObjCopy.triggerType ? "Type: <b>" + stringifyValue(flowObjCopy.triggerType, "triggerType", Object.keys(flowObjCopy)) + "</b><br/>" : '')
+        }
+        else {
+            startNodeLabel = "START<br/>" +
+                (flowObjCopy.object ? "<b>" + stringifyValue(flowObjCopy.object, "object", Object.keys(flowObjCopy)) + "</b><br/>" : '') +
+                (flowObjCopy.triggerType ? "Type: <b>" + stringifyValue(flowObjCopy.triggerType, "triggerType", Object.keys(flowObjCopy)) + "</b><br/>" : '') +
+                (flowObjCopy.recordTriggerType ? "On: <b>" + stringifyValue(flowObjCopy.recordTriggerType, "recordTriggerType", Object.keys(flowObjCopy)) + "</b><br/>" : '');
+        }
     }
     const generalInfoMd = mdEndSection(buildGenericMarkdownTable(flowObjCopy, ["allFields"], "## General Information", Object.keys(flowMap)) + detailTablesMd);
-    return generalInfoMd;
+    if (startNodeLabel.endsWith("<br/>")) {
+        startNodeLabel = startNodeLabel.slice(0, -5);
+    }
+    return {
+        generalInfoMd: generalInfoMd,
+        startNodeLabel: startNodeLabel,
+        startFingerPrint: startFingerPrint
+    }
 }
 
 function getVariablesMd(vars: any[]): string {
