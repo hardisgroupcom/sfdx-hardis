@@ -149,6 +149,11 @@ function handleConditions(ruleNode: any, allProperties: string[]) {
     };
   });
   delete ruleNode.conditions;
+  /* let descriptiveLine = "";
+  if (ruleNode.conditionLogic) {
+    descriptiveLine += "\n\nConditions logic: **" + ruleNode.conditionLogic + "**\n\n";
+    delete ruleNode.conditionLogic;
+  } */
   return buildCustomMarkdownTable(conditionsValues, ["conditionId", "leftValueReference", "operator", "rightValue"], "", allProperties);
 }
 
@@ -190,15 +195,23 @@ export function handleFilterItems(flowNode: any, allProperties: string[]): strin
   if (filterItems.length === 0) {
     return ""
   }
+  let id = 0;
   const filterItemsValues = filterItems.map((item: any) => {
+    id++;
     return {
+      filterId: id,
       field: item.field,
       operator: stringifyOperator(item.operator),
       value: item.operator === "IsNull" ? "<!-- -->" : stringifyValue(item.value, item.field, allProperties)
     };
   });
   delete flowNode.filters;
-  return buildCustomMarkdownTable(filterItemsValues, ["field", "operator", "value"], "#### Filters", allProperties);
+  let descriptiveLine = "";
+  if (flowNode.filterLogic) {
+    descriptiveLine += " (logic: **" + flowNode.filterLogic + "**)";
+    delete flowNode.filterLogic;
+  }
+  return buildCustomMarkdownTable(filterItemsValues, ["filterId", "field", "operator", "value"], "#### Filters" + descriptiveLine, allProperties);
 }
 
 function handleAssignmentItems(flowNode: any, allProperties: string[]) {
