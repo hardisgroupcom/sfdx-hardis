@@ -103,45 +103,65 @@ export async function generateMarkdownFileWithMermaidCli(outputFlowMdFile: strin
 }
 
 export function getMermaidExtraClasses() {
-  return `classDef actionCallsAdded fill:green,color:white
-classDef assignmentsAdded fill:green,color:white
-classDef collectionProcessorsAdded fill:green,color:white
-classDef customErrorsAdded fill:green,color:white
-classDef decisionsAdded fill:green,color:white
-classDef loopsAdded fill:green,color:white
-classDef recordCreatesAdded fill:green,color:white
-classDef recordDeletesAdded fill:green,color:white
-classDef recordLookupsAdded fill:green,color:white
-classDef recordUpdatesAdded fill:green,color:white
-classDef screensAdded fill:green,color:white
-classDef subflowsAdded fill:green,color:white
-  
-classDef actionCallsRemoved fill:red,color:white
-classDef assignmentsRemoved fill:red,color:white
-classDef collectionProcessorsRemoved fill:red,color:white
-classDef customErrorsRemoved fill:red,color:white
-classDef decisionsRemoved fill:red,color:white
-classDef loopsRemoved fill:red,color:white
-classDef recordCreatesRemoved fill:red,color:white
-classDef recordDeletesRemoved fill:red,color:white
-classDef recordLookupsRemoved fill:red,color:white
-classDef recordUpdatesRemoved fill:red,color:white
-classDef screensRemoved fill:red,color:white
-classDef subflowsRemoved fill:red,color:white
+  const added = 'fill:green,color:white,stroke-width:4px';
+  const removed = 'fill:red,color:white,stroke-width:4px';
+  const changed = 'fill:orange,color:white,stroke-width:4px';
 
-classDef actionCallsChanged fill:orange,color:white
-classDef assignmentsChanged fill:orange,color:white
-classDef collectionProcessorsChanged fill:orange,color:white
-classDef customErrorsChanged fill:orange,color:white
-classDef decisionsChanged fill:orange,color:white
-classDef loopsChanged fill:orange,color:white
-classDef recordCreatesChanged fill:orange,color:white
-classDef recordDeletesChanged fill:orange,color:white
-classDef recordLookupsChanged fill:orange,color:white
-classDef recordUpdatesChanged fill:orange,color:white
-classDef screensChanged fill:orange,color:white
-classDef subflowsChanged fill:orange,color:white
-`
+  const addedClasses = [
+    'actionCallsAdded',
+    'assignmentsAdded',
+    'collectionProcessorsAdded',
+    'customErrorsAdded',
+    'decisionsAdded',
+    'loopsAdded',
+    'recordCreatesAdded',
+    'recordDeletesAdded',
+    'recordLookupsAdded',
+    'recordUpdatesAdded',
+    'screensAdded',
+    'subflowsAdded',
+  ];
+
+  const removedClasses = [
+    'actionCallsRemoved',
+    'assignmentsRemoved',
+    'collectionProcessorsRemoved',
+    'customErrorsRemoved',
+    'decisionsRemoved',
+    'loopsRemoved',
+    'recordCreatesRemoved',
+    'recordDeletesRemoved',
+    'recordLookupsRemoved',
+    'recordUpdatesRemoved',
+    'screensRemoved',
+    'subflowsRemoved',
+  ];
+
+  const changedClasses = [
+    'actionCallsChanged',
+    'assignmentsChanged',
+    'collectionProcessorsChanged',
+    'customErrorsChanged',
+    'decisionsChanged',
+    'loopsChanged',
+    'recordCreatesChanged',
+    'recordDeletesChanged',
+    'recordLookupsChanged',
+    'recordUpdatesChanged',
+    'screensChanged',
+    'subflowsChanged',
+  ];
+
+  const formatClasses = (classList, style) =>
+    classList.map(className => `classDef ${className} ${style}`).join('\n');
+
+  return `
+${formatClasses(addedClasses, added)}
+
+${formatClasses(removedClasses, removed)}
+
+${formatClasses(changedClasses, changed)}
+  `;
 }
 
 export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, commitAfter: string,
@@ -334,14 +354,14 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     styledLine = styledLine + "Removed"
     if (styledLine.split('"').length === 3) {
       const splits = styledLine.split('"');
-      styledLine = splits[0] + '"🟥<i>' + splits[1] + '</i>"' + splits[2]
+      styledLine = splits[0] + '"<i>' + splits[1] + '</i>"' + splits[2]
     }
   }
   else if (isMermaid === true && status === "added" && currentLine.split(":::").length === 2) {
     styledLine = styledLine + "Added"
     if (styledLine.split('"').length === 3) {
       const splits = styledLine.split('"');
-      styledLine = splits[0] + '"🟩<b>' + splits[1] + '</b>"' + splits[2]
+      styledLine = splits[0] + '"<b>' + splits[1] + '</b>"' + splits[2]
     }
   }
   else if (isMermaid === true && currentLine.includes(":::")) {
@@ -354,7 +374,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
         styledLine = styledLine + "Changed"
         if (styledLine.split('"').length === 3) {
           const splits = styledLine.split('"');
-          styledLine = splits[0] + '"🟧<b>' + splits[1] + '</b>"' + splits[2]
+          styledLine = splits[0] + '"<b>' + splits[1] + '</b>"' + splits[2]
         }
       }
     }
@@ -375,7 +395,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     linkLines.push("removed");
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
-      styledLine = splits[0] + "|🟥<i>" + splits[1] + "</i>|" + splits[2]
+      styledLine = splits[0] + '|"🟥<i>' + removeQuotes(splits[1]) + '</i>"|' + splits[2]
     }
   }
   else if (isMermaid === true && status === "added" && currentLine.includes('--->')) {
@@ -383,7 +403,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     linkLines.push("added");
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
-      styledLine = splits[0] + "|🟩<b>" + splits[1] + "</b>|" + splits[2]
+      styledLine = splits[0] + '|"🟩<b>' + removeQuotes(splits[1]) + '</b>"|' + splits[2]
     }
   }
   // Link lines
@@ -392,7 +412,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     linkLines.push("removed");
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
-      styledLine = splits[0] + "|🟥<i>" + splits[1] + "</i>|" + splits[2]
+      styledLine = splits[0] + '|"🟥<i>' + removeQuotes(splits[1]) + '</i>"|' + splits[2]
     }
   }
   else if (isMermaid === true && status === "added" && currentLine.includes('-->')) {
@@ -400,7 +420,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     linkLines.push("added");
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
-      styledLine = splits[0] + "|🟩<b>" + splits[1] + "</b>|" + splits[2]
+      styledLine = splits[0] + '|"🟩<b>' + removeQuotes(splits[1]) + '</b>"|' + splits[2]
     }
   }
   else if (isMermaid === true && !["added", "removed"].includes(status) &&
@@ -422,4 +442,14 @@ async function buildMermaidMarkdown(commit, flowFile) {
   } catch (err: any) {
     throw new SfError(`Unable to build Graph for flow ${flowFile}: ${err.message}`)
   }
+}
+
+function removeQuotes(str: string) {
+  if (str.startsWith('"')) {
+    str = str.slice(1);
+  }
+  if (str.endsWith('"')) {
+    str = str.slice(0, -1)
+  }
+  return str;
 }

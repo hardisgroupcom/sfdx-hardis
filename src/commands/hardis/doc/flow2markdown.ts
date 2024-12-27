@@ -32,6 +32,11 @@ export default class Flow2Markdown extends SfCommand<any> {
       char: 'f',
       description: 'Force the path and name of output markdown file. Must end with .md',
     }),
+    "with-history": Flags.boolean({
+      char: 'd',
+      default: false,
+      description: messages.getMessage('debugMode'),
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
