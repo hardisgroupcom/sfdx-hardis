@@ -1,9 +1,6 @@
-/**
- * renderConfig.js
- */
 export const NODE_CONFIG = {
 	'actionCalls': {
-		background: "#b6dafa",
+		background: "#D4E4FC", // Light blue
 		color: "black",
 		label: "",
 		icon: "<&pulse>",
@@ -17,7 +14,7 @@ export const NODE_CONFIG = {
 		mermaidOpen: "("
 	},
 	'assignments': {
-		background: "#befadb",
+		background: "#FBEED7", // Light beige
 		color: "black",
 		label: "",
 		icon: "<&menu>",
@@ -26,7 +23,7 @@ export const NODE_CONFIG = {
 		mermaidOpen: "("
 	},
 	'collectionProcessors': {
-		background: "#DD7A00",
+		background: "#F0E3FA", // Light lavender
 		color: "black",
 		label: {
 			"FilterCollectionProcessor": "Collection Filter",
@@ -41,7 +38,7 @@ export const NODE_CONFIG = {
 		mermaidOpen: "("
 	},
 	'customErrors': {
-		background: "#032D60",
+		background: "#FFE9E9", // Pale blush
 		color: "black",
 		label: "",
 		icon: "<&pencil>",
@@ -50,7 +47,7 @@ export const NODE_CONFIG = {
 		mermaidOpen: "("
 	},
 	'decisions': {
-		background: "#f7e1e4",
+		background: "#FDEAF6", // Light pink
 		color: "black",
 		label: "",
 		icon: "<&fork>",
@@ -59,14 +56,15 @@ export const NODE_CONFIG = {
 		mermaidOpen: "{"
 	},
 	'loops': {
-		background: "#e0f5c6",
+		background: "#FDEAF6", // Light pink (harmonized with decisions)
 		label: "",
+		color: "black",
 		mermaidIcon: "🔁",
 		mermaidClose: "/]",
 		mermaidOpen: "[/"
 	},
 	'recordCreates': {
-		background: "#d5def5",
+		background: "#FFF8C9", // Light periwinkle (harmonized with recordCreates and recordDeletes)
 		color: "black",
 		label: "",
 		icon: "<&medical-cross>",
@@ -75,7 +73,7 @@ export const NODE_CONFIG = {
 		mermaidOpen: "[("
 	},
 	'recordDeletes': {
-		background: "#d5def5",
+		background: "#FFF8C9", // Light periwinkle (harmonized with recordCreates and recordDeletes)
 		color: "black",
 		label: "",
 		icon: "<&medical-cross>",
@@ -84,7 +82,7 @@ export const NODE_CONFIG = {
 		mermaidOpen: "[("
 	},
 	'recordLookups': {
-		background: "#f5facd",
+		background: "#EDEAFF", // Pale yellow
 		color: "black",
 		label: "",
 		icon: "<&medical-cross>",
@@ -93,7 +91,7 @@ export const NODE_CONFIG = {
 		mermaidOpen: "[("
 	},
 	'recordUpdates': {
-		background: "#d5def5",
+		background: "#FFF8C9", // Light periwinkle (harmonized with recordCreates and recordDeletes)
 		color: "black",
 		label: "",
 		icon: "<&pencil>",
@@ -102,7 +100,7 @@ export const NODE_CONFIG = {
 		mermaidOpen: "[("
 	},
 	'screens': {
-		background: "#cdf1fa",
+		background: "#DFF6FF", // Pale sky blue
 		color: "black",
 		label: "",
 		icon: "<&pencil>",
@@ -111,7 +109,7 @@ export const NODE_CONFIG = {
 		mermaidOpen: "("
 	},
 	'subflows': {
-		background: "#032D60",
+		background: "#D4E4FC", // Light blue (harmonized with actionCalls)
 		color: "black",
 		label: "Subflow",
 		icon: "<&pencil>",
@@ -120,11 +118,11 @@ export const NODE_CONFIG = {
 		mermaidOpen: "[["
 	},
 	"startClass": {
-		background: "#bbfacb",
+		background: "#D9F2E6", // Light turquoise (between green and blue)
 		color: "black"
 	},
 	"endClass": {
-		background: "#faacbb",
+		background: "#F9BABA", // Slightly shinier pale re
 		color: "black"
 	}
 };
