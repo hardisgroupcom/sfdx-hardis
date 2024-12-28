@@ -19,8 +19,8 @@ export const NODE_CONFIG = {
 		label: "",
 		icon: "<&menu>",
 		mermaidIcon: "🟰",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: "/]",
+		mermaidOpen: "[\\"
 	},
 	'collectionProcessors': {
 		background: "#F0E3FA", // Light lavender
@@ -34,8 +34,8 @@ export const NODE_CONFIG = {
 			"FilterCollectionProcessor": "🔽",
 			"SortCollectionProcessor": "🔃",
 		},
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: "}}",
+		mermaidOpen: "{{"
 	},
 	'customErrors': {
 		background: "#FFE9E9", // Pale blush
@@ -60,8 +60,8 @@ export const NODE_CONFIG = {
 		label: "",
 		color: "black",
 		mermaidIcon: "🔁",
-		mermaidClose: "/]",
-		mermaidOpen: "[/"
+		mermaidClose: "}}",
+		mermaidOpen: "{{"
 	},
 	'recordCreates': {
 		background: "#FFF8C9", // Light periwinkle (harmonized with recordCreates and recordDeletes)
@@ -105,8 +105,8 @@ export const NODE_CONFIG = {
 		label: "",
 		icon: "<&pencil>",
 		mermaidIcon: "💻",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: "])",
+		mermaidOpen: "(["
 	},
 	'subflows': {
 		background: "#D4E4FC", // Light blue (harmonized with actionCalls)

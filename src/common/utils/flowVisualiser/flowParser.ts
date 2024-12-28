@@ -430,7 +430,7 @@ function getTemplatesMd(textTemplates: any[]): string {
 function getMermaidClasses(): string {
     let classStr = "";
     for (const property in NODE_CONFIG) {
-        classStr += "classDef " + property + " fill:" + (<any>NODE_CONFIG)[property].background + ",color:" + (<any>NODE_CONFIG)[property].color + "\n";
+        classStr += "classDef " + property + " fill:" + (<any>NODE_CONFIG)[property].background + ",color:" + (<any>NODE_CONFIG)[property].color + ",max-height:100px\n";
     }
     return classStr;
 }
