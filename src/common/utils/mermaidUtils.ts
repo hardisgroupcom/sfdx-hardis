@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import * as Diff from "diff";
 import * as path from "path";
 import which from "which";
-import { execCommand, git, uxLog } from "./index.js";
+import { execCommand, git, isDockerRunning, uxLog } from "./index.js";
 import { parseFlow } from "./flowVisualiser/flowParser.js";
 import { getReportDirectory } from "../../config/index.js";
 import moment from "moment";
@@ -28,8 +28,10 @@ export async function isDockerAvailable() {
   if (IS_DOCKER_AVAILABLE !== null) {
     return IS_DOCKER_AVAILABLE;
   }
-  const isDockerAvailable1 = await which("docker", { nothrow: true });
-  IS_DOCKER_AVAILABLE = isDockerAvailable1 !== null
+  IS_DOCKER_AVAILABLE = await isDockerRunning();
+  if (!IS_DOCKER_AVAILABLE) {
+    uxLog(this, c.yellow("Docker daemon is not available. If you have issues running npm package @mermaid-js/mermaid-cli, please install Docker and start it"));
+  }
   return IS_DOCKER_AVAILABLE;
 }
 
@@ -165,7 +167,8 @@ ${formatClasses(changedClasses, changed)}
 }
 
 export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, commitAfter: string,
-  options: { mermaidMd: boolean, svgMd: boolean, debug: boolean } = { mermaidMd: false, svgMd: true, debug: false }): Promise<string> {
+  options: { mermaidMd: boolean, svgMd: boolean, debug: boolean } = { mermaidMd: false, svgMd: true, debug: false }) {
+  const result = { outputDiffMdFile: "", hasFlowDiffs: false };
   const mermaidMdBefore = await buildMermaidMarkdown(commitBefore, flowFile);
   const mermaidMdAfter = await buildMermaidMarkdown(commitAfter, flowFile);
   const flowLabel = path.basename(flowFile, ".flow-meta.xml");
@@ -176,13 +179,13 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
 
   if (options.debug) {
     uxLog(this, c.grey("FLOW DOC BEFORE:\n" + mermaidMdBefore) + "\n");
-    await fs.writeFile(diffMdFile + ".mermaid.before.md", mermaidMdBefore);
+    await fs.writeFile(diffMdFile.replace(".md", ".mermaid-before.md"), mermaidMdBefore);
     uxLog(this, c.grey("FLOW DOC AFTER:\n" + mermaidMdAfter) + "\n");
-    await fs.writeFile(diffMdFile + ".mermaid.after.md", mermaidMdAfter);
+    await fs.writeFile(diffMdFile.replace(".md", ".mermaid-after.md"), mermaidMdAfter);
   }
 
   const flowDiffs = Diff.diffLines(mermaidMdBefore, mermaidMdAfter);
-  // uxLog(this, JSON.stringify(flowDiffs, null, 2));
+  result.hasFlowDiffs = flowDiffs.some(line => line.added || line.removed);
 
   const mixedLines: any[] = [];
   for (const line of flowDiffs) {
@@ -204,17 +207,19 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   // Write markdown with diff in a file
   await fs.writeFile(diffMdFile, compareMdLines.join("\n"));
   if (options.mermaidMd) {
-    await fs.copyFile(diffMdFile, diffMdFile + ".mermaid.md");
+    await fs.copyFile(diffMdFile, diffMdFile.replace(".md", ".mermaid.md"));
   }
   if (!options.svgMd) {
-    return diffMdFile;
+    result.outputDiffMdFile = diffMdFile;
+    return result;
   }
   // Generate final markdown with mermaid SVG
   const finalRes = await generateMarkdownFileWithMermaid(diffMdFile);
   if (finalRes) {
     uxLog(this, c.green(`Successfully generated visual git diff for flow: ${diffMdFile}`));
   }
-  return diffMdFile;
+  result.outputDiffMdFile = diffMdFile;
+  return result;
 }
 
 function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid, isTableStarted, linkLines) {
@@ -319,10 +324,10 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
 
   // Tables lines
   if (!isMermaid && status === "removed" && styledLine.startsWith("|") && !styledLine.startsWith("|:-")) {
-    styledLine = "|🟥" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: red;"><i>${col}</i></span>`).join("|") + "|";
+    styledLine = "|🟥" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: #ff7f7f;"><i>${col}</i></span>`).join("|") + "|";
   }
   else if (!isMermaid && status === "added" && styledLine.startsWith("|") && !styledLine.startsWith("|:-")) {
-    styledLine = "|🟩" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: green;"><b>${col}</b></span>`).join("|") + "|";
+    styledLine = "|🟩" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: #a6e22e;"><b>${col}</b></span>`).join("|") + "|";
   }
   // Normal lines header 3
   else if (!isMermaid && status === "removed" && styledLine.startsWith("#### ")) {
@@ -347,10 +352,10 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   }
   // Normal lines
   else if (!isMermaid && status === "removed" && styledLine !== "" && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
-    styledLine = `<span style="background-color: red;"><i>🟥${styledLine}</i></span>`;
+    styledLine = `<span style="background-color: #ff7f7f;"><i>🟥${styledLine}</i></span>`;
   }
   else if (!isMermaid && status === "added" && styledLine !== "" && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
-    styledLine = `<span style="background-color: green;"><b>🟩${styledLine}</b></span>`;
+    styledLine = `<span style="background-color: #a6e22e;"><b>🟩${styledLine}</b></span>`;
   }
   // Boxes lines
   else if (isMermaid === true && status === "removed" && currentLine.split(":::").length === 2) {
@@ -460,4 +465,77 @@ function removeQuotes(str: string) {
     str = str.slice(0, -1)
   }
   return str;
+}
+
+export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: boolean) {
+  await fs.ensureDir(path.join("docs", "flows"));
+  const diffMdFile = path.join("docs", "flows", path.basename(flowFile).replace(".flow-meta.xml", "-history.md"));
+  // Compute for all states
+  const fileHistory = await git().log({ file: flowFile });
+  if (fileHistory.all.length === 1) {
+    // Single state
+    uxLog(this, c.green(`There is only one state for Flow ${flowFile}. Generating normal documentation`));
+    const flowXml = await git().show([`${fileHistory.all[0].hash}:${flowFile}`]);
+    const genRes = await generateFlowMarkdownFile(flowFile, flowXml, diffMdFile, { collapsedDetails: false });
+    if (!genRes) {
+      throw new Error(`Error generating markdown file for flow ${flowFile}`);
+    }
+    if (debugMode) {
+      await fs.copyFile(diffMdFile, diffMdFile.replace(".md", ".mermaid.md"));
+    }
+    const gen2res = await generateMarkdownFileWithMermaid(diffMdFile);
+    if (!gen2res) {
+      throw new Error(`Error generating mermaid markdown file for flow ${flowFile}`);
+    }
+    return diffMdFile;
+  }
+  const flowLabel = path.basename(flowFile, ".flow-meta.xml");
+  uxLog(this, c.cyan(`Generating ${flowLabel} markdown diff between ${fileHistory.all.length} Flow states...`));
+  const diffMdFiles: any[] = [];
+  for (let i = 0; i < fileHistory.all.length - 1; i++) {
+    const commitAfter = fileHistory.all[i];
+    const commitBefore = fileHistory.all[i + 1];
+    const { outputDiffMdFile, hasFlowDiffs } = await generateFlowVisualGitDiff(flowFile, commitBefore.hash, commitAfter.hash, { svgMd: false, mermaidMd: true, debug: debugMode });
+    if (hasFlowDiffs) {
+      diffMdFiles.push({
+        commitBefore: commitBefore,
+        commitAfter: commitAfter,
+        diffMdFile: outputDiffMdFile
+      });
+    }
+    else {
+      uxLog(this, c.yellow(`No real flow diff has been found between ${commitBefore.hash} and ${commitAfter.hash}`));
+    }
+  }
+  // Set all the results in a single tabbed markdown
+  uxLog(this, c.cyan(`Aggregating results in summary tabbed file ${diffMdFile}...`));
+  let finalMd = `# ${flowLabel} history\n\n`;
+  for (const diffMdFile of diffMdFiles) {
+    finalMd += `=== "${moment(diffMdFile.commitAfter.date).format("ll")}"\n\n`;
+    finalMd += `    _State on ${moment(diffMdFile.commitAfter.date).format("ll")}, by ${diffMdFile.commitAfter.author_name}(${diffMdFile.commitAfter.author_email}) in ${diffMdFile.commitAfter.refs} (${diffMdFile.commitAfter.message})_\n\n`;
+    // Remove title and add indentation for tabs to be displayed
+    const generatedDiffText = await fs.readFile(diffMdFile.diffMdFile, "utf8");
+    finalMd += generatedDiffText.split("\n").filter(line => !line.startsWith("# ")).map(line => `    ${line}`).join("\n");
+    finalMd += "\n\n";
+  }
+  await fs.writeFile(diffMdFile, finalMd);
+  if (debugMode) {
+    await fs.copyFile(diffMdFile, diffMdFile.replace(".md", ".mermaid.md"));
+  }
+  const genSvgRes = await generateMarkdownFileWithMermaid(diffMdFile);
+  if (!genSvgRes) {
+    throw new Error("Error generating mermaid markdown file");
+  }
+
+  // Fix indentation for mermaid SVG links
+  const diffMarkdown = await fs.readFile(diffMdFile, "utf8");
+  const diffMarkdownFixed = diffMarkdown.split("\n").map(line => {
+    if (line.startsWith("![diagram]")) {
+      return `    ${line}`;
+    }
+    return line;
+  }).join("\n");
+  await fs.writeFile(diffMdFile, diffMarkdownFixed);
+  uxLog(this, c.green(`Markdown diff between ${fileHistory.all.length} Flow states generated in ${diffMdFile}`));
+  return diffMdFile;
 }

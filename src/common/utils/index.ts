@@ -1364,3 +1364,12 @@ export function killBoringExitHandlers() {
     }
   }
 }
+
+export async function isDockerRunning(): Promise<boolean> {
+  try {
+    await exec("docker info");
+  } catch (e) {
+    return false;
+  }
+  return true;
+}
