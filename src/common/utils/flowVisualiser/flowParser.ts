@@ -185,13 +185,13 @@ async function generateMermaidContent(flowMap: FlowMap, flowObj: any, options: a
     // console.log("options", options)
     const flowType = getFlowType(flowMap);
     const title = `# ${flowMap['label']}\n\n`;
-    const { generalInfoMd, startFingerPrint, startNodeLabel } = getGeneralInfoMd(flowObj, flowMap);
+    const { generalInfoMd, startFingerPrint, startNodeLabel, startElementReference } = getGeneralInfoMd(flowObj, flowMap);
     const variables = getVariablesMd(flowMap.variables || []);
     const constants = getConstantsMd(flowMap.constants || []);
     const formulas = getFormulasMd(flowMap.formulas || []);
     const textTemplates = getTemplatesMd(flowMap.textTemplates || []);
     const mdStart = "## Flow Diagram\n\n```mermaid\n";
-    const { nodeDefStr, nodeDetailMd } = await getNodeDefStr(flowMap, flowType, startFingerPrint, startNodeLabel, options);
+    const { nodeDefStr, nodeDetailMd } = await getNodeDefStr(flowMap, flowType, startFingerPrint, startNodeLabel, startElementReference, options);
     const mdClasses = getMermaidClasses() + "\n\n";
     const mdBody = await getMermaidBody(flowMap) + "\n\n";
     const mdEnd = "```\n\n";
@@ -285,15 +285,18 @@ function manageAddEndNode(nextOrFaultNode: string, endNodeIds: string[]) {
     }
 }
 
-async function getNodeDefStr(flowMap: FlowMap, flowType: string, startFingerPrint: number, startNodeLabel: string, options: any): Promise<any> {
+async function getNodeDefStr(flowMap: FlowMap, flowType: string, startFingerPrint: number, startNodeLabel: string, startElementReference: string, options: any): Promise<any> {
     let nodeDetailMd = "## Flow Nodes Details\n\n"
     if (options?.collapsedDetails) {
         nodeDetailMd += "<details><summary>NODES CONTENT (expand to view)</summary>\n\n"
     }
     let nodeDefStr = "";
-    if (!["InvocableProcess", "Workflow"].includes(flowType)) {
+    if (!["InvocableProcess", "Workflow"].includes(flowType) || (startNodeLabel !== 'START')) {
         nodeDefStr += `START(["${startNodeLabel}"]):::startClass\n`
         nodeDefStr += `click START "#general-information" "${startFingerPrint}"\n\n`;
+        if (startElementReference) {
+            nodeDefStr += `START --> ${startElementReference}\n`
+        }
     }
     const allproperties = Object.keys(flowMap);
     for (const property of allproperties) {
@@ -344,6 +347,7 @@ function getGeneralInfoMd(flowObj: any, flowMap: FlowMap) {
     for (const nodeKey of [...["constants", "formulas", "variables"], ...FLOW_NODE_TYPES]) {
         delete flowObjCopy[nodeKey];
     }
+    const metadataValue = handleprocessMetadataValues(flowObjCopy, Object.keys(flowMap));
     // Remove nodes that will be processed after
     for (const nodeKey of Object.keys(flowObjCopy)) {
         if (typeof flowObjCopy?.[nodeKey] === "object" && flowObjCopy?.[nodeKey]?.name !== 'null') {
@@ -352,9 +356,9 @@ function getGeneralInfoMd(flowObj: any, flowMap: FlowMap) {
     }
     const startFingerPrint = farmhash.fingerprint32(JSON.stringify(flowObjCopy));
     handleInputParameters(flowObjCopy, Object.keys(flowMap));
-    handleprocessMetadataValues(flowObjCopy, Object.keys(flowMap));
     let startNodeLabel = "START";
     let detailTablesMd = ""
+    let startElementReference = ""
     if (flowObj.start) {
         const startObjCopy = simplifyNode(Object.assign({}, flowObj.start.flowNodeDescription || flowObj.start));
         delete startObjCopy.flowNodeDescription;
@@ -378,6 +382,11 @@ function getGeneralInfoMd(flowObj: any, flowMap: FlowMap) {
                 (flowObjCopy.recordTriggerType ? "On: <b>" + stringifyValue(flowObjCopy.recordTriggerType, "recordTriggerType", Object.keys(flowObjCopy)) + "</b><br/>" : '');
         }
     }
+    else if (metadataValue && metadataValue.TriggerType && metadataValue.ObjectType) {
+        startNodeLabel = "START<br/>" + "<b>" + metadataValue.ObjectType + "</b></br>" +
+            (metadataValue.TriggerType ? "Type: <b>" + stringifyValue(metadataValue.TriggerType, "triggerType", Object.keys(flowObjCopy)) + "</b><br/>" : '')
+        startElementReference = flowObj.startElementReference;
+    }
     const generalInfoMd = mdEndSection(buildGenericMarkdownTable(flowObjCopy, ["allFields"], "## General Information", Object.keys(flowMap)) + detailTablesMd);
     if (startNodeLabel.endsWith("<br/>")) {
         startNodeLabel = startNodeLabel.slice(0, -5);
@@ -385,7 +394,8 @@ function getGeneralInfoMd(flowObj: any, flowMap: FlowMap) {
     return {
         generalInfoMd: generalInfoMd,
         startNodeLabel: startNodeLabel,
-        startFingerPrint: startFingerPrint
+        startFingerPrint: startFingerPrint,
+        startElementReference: startElementReference
     }
 }
 

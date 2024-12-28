@@ -250,12 +250,15 @@ export function handleInputParameters(flowNode: any, allProperties: string[]) {
 }
 
 export function handleprocessMetadataValues(flowNode: any, allProperties: string[]) {
+  const metadataValues: any = {};
   const processMetadataValues = getElementAsArray(flowNode, "processMetadataValues");
   for (const processMetadataValue of processMetadataValues) {
     const inputParamName = `${processMetadataValue.name} (PM)`;
     flowNode[inputParamName] = stringifyValue(processMetadataValue.value, processMetadataValue.name, allProperties);
+    metadataValues[processMetadataValue.name] = flowNode[inputParamName];
   }
   delete flowNode.processMetadataValues;
+  return metadataValues;
 }
 
 export function buildGenericMarkdownTable(item: any, fields: string[], title: string = "", allProperties: string[]): string {
