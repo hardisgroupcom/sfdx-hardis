@@ -1,11 +1,8 @@
-/**
- * renderConfig.js
- */
 export const NODE_CONFIG = {
 	'actionCalls': {
-		background: "#344568",
-		color: "white",
-		label: "Action",
+		background: "#D4E4FC", // Light blue
+		color: "black",
+		label: "",
 		icon: "<&pulse>",
 		mermaidIcon: {
 			"apex": "⚙️",
@@ -17,17 +14,17 @@ export const NODE_CONFIG = {
 		mermaidOpen: "("
 	},
 	'assignments': {
-		background: "#F97924",
-		color: "white",
-		label: "Assignment",
+		background: "#FBEED7", // Light beige
+		color: "black",
+		label: "",
 		icon: "<&menu>",
 		mermaidIcon: "🟰",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: "/]",
+		mermaidOpen: "[\\"
 	},
 	'collectionProcessors': {
-		background: "#DD7A00",
-		color: "white",
+		background: "#F0E3FA", // Light lavender
+		color: "black",
 		label: {
 			"FilterCollectionProcessor": "Collection Filter",
 			"SortCollectionProcessor": "Collection Sort",
@@ -37,86 +34,95 @@ export const NODE_CONFIG = {
 			"FilterCollectionProcessor": "🔽",
 			"SortCollectionProcessor": "🔃",
 		},
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: "}}",
+		mermaidOpen: "{{"
 	},
 	'customErrors': {
-		background: "#032D60",
-		color: "white",
-		label: "Custom Error",
+		background: "#FFE9E9", // Pale blush
+		color: "black",
+		label: "",
 		icon: "<&pencil>",
 		mermaidIcon: "🚫",
 		mermaidClose: ")",
 		mermaidOpen: "("
 	},
 	'decisions': {
-		background: "#DD7A00",
-		color: "white",
-		label: "Decision",
+		background: "#FDEAF6", // Light pink
+		color: "black",
+		label: "",
 		icon: "<&fork>",
 		mermaidIcon: "🔀",
+		mermaidClose: "}",
+		mermaidOpen: "{"
+	},
+	'loops': {
+		background: "#FDEAF6", // Light pink (harmonized with decisions)
+		label: "",
+		color: "black",
+		mermaidIcon: "🔁",
 		mermaidClose: "}}",
 		mermaidOpen: "{{"
 	},
-	'loops': {
-		background: "#E07D1C",
-		label: "Loop",
-		mermaidIcon: "🔁",
-		mermaidClose: ")",
-		mermaidOpen: "("
-	},
 	'recordCreates': {
-		background: "#F9548A",
-		color: "white",
-		label: "Create Records",
+		background: "#FFF8C9", // Light periwinkle (harmonized with recordCreates and recordDeletes)
+		color: "black",
+		label: "",
 		icon: "<&medical-cross>",
 		mermaidIcon: "➕",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: ")]",
+		mermaidOpen: "[("
 	},
 	'recordDeletes': {
-		background: "#F9548A",
-		color: "white",
-		label: "Delete Records",
+		background: "#FFF8C9", // Light periwinkle (harmonized with recordCreates and recordDeletes)
+		color: "black",
+		label: "",
 		icon: "<&medical-cross>",
 		mermaidIcon: "🗑️",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: ")]",
+		mermaidOpen: "[("
 	},
 	'recordLookups': {
-		background: "#F9548A",
-		color: "white",
-		label: "Get Records",
+		background: "#EDEAFF", // Pale yellow
+		color: "black",
+		label: "",
 		icon: "<&medical-cross>",
 		mermaidIcon: "🔍",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: ")]",
+		mermaidOpen: "[("
 	},
 	'recordUpdates': {
-		background: "#F9548A",
-		color: "white",
-		label: "Update Records",
+		background: "#FFF8C9", // Light periwinkle (harmonized with recordCreates and recordDeletes)
+		color: "black",
+		label: "",
 		icon: "<&pencil>",
 		mermaidIcon: "🛠️",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: ")]",
+		mermaidOpen: "[("
 	},
 	'screens': {
-		background: "#1B96FF",
-		color: "white",
-		label: "Screen",
+		background: "#DFF6FF", // Pale sky blue
+		color: "black",
+		label: "",
 		icon: "<&pencil>",
 		mermaidIcon: "💻",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: "])",
+		mermaidOpen: "(["
 	},
 	'subflows': {
-		background: "#032D60",
-		color: "white",
+		background: "#D4E4FC", // Light blue (harmonized with actionCalls)
+		color: "black",
 		label: "Subflow",
 		icon: "<&pencil>",
 		mermaidIcon: "🔗",
-		mermaidClose: ")",
-		mermaidOpen: "("
+		mermaidClose: "]]",
+		mermaidOpen: "[["
 	},
+	"startClass": {
+		background: "#D9F2E6", // Light turquoise (between green and blue)
+		color: "black"
+	},
+	"endClass": {
+		background: "#F9BABA", // Slightly shinier pale re
+		color: "black"
+	}
 };

@@ -12,6 +12,7 @@ theme:
   name: material
   custom_dir: docs/overrides
   features:
+    - content.code.copy
     - navigation.instant
     - navigation.footer
   logo: assets/images/cloudity-text-logo.svg
