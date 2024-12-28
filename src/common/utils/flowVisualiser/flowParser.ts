@@ -1,17 +1,10 @@
-/**
- * index.ts
- * TODO
- * - Move FlowMap to a class
- * - Move each language to their own file
- * - Handle options
- */
-
 import { NODE_CONFIG } from "./renderConfig.js";
 
-import * as yaml from 'js-yaml';
 import { XMLParser } from "fast-xml-parser";
 import { CONSTANTS } from "../../../config/index.js";
 import { getCurrentGitBranch } from "../index.js";
+import farmhash from 'farmhash';
+import { buildCustomMarkdownTable, buildGenericMarkdownTable, flowNodeToMarkdown, handleFilterItems, handleInputParameters, handleprocessMetadataValues, handleSchedule, handleScheduledPaths, mdEndSection, simplifyNode, stringifyValue } from "./nodeFormatUtils.js";
 
 interface FlowMap {
     "description"?: string;
@@ -45,25 +38,33 @@ interface FlowObj {
  * E X P O R T E D
  *=================================================================*/
 
+const FLOW_NODE_TYPES = [
+    'actionCalls',
+    'assignments',
+    'customErrors',
+    'collectionProcessors',
+    'decisions',
+    'loops',
+    'recordCreates',
+    'recordDeletes',
+    'recordLookups',
+    'recordUpdates',
+    'screens',
+    'subflows'
+];
+
 export async function parseFlow(xml: string, renderAs: "mermaid" | "plantuml" = "mermaid", options: any = {}): Promise<{ flowMap: FlowMap, uml: string }> {
     try {
         const parser = new XMLParser();
         const flowObj = parser.parse(xml).Flow;
         const flowMap = await createFlowMap(flowObj);
-        // console.log("flowMap", flowMap);
         if (Object.keys(flowMap).length === 0) {
             throw new Error("no-renderable-content-found");
         }
         if (renderAs === "mermaid") {
             return {
                 flowMap: flowMap,
-                uml: await generateMermaidContent(flowMap, options)
-            };
-        }
-        else if (renderAs === 'plantuml') {
-            return {
-                flowMap: flowMap,
-                uml: await generatePlantUMLContent(flowMap)
+                uml: await generateMermaidContent(flowMap, flowObj, options)
             };
         }
         throw new Error("unknown-renderAs-" + renderAs);
@@ -72,7 +73,6 @@ export async function parseFlow(xml: string, renderAs: "mermaid" | "plantuml" = 
         throw (error);
     }
 }
-
 
 /*===================================================================
  * P R I V A T E
@@ -141,6 +141,7 @@ async function createFlowMap(flowObj: any): Promise<FlowMap> {
                             flowNodeDescription: el
                         }
                         flowMap[el.name] = mappedEl;
+                        flowMap[el.name].flowNodeDescription.type = property;
                     } else if (property === 'variables') {
                         flowMap.variables = flowObj[property];
                     } else if (property === 'constants') {
@@ -164,7 +165,7 @@ function getFlowType(flowMap: FlowMap): string {
     else {
         switch (flowMap.start.triggerType) {
             case "Scheduled":
-                return "Scheduled Flow;"
+                return "Scheduled Flow"
             case "RecordAfterSave":
                 return "Record Triggered Flow: After Save (" + flowMap.start.object + ")";
             case "RecordBeforeSave":
@@ -180,23 +181,17 @@ function getFlowType(flowMap: FlowMap): string {
 /*===================================================================
  * M E R M A I D
  *=================================================================*/
-async function generateMermaidContent(flowMap: FlowMap, options: any): Promise<string> {
+async function generateMermaidContent(flowMap: FlowMap, flowObj: any, options: any): Promise<string> {
     // console.log("options", options)
-    const title = `# ${flowMap['label']}
-
-- Type: **${getFlowType(flowMap)}**
-- Description: **${flowMap['description'] || "None"}**
-- Interview Label: **${flowMap['interviewLabel'] || "None"}**
-- Environment: **${flowMap['environments'] || "None"}**
-- Status: **${flowMap['status']}**
-
-`;
-    const variables = getVariablesMd(flowMap.variables || []) + "\n";
-    const constants = getConstantsMd(flowMap.constants || []) + "\n";
-    const formulas = getFormulasMd(flowMap.formulas || []) + "\n";
-    const textTemplates = getTemplatesMd(flowMap.textTemplates || []) + "\n";
-    const mdStart = "## Flow diagram\n\n```mermaid\n";
-    const { nodeDefStr, nodeDetailMd } = await getNodeDefStr(flowMap);
+    const flowType = getFlowType(flowMap);
+    const title = `# ${flowMap['label']}\n\n`;
+    const { generalInfoMd, startFingerPrint, startNodeLabel, startElementReference } = getGeneralInfoMd(flowObj, flowMap);
+    const variables = getVariablesMd(flowMap.variables || []);
+    const constants = getConstantsMd(flowMap.constants || []);
+    const formulas = getFormulasMd(flowMap.formulas || []);
+    const textTemplates = getTemplatesMd(flowMap.textTemplates || []);
+    const mdStart = "## Flow Diagram\n\n```mermaid\n";
+    const { nodeDefStr, nodeDetailMd } = await getNodeDefStr(flowMap, flowType, startFingerPrint, startNodeLabel, startElementReference, options);
     const mdClasses = getMermaidClasses() + "\n\n";
     const mdBody = await getMermaidBody(flowMap) + "\n\n";
     const mdEnd = "```\n\n";
@@ -206,17 +201,24 @@ async function generateMermaidContent(flowMap: FlowMap, options: any): Promise<s
     if (options.wrapInMarkdown === false) {
         return (mdDiagram);
     } else {
-        return (title + mdStart + mdDiagram + mdEnd + variables + formulas + constants + textTemplates + nodeDetailMd + footer);
+        return (title + mdStart + mdDiagram + mdEnd + generalInfoMd + variables + formulas + constants + textTemplates + nodeDetailMd + footer);
     }
 }
 
 async function getMermaidBody(flowMap: FlowMap): Promise<string> {
     let bodyStr = "";
+    const endNodeIds: string[] = [];
     for (const property in flowMap) {
         const node = flowMap[property];
         const type = node.type;
-        const nextNode = (node.nextNode) ? node.nextNode : "END"
-        const faultNode = (node.faultPath) ? node.faultPath : "END"
+        let nextNode = node.nextNode ? node.nextNode : "END"
+        if (nextNode === "END") {
+            nextNode = "END_" + node.name;
+        }
+        let faultNode = node.faultPath ? node.faultPath : "END"
+        if (faultNode === "END") {
+            faultNode = "END_" + node.name;
+        }
         let loopNextNode;
         switch (type) {
             case 'actionCalls':
@@ -229,20 +231,22 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
             case 'recordUpdates':
             case 'screens':
                 bodyStr += node.name + " --> " + nextNode + "\n";
+                manageAddEndNode(nextNode, endNodeIds);
                 if (node.faultPath) {
                     bodyStr += node.name + " -. Fault .->" + faultNode + "\n";
+                    manageAddEndNode(faultNode, endNodeIds);
                 }
                 break;
             case 'start':
-                if (nextNode !== "END") {
+                if (!nextNode.startsWith("END")) {
                     // 'start' may not have a default path 
-                    const defaultPathLabel = (node.scheduledPaths.length > 0) ? "|Run Immediately|" : "";
-                    bodyStr += "START(( START )) --> " + defaultPathLabel + nextNode + "\n";
+                    const defaultPathLabel = (node.scheduledPaths.length > 0) ? '|"Run Immediately"|' : "";
+                    bodyStr += "START --> " + defaultPathLabel + nextNode + "\n";
                 }
                 // scheduled paths
                 for (const path of node.scheduledPaths) {
                     path.label = (path.label) ? path.label : 'Run Immediately';
-                    bodyStr += "START(( START )) --> |" + path.label + "| " + path.connector.targetReference + "\n";
+                    bodyStr += 'START --> |"' + path.label + '"| ' + path.connector.targetReference + "\n";
                     // bodyStr += "START(( START )) --> |" + (path.label) ?  path.label : 'Run Immediately' + "| " + path.connector.targetReference + "\n";
                 }
 
@@ -251,37 +255,55 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
                 // rules
                 for (const rule of node.rules) {
                     if (rule.nextNode?.targetReference) {
-                        bodyStr += node.name + " --> |" + rule.label + "| " + rule.nextNode.targetReference + "\n";
+                        bodyStr += node.name + ' --> |"' + rule.label + '"| ' + rule.nextNode.targetReference + "\n";
                     }
                 }
 
                 // default
-                bodyStr += node.name + " --> |" + node.nextNodeLabel + "| " + nextNode + "\n";
+                bodyStr += node.name + ' --> |"' + node.nextNodeLabel + '"| ' + nextNode + "\n";
+                manageAddEndNode(nextNode, endNodeIds);
                 break;
             case 'loops':
                 loopNextNode = node.nextValueConnector;
-                bodyStr += node.name + " --> " + loopNextNode + "\n";
-                bodyStr += node.name + " ---> " + node.nextNode + "\n";
+                bodyStr += node.name + ' --> |"For Each"|' + loopNextNode + "\n";
+                bodyStr += node.name + ' ---> |"After Last"|' + node.nextNode + "\n";
                 break;
             case 'subflows':
                 bodyStr += node.name + " --> " + nextNode + "\n";
-                break;
-            default:
-                // do nothing
-                break;
+                manageAddEndNode(nextNode, endNodeIds);
         }
+    }
+    for (const endNodeId of [...new Set(endNodeIds)]) {
+        bodyStr += `${endNodeId}(( END )):::endClass\n`;
     }
     return (bodyStr);
 }
 
-async function getNodeDefStr(flowMap: FlowMap): Promise<any> {
-    let nodeDetailMd = "## More details\n\n<details><summary>NODES CONTENT (expand to view)</summary>\n\n"
-    let nodeDefStr = "START(( START ))\n";
-    for (const property in flowMap) {
-        const type = flowMap[property].type;
+function manageAddEndNode(nextOrFaultNode: string, endNodeIds: string[]) {
+    if (nextOrFaultNode.startsWith("END")) {
+        endNodeIds.push(nextOrFaultNode);
+    }
+}
+
+async function getNodeDefStr(flowMap: FlowMap, flowType: string, startFingerPrint: number, startNodeLabel: string, startElementReference: string, options: any): Promise<any> {
+    let nodeDetailMd = "## Flow Nodes Details\n\n"
+    if (options?.collapsedDetails) {
+        nodeDetailMd += "<details><summary>NODES CONTENT (expand to view)</summary>\n\n"
+    }
+    let nodeDefStr = "";
+    if (!["InvocableProcess", "Workflow"].includes(flowType) || (startNodeLabel !== 'START')) {
+        nodeDefStr += `START(["${startNodeLabel}"]):::startClass\n`
+        nodeDefStr += `click START "#general-information" "${startFingerPrint}"\n\n`;
+        if (startElementReference) {
+            nodeDefStr += `START --> ${startElementReference}\n`
+        }
+    }
+    const allproperties = Object.keys(flowMap);
+    for (const property of allproperties) {
+        const type = flowMap?.[property]?.type;
         let label: string = ((<any>NODE_CONFIG)[type]) ? (<any>NODE_CONFIG)[type].label : "";
         let icon: string = ((<any>NODE_CONFIG)[type]) ? (<any>NODE_CONFIG)[type].mermaidIcon : null;
-        let nodeCopy;
+        let nodeSimplified;
         let tooltipClassMermaid;
         if (type === 'actionCalls') {
             icon = ((<any>NODE_CONFIG)[type].mermaidIcon[flowMap[property].actionType]) ?
@@ -298,70 +320,109 @@ async function getNodeDefStr(flowMap: FlowMap): Promise<any> {
                 (<any>NODE_CONFIG)[type].label;
         }
         // Create Mermaid Lines
-        if (['actionCalls', 'assignments', 'customErrors', 'collectionProcessors', 'decisions', 'loops', 'recordCreates', 'recordDeletes', 'recordLookups', 'recordUpdates', 'screens', 'subflows'].includes(type)) {
+        if (FLOW_NODE_TYPES.includes(type)) {
+            // Mermaid node
             nodeDefStr += property + (<any>NODE_CONFIG)[type].mermaidOpen + '"' + icon + " <em>" + label + "</em><br/>" + flowMap[property].label + '"' + (<any>NODE_CONFIG)[type].mermaidClose + ':::' + type + "\n"
             // Remove not relevant properties from node display
-            nodeCopy = Object.assign({}, flowMap[property]?.flowNodeDescription || flowMap[property]);
-            for (const nodeKey of Object.keys(nodeCopy)) {
-                if (["locationX", "locationY"].includes(nodeKey)) {
-                    delete nodeCopy[nodeKey]
-                }
-                else if (nodeCopy[nodeKey] === null || nodeCopy[nodeKey] === undefined) {
-                    delete nodeCopy[nodeKey]
-                }
-            }
-            tooltipClassMermaid = `click ${property} "#${property}" "${yaml.dump(nodeCopy).replace(/"/gm, "").split("\n").join("<br/>")}"`;
-            nodeDetailMd += `### ${property}\n\n${yaml.dump(nodeCopy).replace(/"/gm, "").replace(/^(\s+)/gm, match => '&nbsp;'.repeat(match.length)).split("\n").join("<br/>\n")}\n\n`
+            nodeSimplified = simplifyNode(flowMap[property]?.flowNodeDescription || flowMap[property]);
+            // Mermaid compare node
+            tooltipClassMermaid = `click ${property} "#${property.toLowerCase()}" "${farmhash.fingerprint32(JSON.stringify(nodeSimplified))}"`;
             nodeDefStr += tooltipClassMermaid + "\n\n"
+            // Markdown details
+            nodeDetailMd += `### ${property}\n\n` + flowNodeToMarkdown(nodeSimplified, allproperties);
         }
     }
+    if (options?.collapsedDetails) {
+        nodeDetailMd += "</details>\n\n"
+    }
     return {
-        nodeDefStr: (nodeDefStr + "END(( END ))\n\n"),
-        nodeDetailMd: nodeDetailMd + "</details>\n\n"
+        nodeDefStr: nodeDefStr,
+        nodeDetailMd: nodeDetailMd + "\n\n"
     };
+}
+
+function getGeneralInfoMd(flowObj: any, flowMap: FlowMap) {
+    let flowObjCopy = Object.assign({}, flowObj);
+    // Remove sections that are somewhere else
+    for (const nodeKey of [...["constants", "formulas", "variables"], ...FLOW_NODE_TYPES]) {
+        delete flowObjCopy[nodeKey];
+    }
+    const metadataValue = handleprocessMetadataValues(flowObjCopy, Object.keys(flowMap));
+    // Remove nodes that will be processed after
+    for (const nodeKey of Object.keys(flowObjCopy)) {
+        if (typeof flowObjCopy?.[nodeKey] === "object" && flowObjCopy?.[nodeKey]?.name !== 'null') {
+            delete flowObjCopy[nodeKey];
+        }
+    }
+    const startFingerPrint = farmhash.fingerprint32(JSON.stringify(flowObjCopy));
+    handleInputParameters(flowObjCopy, Object.keys(flowMap));
+    let startNodeLabel = "START";
+    let detailTablesMd = ""
+    let startElementReference = ""
+    if (flowObj.start) {
+        const startObjCopy = simplifyNode(Object.assign({}, flowObj.start.flowNodeDescription || flowObj.start));
+        delete startObjCopy.flowNodeDescription;
+        flowObjCopy = Object.assign({}, startObjCopy, flowObjCopy);
+        delete flowObjCopy.start
+        delete flowObjCopy.type
+        detailTablesMd += handleSchedule(flowObjCopy, Object.keys(flowMap));
+        detailTablesMd += handleScheduledPaths(flowObjCopy, Object.keys(flowMap));
+        detailTablesMd += handleFilterItems(flowObjCopy, Object.keys(flowMap));
+        if (flowObjCopy.processType === "Flow") {
+            startNodeLabel = "START<br/>" + "<b>Screen Flow</b>"
+        }
+        else if (flowObjCopy.processType === "AutoLaunchedFlow") {
+            startNodeLabel = "START<br/>" + "<b>AutoLaunched Flow</b></br>" +
+                (flowObjCopy.triggerType ? "Type: <b>" + stringifyValue(flowObjCopy.triggerType, "triggerType", Object.keys(flowObjCopy)) + "</b><br/>" : '')
+        }
+        else {
+            startNodeLabel = "START<br/>" +
+                (flowObjCopy.object ? "<b>" + stringifyValue(flowObjCopy.object, "object", Object.keys(flowObjCopy)) + "</b><br/>" : '') +
+                (flowObjCopy.triggerType ? "Type: <b>" + stringifyValue(flowObjCopy.triggerType, "triggerType", Object.keys(flowObjCopy)) + "</b><br/>" : '') +
+                (flowObjCopy.recordTriggerType ? "On: <b>" + stringifyValue(flowObjCopy.recordTriggerType, "recordTriggerType", Object.keys(flowObjCopy)) + "</b><br/>" : '');
+        }
+    }
+    else if (metadataValue && metadataValue.TriggerType && metadataValue.ObjectType) {
+        startNodeLabel = "START<br/>" + "<b>" + metadataValue.ObjectType + "</b></br>" +
+            (metadataValue.TriggerType ? "Type: <b>" + stringifyValue(metadataValue.TriggerType, "triggerType", Object.keys(flowObjCopy)) + "</b><br/>" : '')
+        startElementReference = flowObj.startElementReference;
+    }
+    const generalInfoMd = mdEndSection(buildGenericMarkdownTable(flowObjCopy, ["allFields"], "## General Information", Object.keys(flowMap)) + detailTablesMd);
+    if (startNodeLabel.endsWith("<br/>")) {
+        startNodeLabel = startNodeLabel.slice(0, -5);
+    }
+    return {
+        generalInfoMd: generalInfoMd,
+        startNodeLabel: startNodeLabel,
+        startFingerPrint: startFingerPrint,
+        startElementReference: startElementReference
+    }
 }
 
 function getVariablesMd(vars: any[]): string {
     if (vars && vars.length > 0) {
-        let vStr = "## Variables\n\n|Name|DataType|Collection|Input|Output|objectType|\n|:-|:-:|:-:|:-:|:-:|:-|\n";
-        for (const v of vars) {
-            vStr += "|" + v.name + "|" + v.dataType + "|" + v.isCollection + "|" + v.isInput + "|" + v.isOutput + "|" + ((v.objectType) ? v.objectType : "") + "\n";
-        }
-        return vStr;
+        return mdEndSection(buildCustomMarkdownTable(vars, ["name", "dataType", "isCollection", "isInput", "isOutput", "objectType"], "## Variables", []));
     }
     return "";
 }
 
 function getConstantsMd(constants: any[]): string {
     if (constants && constants.length > 0) {
-        let vStr = "## Constants\n\n|Name|DataType|Value|\n|:-|:-:|:-|\n";
-        for (const v of constants) {
-            const val = v?.value?.stringValue || v?.value?.numberValue || v?.value?.booleanValue || JSON.stringify(v.value)
-            vStr += "|" + v.name + "|" + v.dataType + "|" + val + "|\n";
-        }
-        return vStr;
+        return mdEndSection(buildCustomMarkdownTable(constants, ["name", "dataType", "value"], "## Constants", []));
     }
     return "";
 }
 
 function getFormulasMd(formulas: any[]): string {
     if (formulas && formulas.length > 0) {
-        let vStr = "## Formulas\n\n|Name|DataType|Expression|\n|:-|:-:|:-|\n";
-        for (const f of formulas) {
-            vStr += "|" + f.name + "|" + f.dataType + "|" + f.expression.replace(/"/gm, "\"").split("\n").join("<br/>") + "|\n";
-        }
-        return vStr;
+        return mdEndSection(buildCustomMarkdownTable(formulas, ["name", "dataType", "expression"], "## Formulas", []));
     }
     return "";
 }
 
 function getTemplatesMd(textTemplates: any[]): string {
     if (textTemplates && textTemplates.length > 0) {
-        let vStr = "## Text Templates\n\n|Name|Text|\n|:-|:-|\n";
-        for (const v of textTemplates) {
-            vStr += "|" + v.name + "|" + v.text + "|\n";
-        }
-        return vStr;
+        return mdEndSection(buildCustomMarkdownTable(textTemplates, ["name", "text"], "## Text Templates", []));
     }
     return "";
 }
@@ -369,87 +430,7 @@ function getTemplatesMd(textTemplates: any[]): string {
 function getMermaidClasses(): string {
     let classStr = "";
     for (const property in NODE_CONFIG) {
-        classStr += "classDef " + property + " fill:" + (<any>NODE_CONFIG)[property].background + ",color:" + (<any>NODE_CONFIG)[property].color + "\n";
+        classStr += "classDef " + property + " fill:" + (<any>NODE_CONFIG)[property].background + ",color:" + (<any>NODE_CONFIG)[property].color + ",max-height:100px\n";
     }
     return classStr;
-}
-
-
-/*===================================================================
- * P L A N T U M L
- *=================================================================*/
-async function generatePlantUMLContent(flowMap: FlowMap): Promise<string> {
-    const START_STR = "' THIS IS A TEMPORARY FILE\n@startuml " + flowMap['label'] + "\nstart\n";
-    const TITLE_STR = "title " + flowMap['label'] + "\n";
-    let nextNode = flowMap[flowMap['start'].connector.targetReference];
-    let end = false;
-    let bodyStr = '';
-    while (!end) {
-        bodyStr += getPlantUMLNodeStr(nextNode, flowMap);
-        if (!nextNode.nextNode || nextNode.nextNode === "END") {
-            end = true;
-        } else {
-            nextNode = flowMap[nextNode.nextNode]
-        }
-    }
-    const END_STR = "stop\n@enduml";
-    return (START_STR + TITLE_STR + bodyStr + END_STR);
-}
-
-
-function getPlantUMLNodeStr(node: any, flowMap: FlowMap) {
-    let nextNode;
-    let end;
-    let loopName;
-    let bodyStr;
-    switch (node.type) {
-        case 'decisions':
-            return processDecisions(node, flowMap);
-        case 'loops':
-            loopName = node.name;
-            nextNode = flowMap[node.nextValueConnector];
-            bodyStr = "floating note left: " + loopName + "\n repeat :<size:30><&loop-circular></size>;\n";
-            end = false;
-            while (!end) {
-                bodyStr += getPlantUMLNodeStr(nextNode, flowMap);
-                if (!nextNode.nextNode || nextNode.nextNode === loopName) {
-                    end = true;
-                } else {
-                    nextNode = flowMap[nextNode.nextNode]
-                }
-            }
-            return bodyStr + "repeat while (more data?)\n";
-        default:
-            if ((<any>NODE_CONFIG)[node.type]) {
-                const cnf = (<any>NODE_CONFIG)[node.type];
-                return cnf.background + ":<color:" + cnf.color + "><size:30>" + cnf.icon + "</size>;\nfloating note left\n**" + node.label + "**\n" + cnf.label + "\nend note\n";
-            } else {
-                return "' " + node.name + " NOT IMPLEMENTED \n";
-            }
-    }
-}
-
-function processDecisions(node: any, flowMap: FlowMap) {
-    const START_STR = "switch (" + node.label + ")\n"
-    const DEFAULT_STR = "\ncase (" + node.nextNodeLabel + ")\n";
-
-    let nextNode;
-    let end;
-    let rulesStr = "";
-    for (const rule of node.rules) {
-        rulesStr += "case (" + rule.label + ")\n";
-
-        nextNode = nextNode = flowMap[rule.nextNode.targetReference];
-        end = false;
-        while (!end) {
-            rulesStr += getPlantUMLNodeStr(nextNode, flowMap);
-            if (!nextNode.nextNode || nextNode.nextNode === node.nextNode) {
-                end = true;
-            } else {
-                nextNode = flowMap[nextNode.nextNode]
-            }
-        }
-    }
-    const END_STR = "endswitch\n";
-    return START_STR + rulesStr + DEFAULT_STR + END_STR;
 }

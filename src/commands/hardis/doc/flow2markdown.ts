@@ -32,6 +32,11 @@ export default class Flow2Markdown extends SfCommand<any> {
       char: 'f',
       description: 'Force the path and name of output markdown file. Must end with .md',
     }),
+    "with-history": Flags.boolean({
+      char: 'd',
+      default: false,
+      description: messages.getMessage('debugMode'),
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -69,7 +74,7 @@ export default class Flow2Markdown extends SfCommand<any> {
 
     uxLog(this, c.grey(`Generating markdown for Flow ${this.inputFile}...`));
     const flowXml = (await fs.readFile(this.inputFile, "utf8")).toString();
-    const genRes = await generateFlowMarkdownFile(this.inputFile, flowXml, this.outputFile);
+    const genRes = await generateFlowMarkdownFile(this.inputFile, flowXml, this.outputFile, { collapsedDetails: false });
     if (!genRes) {
       throw new Error("Error generating markdown file");
     }

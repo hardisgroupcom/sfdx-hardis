@@ -10,7 +10,6 @@ import moment from "moment";
 import { SfError } from "@salesforce/core";
 import { PACKAGE_ROOT_DIR } from "../../settings.js";
 
-
 let IS_MERMAID_AVAILABLE: boolean | null = null;
 export async function isMermaidAvailable() {
   if (IS_MERMAID_AVAILABLE !== null) {
@@ -34,9 +33,9 @@ export async function isDockerAvailable() {
   return IS_DOCKER_AVAILABLE;
 }
 
-export async function generateFlowMarkdownFile(flowName: string, flowXml: string, outputFlowMdFile: string): Promise<boolean> {
+export async function generateFlowMarkdownFile(flowName: string, flowXml: string, outputFlowMdFile: string, options: { collapsedDetails: boolean } = { collapsedDetails: true }): Promise<boolean> {
   try {
-    const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true });
+    const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true, collapsedDetails: options.collapsedDetails });
     const flowMarkdownDoc = flowDocGenResult.uml;
     await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
     uxLog(this, c.grey(`Written ${flowName} documentation in ${outputFlowMdFile}`));
@@ -104,48 +103,65 @@ export async function generateMarkdownFileWithMermaidCli(outputFlowMdFile: strin
 }
 
 export function getMermaidExtraClasses() {
-  return `classDef actionCallsAdded fill:#344568,color:white,stroke:#00ff00,stroke-width:12px;
-classDef assignmentsAdded fill:#F97924,color:white,stroke:#00ff00,stroke-width:12px;
-classDef collectionProcessorsAdded fill:#DD7A00,color:white,stroke:#00ff00,stroke-width:12px;
-classDef customErrorsAdded fill:#032D60,color:white,stroke:#00ff00,stroke-width:12px;
-classDef decisionsAdded fill:#DD7A00,color:white,stroke:#00ff00,stroke-width:12px;
-classDef loopsAdded fill:#E07D1C,color:undefined,stroke:#00ff00,stroke-width:12px;
-classDef recordCreatesAdded fill:#F9548A,color:white,stroke:#00ff00,stroke-width:12px;
-classDef recordDeletesAdded fill:#F9548A,color:white,stroke:#00ff00,stroke-width:12px;
-classDef recordLookupsAdded fill:#F9548A,color:white,stroke:#00ff00,stroke-width:12px;
-classDef recordUpdatesAdded fill:#F9548A,color:white,stroke:#00ff00,stroke-width:12px;
-classDef screensAdded fill:#1B96FF,color:white,stroke:#00ff00,stroke-width:12px;
-classDef subflowsAdded fill:#032D60,color:white,stroke:#00ff00,stroke-width:12px;
-  
-classDef actionCallsRemoved fill:#344568,color:white,stroke:#ff0000,stroke-width:12px;
-classDef assignmentsRemoved fill:#F97924,color:white,stroke:#ff0000,stroke-width:12px;
-classDef collectionProcessorsRemoved fill:#DD7A00,color:white,stroke:#ff0000,stroke-width:12px;
-classDef customErrorsRemoved fill:#032D60,color:white,stroke:#ff0000,stroke-width:12px;
-classDef decisionsRemoved fill:#DD7A00,color:white,stroke:#ff0000,stroke-width:12px;
-classDef loopsRemoved fill:#E07D1C,color:undefined,stroke:#ff0000,stroke-width:12px;
-classDef recordCreatesRemoved fill:#F9548A,color:white,stroke:#ff0000,stroke-width:12px;
-classDef recordDeletesRemoved fill:#F9548A,color:white,stroke:#ff0000,stroke-width:12px;
-classDef recordLookupsRemoved fill:#F9548A,color:white,stroke:#ff0000,stroke-width:12px;
-classDef recordUpdatesRemoved fill:#F9548A,color:white,stroke:#ff0000,stroke-width:12px;
-classDef screensRemoved fill:#1B96FF,color:white,stroke:#ff0000,stroke-width:12px;
-classDef subflowsRemoved fill:#032D60,color:white,stroke:#ff0000,stroke-width:12px;
+  const added = 'fill:green,color:white,stroke-width:4px,max-height:100px';
+  const removed = 'fill:red,color:white,stroke-width:4px,max-height:100px';
+  const changed = 'fill:orange,color:white,stroke-width:4px,max-height:100px';
 
-classDef actionCallsChanged fill:#344568,color:white,stroke:#edaa18,stroke-width:12px;
-classDef assignmentsChanged fill:#F97924,color:white,stroke:#edaa18,stroke-width:12px;
-classDef collectionProcessorsChanged fill:#DD7A00,color:white,stroke:#edaa18,stroke-width:12px;
-classDef customErrorsChanged fill:#032D60,color:white,stroke:#edaa18,stroke-width:12px;
-classDef decisionsChanged fill:#DD7A00,color:white,stroke:#edaa18,stroke-width:12px;
-classDef loopsChanged fill:#E07D1C,color:undefined,stroke:#edaa18,stroke-width:12px;
-classDef recordCreatesChanged fill:#F9548A,color:white,stroke:#edaa18,stroke-width:12px;
-classDef recordDeletesChanged fill:#F9548A,color:white,stroke:#edaa18,stroke-width:12px;
-classDef recordLookupsChanged fill:#F9548A,color:white,stroke:#edaa18,stroke-width:12px;
-classDef recordUpdatesChanged fill:#F9548A,color:white,stroke:#edaa18,stroke-width:12px;
-classDef screensChanged fill:#1B96FF,color:white,stroke:#edaa18,stroke-width:12px;
-classDef subflowsChanged fill:#032D60,color:white,stroke:#edaa18,stroke-width:12px;
+  const addedClasses = [
+    'actionCallsAdded',
+    'assignmentsAdded',
+    'collectionProcessorsAdded',
+    'customErrorsAdded',
+    'decisionsAdded',
+    'loopsAdded',
+    'recordCreatesAdded',
+    'recordDeletesAdded',
+    'recordLookupsAdded',
+    'recordUpdatesAdded',
+    'screensAdded',
+    'subflowsAdded',
+  ];
 
-classDef addedLink stroke:#00ff00,stroke-width:3px;
-classDef removedLink stroke:#ff0000,stroke-width:3px;
-`
+  const removedClasses = [
+    'actionCallsRemoved',
+    'assignmentsRemoved',
+    'collectionProcessorsRemoved',
+    'customErrorsRemoved',
+    'decisionsRemoved',
+    'loopsRemoved',
+    'recordCreatesRemoved',
+    'recordDeletesRemoved',
+    'recordLookupsRemoved',
+    'recordUpdatesRemoved',
+    'screensRemoved',
+    'subflowsRemoved',
+  ];
+
+  const changedClasses = [
+    'actionCallsChanged',
+    'assignmentsChanged',
+    'collectionProcessorsChanged',
+    'customErrorsChanged',
+    'decisionsChanged',
+    'loopsChanged',
+    'recordCreatesChanged',
+    'recordDeletesChanged',
+    'recordLookupsChanged',
+    'recordUpdatesChanged',
+    'screensChanged',
+    'subflowsChanged',
+  ];
+
+  const formatClasses = (classList, style) =>
+    classList.map(className => `classDef ${className} ${style}`).join('\n');
+
+  return `
+${formatClasses(addedClasses, added)}
+
+${formatClasses(removedClasses, removed)}
+
+${formatClasses(changedClasses, changed)}
+  `;
 }
 
 export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, commitAfter: string,
@@ -176,7 +192,8 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   }
   // uxLog(this, JSON.stringify(mixedLines, null, 2));
   const compareMdLines: string[] = [];
-  buildFinalCompareMarkdown(mixedLines, compareMdLines, false, false);
+  const linkLines: string[] = [];
+  buildFinalCompareMarkdown(mixedLines, compareMdLines, false, false, linkLines);
 
   // Write markdown with diff in a file
   const reportDir = await getReportDirectory();
@@ -197,7 +214,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   return diffMdFile;
 }
 
-function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid, isTableStarted) {
+function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid, isTableStarted, linkLines) {
   if (mixedLines.length === 0) {
     return;
   }
@@ -208,7 +225,25 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     isMermaid = true;
   } else if (isMermaid === true && currentLine.includes("```")) {
     compareMdLines.push(...getMermaidExtraClasses().split("\n"));
-    isMermaid = false;
+    // Build link positions
+    let pos = 0;
+    const positions = {
+      added: [],
+      removed: [],
+      unchanged: []
+    }
+    for (const linkType of linkLines) {
+      positions[linkType].push(pos);
+      pos++;
+    }
+    // Build added and removed links styles
+    if (positions.added.length > 0) {
+      compareMdLines.push("linkStyle " + positions.added.join(",") + " stroke:#00ff00,stroke-width:4px,color:green;");
+    }
+    if (positions.removed.length > 0) {
+      compareMdLines.push("linkStyle " + positions.removed.join(",") + " stroke:#ff0000,stroke-width:4px,color:red;");
+    }
+    isMermaid = false
   }
   let styledLine = currentLine;
   // Remove next diff line if not relevant
@@ -216,7 +251,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     mixedLines.shift();
   }
   // Skip table block if there are no updated lines within
-  if (styledLine.startsWith("## ") && !styledLine.startsWith("## Flow")) {
+  if (styledLine.startsWith("## ") && !styledLine.startsWith("## Flow Diagram")) {
     let updatedInBlock = false;
     let nextBlockPos = 0;
     for (const nextLine of mixedLines) {
@@ -231,7 +266,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted, linkLines);
       return;
     }
   }
@@ -252,7 +287,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted, linkLines);
       return;
     }
   }
@@ -275,7 +310,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     const mixedLinesStartingFromEndOfTable = mixedLines.slice(endTablePos);
     const newMixedLines = [...tableFilteredLines, ...mixedLinesStartingFromEndOfTable];
     // Continue processing next lines
-    buildFinalCompareMarkdown(newMixedLines, compareMdLines, isMermaid, true);
+    buildFinalCompareMarkdown(newMixedLines, compareMdLines, isMermaid, true, linkLines);
     return;
   }
 
@@ -286,26 +321,32 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   else if (!isMermaid && status === "added" && styledLine.startsWith("|") && !styledLine.startsWith("|:-")) {
     styledLine = "|🟩" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: green;"><b>${col}</b></span>`).join("|") + "|";
   }
-
+  // Normal lines header 3
+  else if (!isMermaid && status === "removed" && styledLine.startsWith("#### ")) {
+    styledLine = `#### 🟥${styledLine.replace("#### ", "")}`;
+  }
+  else if (!isMermaid && status === "added" && styledLine.startsWith("#### ")) {
+    styledLine = `#### 🟩${styledLine.replace("#### ", "")}`;
+  }
   // Normal lines header 2
-  else if (!isMermaid && status === "removed" && styledLine.startsWith("###")) {
+  else if (!isMermaid && status === "removed" && styledLine.startsWith("### ")) {
     styledLine = `### 🟥${styledLine.replace("### ", "")}`;
   }
-  else if (!isMermaid && status === "added" && styledLine.startsWith("###")) {
+  else if (!isMermaid && status === "added" && styledLine.startsWith("### ")) {
     styledLine = `### 🟩${styledLine.replace("### ", "")}`;
   }
   // Normal lines header 3
-  else if (!isMermaid && status === "removed" && styledLine.startsWith("##")) {
+  else if (!isMermaid && status === "removed" && styledLine.startsWith("## ")) {
     styledLine = `## 🟥${styledLine.replace("## ", "")}`;
   }
-  else if (!isMermaid && status === "added" && styledLine.startsWith("##")) {
+  else if (!isMermaid && status === "added" && styledLine.startsWith("## ")) {
     styledLine = `## 🟩${styledLine.replace("## ", "")}`;
   }
   // Normal lines
-  else if (!isMermaid && status === "removed" && styledLine !== "" && !styledLine.startsWith("|:-")) {
+  else if (!isMermaid && status === "removed" && styledLine !== "" && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
     styledLine = `<span style="background-color: red;"><i>🟥${styledLine}</i></span>`;
   }
-  else if (!isMermaid && status === "added" && styledLine !== "" && !styledLine.startsWith("|:-")) {
+  else if (!isMermaid && status === "added" && styledLine !== "" && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
     styledLine = `<span style="background-color: green;"><b>🟩${styledLine}</b></span>`;
   }
   // Boxes lines
@@ -313,14 +354,14 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     styledLine = styledLine + "Removed"
     if (styledLine.split('"').length === 3) {
       const splits = styledLine.split('"');
-      styledLine = splits[0] + '"🟥<i>' + splits[1] + '</i>"' + splits[2]
+      styledLine = splits[0] + '"<i>' + splits[1] + '</i>"' + splits[2]
     }
   }
   else if (isMermaid === true && status === "added" && currentLine.split(":::").length === 2) {
     styledLine = styledLine + "Added"
     if (styledLine.split('"').length === 3) {
       const splits = styledLine.split('"');
-      styledLine = splits[0] + '"🟩<b>' + splits[1] + '</b>"' + splits[2]
+      styledLine = splits[0] + '"<b>' + splits[1] + '</b>"' + splits[2]
     }
   }
   else if (isMermaid === true && currentLine.includes(":::")) {
@@ -333,53 +374,64 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
         styledLine = styledLine + "Changed"
         if (styledLine.split('"').length === 3) {
           const splits = styledLine.split('"');
-          styledLine = splits[0] + '"🟧<b>' + splits[1] + '</b>"' + splits[2]
+          styledLine = splits[0] + '"<b>' + splits[1] + '</b>"' + splits[2]
         }
       }
     }
   }
   // Long Link lines
   else if (isMermaid === true && status === "removed" && currentLine.includes('-. Fault .->')) {
-    styledLine = styledLine.replace('-. Fault .->', '-. 🟥Fault .->') + ":::removedLink"
+    styledLine = styledLine.replace('-. Fault .->', '-. 🟥Fault .->') //+ ":::removedLink"
+    linkLines.push("removed");
   }
   else if (isMermaid === true && status === "added" && currentLine.includes('-. Fault .->')) {
-    styledLine = styledLine.replace('-. Fault .->', '-. 🟩Fault .->') + ":::addedLink"
+    styledLine = styledLine.replace('-. Fault .->', '-. 🟩Fault .->') // + ":::addedLink"
+    linkLines.push("added");
   }
   /* jscpd:ignore-start */
   // Long Link lines
   else if (isMermaid === true && status === "removed" && currentLine.includes('--->')) {
-    styledLine = styledLine.replace("--->", "--.->") + ":::removedLink"
+    styledLine = styledLine.replace("--->", "--.->");//+ ":::removedLink"
+    linkLines.push("removed");
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
-      styledLine = splits[0] + "|🟥<i>" + splits[1] + "</i>|" + splits[2]
+      styledLine = splits[0] + '|"🟥<i>' + removeQuotes(splits[1]) + '</i>"|' + splits[2]
     }
   }
   else if (isMermaid === true && status === "added" && currentLine.includes('--->')) {
-    styledLine = styledLine.replace("--->", "===>") + ":::addedLink"
+    styledLine = styledLine.replace("--->", "===>"); // + ":::addedLink"
+    linkLines.push("added");
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
-      styledLine = splits[0] + "|🟩<b>" + splits[1] + "</b>|" + splits[2]
+      styledLine = splits[0] + '|"🟩<b>' + removeQuotes(splits[1]) + '</b>"|' + splits[2]
     }
   }
   // Link lines
   else if (isMermaid === true && status === "removed" && currentLine.includes('-->')) {
-    styledLine = styledLine.replace("-->", "-.->") + ":::removedLink"
+    styledLine = styledLine.replace("-->", "-.->") // + ":::removedLink"
+    linkLines.push("removed");
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
-      styledLine = splits[0] + "|🟥<i>" + splits[1] + "</i>|" + splits[2]
+      styledLine = splits[0] + '|"🟥<i>' + removeQuotes(splits[1]) + '</i>"|' + splits[2]
     }
   }
   else if (isMermaid === true && status === "added" && currentLine.includes('-->')) {
-    styledLine = styledLine.replace("-->", "==>") + ":::addedLink"
+    styledLine = styledLine.replace("-->", "==>") // + ":::addedLink"
+    linkLines.push("added");
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
-      styledLine = splits[0] + "|🟩<b>" + splits[1] + "</b>|" + splits[2]
+      styledLine = splits[0] + '|"🟩<b>' + removeQuotes(splits[1]) + '</b>"|' + splits[2]
     }
+  }
+  else if (isMermaid === true && !["added", "removed"].includes(status) &&
+    (currentLine.includes('-->') || currentLine.includes('-. Fault .->'))
+  ) {
+    linkLines.push("unchanged");
   }
   /* jscpd:ignore-end */
   compareMdLines.push(styledLine);
   // Continue processing next lines
-  buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid, (styledLine.startsWith("|") && isTableStarted));
+  buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid, (styledLine.startsWith("|") && isTableStarted), linkLines);
 }
 
 async function buildMermaidMarkdown(commit, flowFile) {
@@ -390,4 +442,14 @@ async function buildMermaidMarkdown(commit, flowFile) {
   } catch (err: any) {
     throw new SfError(`Unable to build Graph for flow ${flowFile}: ${err.message}`)
   }
+}
+
+function removeQuotes(str: string) {
+  if (str.startsWith('"')) {
+    str = str.slice(1);
+  }
+  if (str.endsWith('"')) {
+    str = str.slice(0, -1)
+  }
+  return str;
 }
