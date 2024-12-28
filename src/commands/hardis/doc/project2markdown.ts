@@ -227,6 +227,7 @@ ${Project2Markdown.htmlInstructions}
         mkdocsYml.nav.push(navMenu);
       }
     }
+    /* jscpd:ignore-start */
     const mkdocsYmlStr = yaml
       .dump(mkdocsYml)
       .replace("'!!python/name:materialx.emoji.twemoji'", '!!python/name:materialx.emoji.twemoji')
@@ -234,6 +235,7 @@ ${Project2Markdown.htmlInstructions}
     await fs.writeFile(mkdocsYmlFile, mkdocsYmlStr);
     uxLog(this, c.cyan(`Updated ${c.green(mkdocsYmlFile)}`));
     uxLog(this, c.cyan(`To generate a HTML WebSite with this documentation with a single command, see instructions at ${CONSTANTS.DOC_URL_ROOT}/hardis/doc/project2markdown/`));
+    /* jscpd:ignore-end */
   }
 
   private async generateFlowsDocumentation() {
