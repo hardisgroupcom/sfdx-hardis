@@ -29,8 +29,10 @@ const FIELDS_PREFERRED_ORDER_START = [
 const FIELDS_PREFERRED_ORDER_END = [
   "connector",
   "nextNode",
+  "noMoreValuesConnector",
   "conditionLogic",
-  "filterLogic"
+  "filterLogic",
+
 ];
 
 const FIELDS_WITH_COLUMN_CENTERED = [
@@ -265,7 +267,8 @@ export function buildGenericMarkdownTable(item: any, fields: string[], title: st
   if (fields[0] === "allFields") {
     fields = Object.keys(item);
     // Reorder fields according to preferences
-    for (const field of FIELDS_PREFERRED_ORDER_START.reverse()) {
+    const fieldOrderFromStart = FIELDS_PREFERRED_ORDER_START.slice().reverse()
+    for (const field of fieldOrderFromStart) {
       if (fields.includes(field)) {
         fields.splice(fields.indexOf(field), 1);
         fields.unshift(field);

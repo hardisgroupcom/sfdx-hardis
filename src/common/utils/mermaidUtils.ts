@@ -170,9 +170,15 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   const mermaidMdAfter = await buildMermaidMarkdown(commitAfter, flowFile);
   const flowLabel = path.basename(flowFile, ".flow-meta.xml");
 
+  const reportDir = await getReportDirectory();
+  await fs.ensureDir(path.join(reportDir, "flow-diff"));
+  const diffMdFile = path.join(reportDir, 'flow-diff', `${flowLabel}_${moment().format("YYYYMMDD-hhmmss")}.md`);
+
   if (options.debug) {
     uxLog(this, c.grey("FLOW DOC BEFORE:\n" + mermaidMdBefore) + "\n");
+    await fs.writeFile(diffMdFile + ".mermaid.before.md", mermaidMdBefore);
     uxLog(this, c.grey("FLOW DOC AFTER:\n" + mermaidMdAfter) + "\n");
+    await fs.writeFile(diffMdFile + ".mermaid.after.md", mermaidMdAfter);
   }
 
   const flowDiffs = Diff.diffLines(mermaidMdBefore, mermaidMdAfter);
@@ -196,9 +202,6 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   buildFinalCompareMarkdown(mixedLines, compareMdLines, false, false, linkLines);
 
   // Write markdown with diff in a file
-  const reportDir = await getReportDirectory();
-  await fs.ensureDir(path.join(reportDir, "flow-diff"));
-  const diffMdFile = path.join(reportDir, 'flow-diff', `${flowLabel}_${moment().format("YYYYMMDD-hhmmss")}.md`);
   await fs.writeFile(diffMdFile, compareMdLines.join("\n"));
   if (options.mermaidMd) {
     await fs.copyFile(diffMdFile, diffMdFile + ".mermaid.md");
@@ -369,12 +372,17 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     const splits = currentLine.split(/[[({]/);
     if (splits.length > 1) {
       const boxName = splits[0];
-      const changed = mixedLines.filter(([lineStatus, line]) => { return line.startsWith(`click ${boxName}`) && ["added", "changed"].includes(lineStatus) }).length;
+      const changed = mixedLines.filter(([lineStatus, line]) => { return line.startsWith(`click ${boxName}`) && ["added", "removed"].includes(lineStatus) }).length;
       if (changed > 0) {
         styledLine = styledLine + "Changed"
         if (styledLine.split('"').length === 3) {
           const splits = styledLine.split('"');
           styledLine = splits[0] + '"<b>' + splits[1] + '</b>"' + splits[2]
+        }
+        // Remove "removed" line from mixedLines
+        const removedNodePos = mixedLines.findIndex(([lineStatus, line]) => { return line.startsWith(`click ${boxName}`) && lineStatus === "removed" });
+        if (removedNodePos !== -1) {
+          mixedLines.splice(removedNodePos, 1);
         }
       }
     }
