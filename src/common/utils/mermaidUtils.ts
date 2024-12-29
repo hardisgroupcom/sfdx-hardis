@@ -168,7 +168,7 @@ ${formatClasses(changedClasses, changed)}
 
 export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, commitAfter: string,
   options: { mermaidMd: boolean, svgMd: boolean, debug: boolean } = { mermaidMd: false, svgMd: true, debug: false }) {
-  const result = { outputDiffMdFile: "", hasFlowDiffs: false };
+  const result: any = { outputDiffMdFile: "", hasFlowDiffs: false };
   const mermaidMdBefore = await buildMermaidMarkdown(commitBefore, flowFile);
   const mermaidMdAfter = await buildMermaidMarkdown(commitAfter, flowFile);
   const flowLabel = path.basename(flowFile, ".flow-meta.xml");
@@ -186,6 +186,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
 
   const flowDiffs = Diff.diffLines(mermaidMdBefore, mermaidMdAfter);
   result.hasFlowDiffs = flowDiffs.some(line => line.added || line.removed);
+  result.diffLines = flowDiffs.filter(line => line.added || line.removed);
 
   const mixedLines: any[] = [];
   for (const line of flowDiffs) {
@@ -472,50 +473,50 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
   const diffMdFile = path.join("docs", "flows", path.basename(flowFile).replace(".flow-meta.xml", "-history.md"));
   // Compute for all states
   const fileHistory = await git().log({ file: flowFile });
-  if (fileHistory.all.length === 1) {
-    // Single state
-    uxLog(this, c.green(`There is only one state for Flow ${flowFile}. Generating normal documentation`));
-    const flowXml = await git().show([`${fileHistory.all[0].hash}:${flowFile}`]);
-    const genRes = await generateFlowMarkdownFile(flowFile, flowXml, diffMdFile, { collapsedDetails: false });
-    if (!genRes) {
-      throw new Error(`Error generating markdown file for flow ${flowFile}`);
-    }
-    if (debugMode) {
-      await fs.copyFile(diffMdFile, diffMdFile.replace(".md", ".mermaid.md"));
-    }
-    const gen2res = await generateMarkdownFileWithMermaid(diffMdFile);
-    if (!gen2res) {
-      throw new Error(`Error generating mermaid markdown file for flow ${flowFile}`);
-    }
-    return diffMdFile;
-  }
   const flowLabel = path.basename(flowFile, ".flow-meta.xml");
   uxLog(this, c.cyan(`Generating ${flowLabel} markdown diff between ${fileHistory.all.length} Flow states...`));
   const diffMdFiles: any[] = [];
-  for (let i = 0; i < fileHistory.all.length - 1; i++) {
+  for (let i = 0; i < fileHistory.all.length; i++) {
     const commitAfter = fileHistory.all[i];
-    const commitBefore = fileHistory.all[i + 1];
-    const { outputDiffMdFile, hasFlowDiffs } = await generateFlowVisualGitDiff(flowFile, commitBefore.hash, commitAfter.hash, { svgMd: false, mermaidMd: true, debug: debugMode });
-    if (hasFlowDiffs) {
+    // Initial state
+    if (i === fileHistory.all.length - 1) {
+      const flowXml = await git().show([`${fileHistory.all[i].hash}:${flowFile}`]);
+      const reportDir = await getReportDirectory();
+      await fs.ensureDir(path.join(reportDir, "flow-diff"));
+      const diffMdFileTmp = path.join(reportDir, 'flow-diff', `${flowLabel}_${moment().format("YYYYMMDD-hhmmss")}.md`);
+      const genRes = await generateFlowMarkdownFile(flowFile, flowXml, diffMdFileTmp, { collapsedDetails: false });
+      if (!genRes) {
+        throw new Error(`Error generating markdown file for flow ${flowFile}`);
+      }
       diffMdFiles.push({
-        commitBefore: commitBefore,
+        initialVersion: true,
         commitAfter: commitAfter,
-        diffMdFile: outputDiffMdFile
+        markdown: fs.readFileSync(diffMdFileTmp, "utf8")
       });
     }
     else {
-      uxLog(this, c.yellow(`No real flow diff has been found between ${commitBefore.hash} and ${commitAfter.hash}`));
+      const commitBefore = fileHistory.all[i + 1];
+      const genDiffRes = await generateFlowVisualGitDiff(flowFile, commitBefore.hash, commitAfter.hash, { svgMd: false, mermaidMd: true, debug: debugMode });
+      if (genDiffRes.hasFlowDiffs && fs.existsSync(genDiffRes.outputDiffMdFile)) {
+        diffMdFiles.push({
+          commitBefore: commitBefore,
+          commitAfter: commitAfter,
+          markdown: fs.readFileSync(genDiffRes.outputDiffMdFile, "utf8")
+        });
+      }
+      else {
+        uxLog(this, c.yellow(`No real flow diff has been found between ${commitBefore.hash} and ${commitAfter.hash}`));
+      }
     }
   }
   // Set all the results in a single tabbed markdown
   uxLog(this, c.cyan(`Aggregating results in summary tabbed file ${diffMdFile}...`));
   let finalMd = `# ${flowLabel} history\n\n`;
   for (const diffMdFile of diffMdFiles) {
-    finalMd += `=== "${moment(diffMdFile.commitAfter.date).format("ll")}"\n\n`;
+    finalMd += `=== "${moment(diffMdFile.commitAfter.date).format("ll")}` + (diffMdFile.initialVersion ? " (Initial)" : "") + `"\n\n`;
     finalMd += `    _State on ${moment(diffMdFile.commitAfter.date).format("ll")}, by ${diffMdFile.commitAfter.author_name}(${diffMdFile.commitAfter.author_email}) in ${diffMdFile.commitAfter.refs} (${diffMdFile.commitAfter.message})_\n\n`;
     // Remove title and add indentation for tabs to be displayed
-    const generatedDiffText = await fs.readFile(diffMdFile.diffMdFile, "utf8");
-    finalMd += generatedDiffText.split("\n").filter(line => !line.startsWith("# ")).map(line => `    ${line}`).join("\n");
+    finalMd += diffMdFile.markdown.split("\n").filter(line => !line.startsWith("# ")).map(line => `    ${line}`).join("\n");
     finalMd += "\n\n";
   }
   await fs.writeFile(diffMdFile, finalMd);
@@ -536,6 +537,25 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
     return line;
   }).join("\n");
   await fs.writeFile(diffMdFile, diffMarkdownFixed);
+
+  // Add link to main flow doc 
+  const mainFlowDoc = path.join("docs", "flows", path.basename(flowFile).replace(".flow-meta.xml", ".md"));
+  if (fs.existsSync(mainFlowDoc)) {
+    const mainFlowDocContent = await fs.readFile(mainFlowDoc, "utf8");
+    const mainFlowDocLink = `[_View History_](${path.basename(flowFile).replace(".flow-meta.xml", "-history.md")})`;
+    if (!mainFlowDocContent.includes(mainFlowDocLink)) {
+      let replaced = false;
+      const updatedFlowDocContent = mainFlowDocContent.split("\n").map(line => {
+        if (line.startsWith("![") && replaced === false) {
+          replaced = true;
+          return `${line}\n\n ${mainFlowDocLink}\n`;
+        }
+        return line;
+      }).join("\n");
+      await fs.writeFile(mainFlowDoc, updatedFlowDocContent);
+    }
+  }
+
   uxLog(this, c.green(`Markdown diff between ${fileHistory.all.length} Flow states generated in ${diffMdFile}`));
   return diffMdFile;
 }
