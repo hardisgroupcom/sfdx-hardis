@@ -259,7 +259,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   }
   let styledLine = currentLine;
   // Remove next diff line if not relevant
-  if (styledLine.startsWith("|") && mixedLines.length > 1 && mixedLines[0][1] === '' && mixedLines[1][1].startsWith("|")) {
+  if (styledLine.startsWith("|") && mixedLines.length > 1 && mixedLines[0][1] === '' && mixedLines[1][1].startsWith("|") && !mixedLines[1][1].startsWith("|Condition Id|") && !mixedLines[1][1].startsWith("|Filter Id|")) {
     mixedLines.shift();
   }
   // Skip table block if there are no updated lines within
@@ -267,7 +267,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     let updatedInBlock = false;
     let nextBlockPos = 0;
     for (const nextLine of mixedLines) {
-      if (nextLine[1].startsWith("## ") || nextLine[1].startsWith("_Documentation")) {
+      if (nextLine[1].startsWith("## ") || nextLine[1].includes("_Documentation") || nextLine[1].startsWith("___")) {
         break;
       }
       if (nextLine[0] === "removed" || nextLine[0] === "added") {
@@ -278,7 +278,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted, linkLines);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines);
       return;
     }
   }
@@ -288,7 +288,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     let updatedInBlock = false;
     let nextBlockPos = 0;
     for (const nextLine of mixedLines) {
-      if (nextLine[1].startsWith("### ") || nextLine[1].startsWith("_Documentation")) {
+      if (nextLine[1].startsWith("### ") || nextLine[1].startsWith("## ") || nextLine[1].includes("_Documentation") || nextLine[1].startsWith("___")) {
         break;
       }
       if (nextLine[0] === "removed" || nextLine[0] === "added") {
@@ -299,7 +299,26 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, isTableStarted, linkLines);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines);
+      return;
+    }
+  }
+  else if (styledLine.startsWith("#### ")) {
+    let updatedInBlock = false;
+    let nextBlockPos = 0;
+    for (const nextLine of mixedLines) {
+      if (nextLine[1].startsWith("#### ") || nextLine[1].startsWith("### ") || nextLine[1].startsWith("## ") || nextLine[1].includes("_Documentation") || nextLine[1].startsWith("___")) {
+        break;
+      }
+      if (nextLine[0] === "removed" || nextLine[0] === "added") {
+        updatedInBlock = true;
+      }
+      nextBlockPos++;
+    }
+    if (!updatedInBlock) {
+      const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
+      // Continue processing next lines
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines);
       return;
     }
   }
@@ -310,19 +329,26 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     const tableFilteredLines: any[] = [];
     let endTablePos = 0;
     for (const nextLine of mixedLines) {
-      if (!nextLine[1].startsWith("|") && nextLine[1] !== "") {
+      if ((!nextLine[1].startsWith("|") || nextLine[1].includes("Condition Id") || nextLine[1].includes("Filter Id")) && nextLine[1] !== "") {
         break;
       }
-      if (nextLine[0] === "removed" || nextLine[0] === "added" || endTablePos === 0) {
+      if ((nextLine[0] === "removed" || nextLine[0] === "added" || endTablePos === 0) && nextLine[1] !== "") {
         tableFilteredLines.push(nextLine);
       }
       endTablePos++;
     }
-    compareMdLines.push(styledLine);
-    const mixedLinesStartingFromEndOfTable = mixedLines.slice(endTablePos);
-    const newMixedLines = [...tableFilteredLines, ...mixedLinesStartingFromEndOfTable];
-    // Continue processing next lines
-    buildFinalCompareMarkdown(newMixedLines, compareMdLines, isMermaid, true, linkLines);
+    if (tableFilteredLines.length < 2) {
+      // Empty table
+      const mixedLinesStartingFromEndOfTable = mixedLines.slice(endTablePos);
+      buildFinalCompareMarkdown(mixedLinesStartingFromEndOfTable, compareMdLines, isMermaid, false, linkLines);
+    }
+    else {
+      compareMdLines.push(styledLine);
+      const mixedLinesStartingFromEndOfTable = mixedLines.slice(endTablePos);
+      const newMixedLines = [...tableFilteredLines, ...[["unchanged", ""]], ...mixedLinesStartingFromEndOfTable];
+      // Continue processing next lines
+      buildFinalCompareMarkdown(newMixedLines, compareMdLines, isMermaid, true, linkLines);
+    }
     return;
   }
 
@@ -517,7 +543,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
   let finalMd = `# ${flowLabel} history\n\n`;
   for (const diffMdFile of diffMdFiles) {
     finalMd += `=== "${moment(diffMdFile.commitAfter.date).format("ll")}` + (diffMdFile.initialVersion ? " (Initial)" : "") + `"\n\n`;
-    finalMd += `    _State on ${moment(diffMdFile.commitAfter.date).format("ll")}, by ${diffMdFile.commitAfter.author_name}(${diffMdFile.commitAfter.author_email}) in ${diffMdFile.commitAfter.refs} (${diffMdFile.commitAfter.message})_\n\n`;
+    finalMd += `    _${moment(diffMdFile.commitAfter.date).format("ll")}, by ${diffMdFile.commitAfter.author_name} in commit ${diffMdFile.commitAfter.message}_\n\n`;
     // Remove title and add indentation for tabs to be displayed
     finalMd += diffMdFile.markdown.split("\n").filter(line => !line.startsWith("# ")).map(line => `    ${line}`).join("\n");
     finalMd += "\n\n";
