@@ -8,7 +8,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { isCI, uxLog } from '../../../common/utils/index.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
-import { generateFlowMarkdownFile, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
+import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -35,7 +35,7 @@ export default class Flow2Markdown extends SfCommand<any> {
     "with-history": Flags.boolean({
       char: 'd',
       default: false,
-      description: messages.getMessage('debugMode'),
+      description: "Generate a markdown file with the history diff of the Flow",
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -53,6 +53,7 @@ export default class Flow2Markdown extends SfCommand<any> {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
 
+  protected withHistory = false;
   protected inputFile;
   protected outputFile;
   protected debugMode = false;
@@ -62,6 +63,7 @@ export default class Flow2Markdown extends SfCommand<any> {
     const { flags } = await this.parse(Flow2Markdown);
     this.inputFile = flags.inputfile || null;
     this.outputFile = flags.outputfile || null;
+    this.withHistory = flags["with-history"] === true ? true : false;
     this.debugMode = flags.debug || false;
 
     if (this.inputFile === null && !isCI) {
@@ -79,12 +81,21 @@ export default class Flow2Markdown extends SfCommand<any> {
       throw new Error("Error generating markdown file");
     }
     if (this.debugMode) {
-      await fs.copyFile(this.outputFile, this.outputFile + ".mermaid.md");
+      await fs.copyFile(this.outputFile, this.outputFile.replace(".md", ".mermaid.md"));
     }
     const gen2res = await generateMarkdownFileWithMermaid(this.outputFile);
     if (!gen2res) {
       throw new Error("Error generating mermaid markdown file");
     }
+
+    if (this.withHistory) {
+      try {
+        await generateHistoryDiffMarkdown(this.inputFile, this.debugMode);
+      } catch (e: any) {
+        uxLog(this, c.yellow(`Error generating history diff markdown: ${e.message}`));
+      }
+    }
+
     // Open file in a new VsCode tab if available
     WebSocketClient.requestOpenFile(this.outputFile);
 

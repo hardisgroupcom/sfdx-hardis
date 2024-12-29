@@ -36,7 +36,7 @@ export async function listFlowFiles(packageDirs) {
   for (const packageDir of packageDirs || []) {
     const flowMetadatas = await glob("**/*.flow-meta.xml", { cwd: packageDir.path });
     for (const flowMetadata of flowMetadatas) {
-      const flowFile = path.join(packageDir.path, flowMetadata);
+      const flowFile = path.join(packageDir.path, flowMetadata).replace(/\\/g, '/');
       flowFiles.push(flowFile)
     }
   }

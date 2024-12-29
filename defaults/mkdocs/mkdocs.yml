@@ -16,6 +16,9 @@ theme:
   #  favicon: assets/images/salesforce-icon.png
   palette:
     primary: "light blue"
+plugins:
+  - glightbox
+  - search
 markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
@@ -25,6 +28,9 @@ markdown_extensions:
       check_paths: true
   - mdx_truly_sane_lists
   - attr_list
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js
   - javascripts/tables.js

@@ -3,7 +3,6 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from "chalk";
-
 import * as path from "path";
 import {
   ensureGitRepository,
@@ -13,7 +12,7 @@ import {
 } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import moment from 'moment';
-import { generateFlowVisualGitDiff } from '../../../../common/utils/mermaidUtils.js';
+import { generateFlowVisualGitDiff, generateHistoryDiffMarkdown } from '../../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 
@@ -85,29 +84,40 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
         title: `${moment(log.date).format("ll")}: ${log.message}`,
         description: `By ${log.author_name}(${log.author_email}) in ${log.refs}`
       }
-    })
-    const commitSelectRes = await prompts([
-      {
-        type: 'select',
-        name: 'before',
-        message: 'Please select BEFORE UPDATE commit',
-        choices: allChoices
-      },
-      {
+    });
+    const commitBeforeSelectRes = await prompts({
+      type: 'select',
+      name: 'before',
+      message: 'Please select BEFORE UPDATE commit',
+      choices: [...allChoices, ...[
+        {
+          title: "Calculate for all Flow states",
+          value: "allStates",
+          description: "Requires mkdocs-material to be read correctly. If you do not have it, we advise to select 2 commits for comparison."
+        }
+      ]]
+    });
+    const commitBefore = commitBeforeSelectRes.before;
+    let diffMdFile;
+
+    if (commitBefore === "allStates") {
+      diffMdFile = await generateHistoryDiffMarkdown(this.flowFile, this.debugMode);
+      uxLog(this, c.yellow(`It is recommended to use mkdocs-material to read it correctly (see https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/#doc-html-pages)`));
+    }
+    else {
+      // Compute between 2 commits: prompt for the second one      
+      const commitAfterSelectRes = await prompts({
         type: 'select',
         name: 'after',
         message: 'Please select AFTER UPDATE commit',
         choices: allChoices
-      }
-    ])
+      })
+      const commitAfter = commitAfterSelectRes.after;
+      const { outputDiffMdFile } = await generateFlowVisualGitDiff(this.flowFile, commitBefore, commitAfter, { svgMd: true, mermaidMd: this.debugMode, debug: this.debugMode })
 
-    const commitAfter = commitSelectRes.after;
-    const commitBefore = commitSelectRes.before;
-
-    const diffMdFile = await generateFlowVisualGitDiff(this.flowFile, commitBefore, commitAfter, { svgMd: true, mermaidMd: this.debugMode, debug: this.debugMode })
-
-    // Open file in a new VsCode tab if available
-    WebSocketClient.requestOpenFile(path.relative(process.cwd(), diffMdFile));
+      // Open file in a new VsCode tab if available
+      WebSocketClient.requestOpenFile(path.relative(process.cwd(), outputDiffMdFile));
+    }
 
     // Return an object to be displayed with --json
     return {
