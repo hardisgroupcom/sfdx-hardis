@@ -14,7 +14,7 @@ import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
 import { listFlowFiles } from '../../../common/utils/projectUtils.js';
-import { generateFlowMarkdownFile, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
+import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
 import yaml from 'js-yaml';
@@ -75,6 +75,11 @@ ${this.htmlInstructions}
       default: false,
       description: "Generate documentation only for changed files (used for monitoring)",
     }),
+    "with-history": Flags.boolean({
+      char: 'd',
+      default: false,
+      description: "Generate a markdown file with the history diff of the Flow",
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -99,6 +104,7 @@ ${this.htmlInstructions}
   protected sfdxHardisConfig: any = {};
   protected outputPackageXmlMarkdownFiles: any[] = [];
   protected mkDocsNavNodes: any = { "Home": "index.md" };
+  protected withHistory = false;
   protected debugMode = false;
   protected footer: string;
   /* jscpd:ignore-end */
@@ -106,6 +112,7 @@ ${this.htmlInstructions}
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Project2Markdown);
     this.diffOnly = flags["diff-only"] === true ? true : false;
+    this.withHistory = flags["with-history"] === true ? true : false;
     this.debugMode = flags.debug || false;
 
     await fs.ensureDir(this.outputMarkdownRoot);
@@ -274,7 +281,7 @@ ${Project2Markdown.htmlInstructions}
         continue;
       }
       if (this.debugMode) {
-        await fs.copyFile(outputFlowMdFile, outputFlowMdFile + ".mermaid.md");
+        await fs.copyFile(outputFlowMdFile, outputFlowMdFile.replace(".md", ".mermaid.md"));
       }
       const gen2res = await generateMarkdownFileWithMermaid(outputFlowMdFile);
       if (!gen2res) {
@@ -293,6 +300,18 @@ ${Project2Markdown.htmlInstructions}
       uxLog(this, c.yellow(`Error generating documentation for ${flowErrors.length} Flows: ${this.humanDisplay(flowErrors)}`));
     }
 
+    // History
+    if (this.withHistory) {
+      uxLog(this, c.cyan("Generating Flows Visual Git Diff History documentation..."));
+      for (const flowFile of flowFiles) {
+        try {
+          await generateHistoryDiffMarkdown(flowFile, this.debugMode);
+        } catch (e: any) {
+          uxLog(this, c.yellow(`Error generating history diff markdown: ${e.message}`));
+        }
+      }
+    }
+
     // Write table on doc index
     const flowTableLines = await this.buildFlowsTable(flowDescriptions, 'flows/');
     this.mdLines.push(...flowTableLines);
@@ -306,6 +325,15 @@ ${Project2Markdown.htmlInstructions}
 
     this.mkDocsNavNodes["Flows"] = flowsForMenu;
     uxLog(this, c.green(`Successfully generated doc index for Flows at ${flowIndexFile}`));
+
+    const mkdocsNavHistoryNodes: any = {};
+    for (const flowName of Object.keys(flowsForMenu)) {
+      const flowHistoryFile = path.join(this.outputMarkdownRoot, flowsForMenu[flowName].replace(".md", "-history.md"));
+      if (fs.existsSync(flowHistoryFile)) {
+        mkdocsNavHistoryNodes[flowName] = flowsForMenu[flowName].replace(".md", "-history.md");
+      }
+    }
+    this.mkDocsNavNodes["Flows History"] = mkdocsNavHistoryNodes;
   }
 
   private humanDisplay(flows) {
@@ -321,8 +349,12 @@ ${Project2Markdown.htmlInstructions}
       "| :----  | :-------- | :--: | :---------- | "
     ]);
     for (const flow of sortArray(flowDescriptions, { by: ['object', 'name'], order: ['asc', 'asc'] }) as any[]) {
+      const outputFlowHistoryMdFile = path.join(this.outputMarkdownRoot, "flows", flow.name + "-history.md");
+      const flowNameCell = fs.existsSync(outputFlowHistoryMdFile) ?
+        `[${flow.name}](${prefix}${flow.name}.md) [🕒](${prefix}${flow.name}-history.md)` :
+        `[${flow.name}](${prefix}${flow.name}.md)`;
       lines.push(...[
-        `| ${flow.object} | [${flow.name}](${prefix}${flow.name}.md) | ${flow.type} | ${flow.description} |`
+        `| ${flow.object} | ${flowNameCell} | ${flow.type} | ${flow.description} |`
       ]);
     }
     lines.push("");

@@ -1364,3 +1364,14 @@ export function killBoringExitHandlers() {
     }
   }
 }
+
+export async function isDockerRunning(): Promise<boolean> {
+  try {
+    await exec("docker info");
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  catch (e) {
+    return false;
+  }
+  return true;
+}

@@ -24,6 +24,9 @@ markdown_extensions:
       check_paths: true
   - mdx_truly_sane_lists
   - attr_list
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js
   - javascripts/tables.js
