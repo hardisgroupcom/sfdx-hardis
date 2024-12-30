@@ -542,7 +542,11 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
         imageName // File name
       );
       if (attachment && attachment.url) {
+        uxLog(this, c.grey(`[Bitbucket Integration] Image uploaded for comment: ${attachment.url}`));
         return attachment.url;
+      }
+      else {
+        uxLog(this, c.yellow(`[Bitbucket Integration] Image uploaded but unable to get URL from response\n${JSON.stringify(attachment, null, 2)}`));
       }
     } catch (e) {
       uxLog(this, c.yellow(`[Azure Integration] Error while uploading image ${localImagePath}\n${(e as Error).message}`));
