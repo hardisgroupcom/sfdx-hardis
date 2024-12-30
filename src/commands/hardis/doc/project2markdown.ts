@@ -270,11 +270,11 @@ ${Project2Markdown.htmlInstructions}
         object: flowContent?.Flow?.start?.[0]?.object?.[0] || flowContent?.Flow?.processMetadataValues?.filter(pmv => pmv.name[0] === "ObjectType")?.[0]?.value?.[0]?.stringValue?.[0] || ""
       });
       flowsForMenu[flowName] = "flows/" + flowName + ".md";
-      if (this.diffOnly && !updatedFlowNames.includes(flowName)) {
+      const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", flowName + ".md");
+      if (this.diffOnly && !updatedFlowNames.includes(flowName) && fs.existsSync(outputFlowMdFile)) {
         flowSkips.push(flowFile);
         continue;
       }
-      const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", flowName + ".md");
       const genRes = await generateFlowMarkdownFile(flowFile, flowXml, outputFlowMdFile, { collapsedDetails: false });
       if (!genRes) {
         flowErrors.push(flowFile);
