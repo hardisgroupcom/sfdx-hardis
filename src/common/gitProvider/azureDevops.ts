@@ -514,6 +514,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     return null;
   }
 
+  /* jscpd:ignore-start */
   private async uploadAndReplaceImageReferences(markdownBody: string) {
     const replacements: any = {};
     const markdownImages = extractImagesFromMarkdown(markdownBody);
@@ -526,6 +527,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     markdownBody = replaceImagesInMarkdown(markdownBody, replacements);
     return markdownBody;
   }
+  /* jscpd:ignore-end */
 
   private async uploadImage(localImagePath: string): Promise<string | null> {
     try {
