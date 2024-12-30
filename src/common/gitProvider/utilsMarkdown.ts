@@ -142,3 +142,16 @@ ${message.replace(/:\n-/gm, `:\n\n-`)}
 <br/>
 `;
 }
+
+export function extractImagesFromMarkdown(markdown: string): string[] {
+  const imageRegex = /!\[.*?\]\((.*?)\)/g;
+  const matches = Array.from(markdown.matchAll(imageRegex));
+  return matches.map((match) => match[1]).filter(file => fs.existsSync(file));
+}
+
+export function replaceImagesInMarkdown(markdown: string, replacements: any): string {
+  for (const replacedImage of Object.keys(replacements)) {
+    markdown = markdown.replaceAll(replacedImage, replacements[replacedImage]);
+  }
+  return markdown;
+}

@@ -1,12 +1,15 @@
 import { GitProviderRoot } from "./gitProviderRoot.js";
 import * as azdev from "azure-devops-node-api";
 import c from "chalk";
+import fs from 'fs-extra';
 import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../utils/index.js";
+import * as path from "path";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { CONSTANTS } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
+import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -361,6 +364,8 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     if (globalThis.pullRequestDeploymentId) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
+    // Upload attached images if necessary
+    messageBody = await this.uploadAndReplaceImageReferences(messageBody);
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
     // Check for existing threads from a previous run
@@ -506,6 +511,40 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     }
 
     // Return null if the URL doesn't match expected patterns
+    return null;
+  }
+
+  private async uploadAndReplaceImageReferences(markdownBody: string) {
+    const replacements: any = {};
+    const markdownImages = extractImagesFromMarkdown(markdownBody);
+    for (const image of markdownImages) {
+      const imageUrl = await this.uploadImage(image);
+      if (imageUrl) {
+        replacements[image] = imageUrl;
+      }
+    }
+    markdownBody = replaceImagesInMarkdown(markdownBody, replacements);
+    return markdownBody;
+  }
+
+  private async uploadImage(localImagePath: string): Promise<string | null> {
+    try {
+      // Upload the image to Azure DevOps
+      const imageName = path.basename(localImagePath);
+      const imageContent = fs.createReadStream(localImagePath);
+      const witApi = await this.azureApi.getWorkItemTrackingApi();
+      const attachment = await witApi.createAttachment(
+        null, // Custom headers (usually null)
+        imageContent, // File content
+        process.env.SYSTEM_TEAMPROJECT, // Project name
+        imageName // File name
+      );
+      if (attachment && attachment.url) {
+        return attachment.url;
+      }
+    } catch (e) {
+      uxLog(this, c.yellow(`[Azure Integration] Error while uploading image ${localImagePath}\n${(e as Error).message}`));
+    }
     return null;
   }
 }
