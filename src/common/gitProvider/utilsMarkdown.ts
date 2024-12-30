@@ -94,7 +94,7 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
         await generateDiffMarkdownWithSvg(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }
     } catch (e: any) {
-      uxLog(this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff: ${e.message}`));
+      uxLog(this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff for ${flowName}: ${e.message}`));
       const flowGenErrorMd = `# ${flowName}
 
 Error while generating Flows visual git diff

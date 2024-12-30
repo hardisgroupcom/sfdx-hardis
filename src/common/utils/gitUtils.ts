@@ -1,6 +1,7 @@
 import { getConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import c from 'chalk';
+import fs from "fs-extra";
 import * as path from "path";
 import sortArray from 'sort-array';
 import {
@@ -214,9 +215,9 @@ async function collectTicketsAndManualActions(str: string, tickets: Ticket[], ma
 }
 
 export async function getCommitUpdatedFiles(commitHash) {
-  const result = await git().show(["--name-only", commitHash]);
+  const result = await git().show(["--name-only", "--pretty=format:", commitHash]);
   // Split the result into lines (file paths) and remove empty lines
-  const files = result.split('\n').filter(file => file.trim() !== '');
+  const files = result.split('\n').filter(file => file.trim() !== '' && fs.existsSync(file));
   return files;
 }
 
