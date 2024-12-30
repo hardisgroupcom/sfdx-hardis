@@ -2,6 +2,7 @@ import * as path from "path";
 import c from 'chalk';
 import fs from 'fs-extra';
 import { uxLog } from "./index.js";
+import * as yaml from 'js-yaml';
 import { countPackageXmlItems, parsePackageXmlFile } from "./xmlUtils.js";
 import { CONSTANTS } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
@@ -76,4 +77,32 @@ export async function generatePackageXmlMarkdown(inputFile: string | null, outpu
   uxLog(this, c.green(`Successfully generated ${path.basename(inputFile)} documentation into ${outputFile}`));
 
   return outputFile;
+}
+
+export function readMkDocsFile(mkdocsYmlFile: string): any {
+  const mkdocsYml: any = yaml.load(
+    fs
+      .readFileSync(mkdocsYmlFile, 'utf-8')
+      .replace('!!python/name:materialx.emoji.twemoji', "!!python/name:material.extensions.emoji.twemoji")
+      .replace('!!python/name:materialx.emoji.to_svg', "!!python/name:material.extensions.emoji.to_svg")
+      .replace('!!python/name:material.extensions.emoji.twemoji', "'!!python/name:material.extensions.emoji.twemoji'")
+      .replace('!!python/name:material.extensions.emoji.to_svg', "'!!python/name:material.extensions.emoji.to_svg'")
+      .replace('!!python/name:pymdownx.superfences.fence_code_format', "'!!python/name:pymdownx.superfences.fence_code_format'")
+  );
+  if (!mkdocsYml.nav) {
+    mkdocsYml.nav = {}
+  }
+  return mkdocsYml;
+}
+
+export async function writeMkDocsFile(mkdocsYmlFile: string, mkdocsYml: any) {
+  const mkdocsYmlStr = yaml
+    .dump(mkdocsYml)
+    .replace("!!python/name:materialx.emoji.twemoji", '!!python/name:material.extensions.emoji.twemoji')
+    .replace("!!python/name:materialx.emoji.to_svg", '!!python/name:material.extensions.emoji.to_svg')
+    .replace("'!!python/name:material.extensions.emoji.twemoji'", '!!python/name:material.extensions.emoji.twemoji')
+    .replace("'!!python/name:material.extensions.emoji.to_svg'", '!!python/name:material.extensions.emoji.to_svg')
+    .replace("'!!python/name:pymdownx.superfences.fence_code_format'", '!!python/name:pymdownx.superfences.fence_code_format');
+  await fs.writeFile(mkdocsYmlFile, mkdocsYmlStr);
+  uxLog(this, c.cyan(`Updated mkdocs-material config file at ${c.green(mkdocsYmlFile)}`));
 }
