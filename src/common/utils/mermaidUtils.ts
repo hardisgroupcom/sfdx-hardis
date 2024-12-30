@@ -48,8 +48,13 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
   }
 }
 
-export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string): Promise<boolean> {
-  const mermaidModes = (process.env.MERMAID_MODES || "cli,docker").split(",");
+export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string, mermaidModes: string[] | null = null): Promise<boolean> {
+  if (mermaidModes === null) {
+    mermaidModes = (process.env.MERMAID_MODES || "mermaid,cli,docker").split(",");
+  }
+  if (mermaidModes.includes("mermaid")) {
+    return true;
+  }
   const isDockerAvlbl = await isDockerAvailable();
   if (isDockerAvlbl && (!(globalThis.mermaidUnavailableTools || []).includes("docker")) && mermaidModes.includes("docker")) {
     const dockerSuccess = await generateMarkdownFileWithMermaidDocker(outputFlowMdFile);
@@ -354,10 +359,10 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
 
   // Tables lines
   if (!isMermaid && status === "removed" && styledLine.startsWith("|") && !styledLine.startsWith("|:-")) {
-    styledLine = "|🟥" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: #ff7f7f;"><i>${col}</i></span>`).join("|") + "|";
+    styledLine = "|🟥" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: #ff7f7f; color: black;"><i>${col}</i></span>`).join("|") + "|";
   }
   else if (!isMermaid && status === "added" && styledLine.startsWith("|") && !styledLine.startsWith("|:-")) {
-    styledLine = "|🟩" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: #a6e22e;"><b>${col}</b></span>`).join("|") + "|";
+    styledLine = "|🟩" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: #a6e22e; color: black;"><b>${col}</b></span>`).join("|") + "|";
   }
   // Normal lines header 3
   else if (!isMermaid && status === "removed" && styledLine.startsWith("#### ")) {
@@ -382,10 +387,10 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   }
   // Normal lines
   else if (!isMermaid && status === "removed" && styledLine !== "" && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
-    styledLine = `<span style="background-color: #ff7f7f;"><i>🟥${styledLine}</i></span>`;
+    styledLine = `<span style="background-color: #ff7f7f; color: black;"><i>🟥${styledLine}</i></span>`;
   }
   else if (!isMermaid && status === "added" && styledLine !== "" && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
-    styledLine = `<span style="background-color: #a6e22e;"><b>🟩${styledLine}</b></span>`;
+    styledLine = `<span style="background-color: #a6e22e; color: black;"><b>🟩${styledLine}</b></span>`;
   }
   // Boxes lines
   else if (isMermaid === true && status === "removed" && currentLine.split(":::").length === 2) {
@@ -541,6 +546,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
   // Set all the results in a single tabbed markdown
   uxLog(this, c.cyan(`Aggregating results in summary tabbed file ${diffMdFile}...`));
   let finalMd = `# ${flowLabel} history\n\n`;
+  finalMd += "<!-- This page has been generated to be viewed with mkdocs-material, you can not view it just as markdown . Activate tab plugin following the doc at https://squidfunk.github.io/mkdocs-material/reference/content-tabs/ -->\n\n"
   for (const diffMdFile of diffMdFiles) {
     finalMd += `=== "${moment(diffMdFile.commitAfter.date).format("ll")}` + (diffMdFile.initialVersion ? " (Initial)" : "") + `"\n\n`;
     finalMd += `    _${moment(diffMdFile.commitAfter.date).format("ll")}, by ${diffMdFile.commitAfter.author_name} in commit ${diffMdFile.commitAfter.message}_\n\n`;

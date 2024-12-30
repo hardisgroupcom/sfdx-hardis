@@ -7,7 +7,7 @@ import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { generatePackageXmlMarkdown } from '../../../common/utils/docUtils.js';
+import { generatePackageXmlMarkdown, readMkDocsFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
 import { countPackageXmlItems, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
@@ -17,7 +17,6 @@ import { listFlowFiles } from '../../../common/utils/projectUtils.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
-import yaml from 'js-yaml';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -206,15 +205,7 @@ ${Project2Markdown.htmlInstructions}
       );
     }
     // Update mkdocs nav items
-    const mkdocsYml: any = yaml.load(
-      fs
-        .readFileSync(mkdocsYmlFile, 'utf-8')
-        .replace('!!python/name:materialx.emoji.twemoji', "'!!python/name:materialx.emoji.twemoji'")
-        .replace('!!python/name:materialx.emoji.to_svg', "'!!python/name:materialx.emoji.to_svg'")
-    );
-    if (!mkdocsYml.nav) {
-      mkdocsYml.nav = {}
-    }
+    const mkdocsYml: any = readMkDocsFile(mkdocsYmlFile);
     for (const menuName of Object.keys(this.mkDocsNavNodes)) {
       let pos = 0;
       let found = false;
@@ -233,15 +224,8 @@ ${Project2Markdown.htmlInstructions}
         mkdocsYml.nav.push(navMenu);
       }
     }
-    /* jscpd:ignore-start */
-    const mkdocsYmlStr = yaml
-      .dump(mkdocsYml)
-      .replace("'!!python/name:materialx.emoji.twemoji'", '!!python/name:materialx.emoji.twemoji')
-      .replace("'!!python/name:materialx.emoji.to_svg'", '!!python/name:materialx.emoji.to_svg');
-    await fs.writeFile(mkdocsYmlFile, mkdocsYmlStr);
-    uxLog(this, c.cyan(`Updated ${c.green(mkdocsYmlFile)}`));
+    await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
     uxLog(this, c.cyan(`To generate a HTML WebSite with this documentation with a single command, see instructions at ${CONSTANTS.DOC_URL_ROOT}/hardis/doc/project2markdown/`));
-    /* jscpd:ignore-end */
   }
 
   private async generateFlowsDocumentation() {
@@ -353,7 +337,7 @@ ${Project2Markdown.htmlInstructions}
         `[${flow.name}](${prefix}${flow.name}.md) [🕒](${prefix}${flow.name}-history.md)` :
         `[${flow.name}](${prefix}${flow.name}.md)`;
       lines.push(...[
-        `| ${flow.object} | ${flowNameCell} | ${flow.type} | ${flow.description} |`
+        `| ${flow.object} | ${flowNameCell} | ${flow.type} | ${flow.description.replace(/\n/gm, "<br/>".replace(/\|/gm, ""))} |`
       ]);
     }
     lines.push("");
@@ -447,21 +431,26 @@ ${Project2Markdown.htmlInstructions}
         // Generate manifest from package folder
         const packageManifestFile = path.join("manifest", packageDir.name + '-package.xml');
         await fs.ensureDir(path.dirname(packageManifestFile));
-        await execSfdxJson("sf project generate manifest" +
-          ` --source-dir ${packageDir.path}` +
-          ` --name ${packageManifestFile}`, this,
-          {
-            fail: true,
-            output: true,
-            debug: this.debugMode,
-          }
-        );
-        // Add package in available packages list
-        this.packageXmlCandidates.push({
-          path: packageManifestFile,
-          name: packageDir.name,
-          description: `Package.xml generated from content of SFDX package ${packageDir.name} (folder ${packageDir.path})`
-        });
+        try {
+          await execSfdxJson("sf project generate manifest" +
+            ` --source-dir ${packageDir.path}` +
+            ` --name ${packageManifestFile}`, this,
+            {
+              fail: true,
+              output: true,
+              debug: this.debugMode,
+            }
+          );
+          // Add package in available packages list
+          this.packageXmlCandidates.push({
+            path: packageManifestFile,
+            name: packageDir.name,
+            description: `Package.xml generated from content of SFDX package ${packageDir.name} (folder ${packageDir.path})`
+          });
+        }
+        catch (e: any) {
+          uxLog(this, c.red(`Unable to generate manifest from ${packageDir.path}: it won't appear in the documentation\n${e.message}`))
+        }
       }
     }
   }

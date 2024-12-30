@@ -1,9 +1,12 @@
 import { GitProviderRoot } from './gitProviderRoot.js';
 import c from 'chalk';
+import fs from "fs-extra";
 import { PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
 import { git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { CONSTANTS } from '../../config/index.js';
+import * as path from 'path';
+import { extractImagesFromMarkdown, replaceImagesInMarkdown } from './utilsMarkdown.js';
 const { Bitbucket } = bbPkg;
 
 export class BitbucketProvider extends GitProviderRoot {
@@ -207,6 +210,8 @@ export class BitbucketProvider extends GitProviderRoot {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
 
+    messageBody = await this.uploadAndReplaceImageReferences(messageBody);
+
     const commentBody: any = {
       content: {
         raw: messageBody,
@@ -272,4 +277,41 @@ export class BitbucketProvider extends GitProviderRoot {
     prInfo.targetBranch = prData?.destination?.branch?.name || '';
     return prInfo;
   }
+
+  private async uploadAndReplaceImageReferences(markdownBody: string) {
+    const replacements: any = {};
+    const markdownImages = extractImagesFromMarkdown(markdownBody);
+    for (const image of markdownImages) {
+      const imageUrl = await this.uploadImage(image);
+      if (imageUrl) {
+        replacements[image] = imageUrl;
+      }
+    }
+    markdownBody = replaceImagesInMarkdown(markdownBody, replacements);
+    return markdownBody;
+  }
+
+  // Upload the image to Bitbucket
+  private async uploadImage(localImagePath: string): Promise<string | null> {
+    try {
+      const imageBuffer = fs.readFileSync(localImagePath);
+      const imageBlob = new Blob([imageBuffer]);
+      const imageName = path.basename(localImagePath);
+      const filesForm = new FormData();
+      filesForm.append('files', imageBlob, imageName);
+      const attachmentResponse = await this.bitbucket.repositories.createIssueAttachments({
+        workspace: process.env.BITBUCKET_WORKSPACE || "",
+        repo_slug: process.env.BITBUCKET_REPO_SLUG || "",
+        issue_id: process.env.BITBUCKET_PR_ID || "", // Attach to the pull request as an "issue"
+        _body: filesForm,
+      });
+      if (attachmentResponse?.data?.links?.self?.href) {
+        return attachmentResponse.data.links.self.href;
+      }
+    } catch (e) {
+      uxLog(this, c.yellow(`[Bitbucket Integration] Error while uploading image ${localImagePath}\n${(e as Error).message}`));
+    }
+    return null;
+  }
+
 }

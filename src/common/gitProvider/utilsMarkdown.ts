@@ -88,10 +88,10 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
     const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("Flow", flowName);
     try {
       if (supportsMermaidInPrMarkdown) {
-        await generateMarkdownWithMermaid(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
+        await generateDiffMarkdownWithMermaid(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }
       else {
-        await generateMarkdownWithSvg(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
+        await generateDiffMarkdownWithSvg(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }
     } catch (e: any) {
       uxLog(this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff: ${e.message}`));
@@ -108,7 +108,7 @@ Error while generating Flows visual git diff
   }
 }
 
-async function generateMarkdownWithMermaid(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
+async function generateDiffMarkdownWithMermaid(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
   const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, debug: false });
   if (outputDiffMdFile) {
     const flowDiffMarkdownMermaid = await fs.readFile(outputDiffMdFile.replace(".md", ".mermaid.md"), "utf8");
@@ -116,7 +116,7 @@ async function generateMarkdownWithMermaid(fileMetadata: string | null, fromComm
   }
 }
 
-async function generateMarkdownWithSvg(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
+async function generateDiffMarkdownWithSvg(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
   const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: true, debug: false });
   flowDiffMarkdownList.push({ name: flowName, markdown: outputDiffMdFile });
 }
@@ -141,4 +141,17 @@ ${message.replace(/:\n-/gm, `:\n\n-`)}
 </details>
 <br/>
 `;
+}
+
+export function extractImagesFromMarkdown(markdown: string): string[] {
+  const imageRegex = /!\[.*?\]\((.*?)\)/g;
+  const matches = Array.from(markdown.matchAll(imageRegex));
+  return matches.map((match) => match[1]).filter(file => fs.existsSync(file));
+}
+
+export function replaceImagesInMarkdown(markdown: string, replacements: any): string {
+  for (const replacedImage of Object.keys(replacements)) {
+    markdown = markdown.replaceAll(replacedImage, replacements[replacedImage]);
+  }
+  return markdown;
 }

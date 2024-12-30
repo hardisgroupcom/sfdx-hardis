@@ -11,6 +11,7 @@ import * as yaml from 'js-yaml';
 import { uxLog } from '../../../../common/utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { Config } from '@oclif/core';
+import { readMkDocsFile, writeMkDocsFile } from '../../../../common/utils/docUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -111,24 +112,14 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     }
 
     // Update mkdocs nav items
-    const mkdocsYml: any = yaml.load(
-      fs
-        .readFileSync(mkdocsYmlFile, 'utf-8')
-        .replace('!!python/name:materialx.emoji.twemoji', "'!!python/name:materialx.emoji.twemoji'")
-        .replace('!!python/name:materialx.emoji.to_svg', "'!!python/name:materialx.emoji.to_svg'")
-    );
+    const mkdocsYml: any = readMkDocsFile(mkdocsYmlFile);
     mkdocsYml.nav = mkdocsYml.nav.map((navItem: any) => {
       if (navItem['Commands']) {
         navItem['Commands'] = commandsNav;
       }
       return navItem;
     });
-    const mkdocsYmlStr = yaml
-      .dump(mkdocsYml)
-      .replace("'!!python/name:materialx.emoji.twemoji'", '!!python/name:materialx.emoji.twemoji')
-      .replace("'!!python/name:materialx.emoji.to_svg'", '!!python/name:materialx.emoji.to_svg');
-    await fs.writeFile(mkdocsYmlFile, mkdocsYmlStr);
-    uxLog(this, c.cyan(`Updated ${c.green(mkdocsYmlFile)}`));
+    await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
 
     // Return an object to be displayed with --json
     return { outputString: `Generated documentation` };
