@@ -33,7 +33,6 @@ export default class Flow2Markdown extends SfCommand<any> {
       description: 'Force the path and name of output markdown file. Must end with .md',
     }),
     "with-history": Flags.boolean({
-      char: 'd',
       default: false,
       description: "Generate a markdown file with the history diff of the Flow",
     }),

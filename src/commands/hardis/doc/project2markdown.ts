@@ -76,7 +76,6 @@ ${this.htmlInstructions}
       description: "Generate documentation only for changed files (used for monitoring)",
     }),
     "with-history": Flags.boolean({
-      char: 'd',
       default: false,
       description: "Generate a markdown file with the history diff of the Flow",
     }),
@@ -252,7 +251,7 @@ ${Project2Markdown.htmlInstructions}
     const packageDirs = this.project?.getPackageDirectories();
     const updatedFlowNames = !this.diffOnly ?
       [] :
-      (await MetadataUtils.listChangedFiles()).filter(f => f?.path?.endsWith(".flow-meta.xml")).map(f => path.basename(f.path, ".flow-meta.xml"));
+      (await MetadataUtils.listChangedOrFromCurrentCommitFiles()).filter(f => f?.path?.endsWith(".flow-meta.xml")).map(f => path.basename(f.path, ".flow-meta.xml"));
     const flowFiles = await listFlowFiles(packageDirs);
     const flowErrors: string[] = [];
     const flowWarnings: string[] = [];
@@ -270,11 +269,11 @@ ${Project2Markdown.htmlInstructions}
         object: flowContent?.Flow?.start?.[0]?.object?.[0] || flowContent?.Flow?.processMetadataValues?.filter(pmv => pmv.name[0] === "ObjectType")?.[0]?.value?.[0]?.stringValue?.[0] || ""
       });
       flowsForMenu[flowName] = "flows/" + flowName + ".md";
-      if (this.diffOnly && !updatedFlowNames.includes(flowName)) {
+      const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", flowName + ".md");
+      if (this.diffOnly && !updatedFlowNames.includes(flowName) && fs.existsSync(outputFlowMdFile)) {
         flowSkips.push(flowFile);
         continue;
       }
-      const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", flowName + ".md");
       const genRes = await generateFlowMarkdownFile(flowFile, flowXml, outputFlowMdFile, { collapsedDetails: false });
       if (!genRes) {
         flowErrors.push(flowFile);
