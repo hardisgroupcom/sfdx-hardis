@@ -306,7 +306,11 @@ export class BitbucketProvider extends GitProviderRoot {
         _body: filesForm,
       });
       if (attachmentResponse?.data?.links?.self?.href) {
+        uxLog(this, c.grey(`[Bitbucket Integration] Image uploaded for comment: ${attachmentResponse.data.links.self.href}`));
         return attachmentResponse.data.links.self.href;
+      }
+      else {
+        uxLog(this, c.yellow(`[Bitbucket Integration] Image uploaded but unable to get URL from response\n${JSON.stringify(attachmentResponse, null, 2)}`));
       }
     } catch (e) {
       uxLog(this, c.yellow(`[Bitbucket Integration] Error while uploading image ${localImagePath}\n${(e as Error).message}`));
