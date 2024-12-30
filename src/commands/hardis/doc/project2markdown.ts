@@ -76,7 +76,6 @@ ${this.htmlInstructions}
       description: "Generate documentation only for changed files (used for monitoring)",
     }),
     "with-history": Flags.boolean({
-      char: 'd',
       default: false,
       description: "Generate a markdown file with the history diff of the Flow",
     }),
