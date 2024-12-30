@@ -8,6 +8,7 @@
 
 variables:
   FORCE_COLOR: "1"
+  GIT_FETCH_EXTRA_FLAGS: --depth 10000
 
 # Pipeline stages
 stages:

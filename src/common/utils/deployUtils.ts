@@ -438,6 +438,7 @@ async function getDeploymentId(rawLog: string) {
   if (jsonLog) {
     const deploymentId = jsonLog?.result?.id || null;
     if (deploymentId) {
+      globalThis.pullRequestDeploymentId = deploymentId;
       return deploymentId;
     }
   }
@@ -448,6 +449,7 @@ async function getDeploymentId(rawLog: string) {
     globalThis.pullRequestDeploymentId = deploymentId;
     return deploymentId;
   }
+  uxLog(this, c.yellow(`Unable to find deploymentId in logs \n${c.grey(rawLog)}`));
   return null;
 }
 
