@@ -251,7 +251,7 @@ ${Project2Markdown.htmlInstructions}
     const packageDirs = this.project?.getPackageDirectories();
     const updatedFlowNames = !this.diffOnly ?
       [] :
-      (await MetadataUtils.listChangedFiles()).filter(f => f?.path?.endsWith(".flow-meta.xml")).map(f => path.basename(f.path, ".flow-meta.xml"));
+      (await MetadataUtils.listChangedOrFromCurrentCommitFiles()).filter(f => f?.path?.endsWith(".flow-meta.xml")).map(f => path.basename(f.path, ".flow-meta.xml"));
     const flowFiles = await listFlowFiles(packageDirs);
     const flowErrors: string[] = [];
     const flowWarnings: string[] = [];
