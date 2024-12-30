@@ -83,8 +83,10 @@ export function readMkDocsFile(mkdocsYmlFile: string): any {
   const mkdocsYml: any = yaml.load(
     fs
       .readFileSync(mkdocsYmlFile, 'utf-8')
-      .replace('!!python/name:materialx.emoji.twemoji', "'!!python/name:materialx.emoji.twemoji'")
-      .replace('!!python/name:materialx.emoji.to_svg', "'!!python/name:materialx.emoji.to_svg'")
+      .replace('!!python/name:materialx.emoji.twemoji', "!!python/name:material.extensions.emoji.twemoji")
+      .replace('!!python/name:materialx.emoji.to_svg', "!!python/name:material.extensions.emoji.to_svg")
+      .replace('!!python/name:material.extensions.emoji.twemoji', "'!!python/name:material.extensions.emoji.twemoji'")
+      .replace('!!python/name:material.extensions.emoji.to_svg', "'!!python/name:material.extensions.emoji.to_svg'")
       .replace('!!python/name:pymdownx.superfences.fence_code_format', "'!!python/name:pymdownx.superfences.fence_code_format'")
   );
   if (!mkdocsYml.nav) {
@@ -96,8 +98,10 @@ export function readMkDocsFile(mkdocsYmlFile: string): any {
 export async function writeMkDocsFile(mkdocsYmlFile: string, mkdocsYml: any) {
   const mkdocsYmlStr = yaml
     .dump(mkdocsYml)
-    .replace("'!!python/name:materialx.emoji.twemoji'", '!!python/name:materialx.emoji.twemoji')
-    .replace("'!!python/name:materialx.emoji.to_svg'", '!!python/name:materialx.emoji.to_svg')
+    .replace("!!python/name:materialx.emoji.twemoji", '!!python/name:material.extensions.emoji.twemoji')
+    .replace("!!python/name:materialx.emoji.to_svg", '!!python/name:material.extensions.emoji.to_svg')
+    .replace("'!!python/name:material.extensions.emoji.twemoji'", '!!python/name:material.extensions.emoji.twemoji')
+    .replace("'!!python/name:material.extensions.emoji.to_svg'", '!!python/name:material.extensions.emoji.to_svg')
     .replace("'!!python/name:pymdownx.superfences.fence_code_format'", '!!python/name:pymdownx.superfences.fence_code_format');
   await fs.writeFile(mkdocsYmlFile, mkdocsYmlStr);
   uxLog(this, c.cyan(`Updated mkdocs-material config file at ${c.green(mkdocsYmlFile)}`));
