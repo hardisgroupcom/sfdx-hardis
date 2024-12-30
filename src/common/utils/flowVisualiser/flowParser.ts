@@ -197,7 +197,12 @@ async function generateMermaidContent(flowMap: FlowMap, flowObj: any, options: a
     const mdEnd = "```\n\n";
     const currentBranch = await getCurrentGitBranch();
     const footer = `\n\n___\n\n_Documentation generated from branch ${currentBranch} by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}), featuring [salesforce-flow-visualiser](https://github.com/toddhalfpenny/salesforce-flow-visualiser)_`;
-    const mdDiagram = "flowchart TB\n" + nodeDefStr + mdBody + mdClasses
+    const mdDiagram =
+        "%% If you read this, your Markdown visualizer does not handle MermaidJS syntax. If you are using sfdx-hardis, try to define env variable `MERMAID_MODES=cli,docker` ,then run again the command to regenerate markdown with SVG images.\n" +
+        "flowchart TB\n" +
+        nodeDefStr +
+        mdBody +
+        mdClasses
     if (options.wrapInMarkdown === false) {
         return (mdDiagram);
     } else {

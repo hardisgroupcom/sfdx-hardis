@@ -431,21 +431,26 @@ ${Project2Markdown.htmlInstructions}
         // Generate manifest from package folder
         const packageManifestFile = path.join("manifest", packageDir.name + '-package.xml');
         await fs.ensureDir(path.dirname(packageManifestFile));
-        await execSfdxJson("sf project generate manifest" +
-          ` --source-dir ${packageDir.path}` +
-          ` --name ${packageManifestFile}`, this,
-          {
-            fail: true,
-            output: true,
-            debug: this.debugMode,
-          }
-        );
-        // Add package in available packages list
-        this.packageXmlCandidates.push({
-          path: packageManifestFile,
-          name: packageDir.name,
-          description: `Package.xml generated from content of SFDX package ${packageDir.name} (folder ${packageDir.path})`
-        });
+        try {
+          await execSfdxJson("sf project generate manifest" +
+            ` --source-dir ${packageDir.path}` +
+            ` --name ${packageManifestFile}`, this,
+            {
+              fail: true,
+              output: true,
+              debug: this.debugMode,
+            }
+          );
+          // Add package in available packages list
+          this.packageXmlCandidates.push({
+            path: packageManifestFile,
+            name: packageDir.name,
+            description: `Package.xml generated from content of SFDX package ${packageDir.name} (folder ${packageDir.path})`
+          });
+        }
+        catch (e: any) {
+          uxLog(this, c.red(`Unable to generate manifest from ${packageDir.path}: it won't appear in the documentation\n${e.message}`))
+        }
       }
     }
   }
