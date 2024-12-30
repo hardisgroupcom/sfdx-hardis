@@ -201,7 +201,9 @@ async function generateMermaidContent(flowMap: FlowMap, flowObj: any, options: a
         "%% If you read this, your Markdown visualizer does not handle MermaidJS syntax.\n" +
         "%% - If you are in VsCode, install extension `Markdown Preview Mermaid Support` at https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid\n" +
         "%% - If you are using sfdx-hardis, try to define env variable `MERMAID_MODES=cli,docker` ,then run again the command to regenerate markdown with SVG images.\n" +
-        "%% - If you are within mkdocs-material, define mermaid plugin in `mkdocs.yml` as described in https://squidfunk.github.io/mkdocs-material/extensions/mermaid/\n\n" +
+        "%% - If you are within mkdocs-material, define mermaid plugin in `mkdocs.yml` as described in https://squidfunk.github.io/mkdocs-material/extensions/mermaid/\n" +
+        "%% - At last resort, you can copy-paste this MermaidJS code in https://mermaid.live/ to see the Flow Diagram\n\n" +
+
         "flowchart TB\n" +
         nodeDefStr +
         mdBody +
