@@ -187,8 +187,13 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
       const updatedFiles = await getCommitUpdatedFiles(logResult.hash);
       for (const updatedFile of updatedFiles) {
         if (updatedFile.endsWith(".flow-meta.xml")) {
-          const flowName = path.basename(updatedFile, ".flow-meta.xml");
-          flowList.push(flowName);
+          if (fs.existsSync(updatedFile)) {
+            const flowName = path.basename(updatedFile, ".flow-meta.xml");
+            flowList.push(flowName);
+          }
+          else {
+            uxLog(this, c.yellow(`[FlowGitDiff] Unable to find Flow file ${updatedFile} (probably has been deleted)`));
+          }
         }
       }
     }
