@@ -238,7 +238,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     // Run project documentation generation
     try {
-      await Project2Markdown.run(["--diff-only"]);
+      await Project2Markdown.run(["--diff-only", "--with-history"]);
     } catch (e: any) {
       uxLog(this, c.yellow("Error while generating project documentation " + e.message));
     }

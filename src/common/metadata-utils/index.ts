@@ -390,6 +390,25 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     return filesSorted;
   }
 
+  // List updated files and reformat them as string
+  public static async listChangedOrFromCurrentCommitFiles(): Promise<FileStatusResult[]> {
+    if (!isGitRepo()) {
+      return [];
+    }
+    const changedFiles = await MetadataUtils.listChangedFiles();
+    const commitDetails = await git().show(['--name-only', '--pretty=format:']);
+    const updatedFiles = commitDetails.trim().split('\n')
+      .filter(file => {
+        return file && !changedFiles.some(changedFile => changedFile.path === file);
+      })
+      .map((file) => {
+        return { path: file, index: 'x', working_dir: 'x' };
+      });
+    const files = [...changedFiles, ...updatedFiles]
+    const filesSorted = files.sort((a, b) => (a.path > b.path ? 1 : -1));
+    return filesSorted;
+  }
+
   public static getMetadataPrettyNames(metadataFilePaths: string[], bold = false): Map<string, string> {
     const metadataList = listMetadataTypes();
     const metadataFilePathsHuman = new Map<string, string>();
