@@ -13,6 +13,14 @@ const FIELDS_WITH_VALUES_TO_FORMAT = [
   "type"
 ];
 
+const FIELDS_WITH_VALUES_TO_FORMAT_ENUM = {
+  "status": {
+    "Draft": "⚠️ Draft",
+    "Inactive": "⚠️ Inactive",
+    "InvalidDraft": "⚠️ Invalid Draft"
+  }
+}
+
 const FIELDS_PREFERRED_ORDER_START = [
   "type",
   "object",
@@ -20,6 +28,7 @@ const FIELDS_PREFERRED_ORDER_START = [
   "triggerType",
   "recordTriggerType",
   "label",
+  "status",
   "actionType",
   "actionName",
   "dataType",
@@ -337,6 +346,9 @@ export function stringifyValue(valueIn: any, field: string, allProperties: strin
   // Final updates if necessary
   if (allProperties.includes(valueStringified)) {
     valueStringified = `[${valueStringified}](#${valueStringified.toLowerCase()})`
+  }
+  else if (FIELDS_WITH_VALUES_TO_FORMAT_ENUM[field] && FIELDS_WITH_VALUES_TO_FORMAT_ENUM[field][valueStringified]) {
+    valueStringified = FIELDS_WITH_VALUES_TO_FORMAT_ENUM[field][valueStringified];
   }
   else if (FIELDS_WITH_VALUES_TO_FORMAT.includes(field)) {
     valueStringified = prettifyFieldName(valueStringified);
