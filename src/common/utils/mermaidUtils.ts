@@ -359,10 +359,10 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
 
   // Tables lines
   if (!isMermaid && status === "removed" && styledLine.startsWith("|") && !styledLine.startsWith("|:-")) {
-    styledLine = "|🟥" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: #ff7f7f;"><i>${col}</i></span>`).join("|") + "|";
+    styledLine = "|🟥" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: #ff7f7f; color: black;"><i>${col}</i></span>`).join("|") + "|";
   }
   else if (!isMermaid && status === "added" && styledLine.startsWith("|") && !styledLine.startsWith("|:-")) {
-    styledLine = "|🟩" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: #a6e22e;"><b>${col}</b></span>`).join("|") + "|";
+    styledLine = "|🟩" + styledLine.split("|").filter(e => e !== "").map((col: string) => `<span style="background-color: #a6e22e; color: black;"><b>${col}</b></span>`).join("|") + "|";
   }
   // Normal lines header 3
   else if (!isMermaid && status === "removed" && styledLine.startsWith("#### ")) {
@@ -387,10 +387,10 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   }
   // Normal lines
   else if (!isMermaid && status === "removed" && styledLine !== "" && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
-    styledLine = `<span style="background-color: #ff7f7f;"><i>🟥${styledLine}</i></span>`;
+    styledLine = `<span style="background-color: #ff7f7f; color: black;"><i>🟥${styledLine}</i></span>`;
   }
   else if (!isMermaid && status === "added" && styledLine !== "" && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
-    styledLine = `<span style="background-color: #a6e22e;"><b>🟩${styledLine}</b></span>`;
+    styledLine = `<span style="background-color: #a6e22e; color: black;"><b>🟩${styledLine}</b></span>`;
   }
   // Boxes lines
   else if (isMermaid === true && status === "removed" && currentLine.split(":::").length === 2) {
