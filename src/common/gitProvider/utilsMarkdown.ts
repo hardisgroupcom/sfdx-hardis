@@ -1,5 +1,6 @@
 import c from "chalk";
 import fs from "fs-extra"
+import * as path from "path"
 import { MetadataUtils } from "../metadata-utils/index.js";
 import { uxLog } from "../utils/index.js";
 import { generateFlowVisualGitDiff } from "../utils/mermaidUtils.js";
@@ -112,14 +113,14 @@ async function generateDiffMarkdownWithMermaid(fileMetadata: string | null, from
   const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, debug: false });
   if (outputDiffMdFile) {
     const flowDiffMarkdownMermaid = await fs.readFile(outputDiffMdFile.replace(".md", ".mermaid.md"), "utf8");
-    flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownMermaid });
+    flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownMermaid, markdownFile: outputDiffMdFile });
   }
 }
 
 async function generateDiffMarkdownWithSvg(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
   const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: true, debug: false });
   const flowDiffMarkdownWithSvg = await fs.readFile(outputDiffMdFile, "utf8");
-  flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithSvg });
+  flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithSvg, markdownFile: outputDiffMdFile });
 }
 
 function getAiPromptResponseMarkdown(title, message) {
@@ -144,15 +145,30 @@ ${message.replace(/:\n-/gm, `:\n\n-`)}
 `;
 }
 
-export function extractImagesFromMarkdown(markdown: string): string[] {
+export function extractImagesFromMarkdown(markdown: string, sourceFile: string | null): any[] {
+  let sourceFilePath = "";
+  if (sourceFile && fs.existsSync(sourceFile)) {
+    sourceFilePath = path.dirname(sourceFile)
+  }
   const imageRegex = /!\[.*?\]\((.*?)\)/gm;
   const matches = Array.from(markdown.matchAll(imageRegex));
   return matches.map((match) => match[1]).filter(file => {
     if (fs.existsSync(file)) {
       return true;
     }
+    else if (fs.existsSync(path.join(sourceFilePath, file))) {
+      return true;
+    }
     uxLog(this, c.yellow(`[Markdown] Image file not found: ${file}`));
     return false;
+  }).map(file => {
+    if (fs.existsSync(file)) {
+      return { name: file, path: file };
+    }
+    else if (fs.existsSync(path.join(sourceFilePath, file))) {
+      return { name: file, path: path.join(sourceFilePath, file) };
+    }
+    return {};
   });
 }
 
