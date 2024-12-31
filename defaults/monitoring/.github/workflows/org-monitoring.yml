@@ -283,7 +283,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Faster code checkout fetching only latest commit
+          fetch-depth: 0
           ref: ${{ matrix.branch }}
           persist-credentials: true
       # Setup node

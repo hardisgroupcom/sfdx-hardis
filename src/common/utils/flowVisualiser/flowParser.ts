@@ -251,13 +251,17 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
                 if (!nextNode.startsWith("END")) {
                     // 'start' may not have a default path 
                     const defaultPathLabel = (node.scheduledPaths.length > 0) ? '|"Run Immediately"|' : "";
-                    bodyStr += "START --> " + defaultPathLabel + nextNode + "\n";
+                    bodyStr += "START --> " + defaultPathLabel + " " + nextNode + "\n";
                 }
                 // scheduled paths
                 for (const path of node.scheduledPaths) {
                     path.label = (path.label) ? path.label : 'Run Immediately';
-                    bodyStr += 'START --> |"' + path.label + '"| ' + path.connector.targetReference + "\n";
-                    // bodyStr += "START(( START )) --> |" + (path.label) ?  path.label : 'Run Immediately' + "| " + path.connector.targetReference + "\n";
+                    if (path?.connector?.targetReference) {
+                        bodyStr += 'START --> |"' + path.label + '"| ' + path.connector.targetReference + "\n";
+                    }
+                    else if (nextNode) {
+                        bodyStr += 'START --> |"' + path.label + '"| ' + nextNode + "\n";
+                    }
                 }
 
                 break;
