@@ -106,7 +106,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
     detailedErrorLines.push(...["", c.red(c.bold("Test failures:"))], "");
     for (const failedTest of failedTests) {
       detailedErrorLines.push(...[
-        c.red(`${c.bold(failedTest.class)}.${c.bold(failedTest.method)}: ${failedTest.error}`),
+        c.red(`💥 ${c.bold(failedTest.class)}.${c.bold(failedTest.method)}: ${failedTest.error}`),
         c.grey(`Stack: ${failedTest.stack || "none"}`),
         ""
       ]);
