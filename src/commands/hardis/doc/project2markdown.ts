@@ -47,7 +47,7 @@ Can work on any sfdx project, no need for it to be a sfdx-hardis flavored one.
 
 Generates markdown files will be written in **docs** folder (except README.md where a link to doc index is added)
 
-To generate Flow documentations, this command requires @mermaid-js/mermaid-cli
+To read Flow documentations if your markdown reader doesn't handle MermaidJS syntax, this command could require @mermaid-js/mermaid-cli
 
 - Run \`npm install @mermaid-js/mermaid-cli --global\` if puppeteer works in your environment
 - It can also be run as a docker image
@@ -55,6 +55,13 @@ To generate Flow documentations, this command requires @mermaid-js/mermaid-cli
 Both modes will be tried by default, but you can also force one of them by defining environment variable \`MERMAID_MODES=docker\` or \`MERMAID_MODES=cli\`
 
 _sfdx-hardis docker image is alpine-based and does not succeed to run mermaid/puppeteer: if you can help, please submit a PR !_
+
+If Flow history doc always display a single state, you probably need to update your workflow configuration:
+
+- on Gitlab: Env variable [\`GIT_FETCH_EXTRA_FLAGS: --depth 10000\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.gitlab-ci.yml#L11)
+- on GitHub: [\`fetch-depth: 0\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.github/workflows/org-monitoring.yml#L58)
+- on Azure: [\`fetchDepth: "0"\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/azure-pipelines.yml#L39)
+- on Bitbucket: [\`step: clone: depth: full\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/bitbucket-pipelines.yml#L18)
 
 ![Screenshot flow doc](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-flow-doc.jpg)
 
@@ -67,6 +74,7 @@ ${this.htmlInstructions}
 
   public static examples = [
     '$ sf hardis:doc:project2markdown',
+    '$ sf hardis:doc:project2markdown --with-history'
   ];
 
   public static flags: any = {
