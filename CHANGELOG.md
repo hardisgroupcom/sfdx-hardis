@@ -16,7 +16,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Command updates
   - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Refactor deployment errors parsing: use JSON output instead of text output
   - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): Display the number of failed tests in messages and notifications
-  - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): New option **--exclude-namespaces** that can be used with **--full** option
+  - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/):
+    - New option **--exclude-namespaces** that can be used with **--full** option
+    - New option **--full-apply-filters** that can be used with **--full** option to apply filters anyway
 
 - Core enhancements & fixes
   - Obfuscate some data from text log files
