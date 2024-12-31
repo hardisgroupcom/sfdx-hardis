@@ -6,7 +6,6 @@ import { git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { CONSTANTS } from '../../config/index.js';
 import * as path from 'path';
-import { extractImagesFromMarkdown, replaceImagesInMarkdown } from './utilsMarkdown.js';
 const { Bitbucket } = bbPkg;
 
 export class BitbucketProvider extends GitProviderRoot {
@@ -278,21 +277,8 @@ export class BitbucketProvider extends GitProviderRoot {
     return prInfo;
   }
 
-  private async uploadAndReplaceImageReferences(markdownBody: string) {
-    const replacements: any = {};
-    const markdownImages = extractImagesFromMarkdown(markdownBody);
-    for (const image of markdownImages) {
-      const imageUrl = await this.uploadImage(image);
-      if (imageUrl) {
-        replacements[image] = imageUrl;
-      }
-    }
-    markdownBody = replaceImagesInMarkdown(markdownBody, replacements);
-    return markdownBody;
-  }
-
   // Upload the image to Bitbucket
-  private async uploadImage(localImagePath: string): Promise<string | null> {
+  public async uploadImage(localImagePath: string): Promise<string | null> {
     try {
       const imageBuffer = fs.readFileSync(localImagePath);
       const imageBlob = new Blob([imageBuffer]);
