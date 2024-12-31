@@ -25,9 +25,9 @@ export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
         : err?.tipFromAi?.promptText
           ? getAiPromptTextMarkdown("Get prompt for AI", err.tipFromAi.promptText)
           : "";
-      md += `<details><summary>🛠️ ${errorMessage}</summary>
+      md += `<details><summary>⛔ ${errorMessage}</summary>
 
-_[**${err.tip.label}**](${err.tip.docUrl || "https://sfdx-hardis.cloudity.com/salesforce-deployment-assistant-home/"})_
+_[**✏️ ${err.tip.label}**](${err.tip.docUrl || "https://sfdx-hardis.cloudity.com/salesforce-deployment-assistant-home/"})_
 
 ${err.tip.message.replace(/:\n-/gm, `:\n\n-`)}
 ${aiText}
@@ -124,7 +124,7 @@ async function generateDiffMarkdownWithSvg(fileMetadata: string | null, fromComm
 }
 
 function getAiPromptResponseMarkdown(title, message) {
-  return `<details><summary>🤖 <b>${title}</b> 🤖</summary>
+  return `<details><summary>🤖 <b>${title}</b></summary>
 
 _AI Deployment Assistant tip (not verified !)_
 
