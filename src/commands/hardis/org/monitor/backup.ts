@@ -67,7 +67,9 @@ If Flow history doc always display a single state, you probably need to update y
 
   public static examples = [
     '$ sf hardis:org:monitor:backup',
-    '$ sf hardis:org:monitor:backup --full'
+    '$ sf hardis:org:monitor:backup --full',
+    '$ sf hardis:org:monitor:backup --full --exclude-namespaces',
+    '$ sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters'
   ];
 
   public static flags: any = {

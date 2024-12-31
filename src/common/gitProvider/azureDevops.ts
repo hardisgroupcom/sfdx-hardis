@@ -364,7 +364,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
     // Upload attached images if necessary
-    messageBody = await this.uploadAndReplaceImageReferences(messageBody);
+    messageBody = await this.uploadAndReplaceImageReferences(messageBody, prMessage.sourceFile || "");
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
     // Check for existing threads from a previous run
