@@ -251,7 +251,8 @@ If you want to disable the calculation and display of Flow Visual Git Diff in Pu
     "$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'",
     '$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTestsExceptSeeAllData',
     '$ sf hardis:project:deploy:smart',
-    '$ FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod'
+    '$ FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod',
+    '$ SYSTEM_ACCESSTOKEN=toto SYSTEM_COLLECTIONURI=titi BUILD_REPOSITORY_ID=tata SYSTEM_PULLREQUEST_PULLREQUESTID=tutu FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org mytest@org.com'
   ];
 
 

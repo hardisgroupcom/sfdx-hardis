@@ -209,7 +209,7 @@ export class BitbucketProvider extends GitProviderRoot {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
 
-    messageBody = await this.uploadAndReplaceImageReferences(messageBody);
+    messageBody = await this.uploadAndReplaceImageReferences(messageBody, prMessage.sourceFile || "");
 
     const commentBody: any = {
       content: {
