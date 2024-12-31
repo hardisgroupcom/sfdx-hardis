@@ -9,6 +9,7 @@ import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPu
 import { CONSTANTS } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
+import { convertSvgToPng } from "../utils/filesUtils.js";
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -514,6 +515,13 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
   }
 
   public async uploadImage(localImagePath: string): Promise<string | null> {
+    if (localImagePath.endsWith(".svg")) {
+      const pngFileRes = convertSvgToPng(localImagePath, localImagePath.replace(".svg", ".png"));
+      if (pngFileRes == null) {
+        return null;
+      }
+      localImagePath = pngFileRes;
+    }
     try {
       // Upload the image to Azure DevOps
       const imageName = path.basename(localImagePath);

@@ -8,6 +8,7 @@
     "@actions/github": "^6.0.0",
     "@gitbeaker/node": "^35.8.1",
     "@oclif/core": "^4.0.37",
+    "@resvg/resvg-js": "^2.6.2",
     "@salesforce/core": "^8.8.0",
     "@salesforce/sf-plugins-core": "^11.3.12",
     "@slack/types": "^2.14.0",

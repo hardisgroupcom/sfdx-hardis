@@ -13,6 +13,7 @@ import ExcelJS from 'exceljs';
 // Project Specific Utilities
 import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from './index.js';
 import { bulkQuery, soqlQuery } from './apiUtils.js';
+import { Resvg } from '@resvg/resvg-js';
 import { prompts } from './prompts.js';
 import { CONSTANTS, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
@@ -757,4 +758,18 @@ async function csvToXls(csvFile: string, xslxFile: string) {
     });
   }
   await workbook.xlsx.writeFile(xslxFile);
+}
+
+
+export function convertSvgToPng(svgPath: string, pngPath: string) {
+  try {
+    const svgContent = fs.readFileSync(svgPath, 'utf8');
+    const resvg = new Resvg(svgContent);
+    const pngBuffer = resvg.render().asPng();
+    fs.writeFileSync(pngPath, pngBuffer);
+    return pngPath;
+  } catch (error: any) {
+    uxLog(this, 'Error converting SVG to PNG:' + error.message);
+    return null;
+  }
 }
