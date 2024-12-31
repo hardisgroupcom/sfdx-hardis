@@ -6,7 +6,6 @@ import { git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { CONSTANTS } from '../../config/index.js';
 import * as path from 'path';
-import { convertSvgToPng } from '../utils/filesUtils.js';
 const { Bitbucket } = bbPkg;
 
 export class BitbucketProvider extends GitProviderRoot {
@@ -280,14 +279,6 @@ export class BitbucketProvider extends GitProviderRoot {
 
   // Upload the image to Bitbucket
   public async uploadImage(localImagePath: string): Promise<string | null> {
-    // Bitbucket can not handle SVG format
-    if (localImagePath.endsWith(".svg")) {
-      const pngFileRes = convertSvgToPng(localImagePath, localImagePath.replace(".svg", ".png"));
-      if (pngFileRes == null) {
-        return null;
-      }
-      localImagePath = pngFileRes;
-    }
     try {
       const imageBuffer = fs.readFileSync(localImagePath);
       const imageBlob = new Blob([imageBuffer]);

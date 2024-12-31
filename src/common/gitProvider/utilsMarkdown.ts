@@ -82,17 +82,24 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
     return "";
   }
   const supportsMermaidInPrMarkdown = await GitProvider.supportsMermaidInPrMarkdown();
+  const supportsSvgAttachments = await GitProvider.supportsSvgAttachments();
   const flowDiffMarkdownList: any = [];
   let flowDiffFilesSummary = "## Flow changes\n\n";
   for (const flowName of flowNames) {
     flowDiffFilesSummary += `- [${flowName}](#${flowName})\n`;
     const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("Flow", flowName);
     try {
+      // Markdown wiwth pure mermaidJs
       if (supportsMermaidInPrMarkdown) {
         await generateDiffMarkdownWithMermaid(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }
-      else {
+      // Markdown with Mermaid converted as SVG
+      else if (supportsSvgAttachments) {
         await generateDiffMarkdownWithSvg(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
+      }
+      // Markdown with images converted as PNG
+      else {
+        await generateDiffMarkdownWithPng(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }
     } catch (e: any) {
       uxLog(this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff for ${flowName}: ${e.message}`));
@@ -110,7 +117,7 @@ Error while generating Flows visual git diff
 }
 
 async function generateDiffMarkdownWithMermaid(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, debug: false });
+  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: false, debug: false });
   if (outputDiffMdFile) {
     const flowDiffMarkdownMermaid = await fs.readFile(outputDiffMdFile.replace(".md", ".mermaid.md"), "utf8");
     flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownMermaid, markdownFile: outputDiffMdFile });
@@ -118,9 +125,15 @@ async function generateDiffMarkdownWithMermaid(fileMetadata: string | null, from
 }
 
 async function generateDiffMarkdownWithSvg(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: true, debug: false });
+  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: false, debug: false });
   const flowDiffMarkdownWithSvg = await fs.readFile(outputDiffMdFile, "utf8");
   flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithSvg, markdownFile: outputDiffMdFile });
+}
+
+async function generateDiffMarkdownWithPng(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
+  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: true, debug: false });
+  const flowDiffMarkdownWithPng = await fs.readFile(outputDiffMdFile, "utf8");
+  flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithPng, markdownFile: outputDiffMdFile });
 }
 
 function getAiPromptResponseMarkdown(title, message) {
