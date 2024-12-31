@@ -78,17 +78,25 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
   const detailedErrorLines: string[] = [];
   for (const error of errors) {
     detailedErrorLines.push(...["", c.red(c.bold(error.messageInitialDisplay)), ""]);
-    if (error.tips.length > 0 && error.tips.some(err => err.tip)) {
+    if (error.tips.length > 0 && error.tips.some(err => err.tip || err.tipFromAi)) {
       for (const errorTip of error.tips) {
-        detailedErrorLines.push(...[
-          c.yellow(c.italic("Error " + c.bold(errorTip.tip.label)) + ":"),
-          c.yellow(errorTip.tip.messageConsole),
-          c.yellow(`Documentation: ${errorTip.tip.docUrl}`)
-        ])
+        if (errorTip.tip) {
+          detailedErrorLines.push(...[
+            c.yellow(c.italic("Error " + c.bold(errorTip.tip.label)) + ":"),
+            c.yellow(errorTip.tip.messageConsole),
+            c.yellow(`Documentation: ${errorTip.tip.docUrl}`)
+          ])
+        }
+        if (errorTip.tipFromAi) {
+          detailedErrorLines.push(...[
+            c.yellow(c.italic("🤖 AI response:")),
+            c.yellow(errorTip.tipFromAi.promptResponse)
+          ])
+        }
       }
     }
     else {
-      detailedErrorLines.push(...["No tip found for error. Try asking ChatGPT, Google or a Release Manager :)"])
+      detailedErrorLines.push(...[c.yellow("No tip found for error. Try asking ChatGPT, Google or a Release Manager :)")])
     }
   }
   detailedErrorLines.push("");
