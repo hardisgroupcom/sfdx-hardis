@@ -49,8 +49,11 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
 }
 
 export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string, mermaidModes: string[] | null = null): Promise<boolean> {
-  if (mermaidModes === null) {
-    mermaidModes = (process.env.MERMAID_MODES || "mermaid,cli,docker").split(",");
+  if (process.env.MERMAID_MODES) {
+    mermaidModes = process.env.MERMAID_MODES.split(",");
+  }
+  else if (mermaidModes === null) {
+    mermaidModes = ["mermaid", "cli", "docker"];
   }
   if (mermaidModes.includes("mermaid")) {
     return true;
@@ -223,7 +226,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
     return result;
   }
   // Generate final markdown with mermaid SVG
-  const finalRes = await generateMarkdownFileWithMermaid(diffMdFile);
+  const finalRes = await generateMarkdownFileWithMermaid(diffMdFile, ["cli", "docker"]);
   if (finalRes) {
     uxLog(this, c.green(`Successfully generated visual git diff for flow: ${diffMdFile}`));
   }

@@ -145,9 +145,15 @@ ${message.replace(/:\n-/gm, `:\n\n-`)}
 }
 
 export function extractImagesFromMarkdown(markdown: string): string[] {
-  const imageRegex = /!\[.*?\]\((.*?)\)/g;
+  const imageRegex = /!\[.*?\]\((.*?)\)/gm;
   const matches = Array.from(markdown.matchAll(imageRegex));
-  return matches.map((match) => match[1]).filter(file => fs.existsSync(file));
+  return matches.map((match) => match[1]).filter(file => {
+    if (fs.existsSync(file)) {
+      return true;
+    }
+    uxLog(this, c.yellow(`[Markdown] Image file not found: ${file}`));
+    return false;
+  });
 }
 
 export function replaceImagesInMarkdown(markdown: string, replacements: any): string {

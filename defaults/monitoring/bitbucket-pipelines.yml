@@ -16,6 +16,8 @@ pipelines:
     ##############################################
     - step:
         name: Backup sfdx-hardis
+        clone:
+          depth: full
         script:
           # Install SF Cli & dependencies
           - npm install --no-cache @salesforce/cli --global
