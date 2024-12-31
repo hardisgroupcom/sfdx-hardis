@@ -77,12 +77,12 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
   // Create output log for errors
   const detailedErrorLines: string[] = [];
   for (const error of errors) {
-    detailedErrorLines.push(...["", c.red(c.bold(error.messageInitialDisplay)), ""]);
+    detailedErrorLines.push(...["", "⛔ " + c.red(c.bold(error.messageInitialDisplay)), ""]);
     if (error.tips.length > 0 && error.tips.some(err => err.tip || err.tipFromAi)) {
       for (const errorTip of error.tips) {
         if (errorTip.tip) {
           detailedErrorLines.push(...[
-            c.yellow(c.italic("Error " + c.bold(errorTip.tip.label)) + ":"),
+            c.yellow(c.italic("✏️ Error " + c.bold(errorTip.tip.label)) + ":"),
             c.yellow(errorTip.tip.messageConsole),
             c.yellow(`Documentation: ${errorTip.tip.docUrl}`)
           ])
