@@ -29,6 +29,15 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
         tips.push(tipDefinition);
       }
     }
+    // Add default tip if not found
+    if (error.tips.length === 0) {
+      error.message = stripAnsi(error.messageInitial);
+      const errorBase = Object.assign({}, error);
+      delete errorBase.tips;
+      error.tips.push({
+        error: errorBase
+      });
+    }
   }
 
   // Enrich with AI if applicable
@@ -69,7 +78,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
   const detailedErrorLines: string[] = [];
   for (const error of errors) {
     detailedErrorLines.push(...["", c.red(c.bold(error.messageInitialDisplay)), ""]);
-    if (error.tips.length > 0) {
+    if (error.tips.length > 0 && error.tips.some(err => err.tip)) {
       for (const errorTip of error.tips) {
         detailedErrorLines.push(...[
           c.yellow(c.italic("Error " + c.bold(errorTip.tip.label)) + ":"),
