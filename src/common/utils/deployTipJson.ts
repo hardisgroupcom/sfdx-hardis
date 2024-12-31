@@ -184,8 +184,8 @@ function extractFailedTestsInfo(failedTestsIn: any[]) {
       method: failedTestIn.methodName,
       error: failedTestIn.message,
     };
-    if (failedTestIn?.stacktrace) {
-      failedTestRes.stack = failedTestIn.stacktrace;
+    if (failedTestIn?.stackTrace) {
+      failedTestRes.stack = failedTestIn.stackTrace;
     }
     failedTests.push(failedTestRes);
   }
