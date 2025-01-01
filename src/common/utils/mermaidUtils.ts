@@ -49,6 +49,8 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
 }
 
 export async function generateMarkdownFileWithMermaid(outputFlowMdFileIn: string, outputFlowMdFileOut: string, mermaidModes: string[] | null = null): Promise<boolean> {
+  await fs.ensureDir(path.dirname(outputFlowMdFileIn));
+  await fs.ensureDir(path.dirname(outputFlowMdFileOut));
   if (process.env.MERMAID_MODES) {
     mermaidModes = process.env.MERMAID_MODES.split(",");
   }
