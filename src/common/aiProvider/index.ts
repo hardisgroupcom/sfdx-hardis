@@ -10,7 +10,7 @@ export abstract class AiProvider {
 
   static getInstance(): AiProviderRoot | null {
     // OpenAi
-    if (UtilsAi.isOpenApiAvailable()) {
+    if (UtilsAi.isOpenAiAvailable()) {
       return new OpenAiProvider();
     }
     return null;

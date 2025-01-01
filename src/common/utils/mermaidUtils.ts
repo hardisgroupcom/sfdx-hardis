@@ -48,7 +48,7 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
   }
 }
 
-export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string, mermaidModes: string[] | null = null): Promise<boolean> {
+export async function generateMarkdownFileWithMermaid(outputFlowMdFileIn: string, outputFlowMdFileOut: string, mermaidModes: string[] | null = null): Promise<boolean> {
   if (process.env.MERMAID_MODES) {
     mermaidModes = process.env.MERMAID_MODES.split(",");
   }
@@ -60,13 +60,13 @@ export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string, 
   }
   const isDockerAvlbl = await isDockerAvailable();
   if (isDockerAvlbl && (!(globalThis.mermaidUnavailableTools || []).includes("docker")) && mermaidModes.includes("docker")) {
-    const dockerSuccess = await generateMarkdownFileWithMermaidDocker(outputFlowMdFile);
+    const dockerSuccess = await generateMarkdownFileWithMermaidDocker(outputFlowMdFileIn, outputFlowMdFileOut);
     if (dockerSuccess) {
       return true;
     }
   }
   if ((!(globalThis.mermaidUnavailableTools || []).includes("cli")) && mermaidModes.includes("cli")) {
-    const mmCliSuccess = await generateMarkdownFileWithMermaidCli(outputFlowMdFile);
+    const mmCliSuccess = await generateMarkdownFileWithMermaidCli(outputFlowMdFileIn, outputFlowMdFileOut);
     if (mmCliSuccess) {
       return true;
     }
@@ -77,15 +77,15 @@ export async function generateMarkdownFileWithMermaid(outputFlowMdFile: string, 
   return false;
 }
 
-export async function generateMarkdownFileWithMermaidDocker(outputFlowMdFile: string): Promise<boolean> {
-  const fileDir = path.resolve(path.dirname(outputFlowMdFile));
-  const fileName = path.basename(outputFlowMdFile);
-  const dockerCommand = `docker run --rm -v "${fileDir}:/data" ghcr.io/mermaid-js/mermaid-cli/mermaid-cli -i "${fileName}" -o "${fileName}"`;
+export async function generateMarkdownFileWithMermaidDocker(outputFlowMdFileIn: string, outputFlowMdFileOut: string): Promise<boolean> {
+  const fileDir = path.resolve(path.dirname(outputFlowMdFileIn));
+  const fileName = path.basename(outputFlowMdFileIn);
+  const dockerCommand = `docker run --rm -v "${fileDir}:/data" ghcr.io/mermaid-js/mermaid-cli/mermaid-cli -i "${fileName}" -o "${outputFlowMdFileOut}"`;
   try {
     await execCommand(dockerCommand, this, { output: false, fail: true, debug: false });
     return true;
   } catch (e: any) {
-    uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation with Docker: ${e.message}`) + "\n" + c.grey(e.stack));
+    uxLog(this, c.yellow(`Error generating mermaidJs Graphs from ${outputFlowMdFileIn} documentation with Docker: ${e.message}`) + "\n" + c.grey(e.stack));
     if (JSON.stringify(e).includes("Cannot connect to the Docker daemon") || JSON.stringify(e).includes("daemon is not running")) {
       globalThis.mermaidUnavailableTools = (globalThis.mermaidUnavailableTools || []).concat("docker");
       uxLog(this, c.yellow("[Mermaid] Docker unavailable: do not try again"));
@@ -94,16 +94,16 @@ export async function generateMarkdownFileWithMermaidDocker(outputFlowMdFile: st
   }
 }
 
-export async function generateMarkdownFileWithMermaidCli(outputFlowMdFile: string): Promise<boolean> {
+export async function generateMarkdownFileWithMermaidCli(outputFlowMdFileIn: string, outputFlowMdFileOut: string): Promise<boolean> {
   // Try with NPM package
   const isMmdAvailable = await isMermaidAvailable();
   const puppeteerConfigPath = path.join(PACKAGE_ROOT_DIR, 'defaults', 'puppeteer-config.json');
-  const mermaidCmd = `${!isMmdAvailable ? 'npx --yes -p @mermaid-js/mermaid-cli ' : ''}mmdc -i "${outputFlowMdFile}" -o "${outputFlowMdFile}" --puppeteerConfigFile "${puppeteerConfigPath}"`;
+  const mermaidCmd = `${!isMmdAvailable ? 'npx --yes -p @mermaid-js/mermaid-cli ' : ''}mmdc -i "${outputFlowMdFileIn}" -o "${outputFlowMdFileOut}" --puppeteerConfigFile "${puppeteerConfigPath}"`;
   try {
     await execCommand(mermaidCmd, this, { output: false, fail: true, debug: false });
     return true;
   } catch (e: any) {
-    uxLog(this, c.yellow(`Error generating mermaidJs Graphs in ${outputFlowMdFile} documentation with CLI: ${e.message}`) + "\n" + c.grey(e.stack));
+    uxLog(this, c.yellow(`Error generating mermaidJs Graphs from ${outputFlowMdFileIn} documentation with CLI: ${e.message}`) + "\n" + c.grey(e.stack));
     if (JSON.stringify(e).includes("timed out")) {
       globalThis.mermaidUnavailableTools = (globalThis.mermaidUnavailableTools || []).concat("cli");
       uxLog(this, c.yellow("[Mermaid] CLI unavailable: do not try again"));
@@ -178,7 +178,7 @@ ${formatClasses(changedClasses, changed)}
 }
 
 export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, commitAfter: string,
-  options: { mermaidMd: boolean, svgMd: boolean, debug: boolean } = { mermaidMd: false, svgMd: true, debug: false }) {
+  options: { mermaidMd: boolean, svgMd: boolean, pngMd: boolean, debug: boolean } = { mermaidMd: false, svgMd: true, pngMd: false, debug: false }) {
   const result: any = { outputDiffMdFile: "", hasFlowDiffs: false };
   const mermaidMdBefore = await buildMermaidMarkdown(commitBefore, flowFile);
   const mermaidMdAfter = await buildMermaidMarkdown(commitAfter, flowFile);
@@ -221,16 +221,29 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   if (options.mermaidMd) {
     await fs.copyFile(diffMdFile, diffMdFile.replace(".md", ".mermaid.md"));
   }
-  if (!options.svgMd) {
-    result.outputDiffMdFile = diffMdFile;
+  result.outputDiffMdFile = diffMdFile;
+  if (!options.svgMd && !options.pngMd) {
     return result;
   }
-  // Generate final markdown with mermaid SVG
-  const finalRes = await generateMarkdownFileWithMermaid(diffMdFile, ["cli", "docker"]);
-  if (finalRes) {
-    uxLog(this, c.green(`Successfully generated visual git diff for flow: ${diffMdFile}`));
+  if (options.svgMd) {
+    // Generate final markdown with mermaid SVG
+    const finalRes = await generateMarkdownFileWithMermaid(diffMdFile, diffMdFile, ["cli", "docker"]);
+    if (finalRes) {
+      uxLog(this, c.green(`Successfully generated visual git diff for flow: ${diffMdFile}`));
+    }
   }
-  result.outputDiffMdFile = diffMdFile;
+  else if (options.pngMd) {
+    // General final markdown with mermaid PNG
+    const pngFile = path.join(path.dirname(diffMdFile), path.basename(diffMdFile, ".md") + ".png");
+    const pngRes = await generateMarkdownFileWithMermaid(diffMdFile, pngFile, ["cli", "docker"]);
+    if (pngRes) {
+      let mdWithMermaid = fs.readFileSync(diffMdFile, "utf8");
+      mdWithMermaid = mdWithMermaid.replace(
+        /```mermaid\n([\s\S]*?)\n```/g,
+        `![Diagram as PNG](./${path.basename(pngFile).replace(".png", "-1.png")})`);
+      await fs.writeFile(diffMdFile, mdWithMermaid);
+    }
+  }
   return result;
 }
 
@@ -533,7 +546,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
     }
     else {
       const commitBefore = fileHistory.all[i + 1];
-      const genDiffRes = await generateFlowVisualGitDiff(flowFile, commitBefore.hash, commitAfter.hash, { svgMd: false, mermaidMd: true, debug: debugMode });
+      const genDiffRes = await generateFlowVisualGitDiff(flowFile, commitBefore.hash, commitAfter.hash, { svgMd: false, mermaidMd: true, pngMd: false, debug: debugMode });
       if (genDiffRes.hasFlowDiffs && fs.existsSync(genDiffRes.outputDiffMdFile)) {
         diffMdFiles.push({
           commitBefore: commitBefore,
@@ -561,7 +574,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
   if (debugMode) {
     await fs.copyFile(diffMdFile, diffMdFile.replace(".md", ".mermaid.md"));
   }
-  const genSvgRes = await generateMarkdownFileWithMermaid(diffMdFile);
+  const genSvgRes = await generateMarkdownFileWithMermaid(diffMdFile, diffMdFile);
   if (!genSvgRes) {
     throw new Error("Error generating mermaid markdown file");
   }

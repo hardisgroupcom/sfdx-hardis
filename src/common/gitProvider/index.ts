@@ -193,6 +193,14 @@ export abstract class GitProvider {
     return gitProvider.supportsMermaidInPrMarkdown();
   }
 
+  static async supportsSvgAttachments(): Promise<boolean> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return false;
+    }
+    return gitProvider.supportsSvgAttachments();
+  }
+
   static async getPullRequestInfo(): Promise<any> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {

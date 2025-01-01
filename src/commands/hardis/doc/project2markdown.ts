@@ -274,7 +274,7 @@ ${Project2Markdown.htmlInstructions}
       if (this.debugMode) {
         await fs.copyFile(outputFlowMdFile, outputFlowMdFile.replace(".md", ".mermaid.md"));
       }
-      const gen2res = await generateMarkdownFileWithMermaid(outputFlowMdFile);
+      const gen2res = await generateMarkdownFileWithMermaid(outputFlowMdFile, outputFlowMdFile);
       if (!gen2res) {
         flowWarnings.push(flowFile);
         continue;
