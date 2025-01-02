@@ -1,5 +1,6 @@
 import c from "chalk";
 import fs from "fs-extra"
+import * as path from "path"
 import { MetadataUtils } from "../metadata-utils/index.js";
 import { uxLog } from "../utils/index.js";
 import { generateFlowVisualGitDiff } from "../utils/mermaidUtils.js";
@@ -24,9 +25,9 @@ export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
         : err?.tipFromAi?.promptText
           ? getAiPromptTextMarkdown("Get prompt for AI", err.tipFromAi.promptText)
           : "";
-      md += `<details><summary>🛠️ ${errorMessage}</summary>
+      md += `<details><summary>⛔ ${errorMessage}</summary>
 
-_[**${err.tip.label}**](${err.tip.docUrl || "https://sfdx-hardis.cloudity.com/salesforce-deployment-assistant-home/"})_
+_[**✏️ ${err.tip.label}**](${err.tip.docUrl || "https://sfdx-hardis.cloudity.com/salesforce-deployment-assistant-home/"})_
 
 ${err.tip.message.replace(/:\n-/gm, `:\n\n-`)}
 ${aiText}
@@ -81,17 +82,24 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
     return "";
   }
   const supportsMermaidInPrMarkdown = await GitProvider.supportsMermaidInPrMarkdown();
+  const supportsSvgAttachments = await GitProvider.supportsSvgAttachments();
   const flowDiffMarkdownList: any = [];
   let flowDiffFilesSummary = "## Flow changes\n\n";
   for (const flowName of flowNames) {
     flowDiffFilesSummary += `- [${flowName}](#${flowName})\n`;
     const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("Flow", flowName);
     try {
+      // Markdown with pure mermaidJs
       if (supportsMermaidInPrMarkdown) {
         await generateDiffMarkdownWithMermaid(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }
-      else {
+      // Markdown with Mermaid converted as SVG
+      else if (supportsSvgAttachments) {
         await generateDiffMarkdownWithSvg(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
+      }
+      // Markdown with images converted as PNG
+      else {
+        await generateDiffMarkdownWithPng(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }
     } catch (e: any) {
       uxLog(this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff for ${flowName}: ${e.message}`));
@@ -109,21 +117,27 @@ Error while generating Flows visual git diff
 }
 
 async function generateDiffMarkdownWithMermaid(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, debug: false });
+  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: false, debug: false });
   if (outputDiffMdFile) {
     const flowDiffMarkdownMermaid = await fs.readFile(outputDiffMdFile.replace(".md", ".mermaid.md"), "utf8");
-    flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownMermaid });
+    flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownMermaid, markdownFile: outputDiffMdFile });
   }
 }
 
 async function generateDiffMarkdownWithSvg(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: true, debug: false });
+  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: false, debug: false });
   const flowDiffMarkdownWithSvg = await fs.readFile(outputDiffMdFile, "utf8");
-  flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithSvg });
+  flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithSvg, markdownFile: outputDiffMdFile });
+}
+
+async function generateDiffMarkdownWithPng(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
+  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: true, debug: false });
+  const flowDiffMarkdownWithPng = await fs.readFile(outputDiffMdFile, "utf8");
+  flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithPng, markdownFile: outputDiffMdFile });
 }
 
 function getAiPromptResponseMarkdown(title, message) {
-  return `<details><summary>🤖 <b>${title}</b> 🤖</summary>
+  return `<details><summary>🤖 <b>${title}</b></summary>
 
 _AI Deployment Assistant tip (not verified !)_
 
@@ -144,15 +158,30 @@ ${message.replace(/:\n-/gm, `:\n\n-`)}
 `;
 }
 
-export function extractImagesFromMarkdown(markdown: string): string[] {
+export function extractImagesFromMarkdown(markdown: string, sourceFile: string | null): any[] {
+  let sourceFilePath = "";
+  if (sourceFile && fs.existsSync(sourceFile)) {
+    sourceFilePath = path.dirname(sourceFile)
+  }
   const imageRegex = /!\[.*?\]\((.*?)\)/gm;
   const matches = Array.from(markdown.matchAll(imageRegex));
   return matches.map((match) => match[1]).filter(file => {
     if (fs.existsSync(file)) {
       return true;
     }
-    uxLog(this, c.yellow(`[Markdown] Image file not found: ${file}`));
+    else if (fs.existsSync(path.join(sourceFilePath, file))) {
+      return true;
+    }
+    uxLog(this, c.yellow(`[Markdown] Image file not found: ${file} or ${path.join(sourceFilePath, file)}`));
     return false;
+  }).map(file => {
+    if (fs.existsSync(file)) {
+      return { name: file, path: file };
+    }
+    else if (fs.existsSync(path.join(sourceFilePath, file))) {
+      return { name: file, path: path.join(sourceFilePath, file) };
+    }
+    return {};
   });
 }
 

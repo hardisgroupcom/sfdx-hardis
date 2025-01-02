@@ -29,6 +29,15 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
         tips.push(tipDefinition);
       }
     }
+    // Add default tip if not found
+    if (error.tips.length === 0) {
+      error.message = stripAnsi(error.messageInitial);
+      const errorBase = Object.assign({}, error);
+      delete errorBase.tips;
+      error.tips.push({
+        error: errorBase
+      });
+    }
   }
 
   // Enrich with AI if applicable
@@ -68,18 +77,26 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
   // Create output log for errors
   const detailedErrorLines: string[] = [];
   for (const error of errors) {
-    detailedErrorLines.push(...["", c.red(c.bold(error.messageInitialDisplay)), ""]);
-    if (error.tips.length > 0) {
+    detailedErrorLines.push(...["", "⛔ " + c.red(c.bold(error.messageInitialDisplay)), ""]);
+    if (error.tips.length > 0 && error.tips.some(err => err.tip || err.tipFromAi)) {
       for (const errorTip of error.tips) {
-        detailedErrorLines.push(...[
-          c.yellow(c.italic("Error " + c.bold(errorTip.tip.label)) + ":"),
-          c.yellow(errorTip.tip.messageConsole),
-          c.yellow(`Documentation: ${errorTip.tip.docUrl}`)
-        ])
+        if (errorTip.tip) {
+          detailedErrorLines.push(...[
+            c.yellow(c.italic("✏️ Error " + c.bold(errorTip.tip.label)) + ":"),
+            c.yellow(errorTip.tip.messageConsole),
+            c.yellow(`Documentation: ${errorTip.tip.docUrl}`)
+          ])
+        }
+        if (errorTip.tipFromAi) {
+          detailedErrorLines.push(...[
+            c.yellow(c.italic("🤖 AI response:")),
+            c.yellow(errorTip.tipFromAi.promptResponse)
+          ])
+        }
       }
     }
     else {
-      detailedErrorLines.push(...["No tip found for error. Try asking ChatGPT, Google or a Release Manager :)"])
+      detailedErrorLines.push(...[c.yellow("No tip found for error. Try asking ChatGPT, Google or a Release Manager :)")])
     }
   }
   detailedErrorLines.push("");
@@ -89,7 +106,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
     detailedErrorLines.push(...["", c.red(c.bold("Test failures:"))], "");
     for (const failedTest of failedTests) {
       detailedErrorLines.push(...[
-        c.red(`${c.bold(failedTest.class)}.${c.bold(failedTest.method)}: ${failedTest.error}`),
+        c.red(`💥 ${c.bold(failedTest.class)}.${c.bold(failedTest.method)}: ${failedTest.error}`),
         c.grey(`Stack: ${failedTest.stack || "none"}`),
         ""
       ]);
@@ -167,8 +184,8 @@ function extractFailedTestsInfo(failedTestsIn: any[]) {
       method: failedTestIn.methodName,
       error: failedTestIn.message,
     };
-    if (failedTestIn?.error?.stacktrace) {
-      failedTestRes.stack = failedTestIn.error.stacktrace;
+    if (failedTestIn?.stackTrace) {
+      failedTestRes.stack = failedTestIn.stackTrace;
     }
     failedTests.push(failedTestRes);
   }

@@ -82,7 +82,7 @@ export default class Flow2Markdown extends SfCommand<any> {
     if (this.debugMode) {
       await fs.copyFile(this.outputFile, this.outputFile.replace(".md", ".mermaid.md"));
     }
-    const gen2res = await generateMarkdownFileWithMermaid(this.outputFile);
+    const gen2res = await generateMarkdownFileWithMermaid(this.outputFile, this.outputFile);
     if (!gen2res) {
       throw new Error("Error generating mermaid markdown file");
     }

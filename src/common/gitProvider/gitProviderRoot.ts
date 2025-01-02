@@ -2,6 +2,7 @@ import { SfError } from "@salesforce/core";
 import c from "chalk";
 import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { uxLog } from "../utils/index.js";
+import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
 
 export abstract class GitProviderRoot {
   public serverUrl: string | null;
@@ -37,8 +38,21 @@ export abstract class GitProviderRoot {
     return false;
   }
 
+  public async supportsSvgAttachments(): Promise<boolean> {
+    // False by default, might be used later
+    return false;
+  }
+
+
+
   public async getPullRequestInfo(): Promise<any> {
     uxLog(this, `Method getPullRequestInfo is not implemented yet on ${this.getLabel()}`);
+    return null;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async uploadImage(image: string): Promise<any> {
+    uxLog(this, `Method uploadImage is not implemented yet on ${this.getLabel()}`);
     return null;
   }
 
@@ -72,4 +86,17 @@ export abstract class GitProviderRoot {
     return prResult;
   }
   /* jscpd:ignore-end */
+
+  public async uploadAndReplaceImageReferences(markdownBody: string, sourceFile: string | null = null): Promise<string> {
+    const replacements: any = {};
+    const markdownImages = extractImagesFromMarkdown(markdownBody, sourceFile);
+    for (const image of markdownImages) {
+      const imageUrl = await this.uploadImage(image.path);
+      if (imageUrl) {
+        replacements[image.name] = imageUrl;
+      }
+    }
+    markdownBody = replaceImagesInMarkdown(markdownBody, replacements);
+    return markdownBody;
+  }
 }

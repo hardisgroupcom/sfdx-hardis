@@ -9,7 +9,6 @@ import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPu
 import { CONSTANTS } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
-import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -365,7 +364,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
     // Upload attached images if necessary
-    messageBody = await this.uploadAndReplaceImageReferences(messageBody);
+    messageBody = await this.uploadAndReplaceImageReferences(messageBody, prMessage.sourceFile || "");
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
     // Check for existing threads from a previous run
@@ -514,22 +513,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     return null;
   }
 
-  /* jscpd:ignore-start */
-  private async uploadAndReplaceImageReferences(markdownBody: string) {
-    const replacements: any = {};
-    const markdownImages = extractImagesFromMarkdown(markdownBody);
-    for (const image of markdownImages) {
-      const imageUrl = await this.uploadImage(image);
-      if (imageUrl) {
-        replacements[image] = imageUrl;
-      }
-    }
-    markdownBody = replaceImagesInMarkdown(markdownBody, replacements);
-    return markdownBody;
-  }
-  /* jscpd:ignore-end */
-
-  private async uploadImage(localImagePath: string): Promise<string | null> {
+  public async uploadImage(localImagePath: string): Promise<string | null> {
     try {
       // Upload the image to Azure DevOps
       const imageName = path.basename(localImagePath);

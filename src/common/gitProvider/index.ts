@@ -140,6 +140,7 @@ export abstract class GitProvider {
           message: flowDiff.markdown,
           status: "valid",
           messageKey: `sfdx-hardis-flow-diff-${flowDiff.name}`,
+          sourceFile: flowDiff.markdownFile,
         };
         await gitProvider.tryPostPullRequestMessage(prMessageRequestAdditional);
       }
@@ -192,6 +193,14 @@ export abstract class GitProvider {
     return gitProvider.supportsMermaidInPrMarkdown();
   }
 
+  static async supportsSvgAttachments(): Promise<boolean> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return false;
+    }
+    return gitProvider.supportsSvgAttachments();
+  }
+
   static async getPullRequestInfo(): Promise<any> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
@@ -222,6 +231,7 @@ export declare type PullRequestMessageRequest = {
   message: string;
   messageKey: string;
   status: "valid" | "invalid" | "tovalidate";
+  sourceFile?: string;
 };
 
 export declare type PullRequestMessageResult = {

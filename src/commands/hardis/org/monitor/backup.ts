@@ -40,9 +40,14 @@ You can remove more metadata types from backup, especially in case you have too 
 
 Activate it with **--full** parameter, or variable MONITORING_BACKUP_MODE_FULL=true
 
-Ignores filters (namespaces items & manifest/package-skip-items.xm) to retrieve ALL metadatas, including those you might not care about (reports, translations...)
+Ignores filters (namespaces items & manifest/package-skip-items.xml) to retrieve ALL metadatas, including those you might not care about (reports, translations...)
 
 As we can retrieve only 10000 files by call, the list of all metadatas will be chunked to make multiple calls (and take more time than filtered mode)
+
+- if you use \`--full-apply-filters\` , manifest/package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES filters will be applied anyway
+- if you use \`--exclude-namespaces\` , namespaced items will be ignored
+
+_With those both options, it's like if you are not using --full, but with chunked metadata download_
 
 ## In CI/CD
 
@@ -62,7 +67,9 @@ If Flow history doc always display a single state, you probably need to update y
 
   public static examples = [
     '$ sf hardis:org:monitor:backup',
-    '$ sf hardis:org:monitor:backup --full'
+    '$ sf hardis:org:monitor:backup --full',
+    '$ sf hardis:org:monitor:backup --full --exclude-namespaces',
+    '$ sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters'
   ];
 
   public static flags: any = {
@@ -78,6 +85,11 @@ If Flow history doc always display a single state, you probably need to update y
       char: "e",
       default: false,
       description: 'If mode --full is activated, exclude namespaced metadatas',
+    }),
+    "full-apply-filters": Flags.boolean({
+      char: "z",
+      default: false,
+      description: 'If mode --full is activated, apply filters of manifest/package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES anyway',
     }),
     outputfile: Flags.string({
       char: 'f',
@@ -108,7 +120,9 @@ If Flow history doc always display a single state, you probably need to update y
   protected full: boolean = false;
   protected maxByChunk: number = 3000;
   protected excludeNamespaces: boolean = false;
+  protected fullApplyFilters: boolean = false;
 
+  protected packageXmlToRemove: string | null = null;
   protected extractPackageXmlChunks: any[] = [];
   protected currentPackage: any = {};
   protected currentPackageLen = 0;
@@ -126,6 +140,7 @@ If Flow history doc always display a single state, you probably need to update y
     this.full = flags.full || (process.env?.MONITORING_BACKUP_MODE_FULL === "true" ? true : false);
     this.maxByChunk = flags["max-by-chunk"] || 3000;
     this.excludeNamespaces = flags["exclude-namespaces"] === true ? true : false;
+    this.fullApplyFilters = flags["full-apply-filters"] === true ? true : false;
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
 
@@ -256,11 +271,14 @@ If Flow history doc always display a single state, you probably need to update y
   private async extractMetadatasFull(packageXmlFullFile: string, flags) {
     let packageXmlToExtract = packageXmlFullFile;
     // Filter namespaces if requested in the command
-    if (this.excludeNamespaces || process.env?.SFDX_HARDIS_BACKUP_EXCLUDE_NAMESPACES === "true") {
+    if (this.excludeNamespaces || process.env?.SFDX_HARDIS_BACKUP_EXCLUDE_NAMESPACES === "true" || this.fullApplyFilters) {
+      packageXmlToExtract = await this.buildFilteredManifestsForRetrieve(packageXmlFullFile);
       const packageXmlFullFileWithoutNamespace = 'manifest/package-all-org-items-except-namespaces.xml';
+      const namespacesToFilter = (this.excludeNamespaces || process.env?.SFDX_HARDIS_BACKUP_EXCLUDE_NAMESPACES === "true") ? this.namespaces : [];
       await filterPackageXml(packageXmlFullFile, packageXmlFullFileWithoutNamespace, {
-        removeNamespaces: this.namespaces,
+        removeNamespaces: namespacesToFilter,
         removeStandard: false,
+        removeFromPackageXmlFile: this.packageXmlToRemove,
         updateApiVersion: CONSTANTS.API_VERSION,
       });
       packageXmlToExtract = packageXmlFullFileWithoutNamespace;
@@ -348,9 +366,24 @@ If Flow history doc always display a single state, you probably need to update y
   }
 
   private async extractMetadatasFiltered(packageXmlFullFile: string, flags) {
+    const packageXmlBackUpItemsFile = await this.buildFilteredManifestsForRetrieve(packageXmlFullFile);
+
+    // Apply filters to package.xml
+    uxLog(this, c.cyan(`Reducing content of ${packageXmlFullFile} to generate ${packageXmlBackUpItemsFile} ...`));
+    await filterPackageXml(packageXmlFullFile, packageXmlBackUpItemsFile, {
+      removeNamespaces: this.namespaces,
+      removeStandard: true,
+      removeFromPackageXmlFile: this.packageXmlToRemove,
+      updateApiVersion: CONSTANTS.API_VERSION,
+    });
+
+    // Retrieve sfdx sources in local git repo
+    await this.retrievePackageXml(packageXmlBackUpItemsFile, flags);
+  }
+
+  private async buildFilteredManifestsForRetrieve(packageXmlFullFile: string) {
     const packageXmlBackUpItemsFile = 'manifest/package-backup-items.xml';
     const packageXmlSkipItemsFile = 'manifest/package-skip-items.xml';
-    let packageXmlToRemove: string | null = null;
     if (fs.existsSync(packageXmlSkipItemsFile)) {
       uxLog(
         this,
@@ -358,7 +391,7 @@ If Flow history doc always display a single state, you probably need to update y
           `${packageXmlSkipItemsFile} has been found and will be use to reduce the content of ${packageXmlFullFile} ...`
         )
       );
-      packageXmlToRemove = packageXmlSkipItemsFile;
+      this.packageXmlToRemove = packageXmlSkipItemsFile;
     }
 
     // Add more metadata types to ignore using global variable MONITORING_BACKUP_SKIP_METADATA_TYPES
@@ -371,27 +404,16 @@ If Flow history doc always display a single state, you probably need to update y
         )
       );
       let packageSkipItems = {};
-      if (fs.existsSync(packageXmlToRemove || '')) {
-        packageSkipItems = await parsePackageXmlFile(packageXmlToRemove || '');
+      if (fs.existsSync(this.packageXmlToRemove || '')) {
+        packageSkipItems = await parsePackageXmlFile(this.packageXmlToRemove || '');
       }
       for (const metadataType of additionalSkipMetadataTypes.split(',')) {
         packageSkipItems[metadataType] = ['*'];
       }
-      packageXmlToRemove = 'manifest/package-skip-items-dynamic-do-not-update-manually.xml';
-      await writePackageXmlFile(packageXmlToRemove, packageSkipItems);
+      this.packageXmlToRemove = 'manifest/package-skip-items-dynamic-do-not-update-manually.xml';
+      await writePackageXmlFile(this.packageXmlToRemove, packageSkipItems);
     }
-
-    // Apply filters to package.xml
-    uxLog(this, c.cyan(`Reducing content of ${packageXmlFullFile} to generate ${packageXmlBackUpItemsFile} ...`));
-    await filterPackageXml(packageXmlFullFile, packageXmlBackUpItemsFile, {
-      removeNamespaces: this.namespaces,
-      removeStandard: true,
-      removeFromPackageXmlFile: packageXmlToRemove,
-      updateApiVersion: CONSTANTS.API_VERSION,
-    });
-
-    // Retrieve sfdx sources in local git repo
-    await this.retrievePackageXml(packageXmlBackUpItemsFile, flags);
+    return packageXmlBackUpItemsFile;
   }
 
   private async retrievePackageXml(packageXmlBackUpItemsFile: string, flags: any) {
