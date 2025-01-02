@@ -19,7 +19,7 @@ export default class DeployNotify extends SfCommand<any> {
   - Deployment simulation
   - Deployment process
 
-  According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment informations and [Flow Visual Git Diff](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-assistant-home/#flow-visual-git-diff)
+  According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-assistant-home/#flow-visual-git-diff)
 
   - GitHub, Gitlab, Azure DevOps, Bitbucket comments on Pull Requests
   - Slack, Microsoft Teams, Email deployment summary
