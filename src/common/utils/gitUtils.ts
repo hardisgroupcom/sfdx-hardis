@@ -240,7 +240,7 @@ export async function buildCheckDeployCommitSummary() {
   }
 }
 
-export async function handlePostDeploymentNotifications(flags, targetUsername: any, quickDeploy: any, delta: boolean, debugMode: boolean) {
+export async function handlePostDeploymentNotifications(flags, targetUsername: any, quickDeploy: any, delta: boolean, debugMode: boolean, additionalMessage = "") {
   const pullRequestInfo = await GitProvider.getPullRequestInfo();
   const attachments: MessageAttachment[] = [];
   try {
@@ -270,6 +270,9 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
     : delta
       ? ' (🌙 delta deployment)'
       : ' (🌕 full deployment)';
+  if (additionalMessage) {
+    notifMessage += '\n\n' + additionalMessage + "\n\n"
+  }
 
   const notifButtons = await getNotificationButtons();
   if (pullRequestInfo) {

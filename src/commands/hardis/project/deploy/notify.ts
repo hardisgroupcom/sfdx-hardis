@@ -80,6 +80,7 @@ export default class DeployNotify extends SfCommand<any> {
     const { flags } = await this.parse(DeployNotify);
     this.checkOnly = flags["check-only"] === true ? true : false;
     this.deployStatus = flags["deploy-status"] || "unknown";
+    this.message = flags.message || "";
     this.debugMode = flags.debug || false;
 
     // Deployment check mode
@@ -107,7 +108,7 @@ export default class DeployNotify extends SfCommand<any> {
 
     // Post notifications after successful deployment
     else if (this.checkOnly === false && this.deployStatus === "valid") {
-      await handlePostDeploymentNotifications(flags, flags["target-org"].getUsername(), false, false, this.debugMode);
+      await handlePostDeploymentNotifications(flags, flags["target-org"].getUsername(), false, false, this.debugMode, this.message);
     }
     // Fallback
     else {
