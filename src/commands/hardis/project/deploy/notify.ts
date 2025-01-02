@@ -5,6 +5,8 @@ import { AnyJson } from '@salesforce/ts-types';
 import { CONSTANTS } from '../../../../config/index.js';
 import { buildCheckDeployCommitSummary, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
+import c from "chalk"
+import { uxLog } from '../../../../common/utils/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -28,7 +30,11 @@ export default class DeployNotify extends SfCommand<any> {
   You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-assistant-setup/#using-custom-cicd-pipeline)
   `
 
-  public static examples = ['$ sf hardis:project:audit:apiversion'];
+  public static examples = [
+    '$ sf hardis:project:deploy:notify --check-only --deploy-status valid --message "This deployment check is valid\\n\\nYahooo !!"',
+    '$ sf hardis:project:deploy:notify --check-only --deploy-status invalid --message "This deployment check has failed !\\n\\Oh no !!"',
+    '$ sf hardis:project:deploy:notify --deploy-status valid --message "This deployment has been processed !\\n\\nYahooo !!"'
+  ];
 
   public static flags: any = {
     "check-only": Flags.boolean({
@@ -73,34 +79,42 @@ export default class DeployNotify extends SfCommand<any> {
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DeployNotify);
     this.checkOnly = flags["check-only"] === true ? true : false;
-    this.deployStatus = flags.status || "unknown";
+    this.deployStatus = flags["deploy-status"] || "unknown";
     this.debugMode = flags.debug || false;
 
-    // Compute commitsSummary and store it in globalThis.pullRequestData.commitsSummary
+    // Deployment check mode
     if (this.checkOnly) {
+      uxLog(this, c.cyan("Handling Pull Request comments for a deployment check job..."));
       await buildCheckDeployCommitSummary();
+
+      // Add deployment info
+      const prData: any = {
+        messageKey: "deployment",
+        title:
+          (this.checkOnly && this.deployStatus === "valid") ? "✅ Deployment check success" :
+            (!this.checkOnly && this.deployStatus === "valid") ? "✅ Deployment success" :
+              (this.checkOnly && this.deployStatus === "invalid") ? "❌ Deployment check failure" :
+                (!this.checkOnly && this.deployStatus === "invalid") ? "❌ Deployment failure" :
+                  (this.checkOnly && this.deployStatus === "unknown") ? "🤷 Deployment check status unknown" :
+                    "🤷 Deployment  status unknown",
+        deployErrorsMarkdownBody: this.message,
+        status: this.deployStatus,
+      };
+      globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
+      // Post comments :)
+      await GitProvider.managePostPullRequestComment();
     }
 
-    // Add deployment info
-    const prData: any = {
-      messageKey: "deployment",
-      title:
-        (this.checkOnly && this.deployStatus === "valid") ? "✅ Deployment check success" :
-          (!this.checkOnly && this.deployStatus === "valid") ? "✅ Deployment success" :
-            (this.checkOnly && this.deployStatus === "invalid") ? "❌ Deployment check failure" :
-              (!this.checkOnly && this.deployStatus === "invalid") ? "❌ Deployment failure" :
-                (this.checkOnly && this.deployStatus === "unknown") ? "🤷 Deployment check status unknown" :
-                  "🤷 Deployment  status unknown",
-      deployErrorsMarkdownBody: this.message,
-      deployStatus: this.deployStatus,
-    };
-    globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
-
-    if (this.checkOnly === false) {
+    // Post notifications after successful deployment
+    else if (this.checkOnly === false && this.deployStatus === "valid") {
       await handlePostDeploymentNotifications(flags, flags["target-org"].getUsername(), false, false, this.debugMode);
     }
-
-    await GitProvider.managePostPullRequestComment();
+    // Fallback
+    else {
+      uxLog(this, c.yellow("No notification has been sent"));
+      uxLog(this, c.yellow("- Pull Request comments are sent if --check-only is true"));
+      uxLog(this, c.yellow("- Slack / Teams / Email / JIRA messages are sent only if --check-only is false and --deploy-status is valid"));
+    }
 
     return { message: "Processed notifications" }
   }
