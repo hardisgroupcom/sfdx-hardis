@@ -125,7 +125,7 @@ async function generateDiffMarkdownWithMermaid(fileMetadata: string | null, from
 }
 
 async function generateDiffMarkdownWithSvg(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: false, debug: false });
+  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: true, pngMd: false, debug: false });
   const flowDiffMarkdownWithSvg = await fs.readFile(outputDiffMdFile, "utf8");
   flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithSvg, markdownFile: outputDiffMdFile });
 }
