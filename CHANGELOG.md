@@ -27,14 +27,11 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Fix init sfdx-hardis project commands and docs
   - Display warning message in case package.xml has wrong format
   - Allow to override package-no-overwrite from a branch .sfdx-hardis.yml config file
+  - Using target_branch for Jira labels when isDeployBeforeMerge flag is true
 
 - Doc
   - Update Microsoft Teams notifications integration User Guide
   - Add troubleshooting section in Email integration User Guide
-
-## [5.10.2] 2024-12-31
-
-- Using target_branch for Jira labels when isDeployBeforeMerge flag is true
 
 ## [5.10.1] 2024-12-12
 
