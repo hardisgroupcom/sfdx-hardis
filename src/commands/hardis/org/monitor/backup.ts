@@ -91,6 +91,10 @@ If Flow history doc always display a single state, you probably need to update y
       default: false,
       description: 'If mode --full is activated, apply filters of manifest/package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES anyway',
     }),
+    "skip-doc": Flags.boolean({
+      default: false,
+      description: 'Skip the generation of project documentation at the end of the command',
+    }),
     outputfile: Flags.string({
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
@@ -121,6 +125,7 @@ If Flow history doc always display a single state, you probably need to update y
   protected maxByChunk: number = 3000;
   protected excludeNamespaces: boolean = false;
   protected fullApplyFilters: boolean = false;
+  protected skipDoc: boolean = false;
 
   protected packageXmlToRemove: string | null = null;
   protected extractPackageXmlChunks: any[] = [];
@@ -141,6 +146,7 @@ If Flow history doc always display a single state, you probably need to update y
     this.maxByChunk = flags["max-by-chunk"] || 3000;
     this.excludeNamespaces = flags["exclude-namespaces"] === true ? true : false;
     this.fullApplyFilters = flags["full-apply-filters"] === true ? true : false;
+    this.skipDoc = flags["skip-doc"] === true ? true : false;
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
 
@@ -259,10 +265,13 @@ If Flow history doc always display a single state, you probably need to update y
     });
 
     // Run project documentation generation
-    try {
-      await Project2Markdown.run(["--diff-only", "--with-history"]);
-    } catch (e: any) {
-      uxLog(this, c.yellow("Error while generating project documentation " + e.message));
+    if (this.skipDoc !== true) {
+      try {
+        await Project2Markdown.run(["--diff-only", "--with-history"]);
+        uxLog(this, c.cyan("Documentation generated from retrieved sources. If you want to skip it, use option --skip-doc"));
+      } catch (e: any) {
+        uxLog(this, c.yellow("Error while generating project documentation " + e.message));
+      }
     }
 
     return { outputString: 'BackUp processed on org ' + flags['target-org'].getConnection().instanceUrl };

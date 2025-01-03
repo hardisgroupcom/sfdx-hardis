@@ -252,7 +252,8 @@ If you want to disable the calculation and display of Flow Visual Git Diff in Pu
     '$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTestsExceptSeeAllData',
     '$ sf hardis:project:deploy:smart',
     '$ FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod',
-    '$ SYSTEM_ACCESSTOKEN=toto SYSTEM_COLLECTIONURI=titi BUILD_REPOSITORY_ID=tata SYSTEM_PULLREQUEST_PULLREQUESTID=tutu FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org mytest@org.com'
+    '$ SYSTEM_ACCESSTOKEN=xxxxxx SYSTEM_COLLECTIONURI=https://dev.azure.com/xxxxxxx/ SYSTEM_TEAMPROJECT="xxxxxxx" BUILD_REPOSITORY_ID=xxxxx SYSTEM_PULLREQUEST_PULLREQUESTID=1418 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my.salesforce@org.com',
+    '$ CI_SFDX_HARDIS_BITBUCKET_TOKEN=xxxxxx BITBUCKET_WORKSPACE=sfdxhardis-demo BITBUCKET_REPO_SLUG=test BITBUCKET_BUILD_NUMBER=1 BITBUCKET_BRANCH=uat BITBUCKET_PR_ID=2 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com'
   ];
 
 

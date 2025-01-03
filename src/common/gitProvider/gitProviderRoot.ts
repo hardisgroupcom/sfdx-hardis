@@ -43,8 +43,6 @@ export abstract class GitProviderRoot {
     return false;
   }
 
-
-
   public async getPullRequestInfo(): Promise<any> {
     uxLog(this, `Method getPullRequestInfo is not implemented yet on ${this.getLabel()}`);
     return null;

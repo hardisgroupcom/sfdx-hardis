@@ -401,6 +401,9 @@ function getGeneralInfoMd(flowObj: any, flowMap: FlowMap) {
             (metadataValue.TriggerType ? "Type: <b>" + stringifyValue(metadataValue.TriggerType, "triggerType", Object.keys(flowObjCopy)) + "</b><br/>" : '')
         startElementReference = flowObj.startElementReference;
     }
+    else if (flowObj.startElementReference) {
+        startElementReference = flowObj.startElementReference;
+    }
     const generalInfoMd = mdEndSection(buildGenericMarkdownTable(flowObjCopy, ["allFields"], "## General Information", Object.keys(flowMap)) + detailTablesMd);
     if (startNodeLabel.endsWith("<br/>")) {
         startNodeLabel = startNodeLabel.slice(0, -5);
