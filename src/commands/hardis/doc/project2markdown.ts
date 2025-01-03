@@ -26,7 +26,7 @@ export default class Project2Markdown extends SfCommand<any> {
 
   public static htmlInstructions = `## Doc HTML Pages
 
-To read the documentation as HTML pages, run the following code (you need python on your computer)
+To read the documentation as HTML pages, run the following code (you need [**Python**](https://www.python.org/downloads/) on your computer)
 
 \`\`\`python
 pip install mkdocs-material mdx_truly_sane_lists

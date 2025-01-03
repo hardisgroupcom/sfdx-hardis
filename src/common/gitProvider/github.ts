@@ -212,6 +212,26 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${githubWorkflowN
     if (globalThis.pullRequestDeploymentId) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
+
+    // Remove click elements from markdown for better display
+    if (messageBody.includes("```mermaid")) {
+      let withinMermaid = false;
+      messageBody = messageBody.split("\n").
+        filter((line) => {
+          if (line.includes("```mermaid")) {
+            withinMermaid = true;
+          }
+          else if (line.includes("```") && withinMermaid === true) {
+            withinMermaid = false;
+          }
+          if (line.startsWith("click")) {
+            return false;
+          }
+          return true;
+        })
+        .join("\n");
+    }
+
     // Check for existing note from a previous run
     uxLog(this, c.grey("[GitHub integration] Listing comments of Pull Request..."));
     const existingComments = await this.octokit.rest.issues.listComments({
