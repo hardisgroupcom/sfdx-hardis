@@ -1,16 +1,17 @@
 import { GitProviderRoot } from './gitProviderRoot.js';
 import c from 'chalk';
 import fs from "fs-extra";
+import FormData from 'form-data'
+import * as path from "path";
 import { PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
 import { git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { CONSTANTS } from '../../config/index.js';
-import * as path from 'path';
 const { Bitbucket } = bbPkg;
 
 export class BitbucketProvider extends GitProviderRoot {
   private bitbucket: InstanceType<typeof Bitbucket>;
-  public serverUrl: string = '';
+  public serverUrl: string = 'https://bitbucket.org';
   public token: string;
 
   constructor() {
@@ -26,7 +27,7 @@ export class BitbucketProvider extends GitProviderRoot {
 
   public async getCurrentJobUrl(): Promise<string | null> {
     if (process.env.BITBUCKET_WORKSPACE && process.env.BITBUCKET_REPO_SLUG && process.env.BITBUCKET_BUILD_NUMBER) {
-      const jobUrl = `https://bitbucket.org/${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG}/pipelines/results/${process.env.BITBUCKET_BUILD_NUMBER}`;
+      const jobUrl = `${this.serverUrl}/${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG}/pipelines/results/${process.env.BITBUCKET_BUILD_NUMBER}`;
       return jobUrl;
     }
     uxLog(
@@ -42,7 +43,7 @@ export class BitbucketProvider extends GitProviderRoot {
 
   public async getCurrentBranchUrl(): Promise<string | null> {
     if (process.env.BITBUCKET_WORKSPACE && process.env.BITBUCKET_REPO_SLUG && process.env.BITBUCKET_BRANCH) {
-      const currentBranchUrl = `https://bitbucket.org/${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG}/branch/${process.env.BITBUCKET_BRANCH}`;
+      const currentBranchUrl = `${this.serverUrl}/${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG}/branch/${process.env.BITBUCKET_BRANCH}`;
       return currentBranchUrl;
     }
     uxLog(
@@ -250,6 +251,7 @@ export class BitbucketProvider extends GitProviderRoot {
         posted: (pullRequestComment?.data?.id || -1) > 0,
         providerResult: pullRequestComment,
       };
+      uxLog(this, c.grey(`[Bitbucket integration] Updated Pull Request comment ${existingCommentId}`));
       return prResult;
     } else {
       // Create new comment if no existing comment was found
@@ -266,6 +268,11 @@ export class BitbucketProvider extends GitProviderRoot {
         posted: (pullRequestComment?.data?.id || -1) > 0,
         providerResult: pullRequestComment,
       };
+      if (prResult.posted) {
+        uxLog(this, c.grey(`[Bitbucket integration] Posted Pull Request comment on ${pullRequestId}`));
+      } else {
+        uxLog(this, c.yellow(`[Bitbucket integration] Unable to post Pull Request comment on ${pullRequestId}:\n${JSON.stringify(pullRequestComment, null, 2)}`));
+      }
       return prResult;
     }
   }
@@ -280,28 +287,27 @@ export class BitbucketProvider extends GitProviderRoot {
   // Upload the image to Bitbucket
   public async uploadImage(localImagePath: string): Promise<string | null> {
     try {
-      const imageBuffer = fs.readFileSync(localImagePath);
-      const imageBlob = new Blob([imageBuffer]);
       const imageName = path.basename(localImagePath);
       const filesForm = new FormData();
-      filesForm.append('files', imageBlob, imageName);
-      const attachmentResponse = await this.bitbucket.repositories.createIssueAttachments({
+      filesForm.append("files", fs.createReadStream(localImagePath));
+      const attachmentResponse = await this.bitbucket.repositories.createDownload({
         workspace: process.env.BITBUCKET_WORKSPACE || "",
         repo_slug: process.env.BITBUCKET_REPO_SLUG || "",
-        issue_id: process.env.BITBUCKET_PR_ID || "", // Attach to the pull request as an "issue"
-        _body: filesForm,
+        _body: filesForm as any,
       });
-      if (attachmentResponse?.data?.links?.self?.href) {
-        uxLog(this, c.grey(`[Bitbucket Integration] Image uploaded for comment: ${attachmentResponse.data.links.self.href}`));
-        return attachmentResponse.data.links.self.href;
+      if (attachmentResponse) {
+        const imageRef = `${this.serverUrl}/${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG}/downloads/${imageName}`;
+        uxLog(this, c.grey(`[Bitbucket Integration] Image uploaded for comment: ${imageRef}`));
+        return imageRef;
       }
       else {
         uxLog(this, c.yellow(`[Bitbucket Integration] Image uploaded but unable to get URL from response\n${JSON.stringify(attachmentResponse, null, 2)}`));
       }
     } catch (e) {
-      uxLog(this, c.yellow(`[Bitbucket Integration] Error while uploading image ${localImagePath}\n${(e as Error).message}`));
+      uxLog(this, c.yellow(`[Bitbucket Integration] Error while uploading image as issue attachment ${localImagePath}\n${(e as Error).message}`));
     }
     return null;
   }
+
 
 }
