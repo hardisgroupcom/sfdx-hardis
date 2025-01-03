@@ -5,6 +5,8 @@
 
 sfdx-hardis wrapper for **sf project deploy quick** that displays tips to solve deployment errors.
 
+Note: Use **--json** argument to have better results
+
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_deploy_quick_unified)
@@ -50,18 +52,18 @@ commandsPostDeploy:
 
 ## Parameters
 
-| Name                     |  Type   | Description            | Default | Required | Options |
-|:-------------------------|:-------:|:-----------------------|:-------:|:--------:|:-------:|
-| --job-id<br/>-i          | option  | job-id                 |         |          |         |
-| --use-most-recent<br/>-r | boolean | use-most-recent        |         |          |         |
-| api-version<br/>-a       | option  | api-version            |         |          |         |
-| async                    | boolean | async                  |         |          |         |
-| debug                    | boolean | debug                  |         |          |         |
-| flags-dir                | option  | undefined              |         |          |         |
-| json                     | boolean | Format output as json. |         |          |         |
-| target-org<br/>-o        | option  | undefined              |         |          |         |
-| tests                    | option  | tests                  |         |          |         |
-| wait<br/>-w              | option  | wait                   |   33    |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|--job-id<br/>-i|option|job-id||||
+|--use-most-recent<br/>-r|boolean|use-most-recent||||
+|api-version<br/>-a|option|api-version||||
+|async|boolean|async||||
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|target-org<br/>-o|option|undefined||||
+|tests|option|tests||||
+|wait<br/>-w|option|wait|33|||
 
 ## Examples
 

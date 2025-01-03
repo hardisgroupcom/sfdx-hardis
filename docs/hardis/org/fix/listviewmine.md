@@ -56,11 +56,11 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\{CHROMIUM_PATH}" // remove \ before {
 
 ## Parameters
 
-| Name         |  Type   | Description                     | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d | boolean | Activate debug mode (more logs) |         |          |         |
-| flags-dir    | option  | undefined                       |         |          |         |
-| json         | boolean | Format output as json.          |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
 |listviews<br/>-l|option|Comma-separated list of listviews following format Object:ListViewName
 Example: Contact:MyContacts,Contact:MyActiveContacts,Opportunity:MYClosedOpportunities||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
@@ -70,11 +70,11 @@ Example: Contact:MyContacts,Contact:MyActiveContacts,Opportunity:MYClosedOpportu
 ## Examples
 
 ```shell
-sf hardis:org:fix:listviewmine
+$ sf hardis:org:fix:listviewmine
 ```
 
 ```shell
-sf hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners
+$ sf hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners
 ```
 
 

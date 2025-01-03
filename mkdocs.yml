@@ -148,6 +148,7 @@ nav:
           - Setup Deployment Assistant: salesforce-deployment-assistant-setup.md
           - Setup AI integration: salesforce-ai-setup.md
       - Deployment errors list: salesforce-deployment-assistant-error-list.md
+  - Project & Flows Documentation: salesforce-project-documentation-home.md
   - Integrations:
       - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
       - GitHub: salesforce-ci-cd-setup-integration-github.md
@@ -173,6 +174,7 @@ nav:
         doc:
           extract:
             permsetgroups: hardis/doc/extract/permsetgroups.md
+          flow2markdown: hardis/doc/flow2markdown.md
           packagexml2markdown: hardis/doc/packagexml2markdown.md
           plugin:
             generate: hardis/doc/plugin/generate.md
@@ -281,6 +283,7 @@ nav:
             profilestopermsets: hardis/project/convert/profilestopermsets.md
           create: hardis/project/create.md
           deploy:
+            notify: hardis/project/deploy/notify.md
             quick: hardis/project/deploy/quick.md
             simulate: hardis/project/deploy/simulate.md
             smart: hardis/project/deploy/smart.md
@@ -293,10 +296,15 @@ nav:
             profiletabs: hardis/project/fix/profiletabs.md
             v53flexipages: hardis/project/fix/v53flexipages.md
           generate:
+            flow-git-diff: hardis/project/generate/flow-git-diff.md
             gitdelta: hardis/project/generate/gitdelta.md
           lint: hardis/project/lint.md
           metadata:
             findduplicates: hardis/project/metadata/findduplicates.md
+        deploy:
+          quick: hardis/deploy/quick.md
+          start: hardis/deploy/start.md
+          validate: hardis/deploy/validate.md
         scratch:
           create: hardis/scratch/create.md
           delete: hardis/scratch/delete.md
