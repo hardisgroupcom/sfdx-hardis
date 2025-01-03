@@ -1,7 +1,12 @@
+---
+title: Work with Cloudity
+description: See how Cloudity can help you as a Salesforce Consulting Partner
+---
+
 ## Your Expert Salesforce Partner
 
 <div style="text-align: center;">
-    <a href="https://cloudity.com/" target="_blank"><img src="assets/images/cloudity-logo.jpg" alt="description" /></a>
+    <a href="https://cloudity.com/" target="_blank"><img src="../assets/images/cloudity-logo.jpg" alt="description" /></a>
 </div>
 
 ___
@@ -17,5 +22,5 @@ With experts from Hardis Group, Carrenet and Cloudity having joined forces, we n
 Want to know more ? Contact us on our [**WebSite**](https://cloudity.com/) !
 
 <div style="text-align: center;">
-    <a href="https://cloudity.com/" target="_blank"><img src="assets/images/cloudity-map.jpg" alt="description" /></a>
+    <a href="https://cloudity.com/" target="_blank"><img src="../assets/images/cloudity-map.jpg" alt="description" /></a>
 </div>
