@@ -61,7 +61,7 @@ with:
 
 ## Not updating custom CI/CD pipeline
 
-You don't want to update your calls to `sf project deploy start` ? 
+You don't want to update your calls to `sf project deploy start` ?
 
 That's ok, you can't benefit from the error management, but you can benefit from the Flows Visual Git Diff and other integrations anyway !
 
