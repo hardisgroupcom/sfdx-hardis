@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.11.0] 2025-03-01
+
 - Visual flow management, using MermaidJs
   - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add a markdown file for each Flow
     - If unable to run mermaid-cli, store markdown with mermaidJs diagram content anyway (can happen from Monitoring Backup Command)

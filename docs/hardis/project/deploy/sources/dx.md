@@ -200,6 +200,8 @@ If you need to increase the deployment waiting time (sf project deploy start --w
 
 If you need notifications to be sent using the current Pull Request and not the one just merged ([see use case](https://github.com/hardisgroupcom/sfdx-hardis/issues/637#issuecomment-2230798904)), define env variable SFDX_HARDIS_DEPLOY_BEFORE_MERGE=true
 
+If you want to disable the calculation and display of Flow Visual Git Diff in Pull Request comments, define variable **SFDX_DISABLE_FLOW_DIFF=true**
+
 
 ## Parameters
 
@@ -246,6 +248,14 @@ sf hardis:project:deploy:smart
 
 ```shell
 FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod
+```
+
+```shell
+SYSTEM_ACCESSTOKEN=xxxxxx SYSTEM_COLLECTIONURI=https://dev.azure.com/xxxxxxx/ SYSTEM_TEAMPROJECT="xxxxxxx" BUILD_REPOSITORY_ID=xxxxx SYSTEM_PULLREQUEST_PULLREQUESTID=1418 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my.salesforce@org.com
+```
+
+```shell
+CI_SFDX_HARDIS_BITBUCKET_TOKEN=xxxxxx BITBUCKET_WORKSPACE=sfdxhardis-demo BITBUCKET_REPO_SLUG=test BITBUCKET_BUILD_NUMBER=1 BITBUCKET_BRANCH=uat BITBUCKET_PR_ID=2 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com
 ```
 
 
