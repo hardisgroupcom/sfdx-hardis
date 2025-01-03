@@ -4,7 +4,7 @@ description: Learn how to send notifications to external apis like Grafana
 ---
 <!-- markdownlint-disable MD013 -->
 
-## API Integration (BETA)
+## API Integration
 
 You can send notifications to an external API endpoints, for example to [build Grafana dashboards](#grafana-setup)
 
