@@ -148,7 +148,7 @@ nav:
           - Setup Deployment Assistant: salesforce-deployment-assistant-setup.md
           - Setup AI integration: salesforce-ai-setup.md
       - Deployment errors list: salesforce-deployment-assistant-error-list.md
-  - Project & Flows Documentation: salesforce-project-documentation-home.md
+  - Project & Flows Documentation: salesforce-project-documentation.md
   - Integrations:
       - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
       - GitHub: salesforce-ci-cd-setup-integration-github.md
