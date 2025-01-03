@@ -306,6 +306,19 @@ nav:
           - Setup Deployment Assistant: salesforce-deployment-assistant-setup.md
           - Setup AI integration: salesforce-ai-setup.md
       - Deployment errors list: salesforce-deployment-assistant-error-list.md
+  - Integrations:
+      - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
+      - GitHub: salesforce-ci-cd-setup-integration-github.md
+      - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
+      - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
+      - BitBucket: salesforce-ci-cd-setup-integration-bitbucket.md
+      - Slack: salesforce-ci-cd-setup-integration-slack.md
+      - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+      - Email: salesforce-ci-cd-setup-integration-email.md
+      - API (beta): salesforce-ci-cd-setup-integration-api.md
+      - Jira: salesforce-ci-cd-setup-integration-jira.md
+      - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
+      - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
   - Configuration reference: sfdx-hardis-config-file.md
   - Articles / Tutorials: https://sfdx-hardis.cloudity.com/#articles
   - Special Thanks: special-thanks.md
