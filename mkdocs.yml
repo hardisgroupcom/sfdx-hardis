@@ -24,8 +24,8 @@ plugins:
   - search
 markdown_extensions:
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.snippets:
       base_path: docs
       check_paths: true
@@ -270,7 +270,7 @@ nav:
               - Slack: salesforce-ci-cd-setup-integration-slack.md
               - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
               - Email: salesforce-ci-cd-setup-integration-email.md
-              - API (beta): salesforce-ci-cd-setup-integration-api.md
+              - Grafana: salesforce-ci-cd-setup-integration-api.md
               - Jira: salesforce-ci-cd-setup-integration-jira.md
               - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
               - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
