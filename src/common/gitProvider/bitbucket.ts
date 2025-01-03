@@ -304,7 +304,7 @@ export class BitbucketProvider extends GitProviderRoot {
         uxLog(this, c.yellow(`[Bitbucket Integration] Image uploaded but unable to get URL from response\n${JSON.stringify(attachmentResponse, null, 2)}`));
       }
     } catch (e) {
-      uxLog(this, c.yellow(`[Bitbucket Integration] Error while uploading image as issue attachment ${localImagePath}\n${(e as Error).message}`));
+      uxLog(this, c.yellow(`[Bitbucket Integration] Error while uploading image in downloads section ${localImagePath}\n${(e as Error).message}`));
     }
     return null;
   }
