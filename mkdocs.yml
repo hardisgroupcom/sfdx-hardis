@@ -60,6 +60,107 @@ extra:
 nav:
   - Home: index.md
   - Installation: https://sfdx-hardis.cloudity.com/#installation
+  - Salesforce CI/CD:
+      - CI/CD Home: salesforce-ci-cd-home.md
+      - Contributor Guide:
+          - Contributor Guide Home: salesforce-ci-cd-use-home.md
+          - Prepare your computer: salesforce-ci-cd-use-install.md
+          - Clone the repository: salesforce-ci-cd-clone-repository.md
+          - Create new task: salesforce-ci-cd-create-new-task.md
+          - Work on your dev org:
+              - Work home: salesforce-ci-cd-work-on-task.md
+              - Open your org: salesforce-ci-cd-work-on-task-open-org.md
+              - Configure Salesforce: salesforce-ci-cd-work-on-task-configuration.md
+              - Handle Profiles: salesforce-ci-cd-work-on-task-profiles.md
+              - Install packages: salesforce-ci-cd-work-on-task-install-packages.md
+              - Develop in Salesforce: salesforce-ci-cd-work-on-task-development.md
+          - Publish your work: salesforce-ci-cd-publish-task.md
+          - Create Merge Request:
+              - On Gitlab: salesforce-ci-cd-merge-request-gitlab.md
+              - On Azure: salesforce-ci-cd-pull-request-azure.md
+              - On Github: salesforce-ci-cd-pull-request-github.md
+          - Check merge request results:
+              - Merge Request results Home: salesforce-ci-cd-handle-merge-request-results.md
+              - Solve deployment errors: salesforce-ci-cd-solve-deployment-errors.md
+              - Solve MegaLinter errors: salesforce-ci-cd-solve-megalinter-errors.md
+      - Release Manager Guide:
+          - Release Manager Home: salesforce-ci-cd-release-home.md
+          - Validate a merge request: salesforce-ci-cd-validate-merge-request.md
+          - Deploy to major orgs: salesforce-ci-cd-deploy-major-branches.md
+          - Handle RUN / Hotfix to Production: salesforce-ci-cd-hotfixes.md
+          - CI/CD Configuration:
+              - CI/CD Config Home: salesforce-ci-cd-config-home.md
+              - Overwrite Management: salesforce-ci-cd-config-overwrite.md
+              - Delta deployments: salesforce-ci-cd-config-delta-deployment.md
+              - Automated cleaning: salesforce-ci-cd-config-cleaning.md
+              - Source retrieve issues: salesforce-ci-cd-retrieve.md
+          - sfdx-hardis for packaging: salesforce-ci-cd-packaging.md
+          - sfdx-hardis for conga: salesforce-ci-cd-conga.md
+      - Setup Guide:
+          - CI/CD Setup Home: salesforce-ci-cd-setup-home.md
+          - Init Git repository: salesforce-ci-cd-setup-git.md
+          - DevHub and Sandbox Tracking: salesforce-ci-cd-setup-activate-org.md
+          - Init SFDX Project: salesforce-ci-cd-setup-init-project.md
+          - CI Server Authentication: salesforce-ci-cd-setup-auth.md
+          - Init from Existing Org: salesforce-ci-cd-setup-existing-org.md
+          - Integrations:
+              - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
+              - GitHub: salesforce-ci-cd-setup-integration-github.md
+              - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
+              - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
+              - BitBucket: salesforce-ci-cd-setup-integration-bitbucket.md
+              - Slack: salesforce-ci-cd-setup-integration-slack.md
+              - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+              - Email: salesforce-ci-cd-setup-integration-email.md
+              - Grafana: salesforce-ci-cd-setup-integration-api.md
+              - Jira: salesforce-ci-cd-setup-integration-jira.md
+              - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
+              - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
+          - First merge request: salesforce-ci-cd-setup-merge-request.md
+  - Org Monitoring:
+      - Monitoring home: salesforce-monitoring-home.md
+      - List of checks:
+          - Metadata Backup: salesforce-monitoring-metadata-backup.md
+          - Suspect Setup Actions: salesforce-monitoring-suspect-audit-trail.md
+          - Apex tests: salesforce-monitoring-apex-tests.md
+          - Quality Checks with MegaLinter: salesforce-monitoring-quality-checks.md
+          - Limits issues: salesforce-monitoring-org-limits.md
+          - Calls to deprecated API versions: salesforce-monitoring-deprecated-api-calls.md
+          - Inactive users: salesforce-monitoring-inactive-users.md
+          - Unused licenses: salesforce-monitoring-unused-licenses.md
+          - Unused Apex Classes: salesforce-monitoring-unused-apex-classes.md
+          - Unused Connected Apps: salesforce-monitoring-unused-connected-apps.md
+          - Metadatas without access: salesforce-monitoring-missing-access.md
+          - Unused Custom Labels: salesforce-monitoring-unused-metadata.md
+          - Inactive metadata: salesforce-monitoring-inactive-metadata.md
+          - Missing metadata attributes: salesforce-monitoring-missing-metadata-attributes.md
+      - Configuration:
+          - Configuration guide: salesforce-monitoring-config-home.md
+          - GitHub: salesforce-monitoring-config-github.md
+          - Gitlab: salesforce-monitoring-config-gitlab.md
+          - Azure: salesforce-monitoring-config-azure.md
+          - Bitbucket: salesforce-monitoring-config-bitbucket.md
+          - Slack: salesforce-ci-cd-setup-integration-slack.md
+          - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+  - AI Deployment Assistant:
+      - Deployment Assistant home: salesforce-deployment-assistant-home.md
+      - Configuration:
+          - Setup Deployment Assistant: salesforce-deployment-assistant-setup.md
+          - Setup AI integration: salesforce-ai-setup.md
+      - Deployment errors list: salesforce-deployment-assistant-error-list.md
+  - Integrations:
+      - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
+      - GitHub: salesforce-ci-cd-setup-integration-github.md
+      - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
+      - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
+      - BitBucket: salesforce-ci-cd-setup-integration-bitbucket.md
+      - Slack: salesforce-ci-cd-setup-integration-slack.md
+      - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
+      - Email: salesforce-ci-cd-setup-integration-email.md
+      - Grafana: salesforce-ci-cd-setup-integration-api.md
+      - Jira: salesforce-ci-cd-setup-integration-jira.md
+      - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
+      - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
   - Commands:
       All commands: commands.md
       hardis:
@@ -219,109 +320,8 @@ nav:
           ws: hardis/work/ws.md
       hello:
         world: hello/world.md
-  - Salesforce CI/CD:
-      - CI/CD Home: salesforce-ci-cd-home.md
-      - Contributor Guide:
-          - Contributor Guide Home: salesforce-ci-cd-use-home.md
-          - Prepare your computer: salesforce-ci-cd-use-install.md
-          - Clone the repository: salesforce-ci-cd-clone-repository.md
-          - Create new task: salesforce-ci-cd-create-new-task.md
-          - Work on your dev org:
-              - Work home: salesforce-ci-cd-work-on-task.md
-              - Open your org: salesforce-ci-cd-work-on-task-open-org.md
-              - Configure Salesforce: salesforce-ci-cd-work-on-task-configuration.md
-              - Handle Profiles: salesforce-ci-cd-work-on-task-profiles.md
-              - Install packages: salesforce-ci-cd-work-on-task-install-packages.md
-              - Develop in Salesforce: salesforce-ci-cd-work-on-task-development.md
-          - Publish your work: salesforce-ci-cd-publish-task.md
-          - Create Merge Request:
-              - On Gitlab: salesforce-ci-cd-merge-request-gitlab.md
-              - On Azure: salesforce-ci-cd-pull-request-azure.md
-              - On Github: salesforce-ci-cd-pull-request-github.md
-          - Check merge request results:
-              - Merge Request results Home: salesforce-ci-cd-handle-merge-request-results.md
-              - Solve deployment errors: salesforce-ci-cd-solve-deployment-errors.md
-              - Solve MegaLinter errors: salesforce-ci-cd-solve-megalinter-errors.md
-      - Release Manager Guide:
-          - Release Manager Home: salesforce-ci-cd-release-home.md
-          - Validate a merge request: salesforce-ci-cd-validate-merge-request.md
-          - Deploy to major orgs: salesforce-ci-cd-deploy-major-branches.md
-          - Handle RUN / Hotfix to Production: salesforce-ci-cd-hotfixes.md
-          - CI/CD Configuration:
-              - CI/CD Config Home: salesforce-ci-cd-config-home.md
-              - Overwrite Management: salesforce-ci-cd-config-overwrite.md
-              - Delta deployments: salesforce-ci-cd-config-delta-deployment.md
-              - Automated cleaning: salesforce-ci-cd-config-cleaning.md
-              - Source retrieve issues: salesforce-ci-cd-retrieve.md
-          - sfdx-hardis for packaging: salesforce-ci-cd-packaging.md
-          - sfdx-hardis for conga: salesforce-ci-cd-conga.md
-      - Setup Guide:
-          - CI/CD Setup Home: salesforce-ci-cd-setup-home.md
-          - Init Git repository: salesforce-ci-cd-setup-git.md
-          - DevHub and Sandbox Tracking: salesforce-ci-cd-setup-activate-org.md
-          - Init SFDX Project: salesforce-ci-cd-setup-init-project.md
-          - CI Server Authentication: salesforce-ci-cd-setup-auth.md
-          - Init from Existing Org: salesforce-ci-cd-setup-existing-org.md
-          - Integrations:
-              - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
-              - GitHub: salesforce-ci-cd-setup-integration-github.md
-              - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
-              - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
-              - BitBucket: salesforce-ci-cd-setup-integration-bitbucket.md
-              - Slack: salesforce-ci-cd-setup-integration-slack.md
-              - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
-              - Email: salesforce-ci-cd-setup-integration-email.md
-              - Grafana: salesforce-ci-cd-setup-integration-api.md
-              - Jira: salesforce-ci-cd-setup-integration-jira.md
-              - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
-              - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
-          - First merge request: salesforce-ci-cd-setup-merge-request.md
-  - Org Monitoring:
-      - Monitoring home: salesforce-monitoring-home.md
-      - List of checks:
-          - Metadata Backup: salesforce-monitoring-metadata-backup.md
-          - Suspect Setup Actions: salesforce-monitoring-suspect-audit-trail.md
-          - Apex tests: salesforce-monitoring-apex-tests.md
-          - Quality Checks with MegaLinter: salesforce-monitoring-quality-checks.md
-          - Limits issues: salesforce-monitoring-org-limits.md
-          - Calls to deprecated API versions: salesforce-monitoring-deprecated-api-calls.md
-          - Inactive users: salesforce-monitoring-inactive-users.md
-          - Unused licenses: salesforce-monitoring-unused-licenses.md
-          - Unused Apex Classes: salesforce-monitoring-unused-apex-classes.md
-          - Unused Connected Apps: salesforce-monitoring-unused-connected-apps.md
-          - Metadatas without access: salesforce-monitoring-missing-access.md
-          - Unused Custom Labels: salesforce-monitoring-unused-metadata.md
-          - Inactive metadata: salesforce-monitoring-inactive-metadata.md
-          - Missing metadata attributes: salesforce-monitoring-missing-metadata-attributes.md
-      - Configuration:
-          - Configuration guide: salesforce-monitoring-config-home.md
-          - GitHub: salesforce-monitoring-config-github.md
-          - Gitlab: salesforce-monitoring-config-gitlab.md
-          - Azure: salesforce-monitoring-config-azure.md
-          - Bitbucket: salesforce-monitoring-config-bitbucket.md
-          - Slack: salesforce-ci-cd-setup-integration-slack.md
-          - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
-  - AI Deployment Assistant:
-      - Deployment Assistant home: salesforce-deployment-assistant-home.md
-      - Configuration:
-          - Setup Deployment Assistant: salesforce-deployment-assistant-setup.md
-          - Setup AI integration: salesforce-ai-setup.md
-      - Deployment errors list: salesforce-deployment-assistant-error-list.md
-  - Integrations:
-      - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
-      - GitHub: salesforce-ci-cd-setup-integration-github.md
-      - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
-      - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
-      - BitBucket: salesforce-ci-cd-setup-integration-bitbucket.md
-      - Slack: salesforce-ci-cd-setup-integration-slack.md
-      - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
-      - Email: salesforce-ci-cd-setup-integration-email.md
-      - Grafana: salesforce-ci-cd-setup-integration-api.md
-      - Jira: salesforce-ci-cd-setup-integration-jira.md
-      - Azure Boards: salesforce-ci-cd-setup-integration-azure-boards.md
-      - Generic Ticketing: salesforce-ci-cd-setup-integration-generic-ticketing.md
-  - Configuration reference: sfdx-hardis-config-file.md
   - Articles / Tutorials: https://sfdx-hardis.cloudity.com/#articles
+  - Configuration reference: sfdx-hardis-config-file.md
   - Special Thanks: special-thanks.md
   - Frequently Asked Questions: >-
       https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476
@@ -329,4 +329,4 @@ nav:
   - License: license.md
   - Changelog: CHANGELOG.md
   - Help: sfdx-hardis-help.md
-  - Cloudity: https://www.cloudity.com/
+  - Cloudity, Consulting Partner: cloudity-consulting-partner.md
