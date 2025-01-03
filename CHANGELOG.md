@@ -4,7 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [5.11.0] 2025-03-01
+## [5.11.1] 2025-01-03
+
+- Remove hyperlinks from MermaidJs on Pull Request comments, to improve display on GitHub & Gitlab
+
+## [5.11.0] 2025-01-03
 
 - Visual flow management, using MermaidJs
   - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add a markdown file for each Flow
