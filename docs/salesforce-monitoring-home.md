@@ -1,6 +1,6 @@
 ---
 title: How to monitor your Salesforce Org
-description: Monitor your Salesforce orgs with daily metadata backup and more, with open source only
+description: Free Salesforce Metadata BackUp , plus many extra monitoring features like Grafana Dashboards
 ---
 <!-- markdownlint-disable MD013 -->
 
@@ -24,7 +24,7 @@ Salesforce provide **Audit Trail** to trace configuration updates in **productio
 
 You can **know who updated what**, but not with details (before / after).
 
-Sfdx-hardis monitoring provides a **simple way to know the exact state of your orgs metadatas everyday**, or even several times a day, and provides an **exact and detailed comparison with the previous metadata configuration** (using git commits comparison)
+Sfdx-hardis monitoring provides a simple way to **Backup your orgs metadatas everyday**, or even several times a day, and provides an **exact and detailed comparison with the previous metadata configuration** (using git commits comparison)
 
 Extra indicators are also available out of the box, like:
 

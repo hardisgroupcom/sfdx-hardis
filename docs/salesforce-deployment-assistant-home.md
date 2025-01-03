@@ -6,6 +6,8 @@ description: Learn how to sfdx-hardis deployment assistant can help you !
 
 # sfdx-hardis Deployment Assistant
 
+## Salesforce DevOps AI Integration
+
 Deployment errors are common and quite boring, right ?
 
 Sfdx-hardis deployment assistant will help you to solve them, even if you are not using sfdx-hardis CI/CD pipelines !
@@ -16,7 +18,10 @@ The assistant contain core rules and can optionally be integrated with AI to pro
 
 ## Flow Visual Git Diff
 
-In addition to deployment tips, comments will be posted with Visual Git Diff for Flows.
+In addition to deployment tips, comments will be posted on PRs with Visual Git Diff for Flows, that will:
+
+- Visually show you the differences on a diagram
+- Display the update details without having to open any XML !
 
 🟩 = added
 
@@ -25,6 +30,8 @@ In addition to deployment tips, comments will be posted with Visual Git Diff for
 🟧 = updated
 
 ![](assets/images/flow-visual-git-diff.jpg)
+
+![](assets/images/flow-visual-git-diff-2.jpg)
 
 ## Integrations
 

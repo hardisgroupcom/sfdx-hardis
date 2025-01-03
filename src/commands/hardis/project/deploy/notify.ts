@@ -16,13 +16,13 @@ export default class DeployNotify extends SfCommand<any> {
 
   public static description = `Post notifications related to:
 
-  - Deployment simulation
-  - Deployment process
+  - **Deployment simulation** _(use with --check-only)_
+  - **Deployment process** _(to call only if your deployment is successful)_
 
   According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-assistant-home/#flow-visual-git-diff)
 
-  - GitHub, Gitlab, Azure DevOps, Bitbucket comments on Pull Requests
-  - Slack, Microsoft Teams, Email deployment summary
+  - GitHub, Gitlab, Azure DevOps, Bitbucket comments on Pull Requests (including Flows Visual Git Diff)
+  - Slack, Microsoft Teams, Email deployment summary after a successful deployment
   - JIRA tags and comments on tickets that just has been deployed
 
   This command is for custom SF Cli pipelines, if you are a sfdx-hardis user, it is already embedded in sf hardis:deploy:smart.

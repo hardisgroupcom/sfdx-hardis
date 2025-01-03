@@ -58,3 +58,11 @@ Replace:
 with:
 
 `sf hardis project deploy start --dry-run --source-dir force-app --ignore-warnings --ignore-conflicts --test-level RunLocalTests   --coverage-formatters json-summary --verbose --wait 120 --json`
+
+## Not updating custom CI/CD pipeline
+
+You don't want to update your calls to `sf project deploy start` ?
+
+That's ok, you can't benefit from the error management, but you can benefit from the Flows Visual Git Diff and other integrations anyway !
+
+Add the [Notify command](hardis/project/deploy/notify.md) to your custom CI/CD pipeline !

@@ -18,11 +18,20 @@
 |:----------------------------------------------|:------|
 | [**hardis:config:get**](hardis/config/get.md) |       |
 
+## hardis:deploy
+
+| Command                                                 | Title |
+|:--------------------------------------------------------|:------|
+| [**hardis:deploy:quick**](hardis/deploy/quick.md)       |       |
+| [**hardis:deploy:start**](hardis/deploy/start.md)       |       |
+| [**hardis:deploy:validate**](hardis/deploy/validate.md) |       |
+
 ## hardis:doc
 
 | Command                                                                     | Title |
 |:----------------------------------------------------------------------------|:------|
 | [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md) |       |
+| [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                 |       |
 | [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)     |       |
 | [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)             |       |
 | [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)           |       |
@@ -142,6 +151,7 @@
 | [**hardis:project:configure:auth**](hardis/project/configure/auth.md)                         |       |
 | [**hardis:project:convert:profilestopermsets**](hardis/project/convert/profilestopermsets.md) |       |
 | [**hardis:project:create**](hardis/project/create.md)                                         |       |
+| [**hardis:project:deploy:notify**](hardis/project/deploy/notify.md)                           |       |
 | [**hardis:project:deploy:quick**](hardis/project/deploy/quick.md)                             |       |
 | [**hardis:project:deploy:simulate**](hardis/project/deploy/simulate.md)                       |       |
 | [**hardis:project:deploy:smart**](hardis/project/deploy/smart.md)                             |       |
@@ -151,6 +161,7 @@
 | [**hardis:project:deploy:validate**](hardis/project/deploy/validate.md)                       |       |
 | [**hardis:project:fix:profiletabs**](hardis/project/fix/profiletabs.md)                       |       |
 | [**hardis:project:fix:v53flexipages**](hardis/project/fix/v53flexipages.md)                   |       |
+| [**hardis:project:generate:flow-git-diff**](hardis/project/generate/flow-git-diff.md)         |       |
 | [**hardis:project:generate:gitdelta**](hardis/project/generate/gitdelta.md)                   |       |
 | [**hardis:project:lint**](hardis/project/lint.md)                                             |       |
 | [**hardis:project:metadata:findduplicates**](hardis/project/metadata/findduplicates.md)       |       |
