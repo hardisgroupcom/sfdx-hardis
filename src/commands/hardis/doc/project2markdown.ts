@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
@@ -97,6 +97,7 @@ ${this.htmlInstructions}
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    "target-org": optionalOrgFlagWithDeprecations
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -152,7 +153,8 @@ ${this.htmlInstructions}
     // List SFDX packages and generate a manifest for each of them, except if there is only force-app with a package.xml
     this.packageXmlCandidates = this.listPackageXmlCandidates();
     await this.manageLocalPackages();
-    await this.generatePackageXmlMarkdown(this.packageXmlCandidates);
+    const instanceUrl = flags?.['target-org']?.getConnection()?.instanceUrl;
+    await this.generatePackageXmlMarkdown(this.packageXmlCandidates, instanceUrl);
     const packageLines = await this.buildPackagesIndex();
     this.mdLines.push(...packageLines);
     await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), packageLines.join("\n") + `\n${this.footer}\n`);
@@ -488,12 +490,12 @@ ${Project2Markdown.htmlInstructions}
     return packageLines;
   }
 
-  private async generatePackageXmlMarkdown(packageXmlCandidates) {
+  private async generatePackageXmlMarkdown(packageXmlCandidates, instanceUrl) {
     // Generate packageXml doc when found
     for (const packageXmlCandidate of packageXmlCandidates) {
       if (fs.existsSync(packageXmlCandidate.path)) {
         // Generate markdown for package.xml
-        const packageMarkdownFile = await generatePackageXmlMarkdown(packageXmlCandidate.path, null, packageXmlCandidate);
+        const packageMarkdownFile = await generatePackageXmlMarkdown(packageXmlCandidate.path, null, packageXmlCandidate, instanceUrl);
         // Open file in a new VsCode tab if available
         WebSocketClient.requestOpenFile(packageMarkdownFile);
         packageXmlCandidate.markdownFile = packageMarkdownFile;
