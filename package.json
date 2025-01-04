@@ -73,7 +73,7 @@
     "@types/cosmiconfig": "^6.0.3",
     "@types/cross-spawn": "^6.0.6",
     "@types/diff": "^6.0.0",
-    "@types/extract-zip": "^2.0.1",
+    "@types/extract-zip": "^2.0.3",
     "@types/fs-extra": "^11.0.4",
     "@types/fs-readdir-recursive": "^1.1.3",
     "@types/glob": "^8.1.0",
