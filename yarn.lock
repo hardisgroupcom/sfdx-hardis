@@ -1801,13 +1801,13 @@
     wordwrap "^1.0.0"
     wrap-ansi "^7.0.0"
 
-"@oclif/plugin-command-snapshot@^5.2.23":
-  version "5.2.23"
-  resolved "https://registry.yarnpkg.com/@oclif/plugin-command-snapshot/-/plugin-command-snapshot-5.2.23.tgz#bca5f727b4ff8215c9274afb9858f09e154b0806"
-  integrity sha512-RgGuuSPNCO3WMH73D6dm4Dm7tI1VFqduGvYV7JuolncKNCMOb8oBWmhiiGbwqJHwRMUsnKLcWF9SFmA1XBa2xw==
+"@oclif/plugin-command-snapshot@^5.2.24":
+  version "5.2.24"
+  resolved "https://registry.yarnpkg.com/@oclif/plugin-command-snapshot/-/plugin-command-snapshot-5.2.24.tgz#bc349c216ab86f70f35b1c3e53d8a93989b1cdd0"
+  integrity sha512-KgsIyW1hf53JbySSSWv3FzGgtinX3xSj/Uuu+81Wn6em3csyrOfS60J4mUyB2BtSfCj+OXRzwoXluYiTJy974w==
   dependencies:
     "@oclif/core" "^4"
-    ansis "^3.3.2"
+    ansis "^3.5.2"
     globby "^14.0.2"
     just-diff "^5.2.0"
     lodash.difference "^4.5.0"
@@ -2983,10 +2983,10 @@
   resolved "https://registry.npmjs.org/@types/expect/-/expect-1.20.4.tgz"
   integrity sha512-Q5Vn3yjTDyCMV50TB6VRIbQNxSE4OmZR86VSbGaNpfUolm0iePBB4KdEEHmxoY5sT2+2DIvXW0rvMDP2nHZ4Mg==
 
-"@types/extract-zip@^2.0.1":
-  version "2.0.1"
-  resolved "https://registry.npmjs.org/@types/extract-zip/-/extract-zip-2.0.1.tgz"
-  integrity sha512-Rvy84OCUrbGquSMH2a2ifbHB3CEu95LguiihLf0gc4uFaZ7psB6Khq+s8a7rsPGztSlxihu1om7+ZVxBh8iJcg==
+"@types/extract-zip@^2.0.3":
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/@types/extract-zip/-/extract-zip-2.0.3.tgz#5872005fd818767734c3528ba0bf57fc80a8c848"
+  integrity sha512-yrO7h+0qOIGxHCmBeL5fKFzR+PBafh9LG6sOLBFFi2JuN+Hj663TAxfnqJh5vkQn963VimrhBF1GZzea3A+4Ig==
   dependencies:
     extract-zip "*"
 
@@ -3668,12 +3668,7 @@ ansi-wrap@0.1.0:
   resolved "https://registry.npmjs.org/ansi-wrap/-/ansi-wrap-0.1.0.tgz"
   integrity sha512-ZyznvL8k/FZeQHr2T6LzcJ/+vBApDnMNZvfVFy3At0knswWd6rJ3/0Hhmpu8oqa6C92npmozs890sX9Dl6q+Qw==
 
-ansis@^3.3.1, ansis@^3.3.2:
-  version "3.3.2"
-  resolved "https://registry.npmjs.org/ansis/-/ansis-3.3.2.tgz"
-  integrity sha512-cFthbBlt+Oi0i9Pv/j6YdVWJh54CtjGACaMPCIrEV4Ha7HWsIjXDwseYV79TIL0B4+KfSwD5S70PeQDkPUd1rA==
-
-ansis@^3.4.0:
+ansis@^3.3.1, ansis@^3.3.2, ansis@^3.4.0, ansis@^3.5.2:
   version "3.5.2"
   resolved "https://registry.yarnpkg.com/ansis/-/ansis-3.5.2.tgz#d7a1f95a23f6becc5ee16fab85cda41c898fad96"
   integrity sha512-5uGcUZRbORJeEppVdWfZOSybTMz+Ou+84HepgK081Yk5+pPMMzWf/XGxiAT6bfBqCghRB4MwBtYn0CHqINRVag==
@@ -4439,10 +4434,10 @@ chalk@^4, chalk@^4.0.0, chalk@^4.0.2, chalk@^4.1.0:
     ansi-styles "^4.1.0"
     supports-color "^7.1.0"
 
-chalk@^5.0.0, chalk@^5.2.0, chalk@^5.3.0:
-  version "5.3.0"
-  resolved "https://registry.npmjs.org/chalk/-/chalk-5.3.0.tgz"
-  integrity sha512-dLitG79d+GV1Nb/VYcCDFivJeK1hiukt9QjRNVOsUtTy1rR1YJsmpGGTZ3qJos+uw7WmWF4wUwBd9jxjocFC2w==
+chalk@^5.0.0, chalk@^5.2.0, chalk@^5.3.0, chalk@^5.4.1:
+  version "5.4.1"
+  resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.4.1.tgz#1b48bf0963ec158dce2aacf69c093ae2dd2092d8"
+  integrity sha512-zgVZuo2WcZgfUEmsn6eO3kINexW8RAE4maiQ8QNs8CtpPCSyMiYsULR3HQYkm3w8FIA3SberyMJMSldGsW+U3w==
 
 change-case@^4, change-case@^4.1.2:
   version "4.1.2"
