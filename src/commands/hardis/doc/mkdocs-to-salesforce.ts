@@ -216,7 +216,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     const permissionSetFile = path.join(tabsPath, `${resName}.permissionset-meta.xml`);
     const permissionSetMeta = `<?xml version="1.0" encoding="UTF-8"?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
-    <description>Permissions to Visualize Project Documentation, incouding Flow history, generated with sfdx-hardis from Git</description>
+    <description>Permissions to Visualize Project Documentation, including Flow history, generated with sfdx-hardis from Git</description>
     <hasActivationRequired>true</hasActivationRequired>
     <label>${resName}</label>
     <pageAccesses>
