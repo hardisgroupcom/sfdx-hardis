@@ -85,7 +85,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     const mkdocsYml: any = readMkDocsFile(mkdocsYmlFile);
     const mkdocsYmlCopy = Object.assign({}, mkdocsYml);
     mkdocsYmlCopy.use_directory_urls = false;
-    await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
+    await writeMkDocsFile(mkdocsYmlFile, mkdocsYmlCopy);
 
     try {
       // Generate HTML pages
