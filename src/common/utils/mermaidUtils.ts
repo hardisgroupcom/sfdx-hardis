@@ -116,9 +116,9 @@ export async function generateMarkdownFileWithMermaidCli(outputFlowMdFileIn: str
 }
 
 export function getMermaidExtraClasses() {
-  const added = 'fill:green,color:white,stroke-width:4px,max-height:100px';
-  const removed = 'fill:red,color:white,stroke-width:4px,max-height:100px';
-  const changed = 'fill:orange,color:white,stroke-width:4px,max-height:100px';
+  const added = 'fill:green,color:white,stroke-width:4px,text-decoration:none,max-height:100px';
+  const removed = 'fill:red,color:white,stroke-width:4px,text-decoration:none,max-height:100px';
+  const changed = 'fill:orange,color:white,stroke-width:4px,text-decoration:none,max-height:100px';
 
   const addedClasses = [
     'actionCallsAdded',
