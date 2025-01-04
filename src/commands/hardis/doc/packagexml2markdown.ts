@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
@@ -38,6 +38,7 @@ export default class PackageXml2Markdown extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    "target-org": optionalOrgFlagWithDeprecations
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -55,7 +56,8 @@ export default class PackageXml2Markdown extends SfCommand<any> {
     this.debugMode = flags.debug || false;
 
     // Generate markdown for package.xml
-    this.outputFile = await generatePackageXmlMarkdown(this.inputFile, this.outputFile);
+    const instanceUrl = flags?.['target-org']?.getConnection()?.instanceUrl;
+    this.outputFile = await generatePackageXmlMarkdown(this.inputFile, this.outputFile, null, instanceUrl);
 
     // Open file in a new VsCode tab if available
     WebSocketClient.requestOpenFile(this.outputFile);
