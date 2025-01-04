@@ -2983,10 +2983,10 @@
   resolved "https://registry.npmjs.org/@types/expect/-/expect-1.20.4.tgz"
   integrity sha512-Q5Vn3yjTDyCMV50TB6VRIbQNxSE4OmZR86VSbGaNpfUolm0iePBB4KdEEHmxoY5sT2+2DIvXW0rvMDP2nHZ4Mg==
 
-"@types/extract-zip@^2.0.1":
-  version "2.0.1"
-  resolved "https://registry.npmjs.org/@types/extract-zip/-/extract-zip-2.0.1.tgz"
-  integrity sha512-Rvy84OCUrbGquSMH2a2ifbHB3CEu95LguiihLf0gc4uFaZ7psB6Khq+s8a7rsPGztSlxihu1om7+ZVxBh8iJcg==
+"@types/extract-zip@^2.0.3":
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/@types/extract-zip/-/extract-zip-2.0.3.tgz#5872005fd818767734c3528ba0bf57fc80a8c848"
+  integrity sha512-yrO7h+0qOIGxHCmBeL5fKFzR+PBafh9LG6sOLBFFi2JuN+Hj663TAxfnqJh5vkQn963VimrhBF1GZzea3A+4Ig==
   dependencies:
     extract-zip "*"
 
