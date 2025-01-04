@@ -20,7 +20,7 @@ export default class OrgUnfreezeUser extends SfCommand<any> {
 
   public static examples = [
     `$ sf hardis:org:user:unfreeze`,
-    `$ sf hardis:org:user:unfreeze --target-org myuser@myorg.com`,
+    `$ sf hardis:org:user:unfreeze --target-org my-user@myorg.com`,
     `$ sf hardis:org:user:unfreeze --includeprofiles 'Standard'`,
     `$ sf hardis:org:user:unfreeze --excludeprofiles 'System Administrator,Some Other Profile'`,
   ];
