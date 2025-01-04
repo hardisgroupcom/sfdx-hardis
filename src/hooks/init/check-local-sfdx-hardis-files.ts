@@ -21,7 +21,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
   // Run this command only during a monitoring job, or a Release Manager local operation
   const isMon = await isMonitoringJob();
   if (
-    !((isMon && commandId.includes('backup')) || commandId.startsWith("hardis:project:configure:auth"))
+    !((isMon && commandId.includes('backup')) || commandId.startsWith("hardis:project:configure:auth") || commandId.startsWith("hardis:doc:mkdocs-to-salesforce") || commandId.startsWith("hardis:doc:project2markdown"))
   ) {
     return;
   }
@@ -122,6 +122,7 @@ async function getHardisGitRepoIgnoreContent() {
     '.cache/',
     'config/user/',
     'hardis-report/',
+    'site/',
     'tmp/',
     '**/__tests__/**',
     // Metadatas to be ignored

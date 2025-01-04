@@ -116,9 +116,9 @@ export async function generateMarkdownFileWithMermaidCli(outputFlowMdFileIn: str
 }
 
 export function getMermaidExtraClasses() {
-  const added = 'fill:green,color:white,stroke-width:4px,max-height:100px';
-  const removed = 'fill:red,color:white,stroke-width:4px,max-height:100px';
-  const changed = 'fill:orange,color:white,stroke-width:4px,max-height:100px';
+  const added = 'fill:green,color:white,stroke-width:4px,text-decoration:none,max-height:100px';
+  const removed = 'fill:red,color:white,stroke-width:4px,text-decoration:none,max-height:100px';
+  const changed = 'fill:orange,color:white,stroke-width:4px,text-decoration:none,max-height:100px';
 
   const addedClasses = [
     'actionCallsAdded',
@@ -612,4 +612,29 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
 
   uxLog(this, c.green(`Markdown diff between ${fileHistory.all.length} Flow states generated in ${diffMdFile}`));
   return diffMdFile;
+}
+
+export function removeMermaidLinks(messageBody: string) {
+  let result = messageBody + "";
+  if (result.includes("```mermaid")) {
+    let withinMermaid = false;
+    result = result
+      .split("\n")
+      .filter((line) => {
+        // Toggle mermaid flag on/off
+        if (line.includes("```mermaid")) {
+          withinMermaid = true;
+        }
+        else if (line.includes("```") && withinMermaid === true) {
+          withinMermaid = false;
+        }
+        // Filter if click line for better display
+        if (line.startsWith("click") && withinMermaid === true) {
+          return false;
+        }
+        return true;
+      })
+      .join("\n");
+  }
+  return result;
 }

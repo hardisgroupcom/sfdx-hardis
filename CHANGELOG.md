@@ -4,7 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [5.11.0] 2025-03-01
+- New command [hardis:doc:mkdocs-to-salesforce](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-salesforce/) to generate static HTML doc and host it in a Static Resource and a VisualForce page
+- Remove hyperlinks from MermaidJs on Pull Request comments, to improve display on GitHub & Gitlab
+- Upgrade base image to python:3.12.8-alpine3.20, so mkdocs can be installed and run if necessary
+
+## [5.11.0] 2025-01-03
 
 - Visual flow management, using MermaidJs
   - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add a markdown file for each Flow

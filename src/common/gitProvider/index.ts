@@ -8,6 +8,7 @@ import { BitbucketProvider } from "./bitbucket.js";
 import Debug from "debug";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
 import { prompts } from "../utils/prompts.js";
+import { removeMermaidLinks } from "../utils/mermaidUtils.js";
 const debug = Debug("sfdxhardis");
 
 export abstract class GitProvider {
@@ -122,6 +123,7 @@ export abstract class GitProvider {
       if (prData?.flowDiffMarkdown?.markdownSummary) {
         markdownBody += "\n\n" + prData.flowDiffMarkdown.markdownSummary;
       }
+      markdownBody = removeMermaidLinks(markdownBody); // Remove "click" elements that are useless and ugly on some providers :)
       const prMessageRequest: PullRequestMessageRequest = {
         title: prData.title,
         message: markdownBody,
@@ -135,9 +137,10 @@ export abstract class GitProvider {
       }
       // Post additional comments
       for (const flowDiff of prData?.flowDiffMarkdown?.flowDiffMarkdownList || []) {
+        const flowDiffMessage = removeMermaidLinks(flowDiff.markdown); // Remove "click" elements that are useless and ugly on some providers :)
         const prMessageRequestAdditional: PullRequestMessageRequest = {
           title: `Differences for Flow ${flowDiff.name}`,
-          message: flowDiff.markdown,
+          message: flowDiffMessage,
           status: "valid",
           messageKey: `sfdx-hardis-flow-diff-${flowDiff.name}`,
           sourceFile: flowDiff.markdownFile,

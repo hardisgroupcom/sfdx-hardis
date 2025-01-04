@@ -27,8 +27,8 @@ See article below
 
   public static examples = [
     `$ sf hardis:org:user:activateinvalid`,
-    `$ sf hardis:org:user:activateinvalid --target-org myuser@myorg.com`,
-    `$ sf hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --target-org myuser@myorg.com`,
+    `$ sf hardis:org:user:activateinvalid --target-org my-user@myorg.com`,
+    `$ sf hardis:org:user:activateinvalid --profiles 'System Administrator,MyCustomProfile' --target-org my-user@myorg.com`,
   ];
 
   // public static args = [{name: 'file'}];

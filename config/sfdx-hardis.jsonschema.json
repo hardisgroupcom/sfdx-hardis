@@ -751,6 +751,16 @@
       "title": "Dev Hub Username",
       "type": "string"
     },
+    "docDeployToOrg": {
+      "$id": "#/properties/docDeployToOrg",
+      "default": false,
+      "description": "Automatically deploy MkDocs HTML documentation from CI/CD Workflows to Salesforce org as static resource",
+      "examples": [
+        true
+      ],
+      "title": "Doc: Deploy to Salesforce Org",
+      "type": "boolean"
+    },
     "extends": {
       "$id": "#/properties/extends",
       "description": "You can base your local sfdx-hardis configuration on a remote config file. That allows you to have the same config base for all your projects",

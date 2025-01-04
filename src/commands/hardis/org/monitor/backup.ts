@@ -8,13 +8,14 @@ import * as path from 'path';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
 import { execCommand, filterPackageXml, uxLog } from '../../../../common/utils/index.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
-import { CONSTANTS } from '../../../../config/index.js';
+import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { MessageAttachment } from '@slack/web-api';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { countPackageXmlItems, parsePackageXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import Project2Markdown from '../../doc/project2markdown.js';
+import MkDocsToSalesforce from '../../doc/mkdocs-to-salesforce.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -56,6 +57,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 ## Documentation
 
 [Doc generation (including visual flows)](${CONSTANTS.DOC_URL_ROOT}/hardis/doc/project2markdown/) is triggered at the end of the command.
+
+If you want to also upload HTML Documentation on your Salesforce Org as static resource, use variable **SFDX_HARDIS_DOC_DEPLOY_TO_ORG="true"**
 
 If Flow history doc always display a single state, you probably need to update your workflow configuration:
 
@@ -269,6 +272,11 @@ If Flow history doc always display a single state, you probably need to update y
       try {
         await Project2Markdown.run(["--diff-only", "--with-history"]);
         uxLog(this, c.cyan("Documentation generated from retrieved sources. If you want to skip it, use option --skip-doc"));
+        const config = await getConfig("user");
+        if (config.docDeployToOrg || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_ORG === "true") {
+          await MkDocsToSalesforce.run(["--type", "Monitoring"]);
+        }
+
       } catch (e: any) {
         uxLog(this, c.yellow("Error while generating project documentation " + e.message));
       }

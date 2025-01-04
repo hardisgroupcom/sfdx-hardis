@@ -530,7 +530,7 @@ export async function initOrgMetadatas(
 export async function initPermissionSetAssignments(permSets: Array<any>, orgUsername: string) {
   uxLog(this, c.cyan('Assigning Permission Sets...'));
   for (const permSet of permSets) {
-    uxLog(this, c.cyan(`Assigning ${c.bold(permSet.name || permSet)} to sandbox org user`));
+    uxLog(this, c.cyan(`Assigning ${c.bold(permSet.name || permSet)} to org user ${orgUsername}`));
     const assignCommand = `sf org assign permset --name ${permSet.name || permSet} --target-org ${orgUsername}`;
     const assignResult = await execSfdxJson(assignCommand, this, {
       fail: false,
