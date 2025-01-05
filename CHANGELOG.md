@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.13.0] 2025-01-05
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) Add branch & orgs strategy MermaidJS diagram in documentation
+
 ## [5.12.0] 2025-01-04
 
 - New command [hardis:doc:mkdocs-to-salesforce](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-salesforce/) to generate static HTML doc and host it in a Static Resource and a VisualForce page

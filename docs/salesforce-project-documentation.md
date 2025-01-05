@@ -10,6 +10,10 @@ With a single command, you can generate a Web Site documenting your Salesforce m
 
 ![](assets/images/project-documentation.gif)
 
+If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strategy will be generated.
+
+![](assets/images/screenshot-doc-branches-strategy.jpg)
+
 ## How To generate
 
 - Use the Git repository containing your SFDX project, or create it easily using [sfdx-hardis Monitoring](salesforce-monitoring-home.md), or simply calling [BackUp command](hardis/org/monitor/backup.md)
