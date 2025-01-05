@@ -991,6 +991,23 @@
       "title": "Metadata to retrofit",
       "type": "array"
     },
+    "mergeTargets": {
+      "$id": "#/properties/mergeTargets",
+      "description": "In branch-scoped config file, declares the list of branches that the current one can have as merge target. For example, integration will have mergeTargets [uat]",
+      "examples": [
+        [
+          "preprod"
+        ],
+        [
+          "integration"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Merge target branches",
+      "type": "array"
+    },
     "monitoringCommands": {
       "$id": "#/properties/monitoringCommands",
       "description": "List of monitoring commands to run with command hardis:org:monitor:all",

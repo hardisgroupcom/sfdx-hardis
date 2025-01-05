@@ -17,6 +17,7 @@ import { listFlowFiles } from '../../../common/utils/projectUtils.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
+import { BranchStrategyMermaidBuilder } from '../../../common/utils/branchStrategyMermaidBuilder.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -68,6 +69,12 @@ If Flow history doc always display a single state, you probably need to update y
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc.jpg)
 
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc-2.jpg)
+
+If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strategy will be generated.
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-doc-branches-strategy.jpg)
+
+If you have a complex strategy, you might need to input property **mergeTargets** in branch-scoped sfdx-hardis.yml file to have a correct diagram.
 
 ${this.htmlInstructions}
 `;
@@ -417,8 +424,15 @@ ${Project2Markdown.htmlInstructions}
     const branchesOrgsLines: string[] = [];
     const majorOrgs = await listMajorOrgs();
     if (majorOrgs.length > 0) {
+
       branchesOrgsLines.push(...[
-        "## Major branches and orgs",
+        "## Branches & Orgs strategy",
+        "",
+      ]);
+      const mermaidLines = new BranchStrategyMermaidBuilder(majorOrgs).build({ withMermaidTag: true, format: "list" });
+      branchesOrgsLines.push(...mermaidLines);
+
+      branchesOrgsLines.push(...[
         "",
         "| Git branch | Salesforce Org | Deployment Username |",
         "| :--------- | :------------- | :------------------ |"
