@@ -222,17 +222,17 @@ export class BranchStrategyMermaidBuilder {
   }
 
   listClassesAndStyles(): string[] {
-    const classesAndStyles = `    classDef salesforceDev fill:#A9E8F8,stroke:#004E8A,stroke-width:2px,color:black,font-weight:bold,border-radius:10px;
-    classDef salesforceMajor fill:#0088CE,stroke:#004E8A,stroke-width:2px,color:white,font-weight:bold,border-radius:10px;
-    classDef salesforceProd fill:blue,stroke:#004E8A,stroke-width:2px,color:white,font-weight:bold,border-radius:10px;
-    classDef gitMajor fill:#FFC107,stroke:#D84315,stroke-width:2px,color:black,font-weight:bold,border-radius:10px;
-    classDef gitMain fill:#FF6F61,stroke:#FF6F00,stroke-width:2px,color:black,font-weight:bold,border-radius:10px;
-    classDef gitFeature fill:#B5EAD7,stroke:#2E7D32,stroke-width:2px,color:black,font-weight:bold,border-radius:10px;
+    const classesAndStyles = `    classDef salesforceDev fill:#A9E8F8,stroke:#004E8A,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
+    classDef salesforceMajor fill:#0088CE,stroke:#004E8A,stroke-width:2px,color:#FFFFFF,font-weight:bold,border-radius:10px;
+    classDef salesforceProd fill:blue,stroke:#004E8A,stroke-width:2px,color:#FFFFFF,font-weight:bold,border-radius:10px;
+    classDef gitMajor fill:#FFC107,stroke:#D84315,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
+    classDef gitMain fill:#FF6F61,stroke:#FF6F00,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
+    classDef gitFeature fill:#B5EAD7,stroke:#2E7D32,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
     
-    style GitBranches fill:#F4F4F9,stroke:#7C4DFF,stroke-width:1px;
-    style SalesforceOrgs fill:#E8F5E9,stroke:#1B5E20,stroke-width:1px;
-    style SalesforceDevOrgs fill:#E1F5FE,stroke:#0288D1,stroke-width:1px;
-    style SalesforceDevOrgsRun fill:#F3E5F5,stroke:#6A1B9A,stroke-width:1px;
+    style GitBranches fill:#F4F4F9,color:#000000,stroke:#7C4DFF,stroke-width:1px;
+    style SalesforceOrgs fill:#E8F5E9,color:#000000,stroke:#1B5E20,stroke-width:1px;
+    style SalesforceDevOrgs fill:#E1F5FE,color:#000000,stroke:#0288D1,stroke-width:1px;
+    style SalesforceDevOrgsRun fill:#F3E5F5,color:#000000,stroke:#6A1B9A,stroke-width:1px;
 `
     return classesAndStyles.split("\n");
   }
