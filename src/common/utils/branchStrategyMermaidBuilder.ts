@@ -157,6 +157,7 @@ export class BranchStrategyMermaidBuilder {
   }
 
   private generateMermaidLines() {
+    /* jscpd:ignore-start */
     this.mermaidLines.push("flowchart LR");
     this.mermaidLines.push("");
 
@@ -204,6 +205,7 @@ export class BranchStrategyMermaidBuilder {
 
     // Classes and styles
     this.mermaidLines.push(...this.listClassesAndStyles());
+    /* jscpd:ignore-end */
   }
 
   private addLinks(links) {
