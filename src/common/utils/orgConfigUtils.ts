@@ -176,35 +176,99 @@ export async function listMajorOrgs() {
   const majorOrgsSorted: any = [];
   // Main
   for (const majorOrg of majorOrgs) {
-    if (majorOrg?.branchName?.toLowerCase().startsWith("main") || majorOrg?.branchName?.toLowerCase().startsWith("prod")) {
+    if (isProduction(majorOrg?.branchName || "")) {
+      majorOrg.level = majorOrg.level || 100;
       majorOrgsSorted.push(majorOrg);
     }
   }
   // Preprod
   for (const majorOrg of majorOrgs) {
-    if (majorOrg?.branchName?.toLowerCase().startsWith("preprod") || majorOrg?.branchName?.toLowerCase().startsWith("staging")) {
+    if (isPreprod(majorOrg?.branchName || "")) {
+      majorOrg.level = majorOrg.level || 90;
+      majorOrgsSorted.push(majorOrg);
+    }
+  }
+  // uat run
+  for (const majorOrg of majorOrgs) {
+    if (isUatRun(majorOrg?.branchName || "")) {
+      majorOrg.level = majorOrg.level || 80;
       majorOrgsSorted.push(majorOrg);
     }
   }
   // uat
   for (const majorOrg of majorOrgs) {
-    if (majorOrg?.branchName?.toLowerCase().startsWith("uat") || majorOrg?.branchName?.toLowerCase().startsWith("recette")) {
+    if (isUat(majorOrg?.branchName || "")) {
+      majorOrg.level = majorOrg.level || 70;
       majorOrgsSorted.push(majorOrg);
     }
   }
   // integration
   for (const majorOrg of majorOrgs) {
-    if (majorOrg?.branchName?.toLowerCase().startsWith("integ")) {
+    if (isIntegration(majorOrg?.branchName || "")) {
+      majorOrg.level = majorOrg.level || 50;
       majorOrgsSorted.push(majorOrg);
     }
   }
   // Add remaining major branches
   for (const majorOrg of sortArray(majorOrgs, { by: ['branchName'], order: ['asc'] }) as any[]) {
     if (majorOrgsSorted.filter(org => org.branchName === majorOrg.branchName).length === 0) {
+      majorOrg.level = majorOrg.level || 40;
       majorOrgsSorted.push(majorOrg);
     }
   }
-  return majorOrgsSorted;
+  const completedMajorOrgs = majorOrgsSorted.map((majorOrg: any) => {
+    if (majorOrg?.mergeTargets?.length > 0) {
+      return majorOrg;
+    }
+    majorOrg.mergeTargets = guessMatchingMergeTargets(majorOrg.branchName, majorOrgs);
+    return majorOrg;
+  });
+  return completedMajorOrgs;
+}
+
+function guessMatchingMergeTargets(branchName: string, majorOrgs: any[]): string[] {
+  if (isProduction(branchName)) {
+    return [];
+  }
+  else if (isPreprod(branchName)) {
+    return majorOrgs.filter(org => isProduction(org.branchName)).map(org => org.branchName);
+  }
+  else if (isUat(branchName)) {
+    return majorOrgs.filter(org => isPreprod(org.branchName)).map(org => org.branchName);
+  }
+  else if (isUatRun(branchName)) {
+    return majorOrgs.filter(org => isPreprod(org.branchName)).map(org => org.branchName);
+  }
+  else if (isIntegration(branchName)) {
+    return majorOrgs.filter(org => isUat(org.branchName)).map(org => org.branchName);
+  }
+  uxLog(this, c.yellow(`Unable to guess merge targets for ${branchName}.
+Please set them manually in config/branches/.sfdx-hardis.${branchName}.yml
+Example:
+mergeTargets:
+  - preprod
+`));
+  return [];
+}
+
+export function isProduction(branchName) {
+  return branchName.toLowerCase().startsWith("prod") || branchName.toLowerCase().startsWith("main");
+}
+
+export function isPreprod(branchName) {
+  return branchName.toLowerCase().startsWith("preprod") || branchName.toLowerCase().startsWith("staging");
+}
+
+export function isUat(branchName) {
+  return (branchName.toLowerCase().startsWith("uat") || branchName.toLowerCase().startsWith("recette")) && !branchName.toLowerCase().includes("run");
+}
+
+export function isIntegration(branchName) {
+  return branchName.toLowerCase().startsWith("integ");
+}
+
+export function isUatRun(branchName) {
+  return (branchName.toLowerCase().startsWith("uat") || branchName.toLowerCase().startsWith("recette")) && branchName.toLowerCase().includes("run");
 }
 
 export async function checkSfdxHardisTraceAvailable(conn: Connection) {
