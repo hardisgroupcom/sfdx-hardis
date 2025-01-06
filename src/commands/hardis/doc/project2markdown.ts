@@ -354,7 +354,7 @@ ${Project2Markdown.htmlInstructions}
         `[${flow.name}](${prefix}${flow.name}.md) [🕒](${prefix}${flow.name}-history.md)` :
         `[${flow.name}](${prefix}${flow.name}.md)`;
       lines.push(...[
-        `| ${flow.object} | ${flowNameCell} | ${flow.type} | ${flow.description.replace(/\n/gm, "<br/>".replace(/\|/gm, ""))} |`
+        `| ${flow.object || "💻"} | ${flowNameCell} | ${flow.type} | ${flow.description.replace(/\n/gm, "<br/>".replace(/\|/gm, ""))} |`
       ]);
     }
     lines.push("");
