@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.13.1] 2025-01-07
+
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) Display a screen emoji in documentation flows table when they are not tied to an Object
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/doc/project/deploy/smart/): Shorten log lines when there is a too big JSON, by removing info not relevant for display, like unchanged files or test classes results.
 
 ## [5.13.0] 2025-01-05
 
