@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.13.2] 2025-01-07
+
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Fix parsing when deployment failure is related to Apex code coverage
 - Flow doc fix: add description for constants, variables, text template & formulas
 - Flow parsing: Fix error when there is only one formula
 
