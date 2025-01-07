@@ -17,7 +17,7 @@ import { simpleGit, FileStatusResult, SimpleGit } from 'simple-git';
 import { CONSTANTS, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import { encryptFile } from '../cryptoUtils.js';
-import { deployMetadatas, truncateProgressLogLines } from './deployUtils.js';
+import { deployMetadatas, shortenLogLines } from './deployUtils.js';
 import { isProductionOrg, promptProfiles, promptUserEmail } from './orgUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import moment from 'moment';
@@ -647,7 +647,7 @@ export async function execCommand(
     }
     // Display error in red if not json
     if (!command.includes('--json') || options.fail) {
-      const strErr = truncateProgressLogLines(`${(e as any).stdout}\n${(e as any).stderr}`);
+      const strErr = shortenLogLines(`${(e as any).stdout}\n${(e as any).stderr}`);
       console.error(c.red(strErr));
       (e as Error).message = (e as Error).message += '\n' + strErr;
       // Manage retry if requested
@@ -678,9 +678,9 @@ export async function execCommand(
       error: e,
     };
   }
-  // Display output if requested, for better user unrstanding of the logs
+  // Display output if requested, for better user understanding of the logs
   if (options.output || options.debug) {
-    uxLog(commandThis, c.italic(c.grey(truncateProgressLogLines(commandResult.stdout))));
+    uxLog(commandThis, c.italic(c.grey(shortenLogLines(commandResult.stdout))));
   }
   // Return status 0 if not --json
   if (!command.includes('--json')) {
@@ -1351,6 +1351,22 @@ export function findJsonInString(inputString: string) {
     }
   }
   return null;
+}
+
+export function replaceJsonInString(inputString: string, jsonObject: any): string {
+  // Regular expression to match a JSON object
+  const jsonMatch = stripAnsi(inputString).match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+  if (jsonMatch) {
+    try {
+      const jsonString = JSON.stringify(jsonObject, null, 2);
+      return stripAnsi(inputString).replace(jsonMatch[0], jsonString);
+    } catch (err: any) {
+      uxLog(this, c.yellow('Warning: unable to replace JSON in string:' + err.message));
+      return inputString;
+    }
+  }
+  uxLog(this, c.yellow('Warning: unable to find json to replace in string'));
+  return inputString;
 }
 
 // Ugly hack but no choice

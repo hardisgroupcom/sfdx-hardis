@@ -5,6 +5,7 @@ import { getAllTips } from "./deployTipsList.js";
 import { stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
 import { updatePullRequestResult } from "./deployTips.js";
+import { shortenLogLines } from "./deployUtils.js";
 
 
 export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, includeInLog = true, options: any): Promise<any> {
@@ -116,7 +117,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
   // Update data that will be used for Pull Request comment
   await updatePullRequestResult(errorsAndTips, failedTests, options);
   // Return results
-  const newLog = includeInLog ? log + "\n\n" + detailedErrorLines.join("\n") : log;
+  const newLog = includeInLog ? shortenLogLines(log) + "\n\n" + detailedErrorLines.join("\n") : shortenLogLines(log);
   return { tips, errorsAndTips, failedTests, errLog: newLog };
 }
 

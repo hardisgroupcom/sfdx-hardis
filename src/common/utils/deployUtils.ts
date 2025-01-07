@@ -16,6 +16,7 @@ import {
   gitHasLocalUpdates,
   isCI,
   killBoringExitHandlers,
+  replaceJsonInString,
   uxLog,
 } from './index.js';
 import { CONSTANTS, getConfig, setConfig } from '../../config/index.js';
@@ -423,12 +424,32 @@ async function handleDeployError(
   throw new SfError('Deployment failure. Check messages above');
 }
 
-export function truncateProgressLogLines(rawLog: string) {
-  const rawLogCleaned = rawLog
+export function shortenLogLines(rawLog: string) {
+  let rawLogCleaned = rawLog
     .replace(/(SOURCE PROGRESS \|.*\n)/gm, '')
     .replace(/(MDAPI PROGRESS \|.*\n)/gm, '')
     .replace(/(DEPLOY PROGRESS \|.*\n)/gm, '')
     .replace(/(Status: In Progress \|.*\n)/gm, '');
+  // Truncate JSON if huge log
+  if (rawLogCleaned.split("\n").length > 1000 && !(process.env?.NO_TRUNCATE_LOGS === "true")) {
+    const msg = "Result truncated by sfdx-hardis. Define NO_TRUNCATE_LOGS=true tu have full JSON logs";
+    const jsonLog = findJsonInString(rawLogCleaned);
+    if (jsonLog) {
+      if (jsonLog?.result?.details?.componentSuccesses) {
+        jsonLog.result.details.componentSuccesses = jsonLog.result.details.componentSuccesses.filter(item => item.changed === true);
+        jsonLog.truncatedBySfdxHardis = msg;
+      }
+      if (jsonLog?.result?.details?.runTestResult) {
+        delete jsonLog.result.details.runTestResult;
+        jsonLog.truncatedBySfdxHardis = msg;
+      }
+      if (jsonLog?.result?.files) {
+        jsonLog.result.files = jsonLog.result.files.filter(item => item.state === 'Changed');
+        jsonLog.truncatedBySfdxHardis = msg;
+      }
+      rawLogCleaned = replaceJsonInString(rawLogCleaned, jsonLog);
+    }
+  }
   return rawLogCleaned;
 }
 
