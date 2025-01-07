@@ -83,6 +83,9 @@ async function createFlowMap(flowObj: any): Promise<FlowMap> {
         // Common first descriptive elements
         if (['description', 'environments', 'formulas', 'interviewLabel', 'label', 'processType', 'status', 'textTemplates'].includes(property)) {
             flowMap[property] = flowObj[property];
+            if (property === "formulas" && typeof flowObj[property] === "object") {
+                flowMap["formulas"] = [flowObj["formulas"]];
+            }
         }
         // Start element
         else if (property === 'start') {
@@ -418,28 +421,28 @@ function getGeneralInfoMd(flowObj: any, flowMap: FlowMap) {
 
 function getVariablesMd(vars: any[]): string {
     if (vars && vars.length > 0) {
-        return mdEndSection(buildCustomMarkdownTable(vars, ["name", "dataType", "isCollection", "isInput", "isOutput", "objectType"], "## Variables", []));
+        return mdEndSection(buildCustomMarkdownTable(vars, ["name", "dataType", "isCollection", "isInput", "isOutput", "objectType", "description"], "## Variables", []));
     }
     return "";
 }
 
 function getConstantsMd(constants: any[]): string {
     if (constants && constants.length > 0) {
-        return mdEndSection(buildCustomMarkdownTable(constants, ["name", "dataType", "value"], "## Constants", []));
+        return mdEndSection(buildCustomMarkdownTable(constants, ["name", "dataType", "value", "description"], "## Constants", []));
     }
     return "";
 }
 
 function getFormulasMd(formulas: any[]): string {
     if (formulas && formulas.length > 0) {
-        return mdEndSection(buildCustomMarkdownTable(formulas, ["name", "dataType", "expression"], "## Formulas", []));
+        return mdEndSection(buildCustomMarkdownTable(formulas, ["name", "dataType", "expression", "description"], "## Formulas", []));
     }
     return "";
 }
 
 function getTemplatesMd(textTemplates: any[]): string {
     if (textTemplates && textTemplates.length > 0) {
-        return mdEndSection(buildCustomMarkdownTable(textTemplates, ["name", "text"], "## Text Templates", []));
+        return mdEndSection(buildCustomMarkdownTable(textTemplates, ["name", "text", "description"], "## Text Templates", []));
     }
     return "";
 }

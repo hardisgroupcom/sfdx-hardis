@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Flow doc fix: add description for constants, variables, text template & formulas
+- Flow parsing: Fix error when there is only one formula
+
 ## [5.13.1] 2025-01-07
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) Display a screen emoji in documentation flows table when they are not tied to an Object
