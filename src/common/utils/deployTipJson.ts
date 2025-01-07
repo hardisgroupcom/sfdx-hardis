@@ -66,13 +66,30 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
 
   // Fallback in case we have not been able to identify errors
   if (errorsAndTips.length === 0 && failedTests.length === 0) {
-    errorsAndTips.push(({
-      error: { message: "There has been an issue parsing errors, please notify sfdx-hardis maintainers" },
-      tip: {
-        label: "SfdxHardisInternalError",
-        message: "Declare issue on https://github.com/hardisgroupcom/sfdx-hardis/issues",
-      },
-    }))
+    // Check if there are code coverage warnings
+    if (resultJson?.result?.details?.runTestResult?.codeCoverageWarnings?.length > 0) {
+      for (const cvrgWarning of resultJson.result.details.runTestResult.codeCoverageWarnings) {
+        const coverageErrorMsg = (cvrgWarning.name ? `${cvrgWarning.name} :` : "") + cvrgWarning.message;
+        errorsAndTips.push(({
+          error: { message: coverageErrorMsg },
+          tip: {
+            label: "CodeCoverageWarning",
+            message: "Please fix code coverage so your deployment can pass",
+            docUrl: "https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_code_coverage_intro.htm",
+          },
+        }))
+      }
+    }
+    else {
+      // Or add default error message
+      errorsAndTips.push(({
+        error: { message: "There has been an issue parsing errors, please notify sfdx-hardis maintainers" },
+        tip: {
+          label: "SfdxHardisInternalError",
+          message: "Declare issue on https://github.com/hardisgroupcom/sfdx-hardis/issues",
+        },
+      }))
+    }
   }
 
   // Create output log for errors
