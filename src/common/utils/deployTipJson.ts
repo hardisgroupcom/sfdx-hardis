@@ -64,12 +64,14 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
       errorsAndTips.push(errorTip);
   }
 
+  const detailedErrorLines: string[] = [];
+
   // Fallback in case we have not been able to identify errors
   if (errorsAndTips.length === 0 && failedTests.length === 0) {
     // Check if there are code coverage warnings
     if (resultJson?.result?.details?.runTestResult?.codeCoverageWarnings?.length > 0) {
       for (const cvrgWarning of resultJson.result.details.runTestResult.codeCoverageWarnings) {
-        const coverageErrorMsg = (cvrgWarning.name ? `${cvrgWarning.name} :` : "") + cvrgWarning.message;
+        const coverageErrorMsg = (cvrgWarning.name ? `${cvrgWarning.name} - ` : "") + cvrgWarning.message;
         errorsAndTips.push(({
           error: { message: coverageErrorMsg },
           tip: {
@@ -78,6 +80,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
             docUrl: "https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_code_coverage_intro.htm",
           },
         }))
+        detailedErrorLines.push(...["", "⛔ " + c.red(c.bold("Coverage issue: " + coverageErrorMsg)), ""]);
       }
     }
     else {
@@ -89,11 +92,11 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
           message: "Declare issue on https://github.com/hardisgroupcom/sfdx-hardis/issues",
         },
       }))
+      detailedErrorLines.push(...["", "⛔ " + c.red(c.bold("There has been an issue parsing errors, please notify sfdx-hardis maintainers")), ""]);
     }
   }
 
   // Create output log for errors
-  const detailedErrorLines: string[] = [];
   for (const error of errors) {
     detailedErrorLines.push(...["", "⛔ " + c.red(c.bold(error.messageInitialDisplay)), ""]);
     if (error.tips.length > 0 && error.tips.some(err => err.tip || err.tipFromAi)) {
