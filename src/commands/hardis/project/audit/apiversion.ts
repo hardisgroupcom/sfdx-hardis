@@ -11,6 +11,8 @@ import { catchMatches, generateReports, uxLog } from '../../../../common/utils/i
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
+export const CONSTANTS = {API_VERSION: process.env.SFDX_API_VERSION || '62.0',}
+
 export default class CallInCallOut extends SfCommand<any> {
   public static title = 'Audit Metadatas API Version';
 
@@ -42,6 +44,14 @@ export default class CallInCallOut extends SfCommand<any> {
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    metadatatype: Flags.string({
+      description: 'Metadata Types to fix. Comma separated. Supported Metadata types: ApexClass, ApexTrigger, ApexPage'
+    }),
+    fix: Flags.boolean({
+      // can't use "f", already use for failiferror
+      default: false,
+      description: 'Fix ApiVersion on specified Metadata Types.',
+    }),
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -55,6 +65,45 @@ export default class CallInCallOut extends SfCommand<any> {
     const { flags } = await this.parse(CallInCallOut);
     const minimumApiVersion = flags.minimumapiversion || false;
     const failIfError = flags.failiferror || false;
+    const fix = flags.fix || false;
+    const metadataType = flags.metadatatype || '';
+
+    const fixAllowedExtensions = {
+      "ApexClass": "cls",
+      "ApexTrigger": "trigger",
+      "ApexPage": "page",
+    };
+    const fixAllowedMetadataTypes = Object.keys(fixAllowedExtensions);
+
+    const fixTargetedMetadataTypes = metadataType.trim() === '' ? [] : (flags.metadatatype || '').replace(/\s+/g, '').split(',');
+    const fixInvalidMetadataTypes = fixTargetedMetadataTypes.filter(value => !fixAllowedMetadataTypes.includes(value));
+    if (fixTargetedMetadataTypes.length > 0 && fixInvalidMetadataTypes.length > 0 && fix) {
+      uxLog(
+        this,
+        c.yellow(
+          `[sfdx-hardis] WARNING: --fix Invalid Metadata Type(s) found:  ${c.bold(
+            fixInvalidMetadataTypes.join(', ')
+          )}. Only ${c.bold(
+            fixAllowedMetadataTypes.join(', ')
+          )} Metadata Types are allowed for the fix.`
+        )
+      );
+      if (failIfError) {
+        throw new SfError(
+          c.red(
+            `[sfdx-hardis] WARNING: --fix Invalid Metadata Type(s) found:  ${c.bold(
+              fixInvalidMetadataTypes.join(', ')
+            )}. Only ${c.bold(
+              fixAllowedMetadataTypes.join(', ')
+            )} Metadata Types are allowed for the fix.`
+          )
+        );
+      }
+    }
+
+    // Metadata Type Extensions to fix
+    const fixTargetedMetadataTypesExtensions = fixTargetedMetadataTypes.map(type => fixAllowedExtensions[type])
+    const fixTargetedMetadataTypesPattern = new RegExp(`\\.(${fixTargetedMetadataTypesExtensions.join('|')})-meta\\.xml$`);
 
     const pattern = '**/*.xml';
     const catchers = [
@@ -76,6 +125,12 @@ export default class CallInCallOut extends SfCommand<any> {
       for (const catcher of catchers) {
         const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
         this.matchResults.push(...catcherMatchResults);
+      }
+      // Update ApiVersion on file
+      if(fix && fixTargetedMetadataTypes.length > 0 && fixTargetedMetadataTypesPattern.test(file)){
+        const updatedContent = fileText.replace(/<apiVersion>(.*?)<\/apiVersion>/, `<apiVersion>${CONSTANTS.API_VERSION}</apiVersion>`);
+        await fs.promises.writeFile(file, updatedContent, 'utf-8');
+        uxLog(this, `Updated apiVersion in file: ${file}`);
       }
     }
     /* jscpd:ignore-end */
