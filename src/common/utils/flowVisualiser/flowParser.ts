@@ -83,7 +83,7 @@ async function createFlowMap(flowObj: any): Promise<FlowMap> {
         // Common first descriptive elements
         if (['description', 'environments', 'formulas', 'interviewLabel', 'label', 'processType', 'status', 'textTemplates'].includes(property)) {
             flowMap[property] = flowObj[property];
-            if (property === "formulas" && typeof flowObj[property] === "object") {
+            if (property === "formulas" && !Array.isArray(flowObj[property])) {
                 flowMap["formulas"] = [flowObj["formulas"]];
             }
         }
