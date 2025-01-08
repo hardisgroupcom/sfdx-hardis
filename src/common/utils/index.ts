@@ -1025,7 +1025,11 @@ export async function generateReports(
   });
   await fs.writeFile(reportFile, csv, 'utf8');
   // Trigger command to open CSV file in VsCode extension
-  WebSocketClient.requestOpenFile(reportFile);
+  try {
+    WebSocketClient.requestOpenFile(reportFile);
+  } catch (e: any) {
+    uxLog(commandThis, c.yellow(`[sfdx-hardis] Error opening file in VsCode: ${e.message}`));
+  }
   const excel = csvStringify(resultSorted, {
     delimiter: '\t',
     header: true,
