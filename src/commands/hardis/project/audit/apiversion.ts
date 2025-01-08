@@ -12,6 +12,7 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 import { CONSTANTS } from '../../../../config/index.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 export default class CallInCallOut extends SfCommand<any> {
   public static title = 'Audit Metadatas API Version';
@@ -23,14 +24,18 @@ export default class CallInCallOut extends SfCommand<any> {
   Example to handle [ApexClass / Trigger & ApexPage mandatory version upgrade](https://help.salesforce.com/s/articleView?id=sf.admin_locales_update_api.htm&type=5) : sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45.0 --fix
   `
 
-  public static examples = ['$ sf hardis:project:audit:apiversion'];
+  public static examples = [
+    '$ sf hardis:project:audit:apiversion',
+    '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45',
+    '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --fix'
+  ];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
     minimumapiversion: Flags.integer({
       char: 'm',
-      default: 20.0,
+      default: 20,
       description: messages.getMessage('minimumApiVersion'),
     }),
     failiferror: Flags.boolean({
@@ -61,8 +66,6 @@ export default class CallInCallOut extends SfCommand<any> {
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
-
-  /* jscpd:ignore-end */
 
   protected matchResults: any[] = [];
 
@@ -110,7 +113,11 @@ export default class CallInCallOut extends SfCommand<any> {
     const fixTargetedMetadataTypesExtensions = fixTargetedMetadataTypes.map(type => fixAllowedExtensions[type])
     const fixTargetedMetadataTypesPattern = new RegExp(`\\.(${fixTargetedMetadataTypesExtensions.join('|')})-meta\\.xml$`);
 
-    const pattern = '**/*.xml';
+    let pattern = '**/*.xml';
+    if (fixTargetedMetadataTypes.length > 0) {
+      pattern = `**/*.{${fixTargetedMetadataTypesExtensions.join(',')}}-meta.xml`;
+    }
+
     const catchers = [
       {
         type: 'apiVersion',
@@ -120,16 +127,15 @@ export default class CallInCallOut extends SfCommand<any> {
         fixed: false,
       },
     ];
-    const xmlFiles = await glob(pattern);
+    const xmlFiles = await glob(pattern, { ignore: GLOB_IGNORE_PATTERNS });
     this.matchResults = [];
     uxLog(this, `Browsing ${xmlFiles.length} files`);
-    /* jscpd:ignore-start */
     // Loop in files
     for (const file of xmlFiles) {
       const fileText = await fs.readFile(file, 'utf8');
       // Update ApiVersion on file
       let fixed = false;
-      if(fix && fixTargetedMetadataTypes.length > 0 && fixTargetedMetadataTypesPattern.test(file)){
+      if (fix && fixTargetedMetadataTypes.length > 0 && fixTargetedMetadataTypesPattern.test(file)) {
         const updatedContent = fileText.replace(/<apiVersion>(.*?)<\/apiVersion>/, `<apiVersion>${CONSTANTS.API_VERSION}</apiVersion>`);
         await fs.promises.writeFile(file, updatedContent, 'utf-8');
         fixed = true;
@@ -146,7 +152,6 @@ export default class CallInCallOut extends SfCommand<any> {
         this.matchResults.push(...enrichedResults);
       }
     }
-    /* jscpd:ignore-end */
 
     // Format result
     const result: any[] = this.matchResults.map((item: any) => {
@@ -159,7 +164,6 @@ export default class CallInCallOut extends SfCommand<any> {
         fixed: item.fixed ? 'yes' : 'no',
       };
     });
-
     // Sort array
     const resultSorted = sortArray(result, {
       by: ['type', 'subType', 'fileName'],
@@ -174,17 +178,6 @@ export default class CallInCallOut extends SfCommand<any> {
         return item;
       })
     );
-
-    // Generate output files
-    const columns = [
-      { key: 'type', header: 'IN/OUT' },
-      { key: 'fileName', header: 'Apex' },
-      { key: 'nameSpace', header: 'Namespace' },
-      { key: 'apiVersion', header: 'API Version' },
-      { key: 'valid', header: `Valid ( > ${minimumApiVersion} )` },
-      { key: 'fixed', header: 'Fixed'},
-    ];
-    const reportFiles = await generateReports(resultSorted, columns, this);
 
     const numberOfInvalid = result.filter((res: any) => res.valid === 'no').length;
     const numberOfValid = result.length - numberOfInvalid;
@@ -214,6 +207,20 @@ export default class CallInCallOut extends SfCommand<any> {
       );
     }
 
+    // Generate output files
+    const columns = [
+      { key: 'type', header: 'IN/OUT' },
+      { key: 'fileName', header: 'Apex' },
+      { key: 'nameSpace', header: 'Namespace' },
+      { key: 'apiVersion', header: 'API Version' },
+      { key: 'valid', header: `Valid ( > ${minimumApiVersion} )` },
+      { key: 'fixed', header: 'Fixed' },
+    ];
+    const reportFiles = await generateReports(resultSorted, columns, this, {
+      logFileName: 'api-versions',
+      logLabel: 'Extract and Fix Metadata Api Versions',
+    });
+
     // Return an object to be displayed with --json
     return {
       outputString: 'Processed apiVersion audit',
@@ -221,4 +228,5 @@ export default class CallInCallOut extends SfCommand<any> {
       reportFiles,
     };
   }
+  /* jscpd:ignore-end */
 }

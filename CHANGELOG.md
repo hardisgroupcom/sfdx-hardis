@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.14.0] 2025-01-09
+
 - Add ability to replace ApiVersion on specific Metadata Types file using `sf hardis:project:audit:apiversion`
 - Add parameters `fix` and `metadatatype` on `sf hardis:project:audit:apiversion`
 
