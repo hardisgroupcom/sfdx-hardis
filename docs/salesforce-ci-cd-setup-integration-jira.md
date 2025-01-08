@@ -59,6 +59,8 @@ Example: `DEPLOYED_TO_{BRANCH}`
 
 Define CI/CD variable **JIRA_TICKET_REGEX** with a regular expression allowing to identify the JIRA tickets of your project in commit& Pull Requests titles & bodies, for example `(CLOUDITY-[0-9]+)`
 
+If not defined, default value is `(?<=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\d{1,6})(?=[^a-zA-Z0-9_-]|$)`
+
 ### Jira Cloud
 
 Define CI/CD variables
