@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.13.3] 2025-01-08
+
+- Update default JIRA Regex to catch tickets when there is an number in the project name
+
 ## [5.13.2] 2025-01-07
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Fix parsing when deployment failure is related to Apex code coverage
