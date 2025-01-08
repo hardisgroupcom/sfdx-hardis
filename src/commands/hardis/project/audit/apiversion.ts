@@ -20,7 +20,7 @@ export default class CallInCallOut extends SfCommand<any> {
 
   It can also fix the apiVersions with the latest one, if parameter --fix is sent
 
-  Example to handle [ApexClass / Trigger & ApexPage mandatory version upgrade(https://help.salesforce.com/s/articleView?id=sf.admin_locales_update_api.htm&type=5) : sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45.0 --fix
+  Example to handle [ApexClass / Trigger & ApexPage mandatory version upgrade](https://help.salesforce.com/s/articleView?id=sf.admin_locales_update_api.htm&type=5) : sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45.0 --fix
   `
 
   public static examples = ['$ sf hardis:project:audit:apiversion'];
