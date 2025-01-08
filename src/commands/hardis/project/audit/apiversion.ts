@@ -112,6 +112,7 @@ export default class CallInCallOut extends SfCommand<any> {
         subType: '',
         regex: /<apiVersion>(.*?)<\/apiVersion>/gims,
         detail: [{ name: 'apiVersion', regex: /<apiVersion>(.*?)<\/apiVersion>/gims }],
+        fixed: false,
       },
     ];
     const xmlFiles = await glob(pattern);
@@ -121,16 +122,23 @@ export default class CallInCallOut extends SfCommand<any> {
     // Loop in files
     for (const file of xmlFiles) {
       const fileText = await fs.readFile(file, 'utf8');
-      // Loop on criteria to find matches in this file
-      for (const catcher of catchers) {
-        const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
-        this.matchResults.push(...catcherMatchResults);
-      }
       // Update ApiVersion on file
+      let fixed = false;
       if(fix && fixTargetedMetadataTypes.length > 0 && fixTargetedMetadataTypesPattern.test(file)){
         const updatedContent = fileText.replace(/<apiVersion>(.*?)<\/apiVersion>/, `<apiVersion>${CONSTANTS.API_VERSION}</apiVersion>`);
         await fs.promises.writeFile(file, updatedContent, 'utf-8');
+        fixed = true;
         uxLog(this, `Updated apiVersion in file: ${file}`);
+      }
+      // Loop on criteria to find matches in this file
+      for (const catcher of catchers) {
+        const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
+        // Add the "fixed" flag
+        const enrichedResults = catcherMatchResults.map(result => ({
+          ...result,
+          fixed,
+        }));
+        this.matchResults.push(...enrichedResults);
       }
     }
     /* jscpd:ignore-end */
@@ -143,6 +151,7 @@ export default class CallInCallOut extends SfCommand<any> {
         nameSpace: item.fileName.includes('__') ? item.fileName.split('__')[0] : 'Custom',
         apiVersion: parseFloat(item.detail['apiVersion']),
         valid: parseFloat(item.detail['apiVersion']) > (minimumApiVersion || 100) ? 'yes' : 'no',
+        fixed: item.fixed ? 'yes' : 'no',
       };
     });
 
@@ -168,6 +177,7 @@ export default class CallInCallOut extends SfCommand<any> {
       { key: 'nameSpace', header: 'Namespace' },
       { key: 'apiVersion', header: 'API Version' },
       { key: 'valid', header: `Valid ( > ${minimumApiVersion} )` },
+      { key: 'fixed', header: 'Fixed'},
     ];
     const reportFiles = await generateReports(resultSorted, columns, this);
 
