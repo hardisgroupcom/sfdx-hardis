@@ -11,12 +11,17 @@ import { catchMatches, generateReports, uxLog } from '../../../../common/utils/i
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-export const CONSTANTS = {API_VERSION: process.env.SFDX_API_VERSION || '62.0',}
+import { CONSTANTS } from '../../../../config/index.js';
 
 export default class CallInCallOut extends SfCommand<any> {
   public static title = 'Audit Metadatas API Version';
 
-  public static description = messages.getMessage('auditApiVersion');
+  public static description = `This command detects metadatas whose apiVersion is lower than parameter --minimumapiversion
+
+  It can also fix the apiVersions with the latest one, if parameter --fix is sent
+
+  Example to handle [ApexClass / Trigger & ApexPage mandatory version upgrade(https://help.salesforce.com/s/articleView?id=sf.admin_locales_update_api.htm&type=5) : sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45.0 --fix
+  `
 
   public static examples = ['$ sf hardis:project:audit:apiversion'];
 
@@ -75,7 +80,7 @@ export default class CallInCallOut extends SfCommand<any> {
     };
     const fixAllowedMetadataTypes = Object.keys(fixAllowedExtensions);
 
-    const fixTargetedMetadataTypes = metadataType.trim() === '' ? [] : (flags.metadatatype || '').replace(/\s+/g, '').split(',');
+    const fixTargetedMetadataTypes = metadataType.trim() === '' ? [] : (metadataType || '').replace(/\s+/g, '').split(',');
     const fixInvalidMetadataTypes = fixTargetedMetadataTypes.filter(value => !fixAllowedMetadataTypes.includes(value));
     if (fixTargetedMetadataTypes.length > 0 && fixInvalidMetadataTypes.length > 0 && fix) {
       uxLog(

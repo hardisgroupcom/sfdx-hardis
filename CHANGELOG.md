@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add ability to replace ApiVersion on specific Metadata Types file using `sf hardis:project:audit:apiversion`
+- Add parameters `fix` and `metadatatype` on `sf hardis:project:audit:apiversion`
+
 ## [5.13.3] 2025-01-08
 
 - Update default JIRA Regex to catch tickets when there is an number in the project name
