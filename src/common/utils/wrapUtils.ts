@@ -2,6 +2,7 @@ import { SfCommand } from "@salesforce/sf-plugins-core";
 import c from "chalk";
 import { execCommand, uxLog } from "./index.js";
 import { analyzeDeployErrorLogs } from "./deployTips.js";
+import { generateApexCoverageOutputFile } from "./deployUtils.js";
 
 export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], commandThis: SfCommand<any>, debug = false): Promise<any> {
   const endArgs = [...argv].map((arg) => {
@@ -44,7 +45,9 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
       fail: true,
     });
     process.exitCode = 0;
+    await generateApexCoverageOutputFile(deployRes);
   } catch (e) {
+    await generateApexCoverageOutputFile(e);
     // Add deployment tips in error logs
     const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, { check: endArgs.includes("--checkonly") });
     uxLog(commandThis, c.red(c.bold("Sadly there has been error(s)")));
