@@ -10,6 +10,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) (only if `COVERAGE_FORMATTER_JSON=true` environment variable is defined)
   - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/) (always)
   - [SF Cli deployment wrapper commands](https://sfdx-hardis.cloudity.com/salesforce-deployment-assistant-setup/#using-custom-cicd-pipeline)
+- Do not display command output if execCommand has been called with `output: false`
 
 ## [5.14.0] 2025-01-09
 

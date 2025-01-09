@@ -648,7 +648,9 @@ export async function execCommand(
     // Display error in red if not json
     if (!command.includes('--json') || options.fail) {
       const strErr = shortenLogLines(`${(e as any).stdout}\n${(e as any).stderr}`);
-      console.error(c.red(strErr));
+      if (output) {
+        console.error(c.red(strErr));
+      }
       (e as Error).message = (e as Error).message += '\n' + strErr;
       // Manage retry if requested
       if (options.retry != null) {
