@@ -19,7 +19,7 @@ import {
   replaceJsonInString,
   uxLog,
 } from './index.js';
-import { CONSTANTS, getConfig, setConfig } from '../../config/index.js';
+import { CONSTANTS, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { deployCodeCoverageToMarkdown } from '../gitProvider/utilsMarkdown.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
@@ -282,6 +282,7 @@ export async function smartDeploy(
         (options.postDestructiveChanges ? ` --post-destructive-changes ${options.postDestructiveChanges}` : '') +
         (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
         (testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true ? '' : ' --coverage-formatters json-summary') +
+        ((testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true) && process.env?.COVERAGE_FORMATTER_JSON === "true" ? '' : ' --coverage-formatters json') +
         (debugMode ? ' --verbose' : '') +
         ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
         (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
@@ -289,17 +290,22 @@ export async function smartDeploy(
       let deployRes;
       try {
         deployRes = await execCommand(deployCommand, commandThis, {
-          output: true,
+          output: false,
           debug: debugMode,
           fail: true,
           retry: deployment.retry || null,
         });
-      } catch (e) {
+        if (deployRes.status === 0) {
+          uxLog(commandThis, c.grey(shortenLogLines(deployRes.stdout + deployRes.stderr)));
+        }
+      } catch (e: any) {
+        await generateApexCoverageOutputFile(e);
         deployRes = await handleDeployError(e, check, branchConfig, commandThis, options, deployment);
       }
       if (typeof deployRes === 'object') {
         deployRes.stdout = JSON.stringify(deployRes);
       }
+      await generateApexCoverageOutputFile(deployRes.stdout + deployRes.stderr || '');
 
       // Set deployment id
       await getDeploymentId(deployRes.stdout + deployRes.stderr || '');
@@ -1310,4 +1316,33 @@ async function updatePullRequestResultCoverage(
     prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget);
   }
   globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCodeCoverage);
+}
+
+export async function generateApexCoverageOutputFile(commandOutput: string | any): Promise<void> {
+  try {
+    const outputString =
+      typeof commandOutput === 'string' ? commandOutput :
+        typeof commandOutput === 'object' && commandOutput.stdout && commandOutput.stderr ? commandOutput.stdout + commandOutput.stderr :
+          typeof commandOutput === 'object' && commandOutput.stdout ? commandOutput.stdout :
+            typeof commandOutput === 'object' && commandOutput.stderr ? commandOutput.stderr :
+              JSON.stringify(commandOutput);
+    const reportDir = await getReportDirectory();
+    const coverageFileName = path.join(reportDir, "apex-coverage-results.json");
+    let coverageObject: any = null;
+    const jsonLog = findJsonInString(outputString);
+    // Output from sf project deploy start or similar: extract from JSON
+    if (jsonLog && jsonLog?.result?.details?.runTestResult?.codeCoverage?.length > 0) {
+      coverageObject = jsonLog.result.details.runTestResult.codeCoverage;
+    }
+    // Output from apex run tests: get locally generated file
+    else if (fs.existsSync(path.join(reportDir, "test-result-codecoverage.json"))) {
+      coverageObject = JSON.parse(fs.readFileSync(path.join(reportDir, "test-result-codecoverage.json"), 'utf8'));
+    }
+    if (coverageObject !== null) {
+      await fs.writeFile(coverageFileName, JSON.stringify(coverageObject, null, 2), 'utf8');
+      uxLog(this, c.cyan(`Written Apex coverage results in file ${coverageFileName}`));
+    }
+  } catch (e: any) {
+    uxLog(this, c.red(`Error while generating Apex coverage output file: ${e.message}`));
+  }
 }
