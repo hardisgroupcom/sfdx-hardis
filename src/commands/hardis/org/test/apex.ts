@@ -8,6 +8,7 @@ import { execCommand, extractRegexMatchesMultipleGroups, uxLog } from '../../../
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { CONSTANTS, getConfig, getReportDirectory } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
+import { generateApexCoverageOutputFile } from '../../../../common/utils/deployUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -145,6 +146,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       // Parse outcome value from logs with Regex
       this.testRunOutcome = (/Outcome *(.*) */.exec(execCommandRes.stdout + execCommandRes.stderr) || '')[1].trim();
       this.testRunOutputString = execCommandRes.stdout + execCommandRes.stderr;
+      await generateApexCoverageOutputFile(this.testRunOutputString || '');
     } catch (e) {
       // No Apex in the org
       if (
@@ -156,6 +158,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         // Failing Apex tests
         this.testRunOutputString = (e as Error).message;
         this.testRunOutcome = 'Failed';
+        await generateApexCoverageOutputFile(e);
       }
     }
   }

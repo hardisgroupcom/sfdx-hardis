@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.14.1] 2025-01-09
+
+- Generate a file **hardis-report/apex-coverage-results.json** with Apex code coverage details for the following commands:
+  - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) (only if `COVERAGE_FORMATTER_JSON=true` environment variable is defined)
+  - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/) (always)
+  - [SF Cli deployment wrapper commands](https://sfdx-hardis.cloudity.com/salesforce-deployment-assistant-setup/#using-custom-cicd-pipeline)
+- Do not display command output if execCommand has been called with `output: false`
+
 ## [5.14.0] 2025-01-09
 
 - Add ability to replace ApiVersion on specific Metadata Types file using `sf hardis:project:audit:apiversion`
