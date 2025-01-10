@@ -30,11 +30,11 @@ export default class Project2Markdown extends SfCommand<any> {
 To read the documentation as HTML pages, run the following code (you need [**Python**](https://www.python.org/downloads/) on your computer)
 
 \`\`\`python
-pip install mkdocs-material mdx_truly_sane_lists
-mkdocs serve
+pip install mkdocs-material mdx_truly_sane_lists || python -m pip install mkdocs-material mdx_truly_sane_lists || py -m pip install mkdocs-material mdx_truly_sane_lists
+mkdocs serve || python -m mkdocs serve || py -m mkdocs serve
 \`\`\`
 
-To just generate HTML pages that you can host anywhere, run \`mkdocs build\`
+To just generate HTML pages that you can host anywhere, run \`mkdocs build || python -m mkdocs build || py -m mkdocs build\`
 `
 
   public static description = `Generates a markdown documentation from a SFDX project
