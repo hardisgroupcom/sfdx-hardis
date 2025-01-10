@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [5.14.2] 2025-01-10
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) Fix parsing error in case it is UNKNOWN_ERROR
+- Fix error `str.replace is not a function`
 
 ## [5.14.1] 2025-01-09
 

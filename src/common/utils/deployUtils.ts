@@ -1329,7 +1329,7 @@ export async function generateApexCoverageOutputFile(commandOutput: string | any
     const reportDir = await getReportDirectory();
     const coverageFileName = path.join(reportDir, "apex-coverage-results.json");
     let coverageObject: any = null;
-    const jsonLog = findJsonInString(outputString);
+    const jsonLog = findJsonInString(String(outputString));
     // Output from sf project deploy start or similar: extract from JSON
     if (jsonLog && jsonLog?.result?.details?.runTestResult?.codeCoverage?.length > 0) {
       coverageObject = jsonLog.result.details.runTestResult.codeCoverage;
