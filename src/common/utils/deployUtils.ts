@@ -296,7 +296,7 @@ export async function smartDeploy(
           retry: deployment.retry || null,
         });
         if (deployRes.status === 0) {
-          uxLog(commandThis, c.grey(shortenLogLines(deployRes.stdout + deployRes.stderr)));
+          uxLog(commandThis, c.grey(shortenLogLines(JSON.stringify(deployRes))));
         }
       } catch (e: any) {
         await generateApexCoverageOutputFile(e);
