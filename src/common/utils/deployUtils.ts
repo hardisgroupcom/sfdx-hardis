@@ -12,6 +12,7 @@ import {
   execSfdxJson,
   findJsonInString,
   getCurrentGitBranch,
+  getGitRepoRoot,
   git,
   gitHasLocalUpdates,
   isCI,
@@ -1327,7 +1328,7 @@ export async function generateApexCoverageOutputFile(commandOutput: string | any
             typeof commandOutput === 'object' && commandOutput.stderr ? commandOutput.stderr :
               JSON.stringify(commandOutput);
     const reportDir = await getReportDirectory();
-    const coverageFileName = path.join(reportDir, "apex-coverage-results.json");
+    const jsonCoverageFileName = path.join(reportDir, "apex-coverage-results.json");
     let coverageObject: any = null;
     const jsonLog = findJsonInString(outputString);
     // Output from sf project deploy start or similar: extract from JSON
@@ -1339,8 +1340,16 @@ export async function generateApexCoverageOutputFile(commandOutput: string | any
       coverageObject = JSON.parse(fs.readFileSync(path.join(reportDir, "test-result-codecoverage.json"), 'utf8'));
     }
     if (coverageObject !== null) {
-      await fs.writeFile(coverageFileName, JSON.stringify(coverageObject, null, 2), 'utf8');
-      uxLog(this, c.cyan(`Written Apex coverage results in file ${coverageFileName}`));
+      await fs.writeFile(jsonCoverageFileName, JSON.stringify(coverageObject, null, 2), 'utf8');
+      const outputCoverageFileName = path.join(reportDir, "apex-coverage-results.xml");
+      const accTransformerCommand = `sf acc-transformer transform -j "${jsonCoverageFileName}" -r "${outputCoverageFileName}" -f "cobertura"`;
+      await execSfdxJson(accTransformerCommand, this, {
+        output: true,
+        fail: false,
+        debug: false,
+        cwd: await getGitRepoRoot(),
+      });
+      uxLog(this, c.cyan(`Written Apex coverage results in file ${outputCoverageFileName}`));
     }
   } catch (e: any) {
     uxLog(this, c.red(`Error while generating Apex coverage output file: ${e.message}`));

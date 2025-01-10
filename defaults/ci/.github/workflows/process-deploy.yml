@@ -43,6 +43,7 @@ jobs:
           echo 'y' | sf plugins install sfdx-hardis
           # echo 'y' | sf plugins install sfdmu # Disabled while it does not play well with @salesforce/cli
           echo 'y' | sf plugins install sfdx-git-delta
+          echo 'y' | sf plugins install apex-code-coverage-transformer
             sf version --verbose --json
       # Set env branch variable (github.ref_name seems to not work)
       - name: Set env.BRANCH

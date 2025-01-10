@@ -53,6 +53,7 @@ jobs:
           echo 'y' | sf plugins install sfdx-hardis
           echo 'y' | sf plugins install sfdmu
           echo 'y' | sf plugins install sfdx-git-delta
+          echo 'y' | sf plugins install apex-code-coverage-transformer
           sf version --verbose --json
         displayName: "Install SFDX & plugins"
 

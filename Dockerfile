@@ -5,21 +5,21 @@ FROM python:3.12.8-alpine3.20
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
 
 RUN apk add --update --no-cache \
-            coreutils \
-            git \
-            bash \
-            nodejs \
-            npm \
-            # Required for docker
-            docker \
-            openrc \
-            # Required for puppeteer
-            chromium \
-            nss \
-            freetype \
-            harfbuzz \
-            ca-certificates \
-            ttf-freefont
+    coreutils \
+    git \
+    bash \
+    nodejs \
+    npm \
+    # Required for docker
+    docker \
+    openrc \
+    # Required for puppeteer
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
 
 # Start docker daemon in case mermaid-cli image is used
 RUN rc-update add docker boot && (rc-service docker start || true)
@@ -44,6 +44,7 @@ RUN npm install --no-cache yarn -g && \
     echo 'y' | sf plugins install sfdmu && \
     echo 'y' | sf plugins install sfdx-git-delta && \
     echo 'y' | sf plugins install texei-sfdx-plugin && \
+    echo 'y' | sf plugins install apex-code-coverage-transformer && \
     sf version --verbose --json && \
     rm -rf /root/.npm/_cacache
 

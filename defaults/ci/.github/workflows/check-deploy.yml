@@ -47,6 +47,7 @@ jobs:
           sf plugins install @salesforce/plugin-packaging
           echo 'y' | sf plugins install sfdx-hardis
           echo 'y' | sf plugins install sfdx-git-delta
+          echo 'y' | sf plugins install apex-code-coverage-transformer
           sf version --verbose --json
       # Login & check deploy with test classes & code coverage
       - name: Login & Simulate deployment
