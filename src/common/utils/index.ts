@@ -1341,6 +1341,10 @@ const ansiPattern = [
 const ansiRegex = new RegExp(ansiPattern, 'g');
 
 export function stripAnsi(str: string) {
+  if (typeof str !== 'string') {
+    uxLog(this, c.yellow('Warning: stripAnsi expects a string'));
+    return '';
+  }
   return str.replace(ansiRegex, '');
 }
 
