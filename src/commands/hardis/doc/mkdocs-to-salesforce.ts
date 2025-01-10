@@ -129,7 +129,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
   private async installMkDocs() {
     uxLog(this, c.cyan("Managing mkdocs-material local installation..."));
     let mkdocsLocalOk = false;
-    const installMkDocsRes = await execCommand("pip install mkdocs-material mdx_truly_sane_lists", this, { fail: false, output: true, debug: this.debugMode });
+    const installMkDocsRes = await execCommand("pip install mkdocs-material mdx_truly_sane_lists || python -m install mkdocs-material mdx_truly_sane_lists || py -m install mkdocs-material mdx_truly_sane_lists", this, { fail: false, output: true, debug: this.debugMode });
     if (installMkDocsRes.status === 0) {
       mkdocsLocalOk = true;
     }
@@ -141,7 +141,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     if (mkdocsLocalOk) {
       // Generate MkDocs HTML pages with local MkDocs
       uxLog(this, c.cyan("Generating HTML pages with mkdocs..."));
-      const mkdocsBuildRes = await execCommand("mkdocs build", this, { fail: false, output: true, debug: this.debugMode });
+      const mkdocsBuildRes = await execCommand("mkdocs build || python -m mkdocs build || py -m mkdocs build", this, { fail: false, output: true, debug: this.debugMode });
       if (mkdocsBuildRes.status !== 0) {
         throw new SfError('MkDocs build failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
       }
