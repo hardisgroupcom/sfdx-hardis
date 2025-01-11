@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Ai Provider: Change default model from gpt-4o to gpt-4o-mini
+- Add dotenv to allow to define secrets variables in a local .env file (never commit it !)
 - Add more ways to call python depending on the installation
 
 ## [5.14.3] 2025-01-10

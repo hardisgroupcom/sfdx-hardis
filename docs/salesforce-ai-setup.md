@@ -13,5 +13,5 @@ To get an OpenAi API key, [create an OpenAi Platform account](https://platform.o
 | Variable               | Description                                                                               | Default  |
 |------------------------|-------------------------------------------------------------------------------------------|----------|
 | OPENAI_API_KEY         | Your openai account API key                                                               |          |
-| OPENAI_MODEL           | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/)) | `gpt-4o` |
-| AI_MAXIMUM_CALL_NUMBER | Maximum allowed number of calls to OpenAi API during a single sfdx-hardis command         | `10`     |
+| OPENAI_MODEL           | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/)) | `gpt-4o-mini` |
+| AI_MAXIMUM_CALL_NUMBER | Maximum allowed number of calls to OpenAi API during a single sfdx-hardis command         | `10000` |

@@ -1,4 +1,12 @@
-export type PromptTemplate = "PROMPT_SOLVE_DEPLOYMENT_ERROR" | "PROMPT_DESCRIBE_FLOW";
+import { uxLog } from "../utils/index.js";
+import c from "chalk";
+
+export type PromptTemplate =
+  "PROMPT_SOLVE_DEPLOYMENT_ERROR" |
+  "PROMPT_DESCRIBE_FLOW" |
+  "PROMPT_DESCRIBE_FLOW_DIFF"
+  ;
+
 export type PromptLanguage = "en" | "fr";
 
 export function buildPromptFromTemplate(template: PromptTemplate, variables: object): string {
@@ -10,9 +18,10 @@ export function buildPromptFromTemplate(template: PromptTemplate, variables: obj
     throw new Error(`Missing variables for prompt template ${template}: ${missingVariables.join(", ")}`);
   }
   // Get prompt language and check if it is an allowed one
-  const promptsLanguage = process.env.PROMPTS_LANGUAGE || "EN";
+  let promptsLanguage = process.env.PROMPTS_LANGUAGE || "en";
   if (!["en", "fr"].includes(promptsLanguage)) {
-    throw new Error(`Invalid prompts language: ${promptsLanguage}`);
+    uxLog(this, c.yellow(`Unknown prompt language ${promptsLanguage}: Switch back to en`));
+    promptsLanguage = "en";
   }
   // Build prompt
   let prompt = process.env?.[template] || templateData.text[promptsLanguage];
@@ -57,14 +66,51 @@ L'erreur est :
     text: {
       "en": `You are a business analyst working on a Salesforce project.
 Please describe the following flow using plain English that can be understood by a business user.
+Please respond with markdown format, that can be embedded in a level 2 header (##).
+Add a new line before starting a bullet list so mkdocs-material displays it correctly, including for sub-bullets.
 Caution: If the XML contains secret tokens or password, please replace them with a placeholder.
 The flox XML is:
 {{FLOW_XML}}`,
       "fr": `Vous êtes un analyste métier travaillant sur un projet Salesforce.
 Veuillez décrire le flux suivant en utilisant un langage simple qui peut être compris par un utilisateur métier.
+Veuillez répondre avec le format markdown, qui peut être intégré dans un en-tête de niveau 2 (##)
+Ajoutez une nouvelle ligne avant de commencer une liste à puces pour que mkdocs-material l'affiche correctement, y compris pour les sous-puces.
 Attention : Si le XML contient des jetons secrets ou des mots de passe, veuillez les remplacer par un espace réservé.
 Le XML du flux est :
 {{FLOW_XML}}`
+    }
+  },
+  "PROMPT_DESCRIBE_FLOW_DIFF": {
+    variables: ["FLOW_XML_NEW", "FLOW_XML_PREVIOUS"],
+    text: {
+      "en": `You are a business analyst working on a Salesforce project.
+Please describe the differences between new version of the flow and previous version of the flow, using plain English that can be understood by a business user.
+Do NOT include in the response:
+- Elements related to location attributes (locationX and locationY).
+- Elements that have not changed
+Please respond with markdown format, that can be embedded in a level 2 header (##).
+Add a new line before starting a bullet list so mkdocs-material displays it correctly, including for sub-bullets.
+Caution: If the XML contains secret tokens or password, please replace them with a placeholder.
+The new version flow XML is:
+{{FLOW_XML_NEW}}
+
+The previous version flow XML is:
+{{FLOW_XML_PREVIOUS}}
+`,
+      "fr": `Vous êtes un analyste métier travaillant sur un projet Salesforce.
+Veuillez décrire les différences entre la nouvelle version du Flow et la version précédente du Flow, en utilisant un langage simple qui peut être compris par un utilisateur métier.
+Ne PAS inclure dans la réponse :
+- Les éléments liés aux attributs de localisation (locationX et locationY).
+- Les éléments qui n'ont pas changé
+Veuillez répondre avec le format markdown, qui peut être intégré dans un en-tête de niveau 2 (##)
+Ajoutez une nouvelle ligne avant de commencer une liste à puces pour que mkdocs-material l'affiche correctement, y compris pour les sous-puces.
+Attention : Si le XML contient des jetons secrets ou des mots de passe, veuillez les remplacer par un espace réservé.
+Le XML de la nouvelle version du Flow est:
+{{FLOW_XML_CURRENT}}
+
+Le XML de la précédente version du Flow est:
+{{FLOW_XML_PREVIOUS}}
+`
     }
   }
 }

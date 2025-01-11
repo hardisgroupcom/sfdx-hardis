@@ -197,7 +197,7 @@ async function generateMermaidContent(flowMap: FlowMap, flowObj: any, options: a
     const { nodeDefStr, nodeDetailMd } = await getNodeDefStr(flowMap, flowType, startFingerPrint, startNodeLabel, startElementReference, options);
     const mdClasses = getMermaidClasses() + "\n\n";
     const mdBody = await getMermaidBody(flowMap) + "\n\n";
-    const mdEnd = "```\n\n";
+    const mdEnd = "```\n\n<!-- Flow description -->\n\n";
     const currentBranch = await getCurrentGitBranch();
     const footer = `\n\n___\n\n_Documentation generated from branch ${currentBranch} by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}), featuring [salesforce-flow-visualiser](https://github.com/toddhalfpenny/salesforce-flow-visualiser)_`;
     const mdDiagram =
