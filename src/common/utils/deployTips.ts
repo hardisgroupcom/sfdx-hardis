@@ -59,7 +59,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
           },
         });
       } else {
-        const promptText = AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", logLine.trim());
+        const promptText = AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": logLine.trim() });
         // No tip found, give the user an AI prompt
         logResLines.push(c.yellow("No sfdx-hardis tip to solve this error. You can try the following prompt:"));
         logResLines.push(c.yellow(promptText));
