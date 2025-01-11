@@ -310,7 +310,7 @@ async function findAiTip(errorLine: any): Promise<AiResponse | null> {
       uxLog(this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
       return null;
     }
-    const prompt = AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", errorLine);
+    const prompt = AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": errorLine });
     try {
       const aiResponse = await AiProvider.promptAi(prompt);
       return aiResponse;
