@@ -2,6 +2,7 @@ import { UtilsAi } from "./utils.js";
 import { AiProviderRoot } from "./aiProviderRoot.js";
 import { OpenAiProvider } from "./openaiProvider.js";
 import { SfError } from "@salesforce/core";
+import { buildPromptFromTemplate, PromptTemplate } from "./promptTemplates.js";
 
 export abstract class AiProvider {
   static isAiAvailable(): boolean {
@@ -23,6 +24,11 @@ export abstract class AiProvider {
     }
     return await aiInstance.promptAi(prompt);
   }
+
+  static buildPrompt(template: PromptTemplate, variables: object): string {
+    return buildPromptFromTemplate(template, variables);
+  }
+
 }
 
 export interface AiResponse {
