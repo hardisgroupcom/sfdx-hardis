@@ -51,6 +51,7 @@ How to solve the following Salesforce deployment error ?
 The error is: 
 {{ERROR}}
 `,
+      /* cSpell:disable */
       "fr": `Vous êtes un release manager Salesforce qui utilise les commands Salesforce CLI pour effectuer des déploiements 
 Comment résoudre l'erreur de déploiement Salesforce suivante ?
 - Veuillez répondre en utilisant le format source de sfdx, pas le format metadata.
@@ -59,6 +60,7 @@ Comment résoudre l'erreur de déploiement Salesforce suivante ?
 L'erreur est :
 {{ERROR}}
 `
+      /* cSpell:enable */
     },
   },
   "PROMPT_DESCRIBE_FLOW": {
@@ -71,6 +73,7 @@ Add a new line before starting a bullet list so mkdocs-material displays it corr
 Caution: If the XML contains secret tokens or password, please replace them with a placeholder.
 The flow XML is:
 {{FLOW_XML}}`,
+      /* cSpell:disable */
       "fr": `Vous êtes un analyste métier travaillant sur un projet Salesforce.
 Veuillez décrire le flux suivant en utilisant un langage simple qui peut être compris par un utilisateur métier.
 Veuillez répondre avec le format markdown, qui peut être intégré dans un en-tête de niveau 2 (##)
@@ -78,41 +81,43 @@ Ajoutez une nouvelle ligne avant de commencer une liste à puces pour que mkdocs
 Attention : Si le XML contient des jetons secrets ou des mots de passe, veuillez les remplacer par un espace réservé.
 Le XML du flux est :
 {{FLOW_XML}}`
+      /* cSpell:enable */
     }
+
   },
   "PROMPT_DESCRIBE_FLOW_DIFF": {
     variables: ["FLOW_XML_NEW", "FLOW_XML_PREVIOUS"],
     text: {
       "en": `You are a business analyst working on a Salesforce project.
 Please describe the differences between new version of the flow and previous version of the flow, using plain English that can be understood by a business user.
-Do NOT include in the response:
-- Elements related to location attributes (locationX and locationY) or positions.
-- Elements that have not changed
+Ignore tags related to location attributes (locationX and locationY) or positions: do not mention them in your response
+Ignore nodes and elements that have not changed: do not mention them in your response
+Ignore connector changes: do not mention them in your response
 Please respond with markdown format, that can be embedded in a level 2 header (##).
-Add a new line before starting a bullet list so mkdocs-material displays it correctly, including for sub-bullets.
-Caution: If the XML contains secret tokens or password, please replace them with a placeholder.
-Please DO NOT refer to locationX, locationY or positions of the XML nodes.
+Add a new line before starting a bullet list so mkdocs-material displays it correctly, including for sub-bullets and sub-sub-bullets.
+If the XML contains secret tokens or password, please replace them with a placeholder.
 The new version flow XML is:
 {{FLOW_XML_NEW}}
 
 The previous version flow XML is:
 {{FLOW_XML_PREVIOUS}}
 `,
+      /* cSpell:disable */
       "fr": `Vous êtes un analyste métier travaillant sur un projet Salesforce.
 Veuillez décrire les différences entre la nouvelle version du Flow et la version précédente du Flow, en utilisant un langage simple qui peut être compris par un utilisateur métier.
-Ne PAS inclure dans la réponse :
-- Les éléments liés aux attributs de localisation (locationX et locationY).
-- Les éléments qui n'ont pas changé
+Ignorez les balises liées aux attributs de localisation (locationX et locationY) ou positions : ne les mentionnez pas dans votre réponse
+Ignorez les nœuds et éléments qui n'ont pas changé : ne les mentionnez pas dans votre réponse
+Ignorez les changements de connecteurs : ne les mentionnez pas dans votre réponse
 Veuillez répondre avec le format markdown, qui peut être intégré dans un en-tête de niveau 2 (##)
 Ajoutez une nouvelle ligne avant de commencer une liste à puces pour que mkdocs-material l'affiche correctement, y compris pour les sous-puces.
-Attention : Si le XML contient des jetons secrets ou des mots de passe, veuillez les remplacer par un espace réservé.
-Veuillez NE PAS faire référence aux localisations (locationX, locationY or positions) des nœuds XML.
+Si le XML contient des jetons secrets ou des mots de passe, veuillez les remplacer par un espace réservé.
 Le XML de la nouvelle version du Flow est:
 {{FLOW_XML_CURRENT}}
 
 Le XML de la précédente version du Flow est:
 {{FLOW_XML_PREVIOUS}}
 `
+      /* cSpell:enable */
     }
   }
 }
