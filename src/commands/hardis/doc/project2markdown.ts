@@ -74,6 +74,8 @@ If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strateg
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-doc-branches-strategy.jpg)
 
+If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configured, documentation will contain a summary of the Flow.
+
 If you have a complex strategy, you might need to input property **mergeTargets** in branch-scoped sfdx-hardis.yml file to have a correct diagram.
 
 ${this.htmlInstructions}
@@ -131,7 +133,7 @@ ${this.htmlInstructions}
 
     await fs.ensureDir(this.outputMarkdownRoot);
     const currentBranch = await getCurrentGitBranch()
-    this.footer = `_Documentation generated from branch ${currentBranch} with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`;
+    this.footer = `_Documentation generated from branch ${currentBranch} with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) by [Cloudity](${CONSTANTS.WEBSITE_URL}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`;
 
     if (fs.existsSync("config/.sfdx-hardis.yml")) {
       this.sfdxHardisConfig = await getConfig("project");
@@ -275,7 +277,7 @@ ${Project2Markdown.htmlInstructions}
         flowSkips.push(flowFile);
         continue;
       }
-      const genRes = await generateFlowMarkdownFile(flowFile, flowXml, outputFlowMdFile, { collapsedDetails: false });
+      const genRes = await generateFlowMarkdownFile(flowFile, flowXml, outputFlowMdFile, { collapsedDetails: false, describeWithAi: true });
       if (!genRes) {
         flowErrors.push(flowFile);
         continue;
@@ -325,15 +327,6 @@ ${Project2Markdown.htmlInstructions}
 
     this.mkDocsNavNodes["Flows"] = flowsForMenu;
     uxLog(this, c.green(`Successfully generated doc index for Flows at ${flowIndexFile}`));
-
-    const mkdocsNavHistoryNodes: any = {};
-    for (const flowName of Object.keys(flowsForMenu)) {
-      const flowHistoryFile = path.join(this.outputMarkdownRoot, flowsForMenu[flowName].replace(".md", "-history.md"));
-      if (fs.existsSync(flowHistoryFile)) {
-        mkdocsNavHistoryNodes[flowName] = flowsForMenu[flowName].replace(".md", "-history.md");
-      }
-    }
-    this.mkDocsNavNodes["Flows History"] = mkdocsNavHistoryNodes;
   }
 
   private humanDisplay(flows) {

@@ -36,6 +36,8 @@ const REMOTE_CONFIGS: any = {};
 export const CONSTANTS = {
   API_VERSION: process.env.SFDX_API_VERSION || '62.0',
   DOC_URL_ROOT: "https://sfdx-hardis.cloudity.com",
+  WEBSITE_URL: "https://cloudity.com",
+  CONTACT_URL: "https://cloudity.com/#form",
   NOT_IMPACTING_METADATA_TYPES: process.env.NOT_IMPACTING_METADATA_TYPES?.split(",") ?? [
     "Audience",
     "AuraDefinitionBundle",

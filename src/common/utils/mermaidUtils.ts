@@ -9,6 +9,7 @@ import { getReportDirectory } from "../../config/index.js";
 import moment from "moment";
 import { SfError } from "@salesforce/core";
 import { PACKAGE_ROOT_DIR } from "../../settings.js";
+import { AiProvider } from "../aiProvider/index.js";
 
 let IS_MERMAID_AVAILABLE: boolean | null = null;
 export async function isMermaidAvailable() {
@@ -35,10 +36,13 @@ export async function isDockerAvailable() {
   return IS_DOCKER_AVAILABLE;
 }
 
-export async function generateFlowMarkdownFile(flowName: string, flowXml: string, outputFlowMdFile: string, options: { collapsedDetails: boolean } = { collapsedDetails: true }): Promise<boolean> {
+export async function generateFlowMarkdownFile(flowName: string, flowXml: string, outputFlowMdFile: string, options: { collapsedDetails: boolean, describeWithAi: boolean } = { collapsedDetails: true, describeWithAi: true }): Promise<boolean> {
   try {
     const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true, collapsedDetails: options.collapsedDetails });
-    const flowMarkdownDoc = flowDocGenResult.uml;
+    let flowMarkdownDoc = flowDocGenResult.uml;
+    if (options.describeWithAi) {
+      flowMarkdownDoc = await completeWithAiDescription(flowMarkdownDoc, flowXml);
+    }
     await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
     uxLog(this, c.grey(`Written ${flowName} documentation in ${outputFlowMdFile}`));
     return true;
@@ -183,8 +187,10 @@ ${formatClasses(changedClasses, changed)}
 export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, commitAfter: string,
   options: { mermaidMd: boolean, svgMd: boolean, pngMd: boolean, debug: boolean } = { mermaidMd: false, svgMd: true, pngMd: false, debug: false }) {
   const result: any = { outputDiffMdFile: "", hasFlowDiffs: false };
-  const mermaidMdBefore = await buildMermaidMarkdown(commitBefore, flowFile);
-  const mermaidMdAfter = await buildMermaidMarkdown(commitAfter, flowFile);
+  const flowXmlBefore = await git().show([`${commitBefore}:${flowFile}`]);
+  const mermaidMdBefore = await buildMermaidMarkdown(flowXmlBefore, flowFile);
+  const flowXmlAfter = await git().show([`${commitAfter}:${flowFile}`]);
+  const mermaidMdAfter = await buildMermaidMarkdown(flowXmlAfter, flowFile);
   const flowLabel = path.basename(flowFile, ".flow-meta.xml");
 
   const reportDir = await getReportDirectory();
@@ -219,8 +225,14 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   const linkLines: string[] = [];
   buildFinalCompareMarkdown(mixedLines, compareMdLines, false, false, linkLines);
 
+  let diffMarkdown = compareMdLines.join("\n");
+
+  if (result.hasFlowDiffs === true) {
+    diffMarkdown = await completeWithDiffAiDescription(diffMarkdown, flowXmlAfter, flowXmlBefore)
+  }
+
   // Write markdown with diff in a file
-  await fs.writeFile(diffMdFile, compareMdLines.join("\n"));
+  await fs.writeFile(diffMdFile, diffMarkdown);
   if (options.mermaidMd) {
     await fs.copyFile(diffMdFile, diffMdFile.replace(".md", ".mermaid.md"));
   }
@@ -501,8 +513,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid, (styledLine.startsWith("|") && isTableStarted), linkLines);
 }
 
-async function buildMermaidMarkdown(commit, flowFile) {
-  const flowXml = await git().show([`${commit}:${flowFile}`]);
+async function buildMermaidMarkdown(flowXml, flowFile) {
   try {
     const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true });
     return flowDocGenResult.uml;
@@ -537,7 +548,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
       const reportDir = await getReportDirectory();
       await fs.ensureDir(path.join(reportDir, "flow-diff"));
       const diffMdFileTmp = path.join(reportDir, 'flow-diff', `${flowLabel}_${moment().format("YYYYMMDD-hhmmss")}.md`);
-      const genRes = await generateFlowMarkdownFile(flowFile, flowXml, diffMdFileTmp, { collapsedDetails: false });
+      const genRes = await generateFlowMarkdownFile(flowFile, flowXml, diffMdFileTmp, { collapsedDetails: false, describeWithAi: false });
       if (!genRes) {
         throw new Error(`Error generating markdown file for flow ${flowFile}`);
       }
@@ -596,16 +607,9 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
   const mainFlowDoc = path.join("docs", "flows", path.basename(flowFile).replace(".flow-meta.xml", ".md"));
   if (fs.existsSync(mainFlowDoc)) {
     const mainFlowDocContent = await fs.readFile(mainFlowDoc, "utf8");
-    const mainFlowDocLink = `[_View History_](${path.basename(flowFile).replace(".flow-meta.xml", "-history.md")})`;
-    if (!mainFlowDocContent.includes(mainFlowDocLink)) {
-      let replaced = false;
-      const updatedFlowDocContent = mainFlowDocContent.split("\n").map(line => {
-        if (line.startsWith("![") && replaced === false) {
-          replaced = true;
-          return `${line}\n\n ${mainFlowDocLink}\n`;
-        }
-        return line;
-      }).join("\n");
+    const mainFlowDocLink = `[(_View History_)](${path.basename(flowFile).replace(".flow-meta.xml", "-history.md")})`;
+    if (mainFlowDocContent.includes("## Flow Diagram") && !mainFlowDocContent.includes(mainFlowDocLink)) {
+      const updatedFlowDocContent = mainFlowDocContent.replace("## Flow Diagram", `## Flow Diagram ${mainFlowDocLink}`);
       await fs.writeFile(mainFlowDoc, updatedFlowDocContent);
     }
   }
@@ -638,3 +642,43 @@ export function removeMermaidLinks(messageBody: string) {
   }
   return result;
 }
+
+async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: string): Promise<string> {
+  if (await AiProvider.isAiAvailableWithUserPrompt()) {
+    // Invoke AI Service
+    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW", { "FLOW_XML": flowXml });
+    const aiResponse = await AiProvider.promptAi(prompt);
+    // Replace description in markdown
+    if (aiResponse?.success) {
+      let responseText = aiResponse.promptResponse || "No AI description available";
+      if (responseText.startsWith("##")) {
+        responseText = responseText.split("\n").slice(1).join("\n");
+      }
+      const replaceText = "## AI-Generated Description\n\n" + responseText;
+      const flowMarkdownDocUpdated = flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
+      return flowMarkdownDocUpdated;
+    }
+  }
+  return flowMarkdownDoc;
+}
+
+/* jscpd:ignore-start */
+async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew: string, flowXmlPrevious: string): Promise<string> {
+  if (await AiProvider.isAiAvailableWithUserPrompt()) {
+    // Invoke AI Service
+    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW_DIFF", { "FLOW_XML_NEW": flowXmlNew, "FLOW_XML_PREVIOUS": flowXmlPrevious });
+    const aiResponse = await AiProvider.promptAi(prompt);
+    // Replace description in markdown
+    if (aiResponse?.success) {
+      let responseText = aiResponse.promptResponse || "No AI description available";
+      if (responseText.startsWith("##")) {
+        responseText = responseText.split("\n").slice(1).join("\n");
+      }
+      const replaceText = "## AI-Generated Differences Summary\n\n" + responseText;
+      const flowMarkdownDocUpdated = flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
+      return flowMarkdownDocUpdated;
+    }
+  }
+  return flowMarkdownDoc;
+}
+/* jscpd:ignore-end */

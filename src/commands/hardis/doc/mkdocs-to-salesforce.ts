@@ -11,7 +11,6 @@ import { initPermissionSetAssignments, isProductionOrg } from '../../../common/u
 import { CONSTANTS } from '../../../config/index.js';
 import { readMkDocsFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
 
-
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
@@ -251,12 +250,20 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     }
     if (deployRes.status !== 0) {
       uxLog(this, c.red(`Deployment failed:\n${deployRes.stderr + "\n" + deployRes.stdout}`));
-      uxLog(this, c.yellow(`You can manually deploy the Static Resource ${resName},the VisualForce page ${resName} and the custom tab ${resName} to your org
+      if ((deployRes.stderr + deployRes.stdout).includes("static resource cannot exceed")) {
+        uxLog(this, c.red(`Documentation is too big to be hosted in a Static Resource.`));
+        uxLog(this, c.yellow(`Cloudity can help you to host it somewhere else :)`));
+        uxLog(this, c.yellow(`If you are interested, contact us on ${c.green(c.bold(CONSTANTS.CONTACT_URL))}`));
+      }
+      else {
+        uxLog(this, c.yellow(`You can manually deploy the Static Resource ${resName},the VisualForce page ${resName} and the custom tab ${resName} to your org
 - Static Resource: ${mkDocsResourcePath} (If you upload using UI, zip the folder and make sure to have index.html at the zip root)
 - VisualForce page: ${vfPageMetaFile}
 - Custom tab: ${tabMetaFile}
 - Permission Set: ${permissionSetFile}
+You can also run the documentation locally using "mkdocs serve || python -m mkdocs serve || py -m mkdocs serve"
 `));
+      }
     }
     else {
       uxLog(this, c.green(`SFDX Project documentation uploaded to salesforce and available in Custom Tab ${resName}`));

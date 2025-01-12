@@ -59,7 +59,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
           },
         });
       } else {
-        const promptText = buildPrompt(logLine.trim());
+        const promptText = AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": logLine.trim() });
         // No tip found, give the user an AI prompt
         logResLines.push(c.yellow("No sfdx-hardis tip to solve this error. You can try the following prompt:"));
         logResLines.push(c.yellow(promptText));
@@ -306,7 +306,11 @@ async function findAiTip(errorLine: any): Promise<AiResponse | null> {
   }
   alreadyProcessedErrors.push(errorLine);
   if (AiProvider.isAiAvailable()) {
-    const prompt = buildPrompt(errorLine);
+    if (alreadyProcessedErrors.length > parseInt(process.env.MAX_DEPLOYMENT_TIPS_AI_CALLS || "20")) {
+      uxLog(this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
+      return null;
+    }
+    const prompt = AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": errorLine });
     try {
       const aiResponse = await AiProvider.promptAi(prompt);
       return aiResponse;
@@ -317,11 +321,3 @@ async function findAiTip(errorLine: any): Promise<AiResponse | null> {
   return null;
 }
 
-function buildPrompt(errorLine: string) {
-  const prompt =
-    `How to solve Salesforce deployment error "${errorLine}" ? \n` +
-    "- Please answer using sfdx source format, not metadata format. \n" +
-    "- Please provide XML example if applicable. \n" +
-    "- Please skip the part of the response about retrieving or deploying the changes with Salesforce CLI.";
-  return prompt;
-}
