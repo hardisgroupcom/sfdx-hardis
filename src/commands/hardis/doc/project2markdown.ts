@@ -74,6 +74,8 @@ If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strateg
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-doc-branches-strategy.jpg)
 
+If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configured, documentation will contain a summary of the Flow.
+
 If you have a complex strategy, you might need to input property **mergeTargets** in branch-scoped sfdx-hardis.yml file to have a correct diagram.
 
 ${this.htmlInstructions}

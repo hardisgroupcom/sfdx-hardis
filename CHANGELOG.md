@@ -4,7 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Ai Provider: Change default model from gpt-4o to gpt-4o-mini
+- Allow to call AI to describe flows in documentation
+- Allow to call AI to describe differences between 2 flow versions in a pull request comment
+- Ai Provider enhancements
+  - Change default model from gpt-4o to gpt-4o-mini
+  - Prompt templates factory, with capability to override default prompt with ENV variable
+  - Translate prompts in french
+
 - Add dotenv to allow to define secrets variables in a local .env file (never commit it !)
 - Add more ways to call python depending on the installation
 
