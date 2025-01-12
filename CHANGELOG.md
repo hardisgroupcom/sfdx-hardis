@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.15.0] 2025-01-12
+
 - Allow to call AI to describe flows in documentation
 - Allow to call AI to describe differences between 2 flow versions in a pull request comment
 - [Ai Provider](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/) enhancements
