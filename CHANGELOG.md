@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.15.1] 2025-01-12
+
+- Improve prompt templates
+
 ## [5.15.0] 2025-01-12
 
 - Allow to call AI to describe flows in documentation
