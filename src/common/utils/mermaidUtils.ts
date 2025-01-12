@@ -607,16 +607,9 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
   const mainFlowDoc = path.join("docs", "flows", path.basename(flowFile).replace(".flow-meta.xml", ".md"));
   if (fs.existsSync(mainFlowDoc)) {
     const mainFlowDocContent = await fs.readFile(mainFlowDoc, "utf8");
-    const mainFlowDocLink = `[_View History_](${path.basename(flowFile).replace(".flow-meta.xml", "-history.md")})`;
-    if (!mainFlowDocContent.includes(mainFlowDocLink)) {
-      let replaced = false;
-      const updatedFlowDocContent = mainFlowDocContent.split("\n").map(line => {
-        if (line.startsWith("![") && replaced === false) {
-          replaced = true;
-          return `${line}\n\n ${mainFlowDocLink}\n`;
-        }
-        return line;
-      }).join("\n");
+    const mainFlowDocLink = `[(_View History_)](${path.basename(flowFile).replace(".flow-meta.xml", "-history.md")})`;
+    if (mainFlowDocContent.includes("## Flow Diagram") && !mainFlowDocContent.includes(mainFlowDocLink)) {
+      const updatedFlowDocContent = mainFlowDocContent.replace("## Flow Diagram", `## Flow Diagram ${mainFlowDocLink}`);
       await fs.writeFile(mainFlowDoc, updatedFlowDocContent);
     }
   }

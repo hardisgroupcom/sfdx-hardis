@@ -327,15 +327,6 @@ ${Project2Markdown.htmlInstructions}
 
     this.mkDocsNavNodes["Flows"] = flowsForMenu;
     uxLog(this, c.green(`Successfully generated doc index for Flows at ${flowIndexFile}`));
-
-    const mkdocsNavHistoryNodes: any = {};
-    for (const flowName of Object.keys(flowsForMenu)) {
-      const flowHistoryFile = path.join(this.outputMarkdownRoot, flowsForMenu[flowName].replace(".md", "-history.md"));
-      if (fs.existsSync(flowHistoryFile)) {
-        mkdocsNavHistoryNodes[flowName] = flowsForMenu[flowName].replace(".md", "-history.md");
-      }
-    }
-    this.mkDocsNavNodes["Flows History"] = mkdocsNavHistoryNodes;
   }
 
   private humanDisplay(flows) {
