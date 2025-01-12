@@ -662,6 +662,7 @@ async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: strin
   return flowMarkdownDoc;
 }
 
+/* jscpd:ignore-start */
 async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew: string, flowXmlPrevious: string): Promise<string> {
   if (await AiProvider.isAiAvailableWithUserPrompt()) {
     // Invoke AI Service
@@ -680,3 +681,4 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
   }
   return flowMarkdownDoc;
 }
+/* jscpd:ignore-end */

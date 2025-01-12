@@ -69,7 +69,7 @@ Please describe the following flow using plain English that can be understood by
 Please respond with markdown format, that can be embedded in a level 2 header (##).
 Add a new line before starting a bullet list so mkdocs-material displays it correctly, including for sub-bullets.
 Caution: If the XML contains secret tokens or password, please replace them with a placeholder.
-The flox XML is:
+The flow XML is:
 {{FLOW_XML}}`,
       "fr": `Vous êtes un analyste métier travaillant sur un projet Salesforce.
 Veuillez décrire le flux suivant en utilisant un langage simple qui peut être compris par un utilisateur métier.
