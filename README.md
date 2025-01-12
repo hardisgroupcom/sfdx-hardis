@@ -26,6 +26,7 @@ It will allow you to:
 - Do with simple commands what could be done manually in minutes/hours
 - [Define a **ready to use CI/CD Pipeline** for your Salesforce project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 - [**Backup Metadatas** and **monitor any Salesforce org**](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/)
+- [Generate your **project documentation**](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/), including AI-generated description and Flow Visual History
 
 [_Please see the full list of commands in Online documentation_](https://sfdx-hardis.cloudity.com)
 
