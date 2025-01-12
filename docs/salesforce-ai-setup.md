@@ -6,6 +6,16 @@ description: Learn how to use AI to supercharge sfdx-hardis deployments
 
 # Setup AI for sfdx-hardis
 
+## Security considerations
+
+sfdx-hardis uses **prompt via API** to collect analysis: only **Metadata XML** or **JSON deployment errors** are sent in the prompts.
+
+If you follow Flows best practices and **do not hardcode credentials / tokens in variables**, there is no serious risk to send metadata XML to an external LLM (**but be aware that you do !**)
+
+You can see the prompts content if you set env variable `DEBUG_PROMPTS=true`.
+
+The list of prompts used by sfdx-hardis is defined in [this source file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/promptTemplates.ts).
+
 ## Main configuration
 
 You need to define at least env variable OPENAI_API_KEY and make it available to your CI/CD workflow.

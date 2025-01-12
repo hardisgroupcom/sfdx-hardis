@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add AI security considerations in documentation
+
 ## [5.15.1] 2025-01-12
 
 - Improve prompt templates
