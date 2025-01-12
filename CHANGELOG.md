@@ -6,12 +6,11 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Allow to call AI to describe flows in documentation
 - Allow to call AI to describe differences between 2 flow versions in a pull request comment
-- Ai Provider enhancements
+- [Ai Provider](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/) enhancements
   - Change default model from gpt-4o to gpt-4o-mini
   - Prompt templates factory, with capability to override default prompt with ENV variable
   - Translate prompts in french
-
-- Add dotenv to allow to define secrets variables in a local .env file (never commit it !)
+- Add dotenv to allow to define secrets variables in a local `.env` file (never commit it !)
 - Add more ways to call python depending on the installation
 
 ## [5.14.3] 2025-01-10
