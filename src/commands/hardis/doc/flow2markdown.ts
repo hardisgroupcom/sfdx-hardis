@@ -9,6 +9,7 @@ import { WebSocketClient } from '../../../common/websocketClient.js';
 import { isCI, uxLog } from '../../../common/utils/index.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
+import { CONSTANTS } from '../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -16,7 +17,10 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class Flow2Markdown extends SfCommand<any> {
   public static title = 'Flow to Markdown';
 
-  public static description = `Generates a markdown documentation from a Flow file`;
+  public static description = `Generates a markdown documentation from a Flow file
+  
+If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configured, documentation will contain a summary of the Flow.  
+  `;
 
   public static examples = [
     '$ sf hardis:doc:flow2markdown',
@@ -75,7 +79,7 @@ export default class Flow2Markdown extends SfCommand<any> {
 
     uxLog(this, c.grey(`Generating markdown for Flow ${this.inputFile}...`));
     const flowXml = (await fs.readFile(this.inputFile, "utf8")).toString();
-    const genRes = await generateFlowMarkdownFile(this.inputFile, flowXml, this.outputFile, { collapsedDetails: false });
+    const genRes = await generateFlowMarkdownFile(this.inputFile, flowXml, this.outputFile, { collapsedDetails: false, describeWithAi: true });
     if (!genRes) {
       throw new Error("Error generating markdown file");
     }
