@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Add AI security considerations in documentation
 - Do not prompt for AI API TOKEN
+- Do not crash in case of AI call failure
 
 ## [5.15.1] 2025-01-12
 
