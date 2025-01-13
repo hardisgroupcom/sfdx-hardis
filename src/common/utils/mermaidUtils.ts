@@ -644,7 +644,7 @@ export function removeMermaidLinks(messageBody: string) {
 }
 
 async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: string): Promise<string> {
-  if (await AiProvider.isAiAvailableWithUserPrompt()) {
+  if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
     const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW", { "FLOW_XML": flowXml });
     const aiResponse = await AiProvider.promptAi(prompt);
@@ -664,7 +664,7 @@ async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: strin
 
 /* jscpd:ignore-start */
 async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew: string, flowXmlPrevious: string): Promise<string> {
-  if (await AiProvider.isAiAvailableWithUserPrompt()) {
+  if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
     const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW_DIFF", { "FLOW_XML_NEW": flowXmlNew, "FLOW_XML_PREVIOUS": flowXmlPrevious });
     const aiResponse = await AiProvider.promptAi(prompt);

@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.15.2] 2025-01-13
+
 - Add AI security considerations in documentation
+- Do not prompt for AI API TOKEN
 
 ## [5.15.1] 2025-01-12
 
