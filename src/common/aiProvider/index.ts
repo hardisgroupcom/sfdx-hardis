@@ -1,9 +1,10 @@
 import { UtilsAi } from "./utils.js";
+import c from 'chalk';
 import { AiProviderRoot } from "./aiProviderRoot.js";
 import { OpenAiProvider } from "./openaiProvider.js";
 import { SfError } from "@salesforce/core";
 import { buildPromptFromTemplate, PromptTemplate } from "./promptTemplates.js";
-import { isCI } from "../utils/index.js";
+import { isCI, uxLog } from "../utils/index.js";
 import { prompts } from "../utils/prompts.js";
 
 let IS_AI_AVAILABLE: boolean | null = null;
@@ -48,7 +49,12 @@ export abstract class AiProvider {
     if (!aiInstance) {
       throw new SfError("aiInstance should be set");
     }
-    return await aiInstance.promptAi(prompt, template);
+    try {
+      return await aiInstance.promptAi(prompt, template);
+    } catch (e: any) {
+      uxLog(this, c.red(`Error while calling AI provider: ${e.message}`));
+      return null;
+    }
   }
 
   static buildPrompt(template: PromptTemplate, variables: object): string {
