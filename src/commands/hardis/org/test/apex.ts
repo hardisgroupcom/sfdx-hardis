@@ -132,7 +132,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const testCommand =
       'sf apex run test' +
       ' --code-coverage' +
-      ' --result-format json' +
+      ' --result-format human' +
       ` --output-dir ${reportDir}` +
       ` --wait ${process.env.SFDX_TEST_WAIT_MINUTES || '60'}` +
       ` --test-level ${testlevel}` +
