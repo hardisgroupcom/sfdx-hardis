@@ -5,15 +5,15 @@ import { Hook } from '@oclif/core';
 // The use of this method is deprecated: use NotifProvider.sendNotification :)
 
 const hook: Hook<'postrun'> = async (options) => {
-  if (globalThis.hardisLogFileStream) {
-    globalThis.hardisLogFileStream.end();
-    globalThis.hardisLogFileStream = null;
-  }
-
   // Skip hooks from other commands than hardis commands
   const commandId = options?.Command?.id || '';
   if (!commandId.startsWith('hardis')) {
     return;
+  }
+
+  if (globalThis.hardisLogFileStream) {
+    globalThis.hardisLogFileStream.end();
+    globalThis.hardisLogFileStream = null;
   }
 
   // Close WebSocketClient if existing
@@ -28,6 +28,10 @@ const hook: Hook<'postrun'> = async (options) => {
     globalThis.webSocketClient = null;
   }
 
+  const aiCounter = globalThis?.aiCallsNumber || 0;
+  if (aiCounter > 0) {
+    uxLog(this, c.grey(c.italic(`AI prompts API calls: ${aiCounter}`)));
+  }
   elapseEnd(`${options?.Command?.id} execution time`);
 };
 
