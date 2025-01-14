@@ -4,8 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.15.3] 2025-01-14
+
 - [hardis:project:generate:flow-git-diff](https://sfdx-hardis.cloudity.com/hardis/project/generate/flow-git-diff/) New parameters --commit-before and --commit-after
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Filter flows from managed packages
+- Display number of AI prompts API calls at the end of a command
 
 ## [5.15.2] 2025-01-13
 
