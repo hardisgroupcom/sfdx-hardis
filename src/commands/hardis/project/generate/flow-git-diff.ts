@@ -29,11 +29,22 @@ This command requires @mermaid-js/mermaid-cli to be installed.
 Run \`npm install @mermaid-js/mermaid-cli --global\`
   `;
 
-  public static examples = ['$ sf hardis:project:generate:flow-git-diff'];
+  public static examples = [
+    '$ sf hardis:project:generate:flow-git-diff',
+    '$ sf hardis:project:generate:flow-git-diff --flow "force-app/main/default/flows/Opportunity_AfterUpdate_Cloudity.flow-meta.xml" --commit-before 8bd290e914c9dbdde859dad7e3c399776160d704 --commit-after e0835251bef6e400fb91e42f3a31022f37840f65'
+  ];
 
   public static flags: any = {
     flow: Flags.string({
       description: 'Path to flow file (will be prompted if not set)',
+    }),
+    "commit-before": Flags.string({
+      description: 'Hash of the commit of the previous flow state, or "allStates" (will be prompted if not set)',
+      default: ""
+    }),
+    "commit-after": Flags.string({
+      description: 'Hash of the commit of the new flow state (will be prompted if not set)',
+      default: "",
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -53,6 +64,8 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
 
   protected flowFile: string;
   protected flowLabel: string;
+  commitBefore: string = "";
+  commitAfter: string = "";
   protected debugMode = false;
 
   /* jscpd:ignore-end */
@@ -60,6 +73,8 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(GenerateFlowGitDiff);
     this.flowFile = flags.flow || "";
+    this.commitBefore = flags["commit-before"] || "";
+    this.commitAfter = flags["commit-after"] || "";
     this.debugMode = flags.debug || false;
     // Check git repo
     await ensureGitRepository();
@@ -77,44 +92,54 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       return {};
     }
 
-    // Prompt commits
-    const allChoices = fileHistory.all.map(log => {
-      return {
-        value: log.hash,
-        title: `${moment(log.date).format("ll")}: ${log.message}`,
-        description: `By ${log.author_name}(${log.author_email}) in ${log.refs}`
-      }
-    });
-    const commitBeforeSelectRes = await prompts({
-      type: 'select',
-      name: 'before',
-      message: 'Please select BEFORE UPDATE commit',
-      choices: [...allChoices, ...[
-        {
-          title: "Calculate for all Flow states",
-          value: "allStates",
-          description: "Requires mkdocs-material to be read correctly. If you do not have it, we advise to select 2 commits for comparison."
+    // Build prompt choices
+    let allChoices: any[] = [];
+    if ((this.commitBefore === "" || this.commitAfter === "") && !isCI) {
+      allChoices = fileHistory.all.map(log => {
+        return {
+          value: log.hash,
+          title: `${moment(log.date).format("ll")}: ${log.message}`,
+          description: `By ${log.author_name}(${log.author_email}) in ${log.refs}`
         }
-      ]]
-    });
-    const commitBefore = commitBeforeSelectRes.before;
+      });
+    }
+
+    // Prompt commits if not sent as input parameter
+    if (this.commitBefore === "" && !isCI) {
+      const commitBeforeSelectRes = await prompts({
+        type: 'select',
+        name: 'before',
+        message: 'Please select BEFORE UPDATE commit',
+        choices: [...allChoices, ...[
+          {
+            title: "Calculate for all Flow states",
+            value: "allStates",
+            description: "Requires mkdocs-material to be read correctly. If you do not have it, we advise to select 2 commits for comparison."
+          }
+        ]]
+      });
+      this.commitBefore = commitBeforeSelectRes.before;
+    }
     let diffMdFile;
 
-    if (commitBefore === "allStates") {
+    if (this.commitBefore === "allStates") {
       diffMdFile = await generateHistoryDiffMarkdown(this.flowFile, this.debugMode);
       uxLog(this, c.yellow(`It is recommended to use mkdocs-material to read it correctly (see https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/#doc-html-pages)`));
     }
     else {
-      // Compute between 2 commits: prompt for the second one      
-      const commitAfterSelectRes = await prompts({
-        type: 'select',
-        name: 'after',
-        message: 'Please select AFTER UPDATE commit',
-        choices: allChoices
-      })
-      const commitAfter = commitAfterSelectRes.after;
-      const { outputDiffMdFile } = await generateFlowVisualGitDiff(this.flowFile, commitBefore, commitAfter, { svgMd: true, pngMd: false, mermaidMd: this.debugMode, debug: this.debugMode })
-
+      if (this.commitAfter === "" && !isCI) {
+        // Compute between 2 commits: prompt for the second one      
+        const commitAfterSelectRes = await prompts({
+          type: 'select',
+          name: 'after',
+          message: 'Please select AFTER UPDATE commit',
+          choices: allChoices
+        })
+        this.commitAfter = commitAfterSelectRes.after;
+      }
+      // Generate diff
+      const { outputDiffMdFile } = await generateFlowVisualGitDiff(this.flowFile, this.commitBefore, this.commitAfter, { svgMd: true, pngMd: false, mermaidMd: this.debugMode, debug: this.debugMode })
+      diffMdFile = outputDiffMdFile;
       // Open file in a new VsCode tab if available
       WebSocketClient.requestOpenFile(path.relative(process.cwd(), outputDiffMdFile));
     }
