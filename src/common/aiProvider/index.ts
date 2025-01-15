@@ -11,6 +11,10 @@ let IS_AI_AVAILABLE: boolean | null = null;
 
 export abstract class AiProvider {
   static isAiAvailable(): boolean {
+    if (process.env?.DISABLE_AI === "true") {
+      uxLog(this, c.yellow("[AI Provider] AI calls have been disabled using env var DISABLE_AI=true"))
+      return false;
+    }
     return this.getInstance() != null;
   }
 
