@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Allow to disable calls to AI prompts API using DISABLE_AI=true
+- Implement AI cache to save calls to AI prompts API (can be disabled using IGNORE_AI_CACHE)
+
 ## [5.15.3] 2025-01-14
 
 - [hardis:project:generate:flow-git-diff](https://sfdx-hardis.cloudity.com/hardis/project/generate/flow-git-diff/) New parameters --commit-before and --commit-after

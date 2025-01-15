@@ -30,6 +30,8 @@ You can contact [Cloudity](https://cloudity.com/#form) to use our fine-tuned Mod
 | PROMPTS_LANGUAGE             | Language to use for prompts results (en,fr)                                               | `en`          |
 | DEBUG_PROMPTS                | Set to true if you want prompts requests and responses in logs                            | `false`       |
 | MAX_DEPLOYMENT_TIPS_AI_CALLS | Maximum number of errors that will be analyzed by AI for a single Pull Request            | `20`          |
+| DISABLE_AI                   | In case you want to disable API calls to API without removing your configuration, set to true | `false`   |
+| IGNORE_AI_CACHE              | Some processes like Flow description use AI cache files to save calls to prompts API, disable by setting to true | `false` | 
 
 ## Templates
 

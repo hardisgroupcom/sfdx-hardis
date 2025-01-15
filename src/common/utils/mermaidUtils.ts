@@ -10,6 +10,8 @@ import moment from "moment";
 import { SfError } from "@salesforce/core";
 import { PACKAGE_ROOT_DIR } from "../../settings.js";
 import { AiProvider } from "../aiProvider/index.js";
+import { XMLParser } from "fast-xml-parser";
+import farmhash from "farmhash";
 
 let IS_MERMAID_AVAILABLE: boolean | null = null;
 export async function isMermaidAvailable() {
@@ -644,6 +646,11 @@ export function removeMermaidLinks(messageBody: string) {
 }
 
 async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: string): Promise<string> {
+  const aiCache = await findAiCache(flowXml);
+  if (aiCache) {
+    uxLog(this, c.grey("Used AI cache for flow description (set IGNORE_AI_CACHE=true to force call to AI)"));
+    return flowMarkdownDoc.replace("<!-- Flow description -->", aiCache);
+  }
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
     const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW", { "FLOW_XML": flowXml });
@@ -656,6 +663,7 @@ async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: strin
       }
       const replaceText = "## AI-Generated Description\n\n" + responseText;
       const flowMarkdownDocUpdated = flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
+      await writeAiCache(flowXml, "", replaceText);
       return flowMarkdownDocUpdated;
     }
   }
@@ -664,6 +672,11 @@ async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: strin
 
 /* jscpd:ignore-start */
 async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew: string, flowXmlPrevious: string): Promise<string> {
+  const aiCache = await findAiCache(flowXmlNew, flowXmlPrevious);
+  if (aiCache) {
+    uxLog(this, c.grey("Used AI cache for diff description (set IGNORE_AI_CACHE=true to force call to AI)"));
+    return flowMarkdownDoc.replace("<!-- Flow description -->", aiCache);
+  }
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
     const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW_DIFF", { "FLOW_XML_NEW": flowXmlNew, "FLOW_XML_PREVIOUS": flowXmlPrevious });
@@ -676,9 +689,41 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
       }
       const replaceText = "## AI-Generated Differences Summary\n\n" + responseText;
       const flowMarkdownDocUpdated = flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
+      await writeAiCache(flowXmlNew, flowXmlPrevious, replaceText);
       return flowMarkdownDocUpdated;
     }
   }
   return flowMarkdownDoc;
 }
 /* jscpd:ignore-end */
+
+async function findAiCache(flowXml1: string, flowXml2: string = ""): Promise<string | null> {
+  if (process.env?.IGNORE_AI_CACHE === "true") {
+    return null;
+  }
+  const fingerPrint = getFingerPrint(flowXml1, flowXml2);
+  const flowsAiCacheDirFile = path.join("docs", "flows", "ai-results", fingerPrint + ".md");
+  if (fs.existsSync(flowsAiCacheDirFile)) {
+    return await fs.readFile(flowsAiCacheDirFile, "utf8");
+  }
+  return null;
+}
+
+async function writeAiCache(flowXml1: string, flowXml2: string, aiCacheText: string): Promise<void> {
+  const fingerPrint = getFingerPrint(flowXml1, flowXml2);
+  const flowsAiCacheDir = path.join("docs", "flows", "ai-results");
+  await fs.ensureDir(flowsAiCacheDir);
+  const flowsAiCacheDirFile = path.join(flowsAiCacheDir, fingerPrint + ".md");
+  await fs.writeFile(flowsAiCacheDirFile, aiCacheText);
+}
+
+function getFingerPrint(flowXml1: string, flowXml2: string) {
+  const flowObj = new XMLParser().parse(flowXml1)?.Flow || "";
+  let fingerPrint = String(farmhash.fingerprint32(JSON.stringify(flowObj)));
+  if (flowXml2 !== "") {
+    const flowObj2 = new XMLParser().parse(flowXml2)?.Flow || "";
+    fingerPrint += "-" + String(farmhash.fingerprint32(JSON.stringify(flowObj2)));
+  }
+  return fingerPrint;
+}
+
