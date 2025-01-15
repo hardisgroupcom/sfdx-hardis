@@ -22,16 +22,16 @@ You need to define at least env variable OPENAI_API_KEY and make it available to
 
 You can contact [Cloudity](https://cloudity.com/#form) to use our fine-tuned Model for best results, or get an OpenAi API key via [OpenAi Platform](https://platform.openai.com/).
 
-| Variable                     | Description                                                                               | Default       |
-|------------------------------|-------------------------------------------------------------------------------------------|---------------|
-| OPENAI_API_KEY               | Your openai account API key                                                               |               |
-| OPENAI_MODEL                 | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/)) | `gpt-4o-mini` |
-| AI_MAXIMUM_CALL_NUMBER       | Maximum allowed number of calls to OpenAi API during a single sfdx-hardis command         | `10000`       |
-| PROMPTS_LANGUAGE             | Language to use for prompts results (en,fr)                                               | `en`          |
-| DEBUG_PROMPTS                | Set to true if you want prompts requests and responses in logs                            | `false`       |
-| MAX_DEPLOYMENT_TIPS_AI_CALLS | Maximum number of errors that will be analyzed by AI for a single Pull Request            | `20`          |
-| DISABLE_AI                   | In case you want to disable API calls to API without removing your configuration, set to true | `false`   |
-| IGNORE_AI_CACHE              | Some processes like Flow description use AI cache files to save calls to prompts API, disable by setting to true | `false` | 
+| Variable                     | Description                                                                                                      | Default       |
+|------------------------------|------------------------------------------------------------------------------------------------------------------|---------------|
+| OPENAI_API_KEY               | Your openai account API key                                                                                      |               |
+| OPENAI_MODEL                 | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/))                        | `gpt-4o-mini` |
+| AI_MAXIMUM_CALL_NUMBER       | Maximum allowed number of calls to OpenAi API during a single sfdx-hardis command                                | `10000`       |
+| PROMPTS_LANGUAGE             | Language to use for prompts results (en,fr)                                                                      | `en`          |
+| DEBUG_PROMPTS                | Set to true if you want prompts requests and responses in logs                                                   | `false`       |
+| MAX_DEPLOYMENT_TIPS_AI_CALLS | Maximum number of errors that will be analyzed by AI for a single Pull Request                                   | `20`          |
+| DISABLE_AI                   | In case you want to disable API calls to API without removing your configuration, set to true                    | `false`       |
+| IGNORE_AI_CACHE              | Some processes like Flow description use AI cache files to save calls to prompts API, disable by setting to true | `false`       |
 
 ## Templates
 
