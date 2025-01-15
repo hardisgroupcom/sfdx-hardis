@@ -55,8 +55,7 @@ const FLOW_NODE_TYPES = [
 
 export async function parseFlow(xml: string, renderAs: "mermaid" | "plantuml" = "mermaid", options: any = {}): Promise<{ flowMap: FlowMap, uml: string }> {
     try {
-        const parser = new XMLParser();
-        const flowObj = parser.parse(xml).Flow;
+        const flowObj = new XMLParser().parse(xml).Flow;
         const flowMap = await createFlowMap(flowObj);
         if (Object.keys(flowMap).length === 0) {
             throw new Error("no-renderable-content-found");
