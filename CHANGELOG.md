@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.15.4] 2025-01-15
+
 - Allow to disable calls to AI prompts API using DISABLE_AI=true
 - Implement AI cache to save calls to AI prompts API (can be disabled using IGNORE_AI_CACHE)
 
