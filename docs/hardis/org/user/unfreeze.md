@@ -33,7 +33,7 @@ sf hardis:org:user:unfreeze
 ```
 
 ```shell
-sf hardis:org:user:unfreeze --target-org myuser@myorg.com
+sf hardis:org:user:unfreeze --target-org my-user@myorg.com
 ```
 
 ```shell

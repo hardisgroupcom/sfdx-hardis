@@ -4,6 +4,9 @@
 ## Description
 
 Generates a markdown documentation from a Flow file
+  
+If [AI integration](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/) is configured, documentation will contain a summary of the Flow.  
+  
 
 ## Parameters
 
