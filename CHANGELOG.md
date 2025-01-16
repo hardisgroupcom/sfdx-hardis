@@ -10,6 +10,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Display full node fields table when it contains updated elements
   - Fix removed long links
   - Handle cases where Flow has been added or deleted
+- Update [hardis:project:deploy:notify](https://sfdx-hardis.cloudity.com/hardis/project/deploy/notify/) documentation
 
 ## [5.15.4] 2025-01-15
 

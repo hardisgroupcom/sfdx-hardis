@@ -16,19 +16,54 @@ export default class DeployNotify extends SfCommand<any> {
 
   public static description = `Post notifications related to:
 
-  - **Deployment simulation** _(use with --check-only)_
-  - **Deployment process** _(to call only if your deployment is successful)_
+- **Deployment simulation** _(use with --check-only)_
 
-  According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-assistant-home/#flow-visual-git-diff)
+- **Deployment process** _(to call only if your deployment is successful)_
+
+### Integrations
+
+According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-assistant-home/#flow-visual-git-diff)
 
   - GitHub, Gitlab, Azure DevOps, Bitbucket comments on Pull Requests (including Flows Visual Git Diff)
+
   - Slack, Microsoft Teams, Email deployment summary after a successful deployment
+
   - JIRA tags and comments on tickets that just has been deployed
 
-  This command is for custom SF Cli pipelines, if you are a sfdx-hardis user, it is already embedded in sf hardis:deploy:smart.
+![](${CONSTANTS.DOC_URL_ROOT}/assets/images/screenshot-jira-gitlab.jpg)
 
-  You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-assistant-setup/#using-custom-cicd-pipeline)
-  `
+![](${CONSTANTS.DOC_URL_ROOT}/assets/images/screenshot-jira-slack.jpg)
+
+### Flows Visual Git Diff
+
+- Visually show you the differences on a diagram
+
+- Display the update details without having to open any XML !
+
+🟩 = added
+
+🟥 = removed
+
+🟧 = updated
+
+![](${CONSTANTS.DOC_URL_ROOT}/assets/images/flow-visual-git-diff.jpg)
+
+![](${CONSTANTS.DOC_URL_ROOT}/assets/images/flow-visual-git-diff-2.jpg)
+
+### In custom CI/CD workflow
+
+Example of usage in a custom CI/CD pipeline:
+
+\`\`\`bash
+
+\`\`\`
+
+### Other usages
+
+This command is for custom SF Cli pipelines, if you are a sfdx-hardis user, it is already embedded in sf hardis:deploy:smart.
+
+You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-assistant-setup/#using-custom-cicd-pipeline)
+`
 
   public static examples = [
     '$ sf hardis:project:deploy:notify --check-only --deploy-status valid --message "This deployment check is valid\\n\\nYahooo !!"',
