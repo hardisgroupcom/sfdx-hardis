@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.15.5] 2025-01-16
+
+- Flow Visual Diff enhancements
+  - Display full node fields table when it contains updated elements
+  - Fix removed long links
+  - Handle cases where Flow has been added or deleted
+
 ## [5.15.4] 2025-01-15
 
 - Allow to disable calls to AI prompts API using DISABLE_AI=true

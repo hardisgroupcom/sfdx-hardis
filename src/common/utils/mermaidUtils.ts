@@ -189,10 +189,8 @@ ${formatClasses(changedClasses, changed)}
 export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, commitAfter: string,
   options: { mermaidMd: boolean, svgMd: boolean, pngMd: boolean, debug: boolean } = { mermaidMd: false, svgMd: true, pngMd: false, debug: false }) {
   const result: any = { outputDiffMdFile: "", hasFlowDiffs: false };
-  const flowXmlBefore = await git().show([`${commitBefore}:${flowFile}`]);
-  const mermaidMdBefore = await buildMermaidMarkdown(flowXmlBefore, flowFile);
-  const flowXmlAfter = await git().show([`${commitAfter}:${flowFile}`]);
-  const mermaidMdAfter = await buildMermaidMarkdown(flowXmlAfter, flowFile);
+  const { mermaidMdBefore, flowXmlBefore } = await getFlowXmlBefore(commitBefore, flowFile);
+  const { mermaidMdAfter, flowXmlAfter } = await getFlowXmlAfter(commitAfter, flowFile);
   const flowLabel = path.basename(flowFile, ".flow-meta.xml");
 
   const reportDir = await getReportDirectory();
@@ -229,7 +227,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
 
   let diffMarkdown = compareMdLines.join("\n");
 
-  if (result.hasFlowDiffs === true) {
+  if (result.hasFlowDiffs === true && flowXmlAfter !== "" && flowXmlBefore !== "") {
     diffMarkdown = await completeWithDiffAiDescription(diffMarkdown, flowXmlAfter, flowXmlBefore)
   }
 
@@ -262,6 +260,27 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
     }
   }
   return result;
+}
+
+async function getFlowXmlAfter(commitAfter: string, flowFile: any) {
+  try {
+    const flowXmlAfter = await git().show([`${commitAfter}:${flowFile}`]);
+    const mermaidMdAfter = await buildMermaidMarkdown(flowXmlAfter, flowFile);
+    return { mermaidMdAfter, flowXmlAfter };
+  }
+  catch (err: any) {
+    return { mermaidMdAfter: "", flowXmlAfter: "" };
+  }
+}
+
+async function getFlowXmlBefore(commitBefore: string, flowFile: any) {
+  try {
+    const flowXmlBefore = await git().show([`${commitBefore}:${flowFile}`]);
+    const mermaidMdBefore = await buildMermaidMarkdown(flowXmlBefore, flowFile);
+    return { mermaidMdBefore, flowXmlBefore };
+  } catch (err: any) {
+    return { mermaidMdBefore: "", flowXmlBefore: "" };
+  }
 }
 
 function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid, isTableStarted, linkLines) {
@@ -362,6 +381,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   }
   /* jscpd:ignore-end */
   // Skip table lines that have not been updated
+  /*
   else if (!isMermaid && styledLine.startsWith("|") && isTableStarted === false) {
     isTableStarted = true;
     const tableFilteredLines: any[] = [];
@@ -389,6 +409,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     }
     return;
   }
+  */
 
   // Tables lines
   if (!isMermaid && status === "removed" && styledLine.startsWith("|") && !styledLine.startsWith("|:-")) {
@@ -419,10 +440,10 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     styledLine = `## 🟩${styledLine.replace("## ", "")}`;
   }
   // Normal lines
-  else if (!isMermaid && status === "removed" && styledLine !== "" && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
+  else if (!isMermaid && status === "removed" && styledLine !== "" && !styledLine.includes('```') && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
     styledLine = `<span style="background-color: #ff7f7f; color: black;"><i>🟥${styledLine}</i></span>`;
   }
-  else if (!isMermaid && status === "added" && styledLine !== "" && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
+  else if (!isMermaid && status === "added" && styledLine !== "" && !styledLine.includes('```') && !styledLine.startsWith("|:-") && !styledLine.startsWith("___")) {
     styledLine = `<span style="background-color: #a6e22e; color: black;"><b>🟩${styledLine}</b></span>`;
   }
   // Boxes lines
@@ -472,7 +493,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   /* jscpd:ignore-start */
   // Long Link lines
   else if (isMermaid === true && status === "removed" && currentLine.includes('--->')) {
-    styledLine = styledLine.replace("--->", "--.->");//+ ":::removedLink"
+    styledLine = styledLine.replace("--->", "-.->");//+ ":::removedLink"
     linkLines.push("removed");
     if (styledLine.split("|").length === 3) {
       const splits = styledLine.split("|");
