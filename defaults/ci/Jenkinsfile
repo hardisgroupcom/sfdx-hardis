@@ -25,6 +25,7 @@ pipeline {
         CONFIG_BRANCH = "${GIT_BRANCH}"
         CI_COMMIT_REF_NAME = "${GIT_BRANCH}"
         ORG_ALIAS = "${GIT_BRANCH}"
+        SFDX_DISABLE_FLOW_DIFF = 'false' // Set to true to disable Flow doc during CI/CD setup
     }
 
     //Stage of the job
