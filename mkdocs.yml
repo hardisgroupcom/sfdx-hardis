@@ -180,7 +180,6 @@ nav:
           plugin:
             generate: hardis/doc/plugin/generate.md
           project2markdown: hardis/doc/project2markdown.md
-          project2markdown copy: hardis/doc/project2markdown copy.md
         git:
           pull-requests:
             extract: hardis/git/pull-requests/extract.md
