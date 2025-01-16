@@ -268,6 +268,7 @@ async function getFlowXmlAfter(commitAfter: string, flowFile: any) {
     const mermaidMdAfter = await buildMermaidMarkdown(flowXmlAfter, flowFile);
     return { mermaidMdAfter, flowXmlAfter };
   }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   catch (err: any) {
     return { mermaidMdAfter: "", flowXmlAfter: "" };
   }
@@ -278,7 +279,9 @@ async function getFlowXmlBefore(commitBefore: string, flowFile: any) {
     const flowXmlBefore = await git().show([`${commitBefore}:${flowFile}`]);
     const mermaidMdBefore = await buildMermaidMarkdown(flowXmlBefore, flowFile);
     return { mermaidMdBefore, flowXmlBefore };
-  } catch (err: any) {
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  catch (err: any) {
     return { mermaidMdBefore: "", flowXmlBefore: "" };
   }
 }
