@@ -55,7 +55,25 @@ According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesfo
 Example of usage in a custom CI/CD pipeline:
 
 \`\`\`bash
+# Disable exit-on-error temporarily
+set +e
 
+# Run the deploy command
+sf project deploy start [....]
+RET_CODE=$?
+
+# Re-enable exit-on-error
+set -e
+
+# Determine MYSTATUS based on return code
+if [ $RET_CODE -eq 0 ]; then
+    MYSTATUS="valid"
+else
+    MYSTATUS="invalid"
+fi
+
+# Run the notify command with MYSTATUS
+sf hardis:project:deploy:notify --check-only --deploy-status "$MYSTATUS"
 \`\`\`
 
 ### Other usages

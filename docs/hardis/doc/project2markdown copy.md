@@ -1,5 +1,5 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:doc:project2markdown
+# hardis:doc:project2markdown copy
 
 ## Description
 
@@ -36,24 +36,16 @@ If Flow history doc always display a single state, you probably need to update y
 
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc-2.jpg)
 
-If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strategy will be generated.
-
-![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-doc-branches-strategy.jpg)
-
-If [AI integration](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/) is configured, documentation will contain a summary of the Flow.
-
-If you have a complex strategy, you might need to input property **mergeTargets** in branch-scoped sfdx-hardis.yml file to have a correct diagram.
-
 ## Doc HTML Pages
 
 To read the documentation as HTML pages, run the following code (you need [**Python**](https://www.python.org/downloads/) on your computer)
 
 ```python
-pip install mkdocs-material mdx_truly_sane_lists || python -m pip install mkdocs-material mdx_truly_sane_lists || py -m pip install mkdocs-material mdx_truly_sane_lists
-mkdocs serve || python -m mkdocs serve || py -m mkdocs serve
+pip install mkdocs-material mdx_truly_sane_lists
+mkdocs serve
 ```
 
-To just generate HTML pages that you can host anywhere, run `mkdocs build || python -m mkdocs build || py -m mkdocs build`
+To just generate HTML pages that you can host anywhere, run `mkdocs build`
 
 
 
@@ -66,7 +58,6 @@ To just generate HTML pages that you can host anywhere, run `mkdocs build || pyt
 |flags-dir|option|undefined||||
 |json|boolean|Format output as json.||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 |with-history|boolean|Generate a markdown file with the history diff of the Flow||||
 
