@@ -205,14 +205,14 @@ If you want to disable the calculation and display of Flow Visual Git Diff in Pu
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|check<br/>-c|boolean|Only checks the deployment, there is no impact on target org||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|delta|boolean|Applies sfdx-git-delta to package.xml before other deployment processes||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|packagexml<br/>-p|option|Path to package.xml containing what you want to deploy in target org||||
+| Name              |  Type   | Description                                                             | Default | Required | Options |
+|:------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| check<br/>-c      | boolean | Only checks the deployment, there is no impact on target org            |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                         |         |          |         |
+| delta             | boolean | Applies sfdx-git-delta to package.xml before other deployment processes |         |          |         |
+| flags-dir         | option  | undefined                                                               |         |          |         |
+| json              | boolean | Format output as json.                                                  |         |          |         |
+| packagexml<br/>-p | option  | Path to package.xml containing what you want to deploy in target org    |         |          |         |
 |runtests<br/>-r|option|If testlevel=RunSpecifiedTests, please provide a list of classes.
 If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo.||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
@@ -223,43 +223,43 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 ## Examples
 
 ```shell
-$ sf hardis:project:deploy:smart
+sf hardis:project:deploy:smart
 ```
 
 ```shell
-$ sf hardis:project:deploy:smart --check
+sf hardis:project:deploy:smart --check
 ```
 
 ```shell
-$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests
+sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests
 ```
 
 ```shell
-$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'
+sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'
 ```
 
 ```shell
-$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTestsExceptSeeAllData
+sf hardis:project:deploy:smart --check --testlevel RunRepositoryTestsExceptSeeAllData
 ```
 
 ```shell
-$ sf hardis:project:deploy:smart
+sf hardis:project:deploy:smart
 ```
 
 ```shell
-$ FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod
+FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod
 ```
 
 ```shell
-$ SYSTEM_ACCESSTOKEN=xxxxxx SYSTEM_COLLECTIONURI=https://dev.azure.com/xxxxxxx/ SYSTEM_TEAMPROJECT="xxxxxxx" BUILD_REPOSITORY_ID=xxxxx SYSTEM_PULLREQUEST_PULLREQUESTID=1418 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my.salesforce@org.com
+SYSTEM_ACCESSTOKEN=xxxxxx SYSTEM_COLLECTIONURI=https://dev.azure.com/xxxxxxx/ SYSTEM_TEAMPROJECT="xxxxxxx" BUILD_REPOSITORY_ID=xxxxx SYSTEM_PULLREQUEST_PULLREQUESTID=1418 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my.salesforce@org.com
 ```
 
 ```shell
-$ CI_SFDX_HARDIS_BITBUCKET_TOKEN=xxxxxx BITBUCKET_WORKSPACE=sfdxhardis-demo BITBUCKET_REPO_SLUG=test BITBUCKET_BUILD_NUMBER=1 BITBUCKET_BRANCH=uat BITBUCKET_PR_ID=2 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com
+CI_SFDX_HARDIS_BITBUCKET_TOKEN=xxxxxx BITBUCKET_WORKSPACE=sfdxhardis-demo BITBUCKET_REPO_SLUG=test BITBUCKET_BUILD_NUMBER=1 BITBUCKET_BRANCH=uat BITBUCKET_PR_ID=2 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com
 ```
 
 ```shell
-$ GITHUB_TOKEN=xxxx GITHUB_REPOSITORY=my-user/my-repo FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com
+GITHUB_TOKEN=xxxx GITHUB_REPOSITORY=my-user/my-repo FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com
 ```
 
 
