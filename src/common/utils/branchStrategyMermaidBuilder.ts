@@ -7,11 +7,13 @@ export class BranchStrategyMermaidBuilder {
   private branchesAndOrgs: any[];
   private gitBranches: any[];
   private salesforceOrgs: any[] = [];
+  private salesforceDevOrgsGroup: string[] = [];
   private gitLinks: any[] = [];
   private deployLinks: any[] = [];
   private sbDevLinks: any[] = [];
   private retrofitLinks: any[] = [];
   private mermaidLines: string[] = [];
+  private featureBranchNb: number = 0;
 
   constructor(branchesAndOrgs: any[]) {
     this.branchesAndOrgs = branchesAndOrgs;
@@ -63,52 +65,47 @@ export class BranchStrategyMermaidBuilder {
     for (const branchAndOrg of noMergeTargetBranchAndOrg) {
       const nameBase = isPreprod(branchAndOrg.branchName) ? "hotfix" : "feature";
       const level = branchAndOrg.level - 1
-      const nameBase1 = nameBase + "1";
-      const nodeName1 = nameBase + "Branch" + "1"
-      this.gitBranches.push({
-        name: nameBase1,
-        nodeName: nodeName1,
-        label: nameBase1,
-        class: "gitFeature",
-        level: level
-      });
-      this.gitLinks.push({
-        source: nodeName1,
-        target: this.gitBranches.find((gitBranch) => gitBranch.name === branchAndOrg.branchName)?.nodeName || "ERROR",
-        type: "gitMerge",
-        label: "Merge"
-      });
-      const nameBase2 = nameBase + "2";
-      const nodeName2 = nameBase + "Branch" + "2"
-      this.gitBranches.push({
-        name: nameBase2,
-        nodeName: nodeName2,
-        label: nameBase2,
-        class: "gitFeature",
-        level: level
-      });
-      this.gitLinks.push({
-        source: nodeName2,
-        target: this.gitBranches.find((gitBranch) => gitBranch.name === branchAndOrg.branchName)?.nodeName || "ERROR",
-        type: "gitMerge",
-        label: "Merge",
-        level: level
-      });
+      this.salesforceDevOrgsGroup.push(branchAndOrg.branchName);
+      this.addFeatureBranch(nameBase, level, branchAndOrg);
+      this.addFeatureBranch(nameBase, level, branchAndOrg);
     }
-    const mainBranch = this.branchesAndOrgs.find((branchAndOrg) => isProduction(branchAndOrg.branchName));
-    const preprodBranch = this.branchesAndOrgs.find((branchAndOrg) => isPreprod(branchAndOrg.branchName));
-    const integrationBranch = this.branchesAndOrgs.find((branchAndOrg) => isIntegration(branchAndOrg.branchName));
-    if (mainBranch && preprodBranch && integrationBranch) {
-      this.retrofitLinks.push({
-        source: mainBranch.branchName + "Branch",
-        target: integrationBranch.branchName + "Branch",
-        type: "gitMerge",
-        label: "Retrofit from RUN to BUILD"
-      });
+    // Add retrofit link only if it does not mess with the diagram display :/
+    if (branchesMergingInPreprod.length < 2) {
+      const mainBranch = this.branchesAndOrgs.find((branchAndOrg) => isProduction(branchAndOrg.branchName));
+      const preprodBranch = this.branchesAndOrgs.find((branchAndOrg) => isPreprod(branchAndOrg.branchName));
+      const integrationBranch = this.branchesAndOrgs.find((branchAndOrg) => isIntegration(branchAndOrg.branchName));
+      if (mainBranch && preprodBranch && integrationBranch) {
+        this.retrofitLinks.push({
+          source: mainBranch.branchName + "Branch",
+          target: integrationBranch.branchName + "Branch",
+          type: "gitMerge",
+          label: "Retrofit from RUN to BUILD"
+        });
+      }
     }
     // Sort branches & links
     this.gitBranches = sortArray(this.gitBranches, { by: ['level', 'name'], order: ['asc', 'asc'] });
     this.gitLinks = sortArray(this.gitLinks, { by: ['level', 'source'], order: ['asc', 'asc'] });
+  }
+
+  private addFeatureBranch(nameBase: string, level: number, branchAndOrg: any) {
+    this.featureBranchNb++;
+    const nameBase1 = nameBase + this.featureBranchNb;
+    const nodeName1 = nameBase + "Branch" + this.featureBranchNb;
+    this.gitBranches.push({
+      name: nameBase1,
+      nodeName: nodeName1,
+      label: nameBase1,
+      class: "gitFeature",
+      level: level,
+      group: branchAndOrg.branchName
+    });
+    this.gitLinks.push({
+      source: nodeName1,
+      target: this.gitBranches.find((gitBranch) => gitBranch.name === branchAndOrg.branchName)?.nodeName || "ERROR",
+      type: "gitMerge",
+      label: "Merge"
+    });
   }
 
   private listSalesforceOrgsAndLinks(): any {
@@ -139,14 +136,15 @@ export class BranchStrategyMermaidBuilder {
           nodeName: nodeName,
           label: "Dev " + prettifyFieldName(gitBranch.name),
           class: "salesforceDev",
-          level: gitBranch.level
+          level: gitBranch.level,
+          group: gitBranch.group
         });
         this.sbDevLinks.push({
           source: nodeName,
           target: gitBranch.nodeName,
           type: "sfPushPull",
           label: "Push / Pull",
-          level: gitBranch.level
+          level: gitBranch.level,
         });
       }
     }
@@ -171,31 +169,24 @@ export class BranchStrategyMermaidBuilder {
     this.mermaidLines.push("");
 
     // Salesforce orgs
-    this.mermaidLines.push(this.indent("subgraph SalesforceOrgs [Salesforce Orgs]", 1));
+    this.mermaidLines.push(this.indent("subgraph SalesforceOrgs [Salesforce Major Orgs]", 1));
     this.mermaidLines.push(this.indent("direction TB", 2));
     for (const salesforceOrg of this.salesforceOrgs.filter((salesforceOrg) => ["salesforceProd", "salesforceMajor"].includes(salesforceOrg.class))) {
-      this.mermaidLines.push(this.indent(`${salesforceOrg.nodeName}(["${salesforceOrg.label}"]):::${salesforceOrg.class}`, 2));
+      this.mermaidLines.push(this.indent(`${salesforceOrg.nodeName}(["<b>${salesforceOrg.label}</b>"]):::${salesforceOrg.class}`, 2));
     }
     this.mermaidLines.push(this.indent("end", 1));
     this.mermaidLines.push("");
 
     // Salesforce dev orgs
-    this.mermaidLines.push(this.indent("subgraph SalesforceDevOrgs [Salesforce Orgs BUILD]", 1));
-    this.mermaidLines.push(this.indent("direction TB", 2));
-    for (const salesforceOrg of this.salesforceOrgs.filter((salesforceOrg) => salesforceOrg.name.startsWith("feature"))) {
-      this.mermaidLines.push(this.indent(`${salesforceOrg.nodeName}(["${salesforceOrg.label}"]):::${salesforceOrg.class}`, 2));
+    for (const devOrgsGroup of this.salesforceDevOrgsGroup) {
+      this.mermaidLines.push(this.indent(`subgraph SalesforceDevOrgs${devOrgsGroup} [Salesforce Dev Orgs]`, 1));
+      this.mermaidLines.push(this.indent("direction TB", 2));
+      for (const salesforceOrg of this.salesforceOrgs.filter((salesforceOrg) => salesforceOrg.group === devOrgsGroup && (salesforceOrg.name.startsWith("feature") || salesforceOrg.name.startsWith("hotfix")))) {
+        this.mermaidLines.push(this.indent(`${salesforceOrg.nodeName}(["${salesforceOrg.label}"]):::${salesforceOrg.class}`, 2));
+      }
+      this.mermaidLines.push(this.indent("end", 1));
+      this.mermaidLines.push("");
     }
-    this.mermaidLines.push(this.indent("end", 1));
-    this.mermaidLines.push("");
-
-    // Salesforce dev orgs run
-    this.mermaidLines.push(this.indent("subgraph SalesforceDevOrgsRun [Salesforce Orgs RUN]", 1));
-    this.mermaidLines.push(this.indent("direction TB", 2));
-    for (const salesforceOrg of this.salesforceOrgs.filter((salesforceOrg) => salesforceOrg.name.startsWith("hotfix"))) {
-      this.mermaidLines.push(this.indent(`${salesforceOrg.nodeName}(["${salesforceOrg.label}"]):::${salesforceOrg.class}`, 2));
-    }
-    this.mermaidLines.push(this.indent("end", 1));
-    this.mermaidLines.push("");
 
     // Links
     this.addLinks(this.gitLinks);
@@ -205,13 +196,31 @@ export class BranchStrategyMermaidBuilder {
 
     // Classes and styles
     this.mermaidLines.push(...this.listClassesAndStyles());
+    for (const salesforceDevOrgsGroup of this.salesforceDevOrgsGroup) {
+      this.mermaidLines.push(`style SalesforceDevOrgs${salesforceDevOrgsGroup} fill:#EBF6FF,color:#000000,stroke:#0077B5,stroke-width:1px;`);
+    }
     /* jscpd:ignore-end */
+    const allLinks = [...this.gitLinks, ...this.deployLinks, ...this.sbDevLinks, ...this.retrofitLinks];
+    let pos = 0;
+    const positions: any = {}
+    for (const link of allLinks) {
+      if (!positions[link.type]) {
+        positions[link.type] = [];
+      }
+      positions[link.type].push(pos);
+      pos++;
+    }
+    const linksDef = this.listLinksDef();
+    for (const key of Object.keys(positions)) {
+      const styleDef = linksDef[key];
+      this.mermaidLines.push(`linkStyle ${positions[key].join(",")} ${styleDef}`);
+    }
   }
 
   private addLinks(links) {
     for (const link of links) {
       if (link.type === "gitMerge") {
-        this.mermaidLines.push(this.indent(`${link.source} -->|"${link.label}"| ${link.target}`, 1));
+        this.mermaidLines.push(this.indent(`${link.source} ==>|"${link.label}"| ${link.target}`, 1));
       } else if (link.type === "sfDeploy") {
         this.mermaidLines.push(this.indent(`${link.source} -. ${link.label} .-> ${link.target}`, 1));
       } else if (link.type === "sfPushPull") {
@@ -222,19 +231,25 @@ export class BranchStrategyMermaidBuilder {
   }
 
   listClassesAndStyles(): string[] {
-    const classesAndStyles = `    classDef salesforceDev fill:#A9E8F8,stroke:#004E8A,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
-    classDef salesforceMajor fill:#0088CE,stroke:#004E8A,stroke-width:2px,color:#FFFFFF,font-weight:bold,border-radius:10px;
-    classDef salesforceProd fill:blue,stroke:#004E8A,stroke-width:2px,color:#FFFFFF,font-weight:bold,border-radius:10px;
-    classDef gitMajor fill:#FFC107,stroke:#D84315,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
-    classDef gitMain fill:#FF6F61,stroke:#FF6F00,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
-    classDef gitFeature fill:#B5EAD7,stroke:#2E7D32,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
+    const classesAndStyles = `    classDef salesforceDev fill:#9BC3FF,stroke:#2B65D9,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
+    classDef salesforceMajor fill:#67B7D1,stroke:#004D66,stroke-width:2px,color:#FFFFFF,font-weight:bold,border-radius:10px;
+    classDef salesforceProd fill:#4C98C3,stroke:#003B5A,stroke-width:2px,color:#FFFFFF,font-weight:bold,border-radius:10px;
+    classDef gitMajor fill:#FFCA76,stroke:#E65C00,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
+    classDef gitMain fill:#F97B8B,stroke:#CC2936,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
+    classDef gitFeature fill:#B0DE87,stroke:#2D6A4F,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
     
-    style GitBranches fill:#F4F4F9,color:#000000,stroke:#7C4DFF,stroke-width:1px;
-    style SalesforceOrgs fill:#E8F5E9,color:#000000,stroke:#1B5E20,stroke-width:1px;
-    style SalesforceDevOrgs fill:#E1F5FE,color:#000000,stroke:#0288D1,stroke-width:1px;
-    style SalesforceDevOrgsRun fill:#F3E5F5,color:#000000,stroke:#6A1B9A,stroke-width:1px;
+    style GitBranches fill:#F4F5F9,color:#000000,stroke:#8B72B2,stroke-width:1px;
+    style SalesforceOrgs fill:#F1F7F5,color:#000000,stroke:#468C70,stroke-width:1px;
 `
     return classesAndStyles.split("\n");
+  }
+
+  private listLinksDef(): any {
+    return {
+      "gitMerge": "stroke:#4B0082,stroke-width:4px,color:#4B0082,background-color:transparent;",
+      "sfDeploy": "stroke:#4169E1,stroke-width:2px,color:#4169E1,background-color:transparent;",
+      "sfPushPull": "stroke:#5F9EA0,stroke-width:2px,color:#5F9EA0,background-color:transparent;"
+    }
   }
 
   private indent(str: string, number: number): string {
