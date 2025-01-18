@@ -81,6 +81,7 @@ check_deploy_to_target_branch_org:
   variables:
     CONFIG_BRANCH: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
     ORG_ALIAS: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+    SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD setup
   script:
     - '[ -z "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ] && exit 0;' # Skip this job if it is launched from web UI and we are not in merge request context
     - sf hardis:auth:login

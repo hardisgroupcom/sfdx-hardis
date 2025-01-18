@@ -32,6 +32,7 @@ pipelines:
                 - export ORG_ALIAS=$BRANCH_NAME
                 - export CONFIG_BRANCH=$BRANCH_NAME
                 - export FORCE_COLOR=1
+                - export SFDX_DISABLE_FLOW_DIFF=false # Set to true to disable Flow doc during CI/CD setup
                 - sf hardis:auth:login
                 - sf hardis:project:deploy:smart --check
 

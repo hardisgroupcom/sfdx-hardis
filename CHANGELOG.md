@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add `SFDX_DISABLE_FLOW_DIFF: false` in default CI/CD pipelines (must be set to true during CI/CD setup)
+
 ## [5.15.5] 2025-01-16
 
 - Flow Visual Diff enhancements
