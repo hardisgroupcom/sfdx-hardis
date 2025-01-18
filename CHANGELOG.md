@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Add `SFDX_DISABLE_FLOW_DIFF: false` in default CI/CD pipelines (must be set to true during CI/CD setup)
 - Enhance branches & orgs CI/CD strategy mermaid diagram
+- Handle prompts multilingualism and cache
 
 ## [5.15.5] 2025-01-16
 
