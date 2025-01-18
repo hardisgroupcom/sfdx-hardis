@@ -1,13 +1,10 @@
-import { uxLog } from "../utils/index.js";
-import c from "chalk";
+import { UtilsAi } from "./utils.js";
 
 export type PromptTemplate =
   "PROMPT_SOLVE_DEPLOYMENT_ERROR" |
   "PROMPT_DESCRIBE_FLOW" |
   "PROMPT_DESCRIBE_FLOW_DIFF"
   ;
-
-export type PromptLanguage = "en" | "fr";
 
 export function buildPromptFromTemplate(template: PromptTemplate, variables: object): string {
   // Get matching prompt
@@ -18,13 +15,9 @@ export function buildPromptFromTemplate(template: PromptTemplate, variables: obj
     throw new Error(`Missing variables for prompt template ${template}: ${missingVariables.join(", ")}`);
   }
   // Get prompt language and check if it is an allowed one
-  let promptsLanguage = process.env.PROMPTS_LANGUAGE || "en";
-  if (!["en", "fr"].includes(promptsLanguage)) {
-    uxLog(this, c.yellow(`Unknown prompt language ${promptsLanguage}: Switch back to en`));
-    promptsLanguage = "en";
-  }
+  const promptsLanguage = UtilsAi.getPromptsLanguage();
   // Build prompt
-  let prompt = process.env?.[template] || templateData.text[promptsLanguage];
+  let prompt = process.env?.[template] || templateData.text?.[promptsLanguage] || (templateData.text?.["en"] + `\nPlease answer using the language corresponding to "${promptsLanguage}"`);
   for (const variable in variables) {
     prompt = prompt.replace(`{{${variable}}}`, variables[variable]);
   }
