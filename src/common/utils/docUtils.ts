@@ -278,6 +278,7 @@ async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, obj
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
     const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_OBJECT", { "OBJECT_NAME": objectName, "OBJECT_XML": objectXml, "ALL_OBJECTS_LIST": allObjectsNames, "ALL_OBJECT_LINKS": objectLinksDetails });
+    /* jscpd:ignore-start */
     const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_OBJECT");
     // Replace description in markdown
     if (aiResponse?.success) {
@@ -290,6 +291,7 @@ async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, obj
       const objectMarkdownDocUpdated = objectMarkdownDoc.replace("<!-- Object description -->", replaceText);
       return objectMarkdownDocUpdated;
     }
+    /* jscpd:ignore-end */
   }
   return objectMarkdownDoc;
 }

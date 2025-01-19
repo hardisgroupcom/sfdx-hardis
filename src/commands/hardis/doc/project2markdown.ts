@@ -316,17 +316,17 @@ ${Project2Markdown.htmlInstructions}
 
     // Write index file for objects folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
-    const ojectsTableLinesForIndex = await this.buildObjectsTable('');
+    const objectsTableLinesForIndex = await this.buildObjectsTable('');
     const objectsIndexFile = path.join(this.outputMarkdownRoot, "objects", "index.md");
-    await fs.writeFile(objectsIndexFile, ojectsTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(objectsIndexFile, objectsTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
   }
 
   private async buildAttributesTables(objectName: string, objectXmlParsed: any, objectMdFile: string) {
     const fieldsTable = await this.buildCustomFieldsTable(objectXmlParsed?.CustomObject?.fields || []);
     const validationRulesTable = await this.buildValidationRulesTable(objectXmlParsed?.CustomObject?.validationRules || []);
     const attributesLines = [...fieldsTable, ...validationRulesTable];
-    const attributesMarkown = await completeAttributesDescriptionWithAi(attributesLines.join("\n"), objectName)
-    await replaceInFile(objectMdFile, '<!-- Attributes tables -->', attributesMarkown);
+    const attributesMarkdown = await completeAttributesDescriptionWithAi(attributesLines.join("\n"), objectName)
+    await replaceInFile(objectMdFile, '<!-- Attributes tables -->', attributesMarkdown);
   }
 
   private async generateLinksInfo(): Promise<string> {
