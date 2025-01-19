@@ -202,7 +202,7 @@ export class SalesforceSetupUrlBuilder {
 
     if (!pathTemplate) {
       if (!alreadySaid.includes(metadataType)) {
-        uxLog(this, c.grey(`Unsupported metadata type: ${metadataType}`));
+        uxLog(this, c.grey(`Unsupported metadata type for doc quick link: ${metadataType}`));
         alreadySaid.push(metadataType);
       }
       return null;
@@ -252,7 +252,7 @@ export async function completeAttributesDescriptionWithAi(attributesMarkdown: st
   if (!attributesMarkdown) {
     return attributesMarkdown;
   }
-  const aiCache = await UtilsAi.findAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown]);
+  const aiCache = await UtilsAi.findAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown], objectName);
   if (aiCache.success === true) {
     uxLog(this, c.grey("Used AI cache for attributes completion (set IGNORE_AI_CACHE=true to force call to AI)"));
     return aiCache.cacheText ? `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText}` : attributesMarkdown;
@@ -264,7 +264,7 @@ export async function completeAttributesDescriptionWithAi(attributesMarkdown: st
     // Replace description in markdown
     if (aiResponse?.success) {
       const responseText = aiResponse.promptResponse || "No AI description available";
-      await UtilsAi.writeAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown], responseText);
+      await UtilsAi.writeAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown], objectName, responseText);
       attributesMarkdown = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
     }
   }
@@ -272,7 +272,7 @@ export async function completeAttributesDescriptionWithAi(attributesMarkdown: st
 }
 
 async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, objectName: string, objectXml: string, allObjectsNames: string, objectLinksDetails: string): Promise<string> {
-  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_OBJECT", [objectXml]);
+  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_OBJECT", [objectXml], objectName);
   if (aiCache.success === true) {
     uxLog(this, c.grey("Used AI cache for object description (set IGNORE_AI_CACHE=true to force call to AI)"));
     const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
@@ -289,7 +289,7 @@ async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, obj
       if (responseText.startsWith("##")) {
         responseText = responseText.split("\n").slice(1).join("\n");
       }
-      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_OBJECT", [objectXml], responseText);
+      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_OBJECT", [objectXml], objectName, responseText);
       const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
       const objectMarkdownDocUpdated = objectMarkdownDoc.replace("<!-- Object description -->", replaceText);
       return objectMarkdownDocUpdated;

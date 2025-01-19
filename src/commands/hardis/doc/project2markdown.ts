@@ -378,7 +378,7 @@ ${Project2Markdown.htmlInstructions}
         flowSkips.push(flowFile);
         continue;
       }
-      const genRes = await generateFlowMarkdownFile(flowFile, flowXml, outputFlowMdFile, { collapsedDetails: false, describeWithAi: true });
+      const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFlowMdFile, { collapsedDetails: false, describeWithAi: true });
       if (!genRes) {
         flowErrors.push(flowFile);
         continue;

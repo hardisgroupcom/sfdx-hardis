@@ -6,7 +6,10 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [5.16.1] 2025-01-19
 
-- AI Cache: Normalize strings before creating fingerprint to handle multiple platforms
+- AI Cache results enhancements
+  - Normalize strings before creating fingerprint to handle multiple platforms
+  - Delete unused cache files
+- Fix variables mistmatch when calling `generateFlowMarkdownFile`
 
 ## [5.16.0] 2025-01-19
 

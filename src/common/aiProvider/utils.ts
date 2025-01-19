@@ -24,10 +24,10 @@ export class UtilsAi {
     return process.env.PROMPTS_LANGUAGE || "en";
   }
 
-  public static async findAiCache(template: PromptTemplate, promptParameters: any[]): Promise<{ success: boolean, cacheText?: string, fingerPrint: string, aiCacheDirFile: string }> {
+  public static async findAiCache(template: PromptTemplate, promptParameters: any[], uniqueId: string): Promise<{ success: boolean, cacheText?: string, fingerPrint: string, aiCacheDirFile: string }> {
     const fingerPrint = this.getFingerPrint(promptParameters);
     const lang = this.getPromptsLanguage();
-    const aiCacheDirFile = path.join("docs", "cache-ai-results", `${lang}-${template}-${fingerPrint}.md`);
+    const aiCacheDirFile = path.join("docs", "cache-ai-results", `${lang}-${template}-${uniqueId}-${fingerPrint}.md`);
     if (process.env?.IGNORE_AI_CACHE === "true") {
       return { success: false, fingerPrint, aiCacheDirFile: aiCacheDirFile.replace(/\\/g, '/') };
     }
@@ -38,12 +38,16 @@ export class UtilsAi {
     return { success: false, fingerPrint, aiCacheDirFile: aiCacheDirFile.replace(/\\/g, '/') };
   }
 
-  public static async writeAiCache(template: PromptTemplate, promptParameters: any[], aiCacheText: string): Promise<void> {
+  public static async writeAiCache(template: PromptTemplate, promptParameters: any[], uniqueId: string, aiCacheText: string): Promise<void> {
     const fingerPrint = this.getFingerPrint(promptParameters);
     const aiCacheDir = path.join("docs", "cache-ai-results");
     await fs.ensureDir(aiCacheDir);
     const lang = this.getPromptsLanguage();
-    const aiCacheDirFile = path.join(aiCacheDir, `${lang}-${template}-${fingerPrint}.md`);
+    const aiCacheDirFile = path.join(aiCacheDir, `${lang}-${template}-${uniqueId}-${fingerPrint}.md`);
+    const otherCacheFiles = fs.readdirSync(aiCacheDir).filter((file) => file.includes(`${lang}-${template}-${uniqueId}`) && !file.includes(fingerPrint));
+    for (const otherCacheFile of otherCacheFiles) {
+      await fs.remove(path.join(aiCacheDir, otherCacheFile));
+    }
     await fs.writeFile(aiCacheDirFile, aiCacheText);
   }
 
