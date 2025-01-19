@@ -678,7 +678,7 @@ async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: strin
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
     const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW", { "FLOW_XML": flowXml });
-    const aiResponse = await AiProvider.promptAi(prompt);
+    const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_FLOW");
     // Replace description in markdown
     if (aiResponse?.success) {
       let responseText = aiResponse.promptResponse || "No AI description available";
@@ -705,7 +705,7 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
     const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW_DIFF", { "FLOW_XML_NEW": flowXmlNew, "FLOW_XML_PREVIOUS": flowXmlPrevious });
-    const aiResponse = await AiProvider.promptAi(prompt);
+    const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_FLOW_DIFF");
     // Replace description in markdown
     if (aiResponse?.success) {
       let responseText = aiResponse.promptResponse || "No AI description available";

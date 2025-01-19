@@ -18,20 +18,45 @@ The list of prompts used by sfdx-hardis is defined in [this source file](https:/
 
 ## Main configuration
 
-You need to define at least env variable OPENAI_API_KEY and make it available to your CI/CD workflow.
+> You're lost ? Contact [Cloudity](https://cloudity.com/#form), we can do it for you :)
 
-You can contact [Cloudity](https://cloudity.com/#form) to use our fine-tuned Model for best results, or get an OpenAi API key via [OpenAi Platform](https://platform.openai.com/).
+### Common variables
 
 | Variable                     | Description                                                                                                                               | Default       |
 |------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| OPENAI_API_KEY               | Your openai account API key                                                                                                               |               |
-| OPENAI_MODEL                 | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/))                                                 | `gpt-4o-mini` |
 | AI_MAXIMUM_CALL_NUMBER       | Maximum allowed number of calls to OpenAi API during a single sfdx-hardis command                                                         | `10000`       |
 | PROMPTS_LANGUAGE             | Language to use for prompts results (`en`,`fr`, or any [ISO Language code](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes)) | `en`          |
 | DEBUG_PROMPTS                | Set to true if you want prompts requests and responses in logs                                                                            | `false`       |
 | MAX_DEPLOYMENT_TIPS_AI_CALLS | Maximum number of errors that will be analyzed by AI for a single Pull Request                                                            | `20`          |
 | DISABLE_AI                   | In case you want to disable API calls to API without removing your configuration, set to true                                             | `false`       |
 | IGNORE_AI_CACHE              | Some processes like Flow description use AI cache files to save calls to prompts API, disable by setting to true                          | `false`       |
+
+### With Agentforce
+
+- Agentforce must be activated on the default org used when you call the sfdx-hardis command
+- A prompt template **SfdxHardisGenericPrompt** (type `Flex`) must exist in the default org, with input variable **PromptText** (type `FreeText`)
+- The connected used must be assigned to permission set **Prompt Template User**
+
+| Variable                     | Description                                                                                                                               | Default       |
+|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| USE_AGENTFORCE               | Set to true to activate the use of Agentforce prompts                                                                                                             | false |
+| GENERIC_AGENTFORCE_PROMPT_TEMPLATE                 | Set this variable to override default prompt template                           | `SfdxHardisGenericPrompt` |
+| GENERIC_AGENTFORCE_PROMPT_URL       |  Set this variable to override default prompt url                                 | `/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{GENERIC_AGENTFORCE_PROMPT_TEMPLATE}}/generations`       |
+
+![](assets/images//screenshot-agentforce-config-1.jpg)
+
+![](assets/images//screenshot-agentforce-config-2.jpg)
+
+### With OpenAI
+
+You need to define env variable OPENAI_API_KEY and make it available to your CI/CD workflow.
+
+To get an OpenAi API key , register on [OpenAi Platform](https://platform.openai.com/).
+
+| Variable                     | Description                                                                                                                               | Default       |
+|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| OPENAI_API_KEY               | Your openai account API key                                                                                                               |               |
+| OPENAI_MODEL                 | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/))                                                 | `gpt-4o-mini` |
 
 ## Templates
 
@@ -41,4 +66,6 @@ You can override default prompts by defining the following environment variables
 |-------------------------------|-------------------------------------------------------------------------|:------------------------------:|
 | PROMPT_SOLVE_DEPLOYMENT_ERROR | Ask AI about how to solve a deployment error                            |             ERROR              |
 | PROMPT_DESCRIBE_FLOW          | Describe a flow from its XML                                            |            FLOW_XML            |
-| PROMPT_DESCRIBE_FLOW_DIFF     | Describe the differences between 2 flow versions by comparing their XML | FLOW_XML_NEW,FLOW_XML_PREVIOUS |
+| PROMPT_DESCRIBE_FLOW_DIFF     | Describe the differences between 2 flow versions by comparing their XML | FLOW_XML_NEW, FLOW_XML_PREVIOUS |
+| PROMPT_DESCRIBE_OBJECT        | Describe Object using sfdx-hardis generated info based on project metadatas | OBJECT_NAME, OBJECT_XML, ALL_OBJECTS_LIST, ALL_OBJECT_LINKS |
+| PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD | Complete fields and validation rules descriptions in input markdown tables generated by sfdx-hardis | OBJECT_NAME, MARKDOWN |

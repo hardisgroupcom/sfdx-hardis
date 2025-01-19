@@ -13,6 +13,13 @@ export class UtilsAi {
     return false;
   }
 
+  public static isAgentforceAvailable() {
+    if (getEnvVar("USE_AGENTFORCE") === "true" && globalThis.jsForceConn) {
+      return true;
+    }
+    return false;
+  }
+
   public static getPromptsLanguage(): string {
     return process.env.PROMPTS_LANGUAGE || "en";
   }

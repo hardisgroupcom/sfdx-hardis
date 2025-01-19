@@ -257,7 +257,7 @@ export async function completeAttributesDescriptionWithAi(attributesMarkdown: st
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
     const prompt = AiProvider.buildPrompt("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", { "MARKDOWN": attributesMarkdown, "OBJECT_NAME": objectName });
-    const aiResponse = await AiProvider.promptAi(prompt);
+    const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD");
     // Replace description in markdown
     if (aiResponse?.success) {
       const responseText = aiResponse.promptResponse || "No AI description available";
@@ -278,7 +278,7 @@ async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, obj
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
     const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_OBJECT", { "OBJECT_NAME": objectName, "OBJECT_XML": objectXml, "ALL_OBJECTS_LIST": allObjectsNames, "ALL_OBJECT_LINKS": objectLinksDetails });
-    const aiResponse = await AiProvider.promptAi(prompt);
+    const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_OBJECT");
     // Replace description in markdown
     if (aiResponse?.success) {
       let responseText = aiResponse.promptResponse || "No AI description available";
