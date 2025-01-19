@@ -86,35 +86,61 @@ The previous version flow XML is:
   "PROMPT_DESCRIBE_OBJECT": {
     variables: ["OBJECT_NAME", "OBJECT_XML", "ALL_OBJECTS_LIST", "ALL_OBJECT_LINKS"],
     text: {
-      "en": `You are a business analyst working on a Salesforce project.
-Please describe Salesforce object "{{OBJECT_NAME}}", using plain English that can be understood by a business user.
+      "en": `You are a business analyst working on a Salesforce project. Your goal is to describe the Salesforce object "{{OBJECT_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
 
-To help you understand the org implementation, the complete list of objects in the Salesforce org is the following: {{ALL_OBJECTS_LIST}}
+### Instructions:
 
-To help you understand the org Object model, so you can better explain the relationships of {{OBJECT_NAME}} in it, here is the list of MasterDetail and Lookups of all org objects:
-{{ALL_OBJECT_LINKS}}
+1. **Contextual Overview**:
+    - Begin by summarizing the role and purpose of the object "{{OBJECT_NAME}}" in the Salesforce org.
+    - Explain its significance in the project, its purpose in the org's implementation, and any key business processes it supports.
 
-Explain object {{OBJECT_NAME}}'s place in the project, its role in the org, importance, etc.
+2. **Relationships**:
+    - Use the provided object model data to describe how "{{OBJECT_NAME}}" relates to other objects.
+    - Include:
+        - Direct relationships (MasterDetail and Lookup fields on the object).
+        - Inverse relationships (other objects referencing "{{OBJECT_NAME}}").
+        - Highlight any key dependencies or implications of these relationships in plain English.
 
-Explain object {{OBJECT_NAME}} relationships with other objects in the org, using MasterDetail and Lookups defined on {{OBJECT_NAME}}, but also using inverse relationships having {{OBJECT_NAME}} as target object reference. Give as many details as possible about direct and inverse relationships.
+3. **Detailed Metadata**:
+    - If applicable, include metadata details in the following formats:
+        - **Fields**: Display in a markdown table with columns:
+            - Field Name
+            - Type (e.g., Text, Number, Lookup)
+            - Description (business explanation of the field's purpose)
+            - Additional Details (e.g., required, unique, history tracking).
+        - **Record Types**: Display in a markdown table with columns:
+            - Record Type Name
+            - Description (purpose and key distinctions).
+        - **Validation Rules**: Display in a markdown table with columns:
+            - Rule Name
+            - Condition (logical statement triggering the rule)
+            - Description (business reasoning for the rule).
+        - **List Views**: Display in a markdown table with columns:
+            - View Name
+            - Filters (criteria applied to display the view)
+            - Description (purpose of the view).
+    - Ensure tables are in markdown format and fully readable (no truncated lines).
 
-If the object contains fields, display them in a markdown table format, including columns with detailed field types and detailed description. Do not truncate the table lines.
-If the object contains record types, display them in a markdown table format, including columns with detailed description. Do not truncate the table lines.
-If the object contains validation rules, display them in a markdown table format, including columns with detailed description. Do not truncate the table lines.
-If the object contains list views, display them in a markdown table format, including columns with detailed description. Do not truncate the table lines.
+4. **Additional Guidance**:
+    - Use the acronyms provided to interpret metadata names (e.g., TR: Trigger, VR: Validation Rule, WF: Workflow).
+    - If the XML metadata contains sensitive information (e.g., tokens, passwords), replace them with a placeholder (e.g., \`[REDACTED]\`).
 
-The following acronyms are used in metadata names:
-- TR: Trigger
-- VR: Validation Rule
-- WF: Workflow 
+5. **Formatting Requirements**:
+    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
+    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
+    - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Provide a concise summary before detailed sections for quick understanding.
 
-Please reply with markdown format, that can be embedded in a level 2 header (##).
-Add a new line before starting a bullet list so mkdocs-material displays it correctly, including for sub-bullets.
+### Reference Data:
 
-Caution: If the XML contains secret tokens or password, please replace them with a placeholder.
+- The list of all objects in the Salesforce org is: {{ALL_OBJECTS_LIST}}
 
-The {{OBJECT_NAME}} object metadata XML is:
+- The object model (MasterDetail and Lookup relationships) is: {{ALL_OBJECT_LINKS}}
+
+- The metadata XML for "{{OBJECT_NAME}}" is:
 {{OBJECT_XML}}
+
+Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
 `
     }
 
