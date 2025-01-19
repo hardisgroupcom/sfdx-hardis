@@ -249,6 +249,9 @@ export async function generateObjectMarkdown(objectName: string, objectXmlDefini
 }
 
 export async function completeAttributesDescriptionWithAi(attributesMarkdown: string, objectName: string): Promise<string> {
+  if (!attributesMarkdown) {
+    return attributesMarkdown;
+  }
   const aiCache = await UtilsAi.findAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown]);
   if (aiCache.success === true) {
     uxLog(this, c.grey("Used AI cache for attributes completion (set IGNORE_AI_CACHE=true to force call to AI)"));
