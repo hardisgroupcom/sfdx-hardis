@@ -11,7 +11,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Fields
   - Validation rules
   - Related flows
-- Handle prompts multilingualism (ex: `PROMPTS_LANGUAGE=fr`) 
+- Handle prompts multilingualism (ex: `PROMPTS_LANGUAGE=fr`)
 - Handle prompts cache to save tokens
 - Add `SFDX_DISABLE_FLOW_DIFF: false` in default CI/CD pipelines (must be set to true during CI/CD setup)
 - Enhance branches & orgs CI/CD strategy mermaid diagram
