@@ -4,7 +4,8 @@ export type PromptTemplate =
   "PROMPT_SOLVE_DEPLOYMENT_ERROR" |
   "PROMPT_DESCRIBE_FLOW" |
   "PROMPT_DESCRIBE_FLOW_DIFF" |
-  "PROMPT_DESCRIBE_OBJECT"
+  "PROMPT_DESCRIBE_OBJECT" |
+  "PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD"
   ;
 
 export function buildPromptFromTemplate(template: PromptTemplate, variables: object): string {
@@ -101,34 +102,16 @@ The previous version flow XML is:
         - Inverse relationships (other objects referencing "{{OBJECT_NAME}}").
         - Highlight any key dependencies or implications of these relationships in plain English.
 
-3. **Detailed Metadata**:
-    - If applicable, include metadata details in the following formats:
-        - **Fields**: Display in a markdown table with columns:
-            - Field Name
-            - Type (e.g., Text, Number, Lookup)
-            - Description (business explanation of the field's purpose)
-            - Additional Details (e.g., required, unique, history tracking).
-        - **Record Types**: Display in a markdown table with columns:
-            - Record Type Name
-            - Description (purpose and key distinctions).
-        - **Validation Rules**: Display in a markdown table with columns:
-            - Rule Name
-            - Condition (logical statement triggering the rule)
-            - Description (business reasoning for the rule).
-        - **List Views**: Display in a markdown table with columns:
-            - View Name
-            - Filters (criteria applied to display the view)
-            - Description (purpose of the view).
-    - Ensure tables are in markdown format and fully readable (no truncated lines).
-
-4. **Additional Guidance**:
+3. **Additional Guidance**:
+    - **Do NOT include** fields table or validation rules table in the response
     - Use the acronyms provided to interpret metadata names (e.g., TR: Trigger, VR: Validation Rule, WF: Workflow).
     - If the XML metadata contains sensitive information (e.g., tokens, passwords), replace them with a placeholder (e.g., \`[REDACTED]\`).
 
-5. **Formatting Requirements**:
+4. **Formatting Requirements**:
     - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
     - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
     - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Never truncate any information in the response.
     - Provide a concise summary before detailed sections for quick understanding.
 
 ### Reference Data:
@@ -143,6 +126,38 @@ The previous version flow XML is:
 Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
 `
     }
+  },
+  "PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD": {
+    variables: ["OBJECT_NAME", "MARKDOWN"],
+    text: {
+      "en": `You are a skilled Business Analyst working on a Salesforce project. Your task is to review and refine the attributes of the Salesforce object "{{OBJECT_NAME}}" and describe them in plain English. The goal is to create a detailed, user-friendly explanation of each attribute that a non-technical business user can easily understand.
 
+## Instructions:
+1. **Enhancing Descriptions**:
+   - If an attribute's description is missing, generate a meaningful description using the context provided by the other column values (e.g., name, data type, or usage).
+   - If a description already exists, improve its clarity and comprehensiveness by incorporating insights from the other column values.
+   - If an attribute's label is missing, generate a meaningful label using the context provided by the other column values.
+
+2. **Output Format**:
+   - Return the updated descriptions in the **Markdown table** format provided below.
+   - Ensure the table aligns with Markdown syntax conventions for proper rendering.
+
+3. **Tone and Style**:
+   - Use plain English suitable for business users with minimal technical jargon.
+   - Focus on clarity, completeness, and practical usage examples if applicable.
+
+4. **Output Requirements**:
+   - Respond **only in Markdown** format.
+   - Do not include any additional text or commentary outside of the Markdown.
+
+## Reference Data:
+- Use the following markdown as the basis for your updates:
+  {{MARKDOWN}}
+
+## Additional Guidance:
+- **Consistency**: Maintain consistent formatting and ensure the descriptions are cohesive across all attributes.
+- **Use Examples**: When applicable, include simple examples to illustrate the attribute's purpose or use case.
+ `
+    }
   }
 }

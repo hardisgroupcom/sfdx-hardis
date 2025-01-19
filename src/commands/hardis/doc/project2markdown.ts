@@ -8,7 +8,7 @@ import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { generateObjectMarkdown, generatePackageXmlMarkdown, readMkDocsFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
+import { completeAttributesDescriptionWithAi, generateObjectMarkdown, generatePackageXmlMarkdown, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
 import { countPackageXmlItems, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
@@ -19,6 +19,8 @@ import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdown
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
 import { BranchStrategyMermaidBuilder } from '../../../common/utils/branchStrategyMermaidBuilder.js';
+import { mdTableCell } from '../../../common/gitProvider/utilsMarkdown.js';
+import { prettifyFieldName } from '../../../common/utils/flowVisualiser/nodeFormatUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -124,6 +126,11 @@ ${this.htmlInstructions}
   protected withHistory = false;
   protected debugMode = false;
   protected footer: string;
+  protected flowDescriptions: any[] = [];
+  protected objectDescriptions: any[] = [];
+  protected objectFiles: string[];
+  protected allObjectsNames: string[];
+  protected tempDir: string;
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
@@ -174,6 +181,13 @@ ${this.htmlInstructions}
     this.mdLines.push(...installedPackages);
     await fs.writeFile(path.join(this.outputMarkdownRoot, "installed-packages.md"), installedPackages.join("\n") + `\n${this.footer}\n`);
     this.mkDocsNavNodes["Installed Packages"] = "installed-packages.md";
+
+
+    this.tempDir = await createTempDir()
+    // Convert source to metadata API format to build prompts
+    await execCommand(`sf project convert source --metadata CustomObject --output-dir ${this.tempDir}`, this, { fail: true, output: true, debug: this.debugMode });
+    this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS })).sort();
+    this.allObjectsNames = this.objectFiles.map(object => path.basename(object, ".object"));
 
     // List flows & generate doc
     if (!(process?.env?.GENERATE_FLOW_DOC === 'false')) {
@@ -255,17 +269,14 @@ ${Project2Markdown.htmlInstructions}
 
   private async generateObjectsDocumentation() {
     uxLog(this, c.cyan("Generating Objects AI documentation... (if you don't want it, define GENERATE_OBJECTS_DOC=false in your environment variables)"));
-    const tempDir = await createTempDir()
-    await execCommand(`sf project convert source --metadata CustomObject --output-dir ${tempDir}`, this, { fail: true, output: true, debug: this.debugMode });
-    const objectFiles = (await glob("**/*.object", { cwd: tempDir, ignore: GLOB_IGNORE_PATTERNS })).sort();
-    const allObjectsNames = objectFiles.map(object => path.basename(object, ".object")).join(",");
+
     const objectLinksInfo = await this.generateLinksInfo();
     const objectsForMenu: any = { "All objects": "objects/index.md" }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
-    for (const objectFile of objectFiles) {
+    for (const objectFile of this.objectFiles) {
       const objectName = path.basename(objectFile, ".object");
       uxLog(this, c.grey(`Generating markdown for Object ${objectFile}...`));
-      const objectXml = (await fs.readFile(path.join(tempDir, objectFile), "utf8")).toString();
+      const objectXml = (await fs.readFile(path.join(this.tempDir, objectFile), "utf8")).toString();
       const objectMdFile = path.join(this.outputMarkdownRoot, "objects", objectName + ".md");
       // Remove picklist values from Record Types to save tokens
       const objectXmlParsed = new XMLParser().parse(objectXml);
@@ -274,15 +285,47 @@ ${Project2Markdown.htmlInstructions}
           delete recordType.picklistValues;
         }
       }
-      const objectXmlStripped = new XMLBuilder().build(objectXmlParsed);
-      const genRes = await generateObjectMarkdown(objectName, objectXmlStripped, allObjectsNames, objectLinksInfo, objectMdFile);
-      if (!genRes) {
-        uxLog(this, c.yellow(`Error generating documentation for Object ${objectFile}`));
-        continue;
+      // Remove actionOverrides with formFactors to save tokens
+      if (objectXmlParsed?.CustomObject?.actionOverrides) {
+        objectXmlParsed.CustomObject.actionOverrides = objectXmlParsed.CustomObject.actionOverrides.filter(actionOverride => !actionOverride.formFactor);
       }
+      // Remove compact layouts to save tokens
+      delete objectXmlParsed.CustomObject?.compactLayouts;
+      // Build filtered XML
+      const objectXmlStripped = new XMLBuilder().build(objectXmlParsed);
+      // Main AI markdown
+      await generateObjectMarkdown(objectName, objectXmlStripped, this.allObjectsNames.join(","), objectLinksInfo, objectMdFile);
+      // Fields table
+      await this.buildAttributesTables(objectName, objectXmlParsed, objectMdFile);
+      // Flows Tables
+      const relatedObjectFlowsTable = await this.buildFlowsTable('../flows/', objectName);
+      await replaceInFile(objectMdFile, '<!-- Flows table -->', relatedObjectFlowsTable.join("\n"));
+      this.objectDescriptions.push({
+        name: objectName,
+        label: objectXmlParsed?.CustomObject?.label || "",
+        description: objectXmlParsed?.CustomObject?.description || "",
+      });
       objectsForMenu[objectName] = "objects/" + objectName + ".md";
     }
     this.mkDocsNavNodes["Objects"] = objectsForMenu;
+    // Write table on doc index
+    const objectsTableLines = await this.buildObjectsTable('objects/');
+    this.mdLines.push(...objectsTableLines);
+    this.mdLines.push(...["___", ""]);
+
+    // Write index file for objects folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
+    const ojectsTableLinesForIndex = await this.buildObjectsTable('');
+    const objectsIndexFile = path.join(this.outputMarkdownRoot, "objects", "index.md");
+    await fs.writeFile(objectsIndexFile, ojectsTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
+  }
+
+  private async buildAttributesTables(objectName: string, objectXmlParsed: any, objectMdFile: string) {
+    const fieldsTable = await this.buildCustomFieldsTable(objectXmlParsed?.CustomObject?.fields || []);
+    const validationRulesTable = await this.buildValidationRulesTable(objectXmlParsed?.CustomObject?.validationRules || []);
+    const attributesLines = [...fieldsTable, ...validationRulesTable];
+    const attributesMarkown = await completeAttributesDescriptionWithAi(attributesLines.join("\n"), objectName)
+    await replaceInFile(objectMdFile, '<!-- Attributes tables -->', attributesMarkown);
   }
 
   private async generateLinksInfo(): Promise<string> {
@@ -315,17 +358,18 @@ ${Project2Markdown.htmlInstructions}
     const flowErrors: string[] = [];
     const flowWarnings: string[] = [];
     const flowSkips: string[] = [];
-    const flowDescriptions: any[] = [];
+    this.flowDescriptions = [];
     for (const flowFile of flowFiles) {
       const flowName = path.basename(flowFile, ".flow-meta.xml");
       uxLog(this, c.grey(`Generating markdown for Flow ${flowFile}...`));
       const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
       const flowContent = await parseXmlFile(flowFile);
-      flowDescriptions.push({
+      this.flowDescriptions.push({
         name: flowName,
         description: flowContent?.Flow?.description?.[0] || "",
         type: flowContent?.Flow?.processType?.[0] === "Flow" ? "ScreenFlow" : flowContent?.Flow?.start?.[0]?.triggerType?.[0] ?? (flowContent?.Flow?.processType?.[0] || "ERROR (Unknown)"),
-        object: flowContent?.Flow?.start?.[0]?.object?.[0] || flowContent?.Flow?.processMetadataValues?.filter(pmv => pmv.name[0] === "ObjectType")?.[0]?.value?.[0]?.stringValue?.[0] || ""
+        object: flowContent?.Flow?.start?.[0]?.object?.[0] || flowContent?.Flow?.processMetadataValues?.filter(pmv => pmv.name[0] === "ObjectType")?.[0]?.value?.[0]?.stringValue?.[0] || "",
+        impactedObjects: this.allObjectsNames.filter(objectName => flowXml.includes(`>${objectName}<`)).join(", ")
       });
       flowsForMenu[flowName] = "flows/" + flowName + ".md";
       const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", flowName + ".md");
@@ -347,6 +391,7 @@ ${Project2Markdown.htmlInstructions}
         continue;
       }
     }
+    this.flowDescriptions = sortArray(this.flowDescriptions, { by: ['object', 'name'], order: ['asc', 'asc'] }) as any[]
     if (flowSkips.length > 0) {
       uxLog(this, c.yellow(`Skipped generation for ${flowSkips.length} Flows that have not been updated: ${this.humanDisplay(flowSkips)}`));
     }
@@ -371,13 +416,13 @@ ${Project2Markdown.htmlInstructions}
     }
 
     // Write table on doc index
-    const flowTableLines = await this.buildFlowsTable(flowDescriptions, 'flows/');
+    const flowTableLines = await this.buildFlowsTable('flows/');
     this.mdLines.push(...flowTableLines);
     this.mdLines.push(...["___", ""]);
 
     // Write index file for flow folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
-    const flowTableLinesForIndex = await this.buildFlowsTable(flowDescriptions, '');
+    const flowTableLinesForIndex = await this.buildFlowsTable('');
     const flowIndexFile = path.join(this.outputMarkdownRoot, "flows", "index.md");
     await fs.writeFile(flowIndexFile, flowTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
 
@@ -389,21 +434,89 @@ ${Project2Markdown.htmlInstructions}
     return flows.map(flow => path.basename(flow, ".flow-meta.xml")).join(", ");
   }
 
-  private async buildFlowsTable(flowDescriptions: any[], prefix: string) {
+  private async buildFlowsTable(prefix: string, filterObject: string | null = null) {
+    const filteredFlows = filterObject ? this.flowDescriptions.filter(flow => flow.object === filterObject || flow.impactedObjects.includes(filterObject)) : this.flowDescriptions;
+    if (filteredFlows.length === 0) {
+      return [];
+    }
     const lines: string[] = [];
     lines.push(...[
-      "## Flows",
+      filterObject ? "## Related Flows" : "## Flows",
       "",
       "| Object | Name      | Type | Description |",
       "| :----  | :-------- | :--: | :---------- | "
     ]);
-    for (const flow of sortArray(flowDescriptions, { by: ['object', 'name'], order: ['asc', 'asc'] }) as any[]) {
+    for (const flow of filteredFlows) {
       const outputFlowHistoryMdFile = path.join(this.outputMarkdownRoot, "flows", flow.name + "-history.md");
       const flowNameCell = fs.existsSync(outputFlowHistoryMdFile) ?
         `[${flow.name}](${prefix}${flow.name}.md) [🕒](${prefix}${flow.name}-history.md)` :
         `[${flow.name}](${prefix}${flow.name}.md)`;
       lines.push(...[
-        `| ${flow.object || "💻"} | ${flowNameCell} | ${flow.type} | ${flow.description.replace(/\n/gm, "<br/>".replace(/\|/gm, ""))} |`
+        `| ${flow.object || "💻"} | ${flowNameCell} | ${prettifyFieldName(flow.type)} | ${mdTableCell(flow.description)} |`
+      ]);
+    }
+    lines.push("");
+    return lines;
+  }
+
+  private async buildObjectsTable(prefix: string) {
+    const lines: string[] = [];
+    lines.push(...[
+      "## Objects",
+      "",
+      "| Name      | Label | Description |",
+      "| :-------- | :---- | :---------- | "
+    ]);
+    for (const objectDescription of this.objectDescriptions) {
+      const objectNameCell = `[${objectDescription.name}](${prefix}${objectDescription.name}.md)`;
+      lines.push(...[
+        `| ${objectNameCell} | ${objectDescription.label || ""} | ${mdTableCell(objectDescription.description)} |`
+      ]);
+    }
+    lines.push("");
+    return lines;
+  }
+
+  private async buildCustomFieldsTable(fields: any[]) {
+    if (!Array.isArray(fields)) {
+      fields = [fields];
+    }
+    if (fields.length === 0) {
+      return [];
+    }
+    const lines: string[] = [];
+    lines.push(...[
+      "## Fields",
+      "",
+      "| Name      | Label | Type | Description |",
+      "| :-------- | :---- | :--: | :---------- | "
+    ]);
+    for (const field of fields) {
+      lines.push(...[
+        `| ${field.fullName} | ${field.label || ""} | ${field.type || ""} | ${mdTableCell(field.description)} |`
+      ]);
+    }
+    lines.push("");
+    return lines;
+  }
+
+  private async buildValidationRulesTable(validationRules: any[]) {
+    if (!Array.isArray(validationRules)) {
+      validationRules = [validationRules];
+    }
+    if (validationRules.length === 0) {
+      return [];
+    }
+    const lines: string[] = [];
+    lines.push(...[
+      "## Validation Rules",
+      "",
+      "| Rule      | Active | Description | Formula |",
+      "| :-------- | :---- | :---------- | :------ |"
+    ]);
+    for (const rule of validationRules) {
+      lines.push(...[
+        `| ${rule.fullName} | ${rule.active ? "Yes" : "No ⚠️"} | ${rule.description || ""} | \`${rule.errorConditionFormula}\` |`
       ]);
     }
     lines.push("");

@@ -232,7 +232,10 @@ export async function generateObjectMarkdown(objectName: string, objectXmlDefini
     `## ${objectName}`,
     '',
     '<!-- Object description -->',
-    ''
+    '',
+    '<!-- Attributes tables -->',
+    '',
+    '<!-- Flows table -->'
   ];
   mdLines.push("");
   // Footer
@@ -243,6 +246,26 @@ export async function generateObjectMarkdown(objectName: string, objectXmlDefini
   await fs.writeFile(outputFile, mdLinesStr);
   uxLog(this, c.green(`Successfully generated ${objectName} documentation into ${outputFile}`));
   return outputFile;
+}
+
+export async function completeAttributesDescriptionWithAi(attributesMarkdown: string, objectName: string): Promise<string> {
+  const aiCache = await UtilsAi.findAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown]);
+  if (aiCache.success === true) {
+    uxLog(this, c.grey("Used AI cache for attributes completion (set IGNORE_AI_CACHE=true to force call to AI)"));
+    return aiCache.cacheText ? `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText}` : attributesMarkdown;
+  }
+  if (AiProvider.isAiAvailable()) {
+    // Invoke AI Service
+    const prompt = AiProvider.buildPrompt("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", { "MARKDOWN": attributesMarkdown, "OBJECT_NAME": objectName });
+    const aiResponse = await AiProvider.promptAi(prompt);
+    // Replace description in markdown
+    if (aiResponse?.success) {
+      const responseText = aiResponse.promptResponse || "No AI description available";
+      await UtilsAi.writeAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown], responseText);
+      attributesMarkdown = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
+    }
+  }
+  return attributesMarkdown;
 }
 
 async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, objectName: string, objectXml: string, allObjectsNames: string, objectLinksDetails: string): Promise<string> {
@@ -269,4 +292,10 @@ async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, obj
     }
   }
   return objectMarkdownDoc;
+}
+
+export async function replaceInFile(filePath: string, stringToReplace: string, replaceWith: string) {
+  const fileContent = await fs.readFile(filePath, 'utf8');
+  const newContent = fileContent.replaceAll(stringToReplace, replaceWith);
+  await fs.writeFile(filePath, newContent);
 }
