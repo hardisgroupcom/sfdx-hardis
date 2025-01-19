@@ -8,6 +8,7 @@ import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import { parseXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getConfig, setConfig } from '../../../../config/index.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -54,7 +55,7 @@ export default class CleanListViews extends SfCommand<any> {
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.listView-meta.xml`;
-    const matchingListViews = await glob(findManagedPattern, { cwd: process.cwd() });
+    const matchingListViews = await glob(findManagedPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
     let counter = 0;
     const config = await getConfig('project');
     let listViewsMine = config.listViewsToSetToMine || [];

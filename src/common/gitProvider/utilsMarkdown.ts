@@ -77,6 +77,13 @@ export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTar
   }
 }
 
+export function mdTableCell(str: string) {
+  if (!str) {
+    return "<!-- -->"
+  }
+  return str.replace(/\n/gm, "<br/>".replace(/\|/gm, ""))
+}
+
 export async function flowDiffToMarkdownForPullRequest(flowNames: string[], fromCommit: string, toCommit: string): Promise<any> {
   if (flowNames.length === 0) {
     return "";

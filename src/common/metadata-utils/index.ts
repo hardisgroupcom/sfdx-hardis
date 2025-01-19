@@ -19,7 +19,7 @@ import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { getCache, setCache } from '../cache/index.js';
 import { buildOrgManifest } from '../utils/deployUtils.js';
 import { listMajorOrgs } from '../utils/orgConfigUtils.js';
-import { isSfdxProject } from '../utils/projectUtils.js';
+import { GLOB_IGNORE_PATTERNS, isSfdxProject } from '../utils/projectUtils.js';
 import { prompts } from '../utils/prompts.js';
 import { parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { listMetadataTypes } from './metadataList.js';
@@ -465,6 +465,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
       for (const globExpression of globExpressions) {
         const sourceFiles = await glob(globExpression, {
           cwd: packageDirectory.fullPath,
+          ignore: GLOB_IGNORE_PATTERNS
         });
         if (sourceFiles.length > 0) {
           const metaFile = path.join(packageDirectory.path, sourceFiles[0]);
@@ -476,7 +477,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
   }
 
   public static async promptFlow() {
-    const flowFiles = await glob("**/*.flow-meta.xml");
+    const flowFiles = await glob("**/*.flow-meta.xml", { ignore: GLOB_IGNORE_PATTERNS });
     flowFiles.sort();
     const flowSelectRes = await prompts({
       type: 'select',

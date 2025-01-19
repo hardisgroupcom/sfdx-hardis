@@ -312,7 +312,7 @@ async function findAiTip(errorLine: any): Promise<AiResponse | null> {
     }
     const prompt = AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": errorLine });
     try {
-      const aiResponse = await AiProvider.promptAi(prompt);
+      const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_SOLVE_DEPLOYMENT_ERROR");
       return aiResponse;
     } catch (e) {
       uxLog(this, c.yellow("[AI] Error while calling OpenAI: " + (e as Error).message));

@@ -7,6 +7,7 @@ import fs from 'fs-extra';
 import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -64,7 +65,7 @@ export default class CleanManagedItems extends SfCommand<any> {
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/${this.namespace}__*`;
-    const matchingCustomFiles = await glob(findManagedPattern, { cwd: process.cwd() });
+    const matchingCustomFiles = await glob(findManagedPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
     for (const matchingCustomFile of matchingCustomFiles) {
       if (!fs.existsSync(matchingCustomFile)) {
         continue;
@@ -93,7 +94,7 @@ export default class CleanManagedItems extends SfCommand<any> {
 
   private async folderContainsLocalItems(folder: string): Promise<boolean> {
     // Do not remove managed folders when there are local custom items defined on it
-    const subFiles = await glob(folder + '/**/*', { cwd: process.cwd() });
+    const subFiles = await glob(folder + '/**/*', { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
     const standardItems = subFiles.filter((file) => {
       return !fs.lstatSync(file).isDirectory() && !path.basename(file).startsWith(`${this.namespace}__`);
     });

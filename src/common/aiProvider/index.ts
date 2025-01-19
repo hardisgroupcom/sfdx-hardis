@@ -6,6 +6,7 @@ import { SfError } from "@salesforce/core";
 import { buildPromptFromTemplate, PromptTemplate } from "./promptTemplates.js";
 import { isCI, uxLog } from "../utils/index.js";
 import { prompts } from "../utils/prompts.js";
+import { AgentforceProvider } from "./agentforceProvider.js";
 
 let IS_AI_AVAILABLE: boolean | null = null;
 
@@ -45,10 +46,13 @@ export abstract class AiProvider {
     if (UtilsAi.isOpenAiAvailable()) {
       return new OpenAiProvider();
     }
+    else if (UtilsAi.isAgentforceAvailable()) {
+      return new AgentforceProvider();
+    }
     return null;
   }
 
-  static async promptAi(prompt: string, template: PromptTemplate | null = null): Promise<AiResponse | null> {
+  static async promptAi(prompt: string, template: PromptTemplate): Promise<AiResponse | null> {
     const aiInstance = this.getInstance();
     if (!aiInstance) {
       throw new SfError("aiInstance should be set");
@@ -56,6 +60,17 @@ export abstract class AiProvider {
     try {
       return await aiInstance.promptAi(prompt, template);
     } catch (e: any) {
+      if (e.message.includes("on tokens per min (TPM)")) {
+        try {
+          uxLog(this, c.yellow(`Error while calling AI provider: ${e.message}`));
+          uxLog(this, c.yellow(`Trying again in 60 seconds...`));
+          await new Promise((resolve) => setTimeout(resolve, 60000));
+          return await aiInstance.promptAi(prompt, template);
+        } catch (e2: any) {
+          uxLog(this, c.red(`Error while calling AI provider: ${e2.message}`));
+          return null;
+        }
+      }
       uxLog(this, c.red(`Error while calling AI provider: ${e.message}`));
       return null;
     }

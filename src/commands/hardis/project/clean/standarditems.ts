@@ -7,6 +7,7 @@ import fs from 'fs-extra';
 import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -53,7 +54,7 @@ export default class CleanStandardItems extends SfCommand<any> {
       // Process only standard objects
       if (fs.lstatSync(objectDir).isDirectory() && !objectDir.includes('__')) {
         const findCustomFieldsPattern = `${objectDir}/fields/*__*`;
-        const matchingCustomFiles = await glob(findCustomFieldsPattern, { cwd: process.cwd() });
+        const matchingCustomFiles = await glob(findCustomFieldsPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
         if (matchingCustomFiles.length === 0) {
           // Remove the whole folder
           await fs.remove(objectDir);
@@ -67,7 +68,7 @@ export default class CleanStandardItems extends SfCommand<any> {
         } else {
           // Remove only standard fields
           const findAllFieldsPattern = `${objectDir}/fields/*.field-meta.xml`;
-          const matchingAllFields = await glob(findAllFieldsPattern, { cwd: process.cwd() });
+          const matchingAllFields = await glob(findAllFieldsPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
           for (const field of matchingAllFields) {
             if (!field.includes('__')) {
               await fs.remove(field);
