@@ -42,7 +42,7 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
     const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true, collapsedDetails: options.collapsedDetails });
     let flowMarkdownDoc = flowDocGenResult.uml;
     if (options.describeWithAi) {
-      flowMarkdownDoc = await completeWithAiDescription(flowMarkdownDoc, flowXml);
+      flowMarkdownDoc = await completeWithAiDescription(flowMarkdownDoc, flowXml, flowName);
     }
     await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
     uxLog(this, c.grey(`Written ${flowName} documentation in ${outputFlowMdFile}`));
@@ -227,7 +227,8 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   let diffMarkdown = compareMdLines.join("\n");
 
   if (result.hasFlowDiffs === true && flowXmlAfter !== "" && flowXmlBefore !== "") {
-    diffMarkdown = await completeWithDiffAiDescription(diffMarkdown, flowXmlAfter, flowXmlBefore)
+    const flowDiffKey = `${flowLabel}-${commitBefore}-${commitAfter}`;
+    diffMarkdown = await completeWithDiffAiDescription(diffMarkdown, flowXmlAfter, flowXmlBefore, flowDiffKey)
   }
 
   // Write markdown with diff in a file
@@ -573,7 +574,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
       const reportDir = await getReportDirectory();
       await fs.ensureDir(path.join(reportDir, "flow-diff"));
       const diffMdFileTmp = path.join(reportDir, 'flow-diff', `${flowLabel}_${moment().format("YYYYMMDD-hhmmss")}.md`);
-      const genRes = await generateFlowMarkdownFile(flowFile, flowXml, diffMdFileTmp, { collapsedDetails: false, describeWithAi: false });
+      const genRes = await generateFlowMarkdownFile(flowLabel, flowXml, diffMdFileTmp, { collapsedDetails: false, describeWithAi: false });
       if (!genRes) {
         throw new Error(`Error generating markdown file for flow ${flowFile}`);
       }
@@ -668,8 +669,8 @@ export function removeMermaidLinks(messageBody: string) {
   return result;
 }
 
-async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: string): Promise<string> {
-  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW", [flowXml]);
+async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: string, flowName: string): Promise<string> {
+  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW", [flowXml], flowName);
   if (aiCache.success === true) {
     uxLog(this, c.grey("Used AI cache for flow description (set IGNORE_AI_CACHE=true to force call to AI)"));
     const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
@@ -685,7 +686,7 @@ async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: strin
       if (responseText.startsWith("##")) {
         responseText = responseText.split("\n").slice(1).join("\n");
       }
-      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_FLOW", [flowXml], responseText);
+      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_FLOW", [flowXml], flowName, responseText);
       const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
       const flowMarkdownDocUpdated = flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
       return flowMarkdownDocUpdated;
@@ -695,8 +696,8 @@ async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: strin
 }
 
 /* jscpd:ignore-start */
-async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew: string, flowXmlPrevious: string): Promise<string> {
-  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNew, flowXmlPrevious]);
+async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew: string, flowXmlPrevious: string, diffKey: string): Promise<string> {
+  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNew, flowXmlPrevious], diffKey);
   if (aiCache.success) {
     uxLog(this, c.grey("Used AI cache for diff description (set IGNORE_AI_CACHE=true to force call to AI)"));
     const replaceText = `## AI-Generated Differences Summary\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
@@ -712,7 +713,7 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
       if (responseText.startsWith("##")) {
         responseText = responseText.split("\n").slice(1).join("\n");
       }
-      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNew, flowXmlPrevious], responseText);
+      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNew, flowXmlPrevious], diffKey, responseText);
       const replaceText = `## AI-Generated Differences Summary\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
       const flowMarkdownDocUpdated = flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
       return flowMarkdownDocUpdated;
