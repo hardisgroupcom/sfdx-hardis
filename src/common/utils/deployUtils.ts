@@ -26,7 +26,7 @@ import { MetadataUtils } from '../metadata-utils/index.js';
 import { importData } from './dataUtils.js';
 import { analyzeDeployErrorLogs } from './deployTips.js';
 import { callSfdxGitDelta } from './gitUtils.js';
-import { createBlankSfdxProject, isSfdxProject } from './projectUtils.js';
+import { createBlankSfdxProject, GLOB_IGNORE_PATTERNS, isSfdxProject } from './projectUtils.js';
 import { prompts } from './prompts.js';
 import { arrangeFilesBefore, restoreArrangedFiles } from './workaroundUtils.js';
 import { countPackageXmlItems, isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
@@ -916,7 +916,7 @@ async function replaceQuickActionsWithDummy() {
     uxLog(this, c.cyan('Replacing QuickActions content with Dummy content that will always pass...'));
     quickActionsBackUpFolder = await createTempDir();
     const patternQuickActions = process.cwd() + '/force-app/' + `**/quickActions/*__c.*.quickAction-meta.xml`;
-    const matchQuickActions = await glob(patternQuickActions, { cwd: process.cwd() });
+    const matchQuickActions = await glob(patternQuickActions, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
     for (const quickActionFile of matchQuickActions) {
       const tmpBackupFile = path.join(
         quickActionsBackUpFolder,
@@ -948,6 +948,7 @@ async function restoreQuickActions() {
       quickActionsBackUpFolder + '/force-app/' + `**/quickActions/*.quickAction-meta.xml`;
     const matchQuickActions = await glob(patternQuickActionsBackup, {
       cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
     });
     for (const quickActionFile of matchQuickActions) {
       const prevFileName = path

@@ -56,6 +56,17 @@ export abstract class AiProvider {
     try {
       return await aiInstance.promptAi(prompt, template);
     } catch (e: any) {
+      if (e.message.includes("on tokens per min (TPM)")) {
+        try {
+          uxLog(this, c.yellow(`Error while calling AI provider: ${e.message}`));
+          uxLog(this, c.yellow(`Trying again in 60 seconds...`));
+          await new Promise((resolve) => setTimeout(resolve, 60000));
+          return await aiInstance.promptAi(prompt, template);
+        } catch (e2: any) {
+          uxLog(this, c.red(`Error while calling AI provider: ${e2.message}`));
+          return null;
+        }
+      }
       uxLog(this, c.red(`Error while calling AI provider: ${e.message}`));
       return null;
     }

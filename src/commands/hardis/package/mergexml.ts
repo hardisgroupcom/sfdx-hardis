@@ -10,6 +10,7 @@ import { uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { appendPackageXmlFilesContent } from '../../../common/utils/xmlUtils.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -79,7 +80,7 @@ export default class MergePackageXml extends SfCommand<any> {
     if (this.packageXmlFiles.length === 0) {
       const rootFolder = path.resolve(this.folder);
       const findPackageXmlPattern = rootFolder + this.pattern;
-      const matchingFiles = await glob(findPackageXmlPattern, { cwd: process.cwd() });
+      const matchingFiles = await glob(findPackageXmlPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
       const filesSelectRes = await prompts({
         type: 'multiselect',
         name: 'files',

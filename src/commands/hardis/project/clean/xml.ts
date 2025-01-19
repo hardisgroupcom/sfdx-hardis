@@ -13,6 +13,7 @@ import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { writeXmlFileFormatted } from '../../../../common/utils/xmlUtils.js';
 import { getConfig, setConfig } from '../../../../config/index.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -101,7 +102,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
     // iterate on removePatterns
     for (const cleanXmlPattern of cleanXmlPatterns) {
       const findPattern = rootFolder + cleanXmlPattern.globPattern;
-      const matchingXmlFiles = await glob(findPattern, { cwd: process.cwd() });
+      const matchingXmlFiles = await glob(findPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
       // Iterate on matching files
       for (const xmlFile of matchingXmlFiles) {
         let updated = false;

@@ -3,7 +3,8 @@ import { UtilsAi } from "./utils.js";
 export type PromptTemplate =
   "PROMPT_SOLVE_DEPLOYMENT_ERROR" |
   "PROMPT_DESCRIBE_FLOW" |
-  "PROMPT_DESCRIBE_FLOW_DIFF"
+  "PROMPT_DESCRIBE_FLOW_DIFF" |
+  "PROMPT_DESCRIBE_OBJECT"
   ;
 
 export function buildPromptFromTemplate(template: PromptTemplate, variables: object): string {
@@ -17,9 +18,9 @@ export function buildPromptFromTemplate(template: PromptTemplate, variables: obj
   // Get prompt language and check if it is an allowed one
   const promptsLanguage = UtilsAi.getPromptsLanguage();
   // Build prompt
-  let prompt = process.env?.[template] || templateData.text?.[promptsLanguage] || (templateData.text?.["en"] + `\nPlease answer using the language corresponding to "${promptsLanguage}"`);
+  let prompt: string = process.env?.[template] || templateData.text?.[promptsLanguage] || (templateData.text?.["en"] + `\nPlease answer using the language corresponding to "${promptsLanguage}"`);
   for (const variable in variables) {
-    prompt = prompt.replace(`{{${variable}}}`, variables[variable]);
+    prompt = prompt.replaceAll(`{{${variable}}}`, variables[variable]);
   }
   return prompt;
 }
@@ -44,16 +45,7 @@ How to solve the following Salesforce deployment error ?
 The error is: 
 {{ERROR}}
 `,
-      /* cSpell:disable */
-      "fr": `Vous êtes un release manager Salesforce qui utilise les commands Salesforce CLI pour effectuer des déploiements 
-Comment résoudre l'erreur de déploiement Salesforce suivante ?
-- Veuillez répondre en utilisant le format source de sfdx, pas le format metadata.
-- Veuillez fournir un exemple XML si applicable.
-- Veuillez sauter la partie de la réponse sur comment récupérer ou déployer les changements avec Salesforce CLI
-L'erreur est :
-{{ERROR}}
-`
-      /* cSpell:enable */
+
     },
   },
   "PROMPT_DESCRIBE_FLOW": {
@@ -65,16 +57,9 @@ Please respond with markdown format, that can be embedded in a level 2 header (#
 Add a new line before starting a bullet list so mkdocs-material displays it correctly, including for sub-bullets.
 Caution: If the XML contains secret tokens or password, please replace them with a placeholder.
 The flow XML is:
-{{FLOW_XML}}`,
-      /* cSpell:disable */
-      "fr": `Vous êtes un analyste métier travaillant sur un projet Salesforce.
-Veuillez décrire le flux suivant en utilisant un langage simple qui peut être compris par un utilisateur métier.
-Veuillez répondre avec le format markdown, qui peut être intégré dans un en-tête de niveau 2 (##)
-Ajoutez une nouvelle ligne avant de commencer une liste à puces pour que mkdocs-material l'affiche correctement, y compris pour les sous-puces.
-Attention : Si le XML contient des jetons secrets ou des mots de passe, veuillez les remplacer par un espace réservé.
-Le XML du flux est :
-{{FLOW_XML}}`
-      /* cSpell:enable */
+{{FLOW_XML}}
+`,
+
     }
 
   },
@@ -95,22 +80,43 @@ The new version flow XML is:
 The previous version flow XML is:
 {{FLOW_XML_PREVIOUS}}
 `,
-      /* cSpell:disable */
-      "fr": `Vous êtes un analyste métier travaillant sur un projet Salesforce.
-Veuillez décrire les différences entre la nouvelle version du Flow et la version précédente du Flow, en utilisant un langage simple qui peut être compris par un utilisateur métier.
-Ignorez les balises liées aux attributs de localisation (locationX et locationY) ou positions : ne les mentionnez pas dans votre réponse
-Ignorez les nœuds et éléments qui n'ont pas changé : ne les mentionnez pas dans votre réponse
-Ignorez les changements de connecteurs : ne les mentionnez pas dans votre réponse
-Veuillez répondre avec le format markdown, qui peut être intégré dans un en-tête de niveau 2 (##)
-Ajoutez une nouvelle ligne avant de commencer une liste à puces pour que mkdocs-material l'affiche correctement, y compris pour les sous-puces.
-Si le XML contient des jetons secrets ou des mots de passe, veuillez les remplacer par un espace réservé.
-Le XML de la nouvelle version du Flow est:
-{{FLOW_XML_CURRENT}}
 
-Le XML de la précédente version du Flow est:
-{{FLOW_XML_PREVIOUS}}
-`
-      /* cSpell:enable */
     }
+  },
+  "PROMPT_DESCRIBE_OBJECT": {
+    variables: ["OBJECT_NAME", "OBJECT_XML", "ALL_OBJECTS_LIST", "ALL_OBJECT_LINKS"],
+    text: {
+      "en": `You are a business analyst working on a Salesforce project.
+Please describe Salesforce object "{{OBJECT_NAME}}", using plain English that can be understood by a business user.
+
+To help you understand the org implementation, the complete list of objects in the Salesforce org is the following: {{ALL_OBJECTS_LIST}}
+
+To help you understand the org Object model, so you can better explain the relationships of {{OBJECT_NAME}} in it, here is the list of MasterDetail and Lookups of all org objects:
+{{ALL_OBJECT_LINKS}}
+
+Explain object {{OBJECT_NAME}}'s place in the project, its role in the org, importance, etc.
+
+Explain object {{OBJECT_NAME}} relationships with other objects in the org, using MasterDetail and Lookups defined on {{OBJECT_NAME}}, but also using inverse relationships having {{OBJECT_NAME}} as target object reference. Give as many details as possible about direct and inverse relationships.
+
+If the object contains fields, display them in a markdown table format, including columns with detailed field types and detailed description. Do not truncate the table lines.
+If the object contains record types, display them in a markdown table format, including columns with detailed description. Do not truncate the table lines.
+If the object contains validation rules, display them in a markdown table format, including columns with detailed description. Do not truncate the table lines.
+If the object contains list views, display them in a markdown table format, including columns with detailed description. Do not truncate the table lines.
+
+The following acronyms are used in metadata names:
+- TR: Trigger
+- VR: Validation Rule
+- WF: Workflow 
+
+Please reply with markdown format, that can be embedded in a level 2 header (##).
+Add a new line before starting a bullet list so mkdocs-material displays it correctly, including for sub-bullets.
+
+Caution: If the XML contains secret tokens or password, please replace them with a placeholder.
+
+The {{OBJECT_NAME}} object metadata XML is:
+{{OBJECT_XML}}
+`
+    }
+
   }
 }

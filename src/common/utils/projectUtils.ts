@@ -36,7 +36,7 @@ export async function listFlowFiles(packageDirs) {
   const flowFiles: any[] = [];
   const skippedFlows: string[] = [];
   for (const packageDir of packageDirs || []) {
-    const flowMetadatas = await glob("**/*.flow-meta.xml", { cwd: packageDir.path });
+    const flowMetadatas = await glob("**/*.flow-meta.xml", { cwd: packageDir.path, ignore: GLOB_IGNORE_PATTERNS });
     for (const flowMetadata of flowMetadatas) {
       const flowFile = path.join(packageDir.path, flowMetadata).replace(/\\/g, '/');
       if (await isManagedFlow(flowFile)) {

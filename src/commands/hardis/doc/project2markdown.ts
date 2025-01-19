@@ -3,17 +3,18 @@ import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/s
 import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
+import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { generatePackageXmlMarkdown, readMkDocsFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
+import { generateObjectMarkdown, generatePackageXmlMarkdown, readMkDocsFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
 import { countPackageXmlItems, parseXmlFile } from '../../../common/utils/xmlUtils.js';
-import { bool2emoji, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
+import { bool2emoji, createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
-import { listFlowFiles } from '../../../common/utils/projectUtils.js';
+import { GLOB_IGNORE_PATTERNS, listFlowFiles } from '../../../common/utils/projectUtils.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
@@ -179,6 +180,11 @@ ${this.htmlInstructions}
       await this.generateFlowsDocumentation();
     }
 
+    // List flows & generate doc
+    if (!(process?.env?.GENERATE_OBJECTS_DOC === 'false')) {
+      await this.generateObjectsDocumentation();
+    }
+
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
     await fs.writeFile(this.outputMarkdownIndexFile, this.mdLines.join("\n") + "\n\n" + Project2Markdown.htmlInstructions + `\n\n${this.footer}\n`);
@@ -245,6 +251,56 @@ ${Project2Markdown.htmlInstructions}
     }
     await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
     uxLog(this, c.cyan(`To generate a HTML WebSite with this documentation with a single command, see instructions at ${CONSTANTS.DOC_URL_ROOT}/hardis/doc/project2markdown/`));
+  }
+
+  private async generateObjectsDocumentation() {
+    uxLog(this, c.cyan("Generating Objects AI documentation... (if you don't want it, define GENERATE_OBJECTS_DOC=false in your environment variables)"));
+    const tempDir = await createTempDir()
+    await execCommand(`sf project convert source --metadata CustomObject --output-dir ${tempDir}`, this, { fail: true, output: true, debug: this.debugMode });
+    const objectFiles = (await glob("**/*.object", { cwd: tempDir, ignore: GLOB_IGNORE_PATTERNS })).sort();
+    const allObjectsNames = objectFiles.map(object => path.basename(object, ".object")).join(",");
+    const objectLinksInfo = await this.generateLinksInfo();
+    const objectsForMenu: any = { "All objects": "objects/index.md" }
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
+    for (const objectFile of objectFiles) {
+      const objectName = path.basename(objectFile, ".object");
+      uxLog(this, c.grey(`Generating markdown for Object ${objectFile}...`));
+      const objectXml = (await fs.readFile(path.join(tempDir, objectFile), "utf8")).toString();
+      const objectMdFile = path.join(this.outputMarkdownRoot, "objects", objectName + ".md");
+      // Remove picklist values from Record Types to save tokens
+      const objectXmlParsed = new XMLParser().parse(objectXml);
+      if (objectXmlParsed?.CustomObject?.recordTypes) {
+        for (const recordType of objectXmlParsed.CustomObject.recordTypes || []) {
+          delete recordType.picklistValues;
+        }
+      }
+      const objectXmlStripped = new XMLBuilder().build(objectXmlParsed);
+      const genRes = await generateObjectMarkdown(objectName, objectXmlStripped, allObjectsNames, objectLinksInfo, objectMdFile);
+      if (!genRes) {
+        uxLog(this, c.yellow(`Error generating documentation for Object ${objectFile}`));
+        continue;
+      }
+      objectsForMenu[objectName] = "objects/" + objectName + ".md";
+    }
+    this.mkDocsNavNodes["Objects"] = objectsForMenu;
+  }
+
+  private async generateLinksInfo(): Promise<string> {
+    uxLog(this, c.cyan("Generate MasterDetail and Lookup infos to provide context to AI prompt"));
+    const findFieldsPattern = `**/objects/**/fields/**.field-meta.xml`;
+    const matchingFieldFiles = (await glob(findFieldsPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).map(file => file.replace(/\\/g, '/'));
+    const customFieldsLinks: string[] = [];
+    for (const fieldFile of matchingFieldFiles) {
+      const fieldXml = fs.readFileSync(fieldFile, "utf8").toString();
+      const fieldDetail = new XMLParser().parse(fieldXml);
+      if (fieldDetail?.CustomField?.type === "MasterDetail" || fieldDetail?.CustomField?.type === "Lookup") {
+        const fieldName = path.basename(fieldFile, ".field-meta.xml");
+        const objectName = fieldFile.substring(fieldFile.indexOf('objects/')).split("/")[1];
+        const linkDescription = `- ${fieldDetail.CustomField.type} field "${fieldName}" defined on object ${objectName}, with target object reference to ${fieldDetail.CustomField.referenceTo} (relationship name: "${fieldDetail.CustomField.relationshipName}", label: "${fieldDetail.CustomField.label}", description: "${fieldDetail.CustomField?.description || ''}")`;
+        customFieldsLinks.push(linkDescription);
+      }
+    }
+    return customFieldsLinks.join("\n") + "\n";
   }
 
   private async generateFlowsDocumentation() {
@@ -362,7 +418,7 @@ ${Project2Markdown.htmlInstructions}
     const packageFolder = path.join(process.cwd(), 'installedPackages');
     if (packages.length === 0 && fs.existsSync(packageFolder)) {
       const findManagedPattern = "**/*.json";
-      const matchingPackageFiles = await glob(findManagedPattern, { cwd: packageFolder });
+      const matchingPackageFiles = await glob(findManagedPattern, { cwd: packageFolder, ignore: GLOB_IGNORE_PATTERNS });
       for (const packageFile of matchingPackageFiles) {
         const packageFileFull = path.join(packageFolder, packageFile);
         if (!fs.existsSync(packageFileFull)) {
