@@ -8,6 +8,7 @@ import { getConfig } from '../../../../config/index.js';
 import { glob } from 'glob';
 import { basename } from 'path';
 import c from 'chalk';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -123,7 +124,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
     const inputFiles: any[] = [];
 
     if (flags.files) {
-      const files = await glob('./' + flags.files, { cwd: process.cwd() });
+      const files = await glob('./' + flags.files, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
       inputFiles.push(...files);
     }
 

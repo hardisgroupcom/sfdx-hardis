@@ -8,6 +8,7 @@ import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -64,7 +65,7 @@ export default class CleanEmptyItems extends SfCommand<any> {
     let counter = 0;
     for (const emptyConstraint of emptyConstraints) {
       const findStandardValueSetPattern = rootFolder + emptyConstraint.globPattern;
-      const matchingCustomFiles = await glob(findStandardValueSetPattern, { cwd: process.cwd() });
+      const matchingCustomFiles = await glob(findStandardValueSetPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
       for (const matchingCustomFile of matchingCustomFiles) {
         const xmlContent = await parseXmlFile(matchingCustomFile);
         const tag1 = xmlContent[emptyConstraint.tags[0]];

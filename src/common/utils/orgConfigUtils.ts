@@ -8,6 +8,7 @@ import * as yaml from 'js-yaml';
 import { uxLog } from './index.js';
 import { Connection, SfError } from '@salesforce/core';
 import { DescribeSObjectResult } from '@jsforce/jsforce-node';
+import { GLOB_IGNORE_PATTERNS } from './projectUtils.js';
 
 const listViewRegex = /objects\/(.*)\/listViews\/(.*)\.listView-meta\.xml/gi;
 
@@ -161,7 +162,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
 export async function listMajorOrgs() {
   const majorOrgs: any[] = [];
   const branchConfigPattern = '**/config/branches/.sfdx-hardis.*.yml';
-  const configFiles = await glob(branchConfigPattern);
+  const configFiles = await glob(branchConfigPattern, { ignore: GLOB_IGNORE_PATTERNS });
   for (const configFile of configFiles) {
     const props = (yaml.load(fs.readFileSync(configFile, 'utf-8')) || {}) as any;
     listViewRegex.lastIndex = 0;

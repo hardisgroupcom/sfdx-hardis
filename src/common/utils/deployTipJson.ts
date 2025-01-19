@@ -236,7 +236,7 @@ async function findAiTip(error: any, alreadyProcessedErrors: string[]): Promise<
     }
     const prompt = buildPrompt(error);
     try {
-      const aiResponse = await AiProvider.promptAi(prompt);
+      const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_SOLVE_DEPLOYMENT_ERROR");
       return aiResponse;
     } catch (e) {
       uxLog(this, c.yellow("[AI] Error while calling AI Provider: " + (e as Error).message));

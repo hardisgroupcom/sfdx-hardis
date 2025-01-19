@@ -7,6 +7,7 @@ import { glob } from 'glob';
 import * as path from 'path';
 import fs from 'fs-extra';
 import { uxLog } from '../../../../common/utils/index.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -66,7 +67,7 @@ autoCleanTypes:
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.crt`;
-    const matchingCerts = await glob(findManagedPattern, { cwd: process.cwd() });
+    const matchingCerts = await glob(findManagedPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
     let counter = 0;
     for (const cert of matchingCerts) {
       let certText = await fs.readFile(cert, 'utf8');

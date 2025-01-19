@@ -9,6 +9,7 @@ import { mergeObjectPropertyLists, uxLog } from '../../../../common/utils/index.
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
 import { promptOrg } from '../../../../common/utils/orgUtils.js';
 import { parsePackageXmlFile, parseXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -120,6 +121,7 @@ export default class OrgMissingItems extends SfCommand<any> {
     const patternReportType = this.folder + `/**/reportTypes/*.reportType-meta.xml`;
     const matchFilesPattern = await glob(patternReportType, {
       cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
     });
     uxLog(this, `Processing reportTypes...`);
     for (const reportTypeFile of matchFilesPattern) {

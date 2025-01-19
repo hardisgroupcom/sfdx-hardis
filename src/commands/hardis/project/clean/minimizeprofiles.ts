@@ -8,6 +8,7 @@ import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import { minimizeProfile } from '../../../../common/utils/profileUtils.js';
 import { getConfig } from '../../../../config/index.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -83,7 +84,7 @@ skipMinimizeProfiles
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.profile-meta.xml`;
-    const matchingProfileFiles = await glob(findManagedPattern, { cwd: process.cwd() });
+    const matchingProfileFiles = await glob(findManagedPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
     const config = await getConfig('branch');
     const skipMinimizeProfiles = config.skipMinimizeProfiles || [];
     let counter = 0;

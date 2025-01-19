@@ -672,13 +672,13 @@ async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: strin
   const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW", [flowXml]);
   if (aiCache.success === true) {
     uxLog(this, c.grey("Used AI cache for flow description (set IGNORE_AI_CACHE=true to force call to AI)"));
-    const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.flowsAiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
+    const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
     return flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
   }
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
     const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW", { "FLOW_XML": flowXml });
-    const aiResponse = await AiProvider.promptAi(prompt);
+    const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_FLOW");
     // Replace description in markdown
     if (aiResponse?.success) {
       let responseText = aiResponse.promptResponse || "No AI description available";
@@ -686,7 +686,7 @@ async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: strin
         responseText = responseText.split("\n").slice(1).join("\n");
       }
       await UtilsAi.writeAiCache("PROMPT_DESCRIBE_FLOW", [flowXml], responseText);
-      const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.flowsAiCacheDirFile} -->\n\n${responseText}`;
+      const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
       const flowMarkdownDocUpdated = flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
       return flowMarkdownDocUpdated;
     }
@@ -699,13 +699,13 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
   const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNew, flowXmlPrevious]);
   if (aiCache.success) {
     uxLog(this, c.grey("Used AI cache for diff description (set IGNORE_AI_CACHE=true to force call to AI)"));
-    const replaceText = `## AI-Generated Differences Summary\n\n<!-- Cache file: ${aiCache.flowsAiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
+    const replaceText = `## AI-Generated Differences Summary\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
     return flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
   }
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
     const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW_DIFF", { "FLOW_XML_NEW": flowXmlNew, "FLOW_XML_PREVIOUS": flowXmlPrevious });
-    const aiResponse = await AiProvider.promptAi(prompt);
+    const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_FLOW_DIFF");
     // Replace description in markdown
     if (aiResponse?.success) {
       let responseText = aiResponse.promptResponse || "No AI description available";
@@ -713,7 +713,7 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
         responseText = responseText.split("\n").slice(1).join("\n");
       }
       await UtilsAi.writeAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNew, flowXmlPrevious], responseText);
-      const replaceText = `## AI-Generated Differences Summary\n\n<!-- Cache file: ${aiCache.flowsAiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
+      const replaceText = `## AI-Generated Differences Summary\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
       const flowMarkdownDocUpdated = flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
       return flowMarkdownDocUpdated;
     }

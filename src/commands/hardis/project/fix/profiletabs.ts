@@ -9,6 +9,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parseXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -91,7 +92,7 @@ export default class FixV53Flexipages extends SfCommand<any> {
 
     // Prompt profiles to user
     const globPattern = this.pathToBrowse + `/**/*.profile-meta.xml`;
-    const profileSourceFiles = await glob(globPattern, { cwd: this.pathToBrowse });
+    const profileSourceFiles = await glob(globPattern, { cwd: this.pathToBrowse, ignore: GLOB_IGNORE_PATTERNS });
     const promptProfilesToUpdate = await prompts({
       type: 'multiselect',
       name: 'profiles',

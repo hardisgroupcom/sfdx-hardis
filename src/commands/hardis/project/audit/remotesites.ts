@@ -8,6 +8,7 @@ import * as psl from 'psl';
 import sortArray from 'sort-array';
 import * as url from 'url';
 import { catchMatches, generateReports, uxLog } from '../../../../common/utils/index.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -60,7 +61,7 @@ export default class RemoteSites extends SfCommand<any> {
         ],
       },
     ];
-    const remoteSiteSettingsFiles = await glob(pattern);
+    const remoteSiteSettingsFiles = await glob(pattern, { ignore: GLOB_IGNORE_PATTERNS });
     this.matchResults = [];
     uxLog(this, `Browsing ${remoteSiteSettingsFiles.length} files`);
     // Loop in files

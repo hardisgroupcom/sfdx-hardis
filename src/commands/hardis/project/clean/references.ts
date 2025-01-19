@@ -17,6 +17,7 @@ import {
 import { getConfig, setConfig } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { FilterXmlContent } from './filter-xml-content.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -229,6 +230,7 @@ export default class CleanReferences extends SfCommand<any> {
     const patternPackageXml = '**/manifest/**/package*.xml';
     const packageXmlFiles = await glob(patternPackageXml, {
       cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
     });
     for (const packageXmlFile of packageXmlFiles) {
       const packageXmlContent = await parsePackageXmlFile(packageXmlFile);
@@ -304,19 +306,20 @@ export default class CleanReferences extends SfCommand<any> {
   private async manageDeleteCustomFieldRelatedFiles(field: string) {
     // Remove custom field and customTranslation
     const [obj, fld] = field.split('.');
-    const patternField = `force-app/**/objects/${obj}/fields/${fld}.field-meta.xml`;
-    const patternTranslation = `force-app/**/objectTranslations/${obj}-*/${fld}.fieldTranslation-meta.xml`;
+    const patternField = `**/objects/${obj}/fields/${fld}.field-meta.xml`;
+    const patternTranslation = `**/objectTranslations/${obj}-*/${fld}.fieldTranslation-meta.xml`;
     for (const pattern of [patternField, patternTranslation]) {
-      const matchFiles = await glob(pattern, { cwd: process.cwd() });
+      const matchFiles = await glob(pattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
       for (const removeFile of matchFiles) {
         await fs.remove(removeFile);
         uxLog(this, c.grey(`Removed file ${removeFile}`));
       }
     }
     // Remove field in recordTypes
-    const patternRecordType = `/force-app/**/objects/${obj}/recordTypes/*.recordType-meta.xml`;
+    const patternRecordType = `**/objects/${obj}/recordTypes/*.recordType-meta.xml`;
     const matchFilesPattern = await glob(patternRecordType, {
       cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
     });
     for (const recordTypeFile of matchFilesPattern) {
       const recordType = await parseXmlFile(recordTypeFile);
