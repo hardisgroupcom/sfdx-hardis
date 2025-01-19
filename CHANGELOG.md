@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.16.1] 2025-01-19
+
+- AI Cache: Normalize strings before creating fingerprint to handle multiple platforms
+
 ## [5.16.0] 2025-01-19
 
 - New AI Provider: Agentforce

@@ -51,17 +51,24 @@ export class UtilsAi {
     const parametersFingerPrints = promptParameters.map((promptParameter) => {
       if (typeof promptParameter === "string" && promptParameter.includes("<xml")) {
         try {
-          const xmlObj = new XMLParser().parse(promptParameter);
-          return farmhash.fingerprint32(JSON.stringify(xmlObj));
+          const xmlObj = new XMLParser().parse(UtilsAi.normalizeString(promptParameter));
+          return farmhash.fingerprint32(UtilsAi.normalizeString(JSON.stringify(xmlObj)));
         }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         catch (e) {
-          return farmhash.fingerprint32(promptParameter);
+          return farmhash.fingerprint32(UtilsAi.normalizeString(promptParameter));
         }
       }
-      return farmhash.fingerprint32(JSON.stringify(promptParameter));
+      else if (typeof promptParameter === "string") {
+        return farmhash.fingerprint32(UtilsAi.normalizeString(promptParameter));
+      }
+      return farmhash.fingerprint32(UtilsAi.normalizeString(JSON.stringify(promptParameter)));
     });
     return parametersFingerPrints.join("-");
+  }
+
+  public static normalizeString(str: string) {
+    return str.normalize().trim().replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\r\n/g, '\n');
   }
 
 }
