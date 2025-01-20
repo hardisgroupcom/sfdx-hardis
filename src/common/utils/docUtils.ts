@@ -272,7 +272,8 @@ export async function completeAttributesDescriptionWithAi(attributesMarkdown: st
 }
 
 async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, objectName: string, objectXml: string, allObjectsNames: string, objectLinksDetails: string): Promise<string> {
-  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_OBJECT", [objectXml], objectName);
+  const objectXmlStripped = UtilsAi.stripXmlForAi("CustomObject", objectXml);
+  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_OBJECT", [objectXmlStripped], objectName);
   if (aiCache.success === true) {
     uxLog(this, c.grey("Used AI cache for object description (set IGNORE_AI_CACHE=true to force call to AI)"));
     const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
@@ -280,7 +281,7 @@ async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, obj
   }
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
-    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_OBJECT", { "OBJECT_NAME": objectName, "OBJECT_XML": objectXml, "ALL_OBJECTS_LIST": allObjectsNames, "ALL_OBJECT_LINKS": objectLinksDetails });
+    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_OBJECT", { "OBJECT_NAME": objectName, "OBJECT_XML": objectXmlStripped, "ALL_OBJECTS_LIST": allObjectsNames, "ALL_OBJECT_LINKS": objectLinksDetails });
     /* jscpd:ignore-start */
     const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_OBJECT");
     // Replace description in markdown
@@ -289,7 +290,7 @@ async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, obj
       if (responseText.startsWith("##")) {
         responseText = responseText.split("\n").slice(1).join("\n");
       }
-      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_OBJECT", [objectXml], objectName, responseText);
+      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_OBJECT", [objectXmlStripped], objectName, responseText);
       const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
       const objectMarkdownDocUpdated = objectMarkdownDoc.replace("<!-- Object description -->", replaceText);
       return objectMarkdownDocUpdated;

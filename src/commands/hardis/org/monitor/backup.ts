@@ -279,6 +279,7 @@ If Flow history doc always display a single state, you probably need to update y
 
       } catch (e: any) {
         uxLog(this, c.yellow("Error while generating project documentation " + e.message));
+        uxLog(this, c.grey(e.stack));
       }
     }
 

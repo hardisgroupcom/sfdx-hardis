@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Strip XML to save prompts and fix issue when parsing CustomObject metadata
+
 ## [5.16.1] 2025-01-19
 
 - AI Cache results enhancements
