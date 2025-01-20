@@ -2,7 +2,7 @@ import { getEnvVar } from "../../config/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
 import path from 'path';
 import fs from 'fs-extra';
-import { XMLParser } from "fast-xml-parser";
+import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import farmhash from 'farmhash';
 
 export class UtilsAi {
@@ -73,6 +73,48 @@ export class UtilsAi {
 
   public static normalizeString(str: string) {
     return str.normalize().trim().replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\r\n/g, '\n');
+  }
+
+  // Remove attributes that are not that relevant for AI prompts
+  public static stripXmlForAi(objectType: string, xmlString: string) {
+    let xmlStripped = xmlString;
+    // Custom Object
+    if (objectType === "CustomObject") {
+      const xmlObj = new XMLParser().parse(xmlString);
+      // Remove record types picklist values
+      if (xmlObj?.CustomObject?.recordTypes) {
+        if (!Array.isArray(xmlObj.CustomObject.recordTypes)) {
+          xmlObj.CustomObject.recordTypes = [xmlObj.CustomObject.recordTypes];
+        }
+        for (const recordType of xmlObj?.CustomObject?.recordTypes || []) {
+          delete recordType.picklistValues;
+        }
+      }
+      // Remove actionOverrides with formFactors as they already exist in default
+      if (xmlObj?.CustomObject?.actionOverrides) {
+        if (!Array.isArray(xmlObj.CustomObject.actionOverrides)) {
+          xmlObj.CustomObject.actionOverrides = [xmlObj.CustomObject.actionOverrides];
+        }
+        xmlObj.CustomObject.actionOverrides = xmlObj.CustomObject.actionOverrides.filter(actionOverride => !actionOverride.formFactor);
+      }
+      // Remove compact layouts
+      if (xmlObj?.CustomObject?.compactLayouts) {
+        delete xmlObj.CustomObject.compactLayouts;
+      }
+      // Remove compact layouts
+      if (xmlObj?.CustomObject?.listViews) {
+        delete xmlObj.CustomObject.listViews;
+      }
+      xmlStripped = new XMLBuilder().build(xmlObj);
+    }
+    else if (objectType === "Flow") {
+      // Remove positions
+      const xmlStringStripped = xmlString.replace(/<locationX>.*?<\/locationX>\s*|<locationY>.*?<\/locationY>\s*/g, '');
+      const xmlObj = new XMLParser().parse(xmlStringStripped);
+      xmlStripped = new XMLBuilder().build(xmlObj);
+    }
+
+    return xmlStripped;
   }
 
 }

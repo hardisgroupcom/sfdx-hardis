@@ -670,7 +670,8 @@ export function removeMermaidLinks(messageBody: string) {
 }
 
 async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: string, flowName: string): Promise<string> {
-  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW", [flowXml], flowName);
+  const flowXmlStripped = UtilsAi.stripXmlForAi("Flow", flowXml);
+  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW", [flowXmlStripped], flowName);
   if (aiCache.success === true) {
     uxLog(this, c.grey("Used AI cache for flow description (set IGNORE_AI_CACHE=true to force call to AI)"));
     const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
@@ -678,7 +679,7 @@ async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: strin
   }
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
-    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW", { "FLOW_XML": flowXml });
+    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW", { "FLOW_XML": flowXmlStripped });
     const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_FLOW");
     // Replace description in markdown
     if (aiResponse?.success) {
@@ -686,7 +687,7 @@ async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: strin
       if (responseText.startsWith("##")) {
         responseText = responseText.split("\n").slice(1).join("\n");
       }
-      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_FLOW", [flowXml], flowName, responseText);
+      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_FLOW", [flowXmlStripped], flowName, responseText);
       const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
       const flowMarkdownDocUpdated = flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
       return flowMarkdownDocUpdated;
@@ -697,7 +698,9 @@ async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: strin
 
 /* jscpd:ignore-start */
 async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew: string, flowXmlPrevious: string, diffKey: string): Promise<string> {
-  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNew, flowXmlPrevious], diffKey);
+  const flowXmlNewStripped = UtilsAi.stripXmlForAi("Flow", flowXmlNew);
+  const flowXmlPreviousStripped = UtilsAi.stripXmlForAi("Flow", flowXmlPrevious);
+  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNewStripped, flowXmlPreviousStripped], diffKey);
   if (aiCache.success) {
     uxLog(this, c.grey("Used AI cache for diff description (set IGNORE_AI_CACHE=true to force call to AI)"));
     const replaceText = `## AI-Generated Differences Summary\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
@@ -705,7 +708,7 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
   }
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
-    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW_DIFF", { "FLOW_XML_NEW": flowXmlNew, "FLOW_XML_PREVIOUS": flowXmlPrevious });
+    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW_DIFF", { "FLOW_XML_NEW": flowXmlNewStripped, "FLOW_XML_PREVIOUS": flowXmlPreviousStripped });
     const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_FLOW_DIFF");
     // Replace description in markdown
     if (aiResponse?.success) {
@@ -713,7 +716,7 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
       if (responseText.startsWith("##")) {
         responseText = responseText.split("\n").slice(1).join("\n");
       }
-      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNew, flowXmlPrevious], diffKey, responseText);
+      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNewStripped, flowXmlPreviousStripped], diffKey, responseText);
       const replaceText = `## AI-Generated Differences Summary\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
       const flowMarkdownDocUpdated = flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
       return flowMarkdownDocUpdated;
