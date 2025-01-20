@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Strip XML to save prompts tokens
 - Fix issue when parsing CustomObject metadata
 - Install latest version of plugin @salesforce/plugin-deploy-retrieve in Dockerfile to avoid the bug of its current version
+- Fix: Do not recalculate Flow History doc if flow has not been updated
 
 ## [5.16.1] 2025-01-19
 

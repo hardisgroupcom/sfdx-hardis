@@ -349,7 +349,6 @@ ${Project2Markdown.htmlInstructions}
     this.flowDescriptions = [];
     for (const flowFile of flowFiles) {
       const flowName = path.basename(flowFile, ".flow-meta.xml");
-      uxLog(this, c.grey(`Generating markdown for Flow ${flowFile}...`));
       const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
       const flowContent = await parseXmlFile(flowFile);
       this.flowDescriptions.push({
@@ -365,6 +364,7 @@ ${Project2Markdown.htmlInstructions}
         flowSkips.push(flowFile);
         continue;
       }
+      uxLog(this, c.grey(`Generating markdown for Flow ${flowFile}...`));
       const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFlowMdFile, { collapsedDetails: false, describeWithAi: true });
       if (!genRes) {
         flowErrors.push(flowFile);
@@ -380,6 +380,25 @@ ${Project2Markdown.htmlInstructions}
       }
     }
     this.flowDescriptions = sortArray(this.flowDescriptions, { by: ['object', 'name'], order: ['asc', 'asc'] }) as any[]
+
+    // History
+    if (this.withHistory) {
+      uxLog(this, c.cyan("Generating Flows Visual Git Diff History documentation..."));
+      for (const flowFile of flowFiles) {
+        const flowName = path.basename(flowFile, ".flow-meta.xml");
+        const diffMdFile = path.join("docs", "flows", path.basename(flowFile).replace(".flow-meta.xml", "-history.md"));
+        if (this.diffOnly && !updatedFlowNames.includes(flowName) && fs.existsSync(diffMdFile)) {
+          continue;
+        }
+        try {
+          await generateHistoryDiffMarkdown(flowFile, this.debugMode);
+        } catch (e: any) {
+          uxLog(this, c.yellow(`Error generating history diff markdown: ${e.message}`));
+        }
+      }
+    }
+
+    // Summary
     if (flowSkips.length > 0) {
       uxLog(this, c.yellow(`Skipped generation for ${flowSkips.length} Flows that have not been updated: ${this.humanDisplay(flowSkips)}`));
     }
@@ -389,18 +408,6 @@ ${Project2Markdown.htmlInstructions}
     }
     if (flowErrors.length > 0) {
       uxLog(this, c.yellow(`Error generating documentation for ${flowErrors.length} Flows: ${this.humanDisplay(flowErrors)}`));
-    }
-
-    // History
-    if (this.withHistory) {
-      uxLog(this, c.cyan("Generating Flows Visual Git Diff History documentation..."));
-      for (const flowFile of flowFiles) {
-        try {
-          await generateHistoryDiffMarkdown(flowFile, this.debugMode);
-        } catch (e: any) {
-          uxLog(this, c.yellow(`Error generating history diff markdown: ${e.message}`));
-        }
-      }
     }
 
     // Write table on doc index
