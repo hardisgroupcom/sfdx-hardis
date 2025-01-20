@@ -276,7 +276,11 @@ ${Project2Markdown.htmlInstructions}
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
     for (const objectFile of this.objectFiles) {
       const objectName = path.basename(objectFile, ".object");
-      uxLog(this, c.grey(`Generating markdown for Object ${objectFile}...`));
+      if ((objectName.endsWith("__dlm") || objectName.endsWith("__dll")) && !(process.env?.INCLUDE_DATA_CLOUD_DOC === "true")) {
+        uxLog(this, c.grey(`Skip Data Cloud Object ${objectName}... (use INCLUDE_DATA_CLOUD_DOC=true to enforce it)`));
+        continue;
+      }
+      uxLog(this, c.grey(`Generating markdown for Object ${objectName}...`));
       const objectXml = (await fs.readFile(path.join(this.tempDir, objectFile), "utf8")).toString();
       const objectMdFile = path.join(this.outputMarkdownRoot, "objects", objectName + ".md");
       // Build filtered XML

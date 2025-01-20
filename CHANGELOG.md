@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Fix issue when parsing CustomObject metadata
 - Install latest version of plugin @salesforce/plugin-deploy-retrieve in Dockerfile to avoid the bug of its current version
 - Fix: Do not recalculate Flow History doc if flow has not been updated
+- Skip Data Cloud objects from documentation (enforcec using variable INCLUDE_DATA_CLOUD_DOC=true)
 
 ## [5.16.1] 2025-01-19
 
