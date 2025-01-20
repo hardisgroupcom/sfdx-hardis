@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.16.2] 2025-01-21
+
 - Strip XML to save prompts tokens
 - Fix issue when parsing CustomObject metadata
 - Install latest version of plugin @salesforce/plugin-deploy-retrieve in Dockerfile to avoid the bug of its current version
