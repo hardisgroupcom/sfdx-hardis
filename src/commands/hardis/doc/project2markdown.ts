@@ -3,7 +3,7 @@ import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/s
 import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
-import { XMLBuilder, XMLParser } from "fast-xml-parser";
+import { XMLParser } from "fast-xml-parser";
 import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
@@ -279,23 +279,10 @@ ${Project2Markdown.htmlInstructions}
       uxLog(this, c.grey(`Generating markdown for Object ${objectFile}...`));
       const objectXml = (await fs.readFile(path.join(this.tempDir, objectFile), "utf8")).toString();
       const objectMdFile = path.join(this.outputMarkdownRoot, "objects", objectName + ".md");
-      // Remove picklist values from Record Types to save tokens
-      const objectXmlParsed = new XMLParser().parse(objectXml);
-      if (objectXmlParsed?.CustomObject?.recordTypes) {
-        for (const recordType of objectXmlParsed.CustomObject.recordTypes || []) {
-          delete recordType.picklistValues;
-        }
-      }
-      // Remove actionOverrides with formFactors to save tokens
-      if (objectXmlParsed?.CustomObject?.actionOverrides) {
-        objectXmlParsed.CustomObject.actionOverrides = objectXmlParsed.CustomObject.actionOverrides.filter(actionOverride => !actionOverride.formFactor);
-      }
-      // Remove compact layouts to save tokens
-      delete objectXmlParsed.CustomObject?.compactLayouts;
       // Build filtered XML
-      const objectXmlStripped = new XMLBuilder().build(objectXmlParsed);
+      const objectXmlParsed = new XMLParser().parse(objectXml);
       // Main AI markdown
-      await generateObjectMarkdown(objectName, objectXmlStripped, this.allObjectsNames.join(","), objectLinksInfo, objectMdFile);
+      await generateObjectMarkdown(objectName, objectXml, this.allObjectsNames.join(","), objectLinksInfo, objectMdFile);
       // Fields table
       await this.buildAttributesTables(objectName, objectXmlParsed, objectMdFile);
       // Flows Tables
