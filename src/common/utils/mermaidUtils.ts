@@ -44,6 +44,16 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
     if (options.describeWithAi) {
       flowMarkdownDoc = await completeWithAiDescription(flowMarkdownDoc, flowXml, flowName);
     }
+
+    // Add link to history flow doc 
+    const historyFlowDoc = path.join("docs", "flows", flowName + "-history.md");
+    if (fs.existsSync(historyFlowDoc)) {
+      const historyLink = `[(_View History_)](${flowName + "-history.md"})`;
+      if (flowMarkdownDoc.includes("## Flow Diagram") && !flowMarkdownDoc.includes(historyLink)) {
+        flowMarkdownDoc = flowMarkdownDoc.replace("## Flow Diagram", `## Flow Diagram ${historyLink}`);
+      }
+    }
+
     await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
     uxLog(this, c.grey(`Written ${flowName} documentation in ${outputFlowMdFile}`));
     return true;
@@ -204,7 +214,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   }
 
   const flowDiffs = Diff.diffLines(mermaidMdBefore, mermaidMdAfter);
-  result.hasFlowDiffs = flowDiffs.some(line => line.added || line.removed);
+  result.hasFlowDiffs = flowDiffs.some((line) => (line.added || line.removed) && line.value.trim() !== "");
   result.diffLines = flowDiffs.filter(line => line.added || line.removed);
 
   const mixedLines: any[] = [];
