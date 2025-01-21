@@ -264,6 +264,9 @@ ${Project2Markdown.htmlInstructions}
         mkdocsYml.nav.push(navMenu);
       }
     }
+    // Remove deprecated Flows History if found
+    mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem["Flows History"]);
+    // Update mkdocs file
     await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
     uxLog(this, c.cyan(`To generate a HTML WebSite with this documentation with a single command, see instructions at ${CONSTANTS.DOC_URL_ROOT}/hardis/doc/project2markdown/`));
   }
