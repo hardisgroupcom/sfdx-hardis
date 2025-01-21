@@ -264,6 +264,9 @@ ${Project2Markdown.htmlInstructions}
         mkdocsYml.nav.push(navMenu);
       }
     }
+    // Remove deprecated Flows History if found
+    mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem["Flows History"]);
+    // Update mkdocs file
     await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
     uxLog(this, c.cyan(`To generate a HTML WebSite with this documentation with a single command, see instructions at ${CONSTANTS.DOC_URL_ROOT}/hardis/doc/project2markdown/`));
   }
@@ -280,7 +283,7 @@ ${Project2Markdown.htmlInstructions}
         uxLog(this, c.grey(`Skip Data Cloud Object ${objectName}... (use INCLUDE_DATA_CLOUD_DOC=true to enforce it)`));
         continue;
       }
-      uxLog(this, c.grey(`Generating markdown for Object ${objectName}...`));
+      uxLog(this, c.cyan(`Generating markdown for Object ${objectName}...`));
       const objectXml = (await fs.readFile(path.join(this.tempDir, objectFile), "utf8")).toString();
       const objectMdFile = path.join(this.outputMarkdownRoot, "objects", objectName + ".md");
       // Build filtered XML
