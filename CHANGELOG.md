@@ -4,12 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [5.16.3] 2025-01-21
+## [5.16.3] 2025-01-22
 
 - Do not post comments with Flows if there is no real differences
 - Truncate the number of flows git diff displayed in Pull Request comments to 30 (override the number using MAX_FLOW_DIFF_TO_SHOW )
 - Keep history link in main flow doc if available and history not recalculated
 - Remove Flows History mkdocs menu if present from an old sfdx-hardis doc generation
+- QuickFix AI Generated Summary text in PRs
 
 ## [5.16.2] 2025-01-21
 
