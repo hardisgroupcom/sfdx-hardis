@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.16.3] 2025-01-21
+
+- Truncate the number of flows git diff displayed in Pull Request comments to 30 (override the number using MAX_FLOW_DIFF_TO_SHOW )
+
 ## [5.16.2] 2025-01-21
 
 - Strip XML to save prompts tokens
