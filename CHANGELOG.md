@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [5.16.3] 2025-01-21
 
 - Truncate the number of flows git diff displayed in Pull Request comments to 30 (override the number using MAX_FLOW_DIFF_TO_SHOW )
+- Keep history link in main flow doc if available and history not recalculated
 
 ## [5.16.2] 2025-01-21
 
