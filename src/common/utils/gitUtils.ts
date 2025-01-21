@@ -198,7 +198,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
       }
     }
     const flowListUnique = [...new Set(flowList)].sort();
-    // Truncate flows to the only 30 ones, to avoid floodind the pull request comments
+    // Truncate flows to the only 30 ones, to avoid flooding the pull request comments
     let truncatedNb = 0;
     const maxFlowsToShow = parseInt(process.env?.MAX_FLOW_DIFF_TO_SHOW || "30");
     if (flowListUnique.length > maxFlowsToShow) {
