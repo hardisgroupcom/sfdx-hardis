@@ -214,7 +214,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   }
 
   const flowDiffs = Diff.diffLines(mermaidMdBefore, mermaidMdAfter);
-  result.hasFlowDiffs = flowDiffs.some(line => line.added || line.removed);
+  result.hasFlowDiffs = flowDiffs.some((line) => (line.added || line.removed) && line.value.trim() !== "");
   result.diffLines = flowDiffs.filter(line => line.added || line.removed);
 
   const mixedLines: any[] = [];
