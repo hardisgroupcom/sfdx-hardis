@@ -199,13 +199,15 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
     }
     const flowListUnique = [...new Set(flowList)].sort();
     // Truncate flows to the only 30 ones, to avoid floodind the pull request comments
+    let truncatedNb = 0;
     const maxFlowsToShow = parseInt(process.env?.MAX_FLOW_DIFF_TO_SHOW || "30");
     if (flowListUnique.length > maxFlowsToShow) {
+      truncatedNb = flowListUnique.length - maxFlowsToShow;
       flowListUnique.splice(maxFlowsToShow, flowListUnique.length - maxFlowsToShow);
       uxLog(this, c.yellow(`[FlowGitDiff] Truncated flow list to 30 flows to avoid flooding Pull Request comments`));
       uxLog(this, c.yellow(`[FlowGitDiff] If you want to see the diff of truncated flows, use VsCode SFDX Hardis extension :)`));
     }
-    flowDiffMarkdown = await flowDiffToMarkdownForPullRequest(flowListUnique, previousTargetBranchCommit, (logResults.at(-1) || logResults[0]).hash);
+    flowDiffMarkdown = await flowDiffToMarkdownForPullRequest(flowListUnique, previousTargetBranchCommit, (logResults.at(-1) || logResults[0]).hash, truncatedNb);
   }
 
   return {
