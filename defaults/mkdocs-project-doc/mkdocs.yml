@@ -15,6 +15,14 @@ theme:
   # favicon: assets/images/cloudity-logo.svg
   palette:
     primary: indigo
+plugins:
+  - search
+  - exclude-search:
+      exclude:
+        - index.md
+        - cache-ai-results/*.md
+        - "*package.xml.md"
+        - package-*items.xml.md
 markdown_extensions:
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
