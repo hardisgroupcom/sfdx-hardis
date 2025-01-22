@@ -128,7 +128,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
   private async installMkDocs() {
     uxLog(this, c.cyan("Managing mkdocs-material local installation..."));
     let mkdocsLocalOk = false;
-    const installMkDocsRes = await execCommand("pip install mkdocs-material mdx_truly_sane_lists || python -m install mkdocs-material mdx_truly_sane_lists || py -m install mkdocs-material mdx_truly_sane_lists", this, { fail: false, output: true, debug: this.debugMode });
+    const installMkDocsRes = await execCommand("pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists", this, { fail: false, output: true, debug: this.debugMode });
     if (installMkDocsRes.status === 0) {
       mkdocsLocalOk = true;
     }
