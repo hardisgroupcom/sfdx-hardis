@@ -33,7 +33,7 @@ export default class Project2Markdown extends SfCommand<any> {
 To read the documentation as HTML pages, run the following code (you need [**Python**](https://www.python.org/downloads/) on your computer)
 
 \`\`\`python
-pip install mkdocs-material mdx_truly_sane_lists || python -m pip install mkdocs-material mdx_truly_sane_lists || py -m pip install mkdocs-material mdx_truly_sane_lists
+pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists
 mkdocs serve || python -m mkdocs serve || py -m mkdocs serve
 \`\`\`
 
@@ -264,6 +264,23 @@ ${Project2Markdown.htmlInstructions}
         mkdocsYml.nav.push(navMenu);
       }
     }
+    // Add missing plugin config if necessary
+    if (!mkdocsYml.plugins) {
+      mkdocsYml.plugins = [
+        'search',
+        {
+          'exclude-search': {
+            'exclude': [
+              "index.md",
+              "cache-ai-results/*.md",
+              "*package.xml.md",
+              "package-*items.xml.md"
+            ]
+          }
+        }
+      ]
+    }
+
     // Remove deprecated Flows History if found
     mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem["Flows History"]);
     // Update mkdocs file

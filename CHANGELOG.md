@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.16.4] 2025-01-22
+
+- Doc: Exclude not relevant md from search
+- Upgrade npm dependencies
+- Add more logs to login command
+
 ## [5.16.3] 2025-01-22
 
 - Do not post comments with Flows if there is no real differences

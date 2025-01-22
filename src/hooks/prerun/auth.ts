@@ -1,11 +1,10 @@
-import c from 'chalk';
 import {
   elapseStart,
   getCurrentGitBranch,
   isCI,
   restoreLocalSfdxInfo,
-  uxLog,
 } from '../../common/utils/index.js';
+import c from "chalk";
 import { checkConfig, getConfig } from '../../config/index.js';
 import { Hook } from '@oclif/core';
 import { authOrg } from '../../common/utils/authUtils.js';
@@ -40,7 +39,7 @@ const hook: Hook<'prerun'> = async (options) => {
   await restoreLocalSfdxInfo();
   let configInfo = await getConfig('user');
   if (configInfo.skipAuthCheck === true) {
-    uxLog(this, c.yellow('No authentication check, you better know what you are doing ;)'));
+    console.log(c.yellow('No authentication check, you better know what you are doing ;)'));
     return;
   }
   // Manage authentication if DevHub is required but current user is disconnected

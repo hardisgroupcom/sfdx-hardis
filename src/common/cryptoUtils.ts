@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import c from "chalk";
 import fs from 'fs-extra';
 
 //const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY; // Must be 256 bits (32 characters)
@@ -12,9 +13,13 @@ export async function encryptFile(filePath) {
 }
 
 export async function decryptFile(filePath, targetFile, encryptionKey) {
-  const fileContent = await fs.readFile(filePath, 'utf8');
-  const decryptedFileContent = decrypt(fileContent, encryptionKey);
-  await fs.writeFile(targetFile, decryptedFileContent);
+  try {
+    const fileContent = await fs.readFile(filePath, 'utf8');
+    const decryptedFileContent = decrypt(fileContent, encryptionKey);
+    await fs.writeFile(targetFile, decryptedFileContent);
+  } catch (error: any) {
+    console.error(c.red(`Error while decrypting file ${filePath}: ${error.message}`));
+  }
 }
 
 export function encrypt(text) {
