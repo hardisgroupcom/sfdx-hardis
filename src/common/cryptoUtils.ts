@@ -18,7 +18,7 @@ export async function decryptFile(filePath, targetFile, encryptionKey) {
     const decryptedFileContent = decrypt(fileContent, encryptionKey);
     await fs.writeFile(targetFile, decryptedFileContent);
   } catch (error: any) {
-    console.error(c.red(`Error while decrypting file: ${error.message}`));
+    console.error(c.red(`Error while decrypting file ${filePath}: ${error.message}`));
   }
 }
 

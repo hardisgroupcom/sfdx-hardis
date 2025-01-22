@@ -419,6 +419,18 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
     `./.ssh/${orgAlias}.key`,
     './ssh/server.key',
   ];
+  // Check if we find multiple files 
+  const filesFound = filesToTry.filter((file) => fs.existsSync(file));
+  if (filesFound.length > 1) {
+    console.warn(
+      c.yellow(
+        `[sfdx-hardis] Multiple certificate key files found: ${filesFound.join(
+          ', '
+        )}. Please keep only one certificate key file. If you don't know which one, remove all and re-run the configuration command`
+      )
+    );
+  }
+
   for (const file of filesToTry) {
     if (fs.existsSync(file)) {
       // Decrypt SSH private key and write a temporary file
