@@ -327,10 +327,12 @@ async function getSfdxClientId(orgAlias: string, config: any) {
   // Try to find in global variables
   const sfdxClientIdVarName = `SFDX_CLIENT_ID_${orgAlias}`;
   if (process.env[sfdxClientIdVarName]) {
+    console.log(c.grey(`[sfdx-hardis] Using ${sfdxClientIdVarName.toUpperCase()} env variable`));
     return process.env[sfdxClientIdVarName];
   }
   const sfdxClientIdVarNameUpper = sfdxClientIdVarName.toUpperCase();
   if (process.env[sfdxClientIdVarNameUpper]) {
+    console.log(c.grey(`[sfdx-hardis] Using ${sfdxClientIdVarNameUpper} env variable`));
     return process.env[sfdxClientIdVarNameUpper];
   }
   if (process.env.SFDX_CLIENT_ID) {
@@ -348,6 +350,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
   }
   // Try to find in config files ONLY IN LOCAL MODE (in CI, it's supposed to be a CI variable)
   if (!isCI && config.devHubSfdxClientId) {
+    console.log(c.grey(`[sfdx-hardis] Using devHubSfdxClientId config variable`));
     return config.devHubSfdxClientId;
   }
   if (isCI) {
@@ -368,10 +371,12 @@ async function getKey(orgAlias: string, config: any) {
   // Try to find in global variables
   const sfdxClientKeyVarName = `SFDX_CLIENT_KEY_${orgAlias}`;
   if (process.env[sfdxClientKeyVarName]) {
+    console.log(c.grey(`[sfdx-hardis] Using ${sfdxClientKeyVarName.toUpperCase()} env variable`));
     return process.env[sfdxClientKeyVarName];
   }
   const sfdxClientKeyVarNameUpper = sfdxClientKeyVarName.toUpperCase();
   if (process.env[sfdxClientKeyVarNameUpper]) {
+    console.log(c.grey(`[sfdx-hardis] Using ${sfdxClientKeyVarNameUpper} env variable`));
     return process.env[sfdxClientKeyVarNameUpper];
   }
   if (process.env.SFDX_CLIENT_KEY) {
@@ -389,6 +394,7 @@ async function getKey(orgAlias: string, config: any) {
   }
   // Try to find in config files ONLY IN LOCAL MODE (in CI, it's supposed to be a CI variable)
   if (!isCI && config.devHubSfdxClientKey) {
+    console.log(c.grey(`[sfdx-hardis] Using devHubSfdxClientKey config variable`));
     return config.devHubSfdxClientKey;
   }
   if (isCI) {
@@ -420,11 +426,14 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
       if (sshKey == null) {
         continue;
       }
+
       const tmpSshKeyFile = path.join(await createTempDir(), `${orgAlias}.key`);
+      console.log(c.grey(`[sfdx-hardis] Decrypting key...`));
       await decryptFile(file, tmpSshKeyFile, sshKey);
       return tmpSshKeyFile;
     }
   }
+  console.log(c.grey(`[sfdx-hardis] No certificate key found`));
   if (isCI) {
     console.error(
       c.red(

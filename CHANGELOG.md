@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Doc: Exclude not relevant md from search
 - Upgrade npm dependencies
+- Add more logs to login command
 
 ## [5.16.3] 2025-01-22
 
