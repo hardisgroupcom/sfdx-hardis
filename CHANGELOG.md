@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Display error message in case of XML parsing error
+
 ## [5.16.4] 2025-01-22
 
 - Doc: Exclude not relevant md from search
