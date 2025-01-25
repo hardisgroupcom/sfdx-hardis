@@ -1884,13 +1884,13 @@
     proc-log "^4.0.0"
     which "^4.0.0"
 
-"@oclif/core@^4", "@oclif/core@^4.0.27", "@oclif/core@^4.2.0", "@oclif/core@^4.2.3":
-  version "4.2.3"
-  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.2.3.tgz#b81399b7cf4758b5fe59777e060fb84c7c7e6153"
-  integrity "sha1-uBOZt89HWLX+WXd+Bg+4THx+YVM= sha512-JVEONwSZAfTNZCS81ah2u42Ya1mSeutCtHpoqMq/U+vP9Ka3Ni15/AqtcVtpH1afdUUn5RgtJYj+zlsrvMwksA=="
+"@oclif/core@^4", "@oclif/core@^4.0.27", "@oclif/core@^4.2.0", "@oclif/core@^4.2.4":
+  version "4.2.4"
+  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.2.4.tgz#0737063beb35e3d421135cd07983bc5306fb17bf"
+  integrity sha512-JDqdhX6fBbijY3ouubfmX7yFBXy95YSpiAVk0TAaXXCoSqoo/2WMcV2Ufv2V+8zriafPU/rvKgI+ZE07/7HwfQ==
   dependencies:
     ansi-escapes "^4.3.2"
-    ansis "^3.8.1"
+    ansis "^3.9.0"
     clean-stack "^3.0.1"
     cli-spinners "^2.9.2"
     debug "^4.4.0"
@@ -3775,7 +3775,7 @@ ansi-wrap@0.1.0:
   resolved "https://registry.npmjs.org/ansi-wrap/-/ansi-wrap-0.1.0.tgz"
   integrity sha512-ZyznvL8k/FZeQHr2T6LzcJ/+vBApDnMNZvfVFy3At0knswWd6rJ3/0Hhmpu8oqa6C92npmozs890sX9Dl6q+Qw==
 
-ansis@^3.3.2, ansis@^3.4.0, ansis@^3.5.2, ansis@^3.8.1, ansis@^3.9.0:
+ansis@^3.3.2, ansis@^3.4.0, ansis@^3.5.2, ansis@^3.9.0:
   version "3.9.0"
   resolved "https://registry.yarnpkg.com/ansis/-/ansis-3.9.0.tgz#d195c93c31a333916142ff8f0be4d7e3872f262e"
   integrity "sha1-0ZXJPDGjM5FhQv+PC+TX44cvJi4= sha512-PcDrVe15ldexeZMsVLBAzBwF2KhZgaU0R+CHxH+x5kqn/pO+UWVBZJ+NEXMPpEOLUFeNsnNdoWYc2gwO+MVkDg=="
