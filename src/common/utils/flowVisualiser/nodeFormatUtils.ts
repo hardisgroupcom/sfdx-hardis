@@ -296,6 +296,10 @@ export function buildGenericMarkdownTable(item: any, fields: string[], title: st
   if (item?.actionType === "apex" && item.actionName && fs.existsSync(path.join("docs", "apex", `${item.actionName}.md`))) {
     item.actionName = `[${item.actionName}](../apex/${item.actionName}.md)`
   }
+  // Add link to SObject doc if existing
+  if (item?.sobjectType && fs.existsSync(path.join("docs", "objects", `${item.sobjectType}.md`))) {
+    item.sobjectType = `[${item.sobjectType}](../objects/${item.sobjectType}.md)`
+  }
   let table = title ? `${title}\n\n` : ''
   table += `|<!-- -->|<!-- -->|\n|:---|:---|\n`;
   for (const field of fields) {
@@ -341,14 +345,17 @@ export function stringifyValue(valueIn: any, field: string, allProperties: strin
             // Element reference
             (valueType === "object" && valueIn.elementReference && Object.keys(valueIn).length === 1) ?
               valueIn.elementReference :
-              // Undefined or empty array or empty object
-              (valueType === "undefined" || (Array.isArray(valueIn) && valueIn.length === 0) || (valueType === "object" && Object.keys(valueIn).length === 0)) ?
-                '<!-- -->' :
-                // Default YAML for array & object
-                (Array.isArray(valueIn) || valueType === "object") ?
-                  yaml.dump(valueIn).replace(/"/gm, "").replace(/^(\s+)/gm, match => '&nbsp;'.repeat(match.length)).split("\n").join("<br/>") :
-                  // Default
-                  String(valueIn).split("\n").join("<br/>");
+              // Element reference
+              (valueType === "object" && field === 'template' && valueIn?.name) ?
+                valueIn.name :
+                // Undefined or empty array or empty object
+                (valueType === "undefined" || (Array.isArray(valueIn) && valueIn.length === 0) || (valueType === "object" && Object.keys(valueIn).length === 0)) ?
+                  '<!-- -->' :
+                  // Default YAML for array & object
+                  (Array.isArray(valueIn) || valueType === "object") ?
+                    yaml.dump(valueIn).replace(/"/gm, "").replace(/^(\s+)/gm, match => '&nbsp;'.repeat(match.length)).split("\n").join("<br/>") :
+                    // Default
+                    String(valueIn).split("\n").join("<br/>");
   // Final updates if necessary
   if (allProperties.includes(valueStringified)) {
     valueStringified = `[${valueStringified}](#${valueStringified.toLowerCase()})`
