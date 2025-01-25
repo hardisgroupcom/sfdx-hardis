@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Display error message in case of XML parsing error
 - Do not raise issues when managed items fields don't have descriptions
+- Do not raise inactive validation rule issue when the VR is from aa managed package
 
 ## [5.16.4] 2025-01-22
 
