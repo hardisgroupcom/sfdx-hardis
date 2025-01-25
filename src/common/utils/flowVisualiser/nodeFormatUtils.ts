@@ -1,5 +1,7 @@
 import * as yaml from 'js-yaml';
 import moment from 'moment';
+import * as fs from 'fs';
+import path from 'path';
 
 const FIELDS_WITH_VALUES_TO_FORMAT = [
   "actionType",
@@ -289,6 +291,10 @@ export function buildGenericMarkdownTable(item: any, fields: string[], title: st
         fields.push(field);
       }
     }
+  }
+  // Add link to Apex class doc if existing
+  if (item?.actionType === "apex" && item.actionName && fs.existsSync(path.join("docs", "apex", `${item.actionName}.md`))) {
+    item.actionName = `[${item.actionName}](../apex/${item.actionName}.md)`
   }
   let table = title ? `${title}\n\n` : ''
   table += `|<!-- -->|<!-- -->|\n|:---|:---|\n`;

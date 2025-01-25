@@ -3,18 +3,19 @@ import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/s
 import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
+import { process as ApexDocGen } from '@cparra/apexdocs';
 import { XMLParser } from "fast-xml-parser";
 import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { completeAttributesDescriptionWithAi, generateObjectMarkdown, generatePackageXmlMarkdown, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
+import { completeApexDocWithAiDescription, completeAttributesDescriptionWithAi, generateObjectMarkdown, generatePackageXmlMarkdown, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
 import { countPackageXmlItems, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
-import { GLOB_IGNORE_PATTERNS, listFlowFiles } from '../../../common/utils/projectUtils.js';
+import { GLOB_IGNORE_PATTERNS, listApexFiles, listFlowFiles } from '../../../common/utils/projectUtils.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
@@ -190,6 +191,11 @@ ${this.htmlInstructions}
     this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS })).sort();
     this.allObjectsNames = this.objectFiles.map(object => path.basename(object, ".object"));
 
+    // Generate Apex doc
+    if (!(process?.env?.GENERATE_APEX_DOC === 'false')) {
+      await this.generateApexDocumentation();
+    }
+
     // List flows & generate doc
     if (!(process?.env?.GENERATE_FLOW_DOC === 'false')) {
       await this.generateFlowsDocumentation();
@@ -228,6 +234,73 @@ ${Project2Markdown.htmlInstructions}
     WebSocketClient.requestOpenFile(this.outputMarkdownIndexFile);
 
     return { outputPackageXmlMarkdownFiles: this.outputPackageXmlMarkdownFiles };
+  }
+
+  private async generateApexDocumentation() {
+    uxLog(this, c.cyan("Generating Apex documentation... (if you don't want it, define GENERATE_APEX_DOC=false in your environment variables)"));
+    const tempDir = await createTempDir();
+    uxLog(this, c.grey(`Using temp directory ${tempDir}`));
+    const packageDirs = this.project?.getPackageDirectories() || [];
+    for (const packageDir of packageDirs) {
+      try {
+        await ApexDocGen({
+          sourceDir: packageDir.path,
+          targetDir: tempDir,
+          scope: ['global', 'public', 'private'],
+          targetGenerator: "markdown"
+        });
+      }
+      catch (e: any) {
+        uxLog(this, c.yellow(`Error generating Apex documentation: ${JSON.stringify(e, null, 2)}`));
+        uxLog(this, c.grey(e.stack));
+      }
+
+      // Copy files to apex folder
+      const apexDocFolder = path.join(this.outputMarkdownRoot, "apex");
+      await fs.ensureDir(apexDocFolder);
+      await fs.copy(path.join(tempDir, "miscellaneous"), apexDocFolder, { overwrite: true });
+      /*
+      await ApexDocGen({
+        sourceDir: packageDir.path,
+        targetDir: tempDir,
+        targetGenerator: "openapi"
+      });
+      */
+    }
+    const apexFiles = await listApexFiles(packageDirs);
+    const apexFilesLinesMain: string[] = [];
+    const apexFilesLines: string[] = [];
+
+    const apexForMenu: any = { "All Apex Classes": "apex/index.md" }
+    for (const apexFile of apexFiles) {
+      const apexName = path.basename(apexFile, ".cls").replace(".trigger", "");
+      const mdFile = path.join(this.outputMarkdownRoot, "apex", apexName + ".md");
+      if (fs.existsSync(mdFile)) {
+        apexForMenu[apexName] = "apex/" + apexName + ".md";
+        apexFilesLinesMain.push(`- [${apexName}](apex/${apexName}.md)`);
+        apexFilesLines.push(`- [${apexName}](${apexName}.md)`);
+        // Add apex code in documentation
+        const apexContent = await fs.readFile(apexFile, "utf8");
+        let apexMdContent = await fs.readFile(mdFile, "utf8");
+        // Replace object links
+        apexMdContent = apexMdContent.replaceAll("..\\custom-objects\\", "../objects/").replaceAll("../custom-objects/", "../objects/")
+        // Add text before the first ##
+        const replacement = `\n\n## AI-Generated description\n\n<!-- Apex description -->\n\n## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n`
+        apexMdContent = apexMdContent.replace(/##/, replacement);
+        apexMdContent = await completeApexDocWithAiDescription(apexMdContent, apexName, apexContent);
+        await fs.writeFile(mdFile, apexMdContent);
+        uxLog(this, c.grey(`Generated markdown for Apex class ${apexName}`));
+      }
+    }
+    this.mkDocsNavNodes["Apex"] = apexForMenu;
+
+    this.mdLines.push(...["## Apex Classes", ...apexFilesLinesMain, "___", ""]);
+
+    // Write index file for apex folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "apex"));
+    const apexIndexFile = path.join(this.outputMarkdownRoot, "apex", "index.md");
+    await fs.writeFile(apexIndexFile, "## Apex Classes\n\n" + apexFilesLines.join("\n") + `\n\n${this.footer}\n`);
+
   }
 
   private async buildMkDocsYml() {

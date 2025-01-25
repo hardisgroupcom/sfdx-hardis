@@ -81,3 +81,27 @@ export async function isManagedFlow(flowFile: string) {
   }
   return true;
 }
+
+export async function listApexFiles(packageDirs) {
+  const apexFiles: any[] = [];
+  const skippedApex: string[] = [];
+  for (const packageDir of packageDirs || []) {
+    const apexMetadatas = await glob("**/*.{cls,trigger}", { cwd: packageDir.path, ignore: GLOB_IGNORE_PATTERNS });
+    for (const apexMetadata of apexMetadatas) {
+      const apexFile = path.join(packageDir.path, apexMetadata).replace(/\\/g, '/');
+      if (apexFile.includes('__')) {
+        skippedApex.push(apexFile);
+      }
+      else {
+        apexFiles.push(apexFile)
+      }
+    }
+  }
+  if (skippedApex.length > 0) {
+    uxLog(this, c.yellow(`Skipped ${skippedApex.length} managed Apex:`));
+    for (const skippedFlow of skippedApex.sort()) {
+      uxLog(this, c.yellow(`  ${skippedFlow}`));
+    }
+  }
+  return apexFiles.sort();
+}

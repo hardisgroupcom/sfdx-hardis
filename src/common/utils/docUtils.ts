@@ -300,6 +300,37 @@ async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, obj
   return objectMarkdownDoc;
 }
 
+export async function completeApexDocWithAiDescription(apexMarkdownDoc: string, className: string, apexCode: string): Promise<string> {
+  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_APEX", [apexCode], className);
+  if (aiCache.success === true) {
+    uxLog(this, c.grey("Used AI cache for apex description (set IGNORE_AI_CACHE=true to force call to AI)"));
+    const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
+    return apexMarkdownDoc.replace("<!-- Apex description -->", replaceText);
+  }
+  if (AiProvider.isAiAvailable()) {
+    // Invoke AI Service
+    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_APEX", { "CLASS_NAME": className, "APEX_CODE": apexCode });
+    /* jscpd:ignore-start */
+    const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_APEX");
+    // Replace description in markdown
+    if (aiResponse?.success) {
+      let responseText = aiResponse.promptResponse || "No AI description available";
+      if (responseText.startsWith("##")) {
+        responseText = responseText.split("\n").slice(1).join("\n");
+      }
+      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_APEX", [apexCode], className, responseText);
+      const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
+      const objectMarkdownDocUpdated = apexMarkdownDoc.replace("<!-- Apex description -->", replaceText);
+      return objectMarkdownDocUpdated;
+    }
+    /* jscpd:ignore-end */
+  }
+  else {
+    return apexMarkdownDoc.replace("<!-- Apex description -->", `Activate [AI configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) to generate AI description`);
+  }
+  return apexMarkdownDoc;
+}
+
 export async function replaceInFile(filePath: string, stringToReplace: string, replaceWith: string) {
   const fileContent = await fs.readFile(filePath, 'utf8');
   const newContent = fileContent.replaceAll(stringToReplace, replaceWith);
