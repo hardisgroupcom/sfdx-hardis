@@ -139,7 +139,8 @@ export default class MetadataStatus extends SfCommand<any> {
       const fieldResult = fieldResults[i];
       if (fieldResult && fieldResult.CustomField) {
         const fieldName = fieldResult.CustomField.fullName[0];
-        if (fieldName.endsWith('__c') && !fieldResult.CustomField.description) {
+        // Skip standard and managed fields
+        if (fieldName.endsWith('__c') && !fieldResult.CustomField.description && (fieldName.match(/__/g) || []).length < 2) {
           const fieldFile = this.nonCustomSettingsFieldDirectories[i].replace(/\\/g, '/');
           const objectName = fieldFile.split('/').slice(-3, -2)[0];
           const fullFieldName = `${objectName}.${fieldName}`;

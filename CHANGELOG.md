@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Display error message in case of XML parsing error
+- Do not raise issues when managed items fields don't have descriptions
 
 ## [5.16.4] 2025-01-22
 
