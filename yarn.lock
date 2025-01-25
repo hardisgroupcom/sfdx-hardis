@@ -1908,13 +1908,13 @@
     wordwrap "^1.0.0"
     wrap-ansi "^7.0.0"
 
-"@oclif/plugin-command-snapshot@^5.2.24":
-  version "5.2.24"
-  resolved "https://registry.yarnpkg.com/@oclif/plugin-command-snapshot/-/plugin-command-snapshot-5.2.24.tgz#bc349c216ab86f70f35b1c3e53d8a93989b1cdd0"
-  integrity sha512-KgsIyW1hf53JbySSSWv3FzGgtinX3xSj/Uuu+81Wn6em3csyrOfS60J4mUyB2BtSfCj+OXRzwoXluYiTJy974w==
+"@oclif/plugin-command-snapshot@^5.2.28":
+  version "5.2.28"
+  resolved "https://registry.yarnpkg.com/@oclif/plugin-command-snapshot/-/plugin-command-snapshot-5.2.28.tgz#676a2bc483faafa95d782e201439dddf3ff6d57f"
+  integrity sha512-uXN+42xe8/FLLELRWvP0g1ZsVKYAANAOKOgxqr98KRZVFe4roh3klQtlNj2RHvSTxLQyz/K/V/Mf1q9HDUf7Eg==
   dependencies:
     "@oclif/core" "^4"
-    ansis "^3.5.2"
+    ansis "^3.9.0"
     globby "^14.0.2"
     just-diff "^5.2.0"
     lodash.difference "^4.5.0"
@@ -3775,7 +3775,7 @@ ansi-wrap@0.1.0:
   resolved "https://registry.npmjs.org/ansi-wrap/-/ansi-wrap-0.1.0.tgz"
   integrity sha512-ZyznvL8k/FZeQHr2T6LzcJ/+vBApDnMNZvfVFy3At0knswWd6rJ3/0Hhmpu8oqa6C92npmozs890sX9Dl6q+Qw==
 
-ansis@^3.3.2, ansis@^3.4.0, ansis@^3.5.2, ansis@^3.8.1:
+ansis@^3.3.2, ansis@^3.4.0, ansis@^3.5.2, ansis@^3.8.1, ansis@^3.9.0:
   version "3.9.0"
   resolved "https://registry.yarnpkg.com/ansis/-/ansis-3.9.0.tgz#d195c93c31a333916142ff8f0be4d7e3872f262e"
   integrity "sha1-0ZXJPDGjM5FhQv+PC+TX44cvJi4= sha512-PcDrVe15ldexeZMsVLBAzBwF2KhZgaU0R+CHxH+x5kqn/pO+UWVBZJ+NEXMPpEOLUFeNsnNdoWYc2gwO+MVkDg=="
