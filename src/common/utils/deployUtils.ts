@@ -1176,18 +1176,20 @@ export async function extractOrgCoverageFromLog(stdout) {
       return result;
     }
   }
-  // Get from output file (1)
-  const defaultCoverageOutputJsonFile = path.join(process.cwd(), "coverage", "coverage", "coverage-summary.json");
-  const resultFromDefaultFile = getCoverageFromJsonFile(defaultCoverageOutputJsonFile);
-  if (resultFromDefaultFile) {
-    return resultFromDefaultFile;
-  }
 
-  // Get from output file (2)
-  const otherCoverageOutputJsonFile = path.join((await getReportDirectory()), "coverage", "coverage", "coverage-summary.json");
-  const resultFromOtherFile = getCoverageFromJsonFile(otherCoverageOutputJsonFile);
-  if (resultFromOtherFile) {
-    return resultFromOtherFile;
+  const reportDir = await getReportDirectory();
+  const coverageFilesToTest = [
+    path.join(reportDir, "coverage", "coverage-summary.json"),
+    path.join(reportDir, "coverage", "coverage", "coverage-summary.json"),
+    path.join(process.cwd(), "coverage", "coverage", "coverage-summary.json")
+  ]
+
+  // Get from output file (1)
+  for (const coverageFile of coverageFilesToTest) {
+    const resultFromDefaultFile = getCoverageFromJsonFile(coverageFile);
+    if (resultFromDefaultFile) {
+      return resultFromDefaultFile;
+    }
   }
 
   // Get from JSON Mode (might be best to use output file)
