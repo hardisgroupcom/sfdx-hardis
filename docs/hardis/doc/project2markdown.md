@@ -50,7 +50,7 @@ To read the documentation as HTML pages, run the following code (you need [**Pyt
 
 ```python
 pip install mkdocs-material mdx_truly_sane_lists || python -m pip install mkdocs-material mdx_truly_sane_lists || py -m pip install mkdocs-material mdx_truly_sane_lists
-mkdocs serve || python -m mkdocs serve || py -m mkdocs serve
+mkdocs serve -v || python -m mkdocs serve -v || py -m mkdocs serve -v
 ```
 
 To just generate HTML pages that you can host anywhere, run `mkdocs build || python -m mkdocs build || py -m mkdocs build`
