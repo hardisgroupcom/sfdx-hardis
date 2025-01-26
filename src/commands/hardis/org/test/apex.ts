@@ -146,7 +146,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       // Parse outcome value from logs with Regex
       this.testRunOutcome = (/Outcome *(.*) */.exec(execCommandRes.stdout + execCommandRes.stderr) || '')[1].trim();
       this.testRunOutputString = execCommandRes.stdout + execCommandRes.stderr;
-      await generateApexCoverageOutputFile(this.testRunOutputString || '');
+      await generateApexCoverageOutputFile();
     } catch (e) {
       // No Apex in the org
       if (
@@ -158,7 +158,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         // Failing Apex tests
         this.testRunOutputString = (e as Error).message;
         this.testRunOutcome = 'Failed';
-        await generateApexCoverageOutputFile(e);
+        await generateApexCoverageOutputFile();
       }
     }
   }
