@@ -6,7 +6,14 @@ description: Learn how to generate Salesforce project documentation, including F
 
 ## Salesforce Project Documentation
 
-With a single command, you can generate a Web Site documenting your Salesforce metadatas (like Flows)
+With a single command, you can generate a Web Site documenting your Salesforce metadatas
+
+- Custom Objects (with fields, validation rules, relationships and dependencies)
+- Flows
+- Apex Classes
+- Lightning Pages
+
+The documentation will be [supercharged with AI](salesforce-ai-setup.md) if activated;
 
 ![](assets/images/project-documentation.gif)
 
