@@ -141,9 +141,11 @@ export function returnApexType(apexCode: string) {
               apexContentlower.includes("implements database.schedulable") ? "Schedulable" :
                 apexContentlower.includes("implements schedulable") ? "Schedulable" :
                   apexContentlower.includes("@auraenabled") ? "Lightning Controller" :
-                    apexContentlower.includes("@apexpages.standardcontroller") ? "Visualforce Controller" :
+                    apexContentlower.includes("apexpages.standardcontroller") ? "Visualforce Controller" :
                       apexContentlower.includes("pagereference") ? "Visualforce Controller" :
                         apexContentlower.includes("triggerhandler") ? "Trigger Handler" :
                           apexContentlower.includes("new httprequest") ? "Callout" :
-                            "Class";
+                            apexContentlower.includes("jsonparser parser") ? "JSON" :
+                              apexContentlower.includes("public class soaprequest") ? "SOAP" :
+                                "Class";
 }
