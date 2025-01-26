@@ -267,6 +267,7 @@ export async function smartDeploy(
       }
       // No QuickDeploy Available, or QuickDeploy failing : try full deploy
       const branchConfig = await getConfig('branch');
+      const reportDir = await getReportDirectory();
       const deployCommand =
         `sf project deploy` +
         // (check && testlevel !== 'NoTestRun' ? ' validate' : ' start') + // Not until validate command is correct and accepts ignore-warnings
@@ -276,6 +277,7 @@ export async function smartDeploy(
         ` --manifest "${deployment.packageXmlFile}"` +
         ' --ignore-warnings' + // So it does not fail in for objectTranslations stuff for example
         ' --ignore-conflicts' + // With CICD we are supposed to ignore them
+        ` --results-dir ${reportDir}` +
         ` --test-level ${testlevel}` +
         (options.testClasses && testlevel !== 'NoTestRun' ? ` --tests ${options.testClasses}` : '') +
         (options.preDestructiveChanges ? ` --pre-destructive-changes ${options.preDestructiveChanges}` : '') +
@@ -299,13 +301,13 @@ export async function smartDeploy(
           uxLog(commandThis, c.grey(shortenLogLines(JSON.stringify(deployRes))));
         }
       } catch (e: any) {
-        await generateApexCoverageOutputFile(e);
+        await generateApexCoverageOutputFile();
         deployRes = await handleDeployError(e, check, branchConfig, commandThis, options, deployment);
       }
       if (typeof deployRes === 'object') {
         deployRes.stdout = JSON.stringify(deployRes);
       }
-      await generateApexCoverageOutputFile(deployRes.stdout + deployRes.stderr || '');
+      await generateApexCoverageOutputFile();
 
       // Set deployment id
       await getDeploymentId(deployRes.stdout + deployRes.stderr || '');
@@ -1174,11 +1176,20 @@ export async function extractOrgCoverageFromLog(stdout) {
       return result;
     }
   }
-  // Get from output file whose name has been found in text output
-  const defaultCoverageOutputJsonFile = path.join(process.cwd(), "coverage", "coverage", "coverage-summary.json");
-  const resultFromDefaultFile = getCoverageFromJsonFile(defaultCoverageOutputJsonFile);
-  if (resultFromDefaultFile) {
-    return resultFromDefaultFile;
+
+  const reportDir = await getReportDirectory();
+  const coverageFilesToTest = [
+    path.join(reportDir, "coverage", "coverage-summary.json"),
+    path.join(reportDir, "coverage", "coverage", "coverage-summary.json"),
+    path.join(process.cwd(), "coverage", "coverage", "coverage-summary.json")
+  ]
+
+  // Get from output file (1)
+  for (const coverageFile of coverageFilesToTest) {
+    const resultFromDefaultFile = getCoverageFromJsonFile(coverageFile);
+    if (resultFromDefaultFile) {
+      return resultFromDefaultFile;
+    }
   }
 
   // Get from JSON Mode (might be best to use output file)
@@ -1319,21 +1330,14 @@ async function updatePullRequestResultCoverage(
   globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCodeCoverage);
 }
 
-export async function generateApexCoverageOutputFile(commandOutput: string | any): Promise<void> {
+export async function generateApexCoverageOutputFile(): Promise<void> {
   try {
-    const outputString =
-      typeof commandOutput === 'string' ? commandOutput :
-        typeof commandOutput === 'object' && commandOutput.stdout && commandOutput.stderr ? commandOutput.stdout + commandOutput.stderr :
-          typeof commandOutput === 'object' && commandOutput.stdout ? commandOutput.stdout :
-            typeof commandOutput === 'object' && commandOutput.stderr ? commandOutput.stderr :
-              JSON.stringify(commandOutput);
     const reportDir = await getReportDirectory();
     const coverageFileName = path.join(reportDir, "apex-coverage-results.json");
     let coverageObject: any = null;
-    const jsonLog = findJsonInString(String(outputString));
-    // Output from sf project deploy start or similar: extract from JSON
-    if (jsonLog && jsonLog?.result?.details?.runTestResult?.codeCoverage?.length > 0) {
-      coverageObject = jsonLog.result.details.runTestResult.codeCoverage;
+    // Output from sf project deploy start or similar: get locally generated file
+    if (fs.existsSync(path.join(reportDir, "coverage", "coverage.json"))) {
+      coverageObject = JSON.parse(fs.readFileSync(path.join(reportDir, "coverage", "coverage.json"), 'utf8'));
     }
     // Output from apex run tests: get locally generated file
     else if (fs.existsSync(path.join(reportDir, "test-result-codecoverage.json"))) {
