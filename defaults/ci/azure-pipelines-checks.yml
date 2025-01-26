@@ -94,6 +94,7 @@ jobs:
           BUILD_REPOSITORYNAME: $(Build.Repository.Name)
           BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
           BUILD_BUILD_ID: $(Build.BuildId)
+          SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD setup
         displayName: "Simulate deploy to org"
 
   # Run MegaLinter to detect linting and security issues

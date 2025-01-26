@@ -76,6 +76,7 @@ jobs:
           JIRA_TICKET_REGEX: ${{ secrets.JIRA_TICKET_REGEX }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           FORCE_COLOR: "1"
+          SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD
         run: |
           echo "Simulate SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
           sf hardis:auth:login

@@ -11,7 +11,10 @@ export default class Login extends SfCommand<any> {
 
   public static description = messages.getMessage('loginToOrg');
 
-  public static examples = ['$ sf hardis:auth:login'];
+  public static examples = [
+    '$ sf hardis:auth:login',
+    'CI=true sf hardis:auth:login'
+  ];
 
   // public static args = [{name: 'file'}];
 
@@ -49,6 +52,7 @@ export default class Login extends SfCommand<any> {
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
+    console.log('Entering Login command to authenticate to Salesforce org');
     const { flags } = await this.parse(Login);
     const devHub = flags.devhub || false;
     const scratch = flags.scratchorg || false;

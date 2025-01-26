@@ -6,6 +6,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
 import { uxLog } from '../../../../common/utils/index.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -57,7 +58,7 @@ Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
 
     let counter = 0;
     const flexipages: any[] = [];
-    const flexipageSourceFiles = await glob(globPattern, { cwd: this.pathToBrowse });
+    const flexipageSourceFiles = await glob(globPattern, { cwd: this.pathToBrowse, ignore: GLOB_IGNORE_PATTERNS });
     uxLog(this, c.grey(`Found ${flexipageSourceFiles.length} flexipages`));
     const regexAndReplacements = [
       {

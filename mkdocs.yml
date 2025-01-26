@@ -175,6 +175,7 @@ nav:
           extract:
             permsetgroups: hardis/doc/extract/permsetgroups.md
           flow2markdown: hardis/doc/flow2markdown.md
+          mkdocs-to-salesforce: hardis/doc/mkdocs-to-salesforce.md
           packagexml2markdown: hardis/doc/packagexml2markdown.md
           plugin:
             generate: hardis/doc/plugin/generate.md

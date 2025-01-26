@@ -6,6 +6,7 @@ import fs from 'fs-extra';
 import { glob } from 'glob';
 import sortArray from 'sort-array';
 import { catchMatches, generateReports, uxLog } from '../../../../common/utils/index.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -66,7 +67,7 @@ export default class CallInCallOut extends SfCommand<any> {
         ],
       },
     ];
-    const apexFiles = await glob(pattern);
+    const apexFiles = await glob(pattern, { ignore: GLOB_IGNORE_PATTERNS });
     this.matchResults = [];
     uxLog(this, `Browsing ${apexFiles.length} files`);
     // Loop in files

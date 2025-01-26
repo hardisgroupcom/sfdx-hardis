@@ -22,6 +22,7 @@ import { Parser } from 'xml2js';
 // Config
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from '../../../common/utils/notifUtils.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -162,7 +163,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       }
 
       const findManagedPattern = rootFolder + sourceElement['regex'];
-      const matchedElements = await glob(findManagedPattern, { cwd: process.cwd() });
+      const matchedElements = await glob(findManagedPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
 
       switch (sourceElement.type) {
         case 'CustomField':
@@ -324,7 +325,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async listElementIfNotInProfileOrPermission(rootFolder, elementsToCheckByType) {
-    const profilesFiles = await glob(rootFolder + this.profiles['regex'], { cwd: process.cwd() });
+    const profilesFiles = await glob(rootFolder + this.profiles['regex'], { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
     let remainingElements = elementsToCheckByType;
 
     //CHECK PROFILES FIRST
@@ -336,7 +337,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       );
     }
     if (this.hasRemainingElementsToCheck(remainingElements) && !this.permissionSet.isIgnoredAll) {
-      const permissionSetFiles = await glob(rootFolder + this.permissionSet['regex'], { cwd: process.cwd() });
+      const permissionSetFiles = await glob(rootFolder + this.permissionSet['regex'], { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
       remainingElements = await this.retrieveElementsWithoutRights(
         this.permissionSet.name,
         permissionSetFiles,
@@ -555,7 +556,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   private async listLocalCustomSettings() {
     const globPatternObjects = process.cwd() + `/**/*.object-meta.xml`;
-    const objectFiles = await glob(globPatternObjects);
+    const objectFiles = await glob(globPatternObjects, { ignore: GLOB_IGNORE_PATTERNS });
     const csList: any[] = [];
     for (const objectFile of objectFiles) {
       const objectXml = await parseXmlFile(objectFile);
@@ -568,7 +569,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   private async listLocalPermissionSets() {
     const globPatternPS = process.cwd() + `/**/*.permissionset-meta.xml`;
-    const psFiles = await glob(globPatternPS);
+    const psFiles = await glob(globPatternPS, { ignore: GLOB_IGNORE_PATTERNS });
     const psList: any[] = [];
     for (const ps of psFiles) {
       psList.push({ name: path.basename(ps).replace('.permissionset-meta.xml', ''), filePath: ps });
@@ -644,7 +645,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async verifyMultipleObjectsInPermissionSets(permissionsetsDirectory: string): Promise<void> {
-    const permissionFiles = await glob(permissionsetsDirectory, { cwd: process.cwd() });
+    const permissionFiles = await glob(permissionsetsDirectory, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
 
     for (const permissionFile of permissionFiles) {
       const content = await this.readFile(permissionFile);

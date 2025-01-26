@@ -32,9 +32,11 @@
 |:----------------------------------------------------------------------------|:------|
 | [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md) |       |
 | [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                 |       |
+| [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)   |       |
 | [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)     |       |
 | [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)             |       |
 | [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)           |       |
+| [**hardis:doc:project2markdown copy**](hardis/doc/project2markdown copy.md) |       |
 
 ## hardis:git
 

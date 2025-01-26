@@ -3,12 +3,13 @@
   "description": "Swiss-army-knife Toolbox for Salesforce.\n Allows you to define a complete CD/CD Pipeline.\n Orchestrate base commands and assist users with interactive wizards",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
-  "version": "5.15.3",
+  "version": "5.16.4",
   "dependencies": {
     "@actions/github": "^6.0.0",
+    "@cparra/apexdocs": "^3.7.2",
     "@gitbeaker/node": "^35.8.1",
-    "@oclif/core": "^4.2.2",
-    "@salesforce/core": "^8.8.0",
+    "@oclif/core": "^4.2.4",
+    "@salesforce/core": "^8.8.2",
     "@salesforce/sf-plugins-core": "^11.3.12",
     "@slack/types": "^2.14.0",
     "@slack/web-api": "^7.8.0",
@@ -37,7 +38,7 @@
     "glob": "^11.0.1",
     "he": "^1.2.0",
     "inquirer": "^10.2.2",
-    "isomorphic-dompurify": "^2.19.0",
+    "isomorphic-dompurify": "^2.20.0",
     "jira-client": "^8.2.2",
     "js-yaml": "^4.1.0",
     "make-fetch-happen": "^14.0.3",
@@ -66,7 +67,7 @@
     "xpath": "^0.0.34"
   },
   "devDependencies": {
-    "@oclif/plugin-command-snapshot": "^5.2.24",
+    "@oclif/plugin-command-snapshot": "^5.2.28",
     "@salesforce/cli-plugins-testkit": "^5.3.39",
     "@salesforce/dev-config": "^4.3.1",
     "@salesforce/dev-scripts": "^10",
@@ -90,10 +91,10 @@
     "@types/which": "^3.0.4",
     "@types/ws": "^8.5.13",
     "@types/xml2js": "^0.4.14",
-    "eslint-plugin-sf-plugin": "^1.20.9",
-    "oclif": "^4.17.7",
+    "eslint-plugin-sf-plugin": "^1.20.14",
+    "oclif": "^4.17.17",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.3"
   },
   "engines": {
     "node": ">=20.0.0"

@@ -11,6 +11,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getReportDirectory } from '../../../../config/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -56,7 +57,7 @@ export default class ExtractPermSetGroups extends SfCommand<any> {
 
     const psgList: any[] = [];
     const globPatternPSG = process.cwd() + `/**/*.permissionsetgroup-meta.xml`;
-    const psgFiles = await glob(globPatternPSG);
+    const psgFiles = await glob(globPatternPSG, { ignore: GLOB_IGNORE_PATTERNS });
     uxLog(this, c.grey(`Found ${psgFiles.length} permission set groups`));
     for (const psgFile of psgFiles) {
       const psgName = (psgFile.replace(/\\/g, '/').split('/').pop() || '').replace('.permissionsetgroup-meta.xml', '');

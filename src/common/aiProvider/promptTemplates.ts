@@ -1,13 +1,14 @@
-import { uxLog } from "../utils/index.js";
-import c from "chalk";
+import { UtilsAi } from "./utils.js";
 
 export type PromptTemplate =
   "PROMPT_SOLVE_DEPLOYMENT_ERROR" |
   "PROMPT_DESCRIBE_FLOW" |
-  "PROMPT_DESCRIBE_FLOW_DIFF"
+  "PROMPT_DESCRIBE_FLOW_DIFF" |
+  "PROMPT_DESCRIBE_OBJECT" |
+  "PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD" |
+  "PROMPT_DESCRIBE_APEX" |
+  "PROMPT_DESCRIBE_PAGE"
   ;
-
-export type PromptLanguage = "en" | "fr";
 
 export function buildPromptFromTemplate(template: PromptTemplate, variables: object): string {
   // Get matching prompt
@@ -18,15 +19,11 @@ export function buildPromptFromTemplate(template: PromptTemplate, variables: obj
     throw new Error(`Missing variables for prompt template ${template}: ${missingVariables.join(", ")}`);
   }
   // Get prompt language and check if it is an allowed one
-  let promptsLanguage = process.env.PROMPTS_LANGUAGE || "en";
-  if (!["en", "fr"].includes(promptsLanguage)) {
-    uxLog(this, c.yellow(`Unknown prompt language ${promptsLanguage}: Switch back to en`));
-    promptsLanguage = "en";
-  }
+  const promptsLanguage = UtilsAi.getPromptsLanguage();
   // Build prompt
-  let prompt = process.env?.[template] || templateData.text[promptsLanguage];
+  let prompt: string = process.env?.[template] || templateData.text?.[promptsLanguage] || (templateData.text?.["en"] + `\nPlease answer using the language corresponding to "${promptsLanguage}"`);
   for (const variable in variables) {
-    prompt = prompt.replace(`{{${variable}}}`, variables[variable]);
+    prompt = prompt.replaceAll(`{{${variable}}}`, variables[variable]);
   }
   return prompt;
 }
@@ -51,16 +48,7 @@ How to solve the following Salesforce deployment error ?
 The error is: 
 {{ERROR}}
 `,
-      /* cSpell:disable */
-      "fr": `Vous êtes un release manager Salesforce qui utilise les commands Salesforce CLI pour effectuer des déploiements 
-Comment résoudre l'erreur de déploiement Salesforce suivante ?
-- Veuillez répondre en utilisant le format source de sfdx, pas le format metadata.
-- Veuillez fournir un exemple XML si applicable.
-- Veuillez sauter la partie de la réponse sur comment récupérer ou déployer les changements avec Salesforce CLI
-L'erreur est :
-{{ERROR}}
-`
-      /* cSpell:enable */
+
     },
   },
   "PROMPT_DESCRIBE_FLOW": {
@@ -72,16 +60,9 @@ Please respond with markdown format, that can be embedded in a level 2 header (#
 Add a new line before starting a bullet list so mkdocs-material displays it correctly, including for sub-bullets.
 Caution: If the XML contains secret tokens or password, please replace them with a placeholder.
 The flow XML is:
-{{FLOW_XML}}`,
-      /* cSpell:disable */
-      "fr": `Vous êtes un analyste métier travaillant sur un projet Salesforce.
-Veuillez décrire le flux suivant en utilisant un langage simple qui peut être compris par un utilisateur métier.
-Veuillez répondre avec le format markdown, qui peut être intégré dans un en-tête de niveau 2 (##)
-Ajoutez une nouvelle ligne avant de commencer une liste à puces pour que mkdocs-material l'affiche correctement, y compris pour les sous-puces.
-Attention : Si le XML contient des jetons secrets ou des mots de passe, veuillez les remplacer par un espace réservé.
-Le XML du flux est :
-{{FLOW_XML}}`
-      /* cSpell:enable */
+{{FLOW_XML}}
+`,
+
     }
 
   },
@@ -102,22 +83,142 @@ The new version flow XML is:
 The previous version flow XML is:
 {{FLOW_XML_PREVIOUS}}
 `,
-      /* cSpell:disable */
-      "fr": `Vous êtes un analyste métier travaillant sur un projet Salesforce.
-Veuillez décrire les différences entre la nouvelle version du Flow et la version précédente du Flow, en utilisant un langage simple qui peut être compris par un utilisateur métier.
-Ignorez les balises liées aux attributs de localisation (locationX et locationY) ou positions : ne les mentionnez pas dans votre réponse
-Ignorez les nœuds et éléments qui n'ont pas changé : ne les mentionnez pas dans votre réponse
-Ignorez les changements de connecteurs : ne les mentionnez pas dans votre réponse
-Veuillez répondre avec le format markdown, qui peut être intégré dans un en-tête de niveau 2 (##)
-Ajoutez une nouvelle ligne avant de commencer une liste à puces pour que mkdocs-material l'affiche correctement, y compris pour les sous-puces.
-Si le XML contient des jetons secrets ou des mots de passe, veuillez les remplacer par un espace réservé.
-Le XML de la nouvelle version du Flow est:
-{{FLOW_XML_CURRENT}}
 
-Le XML de la précédente version du Flow est:
-{{FLOW_XML_PREVIOUS}}
+    }
+  },
+  "PROMPT_DESCRIBE_OBJECT": {
+    variables: ["OBJECT_NAME", "OBJECT_XML", "ALL_OBJECTS_LIST", "ALL_OBJECT_LINKS"],
+    text: {
+      "en": `You are a business analyst working on a Salesforce project. Your goal is to describe the Salesforce object "{{OBJECT_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+
+### Instructions:
+
+1. **Contextual Overview**:
+    - Begin by summarizing the role and purpose of the object "{{OBJECT_NAME}}" in the Salesforce org.
+    - Explain its significance in the project, its purpose in the org's implementation, and any key business processes it supports.
+
+2. **Relationships**:
+    - Use the provided object model data to describe how "{{OBJECT_NAME}}" relates to other objects.
+    - Include:
+        - Direct relationships (MasterDetail and Lookup fields on the object).
+        - Inverse relationships (other objects referencing "{{OBJECT_NAME}}").
+        - Highlight any key dependencies or implications of these relationships in plain English.
+
+3. **Additional Guidance**:
+    - **Do NOT include** fields table or validation rules table in the response
+    - Use the acronyms provided to interpret metadata names (e.g., TR: Trigger, VR: Validation Rule, WF: Workflow).
+    - If the XML metadata contains sensitive information (e.g., tokens, passwords), replace them with a placeholder (e.g., \`[REDACTED]\`).
+
+4. **Formatting Requirements**:
+    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
+    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
+    - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Never truncate any information in the response.
+    - Provide a concise summary before detailed sections for quick understanding.
+
+### Reference Data:
+
+- The list of all objects in the Salesforce org is: {{ALL_OBJECTS_LIST}}
+
+- The object model (MasterDetail and Lookup relationships) is: {{ALL_OBJECT_LINKS}}
+
+- The metadata XML for "{{OBJECT_NAME}}" is:
+{{OBJECT_XML}}
+
+Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
 `
-      /* cSpell:enable */
+    }
+  },
+  "PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD": {
+    variables: ["OBJECT_NAME", "MARKDOWN"],
+    text: {
+      "en": `You are a skilled Business Analyst working on a Salesforce project. Your task is to review and refine the fields and validation rules of the Salesforce object "{{OBJECT_NAME}}" and describe them in plain English. The goal is to create a detailed, user-friendly explanation of each field and validation rule that a non-technical business user can easily understand.
+
+## Instructions:
+1. **Enhancing Fields Descriptions**:
+   - If an field's description is missing, generate a meaningful description using the context provided by the other column values (e.g., name, data type, or usage).
+   - If a field description already exists, improve its clarity and comprehensiveness by incorporating insights from the other column values.
+   - If an attribute's label is missing, generate a meaningful label using the context provided by the other column values.
+
+2. **Enhancing Validation Rules Descriptions**:
+   - If an field's description is missing, generate a meaningful description using the context provided by the other column values (especially formula column).
+   - If a validation rule description already exists, improve its clarity and comprehensiveness by incorporating insights from the other column values (especially formula column).
+   - If an validation rule label is missing, generate a meaningful label using the context provided by the other column values.
+
+3. **Output Format**:
+   - Return the updated descriptions in the **Markdown tables** format provided below.
+   - Ensure the tables aligns with Markdown syntax conventions for proper rendering.
+
+4. **Tone and Style**:
+   - Use plain English suitable for business users with minimal technical jargon.
+   - Focus on clarity, completeness, and practical usage examples if applicable.
+
+5. **Output Requirements**:
+   - Respond **only in Markdown** format.
+   - Do not include any additional text or commentary outside of the Markdown.
+
+## Reference Data:
+- Use the following markdown as the basis for your updates:
+  {{MARKDOWN}}
+
+## Additional Guidance:
+- **Consistency**: Maintain consistent formatting and ensure the descriptions are cohesive across all attributes.
+- **Use Examples**: When applicable, include simple examples to illustrate the attribute's purpose or use case.
+ `
+    }
+  },
+  "PROMPT_DESCRIBE_APEX": {
+    variables: ["CLASS_NAME", "APEX_CODE"],
+    text: {
+      "en": `You are a developer working on a Salesforce project. Your goal is to summarize the behavior of the Salesforce Apex class "{{CLASS_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+
+### Instructions:
+
+1. **Contextual Overview**:
+    - Begin by summarizing the role of the apex class.
+    - List the key functionalities and business logic implemented in the class.
+
+2. **Formatting Requirements**:
+    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
+    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
+    - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Never truncate any information in the response.
+    - Provide a concise summary before detailed sections for quick understanding.
+
+### Reference Data:
+
+- The code for Apex class "{{CLASS_NAME}}" is:
+{{APEX_CODE}}
+
+Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+`
+    },
+  },
+  "PROMPT_DESCRIBE_PAGE": {
+    variables: ["PAGE_NAME", "PAGE_XML"],
+    text: {
+      "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce Lightning Page "{{PAGE_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+
+### Instructions:
+
+1. **Contextual Overview**:
+    - Begin by summarizing the role of the lightning page.
+    - List the key tabs, sections, views, related lists and actions described in the lightning page.
+
+2. **Formatting Requirements**:
+    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
+    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
+    - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Never truncate any information in the response.
+    - Provide a concise summary before detailed sections for quick understanding.
+
+### Reference Data:
+
+- The metadata XML for Lightning page "{{PAGE_NAME}}" is:
+{{PAGE_XML}}
+
+Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+`
     }
   }
 }

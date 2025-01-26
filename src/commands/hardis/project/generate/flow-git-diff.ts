@@ -24,7 +24,7 @@ export default class GenerateFlowGitDiff extends SfCommand<any> {
 
   public static description = `Generate Flow Visual Git Diff markdown between 2 commits
 
-This command requires @mermaid-js/mermaid-cli to be installed.
+Note: This command might requires @mermaid-js/mermaid-cli to be installed.
 
 Run \`npm install @mermaid-js/mermaid-cli --global\`
   `;

@@ -33,6 +33,8 @@ description: Learn how to initialize a Salesforce DX Project for CI/CD
   - Bitbucket
     - `bitbucket-pipelines.yml`
 
+- During the CI/CD setup, find variable **SFDX_DISABLE_FLOW_DIFF** in your git provider pipeline and set its value to **true**, to avoid to generate too many PR comments during setup. At the end of the setup, you can set back the variable to false.
+
 > Some workflow files contain additional configuration instructions, please read the comments at the beginning of the files !
 
 You can now go to step [Setup CI Authentication](salesforce-ci-cd-setup-auth.md)

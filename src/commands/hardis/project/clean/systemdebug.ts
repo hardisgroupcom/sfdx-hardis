@@ -7,6 +7,7 @@ import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import fs from 'fs-extra';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -53,7 +54,7 @@ export default class CleanSystemDebug extends SfCommand<any> {
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.{cls,trigger}`;
-    const matchingFiles = await glob(findManagedPattern, { cwd: process.cwd() });
+    const matchingFiles = await glob(findManagedPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
     let countFiles = 0;
     for (const apexFile of matchingFiles) {
       const fileText = await fs.readFile(apexFile, 'utf8');

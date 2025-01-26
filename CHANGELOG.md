@@ -4,6 +4,70 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) enhancements:
+  - Generate Apex classes documentation using `@cparra/apexdocs`, and describe them using AI if available
+  - Generate Lightning Pages documentation and describe them using AI if available
+- Display error message in case of XML parsing error
+- Do not raise issues when managed items fields don't have descriptions
+- Do not raise inactive validation rule issue when the VR is from aa managed package
+
+## [5.16.4] 2025-01-22
+
+- Doc: Exclude not relevant md from search
+- Upgrade npm dependencies
+- Add more logs to login command
+
+## [5.16.3] 2025-01-22
+
+- Do not post comments with Flows if there is no real differences
+- Truncate the number of flows git diff displayed in Pull Request comments to 30 (override the number using MAX_FLOW_DIFF_TO_SHOW )
+- Keep history link in main flow doc if available and history not recalculated
+- Remove Flows History mkdocs menu if present from an old sfdx-hardis doc generation
+- QuickFix AI Generated Summary text in PRs
+
+## [5.16.2] 2025-01-21
+
+- Strip XML to save prompts tokens
+- Fix issue when parsing CustomObject metadata
+- Install latest version of plugin @salesforce/plugin-deploy-retrieve in Dockerfile to avoid the bug of its current version
+- Fix: Do not recalculate Flow History doc if flow has not been updated
+- Skip Data Cloud objects from documentation (enforce using variable INCLUDE_DATA_CLOUD_DOC=true)
+
+## [5.16.1] 2025-01-19
+
+- AI Cache results enhancements
+  - Normalize strings before creating fingerprint to handle multiple platforms
+  - Delete unused cache files
+- Fix variables mismatch when calling `generateFlowMarkdownFile`
+
+## [5.16.0] 2025-01-19
+
+- New AI Provider: Agentforce
+- Create Objects AI-powered documentation
+  - Summary
+  - Relationships with other objects
+  - Fields
+  - Validation rules
+  - Related flows
+- Handle prompts multilingualism (ex: `PROMPTS_LANGUAGE=fr`)
+- Handle prompts cache to save tokens
+- Add `SFDX_DISABLE_FLOW_DIFF: false` in default CI/CD pipelines (must be set to true during CI/CD setup)
+- Enhance branches & orgs CI/CD strategy mermaid diagram
+- Improve performances by using `GLOB_IGNORE_PATTERNS` for all calls to glob
+
+## [5.15.5] 2025-01-16
+
+- Flow Visual Diff enhancements
+  - Display full node fields table when it contains updated elements
+  - Fix removed long links
+  - Handle cases where Flow has been added or deleted
+- Update [hardis:project:deploy:notify](https://sfdx-hardis.cloudity.com/hardis/project/deploy/notify/) documentation
+
+## [5.15.4] 2025-01-15
+
+- Allow to disable calls to AI prompts API using DISABLE_AI=true
+- Implement AI cache to save calls to AI prompts API (can be disabled using IGNORE_AI_CACHE)
+
 ## [5.15.3] 2025-01-14
 
 - [hardis:project:generate:flow-git-diff](https://sfdx-hardis.cloudity.com/hardis/project/generate/flow-git-diff/) New parameters --commit-before and --commit-after

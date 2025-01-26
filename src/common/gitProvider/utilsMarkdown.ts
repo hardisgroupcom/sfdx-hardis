@@ -77,7 +77,14 @@ export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTar
   }
 }
 
-export async function flowDiffToMarkdownForPullRequest(flowNames: string[], fromCommit: string, toCommit: string): Promise<any> {
+export function mdTableCell(str: string) {
+  if (!str) {
+    return "<!-- -->"
+  }
+  return str.replace(/\n/gm, "<br/>".replace(/\|/gm, ""))
+}
+
+export async function flowDiffToMarkdownForPullRequest(flowNames: string[], fromCommit: string, toCommit: string, truncatedNb: number = 0): Promise<any> {
   if (flowNames.length === 0) {
     return "";
   }
@@ -103,12 +110,10 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
       }
     } catch (e: any) {
       uxLog(this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff for ${flowName}: ${e.message}`));
-      const flowGenErrorMd = `# ${flowName}
-
-Error while generating Flows visual git diff
-`;
-      flowDiffMarkdownList.push({ name: flowName, markdown: flowGenErrorMd });
     }
+  }
+  if (truncatedNb > 0) {
+    flowDiffFilesSummary += `\n\n:warning: _${truncatedNb} Flows have been truncated_\n\n`;
   }
   return {
     markdownSummary: flowDiffFilesSummary,
@@ -117,23 +122,27 @@ Error while generating Flows visual git diff
 }
 
 async function generateDiffMarkdownWithMermaid(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: false, debug: false });
-  if (outputDiffMdFile) {
+  const { outputDiffMdFile, hasFlowDiffs } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: false, debug: false });
+  if (outputDiffMdFile && hasFlowDiffs) {
     const flowDiffMarkdownMermaid = await fs.readFile(outputDiffMdFile.replace(".md", ".mermaid.md"), "utf8");
     flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownMermaid, markdownFile: outputDiffMdFile });
   }
 }
 
 async function generateDiffMarkdownWithSvg(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: true, pngMd: false, debug: false });
-  const flowDiffMarkdownWithSvg = await fs.readFile(outputDiffMdFile, "utf8");
-  flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithSvg, markdownFile: outputDiffMdFile });
+  const { outputDiffMdFile, hasFlowDiffs } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: true, pngMd: false, debug: false });
+  if (outputDiffMdFile && hasFlowDiffs && fs.existsSync(outputDiffMdFile)) {
+    const flowDiffMarkdownWithSvg = await fs.readFile(outputDiffMdFile, "utf8");
+    flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithSvg, markdownFile: outputDiffMdFile });
+  }
 }
 
 async function generateDiffMarkdownWithPng(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: true, debug: false });
-  const flowDiffMarkdownWithPng = await fs.readFile(outputDiffMdFile, "utf8");
-  flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithPng, markdownFile: outputDiffMdFile });
+  const { outputDiffMdFile, hasFlowDiffs } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: true, debug: false });
+  if (outputDiffMdFile && hasFlowDiffs && fs.existsSync(outputDiffMdFile)) {
+    const flowDiffMarkdownWithPng = await fs.readFile(outputDiffMdFile, "utf8");
+    flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithPng, markdownFile: outputDiffMdFile });
+  }
 }
 
 function getAiPromptResponseMarkdown(title, message) {

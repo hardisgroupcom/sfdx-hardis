@@ -2,16 +2,19 @@ import {
   getCurrentGitBranch,
   isCI,
 } from '../../common/utils/index.js';
+import c from "chalk"
 import { checkConfig, getConfig } from '../../config/index.js';
 import { Hook } from '@oclif/core';
 import { authOrg } from '../../common/utils/authUtils.js';
 
 const hook: Hook<'auth'> = async (options: any) => {
   const commandId = options?.Command?.id || '';
+  console.log(c.grey("Entering login Auth hook..."));
   let configInfo = await getConfig('user');
 
   // Manage authentication if DevHub is required but current user is disconnected
   if ((options as any)?.devHub === true) {
+    console.log(c.grey("We'll try to authenticate to the DevHub"));
     let devHubAlias = configInfo.devHubAlias || process.env.DEVHUB_ALIAS;
     if (devHubAlias == null) {
       await checkConfig(options);
@@ -38,6 +41,7 @@ const hook: Hook<'auth'> = async (options: any) => {
               : commandId === 'hardis:auth:login' && configInfo.orgAlias
                 ? configInfo.orgAlias
                 : configInfo.scratchOrgAlias || ''; // Can be ''  and it's ok if we're not in scratch org context
+    console.log(c.grey(`We'll try to authenticate to the org related to ${orgAlias !== configInfo.sfdxAuthUrl ? orgAlias : "sfdxAuthUrl"}`));
     await authOrg(orgAlias, options);
   }
 };

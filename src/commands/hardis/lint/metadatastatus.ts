@@ -143,6 +143,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const validationRuleFiles: string[] = await glob(this.validationRuleFilePattern, { ignore: this.ignorePatterns });
     const severityIcon = getSeverityIcon('warning');
     for (const file of validationRuleFiles) {
+      // Skip if validation rule is from a managed package
+      if (path.basename(file).includes('__')) {
+        continue;
+      }
       const ruleContent: string = await fs.readFile(file, 'utf-8');
       if (ruleContent.includes('<active>false</active>')) {
         const ruleName = path.basename(file, '.validationRule-meta.xml');

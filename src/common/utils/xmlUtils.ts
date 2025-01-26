@@ -10,8 +10,12 @@ import { CONSTANTS } from '../../config/index.js';
 
 export async function parseXmlFile(xmlFile: string) {
   const packageXmlString = await fs.readFile(xmlFile, 'utf8');
-  const parsedXml = await xml2js.parseStringPromise(packageXmlString);
-  return parsedXml;
+  try {
+    const parsedXml = await xml2js.parseStringPromise(packageXmlString);
+    return parsedXml;
+  } catch (e: any) {
+    throw new SfError(`Error parsing ${xmlFile}: ${e.message}`);
+  }
 }
 
 export async function writeXmlFile(xmlFile: string, xmlObject: any) {
