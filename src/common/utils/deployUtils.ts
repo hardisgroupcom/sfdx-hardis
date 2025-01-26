@@ -1176,11 +1176,18 @@ export async function extractOrgCoverageFromLog(stdout) {
       return result;
     }
   }
-  // Get from output file whose name has been found in text output
+  // Get from output file (1)
   const defaultCoverageOutputJsonFile = path.join(process.cwd(), "coverage", "coverage", "coverage-summary.json");
   const resultFromDefaultFile = getCoverageFromJsonFile(defaultCoverageOutputJsonFile);
   if (resultFromDefaultFile) {
     return resultFromDefaultFile;
+  }
+
+  // Get from output file (2)
+  const otherCoverageOutputJsonFile = path.join((await getReportDirectory()), "coverage", "coverage", "coverage-summary.json");
+  const resultFromOtherFile = getCoverageFromJsonFile(otherCoverageOutputJsonFile);
+  if (resultFromOtherFile) {
+    return resultFromOtherFile;
   }
 
   // Get from JSON Mode (might be best to use output file)
