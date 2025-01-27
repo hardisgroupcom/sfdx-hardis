@@ -324,9 +324,10 @@ ${Project2Markdown.htmlInstructions}
       pagesForMenu[pageName] = "pages/" + pageName + ".md";
       // Add apex code in documentation
       const pageXml = await fs.readFile(pagefile, "utf8");
+      const pageXmlParsed = new XMLParser().parse(pageXml);
       this.pageDescriptions.push({
         name: pageName,
-        type: "Flexipage",
+        type: prettifyFieldName(pageXmlParsed?.FlexiPage?.type || "Unknown"),
         impactedObjects: this.allObjectsNames.filter(objectName => pageXml.includes(`${objectName}`)).join(", ")
       });
       await generateLightningPageMarkdown(pageName, pageXml, mdFile);
