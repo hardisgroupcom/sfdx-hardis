@@ -44,8 +44,8 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     type: Flags.string({
       char: 't',
       options: ["CICD", "Monitoring"],
-      default: "CICD",
-      description: 'Type of the documentation to generate. Default is "all"',
+      default: "Monitoring",
+      description: 'Type of the documentation to generate. Default is "Monitoring"',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -69,7 +69,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(MkDocsToSalesforce);
-    const type = flags.type || "CICD";
+    const type = flags.type || "Monitoring";
     const targetUsername = flags['target-org'].getUsername();
     const conn = flags['target-org'].getConnection();
     this.debugMode = flags.debug || false;
