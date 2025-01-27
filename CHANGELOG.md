@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add type of Lightning Pages in tables
+
 ## [5.17.0] 2025-01-26
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) enhancements:
@@ -12,7 +14,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Display error message in case of XML parsing error
 - Do not raise issues when managed items fields don't have descriptions
 - Do not raise inactive validation rule issue when the VR is from a managed package
-- Fix New JSON coverage formatter is selecting wrong JSON from sf project deploy command 
+- Fix New JSON coverage formatter is selecting wrong JSON from sf project deploy command
 
 ## [5.16.4] 2025-01-22
 
