@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.17.3] 2025-01-29
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Improve Apex docs markdown
+- Upgrade apexdocs version
+- Fix auth message when selecting default org
+
 ## [5.17.2] 2025-01-29
 
 - [hardis:org:configure:files](https://sfdx-hardis.cloudity.com/hardis/org/configure/files/): Add examples when configuring file export format

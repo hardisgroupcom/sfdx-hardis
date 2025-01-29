@@ -41,7 +41,7 @@ const hook: Hook<'auth'> = async (options: any) => {
               : commandId === 'hardis:auth:login' && configInfo.orgAlias
                 ? configInfo.orgAlias
                 : configInfo.scratchOrgAlias || ''; // Can be ''  and it's ok if we're not in scratch org context
-    console.log(c.grey(`We'll try to authenticate to the org related to ${orgAlias !== configInfo.sfdxAuthUrl ? orgAlias : "sfdxAuthUrl"}`));
+    console.log(c.grey(`We'll try to authenticate to the org related to ${orgAlias !== configInfo.sfdxAuthUrl ? (orgAlias || "DEFAULT ORG") : "sfdxAuthUrl"}`));
     await authOrg(orgAlias, options);
   }
 };
