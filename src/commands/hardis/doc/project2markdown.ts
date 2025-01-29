@@ -257,16 +257,15 @@ ${Project2Markdown.htmlInstructions}
           scope: ['global', 'public', 'private'],
           targetGenerator: "markdown"
         });
+        // Copy files to apex folder
+        const apexDocFolder = path.join(this.outputMarkdownRoot, "apex");
+        await fs.ensureDir(apexDocFolder);
+        await fs.copy(path.join(tempDir, "miscellaneous"), apexDocFolder, { overwrite: true });
       }
       catch (e: any) {
         uxLog(this, c.yellow(`Error generating Apex documentation: ${JSON.stringify(e, null, 2)}`));
         uxLog(this, c.grey(e.stack));
       }
-
-      // Copy files to apex folder
-      const apexDocFolder = path.join(this.outputMarkdownRoot, "apex");
-      await fs.ensureDir(apexDocFolder);
-      await fs.copy(path.join(tempDir, "miscellaneous"), apexDocFolder, { overwrite: true });
       /*
       await ApexDocGen({
         sourceDir: packageDir.path,
