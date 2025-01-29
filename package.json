@@ -6,7 +6,7 @@
   "version": "5.17.2",
   "dependencies": {
     "@actions/github": "^6.0.0",
-    "@cparra/apexdocs": "^3.7.2",
+    "@cparra/apexdocs": "^3.7.3",
     "@gitbeaker/node": "^35.8.1",
     "@oclif/core": "^4.2.4",
     "@salesforce/core": "^8.8.2",
