@@ -609,17 +609,17 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
       {
         type: 'text',
         name: 'outputFolderNameField',
-        message: 'Please input the field to use to build the name of the folder containing downloaded files',
+        message: 'Please input the field to use to build the name of the folder containing downloaded files (can be the name, or another field like External ID)',
         initial: filesExportConfig.outputFolderNameField,
       },
       {
         type: 'select',
         name: 'outputFileNameFormat',
         choices: [
-          { value: 'title', title: 'title' },
-          { value: 'title_id', title: 'title_id' },
-          { value: 'id_title', title: 'id_title' },
-          { value: 'id', title: 'id' },
+          { value: 'title', title: 'title (ex: "Cloudity New Project")' },
+          { value: 'title_id', title: 'title_id (ex: "Cloudity New Project_006bR00000Bet7WQAR")' },
+          { value: 'id_title', title: 'id_title (ex: "006bR00000Bet7WQAR_Cloudity New Project")' },
+          { value: 'id', title: 'id (ex: "006bR00000Bet7WQAR")' },
         ],
         message: 'Please select the format of output files names',
         initial: filesExportConfig.outputFileNameFormat,
