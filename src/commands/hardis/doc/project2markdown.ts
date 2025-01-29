@@ -261,6 +261,7 @@ ${Project2Markdown.htmlInstructions}
         const apexDocFolder = path.join(this.outputMarkdownRoot, "apex");
         await fs.ensureDir(apexDocFolder);
         await fs.copy(path.join(tempDir, "miscellaneous"), apexDocFolder, { overwrite: true });
+        uxLog(this, c.grey(`Generated markdown for Apex classes in ${apexDocFolder}`));
       }
       catch (e: any) {
         uxLog(this, c.yellow(`Error generating Apex documentation: ${JSON.stringify(e, null, 2)}`));
@@ -295,8 +296,9 @@ ${Project2Markdown.htmlInstructions}
         apexMdContent = apexMdContent.replaceAll("..\\custom-objects\\", "../objects/").replaceAll("../custom-objects/", "../objects/")
         // Add text before the first ##
         if (!["MetadataService"].includes(apexName)) {
-          const replacement = `\n\n## AI-Generated description\n\n<!-- Apex description -->\n\n## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`
-          apexMdContent = apexMdContent.replace(/##/, replacement);
+          const insertion = `## AI-Generated description\n\n<!-- Apex description -->\n\n## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`
+          const firstHeading = apexMdContent.indexOf("## ");
+          apexMdContent = apexMdContent.substring(0, firstHeading) + insertion + apexMdContent.substring(firstHeading);
           apexMdContent = await completeApexDocWithAiDescription(apexMdContent, apexName, apexContent);
           await fs.writeFile(mdFile, apexMdContent);
         }
