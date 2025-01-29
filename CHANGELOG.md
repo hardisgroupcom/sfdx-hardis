@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:configure:files](https://sfdx-hardis.cloudity.com/hardis/org/configure/files/): Add examples when configuring file export format
+
 ## [5.17.1] 2025-01-27
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add type of Lightning Pages in tables
