@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Display error message in case of XML parsing error
+- New command [hardis:doc:fieldusage](https://sfdx-hardis.cloudity.com/hardis/doc/fieldusage/) to generate a report with custom field's usage from metadata dependencies.
 
 ## [5.16.4] 2025-01-22
 
