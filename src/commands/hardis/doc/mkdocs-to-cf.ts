@@ -60,11 +60,11 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
 
   protected debugMode = false;
   protected apiEmail: string | undefined;
-  protected apiKey: string | undefined;
+  protected apiToken: string | undefined;
   protected accountId: string | undefined;
   protected client: Cloudflare;
   protected currentGitBranch: string | null;
-  protected appName: string;
+  protected pagesProjectName: string;
   protected pagesProject: Cloudflare.Pages.Projects.Project;
   protected accessPolicyName: string;
   protected accessPolicy: Cloudflare.ZeroTrust.Access.Policies.PolicyGetResponse;
@@ -84,7 +84,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     }
 
     this.currentGitBranch = (await getCurrentGitBranch() || "main").replace(/\//g, "-");
-    this.appName = `sfdx-hardis-app-${this.currentGitBranch}`;
+    this.pagesProjectName = `sfdx-hardis-project-${this.currentGitBranch}`;
     this.accessAppName = `sfdx-hardis-access-app-${this.currentGitBranch}`;
     this.accessPolicyName = `sfdx-hardis-access-policy-${this.currentGitBranch}`;
 
@@ -108,28 +108,31 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
 
   private async ensureCloudflareAccessApplication() {
     uxLog(this, c.cyan("Checking Cloudflare access application..."));
-    this.accessApp = await this.client.zeroTrust.access.applications.get(this.accessAppName, { account_id: this.accountId || "" });
-    if (!this.accessApp) {
+    try {
+      this.accessApp = await this.client.zeroTrust.access.applications.get(this.accessAppName, { account_id: this.accountId || "" });
+      uxLog(this, c.cyan("Cloudflare access application found: " + this.accessAppName));
+    } catch (e: any) {
+      uxLog(this, c.grey(e.message));
       this.accessApp = await this.client.zeroTrust.access.applications.create({
         name: this.accessAppName,
         account_id: this.accountId || "",
-        type: "pages",
+        type: "self_hosted",
+        domain: this.pagesProject?.domains?.[0],
         policies: [{
           id: this.accessPolicy.id,
         }],
       });
       uxLog(this, c.cyan("Cloudflare access application created: " + this.accessAppName));
     }
-    else {
-      uxLog(this, c.cyan("Cloudflare access application found: " + this.accessAppName));
-    }
     uxLog(this, c.grey(JSON.stringify(this.accessApp)));
-
   }
 
   private async ensureCloudflareAccessPolicy() {
-    this.accessPolicy = await this.client.zeroTrust.access.policies.get(this.accessPolicyName, { account_id: this.accountId || "" });
-    if (!this.accessPolicy) {
+    try {
+      this.accessPolicy = await this.client.zeroTrust.access.policies.get(this.accessPolicyName, { account_id: this.accountId || "" });
+      uxLog(this, c.cyan("Cloudflare policy found: " + this.accessPolicyName));
+    } catch (e: any) {
+      uxLog(this, c.grey(e.message));
       this.accessPolicy = await this.client.zeroTrust.access.policies.create({
         name: this.accessPolicyName,
         account_id: this.accountId || "",
@@ -152,31 +155,31 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
 
   private async ensureCloudflarePagesProject() {
     uxLog(this, c.cyan("Checking Cloudflare Pages project..."));
-    this.pagesProject = await this.client.pages.projects.get(this.appName, { account_id: this.accountId || "" });
-    if (!this.pagesProject) {
+    try {
+      this.pagesProject = await this.client.pages.projects.get(this.pagesProjectName, { account_id: this.accountId || "" });
+      uxLog(this, c.cyan("Cloudflare Pages project found: " + this.pagesProjectName));
+    } catch (e: any) {
+      uxLog(this, c.grey(e.message));
       this.pagesProject = await this.client.pages.projects.create({
-        name: this.appName,
+        name: this.pagesProjectName,
         account_id: this.accountId || "",
         production_branch: this.currentGitBranch || "main",
       });
-      uxLog(this, c.cyan("Cloudflare Pages project created: " + this.appName));
-    }
-    else {
-      uxLog(this, c.cyan("Cloudflare Pages project found: " + this.appName));
+      uxLog(this, c.cyan("Cloudflare Pages project created: " + this.pagesProjectName));
     }
     uxLog(this, c.grey(JSON.stringify(this.pagesProject)));
   }
 
   private setupCloudflareClient() {
     this.apiEmail = process.env.CLOUDFLARE_EMAIL;
-    this.apiKey = process.env.CLOUDFLARE_API_KEY;
+    this.apiToken = process.env.CLOUDFLARE_API_TOKEN;
     this.accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-    if (!this.apiEmail || !this.accountId || !this.apiKey) {
+    if (!this.apiEmail || !this.accountId || !this.apiToken) {
       throw new Error('Missing CLOUDFLARE_EMAIL or CLOUDFLARE_API_KEY or CLOUDFLARE_ACCOUNT_ID');
     }
     this.client = new Cloudflare({
       apiEmail: this.apiEmail,
-      apiKey: this.apiKey,
+      apiToken: this.apiToken,
     });
     uxLog(this, c.grey("Cloudflare client info found"));
   }
