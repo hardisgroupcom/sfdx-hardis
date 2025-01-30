@@ -362,7 +362,7 @@ If Flow history doc always display a single state, you probably need to update y
       packageXmlChunkFiles.push(packageChunkFileName);
       uxLog(this, c.grey(`Chunk ${pos} -> ${packageChunkFileName}:`))
       for (const mdType of Object.keys(packageChunk)) {
-        uxLog(this, c.grey(`- ${mdType} (${packageChunk[mdType].length} elements)`));
+        uxLog(this, c.grey(`- ${mdType} (${packageChunk?.[mdType]?.length || 0} elements)`));
       }
       uxLog(this, "");
       pos++;
@@ -439,7 +439,7 @@ If Flow history doc always display a single state, you probably need to update y
     const packageXml = await parsePackageXmlFile(packageXmlBackUpItemsFile);
     uxLog(this, c.cyan(`Run the retrieve command for ${path.basename(packageXmlBackUpItemsFile)}, containing ${nbRetrievedItems} items:`));
     for (const mdType of Object.keys(packageXml)) {
-      uxLog(this, c.cyan(`- ${mdType} (${packageXml[mdType].length})`));
+      uxLog(this, c.cyan(`- ${mdType} (${packageXml?.[mdType]?.length || 0})`));
     }
     try {
       await execCommand(

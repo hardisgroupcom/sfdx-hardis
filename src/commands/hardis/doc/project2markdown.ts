@@ -3,18 +3,19 @@ import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/s
 import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
+import { process as ApexDocGen } from '@cparra/apexdocs';
 import { XMLParser } from "fast-xml-parser";
 import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { completeAttributesDescriptionWithAi, generateObjectMarkdown, generatePackageXmlMarkdown, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
+import { completeApexDocWithAiDescription, completeAttributesDescriptionWithAi, generateLightningPageMarkdown, generateObjectMarkdown, generatePackageXmlMarkdown, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
 import { countPackageXmlItems, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
-import { GLOB_IGNORE_PATTERNS, listFlowFiles } from '../../../common/utils/projectUtils.js';
+import { GLOB_IGNORE_PATTERNS, listApexFiles, listFlowFiles, listPageFiles, returnApexType } from '../../../common/utils/projectUtils.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
@@ -34,7 +35,7 @@ To read the documentation as HTML pages, run the following code (you need [**Pyt
 
 \`\`\`python
 pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists
-mkdocs serve || python -m mkdocs serve || py -m mkdocs serve
+mkdocs serve -v || python -m mkdocs serve -v || py -m mkdocs serve -v
 \`\`\`
 
 To just generate HTML pages that you can host anywhere, run \`mkdocs build || python -m mkdocs build || py -m mkdocs build\`
@@ -126,7 +127,9 @@ ${this.htmlInstructions}
   protected withHistory = false;
   protected debugMode = false;
   protected footer: string;
+  protected apexDescriptions: any[] = [];
   protected flowDescriptions: any[] = [];
+  protected pageDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
   protected objectFiles: string[];
   protected allObjectsNames: string[];
@@ -190,9 +193,19 @@ ${this.htmlInstructions}
     this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS })).sort();
     this.allObjectsNames = this.objectFiles.map(object => path.basename(object, ".object"));
 
+    // Generate Apex doc
+    if (!(process?.env?.GENERATE_APEX_DOC === 'false')) {
+      await this.generateApexDocumentation();
+    }
+
     // List flows & generate doc
     if (!(process?.env?.GENERATE_FLOW_DOC === 'false')) {
       await this.generateFlowsDocumentation();
+    }
+
+    // List flows & generate doc
+    if (!(process?.env?.GENERATE_PAGES_DOC === 'false')) {
+      await this.generatePagesDocumentation();
     }
 
     // List flows & generate doc
@@ -228,6 +241,106 @@ ${Project2Markdown.htmlInstructions}
     WebSocketClient.requestOpenFile(this.outputMarkdownIndexFile);
 
     return { outputPackageXmlMarkdownFiles: this.outputPackageXmlMarkdownFiles };
+  }
+
+  private async generateApexDocumentation() {
+    uxLog(this, c.cyan("Generating Apex documentation... (if you don't want it, define GENERATE_APEX_DOC=false in your environment variables)"));
+    const tempDir = await createTempDir();
+    uxLog(this, c.grey(`Using temp directory ${tempDir}`));
+    const packageDirs = this.project?.getPackageDirectories() || [];
+    for (const packageDir of packageDirs) {
+      try {
+        await ApexDocGen({
+          sourceDir: packageDir.path,
+          targetDir: tempDir,
+          exclude: ["**/MetadataService.cls"],
+          scope: ['global', 'public', 'private'],
+          targetGenerator: "markdown"
+        });
+        // Copy files to apex folder
+        const apexDocFolder = path.join(this.outputMarkdownRoot, "apex");
+        await fs.ensureDir(apexDocFolder);
+        await fs.copy(path.join(tempDir, "miscellaneous"), apexDocFolder, { overwrite: true });
+        uxLog(this, c.grey(`Generated markdown for Apex classes in ${apexDocFolder}`));
+      }
+      catch (e: any) {
+        uxLog(this, c.yellow(`Error generating Apex documentation: ${JSON.stringify(e, null, 2)}`));
+        uxLog(this, c.grey(e.stack));
+      }
+      /*
+      await ApexDocGen({
+        sourceDir: packageDir.path,
+        targetDir: tempDir,
+        targetGenerator: "openapi"
+      });
+      */
+    }
+    const apexFiles = await listApexFiles(packageDirs);
+    const apexForMenu: any = { "All Apex Classes": "apex/index.md" }
+    for (const apexFile of apexFiles) {
+      const apexName = path.basename(apexFile, ".cls").replace(".trigger", "");
+      const mdFile = path.join(this.outputMarkdownRoot, "apex", apexName + ".md");
+      if (fs.existsSync(mdFile)) {
+        apexForMenu[apexName] = "apex/" + apexName + ".md";
+
+        // Add apex code in documentation
+        const apexContent = await fs.readFile(apexFile, "utf8");
+        this.apexDescriptions.push({
+          name: apexName,
+          type: returnApexType(apexContent),
+          impactedObjects: this.allObjectsNames.filter(objectName => apexContent.includes(`${objectName}`)).join(", ")
+        });
+
+        let apexMdContent = await fs.readFile(mdFile, "utf8");
+        // Replace object links
+        apexMdContent = apexMdContent.replaceAll("..\\custom-objects\\", "../objects/").replaceAll("../custom-objects/", "../objects/")
+        // Add text before the first ##
+        if (!["MetadataService"].includes(apexName)) {
+          const insertion = `## AI-Generated description\n\n<!-- Apex description -->\n\n## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`
+          const firstHeading = apexMdContent.indexOf("## ");
+          apexMdContent = apexMdContent.substring(0, firstHeading) + insertion + apexMdContent.substring(firstHeading);
+          apexMdContent = await completeApexDocWithAiDescription(apexMdContent, apexName, apexContent);
+          await fs.writeFile(mdFile, apexMdContent);
+        }
+        uxLog(this, c.grey(`Generated markdown for Apex class ${apexName}`));
+      }
+    }
+    this.mkDocsNavNodes["Apex"] = apexForMenu;
+
+    this.mdLines.push(...this.buildApexTable("apex/"));
+
+    // Write index file for apex folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "apex"));
+    const apexIndexFile = path.join(this.outputMarkdownRoot, "apex", "index.md");
+    await fs.writeFile(apexIndexFile, this.buildApexTable('').join("\n") + `\n\n${this.footer}\n`);
+  }
+
+  private async generatePagesDocumentation() {
+    const packageDirs = this.project?.getPackageDirectories() || [];
+    const pageFiles = await listPageFiles(packageDirs);
+    const pagesForMenu: any = { "All Lightning pages": "pages/index.md" }
+    for (const pagefile of pageFiles) {
+      const pageName = path.basename(pagefile, "flexipage-meta.xml");
+      const mdFile = path.join(this.outputMarkdownRoot, "pages", pageName + ".md");
+      pagesForMenu[pageName] = "pages/" + pageName + ".md";
+      // Add apex code in documentation
+      const pageXml = await fs.readFile(pagefile, "utf8");
+      const pageXmlParsed = new XMLParser().parse(pageXml);
+      this.pageDescriptions.push({
+        name: pageName,
+        type: prettifyFieldName(pageXmlParsed?.FlexiPage?.type || "Unknown"),
+        impactedObjects: this.allObjectsNames.filter(objectName => pageXml.includes(`${objectName}`)).join(", ")
+      });
+      await generateLightningPageMarkdown(pageName, pageXml, mdFile);
+    }
+    this.mkDocsNavNodes["Lightning Pages"] = pagesForMenu;
+
+    this.mdLines.push(...this.buildPagesTable("pages/"));
+
+    // Write index file for apex folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "pages"));
+    const pagesIndexFile = path.join(this.outputMarkdownRoot, "pages", "index.md");
+    await fs.writeFile(pagesIndexFile, this.buildPagesTable('').join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async buildMkDocsYml() {
@@ -312,6 +425,10 @@ ${Project2Markdown.htmlInstructions}
       // Flows Tables
       const relatedObjectFlowsTable = await this.buildFlowsTable('../flows/', objectName);
       await replaceInFile(objectMdFile, '<!-- Flows table -->', relatedObjectFlowsTable.join("\n"));
+      const relatedApexTable = this.buildApexTable('../apex/', objectName);
+      await replaceInFile(objectMdFile, '<!-- Apex table -->', relatedApexTable.join("\n"));
+      const relatedPages = this.buildPagesTable('../pages/', objectName);
+      await replaceInFile(objectMdFile, '<!-- Pages table -->', relatedPages.join("\n"));
       this.objectDescriptions.push({
         name: objectName,
         label: objectXmlParsed?.CustomObject?.label || "",
@@ -370,7 +487,6 @@ ${Project2Markdown.htmlInstructions}
     const flowErrors: string[] = [];
     const flowWarnings: string[] = [];
     const flowSkips: string[] = [];
-    this.flowDescriptions = [];
     for (const flowFile of flowFiles) {
       const flowName = path.basename(flowFile, ".flow-meta.xml");
       const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
@@ -490,6 +606,50 @@ ${Project2Markdown.htmlInstructions}
       const objectNameCell = `[${objectDescription.name}](${prefix}${objectDescription.name}.md)`;
       lines.push(...[
         `| ${objectNameCell} | ${objectDescription.label || ""} | ${mdTableCell(objectDescription.description)} |`
+      ]);
+    }
+    lines.push("");
+    return lines;
+  }
+
+  private buildApexTable(prefix: string, filterObject: string | null = null) {
+    const filteredApex = filterObject ? this.apexDescriptions.filter(apex => apex.impactedObjects.includes(filterObject)) : this.apexDescriptions;
+    if (filteredApex.length === 0) {
+      return [];
+    }
+    const lines: string[] = [];
+    lines.push(...[
+      filterObject ? "## Related Apex Classes" : "## Apex Classes",
+      "",
+      "| Apex Class | Type |",
+      "| :----      | :--: | "
+    ]);
+    for (const apex of filteredApex) {
+      const flowNameCell = `[${apex.name}](${prefix}${apex.name}.md)`;
+      lines.push(...[
+        `| ${flowNameCell} | ${apex.type} |`
+      ]);
+    }
+    lines.push("");
+    return lines;
+  }
+
+  private buildPagesTable(prefix: string, filterObject: string | null = null) {
+    const filteredPages = filterObject ? this.pageDescriptions.filter(page => page.impactedObjects.includes(filterObject)) : this.pageDescriptions;
+    if (filteredPages.length === 0) {
+      return [];
+    }
+    const lines: string[] = [];
+    lines.push(...[
+      filterObject ? "## Related Lightning Pages" : "## Lightning Pages",
+      "",
+      "| Lightning Page | Type |",
+      "| :----      | :--: | "
+    ]);
+    for (const page of filteredPages) {
+      const pageNameCell = `[${page.name}](${prefix}${page.name}.md)`;
+      lines.push(...[
+        `| ${pageNameCell} | ${page.type} |`
       ]);
     }
     lines.push("");

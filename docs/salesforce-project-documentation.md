@@ -6,7 +6,14 @@ description: Learn how to generate Salesforce project documentation, including F
 
 ## Salesforce Project Documentation
 
-With a single command, you can generate a Web Site documenting your Salesforce metadatas (like Flows)
+With a single command, you can generate a Web Site documenting your Salesforce metadatas
+
+- Custom Objects (with fields, validation rules, relationships and dependencies)
+- Flows
+- Apex Classes
+- Lightning Pages
+
+The documentation will be [supercharged with AI](salesforce-ai-setup.md) if activated;
 
 ![](assets/images/project-documentation.gif)
 
@@ -24,9 +31,9 @@ If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strateg
 ## Run Locally
 
 - Run command **Documentation Generation > Run local HTML Doc Pages** (Note: you need  [Python](https://www.python.org/downloads/) on your computer)
-  - Corresponding command lines: `pip install mkdocs-material mdx_truly_sane_lists`, then `mkdocs serve`
-  - Alternative 1: `python -m pip install mkdocs-material mdx_truly_sane_lists`, then `python -m mkdocs serve`
-  - Alternative 2: `py -m pip install mkdocs-material mdx_truly_sane_lists`, then `py -m mkdocs serve`
+  - Corresponding command lines: `pip install mkdocs-material mdx_truly_sane_lists`, then `mkdocs serve -v`
+  - Alternative 1: `python -m pip install mkdocs-material mdx_truly_sane_lists`, then `python -m mkdocs serve -v`
+  - Alternative 2: `py -m pip install mkdocs-material mdx_truly_sane_lists`, then `py -m mkdocs serve -v`
 
 - Open <http://127.0.0.1:8000/> in your Web Browser
 

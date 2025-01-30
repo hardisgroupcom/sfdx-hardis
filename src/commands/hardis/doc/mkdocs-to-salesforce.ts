@@ -261,7 +261,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
 - VisualForce page: ${vfPageMetaFile}
 - Custom tab: ${tabMetaFile}
 - Permission Set: ${permissionSetFile}
-You can also run the documentation locally using "mkdocs serve || python -m mkdocs serve || py -m mkdocs serve"
+You can also run the documentation locally using "mkdocs serve -v || python -m mkdocs serve -v || py -m mkdocs serve -v"
 `));
       }
     }
