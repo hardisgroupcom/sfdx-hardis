@@ -9,6 +9,7 @@ import Cloudflare from 'cloudflare';
 import { execCommand, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
 
 import { CONSTANTS } from '../../../config/index.js';
+import which from 'which';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -64,12 +65,14 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
   protected accountId: string | undefined;
   protected client: Cloudflare;
   protected currentGitBranch: string | null;
+  protected defaultLoginMethodType: string = process.env.CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE || "onetimepin";
+  protected defaultAccessEmailDomain: string = process.env.CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN || "@cloudity.com";
   protected pagesProjectName: string;
   protected pagesProject: Cloudflare.Pages.Projects.Project;
   protected accessPolicyName: string;
-  protected accessPolicy: Cloudflare.ZeroTrust.Access.Policies.PolicyGetResponse;
+  protected accessPolicy: Cloudflare.ZeroTrust.Access.Policies.PolicyGetResponse | null;
   protected accessAppName: string;
-  protected accessApp: Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse;
+  protected accessApp: Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication | null;
 
   /* jscpd:ignore-end */
 
@@ -103,71 +106,13 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     // Ensure there is an access application
     await this.ensureCloudflareAccessApplication();
 
+    // Ensure the access application has the right policy
+    await this.ensureCloudflareAccessApplicationPolicy();
+
+    // Upload pages
+    await this.uploadHtmlPages();
+
     return { success: true };
-  }
-
-  private async ensureCloudflareAccessApplication() {
-    uxLog(this, c.cyan("Checking Cloudflare access application..."));
-    try {
-      this.accessApp = await this.client.zeroTrust.access.applications.get(this.accessAppName, { account_id: this.accountId || "" });
-      uxLog(this, c.cyan("Cloudflare access application found: " + this.accessAppName));
-    } catch (e: any) {
-      uxLog(this, c.grey(e.message));
-      this.accessApp = await this.client.zeroTrust.access.applications.create({
-        name: this.accessAppName,
-        account_id: this.accountId || "",
-        type: "self_hosted",
-        domain: this.pagesProject?.domains?.[0],
-        policies: [{
-          id: this.accessPolicy.id,
-        }],
-      });
-      uxLog(this, c.cyan("Cloudflare access application created: " + this.accessAppName));
-    }
-    uxLog(this, c.grey(JSON.stringify(this.accessApp)));
-  }
-
-  private async ensureCloudflareAccessPolicy() {
-    try {
-      this.accessPolicy = await this.client.zeroTrust.access.policies.get(this.accessPolicyName, { account_id: this.accountId || "" });
-      uxLog(this, c.cyan("Cloudflare policy found: " + this.accessPolicyName));
-    } catch (e: any) {
-      uxLog(this, c.grey(e.message));
-      this.accessPolicy = await this.client.zeroTrust.access.policies.create({
-        name: this.accessPolicyName,
-        account_id: this.accountId || "",
-        decision: "allow",
-        include: [
-          {
-            auth_method: { auth_method: "otp" }
-          }
-        ],
-        require: [
-          {
-            email_domain: { domain: "@cloudity.com" },
-          }
-        ],
-      });
-      uxLog(this, c.cyan("Cloudflare policy created: " + this.accessPolicyName));
-    }
-    uxLog(this, c.grey(JSON.stringify(this.accessPolicy)));
-  }
-
-  private async ensureCloudflarePagesProject() {
-    uxLog(this, c.cyan("Checking Cloudflare Pages project..."));
-    try {
-      this.pagesProject = await this.client.pages.projects.get(this.pagesProjectName, { account_id: this.accountId || "" });
-      uxLog(this, c.cyan("Cloudflare Pages project found: " + this.pagesProjectName));
-    } catch (e: any) {
-      uxLog(this, c.grey(e.message));
-      this.pagesProject = await this.client.pages.projects.create({
-        name: this.pagesProjectName,
-        account_id: this.accountId || "",
-        production_branch: this.currentGitBranch || "main",
-      });
-      uxLog(this, c.cyan("Cloudflare Pages project created: " + this.pagesProjectName));
-    }
-    uxLog(this, c.grey(JSON.stringify(this.pagesProject)));
   }
 
   private setupCloudflareClient() {
@@ -182,6 +127,90 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
       apiToken: this.apiToken,
     });
     uxLog(this, c.grey("Cloudflare client info found"));
+  }
+
+  private async ensureCloudflarePagesProject() {
+    uxLog(this, c.cyan("Checking Cloudflare Pages project..."));
+    try {
+      this.pagesProject = await this.client.pages.projects.get(this.pagesProjectName, { account_id: this.accountId || "" });
+      uxLog(this, c.cyan("Cloudflare Pages project found: " + this.pagesProjectName));
+    } catch (e: any) {
+      uxLog(this, c.grey(e.message));
+      this.pagesProject = await this.client.pages.projects.create({
+        name: this.pagesProjectName,
+        account_id: this.accountId || "",
+        production_branch: this.currentGitBranch || "main",
+      });
+      uxLog(this, c.green("Cloudflare Pages project created: " + this.pagesProjectName));
+    }
+    uxLog(this, c.grey(JSON.stringify(this.pagesProject, null, 2)));
+  }
+
+  private async ensureCloudflareAccessPolicy() {
+    uxLog(this, c.cyan("Checking Cloudflare Access policy..."));
+    const accessPolicies = await this.client.zeroTrust.access.policies.list({ account_id: this.accountId || "" });
+    this.accessPolicy = accessPolicies.result.find((p: Cloudflare.ZeroTrust.Access.Policies.PolicyGetResponse) => p.name === this.accessPolicyName) || null;
+    if (this.accessPolicy) {
+      uxLog(this, c.cyan("Cloudflare policy found: " + this.accessPolicyName));
+    }
+    else {
+      const loginMethods = await this.client.zeroTrust.identityProviders.list({ account_id: this.accountId || "" });
+      const defaultLoginMethod = loginMethods.result.find((m: Cloudflare.ZeroTrust.IdentityProviders.IdentityProviderListResponse) => m.type === this.defaultLoginMethodType);
+      if (!defaultLoginMethod) {
+        throw new SfError(`No login method of type ${this.defaultLoginMethodType} found in Cloudflare account. Please create one in Zero Trust/Settings before running this command`);
+      }
+      this.accessPolicy = await this.client.zeroTrust.access.policies.create({
+        name: this.accessPolicyName,
+        account_id: this.accountId || "",
+        decision: "allow",
+        include: [
+          { login_method: { id: defaultLoginMethod.id } }
+        ],
+        require: [
+          {
+            email_domain: { domain: this.defaultAccessEmailDomain },
+          }
+        ],
+      } as any);
+      uxLog(this, c.green("Cloudflare policy created: " + this.accessPolicyName));
+    }
+    uxLog(this, c.grey(JSON.stringify(this.accessPolicy, null, 2)));
+  }
+
+  private async ensureCloudflareAccessApplication() {
+    uxLog(this, c.cyan("Checking Cloudflare access application..."));
+    const accessApplications = await this.client.zeroTrust.access.applications.list({ account_id: this.accountId || "" });
+    this.accessApp = (accessApplications.result.find((a: Cloudflare.ZeroTrust.Access.Applications.ApplicationListResponse) => a.name === this.accessAppName) || null) as any;
+    if (this.accessApp) {
+      uxLog(this, c.cyan("Cloudflare access application found: " + this.accessAppName));
+    }
+    else {
+      this.accessApp = (await this.client.zeroTrust.access.applications.create({
+        name: this.accessAppName,
+        account_id: this.accountId || "",
+        type: "self_hosted",
+        domain: this.pagesProject?.domains?.[0],
+      }) as Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication);
+      uxLog(this, c.green("Cloudflare access application created: " + this.accessAppName));
+    }
+    uxLog(this, c.grey(JSON.stringify(this.accessApp, null, 2)));
+  }
+
+  private async ensureCloudflareAccessApplicationPolicy() {
+    uxLog(this, c.cyan("Checking Cloudflare access application policy..."));
+    if (this.accessApp?.policies?.length && this.accessApp.policies.find(p => p.id === this.accessPolicy?.id)) {
+      uxLog(this, c.cyan(`Access Application ${this.accessApp.name} already has the policy ${this.accessPolicy?.name}`));
+    }
+    else {
+      this.accessApp = (await this.client.zeroTrust.access.applications.update(this.accessApp?.id || "", {
+        account_id: this.accountId,
+        domain: this.accessApp?.domain,
+        type: this.accessApp?.type,
+        policies: [this.accessPolicy?.id || ""],
+      })) as Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication;
+      uxLog(this, c.green(`Access Application ${this.accessApp?.name} updated with the policy ${this.accessPolicy?.name}`));
+    }
+    uxLog(this, c.grey(JSON.stringify(this.accessApp, null, 2)));
   }
 
   private async generateMkDocsHTML() {
@@ -212,6 +241,16 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
       mkdocsLocalOk = true;
     }
     return mkdocsLocalOk;
+  }
+
+  private async uploadHtmlPages() {
+    uxLog(this, c.cyan("Uploading HTML pages to Cloudflare Pages..."));
+    let wranglerCommand = `wrangler pages publish ./site --project-name="${this.pagesProjectName}" --branch=${this.currentGitBranch}`;
+    const isWranglerAvailable = await which("wrangler", { nothrow: true });
+    if (!isWranglerAvailable) {
+      wranglerCommand = "npx --yes " + wranglerCommand;
+    }
+    await execCommand(wranglerCommand, this, { fail: true, output: true, debug: this.debugMode });
   }
 
 }
