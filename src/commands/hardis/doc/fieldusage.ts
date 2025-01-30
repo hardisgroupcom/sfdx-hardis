@@ -107,7 +107,7 @@ export default class HardisDocFieldusage extends SfCommand<any> {
     });
     await Promise.all(fieldQueries);
 
-    const dependencyQueries = Object.entries(sObjectsDict).map(async ([sObjectName, { publisherId, fields }]) => {
+    const dependencyQueries = Object.entries(sObjectsDict).map(async ([sObjectName, { fields }]) => {
       if (fields.length === 0) {
         uxLog(this, `sObject ${sObjectName} does not have any custom fields, skipping dependencies.`);
         return;
