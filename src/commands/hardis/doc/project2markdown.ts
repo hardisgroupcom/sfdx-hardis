@@ -320,7 +320,7 @@ ${Project2Markdown.htmlInstructions}
     const pageFiles = await listPageFiles(packageDirs);
     const pagesForMenu: any = { "All Lightning pages": "pages/index.md" }
     for (const pagefile of pageFiles) {
-      const pageName = path.basename(pagefile, "flexipage-meta.xml");
+      const pageName = path.basename(pagefile, ".flexipage-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "pages", pageName + ".md");
       pagesForMenu[pageName] = "pages/" + pageName + ".md";
       // Add apex code in documentation

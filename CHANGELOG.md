@@ -4,7 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- New command [hardis:doc:fieldusage](https://sfdx-hardis.cloudity.com/hardis/doc/fieldusage/) to generate a report with custom field's usage from metadata dependencies.
+- New command [hardis:doc:fieldusage](https://sfdx-hardis.cloudity.com/hardis/doc/fieldusage/) : generate a report with custom field's usage from metadata dependencies.
+
+## [5.17.4] 2025-01-31
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fixes pages menu
+- Stealth feature
 
 ## [5.17.3] 2025-01-29
 
