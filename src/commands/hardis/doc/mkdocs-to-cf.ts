@@ -83,7 +83,6 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
   protected pagesProject: Cloudflare.Pages.Projects.Project;
   protected accessPolicyName: string;
   protected accessPolicy: Cloudflare.ZeroTrust.Access.Policies.PolicyGetResponse | null;
-  protected accessAppName: string;
   protected accessApp: Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication | null;
 
   /* jscpd:ignore-end */
@@ -101,7 +100,6 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     this.currentGitBranch = await getCurrentGitBranch() || "main";
     this.projectName = (process.env.CLOUDFLARE_PROJECT_NAME || this.currentGitBranch).replace(/\//g, "-").toLowerCase();
     this.pagesProjectName = `sfdoc-${this.projectName}`;
-    this.accessAppName = `access-app-${this.projectName}`;
     this.accessPolicyName = `access-policy-${this.projectName}`;
 
     // Create connection to Cloudflare
@@ -193,13 +191,13 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
   private async ensureCloudflareAccessApplication() {
     uxLog(this, c.cyan("Checking Cloudflare access application..."));
     const accessApplications = await this.client.zeroTrust.access.applications.list({ account_id: this.accountId || "" });
-    this.accessApp = (accessApplications.result.find((a: Cloudflare.ZeroTrust.Access.Applications.ApplicationListResponse) => a.name === this.accessAppName) || null) as any;
+    this.accessApp = (accessApplications.result.find((a: Cloudflare.ZeroTrust.Access.Applications.ApplicationListResponse) => a.name === this.pagesProject?.domains?.[0]) || null) as any;
     if (this.accessApp) {
-      uxLog(this, c.cyan("Cloudflare access application found: " + this.accessAppName));
+      uxLog(this, c.cyan("Cloudflare access application found: " + this.pagesProject?.domains?.[0]));
     }
     else {
       this.accessApp = (await this.client.zeroTrust.access.applications.create({
-        name: this.accessAppName,
+        name: this.pagesProject?.domains?.[0],
         account_id: this.accountId || "",
         type: "self_hosted",
         domain: this.pagesProject?.domains?.[0],
@@ -214,7 +212,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
           }
         ]
       }) as Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication);
-      uxLog(this, c.green("Cloudflare access application created: " + this.accessAppName));
+      uxLog(this, c.green("Cloudflare access application created: " + this.pagesProject?.domains?.[0]));
     }
     uxLog(this, c.grey(JSON.stringify(this.accessApp, null, 2)));
   }
