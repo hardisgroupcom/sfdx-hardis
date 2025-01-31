@@ -9,7 +9,7 @@ import { createTempDir, execCommand, isCI, uxLog } from '../../../common/utils/i
 import { createBlankSfdxProject } from '../../../common/utils/projectUtils.js';
 import { initPermissionSetAssignments, isProductionOrg } from '../../../common/utils/orgUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
-import { readMkDocsFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
+import { generateMkDocsHTML, readMkDocsFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -88,7 +88,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
 
     try {
       // Generate HTML pages
-      await this.generateMkDocsHTML();
+      await generateMkDocsHTML();
 
       // Create temp sfdx project
       const tmpDirForSfdxProject = await createTempDir();
@@ -122,36 +122,6 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
       // Restore previous mkdocs.yml version
       await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
       throw e;
-    }
-  }
-
-  private async installMkDocs() {
-    uxLog(this, c.cyan("Managing mkdocs-material local installation..."));
-    let mkdocsLocalOk = false;
-    const installMkDocsRes = await execCommand("pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists", this, { fail: false, output: true, debug: this.debugMode });
-    if (installMkDocsRes.status === 0) {
-      mkdocsLocalOk = true;
-    }
-    return mkdocsLocalOk;
-  }
-
-  private async generateMkDocsHTML() {
-    const mkdocsLocalOk = await this.installMkDocs();
-    if (mkdocsLocalOk) {
-      // Generate MkDocs HTML pages with local MkDocs
-      uxLog(this, c.cyan("Generating HTML pages with mkdocs..."));
-      const mkdocsBuildRes = await execCommand("mkdocs build || python -m mkdocs build || py -m mkdocs build", this, { fail: false, output: true, debug: this.debugMode });
-      if (mkdocsBuildRes.status !== 0) {
-        throw new SfError('MkDocs build failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
-      }
-    }
-    else {
-      // Generate MkDocs HTML pages with Docker
-      uxLog(this, c.cyan("Generating HTML pages with Docker..."));
-      const mkdocsBuildRes = await execCommand("docker run --rm -v $(pwd):/docs squidfunk/mkdocs-material build", this, { fail: false, output: true, debug: this.debugMode });
-      if (mkdocsBuildRes.status !== 0) {
-        throw new SfError('MkDocs build with docker failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
-      }
     }
   }
 

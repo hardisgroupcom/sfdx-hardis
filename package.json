@@ -20,6 +20,7 @@
     "bitbucket": "^2.12.0",
     "chalk": "^5.4.1",
     "chrome-launcher": "^1.1.2",
+    "cloudflare": "^4.0.0",
     "columnify": "^1.6.0",
     "cosmiconfig": "^9.0.0",
     "cross-spawn": "^7.0.6",
