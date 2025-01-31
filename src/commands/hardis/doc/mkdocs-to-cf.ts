@@ -34,11 +34,22 @@ You can:
 - Override default styles by customizing mkdocs.yml
 
 More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-project-documentation/)
+
+
+| Variable                                   | Description | Default |
+| :----------------------------------------- | :---------- | :-----: |
+| \`CLOUDFLARE_EMAIL\`                       | Cloudflare account email | <!--- Required --> |
+| \`CLOUDFLARE_API_KEY\`                     | Cloudflare API key | <!--- Required --> |
+| \`CLOUDFLARE_ACCOUNT_ID\`                  | Cloudflare account | <!--- Required --> |
+| \`CLOUDFLARE_PROJECT_NAME\`                | Project name, that will also be used for site URL | Built from git branch name |
+| \`CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE\`   | Cloudflare default login method type | \`onetimepin\` |
+| \`CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN\` | Cloudflare default access email domain | \`@cloudity.com\` |
+
 `;
 
   public static examples = [
     '$ sf hardis:doc:mkdocs-to-cf',
-    '$ CLOUDFLARE_EMAIL=xxx@xxx.com CLOUDFLARE_API_KEY=zzzzzz CLOUDFLARE_ACCOUNT_ID=zzzzz sf hardis:doc:mkdocs-to-cf',
+    '$ CLOUDFLARE_EMAIL=xxx@xxx.com CLOUDFLARE_API_TOKEN=zzzzzz CLOUDFLARE_ACCOUNT_ID=zzzzz sf hardis:doc:mkdocs-to-cf',
   ];
 
   public static flags: any = {
@@ -64,6 +75,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
   protected apiToken: string | undefined;
   protected accountId: string | undefined;
   protected client: Cloudflare;
+  protected projectName: string | null;
   protected currentGitBranch: string | null;
   protected defaultLoginMethodType: string = process.env.CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE || "onetimepin";
   protected defaultAccessEmailDomain: string = process.env.CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN || "@cloudity.com";
@@ -86,10 +98,11 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
       throw new SfError('This command needs a mkdocs.yml config file. Generate one using "sf hardis:doc:project2markdown --with-history"');
     }
 
-    this.currentGitBranch = (await getCurrentGitBranch() || "main").replace(/\//g, "-");
-    this.pagesProjectName = `sfdx-hardis-project-${this.currentGitBranch}`;
-    this.accessAppName = `sfdx-hardis-access-app-${this.currentGitBranch}`;
-    this.accessPolicyName = `sfdx-hardis-access-policy-${this.currentGitBranch}`;
+    this.currentGitBranch = await getCurrentGitBranch() || "main";
+    this.projectName = (process.env.CLOUDFLARE_PROJECT_NAME || this.currentGitBranch).replace(/\//g, "-").toLowerCase();
+    this.pagesProjectName = `sfdoc-${this.projectName}`;
+    this.accessAppName = `access-app-${this.projectName}`;
+    this.accessPolicyName = `access-policy-${this.projectName}`;
 
     // Create connection to Cloudflare
     this.setupCloudflareClient();
@@ -120,7 +133,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     this.apiToken = process.env.CLOUDFLARE_API_TOKEN;
     this.accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
     if (!this.apiEmail || !this.accountId || !this.apiToken) {
-      throw new Error('Missing CLOUDFLARE_EMAIL or CLOUDFLARE_API_KEY or CLOUDFLARE_ACCOUNT_ID');
+      throw new Error('Missing CLOUDFLARE_EMAIL or CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID');
     }
     this.client = new Cloudflare({
       apiEmail: this.apiEmail,
@@ -190,6 +203,16 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
         account_id: this.accountId || "",
         type: "self_hosted",
         domain: this.pagesProject?.domains?.[0],
+        destinations: [
+          {
+            "type": "public",
+            "uri": `${this.pagesProject?.domains?.[0]}`
+          },
+          {
+            "type": "public",
+            "uri": `*.${this.pagesProject?.domains?.[0]}`
+          }
+        ]
       }) as Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication);
       uxLog(this, c.green("Cloudflare access application created: " + this.accessAppName));
     }
@@ -205,9 +228,10 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
       this.accessApp = (await this.client.zeroTrust.access.applications.update(this.accessApp?.id || "", {
         account_id: this.accountId,
         domain: this.accessApp?.domain,
+        destinations: this.accessApp?.destinations,
         type: this.accessApp?.type,
         policies: [this.accessPolicy?.id || ""],
-      })) as Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication;
+      } as Cloudflare.ZeroTrust.Access.ApplicationUpdateParams)) as Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication;
       uxLog(this, c.green(`Access Application ${this.accessApp?.name} updated with the policy ${this.accessPolicy?.name}`));
     }
     uxLog(this, c.grey(JSON.stringify(this.accessApp, null, 2)));
