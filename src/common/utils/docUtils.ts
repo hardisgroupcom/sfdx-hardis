@@ -1,7 +1,7 @@
 import * as path from "path";
 import c from 'chalk';
 import fs from 'fs-extra';
-import { uxLog } from "./index.js";
+import { execCommand, uxLog } from "./index.js";
 import * as yaml from 'js-yaml';
 import { countPackageXmlItems, parsePackageXmlFile } from "./xmlUtils.js";
 import { CONSTANTS } from "../../config/index.js";
@@ -392,4 +392,34 @@ export async function replaceInFile(filePath: string, stringToReplace: string, r
   const fileContent = await fs.readFile(filePath, 'utf8');
   const newContent = fileContent.replaceAll(stringToReplace, replaceWith);
   await fs.writeFile(filePath, newContent);
+}
+
+export async function generateMkDocsHTML() {
+  const mkdocsLocalOk = await installMkDocs();
+  if (mkdocsLocalOk) {
+    // Generate MkDocs HTML pages with local MkDocs
+    uxLog(this, c.cyan("Generating HTML pages with mkdocs..."));
+    const mkdocsBuildRes = await execCommand("mkdocs build -v || python -m mkdocs build -v || py -m mkdocs build -v", this, { fail: false, output: true, debug: this.debugMode });
+    if (mkdocsBuildRes.status !== 0) {
+      throw new SfError('MkDocs build failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
+    }
+  }
+  else {
+    // Generate MkDocs HTML pages with Docker
+    uxLog(this, c.cyan("Generating HTML pages with Docker..."));
+    const mkdocsBuildRes = await execCommand("docker run --rm -v $(pwd):/docs squidfunk/mkdocs-material build -v", this, { fail: false, output: true, debug: this.debugMode });
+    if (mkdocsBuildRes.status !== 0) {
+      throw new SfError('MkDocs build with docker failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
+    }
+  }
+}
+
+export async function installMkDocs() {
+  uxLog(this, c.cyan("Managing mkdocs-material local installation..."));
+  let mkdocsLocalOk = false;
+  const installMkDocsRes = await execCommand("pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists", this, { fail: false, output: true, debug: this.debugMode });
+  if (installMkDocsRes.status === 0) {
+    mkdocsLocalOk = true;
+  }
+  return mkdocsLocalOk;
 }

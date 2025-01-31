@@ -10,6 +10,7 @@ import { execCommand, getCurrentGitBranch, uxLog } from '../../../common/utils/i
 
 import { CONSTANTS } from '../../../config/index.js';
 import which from 'which';
+import { generateMkDocsHTML } from '../../../common/utils/docUtils.js';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -106,7 +107,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     this.setupCloudflareClient();
 
     // Generate HTML pages
-    await this.generateMkDocsHTML();
+    await generateMkDocsHTML();
 
     // Get or Create Cloudflare Pages project
     await this.ensureCloudflarePagesProject();
@@ -233,36 +234,6 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
       uxLog(this, c.green(`Access Application ${this.accessApp?.name} updated with the policy ${this.accessPolicy?.name}`));
     }
     uxLog(this, c.grey(JSON.stringify(this.accessApp, null, 2)));
-  }
-
-  private async generateMkDocsHTML() {
-    const mkdocsLocalOk = await this.installMkDocs();
-    if (mkdocsLocalOk) {
-      // Generate MkDocs HTML pages with local MkDocs
-      uxLog(this, c.cyan("Generating HTML pages with mkdocs..."));
-      const mkdocsBuildRes = await execCommand("mkdocs build -v || python -m mkdocs build -v || py -m mkdocs build -v", this, { fail: false, output: true, debug: this.debugMode });
-      if (mkdocsBuildRes.status !== 0) {
-        throw new SfError('MkDocs build failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
-      }
-    }
-    else {
-      // Generate MkDocs HTML pages with Docker
-      uxLog(this, c.cyan("Generating HTML pages with Docker..."));
-      const mkdocsBuildRes = await execCommand("docker run --rm -v $(pwd):/docs squidfunk/mkdocs-material build -v", this, { fail: false, output: true, debug: this.debugMode });
-      if (mkdocsBuildRes.status !== 0) {
-        throw new SfError('MkDocs build with docker failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
-      }
-    }
-  }
-
-  private async installMkDocs() {
-    uxLog(this, c.cyan("Managing mkdocs-material local installation..."));
-    let mkdocsLocalOk = false;
-    const installMkDocsRes = await execCommand("pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists", this, { fail: false, output: true, debug: this.debugMode });
-    if (installMkDocsRes.status === 0) {
-      mkdocsLocalOk = true;
-    }
-    return mkdocsLocalOk;
   }
 
   private async uploadHtmlPages() {
