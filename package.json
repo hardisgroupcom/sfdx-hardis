@@ -90,7 +90,7 @@
     "@types/sort-array": "^4.1.2",
     "@types/update-notifier": "^6.0.8",
     "@types/which": "^3.0.4",
-    "@types/ws": "^8.5.13",
+    "@types/ws": "^8.5.14",
     "@types/xml2js": "^0.4.14",
     "eslint-plugin-sf-plugin": "^1.20.14",
     "oclif": "^4.17.17",
