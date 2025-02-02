@@ -50,7 +50,7 @@
     "open": "^10.1.0",
     "openai": "^4.78.1",
     "ora": "^8.1.1",
-    "papaparse": "^5.5.1",
+    "papaparse": "^5.5.2",
     "pascalcase": "^2.0.0",
     "psl": "^1.15.0",
     "puppeteer-core": "^23.11.1",
