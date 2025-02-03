@@ -17,7 +17,10 @@ export default class HardisDocFieldusage extends SfCommand<any> {
     }),
   };
 
-  public static description = 'Retrieves custom field usage from metadata dependencies for specified sObjects.';
+  public static description = `
+    Retrieves custom field usage from metadata dependencies for specified sObjects.
+    !["Find custom fields usage"](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/doc-fieldusage.png)
+  `;
 
   public static examples = [
     '$ sf hardis:doc:fieldusage',
@@ -129,29 +132,23 @@ export default class HardisDocFieldusage extends SfCommand<any> {
 
     const columns = [
       { key: 'sObjectName', header: 'sObject Name' },
-      { key: 'publisherId', header: 'Publisher Id' },
-      { key: 'fieldId', header: 'Field Id' },
       { key: 'fieldName', header: 'Field Name' },
       { key: 'fieldType', header: 'Field Type' },
-      { key: 'dependencyId', header: 'Dependency Id' },
       { key: 'dependencyType', header: 'Dependency Type' },
       { key: 'dependencyName', header: 'Dependency Name' }
     ];
 
     const rows: any[] = [];
 
-    for (const [sObjectName, { publisherId, fields }] of Object.entries(sObjectsDict)) {
+    for (const [sObjectName, { fields }] of Object.entries(sObjectsDict)) {
       fields.forEach((field) => {
         field.usedIn.forEach((dep) => {
           const row = {};
           row[columns[0].key] = sObjectName;
-          row[columns[1].key] = publisherId;
-          row[columns[2].key] = field.id;
-          row[columns[3].key] = field.name;
-          row[columns[4].key] = field.type;
-          row[columns[5].key] = dep.id;
-          row[columns[6].key] = dep.type;
-          row[columns[7].key] = dep.name;
+          row[columns[1].key] = field.name;
+          row[columns[2].key] = field.type;
+          row[columns[3].key] = dep.type;
+          row[columns[4].key] = dep.name;
 
           rows.push(row);
         });
@@ -159,7 +156,7 @@ export default class HardisDocFieldusage extends SfCommand<any> {
     }
 
     const resultSorted = sortArray(rows, {
-      by: [columns[0].key, columns[3].key, columns[6].key],
+      by: [columns[0].key, columns[1].key, columns[3].key],
       order: ['asc', 'asc', 'asc'],
     });
 
