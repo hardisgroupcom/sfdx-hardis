@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New command [hardis:doc:fieldusage](https://sfdx-hardis.cloudity.com/hardis/doc/fieldusage/) : generate a report with custom field's usage from metadata dependencies.
+
 ## [5.17.4] 2025-01-31
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fixes pages menu
@@ -30,10 +32,10 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) enhancements:
   - Generate Apex classes documentation using `@cparra/apexdocs`, and describe them using AI if available
   - Generate Lightning Pages documentation and describe them using AI if available
-- Display error message in case of XML parsing error
-- Do not raise issues when managed items fields don't have descriptions
-- Do not raise inactive validation rule issue when the VR is from a managed package
-- Fix New JSON coverage formatter is selecting wrong JSON from sf project deploy command
+  - Display error message in case of XML parsing error
+  - Do not raise issues when managed items fields don't have descriptions
+  - Do not raise inactive validation rule issue when the VR is from a managed package
+  - Fix New JSON coverage formatter is selecting wrong JSON from sf project deploy command
 
 ## [5.16.4] 2025-01-22
 
