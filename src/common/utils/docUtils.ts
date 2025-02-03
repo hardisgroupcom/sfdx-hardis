@@ -249,7 +249,7 @@ export async function generateObjectMarkdown(objectName: string, objectXmlDefini
   let mdLinesStr = mdLines.join("\n") + "\n";
   mdLinesStr = await completeObjectDocWithAiDescription(mdLinesStr, objectName, objectXmlDefinition, allObjectsNames, objectLinksDetails);
   // Write output file
-  await fs.writeFile(outputFile, mdLinesStr);
+  await fs.writeFile(outputFile, getMetaHideLines() + mdLinesStr);
   uxLog(this, c.green(`Successfully generated ${objectName} documentation into ${outputFile}`));
   return outputFile;
 }
@@ -271,7 +271,7 @@ export async function generateLightningPageMarkdown(pageName: string, pageXml: s
   mdLinesStr = await completePageDocWithAiDescription(mdLinesStr, pageName, pageXml);
   // Write output file
   await fs.ensureDir(path.dirname(outputFile));
-  await fs.writeFile(outputFile, mdLinesStr);
+  await fs.writeFile(outputFile, getMetaHideLines() + mdLinesStr);
   uxLog(this, c.green(`Successfully generated ${pageName} documentation into ${outputFile}`));
   return outputFile;
 }
@@ -422,4 +422,13 @@ export async function installMkDocs() {
     mkdocsLocalOk = true;
   }
   return mkdocsLocalOk;
+}
+
+export function getMetaHideLines() {
+  return `---
+hide:
+  - path
+---
+
+`;
 }

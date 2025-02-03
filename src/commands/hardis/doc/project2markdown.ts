@@ -9,7 +9,7 @@ import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { completeApexDocWithAiDescription, completeAttributesDescriptionWithAi, generateLightningPageMarkdown, generateObjectMarkdown, generatePackageXmlMarkdown, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
+import { completeApexDocWithAiDescription, completeAttributesDescriptionWithAi, generateLightningPageMarkdown, generateObjectMarkdown, generatePackageXmlMarkdown, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
 import { countPackageXmlItems, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
@@ -178,9 +178,9 @@ ${this.htmlInstructions}
       // Branches & orgs
       branchesAndOrgsLines = await this.buildMajorBranchesAndOrgs();
     }
-    await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-params.md"), sfdxHardisParamsLines.join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-params.md"), getMetaHideLines() + sfdxHardisParamsLines.join("\n") + `\n${this.footer}\n`);
     this.addNavNode("SFDX-Hardis Config", "sfdx-hardis-params.md");
-    await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-branches-and-orgs.md"), branchesAndOrgsLines.join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-branches-and-orgs.md"), getMetaHideLines() + branchesAndOrgsLines.join("\n") + `\n${this.footer}\n`);
     this.addNavNode("Branches & Orgs", "sfdx-hardis-branches-and-orgs.md");
 
     // List SFDX packages and generate a manifest for each of them, except if there is only force-app with a package.xml
@@ -189,11 +189,11 @@ ${this.htmlInstructions}
     const instanceUrl = flags?.['target-org']?.getConnection()?.instanceUrl;
     await this.generatePackageXmlMarkdown(this.packageXmlCandidates, instanceUrl);
     const packageLines = await this.buildPackagesIndex();
-    await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), packageLines.join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), getMetaHideLines() + packageLines.join("\n") + `\n${this.footer}\n`);
 
     // List managed packages
     const installedPackages = await this.buildInstalledPackages();
-    await fs.writeFile(path.join(this.outputMarkdownRoot, "installed-packages.md"), installedPackages.join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "installed-packages.md"), getMetaHideLines() + installedPackages.join("\n") + `\n${this.footer}\n`);
     this.addNavNode("Installed Packages", "installed-packages.md");
 
 
@@ -225,7 +225,7 @@ ${this.htmlInstructions}
 
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
-    await fs.writeFile(this.outputMarkdownIndexFile, this.mdLines.join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(this.outputMarkdownIndexFile, getMetaHideLines() + this.mdLines.join("\n") + `\n\n${this.footer}\n`);
     uxLog(this, c.green(`Successfully generated doc index at ${this.outputMarkdownIndexFile}`));
 
     const readmeFile = path.join(process.cwd(), "README.md");
@@ -310,7 +310,7 @@ ${Project2Markdown.htmlInstructions}
           const firstHeading = apexMdContent.indexOf("## ");
           apexMdContent = apexMdContent.substring(0, firstHeading) + insertion + apexMdContent.substring(firstHeading);
           apexMdContent = await completeApexDocWithAiDescription(apexMdContent, apexName, apexContent);
-          await fs.writeFile(mdFile, apexMdContent);
+          await fs.writeFile(mdFile, getMetaHideLines() + apexMdContent);
         }
         uxLog(this, c.grey(`Generated markdown for Apex class ${apexName}`));
       }
@@ -320,7 +320,7 @@ ${Project2Markdown.htmlInstructions}
     // Write index file for apex folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "apex"));
     const apexIndexFile = path.join(this.outputMarkdownRoot, "apex", "index.md");
-    await fs.writeFile(apexIndexFile, this.buildApexTable('').join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(apexIndexFile, getMetaHideLines() + this.buildApexTable('').join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async generatePagesDocumentation() {
@@ -346,7 +346,7 @@ ${Project2Markdown.htmlInstructions}
     // Write index file for apex folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "pages"));
     const pagesIndexFile = path.join(this.outputMarkdownRoot, "pages", "index.md");
-    await fs.writeFile(pagesIndexFile, this.buildPagesTable('').join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(pagesIndexFile, getMetaHideLines() + this.buildPagesTable('').join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async buildMkDocsYml() {
@@ -449,7 +449,7 @@ ${Project2Markdown.htmlInstructions}
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
     const objectsTableLinesForIndex = await this.buildObjectsTable('');
     const objectsIndexFile = path.join(this.outputMarkdownRoot, "objects", "index.md");
-    await fs.writeFile(objectsIndexFile, objectsTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(objectsIndexFile, getMetaHideLines() + objectsTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
   }
 
   private async buildAttributesTables(objectName: string, objectXmlParsed: any, objectMdFile: string) {
@@ -557,7 +557,7 @@ ${Project2Markdown.htmlInstructions}
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const flowTableLinesForIndex = await this.buildFlowsTable('');
     const flowIndexFile = path.join(this.outputMarkdownRoot, "flows", "index.md");
-    await fs.writeFile(flowIndexFile, flowTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
+    await fs.writeFile(flowIndexFile, getMetaHideLines() + flowTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
 
     this.addNavNode("Flows", flowsForMenu);
     uxLog(this, c.green(`Successfully generated doc index for Flows at ${flowIndexFile}`));
