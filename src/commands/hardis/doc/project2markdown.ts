@@ -11,7 +11,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { completeApexDocWithAiDescription, completeAttributesDescriptionWithAi, generateLightningPageMarkdown, generateObjectMarkdown, generatePackageXmlMarkdown, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
 import { countPackageXmlItems, parseXmlFile } from '../../../common/utils/xmlUtils.js';
-import { bool2emoji, createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, getGitRepoName, uxLog } from '../../../common/utils/index.js';
+import { bool2emoji, createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
@@ -38,19 +38,27 @@ pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python
 mkdocs serve -v || python -m mkdocs serve -v || py -m mkdocs serve -v
 \`\`\`
 
-To just generate HTML pages that you can host anywhere, run \`mkdocs build || python -m mkdocs build || py -m mkdocs build\`
+To just generate HTML pages that you can host anywhere, run \`mkdocs build -v || python -m mkdocs build -v || py -m mkdocs build -v\`
 `
 
   public static description = `Generates a markdown documentation from a SFDX project
 
-- Package.xml files
-- Source Packages
-- sfdx-hardis configuration
-- Installed packages
+- Objects
+- Flows
+- Apex
+- Lightning Pages
+- SFDX-Hardis Config
+- Branches & Orgs
+- Installed Packages
+- Manifests
 
 Can work on any sfdx project, no need for it to be a sfdx-hardis flavored one.
 
 Generates markdown files will be written in **docs** folder (except README.md where a link to doc index is added)
+
+- You can customize the pages following [mkdocs-material setup documentation](https://squidfunk.github.io/mkdocs-material/setup/)
+- You can manually add new markdown files in the "docs" folder to extend this documentation and add references to them in "mkdocs.yml"
+- You can also add images in folder "docs/assets" and embed them in markdown files.
 
 To read Flow documentations if your markdown reader doesn't handle MermaidJS syntax, this command could require @mermaid-js/mermaid-cli
 
@@ -123,7 +131,7 @@ ${this.htmlInstructions}
   protected mdLines: string[] = [];
   protected sfdxHardisConfig: any = {};
   protected outputPackageXmlMarkdownFiles: any[] = [];
-  protected mkDocsNavNodes: any = { "Home": "index.md" };
+  protected mkDocsNavNodes: any[] = [{ "Home": "index.md" }];
   protected withHistory = false;
   protected debugMode = false;
   protected footer: string;
@@ -147,29 +155,33 @@ ${this.htmlInstructions}
     const currentBranch = await getCurrentGitBranch()
     this.footer = `_Documentation generated from branch ${currentBranch} with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) by [Cloudity](${CONSTANTS.WEBSITE_URL}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`;
 
+    this.mdLines.push(...[
+      "Welcome to the documentation of your Salesforce project.",
+      "",
+      "- [Objects](objects/index.md)",
+      "- [Flows](flows/index.md)",
+      "- [Apex](apex/index.md)",
+      "- [Lightning Pages](pages/index.md)",
+      "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
+      "- [Branches & Orgs](sfdx-hardis-branches-and-orgs.md)",
+      "- [Installed Packages](installed-packages.md)",
+      "- [Manifests](manifests.md)",
+      ""
+    ]);
+
+    let sfdxHardisParamsLines = ["Available only in a [sfdx-hardis CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)"];
+    let branchesAndOrgsLines = ["Available only in a [sfdx-hardis CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)"];
     if (fs.existsSync("config/.sfdx-hardis.yml")) {
       this.sfdxHardisConfig = await getConfig("project");
-
       // General sfdx-hardis config
-      const sfdxHardisParamsLines = this.buildSfdxHardisParams();
-      this.mdLines.push(...sfdxHardisParamsLines);
-      await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-params.md"), sfdxHardisParamsLines.join("\n") + `\n${this.footer}\n`);
-      this.mkDocsNavNodes["SFDX-Hardis Config"] = "sfdx-hardis-params.md";
-
+      sfdxHardisParamsLines = this.buildSfdxHardisParams();
       // Branches & orgs
-      const branchesAndOrgsLines = await this.buildMajorBranchesAndOrgs();
-      this.mdLines.push(...branchesAndOrgsLines);
-      await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-branches-and-orgs.md"), branchesAndOrgsLines.join("\n") + `\n${this.footer}\n`);
-      this.mkDocsNavNodes["Branches & Orgs"] = "sfdx-hardis-branches-and-orgs.md";
+      branchesAndOrgsLines = await this.buildMajorBranchesAndOrgs();
     }
-    else {
-      const repoName = (await getGitRepoName() || "").replace(".git", "");
-      const branchName = await getCurrentGitBranch() || ""
-      this.mdLines.push(...[
-        `## ${repoName}/${branchName} SFDX Project Content`,
-        "",
-      ]);
-    }
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-params.md"), sfdxHardisParamsLines.join("\n") + `\n${this.footer}\n`);
+    this.addNavNode("SFDX-Hardis Config", "sfdx-hardis-params.md");
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-branches-and-orgs.md"), branchesAndOrgsLines.join("\n") + `\n${this.footer}\n`);
+    this.addNavNode("Branches & Orgs", "sfdx-hardis-branches-and-orgs.md");
 
     // List SFDX packages and generate a manifest for each of them, except if there is only force-app with a package.xml
     this.packageXmlCandidates = this.listPackageXmlCandidates();
@@ -177,14 +189,12 @@ ${this.htmlInstructions}
     const instanceUrl = flags?.['target-org']?.getConnection()?.instanceUrl;
     await this.generatePackageXmlMarkdown(this.packageXmlCandidates, instanceUrl);
     const packageLines = await this.buildPackagesIndex();
-    this.mdLines.push(...packageLines);
     await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), packageLines.join("\n") + `\n${this.footer}\n`);
 
     // List managed packages
     const installedPackages = await this.buildInstalledPackages();
-    this.mdLines.push(...installedPackages);
     await fs.writeFile(path.join(this.outputMarkdownRoot, "installed-packages.md"), installedPackages.join("\n") + `\n${this.footer}\n`);
-    this.mkDocsNavNodes["Installed Packages"] = "installed-packages.md";
+    this.addNavNode("Installed Packages", "installed-packages.md");
 
 
     this.tempDir = await createTempDir()
@@ -215,7 +225,7 @@ ${this.htmlInstructions}
 
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
-    await fs.writeFile(this.outputMarkdownIndexFile, this.mdLines.join("\n") + "\n\n" + Project2Markdown.htmlInstructions + `\n\n${this.footer}\n`);
+    await fs.writeFile(this.outputMarkdownIndexFile, this.mdLines.join("\n") + `\n\n${this.footer}\n`);
     uxLog(this, c.green(`Successfully generated doc index at ${this.outputMarkdownIndexFile}`));
 
     const readmeFile = path.join(process.cwd(), "README.md");
@@ -305,9 +315,7 @@ ${Project2Markdown.htmlInstructions}
         uxLog(this, c.grey(`Generated markdown for Apex class ${apexName}`));
       }
     }
-    this.mkDocsNavNodes["Apex"] = apexForMenu;
-
-    this.mdLines.push(...this.buildApexTable("apex/"));
+    this.addNavNode("Apex", apexForMenu);
 
     // Write index file for apex folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "apex"));
@@ -333,9 +341,7 @@ ${Project2Markdown.htmlInstructions}
       });
       await generateLightningPageMarkdown(pageName, pageXml, mdFile);
     }
-    this.mkDocsNavNodes["Lightning Pages"] = pagesForMenu;
-
-    this.mdLines.push(...this.buildPagesTable("pages/"));
+    this.addNavNode("Lightning Pages", pagesForMenu);
 
     // Write index file for apex folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "pages"));
@@ -359,18 +365,16 @@ ${Project2Markdown.htmlInstructions}
     }
     // Update mkdocs nav items
     const mkdocsYml: any = readMkDocsFile(mkdocsYmlFile);
-    for (const menuName of Object.keys(this.mkDocsNavNodes)) {
+    for (const navMenu of this.mkDocsNavNodes) {
       let pos = 0;
       let found = false;
       for (const navItem of mkdocsYml.nav) {
-        if (navItem[menuName]) {
+        if (Object.keys(navItem)[0] === Object.keys(navMenu)[0]) {
           found = true;
           break;
         }
         pos++;
       }
-      const navMenu = {};
-      navMenu[menuName] = this.mkDocsNavNodes[menuName];
       if (found) {
         mkdocsYml.nav[pos] = navMenu;
       } else {
@@ -396,6 +400,9 @@ ${Project2Markdown.htmlInstructions}
 
     // Remove deprecated Flows History if found
     mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem["Flows History"]);
+    // Order nav items with this elements in first
+    const firstItemsInOrder = ["Home", "Objects", "Flows", "Apex", "Lightning Pages", "SFDX-Hardis Config", "Branches & Orgs", "Installed Packages", "Manifests"];
+    mkdocsYml.nav = firstItemsInOrder.map(item => mkdocsYml.nav.find(navItem => Object.keys(navItem)[0] === item)).filter(item => item).concat(mkdocsYml.nav.filter(navItem => !firstItemsInOrder.includes(Object.keys(navItem)[0])));
     // Update mkdocs file
     await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
     uxLog(this, c.cyan(`To generate a HTML WebSite with this documentation with a single command, see instructions at ${CONSTANTS.DOC_URL_ROOT}/hardis/doc/project2markdown/`));
@@ -436,11 +443,7 @@ ${Project2Markdown.htmlInstructions}
       });
       objectsForMenu[objectName] = "objects/" + objectName + ".md";
     }
-    this.mkDocsNavNodes["Objects"] = objectsForMenu;
-    // Write table on doc index
-    const objectsTableLines = await this.buildObjectsTable('objects/');
-    this.mdLines.push(...objectsTableLines);
-    this.mdLines.push(...["___", ""]);
+    this.addNavNode("Objects", objectsForMenu);
 
     // Write index file for objects folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
@@ -550,18 +553,13 @@ ${Project2Markdown.htmlInstructions}
       uxLog(this, c.yellow(`Error generating documentation for ${flowErrors.length} Flows: ${this.humanDisplay(flowErrors)}`));
     }
 
-    // Write table on doc index
-    const flowTableLines = await this.buildFlowsTable('flows/');
-    this.mdLines.push(...flowTableLines);
-    this.mdLines.push(...["___", ""]);
-
     // Write index file for flow folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const flowTableLinesForIndex = await this.buildFlowsTable('');
     const flowIndexFile = path.join(this.outputMarkdownRoot, "flows", "index.md");
     await fs.writeFile(flowIndexFile, flowTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
 
-    this.mkDocsNavNodes["Flows"] = flowsForMenu;
+    this.addNavNode("Flows", flowsForMenu);
     uxLog(this, c.green(`Successfully generated doc index for Flows at ${flowIndexFile}`));
   }
 
@@ -841,8 +839,20 @@ ${Project2Markdown.htmlInstructions}
     packageLines.push("");
     packageLines.push("___");
     packageLines.push("");
-    this.mkDocsNavNodes["Manifests"] = packagesForMenu;
+    this.addNavNode("Manifests", packagesForMenu);
     return packageLines;
+  }
+
+  private addNavNode(nodeName, nodeValue) {
+    const nodeIndex = this.mkDocsNavNodes.findIndex(navNode => Object.keys(navNode)[0] === nodeName);
+    if (nodeIndex > -1) {
+      this.mkDocsNavNodes[nodeIndex][nodeName] = nodeValue;
+    }
+    else {
+      const nodeMenu = {};
+      nodeMenu[nodeName] = nodeValue;
+      this.mkDocsNavNodes.push(nodeMenu);
+    }
   }
 
   private async generatePackageXmlMarkdown(packageXmlCandidates, instanceUrl) {
