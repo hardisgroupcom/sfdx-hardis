@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.18.1] 2025-02-04
+
+- Fix typo in docUtils
+- Stealth enhancements
+
 ## [5.18.0] 2025-02-03
 
 - New command [hardis:doc:fieldusage](https://sfdx-hardis.cloudity.com/hardis/doc/fieldusage/) : generate a report with custom field's usage from metadata dependencies.
