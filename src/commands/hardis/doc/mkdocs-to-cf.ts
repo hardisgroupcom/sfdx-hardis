@@ -37,20 +37,20 @@ You can:
 More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-project-documentation/)
 
 
-| Variable                                   | Description | Default |
-| :----------------------------------------- | :---------- | :-----: |
-| \`CLOUDFLARE_EMAIL\`                       | Cloudflare account email | <!--- Required --> |
-| \`CLOUDFLARE_API_KEY\`                     | Cloudflare API key | <!--- Required --> |
-| \`CLOUDFLARE_ACCOUNT_ID\`                  | Cloudflare account | <!--- Required --> |
-| \`CLOUDFLARE_PROJECT_NAME\`                | Project name, that will also be used for site URL | Built from git branch name |
-| \`CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE\`   | Cloudflare default login method type | \`onetimepin\` |
-| \`CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN\` | Cloudflare default access email domain | \`@cloudity.com\` |
+| Variable                                        | Description | Default |
+| :-----------------------------------------      | :---------- | :-----: |
+| \`CLOUDFLARE_EMAIL\`                            | Cloudflare account email | <!--- Required --> |
+| \`CLOUDFLARE_API_KEY\`                          | Cloudflare API key | <!--- Required --> |
+| \`CLOUDFLARE_ACCOUNT_ID\`                       | Cloudflare account | <!--- Required --> |
+| \`CLOUDFLARE_PROJECT_NAME\`                     | Project name, that will also be used for site URL | Built from git branch name |
+| \`CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE\`        | Cloudflare default login method type | \`onetimepin\` |
+| \`CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN\`      | Cloudflare default access email domain | \`@cloudity.com\` |
+| \`CLOUDFLARE_EXTRA_ACCESS_POLICY_ID_LIST\`    | Policies to assign to every application access | <!--- Optional --> |
 
 `;
 
   public static examples = [
     '$ sf hardis:doc:mkdocs-to-cf',
-    '$ CLOUDFLARE_EMAIL=xxx@xxx.com CLOUDFLARE_API_TOKEN=zzzzzz CLOUDFLARE_ACCOUNT_ID=zzzzz sf hardis:doc:mkdocs-to-cf',
   ];
 
   public static flags: any = {
@@ -84,6 +84,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
   protected pagesProject: Cloudflare.Pages.Projects.Project;
   protected accessPolicyName: string;
   protected accessPolicy: Cloudflare.ZeroTrust.Access.Policies.PolicyGetResponse | null;
+  protected extraPolicyIds: string[] = (process.env.CLOUDFLARE_EXTRA_ACCESS_POLICY_ID_LIST || "").split(",").filter(p => p);
   protected accessApp: Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication | null;
 
   /* jscpd:ignore-end */
@@ -107,7 +108,9 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     this.setupCloudflareClient();
 
     // Generate HTML pages
-    await generateMkDocsHTML();
+    if ((process.env?.SKIP_BUILD_HTML || "false") !== "true") {
+      await generateMkDocsHTML();
+    }
 
     // Get or Create Cloudflare Pages project
     await this.ensureCloudflarePagesProject();
@@ -224,12 +227,13 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
       uxLog(this, c.cyan(`Access Application ${this.accessApp.name} already has the policy ${this.accessPolicy?.name}`));
     }
     else {
+      const policiesWithExtra = this.extraPolicyIds.concat([this.accessPolicy?.id || ""]).filter(p => p);
       this.accessApp = (await this.client.zeroTrust.access.applications.update(this.accessApp?.id || "", {
         account_id: this.accountId,
         domain: this.accessApp?.domain,
         destinations: this.accessApp?.destinations,
         type: this.accessApp?.type,
-        policies: [this.accessPolicy?.id || ""],
+        policies: policiesWithExtra,
       } as Cloudflare.ZeroTrust.Access.ApplicationUpdateParams)) as Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication;
       uxLog(this, c.green(`Access Application ${this.accessApp?.name} updated with the policy ${this.accessPolicy?.name}`));
     }
