@@ -242,12 +242,13 @@ jobs:
           # https://megalinter.io/latest/config-file/
           VALIDATE_ALL_CODEBASE: true # Set ${{ github.event_name == &#39;push&#39; &amp;&amp; github.ref == &#39;refs/heads/master&#39; }} to validate only diff with master branch
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NOTIF_API_URL: ${{ secrets.NOTIF_API_URL }}
-          NOTIF_API_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_BASIC_AUTH_USERNAME }}
-          NOTIF_API_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_BASIC_AUTH_PASSWORD }}
-          NOTIF_API_METRICS_URL: ${{ secrets.NOTIF_API_METRICS_URL }}
-          NOTIF_API_METRICS_BASIC_AUTH_USERNAME: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_USERNAME }}
-          NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_PASSWORD }}
+          API_REPORTER : "true"
+          API_REPORTER_URL : ${{ secrets.NOTIF_API_URL }}
+          API_REPORTER_BASIC_AUTH_USERNAME : ${{ secrets.NOTIF_API_BASIC_AUTH_USERNAME }}
+          API_REPORTER_BASIC_AUTH_PASSWORD : ${{ secrets.NOTIF_API_BASIC_AUTH_PASSWORD }}
+          API_REPORTER_METRICS_URL : ${{ secrets.NOTIF_API_METRICS_URL }}
+          API_REPORTER_METRICS_BASIC_AUTH_USERNAME : ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_USERNAME }}
+          API_REPORTER_METRICS_BASIC_AUTH_PASSWORD : ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_PASSWORD }}
           # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
 
       # Upload Mega-Linter artifacts
