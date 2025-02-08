@@ -8445,10 +8445,10 @@ math-random@^1.0.1:
   resolved "https://registry.npmjs.org/math-random/-/math-random-1.0.4.tgz"
   integrity sha512-rUxjysqif/BZQH2yhd5Aaq7vXMSx9NdEsQcyA07uEzIvxgI7zIr33gGsh+RU0/XjmQpCW7RsVof1vlkvQVCK5A==
 
-mega-linter-runner@^8.4.1:
-  version "8.4.1"
-  resolved "https://registry.yarnpkg.com/mega-linter-runner/-/mega-linter-runner-8.4.1.tgz#0e7bf76395deb0f60edb258986d0ec1349e6f4d1"
-  integrity sha512-gPbNgK7+v8r9JkIuHY/aY9FmqE3aAWDZKr1IofHYCe61Bq1/Z3VFw3/PJI91LH+tzJR0Fnun1oDQAUAoXIuHYw==
+mega-linter-runner@^8.4.2:
+  version "8.4.2"
+  resolved "https://registry.yarnpkg.com/mega-linter-runner/-/mega-linter-runner-8.4.2.tgz#54c1cedff444225c9276418392c3798b5594828c"
+  integrity sha512-CFfJijB3shLJvTq0SapggI2Rq20RdPGTncrWCEdSCiv26TIPA8dakKI07TRsP3oBpJcn77Z03YrrCV0U/PqN7g==
   dependencies:
     chalk "^5.3.0"
     find-package-json "^1.2.0"
