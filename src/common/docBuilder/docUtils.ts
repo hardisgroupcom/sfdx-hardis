@@ -1,15 +1,16 @@
 import * as path from "path";
 import c from 'chalk';
 import fs from 'fs-extra';
-import { execCommand, uxLog } from "./index.js";
+
 import * as yaml from 'js-yaml';
-import { countPackageXmlItems, parsePackageXmlFile } from "./xmlUtils.js";
+import { countPackageXmlItems, parsePackageXmlFile } from "../utils/xmlUtils.js";
 import { CONSTANTS } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
-import { buildGenericMarkdownTable } from "./flowVisualiser/nodeFormatUtils.js";
+import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { XMLParser } from "fast-xml-parser";
+import { uxLog, execCommand } from "../utils/index.js";
 
 export async function generatePackageXmlMarkdown(inputFile: string | null, outputFile: string | null = null, packageXmlDefinition: any = null, rootSalesforceUrl: string = "") {
   // Find packageXml to parse if not defined
@@ -231,7 +232,8 @@ export class SalesforceSetupUrlBuilder {
 
 export async function generateObjectMarkdown(objectName: string, objectXmlDefinition: string, allObjectsNames: string, objectLinksDetails: string, outputFile: string) {
   const mdLines = [
-    `## ${objectName}`,
+    '',
+    '<!-- Mermaid schema -->',
     '',
     '<!-- Object description -->',
     '',
@@ -304,7 +306,7 @@ async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, obj
   const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_OBJECT", [objectXmlStripped], objectName);
   if (aiCache.success === true) {
     uxLog(this, c.grey("Used AI cache for object description (set IGNORE_AI_CACHE=true to force call to AI)"));
-    const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
+    const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n## Description\n\n${aiCache.cacheText || ""}`;
     return objectMarkdownDoc.replace("<!-- Object description -->", replaceText);
   }
   if (AiProvider.isAiAvailable()) {
@@ -319,7 +321,7 @@ async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, obj
         responseText = responseText.split("\n").slice(1).join("\n");
       }
       await UtilsAi.writeAiCache("PROMPT_DESCRIBE_OBJECT", [objectXmlStripped], objectName, responseText);
-      const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
+      const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n## Description\n\n${responseText}`;
       const objectMarkdownDocUpdated = objectMarkdownDoc.replace("<!-- Object description -->", replaceText);
       return objectMarkdownDocUpdated;
     }

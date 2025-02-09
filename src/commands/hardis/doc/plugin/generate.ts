@@ -11,7 +11,7 @@ import * as yaml from 'js-yaml';
 import { uxLog } from '../../../../common/utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { Config } from '@oclif/core';
-import { readMkDocsFile, writeMkDocsFile } from '../../../../common/utils/docUtils.js';
+import { readMkDocsFile, writeMkDocsFile } from '../../../../common/docBuilder/docUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');

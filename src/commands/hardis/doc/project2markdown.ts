@@ -9,7 +9,7 @@ import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { completeApexDocWithAiDescription, completeAttributesDescriptionWithAi, generateLightningPageMarkdown, generateObjectMarkdown, generatePackageXmlMarkdown, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
+import { completeApexDocWithAiDescription, completeAttributesDescriptionWithAi, generateLightningPageMarkdown, generateObjectMarkdown, generatePackageXmlMarkdown, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { countPackageXmlItems, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
@@ -22,6 +22,7 @@ import { PACKAGE_ROOT_DIR } from '../../../settings.js';
 import { BranchStrategyMermaidBuilder } from '../../../common/utils/branchStrategyMermaidBuilder.js';
 import { mdTableCell } from '../../../common/gitProvider/utilsMarkdown.js';
 import { prettifyFieldName } from '../../../common/utils/flowVisualiser/nodeFormatUtils.js';
+import { ObjectModelBuilder } from '../../../common/docBuilder/objectModelBuilder.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -81,6 +82,9 @@ If Flow history doc always display a single state, you probably need to update y
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc.jpg)
 
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc-2.jpg)
+
+![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-object-diagram.jpg)
+
 
 If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strategy will be generated.
 
@@ -158,6 +162,7 @@ ${this.htmlInstructions}
     this.mdLines.push(...[
       "Welcome to the documentation of your Salesforce project.",
       "",
+      // "- [Object Model](object-model.md)",
       "- [Objects](objects/index.md)",
       "- [Flows](flows/index.md)",
       "- [Apex](apex/index.md)",
@@ -182,6 +187,14 @@ ${this.htmlInstructions}
     this.addNavNode("SFDX-Hardis Config", "sfdx-hardis-params.md");
     await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-branches-and-orgs.md"), getMetaHideLines() + branchesAndOrgsLines.join("\n") + `\n${this.footer}\n`);
     this.addNavNode("Branches & Orgs", "sfdx-hardis-branches-and-orgs.md");
+
+    // Object model Mermaid schema
+    /* Disabled: too messy to read
+    let mermaidSchema = await new ObjectModelBuilder().buildObjectsMermaidSchema();
+    mermaidSchema = "```mermaid\n" + mermaidSchema + "\n```";
+    await fs.writeFile(path.join(this.outputMarkdownRoot, "object-model.md"), getMetaHideLines() + mermaidSchema + `\n${this.footer}\n`);
+    this.addNavNode("Object Model", "object-model.md");
+    */
 
     // List SFDX packages and generate a manifest for each of them, except if there is only force-app with a package.xml
     this.packageXmlCandidates = this.listPackageXmlCandidates();
@@ -401,7 +414,7 @@ ${Project2Markdown.htmlInstructions}
     // Remove deprecated Flows History if found
     mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem["Flows History"]);
     // Order nav items with this elements in first
-    const firstItemsInOrder = ["Home", "Objects", "Flows", "Apex", "Lightning Pages", "SFDX-Hardis Config", "Branches & Orgs", "Installed Packages", "Manifests"];
+    const firstItemsInOrder = ["Home", "Object Model", "Objects", "Flows", "Apex", "Lightning Pages", "SFDX-Hardis Config", "Branches & Orgs", "Installed Packages", "Manifests"];
     mkdocsYml.nav = firstItemsInOrder.map(item => mkdocsYml.nav.find(navItem => Object.keys(navItem)[0] === item)).filter(item => item).concat(mkdocsYml.nav.filter(navItem => !firstItemsInOrder.includes(Object.keys(navItem)[0])));
     // Update mkdocs file
     await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
@@ -429,6 +442,9 @@ ${Project2Markdown.htmlInstructions}
       await generateObjectMarkdown(objectName, objectXml, this.allObjectsNames.join(","), objectLinksInfo, objectMdFile);
       // Fields table
       await this.buildAttributesTables(objectName, objectXmlParsed, objectMdFile);
+      // Mermaid schema
+      const mermaidSchema = await new ObjectModelBuilder(objectName).buildObjectsMermaidSchema();
+      await replaceInFile(objectMdFile, '<!-- Mermaid schema -->', '## Schema\n\n```mermaid\n' + mermaidSchema + '\n```\n');
       // Flows Tables
       const relatedObjectFlowsTable = await this.buildFlowsTable('../flows/', objectName);
       await replaceInFile(objectMdFile, '<!-- Flows table -->', relatedObjectFlowsTable.join("\n"));
