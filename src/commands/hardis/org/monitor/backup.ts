@@ -278,7 +278,7 @@ If Flow history doc always display a single state, you probably need to update y
           await MkDocsToSalesforce.run(["--type", "Monitoring"]);
         }
         else if (config.docDeployToCloudflare || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE === "true") {
-          await MkDocsToCloudflare.run([""]);
+          await MkDocsToCloudflare.run([]);
         }
       } catch (e: any) {
         uxLog(this, c.yellow("Error while generating project documentation " + e.message));
