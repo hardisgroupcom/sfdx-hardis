@@ -4,7 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- New command [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/) : Generates bypass custom permissions and permission sets for specified sObjects and automations
+## [5.19.0] 2025-02-09
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add object model diagram in documentation
+- New command [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/) : Generates bypass custom permissions and permission sets for specified sObjects and automations, by @Mehdi-Cloudity in <https://github.com/hardisgroupcom/sfdx-hardis/pull/1060>
+- Adjusting the Grafana Configuration Variables in the Megalinter part of org-monitoring.yml, by @AhmedElAmory in <https://github.com/hardisgroupcom/sfdx-hardis/pull/1057>
 
 ## [5.18.1] 2025-02-04
 
