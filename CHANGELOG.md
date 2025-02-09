@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.19.1] 2025-02-09
+
+- Quickfix cf upload
+
 ## [5.19.0] 2025-02-09
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add object model diagram in documentation
