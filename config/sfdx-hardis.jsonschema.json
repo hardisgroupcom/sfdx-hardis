@@ -751,6 +751,16 @@
       "title": "Dev Hub Username",
       "type": "string"
     },
+    "docDeployToCloudflare": {
+      "$id": "#/properties/docDeployToCloudflare",
+      "default": false,
+      "description": "Automatically deploy MkDocs HTML documentation from CI/CD Workflows to Cloudflare",
+      "examples": [
+        true
+      ],
+      "title": "Doc: Deploy to Cloudflare",
+      "type": "boolean"
+    },
     "docDeployToOrg": {
       "$id": "#/properties/docDeployToOrg",
       "default": false,

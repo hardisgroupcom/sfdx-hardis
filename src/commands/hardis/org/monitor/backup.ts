@@ -16,6 +16,7 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { countPackageXmlItems, parsePackageXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import Project2Markdown from '../../doc/project2markdown.js';
 import MkDocsToSalesforce from '../../doc/mkdocs-to-salesforce.js';
+import MkDocsToCloudflare from '../../doc/mkdocs-to-cf.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -276,7 +277,9 @@ If Flow history doc always display a single state, you probably need to update y
         if (config.docDeployToOrg || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_ORG === "true") {
           await MkDocsToSalesforce.run(["--type", "Monitoring"]);
         }
-
+        else if (config.docDeployToCloudflare || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE === "true") {
+          await MkDocsToCloudflare.run([""]);
+        }
       } catch (e: any) {
         uxLog(this, c.yellow("Error while generating project documentation " + e.message));
         uxLog(this, c.grey(e.stack));
