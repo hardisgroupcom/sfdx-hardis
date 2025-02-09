@@ -9,7 +9,7 @@ import { createTempDir, execCommand, isCI, uxLog } from '../../../common/utils/i
 import { createBlankSfdxProject } from '../../../common/utils/projectUtils.js';
 import { initPermissionSetAssignments, isProductionOrg } from '../../../common/utils/orgUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
-import { generateMkDocsHTML, readMkDocsFile, writeMkDocsFile } from '../../../common/utils/docUtils.js';
+import { generateMkDocsHTML, readMkDocsFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');

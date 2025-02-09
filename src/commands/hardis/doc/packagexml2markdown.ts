@@ -3,7 +3,7 @@ import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { generatePackageXmlMarkdown } from '../../../common/utils/docUtils.js';
+import { generatePackageXmlMarkdown } from '../../../common/docBuilder/docUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');

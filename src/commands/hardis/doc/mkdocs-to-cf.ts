@@ -10,7 +10,7 @@ import { execCommand, getCurrentGitBranch, uxLog } from '../../../common/utils/i
 
 import { CONSTANTS } from '../../../config/index.js';
 import which from 'which';
-import { generateMkDocsHTML } from '../../../common/utils/docUtils.js';
+import { generateMkDocsHTML } from '../../../common/docBuilder/docUtils.js';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
