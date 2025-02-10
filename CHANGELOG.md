@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Change default CF policy
+
 ## [5.19.1] 2025-02-09
 
 - Quickfix cf upload
