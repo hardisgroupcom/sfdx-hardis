@@ -4,6 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update doc to request activation of **ExperienceBundle Metadata API**
 - Change default CF policy
 
 ## [5.19.1] 2025-02-09
