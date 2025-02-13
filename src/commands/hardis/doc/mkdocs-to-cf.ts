@@ -179,12 +179,10 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
         account_id: this.accountId || "",
         decision: "allow",
         include: [
-          { login_method: { id: defaultLoginMethod.id } }
+          { email_domain: { domain: this.defaultAccessEmailDomain } },
         ],
         require: [
-          {
-            email_domain: { domain: this.defaultAccessEmailDomain },
-          }
+          { login_method: { id: defaultLoginMethod.id } }
         ],
       } as any);
       uxLog(this, c.green("Cloudflare policy created: " + this.accessPolicyName));
