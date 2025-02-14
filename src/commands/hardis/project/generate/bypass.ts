@@ -1,13 +1,13 @@
 import { requiredOrgFlagWithDeprecations, SfCommand } from '@salesforce/sf-plugins-core';
 import { Flags } from '@salesforce/sf-plugins-core';
-import { Connection, SfError, Messages  } from '@salesforce/core';
+import { Connection, SfError, Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import c from 'chalk'
 import path from 'path';
-import fs from 'fs';
+import fs from 'fs-extra';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -26,12 +26,12 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
       required: false,
     }),
     'automations': Flags.string({
-      char: 'a', 
+      char: 'a',
       description: `Comma-separated list of automations to bypass. Allowed values: ${ALLOWED_AUTOMATIONS.join(', ')}`,
       required: false,
     }),
     'global': Flags.boolean({
-      char: 'g', 
+      char: 'g',
       description: 'Generate global bypasses for all automations (Flow, Trigger, VR) without selecting sObjects.',
       required: false,
       default: false
@@ -57,11 +57,11 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
   `;
 
   public static examples = [
-    '$ sf hardis:project:generate:bypass',  
-    '$ sf hardis:project:generate:bypass --global',  
-    '$ sf hardis:project:generate:bypass --sObjects Account,Contact,Opportunity',  
-    '$ sf hardis:project:generate:bypass --automations Flow,Trigger,VR',  
-    '$ sf hardis:project:generate:bypass --sObjects Account,Opportunity --automations Flow,Trigger',  
+    '$ sf hardis:project:generate:bypass',
+    '$ sf hardis:project:generate:bypass --global',
+    '$ sf hardis:project:generate:bypass --sObjects Account,Contact,Opportunity',
+    '$ sf hardis:project:generate:bypass --automations Flow,Trigger,VR',
+    '$ sf hardis:project:generate:bypass --sObjects Account,Opportunity --automations Flow,Trigger',
     '$ sf hardis:project:generate:bypass --skip-credits',
   ];
 
@@ -75,9 +75,9 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
     return sObjectResults;
   }
 
-  public async getFilteredSObjects(connection: Connection):Promise<{[key:string]:string}>{
+  public async getFilteredSObjects(connection: Connection): Promise<{ [key: string]: string }> {
     const sObjectResults = await this.querySObjects(connection);
-    const sObjectsDict: {[key:string]:string} = {};
+    const sObjectsDict: { [key: string]: string } = {};
 
     sObjectResults.records.forEach((record) => {
       if (!record.DeveloperName.endsWith('__Share') && !record.DeveloperName.endsWith('__ChangeEvent')) {
@@ -116,14 +116,17 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
   private generateXMLFiles(sObject: string, automation: string, skipCredits: boolean) {
     const customPermissionFile = path.join(`force-app/main/default/customPermissions/Bypass${sObject}${automation}s.customPermission-meta.xml`);
     const permissionSetFile = path.join(`force-app/main/default/permissionsets/Bypass${sObject}${automation}s.permissionset-meta.xml`);
-  
+
+    fs.ensureDirSync(path.dirname(customPermissionFile));
+    fs.ensureDirSync(path.dirname(permissionSetFile));
+
     fs.writeFileSync(customPermissionFile, this.generateCustomPermissionXML(sObject, automation, skipCredits), 'utf-8');
     fs.writeFileSync(permissionSetFile, this.generatePermissionSetXML(sObject, automation, skipCredits), 'utf-8');
 
     uxLog(this, `Created: ${path.basename(customPermissionFile)} for ${sObject}`);
     uxLog(this, `Created: ${path.basename(permissionSetFile)} for ${sObject}`);
   }
-  
+
   generateFiles(targetSObjects: { [key: string]: string }, targetAutomations: string[], skipCredits: boolean): void {
     Object.entries(targetSObjects).map(([developerName]) => {
       targetAutomations.forEach(automation => {
@@ -143,58 +146,58 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
     const skipCredits = flags['skipCredits'];
 
     // Generate global bypasses if they are requested.
-    if(generateGlobalBypasses){
+    if (generateGlobalBypasses) {
       this.generateFiles({ 'All': 'All' }, ALLOWED_AUTOMATIONS, skipCredits);
     }
 
-    let targetSObjects: {[key:string]:string} = sObjectsFromFlag ? Object.fromEntries(
+    let targetSObjects: { [key: string]: string } = sObjectsFromFlag ? Object.fromEntries(
       Object.entries(availableSObjects).filter(([key]) => sObjectsFromFlag.includes(key))
     ) : {};
     let targetAutomations: string[] = automationsFromFlag || [];
 
-    const possiblePrompts:any = [];
+    const possiblePrompts: any = [];
 
-    if(!sObjectsFromFlag || Object.keys(targetSObjects).length === 0){
-      
+    if (!sObjectsFromFlag || Object.keys(targetSObjects).length === 0) {
+
       uxLog(this, c.yellow('[sfdx-hardis] WARNING : No matching sObjects found. Please check your input or select from the prompt.'));
 
       possiblePrompts.push({
         type: 'multiselect',
         name: 'sobjects',
         message: 'Please select the sObjects for which you want to generate the bypass(es)',
-        choices: Object.entries(availableSObjects).map(([developerName, label])  => {
-          return {title: label, value: developerName}
+        choices: Object.entries(availableSObjects).map(([developerName, label]) => {
+          return { title: label, value: developerName }
         })
       })
     }
-    if(!automationsFromFlag){
+    if (!automationsFromFlag) {
       possiblePrompts.push({
         type: 'multiselect',
         name: 'automations',
         message: 'Please which automations you wish to bypass.',
         choices: [
-          {title: "Flows", value: "Flow"},
-          {title: "Triggers", value: "Trigger"},
-          {title: "Validation Rules", value: "VR"}
+          { title: "Flows", value: "Flow" },
+          { title: "Triggers", value: "Trigger" },
+          { title: "Validation Rules", value: "VR" }
         ]
       })
     }
-    if(possiblePrompts.length > 0){
+    if (possiblePrompts.length > 0) {
       const promptSelection = await prompts(possiblePrompts);
-      if(!sObjectsFromFlag){
-        if(promptSelection?.sobjects.length === 0){
+      if (!sObjectsFromFlag) {
+        if (promptSelection?.sobjects.length === 0) {
           throw new SfError(
             c.red(
               `[sfdx-hardis] ERROR: You must select or provide (--sObjects) at least one sObject available on your org.`
             )
           );
         }
-      targetSObjects =  Object.fromEntries(
-        Object.entries(availableSObjects).filter(([key]) => promptSelection.sobjects.includes(key))
-      );
+        targetSObjects = Object.fromEntries(
+          Object.entries(availableSObjects).filter(([key]) => promptSelection.sobjects.includes(key))
+        );
       }
-      if(!automationsFromFlag){
-        if(promptSelection?.automations.length === 0){
+      if (!automationsFromFlag) {
+        if (promptSelection?.automations.length === 0) {
           throw new SfError(
             c.red(
               `[sfdx-hardis] ERROR: You must select or provide (--automations) at least one automation to bypass.`
@@ -205,7 +208,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
       }
     }
 
-    if(Object.keys(targetSObjects).length > 0 && targetAutomations.length > 0){
+    if (Object.keys(targetSObjects).length > 0 && targetAutomations.length > 0) {
       this.generateFiles(targetSObjects, targetAutomations, skipCredits);
     }
 

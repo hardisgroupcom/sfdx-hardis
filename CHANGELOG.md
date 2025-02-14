@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [5.19.2] 2025-02-14
 
 - [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/): Added necessary flags to be run from vscode sfdx-hardis extension + added skip-credits
+  - Bypass generator: Create metadatas folders if not existing yet
 - Change default CF policy
 - Update doc to request activation of **ExperienceBundle Metadata API**
 
