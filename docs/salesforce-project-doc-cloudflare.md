@@ -36,7 +36,7 @@ Make sure the following variables are defined and available from the backup comm
 
 Follow the video tutorial to see all described steps click by click :)
 
-<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/WOqssZwjPhw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/AUipbKjgsDI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
 
 - Create a new Cloudflare account on cloudflare.com
 
