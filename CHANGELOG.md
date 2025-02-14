@@ -4,8 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.19.2] 2025-02-14
+
 - [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/): Added necessary flags to be run from vscode sfdx-hardis extension + added skip-credits
 - Change default CF policy
+- Update doc to request activation of **ExperienceBundle Metadata API**
 
 ## [5.19.1] 2025-02-09
 
