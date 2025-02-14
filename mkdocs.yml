@@ -148,7 +148,12 @@ nav:
           - Setup Deployment Assistant: salesforce-deployment-assistant-setup.md
           - Setup AI integration: salesforce-ai-setup.md
       - Deployment errors list: salesforce-deployment-assistant-error-list.md
-  - Project & Flows Documentation: salesforce-project-documentation.md
+  - AI Project & Flows Doc:
+      - Doc Gen Home: salesforce-project-documentation.md
+      - Generate: salesforce-project-doc-generate.md
+      - Improve with AI: salesforce-project-doc-ai.md
+      - Host on Salesforce: salesforce-project-doc-host-on-salesforce.md
+      - Host on Cloudflare: salesforce-project-doc-cloudflare.md
   - Integrations:
       - Integrations Home: salesforce-ci-cd-setup-integrations-home.md
       - GitHub: salesforce-ci-cd-setup-integration-github.md
@@ -174,7 +179,9 @@ nav:
         doc:
           extract:
             permsetgroups: hardis/doc/extract/permsetgroups.md
+          fieldusage: hardis/doc/fieldusage.md
           flow2markdown: hardis/doc/flow2markdown.md
+          mkdocs-to-cf: hardis/doc/mkdocs-to-cf.md
           mkdocs-to-salesforce: hardis/doc/mkdocs-to-salesforce.md
           packagexml2markdown: hardis/doc/packagexml2markdown.md
           plugin:
@@ -297,6 +304,7 @@ nav:
             profiletabs: hardis/project/fix/profiletabs.md
             v53flexipages: hardis/project/fix/v53flexipages.md
           generate:
+            bypass: hardis/project/generate/bypass.md
             flow-git-diff: hardis/project/generate/flow-git-diff.md
             gitdelta: hardis/project/generate/gitdelta.md
           lint: hardis/project/lint.md
