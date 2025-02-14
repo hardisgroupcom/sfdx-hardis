@@ -99,7 +99,7 @@ nav:
       - Setup Guide:
           - CI/CD Setup Home: salesforce-ci-cd-setup-home.md
           - Init Git repository: salesforce-ci-cd-setup-git.md
-          - DevHub and Sandbox Tracking: salesforce-ci-cd-setup-activate-org.md
+          - Configure Orgs: salesforce-ci-cd-setup-activate-org.md
           - Init SFDX Project: salesforce-ci-cd-setup-init-project.md
           - CI Server Authentication: salesforce-ci-cd-setup-auth.md
           - Init from Existing Org: salesforce-ci-cd-setup-existing-org.md
