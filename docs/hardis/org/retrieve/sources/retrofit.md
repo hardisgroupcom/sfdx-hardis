@@ -70,7 +70,7 @@ Can be defined in productionBranch property in .sfdx-hardis.yml||||
 |retrofittargetbranch|option|Name of branch the merge request will have as target
 Can be defined in retrofitBranch property in .sfdx-hardis.yml||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
+|target-org<br/>-o|option|undefined|<nicolas.vuillamy@cloudity.com.playnico>|||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples

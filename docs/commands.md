@@ -31,12 +31,13 @@
 | Command                                                                     | Title |
 |:----------------------------------------------------------------------------|:------|
 | [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md) |       |
+| [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                       |       |
 | [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                 |       |
+| [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                   |       |
 | [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)   |       |
 | [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)     |       |
 | [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)             |       |
 | [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)           |       |
-| [**hardis:doc:project2markdown copy**](hardis/doc/project2markdown copy.md) |       |
 
 ## hardis:git
 
@@ -163,6 +164,7 @@
 | [**hardis:project:deploy:validate**](hardis/project/deploy/validate.md)                       |       |
 | [**hardis:project:fix:profiletabs**](hardis/project/fix/profiletabs.md)                       |       |
 | [**hardis:project:fix:v53flexipages**](hardis/project/fix/v53flexipages.md)                   |       |
+| [**hardis:project:generate:bypass**](hardis/project/generate/bypass.md)                       |       |
 | [**hardis:project:generate:flow-git-diff**](hardis/project/generate/flow-git-diff.md)         |       |
 | [**hardis:project:generate:gitdelta**](hardis/project/generate/gitdelta.md)                   |       |
 | [**hardis:project:lint**](hardis/project/lint.md)                                             |       |
