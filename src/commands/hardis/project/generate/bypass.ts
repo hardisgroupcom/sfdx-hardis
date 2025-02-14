@@ -1,6 +1,6 @@
 import { requiredOrgFlagWithDeprecations, SfCommand } from '@salesforce/sf-plugins-core';
 import { Flags } from '@salesforce/sf-plugins-core';
-import { Connection, SfError  } from '@salesforce/core';
+import { Connection, SfError, Messages  } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { uxLog } from '../../../../common/utils/index.js';
@@ -9,6 +9,9 @@ import c from 'chalk'
 import path from 'path';
 import fs from 'fs';
 
+
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 const ALLOWED_AUTOMATIONS = ['Flow', 'Trigger', 'VR'];
 
@@ -31,6 +34,12 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
       description: 'Generate global bypasses for all automations (Flow, Trigger, VR) without selecting sObjects.',
       required: false,
       default: false
+    }),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
+    }),
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
     }),
 
   };
