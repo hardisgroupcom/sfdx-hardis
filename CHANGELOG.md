@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.19.3] 2025-02-15
+
+- Doc: Add Cloudflare setup instructions
+- Doc: Reorganize Project documentation menus
+- Update default workflows to handle Cloudflare variables
+
 ## [5.19.2] 2025-02-14
 
 - [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/): Added necessary flags to be run from vscode sfdx-hardis extension + added skip-credits
