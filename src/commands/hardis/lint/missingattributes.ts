@@ -102,6 +102,10 @@ export default class MetadataStatus extends SfCommand<any> {
     const objectDirectories: string[] = await glob(this.objectFileDirectory, { ignore: this.ignorePatterns });
     for (const directory of objectDirectories) {
       const objectName = path.basename(path.dirname(path.dirname(directory)));
+      // Filter Data Cloud & managed items
+      if (objectName.endsWith("__dlm") || objectName.endsWith("__dll") || objectName.split('__').length > 2) {
+        continue;
+      }
       const objectMetaFilePath = path.join(path.dirname(path.dirname(directory)), `${objectName}.object-meta.xml`);
 
       if (fs.existsSync(objectMetaFilePath)) {
