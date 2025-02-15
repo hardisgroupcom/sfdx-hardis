@@ -1068,10 +1068,10 @@
   resolved "https://registry.yarnpkg.com/@cparra/apex-reflection/-/apex-reflection-2.16.1.tgz#c22e7e4df0455aafe6e5f3db99f02f248b472e71"
   integrity sha512-VbGTYKMBqIGXeLosjuo6fF9vMwaZpiIRg8fnUCrhsI8RdaG9FG2HRGpiaqlizAzBLhxBluBPKhFPesDFAfPSUg==
 
-"@cparra/apexdocs@^3.7.3":
-  version "3.7.3"
-  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.7.3.tgz#581b3bc981834f273ae123cdee7ccc7b147deb8a"
-  integrity sha512-ajZjt9KO5Tf5l7tyo5Fr4HEA1HsMNFF/V6Tan3MnTW0oOZevdSkTs6aUVtewdtxMVBYoA2Ht2Ki1BRunmKPNGg==
+"@cparra/apexdocs@^3.9.0":
+  version "3.9.0"
+  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.9.0.tgz#507bd8b025825d5af376ce480efd8058fb7cd34d"
+  integrity sha512-e2cvYX6Cgh6iZd4QS9xYusI56HxGkvPmlnJTcWW4knxc7j4f54daULptC9qDTLr1IgkLytKEjpFfKIdhrgOzCA==
   dependencies:
     "@cparra/apex-reflection" "2.16.1"
     "@salesforce/source-deploy-retrieve" "^12.8.1"
