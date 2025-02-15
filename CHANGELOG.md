@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Do not check for missing descriptions on Data Cloud & Managed package metadatas
+
 ## [5.19.3] 2025-02-15
 
 - Doc: Add Cloudflare setup instructions
