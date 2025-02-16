@@ -37,7 +37,7 @@ export async function isDockerAvailable() {
   return IS_DOCKER_AVAILABLE;
 }
 
-export async function generateFlowMarkdownFile(flowName: string, flowXml: string, outputFlowMdFile: string, options: { collapsedDetails: boolean, describeWithAi: boolean } = { collapsedDetails: true, describeWithAi: true }): Promise<boolean> {
+export async function generateFlowMarkdownFile(flowName: string, flowXml: string, outputFlowMdFile: string, options: { collapsedDetails: boolean, describeWithAi: boolean, flowDependencies: any } = { collapsedDetails: true, describeWithAi: true, flowDependencies: {} }): Promise<boolean> {
   try {
     const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true, collapsedDetails: options.collapsedDetails });
     let flowMarkdownDoc = flowDocGenResult.uml;
@@ -52,6 +52,17 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
       if (flowMarkdownDoc.includes("## Flow Diagram") && !flowMarkdownDoc.includes(historyLink)) {
         flowMarkdownDoc = flowMarkdownDoc.replace("## Flow Diagram", `## Flow Diagram ${historyLink}`);
       }
+    }
+
+    // Add flow dependencies
+    const dependencies: string[] = [];
+    for (const mainFlow of Object.keys(options.flowDependencies)) {
+      if (options.flowDependencies[mainFlow].includes(flowName)) {
+        dependencies.push(mainFlow);
+      }
+    }
+    if (dependencies.length > 0) {
+      flowMarkdownDoc += `\n\n## Dependencies\n\n${dependencies.map(dep => `- [${dep}](${dep}.md)`).join("\n")}\n`;
     }
 
     await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
@@ -584,7 +595,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
       const reportDir = await getReportDirectory();
       await fs.ensureDir(path.join(reportDir, "flow-diff"));
       const diffMdFileTmp = path.join(reportDir, 'flow-diff', `${flowLabel}_${moment().format("YYYYMMDD-hhmmss")}.md`);
-      const genRes = await generateFlowMarkdownFile(flowLabel, flowXml, diffMdFileTmp, { collapsedDetails: false, describeWithAi: false });
+      const genRes = await generateFlowMarkdownFile(flowLabel, flowXml, diffMdFileTmp, { collapsedDetails: false, describeWithAi: false, flowDependencies: {} });
       if (!genRes) {
         throw new Error(`Error generating markdown file for flow ${flowFile}`);
       }
