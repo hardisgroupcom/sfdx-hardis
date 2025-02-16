@@ -79,7 +79,7 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
 
     uxLog(this, c.grey(`Generating markdown for Flow ${this.inputFile}...`));
     const flowXml = (await fs.readFile(this.inputFile, "utf8")).toString();
-    const genRes = await generateFlowMarkdownFile(path.basename(this.inputFile, ".flow-meta.xml"), flowXml, this.outputFile, { collapsedDetails: false, describeWithAi: true });
+    const genRes = await generateFlowMarkdownFile(path.basename(this.inputFile, ".flow-meta.xml"), flowXml, this.outputFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: {} });
     if (!genRes) {
       throw new Error("Error generating markdown file");
     }

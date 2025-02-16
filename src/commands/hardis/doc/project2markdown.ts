@@ -506,6 +506,18 @@ ${Project2Markdown.htmlInstructions}
     const flowErrors: string[] = [];
     const flowWarnings: string[] = [];
     const flowSkips: string[] = [];
+
+    // List flows dependencies
+    const flowDeps: any = {};
+    for (const flowFile of flowFiles) {
+      const flowName = path.basename(flowFile, ".flow-meta.xml");
+      const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
+      // Find all occurences of <flowName>.*</flowName> in flowXml
+      const regex = /<flowName>(.*?)<\/flowName>/g;
+      const extractedNames = [...flowXml.matchAll(regex)].map(match => match[1]);
+      flowDeps[flowName] = extractedNames;
+    }
+    // Generate Flows documentation
     for (const flowFile of flowFiles) {
       const flowName = path.basename(flowFile, ".flow-meta.xml");
       const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
@@ -524,7 +536,7 @@ ${Project2Markdown.htmlInstructions}
         continue;
       }
       uxLog(this, c.grey(`Generating markdown for Flow ${flowFile}...`));
-      const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFlowMdFile, { collapsedDetails: false, describeWithAi: true });
+      const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFlowMdFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: flowDeps });
       if (!genRes) {
         flowErrors.push(flowFile);
         continue;
