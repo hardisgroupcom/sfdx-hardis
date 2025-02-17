@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
@@ -64,8 +64,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
-    }),
-    'target-org': requiredOrgFlagWithDeprecations,
+    })
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
