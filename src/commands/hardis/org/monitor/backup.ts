@@ -6,7 +6,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
-import { execCommand, filterPackageXml, uxLog } from '../../../../common/utils/index.js';
+import { execCommand, execSfdxJson, filterPackageXml, uxLog } from '../../../../common/utils/index.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
@@ -181,6 +181,14 @@ If Flow history doc always display a single state, you probably need to update y
       await this.extractMetadatasFiltered(packageXmlFullFile, flags);
     }
 
+    // Remove deleted files
+    try {
+      await this.removeDeletedMetadataFiles();
+    } catch (e: any) {
+      uxLog(this, c.yellow("Error while removing deleted metadata files " + e.message));
+      uxLog(this, c.grey(e.stack));
+    }
+
     // Write installed packages
     uxLog(this, c.cyan(`Write installed packages ...`));
     const installedPackagesLog: any[] = [];
@@ -289,6 +297,52 @@ If Flow history doc always display a single state, you probably need to update y
     }
 
     return { outputString: 'BackUp processed on org ' + flags['target-org'].getConnection().instanceUrl };
+  }
+
+  private async removeDeletedMetadataFiles() {
+    uxLog(this, c.cyan('Removing deleted metadata files from local repository ...'));
+    const packageXmlBackUpItemsFile = 'manifest/package-backup-items.xml';
+    const tmpCurrentForceAppPackageXml = 'current-force-app-package.xml';
+    // Build current local package.xml
+    await execSfdxJson("sf project generate manifest" +
+      ` --source-dir force-app` +
+      ` --name ${tmpCurrentForceAppPackageXml}`, this,
+      {
+        fail: true,
+        output: true,
+        debug: this.debugMode,
+      }
+    );
+    // Compare current local package.xml with backup package.xml
+    const currentBackupItems = await parsePackageXmlFile(packageXmlBackUpItemsFile);
+    const currentLocalFiles = await parsePackageXmlFile(tmpCurrentForceAppPackageXml);
+    const packageItemsToRemove = {};
+    for (const mdType of Object.keys(currentBackupItems)) {
+      const backupItems = currentBackupItems[mdType];
+      const localItems = currentLocalFiles[mdType];
+      if (localItems && backupItems) {
+        const itemsToRemove = localItems.filter((localItem) => {
+          return !backupItems.includes(localItem);
+        });
+        if (itemsToRemove.length > 0) {
+          packageItemsToRemove[mdType] = itemsToRemove;
+        }
+      }
+    }
+    // Delete item files
+    for (const mdType of Object.keys(packageItemsToRemove)) {
+      for (const itemToRemove of packageItemsToRemove[mdType]) {
+        const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName(mdType, itemToRemove);
+        if (fileMetadata && fs.existsSync(fileMetadata)) {
+          await fs.remove(fileMetadata);
+          uxLog(this, c.grey(`- Removed ${mdType} ${itemToRemove}: ${fileMetadata}`));
+        }
+        else {
+          uxLog(this, c.yellow(`- Unable to find file for ${mdType} ${itemToRemove}. Check MetadataUtils.findMetaFileFromTypeAndName ?`));
+        }
+      }
+    }
+    await fs.remove(tmpCurrentForceAppPackageXml);
   }
 
   private async extractMetadatasFull(packageXmlFullFile: string, flags) {
