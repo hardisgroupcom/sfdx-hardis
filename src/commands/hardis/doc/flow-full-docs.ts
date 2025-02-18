@@ -25,8 +25,8 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
   `;
 
   public static examples = [
-    '$ sf hardis:doc:fullflowdocs',
-    '$ sf hardis:doc:fullflowdocs --inputfile force-app/main/default/flows/MyFlow.flow-meta.xml'
+    '$ sf hardis:doc:flow-full-docs',
+    '$ sf hardis:doc:flow-full-docs --inputfile force-app/main/default/flows/MyFlow.flow-meta.xml'
   ];
 
   public static flags: any = {
