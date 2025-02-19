@@ -16,17 +16,17 @@ import { mdToPdf } from 'md-to-pdf';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-export default class FlowFullDocs extends SfCommand<any> {
-  public static title = 'Full Flow Documentation';
+export default class FlowsToPdf extends SfCommand<any> {
+  public static title = 'Flows to PDF';
 
-  public static description = `Generates a Markdown and PDF documentation from Flows files
+  public static description = `Generates a PDF documentation from Flows files
   
 If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configured, documentation will contain a summary of the Flow.  
   `;
 
   public static examples = [
-    '$ sf hardis:doc:flow-full-docs',
-    '$ sf hardis:doc:flow-full-docs --inputfile force-app/main/default/flows/MyFlow.flow-meta.xml'
+    '$ sf hardis:doc:flows-to-pdf',
+    '$ sf hardis:doc:flows-to-pdf --inputfile force-app/main/default/flows/MyFlow.flow-meta.xml'
   ];
 
   public static flags: any = {
@@ -60,7 +60,7 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const { flags } = await this.parse(FlowFullDocs);
+    const { flags } = await this.parse(FlowsToPdf);
     const outputFiles: string[] = [];
     this.inputFiles = flags.inputfile ? [flags.inputfile] : null;
     this.withHistory = flags["with-history"] === true ? true : false;
@@ -73,10 +73,11 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
     for (const inputFile of this.inputFiles) {
       await fs.ensureDir(path.join("docs", "flows"));
       const outputFile = path.join("docs", "flows", path.basename(inputFile).replace(".flow-meta.xml", ".md"));
+      const flowName = path.basename(inputFile, ".flow-meta.xml");
 
       uxLog(this, c.grey(`Generating markdown for Flow ${inputFile}...`));
       const flowXml = (await fs.readFile(inputFile, "utf8")).toString();
-      const genRes = await generateFlowMarkdownFile(path.basename(inputFile, ".flow-meta.xml"), flowXml, outputFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: {} });
+      const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: {} });
       if (!genRes) {
         throw new Error("Error generating markdown file");
       }
@@ -96,9 +97,10 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
         }
       }
 
+      const outputPdfFile = outputFile.replace('.md', '.pdf');
       uxLog(this, c.grey(`Generating PDF for Flow ${inputFile}...`));
       await mdToPdf({ path: outputFile }, {
-        dest: outputFile.replace('.md', '.pdf'),
+        dest: outputPdfFile,
         css: `img {
               max-width: 50%;
               max-height: 20%;
@@ -108,6 +110,7 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
         stylesheet_encoding: 'utf-8'
       }
       );
+      uxLog(this, c.grey(`Written ${flowName} PDF documentation in ${outputPdfFile}`));
 
       // Open file in a new VsCode tab if available
       WebSocketClient.requestOpenFile(outputFile);
