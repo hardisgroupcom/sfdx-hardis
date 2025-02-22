@@ -1163,6 +1163,28 @@
       "title": "MsTeams WebHook Url (INFO)",
       "type": "string"
     },
+    "newTaskNameRegex": {
+      "$id": "#/properties/newTaskNameRegex",
+      "default": "",
+      "description": "Regex to validate new task names",
+      "examples": [
+        "^[A-Z]+-[0-9]+ .*",
+        "^CLOUDITY-[0-9]+ .*",
+        "^MYPROJECT-[0-9]+ .*"
+      ],
+      "title": "New task name regex",
+      "type": "string"
+    },
+    "newTaskNameRegexExample": {
+      "$id": "#/properties/newTaskNameRegexExample",
+      "default": "",
+      "description": "Example of value that will match newTaskNameRegex",
+      "examples": [
+        "MYPROJECT-123 Update account status validation rule"
+      ],
+      "title": "New task name example",
+      "type": "string"
+    },
     "notificationsDisable": {
       "$id": "#/properties/notificationsDisable",
       "description": "List of notifications types to skip sending",
@@ -1358,6 +1380,13 @@
       "default": false,
       "description": "Defines if sfdx-hardis will propose to upgrade local .gitignore file",
       "title": "Skip update .gitignore file",
+      "type": "boolean"
+    },
+    "sharedDevSandboxes": {
+      "$id": "#/properties/sharedDevSandboxes",
+      "default": false,
+      "description": "Define to true if contributors can share dev sandboxes",
+      "title": "Shared Dev Sandboxes",
       "type": "boolean"
     },
     "targetUsername": {
