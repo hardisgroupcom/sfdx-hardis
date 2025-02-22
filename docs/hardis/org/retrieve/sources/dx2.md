@@ -7,16 +7,16 @@ Retrieve Salesforce DX project from org
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |                 Default                  | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:----------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                          |          |         |
-| flags-dir         | option  | undefined                                                     |                                          |          |         |
-| json              | boolean | Format output as json.                                        |                                          |          |         |
-| packagexml<br/>-x | option  | Path to package.xml file                                      |                                          |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                                          |          |         |
-| target-org<br/>-o | option  | undefined                                                     | <nicolas.vuillamy@cloudity.com.playnico> |          |         |
-| template<br/>-t   | option  | sfdx-hardis package.xml Template name. ex: wave               |                                          |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                          |          |         |
+| Name              |  Type   | Description                                                   | Default | Required | Options |
+|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
+| flags-dir         | option  | undefined                                                     |         |          |         |
+| json              | boolean | Format output as json.                                        |         |          |         |
+| packagexml<br/>-x | option  | Path to package.xml file                                      |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
+| target-org<br/>-o | option  | undefined                                                     |         |          |         |
+| template<br/>-t   | option  | sfdx-hardis package.xml Template name. ex: wave               |         |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
 
 ## Examples
 
