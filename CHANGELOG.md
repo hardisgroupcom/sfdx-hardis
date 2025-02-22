@@ -4,7 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.20.0] 2025-02-22
+
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/)
+  - Document properties **availableProjects** and **availableTargetBranches**
+  - Allow to define **newTaskNameRegex** to enforce the naming of a new task
+  - Allow to remove question about upgrading the dev sandbox is `sharedDevSandboxes: true` is set
 - Fix issue with **monitoringAllowedSectionsActions** not taking in account when a section is defined as `[]` to ignore all of its member types.
+- Upgrade npm dependencies
 
 ## [5.19.4] 2025-02-17
 
