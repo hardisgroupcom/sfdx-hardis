@@ -32,7 +32,7 @@
     "exceljs": "^4.4.0",
     "extract-zip": "^2.0.1",
     "farmhash": "^4.0.1",
-    "fast-xml-parser": "^4.5.1",
+    "fast-xml-parser": "^4.5.3",
     "form-data": "^4.0.1",
     "fs-extra": "^11.3.0",
     "fs-readdir-recursive": "^1.1.0",
