@@ -12,23 +12,23 @@ See article below
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|chunksize<br/>-c|option|Number of records to add in a chunk before it is processed|1000|||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|path<br/>-p|option|Path to the file export project||||
-|polltimeout<br/>-t|option|Timeout in MS for Bulk API calls|300000|||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|startchunknumber<br/>-s|option|Chunk number to start from||||
-|target-org<br/>-o|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                    |  Type   | Description                                                   | Default | Required | Options |
+|:------------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| chunksize<br/>-c        | option  | Number of records to add in a chunk before it is processed    |  1000   |          |         |
+| debug<br/>-d            | boolean | Activate debug mode (more logs)                               |         |          |         |
+| flags-dir               | option  | undefined                                                     |         |          |         |
+| json                    | boolean | Format output as json.                                        |         |          |         |
+| path<br/>-p             | option  | Path to the file export project                               |         |          |         |
+| polltimeout<br/>-t      | option  | Timeout in MS for Bulk API calls                              | 300000  |          |         |
+| skipauth                | boolean | Skip authentication check when a default username is required |         |          |         |
+| startchunknumber<br/>-s | option  | Chunk number to start from                                    |         |          |         |
+| target-org<br/>-o       | option  | undefined                                                     |         |          |         |
+| websocket               | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
 
 ## Examples
 
 ```shell
-$ sf hardis:org:files:export
+sf hardis:org:files:export
 ```
 
 
