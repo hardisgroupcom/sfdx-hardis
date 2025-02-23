@@ -11,6 +11,7 @@ import { SfError } from "@salesforce/core";
 import { PACKAGE_ROOT_DIR } from "../../settings.js";
 import { AiProvider } from "../aiProvider/index.js";
 import { UtilsAi } from "../aiProvider/utils.js";
+import { mdToPdf } from 'md-to-pdf';
 
 let IS_MERMAID_AVAILABLE: boolean | null = null;
 export async function isMermaidAvailable() {
@@ -74,10 +75,13 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
   }
 }
 
-export async function generateMarkdownFileWithMermaid(outputFlowMdFileIn: string, outputFlowMdFileOut: string, mermaidModes: string[] | null = null): Promise<boolean> {
+export async function generateMarkdownFileWithMermaid(outputFlowMdFileIn: string, outputFlowMdFileOut: string, mermaidModes: string[] | null = null, withPdf = false): Promise<boolean> {
   await fs.ensureDir(path.dirname(outputFlowMdFileIn));
   await fs.ensureDir(path.dirname(outputFlowMdFileOut));
-  if (process.env.MERMAID_MODES) {
+  if (withPdf) {
+    // Force the usage of mermaid CLI so the mermaid code is converted to SVG
+    mermaidModes = ["cli"];
+  } else if (process.env.MERMAID_MODES) {
     mermaidModes = process.env.MERMAID_MODES.split(",");
   }
   else if (mermaidModes === null) {
@@ -96,6 +100,13 @@ export async function generateMarkdownFileWithMermaid(outputFlowMdFileIn: string
   if ((!(globalThis.mermaidUnavailableTools || []).includes("cli")) && mermaidModes.includes("cli")) {
     const mmCliSuccess = await generateMarkdownFileWithMermaidCli(outputFlowMdFileIn, outputFlowMdFileOut);
     if (mmCliSuccess) {
+      if (withPdf) {
+        const pdfGenerated = await generatePdfFileFromMermaidMarkdown(outputFlowMdFileOut);
+        if (!pdfGenerated) { return false; }
+
+        const fileName = path.basename(pdfGenerated).replace(".pdf", "");
+        uxLog(this, c.grey(`Written ${fileName} PDF documentation in ${pdfGenerated}`));
+      }
       return true;
     }
   }
@@ -137,6 +148,26 @@ export async function generateMarkdownFileWithMermaidCli(outputFlowMdFileIn: str
       globalThis.mermaidUnavailableTools = (globalThis.mermaidUnavailableTools || []).concat("cli");
       uxLog(this, c.yellow("[Mermaid] CLI unavailable: do not try again"));
     }
+    return false;
+  }
+}
+
+export async function generatePdfFileFromMermaidMarkdown(mermaidMarkdownFile: string): Promise<string | false> {
+  try {
+    const outputPdfFile = mermaidMarkdownFile.replace('.md', '.pdf');
+    await mdToPdf({ path: mermaidMarkdownFile }, {
+      dest: outputPdfFile,
+      css: `img {
+              max-width: 50%;
+              max-height: 20%;
+              display: block;
+              margin: 0 auto;
+            }`,
+      stylesheet_encoding: 'utf-8'
+    });
+    return outputPdfFile;
+  } catch (e: any) {
+    uxLog(this, c.yellow(`Error generating PDF file from ${mermaidMarkdownFile} documentation with CLI: ${e.message}`) + "\n" + c.grey(e.stack));
     return false;
   }
 }
