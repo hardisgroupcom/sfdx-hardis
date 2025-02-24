@@ -75,7 +75,7 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
     this.outputFile = flags.outputfile || null;
     this.withHistory = flags["with-history"] === true ? true : false;
     this.withPdf = flags.pdf === true ? true : false;
-    this.singleFileMode = this.inputFiles.length == 1;
+    this.singleFileMode = this.inputFiles != null && this.inputFiles.length == 1;
     this.debugMode = flags.debug || false;
 
     if (this.inputFiles === null && !isCI) {
