@@ -311,8 +311,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       record.severityIcon = severityIconLog;
       // Unallowed actions
       if (
-        (this.allowedSectionsActions[section] &&
-          (this.allowedSectionsActions[section].length === 0 || !this.allowedSectionsActions[section].includes(record.Action))
+        (
+          this.allowedSectionsActions[section] &&
+          this.allowedSectionsActions[section].length > 0 &&
+          !this.allowedSectionsActions[section].includes(record.Action)
         ) ||
         !this.allowedSectionsActions[section]
       ) {
