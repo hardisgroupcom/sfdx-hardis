@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.21.0] 2025-02-27
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Generate PDF files from markdown documentation, by @matheus-delazeri
+
 ## [5.20.0] 2025-02-22
 
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/)
