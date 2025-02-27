@@ -100,7 +100,8 @@ ${this.htmlInstructions}
 
   public static examples = [
     '$ sf hardis:doc:project2markdown',
-    '$ sf hardis:doc:project2markdown --with-history'
+    '$ sf hardis:doc:project2markdown --with-history',
+    '$ sf hardis:doc:project2markdown --with-history --pdf'
   ];
 
   public static flags: any = {

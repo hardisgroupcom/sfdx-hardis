@@ -24,7 +24,9 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
 
   public static examples = [
     '$ sf hardis:doc:flow2markdown',
-    '$ sf hardis:doc:flow2markdown --inputfile force-app/main/default/flows/MyFlow.flow-meta.xml'
+    '$ sf hardis:doc:flow2markdown --inputfile force-app/main/default/flows/MyFlow.flow-meta.xml',
+    '$ sf hardis:doc:flow2markdown --pdf',
+    '$ sf hardis:doc:flow2markdown --inputfile force-app/main/default/flows/MyFlow.flow-meta.xml --pdf',
   ];
 
   public static flags: any = {
