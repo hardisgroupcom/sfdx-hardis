@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.20.0] 2025-02-27
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Generate PDF files from markdown documentation, by @matheus-delazeri
 - Fix issue with **monitoringAllowedSectionsActions** not taking in account when a section is defined as `[]` to ignore all of its member types.
 
 ## [5.19.4] 2025-02-17
