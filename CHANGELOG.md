@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:diagnose:unused-connected-app](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/): Fix crash when a Connected App doesn't have a CreatedBy
+
 ## [5.21.1] 2025-02-27
 
 - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/) Take in account `--target-org` option
