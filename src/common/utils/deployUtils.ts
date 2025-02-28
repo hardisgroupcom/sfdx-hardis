@@ -166,11 +166,57 @@ export async function smartDeploy(
 ): Promise<any> {
   elapseStart('all deployments');
   let quickDeploy = false;
+
+  // Check package.xml emptiness
+  const packageXmlIsEmpty = !fs.existsSync(packageXmlFile) || await isPackageXmlEmpty(packageXmlFile);
+
+  // Check if destructive changes files exist and have content
+  const hasDestructiveChanges = (
+    (!!options.preDestructiveChanges && fs.existsSync(options.preDestructiveChanges) &&
+      !(await isPackageXmlEmpty(options.preDestructiveChanges))) ||
+    (!!options.postDestructiveChanges && fs.existsSync(options.postDestructiveChanges) &&
+      !(await isPackageXmlEmpty(options.postDestructiveChanges)))
+  );
+
+  // Check if files exist but are empty
+  const hasEmptyDestructiveChanges = (
+    (!!options.preDestructiveChanges && fs.existsSync(options.preDestructiveChanges) &&
+      await isPackageXmlEmpty(options.preDestructiveChanges)) ||
+    (!!options.postDestructiveChanges && fs.existsSync(options.postDestructiveChanges) &&
+      await isPackageXmlEmpty(options.postDestructiveChanges))
+  );
+
+  // Special case: both package.xml and destructive changes files exist but are empty
+  if (packageXmlIsEmpty && hasEmptyDestructiveChanges && !hasDestructiveChanges) {
+    uxLog(this, c.cyan('Both package.xml and destructive changes files exist but are empty. Nothing to deploy.'));
+    return { messages: [], quickDeploy, deployXmlCount: 0 };
+  }
+
+  // If we have empty package.xml and no destructive changes, there's nothing to do
+  if (packageXmlIsEmpty && !hasDestructiveChanges) {
+    uxLog(this, 'No deployment or destructive changes to perform');
+    return { messages: [], quickDeploy, deployXmlCount: 0 };
+  }
+
+  // If we have empty package.xml but destructive changes, log it
+  if (packageXmlIsEmpty && hasDestructiveChanges) {
+    uxLog(this, c.cyan('Package.xml is empty, but destructive changes are present. Will proceed with deployment.'));
+  }
+
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode, options);
   const messages: any[] = [];
   let deployXmlCount = splitDeployments.length;
 
-  if (deployXmlCount === 0) {
+  // If no deployments are planned but we have destructive changes, add a deployment with the existing package.xml
+  if (deployXmlCount === 0 && hasDestructiveChanges) {
+    uxLog(this, c.cyan('Creating deployment for destructive changes...'));
+    splitDeployments.push({
+      label: 'package-for-destructive-changes',
+      packageXmlFile: packageXmlFile,
+      order: 0,
+    });
+    deployXmlCount = 1;
+  } else if (deployXmlCount === 0) {
     uxLog(this, 'No deployment to perform');
     return { messages, quickDeploy, deployXmlCount };
   }
@@ -183,11 +229,13 @@ export async function smartDeploy(
   uxLog(this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
   for (const deployment of splitDeployments) {
     elapseStart(`deploy ${deployment.label}`);
-    // Skip this deployment items if there is nothing to deploy in package.xml
-    if (
-      deployment.packageXmlFile &&
-      (await isPackageXmlEmpty(deployment.packageXmlFile, { ignoreStandaloneParentItems: true }))
-    ) {
+
+    // Skip this deployment if package.xml is empty AND it's not a special destructive changes deployment
+    // AND there are no destructive changes
+    const isDestructiveChangesDeployment = deployment.label === 'package-for-destructive-changes';
+    const packageXmlEmpty = await isPackageXmlEmpty(deployment.packageXmlFile, { ignoreStandaloneParentItems: true });
+
+    if (packageXmlEmpty && !isDestructiveChangesDeployment && !hasDestructiveChanges) {
       uxLog(
         commandThis,
         c.cyan(
@@ -211,11 +259,23 @@ export async function smartDeploy(
     // Deployment of type package.xml file
     if (deployment.packageXmlFile) {
       const nbDeployedItems = await countPackageXmlItems(deployment.packageXmlFile);
+
+      if (nbDeployedItems === 0 && !hasDestructiveChanges) {
+        uxLog(
+          commandThis,
+          c.yellow(
+            `Skipping deployment of ${c.bold(deployment.label)} because package.xml is empty and there are no destructive changes.`
+          )
+        );
+        elapseEnd(`deploy ${deployment.label}`);
+        continue;
+      }
+
       uxLog(
         commandThis,
         c.cyan(
           `${check ? 'Simulating deployment of' : 'Deploying'} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile
-          } (${nbDeployedItems} items)...`
+          } (${nbDeployedItems} items)${hasDestructiveChanges ? ' with destructive changes' : ''}...`
         )
       );
       // Try QuickDeploy
@@ -302,8 +362,36 @@ export async function smartDeploy(
         }
       } catch (e: any) {
         await generateApexCoverageOutputFile();
-        deployRes = await handleDeployError(e, check, branchConfig, commandThis, options, deployment);
+
+        // Special handling for "nothing to deploy" error with destructive changes
+        if ((e.stdout + e.stderr).includes("No local changes to deploy") && hasDestructiveChanges) {
+
+          uxLog(commandThis, c.yellow(c.bold(
+            'Received "Nothing to Deploy" error, but destructive changes are present. ' +
+            'This can happen when only destructive changes are being deployed.'
+          )));
+
+          // Create a minimal response to avoid terminal freeze
+          deployRes = {
+            status: 0,  // Treat as success
+            stdout: JSON.stringify({
+              status: 0,
+              result: {
+                success: true,
+                id: "destructiveChangesOnly",
+                details: {
+                  componentSuccesses: [],
+                  runTestResult: null
+                }
+              }
+            }),
+            stderr: ""
+          };
+        } else {
+          deployRes = await handleDeployError(e, check, branchConfig, commandThis, options, deployment);
+        }
       }
+
       if (typeof deployRes === 'object') {
         deployRes.stdout = JSON.stringify(deployRes);
       }
