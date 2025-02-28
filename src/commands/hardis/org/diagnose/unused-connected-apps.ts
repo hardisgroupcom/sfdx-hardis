@@ -221,7 +221,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     // Build result
     const severityIcon = getSeverityIcon(severity);
-    connectedApp.CreatedBy = connectedApp.CreatedBy.Name;
+    connectedApp.CreatedBy = connectedApp?.CreatedBy?.Name || 'Not set';
     connectedApp.LastModifiedBy = connectedApp?.LastModifiedBy?.Name || 'Not set';
     connectedApp.loginHistoryFound = loginHistoryFound;
     connectedApp.severityReason = reason;
