@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - [hardis:org:diagnose:unused-connected-app](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/): Fix crash when a Connected App doesn't have a CreatedBy
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Avoid crash when a lookup field does not contain referenceTo
 
 ## [5.21.1] 2025-02-27
 
