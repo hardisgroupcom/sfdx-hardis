@@ -225,57 +225,63 @@ export class FilesExporter {
         `Processing parent records chunk #${this.recordChunksNumber} on ${this.chunksNumber} (${records.length} records) ...`
       )
     );
-    // Request all ContentDocumentLink related to all records of the chunk
-    const linkedEntityIdIn = records.map((record: any) => `'${record.Id}'`).join(',');
-    const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
-    this.totalSoqlRequests++;
-    const contentDocumentLinks = await bulkQuery(linkedEntityInQuery, this.conn);
-    if (contentDocumentLinks.records.length === 0) {
-      uxLog(this, c.grey('No ContentDocumentLinks found for the parent records in this chunk'));
-      return;
+  
+    // Process records in batches of 1000 to avoid hitting the SOQL query limit
+    const batchSize = 1000;
+    for (let i = 0; i < records.length; i += batchSize) {
+      const batch = records.slice(i, i + batchSize);
+  
+      // Request all ContentDocumentLink related to all records of the batch
+      const linkedEntityIdIn = batch.map((record: any) => `'${record.Id}'`).join(',');
+      const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
+      this.totalSoqlRequests++;
+      const contentDocumentLinks = await bulkQuery(linkedEntityInQuery, this.conn);
+      if (contentDocumentLinks.records.length === 0) {
+        uxLog(this, c.grey('No ContentDocumentLinks found for the parent records in this batch'));
+        continue;
+      }
+  
+      // Retrieve all ContentVersion related to ContentDocumentLink
+      const contentDocIdIn = contentDocumentLinks.records
+        .map((contentDocumentLink: any) => `'${contentDocumentLink.ContentDocumentId}'`)
+        .join(',');
+      const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdIn}) AND IsLatest = true`;
+      this.totalSoqlRequests++;
+      const contentVersions = await bulkQuery(contentVersionSoql, this.conn);
+  
+      // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
+      // Because of this when we fetch ContentVersion for ContentDocument it can return less results than there is ContentDocumentLink objects to link.
+      // To fix this we create a list of ContentVersion and ContentDocumentLink pairs.
+      // This way we have multiple pairs and we will download ContentVersion objects for each linked object.
+      const versionsAndLinks: any[] = [];
+      contentVersions.records.forEach((contentVersion) => {
+        contentDocumentLinks.records.forEach((contentDocumentLink) => {
+          if (contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId) {
+            versionsAndLinks.push({
+              contentVersion: contentVersion,
+              contentDocumentLink: contentDocumentLink,
+            });
+          }
+        });
+      });
+  
+      // Download files
+      await PromisePool.withConcurrency(5)
+        .for(versionsAndLinks)
+        .process(async (versionAndLink: any) => {
+          try {
+            await this.downloadContentVersionFile(
+              versionAndLink.contentVersion,
+              batch,
+              versionAndLink.contentDocumentLink
+            );
+          } catch (e) {
+            this.filesErrors++;
+            uxLog(this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
+          }
+        });
     }
-
-    // Retrieve all ContentVersion related to ContentDocumentLink
-    const contentDocIdIn = contentDocumentLinks.records
-      .map((contentDocumentLink: any) => `'${contentDocumentLink.ContentDocumentId}'`)
-      .join(',');
-    const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdIn}) AND IsLatest = true`;
-    this.totalSoqlRequests++;
-    const contentVersions = await bulkQuery(contentVersionSoql, this.conn);
-
-    // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
-    // Because of this when we fetch ContentVersion for ContentDocument it can return less results than there is ContentDocumentLink objects to link.
-    // To fix this we create a list of ContentVersion and ContentDocumentLink pairs.
-    // This way we have multiple pairs and we will download ContentVersion objects for each linked object.
-    const versionsAndLinks: any[] = [];
-    contentVersions.records.forEach((contentVersion) => {
-      contentDocumentLinks.records.forEach((contentDocumentLink) => {
-        if (contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId) {
-          versionsAndLinks.push({
-            contentVersion: contentVersion,
-            contentDocumentLink: contentDocumentLink,
-          });
-        }
-      });
-    });
-
-    // Download files
-    await PromisePool.withConcurrency(5)
-      .for(versionsAndLinks)
-      .process(async (versionAndLink: any) => {
-        try {
-          await this.downloadContentVersionFile(
-            versionAndLink.contentVersion,
-            records,
-            versionAndLink.contentDocumentLink
-          );
-        } catch (e) {
-          this.filesErrors++;
-          uxLog(this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
-        }
-      });
   }
-
   private async downloadContentVersionFile(contentVersion, records, contentDocumentLink) {
     // Retrieve initial record to build output files folder name
     const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
