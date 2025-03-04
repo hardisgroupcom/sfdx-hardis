@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.21.3] 2025-03-01
+
+- [hardis:org:data:export](https://sfdx-hardis.cloudity.com/hardis/org/data/export/): Fix crash when a record has more than 1000 attached documents
+
 ## [5.21.2] 2025-03-01
 
 - [hardis:org:diagnose:unused-connected-app](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/): Fix crash when a Connected App doesn't have a CreatedBy
