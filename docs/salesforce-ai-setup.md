@@ -34,6 +34,11 @@ The list of prompts used by sfdx-hardis is defined in [this source file](https:/
 ### With Agentforce
 
 - Agentforce must be activated on the default org used when you call the sfdx-hardis command
+
+> You can do that with Salesforce Freemium feature [Salesforce Foundations](https://www.salesforce.com/crm/foundations/), that offers 200000 Einstein Prompts
+
+![Salesforce Foundations free tier](assets/images/foundations.png)
+
 - A prompt template **SfdxHardisGenericPrompt** (type `Flex`) must exist in the default org, with input variable **PromptText** (type `FreeText`)
 - The connected used must be assigned to permission set **Prompt Template User**
 

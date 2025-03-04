@@ -23,6 +23,7 @@ import { BranchStrategyMermaidBuilder } from '../../../common/utils/branchStrate
 import { mdTableCell } from '../../../common/gitProvider/utilsMarkdown.js';
 import { prettifyFieldName } from '../../../common/utils/flowVisualiser/nodeFormatUtils.js';
 import { ObjectModelBuilder } from '../../../common/docBuilder/objectModelBuilder.js';
+import { generatePdfFileFromMarkdown } from '../../../common/utils/markdownUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -99,7 +100,8 @@ ${this.htmlInstructions}
 
   public static examples = [
     '$ sf hardis:doc:project2markdown',
-    '$ sf hardis:doc:project2markdown --with-history'
+    '$ sf hardis:doc:project2markdown --with-history',
+    '$ sf hardis:doc:project2markdown --with-history --pdf'
   ];
 
   public static flags: any = {
@@ -110,6 +112,9 @@ ${this.htmlInstructions}
     "with-history": Flags.boolean({
       default: false,
       description: "Generate a markdown file with the history diff of the Flow",
+    }),
+    pdf: Flags.boolean({
+      description: 'Also generate the documentation in PDF format',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -137,6 +142,7 @@ ${this.htmlInstructions}
   protected outputPackageXmlMarkdownFiles: any[] = [];
   protected mkDocsNavNodes: any[] = [{ "Home": "index.md" }];
   protected withHistory = false;
+  protected withPdf = false;
   protected debugMode = false;
   protected footer: string;
   protected apexDescriptions: any[] = [];
@@ -152,6 +158,7 @@ ${this.htmlInstructions}
     const { flags } = await this.parse(Project2Markdown);
     this.diffOnly = flags["diff-only"] === true ? true : false;
     this.withHistory = flags["with-history"] === true ? true : false;
+    this.withPdf = flags.pdf === true ? true : false;
     this.debugMode = flags.debug || false;
     globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email, or for Agentforce
 
@@ -326,6 +333,9 @@ ${Project2Markdown.htmlInstructions}
           await fs.writeFile(mdFile, getMetaHideLines() + apexMdContent);
         }
         uxLog(this, c.grey(`Generated markdown for Apex class ${apexName}`));
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(mdFile);
+        }
       }
     }
     this.addNavNode("Apex", apexForMenu);
@@ -353,6 +363,9 @@ ${Project2Markdown.htmlInstructions}
         impactedObjects: this.allObjectsNames.filter(objectName => pageXml.includes(`${objectName}`)).join(", ")
       });
       await generateLightningPageMarkdown(pageName, pageXml, mdFile);
+      if (this.withPdf) {
+        await generatePdfFileFromMarkdown(mdFile);
+      }
     }
     this.addNavNode("Lightning Pages", pagesForMenu);
 
@@ -445,6 +458,10 @@ ${Project2Markdown.htmlInstructions}
       // Mermaid schema
       const mermaidSchema = await new ObjectModelBuilder(objectName).buildObjectsMermaidSchema();
       await replaceInFile(objectMdFile, '<!-- Mermaid schema -->', '## Schema\n\n```mermaid\n' + mermaidSchema + '\n```\n');
+      if (this.withPdf) {
+        /** Regenerate using Mermaid CLI to convert Mermaid code into SVG */
+        await generateMarkdownFileWithMermaid(objectMdFile, objectMdFile, null, true);
+      }
       // Flows Tables
       const relatedObjectFlowsTable = await this.buildFlowsTable('../flows/', objectName);
       await replaceInFile(objectMdFile, '<!-- Flows table -->', relatedObjectFlowsTable.join("\n"));
@@ -458,6 +475,9 @@ ${Project2Markdown.htmlInstructions}
         description: objectXmlParsed?.CustomObject?.description || "",
       });
       objectsForMenu[objectName] = "objects/" + objectName + ".md";
+      if (this.withPdf) {
+        await generatePdfFileFromMarkdown(objectMdFile);
+      }
     }
     this.addNavNode("Objects", objectsForMenu);
 
@@ -506,6 +526,18 @@ ${Project2Markdown.htmlInstructions}
     const flowErrors: string[] = [];
     const flowWarnings: string[] = [];
     const flowSkips: string[] = [];
+
+    // List flows dependencies
+    const flowDeps: any = {};
+    for (const flowFile of flowFiles) {
+      const flowName = path.basename(flowFile, ".flow-meta.xml");
+      const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
+      // Find all occurences of <flowName>.*</flowName> in flowXml
+      const regex = /<flowName>(.*?)<\/flowName>/g;
+      const extractedNames = [...flowXml.matchAll(regex)].map(match => match[1]);
+      flowDeps[flowName] = extractedNames;
+    }
+    // Generate Flows documentation
     for (const flowFile of flowFiles) {
       const flowName = path.basename(flowFile, ".flow-meta.xml");
       const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
@@ -524,7 +556,7 @@ ${Project2Markdown.htmlInstructions}
         continue;
       }
       uxLog(this, c.grey(`Generating markdown for Flow ${flowFile}...`));
-      const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFlowMdFile, { collapsedDetails: false, describeWithAi: true });
+      const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFlowMdFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: flowDeps });
       if (!genRes) {
         flowErrors.push(flowFile);
         continue;
@@ -532,7 +564,7 @@ ${Project2Markdown.htmlInstructions}
       if (this.debugMode) {
         await fs.copyFile(outputFlowMdFile, outputFlowMdFile.replace(".md", ".mermaid.md"));
       }
-      const gen2res = await generateMarkdownFileWithMermaid(outputFlowMdFile, outputFlowMdFile);
+      const gen2res = await generateMarkdownFileWithMermaid(outputFlowMdFile, outputFlowMdFile, null, this.withPdf);
       if (!gen2res) {
         flowWarnings.push(flowFile);
         continue;

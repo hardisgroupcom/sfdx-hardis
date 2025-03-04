@@ -24,4 +24,8 @@ Login to salesforce org
 sf hardis:auth:login
 ```
 
+```shell
+CI=true sf hardis:auth:login
+```
+
 

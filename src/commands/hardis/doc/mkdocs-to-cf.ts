@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
@@ -40,7 +40,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
 | Variable                                        | Description | Default |
 | :-----------------------------------------      | :---------- | :-----: |
 | \`CLOUDFLARE_EMAIL\`                            | Cloudflare account email | <!--- Required --> |
-| \`CLOUDFLARE_API_KEY\`                          | Cloudflare API key | <!--- Required --> |
+| \`CLOUDFLARE_API_TOKEN\`                        | Cloudflare API token | <!--- Required --> |
 | \`CLOUDFLARE_ACCOUNT_ID\`                       | Cloudflare account | <!--- Required --> |
 | \`CLOUDFLARE_PROJECT_NAME\`                     | Project name, that will also be used for site URL | Built from git branch name |
 | \`CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE\`        | Cloudflare default login method type | \`onetimepin\` |
@@ -64,8 +64,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
-    }),
-    'target-org': requiredOrgFlagWithDeprecations,
+    })
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -179,12 +178,10 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
         account_id: this.accountId || "",
         decision: "allow",
         include: [
-          { login_method: { id: defaultLoginMethod.id } }
+          { email_domain: { domain: this.defaultAccessEmailDomain } },
         ],
         require: [
-          {
-            email_domain: { domain: this.defaultAccessEmailDomain },
-          }
+          { login_method: { id: defaultLoginMethod.id } }
         ],
       } as any);
       uxLog(this, c.green("Cloudflare policy created: " + this.accessPolicyName));

@@ -4,6 +4,48 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.21.2] 2025-03-01
+
+- [hardis:org:diagnose:unused-connected-app](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/): Fix crash when a Connected App doesn't have a CreatedBy
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Avoid crash when a lookup field does not contain referenceTo
+
+## [5.21.1] 2025-02-27
+
+- [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/) Take in account `--target-org` option
+- [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/) Fix **monitoringAllowedSectionsActions**
+
+## [5.21.0] 2025-02-27
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Generate PDF files from markdown documentation, by @matheus-delazeri
+
+## [5.20.0] 2025-02-22
+
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/)
+  - Document properties **availableProjects** and **availableTargetBranches**
+  - Allow to define **newTaskNameRegex** to enforce the naming of a new task
+  - Allow to remove question about upgrading the dev sandbox is `sharedDevSandboxes: true` is set
+- Fix issue with **monitoringAllowedSectionsActions** not taking in account when a section is defined as `[]` to ignore all of its member types.
+- Upgrade npm dependencies
+
+## [5.19.4] 2025-02-17
+
+- Do not check for missing descriptions on Data Cloud & Managed package metadatas
+- Doc: display where subflows are used in a new Dependencies paragraph
+- mkdocs-to-cf: No need to authenticate to SF org
+
+## [5.19.3] 2025-02-15
+
+- Doc: Add Cloudflare setup instructions
+- Doc: Reorganize Project documentation menus
+- Update default workflows to handle Cloudflare variables
+
+## [5.19.2] 2025-02-14
+
+- [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/): Added necessary flags to be run from vscode sfdx-hardis extension + added skip-credits
+  - Bypass generator: Create metadatas folders if not existing yet
+- Change default CF policy
+- Update doc to request activation of **ExperienceBundle Metadata API**
+
 ## [5.19.1] 2025-02-09
 
 - Quickfix cf upload
