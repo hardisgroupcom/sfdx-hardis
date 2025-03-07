@@ -311,21 +311,7 @@ export class FilesExporter {
     }
   }
   
-  private async downloadAttachmentFile(attachment: any, records: any[]) {
-    // Retrieve initial record to build output files folder name
-    const parentRecord = records.filter((record) => record.Id === attachment.ParentId)[0];
-    // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
-    const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id).replace(
-      /[/\\?%*:|"<>]/g,
-      '-'
-    );
-    const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
-    // Define name of the file
-    const outputFile = path.join(parentRecordFolderForFiles, attachment.Name.replace(/[/\\?%*:|"<>]/g, '-'));
-    // Create directory if not existing
-    await fs.ensureDir(parentRecordFolderForFiles);
-    // Download file locally
-    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/Attachment/${attachment.Id}/Body`;
+  private async downloadFile(fetchUrl: string, outputFile: string) {
     const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
     if (downloadResult.success) {
       this.filesDownloaded++;
@@ -333,8 +319,26 @@ export class FilesExporter {
       this.filesErrors++;
     }
   }
-
-  private async downloadContentVersionFile(contentVersion, records, contentDocumentLink) {
+  
+  private async downloadAttachmentFile(attachment: any, records: any[]) {
+    // Retrieve initial record to build output files folder name
+    const parentAttachment = records.filter((record) => record.Id === attachment.ParentId)[0];
+    // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
+    const attachmentParentFolderName = (parentAttachment[this.dtl.outputFolderNameField] || parentAttachment.Id).replace(
+      /[/\\?%*:|"<>]/g,
+      '-'
+    );
+    const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, attachmentParentFolderName));
+    // Define name of the file
+    const outputFile = path.join(parentRecordFolderForFiles, attachment.Name.replace(/[/\\?%*:|"<>]/g, '-'));
+    // Create directory if not existing
+    await fs.ensureDir(parentRecordFolderForFiles);
+    // Download file locally
+    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/Attachment/${attachment.Id}/Body`;
+    await this.downloadFile(fetchUrl, outputFile);
+  }
+  
+  private async downloadContentVersionFile(contentVersion: any, records: any[], contentDocumentLink: any) {
     // Retrieve initial record to build output files folder name
     const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
@@ -383,14 +387,9 @@ export class FilesExporter {
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
-    const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
-    if (downloadResult.success) {
-      this.filesDownloaded++;
-    } else {
-      this.filesErrors++;
-    }
+    await this.downloadFile(fetchUrl, outputFile);
   }
-
+  
   // Build stats & result
   private async buildResult() {
     const connAny = this.conn as any;
