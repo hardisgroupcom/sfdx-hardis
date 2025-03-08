@@ -1976,9 +1976,9 @@
     universal-user-agent "^6.0.0"
 
 "@octokit/endpoint@^9.0.1":
-  version "9.0.5"
-  resolved "https://registry.npmjs.org/@octokit/endpoint/-/endpoint-9.0.5.tgz"
-  integrity sha512-ekqR4/+PCLkEBF6qgj8WqJfvDq65RH85OAgrtnVp1mSxaXF03u2xW/hUdweGS5654IlC0wkNYC18Z50tSYTAFw==
+  version "9.0.6"
+  resolved "https://registry.yarnpkg.com/@octokit/endpoint/-/endpoint-9.0.6.tgz#114d912108fe692d8b139cfe7fc0846dfd11b6c0"
+  integrity "sha1-EU2RIQj+aS2LE5z+f8CEbf0RtsA= sha512-H1fNTMA57HbkFESSt3Y9+FBICv+0jFceJFPWDePYlR/iMGrwM5ph+Dd4XRQs+8X+PUFURLQgX9ChPfhJ/1uNQw=="
   dependencies:
     "@octokit/types" "^13.1.0"
     universal-user-agent "^6.0.0"
@@ -2060,9 +2060,9 @@
     once "^1.4.0"
 
 "@octokit/request-error@^5.1.0":
-  version "5.1.0"
-  resolved "https://registry.npmjs.org/@octokit/request-error/-/request-error-5.1.0.tgz"
-  integrity sha512-GETXfE05J0+7H2STzekpKObFe765O5dlAKUTLNGeH+x47z7JjXHfsHKo5z21D/o/IOZTUEI6nyWyR+bZVP/n5Q==
+  version "5.1.1"
+  resolved "https://registry.yarnpkg.com/@octokit/request-error/-/request-error-5.1.1.tgz#b9218f9c1166e68bb4d0c89b638edc62c9334805"
+  integrity "sha1-uSGPnBFm5ou00MibY47cYskzSAU= sha512-v9iyEQJH6ZntoENr9/yXxjuezh4My67CBSu9r6Ve/05Iu5gNgnisNWOsoJHTP6k0Rr0+HQIpnH+kyammu90q/g=="
   dependencies:
     "@octokit/types" "^13.1.0"
     deprecation "^2.0.0"
