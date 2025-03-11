@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Support edge-case when package.xml is empty but destructive changes are present. (see [Github issue](https://github.com/hardisgroupcom/sfdx-hardis/issues/1093))
+
 ## [5.21.3] 2025-03-01
 
 - [hardis:org:data:export](https://sfdx-hardis.cloudity.com/hardis/org/data/export/): Fix crash when a record has more than 1000 attached documents
@@ -17,7 +19,6 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/) Take in account `--target-org` option
 - [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/) Fix **monitoringAllowedSectionsActions**
-- Support edge-case when package.xml is empty but destructive changes are present. (see [Github issue](https://github.com/hardisgroupcom/sfdx-hardis/issues/1093))
 
 ## [5.21.0] 2025-02-27
 
