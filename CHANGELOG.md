@@ -4,6 +4,15 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.21.3] 2025-03-01
+
+- [hardis:org:data:export](https://sfdx-hardis.cloudity.com/hardis/org/data/export/): Fix crash when a record has more than 1000 attached documents
+
+## [5.21.2] 2025-03-01
+
+- [hardis:org:diagnose:unused-connected-app](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/): Fix crash when a Connected App doesn't have a CreatedBy
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Avoid crash when a lookup field does not contain referenceTo
+
 ## [5.21.1] 2025-02-27
 
 - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/) Take in account `--target-org` option
