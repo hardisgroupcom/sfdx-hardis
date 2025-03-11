@@ -383,8 +383,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       this.delta = true;
       this.smartDeployOptions.delta = true;
       // Define delta deployment depending on context
-      let fromCommit = 'HEAD';
-      let toCommit = 'HEAD^';
+      let fromCommit = 'HEAD^';
+      let toCommit = 'HEAD';
       if (this.checkOnly) {
         // In deployment check context
         const prInfo = await GitProvider.getPullRequestInfo();
