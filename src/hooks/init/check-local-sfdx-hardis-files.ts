@@ -1,13 +1,12 @@
-import c from 'chalk';
-import fs from 'fs-extra';
-import { isCI, isMonitoringJob, uxLog } from '../../common/utils/index.js';
-import { prompts } from '../../common/utils/prompts.js';
-import { getConfig, setConfig } from '../../config/index.js';
 import { Hook } from '@oclif/core';
 
 const hook: Hook<'init'> = async (options) => {
   // Skip hooks from other commands than hardis:scratch commands
   const commandId = options?.id || '';
+
+  if (!commandId.startsWith('hardis')) {
+    return;
+  }
 
   if (!options.argv.includes('--json')) {
     await manageGitIgnoreForceIgnore(commandId);
@@ -15,9 +14,8 @@ const hook: Hook<'init'> = async (options) => {
 };
 
 async function manageGitIgnoreForceIgnore(commandId: string) {
-  if (!commandId.startsWith('hardis')) {
-    return;
-  }
+  // Dynamic imports to improve performances when other CLI commands are called
+  const { isCI, isMonitoringJob, uxLog } = await import('../../common/utils/index.js');
   // Run this command only during a monitoring job, or a Release Manager local operation
   const isMon = await isMonitoringJob();
   if (
@@ -25,6 +23,12 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
   ) {
     return;
   }
+  // Dynamic imports to improve performances when other CLI commands are called
+  const c = (await import('chalk')).default;
+  const fs = (await import('fs-extra')).default;
+  const { getConfig, setConfig } = await import('../../config/index.js');
+  const { prompts } = await import('../../common/utils/prompts.js');
+
   const config = await getConfig('user');
   // Manage .gitignore
   if (!config.skipUpdateGitIgnore === true) {

@@ -1,9 +1,3 @@
-import c from 'chalk';
-import { readPackageUp } from 'read-package-up';
-import updateNotifier from 'update-notifier';
-import * as semver from 'semver';
-import { fileURLToPath } from 'url';
-import * as path from 'path';
 import { Hook } from '@oclif/core';
 
 const hook: Hook<'init'> = async (options) => {
@@ -12,6 +6,14 @@ const hook: Hook<'init'> = async (options) => {
   if (!commandId.startsWith('hardis')) {
     return;
   }
+
+  // Dynamically import libraries to avoid loading them if not needed
+  const c = (await import('chalk')).default;
+  const { fileURLToPath } = await import('url');
+  const path = await import('path');
+  const semver = (await import('semver')).default;
+  const updateNotifier = (await import('update-notifier')).default;
+  const { readPackageUp } = await import('read-package-up');
 
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -36,8 +38,7 @@ const hook: Hook<'init'> = async (options) => {
     );
     console.warn(
       c.yellow(
-        `WARNING: You are using sfdx-hardis v${notifier.update.current}: Please upgrade to v${
-          notifier.update.latest
+        `WARNING: You are using sfdx-hardis v${notifier.update.current}: Please upgrade to v${notifier.update.latest
         } by running ${c.green('sf plugins install sfdx-hardis')}`
       )
     );
