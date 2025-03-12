@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Lazy loading in hooks to improve performances when other CLI plugins commands are called
+
 ## [5.21.4] 2025-03-11
 
 - Support edge-case when package.xml is empty but destructive changes are present. (see [Github issue](https://github.com/hardisgroupcom/sfdx-hardis/issues/1093))
