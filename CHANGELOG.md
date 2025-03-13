@@ -4,7 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Lazy loading in hooks to improve performances when other CLI plugins commands are called
+- [hardis:doc:flow2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/) Call AI when generating the doc of a single flow
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) Fix: delta after merge is not working as expected
 
 ## [5.21.4] 2025-03-11
 
@@ -243,6 +244,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [5.11.0] 2025-01-03
 
 - Visual flow management, using MermaidJs
+
   - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add a markdown file for each Flow
     - If unable to run mermaid-cli, store markdown with mermaidJs diagram content anyway (can happen from Monitoring Backup Command)
     - When called from Monitoring ([hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)), generate Flow documentation only if it has been updated
@@ -254,6 +256,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - New command [hardis:project:deploy:notify](https://sfdx-hardis.cloudity.com/hardis/project/deploy/notify/) to send Pull Request comments (with Flow Visual Git Diff) and Slack / Teams notifications even if you are not using a sfdx-hardis command to check or process a deployment.
 
 - Command updates
+
   - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Refactor deployment errors parsing: use JSON output instead of text output
   - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): Display the number of failed tests in messages and notifications
   - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/):
@@ -261,6 +264,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
     - New option **--full-apply-filters** that can be used with **--full** option to apply filters anyway
 
 - Core enhancements & fixes
+
   - Obfuscate some data from text log files
   - Kill some exit handlers in case they are making the app crash after a throw SfError
   - Trigger notifications during the command execution, not after
@@ -324,7 +328,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - New command **hardis:git:pull-requests:extract**: Extract Pull Requests from Git Server into CSV/XLS (Azure only for now)
 - Fix bug when scratch org username is > 80 chars
 - Make markdown-links-check not blocking by default in MegaLinter base config
-- Make yamllint  not blocking by default in MegaLinter base config
+- Make yamllint not blocking by default in MegaLinter base config
 
 ## [5.6.3] 2024-11-17
 
