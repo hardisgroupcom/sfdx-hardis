@@ -12,7 +12,7 @@ import ExcelJS from 'exceljs';
 
 // Project Specific Utilities
 import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from './index.js';
-import { bulkQuery, soqlQuery } from './apiUtils.js';
+import { bulkQuery, soqlQuery,bulkQueryByChunks } from './apiUtils.js';
 import { prompts } from './prompts.js';
 import { CONSTANTS, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
@@ -26,6 +26,7 @@ export class FilesExporter {
   private pollTimeout: number;
   private recordsChunkSize: number;
   private startChunkNumber: number;
+  private parentRecordsChunkSize: number;
   private commandThis: any;
 
   private dtl: any = null; // export config
@@ -59,8 +60,9 @@ export class FilesExporter {
   ) {
     this.filesPath = filesPath;
     this.conn = conn;
-    this.pollTimeout = options?.pollTimeout || 300000;
+    this.pollTimeout = options?.pollTimeout || 600000;
     this.recordsChunkSize = options?.recordsChunkSize || 1000;
+    this.parentRecordsChunkSize = 100000;
     this.startChunkNumber = options?.startChunkNumber || 0;
     this.commandThis = commandThis;
     if (options.exportConfig) {
@@ -80,7 +82,7 @@ export class FilesExporter {
     await fs.ensureDir(this.exportedFilesFolder);
 
     await this.calculateApiConsumption();
-    this.startQueue(this.dtl.loadAttachments);
+    this.startQueue();
     await this.processParentRecords();
     await this.queueCompleted();
     return await this.buildResult();
@@ -130,12 +132,12 @@ export class FilesExporter {
   }
 
   // Run chunks one by one, and don't wait to have all the records fetched to start it
-  private startQueue(loadAttachments: boolean) {
+  private startQueue() {
     this.queueInterval = setInterval(async () => {
       if (this.recordsChunkQueueRunning === false && this.recordsChunkQueue.length > 0) {
         this.recordsChunkQueueRunning = true;
         const recordChunk = this.recordsChunkQueue.shift();
-        await this.processRecordsChunk(recordChunk,loadAttachments);
+        await this.processRecordsChunk(recordChunk);
         this.recordsChunkQueueRunning = false;
         // Manage last chunk
       } else if (
@@ -177,7 +179,9 @@ export class FilesExporter {
     // Query parent records using SOQL defined in export.json file
     this.totalSoqlRequests++;
     this.conn.bulk.pollTimeout = this.pollTimeout || 600000; // Increase timeout in case we are on a bad internet connection or if the bulk api batch is queued
-    const queryRes = await bulkQuery(this.dtl.soqlQuery, this.conn, 3);
+
+    // Use bulkQueryByChunks to handle large queries
+    const queryRes = await bulkQueryByChunks(this.dtl.soqlQuery, this.conn, this.parentRecordsChunkSize);
     for (const record of queryRes.records) {
       this.totalParentRecords++;
       const parentRecordFolderForFiles = path.resolve(
@@ -191,7 +195,7 @@ export class FilesExporter {
           )
         );
         this.recordsIgnored++;
-        return;
+        continue;
       }
       await this.addToRecordsChunk(record);
     }
@@ -208,7 +212,7 @@ export class FilesExporter {
     }
   }
 
- private async processRecordsChunk(records: any[], loadAttachments: boolean) {
+  private async processRecordsChunk(records: any[]) {
     this.recordChunksNumber++;
     if (this.recordChunksNumber < this.startChunkNumber) {
       uxLog(
@@ -225,57 +229,47 @@ export class FilesExporter {
         `Processing parent records chunk #${this.recordChunksNumber} on ${this.chunksNumber} (${records.length} records) ...`
       )
     );
-  
-  // Process records in batches of 1000 to avoid hitting the SOQL query limit
-  let batchSize = 1000;
-  if(loadAttachments) {
-    // Process records in batches of 200 to avoid hitting the SOQL query limit
-    batchSize = 200;
-  }
-  for (let i = 0; i < records.length; i += batchSize) {
-    const batch = records.slice(i, i + batchSize);
-
-    if (loadAttachments) {
+    // Process records in batches of 200 for Attachments and 1000 for ContentVersions to avoid hitting the SOQL query limit
+    const attachmentBatchSize = 200;
+    const contentVersionBatchSize = 1000;
+    for (let i = 0; i < records.length; i += attachmentBatchSize) {
+      const batch = records.slice(i, i + attachmentBatchSize);
       // Request all Attachment related to all records of the batch using REST API
       const parentIdIn = batch.map((record: any) => `'${record.Id}'`).join(',');
       const attachmentQuery = `SELECT Id, Name, ContentType, ParentId FROM Attachment WHERE ParentId IN (${parentIdIn})`;
       this.totalSoqlRequests++;
       const attachments = await this.conn.query(attachmentQuery);
-      if (attachments.records.length === 0) {
+      if (attachments.records.length > 0) {
+        // Download attachments using REST API
+        await PromisePool.withConcurrency(5)
+          .for(attachments.records)
+          .process(async (attachment: any) => {
+            try {
+              await this.downloadAttachmentFile(attachment, batch);
+            } catch (e) {
+              this.filesErrors++;
+              uxLog(this, c.red('Download file error: ' + attachment.Name + '\n' + e));
+            }
+          });
+      } else {
         uxLog(this, c.grey('No Attachments found for the parent records in this batch'));
-        continue;
       }
-
-      // Download attachments using REST API
-      await PromisePool.withConcurrency(5)
-        .for(attachments.records)
-        .process(async (attachment: any) => {
-          try {
-            await this.downloadAttachmentFile(attachment, batch);
-          } catch (e) {
-            this.filesErrors++;
-            uxLog(this, c.red('Download file error: ' + attachment.Name + '\n' + e));
-          }
-        });
-    } else {
-        // Request all ContentDocumentLink related to all records of the batch
-        const linkedEntityIdIn = batch.map((record: any) => `'${record.Id}'`).join(',');
-        const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
-        this.totalSoqlRequests++;
-        const contentDocumentLinks = await bulkQuery(linkedEntityInQuery, this.conn);
-        if (contentDocumentLinks.records.length === 0) {
-          uxLog(this, c.grey('No ContentDocumentLinks found for the parent records in this batch'));
-          continue;
-        }
-  
+    }
+    for (let i = 0; i < records.length; i += contentVersionBatchSize) {
+      const batch = records.slice(i, i + contentVersionBatchSize);
+      // Request all ContentDocumentLink related to all records of the batch
+      const linkedEntityIdIn = batch.map((record: any) => `'${record.Id}'`).join(',');
+      const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
+      this.totalSoqlRequests++;
+      const contentDocumentLinks = await bulkQueryByChunks(linkedEntityInQuery, this.conn, this.parentRecordsChunkSize);
+      if (contentDocumentLinks.records.length > 0) {
         // Retrieve all ContentVersion related to ContentDocumentLink
         const contentDocIdIn = contentDocumentLinks.records
           .map((contentDocumentLink: any) => `'${contentDocumentLink.ContentDocumentId}'`)
           .join(',');
         const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdIn}) AND IsLatest = true`;
         this.totalSoqlRequests++;
-        const contentVersions = await bulkQuery(contentVersionSoql, this.conn);
-  
+        const contentVersions = await bulkQueryByChunks(contentVersionSoql, this.conn, this.parentRecordsChunkSize);
         // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
         // Because of this when we fetch ContentVersion for ContentDocument it can return less results than there is ContentDocumentLink objects to link.
         // To fix this we create a list of ContentVersion and ContentDocumentLink pairs.
@@ -291,7 +285,6 @@ export class FilesExporter {
             }
           });
         });
-  
         // Download files
         await PromisePool.withConcurrency(5)
           .for(versionsAndLinks)
@@ -307,10 +300,12 @@ export class FilesExporter {
               uxLog(this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
             }
           });
+      } else {
+        uxLog(this, c.grey('No ContentDocumentLinks found for the parent records in this batch'));
       }
     }
   }
-  
+
   private async downloadFile(fetchUrl: string, outputFile: string) {
     const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
     if (downloadResult.success) {
@@ -389,7 +384,6 @@ export class FilesExporter {
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
     await this.downloadFile(fetchUrl, outputFile);
   }
-  
   // Build stats & result
   private async buildResult() {
     const connAny = this.conn as any;
@@ -614,7 +608,6 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
   const overwriteParentRecords =
     exportFileJson.overwriteParentRecords === false ? false : exportFileJson.overwriteParentRecords || true;
   const overwriteFiles = exportFileJson.overwriteFiles || false;
-  const loadAttachments = exportFileJson.loadAttachments || false;
   return {
     full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ''}`,
     label: hardisLabel,
@@ -625,7 +618,6 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
     outputFileNameFormat: outputFileNameFormat,
     overwriteParentRecords: overwriteParentRecords,
     overwriteFiles: overwriteFiles,
-    loadAttachments: loadAttachments,
   };
 }
 
@@ -634,16 +626,6 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
   if (override === false) {
     questions.push(
       ...[
-        {
-          type: 'select',
-          name: 'loadAttachments',
-          choices: [
-            { value: 'false', title: 'ContentDocuement' },
-            { value: 'true', title: 'Attachment' },
-          ],
-          message: 'Please input the type of files to download (ContentDocument or Attachment).',
-          initial: filesExportConfig.loadAttachments,
-        },
         {
           type: 'text',
           name: 'filesExportPath',
@@ -719,7 +701,6 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
     outputFileNameFormat: resp.outputFileNameFormat,
     overwriteParentRecords: resp.overwriteParentRecords,
     overwriteFiles: resp.overwriteFiles,
-    loadAttachments: resp.loadAttachments,
   });
   return filesConfig;
 }

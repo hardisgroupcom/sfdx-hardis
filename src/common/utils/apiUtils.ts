@@ -100,6 +100,35 @@ export async function bulkQueryChunksIn(
   }
   return results;
 }
+ 
+
+// New method to bulk query records by chunks of 10000
+export async function bulkQueryByChunks(
+  soqlQuery: string,
+  conn: Connection,
+  batchSize = 100000,
+  retries = 3
+): Promise<any> {
+  const results = { records: [] as any[] };
+  let lastRecordId = null;
+  let hasMoreRecords = true;
+
+  while (hasMoreRecords) {
+    let soqlQueryWithLimit = `${soqlQuery} ORDER BY Id LIMIT ${batchSize}`;
+    if (lastRecordId) {
+      soqlQueryWithLimit = `${soqlQuery} WHERE Id > '${lastRecordId}' ORDER BY Id LIMIT ${batchSize}`;
+    }
+    const chunkResults = await bulkQuery(soqlQueryWithLimit, conn, retries);
+    results.records.push(...chunkResults.records);
+    if (chunkResults.records.length > 0) {
+      lastRecordId = chunkResults.records[chunkResults.records.length - 1].Id;
+    }
+    hasMoreRecords = chunkResults.records.length === batchSize;
+  }
+
+  return results;
+}
+ 
 
 let spinner: Ora;
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory

@@ -126,7 +126,6 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
       outputFileNameFormat: 'title',
       overwriteParentRecords: true,
       overwriteFiles: false,
-      loadAttachments: true,
     };
 
     this.exportConfig = await promptFilesExportConfiguration(defaultConfig, false);
