@@ -4,7 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- [hardis:doc:flow2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/) Call AI when generating the doc of a single flow
+- [hardis:org:file:export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/): Now handles to export of Attachments in addition to ContentVersions :)
+- [hardis:doc:flow2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/): Call AI when generating the doc of a single flow
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) Fix: delta after merge is not working as expected
 
 ## [5.21.4] 2025-03-11
