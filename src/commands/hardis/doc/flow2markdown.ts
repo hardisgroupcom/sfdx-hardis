@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import c from "chalk";
 import * as path from "path";
 import fs from "fs-extra";
@@ -56,6 +56,7 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    "target-org": optionalOrgFlagWithDeprecations
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -79,6 +80,8 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
     this.withPdf = flags.pdf === true ? true : false;
     this.singleFileMode = this.inputFiles != null && this.inputFiles.length == 1;
     this.debugMode = flags.debug || false;
+    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email, or for Agentforce
+
 
     if (this.inputFiles === null && !isCI) {
       this.inputFiles = await MetadataUtils.promptMultipleFlows();
