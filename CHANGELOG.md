@@ -6,6 +6,12 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Lazy loading in hooks to improve performances when other CLI plugins commands are called
 
+## [5.22.0] 2025-03-13
+
+- [hardis:org:file:export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/): Now handles to export of Attachments in addition to ContentVersions :)
+- [hardis:doc:flow2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/): Call AI when generating the doc of a single flow
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) Fix: delta after merge is not working as expected
+
 ## [5.21.4] 2025-03-11
 
 - Support edge-case when package.xml is empty but destructive changes are present. (see [Github issue](https://github.com/hardisgroupcom/sfdx-hardis/issues/1093))
