@@ -12,7 +12,7 @@ import ExcelJS from 'exceljs';
 
 // Project Specific Utilities
 import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from './index.js';
-import { bulkQuery, soqlQuery,bulkQueryByChunks } from './apiUtils.js';
+import { bulkQuery, soqlQuery, bulkQueryByChunks } from './apiUtils.js';
 import { prompts } from './prompts.js';
 import { CONSTANTS, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
@@ -265,53 +265,53 @@ export class FilesExporter {
       if (contentDocumentLinks.records.length > 0) {
         // Retrieve all ContentVersion related to ContentDocumentLink
         const contentDocIdIn = contentDocumentLinks.records.map((link: any) => `'${link.ContentDocumentId}'`);
-      // Loop on contentDocIdIn by contentVersionBatchSize
-      for (let j = 0; j < contentDocIdIn.length; j += contentVersionBatchSize) {
-        const contentDocIdBatch = contentDocIdIn.slice(j, j + contentVersionBatchSize).join(',');
-        // Log the progression of contentDocIdBatch
-        uxLog(
-          this,
-          c.cyan(
-            `Processing ContentDocumentId chunk #${Math.ceil((j + 1) / contentVersionBatchSize)} on ${Math.ceil(
-              contentDocIdIn.length / contentVersionBatchSize
-            )}` 
-          )
-        ); 
-        // Request all ContentVersion related to all records of the batch
-        const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
-        this.totalSoqlRequests++;
-        const contentVersions = await bulkQueryByChunks(contentVersionSoql, this.conn, this.parentRecordsChunkSize);
-        // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
-        // Because of this when we fetch ContentVersion for ContentDocument it can return less results than there is ContentDocumentLink objects to link.
-        // To fix this we create a list of ContentVersion and ContentDocumentLink pairs.
-        // This way we have multiple pairs and we will download ContentVersion objects for each linked object.
-        const versionsAndLinks: any[] = [];
-        contentVersions.records.forEach((contentVersion) => {
-          contentDocumentLinks.records.forEach((contentDocumentLink) => {
-            if (contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId) {
-              versionsAndLinks.push({
-                contentVersion: contentVersion,
-                contentDocumentLink: contentDocumentLink,
-              });
-            }
+        // Loop on contentDocIdIn by contentVersionBatchSize
+        for (let j = 0; j < contentDocIdIn.length; j += contentVersionBatchSize) {
+          const contentDocIdBatch = contentDocIdIn.slice(j, j + contentVersionBatchSize).join(',');
+          // Log the progression of contentDocIdBatch
+          uxLog(
+            this,
+            c.cyan(
+              `Processing ContentDocumentId chunk #${Math.ceil((j + 1) / contentVersionBatchSize)} on ${Math.ceil(
+                contentDocIdIn.length / contentVersionBatchSize
+              )}`
+            )
+          );
+          // Request all ContentVersion related to all records of the batch
+          const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
+          this.totalSoqlRequests++;
+          const contentVersions = await bulkQueryByChunks(contentVersionSoql, this.conn, this.parentRecordsChunkSize);
+          // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
+          // Because of this when we fetch ContentVersion for ContentDocument it can return less results than there is ContentDocumentLink objects to link.
+          // To fix this we create a list of ContentVersion and ContentDocumentLink pairs.
+          // This way we have multiple pairs and we will download ContentVersion objects for each linked object.
+          const versionsAndLinks: any[] = [];
+          contentVersions.records.forEach((contentVersion) => {
+            contentDocumentLinks.records.forEach((contentDocumentLink) => {
+              if (contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId) {
+                versionsAndLinks.push({
+                  contentVersion: contentVersion,
+                  contentDocumentLink: contentDocumentLink,
+                });
+              }
+            });
           });
-        });
-        // Download files
-        await PromisePool.withConcurrency(5)
-          .for(versionsAndLinks)
-          .process(async (versionAndLink: any) => {
-            try {
-              await this.downloadContentVersionFile(
-                versionAndLink.contentVersion,
-                batch,
-                versionAndLink.contentDocumentLink
-              );
-            } catch (e) {
-              this.filesErrors++;
-              uxLog(this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
-            }
-          });
-    }
+          // Download files
+          await PromisePool.withConcurrency(5)
+            .for(versionsAndLinks)
+            .process(async (versionAndLink: any) => {
+              try {
+                await this.downloadContentVersionFile(
+                  versionAndLink.contentVersion,
+                  batch,
+                  versionAndLink.contentDocumentLink
+                );
+              } catch (e) {
+                this.filesErrors++;
+                uxLog(this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
+              }
+            });
+        }
       } else {
         uxLog(this, c.grey('No ContentDocumentLinks found for the parent records in this batch'));
       }
@@ -326,7 +326,7 @@ export class FilesExporter {
       this.filesErrors++;
     }
   }
-  
+
   private async downloadAttachmentFile(attachment: any, records: any[]) {
     // Retrieve initial record to build output files folder name
     const parentAttachment = records.filter((record) => record.Id === attachment.ParentId)[0];
@@ -344,7 +344,7 @@ export class FilesExporter {
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/Attachment/${attachment.Id}/Body`;
     await this.downloadFile(fetchUrl, outputFile);
   }
-  
+
   private async downloadContentVersionFile(contentVersion: any, records: any[], contentDocumentLink: any) {
     // Retrieve initial record to build output files folder name
     const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
