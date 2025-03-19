@@ -264,10 +264,21 @@ export class FilesExporter {
       const contentDocumentLinks = await bulkQueryByChunks(linkedEntityInQuery, this.conn, this.parentRecordsChunkSize);
       if (contentDocumentLinks.records.length > 0) {
         // Retrieve all ContentVersion related to ContentDocumentLink
-        const contentDocIdIn = contentDocumentLinks.records
-          .map((contentDocumentLink: any) => `'${contentDocumentLink.ContentDocumentId}'`)
-          .join(',');
-        const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdIn}) AND IsLatest = true`;
+        const contentDocIdIn = contentDocumentLinks.records.map((link: any) => `'${link.ContentDocumentId}'`);
+      // Loop on contentDocIdIn by contentVersionBatchSize
+      for (let j = 0; j < contentDocIdIn.length; j += contentVersionBatchSize) {
+        const contentDocIdBatch = contentDocIdIn.slice(j, j + contentVersionBatchSize).join(',');
+        // Log the progression of contentDocIdBatch
+        uxLog(
+          this,
+          c.cyan(
+            `Processing ContentDocumentId chunk #${Math.ceil((j + 1) / contentVersionBatchSize)} on ${Math.ceil(
+              contentDocIdIn.length / contentVersionBatchSize
+            )}` 
+          )
+        ); 
+        // Request all ContentVersion related to all records of the batch
+        const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
         this.totalSoqlRequests++;
         const contentVersions = await bulkQueryByChunks(contentVersionSoql, this.conn, this.parentRecordsChunkSize);
         // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
@@ -300,6 +311,7 @@ export class FilesExporter {
               uxLog(this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
             }
           });
+    }
       } else {
         uxLog(this, c.grey('No ContentDocumentLinks found for the parent records in this batch'));
       }
