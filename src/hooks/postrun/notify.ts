@@ -1,5 +1,3 @@
-import c from 'chalk';
-import { elapseEnd, uxLog } from '../../common/utils/index.js';
 import { Hook } from '@oclif/core';
 
 // The use of this method is deprecated: use NotifProvider.sendNotification :)
@@ -10,6 +8,10 @@ const hook: Hook<'postrun'> = async (options) => {
   if (!commandId.startsWith('hardis')) {
     return;
   }
+
+  // Dynamic import to save perfs when other CLI commands are called
+  const c = (await import('chalk')).default;
+  const { elapseEnd, uxLog } = await import('../../common/utils/index.js');
 
   if (globalThis.hardisLogFileStream) {
     globalThis.hardisLogFileStream.end();

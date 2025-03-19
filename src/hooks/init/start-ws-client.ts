@@ -1,6 +1,4 @@
 import { Hook } from '@oclif/core';
-import { isCI } from '../../common/utils/index.js';
-import { WebSocketClient } from '../../common/websocketClient.js';
 
 const hook: Hook<'init'> = async (options) => {
   // Skip hooks from other commands than hardis commands
@@ -8,6 +6,10 @@ const hook: Hook<'init'> = async (options) => {
   if (!commandId.startsWith('hardis')) {
     return;
   }
+
+  // Dynamically import libraries to avoid loading it if not needed
+  const { isCI } = await import('../../common/utils/index.js');
+  const { WebSocketClient } = await import('../../common/websocketClient.js');
 
   // Initialize WebSocketClient to communicate with VsCode SFDX Hardis extension
   if (!isCI) {
