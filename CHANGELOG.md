@@ -8,7 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Lazy loading in hooks to improve performances when other CLI plugins commands are called
 - [hardis:org:file:export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/): Fix 100000 characters SOQL error limit
-
+- Upgrade npm dependencies
 
 ## [5.22.0] 2025-03-13
 
