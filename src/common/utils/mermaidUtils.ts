@@ -170,7 +170,8 @@ export function getMermaidExtraClasses() {
     'recordUpdatesAdded',
     'screensAdded',
     'subflowsAdded',
-    'startClassAdded'
+    'startClassAdded',
+    'transformsAdded'
   ];
 
   const removedClasses = [
@@ -186,7 +187,8 @@ export function getMermaidExtraClasses() {
     'recordUpdatesRemoved',
     'screensRemoved',
     'subflowsRemoved',
-    'startClassRemoved'
+    'startClassRemoved',
+    'transformsRemoved'
   ];
 
   const changedClasses = [
@@ -202,7 +204,8 @@ export function getMermaidExtraClasses() {
     'recordUpdatesChanged',
     'screensChanged',
     'subflowsChanged',
-    'startClassChanged'
+    'startClassChanged',
+    'transformsChanged'
   ];
 
   const formatClasses = (classList, style) =>

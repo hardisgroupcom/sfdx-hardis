@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.24.0] 2025-03-21
+
+- Flow documentation: Take in account new **Transform Element**
+
 ## [5.23.0] 2025-03-19
 
 - Lazy loading in hooks to improve performances when other CLI plugins commands are called
