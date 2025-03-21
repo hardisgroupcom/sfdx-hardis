@@ -70,6 +70,7 @@ export async function isManagedFlow(flowFile: string) {
     'recordDeletes',
     'recordLookups',
     'recordUpdates',
+    'transforms',
     'screens',
     'subflows',
     'variables',
