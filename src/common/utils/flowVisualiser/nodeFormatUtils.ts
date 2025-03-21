@@ -105,6 +105,14 @@ export function flowNodeToMarkdown(flowNodeIn: any, allProperties: string[]): st
       additionalTables.push(...[ruleTable, mdEndSection(ruleConditionsTable)])
     }
   }
+  // Special case of transforms
+  else if (flowNode.type === "transforms") {
+    const transformValues = flowNode.transformValues || {};
+    const transformValueActions = getElementAsArray(transformValues, "transformValueActions");
+    delete flowNode.transformValues;
+    const transformsTable = buildCustomMarkdownTable(transformValueActions, ["transformType", "value", "outputFieldApiName"], "#### Transform actions", allProperties);
+    additionalTables.push(transformsTable);
+  }
   else if (flowNode.type === "screens") {
     handleFields(flowNode, allProperties, "", additionalTables);
   }
