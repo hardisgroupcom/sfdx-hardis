@@ -25,6 +25,7 @@ import { parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { listMetadataTypes } from './metadataList.js';
 import { FileStatusResult } from 'simple-git';
 import { glob } from 'glob';
+import { parseStringPromise } from 'xml2js';
 
 class MetadataUtils {
   // Describe packageXml <=> metadata folder correspondance
@@ -501,6 +502,57 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     });
 
     return flowSelectRes.value.map(flowFile => flowFile.replace(/\\/g, "/"));
+  }
+
+  public static async promptCustomLabels() {
+    try {
+      const customLabelsFile = path.join(process.cwd(), 'force-app/main/default/labels/CustomLabels.labels-meta.xml');
+
+      if (!await fs.pathExists(customLabelsFile)) {
+        throw new Error('CustomLabels file not found at: ' + customLabelsFile);
+      }
+
+      const xmlContent = await fs.readFile(customLabelsFile, 'utf8');
+      const parsedXml = await parseStringPromise(xmlContent);
+
+      if (!parsedXml.CustomLabels || !parsedXml.CustomLabels.labels) {
+        throw new Error('No custom labels found in the file');
+      }
+
+      const labels = Array.isArray(parsedXml.CustomLabels.labels)
+        ? parsedXml.CustomLabels.labels
+        : [parsedXml.CustomLabels.labels];
+
+      labels.sort((a, b) => {
+        const nameA = a.fullName ? a.fullName[0] : a.name ? a.name[0] : '';
+        const nameB = b.fullName ? b.fullName[0] : b.name ? b.name[0] : '';
+        return nameA.localeCompare(nameB);
+      });
+
+      const choices = labels.map(label => {
+        const name = label.fullName ? label.fullName[0] : label.name ? label.name[0] : '';
+        const value = label.value ? label.value[0] : '';
+        const shortDesc = value.length > 40 ? value.substring(0, 40) + '...' : value;
+
+        return {
+          value: name,
+          title: name,
+          description: shortDesc
+        };
+      });
+
+      const labelSelectRes = await prompts({
+        type: 'multiselect',
+        message: 'Please select the Custom Labels you want to extract from translations',
+        choices: choices
+      });
+
+      return labelSelectRes.value;
+
+    } catch (err: any) {
+      console.error('Error while processing custom labels:', err.message);
+      throw err;
+    }
   }
 
 
