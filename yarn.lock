@@ -2717,16 +2717,16 @@
   resolved "https://registry.npmjs.org/@slack/types/-/types-2.14.0.tgz"
   integrity sha512-n0EGm7ENQRxlXbgKSrQZL69grzg1gHLAVd+GlRVQJ1NSORo0FrApR7wql/gaKdu2n4TO83Sq/AmeUOqD60aXUA==
 
-"@slack/web-api@^7.8.0":
-  version "7.8.0"
-  resolved "https://registry.yarnpkg.com/@slack/web-api/-/web-api-7.8.0.tgz#e042f39a01ec6f44dc8f244caa2ab1999674479c"
-  integrity sha512-d4SdG+6UmGdzWw38a4sN3lF/nTEzsDxhzU13wm10ejOpPehtmRoqBKnPztQUfFiWbNvSb4czkWYJD4kt+5+Fuw==
+"@slack/web-api@^7.9.0":
+  version "7.9.0"
+  resolved "https://registry.yarnpkg.com/@slack/web-api/-/web-api-7.9.0.tgz#208af70ea0a27c06e012ec05b5687760aafe9ddd"
+  integrity sha512-PEvscTsHj4pLQr6g/0OwPEFDN9ElJMdba9uYvhTPjC2yGQGzjB4YmqilXaDX0Lm3IBEcLtJNRAbsfQp+x3X3Qg==
   dependencies:
     "@slack/logger" "^4.0.0"
     "@slack/types" "^2.9.0"
     "@types/node" ">=18.0.0"
     "@types/retry" "0.12.0"
-    axios "^1.7.8"
+    axios "^1.8.3"
     eventemitter3 "^5.0.1"
     form-data "^4.0.0"
     is-electron "2.2.2"
@@ -4451,7 +4451,7 @@ aws4@^1.12.0:
   resolved "https://registry.npmjs.org/aws4/-/aws4-1.13.1.tgz"
   integrity sha512-u5w79Rd7SU4JaIlA/zFqG+gOiuq25q5VLyZ8E+ijJeILuTxVzZgp2CaGw/UTw6pXYN9XMO9yiqj/nEHmhTG5CA==
 
-axios@^1.7.8, axios@^1.8.3:
+axios@^1.8.3:
   version "1.8.3"
   resolved "https://registry.yarnpkg.com/axios/-/axios-1.8.3.tgz#9ebccd71c98651d547162a018a1a95a4b4ed4de8"
   integrity sha512-iP4DebzoNlP/YN2dpwCgb8zoCmhtkajzS48JvwmkSkXvPI3DHc7m+XYL5tGnSlJtR6nImXZmdCuN5aP8dh1d8A==
