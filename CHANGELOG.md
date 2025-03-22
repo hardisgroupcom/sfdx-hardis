@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Upgrade @xmlnode/xmlnode and update related code so it works with newer version
+- Upgrade NPM dependencies
+
 ## [5.24.0] 2025-03-21
 
 - Flow documentation: Take in account new **Transform Element**
