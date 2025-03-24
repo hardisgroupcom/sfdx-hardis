@@ -506,40 +506,43 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
 
   public static async promptCustomLabels() {
     try {
-      const customLabelsFile = path.join(process.cwd(), 'force-app/main/default/labels/CustomLabels.labels-meta.xml');
-
-      if (!await fs.pathExists(customLabelsFile)) {
-        throw new Error('CustomLabels file not found at: ' + customLabelsFile);
+      const customLabelsFiles = await glob('**/labels/CustomLabels.labels-meta.xml', { ignore: GLOB_IGNORE_PATTERNS });
+      if (customLabelsFiles.length == 0) {
+        throw new Error('No CustomLabels.labels-meta.xml was found');
       }
 
-      const xmlContent = await fs.readFile(customLabelsFile, 'utf8');
-      const parsedXml = await parseStringPromise(xmlContent);
+      const choices: any = [];
 
-      if (!parsedXml.CustomLabels || !parsedXml.CustomLabels.labels) {
-        throw new Error('No custom labels found in the file');
+      for (const customLabelsFile of customLabelsFiles) {
+        const xmlContent = await fs.readFile(customLabelsFile, 'utf8');
+        const parsedXml = await parseStringPromise(xmlContent);
+
+        if (!parsedXml.CustomLabels || !parsedXml.CustomLabels.labels) {
+          throw new Error('No custom labels found in the file');
+        }
+
+        const labels = Array.isArray(parsedXml.CustomLabels.labels)
+          ? parsedXml.CustomLabels.labels
+          : [parsedXml.CustomLabels.labels];
+
+        labels.sort((a, b) => {
+          const nameA = a.fullName ? a.fullName[0] : a.name ? a.name[0] : '';
+          const nameB = b.fullName ? b.fullName[0] : b.name ? b.name[0] : '';
+          return nameA.localeCompare(nameB);
+        });
+
+        labels.map(label => {
+          const name = label.fullName ? label.fullName[0] : label.name ? label.name[0] : '';
+          const value = label.value ? label.value[0] : '';
+          const shortDesc = value.length > 40 ? value.substring(0, 40) + '...' : value;
+
+          choices.push({
+            value: name,
+            title: name,
+            description: shortDesc
+          });
+        });
       }
-
-      const labels = Array.isArray(parsedXml.CustomLabels.labels)
-        ? parsedXml.CustomLabels.labels
-        : [parsedXml.CustomLabels.labels];
-
-      labels.sort((a, b) => {
-        const nameA = a.fullName ? a.fullName[0] : a.name ? a.name[0] : '';
-        const nameB = b.fullName ? b.fullName[0] : b.name ? b.name[0] : '';
-        return nameA.localeCompare(nameB);
-      });
-
-      const choices = labels.map(label => {
-        const name = label.fullName ? label.fullName[0] : label.name ? label.name[0] : '';
-        const value = label.value ? label.value[0] : '';
-        const shortDesc = value.length > 40 ? value.substring(0, 40) + '...' : value;
-
-        return {
-          value: name,
-          title: name,
-          description: shortDesc
-        };
-      });
 
       const labelSelectRes = await prompts({
         type: 'multiselect',
@@ -555,7 +558,99 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     }
   }
 
+  public static async promptLwcComponent() {
+    try {
+      const lwcMetaFiles = await glob('**/lwc/*/*.js-meta.xml');
 
+      if (lwcMetaFiles.length === 0) {
+        throw new Error('No Lightning Web Components found in the project');
+      }
+
+      const componentsInfo: Array<any> = [];
+      for (const metaFile of lwcMetaFiles) {
+        try {
+          const xmlContent = await fs.readFile(metaFile, 'utf8');
+          const parsedXml = await parseStringPromise(xmlContent);
+
+          const pathParts = metaFile.split('/');
+          const componentName = pathParts[pathParts.length - 1].replace('.js-meta.xml', '');
+
+          let masterLabel = componentName;
+
+          if (parsedXml.LightningComponentBundle &&
+            parsedXml.LightningComponentBundle.masterLabel &&
+            parsedXml.LightningComponentBundle.masterLabel.length > 0) {
+            masterLabel = parsedXml.LightningComponentBundle.masterLabel[0];
+          }
+
+          componentsInfo.push({
+            name: componentName,
+            label: masterLabel,
+            path: metaFile
+          });
+        } catch (err: any) {
+          console.warn(`Could not parse meta file: ${metaFile}`, err.message);
+        }
+      }
+
+      componentsInfo.sort((a, b) => a.name.localeCompare(b.name));
+
+      const choices = componentsInfo.map(component => ({
+        value: component.name,
+        title: component.label,
+        description: `Name: ${component.name}`
+      }));
+
+      const componentSelectRes = await prompts({
+        type: 'select',
+        name: 'value',
+        message: 'Select a Lightning Web Component to extract custom labels from',
+        choices: choices
+      });
+
+      return componentSelectRes.value;
+    } catch (err: any) {
+      console.error('Error while finding LWC components:', err.message);
+      throw err;
+    }
+  }
+
+  public static async promptExtractionMethod() {
+    try {
+      const methodSelectRes = await prompts({
+        type: 'select',
+        name: 'method',
+        message: 'How would you like to extract custom label translations?',
+        choices: [
+          {
+            value: 'labels',
+            title: 'Select specific custom labels',
+            description: 'Choose one or more custom labels from the full list'
+          },
+          {
+            value: 'lwc',
+            title: 'Extract from a Lightning Web Component',
+            description: 'Find all custom labels used in a specific LWC'
+          }
+        ]
+      });
+
+      let values;
+      if (methodSelectRes.method === 'labels') {
+        values = await MetadataUtils.promptCustomLabels();
+      } else if (methodSelectRes.method === 'lwc') {
+        values = await MetadataUtils.promptLwcComponent();
+      }
+
+      return {
+        type: methodSelectRes.method,
+        values: values
+      }
+    } catch (err: any) {
+      console.error('Error during extraction method selection:', err.message);
+      throw err;
+    }
+  }
 }
 
 export { MetadataUtils };
