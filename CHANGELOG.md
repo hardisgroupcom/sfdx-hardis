@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.24.1] 2025-03-24
+
+- Upgrade @xmlnode/xmlnode and update related code so it works with newer version
+- Upgrade NPM dependencies
+- Update [Contributor Guide documentation about package management](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-install-packages/)
+
 ## [5.24.0] 2025-03-21
 
 - Flow documentation: Take in account new **Transform Element**

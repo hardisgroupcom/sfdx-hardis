@@ -107,10 +107,10 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
       for (const xmlFile of matchingXmlFiles) {
         let updated = false;
         const xml = await fs.readFile(xmlFile, 'utf8');
-        const doc = new xmldom.DOMParser().parseFromString(xml);
+        const doc = new xmldom.DOMParser().parseFromString(xml, 'text/xml');
         // Iterate on xpaths
         for (const xpathItem of cleanXmlPattern.xpaths) {
-          const nodes = xpathSelect(xpathItem, doc);
+          const nodes = xpathSelect(xpathItem, doc as any);
           for (const node of nodes as Node[]) {
             await this.removeXPath(xpathItem, doc, node);
             uxLog(this, c.grey(`Removed xpath ${xpathItem} from ${xmlFile}`));
@@ -159,8 +159,8 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   public async removeXPath(xPathItem, doc, node) {
     const parentNodeName = this.findRemoveParentNodeName(xPathItem);
     const parentNode = this.findParentNode(node, parentNodeName);
-    if (parentNode) {
-      doc.removeChild(parentNode);
+    if (parentNode && parentNode.parentNode) {
+      parentNode.parentNode.removeChild(parentNode);
     }
   }
 

@@ -3,18 +3,18 @@
   "description": "Swiss-army-knife Toolbox for Salesforce.\n Allows you to define a complete CD/CD Pipeline.\n Orchestrate base commands and assist users with interactive wizards",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
-  "version": "5.24.0",
+  "version": "5.24.1",
   "dependencies": {
     "@actions/github": "^6.0.0",
     "@cparra/apexdocs": "^3.9.0",
     "@gitbeaker/node": "^35.8.1",
     "@oclif/core": "^4.2.10",
-    "@salesforce/core": "^8.8.5",
+    "@salesforce/core": "^8.8.6",
     "@salesforce/sf-plugins-core": "^11.3.12",
     "@slack/types": "^2.14.0",
-    "@slack/web-api": "^7.8.0",
+    "@slack/web-api": "^7.9.0",
     "@supercharge/promise-pool": "^3.2.0",
-    "@xmldom/xmldom": "^0.8.10",
+    "@xmldom/xmldom": "^0.9.8",
     "axios": "^1.8.3",
     "azure-devops-node-api": "^14.1.0",
     "bitbucket": "^2.12.0",
@@ -49,7 +49,7 @@
     "mega-linter-runner": "^8.4.2",
     "moment": "^2.30.1",
     "open": "^10.1.0",
-    "openai": "^4.86.1",
+    "openai": "^4.89.0",
     "ora": "^8.2.0",
     "papaparse": "^5.5.2",
     "pascalcase": "^2.0.0",
@@ -96,7 +96,7 @@
     "eslint-plugin-sf-plugin": "^1.20.16",
     "oclif": "^4.17.34",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.2"
   },
   "engines": {
     "node": ">=20.0.0"
