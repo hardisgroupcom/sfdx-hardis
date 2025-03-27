@@ -9,7 +9,7 @@ import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { completeApexDocWithAiDescription, completeAttributesDescriptionWithAi, generateLightningPageMarkdown, generateObjectMarkdown, generatePackageXmlMarkdown, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+import { completeApexDocWithAiDescription, completeAttributesDescriptionWithAi, generateLightningPageMarkdown, generateObjectMarkdown, generatePackageXmlMarkdown, generateProfileMarkdown, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { countPackageXmlItems, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
@@ -148,6 +148,7 @@ ${this.htmlInstructions}
   protected apexDescriptions: any[] = [];
   protected flowDescriptions: any[] = [];
   protected pageDescriptions: any[] = [];
+  protected profileDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
   protected objectFiles: string[];
   protected allObjectsNames: string[];
@@ -233,14 +234,19 @@ ${this.htmlInstructions}
       await this.generateFlowsDocumentation();
     }
 
-    // List flows & generate doc
+    // List pages & generate doc
     if (!(process?.env?.GENERATE_PAGES_DOC === 'false')) {
       await this.generatePagesDocumentation();
     }
 
-    // List flows & generate doc
+    // List objects & generate doc
     if (!(process?.env?.GENERATE_OBJECTS_DOC === 'false')) {
       await this.generateObjectsDocumentation();
+    }
+
+    // List profiles & generate doc
+    if (!(process?.env?.GENERATE_PROFILES_DOC === 'false')) {
+      await this.generateAuthorizationsDocumentation();
     }
 
     // Write output index file
@@ -373,6 +379,34 @@ ${Project2Markdown.htmlInstructions}
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "pages"));
     const pagesIndexFile = path.join(this.outputMarkdownRoot, "pages", "index.md");
     await fs.writeFile(pagesIndexFile, getMetaHideLines() + this.buildPagesTable('').join("\n") + `\n\n${this.footer}\n`);
+  }
+
+  private async generateAuthorizationsDocumentation() {
+    uxLog(this, c.cyan("Generating Authorizations documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
+    const profilesForMenu: any = { "All Profiles": "profiles/index.md" };
+    const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS })).sort();
+    for (const profileFile of profilesFiles) {
+      const profileName = path.basename(profileFile, ".profile-meta.xml");
+      const mdFile = path.join(this.outputMarkdownRoot, "profiles", profileName + ".md");
+      profilesForMenu[profileName] = "profiles/" + profileName + ".md";
+      const profileXml = await fs.readFile(profileFile, "utf8");
+      const profileXmlParsed = new XMLParser().parse(profileXml);
+      this.profileDescriptions.push({
+        name: profileName,
+        type: prettifyFieldName(profileXmlParsed?.License || "Unknown"),
+        impactedObjects: this.allObjectsNames.filter(objectName => profileXml.includes(`${objectName}`)).join(", ")
+      });
+      // Add apex code in documentation
+      await generateProfileMarkdown(profileName, profileXml, mdFile);
+      if (this.withPdf) {
+        await generatePdfFileFromMarkdown(mdFile);
+      }
+    }
+    this.addNavNode("Profiles", profilesForMenu);
+    // Write index file for profiles folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "profiles"));
+    const profilesIndexFile = path.join(this.outputMarkdownRoot, "profiles", "index.md");
+    await fs.writeFile(profilesIndexFile, getMetaHideLines() + this.buildProfilesTable('').join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async buildMkDocsYml() {
@@ -696,6 +730,28 @@ ${Project2Markdown.htmlInstructions}
       const pageNameCell = `[${page.name}](${prefix}${page.name}.md)`;
       lines.push(...[
         `| ${pageNameCell} | ${page.type} |`
+      ]);
+    }
+    lines.push("");
+    return lines;
+  }
+
+  private buildProfilesTable(prefix: string, filterObject: string | null = null) {
+    const filteredProfiles = filterObject ? this.profileDescriptions.filter(profile => profile.impactedObjects.includes(filterObject)) : this.profileDescriptions;
+    if (filteredProfiles.length === 0) {
+      return [];
+    }
+    const lines: string[] = [];
+    lines.push(...[
+      filterObject ? "## Related Profiles" : "## Profiles",
+      "",
+      "| Profile | Type |",
+      "| :----      | :--: | "
+    ]);
+    for (const profile of filteredProfiles) {
+      const profileNameCell = `[${profile.name}](${prefix}${profile.name}.md)`;
+      lines.push(...[
+        `| ${profileNameCell} | ${profile.type} |`
       ]);
     }
     lines.push("");
