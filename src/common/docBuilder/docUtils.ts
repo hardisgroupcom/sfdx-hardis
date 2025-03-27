@@ -278,6 +278,27 @@ export async function generateLightningPageMarkdown(pageName: string, pageXml: s
   return outputFile;
 }
 
+export async function generateProfileMarkdown(profileName: string, profileXml: string, mdFile: string) {
+  const profileItem = new XMLParser().parse(profileXml)?.Profile || {};
+  const mdLines = [
+    `## ${profileName}`,
+    '',
+    '<!-- Profile description -->',
+    '',
+    buildGenericMarkdownTable(profileItem, ["allFields"], "## Profile attributes", []),
+  ];
+  mdLines.push("");
+  // Footer
+  mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT})_`);
+  let mdLinesStr = mdLines.join("\n") + "\n";
+  mdLinesStr = await completeProfileDocWithAiDescription(mdLinesStr, profileName, profileXml);
+  // Write output file
+  await fs.ensureDir(path.dirname(mdFile));
+  await fs.writeFile(mdFile, getMetaHideLines() + mdLinesStr);
+  uxLog(this, c.green(`Successfully generated ${profileName} documentation into ${mdFile}`));
+  return mdFile;
+}
+
 export async function completeAttributesDescriptionWithAi(attributesMarkdown: string, objectName: string): Promise<string> {
   if (!attributesMarkdown) {
     return attributesMarkdown;
@@ -367,7 +388,7 @@ async function completePageDocWithAiDescription(pageMarkdownDoc: string, pageNam
   if (aiCache.success === true) {
     uxLog(this, c.grey("Used AI cache for lightning page description (set IGNORE_AI_CACHE=true to force call to AI)"));
     const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
-    return pageMarkdownDoc.replace("<!-- Page description -->", replaceText);
+    return pageMarkdownDoc.replace("<!-- profile description -->", replaceText);
   }
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
@@ -382,12 +403,41 @@ async function completePageDocWithAiDescription(pageMarkdownDoc: string, pageNam
       }
       await UtilsAi.writeAiCache("PROMPT_DESCRIBE_PAGE", [pageXmlStripped], pageName, responseText);
       const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
-      const objectMarkdownDocUpdated = pageMarkdownDoc.replace("<!-- Page description -->", replaceText);
+      const objectMarkdownDocUpdated = pageMarkdownDoc.replace("<!-- Profile description -->", replaceText);
       return objectMarkdownDocUpdated;
     }
     /* jscpd:ignore-end */
   }
   return pageMarkdownDoc;
+}
+
+async function completeProfileDocWithAiDescription(profileMarkdownDoc: string, profileName: string, profileXml: string): Promise<string> {
+  const profileXmlStripped = UtilsAi.stripXmlForAi("Profile", profileXml);
+  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_PAGE", [profileXmlStripped], profileName);
+  if (aiCache.success === true) {
+    uxLog(this, c.grey("Used AI cache for profile description (set IGNORE_AI_CACHE=true to force call to AI)"));
+    const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
+    return profileMarkdownDoc.replace("<!-- Page description -->", replaceText);
+  }
+  if (AiProvider.isAiAvailable()) {
+    // Invoke AI Service
+    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_PROFILE", { "PROFILE_NAME": profileName, "PROFILE_XML": profileXmlStripped });
+    /* jscpd:ignore-start */
+    const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_PROFILE");
+    // Replace description in markdown
+    if (aiResponse?.success) {
+      let responseText = aiResponse.promptResponse || "No AI description available";
+      if (responseText.startsWith("##")) {
+        responseText = responseText.split("\n").slice(1).join("\n");
+      }
+      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_PROFILE", [profileXmlStripped], profileName, responseText);
+      const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
+      const objectMarkdownDocUpdated = profileMarkdownDoc.replace("<!-- Page description -->", replaceText);
+      return objectMarkdownDocUpdated;
+    }
+    /* jscpd:ignore-end */
+  }
+  return profileMarkdownDoc;
 }
 
 export async function replaceInFile(filePath: string, stringToReplace: string, replaceWith: string) {
