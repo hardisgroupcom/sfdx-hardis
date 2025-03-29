@@ -8854,10 +8854,10 @@ md-to-pdf@^5.2.4:
     semver "^7.3.7"
     serve-handler "^6.1.3"
 
-mega-linter-runner@^8.4.2:
-  version "8.4.2"
-  resolved "https://registry.yarnpkg.com/mega-linter-runner/-/mega-linter-runner-8.4.2.tgz#54c1cedff444225c9276418392c3798b5594828c"
-  integrity "sha1-VMHO3/REIlySdkGDksN5i1WUgow= sha512-CFfJijB3shLJvTq0SapggI2Rq20RdPGTncrWCEdSCiv26TIPA8dakKI07TRsP3oBpJcn77Z03YrrCV0U/PqN7g=="
+mega-linter-runner@^8.5.0:
+  version "8.5.0"
+  resolved "https://registry.yarnpkg.com/mega-linter-runner/-/mega-linter-runner-8.5.0.tgz#fdd5a679ff9477bedd53495f461ff895921f6ed2"
+  integrity sha512-ZVNWHx6YCHiRairrs9PWM0mOzYWRjiNFSzzMeW7DUrxTjnzkhsbJg6nTmORCb8tLKRu+gWYlOZKH36AosA1Chg==
   dependencies:
     chalk "^5.3.0"
     find-package-json "^1.2.0"
