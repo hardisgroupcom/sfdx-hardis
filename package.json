@@ -46,7 +46,7 @@
     "markdown-toc": "^1.2.0",
     "marked": "^14.1.4",
     "md-to-pdf": "^5.2.4",
-    "mega-linter-runner": "^8.4.2",
+    "mega-linter-runner": "^8.5.0",
     "moment": "^2.30.1",
     "open": "^10.1.0",
     "openai": "^4.89.0",
