@@ -12,7 +12,7 @@
     "@salesforce/core": "^8.8.6",
     "@salesforce/sf-plugins-core": "^11.3.12",
     "@slack/types": "^2.14.0",
-    "@slack/web-api": "^7.9.0",
+    "@slack/web-api": "^7.9.1",
     "@supercharge/promise-pool": "^3.2.0",
     "@xmldom/xmldom": "^0.9.8",
     "axios": "^1.8.3",
