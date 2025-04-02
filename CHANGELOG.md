@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.24.2] 2025-04-02
+
+- Upgrade npm dependencies
+
 ## [5.24.1] 2025-03-24
 
 - Upgrade @xmlnode/xmlnode and update related code so it works with newer version
