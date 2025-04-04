@@ -14,6 +14,8 @@ export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
   public serverUrl: string;
   public token: string;
+  public attachmentsWorkItemId: number;
+  public attachmentsWorkItemTitle: string = process.env.AZURE_ATTACHMENTS_WORK_ITEM_TITLE || 'sfdx-hardis tech attachments'
 
   constructor() {
     super();
@@ -562,11 +564,31 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
   }
 
   public async findCreateAttachmentsWorkItemId() {
+    if (this.attachmentsWorkItemId) {
+      return this.attachmentsWorkItemId;
+    }
     const workItemId = process.env.AZURE_ATTACHMENTS_WORK_ITEM_ID;
     if (workItemId) {
-      return Number(workItemId);
+      this.attachmentsWorkItemId = Number(workItemId);
+      return this.attachmentsWorkItemId;
     }
-    uxLog(this, c.red("[Azure Integration] You need to create a technical work item named 'sfdx-hardis tech attachments', then set its identifier in variable AZURE_ATTACHMENTS_WORK_ITEM_ID"));
+    // Try to find the work item
+    const witApi = await this.azureApi.getWorkItemTrackingApi();
+    const wiql = {
+      query: `
+        SELECT [System.Id], [System.Title]
+        FROM WorkItems
+        WHERE [System.Title] = '${this.attachmentsWorkItemTitle}'
+          AND [System.TeamProject] = '${process.env.SYSTEM_TEAMPROJECT}'
+      `
+    };
+    const queryResult = await witApi.queryByWiql(wiql);
+    const workItemIds = (queryResult.workItems || []).map(item => item.id);
+    if (workItemIds.length > 0) {
+      this.attachmentsWorkItemId = Number(workItemIds[0]);
+      return this.attachmentsWorkItemId;
+    }
+    uxLog(this, c.red(`[Azure Integration] You need to create a technical work item exactly named '${this.attachmentsWorkItemTitle}', then set its identifier in variable AZURE_ATTACHMENTS_WORK_ITEM_ID`));
     return null;
   }
 }
