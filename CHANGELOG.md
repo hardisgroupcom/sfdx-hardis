@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [5.24.3] 2025-04-04
 
-- Fix visualisation of [Azure DevOps](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/#azure-pull-request-notes) images by linking attachments to a generic work item.
+- Fix visualization of [Azure DevOps](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/#azure-pull-request-notes) images by linking attachments to a generic work item.
 
 ## [5.24.2] 2025-04-02
 
