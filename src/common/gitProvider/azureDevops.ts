@@ -551,6 +551,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
             techWorkItemId,
             process.env.SYSTEM_TEAMPROJECT
           );
+          uxLog(this, c.grey(`[Azure Integration] Attachment linked to work item ${techWorkItemId}`));
         }
         return attachment.url;
       }
