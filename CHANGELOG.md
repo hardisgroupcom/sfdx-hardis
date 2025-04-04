@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.24.3] 2025-04-04
+
+- Fix visualisation of Azure DevOps images by linking attachments to a generic work item.
+
 ## [5.24.2] 2025-04-02
 
 - Upgrade npm dependencies
