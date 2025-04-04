@@ -18,6 +18,10 @@ To use this capability:
 
 ![Screenshot](assets/images/AzureReporterConfigContribute.jpg)
 
+- If you want to use Flow Diff, create an Azure boards ticket exactly named **sfdx-hardis tech attachments**. IT will be used to link uploaded images.
+
+![Screenshot](assets/images/az-tech-work-item.png)
+
 Everytime you will make a pull request, the CI job will post its result as comment !
 
 - Example with deployment errors
