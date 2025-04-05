@@ -12,6 +12,7 @@ import { PACKAGE_ROOT_DIR } from "../../settings.js";
 import { AiProvider } from "../aiProvider/index.js";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { generatePdfFileFromMarkdown } from "../utils/markdownUtils.js";
+import { DocBuilderFlow } from "../docBuilder/docBuilderFlow.js";
 
 let IS_MERMAID_AVAILABLE: boolean | null = null;
 export async function isMermaidAvailable() {
@@ -43,7 +44,9 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
     const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true, collapsedDetails: options.collapsedDetails });
     let flowMarkdownDoc = flowDocGenResult.uml;
     if (options.describeWithAi) {
-      flowMarkdownDoc = await completeWithAiDescription(flowMarkdownDoc, flowXml, flowName);
+      const docBuilder = new DocBuilderFlow(flowName, flowXml, "");
+      docBuilder.markdownDoc = flowMarkdownDoc;
+      flowMarkdownDoc = await docBuilder.completeDocWithAiDescription();
     }
 
     // Add link to history flow doc 
@@ -704,37 +707,10 @@ export function removeMermaidLinks(messageBody: string) {
   return result;
 }
 
-async function completeWithAiDescription(flowMarkdownDoc: string, flowXml: string, flowName: string): Promise<string> {
-  const flowXmlStripped = UtilsAi.stripXmlForAi("Flow", flowXml);
-  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW", [flowXmlStripped], flowName);
-  if (aiCache.success === true) {
-    uxLog(this, c.grey("Used AI cache for flow description (set IGNORE_AI_CACHE=true to force call to AI)"));
-    const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
-    return flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
-  }
-  if (AiProvider.isAiAvailable()) {
-    // Invoke AI Service
-    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW", { "FLOW_XML": flowXmlStripped });
-    const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_FLOW");
-    // Replace description in markdown
-    if (aiResponse?.success) {
-      let responseText = aiResponse.promptResponse || "No AI description available";
-      if (responseText.startsWith("##")) {
-        responseText = responseText.split("\n").slice(1).join("\n");
-      }
-      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_FLOW", [flowXmlStripped], flowName, responseText);
-      const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
-      const flowMarkdownDocUpdated = flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
-      return flowMarkdownDocUpdated;
-    }
-  }
-  return flowMarkdownDoc;
-}
-
 /* jscpd:ignore-start */
 async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew: string, flowXmlPrevious: string, diffKey: string): Promise<string> {
-  const flowXmlNewStripped = UtilsAi.stripXmlForAi("Flow", flowXmlNew);
-  const flowXmlPreviousStripped = UtilsAi.stripXmlForAi("Flow", flowXmlPrevious);
+  const flowXmlNewStripped = await new DocBuilderFlow("", flowXmlNew, "").stripXmlForAi();
+  const flowXmlPreviousStripped = await new DocBuilderFlow("", flowXmlPrevious, "").stripXmlForAi();
   const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNewStripped, flowXmlPreviousStripped], diffKey);
   if (aiCache.success) {
     uxLog(this, c.grey("Used AI cache for diff description (set IGNORE_AI_CACHE=true to force call to AI)"));
