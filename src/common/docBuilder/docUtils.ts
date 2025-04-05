@@ -388,7 +388,7 @@ async function completePageDocWithAiDescription(pageMarkdownDoc: string, pageNam
   if (aiCache.success === true) {
     uxLog(this, c.grey("Used AI cache for lightning page description (set IGNORE_AI_CACHE=true to force call to AI)"));
     const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
-    return pageMarkdownDoc.replace("<!-- profile description -->", replaceText);
+    return pageMarkdownDoc.replace("<!-- Page description -->", replaceText);
   }
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
@@ -403,7 +403,7 @@ async function completePageDocWithAiDescription(pageMarkdownDoc: string, pageNam
       }
       await UtilsAi.writeAiCache("PROMPT_DESCRIBE_PAGE", [pageXmlStripped], pageName, responseText);
       const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
-      const objectMarkdownDocUpdated = pageMarkdownDoc.replace("<!-- Profile description -->", replaceText);
+      const objectMarkdownDocUpdated = pageMarkdownDoc.replace("<!-- Page description -->", replaceText);
       return objectMarkdownDocUpdated;
     }
     /* jscpd:ignore-end */
@@ -417,7 +417,7 @@ async function completeProfileDocWithAiDescription(profileMarkdownDoc: string, p
   if (aiCache.success === true) {
     uxLog(this, c.grey("Used AI cache for profile description (set IGNORE_AI_CACHE=true to force call to AI)"));
     const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
-    return profileMarkdownDoc.replace("<!-- Page description -->", replaceText);
+    return profileMarkdownDoc.replace("<!-- Profile description -->", replaceText);
   }
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
@@ -432,7 +432,7 @@ async function completeProfileDocWithAiDescription(profileMarkdownDoc: string, p
       }
       await UtilsAi.writeAiCache("PROMPT_DESCRIBE_PROFILE", [profileXmlStripped], profileName, responseText);
       const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
-      const objectMarkdownDocUpdated = profileMarkdownDoc.replace("<!-- Page description -->", replaceText);
+      const objectMarkdownDocUpdated = profileMarkdownDoc.replace("<!-- Profile description -->", replaceText);
       return objectMarkdownDocUpdated;
     }
     /* jscpd:ignore-end */
