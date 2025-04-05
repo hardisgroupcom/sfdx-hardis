@@ -760,13 +760,13 @@ ${Project2Markdown.htmlInstructions}
     lines.push(...[
       filterObject ? "## Related Profiles" : "## Profiles",
       "",
-      "| Profile | Type |",
+      "| Profile | User License |",
       "| :----      | :--: | "
     ]);
     for (const profile of filteredProfiles) {
-      const profileNameCell = `[${profile.name}](${prefix}${profile.name}.md)`;
+      const profileNameCell = `[${profile.name}](${prefix}${encodeURIComponent(profile.name)}.md)`;
       lines.push(...[
-        `| ${profileNameCell} | ${profile.type} |`
+        `| ${profileNameCell} | ${profile.userLicense} |`
       ]);
     }
     lines.push("");

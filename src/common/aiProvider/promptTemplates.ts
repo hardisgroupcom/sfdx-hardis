@@ -230,8 +230,11 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
 ### Instructions:
 
 1. **Contextual Overview**:
-    - Begin by summarizing the role of the Salesforce Profile.
-    - List the key attributes of the Profiles.
+    - Begin by summarizing the role of the Salesforce Profile that you can guess according to the content of the XML.
+    - List the key features of the Profiles.
+      - The most important features are License, Applications, User Permissions ,features with default values ,Custom Objects and Record Types 
+      - Ignore Apex classes and Custom Fields
+      - Ignore attributes set to "false"
 
 2. **Formatting Requirements**:
     - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
@@ -242,7 +245,7 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
 
 ### Reference Data:
 
-- The metadata XML for profile "{{PROFILE_NAME}}" is:
+- The metadata XML for Salesforce Profile "{{PROFILE_NAME}}" is:
 {{PROFILE_XML}}
 
 Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
