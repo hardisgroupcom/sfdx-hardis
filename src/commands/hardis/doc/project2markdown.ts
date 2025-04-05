@@ -9,7 +9,7 @@ import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { completeApexDocWithAiDescription, completeAttributesDescriptionWithAi, generateLightningPageMarkdown, generateObjectMarkdown, generatePackageXmlMarkdown, generateProfileMarkdown, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+import { completeAttributesDescriptionWithAi, generatePackageXmlMarkdown, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { countPackageXmlItems, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
@@ -24,6 +24,10 @@ import { mdTableCell } from '../../../common/gitProvider/utilsMarkdown.js';
 import { prettifyFieldName } from '../../../common/utils/flowVisualiser/nodeFormatUtils.js';
 import { ObjectModelBuilder } from '../../../common/docBuilder/objectModelBuilder.js';
 import { generatePdfFileFromMarkdown } from '../../../common/utils/markdownUtils.js';
+import { DocBuilderPage } from '../../../common/docBuilder/docBuilderPage.js';
+import { DocBuilderProfile } from '../../../common/docBuilder/docBuilderProfile.js';
+import { DocBuilderObject } from '../../../common/docBuilder/docBuilderObject.js';
+import { DocBuilderApex } from '../../../common/docBuilder/docBuilderApex.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -332,10 +336,15 @@ ${Project2Markdown.htmlInstructions}
         apexMdContent = apexMdContent.replaceAll("..\\custom-objects\\", "../objects/").replaceAll("../custom-objects/", "../objects/")
         // Add text before the first ##
         if (!["MetadataService"].includes(apexName)) {
-          const insertion = `## AI-Generated description\n\n<!-- Apex description -->\n\n## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`
+          const insertion = `<!-- Apex description -->\n\n## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`
           const firstHeading = apexMdContent.indexOf("## ");
           apexMdContent = apexMdContent.substring(0, firstHeading) + insertion + apexMdContent.substring(firstHeading);
-          apexMdContent = await completeApexDocWithAiDescription(apexMdContent, apexName, apexContent);
+          const apexDocBuilder = new DocBuilderApex(apexName, apexContent, "", {
+            "CLASS_NAME": apexName,
+            "APEX_CODE": apexContent
+          });
+          apexDocBuilder.markdownDoc = apexMdContent;
+          apexMdContent = await apexDocBuilder.completeDocWithAiDescription();
           await fs.writeFile(mdFile, getMetaHideLines() + apexMdContent);
         }
         uxLog(this, c.grey(`Generated markdown for Apex class ${apexName}`));
@@ -368,7 +377,7 @@ ${Project2Markdown.htmlInstructions}
         type: prettifyFieldName(pageXmlParsed?.FlexiPage?.type || "Unknown"),
         impactedObjects: this.allObjectsNames.filter(objectName => pageXml.includes(`${objectName}`)).join(", ")
       });
-      await generateLightningPageMarkdown(pageName, pageXml, mdFile);
+      await new DocBuilderPage(pageName, pageXml, mdFile).generateMarkdownFileFromXml();
       if (this.withPdf) {
         await generatePdfFileFromMarkdown(mdFile);
       }
@@ -384,7 +393,7 @@ ${Project2Markdown.htmlInstructions}
   private async generateAuthorizationsDocumentation() {
     uxLog(this, c.cyan("Generating Authorizations documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
     const profilesForMenu: any = { "All Profiles": "profiles/index.md" };
-    const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS })).sort();
+    const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).sort();
     for (const profileFile of profilesFiles) {
       const profileName = path.basename(profileFile, ".profile-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "profiles", profileName + ".md");
@@ -397,7 +406,7 @@ ${Project2Markdown.htmlInstructions}
         impactedObjects: this.allObjectsNames.filter(objectName => profileXml.includes(`${objectName}`)).join(", ")
       });
       // Add apex code in documentation
-      await generateProfileMarkdown(profileName, profileXml, mdFile);
+      await new DocBuilderProfile(profileName, profileXml, mdFile).generateMarkdownFileFromXml();
       if (this.withPdf) {
         await generatePdfFileFromMarkdown(mdFile);
       }
@@ -486,7 +495,13 @@ ${Project2Markdown.htmlInstructions}
       // Build filtered XML
       const objectXmlParsed = new XMLParser().parse(objectXml);
       // Main AI markdown
-      await generateObjectMarkdown(objectName, objectXml, this.allObjectsNames.join(","), objectLinksInfo, objectMdFile);
+      await new DocBuilderObject(
+        objectName,
+        objectXml,
+        objectMdFile, {
+        "ALL_OBJECTS_LIST": this.allObjectsNames.join(","),
+        "ALL_OBJECTS_LINKS": objectLinksInfo
+      }).generateMarkdownFileFromXml();
       // Fields table
       await this.buildAttributesTables(objectName, objectXmlParsed, objectMdFile);
       // Mermaid schema

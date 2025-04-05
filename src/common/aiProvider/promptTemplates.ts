@@ -222,7 +222,7 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
 `
     }
   },
-  "PROMPT_DESCRIBE_PROfILE": {
+  "PROMPT_DESCRIBE_PROFILE": {
     variables: ["PROFILE_NAME", "PROFILE_XML"],
     text: {
       "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce Profile "{{PAGE_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
