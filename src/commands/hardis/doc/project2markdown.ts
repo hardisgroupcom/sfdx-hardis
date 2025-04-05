@@ -402,7 +402,7 @@ ${Project2Markdown.htmlInstructions}
       const profileXmlParsed = new XMLParser().parse(profileXml);
       this.profileDescriptions.push({
         name: profileName,
-        type: prettifyFieldName(profileXmlParsed?.License || "Unknown"),
+        userLicense: prettifyFieldName(profileXmlParsed?.Profile?.userLicense || "Unknown"),
         impactedObjects: this.allObjectsNames.filter(objectName => profileXml.includes(`${objectName}`)).join(", ")
       });
       // Add apex code in documentation
