@@ -125,7 +125,7 @@ export class GithubProvider extends GitProviderRoot {
   // Find pull request info
   public async getPullRequestInfo(): Promise<any> {
     // Case when PR is found in the context
-    if (this.prNumber !== null && this.repoOwner !== null && this.prNumber !== null) {
+    if (this.prNumber !== null && this.repoOwner !== null) {
       const pullRequest = await this.octokit.rest.pulls.get({
         owner: this.repoOwner,
         repo: this.repoName || "",
