@@ -197,7 +197,7 @@ export class GithubProvider extends GitProviderRoot {
       uxLog(this, c.grey("[GitHub Integration] No project and merge request, so no note posted..."));
       return { posted: false, providerResult: { info: "No related pull request" } };
     }
-    const githubJobUrl = `${this.serverUrl}/${this.repoOwner}/${this.repoName}/actions/runs/${this.runId}`;
+    const githubJobUrl = await this.getCurrentJobUrl();
     // Build note message
     const messageKey = prMessage.messageKey + "-" + this.workflow + "-" + this.prNumber;
     let messageBody = `**${prMessage.title || ""}**
