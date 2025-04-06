@@ -9,8 +9,8 @@ import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { completeAttributesDescriptionWithAi, generatePackageXmlMarkdown, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
-import { countPackageXmlItems, parseXmlFile } from '../../../common/utils/xmlUtils.js';
+import { completeAttributesDescriptionWithAi, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+import { parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
@@ -20,7 +20,6 @@ import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdown
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
 import { BranchStrategyMermaidBuilder } from '../../../common/utils/branchStrategyMermaidBuilder.js';
-import { mdTableCell } from '../../../common/gitProvider/utilsMarkdown.js';
 import { prettifyFieldName } from '../../../common/utils/flowVisualiser/nodeFormatUtils.js';
 import { ObjectModelBuilder } from '../../../common/docBuilder/objectModelBuilder.js';
 import { generatePdfFileFromMarkdown } from '../../../common/utils/markdownUtils.js';
@@ -28,6 +27,8 @@ import { DocBuilderPage } from '../../../common/docBuilder/docBuilderPage.js';
 import { DocBuilderProfile } from '../../../common/docBuilder/docBuilderProfile.js';
 import { DocBuilderObject } from '../../../common/docBuilder/docBuilderObject.js';
 import { DocBuilderApex } from '../../../common/docBuilder/docBuilderApex.js';
+import { DocBuilderFlow } from '../../../common/docBuilder/docBuilderFlow.js';
+import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPackageXml.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -209,11 +210,12 @@ ${this.htmlInstructions}
     */
 
     // List SFDX packages and generate a manifest for each of them, except if there is only force-app with a package.xml
-    this.packageXmlCandidates = this.listPackageXmlCandidates();
+    this.packageXmlCandidates = DocBuilderPackageXML.listPackageXmlCandidates();
     await this.manageLocalPackages();
     const instanceUrl = flags?.['target-org']?.getConnection()?.instanceUrl;
     await this.generatePackageXmlMarkdown(this.packageXmlCandidates, instanceUrl);
-    const packageLines = await this.buildPackagesIndex();
+    const { packageLines, packagesForMenu } = await DocBuilderPackageXML.buildIndexTable(this.outputPackageXmlMarkdownFiles);
+    this.addNavNode("Manifests", packagesForMenu);
     await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), getMetaHideLines() + packageLines.join("\n") + `\n${this.footer}\n`);
 
     // List managed packages
@@ -358,7 +360,7 @@ ${Project2Markdown.htmlInstructions}
     // Write index file for apex folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "apex"));
     const apexIndexFile = path.join(this.outputMarkdownRoot, "apex", "index.md");
-    await fs.writeFile(apexIndexFile, getMetaHideLines() + this.buildApexTable('').join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(apexIndexFile, getMetaHideLines() + DocBuilderApex.buildIndexTable('', this.apexDescriptions).join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async generatePagesDocumentation() {
@@ -387,7 +389,7 @@ ${Project2Markdown.htmlInstructions}
     // Write index file for apex folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "pages"));
     const pagesIndexFile = path.join(this.outputMarkdownRoot, "pages", "index.md");
-    await fs.writeFile(pagesIndexFile, getMetaHideLines() + this.buildPagesTable('').join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(pagesIndexFile, getMetaHideLines() + DocBuilderPage.buildIndexTable('', this.pageDescriptions).join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async generateAuthorizationsDocumentation() {
@@ -415,7 +417,7 @@ ${Project2Markdown.htmlInstructions}
     // Write index file for profiles folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "profiles"));
     const profilesIndexFile = path.join(this.outputMarkdownRoot, "profiles", "index.md");
-    await fs.writeFile(profilesIndexFile, getMetaHideLines() + this.buildProfilesTable('').join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(profilesIndexFile, getMetaHideLines() + DocBuilderProfile.buildIndexTable('', this.profileDescriptions).join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async buildMkDocsYml() {
@@ -470,7 +472,7 @@ ${Project2Markdown.htmlInstructions}
     // Remove deprecated Flows History if found
     mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem["Flows History"]);
     // Order nav items with this elements in first
-    const firstItemsInOrder = ["Home", "Object Model", "Objects", "Flows", "Apex", "Lightning Pages", "SFDX-Hardis Config", "Branches & Orgs", "Installed Packages", "Manifests"];
+    const firstItemsInOrder = ["Home", "Object Model", "Objects", "Flows", "Apex", "Profiles", "Lightning Pages", "SFDX-Hardis Config", "Branches & Orgs", "Installed Packages", "Manifests"];
     mkdocsYml.nav = firstItemsInOrder.map(item => mkdocsYml.nav.find(navItem => Object.keys(navItem)[0] === item)).filter(item => item).concat(mkdocsYml.nav.filter(navItem => !firstItemsInOrder.includes(Object.keys(navItem)[0])));
     // Update mkdocs file
     await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
@@ -512,11 +514,11 @@ ${Project2Markdown.htmlInstructions}
         await generateMarkdownFileWithMermaid(objectMdFile, objectMdFile, null, true);
       }
       // Flows Tables
-      const relatedObjectFlowsTable = await this.buildFlowsTable('../flows/', objectName);
+      const relatedObjectFlowsTable = DocBuilderFlow.buildIndexTable('../flows/', this.flowDescriptions, this.outputMarkdownRoot, objectName);
       await replaceInFile(objectMdFile, '<!-- Flows table -->', relatedObjectFlowsTable.join("\n"));
-      const relatedApexTable = this.buildApexTable('../apex/', objectName);
+      const relatedApexTable = DocBuilderApex.buildIndexTable('../apex/', this.apexDescriptions, objectName);
       await replaceInFile(objectMdFile, '<!-- Apex table -->', relatedApexTable.join("\n"));
-      const relatedPages = this.buildPagesTable('../pages/', objectName);
+      const relatedPages = DocBuilderPage.buildIndexTable('../pages/', this.pageDescriptions, objectName);
       await replaceInFile(objectMdFile, '<!-- Pages table -->', relatedPages.join("\n"));
       this.objectDescriptions.push({
         name: objectName,
@@ -532,14 +534,14 @@ ${Project2Markdown.htmlInstructions}
 
     // Write index file for objects folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
-    const objectsTableLinesForIndex = await this.buildObjectsTable('');
+    const objectsTableLinesForIndex = DocBuilderObject.buildIndexTable('', this.objectDescriptions);
     const objectsIndexFile = path.join(this.outputMarkdownRoot, "objects", "index.md");
     await fs.writeFile(objectsIndexFile, getMetaHideLines() + objectsTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
   }
 
   private async buildAttributesTables(objectName: string, objectXmlParsed: any, objectMdFile: string) {
-    const fieldsTable = await this.buildCustomFieldsTable(objectXmlParsed?.CustomObject?.fields || []);
-    const validationRulesTable = await this.buildValidationRulesTable(objectXmlParsed?.CustomObject?.validationRules || []);
+    const fieldsTable = DocBuilderObject.buildCustomFieldsTable(objectXmlParsed?.CustomObject?.fields || []);
+    const validationRulesTable = DocBuilderObject.buildValidationRulesTable(objectXmlParsed?.CustomObject?.validationRules || []);
     const attributesLines = [...fieldsTable, ...validationRulesTable];
     const attributesMarkdown = await completeAttributesDescriptionWithAi(attributesLines.join("\n"), objectName)
     await replaceInFile(objectMdFile, '<!-- Attributes tables -->', attributesMarkdown);
@@ -652,7 +654,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Write index file for flow folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
-    const flowTableLinesForIndex = await this.buildFlowsTable('');
+    const flowTableLinesForIndex = DocBuilderFlow.buildIndexTable('', this.flowDescriptions, this.outputMarkdownRoot);
     const flowIndexFile = path.join(this.outputMarkdownRoot, "flows", "index.md");
     await fs.writeFile(flowIndexFile, getMetaHideLines() + flowTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
 
@@ -662,161 +664,6 @@ ${Project2Markdown.htmlInstructions}
 
   private humanDisplay(flows) {
     return flows.map(flow => path.basename(flow, ".flow-meta.xml")).join(", ");
-  }
-
-  private async buildFlowsTable(prefix: string, filterObject: string | null = null) {
-    const filteredFlows = filterObject ? this.flowDescriptions.filter(flow => flow.object === filterObject || flow.impactedObjects.includes(filterObject)) : this.flowDescriptions;
-    if (filteredFlows.length === 0) {
-      return [];
-    }
-    const lines: string[] = [];
-    lines.push(...[
-      filterObject ? "## Related Flows" : "## Flows",
-      "",
-      "| Object | Name      | Type | Description |",
-      "| :----  | :-------- | :--: | :---------- | "
-    ]);
-    for (const flow of filteredFlows) {
-      const outputFlowHistoryMdFile = path.join(this.outputMarkdownRoot, "flows", flow.name + "-history.md");
-      const flowNameCell = fs.existsSync(outputFlowHistoryMdFile) ?
-        `[${flow.name}](${prefix}${flow.name}.md) [🕒](${prefix}${flow.name}-history.md)` :
-        `[${flow.name}](${prefix}${flow.name}.md)`;
-      lines.push(...[
-        `| ${flow.object || "💻"} | ${flowNameCell} | ${prettifyFieldName(flow.type)} | ${mdTableCell(flow.description)} |`
-      ]);
-    }
-    lines.push("");
-    return lines;
-  }
-
-  private async buildObjectsTable(prefix: string) {
-    const lines: string[] = [];
-    lines.push(...[
-      "## Objects",
-      "",
-      "| Name      | Label | Description |",
-      "| :-------- | :---- | :---------- | "
-    ]);
-    for (const objectDescription of this.objectDescriptions) {
-      const objectNameCell = `[${objectDescription.name}](${prefix}${objectDescription.name}.md)`;
-      lines.push(...[
-        `| ${objectNameCell} | ${objectDescription.label || ""} | ${mdTableCell(objectDescription.description)} |`
-      ]);
-    }
-    lines.push("");
-    return lines;
-  }
-
-  private buildApexTable(prefix: string, filterObject: string | null = null) {
-    const filteredApex = filterObject ? this.apexDescriptions.filter(apex => apex.impactedObjects.includes(filterObject)) : this.apexDescriptions;
-    if (filteredApex.length === 0) {
-      return [];
-    }
-    const lines: string[] = [];
-    lines.push(...[
-      filterObject ? "## Related Apex Classes" : "## Apex Classes",
-      "",
-      "| Apex Class | Type |",
-      "| :----      | :--: | "
-    ]);
-    for (const apex of filteredApex) {
-      const flowNameCell = `[${apex.name}](${prefix}${apex.name}.md)`;
-      lines.push(...[
-        `| ${flowNameCell} | ${apex.type} |`
-      ]);
-    }
-    lines.push("");
-    return lines;
-  }
-
-  private buildPagesTable(prefix: string, filterObject: string | null = null) {
-    const filteredPages = filterObject ? this.pageDescriptions.filter(page => page.impactedObjects.includes(filterObject)) : this.pageDescriptions;
-    if (filteredPages.length === 0) {
-      return [];
-    }
-    const lines: string[] = [];
-    lines.push(...[
-      filterObject ? "## Related Lightning Pages" : "## Lightning Pages",
-      "",
-      "| Lightning Page | Type |",
-      "| :----      | :--: | "
-    ]);
-    for (const page of filteredPages) {
-      const pageNameCell = `[${page.name}](${prefix}${page.name}.md)`;
-      lines.push(...[
-        `| ${pageNameCell} | ${page.type} |`
-      ]);
-    }
-    lines.push("");
-    return lines;
-  }
-
-  private buildProfilesTable(prefix: string, filterObject: string | null = null) {
-    const filteredProfiles = filterObject ? this.profileDescriptions.filter(profile => profile.impactedObjects.includes(filterObject)) : this.profileDescriptions;
-    if (filteredProfiles.length === 0) {
-      return [];
-    }
-    const lines: string[] = [];
-    lines.push(...[
-      filterObject ? "## Related Profiles" : "## Profiles",
-      "",
-      "| Profile | User License |",
-      "| :----      | :--: | "
-    ]);
-    for (const profile of filteredProfiles) {
-      const profileNameCell = `[${profile.name}](${prefix}${encodeURIComponent(profile.name)}.md)`;
-      lines.push(...[
-        `| ${profileNameCell} | ${profile.userLicense} |`
-      ]);
-    }
-    lines.push("");
-    return lines;
-  }
-
-  private async buildCustomFieldsTable(fields: any[]) {
-    if (!Array.isArray(fields)) {
-      fields = [fields];
-    }
-    if (fields.length === 0) {
-      return [];
-    }
-    const lines: string[] = [];
-    lines.push(...[
-      "## Fields",
-      "",
-      "| Name      | Label | Type | Description |",
-      "| :-------- | :---- | :--: | :---------- | "
-    ]);
-    for (const field of fields) {
-      lines.push(...[
-        `| ${field.fullName} | ${field.label || ""} | ${field.type || ""} | ${mdTableCell(field.description)} |`
-      ]);
-    }
-    lines.push("");
-    return lines;
-  }
-
-  private async buildValidationRulesTable(validationRules: any[]) {
-    if (!Array.isArray(validationRules)) {
-      validationRules = [validationRules];
-    }
-    if (validationRules.length === 0) {
-      return [];
-    }
-    const lines: string[] = [];
-    lines.push(...[
-      "## Validation Rules",
-      "",
-      "| Rule      | Active | Description | Formula |",
-      "| :-------- | :---- | :---------- | :------ |"
-    ]);
-    for (const rule of validationRules) {
-      lines.push(...[
-        `| ${rule.fullName} | ${rule.active ? "Yes" : "No ⚠️"} | ${rule.description || ""} | \`${rule.errorConditionFormula}\` |`
-      ]);
-    }
-    lines.push("");
-    return lines;
   }
 
   private async buildInstalledPackages() {
@@ -937,31 +784,6 @@ ${Project2Markdown.htmlInstructions}
     }
   }
 
-  private async buildPackagesIndex() {
-    const packageLines: string[] = [];
-    const packagesForMenu: any = { "All manifests": "manifests.md" }
-    packageLines.push(...[
-      "## Package XML files",
-      "",
-      "| Package name | Description |",
-      "| :----------- | :---------- |"
-    ]);
-
-    for (const outputPackageXmlDef of this.outputPackageXmlMarkdownFiles) {
-      const metadataNb = await countPackageXmlItems(outputPackageXmlDef.path);
-      const packageMdFile = path.basename(outputPackageXmlDef.path) + ".md";
-      const label = outputPackageXmlDef.name ? `Package folder: ${outputPackageXmlDef.name}` : path.basename(outputPackageXmlDef.path);
-      const packageTableLine = `| [${label}](${packageMdFile}) (${metadataNb}) | ${outputPackageXmlDef.description} |`;
-      packageLines.push(packageTableLine);
-      packagesForMenu[label] = packageMdFile;
-    }
-    packageLines.push("");
-    packageLines.push("___");
-    packageLines.push("");
-    this.addNavNode("Manifests", packagesForMenu);
-    return packageLines;
-  }
-
   private addNavNode(nodeName, nodeValue) {
     const nodeIndex = this.mkDocsNavNodes.findIndex(navNode => Object.keys(navNode)[0] === nodeName);
     if (nodeIndex > -1) {
@@ -979,7 +801,7 @@ ${Project2Markdown.htmlInstructions}
     for (const packageXmlCandidate of packageXmlCandidates) {
       if (fs.existsSync(packageXmlCandidate.path)) {
         // Generate markdown for package.xml
-        const packageMarkdownFile = await generatePackageXmlMarkdown(packageXmlCandidate.path, null, packageXmlCandidate, instanceUrl);
+        const packageMarkdownFile = await DocBuilderPackageXML.generatePackageXmlMarkdown(packageXmlCandidate.path, null, packageXmlCandidate, instanceUrl);
         // Open file in a new VsCode tab if available
         WebSocketClient.requestOpenFile(packageMarkdownFile);
         packageXmlCandidate.markdownFile = packageMarkdownFile;
@@ -988,39 +810,6 @@ ${Project2Markdown.htmlInstructions}
     }
   }
 
-  private listPackageXmlCandidates(): any[] {
-    return [
-      // CI/CD package files
-      {
-        path: "manifest/package.xml",
-        description: "Contains all deployable metadatas of the SFDX project"
-      },
-      {
-        path: "manifest/packageDeployOnce.xml",
-        description: "Contains all metadatas that will never be overwritten during deployment if they are already existing in the target org"
-      },
-      {
-        path: "manifest/package-no-overwrite.xml",
-        description: "Contains all metadatas that will never be overwritten during deployment if they are already existing in the target org"
-      },
-      {
-        path: "manifest/destructiveChanges.xml",
-        description: "Contains all metadatas that will be deleted during deployment, in case they are existing in the target org"
-      },
-      // Monitoring package files
-      {
-        path: "manifest/package-all-org-items.xml",
-        description: "Contains the entire list of metadatas that are present in the monitored org (not all of them are in the git backup)"
-      },
-      {
-        path: "manifest/package-backup-items.xml",
-        description: "Contains the list of metadatas that are in the git backup"
-      },
-      {
-        path: "manifest/package-skip-items.xml",
-        description: "Contains the list of metadatas that are excluded from the backup.<br/>Other metadata types might be skipped using environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES"
-      },
-    ];
-  }
+
 
 }
