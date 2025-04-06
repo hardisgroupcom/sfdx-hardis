@@ -65,6 +65,9 @@ export class AzureDevopsProvider extends GitProviderRoot {
 
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string | null> {
+    if (process.env.PIPELINE_JOB_URL) {
+      return process.env.PIPELINE_JOB_URL;
+    }
     if (process.env.SYSTEM_COLLECTIONURI && process.env.SYSTEM_TEAMPROJECT && process.env.BUILD_BUILDID) {
       const jobUrl = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT)}/_build/results?buildId=${process.env.BUILD_BUILDID
         }`;
