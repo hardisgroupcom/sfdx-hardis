@@ -69,14 +69,14 @@ export class DocBuilderProfile extends DocBuilderRoot {
       if (!Array.isArray(xmlObj.Profile.applicationVisibilities)) {
         xmlObj.Profile.applicationVisibilities = [xmlObj.Profile.applicationVisibilities];
       }
-      xmlObj.Profile.applicationVisibilities = xmlObj.Profile.applicationVisibilities.filter(applicationVisibility => applicationVisibility.visible === 'true');
+      xmlObj.Profile.applicationVisibilities = xmlObj.Profile.applicationVisibilities.filter(applicationVisibility => applicationVisibility.visible === true);
     }
     // Keep only visible recordTypes
     if (xmlObj?.Profile?.recordTypeVisibilities) {
       if (!Array.isArray(xmlObj.Profile.recordTypeVisibilities)) {
         xmlObj.Profile.recordTypeVisibilities = [xmlObj.Profile.recordTypeVisibilities];
       }
-      xmlObj.Profile.recordTypeVisibilities = xmlObj.Profile.recordTypeVisibilities.filter(rt => rt.visible === 'true');
+      xmlObj.Profile.recordTypeVisibilities = xmlObj.Profile.recordTypeVisibilities.filter(rt => rt.visible === true);
     }
     // Keep only visible tabs
     if (xmlObj?.Profile?.tabVisibilities) {

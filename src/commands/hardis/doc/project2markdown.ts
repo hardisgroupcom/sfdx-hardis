@@ -179,6 +179,7 @@ ${this.htmlInstructions}
       "- [Objects](objects/index.md)",
       "- [Flows](flows/index.md)",
       "- [Apex](apex/index.md)",
+      "- [Profiles](profiles/index.md)",
       "- [Lightning Pages](pages/index.md)",
       "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
       "- [Branches & Orgs](sfdx-hardis-branches-and-orgs.md)",
