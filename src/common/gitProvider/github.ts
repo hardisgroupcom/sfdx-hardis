@@ -11,15 +11,23 @@ export class GithubProvider extends GitProviderRoot {
   private repoOwner: string | null;
   private repoName: string | null;
   public serverUrl: string | null;
+  public workflow: string | null;
+  public branch: string | null;
+  public prNumber: number | null;
+  public runId: string | number | null;
 
   constructor() {
     super();
     const tokenName = process.env.CI_SFDX_HARDIS_GITHUB_TOKEN ? "CI_SFDX_HARDIS_GITHUB_TOKEN" : process.env.PAT ? "PAT" : "GITHUB_TOKEN";
     const token = process.env[tokenName];
     this.octokit = github.getOctokit(token || "");
-    this.repoOwner = github?.context?.repo?.owner || null;
-    this.repoName = github?.context?.repo?.repo || null;
-    this.serverUrl = github?.context?.serverUrl || null;
+    this.repoOwner = github?.context?.repo?.owner || process.env.GITHUB_REPOSITORY_OWNER || null;
+    this.repoName = github?.context?.repo?.repo || process.env?.GITHUB_REPOSITORY?.split("/")[1] || null
+    this.serverUrl = github?.context?.serverUrl || process.env.GITHUB_SERVER_URL || null;
+    this.workflow = github?.context?.workflow || process.env.GITHUB_WORKFLOW || null;
+    this.branch = github?.context?.ref || process.env.GITHUB_REF || null;
+    this.prNumber = github?.context?.payload?.pull_request?.number || (process.env.GITHUB_REF_NAME ? parseInt(process.env.GITHUB_REF_NAME.split("/")?.[0] || "0") : null);
+    this.runId = github?.context?.runId || process.env.GITHUB_RUN_ID || null;
   }
 
   public getLabel(): string {
@@ -28,12 +36,10 @@ export class GithubProvider extends GitProviderRoot {
 
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId = null;
-    const repoOwner = github?.context?.repo?.owner || null;
-    const repoName = github?.context?.repo?.repo || null;
     uxLog(this, c.grey("[GitHub Integration] Listing previously closed Pull Requests"));
     const latestPullRequestsOnBranch = await this.octokit.rest.pulls.list({
-      owner: repoOwner || "",
-      repo: repoName || "",
+      owner: this.repoOwner || "",
+      repo: this.repoName || "",
       state: "closed",
       direction: "desc",
       per_page: 10,
@@ -42,7 +48,7 @@ export class GithubProvider extends GitProviderRoot {
     if (latestPullRequestsOnBranch.data.length > 0) {
       const latestPullRequest = latestPullRequestsOnBranch.data[0];
       const latestPullRequestId = latestPullRequest.number;
-      deploymentCheckId = await this.getDeploymentIdFromPullRequest(latestPullRequestId, repoOwner || "", repoName || "", deploymentCheckId, latestPullRequest);
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(latestPullRequestId, this.repoOwner || "", this.repoName || "", deploymentCheckId, latestPullRequest);
     }
     return deploymentCheckId;
   }
@@ -50,9 +56,7 @@ export class GithubProvider extends GitProviderRoot {
   public async getPullRequestDeploymentCheckId(): Promise<string | null> {
     const pullRequestInfo = await this.getPullRequestInfo();
     if (pullRequestInfo) {
-      const repoOwner = github?.context?.repo?.owner || null;
-      const repoName = github?.context?.repo?.repo || null;
-      return await this.getDeploymentIdFromPullRequest(pullRequestInfo.number, repoOwner || "", repoName || "", null, pullRequestInfo);
+      return await this.getDeploymentIdFromPullRequest(pullRequestInfo.number, this.repoOwner || "", this.repoName || "", null, pullRequestInfo);
     }
     return null;
   }
@@ -86,9 +90,8 @@ export class GithubProvider extends GitProviderRoot {
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string | null> {
     try {
-      const runId = github?.context?.runId;
-      if (this.repoOwner && this.repoName && this.serverUrl && runId) {
-        return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/actions/runs/${runId}`;
+      if (this.repoOwner && this.repoName && this.serverUrl && this.runId) {
+        return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/actions/runs/${this.runId}`;
       }
     } catch (err: any) {
       uxLog(this, c.yellow("[GitHub Integration]" + err.message));
@@ -102,9 +105,8 @@ export class GithubProvider extends GitProviderRoot {
   // Returns current job URL
   public async getCurrentBranchUrl(): Promise<string | null> {
     try {
-      const branch = github?.context?.ref || null;
-      if (this.repoOwner && this.repoName && this.serverUrl && branch) {
-        return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/tree/${branch}`;
+      if (this.repoOwner && this.repoName && this.serverUrl && this.branch) {
+        return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/tree/${this.branch}`;
       }
     } catch (err: any) {
       uxLog(this, c.yellow("[GitHub Integration]" + err.message));
@@ -120,12 +122,11 @@ export class GithubProvider extends GitProviderRoot {
   // Find pull request info
   public async getPullRequestInfo(): Promise<any> {
     // Case when PR is found in the context
-    const prNumber = github?.context?.payload?.pull_request?.number || null;
-    if (prNumber !== null && this.repoOwner !== null && prNumber !== null) {
+    if (this.prNumber !== null && this.repoOwner !== null && this.prNumber !== null) {
       const pullRequest = await this.octokit.rest.pulls.get({
         owner: this.repoOwner,
         repo: this.repoName || "",
-        pull_number: prNumber,
+        pull_number: this.prNumber,
       });
       // Add cross git provider properties used by sfdx-hardis
       if (pullRequest) {
@@ -189,23 +190,18 @@ export class GithubProvider extends GitProviderRoot {
 
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
-    const { pull_request } = github.context.payload;
-
-    // Get CI variables
-    const pullRequestId = pull_request?.number || null;
-    if (this.repoName == null || pullRequestId == null) {
+    if (this.repoName == null || this.prNumber == null) {
       uxLog(this, c.grey("[GitHub Integration] No project and merge request, so no note posted..."));
       return { posted: false, providerResult: { info: "No related pull request" } };
     }
-    const githubWorkflowName = github.context.workflow;
-    const githubJobUrl = `${github.context.serverUrl}/${this.repoOwner}/${this.repoName}/actions/runs/${github.context.runId}`;
+    const githubJobUrl = `${this.serverUrl}/${this.repoOwner}/${this.repoName}/actions/runs/${this.runId}`;
     // Build note message
-    const messageKey = prMessage.messageKey + "-" + githubWorkflowName + "-" + pullRequestId;
+    const messageKey = prMessage.messageKey + "-" + this.workflow + "-" + this.prNumber;
     let messageBody = `**${prMessage.title || ""}**
 
 ${prMessage.message}
 
-_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${githubWorkflowName}](${githubJobUrl})_
+_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}](${githubJobUrl})_
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present
@@ -218,7 +214,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${githubWorkflowN
     const existingComments = await this.octokit.rest.issues.listComments({
       owner: this.repoOwner || "",
       repo: this.repoName,
-      issue_number: pullRequestId,
+      issue_number: this.prNumber,
     });
     let existingCommentId: number | null = null;
     for (const existingComment of existingComments.data) {
@@ -234,7 +230,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${githubWorkflowN
       const githubCommentEditResult = await this.octokit.rest.issues.updateComment({
         owner: this.repoOwner || "",
         repo: this.repoName,
-        issue_number: pullRequestId,
+        issue_number: this.prNumber,
         comment_id: existingCommentId,
         body: messageBody,
       });
@@ -249,7 +245,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${githubWorkflowN
       const githubCommentCreateResult = await this.octokit.rest.issues.createComment({
         owner: this.repoOwner || "",
         repo: this.repoName,
-        issue_number: pullRequestId,
+        issue_number: this.prNumber,
         body: messageBody,
       });
       const prResult: PullRequestMessageResult = {
