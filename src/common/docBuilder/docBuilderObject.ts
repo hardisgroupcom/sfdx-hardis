@@ -1,6 +1,7 @@
 import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
+import { mdTableCell } from "../gitProvider/utilsMarkdown.js";
 
 export class DocBuilderObject extends DocBuilderRoot {
 
@@ -8,6 +9,70 @@ export class DocBuilderObject extends DocBuilderRoot {
   public promptKey: PromptTemplate = "PROMPT_DESCRIBE_OBJECT";
   public placeholder = "<!-- Object description -->";
   public xmlRootKey = "CustomObject";
+
+  public static buildIndexTable(prefix: string, objectDescriptions: any[]) {
+    const lines: string[] = [];
+    lines.push(...[
+      "## Objects",
+      "",
+      "| Name      | Label | Description |",
+      "| :-------- | :---- | :---------- | "
+    ]);
+    for (const objectDescription of objectDescriptions) {
+      const objectNameCell = `[${objectDescription.name}](${prefix}${objectDescription.name}.md)`;
+      lines.push(...[
+        `| ${objectNameCell} | ${objectDescription.label || ""} | ${mdTableCell(objectDescription.description)} |`
+      ]);
+    }
+    lines.push("");
+    return lines;
+  }
+
+  public static buildCustomFieldsTable(fields: any[]) {
+    if (!Array.isArray(fields)) {
+      fields = [fields];
+    }
+    if (fields.length === 0) {
+      return [];
+    }
+    const lines: string[] = [];
+    lines.push(...[
+      "## Fields",
+      "",
+      "| Name      | Label | Type | Description |",
+      "| :-------- | :---- | :--: | :---------- | "
+    ]);
+    for (const field of fields) {
+      lines.push(...[
+        `| ${field.fullName} | ${field.label || ""} | ${field.type || ""} | ${mdTableCell(field.description)} |`
+      ]);
+    }
+    lines.push("");
+    return lines;
+  }
+
+  public static buildValidationRulesTable(validationRules: any[]) {
+    if (!Array.isArray(validationRules)) {
+      validationRules = [validationRules];
+    }
+    if (validationRules.length === 0) {
+      return [];
+    }
+    const lines: string[] = [];
+    lines.push(...[
+      "## Validation Rules",
+      "",
+      "| Rule      | Active | Description | Formula |",
+      "| :-------- | :---- | :---------- | :------ |"
+    ]);
+    for (const rule of validationRules) {
+      lines.push(...[
+        `| ${rule.fullName} | ${rule.active ? "Yes" : "No ⚠️"} | ${rule.description || ""} | \`${rule.errorConditionFormula}\` |`
+      ]);
+    }
+    lines.push("");
+    return lines;
+  }
 
   public async buildInitialMarkdownLines(): Promise<string[]> {
     return [
