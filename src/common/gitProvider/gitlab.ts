@@ -29,6 +29,9 @@ export class GitlabProvider extends GitProviderRoot {
 
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string | null> {
+    if (process.env.PIPELINE_JOB_URL) {
+      return process.env.PIPELINE_JOB_URL;
+    }
     if (process.env.CI_JOB_URL) {
       return process.env.CI_JOB_URL;
     }

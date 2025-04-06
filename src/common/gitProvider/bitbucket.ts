@@ -26,6 +26,9 @@ export class BitbucketProvider extends GitProviderRoot {
   }
 
   public async getCurrentJobUrl(): Promise<string | null> {
+    if (process.env.PIPELINE_JOB_URL) {
+      return process.env.PIPELINE_JOB_URL;
+    }
     if (process.env.BITBUCKET_WORKSPACE && process.env.BITBUCKET_REPO_SLUG && process.env.BITBUCKET_BUILD_NUMBER) {
       const jobUrl = `${this.serverUrl}/${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG}/pipelines/results/${process.env.BITBUCKET_BUILD_NUMBER}`;
       return jobUrl;
