@@ -89,6 +89,9 @@ export class GithubProvider extends GitProviderRoot {
 
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string | null> {
+    if (process.env.PIPELINE_JOB_URL) {
+      return process.env.PIPELINE_JOB_URL;
+    }
     try {
       if (this.repoOwner && this.repoName && this.serverUrl && this.runId) {
         return `${this.serverUrl}/${this.repoOwner}/${this.repoName}/actions/runs/${this.runId}`;
