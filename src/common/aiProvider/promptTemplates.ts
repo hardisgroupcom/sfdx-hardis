@@ -230,11 +230,11 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
 ### Instructions:
 
 1. **Contextual Overview**:
-    - Begin by summarizing the role of the Salesforce Profile that you can guess according to the content of the XML.
+    - Begin by summarizing the role of the Salesforce Profile that you can guess according to the content of the XML. Try to guess the role of users assigned to this profile acording to applicationVisibilities, objectVisibilities and userPermissions.
     - List the key features of the Profiles.
       - The most important features are License, Applications, User Permissions ,features with default values ,Custom Objects and Record Types 
       - Ignore Apex classes and Custom Fields
-      - Ignore attributes set to "false"
+      - Ignore blocks who has access or visibility set to "false"
 
 2. **Formatting Requirements**:
     - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
