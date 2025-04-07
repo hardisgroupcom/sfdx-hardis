@@ -1,6 +1,6 @@
 ---
-title: Configure overwrite management on a Salesforce CI/CD Project
-description: Learn how to manage package-no-overwrite.xml and packageDeployOnChange.xml
+title: Configure Conga management on a Salesforce CI/CD Project
+description: Learn how to manage Conga
 ---
 <!-- markdownlint-disable MD013 -->
 
