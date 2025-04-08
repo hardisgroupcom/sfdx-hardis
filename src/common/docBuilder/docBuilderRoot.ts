@@ -67,7 +67,7 @@ export abstract class DocBuilderRoot {
 
     if (AiProvider.isAiAvailable()) {
       const defaultVariables = { [`${this.docType.toUpperCase()}_NAME`]: this.metadataName, [`${this.docType.toUpperCase()}_XML`]: xmlStripped };
-      const variables = { ...defaultVariables, ...this.additionalVariables };
+      const variables = Object.assign(defaultVariables, this.additionalVariables);
       const prompt = AiProvider.buildPrompt(this.promptKey, variables);
 
       const aiResponse = await AiProvider.promptAi(prompt, this.promptKey);

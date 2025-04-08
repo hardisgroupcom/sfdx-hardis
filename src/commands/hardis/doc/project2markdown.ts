@@ -503,7 +503,7 @@ ${Project2Markdown.htmlInstructions}
         objectXml,
         objectMdFile, {
         "ALL_OBJECTS_LIST": this.allObjectsNames.join(","),
-        "ALL_OBJECTS_LINKS": objectLinksInfo
+        "ALL_OBJECT_LINKS": objectLinksInfo
       }).generateMarkdownFileFromXml();
       // Fields table
       await this.buildAttributesTables(objectName, objectXmlParsed, objectMdFile);
