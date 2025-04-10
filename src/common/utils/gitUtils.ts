@@ -171,7 +171,11 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
     let ticketsMarkdown = '## Tickets\n\n';
     for (const ticket of ticketsSorted) {
       if (ticket.foundOnServer) {
-        ticketsMarkdown += '- [' + ticket.id + '](' + ticket.url + ') ' + ticket.subject + '\n';
+        ticketsMarkdown += '- [' + ticket.id + '](' + ticket.url + ') ' + ticket.subject;
+        if (ticket.statusLabel) {
+          ticketsMarkdown += ' (' + ticket.statusLabel + ')';
+        }
+        ticketsMarkdown += '\n'
       } else {
         ticketsMarkdown += '- [' + ticket.id + '](' + ticket.url + ')\n';
       }
