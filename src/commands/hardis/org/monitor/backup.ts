@@ -36,6 +36,8 @@ You can remove more metadata types from backup, especially in case you have too 
 
 - Manual update of \`manifest/package-skip-items.xml\` config file (then commit & push in the same branch)
 
+  - Works with full wildcard (\`<members>*</members>\`) , named metadata (\`<members>Account.Name</members>\`) or partial wildcards names (\`<members>pi__*</members>\` , \`<members>*__dlm</members>\` , or \`<members>prefix*suffix</members>\`)
+
 - Environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`): that will be applied to all monitoring branches.
 
 ## Full mode
