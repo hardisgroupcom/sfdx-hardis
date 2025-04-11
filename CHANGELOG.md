@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.26.0] 2025-04-11
+
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): Allow wildcards in package-skip-items.xml (examples: `pi__*` , `*__dlm` , or `prefix*suffix` )
+
 ## [5.25.2] 2025-04-10
 
 - Display JIRA and Azure Boards issue labels in Pull Request comments
