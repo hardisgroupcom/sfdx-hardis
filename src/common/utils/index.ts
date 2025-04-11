@@ -830,10 +830,7 @@ export async function filterPackageXml(
         });
         if (destructiveTypes.length > 0) {
           type.members = type.members.filter((member: string) => {
-            return (
-              destructiveTypes[0].members.filter((destructiveMember: string) => destructiveMember === member).length ===
-              0
-            );
+            return shouldRetainMember(destructiveTypes[0].members, member);
           });
         }
         return type;
@@ -903,6 +900,27 @@ export async function filterPackageXml(
     updated,
     message,
   };
+}
+
+function shouldRetainMember(destructiveMembers: string[], member: string) {
+  if (destructiveMembers.length === 1 && destructiveMembers[0] === '*') {
+    // Whole type will be filtered later in the code
+    return true;
+  }
+  const matchesWithItemsToExclude = destructiveMembers.filter((destructiveMember: string) => {
+    if (destructiveMember === member) {
+      return true;
+    }
+    // Handle cases wild wildcards, like copado__* , *__dlm , or begin*end
+    if (destructiveMember.includes('*')) {
+      const regex = new RegExp(destructiveMember.replace(/\*/g, '.*'));
+      if (regex.test(member)) {
+        return true;
+      }
+    }
+    return false;
+  });
+  return matchesWithItemsToExclude.length === 0;
 }
 
 // Catch matches in files according to criteria
