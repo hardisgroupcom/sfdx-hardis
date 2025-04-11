@@ -911,7 +911,7 @@ function shouldRetainMember(destructiveMembers: string[], member: string) {
     if (destructiveMember === member) {
       return true;
     }
-    // Handle cases wild wildcards, like copado__* , *__dlm , or begin*end
+    // Handle cases wild wildcards, like pi__* , *__dlm , or begin*end
     if (destructiveMember.includes('*')) {
       const regex = new RegExp(destructiveMember.replace(/\*/g, '.*'));
       if (regex.test(member)) {
