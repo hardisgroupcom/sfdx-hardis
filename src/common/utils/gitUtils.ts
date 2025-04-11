@@ -324,7 +324,11 @@ async function collectNotifAttachments(attachments: MessageAttachment[], pullReq
       text: `*Tickets*\n${commitsSummary.tickets
         .map((ticket) => {
           if (ticket.foundOnServer) {
-            return '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id) + ' ' + ticket.subject;
+            let ticketsMarkdown = '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id) + ' ' + ticket.subject;
+            if (ticket.statusLabel) {
+              ticketsMarkdown += ' (' + ticket.statusLabel + ')';
+            }
+            return ticketsMarkdown;
           } else {
             return '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id);
           }
