@@ -43,11 +43,15 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
 extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js
   - https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js
   - javascripts/tables.js
   - javascripts/gtag.js
+  - javascripts/jstree-handler.js
 extra_css:
   - stylesheets/extra.css
+  - https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css
 extra:
   social:
     - icon: fontawesome/regular/circle-question

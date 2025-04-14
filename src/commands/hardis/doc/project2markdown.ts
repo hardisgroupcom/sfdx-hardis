@@ -453,6 +453,38 @@ ${Project2Markdown.htmlInstructions}
         mkdocsYml.nav.push(navMenu);
       }
     }
+    // Add missing javascripts if necessary
+    const allJavascripts = [
+      "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js",
+      "javascripts/tables.js",
+      "javascripts/gtag.js",
+      "javascripts/jstree-handler.js"
+    ];
+    const extraJavascript = mkdocsYml.extra_javascript || [];
+    for (const jsItem of allJavascripts) {
+      if (!extraJavascript.includes(jsItem)) {
+        extraJavascript.push(jsItem);
+      }
+    }
+    mkdocsYml.extra_javascript = extraJavascript;
+
+    // Add missing CSS if necessary
+    const allCss = [
+      "https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css",
+      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+      "stylesheets/extra.css",
+      "stylesheets/jstree-custom.css"
+    ];
+    const extraCss = mkdocsYml.extra_css || [];
+    for (const cssItem of allCss) {
+      if (!extraCss.includes(cssItem)) {
+        extraCss.push(cssItem);
+      }
+    }
+    mkdocsYml.extra_css = extraCss;
+
     // Add missing plugin config if necessary
     if (!mkdocsYml.plugins) {
       mkdocsYml.plugins = [

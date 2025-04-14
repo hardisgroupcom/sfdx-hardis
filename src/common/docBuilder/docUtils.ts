@@ -26,7 +26,7 @@ export function readMkDocsFile(mkdocsYmlFile: string): any {
 
 export async function writeMkDocsFile(mkdocsYmlFile: string, mkdocsYml: any) {
   const mkdocsYmlStr = yaml
-    .dump(mkdocsYml)
+    .dump(mkdocsYml, { lineWidth: -1 })
     .replace("!!python/name:materialx.emoji.twemoji", '!!python/name:material.extensions.emoji.twemoji')
     .replace("!!python/name:materialx.emoji.to_svg", '!!python/name:material.extensions.emoji.to_svg')
     .replace("'!!python/name:material.extensions.emoji.twemoji'", '!!python/name:material.extensions.emoji.twemoji')
