@@ -113,38 +113,49 @@ export class DocBuilderProfile extends DocBuilderRoot {
       }
       for (const element of attributeValue) {
         const subElement: any = {
-          text: element.name || element.apexClass || element.flow || element.apexPage || element.object || element.tab || element.recordType || element.application || element.field || element.layout || element.externalDataSource,
+          text: element.name || element.apexClass || element.flow || element.apexPage || element.object || element.tab || element.application || element.field || element.layout || element.recordType || element.externalDataSource || element.startAddress || "ERROR: " + JSON.stringify(element),
           icon:
             // Common properties
-            element.visible === true ? "fa-solid eye icon-success" :
-              element.visible === false ? "fa-solid eye-slash icon-error" :
-                element.enabled === true ? "fa-solid fa-circle-check icon-success" :
-                  element.enabled === false ? "fa-solid fa-circle-xmark icon-error" :
-                    // Custom fields 
-                    element.editable === true ? "fa-solid fa-square-pen icon-success" :
-                      element.readable === true ? "fa-solid fa-eye icon-success" :
-                        element.readable === false ? "fa-solid fa-eye-slash icon-error" :
-                          // Custom objects
-                          element.allowEdit === true ? "fa-solid fa-square-pen icon-success" :
-                            element.allowRead === true ? "fa-solid fa-eye icon-success" :
-                              element.allowRead === false ? "fa-solid fa-eye-slash icon-error" :
-                                // Tabs
-                                element.visibility === "DefaultOn" ? "fa-solid fa-circle-check icon-success" :
-                                  element.visibility === "hidden" ? "fa-solid fa-circle-xmark icon-error" :
-                                    "fa-solid fa-file",
+            element.default === true ? "fa-solid fa-star icon-success" :
+              element.visible === true ? "fa-solid fa-eye icon-success" :
+                element.visible === false ? "fa-solid fa-eye-slash icon-error" :
+                  element.enabled === true ? "fa-solid fa-circle-check icon-success" :
+                    element.enabled === false ? "fa-solid fa-circle-xmark icon-error" :
+                      // Custom fields 
+                      element.editable === true ? "fa-solid fa-square-pen icon-success" :
+                        element.readable === true ? "fa-solid fa-eye icon-success" :
+                          element.readable === false ? "fa-solid fa-eye-slash icon-error" :
+                            // Custom objects
+                            element.allowEdit === true ? "fa-solid fa-square-pen icon-success" :
+                              element.allowRead === true ? "fa-solid fa-eye icon-success" :
+                                element.allowRead === false ? "fa-solid fa-eye-slash icon-error" :
+                                  // Tabs
+                                  element.visibility === "DefaultOn" ? "fa-solid fa-eye icon-success" :
+                                    element.visibility === "DefaultOff" ? "fa-solid fa-circle-notch icon-warning" :
+                                      element.visibility === "Hidden" ? "fa-solid fa-eye-slash icon-error" :
+                                        "fa-solid fa-file",
           a_attr: { href: null },
           children: [],
         }
         subElement.children = Object.keys(element).map((key) => {
           const icon =
-            element[key] === true ? "fa-solid fa-circle-check icon-success" :
-              (element[key] === false || element[key] === "Hidden") ? "fa-solid fa-circle-xmark icon-error" :
-                "";
+            (element[key] === true) ? "fa-solid fa-circle-check icon-success" :
+              (element[key] === false) ? "fa-solid fa-circle-xmark icon-error" :
+                (element[key] === "DefaultOn") ? "fa-solid fa-eye icon-success" :
+                  (element[key] === "Hidden") ? "fa-solid fa-eye-slash icon-error" :
+                    (element[key] === "DefaultOff") ? "fa-solid fa-circle-notch icon-warning" :
+                      "";
           return {
             text: prettifyFieldName(key) + ": " + element[key],
             icon: icon,
             a_attr: { href: null },
           };
+        });
+        // Sort subElement.children to put text as first element
+        subElement.children.sort((a: any, b: any) => {
+          if (a.text.endsWith(subElement.text)) return -1;
+          if (b.text.endsWith(subElement.text)) return 1;
+          return 0;
         });
         attributeTreeRoot.children.push(subElement);
       }

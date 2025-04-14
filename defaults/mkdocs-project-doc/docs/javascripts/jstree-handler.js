@@ -37,7 +37,12 @@ document$.subscribe(async () => {
     container.jstree({
       'core': {
         'data': jsonData
-      }
+      },
+      "plugins": [
+        "search",
+        "state",
+        "wholerow"
+      ]
     });
 
   } catch (err) {
