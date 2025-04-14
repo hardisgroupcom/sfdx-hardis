@@ -1,6 +1,6 @@
 import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
-import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUtils.js";
+import { buildGenericMarkdownTable, prettifyFieldName } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
 
 export class DocBuilderProfile extends DocBuilderRoot {
@@ -9,6 +9,7 @@ export class DocBuilderProfile extends DocBuilderRoot {
   public promptKey: PromptTemplate = "PROMPT_DESCRIBE_PROFILE";
   public placeholder = "<!-- Profile description -->";
   public xmlRootKey = "Profile";
+  public docsSection = "profiles";
 
   public static buildIndexTable(prefix: string, profileDescriptions: any[], filterObject: string | null = null) {
     const filteredProfiles = filterObject ? profileDescriptions.filter(profile => profile.impactedObjects.includes(filterObject)) : profileDescriptions;
@@ -36,9 +37,12 @@ export class DocBuilderProfile extends DocBuilderRoot {
     return [
       `## ${this.metadataName}`,
       '',
+      '<div id="jstree-container"></div>',
+      '',
+      buildGenericMarkdownTable(this.parsedXmlObject, ["userLicense", "custom"], "## Profile attributes", []),
+      '',
       '<!-- Profile description -->',
       '',
-      buildGenericMarkdownTable(this.parsedXmlObject, ["allFields"], "## Profile attributes", []),
     ];
   }
 
@@ -87,6 +91,67 @@ export class DocBuilderProfile extends DocBuilderRoot {
     }
     const xmlStripped = new XMLBuilder().build(xmlObj);
     return xmlStripped
+  }
+
+  // Generate json for display with jsTree npm library 
+  public async generateJsonTree(): Promise<any> {
+    const xmlObj = new XMLParser().parse(this.metadataXml);
+    const treeElements: any[] = [];
+    for (const profileRootAttribute of Object.keys(xmlObj?.Profile || {})) {
+      if (["custom", "userLicense"].includes(profileRootAttribute)) {
+        continue;
+      }
+      let attributeValue = xmlObj.Profile[profileRootAttribute];
+      if (!Array.isArray(attributeValue)) {
+        attributeValue = [attributeValue]
+      }
+      const attributeTreeRoot: any = {
+        text: prettifyFieldName(profileRootAttribute),
+        icon: "fa-solid fa-folder",
+        a_attr: { href: null },
+        children: [],
+      }
+      for (const element of attributeValue) {
+        const subElement: any = {
+          text: element.name || element.apexClass || element.flow || element.apexPage || element.object || element.tab || element.recordType || element.application || element.field || element.layout || element.externalDataSource,
+          icon:
+            // Common properties
+            element.visible === true ? "fa-solid eye icon-success" :
+              element.visible === false ? "fa-solid eye-slash icon-error" :
+                element.enabled === true ? "fa-solid fa-circle-check icon-success" :
+                  element.enabled === false ? "fa-solid fa-circle-xmark icon-error" :
+                    // Custom fields 
+                    element.editable === true ? "fa-solid fa-square-pen icon-success" :
+                      element.readable === true ? "fa-solid fa-eye icon-success" :
+                        element.readable === false ? "fa-solid fa-eye-slash icon-error" :
+                          // Custom objects
+                          element.allowEdit === true ? "fa-solid fa-square-pen icon-success" :
+                            element.allowRead === true ? "fa-solid fa-eye icon-success" :
+                              element.allowRead === false ? "fa-solid fa-eye-slash icon-error" :
+                                // Tabs
+                                element.visibility === "DefaultOn" ? "fa-solid fa-circle-check icon-success" :
+                                  element.visibility === "hidden" ? "fa-solid fa-circle-xmark icon-error" :
+                                    "fa-solid fa-file",
+          a_attr: { href: null },
+          children: [],
+        }
+        subElement.children = Object.keys(element).map((key) => {
+          const icon =
+            element[key] === true ? "fa-solid fa-circle-check icon-success" :
+              (element[key] === false || element[key] === "Hidden") ? "fa-solid fa-circle-xmark icon-error" :
+                "";
+          return {
+            text: prettifyFieldName(key) + ": " + element[key],
+            icon: icon,
+            a_attr: { href: null },
+          };
+        });
+        attributeTreeRoot.children.push(subElement);
+      }
+      attributeTreeRoot.text = attributeTreeRoot.text + " (" + attributeTreeRoot.children.length + ")";
+      treeElements.push(attributeTreeRoot);
+    }
+    return treeElements;
   }
 
 }
