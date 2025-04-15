@@ -107,7 +107,7 @@ export class DocBuilderProfile extends DocBuilderRoot {
       }
       const attributeTreeRoot: any = {
         text: prettifyFieldName(profileRootAttribute),
-        icon: "fa-solid fa-folder",
+        icon: "fa-solid fa-folder icon-blue",
         a_attr: { href: null },
         children: [],
       }
