@@ -174,13 +174,12 @@ export class DocBuilderPackageXML {
         children: [],
       }
       if (memberLengthLabel !== "all") {
-        for (const member of members) {
-          const subElement: any = {
-            text: member,
-            icon: "fa-solid fa-circle-check icon-success",
-            a_attr: { href: null },
-          }
-          typeRoot.children.push(subElement);
+        if (metadataType === "CustomField") {
+          // Sort custom fields by object name
+          DocBuilderPackageXML.createCustomFieldsTree(members, typeRoot);
+        }
+        else {
+          DocBuilderPackageXML.createMembersTree(members, typeRoot);
         }
       }
       treeElements.push(typeRoot);
@@ -188,4 +187,43 @@ export class DocBuilderPackageXML {
     return treeElements;
   }
 
+  private static createCustomFieldsTree(members: any, typeRoot: any) {
+    const elementsByObject: any = [];
+    for (const element of members) {
+      const objectName = element.split('.')[0];
+      if (!elementsByObject[objectName]) {
+        elementsByObject[objectName] = [];
+      }
+      elementsByObject[objectName].push(element);
+    }
+    // Create object nodes and fields as children
+    for (const objectName of Object.keys(elementsByObject)) {
+      const objectNode: any = {
+        text: objectName + " (" + elementsByObject[objectName].length + ")",
+        icon: "fa-solid fa-folder icon-blue",
+        a_attr: { href: null },
+        children: [],
+      };
+      for (const element of elementsByObject[objectName]) {
+        const subElement: any = {
+          text: element,
+          icon: "fa-solid fa-circle-check icon-success",
+          a_attr: { href: null },
+        };
+        objectNode.children.push(subElement);
+      }
+      typeRoot.children.push(objectNode);
+    }
+  }
+
+  private static createMembersTree(members: any, typeRoot: any) {
+    for (const member of members) {
+      const subElement: any = {
+        text: member,
+        icon: "fa-solid fa-circle-check icon-success",
+        a_attr: { href: null },
+      };
+      typeRoot.children.push(subElement);
+    }
+  }
 }

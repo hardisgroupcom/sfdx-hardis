@@ -111,58 +111,95 @@ export class DocBuilderProfile extends DocBuilderRoot {
         a_attr: { href: null },
         children: [],
       }
-      for (const element of attributeValue) {
-        const subElement: any = {
-          text: element.name || element.apexClass || element.flow || element.apexPage || element.object || element.tab || element.application || element.field || element.layout || element.recordType || element.externalDataSource || element.startAddress || "ERROR: " + JSON.stringify(element),
-          icon:
-            // Common properties
-            element.default === true ? "fa-solid fa-star icon-success" :
-              element.visible === true ? "fa-solid fa-eye icon-success" :
-                element.visible === false ? "fa-solid fa-eye-slash icon-error" :
-                  element.enabled === true ? "fa-solid fa-circle-check icon-success" :
-                    element.enabled === false ? "fa-solid fa-circle-xmark icon-error" :
-                      // Custom fields 
-                      element.editable === true ? "fa-solid fa-square-pen icon-success" :
-                        element.readable === true ? "fa-solid fa-eye icon-success" :
-                          element.readable === false ? "fa-solid fa-eye-slash icon-error" :
-                            // Custom objects
-                            element.allowEdit === true ? "fa-solid fa-square-pen icon-success" :
-                              element.allowRead === true ? "fa-solid fa-eye icon-success" :
-                                element.allowRead === false ? "fa-solid fa-eye-slash icon-error" :
-                                  // Tabs
-                                  element.visibility === "DefaultOn" ? "fa-solid fa-eye icon-success" :
-                                    element.visibility === "DefaultOff" ? "fa-solid fa-circle-notch icon-warning" :
-                                      element.visibility === "Hidden" ? "fa-solid fa-eye-slash icon-error" :
-                                        "fa-solid fa-file",
-          a_attr: { href: null },
-          children: [],
-        }
-        subElement.children = Object.keys(element).map((key) => {
-          const icon =
-            (element[key] === true) ? "fa-solid fa-circle-check icon-success" :
-              (element[key] === false) ? "fa-solid fa-circle-xmark icon-error" :
-                (element[key] === "DefaultOn") ? "fa-solid fa-eye icon-success" :
-                  (element[key] === "Hidden") ? "fa-solid fa-eye-slash icon-error" :
-                    (element[key] === "DefaultOff") ? "fa-solid fa-circle-notch icon-warning" :
-                      "";
-          return {
-            text: prettifyFieldName(key) + ": " + element[key],
-            icon: icon,
-            a_attr: { href: null },
-          };
-        });
-        // Sort subElement.children to put text as first element
-        subElement.children.sort((a: any, b: any) => {
-          if (a.text.endsWith(subElement.text)) return -1;
-          if (b.text.endsWith(subElement.text)) return 1;
-          return 0;
-        });
-        attributeTreeRoot.children.push(subElement);
+      if (profileRootAttribute === "fieldPermissions") {
+        // Sort custom fields by object name
+        this.buildObjectFieldsTree(attributeValue, attributeTreeRoot);
       }
-      attributeTreeRoot.text = attributeTreeRoot.text + " (" + attributeTreeRoot.children.length + ")";
+      else {
+        for (const element of attributeValue) {
+          const subElement: any = this.getSubElement(element);
+          attributeTreeRoot.children.push(subElement);
+        }
+        attributeTreeRoot.text = attributeTreeRoot.text + " (" + attributeTreeRoot.children.length + ")";
+      }
       treeElements.push(attributeTreeRoot);
     }
     return treeElements;
   }
 
+  private buildObjectFieldsTree(attributeValue: any, attributeTreeRoot: any) {
+    const elementsByObject: any = [];
+    for (const element of attributeValue) {
+      const objectName = element.field.split('.')[0];
+      if (!elementsByObject[objectName]) {
+        elementsByObject[objectName] = [];
+      }
+      elementsByObject[objectName].push(element);
+    }
+    // Create object nodes and fields as children
+    let totalFields = 0;
+    for (const objectName of Object.keys(elementsByObject)) {
+      const objectNode: any = {
+        text: objectName + " (" + elementsByObject[objectName].length + ")",
+        icon: "fa-solid fa-folder icon-blue",
+        a_attr: { href: null },
+        children: [],
+      };
+      totalFields += elementsByObject[objectName].length;
+      for (const element of elementsByObject[objectName]) {
+        const subElement: any = this.getSubElement(element);
+        objectNode.children.push(subElement);
+      }
+      attributeTreeRoot.children.push(objectNode);
+    }
+    attributeTreeRoot.text = attributeTreeRoot.text + " (" + totalFields + ")";
+  }
+
+  private getSubElement(element: any) {
+    const subElement: any = {
+      text: element.name || element.apexClass || element.flow || element.apexPage || element.object || element.tab || element.application || element.field || element.layout || element.recordType || element.externalDataSource || element.startAddress || "ERROR: " + JSON.stringify(element),
+      icon:
+        // Common properties
+        element.default === true ? "fa-solid fa-star icon-success" :
+          element.visible === true ? "fa-solid fa-eye icon-success" :
+            element.visible === false ? "fa-solid fa-eye-slash icon-error" :
+              element.enabled === true ? "fa-solid fa-circle-check icon-success" :
+                element.enabled === false ? "fa-solid fa-circle-xmark icon-error" :
+                  // Custom fields 
+                  element.editable === true ? "fa-solid fa-square-pen icon-success" :
+                    element.readable === true ? "fa-solid fa-eye icon-success" :
+                      element.readable === false ? "fa-solid fa-eye-slash icon-error" :
+                        // Custom objects
+                        element.allowEdit === true ? "fa-solid fa-square-pen icon-success" :
+                          element.allowRead === true ? "fa-solid fa-eye icon-success" :
+                            element.allowRead === false ? "fa-solid fa-eye-slash icon-error" :
+                              // Tabs
+                              element.visibility === "DefaultOn" ? "fa-solid fa-eye icon-success" :
+                                element.visibility === "DefaultOff" ? "fa-solid fa-circle-notch icon-warning" :
+                                  element.visibility === "Hidden" ? "fa-solid fa-eye-slash icon-error" :
+                                    "fa-solid fa-file",
+      a_attr: { href: null },
+      children: [],
+    };
+    subElement.children = Object.keys(element).map((key) => {
+      const icon = (element[key] === true) ? "fa-solid fa-circle-check icon-success" :
+        (element[key] === false) ? "fa-solid fa-circle-xmark icon-error" :
+          (element[key] === "DefaultOn") ? "fa-solid fa-eye icon-success" :
+            (element[key] === "Hidden") ? "fa-solid fa-eye-slash icon-error" :
+              (element[key] === "DefaultOff") ? "fa-solid fa-circle-notch icon-warning" :
+                "";
+      return {
+        text: prettifyFieldName(key) + ": " + element[key],
+        icon: icon,
+        a_attr: { href: null },
+      };
+    });
+    // Sort subElement.children to put text as first element
+    subElement.children.sort((a: any, b: any) => {
+      if (a.text.endsWith(subElement.text)) return -1;
+      if (b.text.endsWith(subElement.text)) return 1;
+      return 0;
+    });
+    return subElement;
+  }
 }
