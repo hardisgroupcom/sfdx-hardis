@@ -5,6 +5,11 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Also Display JIRA and Azure Boards issue status labels in notifications
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/) enhancements
+  - Add **--start-chunk** to help solving rotten Metadata retrieve issues
+  - When using **--full-apply-filters**, do not kee Custom Objects who do not have Custom Fields locally defined
+  - Update package-skip-items template to add MilestoneType
+  - Add troubleshooting documentation
 
 ## [5.26.0] 2025-04-11
 
