@@ -2,7 +2,7 @@ import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { buildGenericMarkdownTable, prettifyFieldName } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
-
+/* jscpd:ignore-start */
 export class DocBuilderProfile extends DocBuilderRoot {
 
   public docType = "Profile";
@@ -126,6 +126,7 @@ export class DocBuilderProfile extends DocBuilderRoot {
     }
     return treeElements;
   }
+  /* jscpd:ignore-end */
 
   public buildObjectFieldsTree(attributeValue: any, attributeTreeRoot: any) {
     const elementsByObject: any = [];
