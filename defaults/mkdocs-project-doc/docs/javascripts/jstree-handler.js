@@ -36,13 +36,14 @@ document$.subscribe(async () => {
     const jsonData = await response.json();
     container.jstree({
       'core': {
+        'dblclick_toggle': false,
         'data': jsonData
       },
       "plugins": [
         "search"
       ],
       'search': {
-        // 'show_only_matches': true,
+        //'show_only_matches': true,
         'case_sensitive': false
       }
     });
