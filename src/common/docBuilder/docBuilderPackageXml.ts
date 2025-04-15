@@ -6,6 +6,7 @@ import { uxLog } from '../utils/index.js';
 import { countPackageXmlItems, parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { SalesforceSetupUrlBuilder } from './docUtils.js';
 import { CONSTANTS } from '../../config/index.js';
+import { prettifyFieldName } from '../utils/flowVisualiser/nodeFormatUtils.js';
 
 export class DocBuilderPackageXML {
 
@@ -65,6 +66,8 @@ export class DocBuilderPackageXML {
         '',
         packageXmlDefinition.description,
         '',
+        '<div id="jstree-container"></div>',
+        '',
         `Metadatas: ${nbItems}`,
         ''
       ]);
@@ -73,6 +76,8 @@ export class DocBuilderPackageXML {
       // Header
       mdLines.push(...[
         `## Content of ${path.basename(inputFile)}`,
+        '',
+        '<div id="jstree-container"></div>',
         '',
         `Metadatas: ${nbItems}`,
         ''
@@ -106,8 +111,16 @@ export class DocBuilderPackageXML {
 
     // Write output file
     await fs.writeFile(outputFile, mdLines.join("\n") + "\n");
-
     uxLog(this, c.green(`Successfully generated ${path.basename(inputFile)} documentation into ${outputFile}`));
+
+    const jsonTree = await this.generateJsonTree(metadataTypes, packageXmlContent);
+    if (jsonTree) {
+      const packageXmlFileName = path.basename(outputFile, ".md");
+      const jsonFile = `./docs/json/root-${packageXmlFileName}.json`;
+      await fs.ensureDir(path.dirname(jsonFile));
+      await fs.writeFile(jsonFile, JSON.stringify(jsonTree, null, 2));
+      uxLog(this, c.green(`Successfully generated ${packageXmlFileName} JSON into ${jsonFile}`));
+    }
 
     return outputFile;
   }
@@ -145,6 +158,34 @@ export class DocBuilderPackageXML {
         description: "Contains the list of metadatas that are excluded from the backup.<br/>Other metadata types might be skipped using environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES"
       },
     ];
+  }
+
+  // Generate json for display with jsTree npm library 
+  public static async generateJsonTree(metadataTypes: any, packageXmlContent: any): Promise<any> {
+    const treeElements: any[] = [];
+    for (const metadataType of metadataTypes) {
+      const members = packageXmlContent[metadataType] || [];
+      members.sort();
+      const memberLengthLabel = members.length === 1 && members[0] === "*" ? "all" : members.length;
+      const typeRoot: any = {
+        text: prettifyFieldName(metadataType) + " (" + memberLengthLabel + ")",
+        icon: memberLengthLabel !== "all" ? "fa-solid fa-folder icon-blue" : "fa-solid fa-folder icon-warning",
+        a_attr: { href: null },
+        children: [],
+      }
+      if (memberLengthLabel !== "all") {
+        for (const member of members) {
+          const subElement: any = {
+            text: member,
+            icon: "fa-solid fa-circle-check icon-success",
+            a_attr: { href: null },
+          }
+          typeRoot.children.push(subElement);
+        }
+      }
+      treeElements.push(typeRoot);
+    }
+    return treeElements;
   }
 
 }
