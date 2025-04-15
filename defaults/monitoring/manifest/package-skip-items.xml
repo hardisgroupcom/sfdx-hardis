@@ -74,6 +74,13 @@
         <name>LightningMessageChannel</name>
     </types>
 
+    <!-- Uncomment if it crashes with "UNKNOWN ERROR", it might be the cause !
+    <types>
+        <members>*</members>
+        <name>MilestoneType</name>
+    </types>
+    -->
+
     <!-- Uncomment if you have too many metadatas
     <types>
         <members>*</members>
