@@ -4,6 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Display Profiles attributes in a tree
 - Also Display JIRA and Azure Boards issue status labels in notifications
 
 ## [5.26.0] 2025-04-11
