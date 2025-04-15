@@ -36,7 +36,6 @@ document$.subscribe(async () => {
     const jsonData = await response.json();
     container.jstree({
       'core': {
-        'dblclick_toggle': false,
         'data': jsonData
       },
       "plugins": [
@@ -46,6 +45,19 @@ document$.subscribe(async () => {
         //'show_only_matches': true,
         'case_sensitive': false
       }
+    }).on('ready.jstree', function () {
+      $('#jstree-container').on('click', '.jstree-anchor', function (e) {
+        // Prevent the default behavior of the click (which might conflict with jsTree's event)
+        e.preventDefault();
+        // Get the node
+        const node = $(this).closest('li');
+        // Check if it's a folder (node with children) and toggle
+        if (node.hasClass('jstree-open')) {
+          $('#jstree-container').jstree('close_node', node);
+        } else {
+          $('#jstree-container').jstree('open_node', node);
+        }
+      });
     });
 
     // Add search button
