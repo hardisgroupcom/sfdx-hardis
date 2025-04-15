@@ -101,6 +101,13 @@
       <name>SamlSsoConfig</name>
     </types>
 
+    <!-- Uncomment if you have crashes that seem related to SiteDotCom metadatas
+    <types>
+        <members>*</members>
+        <name>SiteDotCom</name>
+    </types>
+    -->
+
     <!-- Uncomment if you have too many metadatas
     <types>
         <members>*</members>
