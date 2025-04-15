@@ -39,11 +39,35 @@ document$.subscribe(async () => {
         'data': jsonData
       },
       "plugins": [
-        "search",
-        "state",
-        "wholerow"
-      ]
+        "search"
+      ],
+      'search': {
+        // 'show_only_matches': true,
+        'case_sensitive': false
+      }
     });
+
+    // Add search button
+    if (container?.[0]?.parentNode) {
+      // Create the input element
+      const searchInput = document.createElement('input');
+      searchInput.type = 'text';
+      searchInput.id = 'jstree-search';
+      searchInput.placeholder = 'Input items to find';
+      searchInput.style.marginBottom = '1em'; // Optional spacing
+      // Insert it before the jstree container
+      container[0].parentNode.insertBefore(searchInput, container[0]);
+
+      // Perform search
+      let to = false;
+      $('#jstree-search').on('input', function () {
+        if (to) clearTimeout(to);
+        to = setTimeout(function () {
+          const searchValue = $('#jstree-search').val();
+          $('#jstree-container').jstree(true).search(searchValue);
+        }, 250); // debounce for smoother UX
+      });
+    }
 
   } catch (err) {
     console.error('Failed to load JSON file:', jsonPath, err);
