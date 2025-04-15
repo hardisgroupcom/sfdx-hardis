@@ -127,7 +127,7 @@ export class DocBuilderProfile extends DocBuilderRoot {
     return treeElements;
   }
 
-  private buildObjectFieldsTree(attributeValue: any, attributeTreeRoot: any) {
+  public buildObjectFieldsTree(attributeValue: any, attributeTreeRoot: any) {
     const elementsByObject: any = [];
     for (const element of attributeValue) {
       const objectName = element.field.split('.')[0];
@@ -155,7 +155,7 @@ export class DocBuilderProfile extends DocBuilderRoot {
     attributeTreeRoot.text = attributeTreeRoot.text + " (" + totalFields + ")";
   }
 
-  private getSubElement(element: any) {
+  public getSubElement(element: any) {
     const subElement: any = {
       text: element.name || element.apexClass || element.flow || element.apexPage || element.object || element.tab || element.application || element.field || element.layout || element.recordType || element.externalDataSource || element.startAddress || "ERROR: " + JSON.stringify(element),
       icon:
@@ -174,7 +174,7 @@ export class DocBuilderProfile extends DocBuilderRoot {
                           element.allowRead === true ? "fa-solid fa-eye icon-success" :
                             element.allowRead === false ? "fa-solid fa-eye-slash icon-error" :
                               // Tabs
-                              element.visibility === "DefaultOn" ? "fa-solid fa-eye icon-success" :
+                              ["DefaultOn", "Visible"].includes(element.visibility) ? "fa-solid fa-eye icon-success" :
                                 element.visibility === "DefaultOff" ? "fa-solid fa-circle-notch icon-warning" :
                                   element.visibility === "Hidden" ? "fa-solid fa-eye-slash icon-error" :
                                     "fa-solid fa-file",
@@ -184,7 +184,7 @@ export class DocBuilderProfile extends DocBuilderRoot {
     subElement.children = Object.keys(element).map((key) => {
       const icon = (element[key] === true) ? "fa-solid fa-circle-check icon-success" :
         (element[key] === false) ? "fa-solid fa-circle-xmark icon-error" :
-          (element[key] === "DefaultOn") ? "fa-solid fa-eye icon-success" :
+          (["DefaultOn", "Visible"].includes(element[key])) ? "fa-solid fa-eye icon-success" :
             (element[key] === "Hidden") ? "fa-solid fa-eye-slash icon-error" :
               (element[key] === "DefaultOff") ? "fa-solid fa-circle-notch icon-warning" :
                 "";
