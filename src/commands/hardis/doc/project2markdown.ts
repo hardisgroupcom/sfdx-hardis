@@ -30,6 +30,7 @@ import { DocBuilderApex } from '../../../common/docBuilder/docBuilderApex.js';
 import { DocBuilderFlow } from '../../../common/docBuilder/docBuilderFlow.js';
 import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPackageXml.js';
 import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPermissionSet.js';
+import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -156,6 +157,7 @@ ${this.htmlInstructions}
   protected pageDescriptions: any[] = [];
   protected profileDescriptions: any[] = [];
   protected permissionSetsDescriptions: any[] = [];
+  protected permissionSetGroupsDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
   protected objectFiles: string[];
   protected allObjectsNames: string[];
@@ -182,6 +184,8 @@ ${this.htmlInstructions}
       "- [Flows](flows/index.md)",
       "- [Apex](apex/index.md)",
       "- [Profiles](profiles/index.md)",
+      "- [Permission Set Groups](permissionsetgroups/index.md)",
+      "- [Permission Sets](permissionsets/index.md)",
       "- [Lightning Pages](pages/index.md)",
       "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
       "- [Branches & Orgs](sfdx-hardis-branches-and-orgs.md)",
@@ -251,6 +255,7 @@ ${this.htmlInstructions}
     // List profiles & generate doc
     if (!(process?.env?.GENERATE_PROFILES_DOC === 'false')) {
       await this.generateProfilesDocumentation();
+      await this.generatePermissionSetGroupsDocumentation();
       await this.generatePermissionSetsDocumentation();
     }
 
@@ -258,6 +263,8 @@ ${this.htmlInstructions}
     if (!(process?.env?.GENERATE_OBJECTS_DOC === 'false')) {
       await this.generateObjectsDocumentation();
     }
+
+
 
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
@@ -441,6 +448,9 @@ ${Project2Markdown.htmlInstructions}
       });
       // Add apex code in documentation
       await new DocBuilderPermissionSet(psName, psXml, mdFile).generateMarkdownFileFromXml();
+      // Permission Set Groups Table
+      const relatedPsg = DocBuilderPermissionSetGroup.buildIndexTable('../permissionsetgroups/', this.permissionSetGroupsDescriptions, psName);
+      await replaceInFile(mdFile, '<!-- Permission Set Groups table -->', relatedPsg.join("\n"));
       if (this.withPdf) {
         await generatePdfFileFromMarkdown(mdFile);
       }
@@ -449,7 +459,39 @@ ${Project2Markdown.htmlInstructions}
     // Write index file for permission sets folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "permissionsets"));
     const psIndexFile = path.join(this.outputMarkdownRoot, "permissionsets", "index.md");
-    await fs.writeFile(psIndexFile, getMetaHideLines() + DocBuilderProfile.buildIndexTable('', this.permissionSetsDescriptions).join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(psIndexFile, getMetaHideLines() + DocBuilderPermissionSet.buildIndexTable('', this.permissionSetsDescriptions).join("\n") + `\n\n${this.footer}\n`);
+  }
+
+  private async generatePermissionSetGroupsDocumentation() {
+    uxLog(this, c.cyan("Generating Permission Set Groups documentation..."));
+    const psgForMenu: any = { "All Permission Set Groups": "permissionsetgroups/index.md" };
+    const psgFiles = (await glob("**/permissionsetgroups/**.permissionsetgroup-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).sort();
+    for (const psgFile of psgFiles) {
+      const psgName = path.basename(psgFile, ".permissionsetgroup-meta.xml");
+      const mdFile = path.join(this.outputMarkdownRoot, "permissionsetgroups", psgName + ".md");
+      psgForMenu[psgName] = "permissionsetgroups/" + psgName + ".md";
+      const psgXml = await fs.readFile(psgFile, "utf8");
+      const psgXmlParsed = new XMLParser().parse(psgXml);
+      let permissionSets = psgXmlParsed?.PermissionSetGroup?.permissionSets || [];
+      if (!Array.isArray(permissionSets)) {
+        permissionSets = [permissionSets];
+      }
+      this.permissionSetGroupsDescriptions.push({
+        name: psgName,
+        description: psgXmlParsed?.PermissionSetGroup?.description || "None",
+        relatedPermissionSets: permissionSets,
+      });
+      await new DocBuilderPermissionSetGroup(psgName, psgXml, mdFile).generateMarkdownFileFromXml();
+      if (this.withPdf) {
+        await generatePdfFileFromMarkdown(mdFile);
+      }
+    }
+    this.addNavNode("Permission Set Groups", psgForMenu);
+
+    // Write index file for permission set groups folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "permissionsetgroups"));
+    const psgIndexFile = path.join(this.outputMarkdownRoot, "permissionsetgroups", "index.md");
+    await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderPermissionSetGroup.buildIndexTable('', this.permissionSetGroupsDescriptions).join("\n") + `\n${this.footer}\n`);
   }
 
   private async buildMkDocsYml() {
@@ -542,6 +584,7 @@ ${Project2Markdown.htmlInstructions}
       "Flows",
       "Apex",
       "Profiles",
+      "Permission Set Groups",
       "Permission Sets",
       "Lightning Pages",
       "SFDX-Hardis Config",

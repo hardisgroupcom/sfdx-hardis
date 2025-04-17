@@ -41,6 +41,8 @@ export class DocBuilderPermissionSet extends DocBuilderProfile {
       '',
       buildGenericMarkdownTable(this.parsedXmlObject, ["label", "description", "license", "hasActivationRequired"], "## Permission Set attributes", []),
       '',
+      '<!-- Permission Set Groups table -->',
+      '',
       '<!-- PermissionSet description -->',
       '',
     ];
