@@ -8,6 +8,23 @@ extra_css:
   - https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css
   - https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css
 */
+
+function countJsTreeNodes(nodes) {
+  let count = 0;
+
+  function traverse(nodeList) {
+    for (const node of nodeList) {
+      count++;
+      if (node.children && node.children.length > 0) {
+        traverse(node.children);
+      }
+    }
+  }
+
+  traverse(nodes);
+  return count;
+}
+
 document$.subscribe(async () => {
   // Initialize jstree with some sample data
   const container = $('#jstree-container');
@@ -34,6 +51,7 @@ document$.subscribe(async () => {
       throw new Error(`HTTP error !  Status: ${response.status}`);
     }
     const jsonData = await response.json();
+    const nodesNumber = countJsTreeNodes(jsonData);
     container.jstree({
       'core': {
         'data': jsonData
@@ -58,6 +76,10 @@ document$.subscribe(async () => {
           $('#jstree-container').jstree('open_node', node);
         }
       });
+      // Open all if there are less than 30 nodes
+      if (nodesNumber < 20) {
+        $('#jstree-container').jstree('open_all');
+      }
     });
 
     // Add search button
