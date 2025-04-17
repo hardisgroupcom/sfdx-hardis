@@ -93,6 +93,7 @@ If Flow history doc always display a single state, you probably need to update y
 
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-object-diagram.jpg)
 
+![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc-profile.gif)
 
 If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strategy will be generated.
 
