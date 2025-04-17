@@ -19,6 +19,8 @@ The documentation will be [supercharged with AI](salesforce-ai-setup.md) if acti
 
 ![](assets/images/screenshot-object-diagram.jpg)
 
+![](assets/images/screenshot-project-doc-profile.gif)
+
 If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strategy will be generated.
 
 ![](assets/images/screenshot-doc-branches-strategy.jpg)
