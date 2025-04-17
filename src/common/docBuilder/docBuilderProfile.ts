@@ -126,7 +126,6 @@ export class DocBuilderProfile extends DocBuilderRoot {
     }
     return treeElements;
   }
-  /* jscpd:ignore-end */
 
   public buildObjectFieldsTree(attributeValue: any, attributeTreeRoot: any) {
     const elementsByObject: any = [];
@@ -204,3 +203,4 @@ export class DocBuilderProfile extends DocBuilderRoot {
     return subElement;
   }
 }
+/* jscpd:ignore-end */
