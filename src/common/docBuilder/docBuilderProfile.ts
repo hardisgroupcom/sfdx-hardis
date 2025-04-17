@@ -1,14 +1,15 @@
 import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
-import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUtils.js";
+import { buildGenericMarkdownTable, prettifyFieldName } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
-
+/* jscpd:ignore-start */
 export class DocBuilderProfile extends DocBuilderRoot {
 
   public docType = "Profile";
   public promptKey: PromptTemplate = "PROMPT_DESCRIBE_PROFILE";
   public placeholder = "<!-- Profile description -->";
   public xmlRootKey = "Profile";
+  public docsSection = "profiles";
 
   public static buildIndexTable(prefix: string, profileDescriptions: any[], filterObject: string | null = null) {
     const filteredProfiles = filterObject ? profileDescriptions.filter(profile => profile.impactedObjects.includes(filterObject)) : profileDescriptions;
@@ -36,9 +37,12 @@ export class DocBuilderProfile extends DocBuilderRoot {
     return [
       `## ${this.metadataName}`,
       '',
+      '<div id="jstree-container"></div>',
+      '',
+      buildGenericMarkdownTable(this.parsedXmlObject, ["userLicense", "custom"], "## Profile attributes", []),
+      '',
       '<!-- Profile description -->',
       '',
-      buildGenericMarkdownTable(this.parsedXmlObject, ["allFields"], "## Profile attributes", []),
     ];
   }
 
@@ -89,4 +93,114 @@ export class DocBuilderProfile extends DocBuilderRoot {
     return xmlStripped
   }
 
+  // Generate json for display with jsTree npm library 
+  public async generateJsonTree(): Promise<any> {
+    const xmlObj = new XMLParser().parse(this.metadataXml);
+    const treeElements: any[] = [];
+    for (const profileRootAttribute of Object.keys(xmlObj?.Profile || {})) {
+      if (["custom", "userLicense"].includes(profileRootAttribute)) {
+        continue;
+      }
+      let attributeValue = xmlObj.Profile[profileRootAttribute];
+      if (!Array.isArray(attributeValue)) {
+        attributeValue = [attributeValue]
+      }
+      const attributeTreeRoot: any = {
+        text: prettifyFieldName(profileRootAttribute),
+        icon: "fa-solid fa-folder icon-blue",
+        a_attr: { href: null },
+        children: [],
+      }
+      if (profileRootAttribute === "fieldPermissions") {
+        // Sort custom fields by object name
+        this.buildObjectFieldsTree(attributeValue, attributeTreeRoot);
+      }
+      else {
+        for (const element of attributeValue) {
+          const subElement: any = this.getSubElement(element);
+          attributeTreeRoot.children.push(subElement);
+        }
+        attributeTreeRoot.text = attributeTreeRoot.text + " (" + attributeTreeRoot.children.length + ")";
+      }
+      treeElements.push(attributeTreeRoot);
+    }
+    return treeElements;
+  }
+
+  public buildObjectFieldsTree(attributeValue: any, attributeTreeRoot: any) {
+    const elementsByObject: any = [];
+    for (const element of attributeValue) {
+      const objectName = element.field.split('.')[0];
+      if (!elementsByObject[objectName]) {
+        elementsByObject[objectName] = [];
+      }
+      elementsByObject[objectName].push(element);
+    }
+    // Create object nodes and fields as children
+    let totalFields = 0;
+    for (const objectName of Object.keys(elementsByObject)) {
+      const objectNode: any = {
+        text: objectName + " (" + elementsByObject[objectName].length + ")",
+        icon: "fa-solid fa-folder icon-blue",
+        a_attr: { href: null },
+        children: [],
+      };
+      totalFields += elementsByObject[objectName].length;
+      for (const element of elementsByObject[objectName]) {
+        const subElement: any = this.getSubElement(element);
+        objectNode.children.push(subElement);
+      }
+      attributeTreeRoot.children.push(objectNode);
+    }
+    attributeTreeRoot.text = attributeTreeRoot.text + " (" + totalFields + ")";
+  }
+
+  public getSubElement(element: any) {
+    const subElement: any = {
+      text: element.name || element.apexClass || element.flow || element.apexPage || element.object || element.tab || element.application || element.field || element.layout || element.recordType || element.externalDataSource || element.startAddress || "ERROR: " + JSON.stringify(element),
+      icon:
+        // Common properties
+        element.default === true ? "fa-solid fa-star icon-success" :
+          element.visible === true ? "fa-solid fa-eye icon-success" :
+            element.visible === false ? "fa-solid fa-eye-slash icon-error" :
+              element.enabled === true ? "fa-solid fa-circle-check icon-success" :
+                element.enabled === false ? "fa-solid fa-circle-xmark icon-error" :
+                  // Custom fields 
+                  element.editable === true ? "fa-solid fa-square-pen icon-success" :
+                    element.readable === true ? "fa-solid fa-eye icon-success" :
+                      element.readable === false ? "fa-solid fa-eye-slash icon-error" :
+                        // Custom objects
+                        element.allowEdit === true ? "fa-solid fa-square-pen icon-success" :
+                          element.allowRead === true ? "fa-solid fa-eye icon-success" :
+                            element.allowRead === false ? "fa-solid fa-eye-slash icon-error" :
+                              // Tabs
+                              ["DefaultOn", "Visible"].includes(element.visibility) ? "fa-solid fa-eye icon-success" :
+                                element.visibility === "DefaultOff" ? "fa-solid fa-circle-notch icon-warning" :
+                                  element.visibility === "Hidden" ? "fa-solid fa-eye-slash icon-error" :
+                                    "fa-solid fa-file",
+      a_attr: { href: null },
+      children: [],
+    };
+    subElement.children = Object.keys(element).map((key) => {
+      const icon = (element[key] === true) ? "fa-solid fa-circle-check icon-success" :
+        (element[key] === false) ? "fa-solid fa-circle-xmark icon-error" :
+          (["DefaultOn", "Visible"].includes(element[key])) ? "fa-solid fa-eye icon-success" :
+            (element[key] === "Hidden") ? "fa-solid fa-eye-slash icon-error" :
+              (element[key] === "DefaultOff") ? "fa-solid fa-circle-notch icon-warning" :
+                "";
+      return {
+        text: prettifyFieldName(key) + ": " + element[key],
+        icon: icon,
+        a_attr: { href: null },
+      };
+    });
+    // Sort subElement.children to put text as first element
+    subElement.children.sort((a: any, b: any) => {
+      if (a.text.endsWith(subElement.text)) return -1;
+      if (b.text.endsWith(subElement.text)) return 1;
+      return 0;
+    });
+    return subElement;
+  }
 }
+/* jscpd:ignore-end */

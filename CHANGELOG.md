@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.27.0] 2025-04-18
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) new features
+  - Generate Permission sets and Permission Set Groups documentation
+  - Display Profiles & Permission Sets attributes in a tree
+
 ## [5.26.1] 2025-04-15
 
 - Also Display JIRA and Azure Boards issue status labels in notifications

@@ -29,6 +29,8 @@ import { DocBuilderObject } from '../../../common/docBuilder/docBuilderObject.js
 import { DocBuilderApex } from '../../../common/docBuilder/docBuilderApex.js';
 import { DocBuilderFlow } from '../../../common/docBuilder/docBuilderFlow.js';
 import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPackageXml.js';
+import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPermissionSet.js';
+import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -91,6 +93,7 @@ If Flow history doc always display a single state, you probably need to update y
 
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-object-diagram.jpg)
 
+![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc-profile.gif)
 
 If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strategy will be generated.
 
@@ -154,6 +157,8 @@ ${this.htmlInstructions}
   protected flowDescriptions: any[] = [];
   protected pageDescriptions: any[] = [];
   protected profileDescriptions: any[] = [];
+  protected permissionSetsDescriptions: any[] = [];
+  protected permissionSetGroupsDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
   protected objectFiles: string[];
   protected allObjectsNames: string[];
@@ -180,6 +185,8 @@ ${this.htmlInstructions}
       "- [Flows](flows/index.md)",
       "- [Apex](apex/index.md)",
       "- [Profiles](profiles/index.md)",
+      "- [Permission Set Groups](permissionsetgroups/index.md)",
+      "- [Permission Sets](permissionsets/index.md)",
       "- [Lightning Pages](pages/index.md)",
       "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
       "- [Branches & Orgs](sfdx-hardis-branches-and-orgs.md)",
@@ -246,15 +253,19 @@ ${this.htmlInstructions}
       await this.generatePagesDocumentation();
     }
 
+    // List profiles & generate doc
+    if (!(process?.env?.GENERATE_PROFILES_DOC === 'false')) {
+      await this.generateProfilesDocumentation();
+      await this.generatePermissionSetGroupsDocumentation();
+      await this.generatePermissionSetsDocumentation();
+    }
+
     // List objects & generate doc
     if (!(process?.env?.GENERATE_OBJECTS_DOC === 'false')) {
       await this.generateObjectsDocumentation();
     }
 
-    // List profiles & generate doc
-    if (!(process?.env?.GENERATE_PROFILES_DOC === 'false')) {
-      await this.generateAuthorizationsDocumentation();
-    }
+
 
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
@@ -393,8 +404,8 @@ ${Project2Markdown.htmlInstructions}
     await fs.writeFile(pagesIndexFile, getMetaHideLines() + DocBuilderPage.buildIndexTable('', this.pageDescriptions).join("\n") + `\n\n${this.footer}\n`);
   }
 
-  private async generateAuthorizationsDocumentation() {
-    uxLog(this, c.cyan("Generating Authorizations documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
+  private async generateProfilesDocumentation() {
+    uxLog(this, c.cyan("Generating Profiles documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
     const profilesForMenu: any = { "All Profiles": "profiles/index.md" };
     const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).sort();
     for (const profileFile of profilesFiles) {
@@ -419,6 +430,69 @@ ${Project2Markdown.htmlInstructions}
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "profiles"));
     const profilesIndexFile = path.join(this.outputMarkdownRoot, "profiles", "index.md");
     await fs.writeFile(profilesIndexFile, getMetaHideLines() + DocBuilderProfile.buildIndexTable('', this.profileDescriptions).join("\n") + `\n\n${this.footer}\n`);
+  }
+
+  private async generatePermissionSetsDocumentation() {
+    uxLog(this, c.cyan("Generating Permission Sets documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
+    const psForMenu: any = { "All Permission Sets": "permissionsets/index.md" };
+    const psFiles = (await glob("**/permissionsets/**.permissionset-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).sort();
+    for (const psFile of psFiles) {
+      const psName = path.basename(psFile, ".permissionset-meta.xml");
+      const mdFile = path.join(this.outputMarkdownRoot, "permissionsets", psName + ".md");
+      psForMenu[psName] = "permissionsets/" + psName + ".md";
+      const psXml = await fs.readFile(psFile, "utf8");
+      const psXmlParsed = new XMLParser().parse(psXml);
+      this.permissionSetsDescriptions.push({
+        name: psName,
+        userLicense: prettifyFieldName(psXmlParsed?.PermissionSet?.license || "Unknown"),
+        impactedObjects: this.allObjectsNames.filter(objectName => psXml.includes(`${objectName}`)).join(", ")
+      });
+      // Add apex code in documentation
+      await new DocBuilderPermissionSet(psName, psXml, mdFile).generateMarkdownFileFromXml();
+      // Permission Set Groups Table
+      const relatedPsg = DocBuilderPermissionSetGroup.buildIndexTable('../permissionsetgroups/', this.permissionSetGroupsDescriptions, psName);
+      await replaceInFile(mdFile, '<!-- Permission Set Groups table -->', relatedPsg.join("\n"));
+      if (this.withPdf) {
+        await generatePdfFileFromMarkdown(mdFile);
+      }
+    }
+    this.addNavNode("Permission Sets", psForMenu);
+    // Write index file for permission sets folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "permissionsets"));
+    const psIndexFile = path.join(this.outputMarkdownRoot, "permissionsets", "index.md");
+    await fs.writeFile(psIndexFile, getMetaHideLines() + DocBuilderPermissionSet.buildIndexTable('', this.permissionSetsDescriptions).join("\n") + `\n\n${this.footer}\n`);
+  }
+
+  private async generatePermissionSetGroupsDocumentation() {
+    uxLog(this, c.cyan("Generating Permission Set Groups documentation..."));
+    const psgForMenu: any = { "All Permission Set Groups": "permissionsetgroups/index.md" };
+    const psgFiles = (await glob("**/permissionsetgroups/**.permissionsetgroup-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).sort();
+    for (const psgFile of psgFiles) {
+      const psgName = path.basename(psgFile, ".permissionsetgroup-meta.xml");
+      const mdFile = path.join(this.outputMarkdownRoot, "permissionsetgroups", psgName + ".md");
+      psgForMenu[psgName] = "permissionsetgroups/" + psgName + ".md";
+      const psgXml = await fs.readFile(psgFile, "utf8");
+      const psgXmlParsed = new XMLParser().parse(psgXml);
+      let permissionSets = psgXmlParsed?.PermissionSetGroup?.permissionSets || [];
+      if (!Array.isArray(permissionSets)) {
+        permissionSets = [permissionSets];
+      }
+      this.permissionSetGroupsDescriptions.push({
+        name: psgName,
+        description: psgXmlParsed?.PermissionSetGroup?.description || "None",
+        relatedPermissionSets: permissionSets,
+      });
+      await new DocBuilderPermissionSetGroup(psgName, psgXml, mdFile).generateMarkdownFileFromXml();
+      if (this.withPdf) {
+        await generatePdfFileFromMarkdown(mdFile);
+      }
+    }
+    this.addNavNode("Permission Set Groups", psgForMenu);
+
+    // Write index file for permission set groups folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "permissionsetgroups"));
+    const psgIndexFile = path.join(this.outputMarkdownRoot, "permissionsetgroups", "index.md");
+    await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderPermissionSetGroup.buildIndexTable('', this.permissionSetGroupsDescriptions).join("\n") + `\n${this.footer}\n`);
   }
 
   private async buildMkDocsYml() {
@@ -453,6 +527,38 @@ ${Project2Markdown.htmlInstructions}
         mkdocsYml.nav.push(navMenu);
       }
     }
+    // Add missing javascripts if necessary
+    const allJavascripts = [
+      "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js",
+      "javascripts/tables.js",
+      "javascripts/gtag.js",
+      "javascripts/jstree-handler.js"
+    ];
+    const extraJavascript = mkdocsYml.extra_javascript || [];
+    for (const jsItem of allJavascripts) {
+      if (!extraJavascript.includes(jsItem)) {
+        extraJavascript.push(jsItem);
+      }
+    }
+    mkdocsYml.extra_javascript = extraJavascript;
+
+    // Add missing CSS if necessary
+    const allCss = [
+      "https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css",
+      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css",
+      "stylesheets/extra.css",
+      "stylesheets/jstree-custom.css"
+    ];
+    const extraCss = mkdocsYml.extra_css || [];
+    for (const cssItem of allCss) {
+      if (!extraCss.includes(cssItem)) {
+        extraCss.push(cssItem);
+      }
+    }
+    mkdocsYml.extra_css = extraCss;
+
     // Add missing plugin config if necessary
     if (!mkdocsYml.plugins) {
       mkdocsYml.plugins = [
@@ -473,7 +579,19 @@ ${Project2Markdown.htmlInstructions}
     // Remove deprecated Flows History if found
     mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem["Flows History"]);
     // Order nav items with this elements in first
-    const firstItemsInOrder = ["Home", "Object Model", "Objects", "Flows", "Apex", "Profiles", "Lightning Pages", "SFDX-Hardis Config", "Branches & Orgs", "Installed Packages", "Manifests"];
+    const firstItemsInOrder = ["Home",
+      "Object Model",
+      "Objects",
+      "Flows",
+      "Apex",
+      "Profiles",
+      "Permission Set Groups",
+      "Permission Sets",
+      "Lightning Pages",
+      "SFDX-Hardis Config",
+      "Branches & Orgs",
+      "Installed Packages",
+      "Manifests"];
     mkdocsYml.nav = firstItemsInOrder.map(item => mkdocsYml.nav.find(navItem => Object.keys(navItem)[0] === item)).filter(item => item).concat(mkdocsYml.nav.filter(navItem => !firstItemsInOrder.includes(Object.keys(navItem)[0])));
     // Update mkdocs file
     await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
@@ -514,13 +632,22 @@ ${Project2Markdown.htmlInstructions}
         /** Regenerate using Mermaid CLI to convert Mermaid code into SVG */
         await generateMarkdownFileWithMermaid(objectMdFile, objectMdFile, null, true);
       }
-      // Flows Tables
+      // Flows Table
       const relatedObjectFlowsTable = DocBuilderFlow.buildIndexTable('../flows/', this.flowDescriptions, this.outputMarkdownRoot, objectName);
       await replaceInFile(objectMdFile, '<!-- Flows table -->', relatedObjectFlowsTable.join("\n"));
+      // Apex Table
       const relatedApexTable = DocBuilderApex.buildIndexTable('../apex/', this.apexDescriptions, objectName);
       await replaceInFile(objectMdFile, '<!-- Apex table -->', relatedApexTable.join("\n"));
+      // Lightning Pages table
       const relatedPages = DocBuilderPage.buildIndexTable('../pages/', this.pageDescriptions, objectName);
       await replaceInFile(objectMdFile, '<!-- Pages table -->', relatedPages.join("\n"));
+      // Add Profiles table
+      const relatedProfilesTable = DocBuilderProfile.buildIndexTable('../profiles/', this.profileDescriptions, objectName);
+      await replaceInFile(objectMdFile, '<!-- Profiles table -->', relatedProfilesTable.join("\n"));
+      // Add Permission Sets table
+      const relatedPermissionSetsTable = DocBuilderPermissionSet.buildIndexTable('../permissionsets/', this.permissionSetsDescriptions, objectName);
+      await replaceInFile(objectMdFile, '<!-- PermissionSets table -->', relatedPermissionSetsTable.join("\n"));
+
       this.objectDescriptions.push({
         name: objectName,
         label: objectXmlParsed?.CustomObject?.label || "",

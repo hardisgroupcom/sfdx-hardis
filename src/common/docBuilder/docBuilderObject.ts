@@ -87,7 +87,11 @@ export class DocBuilderObject extends DocBuilderRoot {
       '',
       '<!-- Apex table -->',
       '',
-      '<!-- Pages table -->'
+      '<!-- Pages table -->',
+      '',
+      '<!-- Profiles table -->',
+      '',
+      '<!-- PermissionSets table -->',
     ];
   }
 

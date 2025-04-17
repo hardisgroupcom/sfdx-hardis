@@ -14,6 +14,7 @@ export abstract class DocBuilderRoot {
   public promptKey: PromptTemplate;
   public placeholder: string;
   public xmlRootKey: string;
+  public docsSection: string;
 
   public metadataName: string;
   public metadataXml: string = "";
@@ -51,6 +52,13 @@ export abstract class DocBuilderRoot {
     await fs.ensureDir(path.dirname(this.outputFile));
     await fs.writeFile(this.outputFile, getMetaHideLines() + this.markdownDoc);
     uxLog(this, c.green(`Successfully generated ${this.metadataName} documentation into ${this.outputFile}`));
+    const jsonTree = await this.generateJsonTree();
+    if (jsonTree) {
+      const jsonFile = `./docs/json/${this.docsSection}-${this.metadataName}.json`;
+      await fs.ensureDir(path.dirname(jsonFile));
+      await fs.writeFile(jsonFile, JSON.stringify(jsonTree, null, 2));
+      uxLog(this, c.green(`Successfully generated ${this.metadataName} JSON into ${jsonFile}`));
+    }
     return this.outputFile;
   }
 
@@ -89,6 +97,11 @@ export abstract class DocBuilderRoot {
   // Override this method if you need to make a smaller XML to fit in the number of prompt tokens
   public async stripXmlForAi(): Promise<string> {
     return this.metadataXml;
+  }
+
+  // Override this method if you need to generate a JSON tree for the doc
+  public async generateJsonTree(): Promise<any> {
+    return null;
   }
 
 }
