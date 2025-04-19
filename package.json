@@ -94,7 +94,7 @@
     "@types/ws": "^8.18.1",
     "@types/xml2js": "^0.4.14",
     "eslint-plugin-sf-plugin": "^1.20.19",
-    "oclif": "^4.17.43",
+    "oclif": "^4.17.44",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
