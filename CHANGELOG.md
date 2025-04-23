@@ -4,6 +4,17 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.28.0] 2025-04-23
+
+- [hardis:lint:metadatastatus](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/): Detect more inactive elements that are technical debt to be cleaned
+  - Approval Processes
+  - Assignment Rules
+  - Auto Response Rules
+  - Escalation Rules
+  - Forecasting Types
+  - Record Types
+  - Workflow Rules
+
 ## [5.27.0] 2025-04-18
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) new features

@@ -12,6 +12,18 @@ And what about this **deactivated Validation** Rule ?
 
 Maybe it's time to remove them !
 
+Full list of metadata types that are checked:
+
+- Approval Processes
+- Assignment Rules
+- Auto Response Rules
+- Escalation Rules
+- Flows
+- Forecasting Types
+- Record Types
+- Validation Rules
+- Workflow Rules
+
 Sfdx-hardis command: [sf hardis:lint:metadatastatus](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/)
 
 Key: **METADATA_STATUS**
