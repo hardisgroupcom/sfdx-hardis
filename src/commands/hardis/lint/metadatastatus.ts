@@ -36,6 +36,8 @@ export default class LintMetadataStatus extends SfCommand<any> {
 - Validation Rules
 - Workflow Rules
 
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/detect-inactive-metadata.gif)
+
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-inactive-metadata/) and can output Grafana, Slack and MsTeams Notifications.
 `;
   public static examples = ['$ sf hardis:lint:metadatastatus'];

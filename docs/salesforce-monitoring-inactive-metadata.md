@@ -35,3 +35,7 @@ Key: **METADATA_STATUS**
 ### Slack example
 
 ![](assets/images/screenshot-monitoring-inactive-metadata.jpg)
+
+### Local example
+
+![](assets/images/detect-inactive-metadata.gif)
