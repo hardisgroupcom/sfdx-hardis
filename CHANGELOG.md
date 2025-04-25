@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/) enhancements
+  - Flag more audit trail actions as not relevant
+  - Display related actions next to username in summary
+
 ## [5.28.0] 2025-04-23
 
 - [hardis:lint:metadatastatus](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/): Detect more inactive elements that are technical debt to be cleaned
