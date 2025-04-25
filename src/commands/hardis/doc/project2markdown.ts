@@ -182,11 +182,14 @@ ${this.htmlInstructions}
       "",
       // "- [Object Model](object-model.md)",
       "- [Objects](objects/index.md)",
-      "- [Flows](flows/index.md)",
-      "- [Apex](apex/index.md)",
-      "- [Profiles](profiles/index.md)",
-      "- [Permission Set Groups](permissionsetgroups/index.md)",
-      "- [Permission Sets](permissionsets/index.md)",
+      "- Automations",
+      "  - [Flows](flows/index.md)",
+      "- Authorizations",
+      "  - [Profiles](profiles/index.md)",
+      "  - [Permission Set Groups](permissionsetgroups/index.md)",
+      "  - [Permission Sets](permissionsets/index.md)",
+      "- Code",
+      "  - [Apex](apex/index.md)",
       "- [Lightning Pages](pages/index.md)",
       "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
       "- [Branches & Orgs](sfdx-hardis-branches-and-orgs.md)",
@@ -511,6 +514,7 @@ ${Project2Markdown.htmlInstructions}
     }
     // Update mkdocs nav items
     const mkdocsYml: any = readMkDocsFile(mkdocsYmlFile);
+
     for (const navMenu of this.mkDocsNavNodes) {
       let pos = 0;
       let found = false;
@@ -578,21 +582,43 @@ ${Project2Markdown.htmlInstructions}
 
     // Remove deprecated Flows History if found
     mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem["Flows History"]);
+
+    // Add root menus
+    const rootSections = [
+      { menu: "Automations", subMenus: ["Flows"] },
+      { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
+      { menu: "Code", subMenus: ["Apex"] },
+    ];
+    for (const rootSection of rootSections) {
+      const navSubmenus: any[] = [];
+      for (const subMenu of rootSection.subMenus) {
+        // Find submenu
+        const subMenuContent = mkdocsYml.nav.find(navItem => Object.keys(navItem)[0] === subMenu);
+        navSubmenus.push(subMenuContent);
+        // Remove sub menus from root menus
+        mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem[subMenu]);
+      }
+      // Add root menu with submenus
+      mkdocsYml.nav.push({ [rootSection.menu]: navSubmenus });
+    }
+
     // Order nav items with this elements in first
-    const firstItemsInOrder = ["Home",
-      "Object Model",
+    const firstItemsInOrder = [
+      "Home",
+      // "Object Model",
       "Objects",
-      "Flows",
-      "Apex",
-      "Profiles",
-      "Permission Set Groups",
-      "Permission Sets",
+      "Automations",
+      "Authorizations",
+      "Code",
       "Lightning Pages",
       "SFDX-Hardis Config",
       "Branches & Orgs",
       "Installed Packages",
-      "Manifests"];
+      "Manifests"
+    ];
     mkdocsYml.nav = firstItemsInOrder.map(item => mkdocsYml.nav.find(navItem => Object.keys(navItem)[0] === item)).filter(item => item).concat(mkdocsYml.nav.filter(navItem => !firstItemsInOrder.includes(Object.keys(navItem)[0])));
+
+
     // Update mkdocs file
     await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
     uxLog(this, c.cyan(`To generate a HTML WebSite with this documentation with a single command, see instructions at ${CONSTANTS.DOC_URL_ROOT}/hardis/doc/project2markdown/`));
