@@ -19,3 +19,11 @@ Key: **AUDIT_TRAIL**
 ### Slack example
 
 ![](assets/images/screenshot-monitoring-audittrail.jpg)
+
+## Excel output example
+
+![](assets/images/screenshot-monitoring-audittrail-excel.jpg)
+
+## Local output example
+
+![](assets/images/screenshot-monitoring-audittrail-local.jpg)

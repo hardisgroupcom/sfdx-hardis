@@ -121,6 +121,14 @@ monitoringAllowedSectionsActions:
   "Some other section": ["actionType1","actionType2","actionType3"] // Will ignore only those 3 actions from section "Some other section". Other actions in the same section will be considered as suspect.
 \`\`\`
 
+## Excel output example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-audittrail-excel.jpg)
+
+## Local output example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-audittrail-local.jpg)
+
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-suspect-audit-trail/) and can output Grafana, Slack and MsTeams Notifications.
 `;
 
