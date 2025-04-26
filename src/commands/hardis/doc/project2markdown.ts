@@ -185,6 +185,7 @@ ${this.htmlInstructions}
       // "- [Object Model](object-model.md)",
       "- [Objects](objects/index.md)",
       "- Automations",
+      "  - [Approval Processes](approval-processes/index.md)",
       "  - [Flows](flows/index.md)",
       "- Authorizations",
       "  - [Profiles](profiles/index.md)",
@@ -193,7 +194,6 @@ ${this.htmlInstructions}
       "- Code",
       "  - [Apex](apex/index.md)",
       "- [Lightning Pages](pages/index.md)",
-      "- [Approval Processes](approvalProcesses/index.md)",
       "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
       "- [Branches & Orgs](sfdx-hardis-branches-and-orgs.md)",
       "- [Installed Packages](installed-packages.md)",
@@ -628,7 +628,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Add root menus
     const rootSections = [
-      { menu: "Automations", subMenus: ["Flows"] },
+      { menu: "Automations", subMenus: ["Approval Processes", "Flows"] },
       { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
       { menu: "Code", subMenus: ["Apex"] },
     ];
@@ -654,7 +654,6 @@ ${Project2Markdown.htmlInstructions}
       "Authorizations",
       "Code",
       "Lightning Pages",
-      "Approval Processes",
       "SFDX-Hardis Config",
       "Branches & Orgs",
       "Installed Packages",
