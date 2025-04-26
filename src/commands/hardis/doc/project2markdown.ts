@@ -31,6 +31,7 @@ import { DocBuilderFlow } from '../../../common/docBuilder/docBuilderFlow.js';
 import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPackageXml.js';
 import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPermissionSet.js';
 import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
+import { DocBuilderApprovalProcess } from '../../../common/docBuilder/docBuilderApprovalProcess.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -159,6 +160,7 @@ ${this.htmlInstructions}
   protected profileDescriptions: any[] = [];
   protected permissionSetsDescriptions: any[] = [];
   protected permissionSetGroupsDescriptions: any[] = [];
+  protected approvalProcessesDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
   protected objectFiles: string[];
   protected allObjectsNames: string[];
@@ -191,6 +193,7 @@ ${this.htmlInstructions}
       "- Code",
       "  - [Apex](apex/index.md)",
       "- [Lightning Pages](pages/index.md)",
+      "- [Approval Processes](approvalProcesses/index.md)",
       "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
       "- [Branches & Orgs](sfdx-hardis-branches-and-orgs.md)",
       "- [Installed Packages](installed-packages.md)",
@@ -268,7 +271,10 @@ ${this.htmlInstructions}
       await this.generateObjectsDocumentation();
     }
 
-
+    // List approval processes & generate doc
+    if (!(process?.env?.GENERATE_APPROVAL_PROCESS_DOC === 'false')) {
+      await this.generateApprovalProcessDocumentation();
+    }
 
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
@@ -280,7 +286,7 @@ ${this.htmlInstructions}
       let readme = await fs.readFile(readmeFile, "utf8");
       if (!readme.includes("docs/index.md")) {
         readme += `
-        
+
 ## Documentation
 
 [Read auto-generated documentation of the SFDX project](docs/index.md)
@@ -498,6 +504,43 @@ ${Project2Markdown.htmlInstructions}
     await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderPermissionSetGroup.buildIndexTable('', this.permissionSetGroupsDescriptions).join("\n") + `\n${this.footer}\n`);
   }
 
+  private async generateApprovalProcessDocumentation() {
+    uxLog(this, c.cyan("Generating Approval Processes documentation... " +
+      "(if you don't want it, define GENERATE_APPROVAL_PROCESS_DOC=false in your environment variables)"));
+
+    const approvalProcessesForMenu: any = {"All Approval Processes": "approvalProcesses/index.md"}
+    const approvalProcessFiles = (await glob("**/approvalProcesses/**.approvalProcess-meta.xml", {
+      cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
+    })).sort();
+
+    for (const approvalProcessFile of approvalProcessFiles) {
+      const approvalProcessName = path.basename(approvalProcessFile, ".approvalProcess-meta.xml");
+      const mdFile = path.join(this.outputMarkdownRoot, "approvalProcesses", approvalProcessName + ".md");
+
+      approvalProcessesForMenu[approvalProcessName] = "approvalProcesses/" + approvalProcessName + ".md";
+      const approvalProcessXml = await fs.readFile(approvalProcessFile, "utf8");
+
+      const approvalProcessXmlParsed = new XMLParser().parse(approvalProcessXml);
+      this.approvalProcessesDescriptions.push({
+        name: approvalProcessName,
+        active: approvalProcessXmlParsed?.ApprovalProcess?.active,
+        impactedObjects: this.allObjectsNames.filter(objectName => approvalProcessXml.includes(`${objectName}`)).join(", ")
+      });
+
+      await new DocBuilderApprovalProcess(approvalProcessName, approvalProcessXml, mdFile).generateMarkdownFileFromXml();
+      if (this.withPdf) {
+        await generatePdfFileFromMarkdown(mdFile);
+      }
+    }
+
+    this.addNavNode("Approval Processes", approvalProcessesForMenu);
+    // Write index file for apex folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "approvalProcesses"));
+    const approvalProcessesIndexFile = path.join(this.outputMarkdownRoot, "approvalProcesses", "index.md");
+    await fs.writeFile(approvalProcessesIndexFile, getMetaHideLines() + DocBuilderApprovalProcess.buildIndexTable('', this.approvalProcessesDescriptions).join("\n") + `\n\n${this.footer}\n`);
+  }
+
   private async buildMkDocsYml() {
     // Copy default files (mkdocs.yml and other files can be updated by the SF Cli plugin developer later)
     const mkdocsYmlFile = path.join(process.cwd(), 'mkdocs.yml');
@@ -611,6 +654,7 @@ ${Project2Markdown.htmlInstructions}
       "Authorizations",
       "Code",
       "Lightning Pages",
+      "Approval Processes",
       "SFDX-Hardis Config",
       "Branches & Orgs",
       "Installed Packages",
@@ -673,6 +717,9 @@ ${Project2Markdown.htmlInstructions}
       // Add Permission Sets table
       const relatedPermissionSetsTable = DocBuilderPermissionSet.buildIndexTable('../permissionsets/', this.permissionSetsDescriptions, objectName);
       await replaceInFile(objectMdFile, '<!-- PermissionSets table -->', relatedPermissionSetsTable.join("\n"));
+      // Add Approval Processes table
+      const relatedApprovalProcessTable = DocBuilderApprovalProcess.buildIndexTable('../approvalProcesses/', this.approvalProcessesDescriptions, objectName);
+      await replaceInFile(objectMdFile, '<!-- ApprovalProcess table -->', relatedApprovalProcessTable.join("\n"));
 
       this.objectDescriptions.push({
         name: objectName,
