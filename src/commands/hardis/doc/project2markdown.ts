@@ -185,7 +185,7 @@ ${this.htmlInstructions}
       // "- [Object Model](object-model.md)",
       "- [Objects](objects/index.md)",
       "- Automations",
-      "  - [Approval Processes](approval-processes/index.md)",
+      "  - [Approval Processes](approvalProcesses/index.md)",
       "  - [Flows](flows/index.md)",
       "- Authorizations",
       "  - [Profiles](profiles/index.md)",
