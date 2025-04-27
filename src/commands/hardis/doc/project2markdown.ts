@@ -31,6 +31,7 @@ import { DocBuilderFlow } from '../../../common/docBuilder/docBuilderFlow.js';
 import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPackageXml.js';
 import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPermissionSet.js';
 import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
+import {DocBuilderAssignmentRules} from '../../../common/docBuilder/docBuilderAssignmentRules.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -159,6 +160,7 @@ ${this.htmlInstructions}
   protected profileDescriptions: any[] = [];
   protected permissionSetsDescriptions: any[] = [];
   protected permissionSetGroupsDescriptions: any[] = [];
+  protected assignmentRulesDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
   protected objectFiles: string[];
   protected allObjectsNames: string[];
@@ -184,6 +186,7 @@ ${this.htmlInstructions}
       "- [Objects](objects/index.md)",
       "- Automations",
       "  - [Flows](flows/index.md)",
+      "  - [Assignment Rules](assignmentRules/index.md)",
       "- Authorizations",
       "  - [Profiles](profiles/index.md)",
       "  - [Permission Set Groups](permissionsetgroups/index.md)",
@@ -268,7 +271,8 @@ ${this.htmlInstructions}
       await this.generateObjectsDocumentation();
     }
 
-
+    // List assignment rules and generate doc
+    await this.generateAssignmentRulesDocumentation();
 
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
@@ -280,7 +284,7 @@ ${this.htmlInstructions}
       let readme = await fs.readFile(readmeFile, "utf8");
       if (!readme.includes("docs/index.md")) {
         readme += `
-        
+
 ## Documentation
 
 [Read auto-generated documentation of the SFDX project](docs/index.md)
@@ -498,6 +502,42 @@ ${Project2Markdown.htmlInstructions}
     await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderPermissionSetGroup.buildIndexTable('', this.permissionSetGroupsDescriptions).join("\n") + `\n${this.footer}\n`);
   }
 
+  private async generateAssignmentRulesDocumentation() {
+    uxLog(this, c.cyan("Generating Assignment Rules documentation..."));
+    const assignmentRulesForMenu: any = { "All Assignment Rules": "assignmentRules/index.md" };
+    const assignmentRulesFiles = (await glob("**/assignmentRules/**.assignmentRules-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).sort();
+    for (const assignmentRulesFile of assignmentRulesFiles) {
+      const assignmentRulesName = path.basename(assignmentRulesFile, ".assignmentRules-meta.xml");
+      const mdFile = path.join(this.outputMarkdownRoot, "assignmentRules", assignmentRulesName + ".md");
+      assignmentRulesForMenu[assignmentRulesName] = "assignmentRules/" + assignmentRulesName + ".md";
+      const assignmentRulesXml = await fs.readFile(assignmentRulesFile, "utf8");
+      const assignmentRulesXmlParsed = new XMLParser().parse(assignmentRulesXml);
+
+      let rulesList  = assignmentRulesXmlParsed?.AssignmentRules?.assignmentRule || [];
+
+      if (!Array.isArray(rulesList)) {
+        rulesList = [rulesList];
+      }
+
+      this.assignmentRulesDescriptions.push({
+        name: assignmentRulesName,
+        count: rulesList.length,
+        rulesList: rulesList
+      });
+
+      await new DocBuilderAssignmentRules(assignmentRulesName, assignmentRulesXml, mdFile).generateMarkdownFileFromXml();
+      if (this.withPdf) {
+        await generatePdfFileFromMarkdown(mdFile);
+      }
+    }
+    this.addNavNode("Assignment Rules", assignmentRulesForMenu);
+
+    // Write index file for permission set groups folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "assignmentRules"));
+    const psgIndexFile = path.join(this.outputMarkdownRoot, "assignmentRules", "index.md");
+    await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderAssignmentRules.buildIndexTable('', this.assignmentRulesDescriptions).join("\n") + `\n${this.footer}\n`);
+  }
+
   private async buildMkDocsYml() {
     // Copy default files (mkdocs.yml and other files can be updated by the SF Cli plugin developer later)
     const mkdocsYmlFile = path.join(process.cwd(), 'mkdocs.yml');
@@ -585,7 +625,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Add root menus
     const rootSections = [
-      { menu: "Automations", subMenus: ["Flows"] },
+      { menu: "Automations", subMenus: ["Flows", "Assignment Rules"] },
       { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
       { menu: "Code", subMenus: ["Apex"] },
     ];
@@ -673,6 +713,9 @@ ${Project2Markdown.htmlInstructions}
       // Add Permission Sets table
       const relatedPermissionSetsTable = DocBuilderPermissionSet.buildIndexTable('../permissionsets/', this.permissionSetsDescriptions, objectName);
       await replaceInFile(objectMdFile, '<!-- PermissionSets table -->', relatedPermissionSetsTable.join("\n"));
+      // Assignment Rules table
+      const relatedAssignmentRulesTable = DocBuilderAssignmentRules.buildIndexTable('../assignmentRules/', this.assignmentRulesDescriptions, objectName);
+      await replaceInFile(objectMdFile, '<!-- AssignmentRules table -->', relatedAssignmentRulesTable.join("\n"));
 
       this.objectDescriptions.push({
         name: objectName,
