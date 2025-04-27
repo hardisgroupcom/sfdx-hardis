@@ -66,9 +66,9 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
         for (const singleRuleEntry of ruleEntries) {
 
           if (singleRuleEntry) {
-            // listing rules per each assignment rule
+            // listing rule entries per each assignment rule
             assignmentRulesAndRuleEntries.push(`#### Rule ${ruleCounter}`);
-            // listing criteria items per each rule entry in a separate table
+            // listing criteria items for each rule entry in a separate table
             assignmentRulesAndRuleEntries.push("| Field | Operation | Value|");
             assignmentRulesAndRuleEntries.push("| :---- | :--: | ----: |");
 
