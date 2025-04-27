@@ -32,6 +32,7 @@ import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPacka
 import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPermissionSet.js';
 import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
 import {DocBuilderAssignmentRules} from '../../../common/docBuilder/docBuilderAssignmentRules.js';
+import { DocBuilderApprovalProcess } from '../../../common/docBuilder/docBuilderApprovalProcess.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -161,6 +162,7 @@ ${this.htmlInstructions}
   protected permissionSetsDescriptions: any[] = [];
   protected permissionSetGroupsDescriptions: any[] = [];
   protected assignmentRulesDescriptions: any[] = [];
+  protected approvalProcessesDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
   protected objectFiles: string[];
   protected allObjectsNames: string[];
@@ -185,6 +187,7 @@ ${this.htmlInstructions}
       // "- [Object Model](object-model.md)",
       "- [Objects](objects/index.md)",
       "- Automations",
+      "  - [Approval Processes](approvalProcesses/index.md)",
       "  - [Flows](flows/index.md)",
       "  - [Assignment Rules](assignmentRules/index.md)",
       "- Authorizations",
@@ -271,6 +274,10 @@ ${this.htmlInstructions}
       await this.generateObjectsDocumentation();
     }
 
+    // List approval processes & generate doc
+    if (!(process?.env?.GENERATE_APPROVAL_PROCESS_DOC === 'false')) {
+      await this.generateApprovalProcessDocumentation();
+    }
     // List assignment rules and generate doc
     await this.generateAssignmentRulesDocumentation();
 
@@ -538,6 +545,43 @@ ${Project2Markdown.htmlInstructions}
     await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderAssignmentRules.buildIndexTable('', this.assignmentRulesDescriptions).join("\n") + `\n${this.footer}\n`);
   }
 
+  private async generateApprovalProcessDocumentation() {
+    uxLog(this, c.cyan("Generating Approval Processes documentation... " +
+      "(if you don't want it, define GENERATE_APPROVAL_PROCESS_DOC=false in your environment variables)"));
+
+    const approvalProcessesForMenu: any = { "All Approval Processes": "approvalProcesses/index.md" }
+    const approvalProcessFiles = (await glob("**/approvalProcesses/**.approvalProcess-meta.xml", {
+      cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
+    })).sort();
+
+    for (const approvalProcessFile of approvalProcessFiles) {
+      const approvalProcessName = path.basename(approvalProcessFile, ".approvalProcess-meta.xml");
+      const mdFile = path.join(this.outputMarkdownRoot, "approvalProcesses", approvalProcessName + ".md");
+
+      approvalProcessesForMenu[approvalProcessName] = "approvalProcesses/" + approvalProcessName + ".md";
+      const approvalProcessXml = await fs.readFile(approvalProcessFile, "utf8");
+
+      const approvalProcessXmlParsed = new XMLParser().parse(approvalProcessXml);
+      this.approvalProcessesDescriptions.push({
+        name: approvalProcessName,
+        active: approvalProcessXmlParsed?.ApprovalProcess?.active,
+        impactedObjects: this.allObjectsNames.filter(objectName => approvalProcessXml.includes(`${objectName}`)).join(", ")
+      });
+
+      await new DocBuilderApprovalProcess(approvalProcessName, approvalProcessXml, mdFile).generateMarkdownFileFromXml();
+      if (this.withPdf) {
+        await generatePdfFileFromMarkdown(mdFile);
+      }
+    }
+
+    this.addNavNode("Approval Processes", approvalProcessesForMenu);
+    // Write index file for apex folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "approvalProcesses"));
+    const approvalProcessesIndexFile = path.join(this.outputMarkdownRoot, "approvalProcesses", "index.md");
+    await fs.writeFile(approvalProcessesIndexFile, getMetaHideLines() + DocBuilderApprovalProcess.buildIndexTable('', this.approvalProcessesDescriptions).join("\n") + `\n\n${this.footer}\n`);
+  }
+
   private async buildMkDocsYml() {
     // Copy default files (mkdocs.yml and other files can be updated by the SF Cli plugin developer later)
     const mkdocsYmlFile = path.join(process.cwd(), 'mkdocs.yml');
@@ -625,7 +669,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Add root menus
     const rootSections = [
-      { menu: "Automations", subMenus: ["Flows", "Assignment Rules"] },
+      { menu: "Automations", subMenus: ["Approval Processes", "Flows", "Assignment Rules"] },
       { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
       { menu: "Code", subMenus: ["Apex"] },
     ];
@@ -638,8 +682,28 @@ ${Project2Markdown.htmlInstructions}
         // Remove sub menus from root menus
         mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem[subMenu]);
       }
-      // Add root menu with submenus
-      mkdocsYml.nav.push({ [rootSection.menu]: navSubmenus });
+      // Check if rootSection.menu already exists in nav
+      const existingRootMenuIndex = mkdocsYml.nav.findIndex(navItem => Object.keys(navItem)[0] === rootSection.menu);
+      if (existingRootMenuIndex > -1) {
+        // Append new submenus to existing root menu
+        const existingSubMenus = mkdocsYml.nav[existingRootMenuIndex][rootSection.menu];
+        const uniqueSubMenus = new Map();
+        for (const item of [...existingSubMenus, ...navSubmenus]) {
+          const key = Object.keys(item)[0];
+          if (!uniqueSubMenus.has(key) || navSubmenus.some(navItem => Object.keys(navItem)[0] === key)) {
+            uniqueSubMenus.set(key, item);
+          }
+        }
+        mkdocsYml.nav[existingRootMenuIndex][rootSection.menu] = Array.from(uniqueSubMenus.values()).sort((a, b) => {
+          const keyA = Object.keys(a)[0].toLowerCase();
+          const keyB = Object.keys(b)[0].toLowerCase();
+          return keyA.localeCompare(keyB);
+        });
+      }
+      else {
+        // Add root menu with submenus
+        mkdocsYml.nav.push({ [rootSection.menu]: navSubmenus });
+      }
     }
 
     // Order nav items with this elements in first
@@ -713,6 +777,9 @@ ${Project2Markdown.htmlInstructions}
       // Add Permission Sets table
       const relatedPermissionSetsTable = DocBuilderPermissionSet.buildIndexTable('../permissionsets/', this.permissionSetsDescriptions, objectName);
       await replaceInFile(objectMdFile, '<!-- PermissionSets table -->', relatedPermissionSetsTable.join("\n"));
+      // Add Approval Processes table
+      const relatedApprovalProcessTable = DocBuilderApprovalProcess.buildIndexTable('../approvalProcesses/', this.approvalProcessesDescriptions, objectName);
+      await replaceInFile(objectMdFile, '<!-- ApprovalProcess table -->', relatedApprovalProcessTable.join("\n"));
       // Assignment Rules table
       const relatedAssignmentRulesTable = DocBuilderAssignmentRules.buildIndexTable('../assignmentRules/', this.assignmentRulesDescriptions, objectName);
       await replaceInFile(objectMdFile, '<!-- AssignmentRules table -->', relatedAssignmentRulesTable.join("\n"));
