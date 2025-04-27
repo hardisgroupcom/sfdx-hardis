@@ -91,30 +91,13 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
       ...assignmentRuleTableLines,
       '',
       "## Assignment Rules - Rules Entries and their criteria",
-      //'',
       ...assignmentRulesAndRuleEntries,
       '',
     ];
   }
 
   public stripXmlForAi(): Promise<string> {
-
     const xmlObj = new XMLParser().parse(this.metadataXml);
-
-    // // Remove var that defines if Approval History is enabled: not relevant for prompt
-    // if (xmlObj?.ApprovalProcess?.showApprovalHistory) {
-    //   delete xmlObj.ApprovalProcess.showApprovalHistory;
-    // }
-    //
-    // // Remove var that defines if user has access to AP on mobile devices: not relevant for prompt
-    // if (xmlObj?.ApprovalProcess?.enableMobileDeviceAccess) {
-    //   delete xmlObj.ApprovalProcess.enableMobileDeviceAccess;
-    // }
-    //
-    // // Remove settings that define if the record is editable while locked: not relevant for prompt
-    // if (xmlObj?.ApprovalProcess?.recordEditability) {
-    //   delete xmlObj.ApprovalProcess.recordEditability;
-    // }
 
     return new XMLBuilder().build(xmlObj);
   }
