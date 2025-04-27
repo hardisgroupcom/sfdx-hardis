@@ -321,7 +321,9 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
 ### Instructions:
 
 1. **Contextual Overview**:
-    - Begin by summarizing the role of the Salesforce Assignment Rules that you can guess according to the content of the XML. Try to guess the role of users assigned to this assignment rule.
+    - Begin by explaining the role of the Salesforce Assignment Rules that you can guess according to the content of the XML and the name.
+    Try to guess the role of users assigned to this assignment rule. Do not mention the email of assigned users, but you can mention type of assigned users.
+    Based by Criteria items, explain what should so the record will be assigned.
 
 2. **Formatting Requirements**:
     - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
@@ -332,7 +334,7 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
 
 ### Reference Data:
 
-- The metadata XML for Salesforce Permission Set Group "{{ASSIGNMENTRULES_NAME}}" is:
+- The metadata XML for Salesforce Assignment Rule "{{ASSIGNMENTRULES_NAME}}" is:
 {{ASSIGNMENTRULES_XML}}
 
 Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
