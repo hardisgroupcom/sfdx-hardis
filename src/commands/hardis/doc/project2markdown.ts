@@ -508,7 +508,7 @@ ${Project2Markdown.htmlInstructions}
     uxLog(this, c.cyan("Generating Approval Processes documentation... " +
       "(if you don't want it, define GENERATE_APPROVAL_PROCESS_DOC=false in your environment variables)"));
 
-    const approvalProcessesForMenu: any = {"All Approval Processes": "approvalProcesses/index.md"}
+    const approvalProcessesForMenu: any = { "All Approval Processes": "approvalProcesses/index.md" }
     const approvalProcessFiles = (await glob("**/approvalProcesses/**.approvalProcess-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -641,8 +641,28 @@ ${Project2Markdown.htmlInstructions}
         // Remove sub menus from root menus
         mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem[subMenu]);
       }
-      // Add root menu with submenus
-      mkdocsYml.nav.push({ [rootSection.menu]: navSubmenus });
+      // Check if rootSection.menu already exists in nav
+      const existingRootMenuIndex = mkdocsYml.nav.findIndex(navItem => Object.keys(navItem)[0] === rootSection.menu);
+      if (existingRootMenuIndex > -1) {
+        // Append new submenus to existing root menu
+        const existingSubMenus = mkdocsYml.nav[existingRootMenuIndex][rootSection.menu];
+        const uniqueSubMenus = new Map();
+        for (const item of [...existingSubMenus, ...navSubmenus]) {
+          const key = Object.keys(item)[0];
+          if (!uniqueSubMenus.has(key) || navSubmenus.some(navItem => Object.keys(navItem)[0] === key)) {
+            uniqueSubMenus.set(key, item);
+          }
+        }
+        mkdocsYml.nav[existingRootMenuIndex][rootSection.menu] = Array.from(uniqueSubMenus.values()).sort((a, b) => {
+          const keyA = Object.keys(a)[0].toLowerCase();
+          const keyB = Object.keys(b)[0].toLowerCase();
+          return keyA.localeCompare(keyB);
+        });
+      }
+      else {
+        // Add root menu with submenus
+        mkdocsYml.nav.push({ [rootSection.menu]: navSubmenus });
+      }
     }
 
     // Order nav items with this elements in first

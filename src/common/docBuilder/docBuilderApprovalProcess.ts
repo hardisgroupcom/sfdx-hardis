@@ -1,7 +1,7 @@
-import {buildGenericMarkdownTable} from "../utils/flowVisualiser/nodeFormatUtils.js";
-import {DocBuilderRoot} from "./docBuilderRoot.js";
-import {PromptTemplate} from "../aiProvider/promptTemplates.js";
-import {XMLBuilder, XMLParser} from "fast-xml-parser";
+import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUtils.js";
+import { DocBuilderRoot } from "./docBuilderRoot.js";
+import { PromptTemplate } from "../aiProvider/promptTemplates.js";
+import { XMLBuilder, XMLParser } from "fast-xml-parser";
 
 export class DocBuilderApprovalProcess extends DocBuilderRoot {
 
@@ -42,7 +42,6 @@ export class DocBuilderApprovalProcess extends DocBuilderRoot {
         "label",
         "active",
         "description",
-        "allowedSubmitters"
       ], "## Approval Process attributes", []),
       '',
       '<!-- ApprovalProcess description -->',
