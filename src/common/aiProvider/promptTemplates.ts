@@ -10,7 +10,8 @@ export type PromptTemplate =
   "PROMPT_DESCRIBE_PAGE" |
   "PROMPT_DESCRIBE_PROFILE" |
   "PROMPT_DESCRIBE_PERMISSION_SET" |
-  "PROMPT_DESCRIBE_PERMISSION_SET_GROUP"
+  "PROMPT_DESCRIBE_PERMISSION_SET_GROUP" |
+  "PROMPT_DESCRIBE_ASSIGNMENT_RULES"
   ;
 
 export function buildPromptFromTemplate(template: PromptTemplate, variables: object): string {
@@ -43,12 +44,12 @@ export const PROMPT_TEMPLATES = {
   "PROMPT_SOLVE_DEPLOYMENT_ERROR": {
     variables: ["ERROR"],
     text: {
-      "en": `You are a Salesforce release manager using Salesforce CLI commands to perform deployments 
+      "en": `You are a Salesforce release manager using Salesforce CLI commands to perform deployments
 How to solve the following Salesforce deployment error ?
 - Please answer using sfdx source format, not metadata format.
-- Please provide XML example if applicable. 
+- Please provide XML example if applicable.
 - Please skip the part of the response about how to retrieve or deploy the changes with Salesforce CLI
-The error is: 
+The error is:
 {{ERROR}}
 `,
 
@@ -234,7 +235,7 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
 1. **Contextual Overview**:
     - Begin by summarizing the role of the Salesforce Profile that you can guess according to the content of the XML. Try to guess the role of users assigned to this profile according to applicationVisibilities, objectVisibilities and userPermissions.
     - List the key features of the Profiles.
-      - The most important features are License, Applications, User Permissions ,features with default values ,Custom Objects and Record Types 
+      - The most important features are License, Applications, User Permissions ,features with default values ,Custom Objects and Record Types
       - Ignore Apex classes and Custom Fields
       - Ignore blocks who has access or visibility set to "false"
 
@@ -264,7 +265,7 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
 1. **Contextual Overview**:
     - Begin by summarizing the role of the Salesforce PermissionSet that you can guess according to the content of the XML. Try to guess the role of users assigned to this permission set according to applicationVisibilities, objectVisibilities and userPermissions.
     - List the key features of the Permission Set.
-      - The most important features are License, Applications, User Permissions ,features with default values ,Custom Objects and Record Types 
+      - The most important features are License, Applications, User Permissions ,features with default values ,Custom Objects and Record Types
       - Ignore Apex classes and Custom Fields
       - Ignore blocks who has access or visibility set to "false"
 
@@ -306,6 +307,32 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
 
 - The metadata XML for Salesforce Permission Set Group "{{PERMISSIONSETGROUP_NAME}}" is:
 {{PERMISSIONSETGROUP_XML}}
+
+Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+`
+    }
+  },
+  "PROMPT_DESCRIBE_ASSIGNMENT_RULES": {
+    variables: ["ASSIGNMENTRULES_NAME", "ASSIGNMENTRULES_XML"],
+    text: {
+      "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce Assignment Rules "{{ASSIGNMENTRULES_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+
+### Instructions:
+
+1. **Contextual Overview**:
+    - Begin by summarizing the role of the Salesforce Assignment Rules that you can guess according to the content of the XML. Try to guess the role of users assigned to this assignment rule.
+
+2. **Formatting Requirements**:
+    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
+    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
+    - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Never truncate any information in the response.
+    - Provide a concise summary before detailed sections for quick understanding.
+
+### Reference Data:
+
+- The metadata XML for Salesforce Permission Set Group "{{ASSIGNMENTRULES_NAME}}" is:
+{{ASSIGNMENTRULES_XML}}
 
 Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
 `
