@@ -274,12 +274,12 @@ ${this.htmlInstructions}
       await this.generateObjectsDocumentation();
     }
 
-    // List approval processes & generate doc
-    if (!(process?.env?.GENERATE_APPROVAL_PROCESS_DOC === 'false')) {
+    if (!(process?.env?.GENERATE_AUTOMATIONS_DOC === 'false')) {
+      // List approval processes & generate doc
       await this.generateApprovalProcessDocumentation();
+      // List assignment rules and generate doc
+      await this.generateAssignmentRulesDocumentation();
     }
-    // List assignment rules and generate doc
-    await this.generateAssignmentRulesDocumentation();
 
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
@@ -510,7 +510,9 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateAssignmentRulesDocumentation() {
-    uxLog(this, c.cyan("Generating Assignment Rules documentation..."));
+    uxLog(this, c.cyan("Generating Assignment Rules documentation... " +
+      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
+
     const assignmentRulesForMenu: any = { "All Assignment Rules": "assignmentRules/index.md" };
     const assignmentRulesFiles = (await glob("**/assignmentRules/**.assignmentRules-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).sort();
     for (const assignmentRulesFile of assignmentRulesFiles) {
@@ -547,7 +549,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generateApprovalProcessDocumentation() {
     uxLog(this, c.cyan("Generating Approval Processes documentation... " +
-      "(if you don't want it, define GENERATE_APPROVAL_PROCESS_DOC=false in your environment variables)"));
+      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
 
     const approvalProcessesForMenu: any = { "All Approval Processes": "approvalProcesses/index.md" }
     const approvalProcessFiles = (await glob("**/approvalProcesses/**.approvalProcess-meta.xml", {
