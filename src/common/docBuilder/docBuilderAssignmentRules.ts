@@ -46,13 +46,15 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
       if (!Array.isArray(this.parsedXmlObject.assignmentRule)) {
         this.parsedXmlObject.assignmentRule = [this.parsedXmlObject.assignmentRule];
       }
-
       for (const assignmentRule of this.parsedXmlObject.assignmentRule) {
         let ruleEntries = assignmentRule.ruleEntry;
         if (!Array.isArray(ruleEntries)) {
           ruleEntries = [ruleEntries];
         }
+
+        // adding object's assignment rules to the top table
         assignmentRuleTableLines.push(`| ${assignmentRule.fullName} |  ${assignmentRule.active} | ${ruleEntries.length} |`);
+        // listing each assignment rule under the top table
         assignmentRulesAndRuleEntries.push(`### ${assignmentRule.fullName}`);
 
         if (assignmentRule.ruleEntry === undefined) {
@@ -64,7 +66,9 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
         for (const singleRuleEntry of ruleEntries) {
 
           if (singleRuleEntry) {
+            // listing rules per each assignment rule
             assignmentRulesAndRuleEntries.push(`#### Rule ${ruleCounter}`);
+            // listing criteria items per each rule entry in a separate table
             assignmentRulesAndRuleEntries.push("| Field | Operation | Value|");
             assignmentRulesAndRuleEntries.push("| :---- | :--: | ----: |");
 
