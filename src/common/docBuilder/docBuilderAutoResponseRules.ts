@@ -36,23 +36,16 @@ export class DocBuilderAutoResponseRules extends DocBuilderRoot {
 
   public async buildInitialMarkdownLines(): Promise<string[]> {
 
-    let autoResponseRulesAndRuleEntries: string [] = [];
-
-    let autoResponseRuleTableLines: string [] = [
-      "| AutoResponse Rule | Is Active | Rule Entries Count |",
-      "| :------------- | :--: | :--: |"
-    ];
-
     let ruleBuilderUtil = new RulesBuilderUtil();
-    await ruleBuilderUtil.buildInitialMarkDownLinesForRules(this.parsedXmlObject.autoResponseRule);
+    await ruleBuilderUtil.buildInitialMarkDownLinesForRules(this.parsedXmlObject.autoResponseRule, "AutoResponse");
 
-    autoResponseRuleTableLines = [...ruleBuilderUtil.globalRuleTableLines];
-    autoResponseRulesAndRuleEntries = [...ruleBuilderUtil.globalRulesAndRuleEntries];
+    let autoResponseRuleTableLines: string [] = [...ruleBuilderUtil.globalRuleTableLines];
+    let autoResponseRulesAndRuleEntries: string [] = [...ruleBuilderUtil.globalRulesAndRuleEntries];
 
     return [
       `## ${this.metadataName}`,
       '',
-      '<!-- Assignment Rules description -->',
+      '<!-- AutoResponse Rules description -->',
       '## AutoResponse Rules list',
       ...autoResponseRuleTableLines,
       '',
