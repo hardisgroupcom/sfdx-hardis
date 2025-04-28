@@ -3,10 +3,10 @@ export class RulesBuilderUtil {
   public globalRulesAndRuleEntries: string [] = [];
   public globalRuleTableLines: string [] = [];
 
-  public async buildInitialMarkDownLinesForRules(ruleGlobal: any) {
+  public async buildInitialMarkDownLinesForRules(ruleGlobal: any, ruleType: string) {
 
     this.globalRuleTableLines = [
-      "| Assignment Rule | Is Active | Rule Entries Count |",
+      "| " + ruleType + " Rule | Is Active | Rule Entries Count |",
       "| :------------- | :--: | :--: |"
     ];
 
