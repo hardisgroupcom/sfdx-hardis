@@ -383,6 +383,7 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
     - Begin by explaining the role of the Salesforce AutoResponse Rules that you can guess according to the content of the XML and the name.
     Try to guess the role of users assigned to this AutoResponse rule. Do not mention the email of assigned users, but you can mention type of assigned users.
     - Analyze all the AutoResponse rules for objects and in the description tell what are the aim of those rules. What is the role of the object in the system, based by the AutoResponse rules.
+    - Based by Criteria items, explain what would be the response to the user, if the criteria are met.
 
 2. **Formatting Requirements**:
     - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
