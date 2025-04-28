@@ -1,6 +1,7 @@
 import {DocBuilderRoot} from "./docBuilderRoot.js";
 import {XMLBuilder, XMLParser} from "fast-xml-parser";
 import {PromptTemplate} from "../aiProvider/promptTemplates.js";
+import {RulesBuilderUtil} from "../utils/rulesBuilderUtil.js";
 
 export class DocBuilderAssignmentRules extends DocBuilderRoot {
 
@@ -42,60 +43,15 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
       "| :------------- | :--: | :--: |"
     ];
 
-    if (this.parsedXmlObject.assignmentRule) {
-      if (!Array.isArray(this.parsedXmlObject.assignmentRule)) {
-        this.parsedXmlObject.assignmentRule = [this.parsedXmlObject.assignmentRule];
-      }
-      for (const assignmentRule of this.parsedXmlObject.assignmentRule) {
-        let ruleEntries = assignmentRule.ruleEntry;
-        if (!Array.isArray(ruleEntries)) {
-          ruleEntries = [ruleEntries];
-        }
+    let ruleBuilderUtil = new RulesBuilderUtil();
+    await ruleBuilderUtil.buildInitialMarkDownLinesForRules(this.parsedXmlObject.assignmentRule);
 
-        // adding object's assignment rules to the top table
-        assignmentRuleTableLines.push(`| ${assignmentRule.fullName} |  ${assignmentRule.active} | ${ruleEntries.length} |`);
-        // listing each assignment rule under the top table
-        assignmentRulesAndRuleEntries.push(`### ${assignmentRule.fullName}`);
-
-        if (assignmentRule.ruleEntry === undefined) {
-          assignmentRulesAndRuleEntries.push(`##### No criteria items found for this rule entry`);
-          assignmentRulesAndRuleEntries.push("");
-          continue;
-        }
-        let ruleCounter = 1;
-        for (const singleRuleEntry of ruleEntries) {
-
-          if (singleRuleEntry) {
-            // listing rule entries and their details per each assignment rule
-            assignmentRulesAndRuleEntries.push(`#### Rule #${ruleCounter}`);
-            assignmentRulesAndRuleEntries.push("| Assigned To Type | Assigned To | Formula |");
-            assignmentRulesAndRuleEntries.push("| :---- | :--: | :--: |");
-            assignmentRulesAndRuleEntries.push(`| ${singleRuleEntry.assignedToType} | ${singleRuleEntry.assignedTo} | \`${singleRuleEntry.formula || 'None'}\` |`);
-            assignmentRulesAndRuleEntries.push("");
-
-            // listing criteria items for each rule entry in a separate table
-            assignmentRulesAndRuleEntries.push(`#### Criteria Items for Rule #${ruleCounter}`);
-            assignmentRulesAndRuleEntries.push("| Field | Operation | Value|");
-            assignmentRulesAndRuleEntries.push("| :---- | :--: | :--: |");
-
-            if (singleRuleEntry) {
-              let criteriaItems = singleRuleEntry.criteriaItems;
-              if (!Array.isArray(criteriaItems)) {
-                criteriaItems = Array.of(criteriaItems);
-              }
-              for (const criteria of criteriaItems) {
-                assignmentRulesAndRuleEntries.push(`| ${criteria.field} | ${criteria.operation} | ${criteria.value.replace(/,/g, ', ')} |`);
-              }
-
-              assignmentRulesAndRuleEntries.push("");
-            }
-            ruleCounter++;
-          }
-        }
-      }
-    }
+    assignmentRuleTableLines = [...ruleBuilderUtil.globalRuleTableLines];
+    assignmentRulesAndRuleEntries = [...ruleBuilderUtil.globalRulesAndRuleEntries];
 
     return [
+      `## ${this.metadataName}`,
+      '',
       '<!-- Assignment Rules description -->',
       '## Assignment Rules list',
       ...assignmentRuleTableLines,
@@ -108,7 +64,6 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
 
   public stripXmlForAi(): Promise<string> {
     const xmlObj = new XMLParser().parse(this.metadataXml);
-
     return new XMLBuilder().build(xmlObj);
   }
 }
