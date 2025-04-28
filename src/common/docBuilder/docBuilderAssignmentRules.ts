@@ -66,11 +66,17 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
         for (const singleRuleEntry of ruleEntries) {
 
           if (singleRuleEntry) {
-            // listing rule entries per each assignment rule
-            assignmentRulesAndRuleEntries.push(`#### Rule ${ruleCounter}`);
+            // listing rule entries and their details per each assignment rule
+            assignmentRulesAndRuleEntries.push(`#### Rule #${ruleCounter}`);
+            assignmentRulesAndRuleEntries.push("| Assigned To Type | Assigned To | Formula |");
+            assignmentRulesAndRuleEntries.push("| :---- | :--: | :--: |");
+            assignmentRulesAndRuleEntries.push(`| ${singleRuleEntry.assignedToType} | ${singleRuleEntry.assignedTo} | \`${singleRuleEntry.formula || 'None'}\` |`);
+            assignmentRulesAndRuleEntries.push("");
+
             // listing criteria items for each rule entry in a separate table
+            assignmentRulesAndRuleEntries.push(`#### Criteria Items for Rule #${ruleCounter}`);
             assignmentRulesAndRuleEntries.push("| Field | Operation | Value|");
-            assignmentRulesAndRuleEntries.push("| :---- | :--: | ----: |");
+            assignmentRulesAndRuleEntries.push("| :---- | :--: | :--: |");
 
             if (singleRuleEntry) {
               let criteriaItems = singleRuleEntry.criteriaItems;
