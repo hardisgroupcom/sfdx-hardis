@@ -33,6 +33,7 @@ import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPe
 import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
 import {DocBuilderAssignmentRules} from '../../../common/docBuilder/docBuilderAssignmentRules.js';
 import { DocBuilderApprovalProcess } from '../../../common/docBuilder/docBuilderApprovalProcess.js';
+import {DocBuilderAutoResponseRules} from "../../../common/docBuilder/docBuilderAutoResponseRules.js";
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -162,6 +163,7 @@ ${this.htmlInstructions}
   protected permissionSetsDescriptions: any[] = [];
   protected permissionSetGroupsDescriptions: any[] = [];
   protected assignmentRulesDescriptions: any[] = [];
+  protected autoResponseRulesDescriptions: any[] = [];
   protected approvalProcessesDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
   protected objectFiles: string[];
@@ -190,6 +192,7 @@ ${this.htmlInstructions}
       "  - [Approval Processes](approvalProcesses/index.md)",
       "  - [Flows](flows/index.md)",
       "  - [Assignment Rules](assignmentRules/index.md)",
+      "  - [AutoResponse Rules](autoResponseRules/index.md)",
       "- Authorizations",
       "  - [Profiles](profiles/index.md)",
       "  - [Permission Set Groups](permissionsetgroups/index.md)",
@@ -279,6 +282,8 @@ ${this.htmlInstructions}
       await this.generateApprovalProcessDocumentation();
       // List assignment rules and generate doc
       await this.generateAssignmentRulesDocumentation();
+      // List auto response rules and generate doc
+      await this.generateAutoResponseRulesDocumentation();
     }
 
     // Write output index file
@@ -584,6 +589,44 @@ ${Project2Markdown.htmlInstructions}
     await fs.writeFile(approvalProcessesIndexFile, getMetaHideLines() + DocBuilderApprovalProcess.buildIndexTable('', this.approvalProcessesDescriptions).join("\n") + `\n\n${this.footer}\n`);
   }
 
+  private async generateAutoResponseRulesDocumentation() {
+    uxLog(this, c.cyan("Generating AutoResponse Rules documentation... " +
+      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
+
+    const autoResponseRulesForMenu: any = { "All AutoResponse Rules": "autoResponseRules/index.md" };
+    const autoResponseRulesFiles = (await glob("**/autoResponseRules/**.autoResponseRules-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).sort();
+    for (const autoResponseRulesFile of autoResponseRulesFiles) {
+      const autoResponseRulesName = path.basename(autoResponseRulesFile, ".autoResponseRules-meta.xml");
+      const mdFile = path.join(this.outputMarkdownRoot, "autoResponseRules", autoResponseRulesName + ".md");
+      autoResponseRulesForMenu[autoResponseRulesName] = "autoResponseRules/" + autoResponseRulesName + ".md";
+      const autoResponseRulesXml = await fs.readFile(autoResponseRulesFile, "utf8");
+      const autoResponseRulesXmlParsed = new XMLParser().parse(autoResponseRulesXml);
+
+      let rulesList  = autoResponseRulesXmlParsed?.AutoResponseRules?.autoResponseRule || [];
+
+      if (!Array.isArray(rulesList)) {
+        rulesList = [rulesList];
+      }
+
+      this.autoResponseRulesDescriptions.push({
+        name: autoResponseRulesName,
+        count: rulesList.length,
+        rulesList: rulesList
+      });
+
+      await new DocBuilderAutoResponseRules(autoResponseRulesName, autoResponseRulesXml, mdFile).generateMarkdownFileFromXml();
+      if (this.withPdf) {
+        await generatePdfFileFromMarkdown(mdFile);
+      }
+    }
+    this.addNavNode("AutoResponse Rules", autoResponseRulesForMenu);
+
+    // Write index file for permission set groups folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "autoResponseRules"));
+    const psgIndexFile = path.join(this.outputMarkdownRoot, "autoResponseRules", "index.md");
+    await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderAutoResponseRules.buildIndexTable('', this.autoResponseRulesDescriptions).join("\n") + `\n${this.footer}\n`);
+  }
+
   private async buildMkDocsYml() {
     // Copy default files (mkdocs.yml and other files can be updated by the SF Cli plugin developer later)
     const mkdocsYmlFile = path.join(process.cwd(), 'mkdocs.yml');
@@ -671,7 +714,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Add root menus
     const rootSections = [
-      { menu: "Automations", subMenus: ["Approval Processes", "Flows", "Assignment Rules"] },
+      { menu: "Automations", subMenus: ["Approval Processes", "Flows", "Assignment Rules", "AutoResponse Rules"] },
       { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
       { menu: "Code", subMenus: ["Apex"] },
     ];
