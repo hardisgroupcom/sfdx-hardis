@@ -2,15 +2,16 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+Always use the latest sfdx-hardis version to be up to date with security updates.
 
-| Version | Supported          |
-|---------|--------------------|
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+## How we secure sfdx-hardis
+
+All development and release workflows contain security checks using [Trivy](https://trivy.dev/latest/)
+
+- Scan package files
+- Scan docker images
+
+We are also using [dependabot](https://github.com/dependabot) to keep dependencies up to date.
 
 ## Reporting a Vulnerability
 
