@@ -30,6 +30,10 @@ CVE-2022-21680
 # Risk: Denial of Service, not risky for sfdx-hardis
 CVE-2022-21681
 
+# sqlite-libs https://avd.aquasec.com/nvd/2025/cve-2025-29087/
+# Risk: Memory leak, not risky for sfdx-hardis
+CVE-2025-29087
+
 # Dockerfile https://avd.aquasec.com/misconfig/ds002
 # Image using root user, that's ok as we are using it in CI/CD jobs containers, so not risky for sfdx-hardis
 DS002
