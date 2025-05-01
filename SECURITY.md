@@ -11,6 +11,8 @@ All development and release workflows contain security checks using [Trivy](http
 - Scan package files
 - Scan docker images
 
+Some exceptions has been added in [.trivyignore config file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/.trivyignore), with comments explaining why these CVE are not risky within sfdx-hardis usage.
+
 We are also using [dependabot](https://github.com/dependabot) to keep dependencies up to date.
 
 ## Reporting a Vulnerability
