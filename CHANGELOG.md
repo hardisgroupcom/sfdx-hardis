@@ -4,10 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.29.0] 2025-05-02
+
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Generate Approval Process documentation
 - Bitbucket Integration: Update default pipeline to add `clone: depth: full`
 - Security: Remove markdown-toc dependency as it is not maintained anymore and contains a CVE on old lodash version
 - Add documentation page about how security is handled with sfdx-hardis
+- Add trivy reports in Github Actions Workflows
 
 ## [5.28.1] 2025-04-25
 
