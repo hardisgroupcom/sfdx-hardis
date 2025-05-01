@@ -42,6 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
+      security-events: write # Added permission for security-events
     environment:
       name: release
     steps:
@@ -89,11 +90,27 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "docker.io/hardisgroupcom/sfdx-hardis:latest"
+          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
           format: "table"
           exit-code: "1"
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
+
+      - name: Generate Trivy security report
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+          format: "sarif"
+          output: "trivy-results.sarif"
+          vuln-type: "os,library"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+          category: "trivy"
 
   push_to_registry_sfdx_recommended:
     name: Push Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
