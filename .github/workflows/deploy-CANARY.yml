@@ -95,5 +95,4 @@ jobs:
           format: "table"
           exit-code: "1"
           vuln-type: "os,library"
-          security-checks: vuln
           severity: "CRITICAL,HIGH"
