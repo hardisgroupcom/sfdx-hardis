@@ -21,7 +21,7 @@ We are also using [dependabot](https://github.com/dependabot) to keep dependenci
 
 ## Architecture
 
-- sfdx-hardis plugin is built using the latest [sfdx-plugin framework provided by Salesforce](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_plugins.meta/sfdx_cli_plugins/cli_plugins.htm), including the use of official CI/CD workflows used by offical Salesforce CLI plugins.
+- sfdx-hardis plugin is built using the latest [sfdx-plugin framework provided by Salesforce](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_plugins.meta/sfdx_cli_plugins/cli_plugins.htm), including the use of official CI/CD workflows used by official Salesforce CLI plugins.
 
 - Authentication between sfdx-hardis and Salesforce orgs are performed using a Connect App created during configuration. Each connection requires 2 secured environment variables: one with the connected app Client Id, and one used to decrypt "on the fly" an encrypted self-signed certificate stored in the repository. 
 
