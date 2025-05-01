@@ -1,10 +1,14 @@
 # Security Policy
 
+## Introduction
+
+Salesforce orgs contain critical data, so we are very serious regarding the security around the use of sfdx-hardis locally or from CI/CD servers.
+
 ## Supported Versions
 
 Always use the latest sfdx-hardis version to be up to date with security updates.
 
-## How we secure sfdx-hardis
+## Supply Chain Security
 
 All development and release workflows contain security checks using [Trivy](https://trivy.dev/latest/)
 
@@ -14,6 +18,14 @@ All development and release workflows contain security checks using [Trivy](http
 Some exceptions has been added in [.trivyignore config file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/.trivyignore), with comments explaining why these CVE are not risky within sfdx-hardis usage.
 
 We are also using [dependabot](https://github.com/dependabot) to keep dependencies up to date.
+
+## Architecture
+
+- sfdx-hardis plugin is built using the latest [sfdx-plugin framework provided by Salesforce](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_plugins.meta/sfdx_cli_plugins/cli_plugins.htm), including the use of official CI/CD workflows used by offical Salesforce CLI plugins.
+
+- Authentication between sfdx-hardis and Salesforce orgs are performed using a Connect App created during configuration. Each connection requires 2 secured environment variables: one with the connected app Client Id, and one used to decrypt "on the fly" an encrypted self-signed certificate stored in the repository. 
+
+- There is no embedded telemetry: sfdx-hardis maintainers have 0 information about sfdx-hardis command line usage, and it is by design.
 
 ## Reporting a Vulnerability
 

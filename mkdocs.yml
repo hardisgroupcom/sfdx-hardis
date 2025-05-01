@@ -344,6 +344,7 @@ nav:
       https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476
   - Contributing: https://sfdx-hardis.cloudity.com/#contributing
   - License: license.md
+  - Security: SECURITY.md
   - Changelog: CHANGELOG.md
   - Help: sfdx-hardis-help.md
   - Cloudity, Consulting Partner: cloudity-consulting-partner.md
