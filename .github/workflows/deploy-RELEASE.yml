@@ -92,7 +92,6 @@ jobs:
           image-ref: "docker.io/hardisgroupcom/sfdx-hardis:latest"
           format: "table"
           exit-code: "1"
-          ignore-unfixed: true
           vuln-type: "os,library"
           security-checks: vuln
           severity: "CRITICAL,HIGH"
@@ -151,7 +150,6 @@ jobs:
           image-ref: "docker.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended"
           format: "table"
           exit-code: "1"
-          ignore-unfixed: true
           vuln-type: "os,library"
           security-checks: vuln
           severity: "CRITICAL,HIGH"
