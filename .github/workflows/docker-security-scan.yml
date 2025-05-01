@@ -1,0 +1,61 @@
+name: Docker Security Scan
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docker-security-scan:
+    name: Build and Scan Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=latest
+            SFDX_CLI_VERSION=latest
+          load: true
+          push: false
+          tags: |
+            sfdx-hardis:security-scan
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "sfdx-hardis:security-scan"
+          format: "table"
+          exit-code: "1"
+          vuln-type: "os,library"
+          security-checks: vuln,config
+          severity: "CRITICAL,HIGH"
+
+      - name: Generate Trivy security report
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: "sfdx-hardis:security-scan"
+          format: "sarif"
+          output: "trivy-results.sarif"
+          vuln-type: "os,library"
+          security-checks: vuln,config
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+          category: "trivy"
