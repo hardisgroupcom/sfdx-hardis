@@ -24,8 +24,10 @@ CVE-2024-12905
 
 # Dockerfile https://avd.aquasec.com/misconfig/ds002
 # Image using root user, that's ok as we are using it in CI/CD jobs containers, so not risky for sfdx-hardis
-ds002
+DS002
 
-# Dokerfile https://avd.aquasec.com/misconfig/ds026
+# Dockerfile https://avd.aquasec.com/misconfig/ds026
 # No HEALTHCHECK defined, that's ok as our container live only the time of the job, so not risky for sfdx-hardis
-ds026
+DS026
+
+
