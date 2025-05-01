@@ -14,13 +14,21 @@ CVE-2025-25290
 # Risk: High CPU Usage, not risky for sfdx-hardis
 CVE-2025-25289
 
-# lodash.template https://avd.aquasec.com/nvd/cve-2021-23337
-# Risk: Command injection
-CVE-2021-23337
-
 # tar-fs https://avd.aquasec.com/nvd/2024/cve-2024-12905/
 # Risk:  Improper Limitation of a Pathname to a Restricted Directory (Path Traversal), not risky for sfdx-hardis
 CVE-2024-12905
+
+# cross-spawn https://avd.aquasec.com/nvd/cve-2024-21538
+# Risk: Denial of Service, not risky for sfdx-hardis
+CVE-2024-21538
+
+# marked https://avd.aquasec.com/nvd/cve-2022-21680
+# Risk: Denial of Service, not risky for sfdx-hardis
+CVE-2022-21680
+
+# marked https://avd.aquasec.com/nvd/cve-2022-21681
+# Risk: Denial of Service, not risky for sfdx-hardis
+CVE-2022-21681
 
 # Dockerfile https://avd.aquasec.com/misconfig/ds002
 # Image using root user, that's ok as we are using it in CI/CD jobs containers, so not risky for sfdx-hardis
