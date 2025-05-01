@@ -1,0 +1,31 @@
+# @babel/runtime https://avd.aquasec.com/nvd/2025/cve-2025-27789/
+# Risk: High CPU Usage, not risky for sfdx-hardis
+CVE-2025-27789
+
+# @octokit/plugin-paginate-rest  https://avd.aquasec.com/nvd/cve-2025-25288
+# Risk: High CPU Usage, not risky for sfdx-hardis
+CVE-2025-25288
+
+# @octokit/request https://avd.aquasec.com/nvd/cve-2025-25290
+# Risk: High CPU Usage, not risky for sfdx-hardis
+CVE-2025-25290
+
+# @octokit/request-error https://avd.aquasec.com/nvd/2025/cve-2025-25289/
+# Risk: High CPU Usage, not risky for sfdx-hardis
+CVE-2025-25289
+
+# lodash.template https://avd.aquasec.com/nvd/cve-2021-23337
+# Risk: Command injection
+CVE-2021-23337
+
+# tar-fs https://avd.aquasec.com/nvd/2024/cve-2024-12905/
+# Risk:  Improper Limitation of a Pathname to a Restricted Directory (Path Traversal), not risky for sfdx-hardis
+CVE-2024-12905
+
+# Dockerfile https://avd.aquasec.com/misconfig/ds002
+# Image using root user, that's ok as we are using it in CI/CD jobs containers, so not risky for sfdx-hardis
+ds002
+
+# Dokerfile https://avd.aquasec.com/misconfig/ds026
+# No HEALTHCHECK defined, that's ok as our container live only the time of the job, so not risky for sfdx-hardis
+ds026
