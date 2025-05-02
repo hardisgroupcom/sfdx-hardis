@@ -51,14 +51,14 @@ jobs:
           output: "trivy-results.sarif"
           vuln-type: "os,library"
 
-      - name: Generate SBOM (text format)
+      - name: Generate SBOM (CycloneDX format)
         uses: aquasecurity/trivy-action@master
         if: always()
         with:
           image-ref: "sfdx-hardis:security-scan"
-          format: "text"
-          output: "sfdx-hardis-sbom.txt"
-          scan-type: "sbom"
+          format: "cyclonedx"
+          output: "sfdx-hardis-sbom.cyclonedx.json"
+          scan-type: "image"
 
       - name: Generate SBOM (SPDX format)
         uses: aquasecurity/trivy-action@master
@@ -67,7 +67,7 @@ jobs:
           image-ref: "sfdx-hardis:security-scan"
           format: "spdx-json"
           output: "sfdx-hardis-sbom.spdx.json"
-          scan-type: "sbom"
+          scan-type: "image"
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
@@ -82,5 +82,5 @@ jobs:
         with:
           name: sbom-documents
           path: |
-            sfdx-hardis-sbom.txt
+            sfdx-hardis-sbom.cyclonedx.json
             sfdx-hardis-sbom.spdx.json
