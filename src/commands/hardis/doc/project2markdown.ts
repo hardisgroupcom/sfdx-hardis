@@ -32,6 +32,7 @@ import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPacka
 import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPermissionSet.js';
 import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
 import { DocBuilderApprovalProcess } from '../../../common/docBuilder/docBuilderApprovalProcess.js';
+import {DocBuilderForecastingTypes} from "../../../common/docBuilder/docBuilderForecastingTypes.js";
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -161,6 +162,7 @@ ${this.htmlInstructions}
   protected permissionSetsDescriptions: any[] = [];
   protected permissionSetGroupsDescriptions: any[] = [];
   protected approvalProcessesDescriptions: any[] = [];
+  protected forecastingTypesDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
   protected objectFiles: string[];
   protected allObjectsNames: string[];
@@ -187,6 +189,7 @@ ${this.htmlInstructions}
       "- Automations",
       "  - [Approval Processes](approvalProcesses/index.md)",
       "  - [Flows](flows/index.md)",
+      "  - [Forecasting Types](forecastingTypes/index.md)",
       "- Authorizations",
       "  - [Profiles](profiles/index.md)",
       "  - [Permission Set Groups](permissionsetgroups/index.md)",
@@ -275,6 +278,10 @@ ${this.htmlInstructions}
     if (!(process?.env?.GENERATE_APPROVAL_PROCESS_DOC === 'false')) {
       await this.generateApprovalProcessDocumentation();
     }
+
+    // TODO: to be updated after Autoresponce Rules PR will be merged, as it contains the env var for all automations
+    // List forecasting types & generate doc
+    await this.generateForecastingTypesDocumentation();
 
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
@@ -541,6 +548,43 @@ ${Project2Markdown.htmlInstructions}
     await fs.writeFile(approvalProcessesIndexFile, getMetaHideLines() + DocBuilderApprovalProcess.buildIndexTable('', this.approvalProcessesDescriptions).join("\n") + `\n\n${this.footer}\n`);
   }
 
+  private async generateForecastingTypesDocumentation() {
+    uxLog(this, c.cyan("Generating Forecasting Types documentation... " +
+      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
+
+    const forecastingTypesForMenu: any = {"All Forecasting Types": "forecastingTypes/index.md"};
+    const forecastingTypesFiles = (await glob("**/forecastingTypes/**.forecastingType-meta.xml", {
+      cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
+    })).sort();
+
+    for (const forecastingTypesFile of forecastingTypesFiles) {
+      const forecastingTypesName = path.basename(forecastingTypesFile, ".forecastingType-meta.xml");
+      const mdFile = path.join(this.outputMarkdownRoot, "forecastingTypes", forecastingTypesName + ".md");
+      forecastingTypesForMenu[forecastingTypesName] = "forecastingTypes/" + forecastingTypesName + ".md";
+      const forecastingTypesXml = await fs.readFile(forecastingTypesFile, "utf8");
+      const forecastingTypesXmlParsed = new XMLParser().parse(forecastingTypesXml);
+
+      this.forecastingTypesDescriptions.push({
+        name: forecastingTypesName,
+        active: forecastingTypesXmlParsed?.ForecastingType?.active,
+        based: forecastingTypesXmlParsed?.ForecastingType?.amount,
+        impactedObjects: this.allObjectsNames.filter(objectName => forecastingTypesXml.includes(`${objectName}`)).join(", ")
+      });
+
+      await new DocBuilderForecastingTypes(forecastingTypesName, forecastingTypesXml, mdFile).generateMarkdownFileFromXml();
+      if (this.withPdf) {
+        await generatePdfFileFromMarkdown(mdFile);
+      }
+    }
+    this.addNavNode("Forecasting Types", forecastingTypesForMenu);
+
+    // Write index file for forecasting types folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "forecastingTypes"));
+    const psgIndexFile = path.join(this.outputMarkdownRoot, "forecastingTypes", "index.md");
+    await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderForecastingTypes.buildIndexTable('', this.forecastingTypesDescriptions).join("\n") + `\n${this.footer}\n`);
+  }
+
   private async buildMkDocsYml() {
     // Copy default files (mkdocs.yml and other files can be updated by the SF Cli plugin developer later)
     const mkdocsYmlFile = path.join(process.cwd(), 'mkdocs.yml');
@@ -628,7 +672,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Add root menus
     const rootSections = [
-      { menu: "Automations", subMenus: ["Approval Processes", "Flows"] },
+      { menu: "Automations", subMenus: ["Approval Processes", "Flows", "Forecasting Types"] },
       { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
       { menu: "Code", subMenus: ["Apex"] },
     ];
