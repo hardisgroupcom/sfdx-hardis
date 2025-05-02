@@ -94,6 +94,7 @@ jobs:
         with:
           image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
           format: "table"
+          output: sfdx-hardis-trivy-image-beta-results.txt
           exit-code: "1"
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
@@ -104,15 +105,45 @@ jobs:
         with:
           image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
           format: "sarif"
-          output: "trivy-results.sarif"
+          output: sfdx-hardis-trivy-image-beta-results.sarif
           vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Generate SBOM (CycloneDX format)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
+          format: "cyclonedx"
+          output: "sfdx-hardis-image-sbom-beta.cyclonedx.json"
+          scan-type: "image"
+
+      - name: Generate SBOM (SPDX format)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
+          format: "spdx-json"
+          output: "sfdx-hardis-image-sbom-beta.spdx.json"
+          scan-type: "image"
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: "trivy-results.sarif"
+          sarif_file: sfdx-hardis-trivy-image-beta-results.sarif
           category: "trivy"
+
+      - name: Upload SBOM and Security artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-and-sbom-documents
+          path: |
+            sfdx-hardis-image-sbom-beta.cyclonedx.json
+            sfdx-hardis-image-sbom-beta.spdx.json
+            sfdx-hardis-trivy-image-beta-results.txt
+            sfdx-hardis-trivy-image-beta-results.sarif
 
   push_beta_to_registry_sfdx_recommended:
     name: Push Beta Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
