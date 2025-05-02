@@ -445,6 +445,7 @@
         "forceignore",
         "forcenew",
         "forceoverwrite",
+        "FORECASTINGTYPES",
         "fournir",
         "fpath",
         "freefont",

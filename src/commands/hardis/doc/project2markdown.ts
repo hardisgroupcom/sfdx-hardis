@@ -279,7 +279,7 @@ ${this.htmlInstructions}
       await this.generateApprovalProcessDocumentation();
     }
 
-    // TODO: to be updated after Autoresponce Rules PR will be merged, as it contains the env var for all automations
+    // TODO: to be updated after Auto response Rules PR will be merged, as it contains the env var for all automations
     // List forecasting types & generate doc
     await this.generateForecastingTypesDocumentation();
 
