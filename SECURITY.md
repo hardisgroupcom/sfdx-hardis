@@ -10,6 +10,8 @@ Always use the latest sfdx-hardis version to be up to date with security updates
 
 ## Supply Chain Security
 
+### Continuous Scanning
+
 All development and release workflows contain security checks using [Trivy](https://trivy.dev/latest/)
 
 - Scan npm package files
@@ -18,7 +20,13 @@ All development and release workflows contain security checks using [Trivy](http
 
 Some exceptions has been added in [.trivyignore config file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/.trivyignore), with comments explaining why these CVE are not risky within sfdx-hardis usage.
 
-We are also using [dependabot](https://github.com/dependabot) to keep dependencies up to date.
+You can find security scan results and SBOM (Software Build Of Materials) in CycloneDX and SPDX formats in the [artifacts of release workflows](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/deploy-RELEASE.yml)
+
+![Security artifacts screenshot](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-security-artifacts-1.jpg)
+
+### Dependencies
+
+We are using [dependabot](https://github.com/dependabot) to keep dependencies up to date.
 
 ## Architecture
 
