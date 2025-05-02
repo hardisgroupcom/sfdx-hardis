@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write # Added permission for security-events
-    
+      security-events: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -51,9 +51,36 @@ jobs:
           output: "trivy-results.sarif"
           vuln-type: "os,library"
 
+      - name: Generate SBOM (text format)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: "sfdx-hardis:security-scan"
+          format: "text"
+          output: "sfdx-hardis-sbom.txt"
+          scan-type: "sbom"
+
+      - name: Generate SBOM (SPDX format)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: "sfdx-hardis:security-scan"
+          format: "spdx-json"
+          output: "sfdx-hardis-sbom.spdx.json"
+          scan-type: "sbom"
+
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
           category: "trivy"
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sbom-documents
+          path: |
+            sfdx-hardis-sbom.txt
+            sfdx-hardis-sbom.spdx.json
