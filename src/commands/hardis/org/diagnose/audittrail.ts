@@ -68,6 +68,7 @@ Regular setup actions performed in major orgs are filtered.
   - changedUserEmailVerifiedStatusUnverified
   - changedUserEmailVerifiedStatusVerified
   - changedknowledgeuseroffon
+  - changedsfcontentuseroffon
   - changedsupportuseroffon
   - changedUserPhoneNumber
   - changedUserPhoneVerifiedStatusUnverified
@@ -251,6 +252,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         'changedroleforuser',
         'changedroleforuserfromnone',
         'changedpassword',
+        'changedsfcontentuseroffon',
         'changedUserEmailVerifiedStatusUnverified',
         'changedUserEmailVerifiedStatusVerified',
         'changedknowledgeuseroffon',

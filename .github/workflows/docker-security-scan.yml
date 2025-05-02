@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write # Added permission for security-events
-    
+      security-events: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,6 +38,7 @@ jobs:
         with:
           image-ref: "sfdx-hardis:security-scan"
           format: "table"
+          output: "sfdx-hardis-trivy-image-results.txt"
           exit-code: "1"
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
@@ -48,12 +49,42 @@ jobs:
         with:
           image-ref: "sfdx-hardis:security-scan"
           format: "sarif"
-          output: "trivy-results.sarif"
+          output: "sfdx-hardis-trivy-image-results.sarif"
           vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Generate SBOM (CycloneDX format)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: "sfdx-hardis:security-scan"
+          format: "cyclonedx"
+          output: "sfdx-hardis-image-sbom.cyclonedx.json"
+          scan-type: "image"
+
+      - name: Generate SBOM (SPDX format)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: "sfdx-hardis:security-scan"
+          format: "spdx-json"
+          output: "sfdx-hardis-image-sbom.spdx.json"
+          scan-type: "image"
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: "trivy-results.sarif"
+          sarif_file: "sfdx-hardis-trivy-image-results.sarif"
           category: "trivy"
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-and-sbom-documents
+          path: |
+            sfdx-hardis-image-sbom.cyclonedx.json
+            sfdx-hardis-image-sbom.spdx.json
+            sfdx-hardis-trivy-image-results.txt
+            sfdx-hardis-trivy-image-results.sarif
