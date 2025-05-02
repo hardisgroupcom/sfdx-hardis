@@ -51,6 +51,7 @@ jobs:
           format: "sarif"
           output: "sfdx-hardis-trivy-image-results.sarif"
           vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
 
       - name: Generate SBOM (CycloneDX format)
         uses: aquasecurity/trivy-action@master
