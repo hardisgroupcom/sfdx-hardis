@@ -3,7 +3,7 @@
   "description": "Swiss-army-knife Toolbox for Salesforce.\n Allows you to define a complete CD/CD Pipeline.\n Orchestrate base commands and assist users with interactive wizards",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
-  "version": "5.28.1",
+  "version": "5.29.1",
   "dependencies": {
     "@actions/github": "^6.0.0",
     "@cparra/apexdocs": "^3.11.0",
@@ -43,7 +43,6 @@
     "jira-client": "^8.2.2",
     "js-yaml": "^4.1.0",
     "make-fetch-happen": "^14.0.3",
-    "markdown-toc": "^1.2.0",
     "marked": "^14.1.4",
     "md-to-pdf": "^5.2.4",
     "mega-linter-runner": "^8.5.0",
