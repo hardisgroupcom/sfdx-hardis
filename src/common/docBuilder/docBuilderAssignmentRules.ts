@@ -36,11 +36,11 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
 
   public async buildInitialMarkdownLines(): Promise<string[]> {
 
-    let ruleBuilderUtil = new RulesBuilderUtil();
+    const ruleBuilderUtil = new RulesBuilderUtil();
     await ruleBuilderUtil.buildInitialMarkDownLinesForRules(this.parsedXmlObject.assignmentRule, "Assignment");
 
-    let assignmentRuleTableLines: string [] = [...ruleBuilderUtil.globalRuleTableLines];
-    let assignmentRulesAndRuleEntries: string [] = [...ruleBuilderUtil.globalRulesAndRuleEntries];
+    const assignmentRuleTableLines: string [] = [...ruleBuilderUtil.globalRuleTableLines];
+    const assignmentRulesAndRuleEntries: string [] = [...ruleBuilderUtil.globalRulesAndRuleEntries];
 
     return [
       `## ${this.metadataName}`,
