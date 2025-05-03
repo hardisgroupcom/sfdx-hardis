@@ -4,13 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [5.29.2] 2025-05-02
-
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) new features
   - Generate Assignment Rules documentation
   - Display Assignment Rule in a tree
-
-
 - Doc: Mention security artifacts in documentation
 
 ## [5.29.1] 2025-05-02
