@@ -9,7 +9,7 @@
     "@cparra/apexdocs": "^3.11.0",
     "@gitbeaker/node": "^35.8.1",
     "@oclif/core": "^4.2.10",
-    "@salesforce/core": "^8.8.6",
+    "@salesforce/core": "^8.10.1",
     "@salesforce/sf-plugins-core": "^11.3.12",
     "@slack/types": "^2.14.0",
     "@slack/web-api": "^7.9.1",
