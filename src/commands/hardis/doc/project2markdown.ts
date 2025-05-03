@@ -31,7 +31,7 @@ import { DocBuilderFlow } from '../../../common/docBuilder/docBuilderFlow.js';
 import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPackageXml.js';
 import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPermissionSet.js';
 import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
-import {DocBuilderAssignmentRules} from '../../../common/docBuilder/docBuilderAssignmentRules.js';
+import { DocBuilderAssignmentRules } from '../../../common/docBuilder/docBuilderAssignmentRules.js';
 import { DocBuilderApprovalProcess } from '../../../common/docBuilder/docBuilderApprovalProcess.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -188,8 +188,8 @@ ${this.htmlInstructions}
       "- [Objects](objects/index.md)",
       "- Automations",
       "  - [Approval Processes](approvalProcesses/index.md)",
-      "  - [Flows](flows/index.md)",
       "  - [Assignment Rules](assignmentRules/index.md)",
+      "  - [Flows](flows/index.md)",
       "- Authorizations",
       "  - [Profiles](profiles/index.md)",
       "  - [Permission Set Groups](permissionsetgroups/index.md)",
@@ -522,7 +522,7 @@ ${Project2Markdown.htmlInstructions}
       const assignmentRulesXml = await fs.readFile(assignmentRulesFile, "utf8");
       const assignmentRulesXmlParsed = new XMLParser().parse(assignmentRulesXml);
 
-      let rulesList  = assignmentRulesXmlParsed?.AssignmentRules?.assignmentRule || [];
+      let rulesList = assignmentRulesXmlParsed?.AssignmentRules?.assignmentRule || [];
 
       if (!Array.isArray(rulesList)) {
         rulesList = [rulesList];
@@ -671,7 +671,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Add root menus
     const rootSections = [
-      { menu: "Automations", subMenus: ["Approval Processes", "Flows", "Assignment Rules"] },
+      { menu: "Automations", subMenus: ["Approval Processes", "Assignment Rules", "Flows"] },
       { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
       { menu: "Code", subMenus: ["Apex"] },
     ];
