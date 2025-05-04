@@ -656,9 +656,6 @@ ${Project2Markdown.htmlInstructions}
         const existingSubMenus = mkdocsYml.nav[existingRootMenuIndex][rootSection.menu];
         const uniqueSubMenus = new Map();
         for (const item of [...existingSubMenus, ...navSubmenus]) {
-          if (!item) {
-            continue;
-          }
           const key = Object.keys(item)[0];
           if (!uniqueSubMenus.has(key) || navSubmenus.some(navItem => Object.keys(navItem)[0] === key)) {
             uniqueSubMenus.set(key, item);
