@@ -37,6 +37,7 @@ export class DocBuilderAutoResponseRules extends DocBuilderRoot {
   public async buildInitialMarkdownLines(): Promise<string[]> {
 
     const ruleBuilderUtil = new RulesBuilderUtil();
+    //generating autoresponse rules table
     await ruleBuilderUtil.buildInitialMarkDownLinesFoAutoResponseRules(this.parsedXmlObject);
     const autoResponseRuleTableLines: string [] = [...ruleBuilderUtil.globalRuleTableLines];
 
