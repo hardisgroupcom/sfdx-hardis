@@ -14,31 +14,31 @@ export class RulesBuilderUtil {
       if (!Array.isArray(ruleGlobal.ruleEntry)) {
         ruleGlobal.ruleEntry = [ruleGlobal.ruleEntry];
       }
-      let order: number = 1;
+      let orderNum: number = 1;
       for (const rule of ruleGlobal.ruleEntry) {
-        const criteria = rule?.criteriaItems ? this.formatCriteria(rule?.criteriaItems, rule?.booleanFilter) : rule?.formula ? JSON.stringify(rule.formula) : "None";
-        this.globalRuleTableLines.push(`| ${order} | ${criteria} |  ${rule.assignedTo} | ${rule.assignedToType} | ${(!!rule.template)} |`);
-        order++;
+        const globalCriteria = rule?.criteriaItems ? this.formatCriteria(rule?.criteriaItems, rule?.booleanFilter) : rule?.formula ? JSON.stringify(rule.formula) : "None";
+        this.globalRuleTableLines.push(`| ${orderNum} | ${globalCriteria} |  ${rule.assignedTo} | ${rule.assignedToType} | ${(!!rule.template)} |`);
+        orderNum++;
       }
     }
   }
 
-  public async buildInitialMarkDownLinesFoAutoResponseRules(ruleGlobal: any) {
+  public async buildInitialMarkDownLinesFoAutoResponseRules(autoresponseRule: any) {
 
     this.globalRuleTableLines = [
-      `## ${ruleGlobal.fullName} Rules`,
+      `## ${autoresponseRule.fullName} Rules`,
       "| Order |  Criteria | Sender Email | Sender Name | Reply To |",
       "| :--: | :------------- | :--: | :--: | :--: |",
     ];
 
-    if (ruleGlobal.ruleEntry) {
-      if (!Array.isArray(ruleGlobal.ruleEntry)) {
-        ruleGlobal.ruleEntry = [ruleGlobal.ruleEntry];
+    if (autoresponseRule.ruleEntry) {
+      if (!Array.isArray(autoresponseRule.ruleEntry)) {
+        autoresponseRule.ruleEntry = [autoresponseRule.ruleEntry];
       }
       let order: number = 1;
-      for (const rule of ruleGlobal.ruleEntry) {
-        const criteria = rule?.criteriaItems ? this.formatCriteria(rule?.criteriaItems, rule?.booleanFilter) : rule?.formula ? JSON.stringify(rule.formula) : "None";
-        this.globalRuleTableLines.push(`| ${order} | ${criteria} |  ${rule.senderEmail} | ${rule.senderName} | ${rule.replyTo ||  "None"} |`);
+      for (const rule of autoresponseRule.ruleEntry) {
+        const autoResponseCriteria = rule?.criteriaItems ? this.formatCriteria(rule?.criteriaItems, rule?.booleanFilter) : rule?.formula ? JSON.stringify(rule.formula) : "None";
+        this.globalRuleTableLines.push(`| ${order} | ${autoResponseCriteria} |  ${rule.senderEmail} | ${rule.senderName} | ${rule.replyTo ||  "None"} |`);
         order++;
       }
     }
