@@ -607,30 +607,43 @@ ${Project2Markdown.htmlInstructions}
     uxLog(this, c.cyan("Generating AutoResponse Rules documentation... " +
       "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
 
-    const autoResponseRulesForMenu: any = { "All AutoResponse Rules": "autoResponseRules/index.md" };
-    const autoResponseRulesFiles = (await glob("**/autoResponseRules/**.autoResponseRules-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).sort();
+    const autoResponseRulesForMenu: any = {"All AutoResponse Rules": "autoResponseRules/index.md"};
+    const autoResponseRulesFiles = (await glob("**/autoResponseRules/**.autoResponseRules-meta.xml", {
+      cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
+    })).sort();
+    const builder = new XMLBuilder();
+
     for (const autoResponseRulesFile of autoResponseRulesFiles) {
-      const autoResponseRulesName = path.basename(autoResponseRulesFile, ".autoResponseRules-meta.xml");
-      const mdFile = path.join(this.outputMarkdownRoot, "autoResponseRules", autoResponseRulesName + ".md");
-      autoResponseRulesForMenu[autoResponseRulesName] = "autoResponseRules/" + autoResponseRulesName + ".md";
+
       const autoResponseRulesXml = await fs.readFile(autoResponseRulesFile, "utf8");
       const autoResponseRulesXmlParsed = new XMLParser().parse(autoResponseRulesXml);
 
-      let rulesList  = autoResponseRulesXmlParsed?.AutoResponseRules?.autoResponseRule || [];
+      const autoResponseRulesName = path.basename(autoResponseRulesFile, ".autoResponseRules-meta.xml");
+      autoResponseRulesForMenu[autoResponseRulesName] = "autoResponseRules/" + autoResponseRulesName + ".md";
 
+      // parsing one single XML file with all the AutoResponse Rules per object:
+      let rulesList = autoResponseRulesXmlParsed?.AutoResponseRules?.autoResponseRule || [];
       if (!Array.isArray(rulesList)) {
         rulesList = [rulesList];
       }
 
-      this.autoResponseRulesDescriptions.push({
-        name: autoResponseRulesName,
-        count: rulesList.length,
-        rulesList: rulesList
-      });
+      for (const rule of rulesList) {
+        const currentRuleName = autoResponseRulesName + "." + rule?.fullName;
+        autoResponseRulesForMenu[currentRuleName] = "autoResponseRules/" + currentRuleName + ".md";
+        const mdFile = path.join(this.outputMarkdownRoot, "autoResponseRules", currentRuleName + ".md");
 
-      await new DocBuilderAutoResponseRules(autoResponseRulesName, autoResponseRulesXml, mdFile).generateMarkdownFileFromXml();
-      if (this.withPdf) {
-        await generatePdfFileFromMarkdown(mdFile);
+        this.autoResponseRulesDescriptions.push({
+          name: currentRuleName,
+          active: rule.active,
+        });
+
+        const ruleXml = builder.build({autoResponseRule: rule});
+
+        await new DocBuilderAutoResponseRules(currentRuleName, ruleXml, mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(mdFile);
+        }
       }
     }
     this.addNavNode("AutoResponse Rules", autoResponseRulesForMenu);

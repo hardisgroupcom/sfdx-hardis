@@ -23,6 +23,27 @@ export class RulesBuilderUtil {
     }
   }
 
+  public async buildInitialMarkDownLinesFoAutoResponseRules(ruleGlobal: any) {
+
+    this.globalRuleTableLines = [
+      `## ${ruleGlobal.fullName} Rules`,
+      "| Order |  Criteria | Sender Email | Sender Name |",
+      "| :--: | :------------- | :--: | :--: |",
+    ];
+
+    if (ruleGlobal.ruleEntry) {
+      if (!Array.isArray(ruleGlobal.ruleEntry)) {
+        ruleGlobal.ruleEntry = [ruleGlobal.ruleEntry];
+      }
+      let order: number = 1;
+      for (const rule of ruleGlobal.ruleEntry) {
+        const criteria = rule?.criteriaItems ? this.formatCriteria(rule?.criteriaItems, rule?.booleanFilter) : rule?.formula ? JSON.stringify(rule.formula) : "None";
+        this.globalRuleTableLines.push(`| ${order} | ${criteria} |  ${rule.senderEmail} | ${rule.senderName} |`);
+        order++;
+      }
+    }
+  }
+
   formatCriteria(criteriaItems: any[], booleanFilter: string): string {
     if (!criteriaItems || criteriaItems.length === 0) {
       return 'None';
