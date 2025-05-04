@@ -6,7 +6,6 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
 import * as path from 'path';
-import toc from 'markdown-toc';
 import { uxLog } from '../../../../common/utils/index.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getReportDirectory } from '../../../../config/index.js';
@@ -112,8 +111,8 @@ export default class ExtractPermSetGroups extends SfCommand<any> {
     }
     const docFile = 'docs/permission-set-groups.md';
     await fs.ensureDir('docs');
-    let mdPsgText = mdPsg.join('\n');
-    mdPsgText = toc.insert(mdPsgText);
+    const mdPsgText = mdPsg.join('\n');
+    // mdPsgText = toc.insert(mdPsgText);
     await fs.writeFile(docFile, mdPsgText, 'utf8');
     uxLog(this, c.cyan(`Permission set groups Markdown file generated in ${c.bold(c.green(docFile))}`));
     // Trigger command to open CSV file in VsCode extension

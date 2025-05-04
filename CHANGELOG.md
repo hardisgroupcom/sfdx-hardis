@@ -4,13 +4,24 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [5.28.2] 2025-04-28
-
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) new features
   - Generate Assignment Rules documentation
   - Display Assignment Rule in a tree
+- Doc: Mention security artifacts in documentation
+
+## [5.29.1] 2025-05-02
+
+- [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/): Flag more audit trail actions as not relevant
+- Generate SBOM (Software Bill Of Material) from CI/CD jobs
+- Expose security scan results and SBOM as artifacts on release jobs
+
+## [5.29.0] 2025-05-02
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Generate Approval Process documentation
+- Bitbucket Integration: Update default pipeline to add `clone: depth: full`
+- Security: Remove markdown-toc dependency as it is not maintained anymore and contains a CVE on old lodash version
+- Add documentation page about how security is handled with sfdx-hardis
+- Add trivy reports in Github Actions Workflows
 
 ## [5.28.1] 2025-04-25
 

@@ -46,6 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
+      security-events: write # Added permission for security-events
     environment:
       name: beta
     steps:
@@ -91,13 +92,58 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "docker.io/hardisgroupcom/sfdx-hardis:beta"
+          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
           format: "table"
+          output: sfdx-hardis-trivy-image-beta-results.txt
           exit-code: "1"
-          ignore-unfixed: true
           vuln-type: "os,library"
-          security-checks: vuln
           severity: "CRITICAL,HIGH"
+
+      - name: Generate Trivy security report
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
+          format: "sarif"
+          output: sfdx-hardis-trivy-image-beta-results.sarif
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Generate SBOM (CycloneDX format)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
+          format: "cyclonedx"
+          output: "sfdx-hardis-image-sbom-beta.cyclonedx.json"
+          scan-type: "image"
+
+      - name: Generate SBOM (SPDX format)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
+          format: "spdx-json"
+          output: "sfdx-hardis-image-sbom-beta.spdx.json"
+          scan-type: "image"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: sfdx-hardis-trivy-image-beta-results.sarif
+          category: "trivy"
+
+      - name: Upload SBOM and Security artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-and-sbom-documents
+          path: |
+            sfdx-hardis-image-sbom-beta.cyclonedx.json
+            sfdx-hardis-image-sbom-beta.spdx.json
+            sfdx-hardis-trivy-image-beta-results.txt
+            sfdx-hardis-trivy-image-beta-results.sarif
 
   push_beta_to_registry_sfdx_recommended:
     name: Push Beta Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
@@ -153,7 +199,5 @@ jobs:
           image-ref: "docker.io/hardisgroupcom/sfdx-hardis:beta-sfdx-recommended"
           format: "table"
           exit-code: "1"
-          ignore-unfixed: true
           vuln-type: "os,library"
-          security-checks: vuln
           severity: "CRITICAL,HIGH"

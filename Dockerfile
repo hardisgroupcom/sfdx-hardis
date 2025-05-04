@@ -1,6 +1,6 @@
 # Docker image to run sfdx-hardis
 
-FROM python:3.12.8-alpine3.20
+FROM python:3.12.10-alpine3.21
 
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
 
