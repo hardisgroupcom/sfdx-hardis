@@ -20,7 +20,7 @@ All development and release workflows contain security checks using [Trivy](http
 
 Some exceptions has been added in [.trivyignore config file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/.trivyignore), with comments explaining why these CVE are not risky within sfdx-hardis usage.
 
-You can find security scan results and SBOM (Software Build Of Materials) in CycloneDX and SPDX formats in the [artifacts of release workflows](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/deploy-RELEASE.yml)
+You can find security scan results and SBOM (Software Build Of Materials) in CycloneDX and SPDX formats in the [artifacts of release workflows](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/deploy-RELEASE.yml) or directly at the end of the Release notes.
 
 ![Security artifacts screenshot](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-security-artifacts-1.jpg)
 

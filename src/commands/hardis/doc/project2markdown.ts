@@ -4,7 +4,7 @@ import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
 import { process as ApexDocGen } from '@cparra/apexdocs';
-import { XMLParser } from "fast-xml-parser";
+import {XMLBuilder, XMLParser} from "fast-xml-parser";
 import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
@@ -31,6 +31,7 @@ import { DocBuilderFlow } from '../../../common/docBuilder/docBuilderFlow.js';
 import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPackageXml.js';
 import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPermissionSet.js';
 import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
+import { DocBuilderAssignmentRules } from '../../../common/docBuilder/docBuilderAssignmentRules.js';
 import { DocBuilderApprovalProcess } from '../../../common/docBuilder/docBuilderApprovalProcess.js';
 import {DocBuilderForecastingTypes} from "../../../common/docBuilder/docBuilderForecastingTypes.js";
 
@@ -161,6 +162,7 @@ ${this.htmlInstructions}
   protected profileDescriptions: any[] = [];
   protected permissionSetsDescriptions: any[] = [];
   protected permissionSetGroupsDescriptions: any[] = [];
+  protected assignmentRulesDescriptions: any[] = [];
   protected approvalProcessesDescriptions: any[] = [];
   protected forecastingTypesDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
@@ -188,6 +190,7 @@ ${this.htmlInstructions}
       "- [Objects](objects/index.md)",
       "- Automations",
       "  - [Approval Processes](approvalProcesses/index.md)",
+      "  - [Assignment Rules](assignmentRules/index.md)",
       "  - [Flows](flows/index.md)",
       "  - [Forecasting Types](forecastingTypes/index.md)",
       "- Authorizations",
@@ -274,9 +277,11 @@ ${this.htmlInstructions}
       await this.generateObjectsDocumentation();
     }
 
-    // List approval processes & generate doc
-    if (!(process?.env?.GENERATE_APPROVAL_PROCESS_DOC === 'false')) {
+    if (!(process?.env?.GENERATE_AUTOMATIONS_DOC === 'false')) {
+      // List approval processes & generate doc
       await this.generateApprovalProcessDocumentation();
+      // List assignment rules and generate doc
+      await this.generateAssignmentRulesDocumentation();
     }
 
     // TODO: to be updated after Auto response Rules PR will be merged, as it contains the env var for all automations
@@ -511,9 +516,61 @@ ${Project2Markdown.htmlInstructions}
     await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderPermissionSetGroup.buildIndexTable('', this.permissionSetGroupsDescriptions).join("\n") + `\n${this.footer}\n`);
   }
 
+  private async generateAssignmentRulesDocumentation() {
+    uxLog(this, c.cyan("Generating Assignment Rules documentation... " +
+      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
+
+    const assignmentRulesForMenu: any = {"All Assignment Rules": "assignmentRules/index.md"};
+    const assignmentRulesFiles = (await glob("**/assignmentRules/**.assignmentRules-meta.xml", {
+      cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
+    })).sort();
+    const builder = new XMLBuilder();
+
+    for (const assignmentRulesFile of assignmentRulesFiles) {
+
+      const assignmentRulesXml = await fs.readFile(assignmentRulesFile, "utf8");
+      const assignmentRulesXmlParsed = new XMLParser().parse(assignmentRulesXml);
+
+      const assignmentRulesName = path.basename(assignmentRulesFile, ".assignmentRules-meta.xml");
+      assignmentRulesForMenu[assignmentRulesName] = "assignmentRules/" + assignmentRulesName + ".md";
+
+      // parsing one singe XML file with all the Assignment Rules per object:
+      let rulesList = assignmentRulesXmlParsed?.AssignmentRules?.assignmentRule || [];
+      if (!Array.isArray(rulesList)) {
+        rulesList = [rulesList];
+      }
+
+      for (const rule of rulesList) {
+        const currentRuleName = assignmentRulesName + "." + rule?.fullName;
+        assignmentRulesForMenu[currentRuleName] = "assignmentRules/" + currentRuleName + ".md";
+        const mdFile = path.join(this.outputMarkdownRoot, "assignmentRules", currentRuleName + ".md");
+
+        this.assignmentRulesDescriptions.push({
+          name: currentRuleName,
+          active: rule.active,
+        });
+
+        const ruleXml = builder.build({ assignmentRule: rule });
+
+        await new DocBuilderAssignmentRules(currentRuleName, ruleXml, mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(mdFile);
+        }
+      }
+    }
+
+    this.addNavNode("Assignment Rules", assignmentRulesForMenu);
+
+    // Write index file for permission set groups folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "assignmentRules"));
+    const psgIndexFile = path.join(this.outputMarkdownRoot, "assignmentRules", "index.md");
+    await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderAssignmentRules.buildIndexTable('', this.assignmentRulesDescriptions).join("\n") + `\n${this.footer}\n`);
+  }
+
   private async generateApprovalProcessDocumentation() {
     uxLog(this, c.cyan("Generating Approval Processes documentation... " +
-      "(if you don't want it, define GENERATE_APPROVAL_PROCESS_DOC=false in your environment variables)"));
+      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
 
     const approvalProcessesForMenu: any = { "All Approval Processes": "approvalProcesses/index.md" }
     const approvalProcessFiles = (await glob("**/approvalProcesses/**.approvalProcess-meta.xml", {
@@ -672,7 +729,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Add root menus
     const rootSections = [
-      { menu: "Automations", subMenus: ["Approval Processes", "Flows", "Forecasting Types"] },
+      { menu: "Automations", subMenus: ["Approval Processes", "Assignment Rules", "Flows", "Forecasting Types"] },
       { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
       { menu: "Code", subMenus: ["Apex"] },
     ];
@@ -783,6 +840,9 @@ ${Project2Markdown.htmlInstructions}
       // Add Approval Processes table
       const relatedApprovalProcessTable = DocBuilderApprovalProcess.buildIndexTable('../approvalProcesses/', this.approvalProcessesDescriptions, objectName);
       await replaceInFile(objectMdFile, '<!-- ApprovalProcess table -->', relatedApprovalProcessTable.join("\n"));
+      // Assignment Rules table
+      const relatedAssignmentRulesTable = DocBuilderAssignmentRules.buildIndexTable('../assignmentRules/', this.assignmentRulesDescriptions, objectName);
+      await replaceInFile(objectMdFile, '<!-- AssignmentRules table -->', relatedAssignmentRulesTable.join("\n"));
 
       this.objectDescriptions.push({
         name: objectName,
