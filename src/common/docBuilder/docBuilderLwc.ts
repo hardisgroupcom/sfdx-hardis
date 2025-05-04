@@ -70,7 +70,7 @@ export class DocBuilderLwc extends DocBuilderRoot {
         return "No JavaScript file found for this component.";
       }
     } catch (error) {
-      return `Error generating JS documentation: ${error.message}`;
+      return `Error generating JS documentation: ${(error as any).message}`;
     }
   }
 
@@ -89,7 +89,7 @@ export class DocBuilderLwc extends DocBuilderRoot {
       
       return fileList || "No files found for this component.";
     } catch (error) {
-      return `Error listing component files: ${error.message}`;
+      return `Error listing component files: ${(error as any).message}`;
     }
   }
 
