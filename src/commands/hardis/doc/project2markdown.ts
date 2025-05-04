@@ -282,11 +282,9 @@ ${this.htmlInstructions}
       await this.generateApprovalProcessDocumentation();
       // List assignment rules and generate doc
       await this.generateAssignmentRulesDocumentation();
+      // List forecasting types & generate doc
+      await this.generateForecastingTypesDocumentation();
     }
-
-    // TODO: to be updated after Auto response Rules PR will be merged, as it contains the env var for all automations
-    // List forecasting types & generate doc
-    await this.generateForecastingTypesDocumentation();
 
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
@@ -843,6 +841,9 @@ ${Project2Markdown.htmlInstructions}
       // Assignment Rules table
       const relatedAssignmentRulesTable = DocBuilderAssignmentRules.buildIndexTable('../assignmentRules/', this.assignmentRulesDescriptions, objectName);
       await replaceInFile(objectMdFile, '<!-- AssignmentRules table -->', relatedAssignmentRulesTable.join("\n"));
+      // Forecasting Types table
+      const relatedForecastingTypesTable = DocBuilderForecastingTypes.buildIndexTable('../forecastingTypes/', this.forecastingTypesDescriptions, objectName);
+      await replaceInFile(objectMdFile, '<!-- ForecastingTypes table -->', relatedForecastingTypesTable.join("\n"));
 
       this.objectDescriptions.push({
         name: objectName,
