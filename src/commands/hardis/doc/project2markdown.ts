@@ -4,7 +4,7 @@ import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
 import { process as ApexDocGen } from '@cparra/apexdocs';
-import { XMLParser } from "fast-xml-parser";
+import {XMLBuilder, XMLParser} from "fast-xml-parser";
 import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
@@ -513,32 +513,46 @@ ${Project2Markdown.htmlInstructions}
     uxLog(this, c.cyan("Generating Assignment Rules documentation... " +
       "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
 
-    const assignmentRulesForMenu: any = { "All Assignment Rules": "assignmentRules/index.md" };
-    const assignmentRulesFiles = (await glob("**/assignmentRules/**.assignmentRules-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).sort();
+    const assignmentRulesForMenu: any = {"All Assignment Rules": "assignmentRules/index.md"};
+    const assignmentRulesFiles = (await glob("**/assignmentRules/**.assignmentRules-meta.xml", {
+      cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
+    })).sort();
+    const builder = new XMLBuilder();
+
     for (const assignmentRulesFile of assignmentRulesFiles) {
-      const assignmentRulesName = path.basename(assignmentRulesFile, ".assignmentRules-meta.xml");
-      const mdFile = path.join(this.outputMarkdownRoot, "assignmentRules", assignmentRulesName + ".md");
-      assignmentRulesForMenu[assignmentRulesName] = "assignmentRules/" + assignmentRulesName + ".md";
+
       const assignmentRulesXml = await fs.readFile(assignmentRulesFile, "utf8");
       const assignmentRulesXmlParsed = new XMLParser().parse(assignmentRulesXml);
 
-      let rulesList = assignmentRulesXmlParsed?.AssignmentRules?.assignmentRule || [];
+      const assignmentRulesName = path.basename(assignmentRulesFile, ".assignmentRules-meta.xml");
+      assignmentRulesForMenu[assignmentRulesName] = "assignmentRules/" + assignmentRulesName + ".md";
 
+      // parsing one singe XML file with all the Assignment Rules per object:
+      let rulesList = assignmentRulesXmlParsed?.AssignmentRules?.assignmentRule || [];
       if (!Array.isArray(rulesList)) {
         rulesList = [rulesList];
       }
 
-      this.assignmentRulesDescriptions.push({
-        name: assignmentRulesName,
-        count: rulesList.length,
-        rulesList: rulesList
-      });
+      for (const rule of rulesList) {
+        const currentRuleName = assignmentRulesName + "." + rule?.fullName;
+        assignmentRulesForMenu[currentRuleName] = "assignmentRules/" + currentRuleName + ".md";
+        const mdFile = path.join(this.outputMarkdownRoot, "assignmentRules", currentRuleName + ".md");
 
-      await new DocBuilderAssignmentRules(assignmentRulesName, assignmentRulesXml, mdFile).generateMarkdownFileFromXml();
-      if (this.withPdf) {
-        await generatePdfFileFromMarkdown(mdFile);
+        this.assignmentRulesDescriptions.push({
+          name: currentRuleName,
+          active: rule.active,
+        });
+
+        const ruleXml = builder.build({ assignmentRule: rule });
+
+        await new DocBuilderAssignmentRules(currentRuleName, ruleXml, mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(mdFile);
+        }
       }
     }
+
     this.addNavNode("Assignment Rules", assignmentRulesForMenu);
 
     // Write index file for permission set groups folder

@@ -1,68 +1,52 @@
 export class RulesBuilderUtil {
 
-  public globalRulesAndRuleEntries: string [] = [];
   public globalRuleTableLines: string [] = [];
 
-  public async buildInitialMarkDownLinesForRules(ruleGlobal: any, ruleType: string) {
+  public async buildInitialMarkDownLinesForRules(ruleGlobal: any) {
 
     this.globalRuleTableLines = [
-      "| " + ruleType + " Rule | Is Active | Rule Entries Count |",
-      "| :------------- | :--: | :--: |"
+      `## ${ruleGlobal.fullName} Rules`,
+      "| Order |  Criteria | Assigned To | Assigned To Type | Email |",
+      "| :--: | :------------- | :--: | :--: | :--: |",
     ];
 
-    if (ruleGlobal) {
-      if (!Array.isArray(ruleGlobal)) {
-        ruleGlobal = [ruleGlobal];
+    if (ruleGlobal.ruleEntry) {
+      if (!Array.isArray(ruleGlobal.ruleEntry)) {
+        ruleGlobal.ruleEntry = [ruleGlobal.ruleEntry];
       }
-
-      for (const assignmentRule of ruleGlobal) {
-        let ruleEntries = assignmentRule.ruleEntry;
-        if (!Array.isArray(ruleEntries)) {
-          ruleEntries = [ruleEntries];
-        }
-
-        // adding object's global rules to the top table
-        // the "global" means: "assignment" | "Auto Response" | "Escalation"
-        this.globalRuleTableLines.push(`| ${assignmentRule.fullName} |  ${assignmentRule.active} | ${ruleEntries.length} |`);
-        // listing each global rule under the top table
-        this.globalRulesAndRuleEntries.push(`### ${assignmentRule.fullName}`);
-
-        if (assignmentRule.ruleEntry === undefined) {
-          this.globalRulesAndRuleEntries.push(`##### No criteria items found for this rule entry`);
-          this.globalRulesAndRuleEntries.push("");
-          continue;
-        }
-        let ruleCounter = 1;
-        for (const singleRuleEntry of ruleEntries) {
-
-          if (singleRuleEntry) {
-            // listing rule entries and their details per each global rule
-            this.globalRulesAndRuleEntries.push(`#### Rule #${ruleCounter}`);
-            this.globalRulesAndRuleEntries.push("| Assigned To Type | Assigned To | Formula |");
-            this.globalRulesAndRuleEntries.push("| :---- | :--: | :--: |");
-            this.globalRulesAndRuleEntries.push(`| ${singleRuleEntry.assignedToType} | ${singleRuleEntry.assignedTo} | \`${singleRuleEntry.formula || 'None'}\` |`);
-            this.globalRulesAndRuleEntries.push("");
-
-            // listing criteria items for each rule entry in a separate table
-            this.globalRulesAndRuleEntries.push(`#### Criteria Items for Rule #${ruleCounter}`);
-            this.globalRulesAndRuleEntries.push("| Field | Operation | Value|");
-            this.globalRulesAndRuleEntries.push("| :---- | :--: | :--: |");
-
-            if (singleRuleEntry) {
-              let criteriaItems = singleRuleEntry.criteriaItems;
-              if (!Array.isArray(criteriaItems)) {
-                criteriaItems = Array.of(criteriaItems);
-              }
-              for (const criteria of criteriaItems) {
-                this.globalRulesAndRuleEntries.push(`| ${criteria.field} | ${criteria.operation} | ${criteria.value.replace(/,/g, ', ')} |`);
-              }
-
-              this.globalRulesAndRuleEntries.push("");
-            }
-            ruleCounter++;
-          }
-        }
+      let order: number = 1;
+      for (const rule of ruleGlobal.ruleEntry) {
+        const criteria = rule?.criteriaItems ? this.formatCriteria(rule?.criteriaItems, rule?.booleanFilter) : rule?.formula ? JSON.stringify(rule.formula) : "None";
+        this.globalRuleTableLines.push(`| ${order} | ${criteria} |  ${rule.assignedTo} | ${rule.assignedToType} | ${(!!rule.template)} |`);
+        order++;
       }
     }
+  }
+
+  formatCriteria(criteriaItems: any[], booleanFilter: string): string {
+    if (!criteriaItems || criteriaItems.length === 0) {
+      return 'None';
+    } else {
+      if (!booleanFilter) {
+        if (!Array.isArray(criteriaItems)) {
+          criteriaItems = [criteriaItems];
+        }
+        return criteriaItems
+          .map((x => this.formatCriteriaItem(x)))
+          .join(' AND ');
+      } else {
+
+        let booleanResult: string = booleanFilter;
+        for (let i = 1; i <= criteriaItems.length; i++) {
+          booleanResult = booleanResult.replace(i.toString(), this.formatCriteriaItem(criteriaItems[i - 1]));
+        }
+        return booleanResult;
+      }
+
+    }
+  }
+
+  formatCriteriaItem(ci: any): string {
+    return '(' + ci.field.split('.')[0] + ': ' + ci.field.substring(ci.field.indexOf('.') + 1) + ' ' + ci.operation + ' ' + ci.value + ')';
   }
 }

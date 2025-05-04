@@ -6,9 +6,9 @@ import {RulesBuilderUtil} from "../utils/rulesBuilderUtil.js";
 export class DocBuilderAssignmentRules extends DocBuilderRoot {
 
   public docType = "AssignmentRules";
-  public placeholder = "<!-- Assignment Rules description -->";
+  public placeholder = "<!-- Assignment Rule description -->";
   public promptKey: PromptTemplate = "PROMPT_DESCRIBE_ASSIGNMENT_RULES";
-  public xmlRootKey = "AssignmentRules";
+  public xmlRootKey = "assignmentRule";
 
   public static buildIndexTable(prefix: string, assignmentRulesDescriptions: any, filterObject: string | null = null) {
     const filteredAssignmentRules = filterObject ? assignmentRulesDescriptions.filter(assignmentRule => assignmentRule.impactedObjects.includes(filterObject)) : assignmentRulesDescriptions;
@@ -19,14 +19,14 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
     lines.push(...[
       filterObject ? "## Related Assignment Rules" : "## Assignment Rules",
       "",
-      "| Assignment Rule | Count of Assignment Rules |",
+      "| Assignment Rule | Is Active |",
       "|     :----       |  :--: | "
     ]);
 
     for (const assignmentRule of filteredAssignmentRules) {
       const assignmentRuleNameCell = `[${assignmentRule.name}](${prefix}${assignmentRule.name}.md)`;
       lines.push(...[
-        `| ${assignmentRuleNameCell} | ${assignmentRule.count} |`
+        `| ${assignmentRuleNameCell} | ${assignmentRule.active} |`
       ]);
     }
     lines.push("");
@@ -37,20 +37,15 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
   public async buildInitialMarkdownLines(): Promise<string[]> {
 
     const ruleBuilderUtil = new RulesBuilderUtil();
-    await ruleBuilderUtil.buildInitialMarkDownLinesForRules(this.parsedXmlObject.assignmentRule, "Assignment");
+
+    await ruleBuilderUtil.buildInitialMarkDownLinesForRules(this.parsedXmlObject);
 
     const assignmentRuleTableLines: string [] = [...ruleBuilderUtil.globalRuleTableLines];
-    const assignmentRulesAndRuleEntries: string [] = [...ruleBuilderUtil.globalRulesAndRuleEntries];
 
     return [
-      `## ${this.metadataName}`,
-      '',
-      '<!-- Assignment Rules description -->',
+      '<!-- Assignment Rule description -->',
       '## Assignment Rules list',
       ...assignmentRuleTableLines,
-      '',
-      "## Assignment Rules - Rules Entries and their criteria",
-      ...assignmentRulesAndRuleEntries,
       '',
     ];
   }
