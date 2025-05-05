@@ -1073,6 +1073,13 @@ ${Project2Markdown.htmlInstructions}
           jsContent = await fs.readFile(jsFile, "utf8");
         }
         
+        // Read HTML template file
+        const htmlFile = path.join(lwcDirPath, `${lwcName}.html`);
+        let htmlContent = "";
+        if (fs.existsSync(htmlFile)) {
+          htmlContent = await fs.readFile(htmlFile, "utf8");
+        }
+        
         // Track this LWC in our descriptions array
         this.lwcDescriptions.push({
           name: lwcName,
@@ -1092,7 +1099,9 @@ ${Project2Markdown.htmlInstructions}
         await new DocBuilderLwc(lwcName, "", mdFile, {
           LWC_PATH: lwcDirPath,
           LWC_NAME: lwcName,
-          LWC_CODE: jsContent
+          LWC_JS_CODE: jsContent,
+          LWC_HTML_CODE: htmlContent,
+          LWC_JS_META: lwcMetaXml
         }).generateMarkdownFileFromXml();
         
         if (this.withPdf) {

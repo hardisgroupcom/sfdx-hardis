@@ -340,7 +340,7 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
     },
   },
   "PROMPT_DESCRIBE_LWC": {
-    variables: ["LWC_NAME", "LWC_CODE"],
+    variables: ["LWC_NAME", "LWC_JS_CODE", "LWC_HTML_CODE", "LWC_JS_META"],
     text: {
       "en": `You are a skilled Salesforce developer working on a Lightning Web Components (LWC) project. Your goal is to explain the Salesforce Lightning Web Component "{{LWC_NAME}}" in plain English, providing a detailed explanation suitable for other developers and business users.
 
@@ -355,7 +355,7 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
     - Describe the main JavaScript methods and their purposes.
     - Explain how the component handles data binding and events.
     - Mention any wire services, apex methods, or external services the component uses.
-    - Identify any custom properties, CSS customizations, or special configurations.
+    - Identify any custom properties or special configurations.
 
 3. **Formatting Requirements**:
     - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
@@ -365,9 +365,19 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
 
 ### Reference Data:
 
-- The code for Lightning Web Component "{{LWC_NAME}}" is:
+- The HTML template for component "{{LWC_NAME}}":
 \`\`\`
-{{LWC_CODE}}
+{{LWC_HTML_CODE}}
+\`\`\`
+
+- The JavaScript controller for component "{{LWC_NAME}}":
+\`\`\`
+{{LWC_JS_CODE}}
+\`\`\`
+
+- The metadata configuration for component "{{LWC_NAME}}":
+\`\`\`
+{{LWC_JS_META}}
 \`\`\`
 
 Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.

@@ -103,6 +103,11 @@ export class DocBuilderLwc extends DocBuilderRoot {
       const stats = await fs.stat(filePath);
       
       if (stats.isFile()) {
+        // Skip CSS files
+        if (file.endsWith('.css')) {
+          continue;
+        }
+        
         const fileContent = await fs.readFile(filePath, 'utf-8');
         componentCode += `// File: ${file}\n${fileContent}\n\n`;
       }
