@@ -33,6 +33,7 @@ import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPe
 import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
 import { DocBuilderAssignmentRules } from '../../../common/docBuilder/docBuilderAssignmentRules.js';
 import { DocBuilderApprovalProcess } from '../../../common/docBuilder/docBuilderApprovalProcess.js';
+import { DocBuilderLwc } from '../../../common/docBuilder/docBuilderLwc.js';
 import { DocBuilderAutoResponseRules } from "../../../common/docBuilder/docBuilderAutoResponseRules.js";
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -158,6 +159,7 @@ ${this.htmlInstructions}
   protected footer: string;
   protected apexDescriptions: any[] = [];
   protected flowDescriptions: any[] = [];
+  protected lwcDescriptions: any[] = [];
   protected pageDescriptions: any[] = [];
   protected profileDescriptions: any[] = [];
   protected permissionSetsDescriptions: any[] = [];
@@ -199,6 +201,7 @@ ${this.htmlInstructions}
       "  - [Permission Sets](permissionsets/index.md)",
       "- Code",
       "  - [Apex](apex/index.md)",
+      "  - [Lightning Web Components](lwc/index.md)",
       "- [Lightning Pages](pages/index.md)",
       "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
       "- [Branches & Orgs](sfdx-hardis-branches-and-orgs.md)",
@@ -284,6 +287,11 @@ ${this.htmlInstructions}
       await this.generateAssignmentRulesDocumentation();
       // List auto response rules and generate doc
       await this.generateAutoResponseRulesDocumentation();
+    }
+
+    // List LWC & generate doc
+    if (!(process?.env?.GENERATE_LWC_DOC === 'false')) {
+      await this.generateLwcDocumentation();
     }
 
     // Write output index file
@@ -740,7 +748,7 @@ ${Project2Markdown.htmlInstructions}
     const rootSections = [
       { menu: "Automations", subMenus: ["Approval Processes", "Assignment Rules", "AutoResponse Rules", "Flows"] },
       { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
-      { menu: "Code", subMenus: ["Apex"] },
+      { menu: "Code", subMenus: ["Apex", "Lightning Web Components"] },
     ];
     for (const rootSection of rootSections) {
       const navSubmenus: any[] = [];
@@ -1143,6 +1151,90 @@ ${Project2Markdown.htmlInstructions}
     }
   }
 
+  private async generateLwcDocumentation() {
+    uxLog(this, c.cyan("Generating Lightning Web Components documentation... " +
+      "(if you don't want it, define GENERATE_LWC_DOC=false in your environment variables)"));
 
+    const lwcForMenu: any = { "All Lightning Web Components": "lwc/index.md" };
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "lwc"));
 
+    const packageDirs = this.project?.getPackageDirectories() || [];
+
+    // Find all LWC components in all package directories
+    for (const packageDir of packageDirs) {
+      // Find LWC components (directories with .js-meta.xml files)
+      const lwcMetaFiles = await glob(`${packageDir.path}/**/lwc/**/*.js-meta.xml`, {
+        cwd: process.cwd(),
+        ignore: GLOB_IGNORE_PATTERNS
+      });
+
+      for (const lwcMetaFile of lwcMetaFiles) {
+        const lwcDirPath = path.dirname(lwcMetaFile);
+        const lwcName = path.basename(lwcDirPath);
+        const mdFile = path.join(this.outputMarkdownRoot, "lwc", lwcName + ".md");
+
+        lwcForMenu[lwcName] = "lwc/" + lwcName + ".md";
+
+        // Read XML metadata for information about the component
+        const lwcMetaXml = await fs.readFile(lwcMetaFile, "utf8");
+        const lwcMetaXmlParsed = new XMLParser().parse(lwcMetaXml);
+
+        // Read JS file to get a better idea of what objects this component works with
+        const jsFile = path.join(lwcDirPath, `${lwcName}.js`);
+        let jsContent = "";
+        if (fs.existsSync(jsFile)) {
+          jsContent = await fs.readFile(jsFile, "utf8");
+        }
+
+        // Read HTML template file
+        const htmlFile = path.join(lwcDirPath, `${lwcName}.html`);
+        let htmlContent = "";
+        if (fs.existsSync(htmlFile)) {
+          htmlContent = await fs.readFile(htmlFile, "utf8");
+        }
+
+        // Track this LWC in our descriptions array
+        this.lwcDescriptions.push({
+          name: lwcName,
+          description: lwcMetaXmlParsed?.LightningComponentBundle?.description ||
+                      lwcMetaXmlParsed?.LightningComponentBundle?.masterLabel || "",
+          targets: Array.isArray(lwcMetaXmlParsed?.LightningComponentBundle?.targets?.target)
+                  ? lwcMetaXmlParsed?.LightningComponentBundle?.targets?.target.join(", ")
+                  : lwcMetaXmlParsed?.LightningComponentBundle?.targets?.target || "",
+          isExposed: lwcMetaXmlParsed?.LightningComponentBundle?.isExposed,
+          impactedObjects: this.allObjectsNames.filter(objectName =>
+            lwcMetaXml.includes(`${objectName}`) ||
+            jsContent.includes(`${objectName}`)
+          ).join(", ")
+        });
+
+        // Generate the documentation file
+        await new DocBuilderLwc(lwcName, "", mdFile, {
+          LWC_PATH: lwcDirPath,
+          LWC_NAME: lwcName,
+          LWC_JS_CODE: jsContent,
+          LWC_HTML_CODE: htmlContent,
+          LWC_JS_META: lwcMetaXml
+        }).generateMarkdownFileFromXml();
+
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(mdFile);
+        }
+      }
+    }
+
+    this.addNavNode("Lightning Web Components", lwcForMenu);
+
+    // Write index file for LWC folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "lwc"));
+    const lwcIndexFile = path.join(this.outputMarkdownRoot, "lwc", "index.md");
+    await fs.writeFile(
+      lwcIndexFile,
+      getMetaHideLines() +
+      DocBuilderLwc.buildIndexTable('', this.lwcDescriptions).join("\n") +
+      `\n\n${this.footer}\n`
+    );
+
+    uxLog(this, c.green(`Successfully generated documentation for Lightning Web Components at ${lwcIndexFile}`));
+  }
 }
