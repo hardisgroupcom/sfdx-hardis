@@ -283,6 +283,8 @@
         "autocleantypes",
         "automations",
         "autoplay",
+        "AUTORESPONSE",
+        "AUTORESPONSERULES",
         "avant",
         "avec",
         "azdev",
