@@ -1,5 +1,4 @@
 import {DocBuilderRoot} from "./docBuilderRoot.js";
-import {XMLBuilder, XMLParser} from "fast-xml-parser";
 import {PromptTemplate} from "../aiProvider/promptTemplates.js";
 import {RulesBuilderUtil} from "../utils/rulesBuilderUtil.js";
 
@@ -47,10 +46,5 @@ export class DocBuilderAutoResponseRules extends DocBuilderRoot {
       '## AutoResponse Rules list',
       ...autoResponseRuleTableLines
     ];
-  }
-
-  public stripXmlForAi(): Promise<string> {
-    const xmlObj = new XMLParser().parse(this.metadataXml);
-    return new XMLBuilder().build(xmlObj);
   }
 }

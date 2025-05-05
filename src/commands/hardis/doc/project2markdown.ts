@@ -531,8 +531,6 @@ ${Project2Markdown.htmlInstructions}
       const assignmentRulesXmlParsed = new XMLParser().parse(assignmentRulesXml);
 
       const assignmentRulesName = path.basename(assignmentRulesFile, ".assignmentRules-meta.xml");
-      assignmentRulesForMenu[assignmentRulesName] = "assignmentRules/" + assignmentRulesName + ".md";
-
       // parsing one singe XML file with all the Assignment Rules per object:
       let rulesList = assignmentRulesXmlParsed?.AssignmentRules?.assignmentRule || [];
       if (!Array.isArray(rulesList)) {
@@ -620,7 +618,6 @@ ${Project2Markdown.htmlInstructions}
       const autoResponseRulesXmlParsed = new XMLParser().parse(autoResponseRulesXml);
 
       const autoResponseRulesName = path.basename(autoResponseRulesFile, ".autoResponseRules-meta.xml");
-      autoResponseRulesForMenu[autoResponseRulesName] = "autoResponseRules/" + autoResponseRulesName + ".md";
 
       // parsing one single XML file with all the AutoResponse Rules per object:
       let rulesList = autoResponseRulesXmlParsed?.AutoResponseRules?.autoResponseRule || [];
