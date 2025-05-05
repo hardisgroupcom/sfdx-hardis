@@ -23,6 +23,41 @@ export class RulesBuilderUtil {
     }
   }
 
+  public async buildInitialMarkDownLinesForEscalationRules(ruleGlobal: any) {
+
+    this.globalRuleTableLines = [
+      `## ${ruleGlobal.fullName} Rules`,
+      "| Order |  Criteria | Actions |",
+      "| :--: | :------------- | :------------- |",
+    ];
+
+    if (ruleGlobal.ruleEntry) {
+      if (!Array.isArray(ruleGlobal.ruleEntry)) {
+        ruleGlobal.ruleEntry = [ruleGlobal.ruleEntry];
+      }
+      let order: number = 1;
+      for (const rule of ruleGlobal.ruleEntry) {
+        const criteria = rule?.criteriaItems ? this.formatCriteria(rule?.criteriaItems, rule?.booleanFilter) : rule?.formula ? JSON.stringify(rule.formula) : "None";
+        const actions = rule?.escalationAction ? this.formatActions(rule?.escalationAction) : "None";
+        this.globalRuleTableLines.push(`| ${order} | ${criteria} | ${actions} |`);
+        order++;
+      }
+    }
+  }
+
+  formatActions(actionItems: any[]): string {
+    if (!actionItems || actionItems.length === 0) {
+      return "None";
+    } else {
+        if (!Array.isArray(actionItems)) {
+          actionItems = [actionItems];
+        }
+        return actionItems
+          .map((x => this.formatActionItem(x)))
+          .join(' AND ');
+      }
+  }
+
   formatCriteria(criteriaItems: any[], booleanFilter: string): string {
     if (!criteriaItems || criteriaItems.length === 0) {
       return 'None';
@@ -47,6 +82,10 @@ export class RulesBuilderUtil {
   }
 
   formatCriteriaItem(ci: any): string {
-    return '(' + ci.field.split('.')[0] + ': ' + ci.field.substring(ci.field.indexOf('.') + 1) + ' ' + ci.operation + ' ' + ci.value + ')';
+    return '(**' + ci.field.split('.')[0] + '**: ' + ci.field.substring(ci.field.indexOf('.') + 1) + ' _' + ci.operation + '_ ' + ci.value.replaceAll(",", ", ") + ')<br>';
+  }
+
+  formatActionItem(ai: any): string {
+    return '<table>  <thead>  <tr>  <th>Field</th>  <th>Value</th>  </tr>  </thead>  <tbody>  <tr>  <td>**Mins to escalations**:</td>  <td>ai.minutesToEscalation</td>  </tr>  <tr>  <td>**Assign To**:</td>  <td>ai.assignedTo</td>  </tr>  <tr>  <td>**Notify**:</td>  <td>ai.notifyTo</td>  </tr>  </tbody>  </table> ';
   }
 }

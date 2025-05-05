@@ -34,6 +34,7 @@ import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuil
 import { DocBuilderAssignmentRules } from '../../../common/docBuilder/docBuilderAssignmentRules.js';
 import { DocBuilderApprovalProcess } from '../../../common/docBuilder/docBuilderApprovalProcess.js';
 import { DocBuilderLwc } from '../../../common/docBuilder/docBuilderLwc.js';
+import { DocBuilderEscalationRules } from '../../../common/docBuilder/docBuilderEscalationRules.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -165,6 +166,7 @@ ${this.htmlInstructions}
   protected permissionSetGroupsDescriptions: any[] = [];
   protected assignmentRulesDescriptions: any[] = [];
   protected approvalProcessesDescriptions: any[] = [];
+  protected escalationRulesDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
   protected objectFiles: string[];
   protected allObjectsNames: string[];
@@ -191,6 +193,7 @@ ${this.htmlInstructions}
       "- Automations",
       "  - [Approval Processes](approvalProcesses/index.md)",
       "  - [Assignment Rules](assignmentRules/index.md)",
+      "  - [Escalation Rules](escalationRules/index.md)",
       "  - [Flows](flows/index.md)",
       "- Authorizations",
       "  - [Profiles](profiles/index.md)",
@@ -282,6 +285,9 @@ ${this.htmlInstructions}
       await this.generateApprovalProcessDocumentation();
       // List assignment rules and generate doc
       await this.generateAssignmentRulesDocumentation();
+      // List escalation rules and generate doc
+      await this.generateEscalationRulesDocumentation();
+
     }
 
     // List LWC & generate doc
@@ -563,7 +569,6 @@ ${Project2Markdown.htmlInstructions}
 
     this.addNavNode("Assignment Rules", assignmentRulesForMenu);
 
-    // Write index file for permission set groups folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "assignmentRules"));
     const psgIndexFile = path.join(this.outputMarkdownRoot, "assignmentRules", "index.md");
     await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderAssignmentRules.buildIndexTable('', this.assignmentRulesDescriptions).join("\n") + `\n${this.footer}\n`);
@@ -600,10 +605,59 @@ ${Project2Markdown.htmlInstructions}
     }
 
     this.addNavNode("Approval Processes", approvalProcessesForMenu);
-    // Write index file for apex folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "approvalProcesses"));
     const approvalProcessesIndexFile = path.join(this.outputMarkdownRoot, "approvalProcesses", "index.md");
     await fs.writeFile(approvalProcessesIndexFile, getMetaHideLines() + DocBuilderApprovalProcess.buildIndexTable('', this.approvalProcessesDescriptions).join("\n") + `\n\n${this.footer}\n`);
+  }
+
+  private async generateEscalationRulesDocumentation() {
+    uxLog(this, c.cyan("Generating Escalation Rules documentation... " +
+      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
+
+    const escalationRulesForMenu: any = {"All Escalation Rules": "escalationRules/index.md"};
+    const escalationRulesFiles = (await glob("**/escalationRules/**.escalationRules-meta.xml", {
+      cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
+    })).sort();
+    const builder = new XMLBuilder();
+
+    for (const escalationRulesFile of escalationRulesFiles) {
+
+      const escalationRulesXml = await fs.readFile(escalationRulesFile, "utf8");
+      const escalationRulesXmlParsed = new XMLParser().parse(escalationRulesXml);
+
+      const escalationRulesName = path.basename(escalationRulesFile, ".escalationRules-meta.xml");
+
+      // parsing one singe XML file with all the Escalation Rules for Case:
+      let rulesList = escalationRulesXmlParsed?.EscalationRules?.escalationRule || [];
+      if (!Array.isArray(rulesList)) {
+        rulesList = [rulesList];
+      }
+
+      for (const rule of rulesList) {
+        const currentRuleName = escalationRulesName + "." + rule?.fullName;
+        escalationRulesForMenu[currentRuleName] = "escalationRules/" + currentRuleName + ".md";
+        const mdFile = path.join(this.outputMarkdownRoot, "escalationRules", currentRuleName + ".md");
+
+        this.escalationRulesDescriptions.push({
+          name: currentRuleName,
+          active: rule.active,
+        });
+
+        const ruleXml = builder.build({ escalationRule: rule });
+
+        await new DocBuilderEscalationRules(currentRuleName, ruleXml, mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(mdFile);
+        }
+      }
+    }
+
+    this.addNavNode("Escalation Rules", escalationRulesForMenu);
+
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "escalationRules"));
+    const psgIndexFile = path.join(this.outputMarkdownRoot, "escalationRules", "index.md");
+    await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderEscalationRules.buildIndexTable('', this.escalationRulesDescriptions).join("\n") + `\n${this.footer}\n`);
   }
 
   private async buildMkDocsYml() {
@@ -693,7 +747,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Add root menus
     const rootSections = [
-      { menu: "Automations", subMenus: ["Approval Processes", "Assignment Rules", "Flows"] },
+      { menu: "Automations", subMenus: ["Approval Processes", "Assignment Rules", "Escalation Rules", "Flows"] },
       { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
       { menu: "Code", subMenus: ["Apex", "Lightning Web Components"] },
     ];
@@ -807,6 +861,10 @@ ${Project2Markdown.htmlInstructions}
       // Assignment Rules table
       const relatedAssignmentRulesTable = DocBuilderAssignmentRules.buildIndexTable('../assignmentRules/', this.assignmentRulesDescriptions, objectName);
       await replaceInFile(objectMdFile, '<!-- AssignmentRules table -->', relatedAssignmentRulesTable.join("\n"));
+      // Escalation Rules table
+      const relatedEscalationRulesTable = DocBuilderEscalationRules.buildIndexTable('../escalationRules/', this.escalationRulesDescriptions, objectName);
+      await replaceInFile(objectMdFile, '<!-- EscalationRules table -->', relatedEscalationRulesTable.join("\n"));
+
 
       this.objectDescriptions.push({
         name: objectName,
@@ -1104,24 +1162,24 @@ ${Project2Markdown.htmlInstructions}
 
     const lwcForMenu: any = { "All Lightning Web Components": "lwc/index.md" };
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "lwc"));
-    
+
     const packageDirs = this.project?.getPackageDirectories() || [];
-    
+
     // Find all LWC components in all package directories
     for (const packageDir of packageDirs) {
       // Find LWC components (directories with .js-meta.xml files)
-      const lwcMetaFiles = await glob(`${packageDir.path}/**/lwc/**/*.js-meta.xml`, { 
-        cwd: process.cwd(), 
-        ignore: GLOB_IGNORE_PATTERNS 
+      const lwcMetaFiles = await glob(`${packageDir.path}/**/lwc/**/*.js-meta.xml`, {
+        cwd: process.cwd(),
+        ignore: GLOB_IGNORE_PATTERNS
       });
 
       for (const lwcMetaFile of lwcMetaFiles) {
         const lwcDirPath = path.dirname(lwcMetaFile);
         const lwcName = path.basename(lwcDirPath);
         const mdFile = path.join(this.outputMarkdownRoot, "lwc", lwcName + ".md");
-        
+
         lwcForMenu[lwcName] = "lwc/" + lwcName + ".md";
-        
+
         // Read XML metadata for information about the component
         const lwcMetaXml = await fs.readFile(lwcMetaFile, "utf8");
         const lwcMetaXmlParsed = new XMLParser().parse(lwcMetaXml);
@@ -1132,29 +1190,29 @@ ${Project2Markdown.htmlInstructions}
         if (fs.existsSync(jsFile)) {
           jsContent = await fs.readFile(jsFile, "utf8");
         }
-        
+
         // Read HTML template file
         const htmlFile = path.join(lwcDirPath, `${lwcName}.html`);
         let htmlContent = "";
         if (fs.existsSync(htmlFile)) {
           htmlContent = await fs.readFile(htmlFile, "utf8");
         }
-        
+
         // Track this LWC in our descriptions array
         this.lwcDescriptions.push({
           name: lwcName,
-          description: lwcMetaXmlParsed?.LightningComponentBundle?.description || 
+          description: lwcMetaXmlParsed?.LightningComponentBundle?.description ||
                       lwcMetaXmlParsed?.LightningComponentBundle?.masterLabel || "",
-          targets: Array.isArray(lwcMetaXmlParsed?.LightningComponentBundle?.targets?.target) 
-                  ? lwcMetaXmlParsed?.LightningComponentBundle?.targets?.target.join(", ") 
+          targets: Array.isArray(lwcMetaXmlParsed?.LightningComponentBundle?.targets?.target)
+                  ? lwcMetaXmlParsed?.LightningComponentBundle?.targets?.target.join(", ")
                   : lwcMetaXmlParsed?.LightningComponentBundle?.targets?.target || "",
           isExposed: lwcMetaXmlParsed?.LightningComponentBundle?.isExposed,
-          impactedObjects: this.allObjectsNames.filter(objectName => 
-            lwcMetaXml.includes(`${objectName}`) || 
+          impactedObjects: this.allObjectsNames.filter(objectName =>
+            lwcMetaXml.includes(`${objectName}`) ||
             jsContent.includes(`${objectName}`)
           ).join(", ")
         });
-        
+
         // Generate the documentation file
         await new DocBuilderLwc(lwcName, "", mdFile, {
           LWC_PATH: lwcDirPath,
@@ -1163,7 +1221,7 @@ ${Project2Markdown.htmlInstructions}
           LWC_HTML_CODE: htmlContent,
           LWC_JS_META: lwcMetaXml
         }).generateMarkdownFileFromXml();
-        
+
         if (this.withPdf) {
           await generatePdfFileFromMarkdown(mdFile);
         }
@@ -1171,17 +1229,17 @@ ${Project2Markdown.htmlInstructions}
     }
 
     this.addNavNode("Lightning Web Components", lwcForMenu);
-    
+
     // Write index file for LWC folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "lwc"));
     const lwcIndexFile = path.join(this.outputMarkdownRoot, "lwc", "index.md");
     await fs.writeFile(
-      lwcIndexFile, 
-      getMetaHideLines() + 
-      DocBuilderLwc.buildIndexTable('', this.lwcDescriptions).join("\n") + 
+      lwcIndexFile,
+      getMetaHideLines() +
+      DocBuilderLwc.buildIndexTable('', this.lwcDescriptions).join("\n") +
       `\n\n${this.footer}\n`
     );
-    
+
     uxLog(this, c.green(`Successfully generated documentation for Lightning Web Components at ${lwcIndexFile}`));
   }
 }
