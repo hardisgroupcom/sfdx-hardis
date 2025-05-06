@@ -54,7 +54,7 @@ export class RulesBuilderUtil {
         }
         return actionItems
           .map((x => this.formatActionItem(x)))
-          .join(' AND ');
+          .join('');
       }
   }
 
@@ -86,6 +86,6 @@ export class RulesBuilderUtil {
   }
 
   formatActionItem(ai: any): string {
-    return '<table>  <thead>  <tr>  <th>Field</th>  <th>Value</th>  </tr>  </thead>  <tbody>  <tr>  <td>**Mins to escalations**:</td>  <td>ai.minutesToEscalation</td>  </tr>  <tr>  <td>**Assign To**:</td>  <td>ai.assignedTo</td>  </tr>  <tr>  <td>**Notify**:</td>  <td>ai.notifyTo</td>  </tr>  </tbody>  </table> ';
+    return '<table> <tbody>  <tr>  <td>**Mins to escalations**:</td>  <td>' + ai.minutesToEscalation + '</td>  </tr>  <tr>  <td>**Assign To**:</td>  <td>' + ai.assignedTo + '</td>  </tr>  <tr>  <td>**Notify**:</td>  <td>' + ai.notifyTo + '</td>  </tr>  </tbody>  </table> ';
   }
 }
