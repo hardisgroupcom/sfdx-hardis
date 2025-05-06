@@ -8,10 +8,25 @@ description: Learn how to generate Salesforce project documentation, including F
 
 With a single command, you can generate a Web Site documenting your Salesforce metadatas
 
-- Custom Objects (with fields, validation rules, relationships and dependencies)
-- Flows
-- Apex Classes
+- Objects (with fields, validation rules, relationships and dependencies)
+- Automations
+  - Approval Processes
+  - Assignment Rules
+  - AutoResponse Rules
+  - Escalation Rules
+  - Flows
+- Authorizations
+  - Profiles
+  - Permission Set Groups
+  - Permission Sets
+- Code
+  - Apex
+  - Lightning Web Components
 - Lightning Pages
+- SFDX-Hardis Config
+- Branches & Orgs
+- Installed Packages
+- Manifests
 
 The documentation will be [supercharged with AI](salesforce-ai-setup.md) if activated;
 
