@@ -35,6 +35,7 @@ import { DocBuilderAssignmentRules } from '../../../common/docBuilder/docBuilder
 import { DocBuilderApprovalProcess } from '../../../common/docBuilder/docBuilderApprovalProcess.js';
 import { DocBuilderLwc } from '../../../common/docBuilder/docBuilderLwc.js';
 import { DocBuilderAutoResponseRules } from "../../../common/docBuilder/docBuilderAutoResponseRules.js";
+import { DocBuilderEscalationRules } from '../../../common/docBuilder/docBuilderEscalationRules.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -167,6 +168,7 @@ ${this.htmlInstructions}
   protected assignmentRulesDescriptions: any[] = [];
   protected autoResponseRulesDescriptions: any[] = [];
   protected approvalProcessesDescriptions: any[] = [];
+  protected escalationRulesDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
   protected objectFiles: string[];
   protected allObjectsNames: string[];
@@ -194,6 +196,7 @@ ${this.htmlInstructions}
       "  - [Approval Processes](approvalProcesses/index.md)",
       "  - [Assignment Rules](assignmentRules/index.md)",
       "  - [AutoResponse Rules](autoResponseRules/index.md)",
+      "  - [Escalation Rules](escalationRules/index.md)",
       "  - [Flows](flows/index.md)",
       "- Authorizations",
       "  - [Profiles](profiles/index.md)",
@@ -287,6 +290,8 @@ ${this.htmlInstructions}
       await this.generateAssignmentRulesDocumentation();
       // List auto response rules and generate doc
       await this.generateAutoResponseRulesDocumentation();
+      // List escalation rules and generate doc
+      await this.generateEscalationRulesDocumentation();
     }
 
     // List LWC & generate doc
@@ -566,7 +571,6 @@ ${Project2Markdown.htmlInstructions}
 
     this.addNavNode("Assignment Rules", assignmentRulesForMenu);
 
-    // Write index file for permission set groups folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "assignmentRules"));
     const psgIndexFile = path.join(this.outputMarkdownRoot, "assignmentRules", "index.md");
     await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderAssignmentRules.buildIndexTable('', this.assignmentRulesDescriptions).join("\n") + `\n${this.footer}\n`);
@@ -603,7 +607,6 @@ ${Project2Markdown.htmlInstructions}
     }
 
     this.addNavNode("Approval Processes", approvalProcessesForMenu);
-    // Write index file for apex folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "approvalProcesses"));
     const approvalProcessesIndexFile = path.join(this.outputMarkdownRoot, "approvalProcesses", "index.md");
     await fs.writeFile(approvalProcessesIndexFile, getMetaHideLines() + DocBuilderApprovalProcess.buildIndexTable('', this.approvalProcessesDescriptions).join("\n") + `\n\n${this.footer}\n`);
@@ -657,6 +660,56 @@ ${Project2Markdown.htmlInstructions}
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "autoResponseRules"));
     const psgIndexFile = path.join(this.outputMarkdownRoot, "autoResponseRules", "index.md");
     await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderAutoResponseRules.buildIndexTable('', this.autoResponseRulesDescriptions).join("\n") + `\n${this.footer}\n`);
+  }
+
+  private async generateEscalationRulesDocumentation() {
+    uxLog(this, c.cyan("Generating Escalation Rules documentation... " +
+      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
+
+    const escalationRulesForMenu: any = {"All Escalation Rules": "escalationRules/index.md"};
+    const escalationRulesFiles = (await glob("**/escalationRules/**.escalationRules-meta.xml", {
+      cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
+    })).sort();
+    const builder = new XMLBuilder();
+
+    for (const escalationRulesFile of escalationRulesFiles) {
+
+      const escalationRulesXml = await fs.readFile(escalationRulesFile, "utf8");
+      const escalationRulesXmlParsed = new XMLParser().parse(escalationRulesXml);
+
+      const escalationRulesName = path.basename(escalationRulesFile, ".escalationRules-meta.xml");
+
+      // parsing one singe XML file with all the Escalation Rules for Case:
+      let rulesList = escalationRulesXmlParsed?.EscalationRules?.escalationRule || [];
+      if (!Array.isArray(rulesList)) {
+        rulesList = [rulesList];
+      }
+
+      for (const rule of rulesList) {
+        const currentRuleName = escalationRulesName + "." + rule?.fullName;
+        escalationRulesForMenu[currentRuleName] = "escalationRules/" + currentRuleName + ".md";
+        const mdFile = path.join(this.outputMarkdownRoot, "escalationRules", currentRuleName + ".md");
+
+        this.escalationRulesDescriptions.push({
+          name: currentRuleName,
+          active: rule.active,
+        });
+
+        const ruleXml = builder.build({ escalationRule: rule });
+
+        await new DocBuilderEscalationRules(currentRuleName, ruleXml, mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(mdFile);
+        }
+      }
+    }
+
+    this.addNavNode("Escalation Rules", escalationRulesForMenu);
+
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "escalationRules"));
+    const psgIndexFile = path.join(this.outputMarkdownRoot, "escalationRules", "index.md");
+    await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderEscalationRules.buildIndexTable('', this.escalationRulesDescriptions).join("\n") + `\n${this.footer}\n`);
   }
 
   private async buildMkDocsYml() {
@@ -746,7 +799,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Add root menus
     const rootSections = [
-      { menu: "Automations", subMenus: ["Approval Processes", "Assignment Rules", "AutoResponse Rules", "Flows"] },
+      { menu: "Automations", subMenus: ["Approval Processes", "Assignment Rules", "AutoResponse Rules", "Escalation Rules", "Flows"] },
       { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
       { menu: "Code", subMenus: ["Apex", "Lightning Web Components"] },
     ];
@@ -860,6 +913,12 @@ ${Project2Markdown.htmlInstructions}
       // Assignment Rules table
       const relatedAssignmentRulesTable = DocBuilderAssignmentRules.buildIndexTable('../assignmentRules/', this.assignmentRulesDescriptions, objectName);
       await replaceInFile(objectMdFile, '<!-- AssignmentRules table -->', relatedAssignmentRulesTable.join("\n"));
+      // AutoResponse Rules table
+      const relatedAutoResponseRulesTable = DocBuilderAutoResponseRules.buildIndexTable('../autoResponseRules/', this.autoResponseRulesDescriptions, objectName);
+      await replaceInFile(objectMdFile, '<!-- AutoResponseRules table -->', relatedAutoResponseRulesTable.join("\n"));
+      // Escalation Rules table
+      const relatedEscalationRulesTable = DocBuilderEscalationRules.buildIndexTable('../escalationRules/', this.escalationRulesDescriptions, objectName);
+      await replaceInFile(objectMdFile, '<!-- EscalationRules table -->', relatedEscalationRulesTable.join("\n"));
 
       this.objectDescriptions.push({
         name: objectName,
