@@ -59,6 +59,8 @@ Regular setup actions performed in major orgs are filtered.
   - changedinteractionuseronoff
   - changedmarketinguseroffon
   - changedmarketinguseronoff
+  - changedofflineuseroffon
+  - changedprofileforuserstdtostd
   - changedprofileforuser
   - changedprofileforusercusttostd
   - changedprofileforuserstdtocust
@@ -245,6 +247,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         'changedmarketinguseroffon',
         'changedmarketinguseronoff',
         'changedManager',
+        "changedofflineuseroffon",
         'changedprofileforuser',
         'changedprofileforusercusttostd',
         'changedprofileforuserstdtocust',
@@ -252,6 +255,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         'changedroleforuser',
         'changedroleforuserfromnone',
         'changedpassword',
+        "changedprofileforuserstdtostd",
         'changedsfcontentuseroffon',
         'changedUserEmailVerifiedStatusUnverified',
         'changedUserEmailVerifiedStatusVerified',
