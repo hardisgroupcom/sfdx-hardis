@@ -4,7 +4,7 @@ import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
 
 // Perform simple SOQL query (max results: 10000)
-export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
+export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
   uxLog(
     this,
     c.grey(
@@ -14,7 +14,18 @@ export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
       conn.instanceUrl
     )
   );
-  return Promise.resolve(conn.query(soqlQuery));
+  // First query
+  const res = await conn.query(soqlQuery);
+  let pageRes = Object.assign({}, res);
+
+  // Get all page results
+  while (pageRes.done === false && pageRes.nextRecordsUrl) {
+    uxLog(this, c.grey(`Fetching next batch of records...`));
+    pageRes = await conn.queryMore(pageRes.nextRecordsUrl);
+    res.records.push(...pageRes.records);
+  }
+
+  return res;
 }
 
 // Perform simple SOQL query with Tooling API
@@ -90,7 +101,7 @@ export async function bulkQueryChunksIn(
   }
   return results;
 }
- 
+
 
 // New method to bulk query records by chunks of 10000
 export async function bulkQueryByChunks(
@@ -118,7 +129,7 @@ export async function bulkQueryByChunks(
 
   return results;
 }
- 
+
 
 let spinner: Ora;
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory

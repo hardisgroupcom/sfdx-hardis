@@ -5,6 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { bulkQuery } from '../../../../common/utils/apiUtils.js';
+import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
@@ -370,6 +371,77 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       }
       return record;
     });
+
+    // Add custom settings tracking
+    uxLog(this, c.cyan(`Retrieving Custom Settings modifications...`));
+    const customSettingsQuery = `SELECT QualifiedApiName, Label FROM EntityDefinition 
+                           WHERE IsCustomSetting = true`;
+    const customSettingsResult = await soqlQuery(customSettingsQuery, conn);
+    uxLog(this, c.cyan(`Found ${customSettingsResult.records.length} Custom Settings`));
+
+    let whereConstraintCustomSetting = `WHERE LastModifiedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND CreatedBy.Username != NULL `;
+    if (this.excludeUsers.length > 0) {
+      whereConstraintCustomSetting += `AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
+    }
+    // Get custom settings modifications
+    const customSettingModifications: any[] = [];
+    for (const cs of customSettingsResult.records) {
+      try {
+        const result = await soqlQuery(
+          `SELECT Id, CreatedDate, CreatedBy.Name, CreatedBy.Username, 
+             LastModifiedDate, LastModifiedBy.Name, LastModifiedBy.Username 
+             FROM ${cs.QualifiedApiName} `
+          + whereConstraintCustomSetting,
+          conn
+        );
+
+        if (result.records.length > 0) {
+          result.records.forEach(record => {
+            customSettingModifications.push({
+              CreatedDate: record.LastModifiedDate,
+              'CreatedBy.Name': record['LastModifiedBy.Name'],
+              'CreatedBy.Username': record['LastModifiedBy.Username'],
+              Action: 'modified',
+              Section: 'Custom Settings',
+              Display: `Modified Custom Setting: ${cs.Label} (${cs.QualifiedApiName})`,
+              ResponsibleNamespacePrefix: null,
+              DelegateUser: null,
+              Suspect: true,
+              severity: 'warning',
+              severityIcon: getSeverityIcon('warning'),
+              SuspectReason: `Custom Setting modification`
+            });
+          });
+        }
+      } catch (error) {
+        uxLog(this, c.red(`Error querying Custom Setting ${cs.Label}: ${error}`));
+        continue;
+      }
+    }
+    // Add custom setting modifications to audit trail records
+    if (customSettingModifications.length > 0) {
+      uxLog(this, c.yellow(`Found ${customSettingModifications.length} Custom Setting modifications`));
+      this.auditTrailRecords.push(...customSettingModifications);
+
+      // Add to suspect records
+      customSettingModifications.forEach(mod => {
+        suspectRecords.push(mod);
+        const suspectUserDisplayName = mod['CreatedBy.Name'];
+        suspectUsers.push(suspectUserDisplayName);
+        const actionFullName = `${mod.Section} - ${mod.Display}`;
+        suspectActions.push(actionFullName);
+
+        if (!suspectUsersAndActions[suspectUserDisplayName]) {
+          suspectUsersAndActions[suspectUserDisplayName] = {
+            name: mod['CreatedBy.Name'],
+            actions: []
+          };
+        }
+        if (!suspectUsersAndActions[suspectUserDisplayName].actions.includes('Custom Setting modification')) {
+          suspectUsersAndActions[suspectUserDisplayName].actions.push('Custom Setting modification');
+        }
+      });
+    }
 
     let statusCode = 0;
     let msg = 'No suspect Setup Audit Trail records has been found';
