@@ -34,6 +34,7 @@ import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuil
 import { DocBuilderAssignmentRules } from '../../../common/docBuilder/docBuilderAssignmentRules.js';
 import { DocBuilderApprovalProcess } from '../../../common/docBuilder/docBuilderApprovalProcess.js';
 import { DocBuilderLwc } from '../../../common/docBuilder/docBuilderLwc.js';
+import { DocBuilderAutoResponseRules } from "../../../common/docBuilder/docBuilderAutoResponseRules.js";
 import { DocBuilderEscalationRules } from '../../../common/docBuilder/docBuilderEscalationRules.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -165,6 +166,7 @@ ${this.htmlInstructions}
   protected permissionSetsDescriptions: any[] = [];
   protected permissionSetGroupsDescriptions: any[] = [];
   protected assignmentRulesDescriptions: any[] = [];
+  protected autoResponseRulesDescriptions: any[] = [];
   protected approvalProcessesDescriptions: any[] = [];
   protected escalationRulesDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
@@ -193,6 +195,7 @@ ${this.htmlInstructions}
       "- Automations",
       "  - [Approval Processes](approvalProcesses/index.md)",
       "  - [Assignment Rules](assignmentRules/index.md)",
+      "  - [AutoResponse Rules](autoResponseRules/index.md)",
       "  - [Escalation Rules](escalationRules/index.md)",
       "  - [Flows](flows/index.md)",
       "- Authorizations",
@@ -285,9 +288,10 @@ ${this.htmlInstructions}
       await this.generateApprovalProcessDocumentation();
       // List assignment rules and generate doc
       await this.generateAssignmentRulesDocumentation();
+      // List auto response rules and generate doc
+      await this.generateAutoResponseRulesDocumentation();
       // List escalation rules and generate doc
       await this.generateEscalationRulesDocumentation();
-
     }
 
     // List LWC & generate doc
@@ -540,8 +544,6 @@ ${Project2Markdown.htmlInstructions}
       const assignmentRulesXmlParsed = new XMLParser().parse(assignmentRulesXml);
 
       const assignmentRulesName = path.basename(assignmentRulesFile, ".assignmentRules-meta.xml");
-      assignmentRulesForMenu[assignmentRulesName] = "assignmentRules/" + assignmentRulesName + ".md";
-
       // parsing one singe XML file with all the Assignment Rules per object:
       let rulesList = assignmentRulesXmlParsed?.AssignmentRules?.assignmentRule || [];
       if (!Array.isArray(rulesList)) {
@@ -608,6 +610,56 @@ ${Project2Markdown.htmlInstructions}
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "approvalProcesses"));
     const approvalProcessesIndexFile = path.join(this.outputMarkdownRoot, "approvalProcesses", "index.md");
     await fs.writeFile(approvalProcessesIndexFile, getMetaHideLines() + DocBuilderApprovalProcess.buildIndexTable('', this.approvalProcessesDescriptions).join("\n") + `\n\n${this.footer}\n`);
+  }
+
+  private async generateAutoResponseRulesDocumentation() {
+    uxLog(this, c.cyan("Generating AutoResponse Rules documentation... " +
+      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
+
+    const autoResponseRulesForMenu: any = {"All AutoResponse Rules": "autoResponseRules/index.md"};
+    const autoResponseRulesFiles = (await glob("**/autoResponseRules/**.autoResponseRules-meta.xml", {
+      cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
+    })).sort();
+    const builder = new XMLBuilder();
+
+    for (const autoResponseRulesFile of autoResponseRulesFiles) {
+
+      const autoResponseRulesXml = await fs.readFile(autoResponseRulesFile, "utf8");
+      const autoResponseRulesXmlParsed = new XMLParser().parse(autoResponseRulesXml);
+
+      const autoResponseRulesName = path.basename(autoResponseRulesFile, ".autoResponseRules-meta.xml");
+
+      // parsing one single XML file with all the AutoResponse Rules per object:
+      let rulesList = autoResponseRulesXmlParsed?.AutoResponseRules?.autoResponseRule || [];
+      if (!Array.isArray(rulesList)) {
+        rulesList = [rulesList];
+      }
+
+      for (const rule of rulesList) {
+        const currentRuleName = autoResponseRulesName + "." + rule?.fullName;
+        autoResponseRulesForMenu[currentRuleName] = "autoResponseRules/" + currentRuleName + ".md";
+        const mdFile = path.join(this.outputMarkdownRoot, "autoResponseRules", currentRuleName + ".md");
+
+        this.autoResponseRulesDescriptions.push({
+          name: currentRuleName,
+          active: rule.active,
+        });
+
+        const ruleXml = builder.build({autoResponseRule: rule});
+
+        await new DocBuilderAutoResponseRules(currentRuleName, ruleXml, mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(mdFile);
+        }
+      }
+    }
+    this.addNavNode("AutoResponse Rules", autoResponseRulesForMenu);
+
+    // Write index file for permission set groups folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "autoResponseRules"));
+    const psgIndexFile = path.join(this.outputMarkdownRoot, "autoResponseRules", "index.md");
+    await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderAutoResponseRules.buildIndexTable('', this.autoResponseRulesDescriptions).join("\n") + `\n${this.footer}\n`);
   }
 
   private async generateEscalationRulesDocumentation() {
@@ -747,7 +799,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Add root menus
     const rootSections = [
-      { menu: "Automations", subMenus: ["Approval Processes", "Assignment Rules", "Escalation Rules", "Flows"] },
+      { menu: "Automations", subMenus: ["Approval Processes", "Assignment Rules", "AutoResponse Rules", "Escalation Rules", "Flows"] },
       { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
       { menu: "Code", subMenus: ["Apex", "Lightning Web Components"] },
     ];
