@@ -57,9 +57,20 @@ To just generate HTML pages that you can host anywhere, run \`mkdocs build -v ||
 
   public static description = `Generates a markdown documentation from a SFDX project
 
-- Objects
-- Flows
-- Apex
+- Objects (with fields, validation rules, relationships and dependencies)
+- Automations
+  - Approval Processes
+  - Assignment Rules
+  - AutoResponse Rules
+  - Escalation Rules
+  - Flows
+- Authorizations
+  - Profiles
+  - Permission Set Groups
+  - Permission Sets
+- Code
+  - Apex
+  - Lightning Web Components
 - Lightning Pages
 - SFDX-Hardis Config
 - Branches & Orgs
