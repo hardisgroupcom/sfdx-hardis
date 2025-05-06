@@ -102,7 +102,6 @@ export async function bulkQueryChunksIn(
   return results;
 }
 
-
 // New method to bulk query records by chunks of 10000
 export async function bulkQueryByChunks(
   soqlQuery: string,
@@ -129,7 +128,6 @@ export async function bulkQueryByChunks(
 
   return results;
 }
-
 
 let spinner: Ora;
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
