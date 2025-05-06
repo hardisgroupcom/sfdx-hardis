@@ -421,6 +421,7 @@
         "errorflow",
         "erroronwarnings",
         "errorprone",
+        "ESCALATIONRULES",
         "eslintcache",
         "espace",
         "eventtype",
