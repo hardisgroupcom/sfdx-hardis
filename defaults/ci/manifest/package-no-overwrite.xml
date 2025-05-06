@@ -21,6 +21,11 @@
     <name>Dashboard</name>
   </types>
   <types>
+    <!-- FlowDefinition is a deprecated Metadata, it should not be part of a sfdx repo. Caution: this is not Flow metadata, who should be in sources and deployed :) -->
+    <members>*</members>
+    <name>FlowDefinition</name>
+  </types>
+  <types>
     <!-- Name Credentials can contain auth info that are different between dev, uat, preprod and prod: let's not overwrite them ! -->
     <members>*</members>
     <name>NamedCredential</name>
