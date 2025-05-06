@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/): Flag more audit trail actions as not relevant
+- CI/CD: Add FlowDefinition in default [package-no-overwrite.xml](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/#package-no-overwritexml), as it is a deprecated metadata
 
 ## [5.31.0] 2025-05-05
 
