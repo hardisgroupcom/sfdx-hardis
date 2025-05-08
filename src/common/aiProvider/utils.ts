@@ -13,6 +13,13 @@ export class UtilsAi {
     return false;
   }
 
+  public static isOllamaAvailable() {
+    if (getEnvVar("USE_OLLAMA") === "true") {
+      return true;
+    }
+    return false;
+  }
+
   public static isAgentforceAvailable() {
     if (getEnvVar("USE_AGENTFORCE") === "true" && globalThis.jsForceConn) {
       return true;

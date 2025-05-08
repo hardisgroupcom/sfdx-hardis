@@ -63,6 +63,32 @@ To get an OpenAi API key , register on [OpenAi Platform](https://platform.openai
 | OPENAI_API_KEY | Your openai account API key                                                               |               |
 | OPENAI_MODEL   | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/)) | `gpt-4o-mini` |
 
+### With Ollama
+
+You can use a local Ollama instance to generate documentation. This requires Ollama to be installed and running on your machine.
+
+#### Install Ollama
+- Visit [Ollama's official website](https://ollama.ai/) and download the appropriate version for your operating system
+- Follow the installation instructions for your platform
+- After installation, start the Ollama service with `ollama serve`
+
+#### Pull a Model**
+```bash
+# Pull your preferred model, for example:
+ollama pull qwen2.5-coder:14b
+
+# See all available models
+ollama list
+```
+
+#### Configure environment variables**
+
+| Variable       | Description                                                                               | Default       |
+|----------------|-------------------------------------------------------------------------------------------|---------------|
+| USE_OLLAMA     | true                                                                                      | false         |
+| OLLAMA_MODEL   | Ollama model used to perform prompts (see [models list](https://ollama.com/library))      |               |
+
+
 ## Templates
 
 You can override default prompts by defining the following environment variables.
