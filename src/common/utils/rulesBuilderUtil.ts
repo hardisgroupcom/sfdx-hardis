@@ -70,13 +70,13 @@ export class RulesBuilderUtil {
     if (!actionItems || actionItems.length === 0) {
       return "None";
     } else {
-        if (!Array.isArray(actionItems)) {
-          actionItems = [actionItems];
-        }
-        return actionItems
-          .map((x => this.formatActionItem(x)))
-          .join('');
+      if (!Array.isArray(actionItems)) {
+        actionItems = [actionItems];
       }
+      return actionItems
+        .map((x => this.formatActionItem(x)))
+        .join('');
+    }
   }
 
   formatCriteria(criteriaItems: any[], booleanFilter: string): string {
@@ -98,15 +98,18 @@ export class RulesBuilderUtil {
         }
         return booleanResult;
       }
-
     }
   }
 
   formatCriteriaItem(ci: any): string {
-    return '(**' + ci.field.split('.')[0] + '**: ' + ci.field.substring(ci.field.indexOf('.') + 1) + ' _' + ci.operation + '_ ' + ci.value.replaceAll(",", ", ") + ')<br>';
+    return '(**'
+      + ci.field.split('.')[0] + '**: '
+      + ci.field.substring(ci.field.indexOf('.') + 1) + ' _'
+      + ci.operation + '_ '
+      + (ci.value ? ci.value.replaceAll(",", ", ") : "' '" )  + ')<br>';
   }
 
   formatActionItem(ai: any): string {
-    return '<table> <tbody>  <tr>  <td>**Mins to escalations**:</td>  <td>' + ai.minutesToEscalation + '</td>  </tr>  <tr>  <td>**Assign To**:</td>  <td>' + ai.assignedTo + '</td>  </tr>  <tr>  <td>**Notify**:</td>  <td>' + ai.notifyTo + '</td>  </tr>  </tbody>  </table> ';
+    return '<table> <tbody>  <tr>  <td>**Mins to escalations**:</td>  <td>' + ai.minutesToEscalation + '</td>  </tr>  <tr>  <td>**Assign To**:</td>  <td>' + ai.assignedTo + '</td>  </tr>  <tr>  <td>**Notify**:</td>  <td>' + (ai.notifyTo ?? 'None') + '</td>  </tr>  </tbody>  </table> ';
   }
 }
