@@ -98,7 +98,6 @@ export class RulesBuilderUtil {
         }
         return booleanResult;
       }
-
     }
   }
 
@@ -107,7 +106,7 @@ export class RulesBuilderUtil {
       + ci.field.split('.')[0] + '**: '
       + ci.field.substring(ci.field.indexOf('.') + 1) + ' _'
       + ci.operation + '_ '
-      + (ci.value ? ci.value.replaceAll(",", ", ") : "\'\xa0\'")  + ')<br>';
+      + (ci.value ? ci.value.replaceAll(",", ", ") : "\'" +  "\xa0" + "\'" )  + ')<br>';
   }
 
   formatActionItem(ai: any): string {
