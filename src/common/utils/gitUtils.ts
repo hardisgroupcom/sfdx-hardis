@@ -171,7 +171,11 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
     let ticketsMarkdown = '## Tickets\n\n';
     for (const ticket of ticketsSorted) {
       if (ticket.foundOnServer) {
-        ticketsMarkdown += '- [' + ticket.id + '](' + ticket.url + ') ' + ticket.subject + '\n';
+        ticketsMarkdown += '- [' + ticket.id + '](' + ticket.url + ') ' + ticket.subject;
+        if (ticket.statusLabel) {
+          ticketsMarkdown += ' (' + ticket.statusLabel + ')';
+        }
+        ticketsMarkdown += '\n'
       } else {
         ticketsMarkdown += '- [' + ticket.id + '](' + ticket.url + ')\n';
       }
@@ -320,7 +324,11 @@ async function collectNotifAttachments(attachments: MessageAttachment[], pullReq
       text: `*Tickets*\n${commitsSummary.tickets
         .map((ticket) => {
           if (ticket.foundOnServer) {
-            return '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id) + ' ' + ticket.subject;
+            let ticketsMarkdown = '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id) + ' ' + ticket.subject;
+            if (ticket.statusLabel) {
+              ticketsMarkdown += ' (' + ticket.statusLabel + ')';
+            }
+            return ticketsMarkdown;
           } else {
             return '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id);
           }

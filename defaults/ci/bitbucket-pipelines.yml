@@ -21,6 +21,8 @@ pipelines:
           # Simulate deployment
           - step:
               name: Simulate SFDX deployment
+              clone:
+                depth: full
               script:
                 - npm install --no-cache @salesforce/cli --global
                 - sf plugins install @salesforce/plugin-packaging
@@ -41,6 +43,8 @@ pipelines:
     "{integration,uat,preprod,production,main}":
       - step:
           name: Deploy to major org
+          clone:
+            depth: full
           script:
             - npm install --no-cache @salesforce/cli --global
             - sf plugins install @salesforce/plugin-packaging

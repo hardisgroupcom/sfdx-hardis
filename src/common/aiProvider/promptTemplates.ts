@@ -7,7 +7,15 @@ export type PromptTemplate =
   "PROMPT_DESCRIBE_OBJECT" |
   "PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD" |
   "PROMPT_DESCRIBE_APEX" |
-  "PROMPT_DESCRIBE_PAGE"
+  "PROMPT_DESCRIBE_PAGE" |
+  "PROMPT_DESCRIBE_PROFILE" |
+  "PROMPT_DESCRIBE_PERMISSION_SET" |
+  "PROMPT_DESCRIBE_PERMISSION_SET_GROUP" |
+  "PROMPT_DESCRIBE_ASSIGNMENT_RULES" |
+  "PROMPT_DESCRIBE_APPROVAL_PROCESS" |
+  "PROMPT_DESCRIBE_LWC" |
+  "PROMPT_DESCRIBE_AUTORESPONSE_RULES" |
+  "PROMPT_DESCRIBE_ESCALATION_RULES"
   ;
 
 export function buildPromptFromTemplate(template: PromptTemplate, variables: object): string {
@@ -40,12 +48,12 @@ export const PROMPT_TEMPLATES = {
   "PROMPT_SOLVE_DEPLOYMENT_ERROR": {
     variables: ["ERROR"],
     text: {
-      "en": `You are a Salesforce release manager using Salesforce CLI commands to perform deployments 
+      "en": `You are a Salesforce release manager using Salesforce CLI commands to perform deployments
 How to solve the following Salesforce deployment error ?
 - Please answer using sfdx source format, not metadata format.
-- Please provide XML example if applicable. 
+- Please provide XML example if applicable.
 - Please skip the part of the response about how to retrieve or deploy the changes with Salesforce CLI
-The error is: 
+The error is:
 {{ERROR}}
 `,
 
@@ -216,6 +224,245 @@ Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as
 
 - The metadata XML for Lightning page "{{PAGE_NAME}}" is:
 {{PAGE_XML}}
+
+Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+`
+    }
+  },
+  "PROMPT_DESCRIBE_PROFILE": {
+    variables: ["PROFILE_NAME", "PROFILE_XML"],
+    text: {
+      "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce Profile "{{PROFILE_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+
+### Instructions:
+
+1. **Contextual Overview**:
+    - Begin by summarizing the role of the Salesforce Profile that you can guess according to the content of the XML. Try to guess the role of users assigned to this profile according to applicationVisibilities, objectVisibilities and userPermissions.
+    - List the key features of the Profiles.
+      - The most important features are License, Applications, User Permissions ,features with default values ,Custom Objects and Record Types
+      - Ignore Apex classes and Custom Fields
+      - Ignore blocks who has access or visibility set to "false"
+
+2. **Formatting Requirements**:
+    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
+    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
+    - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Never truncate any information in the response.
+    - Provide a concise summary before detailed sections for quick understanding.
+
+### Reference Data:
+
+- The metadata XML for Salesforce Profile "{{PROFILE_NAME}}" is:
+{{PROFILE_XML}}
+
+Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+`
+    }
+  },
+  "PROMPT_DESCRIBE_PERMISSION_SET": {
+    variables: ["PERMISSIONSET_NAME", "PERMISSIONSET_XML"],
+    text: {
+      "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce PermissionSet "{{PERMISSIONSET_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+
+### Instructions:
+
+1. **Contextual Overview**:
+    - Begin by summarizing the role of the Salesforce PermissionSet that you can guess according to the content of the XML. Try to guess the role of users assigned to this permission set according to applicationVisibilities, objectVisibilities and userPermissions.
+    - List the key features of the Permission Set.
+      - The most important features are License, Applications, User Permissions ,features with default values ,Custom Objects and Record Types
+      - Ignore Apex classes and Custom Fields
+      - Ignore blocks who has access or visibility set to "false"
+
+2. **Formatting Requirements**:
+    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
+    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
+    - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Never truncate any information in the response.
+    - Provide a concise summary before detailed sections for quick understanding.
+
+### Reference Data:
+
+- The metadata XML for Salesforce Permission Set "{{PERMISSIONSET_NAME}}" is:
+{{PERMISSIONSET_XML}}
+
+Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+`
+    }
+  },
+  "PROMPT_DESCRIBE_PERMISSION_SET_GROUP": {
+    variables: ["PERMISSIONSETGROUP_NAME", "PERMISSIONSETGROUP_XML"],
+    text: {
+      "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce PermissionSetGroup "{{PERMISSIONSETGROUP_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+
+### Instructions:
+
+1. **Contextual Overview**:
+    - Begin by summarizing the role of the Salesforce PermissionSetGroup that you can guess according to the content of the XML. Try to guess the role of users assigned to this permission set group according to the name, description and related Permission Sets
+    - List the key features of the Permission Set.
+
+2. **Formatting Requirements**:
+    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
+    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
+    - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Never truncate any information in the response.
+    - Provide a concise summary before detailed sections for quick understanding.
+
+### Reference Data:
+
+- The metadata XML for Salesforce Permission Set Group "{{PERMISSIONSETGROUP_NAME}}" is:
+{{PERMISSIONSETGROUP_XML}}
+
+Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+`
+    }
+  },
+  "PROMPT_DESCRIBE_ASSIGNMENT_RULES": {
+    variables: ["ASSIGNMENTRULES_NAME", "ASSIGNMENTRULES_XML"],
+    text: {
+      "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce Assignment Rules "{{ASSIGNMENTRULES_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+
+
+### Instructions:
+
+1. **Contextual Overview**:
+    - Begin by explaining the role of the Salesforce Assignment Rules that you can guess according to the content of the XML and the name.
+    Try to guess the role of users assigned to this assignment rule. Do not mention the email of assigned users, but you can mention type of assigned users.
+    Based by Criteria items, explain what should so the record will be assigned.
+    - Analyze all the assignment rules for objects and in the description tell what are the aim of those rules. What is the role of the object in the system, based by the assignment rules.
+
+2. **Formatting Requirements**:
+    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
+    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
+    - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Never truncate any information in the response.
+    - Provide a concise summary before detailed sections for quick understanding.
+
+### Reference Data:
+
+- The metadata XML for Salesforce Assignment Rule "{{ASSIGNMENTRULES_NAME}}" is:
+{{ASSIGNMENTRULES_XML}}
+
+Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+`
+    }
+  },
+  "PROMPT_DESCRIBE_APPROVAL_PROCESS": {
+    variables: ["APPROVALPROCESS_NAME", "APPROVALPROCESS_XML"],
+    text: {
+      "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to explain the what is the Salesforce Approval Process "{{APPROVALPROCESS_NAME}}" about in plain English, provide a detailed explanation suitable for a business user.
+
+### Instructions:
+
+1. **Contextual Overview**:
+    - Begin by summarizing the purpose of the approval process.
+    - List the key functionalities and business logic implemented in the approval process.
+
+2. **Formatting Requirements**:
+    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
+    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
+    - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Never truncate any information in the response.
+    - Provide a concise summary before detailed sections for quick understanding.
+
+### Reference Data:
+
+- The metadata XML for Approval Process "{{APPROVALPROCESS_NAME}}" is:
+{{APPROVALPROCESS_XML}}
+
+Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+`
+    },
+  },
+  "PROMPT_DESCRIBE_LWC": {
+    variables: ["LWC_NAME", "LWC_JS_CODE", "LWC_HTML_CODE", "LWC_JS_META"],
+    text: {
+      "en": `You are a skilled Salesforce developer working on a Lightning Web Components (LWC) project. Your goal is to explain the Salesforce Lightning Web Component "{{LWC_NAME}}" in plain English, providing a detailed explanation suitable for other developers and business users.
+
+### Instructions:
+
+1. **Contextual Overview**:
+    - Begin by summarizing the purpose and functionality of the Lightning Web Component.
+    - Describe the key features and capabilities it provides to users.
+    - Explain how it interacts with Salesforce data or other components.
+
+2. **Technical Analysis**:
+    - Describe the main JavaScript methods and their purposes.
+    - Explain how the component handles data binding and events.
+    - Mention any wire services, apex methods, or external services the component uses.
+    - Identify any custom properties or special configurations.
+
+3. **Formatting Requirements**:
+    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
+    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
+    - Never truncate any information in the response.
+    - Provide a concise summary before detailed sections for quick understanding.
+
+### Reference Data:
+
+- The HTML template for component "{{LWC_NAME}}":
+\`\`\`
+{{LWC_HTML_CODE}}
+\`\`\`
+
+- The JavaScript controller for component "{{LWC_NAME}}":
+\`\`\`
+{{LWC_JS_CODE}}
+\`\`\`
+
+- The metadata configuration for component "{{LWC_NAME}}":
+\`\`\`
+{{LWC_JS_META}}
+\`\`\`
+
+Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+`
+    },
+  },
+  "PROMPT_DESCRIBE_AUTORESPONSE_RULES": {
+    variables: ["AUTORESPONSERULES_NAME", "AUTORESPONSERULES_XML"],
+    text: {
+      "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce AutoResponse Rules "{{AUTORESPONSERULES_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+### Instructions:
+1. **Contextual Overview**:
+    - Begin by explaining the role of the Salesforce AutoResponse Rules that you can guess according to the content of the XML and the name.
+    Try to guess the role of users assigned to this AutoResponse rule. Do not mention the email of assigned users, but you can mention type of assigned users.
+    - Analyze all the AutoResponse rules for objects and in the description tell what are the aim of those rules. What is the role of the object in the system, based by the AutoResponse rules.
+    - Based by Criteria items, explain what would be the response to the user, if the criteria are met.
+2. **Formatting Requirements**:
+    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
+    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
+    - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Never truncate any information in the response.
+    - Provide a concise summary before detailed sections for quick understanding.
+### Reference Data:
+- The metadata XML for Salesforce AutoResponse Rule "{{AUTORESPONSERULES_NAME}}" is:
+{{AUTORESPONSERULES_XML}}
+Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+`
+    }
+  },
+  "PROMPT_DESCRIBE_ESCALATION_RULES": {
+    variables: ["ESCALATIONRULES_NAME", "ESCALATIONRULES_XML"],
+    text: {
+      "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to explain the what is the Salesforce Escalation Rule "{{ESCALATIONRULES_NAME}}" about in plain English, provide a detailed explanation suitable for a business user.
+
+### Instructions:
+
+1. **Contextual Overview**:
+    - Begin by summarizing the purpose of the escalation rule.
+    - List the key functionalities and business logic implemented in the escalation rule.
+
+2. **Formatting Requirements**:
+    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
+    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
+    - Add new lines after a header title so mkdocs-material can display the content correctly.
+    - Never truncate any information in the response.
+    - Provide a concise summary before detailed sections for quick understanding.
+
+### Reference Data:
+
+- The metadata XML for Escalation Rule "{{ESCALATIONRULES_NAME}}" is:
+{{ESCALATIONRULES_XML}}
 
 Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
 `

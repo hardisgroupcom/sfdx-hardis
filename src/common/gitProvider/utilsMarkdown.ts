@@ -81,7 +81,7 @@ export function mdTableCell(str: string) {
   if (!str) {
     return "<!-- -->"
   }
-  return str.replace(/\n/gm, "<br/>".replace(/\|/gm, ""))
+  return str.replace(/\n/gm, "<br/>").replace(/\|/gm, "");
 }
 
 export async function flowDiffToMarkdownForPullRequest(flowNames: string[], fromCommit: string, toCommit: string, truncatedNb: number = 0): Promise<any> {

@@ -31,8 +31,10 @@ Regular setup actions performed in major orgs are filtered.
 - Custom App Licenses
   - addeduserpackagelicense
   - granteduserpackagelicense
+  - revokeduserpackagelicense
 - Customer Portal
   - createdcustomersuccessuser
+  - CSPUserDisabled
 - Currency
   - updateddatedexchrate
 - Data Management
@@ -57,6 +59,8 @@ Regular setup actions performed in major orgs are filtered.
   - changedinteractionuseronoff
   - changedmarketinguseroffon
   - changedmarketinguseronoff
+  - changedofflineuseroffon
+  - changedprofileforuserstdtostd
   - changedprofileforuser
   - changedprofileforusercusttostd
   - changedprofileforuserstdtocust
@@ -65,6 +69,9 @@ Regular setup actions performed in major orgs are filtered.
   - changedroleforuserfromnone
   - changedUserEmailVerifiedStatusUnverified
   - changedUserEmailVerifiedStatusVerified
+  - changedknowledgeuseroffon
+  - changedsfcontentuseroffon
+  - changedsupportuseroffon
   - changedUserPhoneNumber
   - changedUserPhoneVerifiedStatusUnverified
   - deactivateduser
@@ -84,6 +91,8 @@ Regular setup actions performed in major orgs are filtered.
   - PermSetLicenseUnassign
   - registeredUserPhoneNumber
   - resetpassword
+  - suNetworkAdminLogin
+  - suNetworkAdminLogout
   - suOrgAdminLogin
   - suOrgAdminLogout
   - unfrozeuser
@@ -114,6 +123,14 @@ monitoringAllowedSectionsActions:
   "Some section": [] // Will ignore all actions from such section
   "Some other section": ["actionType1","actionType2","actionType3"] // Will ignore only those 3 actions from section "Some other section". Other actions in the same section will be considered as suspect.
 \`\`\`
+
+## Excel output example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-audittrail-excel.jpg)
+
+## Local output example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-audittrail-local.jpg)
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-suspect-audit-trail/) and can output Grafana, Slack and MsTeams Notifications.
 `;
@@ -203,8 +220,15 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.allowedSectionsActions = {
       '': ['createScratchOrg', 'changedsenderemail', 'deleteScratchOrg', 'loginasgrantedtopartnerbt'],
       'Certificate and Key Management': ['insertCertificate'],
-      'Custom App Licenses': ['addeduserpackagelicense', 'granteduserpackagelicense'],
-      'Customer Portal': ['createdcustomersuccessuser'],
+      'Custom App Licenses': [
+        'addeduserpackagelicense',
+        'granteduserpackagelicense',
+        'revokeduserpackagelicense'
+      ],
+      'Customer Portal': [
+        'createdcustomersuccessuser',
+        'CSPUserDisabled'
+      ],
       Currency: ['updateddatedexchrate'],
       'Data Management': ['queueMembership'],
       'Email Administration': ['dkimRotationSuccessful', 'dkimRotationPreparationSuccessful'],
@@ -223,6 +247,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         'changedmarketinguseroffon',
         'changedmarketinguseronoff',
         'changedManager',
+        "changedofflineuseroffon",
         'changedprofileforuser',
         'changedprofileforusercusttostd',
         'changedprofileforuserstdtocust',
@@ -230,8 +255,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         'changedroleforuser',
         'changedroleforuserfromnone',
         'changedpassword',
+        "changedprofileforuserstdtostd",
+        'changedsfcontentuseroffon',
         'changedUserEmailVerifiedStatusUnverified',
         'changedUserEmailVerifiedStatusVerified',
+        'changedknowledgeuseroffon',
+        'changedsupportuseroffon',
         'changedUserPhoneNumber',
         'changedUserPhoneVerifiedStatusUnverified',
         'deactivateduser',
@@ -251,6 +280,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         'PermSetLicenseUnassign',
         'registeredUserPhoneNumber',
         'resetpassword',
+        'suNetworkAdminLogin',
+        'suNetworkAdminLogout',
         'suOrgAdminLogin',
         'suOrgAdminLogout',
         'unfrozeuser',
@@ -301,6 +332,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const queryRes = await bulkQuery(auditTrailQuery, conn);
     const suspectRecords: any[] = [];
     let suspectUsers: any[] = [];
+    const suspectUsersAndActions: any = {};
     const suspectActions: any[] = [];
     const severityIconLog = getSeverityIcon('log');
     const severityIconWarning = getSeverityIcon('warning');
@@ -323,8 +355,21 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         record.severity = 'warning';
         record.severityIcon = severityIconWarning;
         suspectRecords.push(record);
-        suspectUsers.push(record['CreatedBy.Username'] + ' - ' + record['CreatedBy.Name']);
-        suspectActions.push(`${section} - ${record.Action}`);
+        const suspectUserDisplayName = `${record['CreatedBy.Name']}`;
+        suspectUsers.push(suspectUserDisplayName);
+        const actionFullName = `${section} - ${record.Action}`;
+        suspectActions.push(actionFullName);
+        if (!suspectUsersAndActions[suspectUserDisplayName]) {
+          suspectUsersAndActions[suspectUserDisplayName] = {
+            name: record['CreatedBy.Name'],
+            actions: [],
+          };
+        }
+        const suspectUserActions = suspectUsersAndActions[suspectUserDisplayName].actions;
+        if (!suspectUserActions.includes(record.Action)) {
+          suspectUserActions.push(record.Action);
+        }
+        suspectUsersAndActions[suspectUserDisplayName].actions = suspectUserActions;
         return record;
       }
       return record;
@@ -352,7 +397,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       uxLog(this, '');
       uxLog(this, c.yellow('Related users:'));
       for (const user of suspectUsers) {
-        uxLog(this, c.yellow(`- ${user}`));
+        uxLog(this, c.yellow(`- ${user}` + ' (' + suspectUsersAndActions[user].actions.join(', ') + ")"));
       }
       uxLog(this, '');
       uxLog(this, c.yellow('Related actions:'));
@@ -380,7 +425,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       let notifDetailText = ``;
       notifDetailText += '*Related users*:\n';
       for (const user of suspectUsers) {
-        notifDetailText += `• ${user}\n`;
+        notifDetailText += `• ${user + " (" + suspectUsersAndActions[user].actions.join(', ') + ")"}\n`;
       }
       notifDetailText += '\n';
       notifDetailText += '*Related actions*:\n';

@@ -36,6 +36,8 @@ You can remove more metadata types from backup, especially in case you have too 
 
 - Manual update of \`manifest/package-skip-items.xml\` config file (then commit & push in the same branch)
 
+  - Works with full wildcard (\`<members>*</members>\`) , named metadata (\`<members>Account.Name</members>\`) or partial wildcards names (\`<members>pi__*</members>\` , \`<members>*__dlm</members>\` , or \`<members>prefix*suffix</members>\`)
+
 - Environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`): that will be applied to all monitoring branches.
 
 ## Full mode
@@ -54,6 +56,14 @@ _With those both options, it's like if you are not using --full, but with chunke
 ## In CI/CD
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
+
+## Troubleshooting
+
+If you have unknown errors (it happens !), you can investigate using the full command with smaller chunks.
+
+Example: \`sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters --max-by-chunk 500\`
+
+It will allow you the identify the responsible metadata and ignore it using package-skip-items.xml or MONITORING_BACKUP_SKIP_METADATA_TYPES env variable.
 
 ## Documentation
 
@@ -97,6 +107,10 @@ If Flow history doc always display a single state, you probably need to update y
       default: false,
       description: 'If mode --full is activated, apply filters of manifest/package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES anyway',
     }),
+    "start-chunk": Flags.integer({
+      default: 1,
+      description: 'Use this parameter to troubleshoot a specific chunk. It will be used as the first chunk to retrieve',
+    }),
     "skip-doc": Flags.boolean({
       default: false,
       description: 'Skip the generation of project documentation at the end of the command',
@@ -129,6 +143,7 @@ If Flow history doc always display a single state, you probably need to update y
   protected diffFilesSimplified: any[] = [];
   protected full: boolean = false;
   protected maxByChunk: number = 3000;
+  protected startChunk: number = 1;
   protected excludeNamespaces: boolean = false;
   protected fullApplyFilters: boolean = false;
   protected skipDoc: boolean = false;
@@ -150,6 +165,7 @@ If Flow history doc always display a single state, you probably need to update y
     const { flags } = await this.parse(MonitorBackup);
     this.full = flags.full || (process.env?.MONITORING_BACKUP_MODE_FULL === "true" ? true : false);
     this.maxByChunk = flags["max-by-chunk"] || 3000;
+    this.startChunk = flags["start-chunk"] || 1;
     this.excludeNamespaces = flags["exclude-namespaces"] === true ? true : false;
     this.fullApplyFilters = flags["full-apply-filters"] === true ? true : false;
     this.skipDoc = flags["skip-doc"] === true ? true : false;
@@ -300,7 +316,7 @@ If Flow history doc always display a single state, you probably need to update y
       const namespacesToFilter = (this.excludeNamespaces || process.env?.SFDX_HARDIS_BACKUP_EXCLUDE_NAMESPACES === "true") ? this.namespaces : [];
       await filterPackageXml(packageXmlFullFile, packageXmlFullFileWithoutNamespace, {
         removeNamespaces: namespacesToFilter,
-        removeStandard: false,
+        removeStandard: this.fullApplyFilters,
         removeFromPackageXmlFile: this.packageXmlToRemove,
         updateApiVersion: CONSTANTS.API_VERSION,
       });
@@ -313,6 +329,7 @@ If Flow history doc always display a single state, you probably need to update y
     // Handle predefined chunks
     const predefinedChunkTypes = [
       { types: ["CustomLabel"], memberMode: "*" },
+      // { types: ["CustomObject", "Profile"] },
       { types: ["SharingRules", "SharingOwnerRule", "SharingCriteriaRule"] },
       { types: ["Workflow", "WorkflowAlert", "WorkflowFieldUpdate", "WorkflowRule"] }
     ]
@@ -360,8 +377,9 @@ If Flow history doc always display a single state, you probably need to update y
     const packageXmlChunkFiles: string[] = [];
     const chunksFolder = path.join("manifest", "chunks");
     await fs.ensureDir(chunksFolder);
-    uxLog(this, c.cyan(`Building package.xml files for ${packageXmlChunkFiles.length} chunks...`));
+    uxLog(this, c.cyan(`Building package.xml files for ${this.extractPackageXmlChunks.length} chunks...`));
     for (const packageChunk of this.extractPackageXmlChunks) {
+      pos++;
       const packageChunkFileName = path.join(chunksFolder, "chunk-" + pos + ".xml");
       await writePackageXmlFile(packageChunkFileName, packageChunk);
       packageXmlChunkFiles.push(packageChunkFileName);
@@ -370,12 +388,17 @@ If Flow history doc always display a single state, you probably need to update y
         uxLog(this, c.grey(`- ${mdType} (${packageChunk?.[mdType]?.length || 0} elements)`));
       }
       uxLog(this, "");
-      pos++;
     }
 
     // Retrieve metadatas for each chunk
     uxLog(this, c.cyan(`Starting the retrieve of ${packageXmlChunkFiles.length} chunks...`));
+    let posChunk = 0;
     for (const packageXmlChunkFile of packageXmlChunkFiles) {
+      posChunk++;
+      if (this.startChunk > posChunk) {
+        uxLog(this, c.grey(`Skipping chunk ${posChunk} (${packageXmlChunkFile}) according to --start-chunk option`));
+        continue;
+      }
       await this.retrievePackageXml(packageXmlChunkFile, flags);
     }
   }
