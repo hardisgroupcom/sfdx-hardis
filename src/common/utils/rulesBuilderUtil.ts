@@ -103,7 +103,11 @@ export class RulesBuilderUtil {
   }
 
   formatCriteriaItem(ci: any): string {
-    return '(**' + ci.field.split('.')[0] + '**: ' + ci.field.substring(ci.field.indexOf('.') + 1) + ' _' + ci.operation + '_ ' + ci.value.replaceAll(",", ", ") + ')<br>';
+    return '(**'
+      + ci.field.split('.')[0] + '**: '
+      + ci.field.substring(ci.field.indexOf('.') + 1) + ' _'
+      + ci.operation + '_ '
+      + (ci.value ? ci.value.replaceAll(",", ", ") : "\' \'")  + ')<br>';
   }
 
   formatActionItem(ai: any): string {
