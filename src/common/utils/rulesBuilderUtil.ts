@@ -107,10 +107,10 @@ export class RulesBuilderUtil {
       + ci.field.split('.')[0] + '**: '
       + ci.field.substring(ci.field.indexOf('.') + 1) + ' _'
       + ci.operation + '_ '
-      + (ci.value ? ci.value.replaceAll(",", ", ") : "\' \'")  + ')<br>';
+      + (ci.value ? ci.value.replaceAll(",", ", ") : "\'\xa0\'")  + ')<br>';
   }
 
   formatActionItem(ai: any): string {
-    return '<table> <tbody>  <tr>  <td>**Mins to escalations**:</td>  <td>' + ai.minutesToEscalation + '</td>  </tr>  <tr>  <td>**Assign To**:</td>  <td>' + ai.assignedTo + '</td>  </tr>  <tr>  <td>**Notify**:</td>  <td>' + ai.notifyTo + '</td>  </tr>  </tbody>  </table> ';
+    return '<table> <tbody>  <tr>  <td>**Mins to escalations**:</td>  <td>' + ai.minutesToEscalation + '</td>  </tr>  <tr>  <td>**Assign To**:</td>  <td>' + ai.assignedTo + '</td>  </tr>  <tr>  <td>**Notify**:</td>  <td>' + (ai.notifyTo ?? 'None') + '</td>  </tr>  </tbody>  </table> ';
   }
 }
