@@ -41,10 +41,10 @@ LangChain provides a unified interface to work with multiple LLM providers. This
 | LANGCHAIN_LLM_PROVIDER       | The LLM provider to use (currently supports "ollama", "openai", and "anthropic")          |               |
 | LANGCHAIN_LLM_MODEL          | The model to use with the selected provider (e.g. gpt-4o, qwen2.5-coder:14b)              |               |
 | LANGCHAIN_LLM_MODEL_API_KEY  | API key for the selected provider (required for OpenAI and Anthropic)                     |               |
-| LANGCHAIN_LLM_TEMPERATURE    | Controls randomness (0-1)                                                                 | 0.7           |
+| LANGCHAIN_LLM_TEMPERATURE    | Controls randomness (0-1)                                                                 |               |
 | LANGCHAIN_LLM_MAX_TOKENS     | Maximum number of tokens to generate                                                      |               |
-| LANGCHAIN_LLM_MAX_RETRIES    | Number of retries for failed requests                                                     | 3             |
-| LANGCHAIN_LLM_BASE_URL       | Base URL for the API (mainly for Ollama)                                                  | http://localhost:11434 |
+| LANGCHAIN_LLM_MAX_RETRIES    | Number of retries for failed requests                                                     |               |
+| LANGCHAIN_LLM_BASE_URL       | Base URL for the API (mainly for Ollama)                                                  | Ollama: http://localhost:11434 |
 
 #### Example configurations
 
