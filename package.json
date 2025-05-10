@@ -13,7 +13,7 @@
     "@langchain/core": "^0.3.55",
     "@langchain/ollama": "^0.2.0",
     "@oclif/core": "^4.2.10",
-    "@salesforce/core": "^8.10.1",
+    "@salesforce/core": "^8.10.3",
     "@salesforce/sf-plugins-core": "^11.3.12",
     "@slack/types": "^2.14.0",
     "@slack/web-api": "^7.9.1",
