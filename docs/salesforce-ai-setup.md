@@ -33,7 +33,7 @@ See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and ho
 
 ### With LangChain
 
-LangChain provides a unified interface to work with multiple LLM providers. This way to use AI provides better extensibility and future-proofing to extend support for more providers.
+[LangChainJs](https://js.langchain.com/docs/integrations/chat/) provides a unified interface to work with multiple LLM providers. This way to use AI provides better extensibility and future-proofing to extend support for more providers.
 
 | Variable                    | Description                                                                      | Default                          |
 |-----------------------------|----------------------------------------------------------------------------------|----------------------------------|
