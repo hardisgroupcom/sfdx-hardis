@@ -14,7 +14,7 @@ If you follow Flows best practices and **do not hardcode credentials / tokens in
 
 You can see the prompts content if you set env variable `DEBUG_PROMPTS=true`.
 
-The list of prompts used by sfdx-hardis is defined in [this source file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/promptTemplates.ts).
+See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and how to override them.
 
 ## Main configuration
 
@@ -24,63 +24,12 @@ The list of prompts used by sfdx-hardis is defined in [this source file](https:/
 
 | Variable                     | Description                                                                                                                               | Default |
 |------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| AI_MAXIMUM_CALL_NUMBER       | Maximum allowed number of calls to AI Providers during a single sfdx-hardis command                                                         | `10000` |
+| AI_MAXIMUM_CALL_NUMBER       | Maximum allowed number of calls to AI Providers during a single sfdx-hardis command                                                       | `10000` |
 | PROMPTS_LANGUAGE             | Language to use for prompts results (`en`,`fr`, or any [ISO Language code](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes)) | `en`    |
 | DEBUG_PROMPTS                | Set to true if you want prompts requests and responses in logs                                                                            | `false` |
 | MAX_DEPLOYMENT_TIPS_AI_CALLS | Maximum number of errors that will be analyzed by AI for a single Pull Request                                                            | `20`    |
 | DISABLE_AI                   | In case you want to disable API calls to API without removing your configuration, set to true                                             | `false` |
 | IGNORE_AI_CACHE              | Some processes like Flow description use AI cache files to save calls to prompts API, disable by setting to true                          | `false` |
-
-### With LangChain
-
-LangChain provides a unified interface to work with multiple LLM providers. This way to use AI provides better extensibility and future-proofing to extend support for more providers.
-
-| Variable                      | Description                                                                               | Default       |
-|-------------------------------|-------------------------------------------------------------------------------------------|---------------|
-| USE_LANGCHAIN_LLM            | Set to true to use LangChain integration                                                  | false         |
-| LANGCHAIN_LLM_PROVIDER       | The LLM provider to use (currently supports "ollama", "openai", and "anthropic")          |               |
-| LANGCHAIN_LLM_MODEL          | The model to use with the selected provider (e.g. gpt-4o, qwen2.5-coder:14b)              |               |
-| LANGCHAIN_LLM_MODEL_API_KEY  | API key for the selected provider (required for OpenAI and Anthropic)                     |               |
-| LANGCHAIN_LLM_TEMPERATURE    | Controls randomness (0-1)                                                                 |               |
-| LANGCHAIN_LLM_MAX_TOKENS     | Maximum number of tokens to generate                                                      |               |
-| LANGCHAIN_LLM_MAX_RETRIES    | Number of retries for failed requests                                                     |               |
-| LANGCHAIN_LLM_BASE_URL       | Base URL for the API (mainly for Ollama)                                                  | Ollama: http://localhost:11434 |
-
-#### Example configurations
-
-For Ollama:
-
-- Visit [Ollama's official website](https://ollama.ai/) and download the appropriate version for your operating system
-- Follow the installation instructions for your platform
-- After installation, pull your preferred model e.g. `ollama pull qwen2.5-coder:14b` and start the Ollama service with `ollama serve`
-
-```sh
-USE_LANGCHAIN_LLM=true
-LANGCHAIN_LLM_PROVIDER=ollama
-LANGCHAIN_LLM_MODEL=qwen2.5-coder:14b
-LANGCHAIN_LLM_TEMPERATURE=1
-LANGCHAIN_LLM_BASE_URL=http://localhost:11434
-```
-
-For OpenAI:
-```sh
-USE_LANGCHAIN_LLM=true
-LANGCHAIN_LLM_PROVIDER=openai
-LANGCHAIN_LLM_MODEL=gpt-4o-mini
-LANGCHAIN_LLM_MODEL_API_KEY=your-api-key
-LANGCHAIN_LLM_TEMPERATURE=0.7
-LANGCHAIN_LLM_MAX_TOKENS=2000
-```
-
-For Anthropic:
-```sh
-USE_LANGCHAIN_LLM=true
-LANGCHAIN_LLM_PROVIDER=anthropic
-LANGCHAIN_LLM_MODEL=claude-3.5-sonnet
-LANGCHAIN_LLM_MODEL_API_KEY=your-api-key
-LANGCHAIN_LLM_TEMPERATURE=0.7
-LANGCHAIN_LLM_MAX_TOKENS=2000
-```
 
 ### With Agentforce
 
@@ -102,6 +51,75 @@ LANGCHAIN_LLM_MAX_TOKENS=2000
 ![](assets/images//screenshot-agentforce-config-1.jpg)
 
 ![](assets/images//screenshot-agentforce-config-2.jpg)
+
+### With LangChain
+
+[LangChainJs](https://js.langchain.com/docs/integrations/chat/) provides a unified interface to work with multiple LLM providers. This way to use AI provides better extensibility and future-proofing to extend support for more providers.
+
+Currently supported LangchainJS providers:
+
+- Ollama
+- OpenAI
+- Anthropic
+- Google GenAI
+
+| Variable                    | Description                                                                                     | Default                          |
+|-----------------------------|-------------------------------------------------------------------------------------------------|----------------------------------|
+| USE_LANGCHAIN_LLM           | Set to true to use LangChain integration                                                        | `false`                          |
+| LANGCHAIN_LLM_PROVIDER      | The LLM provider to use (currently supports `ollama`, `openai`, `anthropic` and `google-genai`) |                                  |
+| LANGCHAIN_LLM_MODEL         | The model to use with the selected provider (e.g. `gpt-4o`, `qwen2.5-coder:14b`)                |                                  |
+| LANGCHAIN_LLM_MODEL_API_KEY | API key for the selected provider (required for OpenAI, Anthropic and Gemini)                   |                                  |
+| LANGCHAIN_LLM_TEMPERATURE   | Controls randomness (0-1)                                                                       |                                  |
+| LANGCHAIN_LLM_MAX_TOKENS    | Maximum number of tokens to generate                                                            |                                  |
+| LANGCHAIN_LLM_MAX_RETRIES   | Number of retries for failed requests                                                           |                                  |
+| LANGCHAIN_LLM_BASE_URL      | Base URL for the API (mainly for Ollama)                                                        | Ollama: `http://localhost:11434` |
+
+#### Example configurations
+
+For Ollama:
+
+- Visit [Ollama's official website](https://ollama.ai/) and download the appropriate version for your operating system
+- Follow the installation instructions for your platform
+- After installation, pull your preferred model e.g. `ollama pull qwen2.5-coder:14b` and start the Ollama service with `ollama serve`
+
+```sh
+USE_LANGCHAIN_LLM=true
+LANGCHAIN_LLM_PROVIDER=ollama
+LANGCHAIN_LLM_MODEL=qwen2.5-coder:14b
+LANGCHAIN_LLM_TEMPERATURE=1
+LANGCHAIN_LLM_BASE_URL=http://localhost:11434
+```
+
+For OpenAI:
+
+```sh
+USE_LANGCHAIN_LLM=true
+LANGCHAIN_LLM_PROVIDER=openai
+LANGCHAIN_LLM_MODEL=gpt-4o-mini
+LANGCHAIN_LLM_MODEL_API_KEY=your-api-key
+LANGCHAIN_LLM_TEMPERATURE=0.7
+LANGCHAIN_LLM_MAX_TOKENS=2000
+```
+
+For Anthropic:
+
+```sh
+USE_LANGCHAIN_LLM=true
+LANGCHAIN_LLM_PROVIDER=anthropic
+LANGCHAIN_LLM_MODEL=claude-3.5-sonnet
+LANGCHAIN_LLM_MODEL_API_KEY=your-api-key
+LANGCHAIN_LLM_TEMPERATURE=0.7
+LANGCHAIN_LLM_MAX_TOKENS=2000
+```
+
+For Google Gen AI:
+
+```sh
+USE_LANGCHAIN_LLM=true
+LANGCHAIN_LLM_PROVIDER=google-genai
+LANGCHAIN_LLM_MODEL=gemini-1.5-pro
+LANGCHAIN_LLM_MODEL_API_KEY=your-api-key
+```
 
 ### With OpenAI Directly
 
