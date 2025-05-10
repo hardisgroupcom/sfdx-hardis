@@ -8,7 +8,7 @@ description: Prompt template for PROMPT_DESCRIBE_FLOW
 ## Variables
 | Name | Description | Example |
 | :------|:-------------|:---------|
-| **FLOW_XML** | The XML definition of the Salesforce Flow to describe. | `<FlowDefinition>...</FlowDefinition>` |
+| **FLOW_XML** | The XML definition of the Salesforce Flow to describe. | `<Flow>...</Flow>` |
 
 ## Prompt
 

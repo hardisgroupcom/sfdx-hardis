@@ -35,7 +35,7 @@ You are a Salesforce release manager using Salesforce CLI commands to perform de
 
 ### Reference Data:
 
-- The error is:
+- The deployment error returned by Salesforce CLI is:
 {{ERROR}}
 
 Caution: If the error message contains secret tokens or passwords, please replace them with a placeholder (e.g., [REDACTED]). Be as thorough as possible, and make your response clear, complete, and actionable.
