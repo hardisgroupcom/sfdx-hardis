@@ -12,12 +12,14 @@ export class LangChainAnthropicProvider extends AbstractLLMProvider {
   }
 
   getModel(): BaseChatModel {
-    return new ChatAnthropic({
+    const config = {
       modelName: this.modelName,
       anthropicApiKey: this.config.apiKey!,
       temperature: this.config.temperature,
       maxTokens: this.config.maxTokens,
       maxRetries: this.config.maxRetries
-    });
+    };
+
+    return new ChatAnthropic(config) as BaseChatModel;
   }
 } 

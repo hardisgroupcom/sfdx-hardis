@@ -15,6 +15,7 @@ export class LangChainOllamaProvider extends AbstractLLMProvider {
       temperature: this.config.temperature,
       maxRetries: this.config.maxRetries
     };
-    return new ChatOllama(config) as any;
+
+    return new ChatOllama(config) as BaseChatModel;
   }
 } 
