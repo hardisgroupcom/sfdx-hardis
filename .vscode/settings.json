@@ -4,14 +4,21 @@
     "**/.svn": true,
     "**/.hg": true,
     "**/CVS": true,
-    "**/.DS_Store": true
+    "**/.DS_Store": true,
+    "**/node_modules": true,
   },
   "search.exclude": {
     "**/lib": true,
-    "**/bin": true
+    "**/bin": true,
+    "**/node_modules": true,
   },
   "editor.tabSize": 2,
   "editor.formatOnSave": true,
   "rewrap.wrappingColumn": 80,
+  "typescript.tsserver.exclude": [
+    "**/node_modules",
+    "**/dist",
+    "**/build"
+  ],
   "workbench.colorCustomizations": {}
 }

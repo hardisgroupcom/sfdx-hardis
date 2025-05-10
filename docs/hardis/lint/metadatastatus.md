@@ -3,7 +3,19 @@
 
 ## Description
 
-Check if elements (flows and validation rules) are inactive in the project
+Check if elements are inactive in the project:
+
+- Approval Processes
+- Assignment Rules
+- Auto Response Rules
+- Escalation Rules
+- Flows
+- Forecasting Types
+- Record Types
+- Validation Rules
+- Workflow Rules
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/detect-inactive-metadata.gif)
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-inactive-metadata/) and can output Grafana, Slack and MsTeams Notifications.
 
