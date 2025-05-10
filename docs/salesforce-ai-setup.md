@@ -14,7 +14,7 @@ If you follow Flows best practices and **do not hardcode credentials / tokens in
 
 You can see the prompts content if you set env variable `DEBUG_PROMPTS=true`.
 
-The list of prompts used by sfdx-hardis is defined in [this source file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/promptTemplates.ts).
+See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and how to override them.
 
 ## Main configuration
 
