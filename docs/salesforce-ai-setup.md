@@ -72,7 +72,7 @@ You can use a local Ollama instance to generate documentation. This requires Oll
 - Follow the installation instructions for your platform
 - After installation, start the Ollama service with `ollama serve`
 
-#### Pull a Model**
+#### Pull a Model
 ```bash
 # Pull your preferred model, for example:
 ollama pull qwen2.5-coder:14b
@@ -81,7 +81,7 @@ ollama pull qwen2.5-coder:14b
 ollama list
 ```
 
-#### Configure environment variables**
+#### Configure environment variables
 
 | Variable       | Description                                                                               | Default       |
 |----------------|-------------------------------------------------------------------------------------------|---------------|
