@@ -5,7 +5,7 @@ const template: PromptTemplateDefinition = {
     {
       name: "PERMISSIONSETGROUP_NAME",
       description: "The name of the Salesforce Permission Set Group to describe.",
-      example: "My_Permission_Set_Group"
+      example: "PS_CloudityAdmin"
     },
     {
       name: "PERMISSIONSETGROUP_XML",

@@ -1,20 +1,20 @@
-import { PromptTemplateDefinition } from "./types.js";
+---
+title: PROMPT_DESCRIBE_FLOW_DIFF
+description: Prompt template for PROMPT_DESCRIBE_FLOW_DIFF
+---
 
-const template: PromptTemplateDefinition = {
-  variables: [
-    {
-      name: "FLOW_XML_NEW",
-      description: "The XML definition of the new version of the Salesforce Flow.",
-      example: "<Flow>...</Flow>"
-    },
-    {
-      name: "FLOW_XML_PREVIOUS",
-      description: "The XML definition of the previous version of the Salesforce Flow.",
-      example: "<Flow>...</Flow>"
-    }
-  ],
-  text: {
-    "en": `You are a business analyst working on a Salesforce project. Your goal is to describe the differences between the new and previous versions of a Salesforce Flow in plain English, providing a detailed explanation suitable for a business user.
+# PROMPT_DESCRIBE_FLOW_DIFF
+
+## Variables
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **FLOW_XML_NEW** | The XML definition of the new version of the Salesforce Flow. | `<FlowDefinition>...</FlowDefinition>` |
+| **FLOW_XML_PREVIOUS** | The XML definition of the previous version of the Salesforce Flow. | `<FlowDefinition>...</FlowDefinition>` |
+
+## Prompt
+
+```
+You are a business analyst working on a Salesforce project. Your goal is to describe the differences between the new and previous versions of a Salesforce Flow in plain English, providing a detailed explanation suitable for a business user.
 
 ### Instructions:
 
@@ -45,8 +45,11 @@ const template: PromptTemplateDefinition = {
 {{FLOW_XML_PREVIOUS}}
 
 Caution: If the XML contains secret tokens or passwords, please replace them with a placeholder (e.g., [REDACTED]). Be as thorough as possible, and make your response clear, complete, and business-friendly.
-`,
-  },
-};
 
-export default template;
+```
+
+## How to override
+
+To define your own prompt text, you can define a local file **prompt-templates/PROMPT_DESCRIBE_FLOW_DIFF.txt**
+
+If you do so, please don't forget to use the replacement variables :)

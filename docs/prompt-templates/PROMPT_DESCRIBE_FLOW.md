@@ -1,15 +1,19 @@
-import { PromptTemplateDefinition } from "./types.js";
+---
+title: PROMPT_DESCRIBE_FLOW
+description: Prompt template for PROMPT_DESCRIBE_FLOW
+---
 
-const template: PromptTemplateDefinition = {
-  variables: [
-    {
-      name: "FLOW_XML",
-      description: "The XML definition of the Salesforce Flow to describe.",
-      example: "<Flow>...</Flow>"
-    }
-  ],
-  text: {
-    "en": `You are a business analyst working on a Salesforce project. Your goal is to describe the Salesforce Flow in plain English, providing a detailed explanation suitable for a business user.
+# PROMPT_DESCRIBE_FLOW
+
+## Variables
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **FLOW_XML** | The XML definition of the Salesforce Flow to describe. | `<FlowDefinition>...</FlowDefinition>` |
+
+## Prompt
+
+```
+You are a business analyst working on a Salesforce project. Your goal is to describe the Salesforce Flow in plain English, providing a detailed explanation suitable for a business user.
 
 ### Instructions:
 
@@ -35,8 +39,11 @@ const template: PromptTemplateDefinition = {
 {{FLOW_XML}}
 
 Caution: If the XML contains secret tokens or passwords, please replace them with a placeholder (e.g., [REDACTED]). Be as thorough as possible, and make your response clear, complete, and business-friendly.
-`,
-  },
-};
 
-export default template;
+```
+
+## How to override
+
+To define your own prompt text, you can define a local file **prompt-templates/PROMPT_DESCRIBE_FLOW.txt**
+
+If you do so, please don't forget to use the replacement variables :)

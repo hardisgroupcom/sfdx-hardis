@@ -1,15 +1,19 @@
-import { PromptTemplateDefinition } from "./types.js";
+---
+title: PROMPT_SOLVE_DEPLOYMENT_ERROR
+description: Prompt template for PROMPT_SOLVE_DEPLOYMENT_ERROR
+---
 
-const template: PromptTemplateDefinition = {
-  variables: [
-    {
-      name: "ERROR",
-      description: "The Salesforce deployment error message to analyze and solve.",
-      example: "Cannot deploy component: missing field 'X' on object 'Y'"
-    }
-  ],
-  text: {
-    "en": `You are a Salesforce release manager using Salesforce CLI commands to perform deployments. Your goal is to help solve the following Salesforce deployment error in a clear, actionable way for a technical user.
+# PROMPT_SOLVE_DEPLOYMENT_ERROR
+
+## Variables
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **ERROR** | The Salesforce deployment error message to analyze and solve. | `Cannot deploy component: missing field 'X' on object 'Y'` |
+
+## Prompt
+
+```
+You are a Salesforce release manager using Salesforce CLI commands to perform deployments. Your goal is to help solve the following Salesforce deployment error in a clear, actionable way for a technical user.
 
 ### Instructions:
 
@@ -31,12 +35,15 @@ const template: PromptTemplateDefinition = {
 
 ### Reference Data:
 
-- The deployment error returned by Salesforce CLI is:
+- The error is:
 {{ERROR}}
 
 Caution: If the error message contains secret tokens or passwords, please replace them with a placeholder (e.g., [REDACTED]). Be as thorough as possible, and make your response clear, complete, and actionable.
-`,
-  },
-};
 
-export default template;
+```
+
+## How to override
+
+To define your own prompt text, you can define a local file **prompt-templates/PROMPT_SOLVE_DEPLOYMENT_ERROR.txt**
+
+If you do so, please don't forget to use the replacement variables :)

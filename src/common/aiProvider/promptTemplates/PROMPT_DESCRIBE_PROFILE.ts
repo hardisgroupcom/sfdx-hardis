@@ -5,7 +5,7 @@ const template: PromptTemplateDefinition = {
     {
       name: "PROFILE_NAME",
       description: "The name of the Salesforce Profile to describe.",
-      example: "Standard User"
+      example: "Cloudity Sales"
     },
     {
       name: "PROFILE_XML",

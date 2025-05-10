@@ -24,20 +24,23 @@ export type PromptTemplate =
 
 // Loads a template, allowing override from local JSON if present
 function getPromptTemplate(template: PromptTemplate): PromptTemplateDefinition {
-  // Check for local override (JSON file)
-  const localPath = path.resolve(process.cwd(), "promptTemplates", `${template}.json`);
+  const templateData = IMPORTED_PROMPT_TEMPLATES[template];
+  if (!templateData) {
+    throw new Error(`Unknown prompt template: ${template}`);
+  }
+  // Check for local override (Text file)
+  const localPath = path.resolve(process.cwd(), "prompt-templates", `${template}.txt`);
   if (fs.existsSync(localPath)) {
     try {
-      const localTemplate = fs.readJsonSync(localPath);
-      return localTemplate;
+      const localTemplate = fs.readFileSync(localPath , "utf-8");
+      templateData.text = { 
+        "en": localTemplate,
+      };
+      uxLog(this, `Loaded local prompt template for ${template} from ${localPath}`);
     } catch (e: any) {
       // fallback to default if error
       uxLog(this, `Error loading local template for ${template}: ${e.message}`);
     }
-  }
-  const templateData = IMPORTED_PROMPT_TEMPLATES[template];
-  if (!templateData) {
-    throw new Error(`Unknown prompt template: ${template}`);
   }
   return templateData;
 }
