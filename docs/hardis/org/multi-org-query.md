@@ -14,34 +14,34 @@ If you use the command from a CI/CD job, you must previously authenticate to the
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
-|query<br/>-q|option|SOQL Query to run on multiple orgs||||
-|query-template<br/>-t|option|Use one of predefined SOQL Query templates|||active-users<br/>all-users|
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-orgs<br/>-x|option|List of org usernames or aliases.||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                  |  Type   | Description                                                       | Default | Required |          Options           |
+|:----------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:--------------------------:|
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                   |         |          |                            |
+| flags-dir             | option  | undefined                                                         |         |          |                            |
+| json                  | boolean | Format output as json.                                            |         |          |                            |
+| outputfile<br/>-f     | option  | Force the path and name of output report file. Must end with .csv |         |          |                            |
+| query<br/>-q          | option  | SOQL Query to run on multiple orgs                                |         |          |                            |
+| query-template<br/>-t | option  | Use one of predefined SOQL Query templates                        |         |          | active-users<br/>all-users |
+| skipauth              | boolean | Skip authentication check when a default username is required     |         |          |                            |
+| target-orgs<br/>-x    | option  | List of org usernames or aliases.                                 |         |          |                            |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |                            |
 
 ## Examples
 
 ```shell
-$ sf hardis:org:multi-org-query
+sf hardis:org:multi-org-query
 ```
 
 ```shell
-$ sf hardis:org:multi-org-query --query "SELECT Id,Username FROM User"
+sf hardis:org:multi-org-query --query "SELECT Id,Username FROM User"
 ```
 
 ```shell
-$ sf hardis:org:multi-org-query --query "SELECT Id,Username FROM User" --target-orgs nico@cloudity.com nico@cloudity.com.preprod nico@cloudity.com.uat
+sf hardis:org:multi-org-query --query "SELECT Id,Username FROM User" --target-orgs nico@cloudity.com nico@cloudity.com.preprod nico@cloudity.com.uat
 ```
 
 ```shell
-$ sf hardis:org:multi-org-query --query-template active-users --target-orgs nico@cloudity.com nico@cloudity.com.preprod nico@cloudity.com.uat
+sf hardis:org:multi-org-query --query-template active-users --target-orgs nico@cloudity.com nico@cloudity.com.preprod nico@cloudity.com.uat
 ```
 
 
