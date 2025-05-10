@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) Allow to use ollama and Anthropic LLMs, through langchainJs
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Allow to use ollama and Anthropic LLMs, through langchainJs
 - sfdx-hardis prompt templates enhancements:
   - Add prompt templates in online documentation
   - Allow to locally override prompt templates text in `prompt-templates/${templateName}.txt`
