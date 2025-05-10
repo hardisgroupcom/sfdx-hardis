@@ -6,11 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_PAGE
 # PROMPT_DESCRIBE_PAGE
 
 ## Variables
-
-| Name          | Description                                            | Example                      |
-|:--------------|:-------------------------------------------------------|:-----------------------------|
-| **PAGE_NAME** | The name of the Salesforce Lightning Page to describe. | `Account_Record_Page`        |
-| **PAGE_XML**  | The XML metadata for the Lightning Page.               | `<FlexiPage>...</FlexiPage>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **PAGE_NAME** | The name of the Salesforce Lightning Page to describe. | `Account_Record_Page` |
+| **PAGE_XML** | The XML metadata for the Lightning Page. | `<FlexiPage>...</FlexiPage>` |
 
 ## Prompt
 
@@ -41,6 +40,6 @@ Caution: Redact any sensitive information and replace with `[REDACTED]`. Be as t
 
 ## How to override
 
-To define your own prompt text, you can define a local file **prompt-templates/PROMPT_DESCRIBE_PAGE.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_PAGE.txt**
 
 If you do so, please don't forget to use the replacement variables :)

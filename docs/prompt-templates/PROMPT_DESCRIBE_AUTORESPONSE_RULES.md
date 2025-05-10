@@ -6,11 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_AUTORESPONSE_RULES
 # PROMPT_DESCRIBE_AUTORESPONSE_RULES
 
 ## Variables
-
-| Name                       | Description                                                | Example                                      |
-|:---------------------------|:-----------------------------------------------------------|:---------------------------------------------|
-| **AUTORESPONSERULES_NAME** | The name of the Salesforce AutoResponse Rules to describe. | `Case_AutoResponse_Rules`                    |
-| **AUTORESPONSERULES_XML**  | The XML metadata for the Salesforce AutoResponse Rules.    | `<AutoResponseRules>...</AutoResponseRules>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **AUTORESPONSERULES_NAME** | The name of the Salesforce AutoResponse Rules to describe. | `Case_AutoResponse_Rules` |
+| **AUTORESPONSERULES_XML** | The XML metadata for the Salesforce AutoResponse Rules. | `<AutoResponseRules>...</AutoResponseRules>` |
 
 ## Prompt
 
@@ -43,6 +42,6 @@ Caution: Redact any sensitive information and replace with `[REDACTED]`. Be as t
 
 ## How to override
 
-To define your own prompt text, you can define a local file **prompt-templates/PROMPT_DESCRIBE_AUTORESPONSE_RULES.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_AUTORESPONSE_RULES.txt**
 
 If you do so, please don't forget to use the replacement variables :)

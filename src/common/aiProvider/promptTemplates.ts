@@ -29,11 +29,11 @@ function getPromptTemplate(template: PromptTemplate): PromptTemplateDefinition {
     throw new Error(`Unknown prompt template: ${template}`);
   }
   // Check for local override (Text file)
-  const localPath = path.resolve(process.cwd(), "prompt-templates", `${template}.txt`);
+  const localPath = path.resolve(process.cwd(), "config", "prompt-templates", `${template}.txt`);
   if (fs.existsSync(localPath)) {
     try {
-      const localTemplate = fs.readFileSync(localPath , "utf-8");
-      templateData.text = { 
+      const localTemplate = fs.readFileSync(localPath, "utf-8");
+      templateData.text = {
         "en": localTemplate,
       };
       uxLog(this, `Loaded local prompt template for ${template} from ${localPath}`);

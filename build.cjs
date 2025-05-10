@@ -142,7 +142,7 @@ class SfdxHardisBuilder {
         '',
         '## How to override',
         '',
-        `To define your own prompt text, you can define a local file **prompt-templates/${templateName}.txt**`,
+        `To define your own prompt text, you can define a local file **config/prompt-templates/${templateName}.txt**`,
         ``,
         `If you do so, please don't forget to use the replacement variables :)`
       ];

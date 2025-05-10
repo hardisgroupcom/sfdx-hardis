@@ -6,11 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_PERMISSION_SET_GROUP
 # PROMPT_DESCRIBE_PERMISSION_SET_GROUP
 
 ## Variables
-
-| Name                        | Description                                                  | Example                                        |
-|:----------------------------|:-------------------------------------------------------------|:-----------------------------------------------|
-| **PERMISSIONSETGROUP_NAME** | The name of the Salesforce Permission Set Group to describe. | `PS_CloudityAdmin`                             |
-| **PERMISSIONSETGROUP_XML**  | The XML metadata for the Salesforce Permission Set Group.    | `<PermissionSetGroup>...</PermissionSetGroup>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **PERMISSIONSETGROUP_NAME** | The name of the Salesforce Permission Set Group to describe. | `PS_CloudityAdmin` |
+| **PERMISSIONSETGROUP_XML** | The XML metadata for the Salesforce Permission Set Group. | `<PermissionSetGroup>...</PermissionSetGroup>` |
 
 ## Prompt
 
@@ -41,6 +40,6 @@ Caution: Redact any sensitive information and replace with `[REDACTED]`. Be as t
 
 ## How to override
 
-To define your own prompt text, you can define a local file **prompt-templates/PROMPT_DESCRIBE_PERMISSION_SET_GROUP.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_PERMISSION_SET_GROUP.txt**
 
 If you do so, please don't forget to use the replacement variables :)
