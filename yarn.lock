@@ -2049,10 +2049,10 @@
     wordwrap "^1.0.0"
     wrap-ansi "^7.0.0"
 
-"@oclif/plugin-command-snapshot@^5.2.38":
-  version "5.2.38"
-  resolved "https://registry.npmjs.org/@oclif/plugin-command-snapshot/-/plugin-command-snapshot-5.2.38.tgz"
-  integrity "sha1-opfBKbl8gt6Z2FS0IwTvW0XBJtk= sha512-zMns9a5pxz2RfFWxTrfW6fbXRWLzQZ3VwUuSVxm9FIYhv6qdxCEI/f5zexm4jwT5nNgJrpd+erPsISnb8dYWjw=="
+"@oclif/plugin-command-snapshot@^5.2.39":
+  version "5.2.39"
+  resolved "https://registry.yarnpkg.com/@oclif/plugin-command-snapshot/-/plugin-command-snapshot-5.2.39.tgz#988af7777afd743a612eef1c99778aab7c36a506"
+  integrity sha512-Fnos8nK3hwdwQ+mXich6Ckx0KHiQIvJXeD85xpYghbd14RUfFZueS5+56DO9JpW8O7z5N4q9w3TOqkO72iAJIw==
   dependencies:
     "@oclif/core" "^4"
     ansis "^3.17.0"
