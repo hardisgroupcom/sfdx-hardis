@@ -73,6 +73,9 @@
     "xml2js": "^0.6.2",
     "xpath": "^0.0.34"
   },
+  "resolutions": {
+    "@langchain/core": "0.3.55"
+  },
   "devDependencies": {
     "@oclif/plugin-command-snapshot": "^5.2.39",
     "@salesforce/cli-plugins-testkit": "^5.3.39",

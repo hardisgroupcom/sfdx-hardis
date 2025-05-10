@@ -6,7 +6,9 @@
     "noImplicitAny": false,
     "noImplicitThis": false,
     "strictPropertyInitialization": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "target": "ES2020",
+    "module": "nodenext",
   },
   "include": [
     "./src/**/*.ts"

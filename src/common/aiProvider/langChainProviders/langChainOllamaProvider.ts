@@ -9,11 +9,12 @@ export class LangChainOllamaProvider extends AbstractLLMProvider {
   }
 
   getModel(): BaseChatModel {
-    return new ChatOllama({
+    const config = {
       model: this.modelName,
       baseUrl: this.config.baseUrl || "http://localhost:11434",
       temperature: this.config.temperature,
       maxRetries: this.config.maxRetries
-    });
+    };
+    return new ChatOllama(config) as any;
   }
 } 
