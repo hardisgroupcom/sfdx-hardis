@@ -15,6 +15,8 @@ You can remove more metadata types from backup, especially in case you have too 
 
 - Manual update of `manifest/package-skip-items.xml` config file (then commit & push in the same branch)
 
+  - Works with full wildcard (`<members>*</members>`) , named metadata (`<members>Account.Name</members>`) or partial wildcards names (`<members>pi__*</members>` , `<members>*__dlm</members>` , or `<members>prefix*suffix</members>`)
+
 - Environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: `MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation`): that will be applied to all monitoring branches.
 
 ## Full mode
@@ -34,6 +36,14 @@ _With those both options, it's like if you are not using --full, but with chunke
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
 
+## Troubleshooting
+
+If you have unknown errors (it happens !), you can investigate using the full command with smaller chunks.
+
+Example: `sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters --max-by-chunk 500`
+
+It will allow you the identify the responsible metadata and ignore it using package-skip-items.xml or MONITORING_BACKUP_SKIP_METADATA_TYPES env variable.
+
 ## Documentation
 
 [Doc generation (including visual flows)](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) is triggered at the end of the command.
@@ -52,37 +62,38 @@ If Flow history doc always display a single state, you probably need to update y
 
 ## Parameters
 
-| Name                      |  Type   | Description                                                                                                                                | Default | Required | Options |
-|:--------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d              | boolean | Activate debug mode (more logs)                                                                                                            |         |          |         |
-| exclude-namespaces<br/>-e | boolean | If mode --full is activated, exclude namespaced metadatas                                                                                  |         |          |         |
-| flags-dir                 | option  | undefined                                                                                                                                  |         |          |         |
-| full                      | boolean | Dot not take in account filtering using package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES. Efficient but much much slower ! |         |          |         |
-| full-apply-filters<br/>-z | boolean | If mode --full is activated, apply filters of manifest/package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES anyway             |         |          |         |
-| json                      | boolean | Format output as json.                                                                                                                     |         |          |         |
-| max-by-chunk<br/>-m       | option  | If mode --full is activated, maximum number of metadatas in a package.xml chunk                                                            |  3000   |          |         |
-| outputfile<br/>-f         | option  | Force the path and name of output report file. Must end with .csv                                                                          |         |          |         |
-| skip-doc                  | boolean | Skip the generation of project documentation at the end of the command                                                                     |         |          |         |
-| skipauth                  | boolean | Skip authentication check when a default username is required                                                                              |         |          |         |
-| target-org<br/>-o         | option  | undefined                                                                                                                                  |         |          |         |
-| websocket                 | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                  |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|exclude-namespaces<br/>-e|boolean|If mode --full is activated, exclude namespaced metadatas||||
+|flags-dir|option|undefined||||
+|full|boolean|Dot not take in account filtering using package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES. Efficient but much much slower !||||
+|full-apply-filters<br/>-z|boolean|If mode --full is activated, apply filters of manifest/package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES anyway||||
+|json|boolean|Format output as json.||||
+|max-by-chunk<br/>-m|option|If mode --full is activated, maximum number of metadatas in a package.xml chunk|3000|||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|skip-doc|boolean|Skip the generation of project documentation at the end of the command||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|start-chunk|option|Use this parameter to troubleshoot a specific chunk. It will be used as the first chunk to retrieve|1|||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy.ext@vusion.com|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:org:monitor:backup
+$ sf hardis:org:monitor:backup
 ```
 
 ```shell
-sf hardis:org:monitor:backup --full
+$ sf hardis:org:monitor:backup --full
 ```
 
 ```shell
-sf hardis:org:monitor:backup --full --exclude-namespaces
+$ sf hardis:org:monitor:backup --full --exclude-namespaces
 ```
 
 ```shell
-sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters
+$ sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters
 ```
 
 
