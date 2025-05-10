@@ -45,6 +45,6 @@ Caution: If the error message contains secret tokens or passwords, please replac
 
 ## How to override
 
-To define your own prompt text, you can define a local file **prompt-templates/PROMPT_SOLVE_DEPLOYMENT_ERROR.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_SOLVE_DEPLOYMENT_ERROR.txt**
 
 If you do so, please don't forget to use the replacement variables :)
