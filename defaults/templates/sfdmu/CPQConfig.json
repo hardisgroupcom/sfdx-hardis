@@ -1,0 +1,144 @@
+{
+  "objects": [
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, IsDeleted, Name, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, LastViewedDate, LastReferencedDate, SBQQ__Description__c, SBQQ__Explanation__c, SBQQ__IncludePriorPurchases__c, SBQQ__IsActive__c, SBQQ__Summary__c, SBQQ__Type__c, SBQQ__Unit__c FROM SBQQ__PricingGuidance__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT SBQQ__AssetAmendmentBehavior__c, SBQQ__AssetConversion__c, SBQQ__BatchQuantity__c, SBQQ__BillingFrequency__c, SBQQ__BillingType__c, SBQQ__BlockPricingField__c, SBQQ__ChargeType__c, SBQQ__Component__c, SBQQ__CompoundDiscountRate__c, SBQQ__ConfigurationEvent__c, SBQQ__ConfigurationFieldSet__c, SBQQ__ConfigurationFields__c, SBQQ__ConfigurationFormTitle__c, SBQQ__ConfigurationType__c, SBQQ__ConfigurationValidator__c, SBQQ__ConfiguredCodePattern__c, SBQQ__ConfiguredDescriptionPattern__c, SBQQ__CostEditable__c, SBQQ__CustomConfigurationPage__c, SBQQ__CustomConfigurationRequired__c, SBQQ__CustomerCommunityAvailability__c, SBQQ__DefaultPricingTable__c, SBQQ__DefaultQuantity__c, SBQQ__DescriptionLocked__c, SBQQ__DynamicPricingConstraint__c, SBQQ__EnableLargeConfiguration__c, SBQQ__ExcludeFromMaintenance__c, SBQQ__ExcludeFromOpportunity__c, SBQQ__ExternallyConfigurable__c, SBQQ__GenerateContractedPrice__c, SBQQ__HasConfigurationAttributes__c, SBQQ__HasConsumptionSchedule__c, SBQQ__Hidden__c, SBQQ__HidePriceInSearchResults__c, SBQQ__IncludeInMaintenance__c, SBQQ__NewQuoteGroup__c, SBQQ__NonDiscountable__c, SBQQ__NonPartnerDiscountable__c, SBQQ__OptionLayout__c, SBQQ__OptionSelectionMethod__c, SBQQ__Optional__c, SBQQ__PriceEditable__c, SBQQ__PricingMethodEditable__c, SBQQ__PricingMethod__c, SBQQ__ProductPictureID__c, SBQQ__QuantityEditable__c, SBQQ__QuantityScale__c, SBQQ__ReconfigurationDisabled__c, SBQQ__SortOrder__c, SBQQ__Specifications__c, SBQQ__SubscriptionBase__c, SBQQ__SubscriptionCategory__c, SBQQ__SubscriptionPercent__c, SBQQ__SubscriptionPricing__c, SBQQ__SubscriptionTerm__c, SBQQ__SubscriptionType__c, SBQQ__TaxCode__c, SBQQ__Taxable__c, SBQQ__TermDiscountLevel__c, SBQQ__UpgradeRatio__c, SBQQ__CostSchedule__c, SBQQ__DiscountCategory__c, SBQQ__DiscountSchedule__c, SBQQ__PricingGuidance__c, SBQQ__RenewalProduct__c, SBQQ__SubscriptionTarget__c, SBQQ__TermDiscountSchedule__c, SBQQ__UpgradeCredit__c, SBQQ__UpgradeSource__c, SBQQ__UpgradeTarget__c, Description, DisplayUrl, ExternalId, Family, Id, IsActive, Name, ProductCode, QuantityUnitOfMeasure, StockKeepingUnit FROM Product2"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT SBQQ__Category__c, SBQQ__ConfigurationFieldSet__c, SBQQ__DynamicProductFilterFieldSet__c, SBQQ__DynamicProductLookupFieldSet__c, SBQQ__MaxOptionCount__c, SBQQ__MinOptionCount__c, SBQQ__Number__c, SBQQ__OptionSelectionMethod__c, SBQQ__ConfiguredSKU__c, SBQQ__DiscountSchedule__c, Id, Name FROM SBQQ__ProductFeature__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, IsDeleted, Name, RecordTypeId, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, LastViewedDate, LastReferencedDate, SBQQ__AppliedImmediately__c, SBQQ__ApplyToProductOptions__c, SBQQ__AutoSelect__c, SBQQ__ColumnOrder__c, SBQQ__DefaultField__c, SBQQ__DefaultObject__c, SBQQ__DisplayOrder__c, SBQQ__Feature__c, SBQQ__HiddenValues__c, SBQQ__Hidden__c, SBQQ__Position__c, SBQQ__Product__c, SBQQ__Required__c, SBQQ__ShownValues__c, SBQQ__TargetField__c, SBQQ__Global__c FROM SBQQ__ConfigurationAttribute__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, Name, SBQQ__AppliedImmediatelyContext__c, SBQQ__AppliedImmediately__c, SBQQ__Bundled__c, SBQQ__ComponentCodePosition__c, SBQQ__ComponentCode__c, SBQQ__ComponentDescriptionPosition__c, SBQQ__ComponentDescription__c, SBQQ__DefaultPricingTable__c, SBQQ__DiscountAmount__c, SBQQ__Discount__c, SBQQ__DiscountedByPackage__c, SBQQ__ExistingQuantity__c, SBQQ__MaxQuantity__c, SBQQ__MinQuantity__c, SBQQ__Number__c, SBQQ__QuantityEditable__c, SBQQ__Quantity__c, SBQQ__QuoteLineVisibility__c, SBQQ__Required__c, SBQQ__Selected__c, SBQQ__SubscriptionScope__c, SBQQ__System__c, SBQQ__Type__c, SBQQ__UnitPrice__c, SBQQ__UpliftedByPackage__c, SBQQ__ConfiguredSKU__c, SBQQ__DiscountSchedule__c, SBQQ__Feature__c, SBQQ__OptionalSKU__c, SBQQ__RenewalProductOption__c FROM SBQQ__ProductOption__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, Name, Description, IsActive FROM Pricebook2"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, Name, IsActive, UnitPrice, UseStandardPrice, Pricebook2Id, Product2Id FROM PricebookEntry"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, Name, SBQQ__Active__c, SBQQ__CheckPriorPurchases__c, SBQQ__OptionConstraintGroup__c, SBQQ__Type__c, SBQQ__ConfiguredSKU__c, SBQQ__ConstrainingOption__c, SBQQ__ConstrainedOption__c FROM SBQQ__OptionConstraint__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, IsDeleted, Name, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, LastViewedDate, LastReferencedDate, SBQQ__Active__c, SBQQ__AdvancedCondition__c, SBQQ__ConditionsMet__c, SBQQ__ErrorMessage__c, SBQQ__EvaluationEvent__c, SBQQ__EvaluationOrder__c, SBQQ__LookupMessageField__c, SBQQ__LookupObject__c, SBQQ__LookupProductField__c, SBQQ__LookupRequiredField__c, SBQQ__LookupTypeField__c, SBQQ__Scope__c, SBQQ__Type__c FROM SBQQ__ProductRule__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, Name, SBQQ__Active__c, SBQQ__AscendingNestedLevel__c, SBQQ__DescendingActionNesting__c, SBQQ__DescendingNestedLevel__c, SBQQ__ProductFeature__c, SBQQ__Product__c, SBQQ__ProductRule__c FROM SBQQ__ConfigurationRule__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, Name, SBQQ__Active__c, SBQQ__AdvancedCondition__c, SBQQ__ConditionsMet__c, SBQQ__ConfiguratorEvaluationEvent__c, SBQQ__EvaluationEvent__c, SBQQ__EvaluationOrder__c, SBQQ__LookupObject__c, SBQQ__TargetObject__c, SBQQ__Product__c FROM SBQQ__PriceRule__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, Name, SBQQ__Field__c, SBQQ__Formula__c, SBQQ__Order__c, SBQQ__SourceLookupField__c, SBQQ__TargetObject__c, SBQQ__ValueField__c, SBQQ__Value__c, SBQQ__SourceVariable__c, SBQQ__Rule__c FROM SBQQ__PriceAction__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, Name, SBQQ__LookupField__c, SBQQ__MatchType__c, SBQQ__Operator__c, SBQQ__TestedField__c, SBQQ__TestedObject__c, SBQQ__TestedValue__c, SBQQ__PriceRule2__c, SBQQ__ProductRule__c, SBQQ__TestedConfigurationAttribute__c FROM SBQQ__LookupQuery__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, Name, SBQQ__AggregateField__c, SBQQ__AggregateFunction__c, SBQQ__CompositeOperator__c, SBQQ__ConstraintField__c, SBQQ__FilterField__c, SBQQ__FilterValue__c, SBQQ__Operator__c, SBQQ__Scope__c, SBQQ__TargetObject__c, SBQQ__ValueElement__c, SBQQ__CombineWith__c FROM SBQQ__SummaryVariable__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, Name, SBQQ__MaxDiscountRate__c FROM SBQQ__DiscountCategory__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT SBQQ__AggregationScope__c, SBQQ__ConstraintField__c, SBQQ__CrossOrders__c, SBQQ__CrossProducts__c, SBQQ__Description__c, SBQQ__DiscountUnit__c, SBQQ__ExcludedPricebookIds__c, SBQQ__IncludeBundledProducts__c, SBQQ__OverrideBehavior__c, SBQQ__PriceScale__c, SBQQ__QuoteLineQuantityField__c, SBQQ__Type__c, SBQQ__UsePriceForAmount__c, SBQQ__UserDefined__c, SBQQ__Account__c, SBQQ__OrderProduct__c, SBQQ__Order__c, SBQQ__OriginalDiscountSchedule__c, SBQQ__Pricebook__c, SBQQ__Product__c, SBQQ__QuoteLine__c, SBQQ__Quote__c, Id, Name FROM SBQQ__DiscountSchedule__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, IsDeleted, Name, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, SBQQ__Rule__c, SBQQ__FilterType__c, SBQQ__FilterValue__c, SBQQ__FilterVariable__c, SBQQ__Index__c, SBQQ__Operator__c, SBQQ__TestedAttribute__c, SBQQ__TestedObject__c, SBQQ__TestedVariable__c, SBQQ__ParentRuleIsActive__c, SBQQ__RuleTargetsQuote__c, SBQQ__TestedField__c FROM SBQQ__ErrorCondition__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, IsDeleted, Name, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, SBQQ__Rule__c, SBQQ__Field__c, SBQQ__FilterFormula__c, SBQQ__FilterType__c, SBQQ__FilterVariable__c, SBQQ__Index__c, SBQQ__Object__c, SBQQ__Operator__c, SBQQ__TestedFormula__c, SBQQ__TestedVariable__c, SBQQ__Value__c, SBQQ__ParentRuleIsActive__c, SBQQ__RuleTargetsCalculator__c FROM SBQQ__PriceCondition__c"
+      },
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, IsDeleted, Name, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, SBQQ__Rule__c, SBQQ__FilterField__c, SBQQ__FilterValue__c, SBQQ__Operator__c, SBQQ__Product__c, SBQQ__Required__c, SBQQ__Type__c, SBQQ__ValueAttribute__c, SBQQ__ValueField__c, SBQQ__ValueObject__c, SBQQ__ParentRuleIsActive__c FROM SBQQ__ProductAction__c"
+      }, 
+      {
+          "operation": "Upsert",
+          "externalId": "Name",
+          "query": "SELECT Id, IsDeleted, Name, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, SBQQ__Attribute__c, SBQQ__AppliedImmediately__c, SBQQ__ApplyToProductOptions__c, SBQQ__AttributeSet__c, SBQQ__AutoSelect__c, SBQQ__HiddenValues__c, SBQQ__Hidden__c, SBQQ__Required__c, SBQQ__Sequence__c, SBQQ__ShownValues__c, SBQQ__TargetField__c FROM SBQQ__ProductAttribute__c"
+      },
+      {
+          "operation": "Readonly",
+          "externalId": "Name",
+          "query": "SELECT Name FROM Account"
+      },
+      {
+          "operation": "Readonly",
+          "externalId": "Name",
+          "query": "SELECT Name FROM Order"
+      },
+      {
+          "operation": "Readonly",
+          "externalId": "Name",
+          "query": "SELECT Name FROM OrderItem"
+      },
+      {
+          "operation": "Readonly",
+          "externalId": "Name",
+          "query": "SELECT Name FROM SBQQ__AttributeSet__c"
+      },
+      {
+          "operation": "Readonly",
+          "externalId": "Name",
+          "query": "SELECT Name FROM SBQQ__LookupQuery__c"
+      },
+      {
+          "operation": "Readonly",
+          "externalId": "Name",
+          "query": "SELECT Name FROM SBQQ__Quote__c"
+      },
+      {
+          "operation": "Readonly",
+          "externalId": "Name",
+          "query": "SELECT Name FROM SBQQ__QuoteLine__c"
+      }
+  ],
+  "allOrNone": true,
+  "promptOnMissingParentObjects": false,
+  "promptOnIssuesInCSVFiles": false,
+  "concurrencyMode" : "Serial",
+  "bulkApiVersion" : "1.0"
+}
