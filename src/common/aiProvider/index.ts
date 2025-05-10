@@ -7,6 +7,7 @@ import { buildPromptFromTemplate, PromptTemplate } from "./promptTemplates.js";
 import { isCI, uxLog } from "../utils/index.js";
 import { prompts } from "../utils/prompts.js";
 import { AgentforceProvider } from "./agentforceProvider.js";
+import { LangChainProvider } from "./langchainProvider.js";
 
 let IS_AI_AVAILABLE: boolean | null = null;
 
@@ -42,8 +43,12 @@ export abstract class AiProvider {
   }
 
   static getInstance(): AiProviderRoot | null {
+    // LangChain
+    if (UtilsAi.isLangChainAvailable()) {
+      return new LangChainProvider();
+    }
     // OpenAi
-    if (UtilsAi.isOpenAiAvailable()) {
+    else if (UtilsAi.isOpenAiAvailable()) {
       return new OpenAiProvider();
     }
     else if (UtilsAi.isAgentforceAvailable()) {
@@ -79,7 +84,6 @@ export abstract class AiProvider {
   static buildPrompt(template: PromptTemplate, variables: object): string {
     return buildPromptFromTemplate(template, variables);
   }
-
 }
 
 export interface AiResponse {
