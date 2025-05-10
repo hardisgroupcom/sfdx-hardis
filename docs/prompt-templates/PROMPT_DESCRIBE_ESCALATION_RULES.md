@@ -6,10 +6,11 @@ description: Prompt template for PROMPT_DESCRIBE_ESCALATION_RULES
 # PROMPT_DESCRIBE_ESCALATION_RULES
 
 ## Variables
-| Name | Description | Example |
-| :------|:-------------|:---------|
-| **ESCALATIONRULES_NAME** | The name of the Salesforce Escalation Rule to describe. | `Case_Escalation_Rule` |
-| **ESCALATIONRULES_XML** | The XML metadata for the Salesforce Escalation Rule. | `<EscalationRules>...</EscalationRules>` |
+
+| Name                     | Description                                             | Example                                  |
+|:-------------------------|:--------------------------------------------------------|:-----------------------------------------|
+| **ESCALATIONRULES_NAME** | The name of the Salesforce Escalation Rule to describe. | `Case_Escalation_Rule`                   |
+| **ESCALATIONRULES_XML**  | The XML metadata for the Salesforce Escalation Rule.    | `<EscalationRules>...</EscalationRules>` |
 
 ## Prompt
 

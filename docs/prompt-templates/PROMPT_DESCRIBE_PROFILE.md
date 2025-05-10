@@ -6,10 +6,11 @@ description: Prompt template for PROMPT_DESCRIBE_PROFILE
 # PROMPT_DESCRIBE_PROFILE
 
 ## Variables
-| Name | Description | Example |
-| :------|:-------------|:---------|
-| **PROFILE_NAME** | The name of the Salesforce Profile to describe. | `Cloudity Sales` |
-| **PROFILE_XML** | The XML metadata for the Salesforce Profile. | `<Profile>...</Profile>` |
+
+| Name             | Description                                     | Example                  |
+|:-----------------|:------------------------------------------------|:-------------------------|
+| **PROFILE_NAME** | The name of the Salesforce Profile to describe. | `Cloudity Sales`         |
+| **PROFILE_XML**  | The XML metadata for the Salesforce Profile.    | `<Profile>...</Profile>` |
 
 ## Prompt
 
