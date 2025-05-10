@@ -44,7 +44,7 @@ Describe Salesforce Approval Process "{{APPROVALPROCESS_NAME}}".
 
 Below is the list of available prompt templates. Click on any template to view its documentation and variable details:
 
-- [Complete Object Attributes](./pprompt-templates/PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD.md)
+- [Complete Object Attributes](prompt-templates/PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD.md)
 - [Describe Apex](prompt-templates/PROMPT_DESCRIBE_APEX.md)
 - [Describe Approval Process](prompt-templates/PROMPT_DESCRIBE_APPROVAL_PROCESS.md)
 - [Describe Assignment Rules](prompt-templates/PROMPT_DESCRIBE_ASSIGNMENT_RULES.md)
