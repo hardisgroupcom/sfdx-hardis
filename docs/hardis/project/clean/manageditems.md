@@ -7,20 +7,20 @@ Remove unwanted managed items within sfdx project sources
 
 ## Parameters
 
-| Name             |  Type   | Description                                                   |  Default  | Required | Options |
-|:-----------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
-| debug<br/>-d     | boolean | Activate debug mode (more logs)                               |           |          |         |
-| flags-dir        | option  | undefined                                                     |           |          |         |
-| folder<br/>-f    | option  | Root folder                                                   | force-app |          |         |
-| json             | boolean | Format output as json.                                        |           |          |         |
-| namespace<br/>-n | option  | Namespace to remove                                           |           |          |         |
-| skipauth         | boolean | Skip authentication check when a default username is required |           |          |         |
-| websocket        | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |           |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|force-app|||
+|json|boolean|Format output as json.||||
+|namespace<br/>-n|option|Namespace to remove||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:project:clean:manageditems --namespace crta
+$ sf hardis:project:clean:manageditems --namespace crta
 ```
 
 
