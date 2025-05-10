@@ -4,10 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.33.0] 2025-05-10
+
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Allow to use ollama, Anthropic and Gemini LLMs, through langchainJs
 - sfdx-hardis prompt templates enhancements:
-  - Add prompt templates in online documentation
-  - Allow to locally override prompt templates text in `prompt-templates/${templateName}.txt`
+  - Add [prompt templates](https://sfdx-hardis.cloudity.com/salesforce-ai-prompts/#available-prompt-templates) in online documentation
+  - Allow to locally [override prompt templates](https://sfdx-hardis.cloudity.com/salesforce-ai-prompts/#overriding-prompts) text in `config/prompt-templates/${templateName}.txt`
   - Rewrite old prompt templates
 - Improve VsCode workspace configuration to avoid performance issues
 - Upgrade npm dependencies
