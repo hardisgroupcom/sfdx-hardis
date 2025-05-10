@@ -1,9 +1,20 @@
 import { PromptTemplateDefinition } from "./types.js";
 
 const template: PromptTemplateDefinition = {
-  variables: ["OBJECT_NAME", "MARKDOWN"],
-  text: {
-    "en": `You are a skilled Business Analyst working on a Salesforce project. Your task is to review and refine the fields and validation rules of the Salesforce object "{{OBJECT_NAME}}" and describe them in plain English. The goal is to create a detailed, user-friendly explanation of each field and validation rule that a non-technical business user can easily understand.
+   variables: [
+      {
+         name: "OBJECT_NAME",
+         description: "The API name of the Salesforce object whose fields and validation rules are being described.",
+         example: "Account"
+      },
+      {
+         name: "MARKDOWN",
+         description: "The markdown table containing the fields and validation rules to be reviewed and refined.",
+         example: "| Field | Label | Description | ... |\n|-------|-------|-------------| ... |"
+      }
+   ],
+   text: {
+      "en": `You are a skilled Business Analyst working on a Salesforce project. Your task is to review and refine the fields and validation rules of the Salesforce object "{{OBJECT_NAME}}" and describe them in plain English. The goal is to create a detailed, user-friendly explanation of each field and validation rule that a non-technical business user can easily understand.
 
 ## Instructions:
 1. **Enhancing Fields Descriptions**:
@@ -36,7 +47,7 @@ const template: PromptTemplateDefinition = {
 - **Consistency**: Maintain consistent formatting and ensure the descriptions are cohesive across all attributes.
 - **Use Examples**: When applicable, include simple examples to illustrate the attribute's purpose or use case.
  `,
-  },
+   },
 };
 
 export default template;

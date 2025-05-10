@@ -1,7 +1,18 @@
 import { PromptTemplateDefinition } from "./types.js";
 
 const template: PromptTemplateDefinition = {
-  variables: ["ESCALATIONRULES_NAME", "ESCALATIONRULES_XML"],
+  variables: [
+    {
+      name: "ESCALATIONRULES_NAME",
+      description: "The name of the Salesforce Escalation Rule to describe.",
+      example: "Case_Escalation_Rule"
+    },
+    {
+      name: "ESCALATIONRULES_XML",
+      description: "The XML metadata for the Salesforce Escalation Rule.",
+      example: "<EscalationRules>...</EscalationRules>"
+    }
+  ],
   text: {
     "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to explain the what is the Salesforce Escalation Rule "{{ESCALATIONRULES_NAME}}" about in plain English, provide a detailed explanation suitable for a business user.
 

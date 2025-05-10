@@ -1,9 +1,30 @@
 import { PromptTemplateDefinition } from "./types.js";
 
 const template: PromptTemplateDefinition = {
-  variables: ["OBJECT_NAME", "OBJECT_XML", "ALL_OBJECTS_LIST", "ALL_OBJECT_LINKS"],
-  text: {
-    "en": `You are a business analyst working on a Salesforce project. Your goal is to describe the Salesforce object "{{OBJECT_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+    variables: [
+        {
+            name: "OBJECT_NAME",
+            description: "The API name of the Salesforce object to describe.",
+            example: "Account"
+        },
+        {
+            name: "OBJECT_XML",
+            description: "The XML metadata definition of the Salesforce object.",
+            example: "<CustomObject>...</CustomObject>"
+        },
+        {
+            name: "ALL_OBJECTS_LIST",
+            description: "A list of all objects in the Salesforce org.",
+            example: "Account, Contact, Opportunity, ..."
+        },
+        {
+            name: "ALL_OBJECT_LINKS",
+            description: "The object model (MasterDetail and Lookup relationships) for all objects.",
+            example: "Account->Contact (Lookup), Opportunity->Account (MasterDetail)"
+        }
+    ],
+    text: {
+        "en": `You are a business analyst working on a Salesforce project. Your goal is to describe the Salesforce object "{{OBJECT_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
 
 ### Instructions:
 
@@ -41,7 +62,7 @@ const template: PromptTemplateDefinition = {
 
 Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
 `,
-  },
+    },
 };
 
 export default template;

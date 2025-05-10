@@ -1,7 +1,13 @@
 import { PromptTemplateDefinition } from "./types.js";
 
 const template: PromptTemplateDefinition = {
-  variables: ["FLOW_XML"],
+  variables: [
+    {
+      name: "FLOW_XML",
+      description: "The XML definition of the Salesforce Flow to describe.",
+      example: "<FlowDefinition>...</FlowDefinition>"
+    }
+  ],
   text: {
     "en": `You are a business analyst working on a Salesforce project.
 Please describe the following flow using plain English that can be understood by a business user.

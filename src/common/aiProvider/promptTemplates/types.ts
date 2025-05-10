@@ -1,5 +1,11 @@
+export interface PromptTemplateVariable {
+  name: string;
+  description: string;
+  example: string;
+}
+
 export interface PromptTemplateDefinition {
-  variables: string[];
+  variables: PromptTemplateVariable[];
   text: {
     [language: string]: string;
   };

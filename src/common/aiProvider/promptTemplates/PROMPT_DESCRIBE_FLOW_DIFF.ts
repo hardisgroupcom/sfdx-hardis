@@ -1,7 +1,18 @@
 import { PromptTemplateDefinition } from "./types.js";
 
 const template: PromptTemplateDefinition = {
-  variables: ["FLOW_XML_NEW", "FLOW_XML_PREVIOUS"],
+  variables: [
+    {
+      name: "FLOW_XML_NEW",
+      description: "The XML definition of the new version of the Salesforce Flow.",
+      example: "<FlowDefinition>...</FlowDefinition>"
+    },
+    {
+      name: "FLOW_XML_PREVIOUS",
+      description: "The XML definition of the previous version of the Salesforce Flow.",
+      example: "<FlowDefinition>...</FlowDefinition>"
+    }
+  ],
   text: {
     "en": `You are a business analyst working on a Salesforce project.
 Please describe the differences between new version of the flow and previous version of the flow, using plain English that can be understood by a business user.

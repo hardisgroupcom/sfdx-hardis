@@ -1,7 +1,18 @@
 import { PromptTemplateDefinition } from "./types.js";
 
 const template: PromptTemplateDefinition = {
-  variables: ["CLASS_NAME", "APEX_CODE"],
+  variables: [
+    {
+      name: "CLASS_NAME",
+      description: "The name of the Salesforce Apex class to describe.",
+      example: "MyCustomController"
+    },
+    {
+      name: "APEX_CODE",
+      description: "The full source code of the Apex class.",
+      example: "public class MyCustomController { ... }"
+    }
+  ],
   text: {
     "en": `You are a developer working on a Salesforce project. Your goal is to summarize the behavior of the Salesforce Apex class "{{CLASS_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
 

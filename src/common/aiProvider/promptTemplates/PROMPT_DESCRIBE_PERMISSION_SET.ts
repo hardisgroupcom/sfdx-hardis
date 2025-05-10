@@ -1,7 +1,18 @@
 import { PromptTemplateDefinition } from "./types.js";
 
 const template: PromptTemplateDefinition = {
-  variables: ["PERMISSIONSET_NAME", "PERMISSIONSET_XML"],
+  variables: [
+    {
+      name: "PERMISSIONSET_NAME",
+      description: "The name of the Salesforce Permission Set to describe.",
+      example: "Custom_Permission_Set"
+    },
+    {
+      name: "PERMISSIONSET_XML",
+      description: "The XML metadata for the Salesforce Permission Set.",
+      example: "<PermissionSet>...</PermissionSet>"
+    }
+  ],
   text: {
     "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce PermissionSet "{{PERMISSIONSET_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
 

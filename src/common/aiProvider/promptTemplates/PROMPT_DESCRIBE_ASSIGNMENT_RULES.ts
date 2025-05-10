@@ -1,7 +1,18 @@
 import { PromptTemplateDefinition } from "./types.js";
 
 const template: PromptTemplateDefinition = {
-  variables: ["ASSIGNMENTRULES_NAME", "ASSIGNMENTRULES_XML"],
+  variables: [
+    {
+      name: "ASSIGNMENTRULES_NAME",
+      description: "The name of the Salesforce Assignment Rules to describe.",
+      example: "Case_Assignment_Rules"
+    },
+    {
+      name: "ASSIGNMENTRULES_XML",
+      description: "The XML metadata for the Salesforce Assignment Rules.",
+      example: "<AssignmentRules>...</AssignmentRules>"
+    }
+  ],
   text: {
     "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce Assignment Rules "{{ASSIGNMENTRULES_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
 

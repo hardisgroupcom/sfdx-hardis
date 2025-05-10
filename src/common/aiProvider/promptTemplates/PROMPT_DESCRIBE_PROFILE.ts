@@ -1,7 +1,18 @@
 import { PromptTemplateDefinition } from "./types.js";
 
 const template: PromptTemplateDefinition = {
-  variables: ["PROFILE_NAME", "PROFILE_XML"],
+  variables: [
+    {
+      name: "PROFILE_NAME",
+      description: "The name of the Salesforce Profile to describe.",
+      example: "Standard User"
+    },
+    {
+      name: "PROFILE_XML",
+      description: "The XML metadata for the Salesforce Profile.",
+      example: "<Profile>...</Profile>"
+    }
+  ],
   text: {
     "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce Profile "{{PROFILE_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
 

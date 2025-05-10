@@ -1,7 +1,18 @@
 import { PromptTemplateDefinition } from "./types.js";
 
 const template: PromptTemplateDefinition = {
-  variables: ["APPROVALPROCESS_NAME", "APPROVALPROCESS_XML"],
+  variables: [
+    {
+      name: "APPROVALPROCESS_NAME",
+      description: "The name of the Salesforce Approval Process to describe.",
+      example: "Opportunity_Approval"
+    },
+    {
+      name: "APPROVALPROCESS_XML",
+      description: "The XML metadata for the Salesforce Approval Process.",
+      example: "<ApprovalProcess>...</ApprovalProcess>"
+    }
+  ],
   text: {
     "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to explain the what is the Salesforce Approval Process "{{APPROVALPROCESS_NAME}}" about in plain English, provide a detailed explanation suitable for a business user.
 
