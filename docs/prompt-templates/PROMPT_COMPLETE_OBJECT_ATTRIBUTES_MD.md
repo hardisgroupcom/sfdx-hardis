@@ -52,6 +52,6 @@ You are a skilled Business Analyst working on a Salesforce project. Your task is
 
 ## How to override
 
-To define your own prompt text, you can define a local file **prompt-templates/PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD.txt**
 
 If you do so, please don't forget to use the replacement variables :)

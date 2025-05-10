@@ -168,21 +168,21 @@ nav:
           - LLM home: salesforce-ai-setup.md
           - Prompts:
               - All prompts: salesforce-ai-prompts.md
-              - Complete Object Attributes: prompts-templates/PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD.md
-              - Describe Apex: prompts-templates/PROMPT_DESCRIBE_APEX.md
-              - Describe Approval Process: prompts-templates/PROMPT_DESCRIBE_APPROVAL_PROCESS.md
-              - Describe Assignment Rules: prompts-templates/PROMPT_DESCRIBE_ASSIGNMENT_RULES.md
-              - Describe AutoResponse Rules: prompts-templates/PROMPT_DESCRIBE_AUTORESPONSE_RULES.md
-              - Describe Escalation Rules: prompts-templates/PROMPT_DESCRIBE_ESCALATION_RULES.md
-              - Describe Flow: prompts-templates/PROMPT_DESCRIBE_FLOW.md
-              - Describe Flow Diff: prompts-templates/PROMPT_DESCRIBE_FLOW_DIFF.md
-              - Describe LWC: prompts-templates/PROMPT_DESCRIBE_LWC.md
-              - Describe Object: prompts-templates/PROMPT_DESCRIBE_OBJECT.md
-              - Describe Page: prompts-templates/PROMPT_DESCRIBE_PAGE.md
-              - Describe Permission Set: prompts-templates/PROMPT_DESCRIBE_PERMISSION_SET.md
-              - Describe Permission Set Group: prompts-templates/PROMPT_DESCRIBE_PERMISSION_SET_GROUP.md
-              - Describe Profile: prompts-templates/PROMPT_DESCRIBE_PROFILE.md
-              - Solve Deployment Error: prompts-templates/PROMPT_SOLVE_DEPLOYMENT_ERROR.md
+              - Complete Object Attributes: prompt-templates/PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD.md
+              - Describe Apex: prompt-templates/PROMPT_DESCRIBE_APEX.md
+              - Describe Approval Process: prompt-templates/PROMPT_DESCRIBE_APPROVAL_PROCESS.md
+              - Describe Assignment Rules: prompt-templates/PROMPT_DESCRIBE_ASSIGNMENT_RULES.md
+              - Describe AutoResponse Rules: prompt-templates/PROMPT_DESCRIBE_AUTORESPONSE_RULES.md
+              - Describe Escalation Rules: prompt-templates/PROMPT_DESCRIBE_ESCALATION_RULES.md
+              - Describe Flow: prompt-templates/PROMPT_DESCRIBE_FLOW.md
+              - Describe Flow Diff: prompt-templates/PROMPT_DESCRIBE_FLOW_DIFF.md
+              - Describe LWC: prompt-templates/PROMPT_DESCRIBE_LWC.md
+              - Describe Object: prompt-templates/PROMPT_DESCRIBE_OBJECT.md
+              - Describe Page: prompt-templates/PROMPT_DESCRIBE_PAGE.md
+              - Describe Permission Set: prompt-templates/PROMPT_DESCRIBE_PERMISSION_SET.md
+              - Describe Permission Set Group: prompt-templates/PROMPT_DESCRIBE_PERMISSION_SET_GROUP.md
+              - Describe Profile: prompt-templates/PROMPT_DESCRIBE_PROFILE.md
+              - Solve Deployment Error: prompt-templates/PROMPT_SOLVE_DEPLOYMENT_ERROR.md
   - Commands:
       All commands: commands.md
       hardis:
