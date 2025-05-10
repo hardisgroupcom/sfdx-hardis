@@ -12,12 +12,14 @@ export class LangChainOpenAIProvider extends AbstractLLMProvider {
   }
 
   getModel(): BaseChatModel {
-    return new ChatOpenAI({
+    const config = {
       modelName: this.modelName,
       openAIApiKey: this.config.apiKey!,
       temperature: this.config.temperature,
       maxTokens: this.config.maxTokens,
       maxRetries: this.config.maxRetries
-    });
+    };
+
+    return new ChatOpenAI(config) as BaseChatModel;
   }
 } 
