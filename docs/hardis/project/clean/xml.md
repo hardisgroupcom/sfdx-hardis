@@ -19,26 +19,26 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|folder<br/>-f|option|Root folder|force-app|||
-|globpattern<br/>-p|option|Glob pattern to find files to clean. Ex: /**/*.flexipage-meta.xml||||
-|json|boolean|Format output as json.||||
-|namespace<br/>-n|option|XML Namespace to use|http://soap.sforce.com/2006/04/metadata|||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
-|xpath<br/>-x|option|XPath to use to detect the elements to remove. Ex: //ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]||||
+| Name               |  Type   | Description                                                                                                         |                  Default                  | Required | Options |
+|:-------------------|:-------:|:--------------------------------------------------------------------------------------------------------------------|:-----------------------------------------:|:--------:|:-------:|
+| debug<br/>-d       | boolean | Activate debug mode (more logs)                                                                                     |                                           |          |         |
+| flags-dir          | option  | undefined                                                                                                           |                                           |          |         |
+| folder<br/>-f      | option  | Root folder                                                                                                         |                 force-app                 |          |         |
+| globpattern<br/>-p | option  | Glob pattern to find files to clean. Ex: /**/*.flexipage-meta.xml                                                   |                                           |          |         |
+| json               | boolean | Format output as json.                                                                                              |                                           |          |         |
+| namespace<br/>-n   | option  | XML Namespace to use                                                                                                | <http://soap.sforce.com/2006/04/metadata> |          |         |
+| skipauth           | boolean | Skip authentication check when a default username is required                                                       |                                           |          |         |
+| websocket          | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                           |                                           |          |         |
+| xpath<br/>-x       | option  | XPath to use to detect the elements to remove. Ex: //ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')] |                                           |          |         |
 
 ## Examples
 
 ```shell
-$ sf hardis:project:clean:xml
+sf hardis:project:clean:xml
 ```
 
 ```shell
-$ sf hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"
+sf hardis:project:clean:xml --globpattern "/**/*.flexipage-meta.xml" --xpath "//ns:flexiPageRegions//ns:name[contains(text(),'dashboardName')]"
 ```
 
 

@@ -24,7 +24,7 @@ The list of prompts used by sfdx-hardis is defined in [this source file](https:/
 
 | Variable                     | Description                                                                                                                               | Default |
 |------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| AI_MAXIMUM_CALL_NUMBER       | Maximum allowed number of calls to AI Providers during a single sfdx-hardis command                                                         | `10000` |
+| AI_MAXIMUM_CALL_NUMBER       | Maximum allowed number of calls to AI Providers during a single sfdx-hardis command                                                       | `10000` |
 | PROMPTS_LANGUAGE             | Language to use for prompts results (`en`,`fr`, or any [ISO Language code](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes)) | `en`    |
 | DEBUG_PROMPTS                | Set to true if you want prompts requests and responses in logs                                                                            | `false` |
 | MAX_DEPLOYMENT_TIPS_AI_CALLS | Maximum number of errors that will be analyzed by AI for a single Pull Request                                                            | `20`    |
@@ -35,16 +35,16 @@ The list of prompts used by sfdx-hardis is defined in [this source file](https:/
 
 LangChain provides a unified interface to work with multiple LLM providers. This way to use AI provides better extensibility and future-proofing to extend support for more providers.
 
-| Variable                      | Description                                                                               | Default       |
-|-------------------------------|-------------------------------------------------------------------------------------------|---------------|
-| USE_LANGCHAIN_LLM            | Set to true to use LangChain integration                                                  | false         |
-| LANGCHAIN_LLM_PROVIDER       | The LLM provider to use (currently supports "ollama", "openai", and "anthropic")          |               |
-| LANGCHAIN_LLM_MODEL          | The model to use with the selected provider (e.g. gpt-4o, qwen2.5-coder:14b)              |               |
-| LANGCHAIN_LLM_MODEL_API_KEY  | API key for the selected provider (required for OpenAI and Anthropic)                     |               |
-| LANGCHAIN_LLM_TEMPERATURE    | Controls randomness (0-1)                                                                 |               |
-| LANGCHAIN_LLM_MAX_TOKENS     | Maximum number of tokens to generate                                                      |               |
-| LANGCHAIN_LLM_MAX_RETRIES    | Number of retries for failed requests                                                     |               |
-| LANGCHAIN_LLM_BASE_URL       | Base URL for the API (mainly for Ollama)                                                  | Ollama: http://localhost:11434 |
+| Variable                    | Description                                                                      | Default                          |
+|-----------------------------|----------------------------------------------------------------------------------|----------------------------------|
+| USE_LANGCHAIN_LLM           | Set to true to use LangChain integration                                         | false                            |
+| LANGCHAIN_LLM_PROVIDER      | The LLM provider to use (currently supports "ollama", "openai", and "anthropic") |                                  |
+| LANGCHAIN_LLM_MODEL         | The model to use with the selected provider (e.g. gpt-4o, qwen2.5-coder:14b)     |                                  |
+| LANGCHAIN_LLM_MODEL_API_KEY | API key for the selected provider (required for OpenAI and Anthropic)            |                                  |
+| LANGCHAIN_LLM_TEMPERATURE   | Controls randomness (0-1)                                                        |                                  |
+| LANGCHAIN_LLM_MAX_TOKENS    | Maximum number of tokens to generate                                             |                                  |
+| LANGCHAIN_LLM_MAX_RETRIES   | Number of retries for failed requests                                            |                                  |
+| LANGCHAIN_LLM_BASE_URL      | Base URL for the API (mainly for Ollama)                                         | Ollama: <http://localhost:11434> |
 
 #### Example configurations
 

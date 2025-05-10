@@ -10,25 +10,25 @@
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|sObjects<br/>-s|option|Comma-separated list of sObjects to filter||||
-|target-org<br/>-o|option|undefined|nicolas.vuillamy.ext@vusion.com|||
+| Name              |  Type   | Description                                |              Default              | Required | Options |
+|:------------------|:-------:|:-------------------------------------------|:---------------------------------:|:--------:|:-------:|
+| flags-dir         | option  | undefined                                  |                                   |          |         |
+| json              | boolean | Format output as json.                     |                                   |          |         |
+| sObjects<br/>-s   | option  | Comma-separated list of sObjects to filter |                                   |          |         |
+| target-org<br/>-o | option  | undefined                                  | <nicolas.vuillamy.ext@vusion.com> |          |         |
 
 ## Examples
 
 ```shell
-$ sf hardis:doc:fieldusage
+sf hardis:doc:fieldusage
 ```
 
 ```shell
-$ sf hardis:doc:fieldusage --sObjects Account,Contact,Opportunity
+sf hardis:doc:fieldusage --sObjects Account,Contact,Opportunity
 ```
 
 ```shell
-$ sf hardis:doc:fieldusage --target-org myOrgAlias --sObjects CustomObject__c
+sf hardis:doc:fieldusage --target-org myOrgAlias --sObjects CustomObject__c
 ```
 
 
