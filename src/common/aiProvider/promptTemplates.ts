@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs-extra";
 import { PromptTemplateDefinition } from "./promptTemplates/types.js";
 import { PROMPT_TEMPLATES as IMPORTED_PROMPT_TEMPLATES } from "./promptTemplates/index.js";
+import { uxLog } from "../utils/index.js";
 
 export type PromptTemplate =
   "PROMPT_SOLVE_DEPLOYMENT_ERROR" |
@@ -24,13 +25,14 @@ export type PromptTemplate =
 // Loads a template, allowing override from local JSON if present
 function getPromptTemplate(template: PromptTemplate): PromptTemplateDefinition {
   // Check for local override (JSON file)
-  const localPath = path.resolve(__dirname, "promptTemplates", "local", `${template}.json`);
+  const localPath = path.resolve(process.cwd(), "promptTemplates", `${template}.json`);
   if (fs.existsSync(localPath)) {
     try {
       const localTemplate = fs.readJsonSync(localPath);
       return localTemplate;
-    } catch (e) {
+    } catch (e: any) {
       // fallback to default if error
+      uxLog(this, `Error loading local template for ${template}: ${e.message}`);
     }
   }
   const templateData = IMPORTED_PROMPT_TEMPLATES[template];
@@ -42,7 +44,7 @@ function getPromptTemplate(template: PromptTemplate): PromptTemplateDefinition {
 
 export function buildPromptFromTemplate(template: PromptTemplate, variables: object): string {
   const templateData = getPromptTemplate(template);
-  const missingVariables = templateData.variables.filter((variable) => !variables[variable]);
+  const missingVariables = templateData.variables.filter((variable) => !variables[variable.name]);
   if (missingVariables.length > 0) {
     throw new Error(`Missing variables for prompt template ${template}: ${missingVariables.join(", ")}`);
   }
@@ -53,3 +55,5 @@ export function buildPromptFromTemplate(template: PromptTemplate, variables: obj
   }
   return prompt;
 }
+
+
