@@ -5,7 +5,7 @@
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
   "version": "5.32.1",
   "dependencies": {
-    "@actions/github": "^6.0.0",
+    "@actions/github": "^6.0.1",
     "@cparra/apexdocs": "^3.12.1",
     "@gitbeaker/node": "^35.8.1",
     "@langchain/anthropic": "^0.3.20",
@@ -13,7 +13,7 @@
     "@langchain/core": "^0.3.55",
     "@langchain/ollama": "^0.2.0",
     "@oclif/core": "^4.2.10",
-    "@salesforce/core": "^8.10.1",
+    "@salesforce/core": "^8.10.3",
     "@salesforce/sf-plugins-core": "^11.3.12",
     "@slack/types": "^2.14.0",
     "@slack/web-api": "^7.9.1",
