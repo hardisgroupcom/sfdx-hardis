@@ -8,6 +8,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - sfdx-hardis prompt templates enhancements:
   - Add prompt templates in online documentation
   - Allow to locally override prompt templates text in `prompt-templates/${templateName}.txt`
+  - Rewrite old prompt templates
+- Improve VsCode workspace configuration to avoid performance issues
+- Upgrade npm dependencies
 
 ## [5.32.1] 2025-05-09
 
