@@ -31,11 +31,12 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
     res.records.push(...pageRes.records);
     batchCount++;
   }
-  if (!pageRes.done) {
-    uxLog(this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
-    uxLog(this, c.yellow(`Consider using bulkQuery for larger datasets.`));
-  }
-  uxLog(this, c.grey(`Retrieved ${res.records.length} records in ${batchCount} batches`));
+  handleQueryWarnings({
+    maxRecords: MAX_RECORDS,
+    recordCount: res.records.length,
+    batchCount,
+    isDone: pageRes.done
+  });
   return res;
 }
 
@@ -63,13 +64,31 @@ export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Pro
     batchCount++;
   }
 
-  if (!pageRes.done) {
-    uxLog(this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
+  handleQueryWarnings({
+    maxRecords: MAX_RECORDS,
+    recordCount: res.records.length,
+    batchCount,
+    isDone: pageRes.done
+  });
+  return res;
+}
+interface QueryWarningOptions {
+  maxRecords: number;
+  recordCount: number;
+  batchCount: number;
+  isDone: boolean;
+}
+function handleQueryWarnings({
+  maxRecords,
+  recordCount,
+  batchCount,
+  isDone
+}: QueryWarningOptions): void {
+  if (!isDone) {
+    uxLog(this, c.yellow(`Warning: Query limit of ${maxRecords} records reached. Some records were not retrieved.`));
     uxLog(this, c.yellow(`Consider using bulkQuery for larger datasets.`));
   }
-
-  uxLog(this, c.grey(`Retrieved ${res.records.length} records in ${batchCount} batches`));
-  return res;
+  uxLog(this, c.grey(`Retrieved ${recordCount} records in ${batchCount} batches`));
 }
 
 let spinnerQ;
