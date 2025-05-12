@@ -3,6 +3,11 @@ import c from 'chalk';
 import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
 
+// Constants for record limits
+const MAX_BATCHES = 50;
+const BATCH_SIZE = 200;
+const MAX_RECORDS = MAX_BATCHES * BATCH_SIZE;
+
 // Perform simple SOQL query (max results: 10000)
 export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
   uxLog(
@@ -17,14 +22,20 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
   // First query
   const res = await conn.query(soqlQuery);
   let pageRes = Object.assign({}, res);
+  let batchCount = 1;
 
   // Get all page results
-  while (pageRes.done === false && pageRes.nextRecordsUrl) {
-    uxLog(this, c.grey(`Fetching next batch of records...`));
+  while (pageRes.done === false && pageRes.nextRecordsUrl && batchCount < MAX_BATCHES) {
+    uxLog(this, c.grey(`Fetching batch ${batchCount + 1}/${MAX_BATCHES}...`));
     pageRes = await conn.queryMore(pageRes.nextRecordsUrl);
     res.records.push(...pageRes.records);
+    batchCount++;
   }
-
+  if (!pageRes.done) {
+    uxLog(this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
+    uxLog(this, c.yellow(`Consider using bulkQuery for larger datasets.`));
+  }
+  uxLog(this, c.grey(`Retrieved ${res.records.length} records in ${batchCount} batches`));
   return res;
 }
 
@@ -42,11 +53,22 @@ export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Pro
   // First query
   const res = await conn.tooling.query(soqlQuery);
   let pageRes = Object.assign({}, res);
-  // Get all page results
-  while (pageRes.done === false && pageRes.nextRecordsUrl) {
+  let batchCount = 1;
+
+  // Get all page results until limit
+  while (pageRes.done === false && pageRes.nextRecordsUrl && batchCount < MAX_BATCHES) {
+    uxLog(this, c.grey(`Fetching batch ${batchCount + 1}/${MAX_BATCHES}...`));
     pageRes = await conn.tooling.queryMore(pageRes.nextRecordsUrl || "");
     res.records.push(...pageRes.records);
+    batchCount++;
   }
+
+  if (!pageRes.done) {
+    uxLog(this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
+    uxLog(this, c.yellow(`Consider using bulkQuery for larger datasets.`));
+  }
+
+  uxLog(this, c.grey(`Retrieved ${res.records.length} records in ${batchCount} batches`));
   return res;
 }
 
