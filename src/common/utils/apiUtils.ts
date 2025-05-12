@@ -31,12 +31,11 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
     res.records.push(...pageRes.records);
     batchCount++;
   }
-  handleQueryWarnings({
-    maxRecords: MAX_RECORDS,
-    recordCount: res.records.length,
-    batchCount,
-    isDone: pageRes.done
-  });
+  if (!pageRes.done) {
+    uxLog(this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
+    uxLog(this, c.yellow(`Consider using bulkQuery for larger datasets.`));
+  }
+  uxLog(this, c.grey(`Retrieved ${res.records.length} records in ${batchCount} batches`));
   return res;
 }
 
@@ -54,41 +53,12 @@ export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Pro
   // First query
   const res = await conn.tooling.query(soqlQuery);
   let pageRes = Object.assign({}, res);
-  let batchCount = 1;
-
-  // Get all page results until limit
-  while (pageRes.done === false && pageRes.nextRecordsUrl && batchCount < MAX_BATCHES) {
-    uxLog(this, c.grey(`Fetching batch ${batchCount + 1}/${MAX_BATCHES}...`));
+  // Get all page results
+  while (pageRes.done === false && pageRes.nextRecordsUrl) {
     pageRes = await conn.tooling.queryMore(pageRes.nextRecordsUrl || "");
     res.records.push(...pageRes.records);
-    batchCount++;
   }
-
-  handleQueryWarnings({
-    maxRecords: MAX_RECORDS,
-    recordCount: res.records.length,
-    batchCount,
-    isDone: pageRes.done
-  });
   return res;
-}
-interface QueryWarningOptions {
-  maxRecords: number;
-  recordCount: number;
-  batchCount: number;
-  isDone: boolean;
-}
-function handleQueryWarnings({
-  maxRecords,
-  recordCount,
-  batchCount,
-  isDone
-}: QueryWarningOptions): void {
-  if (!isDone) {
-    uxLog(this, c.yellow(`Warning: Query limit of ${maxRecords} records reached. Some records were not retrieved.`));
-    uxLog(this, c.yellow(`Consider using bulkQuery for larger datasets.`));
-  }
-  uxLog(this, c.grey(`Retrieved ${recordCount} records in ${batchCount} batches`));
 }
 
 let spinnerQ;
