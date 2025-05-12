@@ -13,6 +13,13 @@ export class UtilsAi {
     return false;
   }
 
+  public static isLangChainAvailable() {
+    if (getEnvVar("USE_LANGCHAIN_LLM") === "true" && getEnvVar("LANGCHAIN_LLM_MODEL")) {
+      return true;
+    }
+    return false;
+  }
+
   public static isAgentforceAvailable() {
     if (getEnvVar("USE_AGENTFORCE") === "true" && globalThis.jsForceConn) {
       return true;
@@ -74,5 +81,4 @@ export class UtilsAi {
   public static normalizeString(str: string) {
     return str.normalize().trim().replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\r\n/g, '\n');
   }
-
 }
