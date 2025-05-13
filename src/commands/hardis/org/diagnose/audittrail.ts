@@ -370,68 +370,69 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const customSettingsResult = await soqlQuery(customSettingsQuery, conn);
     uxLog(this, c.cyan(`Found ${customSettingsResult.records.length} Custom Settings`));
 
-    let whereConstraintCustomSetting = `WHERE LastModifiedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND CreatedBy.Username != NULL `;
+    let whereConstraintCustomSetting = `WHERE LastModifiedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND LastModifiedBy.Username != NULL `;
     if (this.excludeUsers.length > 0) {
-      whereConstraintCustomSetting += `AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
+      whereConstraintCustomSetting += `AND LastModifiedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
     }
     // Get custom settings modifications
     const customSettingModifications: any[] = [];
     for (const cs of customSettingsResult.records) {
       try {
         const result = await soqlQuery(
-          `SELECT Id, CreatedDate, CreatedBy.Name, CreatedBy.Username, 
-           LastModifiedDate, LastModifiedBy.Name, LastModifiedBy.Username 
+          `SELECT Id, LastModifiedDate, LastModifiedBy.Name, LastModifiedBy.Username 
            FROM ${cs.QualifiedApiName} `
           + whereConstraintCustomSetting,
           conn
         );
 
         if (result.records.length > 0) {
-          result.records.forEach(record => {
+          for (const record of result.records) {
             customSettingModifications.push({
               CreatedDate: record.LastModifiedDate,
-              'CreatedBy.Name': record['LastModifiedBy.Name'],
-              'CreatedBy.Username': record['LastModifiedBy.Username'],
-              Action: 'modified',
+              'CreatedBy.Name': record['LastModifiedBy']?.['Name'],
+              'CreatedBy.Username': record['LastModifiedBy']?.['Username'],
+              'LastModifiedBy.Name': record['LastModifiedBy']?.['Name'],
+              'LastModifiedBy.Username': record['LastModifiedBy']?.['Username'],
+              Action: `customSetting${cs.QualifiedApiName}`,
               Section: 'Custom Settings',
-              Display: `Modified Custom Setting: ${cs.Label} (${cs.QualifiedApiName})`,
+              Display: `Updated custom setting ${cs.Label} (${cs.QualifiedApiName})`,
               ResponsibleNamespacePrefix: null,
               DelegateUser: null,
               Suspect: true,
               severity: 'warning',
               severityIcon: getSeverityIcon('warning'),
-              SuspectReason: `Custom Setting modification`
+              SuspectReason: `CustomSettingUpdate`
             });
-          });
+          }
         }
       } catch (error) {
         uxLog(this, c.red(`Error querying Custom Setting ${cs.Label}: ${error}`));
         continue;
       }
     }
-    // Add custom setting modifications to audit trail records
+    // Add custom setting updates to audit trail records
     if (customSettingModifications.length > 0) {
-      uxLog(this, c.yellow(`Found ${customSettingModifications.length} Custom Setting modifications`));
+      uxLog(this, c.yellow(`Found ${customSettingModifications.length} Custom Setting updates`));
       this.auditTrailRecords.push(...customSettingModifications);
 
       // Add to suspect records
-      customSettingModifications.forEach(mod => {
-        this.suspectRecords.push(mod);
-        const suspectUserDisplayName = mod['CreatedBy.Name'];
+      for (const csUpdate of customSettingModifications) {
+        this.suspectRecords.push(csUpdate);
+        const suspectUserDisplayName = csUpdate['LastModifiedBy.Name'];
         this.suspectUsers.push(suspectUserDisplayName);
-        const actionFullName = `${mod.Section} - ${mod.Display}`;
+        const actionFullName = `${csUpdate.Section} - ${csUpdate.Display}`;
         this.suspectActions.push(actionFullName);
 
         if (!this.suspectUsersAndActions[suspectUserDisplayName]) {
           this.suspectUsersAndActions[suspectUserDisplayName] = {
-            name: mod['CreatedBy.Name'],
+            name: csUpdate['LastModifiedBy.Name'],
             actions: []
           };
         }
-        if (!this.suspectUsersAndActions[suspectUserDisplayName].actions.includes('Custom Setting modification')) {
-          this.suspectUsersAndActions[suspectUserDisplayName].actions.push('Custom Setting modification');
+        if (!this.suspectUsersAndActions[suspectUserDisplayName].actions.includes(csUpdate.Action)) {
+          this.suspectUsersAndActions[suspectUserDisplayName].actions.push(csUpdate.Action);
         }
-      });
+      }
     }
   }
 
