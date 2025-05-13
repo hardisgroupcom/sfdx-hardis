@@ -4,9 +4,9 @@ import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
 
 // Constants for record limits
-const MAX_BATCHES = 50;
-const BATCH_SIZE = 200;
-const MAX_RECORDS = MAX_BATCHES * BATCH_SIZE;
+const MAX_CHUNKS = Number(process.env.SOQL_MAX_BATCHES ?? 50);
+const CHUNK_SIZE = Number(process.env.SOQL_CHUNK_SIZE ?? 200);
+const MAX_RECORDS = MAX_CHUNKS * CHUNK_SIZE;
 
 // Perform simple SOQL query (max results: 10000)
 export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
@@ -25,8 +25,8 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
   let batchCount = 1;
 
   // Get all page results
-  while (pageRes.done === false && pageRes.nextRecordsUrl && batchCount < MAX_BATCHES) {
-    uxLog(this, c.grey(`Fetching batch ${batchCount + 1}/${MAX_BATCHES}...`));
+  while (pageRes.done === false && pageRes.nextRecordsUrl && batchCount < MAX_CHUNKS) {
+    uxLog(this, c.grey(`Fetching batch ${batchCount + 1}/${MAX_CHUNKS}...`));
     pageRes = await conn.queryMore(pageRes.nextRecordsUrl);
     res.records.push(...pageRes.records);
     batchCount++;
@@ -35,7 +35,7 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
     uxLog(this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
     uxLog(this, c.yellow(`Consider using bulkQuery for larger datasets.`));
   }
-  uxLog(this, c.grey(`Retrieved ${res.records.length} records in ${batchCount} batches`));
+  uxLog(this, c.grey(`SOQL REST: Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
   return res;
 }
 
