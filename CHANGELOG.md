@@ -4,8 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.34.0] 2025-05-13
+
 - [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/): Add audit Custom Setting values updates
 - Improve SOQL query functions by adding warning logs for record limits and removing redundant warning handling
+- New command [hardis:misc:custom-label-translations](https://sfdx-hardis.cloudity.com/hardis/misc/custom-label-translations/): Extract selected custom labels, or of a given Lightning Web Component (LWC), from all language translation files. This command generates translation files ('*.translation - meta.xml') for each language already retrieved in the current project, containing only the specified custom labels.
 
 ## [5.33.0] 2025-05-10
 
