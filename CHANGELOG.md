@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/): Add audit Custom Setting values updates
+- Improve SOQL query functions by adding warning logs for record limits and removing redundant warning handling
+
 ## [5.33.0] 2025-05-10
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Allow to use ollama, Anthropic and Gemini LLMs, through langchainJs
