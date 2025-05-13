@@ -17,8 +17,10 @@ Regular setup actions performed in major orgs are filtered.
 - Custom App Licenses
   - addeduserpackagelicense
   - granteduserpackagelicense
+  - revokeduserpackagelicense
 - Customer Portal
   - createdcustomersuccessuser
+  - CSPUserDisabled
 - Currency
   - updateddatedexchrate
 - Data Management
@@ -43,6 +45,8 @@ Regular setup actions performed in major orgs are filtered.
   - changedinteractionuseronoff
   - changedmarketinguseroffon
   - changedmarketinguseronoff
+  - changedofflineuseroffon
+  - changedprofileforuserstdtostd
   - changedprofileforuser
   - changedprofileforusercusttostd
   - changedprofileforuserstdtocust
@@ -51,6 +55,9 @@ Regular setup actions performed in major orgs are filtered.
   - changedroleforuserfromnone
   - changedUserEmailVerifiedStatusUnverified
   - changedUserEmailVerifiedStatusVerified
+  - changedknowledgeuseroffon
+  - changedsfcontentuseroffon
+  - changedsupportuseroffon
   - changedUserPhoneNumber
   - changedUserPhoneVerifiedStatusUnverified
   - deactivateduser
@@ -70,6 +77,8 @@ Regular setup actions performed in major orgs are filtered.
   - PermSetLicenseUnassign
   - registeredUserPhoneNumber
   - resetpassword
+  - suNetworkAdminLogin
+  - suNetworkAdminLogout
   - suOrgAdminLogin
   - suOrgAdminLogout
   - unfrozeuser
@@ -100,6 +109,14 @@ monitoringAllowedSectionsActions:
   "Some section": [] // Will ignore all actions from such section
   "Some other section": ["actionType1","actionType2","actionType3"] // Will ignore only those 3 actions from section "Some other section". Other actions in the same section will be considered as suspect.
 ```
+
+## Excel output example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-audittrail-excel.jpg)
+
+## Local output example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-audittrail-local.jpg)
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-suspect-audit-trail/) and can output Grafana, Slack and MsTeams Notifications.
 

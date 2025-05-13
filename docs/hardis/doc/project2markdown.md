@@ -5,9 +5,20 @@
 
 Generates a markdown documentation from a SFDX project
 
-- Objects
-- Flows
-- Apex
+- Objects (with fields, validation rules, relationships and dependencies)
+- Automations
+  - Approval Processes
+  - Assignment Rules
+  - AutoResponse Rules
+  - Escalation Rules
+  - Flows
+- Authorizations
+  - Profiles
+  - Permission Set Groups
+  - Permission Sets
+- Code
+  - Apex
+  - Lightning Web Components
 - Lightning Pages
 - SFDX-Hardis Config
 - Branches & Orgs
@@ -46,6 +57,7 @@ If Flow history doc always display a single state, you probably need to update y
 
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-object-diagram.jpg)
 
+![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc-profile.gif)
 
 If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strategy will be generated.
 
@@ -76,6 +88,7 @@ To just generate HTML pages that you can host anywhere, run `mkdocs build -v || 
 | diff-only         | boolean | Generate documentation only for changed files (used for monitoring) |         |          |         |
 | flags-dir         | option  | undefined                                                           |         |          |         |
 | json              | boolean | Format output as json.                                              |         |          |         |
+| pdf               | boolean | Also generate the documentation in PDF format                       |         |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required       |         |          |         |
 | target-org<br/>-o | option  | undefined                                                           |         |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration           |         |          |         |
@@ -89,6 +102,10 @@ sf hardis:doc:project2markdown
 
 ```shell
 sf hardis:doc:project2markdown --with-history
+```
+
+```shell
+sf hardis:doc:project2markdown --with-history --pdf
 ```
 
 

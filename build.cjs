@@ -1,11 +1,13 @@
 #!/usr/bin/node
 /* eslint-disable */
 const fs = require("fs-extra");
+const yaml = require("js-yaml");
 
 class SfdxHardisBuilder {
   async run() {
     console.log("Start additional building of sfdx-hardis repository...");
     await this.buildDeployTipsDoc();
+    await this.buildPromptTemplatesDocs();
     this.truncateReadme();
   }
 
@@ -98,6 +100,56 @@ class SfdxHardisBuilder {
     tipFileMd.push(...tip.tip.split("\n"));
     tipFileMd.push("```");
     fs.writeFileSync(tipFile, tipFileMd.join("\n") + "\n");
+  }
+
+  async buildPromptTemplatesDocs() {
+    console.log("Building prompt templates documentation...");
+    const { PROMPT_TEMPLATES } = await import("./lib/common/aiProvider/promptTemplates/index.js");
+    const docsPromptDir = "./docs/prompt-templates";
+    fs.ensureDirSync(docsPromptDir);
+
+    const promptNav = [];
+    for (const templateName of Object.keys(PROMPT_TEMPLATES)) {
+      const templateDocFile = `${docsPromptDir}/${templateName}.md`;
+      const prompt = PROMPT_TEMPLATES[templateName]
+      // Read the template file and extract the prompt text
+      const md = [
+        `---`,
+        `title: ${templateName}`,
+        `description: Prompt template for ${templateName}`,
+        `---`,
+        '',
+        `# ${templateName}`,
+        '',
+        `## Variables`,
+        "| Name | Description | Example |",
+        "| :------|:-------------|:---------|",
+        ...prompt.variables.map(
+          v => {
+            // Escape pipe characters in example to avoid breaking the markdown table
+            let example = String(v.example ?? "");
+            // Replace | with \| and newlines with <br> for markdown table safety
+            example = example.replace(/\|/g, "\\|").replace(/\n/g, "<br>");
+            return `| **${v.name}** | ${v.description} | \`${example}\` |`;
+          }
+        ),
+        '',
+        `## Prompt`,
+        "",
+        "```",
+        prompt.text.en,
+        "```",
+        '',
+        '## How to override',
+        '',
+        `To define your own prompt text, you can define a local file **config/prompt-templates/${templateName}.txt**`,
+        ``,
+        `If you do so, please don't forget to use the replacement variables :)`
+      ];
+      fs.writeFileSync(templateDocFile, md.join("\n") + "\n");
+      promptNav.push({ [templateName]: `prompt-templates/${templateName}.md` });
+    }
+    console.log("Prompt templates documentation generated");
   }
 
   truncateReadme() {
