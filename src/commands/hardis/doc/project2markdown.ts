@@ -4,7 +4,7 @@ import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
 import { process as ApexDocGen } from '@cparra/apexdocs';
-import {XMLBuilder, XMLParser} from "fast-xml-parser";
+import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
@@ -542,7 +542,7 @@ ${Project2Markdown.htmlInstructions}
     uxLog(this, c.cyan("Generating Assignment Rules documentation... " +
       "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
 
-    const assignmentRulesForMenu: any = {"All Assignment Rules": "assignmentRules/index.md"};
+    const assignmentRulesForMenu: any = { "All Assignment Rules": "assignmentRules/index.md" };
     const assignmentRulesFiles = (await glob("**/assignmentRules/**.assignmentRules-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -627,7 +627,7 @@ ${Project2Markdown.htmlInstructions}
     uxLog(this, c.cyan("Generating AutoResponse Rules documentation... " +
       "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
 
-    const autoResponseRulesForMenu: any = {"All AutoResponse Rules": "autoResponseRules/index.md"};
+    const autoResponseRulesForMenu: any = { "All AutoResponse Rules": "autoResponseRules/index.md" };
     const autoResponseRulesFiles = (await glob("**/autoResponseRules/**.autoResponseRules-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -657,7 +657,7 @@ ${Project2Markdown.htmlInstructions}
           active: rule.active,
         });
 
-        const ruleXml = builder.build({autoResponseRule: rule});
+        const ruleXml = builder.build({ autoResponseRule: rule });
 
         await new DocBuilderAutoResponseRules(currentRuleName, ruleXml, mdFile).generateMarkdownFileFromXml();
         if (this.withPdf) {
@@ -677,7 +677,7 @@ ${Project2Markdown.htmlInstructions}
     uxLog(this, c.cyan("Generating Escalation Rules documentation... " +
       "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
 
-    const escalationRulesForMenu: any = {"All Escalation Rules": "escalationRules/index.md"};
+    const escalationRulesForMenu: any = { "All Escalation Rules": "escalationRules/index.md" };
     const escalationRulesFiles = (await glob("**/escalationRules/**.escalationRules-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -1251,14 +1251,14 @@ ${Project2Markdown.htmlInstructions}
 
         // Read JS file to get a better idea of what objects this component works with
         const jsFile = path.join(lwcDirPath, `${lwcName}.js`);
-        let jsContent = "";
+        let jsContent = "none";
         if (fs.existsSync(jsFile)) {
           jsContent = await fs.readFile(jsFile, "utf8");
         }
 
         // Read HTML template file
         const htmlFile = path.join(lwcDirPath, `${lwcName}.html`);
-        let htmlContent = "";
+        let htmlContent = "none";
         if (fs.existsSync(htmlFile)) {
           htmlContent = await fs.readFile(htmlFile, "utf8");
         }
@@ -1267,10 +1267,10 @@ ${Project2Markdown.htmlInstructions}
         this.lwcDescriptions.push({
           name: lwcName,
           description: lwcMetaXmlParsed?.LightningComponentBundle?.description ||
-                      lwcMetaXmlParsed?.LightningComponentBundle?.masterLabel || "",
+            lwcMetaXmlParsed?.LightningComponentBundle?.masterLabel || "",
           targets: Array.isArray(lwcMetaXmlParsed?.LightningComponentBundle?.targets?.target)
-                  ? lwcMetaXmlParsed?.LightningComponentBundle?.targets?.target.join(", ")
-                  : lwcMetaXmlParsed?.LightningComponentBundle?.targets?.target || "",
+            ? lwcMetaXmlParsed?.LightningComponentBundle?.targets?.target.join(", ")
+            : lwcMetaXmlParsed?.LightningComponentBundle?.targets?.target || "",
           isExposed: lwcMetaXmlParsed?.LightningComponentBundle?.isExposed,
           impactedObjects: this.allObjectsNames.filter(objectName =>
             lwcMetaXml.includes(`${objectName}`) ||
