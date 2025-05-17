@@ -13,6 +13,7 @@ import { AiProvider } from "../aiProvider/index.js";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { generatePdfFileFromMarkdown } from "../utils/markdownUtils.js";
 import { DocBuilderFlow } from "../docBuilder/docBuilderFlow.js";
+import { includeFromFile } from "../docBuilder/docUtils.js";
 
 let IS_MERMAID_AVAILABLE: boolean | null = null;
 export async function isMermaidAvailable() {
@@ -714,7 +715,7 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
   const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNewStripped, flowXmlPreviousStripped], diffKey);
   if (aiCache.success) {
     uxLog(this, c.grey("Used AI cache for diff description (set IGNORE_AI_CACHE=true to force call to AI)"));
-    const replaceText = `## AI-Generated Differences Summary\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
+    const replaceText = `## AI-Generated Differences Summary\n\n${includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText || "")}`;
     return flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
   }
   if (AiProvider.isAiAvailable()) {
@@ -728,7 +729,7 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
         responseText = responseText.split("\n").slice(1).join("\n");
       }
       await UtilsAi.writeAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNewStripped, flowXmlPreviousStripped], diffKey, responseText);
-      const replaceText = `## AI-Generated Differences Summary\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText || ""}`;
+      const replaceText = `## AI-Generated Differences Summary\n\n${includeFromFile(aiCache.aiCacheDirFile, responseText || "")}`;
       const flowMarkdownDocUpdated = flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
       return flowMarkdownDocUpdated;
     }

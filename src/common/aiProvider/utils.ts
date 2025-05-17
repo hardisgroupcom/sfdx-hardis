@@ -34,6 +34,15 @@ export class UtilsAi {
   public static async findAiCache(template: PromptTemplate, promptParameters: any[], uniqueId: string): Promise<{ success: boolean, cacheText?: string, fingerPrint: string, aiCacheDirFile: string }> {
     const fingerPrint = this.getFingerPrint(promptParameters);
     const lang = this.getPromptsLanguage();
+
+    // Manual override by user
+    const aiManualOverride = path.join("docs", "cache-ai-results", `${lang}-${template}-${uniqueId}.md`);
+    if (fs.existsSync(aiManualOverride)) {
+      const cacheText = await fs.readFile(aiManualOverride, "utf8");
+      return { success: true, cacheText, fingerPrint, aiCacheDirFile: aiManualOverride.replace(/\\/g, '/') };
+    }
+
+    // Cache of latest generated AI result
     const aiCacheDirFile = path.join("docs", "cache-ai-results", `${lang}-${template}-${uniqueId}-${fingerPrint}.md`);
     if (process.env?.IGNORE_AI_CACHE === "true") {
       return { success: false, fingerPrint, aiCacheDirFile: aiCacheDirFile.replace(/\\/g, '/') };
