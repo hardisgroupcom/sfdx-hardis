@@ -1899,10 +1899,10 @@
     zod "^3.22.4"
     zod-to-json-schema "^3.22.3"
 
-"@langchain/google-genai@^0.2.8":
-  version "0.2.8"
-  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-0.2.8.tgz#b198da0acf57041746538c0691bfe3c523b32bd2"
-  integrity sha512-Iq/CntGgOPvWkbNEEcc2nmZIUddSMEQ+yTFSZyxfEy2GCYSoIdlou5wzQiLRg4aFHHqpnXWgpgl/3evlK427bQ==
+"@langchain/google-genai@^0.2.9":
+  version "0.2.9"
+  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-0.2.9.tgz#22f4517372949d0bb7f4e18ecb3a622d779e4431"
+  integrity sha512-AcHAD0VX8Qci5ApLYd6ojMTJUk4ZTeMQrsOYsOVv09sy3FtrLHkRxZXkb0qgtDS9EJ+w40904B+s6s2H9+HZmQ==
   dependencies:
     "@google/generative-ai" "^0.24.0"
     uuid "^11.1.0"
@@ -12723,12 +12723,7 @@ uuid@^10.0.0:
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-10.0.0.tgz#5a95aa454e6e002725c79055fd42aaba30ca6294"
   integrity sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==
 
-uuid@^11.0.0:
-  version "11.0.3"
-  resolved "https://registry.npmjs.org/uuid/-/uuid-11.0.3.tgz"
-  integrity sha512-d0z310fCWv5dJwnX1Y/MncBAqGMKEzlBb1AOf7z9K8ALnd0utBX/msg/fA0+sbyN1ihbMsLhrBlnl1ak7Wa0rg==
-
-uuid@^11.1.0:
+uuid@^11.0.0, uuid@^11.1.0:
   version "11.1.0"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-11.1.0.tgz#9549028be1753bb934fc96e2bca09bb4105ae912"
   integrity sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==
