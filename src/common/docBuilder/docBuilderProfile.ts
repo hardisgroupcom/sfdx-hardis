@@ -117,12 +117,17 @@ export class DocBuilderProfile extends DocBuilderRoot {
       }
       else {
         for (const element of attributeValue) {
+          if (!this.isAccessibleElement(element)) {
+            continue;
+          }
           const subElement: any = this.getSubElement(element);
           attributeTreeRoot.children.push(subElement);
         }
         attributeTreeRoot.text = attributeTreeRoot.text + " (" + attributeTreeRoot.children.length + ")";
       }
-      treeElements.push(attributeTreeRoot);
+      if (attributeTreeRoot.children.length > 0) {
+        treeElements.push(attributeTreeRoot);
+      }
     }
     return treeElements;
   }
@@ -145,19 +150,40 @@ export class DocBuilderProfile extends DocBuilderRoot {
         a_attr: { href: null },
         children: [],
       };
-      totalFields += elementsByObject[objectName].length;
       for (const element of elementsByObject[objectName]) {
+        if (!this.isAccessibleElement(element)) {
+          continue;
+        }
         const subElement: any = this.getSubElement(element);
         objectNode.children.push(subElement);
       }
-      attributeTreeRoot.children.push(objectNode);
+      if (objectNode.children.length > 0) {
+        attributeTreeRoot.children.push(objectNode);
+        totalFields += objectNode.children.length;
+      }
     }
     attributeTreeRoot.text = attributeTreeRoot.text + " (" + totalFields + ")";
   }
 
+  public isAccessibleElement(element: any) {
+    if (element.visible === false) {
+      return false;
+    }
+    if (element.readable === false) {
+      return false;
+    }
+    if (element.allowRead === false) {
+      return false;
+    }
+    if (element.enabled === false) {
+      return false;
+    }
+    return true;
+  }
+
   public getSubElement(element: any) {
     const subElement: any = {
-      text: element.name || element.apexClass || element.flow || element.apexPage || element.object || element.tab || element.application || element.field || element.layout || element.recordType || element.externalDataSource || element.startAddress || "ERROR: " + JSON.stringify(element),
+      text: element.name || element.apexClass || element.flow || element.apexPage || element.object || element.tab || element.application || element.field || element.layout || element.recordType || element.externalDataSource || element.startAddress || element.dataspaceScope || "ERROR: " + JSON.stringify(element),
       icon:
         // Common properties
         element.default === true ? "fa-solid fa-star icon-success" :
@@ -170,14 +196,16 @@ export class DocBuilderProfile extends DocBuilderRoot {
                     element.readable === true ? "fa-solid fa-eye icon-success" :
                       element.readable === false ? "fa-solid fa-eye-slash icon-error" :
                         // Custom objects
-                        element.allowEdit === true ? "fa-solid fa-square-pen icon-success" :
-                          element.allowRead === true ? "fa-solid fa-eye icon-success" :
-                            element.allowRead === false ? "fa-solid fa-eye-slash icon-error" :
-                              // Tabs
-                              ["DefaultOn", "Visible"].includes(element.visibility) ? "fa-solid fa-eye icon-success" :
-                                element.visibility === "DefaultOff" ? "fa-solid fa-circle-notch icon-warning" :
-                                  element.visibility === "Hidden" ? "fa-solid fa-eye-slash icon-error" :
-                                    "fa-solid fa-file",
+                        element.modifyAllRecords === true ? "fa-solid fa-web-awesome icon-success" :
+                          element.viewAllRecords === true && element.allowEdit === false ? "fa-solid fa-magnifying-glass icon-success" :
+                            element.allowEdit === true ? "fa-solid fa-square-pen icon-success" :
+                              element.allowRead === true ? "fa-solid fa-eye icon-success" :
+                                element.allowRead === false ? "fa-solid fa-eye-slash icon-error" :
+                                  // Tabs
+                                  ["DefaultOn", "Visible"].includes(element.visibility) ? "fa-solid fa-eye icon-success" :
+                                    element.visibility === "DefaultOff" ? "fa-solid fa-circle-notch icon-warning" :
+                                      element.visibility === "Hidden" ? "fa-solid fa-eye-slash icon-error" :
+                                        "fa-solid fa-file",
       a_attr: { href: null },
       children: [],
     };
