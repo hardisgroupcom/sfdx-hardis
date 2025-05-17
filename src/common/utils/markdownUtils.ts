@@ -22,3 +22,26 @@ export async function generatePdfFileFromMarkdown(markdownFile: string): Promise
     return false;
   }
 }
+
+// Add a new line before each start of list of items starting by "-"
+// If the previous line is already empty, do nothing
+// Example before:
+// Some line
+// - item 1
+// - item 2
+// Example after:
+// Some line
+//
+// - item 1
+// - item 2
+export function formatMarkdownForMkDocs(markdown: string): string {
+  const lines = markdown.split("\n");
+  const formattedLines = lines.map((line, index) => {
+    if (line.trim().startsWith("-") && (index === 0 || lines[index - 1].trim() !== "")) {
+      return "\n" + line;
+    }
+    return line;
+  });
+  const formattedMarkdown = formattedLines.join("\n");
+  return formattedMarkdown;
+}
