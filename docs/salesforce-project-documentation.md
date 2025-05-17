@@ -23,9 +23,9 @@ With a single command, you can generate a Web Site documenting your Salesforce m
   - Apex
   - Lightning Web Components
 - Lightning Pages
+- Packages
 - SFDX-Hardis Config
 - Branches & Orgs
-- Installed Packages
 - Manifests
 
 The documentation will be [supercharged with AI](salesforce-ai-setup.md) if activated;

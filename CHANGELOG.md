@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
+  - Add doc for installed packages, enhanced with LLM
   - Fix markdown returned by LLMs so it is compliant with mkdocs
   - Authorizations doc:
     - Filter non accessible items from tree
