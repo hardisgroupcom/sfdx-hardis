@@ -86,12 +86,17 @@ export class DocBuilderPermissionSet extends DocBuilderProfile {
       }
       else {
         for (const element of attributeValue) {
+          if (!this.isAccessibleElement(element)) {
+            continue;
+          }
           const subElement: any = this.getSubElement(element);
           attributeTreeRoot.children.push(subElement);
         }
         attributeTreeRoot.text = attributeTreeRoot.text + " (" + attributeTreeRoot.children.length + ")";
       }
-      treeElements.push(attributeTreeRoot);
+      if (attributeTreeRoot.children.length > 0) {
+        treeElements.push(attributeTreeRoot);
+      }
     }
     return treeElements;
   }
