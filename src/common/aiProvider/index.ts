@@ -8,6 +8,7 @@ import { isCI, uxLog } from "../utils/index.js";
 import { prompts } from "../utils/prompts.js";
 import { AgentforceProvider } from "./agentforceProvider.js";
 import { LangChainProvider } from "./langchainProvider.js";
+import { formatMarkdownForMkDocs } from "../utils/markdownUtils.js";
 
 let IS_AI_AVAILABLE: boolean | null = null;
 
@@ -63,7 +64,11 @@ export abstract class AiProvider {
       throw new SfError("aiInstance should be set");
     }
     try {
-      return await aiInstance.promptAi(prompt, template);
+      const aiResponse = await aiInstance.promptAi(prompt, template);
+      if (aiResponse?.success && aiResponse?.promptResponse) {
+        aiResponse.promptResponse = formatMarkdownForMkDocs(aiResponse.promptResponse);
+      }
+      return aiResponse;
     } catch (e: any) {
       if (e.message.includes("on tokens per min (TPM)")) {
         try {
@@ -84,6 +89,7 @@ export abstract class AiProvider {
   static buildPrompt(template: PromptTemplate, variables: object): string {
     return buildPromptFromTemplate(template, variables);
   }
+
 }
 
 export interface AiResponse {
@@ -91,3 +97,6 @@ export interface AiResponse {
   model: string;
   promptResponse?: string;
 }
+
+
+
