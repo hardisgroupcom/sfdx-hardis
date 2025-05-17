@@ -4,7 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Fix markdown returned by LLMs so it is compliant with mkdocs
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
+  - Fix markdown returned by LLMs so it is compliant with mkdocs
+  - Authorizations doc:
+    - Filter non accessible items from tree
+    - Display special icons for ModifyAllData and ViewAllData items
+    - Fix display of Dataspace scope
 
 ## [5.34.1] 2025-05-15
 
