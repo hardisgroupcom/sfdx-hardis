@@ -80,7 +80,7 @@ Example: `docs/my-custom-doc-page.md`
 
 To add a link to your markdown pages in the menu, update **nav** section of file **mkdocs.yml**.
 
-Example: 
+Example:
 
 ```yaml
   - Branches & Orgs: sfdx-hardis-branches-and-orgs.md
