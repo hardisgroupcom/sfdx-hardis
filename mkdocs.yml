@@ -149,6 +149,7 @@ nav:
       - Doc Gen Home: salesforce-project-documentation.md
       - Generate: salesforce-project-doc-generate.md
       - Improve with AI: salesforce-project-doc-ai.md
+      - Complete manually: salesforce-project-doc-complete-manually.md
       - Host on Salesforce: salesforce-project-doc-host-on-salesforce.md
       - Host on Cloudflare: salesforce-project-doc-cloudflare.md
   - Integrations:
