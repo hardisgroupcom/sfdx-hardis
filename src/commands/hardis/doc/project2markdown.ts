@@ -37,6 +37,7 @@ import { DocBuilderLwc } from '../../../common/docBuilder/docBuilderLwc.js';
 import { DocBuilderAutoResponseRules } from "../../../common/docBuilder/docBuilderAutoResponseRules.js";
 import { DocBuilderEscalationRules } from '../../../common/docBuilder/docBuilderEscalationRules.js';
 import { DocBuilderPackage } from '../../../common/docBuilder/docBuilderPackage.js';
+import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -194,7 +195,7 @@ ${this.htmlInstructions}
     this.withHistory = flags["with-history"] === true ? true : false;
     this.withPdf = flags.pdf === true ? true : false;
     this.debugMode = flags.debug || false;
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email, or for Agentforce
+    await setConnectionVariables(flags['target-org']?.getConnection(), true);// Required for some notifications providers like Email, or for Agentforce
 
     await fs.ensureDir(this.outputMarkdownRoot);
     const currentBranch = await getCurrentGitBranch()

@@ -47,6 +47,7 @@ See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and ho
 | USE_AGENTFORCE                     | Set to true to activate the use of Agentforce prompts | false                                                                                                          |
 | GENERIC_AGENTFORCE_PROMPT_TEMPLATE | Set this variable to override default prompt template | `SfdxHardisGenericPrompt`                                                                                      |
 | GENERIC_AGENTFORCE_PROMPT_URL      | Set this variable to override default prompt url      | `/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{GENERIC_AGENTFORCE_PROMPT_TEMPLATE}}/generations` |
+| SFDX_AUTH_URL_TECHNICAL_ORG        | If you want to use another org to call Agentforce (like a [Developer Org](https://developer.salesforce.com/signup) just to test the feature), you can define this variable (get Auth Url using `sf org display --verbose --json`) | <!-- -->                           |
 
 ![](assets/images//screenshot-agentforce-config-1.jpg)
 

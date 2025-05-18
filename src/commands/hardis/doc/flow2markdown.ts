@@ -10,6 +10,7 @@ import { isCI, uxLog } from '../../../common/utils/index.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
+import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -80,7 +81,7 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
     this.withPdf = flags.pdf === true ? true : false;
     this.singleFileMode = this.inputFiles != null && this.inputFiles.length == 1;
     this.debugMode = flags.debug || false;
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email, or for Agentforce
+    await setConnectionVariables(flags['target-org']?.getConnection(), true); // Required for some notifications providers like Email, or for Agentforce
 
 
     if (this.inputFiles === null && !isCI) {

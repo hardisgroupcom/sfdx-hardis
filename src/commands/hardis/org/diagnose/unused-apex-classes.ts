@@ -13,6 +13,7 @@ import moment from 'moment';
 import columnify from 'columnify';
 import sortArray from 'sort-array';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -291,7 +292,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
     }
     /* jscpd:ignore-start */
     // Send notifications
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'UNUSED_APEX_CLASSES',
       text: notifText,

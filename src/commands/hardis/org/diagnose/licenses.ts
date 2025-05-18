@@ -7,6 +7,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { NotifProvider } from '../../../../common/notifProvider/index.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -121,7 +122,7 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
     this.outputFile = await generateReportPath('licenses', this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.licenses, this.outputFile);
 
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'LICENSES',
       text: '',
