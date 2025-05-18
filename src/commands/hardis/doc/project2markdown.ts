@@ -451,8 +451,8 @@ ${Project2Markdown.htmlInstructions}
       });
       let packageMetadatas = "Unable to list package Metadatas";
       const packageWithAllMetadatas = path.join(process.cwd(), "manifest", "package-all-org-items.xml");
+      const tmpOutput = path.join(this.tempDir, pckg.SubscriberPackageVersionId + ".xml");
       if (fs.existsSync(packageWithAllMetadatas) && pckg.SubscriberPackageNamespace) {
-        const tmpOutput = path.join(this.tempDir, pckg.SubscriberPackageVersionId + ".xml");
         const filterRes = await filterPackageXml(packageWithAllMetadatas, tmpOutput, { keepOnlyNamespaces: [pckg.SubscriberPackageNamespace] })
         if (filterRes.updated) {
           packageMetadatas = await fs.readFile(tmpOutput, "utf8");
@@ -460,7 +460,8 @@ ${Project2Markdown.htmlInstructions}
       }
       // Add apex code in documentation
       await new DocBuilderPackage(packageName, pckg, mdFile, {
-        "PACKAGE_METADATAS": packageMetadatas
+        "PACKAGE_METADATAS": packageMetadatas,
+        "PACKAGE_FILE": tmpOutput
       }).generateMarkdownFileFromXml();
       if (this.withPdf) {
         await generatePdfFileFromMarkdown(mdFile);
