@@ -37,7 +37,10 @@ export abstract class DocBuilderRoot {
   }
 
   public async generateMarkdownFileFromXml() {
-    if (this.xmlRootKey) {
+    if (this.xmlRootKey === 'json') {
+      this.parsedXmlObject = this.metadataXml;
+    }
+    else if (this.xmlRootKey) {
       this.parsedXmlObject = new XMLParser().parse(this.metadataXml)?.[this.xmlRootKey] || {};
     }
     const mdLines: string[] = [
@@ -102,7 +105,7 @@ export abstract class DocBuilderRoot {
           responseText = responseText.split("\n").slice(1).join("\n");
         }
         await UtilsAi.writeAiCache(this.promptKey, [xmlStripped], this.metadataName, responseText);
-        const replaceText = `## AI-Generated Description\n\n<${includeFromFile(aiCache.aiCacheDirFile, responseText)}`;
+        const replaceText = `## AI-Generated Description\n\n${includeFromFile(aiCache.aiCacheDirFile, responseText)}`;
         this.markdownDoc = this.markdownDoc.replace(this.placeholder, replaceText);
         return this.markdownDoc;
       }
