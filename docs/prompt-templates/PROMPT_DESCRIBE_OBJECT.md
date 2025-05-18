@@ -6,12 +6,11 @@ description: Prompt template for PROMPT_DESCRIBE_OBJECT
 # PROMPT_DESCRIBE_OBJECT
 
 ## Variables
-
-| Name                 | Description                                                               | Example                                                          |
-|:---------------------|:--------------------------------------------------------------------------|:-----------------------------------------------------------------|
-| **OBJECT_NAME**      | The API name of the Salesforce object to describe.                        | `Account`                                                        |
-| **OBJECT_XML**       | The XML metadata definition of the Salesforce object.                     | `<CustomObject>...</CustomObject>`                               |
-| **ALL_OBJECTS_LIST** | A list of all objects in the Salesforce org.                              | `Account, Contact, Opportunity, ...`                             |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **OBJECT_NAME** | The API name of the Salesforce object to describe. | `Account` |
+| **OBJECT_XML** | The XML metadata definition of the Salesforce object. | `<CustomObject>...</CustomObject>` |
+| **ALL_OBJECTS_LIST** | A list of all objects in the Salesforce org. | `Account, Contact, Opportunity, ...` |
 | **ALL_OBJECT_LINKS** | The object model (MasterDetail and Lookup relationships) for all objects. | `Account->Contact (Lookup), Opportunity->Account (MasterDetail)` |
 
 ## Prompt
