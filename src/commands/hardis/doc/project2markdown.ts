@@ -11,7 +11,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { completeAttributesDescriptionWithAi, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { parseXmlFile } from '../../../common/utils/xmlUtils.js';
-import { bool2emoji, createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
+import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
@@ -448,8 +448,19 @@ ${Project2Markdown.htmlInstructions}
         versionName: pckg.SubscriberPackageVersionName || "Unknown",
         versionId: pckg.SubscriberPackageVersionId || "Unknown",
       });
+      let packageMetadatas = "Unable to list package Metadatas";
+      const packageWithAllMetadatas = path.join(process.cwd(), "manifest", "package-all-org-items.xml");
+      if (fs.existsSync(packageWithAllMetadatas) && pckg.SubscriberPackageNamespace) {
+        const tmpOutput = path.join(this.tempDir, pckg.SubscriberPackageVersionId + ".xml");
+        const filterRes = await filterPackageXml(packageWithAllMetadatas, tmpOutput, { keepOnlyNamespaces: [pckg.SubscriberPackageNamespace] })
+        if (filterRes.updated) {
+          packageMetadatas = await fs.readFile(tmpOutput, "utf8");
+        }
+      }
       // Add apex code in documentation
-      await new DocBuilderPackage(packageName, pckg, mdFile).generateMarkdownFileFromXml();
+      await new DocBuilderPackage(packageName, pckg, mdFile, {
+        "PACKAGE_METADATAS": packageMetadatas
+      }).generateMarkdownFileFromXml();
       if (this.withPdf) {
         await generatePdfFileFromMarkdown(mdFile);
       }

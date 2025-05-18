@@ -52,6 +52,12 @@ export function buildPromptFromTemplate(template: PromptTemplate, variables: obj
   if (missingVariables.length > 0) {
     throw new Error(`Missing variables for prompt template ${template}: ${missingVariables.map(variable => variable.name).join(", ")}`);
   }
+  // Truncate variable values if necessary
+  for (const variable of templateData.variables) {
+    if (variable.truncateAfter && variables[variable.name]?.length > variable.truncateAfter) {
+      variables[variable.name] = variables[variable.name].slice(0, variable.truncateAfter) + "(truncated first " + variable.truncateAfter + " characters on a total of " + variables[variable.name].length + " characters)";
+    }
+  }
   const promptsLanguage = UtilsAi.getPromptsLanguage();
   let prompt: string = process.env?.[template] || templateData.text?.[promptsLanguage] || (templateData.text?.["en"] + `\nPlease answer using the language corresponding to "${promptsLanguage}"`);
   for (const variable in variables) {
