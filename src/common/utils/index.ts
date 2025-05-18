@@ -784,6 +784,7 @@ export async function filterPackageXml(
   packageXmlFile: string,
   packageXmlFileOut: string,
   options: any = {
+    keepOnlyNamespaces: [],
     removeNamespaces: [],
     removeMetadatas: [],
     removeStandard: false,
@@ -795,6 +796,22 @@ export async function filterPackageXml(
   let message = `[sfdx-hardis] ${packageXmlFileOut} not updated`;
   const initialFileContent = await fs.readFile(packageXmlFile);
   const manifest = await xml2js.parseStringPromise(initialFileContent);
+
+  // Keep only namespaces
+  if ((options.keepOnlyNamespaces || []).length > 0) {
+    uxLog(this, c.grey(`Keeping items from namespaces ${options.keepOnlyNamespaces.join(',')} ...`));
+    manifest.Package.types = manifest.Package.types.map((type: any) => {
+      type.members = type.members.filter((member: string) => {
+        const containsNamespace = options.keepOnlyNamespaces.filter((ns: string) => member.startsWith(ns) || member.includes(`${ns}__`)).length > 0;
+        if (containsNamespace) {
+          return true;
+        }
+        return false;
+      });
+      return type;
+    });
+  }
+
   // Remove namespaces
   if ((options.removeNamespaces || []).length > 0) {
     uxLog(this, c.grey(`Removing items from namespaces ${options.removeNamespaces.join(',')} ...`));

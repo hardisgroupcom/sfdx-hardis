@@ -311,7 +311,7 @@ export function buildGenericMarkdownTable(item: any, fields: string[], title: st
   let table = title ? `${title}\n\n` : ''
   table += `|<!-- -->|<!-- -->|\n|:---|:---|\n`;
   for (const field of fields) {
-    if (item[field] !== undefined) {
+    if (item[field] !== undefined && item[field] !== null) {
       table += `|${prettifyFieldName(field)}|${stringifyValue(item[field], field, allProperties)}|\n`
     }
   }

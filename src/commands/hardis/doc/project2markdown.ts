@@ -11,7 +11,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { completeAttributesDescriptionWithAi, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { parseXmlFile } from '../../../common/utils/xmlUtils.js';
-import { bool2emoji, createTempDir, execCommand, execSfdxJson, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
+import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
@@ -36,6 +36,7 @@ import { DocBuilderApprovalProcess } from '../../../common/docBuilder/docBuilder
 import { DocBuilderLwc } from '../../../common/docBuilder/docBuilderLwc.js';
 import { DocBuilderAutoResponseRules } from "../../../common/docBuilder/docBuilderAutoResponseRules.js";
 import { DocBuilderEscalationRules } from '../../../common/docBuilder/docBuilderEscalationRules.js';
+import { DocBuilderPackage } from '../../../common/docBuilder/docBuilderPackage.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -72,9 +73,9 @@ To just generate HTML pages that you can host anywhere, run \`mkdocs build -v ||
   - Apex
   - Lightning Web Components
 - Lightning Pages
+- Packages
 - SFDX-Hardis Config
 - Branches & Orgs
-- Installed Packages
 - Manifests
 
 Can work on any sfdx project, no need for it to be a sfdx-hardis flavored one.
@@ -172,6 +173,7 @@ ${this.htmlInstructions}
   protected apexDescriptions: any[] = [];
   protected flowDescriptions: any[] = [];
   protected lwcDescriptions: any[] = [];
+  protected packageDescriptions: any[] = [];
   protected pageDescriptions: any[] = [];
   protected profileDescriptions: any[] = [];
   protected permissionSetsDescriptions: any[] = [];
@@ -217,9 +219,9 @@ ${this.htmlInstructions}
       "  - [Apex](apex/index.md)",
       "  - [Lightning Web Components](lwc/index.md)",
       "- [Lightning Pages](pages/index.md)",
+      "- [Packages](packages/index.md)",
       "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
       "- [Branches & Orgs](sfdx-hardis-branches-and-orgs.md)",
-      "- [Installed Packages](installed-packages.md)",
       "- [Manifests](manifests.md)",
       ""
     ]);
@@ -255,17 +257,16 @@ ${this.htmlInstructions}
     this.addNavNode("Manifests", packagesForMenu);
     await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), getMetaHideLines() + packageLines.join("\n") + `\n${this.footer}\n`);
 
-    // List managed packages
-    const installedPackages = await this.buildInstalledPackages();
-    await fs.writeFile(path.join(this.outputMarkdownRoot, "installed-packages.md"), getMetaHideLines() + installedPackages.join("\n") + `\n${this.footer}\n`);
-    this.addNavNode("Installed Packages", "installed-packages.md");
-
-
     this.tempDir = await createTempDir()
     // Convert source to metadata API format to build prompts
     await execCommand(`sf project convert source --metadata CustomObject --output-dir ${this.tempDir}`, this, { fail: true, output: true, debug: this.debugMode });
     this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS })).sort();
     this.allObjectsNames = this.objectFiles.map(object => path.basename(object, ".object"));
+
+    // Generate packages documentation
+    if (!(process?.env?.GENERATE_PACKAGES_DOC === 'false')) {
+      await this.generatePackagesDocumentation();
+    }
 
     // Generate Apex doc
     if (!(process?.env?.GENERATE_APEX_DOC === 'false')) {
@@ -416,6 +417,59 @@ ${Project2Markdown.htmlInstructions}
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "apex"));
     const apexIndexFile = path.join(this.outputMarkdownRoot, "apex", "index.md");
     await fs.writeFile(apexIndexFile, getMetaHideLines() + DocBuilderApex.buildIndexTable('', this.apexDescriptions).join("\n") + `\n\n${this.footer}\n`);
+  }
+
+  private async generatePackagesDocumentation() {
+    const packagesForMenu: any = { "All Packages": "packages/index.md" }
+    // List packages
+    const packages = this.sfdxHardisConfig.installedPackages || [];     // CI/CD context
+    const packageFolder = path.join(process.cwd(), 'installedPackages');     // Monitoring context
+    if (packages.length === 0 && fs.existsSync(packageFolder)) {
+      const findManagedPattern = "**/*.json";
+      const matchingPackageFiles = await glob(findManagedPattern, { cwd: packageFolder, ignore: GLOB_IGNORE_PATTERNS });
+      for (const packageFile of matchingPackageFiles) {
+        const packageFileFull = path.join(packageFolder, packageFile);
+        if (!fs.existsSync(packageFileFull)) {
+          continue;
+        }
+        const pckg = await fs.readJSON(packageFileFull);
+        packages.push(pckg);
+      }
+    }
+    // Process packages
+    for (const pckg of packages) {
+      const packageName = pckg.SubscriberPackageName;
+      const mdFile = path.join(this.outputMarkdownRoot, "packages", packageName + ".md");
+      packagesForMenu[packageName] = "packages/" + packageName + ".md";
+      this.packageDescriptions.push({
+        name: packageName,
+        namespace: pckg.SubscriberPackageNamespace || "Unknown",
+        versionNumber: pckg.SubscriberPackageVersionNumber || "Unknown",
+        versionName: pckg.SubscriberPackageVersionName || "Unknown",
+        versionId: pckg.SubscriberPackageVersionId || "Unknown",
+      });
+      let packageMetadatas = "Unable to list package Metadatas";
+      const packageWithAllMetadatas = path.join(process.cwd(), "manifest", "package-all-org-items.xml");
+      if (fs.existsSync(packageWithAllMetadatas) && pckg.SubscriberPackageNamespace) {
+        const tmpOutput = path.join(this.tempDir, pckg.SubscriberPackageVersionId + ".xml");
+        const filterRes = await filterPackageXml(packageWithAllMetadatas, tmpOutput, { keepOnlyNamespaces: [pckg.SubscriberPackageNamespace] })
+        if (filterRes.updated) {
+          packageMetadatas = await fs.readFile(tmpOutput, "utf8");
+        }
+      }
+      // Add apex code in documentation
+      await new DocBuilderPackage(packageName, pckg, mdFile, {
+        "PACKAGE_METADATAS": packageMetadatas
+      }).generateMarkdownFileFromXml();
+      if (this.withPdf) {
+        await generatePdfFileFromMarkdown(mdFile);
+      }
+    }
+    this.addNavNode("Packages", packagesForMenu);
+    // Write index file for packages folder
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "packages"));
+    const packagesIndexFile = path.join(this.outputMarkdownRoot, "packages", "index.md");
+    await fs.writeFile(packagesIndexFile, getMetaHideLines() + DocBuilderPackage.buildIndexTable('', this.packageDescriptions).join("\n") + `\n\n${this.footer}\n`);
   }
 
   private async generatePagesDocumentation() {
@@ -805,8 +859,9 @@ ${Project2Markdown.htmlInstructions}
       ]
     }
 
-    // Remove deprecated Flows History if found
+    // Remove deprecated items if found
     mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem["Flows History"]);
+    mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem["Installed Packages"]);
 
     // Add root menus
     const rootSections = [
@@ -856,9 +911,9 @@ ${Project2Markdown.htmlInstructions}
       "Authorizations",
       "Code",
       "Lightning Pages",
+      "Packages",
       "SFDX-Hardis Config",
       "Branches & Orgs",
-      "Installed Packages",
       "Manifests"
     ];
     mkdocsYml.nav = firstItemsInOrder.map(item => mkdocsYml.nav.find(navItem => Object.keys(navItem)[0] === item)).filter(item => item).concat(mkdocsYml.nav.filter(navItem => !firstItemsInOrder.includes(Object.keys(navItem)[0])));
@@ -1075,44 +1130,6 @@ ${Project2Markdown.htmlInstructions}
 
   private humanDisplay(flows) {
     return flows.map(flow => path.basename(flow, ".flow-meta.xml")).join(", ");
-  }
-
-  private async buildInstalledPackages() {
-    // CI/CD context
-    const packages = this.sfdxHardisConfig.installedPackages || [];
-    // Monitoring context
-    const installedPackagesLines: string[] = [];
-    const packageFolder = path.join(process.cwd(), 'installedPackages');
-    if (packages.length === 0 && fs.existsSync(packageFolder)) {
-      const findManagedPattern = "**/*.json";
-      const matchingPackageFiles = await glob(findManagedPattern, { cwd: packageFolder, ignore: GLOB_IGNORE_PATTERNS });
-      for (const packageFile of matchingPackageFiles) {
-        const packageFileFull = path.join(packageFolder, packageFile);
-        if (!fs.existsSync(packageFileFull)) {
-          continue;
-        }
-        const pckg = await fs.readJSON(packageFileFull);
-        packages.push(pckg);
-      }
-    }
-    // Write packages table
-    if (packages && packages.length > 0) {
-      installedPackagesLines.push(...[
-        "## Installed packages",
-        "",
-        "| Name  | Namespace | Version | Version Name |",
-        "| :---- | :-------- | :------ | :----------: | "
-      ]);
-      for (const pckg of sortArray(packages, { by: ['SubscriberPackageNamespace', 'SubscriberPackageName'], order: ['asc', 'asc'] }) as any[]) {
-        installedPackagesLines.push(...[
-          `| ${pckg.SubscriberPackageName} | ${pckg.SubscriberPackageNamespace || ""} | [${pckg.SubscriberPackageVersionNumber}](https://test.salesforce.com/packaging/installPackage.apexp?p0=${pckg.SubscriberPackageVersionId}) | ${pckg.SubscriberPackageVersionName} |`
-        ]);
-      }
-      installedPackagesLines.push("");
-      installedPackagesLines.push("___");
-      installedPackagesLines.push("");
-    }
-    return installedPackagesLines;
   }
 
   private buildSfdxHardisParams(): string[] {
