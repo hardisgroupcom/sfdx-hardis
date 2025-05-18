@@ -7,6 +7,7 @@ import { buildCheckDeployCommitSummary, handlePostDeploymentNotifications } from
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import c from "chalk"
 import { uxLog } from '../../../../common/utils/index.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -135,6 +136,7 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
     this.deployStatus = flags["deploy-status"] || "unknown";
     this.message = flags.message || "";
     this.debugMode = flags.debug || false;
+    await setConnectionVariables(flags['target-org']?.getConnection(), true);
 
     // Deployment check mode
     if (this.checkOnly) {

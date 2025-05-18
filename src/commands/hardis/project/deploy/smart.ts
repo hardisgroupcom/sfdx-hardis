@@ -27,7 +27,7 @@ import {
 } from '../../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { smartDeploy, removePackageXmlContent } from '../../../../common/utils/deployUtils.js';
-import { isProductionOrg, promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
+import { isProductionOrg, promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { getApexTestClasses } from '../../../../common/utils/classUtils.js';
 import { listMajorOrgs, restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
@@ -331,6 +331,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       uxLog(this, c.yellow("Just to be sure, please select the org you want to use for this command :)"))
       targetUsername = await promptOrgUsernameDefault(this, targetUsername, { devHub: false, setDefault: false, scratch: false });
     }
+
+    await setConnectionVariables(flags['target-org']?.getConnection(), true);
 
     await this.initTestLevelAndTestClasses(flags);
 

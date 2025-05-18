@@ -23,6 +23,7 @@ import { Parser } from 'xml2js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from '../../../common/utils/notifUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
+import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -486,7 +487,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       attachments = [{ text: notifDetailText }];
     }
 
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'LINT_ACCESS',
       text: notifText,

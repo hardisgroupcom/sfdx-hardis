@@ -9,6 +9,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -92,7 +93,7 @@ export default class DiagnoseInstanceUpgrade extends SfCommand<any> {
       uxLog(this, c.green(notifText));
     }
 
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'ORG_INFO',
       text: notifText,

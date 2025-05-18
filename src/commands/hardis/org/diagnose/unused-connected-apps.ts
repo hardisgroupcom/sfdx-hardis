@@ -16,6 +16,7 @@ import { CONSTANTS } from '../../../../config/index.js';
 import sortArray from 'sort-array';
 import { createBlankSfdxProject } from '../../../../common/utils/projectUtils.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -152,7 +153,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       }
       const notifAttachments = [{ text: notifDetailText }];
       // Post notif
-      globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+      await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
       await NotifProvider.postNotifications({
         type: 'CONNECTED_APPS',
         text: notifText,

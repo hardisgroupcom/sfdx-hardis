@@ -2,7 +2,7 @@
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import { promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
+import { promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { wrapSfdxCoreCommand } from '../../../../common/utils/wrapUtils.js';
 
 
@@ -60,6 +60,8 @@ Used by VsCode Extension`;
     const orgUsername = await promptOrgUsernameDefault(this,
       flags['target-org'].getUsername(),
       { devHub: false, setDefault: false, message: `Do you want to use org ${flags['target-org'].getConnection().instanceUrl} to simulate deployment of metadata ${sourceDirOrFile} ?`, quickOrgList: true });
+
+    await setConnectionVariables(flags['target-org']?.getConnection(), true);
 
     // Build command
     const simulateDeployCommand = "sf project deploy start" +

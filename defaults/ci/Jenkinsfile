@@ -15,6 +15,7 @@ pipeline {
         SFDX_CLIENT_KEY_PREPROD = credentials('SFDX_CLIENT_KEY_PREPROD') //Example
         SFDX_CLIENT_ID_MAIN = credentials('SFDX_CLIENT_ID_MAIN') //Example
         SFDX_CLIENT_KEY_MAIN = credentials('SFDX_CLIENT_KEY_MAIN') //Example
+        SFDX_AUTH_URL_TECHNICAL_ORG = credentials('SFDX_AUTH_URL_TECHNICAL_ORG')
         SLACK_TOKEN = credentials('SLACK_TOKEN') // Remove if not used
         SLACK_CHANNEL_ID = credentials('SLACK_CHANNEL_ID') // Remove if not used
         NOTIF_EMAIL_ADDRESS = credentials('NOTIF_EMAIL_ADDRESS') // Remove if not used

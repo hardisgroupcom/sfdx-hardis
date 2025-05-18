@@ -8,7 +8,7 @@ import { WebSocketClient } from '../websocketClient.js';
 import { getConfig, setConfig } from '../../config/index.js';
 import * as EmailValidator from 'email-validator';
 import sortArray from 'sort-array';
-import { Connection, SfError } from '@salesforce/core';
+import { AuthInfo, Connection, SfError } from '@salesforce/core';
 import { importData } from './dataUtils.js';
 import { soqlQuery } from './apiUtils.js';
 import { isSfdxProject } from './projectUtils.js';
@@ -652,4 +652,42 @@ export async function isScratchOrg(options: any) {
   } else {
     return options?.scratch === true;
   }
+}
+
+// Set global variables with connections
+let tryTechnical = true;
+export async function setConnectionVariables(conn, handleTechnical = false) {
+  if (conn) {
+    globalThis.jsForceConn = conn;
+  }
+  if (handleTechnical && tryTechnical && !(process.env?.SKIP_TECHNICAL_ORG === "true")) {
+    try {
+      const techOrgDisplayCommand = 'sf org display --target-org TECHNICAL_ORG --json --verbose';
+      const orgInfoResult = await execSfdxJson(techOrgDisplayCommand, this, {
+        fail: false,
+        output: false,
+        debug: false,
+      });
+      if (orgInfoResult.result && orgInfoResult.result.connectedStatus === 'Connected') {
+        const authInfo = await AuthInfo.create({
+          username: orgInfoResult.result.username,
+          isDefaultUsername: false,
+        });
+        const connTechnical = await Connection.create({
+          authInfo: authInfo,
+          connectionOptions: {
+            instanceUrl: orgInfoResult.result.instanceUrl,
+            accessToken: orgInfoResult.result.accessToken
+          }
+        });
+        const identity = await connTechnical.identity();
+        uxLog(this, c.grey(`Connected to technical org ${c.green(identity.username)}`));
+        globalThis.jsForceConnTechnical = connTechnical;
+      }
+    } catch (e) {
+      uxLog(this, c.red(`Unable to connect to technical org: ${e}`));
+      globalThis.jsForceConnTechnical = null;
+    }
+  }
+  tryTechnical = false;
 }

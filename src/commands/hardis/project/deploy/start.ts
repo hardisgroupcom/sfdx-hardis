@@ -5,6 +5,7 @@ import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
 import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 export default class ProjectDeployStart extends SfCommand<any> {
   public static description = `sfdx-hardis wrapper for **sf project deploy start** that displays tips to solve deployment errors.
@@ -153,6 +154,7 @@ commandsPostDeploy:
     const { flags } = await this.parse(ProjectDeployStart);
     const conn = flags["target-org"].getConnection();
     const checkOnly = flags["dry-run"] === true;
+    await setConnectionVariables(flags['target-org']?.getConnection(), true);
     // Compute data for PR comments & flow diffs
     if (checkOnly) {
       await buildCheckDeployCommitSummary()

@@ -10,6 +10,7 @@ import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/i
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { CONSTANTS } from '../../../../config/index.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -276,7 +277,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const metrics = this.returnActiveUsers ? { ActiveUsers: this.users.length } : { UnusedUsers: this.users.length };
     /* jscpd:ignore-start */
     // Send notifications
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: this.returnActiveUsers ? 'ACTIVE_USERS' : 'UNUSED_USERS',
       text: notifText,

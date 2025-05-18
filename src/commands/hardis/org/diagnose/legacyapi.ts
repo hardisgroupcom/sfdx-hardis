@@ -16,6 +16,7 @@ import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/i
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { FileDownloader } from '../../../../common/utils/fileDownloader.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 const dnsPromises = dns.promises;
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -241,7 +242,7 @@ See article to solve issue before it's too late:
       notifText = `${this.allErrors.length} deprecated Salesforce API versions are used in ${orgMarkdown}`;
     }
     // Post notifications
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'LEGACY_API',
       text: notifText,

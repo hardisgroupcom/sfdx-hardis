@@ -21,7 +21,7 @@ export class UtilsAi {
   }
 
   public static isAgentforceAvailable() {
-    if (getEnvVar("USE_AGENTFORCE") === "true" && globalThis.jsForceConn) {
+    if (getEnvVar("USE_AGENTFORCE") === "true" && (globalThis.jsForceConn || globalThis.jsForceConnTechnical)) {
       return true;
     }
     return false;

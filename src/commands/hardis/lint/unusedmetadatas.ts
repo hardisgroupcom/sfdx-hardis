@@ -18,6 +18,7 @@ import { generateCsvFile, generateReportPath } from '../../../common/utils/files
 import { uxLog } from '../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
+import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -94,7 +95,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       uxLog(this, 'No unused labels or custom permissions detected.');
     }
     // Post notification
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'UNUSED_METADATAS',
       text: notifText,

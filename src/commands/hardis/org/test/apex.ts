@@ -9,6 +9,7 @@ import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils
 import { CONSTANTS, getConfig, getReportDirectory } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateApexCoverageOutputFile } from '../../../../common/utils/deployUtils.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -95,7 +96,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     uxLog(this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
 
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'APEX_TESTS',
       text: this.notifText,

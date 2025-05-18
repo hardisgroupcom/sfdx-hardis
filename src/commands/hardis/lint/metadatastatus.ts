@@ -17,6 +17,7 @@ import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from '../.
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
+import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -157,7 +158,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       uxLog(this, 'No draft flow or validation rule files detected.');
     }
     // Post notifications
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'METADATA_STATUS',
       text: notifText,

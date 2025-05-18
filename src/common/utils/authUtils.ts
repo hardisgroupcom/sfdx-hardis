@@ -24,13 +24,13 @@ export async function authOrg(orgAlias: string, options: any) {
 
   let doConnect = true;
   let alias = null;
+  let setDefaultOrg = false;
   if (!options.checkAuth) {
     // Check if we are already authenticated
     let orgDisplayCommand = 'sf org display';
-    let setDefaultOrg = false;
     if (orgAlias && (isCI || isDevHub) && !orgAlias.includes('force://')) {
       orgDisplayCommand += ' --target-org ' + orgAlias;
-      setDefaultOrg = true;
+      setDefaultOrg = orgAlias !== 'TECHNICAL_ORG' ? true : false;
     } else {
       if (
         options?.argv.includes('--target-org') ||
@@ -121,7 +121,7 @@ export async function authOrg(orgAlias: string, options: any) {
       await fs.writeFile(authFile, authUrl, 'utf8');
       const authCommand =
         `sf org login sfdx-url -f ${authFile}` +
-        (isDevHub ? ` --set-default-dev-hub` : ` --set-default`) +
+        (isDevHub ? ` --set-default-dev-hub` : (setDefaultOrg ? ` --set-default` : '')) +
         (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
       await execCommand(authCommand, this, { fail: true, output: false });
       uxLog(this, c.cyan('Successfully logged using sfdxAuthUrl'));
