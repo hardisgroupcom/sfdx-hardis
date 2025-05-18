@@ -162,6 +162,10 @@ export class DocBuilderPackageXML {
 
   // Generate json for display with jsTree npm library 
   public static async generateJsonTree(metadataTypes: any, packageXmlContent: any): Promise<any> {
+    if (metadataTypes === "all") {
+      metadataTypes = Object.keys(packageXmlContent);
+      metadataTypes.sort();
+    }
     const treeElements: any[] = [];
     for (const metadataType of metadataTypes) {
       const members = packageXmlContent[metadataType] || [];

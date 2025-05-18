@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.36.1] 2025-05-18
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Display installed package metadatas as tree view
+
 ## [5.36.0] 2025-05-18
 
 - Allow to use another org to call Agentforce, by previously connecting to an org alias TECHNICAL_ORG (to do that, just define SFDX_AUTH_URL_TECHNICAL_ORG and [hardis:auth:login](https://sfdx-hardis.cloudity.com/hardis/auth/login/) will handle the rest)
