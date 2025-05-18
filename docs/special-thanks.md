@@ -11,6 +11,8 @@ description: Thank all people making sfdx-hardis great !
 
 ## Contributors
 
+![](https://contrib.rocks/image?repo=hardisgroupcom/sfdx-hardis)
+
 ![](assets/images/special-thanks-1.png)
 
 ## Inspirations
