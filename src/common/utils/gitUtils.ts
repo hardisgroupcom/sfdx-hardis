@@ -22,6 +22,7 @@ import { flowDiffToMarkdownForPullRequest } from '../gitProvider/utilsMarkdown.j
 import { MessageAttachment } from '@slack/types';
 import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from './notifUtils.js';
 import { NotifProvider, UtilsNotifs } from '../notifProvider/index.js';
+import { setConnectionVariables } from './orgUtils.js';
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const message =
@@ -300,7 +301,7 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
   } else {
     uxLog(this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
   }
-  globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+  await setConnectionVariables(flags['target-org']?.getConnection(), true);// Required for some notifications providers like Email
   await NotifProvider.postNotifications({
     type: 'DEPLOYMENT',
     text: notifMessage,

@@ -12,7 +12,7 @@ export class AgentforceProvider extends AiProviderRoot {
 
   constructor() {
     super();
-    this.conn = globalThis.jsForceConn;
+    this.conn = globalThis.jsForceConnTechnical || globalThis.jsForceConn;
   }
 
   public getLabel(): string {

@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Allow to use another org to call Agentforce, by previously connecting to an org alias TECHNICAL_ORG (to do that, just define SFDX_AUTH_URL_TECHNICAL_ORG and [hardis:auth:login](https://sfdx-hardis.cloudity.com/hardis/auth/login/) will handle the rest)
+
 ## [5.35.0] 2025-05-18
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) new features and fixes:
