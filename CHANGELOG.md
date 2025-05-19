@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.36.2] 2025-05-19
+
+- Do not create package files with git forbidden characters
+
 ## [5.36.1] 2025-05-18
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Display installed package metadatas as tree view

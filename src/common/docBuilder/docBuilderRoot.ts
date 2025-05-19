@@ -8,6 +8,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { getMetaHideLines, includeFromFile } from './docUtils.js';
 import { CONSTANTS } from '../../config/index.js';
+import { makeFileNameGitCompliant } from '../utils/gitUtils.js';
 
 export abstract class DocBuilderRoot {
   public docType: string;
@@ -74,10 +75,20 @@ export abstract class DocBuilderRoot {
 
     const jsonTree = await this.generateJsonTree();
     if (jsonTree) {
-      const jsonFile = `./docs/json/${this.docsSection}-${this.metadataName}.json`;
+      let jsonFile = `./docs/json/${this.docsSection}-${this.metadataName}.json`;
+      if (this.docsSection === "packages") {
+        jsonFile = `./docs/json/${this.docsSection}-${makeFileNameGitCompliant(this.metadataName)}.json`;
+      }
       await fs.ensureDir(path.dirname(jsonFile));
       await fs.writeFile(jsonFile, JSON.stringify(jsonTree, null, 2));
       uxLog(this, c.green(`Successfully generated ${this.metadataName} JSON into ${jsonFile}`));
+      // Recovery to save git repos: Kill existing file if it has been created with forbidden characters
+      if (this.docsSection === "packages") {
+        const jsonFileBad = `./docs/json/${this.docsSection}-${this.metadataName}.json`;
+        if (jsonFileBad !== jsonFile && fs.existsSync(jsonFileBad)) {
+          await fs.remove(jsonFileBad);
+        }
+      }
     }
     return this.outputFile;
   }

@@ -5,6 +5,7 @@ import { DocBuilderRoot } from "./docBuilderRoot.js";
 import { DocBuilderPackageXML } from "./docBuilderPackageXml.js";
 import fs from "fs";
 import { parsePackageXmlFile } from "../utils/xmlUtils.js";
+import { makeFileNameGitCompliant } from "../utils/gitUtils.js";
 
 export class DocBuilderPackage extends DocBuilderRoot {
 
@@ -27,7 +28,7 @@ export class DocBuilderPackage extends DocBuilderRoot {
       "| :---- | :-------- | :------ | :----------: | "
     ]);
     for (const pckg of sortArray(filteredPackages, { by: ['namespace', 'name'], order: ['asc', 'asc'] }) as any[]) {
-      const packageNameCell = `[${pckg.name}](${prefix}${pckg.name}.md)`;
+      const packageNameCell = `[${pckg.name}](${prefix}${makeFileNameGitCompliant(pckg.name)}.md)`;
       lines.push(...[
         `| ${packageNameCell} | ${pckg.namespace || ""} | [${pckg.versionNumber}](https://test.salesforce.com/packaging/installPackage.apexp?p0=${pckg.versionId}) | ${pckg.versionName} |`
       ]);

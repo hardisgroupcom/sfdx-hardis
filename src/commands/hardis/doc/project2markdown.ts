@@ -38,6 +38,7 @@ import { DocBuilderAutoResponseRules } from "../../../common/docBuilder/docBuild
 import { DocBuilderEscalationRules } from '../../../common/docBuilder/docBuilderEscalationRules.js';
 import { DocBuilderPackage } from '../../../common/docBuilder/docBuilderPackage.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
+import { makeFileNameGitCompliant } from '../../../common/utils/gitUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -440,11 +441,12 @@ ${Project2Markdown.htmlInstructions}
     // Process packages
     for (const pckg of packages) {
       const packageName = pckg.SubscriberPackageName;
-      const mdFile = path.join(this.outputMarkdownRoot, "packages", packageName + ".md");
-      packagesForMenu[packageName] = "packages/" + packageName + ".md";
+      const mdFile = path.join(this.outputMarkdownRoot, "packages", makeFileNameGitCompliant(packageName) + ".md");
+      // Generate package page and add it to menu
+      packagesForMenu[packageName] = "packages/" + makeFileNameGitCompliant(packageName) + ".md";
       this.packageDescriptions.push({
         name: packageName,
-        namespace: pckg.SubscriberPackageNamespace || "Unknown",
+        namespace: pckg.SubscriberPackageNamespace || "None",
         versionNumber: pckg.SubscriberPackageVersionNumber || "Unknown",
         versionName: pckg.SubscriberPackageVersionName || "Unknown",
         versionId: pckg.SubscriberPackageVersionId || "Unknown",
@@ -465,6 +467,11 @@ ${Project2Markdown.htmlInstructions}
       }).generateMarkdownFileFromXml();
       if (this.withPdf) {
         await generatePdfFileFromMarkdown(mdFile);
+      }
+      // Recovery to save git repos: Kill existing file if it has been created with forbidden characters
+      const mdFileBad = path.join(this.outputMarkdownRoot, "packages", packageName + ".md");
+      if (mdFileBad !== mdFile && fs.existsSync(mdFileBad)) {
+        await fs.remove(mdFileBad);
       }
     }
     this.addNavNode("Packages", packagesForMenu);
