@@ -18,6 +18,7 @@ import Project2Markdown from '../../doc/project2markdown.js';
 import MkDocsToSalesforce from '../../doc/mkdocs-to-salesforce.js';
 import MkDocsToCloudflare from '../../doc/mkdocs-to-cf.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { makeFileNameGitCompliant } from '../../../../common/utils/gitUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -205,7 +206,7 @@ If Flow history doc always display a single state, you probably need to update y
     await fs.ensureDir(packageFolder);
     for (const installedPackage of this.installedPackages) {
       const fileName = (installedPackage.SubscriberPackageName || installedPackage.SubscriberPackageId) + '.json';
-      const fileNameNoSep = fileName.replace(/\//g, '_').replace(/:/g, '_'); // Handle case when package name contains slashes or colon
+      const fileNameNoSep = makeFileNameGitCompliant(fileName); // Handle case when package name contains slashes or colon
       delete installedPackage.Id; // Not needed for diffs
       await fs.writeFile(path.join(packageFolder, fileNameNoSep), JSON.stringify(installedPackage, null, 2));
       const installedPackageLog = {
@@ -216,6 +217,19 @@ If Flow history doc always display a single state, you probably need to update y
         SubscriberPackageVersionNumber: installedPackage.SubscriberPackageVersionNumber,
       };
       installedPackagesLog.push(installedPackageLog);
+      // Clean repo: Remove previous versions of file names
+      const fileNameNoSepBad1 = fileName.replace(/\//g, '_').replace(/:/g, '_');
+      const fileNameNoSepBad2 = fileName;
+      for (const oldFileName of [fileNameNoSepBad1, fileNameNoSepBad2]) {
+        if (oldFileName === fileNameNoSep) {
+          continue;
+        }
+        const oldFilePath = path.join(packageFolder, oldFileName);
+        if (fs.existsSync(oldFilePath)) {
+          await fs.remove(oldFilePath);
+        }
+      }
+
     }
 
     this.diffFiles = await MetadataUtils.listChangedFiles();
