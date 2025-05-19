@@ -359,3 +359,9 @@ async function collectNotifAttachments(attachments: MessageAttachment[], pullReq
   }
   return commitsSummary;
 }
+
+export function makeFileNameGitCompliant(fileName: string) {
+  // Remove all characters that are not alphanumeric, underscore, hyphen, space or dot
+  const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9_. -]/g, '_');
+  return sanitizedFileName;
+}
