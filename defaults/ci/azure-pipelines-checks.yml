@@ -37,7 +37,7 @@ jobs:
   - job: DeploymentCheck
     timeoutInMinutes: 150
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
     steps:
       # Checkout repo
       - checkout: self
@@ -103,7 +103,7 @@ jobs:
   # Config is editable in .mega-linter.yml
   - job: MegaLinter
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
     steps:
       # Pull MegaLinter docker image
       - script: docker pull oxsecurity/megalinter-salesforce:latest
