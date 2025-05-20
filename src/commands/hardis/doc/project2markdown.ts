@@ -338,6 +338,19 @@ ${Project2Markdown.htmlInstructions}
 
     await this.buildMkDocsYml();
 
+    // Delete files found in docs folder that contain characters not compliant with Windows file system
+    // (e.g. /, \, :, *, ?, ", <, >, |)
+    const filesToDelete = await glob("**/*", { cwd: this.outputMarkdownRoot, nodir: true });
+    for (const file of filesToDelete) {
+      const fileName = path.basename(file);
+      if (fileName.includes("/") || fileName.includes("\\") || fileName.includes(":") || fileName.includes("*") || fileName.includes("?") || fileName.includes('"') || fileName.includes("<") || fileName.includes(">") || fileName.includes("|")) {
+        const filePath = path.join(this.outputMarkdownRoot, file);
+        uxLog(this, c.yellow(`Deleting file ${filePath} because it contains characters not compliant with Windows file system`));
+        await fs.remove(filePath);
+      }
+    }
+
+
     // Open file in a new VsCode tab if available
     WebSocketClient.requestOpenFile(this.outputMarkdownIndexFile);
 
@@ -464,7 +477,7 @@ ${Project2Markdown.htmlInstructions}
         }
       }
       // Add Packages in documentation
-      await new DocBuilderPackage(packageName, pckg, mdFile, {
+      await new DocBuilderPackage(makeFileNameGitCompliant(packageName), pckg, mdFile, {
         "PACKAGE_METADATAS": packageMetadatas,
         "PACKAGE_FILE": tmpOutput
       }).generateMarkdownFileFromXml();

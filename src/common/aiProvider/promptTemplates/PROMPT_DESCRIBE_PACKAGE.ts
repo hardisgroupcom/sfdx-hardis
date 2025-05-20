@@ -34,6 +34,7 @@ const template: PromptTemplateDefinition = {
       - If you find the AppExchange page, include it in your response.
       - If you find the package's GitHub repository, include it in your response.
       - If you find the vendor information, include it in your response.
+      - Make sure that hyperlinks are not dead links leading to 404 pages.
 
 2. **Package Metadata**:
     - Review the list of metadata items (Apex classes, objects, flows, etc.) provided by this package, as listed in reference data.
