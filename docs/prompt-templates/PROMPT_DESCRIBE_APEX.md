@@ -6,16 +6,15 @@ description: Prompt template for PROMPT_DESCRIBE_APEX
 # PROMPT_DESCRIBE_APEX
 
 ## Variables
-
-| Name           | Description                                        | Example                                   |
-|:---------------|:---------------------------------------------------|:------------------------------------------|
-| **CLASS_NAME** | The name of the Salesforce Apex class to describe. | `MyCustomController`                      |
-| **APEX_CODE**  | The full source code of the Apex class.            | `public class MyCustomController { ... }` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **CLASS_NAME** | The name of the Salesforce Apex class to describe. | `MyCustomController` |
+| **APEX_CODE** | The full source code of the Apex class. | `public class MyCustomController { ... }` |
 
 ## Prompt
 
 ```
-You are a developer working on a Salesforce project. Your goal is to summarize the behavior of the Salesforce Apex class "{{CLASS_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+You are a developer working on a Salesforce project. Your goal is to summarize the behavior of the Salesforce Apex class "{{CLASS_NAME}}" in plain English, providing a detailed explanation suitable for a business user.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
 
 ### Instructions:
 

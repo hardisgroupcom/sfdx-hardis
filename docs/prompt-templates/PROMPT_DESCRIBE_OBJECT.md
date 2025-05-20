@@ -6,18 +6,17 @@ description: Prompt template for PROMPT_DESCRIBE_OBJECT
 # PROMPT_DESCRIBE_OBJECT
 
 ## Variables
-
-| Name                 | Description                                                               | Example                                                          |
-|:---------------------|:--------------------------------------------------------------------------|:-----------------------------------------------------------------|
-| **OBJECT_NAME**      | The API name of the Salesforce object to describe.                        | `Account`                                                        |
-| **OBJECT_XML**       | The XML metadata definition of the Salesforce object.                     | `<CustomObject>...</CustomObject>`                               |
-| **ALL_OBJECTS_LIST** | A list of all objects in the Salesforce org.                              | `Account, Contact, Opportunity, ...`                             |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **OBJECT_NAME** | The API name of the Salesforce object to describe. | `Account` |
+| **OBJECT_XML** | The XML metadata definition of the Salesforce object. | `<CustomObject>...</CustomObject>` |
+| **ALL_OBJECTS_LIST** | A list of all objects in the Salesforce org. | `Account, Contact, Opportunity, ...` |
 | **ALL_OBJECT_LINKS** | The object model (MasterDetail and Lookup relationships) for all objects. | `Account->Contact (Lookup), Opportunity->Account (MasterDetail)` |
 
 ## Prompt
 
 ```
-You are a business analyst working on a Salesforce project. Your goal is to describe the Salesforce object "{{OBJECT_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+You are a business analyst working on a Salesforce project. Your goal is to describe the Salesforce object "{{OBJECT_NAME}}" in plain English, providing a detailed explanation suitable for a business user.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
 
 ### Instructions:
 

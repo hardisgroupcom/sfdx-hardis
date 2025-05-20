@@ -6,16 +6,15 @@ description: Prompt template for PROMPT_DESCRIBE_PROFILE
 # PROMPT_DESCRIBE_PROFILE
 
 ## Variables
-
-| Name             | Description                                     | Example                  |
-|:-----------------|:------------------------------------------------|:-------------------------|
-| **PROFILE_NAME** | The name of the Salesforce Profile to describe. | `Cloudity Sales`         |
-| **PROFILE_XML**  | The XML metadata for the Salesforce Profile.    | `<Profile>...</Profile>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **PROFILE_NAME** | The name of the Salesforce Profile to describe. | `Cloudity Sales` |
+| **PROFILE_XML** | The XML metadata for the Salesforce Profile. | `<Profile>...</Profile>` |
 
 ## Prompt
 
 ```
-You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce Profile "{{PROFILE_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce Profile "{{PROFILE_NAME}}" in plain English, providing a detailed explanation suitable for a business user.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
 
 ### Instructions:
 

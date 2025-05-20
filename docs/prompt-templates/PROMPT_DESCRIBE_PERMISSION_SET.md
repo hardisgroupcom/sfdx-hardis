@@ -6,16 +6,15 @@ description: Prompt template for PROMPT_DESCRIBE_PERMISSION_SET
 # PROMPT_DESCRIBE_PERMISSION_SET
 
 ## Variables
-
-| Name                   | Description                                            | Example                              |
-|:-----------------------|:-------------------------------------------------------|:-------------------------------------|
-| **PERMISSIONSET_NAME** | The name of the Salesforce Permission Set to describe. | `PS_CloudityAccount`                 |
-| **PERMISSIONSET_XML**  | The XML metadata for the Salesforce Permission Set.    | `<PermissionSet>...</PermissionSet>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **PERMISSIONSET_NAME** | The name of the Salesforce Permission Set to describe. | `PS_CloudityAccount` |
+| **PERMISSIONSET_XML** | The XML metadata for the Salesforce Permission Set. | `<PermissionSet>...</PermissionSet>` |
 
 ## Prompt
 
 ```
-You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce PermissionSet "{{PERMISSIONSET_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce PermissionSet "{{PERMISSIONSET_NAME}}" in plain English, providing a detailed explanation suitable for a business user.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
 
 ### Instructions:
 

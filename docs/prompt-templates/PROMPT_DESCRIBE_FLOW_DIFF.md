@@ -6,16 +6,15 @@ description: Prompt template for PROMPT_DESCRIBE_FLOW_DIFF
 # PROMPT_DESCRIBE_FLOW_DIFF
 
 ## Variables
-
-| Name                  | Description                                                        | Example            |
-|:----------------------|:-------------------------------------------------------------------|:-------------------|
-| **FLOW_XML_NEW**      | The XML definition of the new version of the Salesforce Flow.      | `<Flow>...</Flow>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **FLOW_XML_NEW** | The XML definition of the new version of the Salesforce Flow. | `<Flow>...</Flow>` |
 | **FLOW_XML_PREVIOUS** | The XML definition of the previous version of the Salesforce Flow. | `<Flow>...</Flow>` |
 
 ## Prompt
 
 ```
-You are a business analyst working on a Salesforce project. Your goal is to describe the differences between the new and previous versions of a Salesforce Flow in plain English, providing a detailed explanation suitable for a business user.
+You are a business analyst working on a Salesforce project. Your goal is to describe the differences between the new and previous versions of a Salesforce Flow in plain English, providing a detailed explanation suitable for a business user.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
 
 ### Instructions:
 

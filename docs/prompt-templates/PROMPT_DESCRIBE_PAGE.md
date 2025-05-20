@@ -6,16 +6,15 @@ description: Prompt template for PROMPT_DESCRIBE_PAGE
 # PROMPT_DESCRIBE_PAGE
 
 ## Variables
-
-| Name          | Description                                            | Example                      |
-|:--------------|:-------------------------------------------------------|:-----------------------------|
-| **PAGE_NAME** | The name of the Salesforce Lightning Page to describe. | `Account_Record_Page`        |
-| **PAGE_XML**  | The XML metadata for the Lightning Page.               | `<FlexiPage>...</FlexiPage>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **PAGE_NAME** | The name of the Salesforce Lightning Page to describe. | `Account_Record_Page` |
+| **PAGE_XML** | The XML metadata for the Lightning Page. | `<FlexiPage>...</FlexiPage>` |
 
 ## Prompt
 
 ```
-You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce Lightning Page "{{PAGE_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce Lightning Page "{{PAGE_NAME}}" in plain English, providing a detailed explanation suitable for a business user.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
 
 ### Instructions:
 

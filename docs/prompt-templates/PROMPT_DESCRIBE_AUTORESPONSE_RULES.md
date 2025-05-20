@@ -6,16 +6,15 @@ description: Prompt template for PROMPT_DESCRIBE_AUTORESPONSE_RULES
 # PROMPT_DESCRIBE_AUTORESPONSE_RULES
 
 ## Variables
-
-| Name                       | Description                                                | Example                                      |
-|:---------------------------|:-----------------------------------------------------------|:---------------------------------------------|
-| **AUTORESPONSERULES_NAME** | The name of the Salesforce AutoResponse Rules to describe. | `Case_AutoResponse_Rules`                    |
-| **AUTORESPONSERULES_XML**  | The XML metadata for the Salesforce AutoResponse Rules.    | `<AutoResponseRules>...</AutoResponseRules>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **AUTORESPONSERULES_NAME** | The name of the Salesforce AutoResponse Rules to describe. | `Case_AutoResponse_Rules` |
+| **AUTORESPONSERULES_XML** | The XML metadata for the Salesforce AutoResponse Rules. | `<AutoResponseRules>...</AutoResponseRules>` |
 
 ## Prompt
 
 ```
-You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce AutoResponse Rules "{{AUTORESPONSERULES_NAME}}" in plain English, providing a detailed explanation suitable for a business user.
+You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce AutoResponse Rules "{{AUTORESPONSERULES_NAME}}" in plain English, providing a detailed explanation suitable for a business user.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
 
 ### Instructions:
 

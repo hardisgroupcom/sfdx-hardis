@@ -6,18 +6,17 @@ description: Prompt template for PROMPT_DESCRIBE_LWC
 # PROMPT_DESCRIBE_LWC
 
 ## Variables
-
-| Name              | Description                                                  | Example                                                    |
-|:------------------|:-------------------------------------------------------------|:-----------------------------------------------------------|
-| **LWC_NAME**      | The name of the Lightning Web Component to describe.         | `myCustomComponent`                                        |
-| **LWC_JS_CODE**   | The JavaScript code of the Lightning Web Component.          | `import { LightningElement } from 'lwc'; ...`              |
-| **LWC_HTML_CODE** | The HTML template code of the Lightning Web Component.       | `<template>...</template>`                                 |
-| **LWC_JS_META**   | The meta configuration file for the Lightning Web Component. | `<LightningComponentBundle>...</LightningComponentBundle>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **LWC_NAME** | The name of the Lightning Web Component to describe. | `myCustomComponent` |
+| **LWC_JS_CODE** | The JavaScript code of the Lightning Web Component. | `import { LightningElement } from 'lwc'; ...` |
+| **LWC_HTML_CODE** | The HTML template code of the Lightning Web Component. | `<template>...</template>` |
+| **LWC_JS_META** | The meta configuration file for the Lightning Web Component. | `<LightningComponentBundle>...</LightningComponentBundle>` |
 
 ## Prompt
 
 ```
-You are a skilled Salesforce developer working on a Lightning Web Components (LWC) project. Your goal is to explain the Salesforce Lightning Web Component "{{LWC_NAME}}" in plain English, providing a detailed explanation suitable for other developers and business users.
+You are a skilled Salesforce developer working on a Lightning Web Components (LWC) project. Your goal is to explain the Salesforce Lightning Web Component "{{LWC_NAME}}" in plain English, providing a detailed explanation suitable for other developers and business users.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
 
 ### Instructions:
 

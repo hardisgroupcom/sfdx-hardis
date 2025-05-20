@@ -6,15 +6,14 @@ description: Prompt template for PROMPT_SOLVE_DEPLOYMENT_ERROR
 # PROMPT_SOLVE_DEPLOYMENT_ERROR
 
 ## Variables
-
-| Name      | Description                                                   | Example                                                    |
-|:----------|:--------------------------------------------------------------|:-----------------------------------------------------------|
+| Name | Description | Example |
+| :------|:-------------|:---------|
 | **ERROR** | The Salesforce deployment error message to analyze and solve. | `Cannot deploy component: missing field 'X' on object 'Y'` |
 
 ## Prompt
 
 ```
-You are a Salesforce release manager using Salesforce CLI commands to perform deployments. Your goal is to help solve the following Salesforce deployment error in a clear, actionable way for a technical user.
+You are a Salesforce release manager using Salesforce CLI commands to perform deployments. Your goal is to help solve the following Salesforce deployment error in a clear, actionable way for a technical user. 
 
 ### Instructions:
 
