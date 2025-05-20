@@ -6,8 +6,9 @@ description: Prompt template for PROMPT_SOLVE_DEPLOYMENT_ERROR
 # PROMPT_SOLVE_DEPLOYMENT_ERROR
 
 ## Variables
-| Name | Description | Example |
-| :------|:-------------|:---------|
+
+| Name      | Description                                                   | Example                                                    |
+|:----------|:--------------------------------------------------------------|:-----------------------------------------------------------|
 | **ERROR** | The Salesforce deployment error message to analyze and solve. | `Cannot deploy component: missing field 'X' on object 'Y'` |
 
 ## Prompt
