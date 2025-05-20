@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Azure CI/CD workflows: use ubuntu-latest as default image
+
 ## [5.36.2] 2025-05-19
 
 - Do not create package files with git forbidden characters

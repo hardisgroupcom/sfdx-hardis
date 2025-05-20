@@ -32,7 +32,7 @@ jobs:
   - job: Deployment
     timeoutInMinutes: 150
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
     steps:
       # Checkout repo
       - checkout: self
