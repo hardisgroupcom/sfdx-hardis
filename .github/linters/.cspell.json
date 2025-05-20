@@ -716,6 +716,7 @@
         "noclean",
         "noconfig",
         "nodelta",
+        "nodir",
         "nogit",
         "noinsight",
         "noprompt",
