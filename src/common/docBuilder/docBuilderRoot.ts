@@ -8,7 +8,6 @@ import fs from 'fs-extra';
 import path from 'path';
 import { getMetaHideLines, includeFromFile } from './docUtils.js';
 import { CONSTANTS } from '../../config/index.js';
-import { makeFileNameGitCompliant } from '../utils/gitUtils.js';
 
 export abstract class DocBuilderRoot {
   public docType: string;
@@ -75,10 +74,7 @@ export abstract class DocBuilderRoot {
 
     const jsonTree = await this.generateJsonTree();
     if (jsonTree) {
-      let jsonFile = `./docs/json/${this.docsSection}-${this.metadataName}.json`;
-      if (this.docsSection === "packages") {
-        jsonFile = `./docs/json/${this.docsSection}-${makeFileNameGitCompliant(this.metadataName)}.json`;
-      }
+      const jsonFile = `./docs/json/${this.docsSection}-${this.metadataName}.json`;
       await fs.ensureDir(path.dirname(jsonFile));
       await fs.writeFile(jsonFile, JSON.stringify(jsonTree, null, 2));
       uxLog(this, c.green(`Successfully generated ${this.metadataName} JSON into ${jsonFile}`));

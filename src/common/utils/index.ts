@@ -1436,3 +1436,24 @@ export async function isDockerRunning(): Promise<boolean> {
   }
   return true;
 }
+
+export function sortCrossPlatform(arr: any[]) {
+  return arr.sort((a, b) => {
+    // Normalize to string in case elements are not strings
+    const strA = String(a).normalize('NFD');
+    const strB = String(b).normalize('NFD');
+
+    // 1. Base comparison: case-insensitive, accent-insensitive
+    const baseCompare = strA.localeCompare(strB, 'en', { sensitivity: 'base' });
+    if (baseCompare !== 0) return baseCompare;
+
+    // 2. Tie-breaker: uppercase before lowercase
+    const isAUpper = strA[0] === strA[0].toUpperCase();
+    const isBUpper = strB[0] === strB[0].toUpperCase();
+
+    if (isAUpper && !isBUpper) return -1;
+    if (!isAUpper && isBUpper) return 1;
+
+    return 0;
+  });
+}

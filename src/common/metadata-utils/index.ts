@@ -12,6 +12,7 @@ import {
   filterPackageXml,
   git,
   isGitRepo,
+  sortCrossPlatform,
   uxLog,
 } from '../../common/utils/index.js';
 import { CONSTANTS } from '../../config/index.js';
@@ -478,7 +479,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
 
   public static async promptFlow() {
     const flowFiles = await glob("**/*.flow-meta.xml", { ignore: GLOB_IGNORE_PATTERNS });
-    flowFiles.sort();
+    sortCrossPlatform(flowFiles);
     const flowSelectRes = await prompts({
       type: 'select',
       message: 'Please select the Flow you want to visually compare',
@@ -491,7 +492,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
 
   public static async promptMultipleFlows() {
     const flowFiles = await glob("**/*.flow-meta.xml", { ignore: GLOB_IGNORE_PATTERNS });
-    flowFiles.sort();
+    sortCrossPlatform(flowFiles);
     const flowSelectRes = await prompts({
       type: 'multiselect',
       message: 'Please select the Flows you want to create the documentation',

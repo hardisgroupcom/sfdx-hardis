@@ -2,7 +2,7 @@ import c from 'chalk';
 import * as path from 'path';
 import fs from 'fs-extra';
 import { SfError } from '@salesforce/core';
-import { uxLog } from '../utils/index.js';
+import { sortCrossPlatform, uxLog } from '../utils/index.js';
 import { countPackageXmlItems, parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { SalesforceSetupUrlBuilder } from './docUtils.js';
 import { CONSTANTS } from '../../config/index.js';
@@ -87,7 +87,7 @@ export class DocBuilderPackageXML {
     // Generate package.xml markdown
     for (const metadataType of metadataTypes) {
       const members = packageXmlContent[metadataType];
-      members.sort();
+      sortCrossPlatform(members);
       const memberLengthLabel = members.length === 1 && members[0] === "*" ? "*" : members.length;
       mdLines.push(`<details><summary>${metadataType} (${memberLengthLabel})</summary>\n\n`);
       for (const member of members) {
@@ -169,7 +169,7 @@ export class DocBuilderPackageXML {
     const treeElements: any[] = [];
     for (const metadataType of metadataTypes) {
       const members = packageXmlContent[metadataType] || [];
-      members.sort();
+      sortCrossPlatform(members);
       const memberLengthLabel = members.length === 1 && members[0] === "*" ? "all" : members.length;
       const typeRoot: any = {
         text: prettifyFieldName(metadataType) + " (" + memberLengthLabel + ")",

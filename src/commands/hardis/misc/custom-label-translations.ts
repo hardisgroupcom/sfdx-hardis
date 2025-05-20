@@ -250,7 +250,7 @@ export default class CustomLabelTranslations extends SfCommand<any> {
         labels.sort((a, b) => {
           const nameA = a.fullName ? a.fullName[0] : a.name ? a.name[0] : '';
           const nameB = b.fullName ? b.fullName[0] : b.name ? b.name[0] : '';
-          return nameA.localeCompare(nameB);
+          return nameA.localeCompare(nameB, 'en', { sensitivity: 'base' });
         });
 
         labels.map(label => {
@@ -315,7 +315,7 @@ export default class CustomLabelTranslations extends SfCommand<any> {
         }
       }
 
-      componentsInfo.sort((a, b) => a.name.localeCompare(b.name));
+      componentsInfo.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
 
       const choices = componentsInfo.map(component => ({
         value: component.name,

@@ -5,7 +5,7 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import * as util from 'util';
 import * as xml2js from 'xml2js';
-import { uxLog } from './index.js';
+import { sortCrossPlatform, uxLog } from './index.js';
 import { CONSTANTS } from '../../config/index.js';
 
 export async function parseXmlFile(xmlFile: string) {
@@ -134,11 +134,11 @@ export async function appendPackageXmlFilesContent(packageXmlFileList: string[],
       }
       const nameKey = typePkg.name[0];
       if (allPackageXmlFilesTypes[nameKey] != null && typePkg.members != null) {
-        allPackageXmlFilesTypes[nameKey] = Array.from(
+        sortCrossPlatform(allPackageXmlFilesTypes[nameKey] = Array.from(
           new Set(allPackageXmlFilesTypes[nameKey].concat(typePkg.members))
-        ).sort();
+        ));
       } else if (typePkg.members != null) {
-        allPackageXmlFilesTypes[nameKey] = Array.from(new Set(typePkg.members)).sort();
+        sortCrossPlatform(allPackageXmlFilesTypes[nameKey] = Array.from(new Set(typePkg.members)));
       }
     }
   }
