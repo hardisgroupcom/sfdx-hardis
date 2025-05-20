@@ -6,12 +6,11 @@ description: Prompt template for PROMPT_DESCRIBE_PACKAGE
 # PROMPT_DESCRIBE_PACKAGE
 
 ## Variables
-
-| Name                  | Description                                                                                                                  | Example                                                                                                                                                                                                               |
-|:----------------------|:-----------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **PACKAGE_NAME**      | The name of the package to describe.                                                                                         | `Pardot`                                                                                                                                                                                                              |
-| **PACKAGE_XML**       | The JsonL metadata for the package                                                                                           | `{"SubscriberPackageName":"Pardot","SubscriberPackageNamespace":"pi","SubscriberPackageVersionNumber":"1.0.0","SubscriberPackageVersionId":"04t1t0000000abcAAA","SubscriberPackageVersionName":"Pardot Version 1.0"}` |
-| **PACKAGE_METADATAS** | A list of all metadata items (Apex classes, objects, flows, etc.) in the org that are provided by this package (namespaced). | `ApexClass: pi__MyClass, CustomObject: pi__MyObject, Flow: pi__MyFlow`                                                                                                                                                |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **PACKAGE_NAME** | The name of the package to describe. | `Pardot` |
+| **PACKAGE_XML** | The JsonL metadata for the package | `{"SubscriberPackageName":"Pardot","SubscriberPackageNamespace":"pi","SubscriberPackageVersionNumber":"1.0.0","SubscriberPackageVersionId":"04t1t0000000abcAAA","SubscriberPackageVersionName":"Pardot Version 1.0"}` |
+| **PACKAGE_METADATAS** | A list of all metadata items (Apex classes, objects, flows, etc.) in the org that are provided by this package (namespaced). | `ApexClass: pi__MyClass, CustomObject: pi__MyObject, Flow: pi__MyFlow` |
 
 ## Prompt
 
@@ -21,7 +20,7 @@ You are a skilled business analyst working on a Salesforce project. Your goal is
 ### Instructions:
 
 1. **Contextual Overview**:
-    - Browse internet to find the package's official documentation and provide an overview of its purpose and capabilities, with links to the documentation.
+    - Browse the internet using Google to find the package's official documentation and provide an overview of its purpose and capabilities, with links to the documentation.
       - If you found the package's official documentation, summarize its key features and functionalities.
       - If you can not find the package's official documentation, provide a general overview based on the package attributes and its metadata components (but do not output the list of metadatas, it will be for paragraph 2).
     - Include any relevant information about the package's intended use cases or target audience.
@@ -29,6 +28,7 @@ You are a skilled business analyst working on a Salesforce project. Your goal is
       - If you find the AppExchange page, include it in your response.
       - If you find the package's GitHub repository, include it in your response.
       - If you find the vendor information, include it in your response.
+      - Make sure that hyperlinks are not dead links leading to 404 pages.
 
 2. **Package Metadata**:
     - Review the list of metadata items (Apex classes, objects, flows, etc.) provided by this package, as listed in reference data.
