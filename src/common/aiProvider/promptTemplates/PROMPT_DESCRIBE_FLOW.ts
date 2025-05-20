@@ -9,7 +9,7 @@ const template: PromptTemplateDefinition = {
     }
   ],
   text: {
-    "en": `You are a business analyst working on a Salesforce project. Your goal is to describe the Salesforce Flow in plain English, providing a detailed explanation suitable for a business user.
+    "en": `You are a business analyst working on a Salesforce project. Your goal is to describe the Salesforce Flow in plain English, providing a detailed explanation suitable for a business user.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
 
 ### Instructions:
 

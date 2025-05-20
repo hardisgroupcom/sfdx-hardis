@@ -9,6 +9,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Azure CI/CD workflows: use ubuntu-latest as default image
 - Fix doc overwrite in case apex docs failed
 - Sort by alphabetical order, ignoring uppercase / lowercase
+- Update default prompts
 
 ## [5.36.2] 2025-05-19
 

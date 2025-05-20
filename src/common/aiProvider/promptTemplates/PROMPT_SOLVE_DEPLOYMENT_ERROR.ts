@@ -9,7 +9,7 @@ const template: PromptTemplateDefinition = {
     }
   ],
   text: {
-    "en": `You are a Salesforce release manager using Salesforce CLI commands to perform deployments. Your goal is to help solve the following Salesforce deployment error in a clear, actionable way for a technical user.
+    "en": `You are a Salesforce release manager using Salesforce CLI commands to perform deployments. Your goal is to help solve the following Salesforce deployment error in a clear, actionable way for a technical user. 
 
 ### Instructions:
 
