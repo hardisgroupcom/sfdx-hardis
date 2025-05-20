@@ -26,7 +26,7 @@ const template: PromptTemplateDefinition = {
 ### Instructions:
 
 1. **Contextual Overview**:
-    - Browse internet to find the package's official documentation and provide an overview of its purpose and capabilities, with links to the documentation.
+    - Browse the internet using Google to find the package's official documentation and provide an overview of its purpose and capabilities, with links to the documentation.
       - If you found the package's official documentation, summarize its key features and functionalities.
       - If you can not find the package's official documentation, provide a general overview based on the package attributes and its metadata components (but do not output the list of metadatas, it will be for paragraph 2).
     - Include any relevant information about the package's intended use cases or target audience.
