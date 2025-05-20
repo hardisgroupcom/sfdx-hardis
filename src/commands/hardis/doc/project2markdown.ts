@@ -11,7 +11,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { completeAttributesDescriptionWithAi, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { parseXmlFile } from '../../../common/utils/xmlUtils.js';
-import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
+import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
@@ -262,7 +262,8 @@ ${this.htmlInstructions}
     this.tempDir = await createTempDir()
     // Convert source to metadata API format to build prompts
     await execCommand(`sf project convert source --metadata CustomObject --output-dir ${this.tempDir}`, this, { fail: true, output: true, debug: this.debugMode });
-    this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS })).sort();
+    this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS }));
+    sortCrossPlatform(this.objectFiles);
     this.allObjectsNames = this.objectFiles.map(object => path.basename(object, ".object"));
 
     // Generate packages documentation
@@ -395,7 +396,9 @@ ${Project2Markdown.htmlInstructions}
         // Replace object links
         apexMdContent = apexMdContent.replaceAll("..\\custom-objects\\", "../objects/").replaceAll("../custom-objects/", "../objects/")
         // Add text before the first ##
-        if (!["MetadataService"].includes(apexName)) {
+        if (!["MetadataService"].includes(apexName) &&
+          // Do not mess with existing apex doc if generation has crashed
+          !apexMdContent.includes(getMetaHideLines())) {
           const insertion = `<!-- Apex description -->\n\n## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`
           const firstHeading = apexMdContent.indexOf("## ");
           apexMdContent = apexMdContent.substring(0, firstHeading) + insertion + apexMdContent.substring(firstHeading);
@@ -460,7 +463,7 @@ ${Project2Markdown.htmlInstructions}
           packageMetadatas = await fs.readFile(tmpOutput, "utf8");
         }
       }
-      // Add apex code in documentation
+      // Add Packages in documentation
       await new DocBuilderPackage(packageName, pckg, mdFile, {
         "PACKAGE_METADATAS": packageMetadatas,
         "PACKAGE_FILE": tmpOutput
@@ -489,7 +492,7 @@ ${Project2Markdown.htmlInstructions}
       const pageName = path.basename(pagefile, ".flexipage-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "pages", pageName + ".md");
       pagesForMenu[pageName] = "pages/" + pageName + ".md";
-      // Add apex code in documentation
+      // Add Pages in documentation
       const pageXml = await fs.readFile(pagefile, "utf8");
       const pageXmlParsed = new XMLParser().parse(pageXml);
       this.pageDescriptions.push({
@@ -504,7 +507,7 @@ ${Project2Markdown.htmlInstructions}
     }
     this.addNavNode("Lightning Pages", pagesForMenu);
 
-    // Write index file for apex folder
+    // Write index file for pages folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "pages"));
     const pagesIndexFile = path.join(this.outputMarkdownRoot, "pages", "index.md");
     await fs.writeFile(pagesIndexFile, getMetaHideLines() + DocBuilderPage.buildIndexTable('', this.pageDescriptions).join("\n") + `\n\n${this.footer}\n`);
@@ -513,7 +516,8 @@ ${Project2Markdown.htmlInstructions}
   private async generateProfilesDocumentation() {
     uxLog(this, c.cyan("Generating Profiles documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
     const profilesForMenu: any = { "All Profiles": "profiles/index.md" };
-    const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).sort();
+    const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
+    sortCrossPlatform(profilesFiles);
     for (const profileFile of profilesFiles) {
       const profileName = path.basename(profileFile, ".profile-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "profiles", profileName + ".md");
@@ -525,7 +529,7 @@ ${Project2Markdown.htmlInstructions}
         userLicense: prettifyFieldName(profileXmlParsed?.Profile?.userLicense || "Unknown"),
         impactedObjects: this.allObjectsNames.filter(objectName => profileXml.includes(`${objectName}`)).join(", ")
       });
-      // Add apex code in documentation
+      // Add Profiles code in documentation
       await new DocBuilderProfile(profileName, profileXml, mdFile).generateMarkdownFileFromXml();
       if (this.withPdf) {
         await generatePdfFileFromMarkdown(mdFile);
@@ -541,7 +545,8 @@ ${Project2Markdown.htmlInstructions}
   private async generatePermissionSetsDocumentation() {
     uxLog(this, c.cyan("Generating Permission Sets documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
     const psForMenu: any = { "All Permission Sets": "permissionsets/index.md" };
-    const psFiles = (await glob("**/permissionsets/**.permissionset-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).sort();
+    const psFiles = (await glob("**/permissionsets/**.permissionset-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
+    sortCrossPlatform(psFiles);
     for (const psFile of psFiles) {
       const psName = path.basename(psFile, ".permissionset-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "permissionsets", psName + ".md");
@@ -553,7 +558,7 @@ ${Project2Markdown.htmlInstructions}
         userLicense: prettifyFieldName(psXmlParsed?.PermissionSet?.license || "Unknown"),
         impactedObjects: this.allObjectsNames.filter(objectName => psXml.includes(`${objectName}`)).join(", ")
       });
-      // Add apex code in documentation
+      // Add Permission Sets code in documentation
       await new DocBuilderPermissionSet(psName, psXml, mdFile).generateMarkdownFileFromXml();
       // Permission Set Groups Table
       const relatedPsg = DocBuilderPermissionSetGroup.buildIndexTable('../permissionsetgroups/', this.permissionSetGroupsDescriptions, psName);
@@ -572,7 +577,8 @@ ${Project2Markdown.htmlInstructions}
   private async generatePermissionSetGroupsDocumentation() {
     uxLog(this, c.cyan("Generating Permission Set Groups documentation..."));
     const psgForMenu: any = { "All Permission Set Groups": "permissionsetgroups/index.md" };
-    const psgFiles = (await glob("**/permissionsetgroups/**.permissionsetgroup-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).sort();
+    const psgFiles = (await glob("**/permissionsetgroups/**.permissionsetgroup-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }))
+    sortCrossPlatform(psgFiles);
     for (const psgFile of psgFiles) {
       const psgName = path.basename(psgFile, ".permissionsetgroup-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "permissionsetgroups", psgName + ".md");
@@ -609,7 +615,8 @@ ${Project2Markdown.htmlInstructions}
     const assignmentRulesFiles = (await glob("**/assignmentRules/**.assignmentRules-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
-    })).sort();
+    }));
+    sortCrossPlatform(assignmentRulesFiles);
     const builder = new XMLBuilder();
 
     for (const assignmentRulesFile of assignmentRulesFiles) {
@@ -658,7 +665,8 @@ ${Project2Markdown.htmlInstructions}
     const approvalProcessFiles = (await glob("**/approvalProcesses/**.approvalProcess-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
-    })).sort();
+    }));
+    sortCrossPlatform(approvalProcessFiles);
 
     for (const approvalProcessFile of approvalProcessFiles) {
       const approvalProcessName = path.basename(approvalProcessFile, ".approvalProcess-meta.xml");
@@ -694,7 +702,8 @@ ${Project2Markdown.htmlInstructions}
     const autoResponseRulesFiles = (await glob("**/autoResponseRules/**.autoResponseRules-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
-    })).sort();
+    }));
+    sortCrossPlatform(autoResponseRulesFiles);
     const builder = new XMLBuilder();
 
     for (const autoResponseRulesFile of autoResponseRulesFiles) {
@@ -744,7 +753,8 @@ ${Project2Markdown.htmlInstructions}
     const escalationRulesFiles = (await glob("**/escalationRules/**.escalationRules-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
-    })).sort();
+    }));
+    sortCrossPlatform(escalationRulesFiles);
     const builder = new XMLBuilder();
 
     for (const escalationRulesFile of escalationRulesFiles) {
@@ -902,7 +912,7 @@ ${Project2Markdown.htmlInstructions}
         mkdocsYml.nav[existingRootMenuIndex][rootSection.menu] = Array.from(uniqueSubMenus.values()).sort((a, b) => {
           const keyA = Object.keys(a)[0].toLowerCase();
           const keyB = Object.keys(b)[0].toLowerCase();
-          return keyA.localeCompare(keyB);
+          return keyA.localeCompare(keyB, 'en', { sensitivity: 'base' });
         });
       }
       else {

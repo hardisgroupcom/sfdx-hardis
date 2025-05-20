@@ -17,6 +17,7 @@ import {
   isCI,
   killBoringExitHandlers,
   replaceJsonInString,
+  sortCrossPlatform,
   uxLog,
 } from './index.js';
 import { CONSTANTS, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
@@ -1126,7 +1127,7 @@ export async function buildOrgManifest(
         // Add member in existing types
         const members = matchTypes[0].members || [];
         members.push(element.fullName);
-        matchTypes[0].members = members.sort();
+        matchTypes[0].members = sortCrossPlatform(members);
         parsedPackageXml.Package.types = parsedPackageXml.Package.types.map((type) =>
           type.name[0] === matchTypes[0].name ? matchTypes[0] : type
         );
@@ -1156,7 +1157,7 @@ export async function buildOrgManifest(
           uxLog(this, c.grey(`- Added WaveDataflow ${recipeId} to match WaveRecipe ${recipeId}`));
         }
       }
-      waveDataFlowType.members.sort();
+      sortCrossPlatform(waveDataFlowType.members);
       // Update type
       if (waveDataFlowTypeList.length === 1) {
         parsedPackageXml.Package.types = parsedPackageXml.Package.types.map((type) =>
