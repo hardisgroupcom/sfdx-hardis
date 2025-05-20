@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { isCI, sortCrossPlatform, uxLog } from '../../../../common/utils/index.js';
 import { bulkQuery } from '../../../../common/utils/apiUtils.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
@@ -234,7 +234,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       msg = `${this.suspectRecords.length} suspect Setup Audit Trail records has been found`;
       uxLog(this, c.yellow(msg));
       this.suspectUsers = [...new Set(this.suspectUsers)];
-      this.suspectUsers.sort();
+      sortCrossPlatform(this.suspectUsers);
       const suspectActionsSummary = {};
       for (const suspectAction of this.suspectActions) {
         suspectActionsSummary[suspectAction] = (suspectActionsSummary[suspectAction] || 0) + 1;
@@ -242,7 +242,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       for (const suspectAction of Object.keys(suspectActionsSummary)) {
         suspectActionsWithCount.push(`${suspectAction} (${suspectActionsSummary[suspectAction]})`);
       }
-      suspectActionsWithCount.sort();
+      sortCrossPlatform(suspectActionsWithCount);
       uxLog(this, '');
       uxLog(this, c.yellow('Related users:'));
       for (const user of this.suspectUsers) {

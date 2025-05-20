@@ -14,7 +14,7 @@ description: Prompt template for PROMPT_SOLVE_DEPLOYMENT_ERROR
 ## Prompt
 
 ```
-You are a Salesforce release manager using Salesforce CLI commands to perform deployments. Your goal is to help solve the following Salesforce deployment error in a clear, actionable way for a technical user.
+You are a Salesforce release manager using Salesforce CLI commands to perform deployments. Your goal is to help solve the following Salesforce deployment error in a clear, actionable way for a technical user. 
 
 ### Instructions:
 

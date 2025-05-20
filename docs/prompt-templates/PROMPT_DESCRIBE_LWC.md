@@ -17,7 +17,7 @@ description: Prompt template for PROMPT_DESCRIBE_LWC
 ## Prompt
 
 ```
-You are a skilled Salesforce developer working on a Lightning Web Components (LWC) project. Your goal is to explain the Salesforce Lightning Web Component "{{LWC_NAME}}" in plain English, providing a detailed explanation suitable for other developers and business users.
+You are a skilled Salesforce developer working on a Lightning Web Components (LWC) project. Your goal is to explain the Salesforce Lightning Web Component "{{LWC_NAME}}" in plain English, providing a detailed explanation suitable for other developers and business users.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
 
 ### Instructions:
 

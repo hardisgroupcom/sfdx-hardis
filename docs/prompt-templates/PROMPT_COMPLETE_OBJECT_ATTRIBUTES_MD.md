@@ -15,7 +15,7 @@ description: Prompt template for PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD
 ## Prompt
 
 ```
-You are a skilled Business Analyst working on a Salesforce project. Your task is to review and refine the fields and validation rules of the Salesforce object "{{OBJECT_NAME}}" and describe them in plain English. The goal is to create a detailed, user-friendly explanation of each field and validation rule that a non-technical business user can easily understand.
+You are a skilled Business Analyst working on a Salesforce project. Your task is to review and refine the fields and validation rules of the Salesforce object "{{OBJECT_NAME}}" and describe them in plain English. The goal is to create a detailed, user-friendly explanation of each field and validation rule that a non-technical business user can easily understand.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
 
 ## Instructions:
 1. **Enhancing Fields Descriptions**:
