@@ -310,7 +310,7 @@ If Flow history doc always display a single state, you probably need to update y
     // Run project documentation generation
     if (this.skipDoc !== true) {
       try {
-        const docLanguages = (getEnvVar('SFDX_DOC_LANGUAGES') || 'en').split(",").reverse(); // Can be 'fr,en,de' for example
+        const docLanguages = (getEnvVar('SFDX_DOC_LANGUAGES') || getEnvVar('PROMPTS_LANGUAGE') || 'en').split(",").reverse(); // Can be 'fr,en,de' for example
         const prevPromptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
         for (const langKey of docLanguages) {
           uxLog(this, c.cyan("Generating doc in language " + c.bold(langKey)));
