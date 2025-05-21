@@ -251,7 +251,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
 
   private async uploadHtmlPages() {
     uxLog(this, c.cyan("Uploading HTML pages to Cloudflare Pages..."));
-    let wranglerCommand = `wrangler pages publish ./site --project-name="${this.pagesProjectName}" --branch=${this.currentGitBranch}`;
+    let wranglerCommand = `wrangler pages deploy ./site --project-name="${this.pagesProjectName}" --branch=${this.currentGitBranch}`;
     const isWranglerAvailable = await which("wrangler", { nothrow: true });
     if (!isWranglerAvailable) {
       wranglerCommand = "npx --yes " + wranglerCommand;
