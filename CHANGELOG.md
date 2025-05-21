@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Generate and publish multilingual documentation from sfdx-hardis monitoring
+- Update command to install mkdocs-material & dependencies to match more python installation types
 
 ## [5.36.3] 2025-05-21
 
