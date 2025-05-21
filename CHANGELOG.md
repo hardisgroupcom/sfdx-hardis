@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.37.0] 2025-05-22
+
 - Generate and publish multilingual documentation from sfdx-hardis monitoring
 - Update command to install mkdocs-material & dependencies to match more python installation types
 - Upgrade way to call wrangler to publish to Cloudflare
