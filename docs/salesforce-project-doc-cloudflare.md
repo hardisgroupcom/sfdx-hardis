@@ -32,6 +32,30 @@ Make sure the following variables are defined and available from the backup comm
 - CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN  (optional, `@cloudity.com` by default)
 - CLOUDFLARE_EXTRA_ACCESS_POLICY_ID_LIST (optional)
 
+### Multilingual documentation
+
+#### Using sfdx-hardis monitoring
+
+If you want to generate the documentation in multiple languages, define variable SFDX_DOC_LANGUAGES (ex: `SFDX_DOC_LANGUAGES=en,fr,de`)
+
+You can define one Cloudflare site by language, for example with the following variables:
+
+  - `CLOUDFLARE_PROJECT_NAME_EN=cloudity-demo-english`
+  - `CLOUDFLARE_PROJECT_NAME_FR=cloudity-demo-french`
+  - `CLOUDFLARE_PROJECT_NAME_DE=cloudity-demo-german`
+
+#### Using custom pipelines
+
+Use variables when you call the commands, for example:
+
+```bash
+PROMPTS_LANGUAGE=fr sf hardis:doc:project2markdown --with-history
+CLOUDFLARE_PROJECT_NAME=cloudity-demo-french sf hardis:doc:mkdocs-to-cf
+
+PROMPTS_LANGUAGE=en sf hardis:doc:project2markdown --with-history
+CLOUDFLARE_PROJECT_NAME=cloudity-demo-english sf hardis:doc:mkdocs-to-cf
+```
+
 ## Create & Configure Cloudflare free tier
 
 Follow the video tutorial to see all described steps click by click :)

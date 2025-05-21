@@ -16,6 +16,8 @@ You can see the prompts content if you set env variable `DEBUG_PROMPTS=true`.
 
 See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and how to override them.
 
+| If you use AI for generated project documentation, it is highly recommended to run it locally the first time to generate and commit AI cache, as it can make hundreds of API calls, so take some time.
+
 ## Main configuration
 
 > You're lost ? Contact [Cloudity](https://cloudity.com/#form), we can do it for you :)

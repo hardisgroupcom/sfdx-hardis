@@ -8,7 +8,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import Cloudflare from 'cloudflare';
 import { execCommand, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
 
-import { CONSTANTS } from '../../../config/index.js';
+import { CONSTANTS, getEnvVar } from '../../../config/index.js';
 import which from 'which';
 import { generateMkDocsHTML } from '../../../common/docBuilder/docUtils.js';
 
@@ -76,7 +76,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
   protected accountId: string | undefined;
   protected client: Cloudflare;
   protected projectName: string | null;
-  protected currentGitBranch: string | null;
+  protected currentGitBranch: string;
   protected defaultLoginMethodType: string = process.env.CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE || "onetimepin";
   protected defaultAccessEmailDomain: string = process.env.CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN || "@cloudity.com";
   protected pagesProjectName: string;
@@ -99,7 +99,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     }
 
     this.currentGitBranch = await getCurrentGitBranch() || "main";
-    this.projectName = (process.env.CLOUDFLARE_PROJECT_NAME || this.currentGitBranch).replace(/\//g, "-").toLowerCase();
+    this.projectName = await this.getProjectName();
     this.pagesProjectName = `sfdoc-${this.projectName}`;
     this.accessPolicyName = `access-policy-${this.projectName}`;
 
@@ -127,6 +127,18 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     await this.uploadHtmlPages();
 
     return { success: true };
+  }
+
+  // Search first for CLOUDFLARE_PROJECT_NAME_<lang> env var, then CLOUDFLARE_PROJECT_NAME, then git branch name
+  // If none of them is found, use the default project name
+  private async getProjectName(): Promise<string> {
+    const defaultProjectName = (getEnvVar('CLOUDFLARE_PROJECT_NAME') || this.currentGitBranch).replace(/\//g, "-").toLowerCase();
+    const promptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
+    const languageScopedProjectVariableName = `CLOUDFLARE_PROJECT_NAME_${promptsLanguage?.toUpperCase()}`;
+    if (getEnvVar(languageScopedProjectVariableName)) {
+      return getEnvVar(languageScopedProjectVariableName) || defaultProjectName;
+    }
+    return defaultProjectName
   }
 
   private setupCloudflareClient() {
