@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
- - Generate and publish multilingual documentation from sfdx-hardis monitoring
+- Generate and publish multilingual documentation from sfdx-hardis monitoring
 
 ## [5.36.3] 2025-05-21
 

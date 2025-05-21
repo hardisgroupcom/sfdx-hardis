@@ -40,9 +40,9 @@ If you want to generate the documentation in multiple languages, define variable
 
 You can define one Cloudflare site by language, for example with the following variables:
 
-  - `CLOUDFLARE_PROJECT_NAME_EN=cloudity-demo-english`
-  - `CLOUDFLARE_PROJECT_NAME_FR=cloudity-demo-french`
-  - `CLOUDFLARE_PROJECT_NAME_DE=cloudity-demo-german`
+- `CLOUDFLARE_PROJECT_NAME_EN=cloudity-demo-english`
+- `CLOUDFLARE_PROJECT_NAME_FR=cloudity-demo-french`
+- `CLOUDFLARE_PROJECT_NAME_DE=cloudity-demo-german`
 
 #### Using custom pipelines
 
