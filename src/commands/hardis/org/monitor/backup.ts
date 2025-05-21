@@ -8,7 +8,7 @@ import * as path from 'path';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
 import { execCommand, filterPackageXml, uxLog } from '../../../../common/utils/index.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
-import { CONSTANTS, getConfig } from '../../../../config/index.js';
+import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { MessageAttachment } from '@slack/web-api';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
@@ -74,6 +74,12 @@ It will allow you the identify the responsible metadata and ignore it using pack
 If you want to also upload HTML Documentation on your Salesforce Org as static resource, use variable **SFDX_HARDIS_DOC_DEPLOY_TO_ORG="true"**
 
 If you want to also upload HTML Documentation on Cloudflare, use variable **SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE="true"**
+
+- If you want to generate the documentation in multiple languages, define variable SFDX_DOC_LANGUAGES (ex: SFDX_DOC_LANGUAGES=en,fr,de)
+- You can define one Cloudflare site by language, for example with the following variables:
+  - CLOUDFLARE_PROJECT_NAME_EN=cloudity-demo-english
+  - CLOUDFLARE_PROJECT_NAME_FR=cloudity-demo-french
+  - CLOUDFLARE_PROJECT_NAME_DE=cloudity-demo-german
 
 If Flow history doc always display a single state, you probably need to update your workflow configuration:
 
@@ -304,15 +310,22 @@ If Flow history doc always display a single state, you probably need to update y
     // Run project documentation generation
     if (this.skipDoc !== true) {
       try {
-        await Project2Markdown.run(["--diff-only", "--with-history"]);
-        uxLog(this, c.cyan("Documentation generated from retrieved sources. If you want to skip it, use option --skip-doc"));
-        const config = await getConfig("user");
-        if (config.docDeployToOrg || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_ORG === "true") {
-          await MkDocsToSalesforce.run(["--type", "Monitoring"]);
+        const docLanguages = (getEnvVar('SFDX_DOC_LANGUAGES') || getEnvVar('PROMPTS_LANGUAGE') || 'en').split(",").reverse(); // Can be 'fr,en,de' for example
+        const prevPromptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
+        for (const langKey of docLanguages) {
+          uxLog(this, c.cyan("Generating doc in language " + c.bold(langKey)));
+          process.env.PROMPTS_LANGUAGE = langKey;
+          await Project2Markdown.run(["--diff-only", "--with-history"]);
+          uxLog(this, c.cyan("Documentation generated from retrieved sources. If you want to skip it, use option --skip-doc"));
+          const config = await getConfig("user");
+          if (config.docDeployToOrg || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_ORG === "true") {
+            await MkDocsToSalesforce.run(["--type", "Monitoring"]);
+          }
+          else if (config.docDeployToCloudflare || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE === "true") {
+            await MkDocsToCloudflare.run([]);
+          }
         }
-        else if (config.docDeployToCloudflare || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE === "true") {
-          await MkDocsToCloudflare.run([]);
-        }
+        process.env.PROMPTS_LANGUAGE = prevPromptsLanguage;
       } catch (e: any) {
         uxLog(this, c.yellow("Error while generating project documentation " + e.message));
         uxLog(this, c.grey(e.stack));

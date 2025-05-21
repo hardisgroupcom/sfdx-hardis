@@ -120,6 +120,8 @@ If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strateg
 
 If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configured, documentation will contain a summary of the Flow.
 
+- Use variable PROMPTS_LANGUAGE (ex: PROMPTS_LANGUAGE=fr) to force language for LLM calls (default:en)
+
 If you have a complex strategy, you might need to input property **mergeTargets** in branch-scoped sfdx-hardis.yml file to have a correct diagram.
 
 ${this.htmlInstructions}
