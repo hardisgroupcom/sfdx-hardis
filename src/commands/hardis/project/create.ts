@@ -82,7 +82,7 @@ export default class ProjectCreate extends SfCommand<any> {
     let setProjectName = false;
     if (projectName == null) {
       // User prompts
-      projectName = await promptForProjectName(projectName);
+      projectName = await promptForProjectName();
       setProjectName = true;
     }
 
@@ -105,7 +105,7 @@ export default class ProjectCreate extends SfCommand<any> {
     uxLog(this, 'Copying default files...');
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/ci', '.'), process.cwd(), { overwrite: false });
 
-    if (setProjectName){
+    if (setProjectName) {
       await setConfig('project', { projectName: projectName });
     }
 

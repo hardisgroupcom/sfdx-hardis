@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.37.1] 2025-05-23
+
 - Update PROMPT_DESCRIBE_PACKAGE
 - Update common instructions about prompt reply language
 - Make sure that projectName is compliant with the format of an environment variable  
