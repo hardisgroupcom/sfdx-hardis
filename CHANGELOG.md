@@ -6,13 +6,13 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Update PROMPT_DESCRIBE_PACKAGE
 - Update common instructions about prompt reply language
-- Make sure that projectName is compliant with the format of an environment variable
+- Make sure that projectName is compliant with the format of an environment variable  
 
 ## [5.37.0] 2025-05-22
 
 - Generate and publish multilingual documentation from sfdx-hardis monitoring
 - Update command to install mkdocs-material & dependencies to match more python installation types
-- Upgrade way to call wrangler to publish to Cloudflare
+- Upgrade way to call wrangler to publish to Cloudflare 
 
 ## [5.36.3] 2025-05-21
 
