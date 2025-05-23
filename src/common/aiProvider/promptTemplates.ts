@@ -59,7 +59,7 @@ export function buildPromptFromTemplate(template: PromptTemplate, variables: obj
     }
   }
   const promptsLanguage = UtilsAi.getPromptsLanguage();
-  let prompt: string = process.env?.[template] || templateData.text?.[promptsLanguage] || (templateData.text?.["en"] + `\nPlease answer using the language corresponding to "${promptsLanguage}"`);
+  let prompt: string = process.env?.[template] || templateData.text?.[promptsLanguage] || (templateData.text?.["en"] + `\n\nIMPORTANT: Please reply in the language corresponding to ISO code "${promptsLanguage}" (for example, in french for "fr", in english for "en", in german for "de", etc.)`);
   for (const variable in variables) {
     prompt = prompt.replaceAll(`{{${variable}}}`, variables[variable]);
   }
