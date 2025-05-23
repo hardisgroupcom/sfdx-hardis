@@ -228,3 +228,31 @@ export function getEnvVar(envVarName: string) {
   }
   return varValue;
 }
+
+export async function promptForProjectName(projectName: any) {
+  const projectRes = await prompts({
+    type: 'text',
+    name: 'projectName',
+    message: 'What is the name of your project ? (example: MyClient)',
+  });
+  const userProjectName = projectRes.projectName + '';
+  projectName = projectRes.projectName.toLowerCase().replace(' ', '_');
+  // Make sure that projectName is compliant with the format of an environment variable
+  projectName = projectName.replace(/[^a-zA-Z0-9_]/g, '_').replace(/^[^a-zA-Z_]+/, '');
+  if (projectName !== userProjectName) {
+    uxLog(this,
+      c.yellow(
+        `Project name has been changed to ${projectName} because it must be compliant with the format of an environment variable.`
+      )
+    );
+    const promptResp = await prompts({
+      type: 'confirm',
+      message: `Are you ok with updated project name "${projectName}" ?`,
+    });
+    if (promptResp.value === true) {
+      return projectName;
+    }
+    return promptForProjectName(projectName);
+  }
+  return projectName;
+}

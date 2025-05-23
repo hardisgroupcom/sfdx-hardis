@@ -7,7 +7,7 @@ import { prompts } from '../../../common/utils/prompts.js';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { CONSTANTS, getConfig, setConfig } from '../../../config/index.js';
+import { CONSTANTS, getConfig, promptForProjectName, setConfig } from '../../../config/index.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { isSfdxProject } from '../../../common/utils/projectUtils.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
@@ -79,14 +79,11 @@ export default class ProjectCreate extends SfCommand<any> {
     // Project name
     let config = await getConfig('project');
     let projectName = config.projectName;
+    let setProjectName = false;
     if (projectName == null) {
       // User prompts
-      const projectRes = await prompts({
-        type: 'text',
-        name: 'projectName',
-        message: 'What is the name of your project ? (example: MyClient)',
-      });
-      projectName = projectRes.projectName.toLowerCase().replace(' ', '_');
+      projectName = await promptForProjectName(projectName);
+      setProjectName = true;
     }
 
     // Create sfdx project only if not existing
@@ -107,6 +104,10 @@ export default class ProjectCreate extends SfCommand<any> {
     // Copy default project files
     uxLog(this, 'Copying default files...');
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/ci', '.'), process.cwd(), { overwrite: false });
+
+    if (setProjectName){
+      await setConfig('project', { projectName: projectName });
+    }
 
     config = await getConfig('project');
     if (config.developmentBranch == null) {
@@ -145,4 +146,5 @@ export default class ProjectCreate extends SfCommand<any> {
     // Return an object to be displayed with --json
     return { outputString: 'Created SFDX Project' };
   }
+
 }
