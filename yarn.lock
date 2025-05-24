@@ -5155,10 +5155,10 @@ clone@^2.1.2:
   resolved "https://registry.npmjs.org/clone/-/clone-2.1.2.tgz"
   integrity sha512-3Pe/CF1Nn94hyhIYpjtiLhdCoEoz0DqQ+988E9gmeEdQZlojxnOb74wctFyuwWQHzqyf9X7C7MG8juUpqBJT8w==
 
-cloudflare@^4.2.0:
-  version "4.2.0"
-  resolved "https://registry.npmjs.org/cloudflare/-/cloudflare-4.2.0.tgz"
-  integrity sha512-L9IainZq+7PN3NG/Mg7T9oRm7SB7AskNe6QLD8j7FrJY+2Dn1qpeLqXF8Im04ANnssezf0KAOtSuxNAAyNEgkg==
+cloudflare@^4.3.0:
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/cloudflare/-/cloudflare-4.3.0.tgz#e4e9d282d05b3ee0a2b242b681f87f933f82d4c5"
+  integrity sha512-C+4Jhsl/OY4V5sykRB1yJxComDld5BkKW1xd3s0MDJ1yYamT2sFAoC2FEUQg5zipyxMaaGU4N7hZ6il+gfJxZg==
   dependencies:
     "@types/node" "^18.11.18"
     "@types/node-fetch" "^2.6.4"
