@@ -41,7 +41,7 @@
     "form-data": "^4.0.2",
     "fs-extra": "^11.3.0",
     "fs-readdir-recursive": "^1.1.0",
-    "glob": "^11.0.1",
+    "glob": "^11.0.2",
     "he": "^1.2.0",
     "inquirer": "^10.2.2",
     "isomorphic-dompurify": "^2.22.0",
