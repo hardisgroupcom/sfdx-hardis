@@ -20,11 +20,59 @@ export default class ServiceNowReport extends SfCommand<any> {
   public static title = 'ServiceNow Report';
   public static description = `This command retrieves user stories from Salesforce and enriches them with data from ServiceNow.
 
-  Define the following environment variables:
+Define the following environment variables (in CICD variables or locally in a **.env** file):
 
-  - SERVICENOW_URL: The base URL of the ServiceNow API (ex: https://your-instance.service-now.com/)
-  - SERVICENOW_USERNAME: The username for ServiceNow API authentication.
-  - SERVICENOW_PASSWORD: The password for ServiceNow API authentication.
+- SERVICENOW_URL: The base URL of the ServiceNow API (ex: https://your-instance.service-now.com/)
+- SERVICENOW_USERNAME: The username for ServiceNow API authentication.
+- SERVICENOW_PASSWORD: The password for ServiceNow API authentication.
+
+You also need to define JSON configuration file(e) in folder **config/user-stories/**
+
+Example:
+
+\`\`\`json
+{
+    "userStoriesConfig": {
+        "fields": [
+            "Id",
+            "Name",
+            "Ticket_Number__c",
+            "copado__User_Story_Title__c",
+            "CreatedBy.Name",
+            "copado__Release__r.Name",
+            "copado__Environment__r.Name"
+        ],
+        "table": "copado__User_Story__c",
+        "where": "copado__Environment__r.Name ='UAT'",
+        "whereChoices": {
+          "UAT all": "copado__Environment__r.Name ='UAT'",
+          "UAT postponed": "copado__Environment__r.Name ='UAT' AND copado__Release__r.Name = 'postponed'",
+          "UAT in progress": "copado__Environment__r.Name ='UAT' AND copado__Release__r.Name != 'postponed' AND copado__Release__r.Name != 'cancelled'"
+        },
+        "orderBy": "Ticket_Number__c ASC",
+        "ticketField": "Ticket_Number__c",
+        "reportFields": [
+            { "key": "US Name", "path": "Name" },
+            { "key": "US SN Identifier", "path": "Ticket_Number__c" },
+            { "key": "US Title", "path": "copado__User_Story_Title__c" },
+            { "key": "US Created By", "path": "CreatedBy.Name" },
+            { "key": "US Environment", "path": "copado__Environment__r.Name" },
+            { "key": "US Release", "path": "copado__Release__r.Name" },
+            { "key": "SN Identifier", "path": "serviceNowInfo.number", "default": "NOT FOUND" },
+            { "key": "SN Title", "path": "serviceNowInfo.short_description", "default": "NOT FOUND" },
+            { "key": "SN Status", "path": "serviceNowInfo.state", "default": "NOT FOUND" },
+            { "key": "SN Created By", "path": "serviceNowInfo.sys_created_by", "default": "NOT FOUND" },
+            { "key": "SN URL", "special": "serviceNowTicketUrl" }
+        ]
+    },
+    "serviceNowConfig": {
+        "tables": [
+            { "tableName": "demand" },
+            { "tableName": "incident" }
+        ]
+    }
+}
+\`\`\`
   `;
 
   public static examples = ['$ sf hardis:misc:servicenow-report'];
@@ -82,23 +130,22 @@ export default class ServiceNowReport extends SfCommand<any> {
     whereChoices: {
       'UAT all': "copado__Environment__r.Name ='UAT'",
       'UAT postponed': "copado__Environment__r.Name ='UAT' AND copado__Release__r.Name = 'postponed'",
-      'UAT in progress': "copado__Environment__r.Name ='UAT' AND copado__Release__r.Name != 'postponed' AND copado__Release__r.Name != 'cancelled'",
+      'UAT in progress': "copado__Environment__r.Name ='UAT' AND copado__Release__r.Name != 'postponed' AND copado__Release__r.Name != 'cancelled'"
     },
     orderBy: 'Ticket_Number__c ASC',
     ticketField: 'Ticket_Number__c',
     reportFields: [
-      // fallback default fields if not defined in config
-      { key: 'userStoryName', path: 'Name' },
-      { key: 'userStoryTicketNumber', path: 'Ticket_Number__c' },
-      { key: 'userStoryTitle', path: 'copado__User_Story_Title__c' },
-      { key: 'userStoryCreatedBy', path: 'CreatedBy.Name' },
-      { key: 'userStoryEnvironmentName', path: 'copado__Environment__r.Name' },
-      { key: 'userStoryReleaseName', path: 'copado__Release__r.Name' },
-      { key: 'serviceNowNumber', path: 'serviceNowInfo.number', default: 'NOT FOUND' },
-      { key: 'serviceNowShortDescription', path: 'serviceNowInfo.short_description', default: 'NOT FOUND' },
-      { key: 'serviceNowState', path: 'serviceNowInfo.state', default: 'NOT FOUND' },
-      { key: 'serviceNowCreatedBy', path: 'serviceNowInfo.sys_created_by', default: 'NOT FOUND' },
-      { key: 'serviceNowUrl' }
+      { key: 'US Name', path: 'Name' },
+      { key: 'US SN Identifier', path: 'Ticket_Number__c' },
+      { key: 'US Title', path: 'copado__User_Story_Title__c' },
+      { key: 'US Created By', path: 'CreatedBy.Name' },
+      { key: 'US Environment', path: 'copado__Environment__r.Name' },
+      { key: 'US Release', path: 'copado__Release__r.Name' },
+      { key: 'SN Identifier', path: 'serviceNowInfo.number', default: 'NOT FOUND' },
+      { key: 'SN Title', path: 'serviceNowInfo.short_description', default: 'NOT FOUND' },
+      { key: 'SN Status', path: 'serviceNowInfo.state', default: 'NOT FOUND' },
+      { key: 'SN Created By', path: 'serviceNowInfo.sys_created_by', default: 'NOT FOUND' },
+      { key: 'SN URL', special: 'serviceNowTicketUrl' }
     ]
   };
 
@@ -159,7 +206,7 @@ export default class ServiceNowReport extends SfCommand<any> {
       // Build result object dynamically based on config
       const result: any = {};
       for (const field of this.userStoriesConfig.reportFields) {
-        if (field.key === "serviceNowUrl") {
+        if (field.special === "serviceNowTicketUrl") {
           if (!serviceNowInfo.sys_id) {
             result[field.key] = 'NOT FOUND';
           }
@@ -211,15 +258,16 @@ export default class ServiceNowReport extends SfCommand<any> {
         // If whereChoices is defined, prompt user to select one
         const whereChoices = Object.keys(this.userStoriesConfig.whereChoices).map((key) => ({
           title: key,
-          value: this.userStoriesConfig.whereChoices[key],
+          description: this.userStoriesConfig.whereChoices[key],
+          value: key,
         }));
         const whereChoiceRes = await prompts({
           type: 'select',
-          name: 'where',
           message: 'Select a WHERE condition for user stories:',
           choices: whereChoices,
         });
-        this.userStoriesConfig.where = whereChoiceRes.where;
+        this.whereChoice = whereChoiceRes.value;
+        this.userStoriesConfig.where = this.userStoriesConfig.whereChoices[this.whereChoice || ''];
       }
     }
     const userStoriesQuery = `SELECT ${this.userStoriesConfig.fields.join(', ')} FROM ${this.userStoriesConfig.table} WHERE ${this.userStoriesConfig.where} ORDER BY ${this.userStoriesConfig.orderBy}`;
@@ -279,7 +327,7 @@ export default class ServiceNowReport extends SfCommand<any> {
   }
 
   private async buildCsvFile(): Promise<void> {
-    this.outputFile = await generateReportPath('user-story-report', this.outputFile);
+    this.outputFile = await generateReportPath('user-story-report' + (this.whereChoice ? `-${this.whereChoice}` : ''), this.outputFile, { withDate: true });
     this.outputFilesRes = await generateCsvFile(this.results, this.outputFile);
   }
 }
