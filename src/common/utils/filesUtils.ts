@@ -748,6 +748,9 @@ export async function countLinesInFile(file: string) {
  * It then joins the report directory, file name prefix, and branch name to form the full path of the report.
  *
  * @param {string} fileNamePrefix - The prefix for the file name.
+ * @param {string} outputFile - The output file path. If null, a new path is generated.
+ * @param {Object} [options] - Additional options for generating the report path.
+ * @param {boolean} [options.withDate=false] - Whether to append a timestamp to the file name.
  * @returns {Promise<string>} - A Promise that resolves to the full path of the report.
  */
 export async function generateReportPath(fileNamePrefix: string, outputFile: string, options: { withDate: boolean } = { withDate: false }): Promise<string> {
