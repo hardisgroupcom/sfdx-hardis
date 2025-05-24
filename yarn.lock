@@ -7122,10 +7122,10 @@ glob@^10.2.2, glob@^10.3.10, glob@^10.3.7:
     package-json-from-dist "^1.0.0"
     path-scurry "^1.11.1"
 
-glob@^11.0.0, glob@^11.0.1:
-  version "11.0.1"
-  resolved "https://registry.npmjs.org/glob/-/glob-11.0.1.tgz"
-  integrity sha512-zrQDm8XPnYEKawJScsnM0QzobJxlT/kHOOlRTio8IH/GrmxRE5fjllkzdaHclIuNjUQTJYH2xHNIGfdpJkDJUw==
+glob@^11.0.0, glob@^11.0.2:
+  version "11.0.2"
+  resolved "https://registry.yarnpkg.com/glob/-/glob-11.0.2.tgz#3261e3897bbc603030b041fd77ba636022d51ce0"
+  integrity sha512-YT7U7Vye+t5fZ/QMkBFrTJ7ZQxInIUjwyAjVj84CYXqgBdv30MFUPGnBR6sQaVq6Is15wYJUsnzTuWaGRBhBAQ==
   dependencies:
     foreground-child "^3.1.0"
     jackspeak "^4.0.1"
