@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New command [hardis:misc:servicenow-report](https://sfdx-hardis.cloudity.com/hardis/misc/servicenow-report/) to generate reports crossing data from a Salesforce object and related entries in ServiceNow
+- Automatically open Excel report files when possible (disable with env var `NO_OPEN=true`)
+
 ## [5.37.1] 2025-05-23
 
 - Update PROMPT_DESCRIBE_PACKAGE
