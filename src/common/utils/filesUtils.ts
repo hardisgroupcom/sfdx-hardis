@@ -2,6 +2,7 @@
 import fs from 'fs-extra';
 import * as path from 'path';
 import c from 'chalk';
+import open from 'open';
 import * as split from 'split';
 import { PromisePool } from '@supercharge/promise-pool';
 
@@ -747,9 +748,12 @@ export async function countLinesInFile(file: string) {
  * It then joins the report directory, file name prefix, and branch name to form the full path of the report.
  *
  * @param {string} fileNamePrefix - The prefix for the file name.
+ * @param {string} outputFile - The output file path. If null, a new path is generated.
+ * @param {Object} [options] - Additional options for generating the report path.
+ * @param {boolean} [options.withDate=false] - Whether to append a timestamp to the file name.
  * @returns {Promise<string>} - A Promise that resolves to the full path of the report.
  */
-export async function generateReportPath(fileNamePrefix: string, outputFile: string): Promise<string> {
+export async function generateReportPath(fileNamePrefix: string, outputFile: string, options: { withDate: boolean } = { withDate: false }): Promise<string> {
   if (outputFile == null) {
     const reportDir = await getReportDirectory();
     const branchName =
@@ -757,7 +761,13 @@ export async function generateReportPath(fileNamePrefix: string, outputFile: str
         process.env.CI_COMMIT_REF_NAME ||
         (await getCurrentGitBranch({ formatted: true })) ||
         'branch-not-found';
-    return path.join(reportDir, `${fileNamePrefix}-${branchName.split('/').pop()}.csv`);
+    let newOutputFile = path.join(reportDir, `${fileNamePrefix}-${branchName.split('/').pop()}.csv`);
+    if (options.withDate) {
+      // Add date time info
+      const date = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0];
+      newOutputFile = path.join(reportDir, `${fileNamePrefix}-${branchName.split('/').pop()}-${date}.csv`);
+    }
+    return newOutputFile;
   } else {
     await fs.ensureDir(path.dirname(outputFile));
     return outputFile;
@@ -791,6 +801,14 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
         await csvToXls(outputPath, xslxFile);
         uxLog(this, c.italic(c.cyan(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
         result.xlsxFile = xslxFile;
+        if (!isCI && !(process.env.NO_OPEN === 'true')) {
+          try {
+            uxLog(this, c.italic(c.grey(`Opening XSLX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
+            await open(xslxFile, { wait: false });
+          } catch (e) {
+            uxLog(this, c.yellow('Error while opening XSLX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+          }
+        }
       } catch (e2) {
         uxLog(
           this,
