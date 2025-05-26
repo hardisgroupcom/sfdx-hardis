@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - New command [hardis:misc:servicenow-report](https://sfdx-hardis.cloudity.com/hardis/misc/servicenow-report/) to generate reports crossing data from a Salesforce object and related entries in ServiceNow
 - Automatically open Excel report files when possible (disable with env var `NO_OPEN=true`)
+- Defer the `sortCrossPlatform` operation for member lists until after all elements for a specific metadata type have been collected. Sorting is now performed only once per type improving the overall performance
 
 ## [5.37.1] 2025-05-23
 
