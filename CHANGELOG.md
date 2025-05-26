@@ -1,5 +1,9 @@
 # Changelog
 
+## 5.37.2] 2025-05-27
+
+- Defer the `sortCrossPlatform` operation for member lists until after all elements for a specific metadata type have been collected. Sorting is now performed only once per type improving the overall performance
+
 ## [beta] (master)
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`

@@ -1140,10 +1140,12 @@ export async function buildOrgManifest(
         parsedPackageXml.Package.types.push(newType);
       }
     }
-    // Sort members for each type once after the loop
-    for (const type of parsedPackageXml.Package.types) {
-      if (type.members && Array.isArray(type.members)) {
-        type.members = sortCrossPlatform(type.members);
+    // Sort members only for the types that were potentially modified
+    for (const mdType of mdTypes) { // mdTypes is [{ type: 'ListView' }, { type: 'CustomLabel' }]
+      const typeName = mdType.type;
+      const matchedType = parsedPackageXml.Package.types.find(t => t.name[0] === typeName);
+      if (matchedType && matchedType.members && Array.isArray(matchedType.members)) {
+        matchedType.members = sortCrossPlatform(matchedType.members);
       }
     }
   
