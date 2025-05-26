@@ -1127,7 +1127,7 @@ export async function buildOrgManifest(
         // Add member in existing types
         const members = matchTypes[0].members || [];
         members.push(element.fullName);
-        matchTypes[0].members = sortCrossPlatform(members);
+        matchTypes[0].members = members;
         parsedPackageXml.Package.types = parsedPackageXml.Package.types.map((type) =>
           type.name[0] === matchTypes[0].name ? matchTypes[0] : type
         );
@@ -1140,7 +1140,13 @@ export async function buildOrgManifest(
         parsedPackageXml.Package.types.push(newType);
       }
     }
-
+    // Sort members for each type once after the loop
+    for (const type of parsedPackageXml.Package.types) {
+      if (type.members && Array.isArray(type.members)) {
+        type.members = sortCrossPlatform(type.members);
+      }
+    }
+  
     // Complete with missing WaveDataflow Ids build from WaveRecipe Ids
     const waveRecipeTypeList = parsedPackageXml.Package.types.filter((type) => type.name[0] === 'WaveRecipe');
     if (waveRecipeTypeList.length === 1) {
