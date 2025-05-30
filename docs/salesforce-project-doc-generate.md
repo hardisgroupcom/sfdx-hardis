@@ -11,6 +11,10 @@ description: Learn how to generate Salesforce project documentation, including F
 - Call VsCode SFDX-Hardis command [**Documentation Generation > Generate Project Documentation (with history)**](hardis/doc/project2markdown.md)
   - Corresponding command line: `sf hardis:doc:project2markdown --with-history`
 
+Here is a click by click tutorial to generate your documentation locally (but it's best to use sfdx-hardis monitoring once you are convinced ^^)
+
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/ZrVPN3jp1Ac" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
 ## Run Locally
 
 - Run command **Documentation Generation > Run local HTML Doc Pages** (Note: you need  [Python](https://www.python.org/downloads/) on your computer)
