@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.38.1] 2025-06-02
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fix crash when generating Assignment Rules doc
+
 ## [5.38.0] 2025-05-27
 
 - New command [hardis:misc:servicenow-report](https://sfdx-hardis.cloudity.com/hardis/misc/servicenow-report/) to generate reports crossing data from a Salesforce object and related entries in ServiceNow

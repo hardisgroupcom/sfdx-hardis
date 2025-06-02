@@ -1,6 +1,6 @@
 export class RulesBuilderUtil {
 
-  public globalRuleTableLines: string [] = [];
+  public globalRuleTableLines: string[] = [];
 
   public async buildInitialMarkDownLinesForRules(ruleGlobal: any) {
 
@@ -38,7 +38,7 @@ export class RulesBuilderUtil {
       let order: number = 1;
       for (const rule of autoresponseRule.ruleEntry) {
         const autoResponseCriteria = rule?.criteriaItems ? this.formatCriteria(rule?.criteriaItems, rule?.booleanFilter) : rule?.formula ? JSON.stringify(rule.formula) : "None";
-        this.globalRuleTableLines.push(`| ${order} | ${autoResponseCriteria} |  ${rule.senderEmail} | ${rule.senderName} | ${rule.replyTo ||  "None"} |`);
+        this.globalRuleTableLines.push(`| ${order} | ${autoResponseCriteria} |  ${rule.senderEmail} | ${rule.senderName} | ${rule.replyTo || "None"} |`);
         order++;
       }
     }
@@ -106,7 +106,7 @@ export class RulesBuilderUtil {
       + ci.field.split('.')[0] + '**: '
       + ci.field.substring(ci.field.indexOf('.') + 1) + ' _'
       + ci.operation + '_ '
-      + (ci.value ? ci.value.replaceAll(",", ", ") : "' '" )  + ')<br>';
+      + (ci.value ? String(ci.value).replaceAll(",", ", ") : "' '") + ')<br>';
   }
 
   formatActionItem(ai: any): string {
