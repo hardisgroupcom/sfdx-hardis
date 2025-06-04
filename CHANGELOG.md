@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.38.2] 2025-06-04
+
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): Do not filter standard objects if they have at least one custom field defined.
+- Upgrade tar-fs to fix CVE
+
 ## [5.38.1] 2025-06-02
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fix crash when generating Assignment Rules doc
@@ -19,7 +24,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Update PROMPT_DESCRIBE_PACKAGE
 - Update common instructions about prompt reply language
-- Make sure that projectName is compliant with the format of an environment variable  
+- Make sure that projectName is compliant with the format of an environment variable
 
 ## [5.37.0] 2025-05-22
 
@@ -69,7 +74,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/): Add audit Custom Setting values updates
 - Improve SOQL query functions by adding warning logs for record limits and removing redundant warning handling
-- New command [hardis:misc:custom-label-translations](https://sfdx-hardis.cloudity.com/hardis/misc/custom-label-translations/): Extract selected custom labels, or of a given Lightning Web Component (LWC), from all language translation files. This command generates translation files ('*.translation - meta.xml') for each language already retrieved in the current project, containing only the specified custom labels.
+- New command [hardis:misc:custom-label-translations](https://sfdx-hardis.cloudity.com/hardis/misc/custom-label-translations/): Extract selected custom labels, or of a given Lightning Web Component (LWC), from all language translation files. This command generates translation files ('\*.translation - meta.xml') for each language already retrieved in the current project, containing only the specified custom labels.
 
 ## [5.33.0] 2025-05-10
 
@@ -434,6 +439,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [5.11.0] 2025-01-03
 
 - Visual flow management, using MermaidJs
+
   - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add a markdown file for each Flow
     - If unable to run mermaid-cli, store markdown with mermaidJs diagram content anyway (can happen from Monitoring Backup Command)
     - When called from Monitoring ([hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)), generate Flow documentation only if it has been updated
@@ -445,6 +451,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - New command [hardis:project:deploy:notify](https://sfdx-hardis.cloudity.com/hardis/project/deploy/notify/) to send Pull Request comments (with Flow Visual Git Diff) and Slack / Teams notifications even if you are not using a sfdx-hardis command to check or process a deployment.
 
 - Command updates
+
   - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Refactor deployment errors parsing: use JSON output instead of text output
   - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): Display the number of failed tests in messages and notifications
   - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/):
@@ -452,6 +459,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
     - New option **--full-apply-filters** that can be used with **--full** option to apply filters anyway
 
 - Core enhancements & fixes
+
   - Obfuscate some data from text log files
   - Kill some exit handlers in case they are making the app crash after a throw SfError
   - Trigger notifications during the command execution, not after
@@ -515,7 +523,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - New command **hardis:git:pull-requests:extract**: Extract Pull Requests from Git Server into CSV/XLS (Azure only for now)
 - Fix bug when scratch org username is > 80 chars
 - Make markdown-links-check not blocking by default in MegaLinter base config
-- Make yamllint  not blocking by default in MegaLinter base config
+- Make yamllint not blocking by default in MegaLinter base config
 
 ## [5.6.3] 2024-11-17
 
