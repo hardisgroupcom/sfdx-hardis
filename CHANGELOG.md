@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.38.2] 2025-06-04
+
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): Do not filter standard objects if they have at least one custom field defined.
+- Upgrade tar-fs to fix CVE
+
 ## [5.38.1] 2025-06-02
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fix crash when generating Assignment Rules doc
@@ -19,7 +24,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Update PROMPT_DESCRIBE_PACKAGE
 - Update common instructions about prompt reply language
-- Make sure that projectName is compliant with the format of an environment variable  
+- Make sure that projectName is compliant with the format of an environment variable
 
 ## [5.37.0] 2025-05-22
 
@@ -69,7 +74,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/): Add audit Custom Setting values updates
 - Improve SOQL query functions by adding warning logs for record limits and removing redundant warning handling
-- New command [hardis:misc:custom-label-translations](https://sfdx-hardis.cloudity.com/hardis/misc/custom-label-translations/): Extract selected custom labels, or of a given Lightning Web Component (LWC), from all language translation files. This command generates translation files ('*.translation - meta.xml') for each language already retrieved in the current project, containing only the specified custom labels.
+- New command [hardis:misc:custom-label-translations](https://sfdx-hardis.cloudity.com/hardis/misc/custom-label-translations/): Extract selected custom labels, or of a given Lightning Web Component (LWC), from all language translation files. This command generates translation files ('\*.translation - meta.xml') for each language already retrieved in the current project, containing only the specified custom labels.
 
 ## [5.33.0] 2025-05-10
 

@@ -869,10 +869,15 @@ export async function filterPackageXml(
   }
   // Remove standard objects
   if (options.removeStandard) {
+    const customFields: Array<string> = manifest.Package.types.filter((t: any) => t.name[0] === 'CustomField')?.[0]?.members || [];
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       if (['CustomObject'].includes(type.name[0])) {
-        type.members = type.members.filter((member: string) => {
-          return member.endsWith('__c');
+        type.members = type.members.filter((customObjectName: string) => {
+          // If a custom field is defined on the standard object, keep the standard object
+          if (customFields.some((field: string) => field.startsWith(customObjectName + '.'))) {
+            return true;
+          }
+          return customObjectName.endsWith('__c');
         });
       }
       type.members = type.members.filter((member: string) => {
