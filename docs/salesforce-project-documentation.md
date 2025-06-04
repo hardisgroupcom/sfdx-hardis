@@ -28,7 +28,7 @@ With a single command, you can generate a Web Site documenting your Salesforce m
 - Branches & Orgs
 - Manifests
 
-The documentation will be [supercharged with AI](salesforce-ai-setup.md) if activated;
+The documentation will be [**supercharged with AI**](salesforce-ai-setup.md) if activated;
 
 ![](assets/images/project-documentation.gif)
 
