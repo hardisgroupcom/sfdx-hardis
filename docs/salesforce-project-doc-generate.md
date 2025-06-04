@@ -8,6 +8,8 @@ description: Learn how to generate Salesforce project documentation, including F
 
 - Use the Git repository containing your SFDX project, or create it easily using [sfdx-hardis Monitoring](salesforce-monitoring-home.md), or simply calling [BackUp command](hardis/org/monitor/backup.md)
 
+- [Activate AI Integration](salesforce-ai-setup.md) (Optional but recommended)
+
 - Call VsCode SFDX-Hardis command [**Documentation Generation > Generate Project Documentation (with history)**](hardis/doc/project2markdown.md)
   - Corresponding command line: `sf hardis:doc:project2markdown --with-history`
 

@@ -18,6 +18,10 @@ CVE-2025-25289
 # Risk:  Improper Limitation of a Pathname to a Restricted Directory (Path Traversal), not risky for sfdx-hardis
 CVE-2024-12905
 
+# tar-fs https://avd.aquasec.com/nvd/cve-2025-48387
+# Risk : Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal'), not risky for sfdx-hardis
+CVE-2025-48387
+
 # cross-spawn https://avd.aquasec.com/nvd/cve-2024-21538
 # Risk: Denial of Service, not risky for sfdx-hardis
 CVE-2024-21538
