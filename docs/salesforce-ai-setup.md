@@ -24,15 +24,15 @@ See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and ho
 
 ### Common variables
 
-| Variable                     | Description                                                                                                                               | Default |
-|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| AI_MAXIMUM_CALL_NUMBER       | Maximum allowed number of calls to AI Providers during a single sfdx-hardis command                                                       | `10000` |
-| PROMPTS_LANGUAGE             | Language to use for prompts results (`en`,`fr`, or any [ISO Language code](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes)) | `en`    |
-| DEBUG_PROMPTS                | Set to true if you want prompts requests and responses in logs                                                                            | `false` |
-| MAX_DEPLOYMENT_TIPS_AI_CALLS | Maximum number of errors that will be analyzed by AI for a single Pull Request                                                            | `20`    |
-| DISABLE_AI                   | In case you want to disable API calls to API without removing your configuration, set to true                                             | `false` |
-| IGNORE_AI_CACHE              | Some processes like Flow description use AI cache files to save calls to prompts API, disable by setting to true                          | `false` |
-| AI_MAX_TIMEOUT_MINUTES       | If you are running sfdx-hardis from a CI/CD job, AI will stopped to be called after 30 minutes, to not mess with the timeouts of other jobs. You can increase this value to however minutes you want :) | `30` |
+| Variable                     | Description                                                                                                                                                                                             | Default |
+|------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
+| AI_MAXIMUM_CALL_NUMBER       | Maximum allowed number of calls to AI Providers during a single sfdx-hardis command                                                                                                                     | `10000` |
+| PROMPTS_LANGUAGE             | Language to use for prompts results (`en`,`fr`, or any [ISO Language code](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes))                                                               | `en`    |
+| DEBUG_PROMPTS                | Set to true if you want prompts requests and responses in logs                                                                                                                                          | `false` |
+| MAX_DEPLOYMENT_TIPS_AI_CALLS | Maximum number of errors that will be analyzed by AI for a single Pull Request                                                                                                                          | `20`    |
+| DISABLE_AI                   | In case you want to disable API calls to API without removing your configuration, set to true                                                                                                           | `false` |
+| IGNORE_AI_CACHE              | Some processes like Flow description use AI cache files to save calls to prompts API, disable by setting to true                                                                                        | `false` |
+| AI_MAX_TIMEOUT_MINUTES       | If you are running sfdx-hardis from a CI/CD job, AI will stopped to be called after 30 minutes, to not mess with the timeouts of other jobs. You can increase this value to however minutes you want :) | `30`    |
 
 ### With Agentforce
 
