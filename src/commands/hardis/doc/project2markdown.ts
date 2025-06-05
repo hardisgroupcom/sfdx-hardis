@@ -124,6 +124,8 @@ If [AI integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) is configure
 
 If you have a complex strategy, you might need to input property **mergeTargets** in branch-scoped sfdx-hardis.yml file to have a correct diagram.
 
+Define DO_NOT_OVERWRITE_INDEX_MD=true to avoid overwriting the index.md file in docs folder, useful if you want to keep your own index.md file.
+
 ${this.htmlInstructions}
 `;
 
@@ -318,8 +320,10 @@ ${this.htmlInstructions}
 
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
-    await fs.writeFile(this.outputMarkdownIndexFile, getMetaHideLines() + this.mdLines.join("\n") + `\n\n${this.footer}\n`);
-    uxLog(this, c.green(`Successfully generated doc index at ${this.outputMarkdownIndexFile}`));
+    if (process.env.DO_NOT_OVERWRITE_INDEX_MD !== 'true' || !fs.existsSync(this.outputMarkdownIndexFile)) {
+      await fs.writeFile(this.outputMarkdownIndexFile, getMetaHideLines() + this.mdLines.join("\n") + `\n\n${this.footer}\n`);
+      uxLog(this, c.green(`Successfully generated doc index at ${this.outputMarkdownIndexFile}`));
+    }
 
     const readmeFile = path.join(process.cwd(), "README.md");
     if (fs.existsSync(readmeFile)) {
