@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.39.0] 2025-06-05
+
+- When in CI, by default a maximum time of 30 minutes can be used to call AI. This value can be overridden using `AI_MAX_TIMEOUT_MINUTES`.
+- New documentation page with all environment variables used by sfdx-hardis
+
 ## [5.38.2] 2025-06-05
 
 - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): Do not filter standard objects if they have at least one custom field defined.
