@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.39.1] 2025-06-05
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Define DO_NOT_OVERWRITE_INDEX_MD=true to avoid overwriting the index.md file in docs folder, useful if you want to keep your own index.md file.
+
 ## [5.39.0] 2025-06-05
 
 - When in CI, by default a maximum time of 30 minutes can be used to call AI. This value can be overridden using `AI_MAX_TIMEOUT_MINUTES`.
