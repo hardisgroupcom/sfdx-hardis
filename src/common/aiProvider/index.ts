@@ -63,6 +63,19 @@ export abstract class AiProvider {
     if (!aiInstance) {
       throw new SfError("aiInstance should be set");
     }
+    // Stop calling AI if a timeout has been reached
+    const aiMaxTimeoutMinutes = parseInt(process.env.AI_MAX_TIMEOUT_MINUTES || (isCI ? "30" : "0"), 10);
+    if (aiMaxTimeoutMinutes > 0) {
+      globalThis.currentAiStartTime = globalThis.currentAiStartTime || Date.now();
+      const elapsedMinutes = (Date.now() - globalThis.currentAiStartTime) / 60000; // Convert milliseconds to minutes
+      if (elapsedMinutes >= aiMaxTimeoutMinutes) {
+        uxLog(this, c.yellow(`AI calls reached maximum time allowed of ${aiMaxTimeoutMinutes} minutes. You can either:
+- Run command locally then commit + push
+- Increase using variable \`AI_MAX_TIMEOUT_MINUTES\` in your CI config (ex: AI_MAX_TIMEOUT_MINUTES=120) after making sure than your CI job timeout can handle it :)`));
+        return { success: false, model: "none", forcedTimeout: true };
+      }
+    }
+    // Call AI using API
     try {
       const aiResponse = await aiInstance.promptAi(prompt, template);
       if (aiResponse?.success && aiResponse?.promptResponse) {
@@ -96,6 +109,7 @@ export interface AiResponse {
   success: boolean;
   model: string;
   promptResponse?: string;
+  forcedTimeout?: boolean // In case AI_MAX_TIMEOUT_MINUTES has been set
 }
 
 
