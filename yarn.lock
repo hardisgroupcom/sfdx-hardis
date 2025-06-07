@@ -2168,10 +2168,10 @@
     proc-log "^4.0.0"
     which "^4.0.0"
 
-"@oclif/core@^4", "@oclif/core@^4.0.27", "@oclif/core@^4.2.10", "@oclif/core@^4.3.0":
-  version "4.3.0"
-  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.3.0.tgz#9a2951f05f81a4c7ae5ffcc00b2d720cca0898e6"
-  integrity sha512-lIzHY+JMP6evrS5E/sGijNnwrCoNtGy8703jWXcMuPOYKiFhWoAqnIm1BGgoRgmxczkbSfRsHUL/lwsSgh74Lw==
+"@oclif/core@^4", "@oclif/core@^4.0.27", "@oclif/core@^4.2.10", "@oclif/core@^4.3.2":
+  version "4.3.2"
+  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.3.2.tgz#522d5f94044ebde5f4041b0bad4f1abfe7a73f61"
+  integrity sha512-3OVGENifC2NzYn/t31fYOrZOGJ5WpUfRktz8v/W4QbP4Su3S/BcBuVuIde65B1mHrnAE/62yOFA/kLx4w1Vf8g==
   dependencies:
     ansi-escapes "^4.3.2"
     ansis "^3.17.0"
@@ -2180,7 +2180,6 @@
     debug "^4.4.0"
     ejs "^3.1.10"
     get-package-type "^0.1.0"
-    globby "^11.1.0"
     indent-string "^4.0.0"
     is-wsl "^2.2.0"
     lilconfig "^3.1.3"
@@ -2188,6 +2187,7 @@
     semver "^7.6.3"
     string-width "^4.2.3"
     supports-color "^8"
+    tinyglobby "^0.2.13"
     widest-line "^3.1.0"
     wordwrap "^1.0.0"
     wrap-ansi "^7.0.0"
@@ -6730,10 +6730,10 @@ fd-slicer@~1.1.0:
   dependencies:
     pend "~1.2.0"
 
-fdir@^6.4.2:
-  version "6.4.3"
-  resolved "https://registry.npmjs.org/fdir/-/fdir-6.4.3.tgz"
-  integrity "sha1-ARzaz4N+ypuBHInbuQLfcUJz23I= sha512-PMXmW2y1hDDfTSRc9gaXIuCCRpuoz3Kaz8cUelp3smouvfT632ozg2vrT6lJsHKKOF59YLbOGfAWGUcKEfRMQw=="
+fdir@^6.4.4:
+  version "6.4.5"
+  resolved "https://registry.yarnpkg.com/fdir/-/fdir-6.4.5.tgz#328e280f3a23699362f95f2e82acf978a0c0cb49"
+  integrity sha512-4BG7puHpVsIYxZUbiUE3RqGloLaSSwzYie5jvasC4LWuBWzZawynvYouhjbQKw2JuIGYdm0DzIxl8iVidKlUEw==
 
 figures@^1.7.0:
   version "1.7.0"
@@ -12361,12 +12361,12 @@ tiny-jsonc@^1.0.2:
   resolved "https://registry.npmjs.org/tiny-jsonc/-/tiny-jsonc-1.0.2.tgz"
   integrity "sha1-II30xDdoQZnMck8xwrke45w0lng= sha512-f5QDAfLq6zIVSyCZQZhhyl0QS6MvAyTxgz4X4x3+EoCktNWEYJ6PeoEA97fyb98njpBNNi88ybpD7m+BDFXaCw=="
 
-tinyglobby@^0.2.9:
-  version "0.2.10"
-  resolved "https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.10.tgz"
-  integrity "sha1-5xLPLcm5Wh9cW70VlyDhWDOXeg8= sha512-Zc+8eJlFMvgatPZTl6A9L/yht8QqdmUNtURHaKZLmKBE12hNPSrqNkUp2cs3M/UKmNVVAMFQYSjYIVHDjW5zew=="
+tinyglobby@^0.2.13, tinyglobby@^0.2.9:
+  version "0.2.14"
+  resolved "https://registry.yarnpkg.com/tinyglobby/-/tinyglobby-0.2.14.tgz#5280b0cf3f972b050e74ae88406c0a6a58f4079d"
+  integrity sha512-tX5e7OM1HnYr2+a2C/4V0htOcSQcoSTH9KgJnVvNm5zm/cyEWKJ7j7YutsH9CxMdtOkkLFy2AHrMci9IM8IPZQ==
   dependencies:
-    fdir "^6.4.2"
+    fdir "^6.4.4"
     picomatch "^4.0.2"
 
 tldts-core@^6.1.50:
