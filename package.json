@@ -11,7 +11,7 @@
     "@langchain/anthropic": "^0.3.21",
     "@langchain/community": "^0.3.44",
     "@langchain/core": "^0.3.57",
-    "@langchain/google-genai": "^0.2.9",
+    "@langchain/google-genai": "^0.2.10",
     "@langchain/ollama": "^0.2.0",
     "@oclif/core": "^4.3.0",
     "@salesforce/core": "^8.11.4",
