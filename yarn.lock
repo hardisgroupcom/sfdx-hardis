@@ -2841,10 +2841,10 @@
   resolved "https://registry.npmjs.org/@slack/types/-/types-2.14.0.tgz"
   integrity sha512-n0EGm7ENQRxlXbgKSrQZL69grzg1gHLAVd+GlRVQJ1NSORo0FrApR7wql/gaKdu2n4TO83Sq/AmeUOqD60aXUA==
 
-"@slack/web-api@^7.9.1":
-  version "7.9.1"
-  resolved "https://registry.npmjs.org/@slack/web-api/-/web-api-7.9.1.tgz"
-  integrity sha512-qMcb1oWw3Y/KlUIVJhkI8+NcQXq1lNymwf+ewk93ggZsGd6iuz9ObQsOEbvlqlx1J+wd8DmIm3DORGKs0fcKdg==
+"@slack/web-api@^7.9.2":
+  version "7.9.2"
+  resolved "https://registry.yarnpkg.com/@slack/web-api/-/web-api-7.9.2.tgz#c996354f467d64c4d3c4e77ab55f42dcf98cf2d0"
+  integrity sha512-3HoDwV6+ZSTfV+DsbnUd82GlZY0a+DPXuHQHpxWTqgxjM3JWZyGiwR+ov3d2M16pWiMzA+l58UJ5lm1znGq0yA==
   dependencies:
     "@slack/logger" "^4.0.0"
     "@slack/types" "^2.9.0"
