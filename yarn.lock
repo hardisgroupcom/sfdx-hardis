@@ -1433,6 +1433,24 @@
     protobufjs "^7.2.5"
     yargs "^17.7.2"
 
+"@huggingface/inference@^4.0.2":
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/@huggingface/inference/-/inference-4.0.2.tgz#962a14c468311755fa34da143c045c34b9dd7775"
+  integrity sha512-XuWb8ocH7lA5kSdXrGnqshtRz3ocSBzEzxcp5xeAXLjgM1ocoIHq+RW8/Ti0xq3MeRGQWgUkYPCgDV/xgs8p4g==
+  dependencies:
+    "@huggingface/jinja" "^0.5.0"
+    "@huggingface/tasks" "^0.19.11"
+
+"@huggingface/jinja@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@huggingface/jinja/-/jinja-0.5.0.tgz#0da65deb98798cd24ea42ad13f6df224ce23f443"
+  integrity sha512-Ptc03/jGRiYRoi0bUYKZ14MkDslsBRT24oxmsvUlfYrvQMldrxCevhPnT+hfX8awKTT8/f/0ZBBWldoeAcMHdQ==
+
+"@huggingface/tasks@^0.19.11":
+  version "0.19.11"
+  resolved "https://registry.yarnpkg.com/@huggingface/tasks/-/tasks-0.19.11.tgz#2c1005b189432528c1e17d1ec9938d11f65a01ca"
+  integrity sha512-oBhSgVlg7Pp643MsH8BiI3OAXIMJNxdSiMtv4mApRZV8dmAz8oasKhg6CVKIplO7vAO7F6dkmMn4bYM64I2A9w==
+
 "@humanwhocodes/config-array@^0.11.14":
   version "0.11.14"
   resolved "https://registry.npmjs.org/@humanwhocodes/config-array/-/config-array-0.11.14.tgz"
@@ -1893,10 +1911,10 @@
     zod "^3.22.4"
     zod-to-json-schema "^3.22.4"
 
-"@langchain/community@^0.3.44":
-  version "0.3.44"
-  resolved "https://registry.yarnpkg.com/@langchain/community/-/community-0.3.44.tgz#6048e357d2168de975f1b33d54e91105059f86cc"
-  integrity sha512-lOA7rw0lC6WCRO/xoacx4Gpbx1ncscAilYn9LVjyiBxJw47d01iq8hdkGdBW5OFISub/wCK4FmHih2S4WJicAg==
+"@langchain/community@^0.3.45":
+  version "0.3.45"
+  resolved "https://registry.yarnpkg.com/@langchain/community/-/community-0.3.45.tgz#7af0cfd67ee662bf4f88a655babbf808918262fd"
+  integrity sha512-KkAGmnP+w5tozLYsj/kGKwyfuPnCcA6MyDXfNF7oDo7L1TxhUgdEKhvNsY7ooLXz6Xh/LV5Kqp2B8U0jfYCQKQ==
   dependencies:
     "@langchain/openai" ">=0.2.0 <0.6.0"
     "@langchain/weaviate" "^0.2.0"

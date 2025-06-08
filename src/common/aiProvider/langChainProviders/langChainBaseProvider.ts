@@ -9,7 +9,7 @@ export interface ModelConfig {
   apiKey?: string;
 }
 
-export type ProviderType = "ollama" | "openai" | "anthropic";
+export type ProviderType = "ollama" | "openai" | "anthropic" | "google-genai" | "huggingface";
 
 export interface BaseLLMProvider {
   getModel(): BaseChatModel;
@@ -28,7 +28,7 @@ export abstract class AbstractLLMProvider implements BaseLLMProvider {
   }
 
   abstract getModel(): BaseChatModel;
-  
+
   getModelName(): string {
     return this.modelName;
   }

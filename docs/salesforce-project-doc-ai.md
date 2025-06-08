@@ -24,6 +24,6 @@ If AI Integration is configured, the following parts of the documentation with b
   - Lightning Web Components
 - Lightning Pages
 
-Configure AI integration following the [related documentation](salesforce-ai-setup.md)
+Configure AI integration following [**AI Setup documentation**](salesforce-ai-setup.md)
 
 See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) to enhance documentation with AI, and how to override them.

@@ -13,8 +13,8 @@ export class LangChainAnthropicProvider extends AbstractLLMProvider {
 
   getModel(): BaseChatModel {
     const config = {
-      modelName: this.modelName,
-      anthropicApiKey: this.config.apiKey!,
+      model: this.modelName,
+      apiKey: this.config.apiKey!,
       temperature: this.config.temperature,
       maxTokens: this.config.maxTokens,
       maxRetries: this.config.maxRetries
