@@ -1,6 +1,5 @@
-import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { HuggingFaceInference } from "@langchain/community/llms/hf";
-import { AbstractLLMProvider, ModelConfig } from "./langChainBaseProvider.js";
+import { AbstractLLMProvider, ModelConfig, SupportedModel } from "./langChainBaseProvider.js";
 
 export class LangChainHuggingFaceProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {
@@ -11,18 +10,17 @@ export class LangChainHuggingFaceProvider extends AbstractLLMProvider {
     this.model = this.getModel();
   }
 
-  getModel(): BaseChatModel {
+  getModel(): SupportedModel {
     const config = {
       model: this.modelName,
       apiKey: this.config.apiKey!,
       temperature: this.config.temperature,
       maxTokens: this.config.maxTokens,
-      maxRetries: this.config.maxRetries,
       // HuggingFace specific configuration
       endpointUrl: this.config.baseUrl, // Custom endpoint URL if needed
     };
 
-    return new HuggingFaceInference(config) as BaseChatModel;
+    return new HuggingFaceInference(config);
   }
 
   getLabel(): string {

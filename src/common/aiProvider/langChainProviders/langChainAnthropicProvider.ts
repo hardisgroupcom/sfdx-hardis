@@ -1,6 +1,5 @@
 import { ChatAnthropic } from "@langchain/anthropic";
-import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { AbstractLLMProvider, ModelConfig } from "./langChainBaseProvider.js";
+import { AbstractLLMProvider, ModelConfig, SupportedModel } from "./langChainBaseProvider.js";
 
 export class LangChainAnthropicProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {
@@ -11,7 +10,7 @@ export class LangChainAnthropicProvider extends AbstractLLMProvider {
     this.model = this.getModel();
   }
 
-  getModel(): BaseChatModel {
+  getModel(): SupportedModel {
     const config = {
       model: this.modelName,
       apiKey: this.config.apiKey!,
@@ -20,6 +19,6 @@ export class LangChainAnthropicProvider extends AbstractLLMProvider {
       maxRetries: this.config.maxRetries
     };
 
-    return new ChatAnthropic(config) as BaseChatModel;
+    return new ChatAnthropic(config);
   }
 } 

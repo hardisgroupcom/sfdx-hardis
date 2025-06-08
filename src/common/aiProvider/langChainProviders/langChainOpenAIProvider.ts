@@ -1,6 +1,5 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { AbstractLLMProvider, ModelConfig } from "./langChainBaseProvider.js";
+import { AbstractLLMProvider, ModelConfig, SupportedModel } from "./langChainBaseProvider.js";
 
 export class LangChainOpenAIProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {
@@ -11,7 +10,7 @@ export class LangChainOpenAIProvider extends AbstractLLMProvider {
     this.model = this.getModel();
   }
 
-  getModel(): BaseChatModel {
+  getModel(): SupportedModel {
     const config = {
       model: this.modelName,
       apiKey: this.config.apiKey!,
@@ -20,6 +19,6 @@ export class LangChainOpenAIProvider extends AbstractLLMProvider {
       maxRetries: this.config.maxRetries
     };
 
-    return new ChatOpenAI(config) as BaseChatModel;
+    return new ChatOpenAI(config);
   }
-} 
+}
