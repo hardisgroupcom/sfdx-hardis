@@ -1,4 +1,4 @@
-import JiraApi from "jira-client";
+import { Version3Client } from "jira.js";
 import { TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from "sort-array";
@@ -9,29 +9,35 @@ import { SfError } from "@salesforce/core";
 import { getEnvVar } from "../../config/index.js";
 
 export class JiraProvider extends TicketProviderRoot {
-  private jiraClient: InstanceType<typeof JiraApi> | any = null;
-
+  private jiraClient: Version3Client | null = null;
   constructor() {
     super();
-    const jiraOptions: JiraApi.JiraApiOptions = {
-      protocol: "https",
-      host: (getEnvVar("JIRA_HOST") || "").replace("https://", ""),
-      apiVersion: "3",
-      strictSSL: true,
-    };
+    const host = getEnvVar("JIRA_HOST") || "";
+
     // Basic Auth
     if (getEnvVar("JIRA_EMAIL") && getEnvVar("JIRA_TOKEN")) {
-      jiraOptions.username = getEnvVar("JIRA_EMAIL") || "";
-      jiraOptions.password = getEnvVar("JIRA_TOKEN") || "";
+      this.jiraClient = new Version3Client({
+        host: host,
+        authentication: {
+          basic: {
+            email: getEnvVar("JIRA_EMAIL") || "",
+            apiToken: getEnvVar("JIRA_TOKEN") || "",
+          },
+        },
+      });
       this.isActive = true;
     }
-    // Personal access token
-    if (getEnvVar("JIRA_PAT")) {
-      jiraOptions.bearer = getEnvVar("JIRA_PAT") || "";
+    // Personal access token (Bearer token)
+    else if (getEnvVar("JIRA_PAT")) {
+      this.jiraClient = new Version3Client({
+        host: host,
+        authentication: {
+          oauth2: {
+            accessToken: getEnvVar("JIRA_PAT") || "",
+          },
+        },
+      });
       this.isActive = true;
-    }
-    if (this.isActive) {
-      this.jiraClient = new JiraApi(jiraOptions);
     }
   }
 
@@ -98,7 +104,6 @@ export class JiraProvider extends TicketProviderRoot {
     const ticketsSorted: Ticket[] = sortArray(tickets, { by: ["id"], order: ["asc"] });
     return ticketsSorted;
   }
-
   public async collectTicketsInfo(tickets: Ticket[]) {
     const jiraTicketsNumber = tickets.filter((ticket) => ticket.provider === "JIRA").length;
     if (jiraTicketsNumber > 0) {
@@ -109,16 +114,18 @@ export class JiraProvider extends TicketProviderRoot {
     }
     for (const ticket of tickets) {
       if (ticket.provider === "JIRA") {
-        let ticketInfo: JiraApi.JsonResponse | null = null;
+        let ticketInfo: any = null;
         try {
-          ticketInfo = await this.jiraClient.getIssue(ticket.id);
+          if (this.jiraClient) {
+            ticketInfo = await this.jiraClient.issues.getIssue({ issueIdOrKey: ticket.id });
+          }
         } catch (e) {
           uxLog(this, c.yellow(`[JiraApi] Error while trying to get ${ticket.id} information: ${(e as Error).message}`));
         }
         if (ticketInfo) {
           const body =
             ticketInfo?.fields?.description?.content?.length > 0
-              ? ticketInfo.fields?.description?.content?.map((content) => content.text).join("\n")
+              ? ticketInfo.fields?.description?.content?.map((content: any) => content.text).join("\n")
               : "";
           ticket.foundOnServer = true;
           ticket.subject = ticketInfo?.fields?.summary || "";
@@ -173,27 +180,33 @@ export class JiraProvider extends TicketProviderRoot {
           prTitle,
           prUrl,
           prAuthor,
-        );
-        // Post comment
+        );        // Post comment
         try {
-          const commentPostRes = await this.jiraClient.addCommentAdvanced(ticket.id, { body: jiraComment });
-          if (JSON.stringify(commentPostRes).includes("<!DOCTYPE html>")) {
-            throw new SfError(genericHtmlResponseError);
+          if (this.jiraClient) {
+            const commentPostRes = await this.jiraClient.issueComments.addComment({
+              issueIdOrKey: ticket.id,
+              comment: jiraComment
+            });
+            if (JSON.stringify(commentPostRes).includes("<!DOCTYPE html>")) {
+              throw new SfError(genericHtmlResponseError);
+            }
+            commentedTickets.push(ticket);
           }
-          commentedTickets.push(ticket);
         } catch (e6) {
           uxLog(this, c.yellow(`[JiraProvider] Error while posting comment on ${ticket.id}: ${(e6 as any).message}`));
         }
 
         // Add deployment label to JIRA ticket
         try {
-          const issueUpdate = {
-            update: {
-              labels: [{ add: tag }],
-            },
-          };
-          await this.jiraClient.updateIssue(ticket.id, issueUpdate);
-          taggedTickets.push(ticket);
+          if (this.jiraClient) {
+            await this.jiraClient.issues.editIssue({
+              issueIdOrKey: ticket.id,
+              update: {
+                labels: [{ add: tag }],
+              },
+            });
+            taggedTickets.push(ticket);
+          }
         } catch (e6) {
           if ((e6 as any).message != null && (e6 as any).message.includes("<!doctype html>")) {
             (e6 as any).message = genericHtmlResponseError;
