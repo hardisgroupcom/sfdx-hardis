@@ -1,5 +1,6 @@
 import { HuggingFaceInference } from "@langchain/community/llms/hf";
 import { AbstractLLMProvider, ModelConfig, SupportedModel } from "./langChainBaseProvider.js";
+import { getEnvVar } from "../../../config/index.js";
 
 export class LangChainHuggingFaceProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {
@@ -18,8 +19,10 @@ export class LangChainHuggingFaceProvider extends AbstractLLMProvider {
       maxTokens: this.config.maxTokens,
       // HuggingFace specific configuration
       endpointUrl: this.config.baseUrl, // Custom endpoint URL if needed
+      options: {
+        provider: getEnvVar("HF_INFERENCE_PROVIDER") || "default",
+      }
     };
-
     return new HuggingFaceInference(config);
   }
 
