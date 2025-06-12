@@ -1,6 +1,5 @@
 import { ChatOllama } from "@langchain/ollama";
-import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { AbstractLLMProvider, ModelConfig } from "./langChainBaseProvider.js";
+import { AbstractLLMProvider, ModelConfig, SupportedModel } from "./langChainBaseProvider.js";
 
 export class LangChainOllamaProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {
@@ -8,7 +7,7 @@ export class LangChainOllamaProvider extends AbstractLLMProvider {
     this.model = this.getModel();
   }
 
-  getModel(): BaseChatModel {
+  getModel(): SupportedModel {
     const config = {
       model: this.modelName,
       baseUrl: this.config.baseUrl || "http://localhost:11434",
@@ -16,6 +15,6 @@ export class LangChainOllamaProvider extends AbstractLLMProvider {
       maxRetries: this.config.maxRetries
     };
 
-    return new ChatOllama(config) as BaseChatModel;
+    return new ChatOllama(config);
   }
 } 

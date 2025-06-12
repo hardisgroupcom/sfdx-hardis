@@ -1,4 +1,5 @@
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import { LLM } from "@langchain/core/language_models/llms";
 import { AiResponse } from "./index.js";
 import { AiProviderRoot } from "./aiProviderRoot.js";
 import c from "chalk";
@@ -6,10 +7,10 @@ import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
 import { getEnvVar } from "../../config/index.js";
 import { LangChainProviderFactory } from "./langChainProviders/langChainProviderFactory.js";
-import { ModelConfig, ProviderType } from "./langChainProviders/langChainBaseProvider.js";
+import { ModelConfig, ProviderType, SupportedModel } from "./langChainProviders/langChainBaseProvider.js";
 
 export class LangChainProvider extends AiProviderRoot {
-  private model: BaseChatModel;
+  private model: SupportedModel;
   private modelName: string;
 
   constructor() {
@@ -22,11 +23,11 @@ export class LangChainProvider extends AiProviderRoot {
     const providerType = provider.toLowerCase() as ProviderType;
     const modelName = getEnvVar("LANGCHAIN_LLM_MODEL");
     const apiKey = getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY");
-    
+
     if (!modelName) {
       throw new Error("LANGCHAIN_LLM_MODEL environment variable must be set to use LangChain integration");
     }
-    
+
     this.modelName = modelName;
 
     // Common configuration for all providers
@@ -47,7 +48,6 @@ export class LangChainProvider extends AiProviderRoot {
   public getLabel(): string {
     return "LangChain connector";
   }
-
   public async promptAi(promptText: string, template: PromptTemplate | null = null): Promise<AiResponse | null> {
     // re-use the same check for max ai calls number as in the original openai provider implementation
     if (!this.checkMaxAiCallsNumber()) {
@@ -65,12 +65,23 @@ export class LangChainProvider extends AiProviderRoot {
     this.incrementAiCallsNumber();
 
     try {
-      const response = await this.model.invoke([
-        {
-          role: "user",
-          content: promptText
-        }
-      ]);
+      let response: any;
+
+      // Check if the model is a BaseChatModel or LLM and call accordingly
+      if (this.model instanceof BaseChatModel) {
+        // For chat models, use message format
+        response = await this.model.invoke([
+          {
+            role: "user",
+            content: promptText
+          }
+        ]);
+      } else if (this.model instanceof LLM) {
+        // For LLMs, use plain string
+        response = await this.model.invoke(promptText);
+      } else {
+        throw new Error("Unsupported model type");
+      }
 
       if (process.env?.DEBUG_PROMPTS === "true") {
         uxLog(this, c.grey("[LangChain] Received prompt response\n" + JSON.stringify(response, null, 2)));
@@ -83,9 +94,17 @@ export class LangChainProvider extends AiProviderRoot {
         model: this.modelName,
       };
 
-      if (response.content) {
+      // Handle different response formats
+      let responseContent: string | undefined;
+      if (this.model instanceof BaseChatModel && response.content) {
+        responseContent = typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
+      } else if (this.model instanceof LLM && typeof response === 'string') {
+        responseContent = response;
+      }
+
+      if (responseContent) {
         aiResponse.success = true;
-        aiResponse.promptResponse = typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
+        aiResponse.promptResponse = responseContent;
       }
 
       return aiResponse;

@@ -1,6 +1,5 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { AbstractLLMProvider, ModelConfig } from "./langChainBaseProvider.js";
+import { AbstractLLMProvider, ModelConfig, SupportedModel } from "./langChainBaseProvider.js";
 
 export class LangChainGoogleGenAiProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {
@@ -11,7 +10,7 @@ export class LangChainGoogleGenAiProvider extends AbstractLLMProvider {
     this.model = this.getModel();
   }
 
-  getModel(): BaseChatModel {
+  getModel(): SupportedModel {
     const config = {
       model: this.modelName,
       apiKey: this.config.apiKey!,
@@ -20,6 +19,6 @@ export class LangChainGoogleGenAiProvider extends AbstractLLMProvider {
       maxRetries: this.config.maxRetries
     };
 
-    return new ChatGoogleGenerativeAI(config) as BaseChatModel;
+    return new ChatGoogleGenerativeAI(config);
   }
 } 
