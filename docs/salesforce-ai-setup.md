@@ -66,11 +66,12 @@ Currently supported LangchainJS providers:
 - OpenAI
 - Anthropic
 - Google GenAI
+- HuggingFace
 
 | Variable                    | Description                                                                                     | Default                          |
 |-----------------------------|-------------------------------------------------------------------------------------------------|----------------------------------|
 | USE_LANGCHAIN_LLM           | Set to true to use LangChain integration                                                        | `false`                          |
-| LANGCHAIN_LLM_PROVIDER      | The LLM provider to use (currently supports `ollama`, `openai`, `anthropic` and `google-genai`) |                                  |
+| LANGCHAIN_LLM_PROVIDER      | The LLM provider to use (currently supports `ollama`, `openai`, `anthropic`, `google-genai` and `huggingface`) |                                  |
 | LANGCHAIN_LLM_MODEL         | The model to use with the selected provider (e.g. `gpt-4o`, `qwen2.5-coder:14b`)                |                                  |
 | LANGCHAIN_LLM_MODEL_API_KEY | API key for the selected provider (required for OpenAI, Anthropic and Gemini)                   |                                  |
 | LANGCHAIN_LLM_TEMPERATURE   | Controls randomness (0-1)                                                                       |                                  |
@@ -124,6 +125,25 @@ LANGCHAIN_LLM_PROVIDER=google-genai
 LANGCHAIN_LLM_MODEL=gemini-1.5-pro
 LANGCHAIN_LLM_MODEL_API_KEY=your-api-key
 ```
+
+For HuggingFace:
+
+- Create an account at [HuggingFace](https://huggingface.co/)
+- Get your API token from [HuggingFace Tokens page](https://huggingface.co/settings/tokens)
+- Choose from thousands of available models on the [HuggingFace Model Hub](https://huggingface.co/models)
+
+```sh
+USE_LANGCHAIN_LLM=true
+LANGCHAIN_LLM_PROVIDER=huggingface
+LANGCHAIN_LLM_MODEL=microsoft/DialoGPT-medium
+LANGCHAIN_LLM_MODEL_API_KEY=your-huggingface-token
+```
+
+Popular HuggingFace models you can use:
+- `microsoft/DialoGPT-medium` - Conversational AI model
+- `google/flan-t5-large` - Text-to-text generation model  
+- `EleutherAI/gpt-neo-2.7B` - GPT-like language model
+- `facebook/blenderbot-400M-distill` - Conversational AI model
 
 ### With OpenAI Directly
 
