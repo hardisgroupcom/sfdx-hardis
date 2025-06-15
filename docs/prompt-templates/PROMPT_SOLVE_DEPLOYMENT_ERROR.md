@@ -27,24 +27,21 @@ You are a Salesforce release manager using Salesforce CLI commands to perform de
     - If applicable, include the correct sfdx source format or XML example.
     - Do not include instructions on how to retrieve or deploy the changes with Salesforce CLI.
 
-3. **Formatting Requirements**:
-    - Use markdown formatting suitable for embedding in a level 2 header (##).
-    - Add new lines before starting bullet lists so mkdocs-material displays them correctly, including for sub-bullets.
-    - Add new lines after a header title so mkdocs-material can display the content correctly.
-    - Never truncate any information in the response.
-    - Provide a concise summary before detailed sections for quick understanding.
+3. {{VARIABLE_FORMATTING_REQUIREMENTS}}
 
 ### Reference Data:
 
 - The deployment error returned by Salesforce CLI is:
 {{ERROR}}
 
-Caution: If the error message contains secret tokens or passwords, please replace them with a placeholder (e.g., [REDACTED]). Be as thorough as possible, and make your response clear, complete, and actionable.
+{{VARIABLE_ADDITIONAL_INSTRUCTIONS}}
 
 ```
 
 ## How to override
 
 To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_SOLVE_DEPLOYMENT_ERROR.txt**
+
+You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 
 If you do so, please don't forget to use the replacement variables :)

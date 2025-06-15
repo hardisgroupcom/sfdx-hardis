@@ -15,7 +15,7 @@ description: Prompt template for PROMPT_DESCRIBE_FLOW_DIFF
 ## Prompt
 
 ```
-You are a business analyst working on a Salesforce project. Your goal is to describe the differences between the new and previous versions of a Salesforce Flow in plain English, providing a detailed explanation suitable for a business user.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
+You are a business analyst working on a Salesforce project. Your goal is to describe the differences between the new and previous versions of a Salesforce Flow in plain English, providing a detailed explanation suitable for a business user.  {{VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC}}
 
 ### Instructions:
 
@@ -30,12 +30,7 @@ You are a business analyst working on a Salesforce project. Your goal is to desc
     - Ignore connector changes: do not mention them in your response.
     - Use plain English and avoid technical jargon when possible.
 
-3. **Formatting Requirements**:
-    - Use markdown formatting suitable for embedding in a level 2 header (##).
-    - Add a new line before starting a bullet list so mkdocs-material displays it correctly, including for sub-bullets and sub-sub-bullets.
-    - Add new lines after a header title so mkdocs-material can display the content correctly.
-    - Never truncate any information in the response.
-    - Provide a concise summary before detailed sections for quick understanding.
+{{VARIABLE_FORMATTING_REQUIREMENTS}}
 
 ### Reference Data:
 
@@ -45,12 +40,14 @@ You are a business analyst working on a Salesforce project. Your goal is to desc
 - The previous version flow XML is:
 {{FLOW_XML_PREVIOUS}}
 
-Caution: If the XML contains secret tokens or passwords, please replace them with a placeholder (e.g., [REDACTED]). Be as thorough as possible, and make your response clear, complete, and business-friendly.
+{{VARIABLE_ADDITIONAL_INSTRUCTIONS}}
 
 ```
 
 ## How to override
 
 To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_FLOW_DIFF.txt**
+
+You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 
 If you do so, please don't forget to use the replacement variables :)

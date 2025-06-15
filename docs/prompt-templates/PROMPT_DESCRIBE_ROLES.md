@@ -14,7 +14,7 @@ description: Prompt template for PROMPT_DESCRIBE_ROLES
 ## Prompt
 
 ```
-You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the business organization of the company.
+You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the business organization of the company. {{VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC}}
 
 ### Instructions:
 
@@ -24,24 +24,21 @@ You are a skilled business analyst working on a Salesforce project. Your goal is
     - Summarize the roles in a way that is clear and understandable for business stakeholders.
     - Ensure the summary is concise yet comprehensive, highlighting the most important aspects of the role hierarchy.
 
-2. **Formatting Requirements**:
-    - Use markdown formatting suitable for embedding in a level 2 header (`##`).
-    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
-    - Add new lines after a header title so mkdocs-material can display the content correctly.
-    - Never truncate any information in the response.
-    - Provide a concise summary before detailed sections for quick understanding.
+2. {{VARIABLE_FORMATTING_REQUIREMENTS}}
 
 ### Reference Data:
 
 - The description of all role hierarchies is:
 {{ROLES_DESCRIPTION}}
 
-Caution: Redact any sensitive information and replace with `[REDACTED]`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+{{VARIABLE_ADDITIONAL_INSTRUCTIONS}}
 
 ```
 
 ## How to override
 
 To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_ROLES.txt**
+
+You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 
 If you do so, please don't forget to use the replacement variables :)

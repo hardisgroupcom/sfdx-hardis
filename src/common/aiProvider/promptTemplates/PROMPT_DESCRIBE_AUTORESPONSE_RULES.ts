@@ -12,9 +12,8 @@ const template: PromptTemplateDefinition = {
       description: "The XML metadata for the Salesforce AutoResponse Rules.",
       example: "<AutoResponseRules>...</AutoResponseRules>"
     }
-  ],
-  text: {
-    "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce AutoResponse Rules "{{AUTORESPONSERULES_NAME}}" in plain English, providing a detailed explanation suitable for a business user.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
+  ], text: {
+    "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce AutoResponse Rules "{{AUTORESPONSERULES_NAME}}" in plain English, providing a detailed explanation suitable for a business user. {{VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC}}
 
 ### Instructions:
 
@@ -24,19 +23,14 @@ const template: PromptTemplateDefinition = {
     - Analyze all the AutoResponse rules for objects and in the description tell what are the aim of those rules. What is the role of the object in the system, based by the AutoResponse rules.
     - Based by Criteria items, explain what would be the response to the user, if the criteria are met.
 
-    2. **Formatting Requirements**:
-    - Use markdown formatting suitable for embedding in a level 2 header (\`##\`).
-    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
-    - Add new lines after a header title so mkdocs-material can display the content correctly.
-    - Never truncate any information in the response.
-    - Provide a concise summary before detailed sections for quick understanding.
+2. {{VARIABLE_FORMATTING_REQUIREMENTS}}
 
-    ### Reference Data:
+### Reference Data:
 
-    - The metadata XML for Salesforce AutoResponse Rule "{{AUTORESPONSERULES_NAME}}" is:
+- The metadata XML for Salesforce AutoResponse Rule "{{AUTORESPONSERULES_NAME}}" is:
 {{AUTORESPONSERULES_XML}}
 
-Caution: Redact any sensitive information and replace with \`[REDACTED]\`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+{{VARIABLE_ADDITIONAL_INSTRUCTIONS}}
 `,
   },
 };
