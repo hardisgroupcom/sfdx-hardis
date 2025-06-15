@@ -28,17 +28,19 @@ import { DocBuilderProfile } from '../../../common/docBuilder/docBuilderProfile.
 import { DocBuilderObject } from '../../../common/docBuilder/docBuilderObject.js';
 import { DocBuilderApex } from '../../../common/docBuilder/docBuilderApex.js';
 import { DocBuilderFlow } from '../../../common/docBuilder/docBuilderFlow.js';
+import { DocBuilderLwc } from '../../../common/docBuilder/docBuilderLwc.js';
 import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPackageXml.js';
 import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPermissionSet.js';
 import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
 import { DocBuilderAssignmentRules } from '../../../common/docBuilder/docBuilderAssignmentRules.js';
 import { DocBuilderApprovalProcess } from '../../../common/docBuilder/docBuilderApprovalProcess.js';
-import { DocBuilderLwc } from '../../../common/docBuilder/docBuilderLwc.js';
 import { DocBuilderAutoResponseRules } from "../../../common/docBuilder/docBuilderAutoResponseRules.js";
 import { DocBuilderEscalationRules } from '../../../common/docBuilder/docBuilderEscalationRules.js';
+import { DocBuilderRoles } from '../../../common/docBuilder/docBuilderRoles.js';
 import { DocBuilderPackage } from '../../../common/docBuilder/docBuilderPackage.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../common/utils/gitUtils.js';
+
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -188,6 +190,7 @@ ${this.htmlInstructions}
   protected autoResponseRulesDescriptions: any[] = [];
   protected approvalProcessesDescriptions: any[] = [];
   protected escalationRulesDescriptions: any[] = [];
+  protected roleDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
   protected objectFiles: string[];
   protected allObjectsNames: string[];
@@ -221,6 +224,7 @@ ${this.htmlInstructions}
       "  - [Profiles](profiles/index.md)",
       "  - [Permission Set Groups](permissionsetgroups/index.md)",
       "  - [Permission Sets](permissionsets/index.md)",
+      "- [Roles](roles.md)",
       "- Code",
       "  - [Apex](apex/index.md)",
       "  - [Lightning Web Components](lwc/index.md)",
@@ -295,6 +299,7 @@ ${this.htmlInstructions}
       await this.generateProfilesDocumentation();
       await this.generatePermissionSetGroupsDocumentation();
       await this.generatePermissionSetsDocumentation();
+      await this.generateRolesDocumentation();
     }
 
     // List objects & generate doc
@@ -626,6 +631,34 @@ ${Project2Markdown.htmlInstructions}
     await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderPermissionSetGroup.buildIndexTable('', this.permissionSetGroupsDescriptions).join("\n") + `\n${this.footer}\n`);
   }
 
+  private async generateRolesDocumentation() {
+    uxLog(this, c.cyan("Generating Roles documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
+    const roleFiles = (await glob("**/roles/**.role-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
+    sortCrossPlatform(roleFiles);
+
+    for (const roleFile of roleFiles) {
+      const roleApiName = path.basename(roleFile, ".role-meta.xml");
+      const roleXml = await fs.readFile(roleFile, "utf8");
+      const roleXmlParsed = new XMLParser().parse(roleXml);
+      // build object with all XML root tags
+      const roleInfo = { apiName: roleApiName };
+      for (const roleAttribute of Object.keys(roleXmlParsed?.Role || {})) {
+        roleInfo[roleAttribute] = roleXmlParsed?.Role[roleAttribute] || "";
+      }
+
+      this.roleDescriptions.push(roleInfo);
+    }
+    this.addNavNode("Roles", "roles.md");
+
+    // Add Roles documentation
+    const rolesIndexFile = path.join(this.outputMarkdownRoot, "roles.md");
+    await DocBuilderRoles.generateMarkdownFileFromRoles(this.roleDescriptions, rolesIndexFile);
+    if (this.withPdf) {
+      await generatePdfFileFromMarkdown(rolesIndexFile);
+    }
+  }
+
+
   private async generateAssignmentRulesDocumentation() {
     uxLog(this, c.cyan("Generating Assignment Rules documentation... " +
       "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
@@ -912,7 +945,9 @@ ${Project2Markdown.htmlInstructions}
       for (const subMenu of rootSection.subMenus) {
         // Find submenu
         const subMenuContent = mkdocsYml.nav.find(navItem => Object.keys(navItem)[0] === subMenu);
-        navSubmenus.push(subMenuContent);
+        if (subMenuContent) {
+          navSubmenus.push(subMenuContent);
+        }
         // Remove sub menus from root menus
         mkdocsYml.nav = mkdocsYml.nav.filter(navItem => !navItem[subMenu]);
       }
@@ -950,6 +985,7 @@ ${Project2Markdown.htmlInstructions}
       "Code",
       "Lightning Pages",
       "Packages",
+      "Roles",
       "SFDX-Hardis Config",
       "Branches & Orgs",
       "Manifests"
