@@ -6,12 +6,11 @@ description: Prompt template for PROMPT_DESCRIBE_PACKAGE
 # PROMPT_DESCRIBE_PACKAGE
 
 ## Variables
-
-| Name                  | Description                                                                                                                  | Example                                                                                                                                                                                                               |
-|:----------------------|:-----------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **PACKAGE_NAME**      | The name of the package to describe.                                                                                         | `Pardot`                                                                                                                                                                                                              |
-| **PACKAGE_XML**       | The JsonL metadata for the package                                                                                           | `{"SubscriberPackageName":"Pardot","SubscriberPackageNamespace":"pi","SubscriberPackageVersionNumber":"1.0.0","SubscriberPackageVersionId":"04t1t0000000abcAAA","SubscriberPackageVersionName":"Pardot Version 1.0"}` |
-| **PACKAGE_METADATAS** | A list of all metadata items (Apex classes, objects, flows, etc.) in the org that are provided by this package (namespaced). | `ApexClass: pi__MyClass, CustomObject: pi__MyObject, Flow: pi__MyFlow`                                                                                                                                                |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **PACKAGE_NAME** | The name of the package to describe. | `Pardot` |
+| **PACKAGE_XML** | The JsonL metadata for the package | `{"SubscriberPackageName":"Pardot","SubscriberPackageNamespace":"pi","SubscriberPackageVersionNumber":"1.0.0","SubscriberPackageVersionId":"04t1t0000000abcAAA","SubscriberPackageVersionName":"Pardot Version 1.0"}` |
+| **PACKAGE_METADATAS** | A list of all metadata items (Apex classes, objects, flows, etc.) in the org that are provided by this package (namespaced). | `ApexClass: pi__MyClass, CustomObject: pi__MyObject, Flow: pi__MyFlow` |
 
 ## Prompt
 
@@ -25,10 +24,10 @@ You are a skilled business analyst working on a Salesforce project. Your goal is
       - If you found the package's official documentation, summarize its key features and functionalities.
       - If you can not find the package's official documentation, provide a general overview based on the package attributes and its metadata components (but do not output the list of metadatas, it will be for paragraph 2).
     - Include any relevant information about the package's intended use cases or target audience.
-    - If you can find other relevant information about the package, like articles or blog posts, provide them as a list of links
-      - If you find the AppExchange page, include it in your response.
-      - If you find the package's GitHub repository, include it in your response.
-      - If you find the vendor information, include it in your response.
+    - If you can find other relevant information about the package, like articles or blog posts, in english or in the prompt reply language, provide them as a list of links
+      - If you find the AppExchange page, include it in your response. Otherwise, don't mention it.
+      - If you find the package's GitHub repository, include it in your response. Otherwise, don't mention it.
+      - If you find the vendor information, include it in your response. Otherwise, don't mention it.
       - Make sure that hyperlinks are not dead links leading to 404 pages.
 
 2. **Package Metadata**:
@@ -54,7 +53,7 @@ You are a skilled business analyst working on a Salesforce project. Your goal is
 
 - There are also many open-source packages available on GitHub (github.com)
 
-- Other relevant sources for articles or blog posts about the package may include the vendor's website, community forums, or Salesforce-related blogs, like Salesforce Ben or medium.com.
+- Other relevant sources for articles or blog posts about the package may include the vendor's website, community forums, or Salesforce-related blogs, like Salesforce Ben or medium.com. Do not mention these source if you don't have a direct link to a page explicitly related to package "{{PACKAGE_NAME}}".
 
 
 Caution: Redact any sensitive information and replace with `[REDACTED]`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
