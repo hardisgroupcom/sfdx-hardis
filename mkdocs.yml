@@ -179,11 +179,17 @@ nav:
               - Describe Flow Diff: prompt-templates/PROMPT_DESCRIBE_FLOW_DIFF.md
               - Describe LWC: prompt-templates/PROMPT_DESCRIBE_LWC.md
               - Describe Object: prompt-templates/PROMPT_DESCRIBE_OBJECT.md
+              - Describe Package: prompt-templates/PROMPT_DESCRIBE_PACKAGE.md
               - Describe Page: prompt-templates/PROMPT_DESCRIBE_PAGE.md
               - Describe Permission Set: prompt-templates/PROMPT_DESCRIBE_PERMISSION_SET.md
               - Describe Permission Set Group: prompt-templates/PROMPT_DESCRIBE_PERMISSION_SET_GROUP.md
               - Describe Profile: prompt-templates/PROMPT_DESCRIBE_PROFILE.md
+              - Describe Roles: prompt-templates/PROMPT_DESCRIBE_ROLES.md
               - Solve Deployment Error: prompt-templates/PROMPT_SOLVE_DEPLOYMENT_ERROR.md
+              - Variables:
+                  - Additional Instructions: prompt-templates/VARIABLE_ADDITIONAL_INSTRUCTIONS.md
+                  - Formatting Requirements: prompt-templates/VARIABLE_FORMATTING_REQUIREMENTS.md
+                  - Output Format Markdown Doc: prompt-templates/VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC.md
   - Commands:
       All commands: commands.md
       hardis:

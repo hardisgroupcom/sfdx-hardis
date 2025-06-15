@@ -16,7 +16,7 @@ description: Prompt template for PROMPT_DESCRIBE_PACKAGE
 ## Prompt
 
 ```
-You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce Installed package "{{PACKAGE_NAME}}" in plain English, providing a detailed explanation suitable for a business user. The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
+You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the content and behavior of the Salesforce Installed package "{{PACKAGE_NAME}}" in plain English, providing a detailed explanation suitable for a business user. {{VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC}}
 
 ### Instructions:
 
@@ -35,12 +35,7 @@ You are a skilled business analyst working on a Salesforce project. Your goal is
     - Review the list of metadata items (Apex classes, objects, flows, etc.) provided by this package, as listed in reference data.
     - Highlight the most important or business-relevant components.
 
-3. **Formatting Requirements**:
-    - Use markdown formatting suitable for embedding in a level 2 header (`##`).
-    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
-    - Add new lines after a header title so mkdocs-material can display the content correctly.
-    - Never truncate any information in the response.
-    - Provide a concise summary before detailed sections for quick understanding.
+3. {{VARIABLE_FORMATTING_REQUIREMENTS}}
 
 ### Reference Data:
 
@@ -56,13 +51,14 @@ You are a skilled business analyst working on a Salesforce project. Your goal is
 
 - Other relevant sources for articles or blog posts about the package may include the vendor's website, community forums, or Salesforce-related blogs, like Salesforce Ben or medium.com. Do not mention these source if you don't have a direct link to a page explicitly related to package "{{PACKAGE_NAME}}".
 
-
-Caution: Redact any sensitive information and replace with `[REDACTED]`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+{{VARIABLE_ADDITIONAL_INSTRUCTIONS}}
 
 ```
 
 ## How to override
 
 To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_PACKAGE.txt**
+
+You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 
 If you do so, please don't forget to use the replacement variables :)
