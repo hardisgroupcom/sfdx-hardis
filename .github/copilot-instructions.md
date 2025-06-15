@@ -120,3 +120,8 @@ docs/                 # Project documentation
 - VS Code extension available for UI interaction
 
 When working on this project, always consider the enterprise nature of the tool and maintain high code quality standards.
+
+## Copilot behavior
+
+- Do not ask if I want to continue to iterate: ALWAYS continue to iterate until the task is complete.
+- Build commands using git bash for windows formatting.

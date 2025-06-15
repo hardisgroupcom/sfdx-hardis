@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs-extra";
 import { PromptTemplateDefinition } from "./promptTemplates/types.js";
 import { PROMPT_TEMPLATES as IMPORTED_PROMPT_TEMPLATES } from "./promptTemplates/index.js";
+import { PROMPT_VARIABLES, PromptVariable } from "./promptTemplates/variablesIndex.js";
 import { uxLog } from "../utils/index.js";
 
 export type PromptTemplate =
@@ -47,6 +48,30 @@ function getPromptTemplate(template: PromptTemplate): PromptTemplateDefinition {
   return templateData;
 }
 
+// Loads a prompt variable, allowing override from local file
+function getPromptVariable(variable: PromptVariable): string {
+  const variableData = PROMPT_VARIABLES[variable];
+  if (!variableData) {
+    throw new Error(`Unknown prompt variable: ${variable}`);
+  }
+
+  // Check for local override (Text file)
+  const localPath = path.resolve(process.cwd(), "config", "prompt-templates", `${variable}.txt`);
+  if (fs.existsSync(localPath)) {
+    try {
+      const localVariable = fs.readFileSync(localPath, "utf-8");
+      uxLog(this, `Loaded local prompt variable for ${variable} from ${localPath}`);
+      return localVariable;
+    } catch (e: any) {
+      // fallback to default if error
+      uxLog(this, `Error loading local variable for ${variable}: ${e.message}`);
+    }
+  }
+
+  const promptsLanguage = UtilsAi.getPromptsLanguage();
+  return variableData.text?.[promptsLanguage] || variableData.text?.["en"] || "";
+}
+
 export function buildPromptFromTemplate(template: PromptTemplate, variables: object): string {
   const templateData = getPromptTemplate(template);
   const missingVariables = templateData.variables.filter((variable) => !variables[variable.name]);
@@ -59,11 +84,21 @@ export function buildPromptFromTemplate(template: PromptTemplate, variables: obj
       variables[variable.name] = variables[variable.name].slice(0, variable.truncateAfter) + "(truncated first " + variable.truncateAfter + " characters on a total of " + variables[variable.name].length + " characters)";
     }
   }
+
   const promptsLanguage = UtilsAi.getPromptsLanguage();
   let prompt: string = process.env?.[template] || templateData.text?.[promptsLanguage] || (templateData.text?.["en"] + `\n\nIMPORTANT: Please reply in the language corresponding to ISO code "${promptsLanguage}" (for example, in french for "fr", in english for "en", in german for "de", etc.)`);
+
+  // Replace prompt variables first (format: {{VARIABLE_NAME}})
+  for (const variableName of Object.keys(PROMPT_VARIABLES) as PromptVariable[]) {
+    const variableContent = getPromptVariable(variableName);
+    prompt = prompt.replaceAll(`{{${variableName}}}`, variableContent);
+  }
+
+  // Then replace user variables
   for (const variable in variables) {
     prompt = prompt.replaceAll(`{{${variable}}}`, variables[variable]);
   }
+
   return prompt;
 }
 
