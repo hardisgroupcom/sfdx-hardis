@@ -10,7 +10,7 @@ const template: PromptTemplateDefinition = {
     },
   ],
   text: {
-    "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the business organisation of the company.
+    "en": `You are a skilled business analyst working on a Salesforce project. Your goal is to summarize the business organization of the company.
 
 ### Instructions:
 

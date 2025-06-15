@@ -104,7 +104,7 @@ export abstract class DocBuilderRoot {
       const defaultVariables = { [`${this.docType.toUpperCase()}_NAME`]: this.metadataName, [`${this.docType.toUpperCase()}_XML`]: xmlStripped };
       const variables = Object.assign(defaultVariables, this.additionalVariables);
       const prompt = AiProvider.buildPrompt(this.promptKey, variables);
-
+      /* jscpd:ignore-start */
       const aiResponse = await AiProvider.promptAi(prompt, this.promptKey);
       if (aiResponse?.success) {
         let responseText = aiResponse.promptResponse || "No AI description available";
@@ -116,6 +116,7 @@ export abstract class DocBuilderRoot {
         this.markdownDoc = this.markdownDoc.replace(this.placeholder, replaceText);
         return this.markdownDoc;
       }
+      /* jscpd:ignore-end */
       else if (aiResponse?.forcedTimeout) {
         const forcedTimeoutText = `CI job reached maximum time allowed for allowed calls to AI. You can either:
 
