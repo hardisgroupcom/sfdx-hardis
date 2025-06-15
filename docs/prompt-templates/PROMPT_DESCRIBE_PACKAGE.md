@@ -6,12 +6,11 @@ description: Prompt template for PROMPT_DESCRIBE_PACKAGE
 # PROMPT_DESCRIBE_PACKAGE
 
 ## Variables
-
-| Name                  | Description                                                                                                                  | Example                                                                                                                                                                                                               |
-|:----------------------|:-----------------------------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **PACKAGE_NAME**      | The name of the package to describe.                                                                                         | `Pardot`                                                                                                                                                                                                              |
-| **PACKAGE_XML**       | The JsonL metadata for the package                                                                                           | `{"SubscriberPackageName":"Pardot","SubscriberPackageNamespace":"pi","SubscriberPackageVersionNumber":"1.0.0","SubscriberPackageVersionId":"04t1t0000000abcAAA","SubscriberPackageVersionName":"Pardot Version 1.0"}` |
-| **PACKAGE_METADATAS** | A list of all metadata items (Apex classes, objects, flows, etc.) in the org that are provided by this package (namespaced). | `ApexClass: pi__MyClass, CustomObject: pi__MyObject, Flow: pi__MyFlow`                                                                                                                                                |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **PACKAGE_NAME** | The name of the package to describe. | `Pardot` |
+| **PACKAGE_XML** | The JsonL metadata for the package | `{"SubscriberPackageName":"Pardot","SubscriberPackageNamespace":"pi","SubscriberPackageVersionNumber":"1.0.0","SubscriberPackageVersionId":"04t1t0000000abcAAA","SubscriberPackageVersionName":"Pardot Version 1.0"}` |
+| **PACKAGE_METADATAS** | A list of all metadata items (Apex classes, objects, flows, etc.) in the org that are provided by this package (namespaced). | `ApexClass: pi__MyClass, CustomObject: pi__MyObject, Flow: pi__MyFlow` |
 
 ## Prompt
 
@@ -64,5 +63,7 @@ Caution: Redact any sensitive information and replace with `[REDACTED]`. Be as t
 ## How to override
 
 To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_PACKAGE.txt**
+
+You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 
 If you do so, please don't forget to use the replacement variables :)

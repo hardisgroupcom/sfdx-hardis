@@ -6,11 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_ESCALATION_RULES
 # PROMPT_DESCRIBE_ESCALATION_RULES
 
 ## Variables
-
-| Name                     | Description                                             | Example                                  |
-|:-------------------------|:--------------------------------------------------------|:-----------------------------------------|
-| **ESCALATIONRULES_NAME** | The name of the Salesforce Escalation Rule to describe. | `Case_Escalation_Rule`                   |
-| **ESCALATIONRULES_XML**  | The XML metadata for the Salesforce Escalation Rule.    | `<EscalationRules>...</EscalationRules>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **ESCALATIONRULES_NAME** | The name of the Salesforce Escalation Rule to describe. | `Case_Escalation_Rule` |
+| **ESCALATIONRULES_XML** | The XML metadata for the Salesforce Escalation Rule. | `<EscalationRules>...</EscalationRules>` |
 
 ## Prompt
 
@@ -42,5 +41,7 @@ Caution: Redact any sensitive information and replace with `[REDACTED]`. Be as t
 ## How to override
 
 To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_ESCALATION_RULES.txt**
+
+You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 
 If you do so, please don't forget to use the replacement variables :)

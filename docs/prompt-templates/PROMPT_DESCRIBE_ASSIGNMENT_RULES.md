@@ -6,11 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_ASSIGNMENT_RULES
 # PROMPT_DESCRIBE_ASSIGNMENT_RULES
 
 ## Variables
-
-| Name                     | Description                                              | Example                                  |
-|:-------------------------|:---------------------------------------------------------|:-----------------------------------------|
-| **ASSIGNMENTRULES_NAME** | The name of the Salesforce Assignment Rules to describe. | `Case_Assignment_Rules`                  |
-| **ASSIGNMENTRULES_XML**  | The XML metadata for the Salesforce Assignment Rules.    | `<AssignmentRules>...</AssignmentRules>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **ASSIGNMENTRULES_NAME** | The name of the Salesforce Assignment Rules to describe. | `Case_Assignment_Rules` |
+| **ASSIGNMENTRULES_XML** | The XML metadata for the Salesforce Assignment Rules. | `<AssignmentRules>...</AssignmentRules>` |
 
 ## Prompt
 
@@ -45,5 +44,7 @@ Caution: Redact any sensitive information and replace with `[REDACTED]`. Be as t
 ## How to override
 
 To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_ASSIGNMENT_RULES.txt**
+
+You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 
 If you do so, please don't forget to use the replacement variables :)

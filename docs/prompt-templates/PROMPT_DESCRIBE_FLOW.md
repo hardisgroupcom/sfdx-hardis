@@ -6,9 +6,8 @@ description: Prompt template for PROMPT_DESCRIBE_FLOW
 # PROMPT_DESCRIBE_FLOW
 
 ## Variables
-
-| Name         | Description                                            | Example            |
-|:-------------|:-------------------------------------------------------|:-------------------|
+| Name | Description | Example |
+| :------|:-------------|:---------|
 | **FLOW_XML** | The XML definition of the Salesforce Flow to describe. | `<Flow>...</Flow>` |
 
 ## Prompt
@@ -46,5 +45,7 @@ Caution: If the XML contains secret tokens or passwords, please replace them wit
 ## How to override
 
 To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_FLOW.txt**
+
+You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 
 If you do so, please don't forget to use the replacement variables :)

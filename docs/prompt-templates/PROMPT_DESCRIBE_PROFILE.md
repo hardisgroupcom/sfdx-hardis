@@ -6,11 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_PROFILE
 # PROMPT_DESCRIBE_PROFILE
 
 ## Variables
-
-| Name             | Description                                     | Example                  |
-|:-----------------|:------------------------------------------------|:-------------------------|
-| **PROFILE_NAME** | The name of the Salesforce Profile to describe. | `Cloudity Sales`         |
-| **PROFILE_XML**  | The XML metadata for the Salesforce Profile.    | `<Profile>...</Profile>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **PROFILE_NAME** | The name of the Salesforce Profile to describe. | `Cloudity Sales` |
+| **PROFILE_XML** | The XML metadata for the Salesforce Profile. | `<Profile>...</Profile>` |
 
 ## Prompt
 
@@ -45,5 +44,7 @@ Caution: Redact any sensitive information and replace with `[REDACTED]`. Be as t
 ## How to override
 
 To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_PROFILE.txt**
+
+You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 
 If you do so, please don't forget to use the replacement variables :)
