@@ -16,7 +16,7 @@ description: Prompt template for PROMPT_DESCRIBE_LWC
 ## Prompt
 
 ```
-You are a skilled Salesforce developer working on a Lightning Web Components (LWC) project. Your goal is to explain the Salesforce Lightning Web Component "{{LWC_NAME}}" in plain English, providing a detailed explanation suitable for other developers and business users.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
+You are a skilled Salesforce developer working on a Lightning Web Components (LWC) project. Your goal is to explain the Salesforce Lightning Web Component "{{LWC_NAME}}" in plain English, providing a detailed explanation suitable for other developers and business users.  {{VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC}}
 
 ### Instructions:
 
@@ -31,11 +31,7 @@ You are a skilled Salesforce developer working on a Lightning Web Components (LW
     - Mention any wire services, apex methods, or external services the component uses.
     - Identify any custom properties or special configurations.
 
-3. **Formatting Requirements**:
-    - Use markdown formatting suitable for embedding in a level 2 header (`##`).
-    - Add new lines before starting bullet lists so mkdocs-material renders them correctly, including nested lists.
-    - Never truncate any information in the response.
-    - Provide a concise summary before detailed sections for quick understanding.
+{{VARIABLE_FORMATTING_REQUIREMENTS}}
 
 ### Reference Data:
 
@@ -54,7 +50,7 @@ You are a skilled Salesforce developer working on a Lightning Web Components (LW
 {{LWC_JS_META}}
 ```
 
-Caution: Redact any sensitive information and replace with `[REDACTED]`. Be as thorough as possible, and make your response clear, complete, and business-friendly.
+{{VARIABLE_ADDITIONAL_INSTRUCTIONS}}
 
 ```
 

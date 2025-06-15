@@ -13,7 +13,7 @@ description: Prompt template for PROMPT_DESCRIBE_FLOW
 ## Prompt
 
 ```
-You are a business analyst working on a Salesforce project. Your goal is to describe the Salesforce Flow in plain English, providing a detailed explanation suitable for a business user.  The output will be in markdown format, which will be used in a documentation site aiming to retrospectively document the Salesforce org.
+You are a business analyst working on a Salesforce project. Your goal is to describe the Salesforce Flow in plain English, providing a detailed explanation suitable for a business user. {{VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC}}
 
 ### Instructions:
 
@@ -26,19 +26,14 @@ You are a business analyst working on a Salesforce project. Your goal is to desc
     - Use plain English and avoid technical jargon when possible.
     - If there are sub-flows or important conditions, mention them clearly.
 
-3. **Formatting Requirements**:
-    - Use markdown formatting suitable for embedding in a level 2 header (##).
-    - Add a new line before starting a bullet list so mkdocs-material displays it correctly, including for sub-bullets.
-    - Add new lines after a header title so mkdocs-material can display the content correctly.
-    - Never truncate any information in the response.
-    - Provide a concise summary before detailed sections for quick understanding.
+3. {{VARIABLE_FORMATTING_REQUIREMENTS}}
 
 ### Reference Data:
 
 - The flow XML is:
 {{FLOW_XML}}
 
-Caution: If the XML contains secret tokens or passwords, please replace them with a placeholder (e.g., [REDACTED]). Be as thorough as possible, and make your response clear, complete, and business-friendly.
+{{VARIABLE_ADDITIONAL_INSTRUCTIONS}}
 
 ```
 
