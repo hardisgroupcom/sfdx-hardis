@@ -106,7 +106,7 @@ docs/                 # Project documentation
 
 ## Documentation
 
-- Main docs at https://sfdx-hardis.cloudity.com
+- Main docs at <https://sfdx-hardis.cloudity.com>
 - Command documentation auto-generated via `yarn build:doc`
 - Uses MkDocs for documentation site generation
 - Supports AI-generated documentation features
