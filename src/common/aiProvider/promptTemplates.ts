@@ -25,12 +25,19 @@ export type PromptTemplate =
   "PROMPT_DESCRIBE_AUTORESPONSE_RULES" |
   "PROMPT_DESCRIBE_ESCALATION_RULES";
 
-// Loads a template, allowing override from local JSON if present
+// Loads a template, allowing override from local file, with caching
+const promptTemplateCache: Record<string, PromptTemplateDefinition> = {};
+
 function getPromptTemplate(template: PromptTemplate): PromptTemplateDefinition {
-  const templateData = IMPORTED_PROMPT_TEMPLATES[template];
+  if (promptTemplateCache[template]) {
+    return promptTemplateCache[template];
+  }
+
+  const templateData = { ...IMPORTED_PROMPT_TEMPLATES[template] };
   if (!templateData) {
     throw new Error(`Unknown prompt template: ${template}`);
   }
+
   // Check for local override (Text file)
   const localPath = path.resolve(process.cwd(), "config", "prompt-templates", `${template}.txt`);
   if (fs.existsSync(localPath)) {
@@ -45,11 +52,19 @@ function getPromptTemplate(template: PromptTemplate): PromptTemplateDefinition {
       uxLog(this, `Error loading local template for ${template}: ${e.message}`);
     }
   }
+
+  promptTemplateCache[template] = templateData;
   return templateData;
 }
 
-// Loads a prompt variable, allowing override from local file
+// Loads a prompt variable, allowing override from local file, with caching
+const promptVariableCache: Record<string, string> = {};
+
 function getPromptVariable(variable: PromptVariable): string {
+  if (promptVariableCache[variable]) {
+    return promptVariableCache[variable];
+  }
+
   const variableData = PROMPT_VARIABLES[variable];
   if (!variableData) {
     throw new Error(`Unknown prompt variable: ${variable}`);
@@ -61,6 +76,7 @@ function getPromptVariable(variable: PromptVariable): string {
     try {
       const localVariable = fs.readFileSync(localPath, "utf-8");
       uxLog(this, `Loaded local prompt variable for ${variable} from ${localPath}`);
+      promptVariableCache[variable] = localVariable;
       return localVariable;
     } catch (e: any) {
       // fallback to default if error
@@ -69,7 +85,9 @@ function getPromptVariable(variable: PromptVariable): string {
   }
 
   const promptsLanguage = UtilsAi.getPromptsLanguage();
-  return variableData.text?.[promptsLanguage] || variableData.text?.["en"] || "";
+  const value = variableData.text?.[promptsLanguage] || variableData.text?.["en"] || "";
+  promptVariableCache[variable] = value;
+  return value;
 }
 
 export function buildPromptFromTemplate(template: PromptTemplate, variables: object): string {
