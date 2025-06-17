@@ -291,8 +291,9 @@ export class BitbucketProvider extends GitProviderRoot {
       webUrl: prData?.links?.html?.href || '',
       authorName: prData?.author?.display_name || '',
       providerInfo: prData,
+      customBehaviors: {}
     };
-    return prInfo;
+    return this.completeWithCustomBehaviors(prInfo);
   }
 
   // Upload the image to Bitbucket

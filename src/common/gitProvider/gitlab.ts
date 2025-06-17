@@ -189,9 +189,9 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       description: prData?.description || "",
       authorName: prData?.author?.name || "",
       webUrl: prData?.web_url || "",
-      providerInfo: prData
+      providerInfo: prData,
+      customBehaviors: {}
     }
-
-    return prInfo;
+    return this.completeWithCustomBehaviors(prInfo);
   }
 }

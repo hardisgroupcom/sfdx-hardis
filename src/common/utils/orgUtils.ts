@@ -472,6 +472,8 @@ export async function initOrgMetadatas(
         : './config/package.xml';
     await smartDeploy(packageXmlFile, false, 'NoTestRun', debugMode, this, {
       targetUsername: orgUsername,
+      conn: null,
+      testClasses: ""
     });
   } else {
     // Use push for local scratch orgs

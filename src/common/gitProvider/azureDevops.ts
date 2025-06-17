@@ -442,9 +442,10 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
         process.env.BUILD_REPOSITORYNAME || "",
       )}/pullrequest/${prData.pullRequestId}`,
       authorName: prData?.createdBy?.displayName || "",
-      providerInfo: prData
+      providerInfo: prData,
+      customBehaviors: {}
     };
-    return prInfo;
+    return this.completeWithCustomBehaviors(prInfo);
   }
 
   private getPipelineVariablesConfig() {

@@ -267,8 +267,9 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
       description: prData?.body || "",
       authorName: prData?.user?.login || "",
       webUrl: prData?.html_url || "",
-      providerInfo: prData
+      providerInfo: prData,
+      customBehaviors: {}
     }
-    return prInfo;
+    return this.completeWithCustomBehaviors(prInfo);
   }
 }

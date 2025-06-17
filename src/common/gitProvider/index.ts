@@ -247,6 +247,11 @@ export declare type CommonPullRequestInfo = {
   description: string;
   authorName: string;
   webUrl: string;
+  customBehaviors: {
+    noDeltaDeployment?: boolean,
+    purgeFlowVersions?: boolean,
+    destructiveChangesAfterDeployment?: boolean
+  }
   providerInfo: any
 }
 

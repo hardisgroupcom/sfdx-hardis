@@ -164,7 +164,16 @@ export async function smartDeploy(
   testlevel = 'RunLocalTests',
   debugMode = false,
   commandThis: any = this,
-  options: any = {}
+  options: {
+    targetUsername: string;
+    conn: any; // Connection from Salesforce
+    testClasses: string;
+    postDestructiveChanges?: string;
+    preDestructiveChanges?: string;
+    delta?: boolean;
+    destructiveChangesAfterDeployment?: boolean;
+    extraCommands?: any[]
+  }
 ): Promise<any> {
   elapseStart('all deployments');
   let quickDeploy = false;
@@ -202,7 +211,7 @@ export async function smartDeploy(
 
   // If we have empty package.xml but destructive changes, log it
   if (packageXmlIsEmpty && hasDestructiveChanges) {
-    uxLog(this, c.cyan('Package.xml is empty, but destructive changes are present. Will proceed with deployment.'));
+    uxLog(this, c.cyan('Package.xml is empty, but destructive changes are present. Will proceed with deployment of destructive changes.'));
   }
 
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode, options);
@@ -215,7 +224,7 @@ export async function smartDeploy(
     splitDeployments.push({
       label: 'package-for-destructive-changes',
       packageXmlFile: packageXmlFile,
-      order: 0,
+      order: options.destructiveChangesAfterDeployment ? 999 : 0,
     });
     deployXmlCount = 1;
   } else if (deployXmlCount === 0) {
@@ -225,7 +234,7 @@ export async function smartDeploy(
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
   // Run deployment pre-commands
-  await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn });
+  await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
   // Process items of deployment plan
   uxLog(this, c.cyan('Processing split deployments build from deployment plan...'));
   uxLog(this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
@@ -343,7 +352,7 @@ export async function smartDeploy(
         ` --test-level ${testlevel}` +
         (options.testClasses && testlevel !== 'NoTestRun' ? ` --tests ${options.testClasses}` : '') +
         (options.preDestructiveChanges ? ` --pre-destructive-changes ${options.preDestructiveChanges}` : '') +
-        (options.postDestructiveChanges ? ` --post-destructive-changes ${options.postDestructiveChanges}` : '') +
+        (options.postDestructiveChanges && !(options.destructiveChangesAfterDeployment === true) ? ` --post-destructive-changes ${options.postDestructiveChanges}` : '') +
         (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
         (testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true ? '' : ' --coverage-formatters json-summary') +
         ((testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true) && process.env?.COVERAGE_FORMATTER_JSON === "true" ? '' : ' --coverage-formatters json') +
@@ -479,7 +488,7 @@ export async function smartDeploy(
     messages.push(message);
   }
   // Run deployment post commands
-  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn });
+  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
   elapseEnd('all deployments');
   return { messages, quickDeploy, deployXmlCount };
 }
@@ -1215,9 +1224,10 @@ export async function createEmptyPackageXml(): Promise<string> {
   return emptyPackageXmlPath;
 }
 
-export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection }) {
+export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection, extraCommands?: any[] }) {
   const branchConfig = await getConfig('branch');
-  const commands = branchConfig[property] || [];
+  const commands = [...(branchConfig[property] || []), ...(options.extraCommands || [])];
+
   if (commands.length === 0) {
     uxLog(this, c.grey(`No ${property} found to run`));
     return;
