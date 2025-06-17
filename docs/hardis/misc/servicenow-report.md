@@ -7,7 +7,7 @@ This command retrieves user stories from Salesforce and enriches them with data 
 
 Define the following environment variables (in CICD variables or locally in a **.env** file):
 
-- SERVICENOW_URL: The base URL of the ServiceNow API (ex: https://your-instance.service-now.com/)
+- SERVICENOW_URL: The base URL of the ServiceNow API (ex: <https://your-instance.service-now.com/>)
 - SERVICENOW_USERNAME: The username for ServiceNow API authentication.
 - SERVICENOW_PASSWORD: The password for ServiceNow API authentication.
 
@@ -62,22 +62,22 @@ Example:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|config<br/>-c|option|Path to JSON config file containing user stories and ServiceNow configuration||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
-|where-choice<br/>-w|option|Where selection for user stories. If not provided, you will be prompted to select one from the config file.||||
+| Name                |  Type   | Description                                                                                                 |                 Default                  | Required | Options |
+|:--------------------|:-------:|:------------------------------------------------------------------------------------------------------------|:----------------------------------------:|:--------:|:-------:|
+| config<br/>-c       | option  | Path to JSON config file containing user stories and ServiceNow configuration                               |                                          |          |         |
+| debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                             |                                          |          |         |
+| flags-dir           | option  | undefined                                                                                                   |                                          |          |         |
+| json                | boolean | Format output as json.                                                                                      |                                          |          |         |
+| outputfile<br/>-f   | option  | Force the path and name of output report file. Must end with .csv                                           |                                          |          |         |
+| skipauth            | boolean | Skip authentication check when a default username is required                                               |                                          |          |         |
+| target-org<br/>-o   | option  | undefined                                                                                                   | <nicolas.vuillamy@cloudity.com.playnico> |          |         |
+| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                   |                                          |          |         |
+| where-choice<br/>-w | option  | Where selection for user stories. If not provided, you will be prompted to select one from the config file. |                                          |          |         |
 
 ## Examples
 
 ```shell
-$ sf hardis:misc:servicenow-report
+sf hardis:misc:servicenow-report
 ```
 
 

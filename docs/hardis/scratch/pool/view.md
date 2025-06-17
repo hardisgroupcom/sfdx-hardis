@@ -7,19 +7,19 @@ Displays all stored content of project scratch org pool if defined
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-dev-hub<br/>-v|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                  |  Type   | Description                                                   | Default | Required | Options |
+|:----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |         |          |         |
+| flags-dir             | option  | undefined                                                     |         |          |         |
+| json                  | boolean | Format output as json.                                        |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required |         |          |         |
+| target-dev-hub<br/>-v | option  | undefined                                                     |         |          |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
 
 ## Examples
 
 ```shell
-$ sf hardis:scratch:pool:view
+sf hardis:scratch:pool:view
 ```
 
 
