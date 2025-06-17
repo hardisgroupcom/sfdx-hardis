@@ -4,7 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- CI/CD enhancements
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): CI/CD enhancements
+  - Allow to activate special behaviors when words are written in Pull Request description
+    - **NO_DELTA**: Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request
+    - **PURGE_FLOW_VERSIONS**: After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !**
+    - **DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT**: If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package
   - Use CommonPullRequestInfo strong type for better use of cross-platform PR functions
   - Manage cache to get Pull Request info to improve performances
 
