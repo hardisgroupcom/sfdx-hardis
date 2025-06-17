@@ -412,6 +412,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       this.smartDeployOptions.extraCommands = this.smartDeployOptions.extraCommands || [];
       if (prInfo.customBehaviors?.purgeFlowVersions === true) {
         this.smartDeployOptions.extraCommands.push({
+          id: `PURGE_FLOW_VERSIONS`,
           command: `sf hardis:org:purge:flow --no-prompt --delete-flow-interviews --target-org ${targetUsername}`,
           label: 'Purge Flow Versions (added from PR config)',
           skipIfError: true,
@@ -435,6 +436,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
             (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
             ` --json`;
           this.smartDeployOptions.extraCommands.push({
+            id: `DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT`,
             command: deployCommand,
             label: 'Destructive Changes After Deployment (added from PR config)',
             skipIfError: true,
