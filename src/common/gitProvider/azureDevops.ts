@@ -208,11 +208,10 @@ ${this.getPipelineVariablesConfig()}
 
     // List pull requests
     const pullRequests = await azureGitApi.getPullRequests(repositoryId, queryConstraint, teamProject);
-
     // Complete results with PR comments
-    const pullRequestsWithComments: any[] = [];
+    const pullRequestsWithComments: Array<GitPullRequest & { threads?: any[] }> = [];
     for (const pullRequest of pullRequests) {
-      const pr: any = Object.assign({}, pullRequest);
+      const pr: GitPullRequest & { threads?: any[] } = Object.assign({}, pullRequest);
       uxLog(this, c.grey(`Getting threads for PR ${pullRequest.pullRequestId}...`));
       const existingThreads = await azureGitApi.getThreads(pullRequest.repository?.id || "", pullRequest.pullRequestId || 0, teamProject);
       pr.threads = existingThreads.filter(thread => !thread.isDeleted);
@@ -224,9 +223,9 @@ ${this.getPipelineVariablesConfig()}
       uxLog(this, c.cyan(`Formatting ${pullRequestsWithComments.length} results...`));
       const pullRequestsFormatted = pullRequestsWithComments.map(pr => {
         const prFormatted: any = {};
-        let tickets = "";
         // Find sfdx-hardis deployment simulation status comment and extract tickets part
-        for (const thread of pr.threads) {
+        let tickets = "";
+        for (const thread of pr.threads || []) {
           for (const comment of thread?.comments || []) {
             if ((comment?.content || "").includes(`<!-- sfdx-hardis deployment-id `)) {
               const ticketsSplit = comment.content.split("## Tickets");
@@ -259,9 +258,8 @@ ${this.getPipelineVariablesConfig()}
     }
     return pullRequestsWithComments;
   }
-
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
-    let deploymentCheckId = null;
+    let deploymentCheckId: string | null = null;
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
@@ -301,14 +299,13 @@ ${this.getPipelineVariablesConfig()}
     }
     return null;
   }
-
   private async getDeploymentIdFromPullRequest(
-    azureGitApi,
+    azureGitApi: any,
     repositoryId: string,
     latestPullRequestId: number,
-    deploymentCheckId: any,
-    latestPullRequest,
-  ) {
+    deploymentCheckId: string | null,
+    latestPullRequest: any,
+  ): Promise<string | null> {
     const existingThreads = await azureGitApi.getThreads(repositoryId, latestPullRequestId);
     for (const existingThread of existingThreads) {
       if (existingThread.isDeleted) {

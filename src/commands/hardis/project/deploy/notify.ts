@@ -4,7 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { CONSTANTS } from '../../../../config/index.js';
 import { buildCheckDeployCommitSummary, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
-import { GitProvider } from '../../../../common/gitProvider/index.js';
+import { GitProvider, PullRequestData } from '../../../../common/gitProvider/index.js';
 import c from "chalk"
 import { uxLog } from '../../../../common/utils/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
@@ -141,10 +141,9 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
     // Deployment check mode
     if (this.checkOnly) {
       uxLog(this, c.cyan("Handling Pull Request comments for a deployment check job..."));
-      await buildCheckDeployCommitSummary();
-
       // Add deployment info
-      const prData: any = {
+      await buildCheckDeployCommitSummary();
+      const prData: Partial<PullRequestData> = {
         messageKey: "deployment",
         title:
           (this.checkOnly && this.deployStatus === "valid") ? "✅ Deployment check success" :
@@ -154,7 +153,7 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
                   (this.checkOnly && this.deployStatus === "unknown") ? "🤷 Deployment check status unknown" :
                     "🤷 Deployment  status unknown",
         deployErrorsMarkdownBody: this.message,
-        status: this.deployStatus,
+        status: this.deployStatus === "valid" ? "valid" : this.deployStatus === "invalid" ? "invalid" : "tovalidate",
       };
       globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
       // Post comments :)

@@ -111,7 +111,7 @@ export class BitbucketProvider extends GitProviderRoot {
   }
 
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
-    let deploymentCheckId = null;
+    let deploymentCheckId: string | null = null;
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const latestMergedPullRequestsOnBranch = await this.bitbucket.repositories.listPullRequests({
@@ -159,9 +159,9 @@ export class BitbucketProvider extends GitProviderRoot {
     latestPullRequestId: number,
     repoSlug: string,
     workspace: string,
-    deploymentCheckId: any,
+    deploymentCheckId: string | null,
     latestPullRequest: CommonPullRequestInfo
-  ) {
+  ): Promise<string | null> {
     const comments = await this.bitbucket.repositories.listPullRequestComments({
       pull_request_id: latestPullRequestId,
       repo_slug: repoSlug,

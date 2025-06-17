@@ -125,10 +125,10 @@ export abstract class GitProvider {
       }
       markdownBody = removeMermaidLinks(markdownBody); // Remove "click" elements that are useless and ugly on some providers :)
       const prMessageRequest: PullRequestMessageRequest = {
-        title: prData.title,
+        title: prData.title || '',
         message: markdownBody,
-        status: prData.status,
-        messageKey: prData.messageKey,
+        status: prData.status || 'tovalidate',
+        messageKey: prData.messageKey || '',
       };
       // Post main message
       const postResult = await gitProvider.tryPostPullRequestMessage(prMessageRequest);
@@ -248,6 +248,34 @@ export declare type CommonPullRequestInfo = {
   authorName: string;
   webUrl: string;
   providerInfo: any
+}
+
+export declare type PullRequestData = {
+  messageKey: string;
+  title: string;
+  deployErrorsMarkdownBody?: string;
+  codeCoverageMarkdownBody?: string;
+  commitsSummary?: string;
+  deployStatus?: "valid" | "invalid" | "unknown";
+  status?: "valid" | "invalid" | "tovalidate";
+  flowDiffMarkdown?: {
+    markdownSummary?: string;
+    flowDiffMarkdownList?: Array<{
+      name: string;
+      markdown: string;
+      markdownFile?: string;
+    }>;
+  };
+}
+
+// Global type augmentation for globalThis
+declare global {
+  // eslint-disable-next-line no-var
+  var pullRequestData: Partial<PullRequestData> | undefined;
+  // eslint-disable-next-line no-var
+  var pullRequestCommentSent: boolean | undefined;
+  // eslint-disable-next-line no-var
+  var pullRequestDeploymentId: string | undefined;
 }
 
 export declare type PullRequestMessageRequest = {

@@ -35,6 +35,7 @@ import { ResetMode } from 'simple-git';
 import { isProductionOrg } from './orgUtils.js';
 import { soqlQuery } from './apiUtils.js';
 import { checkSfdxHardisTraceAvailable } from './orgConfigUtils.js';
+import { PullRequestData } from '../gitProvider/index.js';
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -416,7 +417,7 @@ export async function smartDeploy(
       } else {
         // Handle notif message when there is no apex
         const existingPrData = globalThis.pullRequestData || {};
-        const prDataCodeCoverage: any = {
+        const prDataCodeCoverage: PullRequestData = {
           messageKey: existingPrData.messageKey ?? 'deployment',
           title: existingPrData.title ?? check ? '✅ Deployment check success' : '✅ Deployment success',
           codeCoverageMarkdownBody:
@@ -1425,11 +1426,13 @@ async function updatePullRequestResultCoverage(
   options: any
 ) {
   const existingPrData = globalThis.pullRequestData || {};
-  const prDataCodeCoverage: any = {
+  const prDataCodeCoverage: Partial<PullRequestData> = {
     messageKey: existingPrData.messageKey ?? 'deployment',
     title: existingPrData.title ?? options.check ? '✅ Deployment check success' : '✅ Deployment success',
     codeCoverageMarkdownBody: 'Code coverage is valid',
-    deployStatus: existingPrData ?? coverageStatus,
+    deployStatus: (coverageStatus === 'valid' || coverageStatus === 'invalid' || coverageStatus === 'unknown')
+      ? coverageStatus
+      : existingPrData.deployStatus ?? 'unknown',
   };
   // Code coverage failure
   if (coverageStatus === 'invalid') {

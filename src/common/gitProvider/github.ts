@@ -33,9 +33,8 @@ export class GithubProvider extends GitProviderRoot {
   public getLabel(): string {
     return "sfdx-hardis GitHub connector";
   }
-
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
-    let deploymentCheckId = null;
+    let deploymentCheckId: string | null = null;
     uxLog(this, c.grey("[GitHub Integration] Listing previously closed Pull Requests"));
     const latestPullRequestsOnBranch = await this.octokit.rest.pulls.list({
       owner: this.repoOwner || "",
@@ -60,14 +59,13 @@ export class GithubProvider extends GitProviderRoot {
     }
     return null;
   }
-
   private async getDeploymentIdFromPullRequest(
     latestPullRequestId: number,
     repoOwner: string,
     repoName: string,
-    deploymentCheckId: any,
+    deploymentCheckId: string | null,
     latestPullRequest: any,
-  ) {
+  ): Promise<string | null> {
     uxLog(this, c.grey(`[GitHub Integration] Listing comments for PR ${latestPullRequestId}`));
     const existingComments = await this.octokit.rest.issues.listComments({
       owner: repoOwner,

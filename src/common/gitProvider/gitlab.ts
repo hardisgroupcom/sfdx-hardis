@@ -82,9 +82,8 @@ export class GitlabProvider extends GitProviderRoot {
     uxLog(this, c.grey(`[Gitlab Integration] Unable to find related Merge Request Info`));
     return null;
   }
-
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
-    let deploymentCheckId = null;
+    let deploymentCheckId: string | null = null;
     const projectId = process.env.CI_PROJECT_ID || null;
     const latestMergeRequestsOnBranch = await this.gitlabApi.MergeRequests.all({
       projectId: projectId || "",
@@ -95,7 +94,7 @@ export class GitlabProvider extends GitProviderRoot {
     if (latestMergeRequestsOnBranch.length > 0) {
       const latestMergeRequest = latestMergeRequestsOnBranch[0];
       const latestMergeRequestId = latestMergeRequest.iid;
-      deploymentCheckId = await this.getDeploymentIdFromPullRequest(projectId || "", latestMergeRequestId, deploymentCheckId, latestMergeRequest);
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(projectId || "", latestMergeRequestId, deploymentCheckId, this.completePullRequestInfo(latestMergeRequest));
     }
     return deploymentCheckId;
   }
@@ -109,7 +108,7 @@ export class GitlabProvider extends GitProviderRoot {
     return null;
   }
 
-  private async getDeploymentIdFromPullRequest(projectId: string, latestMergeRequestId: number, deploymentCheckId: any, latestMergeRequest) {
+  private async getDeploymentIdFromPullRequest(projectId: string, latestMergeRequestId: number, deploymentCheckId: string | null, latestMergeRequest: CommonPullRequestInfo): Promise<string | null> {
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, latestMergeRequestId);
     for (const existingNote of existingNotes) {
       if (existingNote.body.includes("<!-- sfdx-hardis deployment-id ")) {
