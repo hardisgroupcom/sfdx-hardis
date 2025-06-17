@@ -100,7 +100,7 @@ export abstract class GitProviderRoot {
   }
 
   protected completeWithCustomBehaviors(pullRequestInfo: CommonPullRequestInfo): CommonPullRequestInfo {
-    const desc = (pullRequestInfo.description || "").toLocaleUpperCase();
+    const desc = pullRequestInfo.description || "";
     if (desc.includes("NO_DELTA")
       || getEnvVar("NO_DELTA") === "true"
       || getEnvVar("NO_DELTA_" + pullRequestInfo.targetBranch) === "true"
