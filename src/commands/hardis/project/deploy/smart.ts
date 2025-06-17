@@ -389,10 +389,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       let toCommit = 'HEAD';
       if (this.checkOnly) {
         // In deployment check context
-        const prInfo = await GitProvider.getPullRequestInfo();
+        const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
         const deltaScope = await getGitDeltaScope(
-          prInfo?.sourceBranch || currentGitBranch,
-          prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH
+          prInfo?.sourceBranch || currentGitBranch || "",
+          prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH || ""
         );
         fromCommit = deltaScope.fromCommit;
         toCommit = deltaScope?.toCommit?.hash || '';
@@ -477,6 +477,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       ? './manifest/destructiveChanges.xml'
       : './config/destructiveChanges.xml';
     if (fs.existsSync(postDestructiveChanges)) {
+
       this.smartDeployOptions.postDestructiveChanges = postDestructiveChanges;
     }
 
@@ -610,7 +611,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
     let currentBranch = await getCurrentGitBranch();
     let parentBranch = process.env.FORCE_TARGET_BRANCH || null;
-    const prInfo = await GitProvider.getPullRequestInfo();
+    const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
     if (prInfo) {
       currentBranch = prInfo.sourceBranch;
       parentBranch = prInfo.targetBranch;

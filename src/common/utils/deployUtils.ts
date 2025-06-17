@@ -613,8 +613,8 @@ async function buildDeploymentPackageXmls(
   const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, options);
   const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
   // Copy main package.xml so it can be dynamically updated before deployment
-  const tmpDeployDir = await createTempDir();
-  const mainPackageXmlCopyFileName = path.join(tmpDeployDir, 'calculated-package.xml');
+  const tmpDir = await createTempDir();
+  const mainPackageXmlCopyFileName = path.join(tmpDir, 'calculated-package.xml');
   await fs.copy(packageXmlFile, mainPackageXmlCopyFileName);
   const mainPackageXmlItem = {
     label: 'calculated-package-xml',
@@ -640,7 +640,7 @@ async function buildDeploymentPackageXmls(
         if (deploymentItem.packageXmlFile) {
           // Copy deployment in temp packageXml file so it can be updated using package-no-overwrite and packageDeployOnChange
           deploymentItem.packageXmlFile = path.resolve(deploymentItem.packageXmlFile);
-          const splitPackageXmlCopyFileName = path.join(tmpDeployDir, path.basename(deploymentItem.packageXmlFile));
+          const splitPackageXmlCopyFileName = path.join(tmpDir, path.basename(deploymentItem.packageXmlFile));
           await fs.copy(deploymentItem.packageXmlFile, splitPackageXmlCopyFileName);
           deploymentItem.packageXmlFile = splitPackageXmlCopyFileName;
           // Remove split of packageXml content from main package.xml
@@ -1148,7 +1148,7 @@ export async function buildOrgManifest(
         matchedType.members = sortCrossPlatform(matchedType.members);
       }
     }
-  
+
     // Complete with missing WaveDataflow Ids build from WaveRecipe Ids
     const waveRecipeTypeList = parsedPackageXml.Package.types.filter((type) => type.name[0] === 'WaveRecipe');
     if (waveRecipeTypeList.length === 1) {
@@ -1188,6 +1188,30 @@ export async function buildOrgManifest(
   const nbRetrievedItems = await countPackageXmlItems(packageXmlFull);
   uxLog(this, c.cyan(`Full org package.xml contains ${c.bold(nbRetrievedItems)} items`))
   return packageXmlFull;
+}
+
+/**
+ * Creates an empty package.xml file in a temporary directory and returns its path
+ * Useful for deployment scenarios requiring an empty package.xml (like destructive changes)
+ * @returns {Promise<string>} Path to the created empty package.xml file
+ */
+export async function createEmptyPackageXml(): Promise<string> {
+  // Create temporary directory for the empty package.xml
+  const tmpDir = await createTempDir();
+  const emptyPackageXmlPath = path.join(tmpDir, 'empty-package.xml');
+
+  // Write empty package.xml with API version from constants
+  await fs.writeFile(
+    emptyPackageXmlPath,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <version>${CONSTANTS.API_VERSION}</version>
+</Package>`,
+    'utf8'
+  );
+
+  uxLog(this, c.grey(`Created empty package.xml at ${emptyPackageXmlPath}`));
+  return emptyPackageXmlPath;
 }
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection }) {

@@ -2,7 +2,7 @@ import * as github from "@actions/github";
 import c from "chalk";
 import { GitProviderRoot } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GitHub } from "@actions/github/lib/utils.js";
 import { CONSTANTS } from "../../config/index.js";
 
@@ -56,7 +56,7 @@ export class GithubProvider extends GitProviderRoot {
   public async getPullRequestDeploymentCheckId(): Promise<string | null> {
     const pullRequestInfo = await this.getPullRequestInfo();
     if (pullRequestInfo) {
-      return await this.getDeploymentIdFromPullRequest(pullRequestInfo.number, this.repoOwner || "", this.repoName || "", null, pullRequestInfo);
+      return await this.getDeploymentIdFromPullRequest(pullRequestInfo.idNumber, this.repoOwner || "", this.repoName || "", null, pullRequestInfo);
     }
     return null;
   }
@@ -123,7 +123,7 @@ export class GithubProvider extends GitProviderRoot {
   }
 
   // Find pull request info
-  public async getPullRequestInfo(): Promise<any> {
+  public async getPullRequestInfo(): Promise<CommonPullRequestInfo | null> {
     // Case when PR is found in the context
     if (this.prNumber !== null && this.repoOwner !== null) {
       const pullRequest = await this.octokit.rest.pulls.get({
@@ -259,11 +259,18 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
     }
   }
 
-  private completePullRequestInfo(prData: any) {
-    const prInfo: any = Object.assign({}, prData);
-    prInfo.sourceBranch = (prData?.head?.ref || "").replace("refs/heads/", "");
-    prInfo.targetBranch = (prData?.base?.ref || "").replace("refs/heads/", "");
-    prInfo.description = prData?.body || "";
+  private completePullRequestInfo(prData: any): CommonPullRequestInfo {
+    const prInfo: CommonPullRequestInfo = {
+      idNumber: prData?.number || 0,
+      idStr: String(prData.number || ""),
+      sourceBranch: (prData?.head?.ref || "").replace("refs/heads/", ""),
+      targetBranch: (prData?.base?.ref || "").replace("refs/heads/", ""),
+      title: prData?.title || "",
+      description: prData?.body || "",
+      authorName: prData?.user?.login || "",
+      webUrl: prData?.html_url || "",
+      providerInfo: prData
+    }
     return prInfo;
   }
 }

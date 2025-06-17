@@ -204,16 +204,25 @@ export abstract class GitProvider {
     return gitProvider.supportsSvgAttachments();
   }
 
-  static async getPullRequestInfo(): Promise<any> {
+  static prInfoCache: any = null;
+
+  static async getPullRequestInfo(options: { useCache: boolean } = { useCache: false }): Promise<CommonPullRequestInfo | null> {
+    // Return cached result if available and caching is enabled
+    if (options.useCache && GitProvider.prInfoCache !== null) {
+      debug("[PR Info] Returning cached pull request info");
+      return GitProvider.prInfoCache;
+    }
+
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       debug("[PR Info] No GitProvider instance found");
       return null;
     }
-    let prInfo: any;
+    let prInfo: CommonPullRequestInfo | null = null;
     try {
       prInfo = await gitProvider.getPullRequestInfo();
       debug("[GitProvider][PR Info] " + JSON.stringify(prInfo, null, 2));
+      GitProvider.prInfoCache = prInfo;
     } catch (e) {
       uxLog(this, c.yellow("[GitProvider] Unable to get Pull Request info: " + (e as Error).message));
       uxLog(this, c.yellow(`[GitProvider] Maybe you misconfigured your ${gitProvider.getLabel()} ?`));
@@ -227,6 +236,18 @@ export abstract class GitProvider {
     const deployBeforeMerge = getEnvVar("SFDX_HARDIS_DEPLOY_BEFORE_MERGE") || false;
     return [true, "true"].includes(deployBeforeMerge);
   }
+}
+
+export declare type CommonPullRequestInfo = {
+  idNumber: number;
+  idStr: string;
+  targetBranch: string;
+  sourceBranch: string;
+  title: string;
+  description: string;
+  authorName: string;
+  webUrl: string;
+  providerInfo: any
 }
 
 export declare type PullRequestMessageRequest = {

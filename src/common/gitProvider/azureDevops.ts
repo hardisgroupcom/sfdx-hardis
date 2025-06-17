@@ -4,7 +4,7 @@ import c from "chalk";
 import fs from 'fs-extra';
 import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../utils/index.js";
 import * as path from "path";
-import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { CONSTANTS } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
@@ -111,7 +111,7 @@ ${this.getPipelineVariablesConfig()}
   }
 
   // Find pull request info
-  public async getPullRequestInfo(): Promise<any> {
+  public async getPullRequestInfo(): Promise<CommonPullRequestInfo | null> {
     // Case when PR is found in the context
     // Get CI variables
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
@@ -297,7 +297,7 @@ ${this.getPipelineVariablesConfig()}
         uxLog(this, c.yellow("BUILD_REPOSITORY_ID must be defined"));
         return null;
       }
-      return await this.getDeploymentIdFromPullRequest(azureGitApi, repositoryId, pullRequestInfo.pullRequestId, null, pullRequestInfo);
+      return await this.getDeploymentIdFromPullRequest(azureGitApi, repositoryId, pullRequestInfo.idNumber || 0, null, pullRequestInfo);
     }
     return null;
   }
@@ -433,14 +433,20 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
         : CommentThreadStatus.Unknown;
   }
 
-  private completePullRequestInfo(prData: any) {
-    const prInfo: any = Object.assign({}, prData);
-    prInfo.sourceBranch = (prData.sourceRefName || "").replace("refs/heads/", "");
-    prInfo.targetBranch = (prData.targetRefName || "").replace("refs/heads/", "");
-    prInfo.web_url = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT || "")}/_git/${encodeURIComponent(
-      process.env.BUILD_REPOSITORYNAME || "",
-    )}/pullrequest/${prData.pullRequestId}`;
-    prInfo.authorName = prData?.createdBy?.displayName || "";
+  private completePullRequestInfo(prData: GitPullRequest): CommonPullRequestInfo {
+    const prInfo: CommonPullRequestInfo = {
+      idNumber: prData.pullRequestId || 0,
+      idStr: String(prData.pullRequestId || 0),
+      sourceBranch: (prData.sourceRefName || "").replace("refs/heads/", ""),
+      targetBranch: (prData.targetRefName || "").replace("refs/heads/", ""),
+      title: prData.title || "",
+      description: prData.description || "",
+      webUrl: `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT || "")}/_git/${encodeURIComponent(
+        process.env.BUILD_REPOSITORYNAME || "",
+      )}/pullrequest/${prData.pullRequestId}`,
+      authorName: prData?.createdBy?.displayName || "",
+      providerInfo: prData
+    };
     return prInfo;
   }
 

@@ -3,6 +3,7 @@ import sortArray from "sort-array";
 import { extractRegexMatches } from "../utils/index.js";
 import { TicketProviderRoot } from "./ticketProviderRoot.js";
 import { getEnvVar } from "../../config/index.js";
+import { CommonPullRequestInfo } from "../gitProvider/index.js";
 
 export class GenericTicketingProvider extends TicketProviderRoot {
   private ticketRefRegex: string | null;
@@ -55,7 +56,7 @@ export class GenericTicketingProvider extends TicketProviderRoot {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async postDeploymentComments(tickets: Ticket[], _org: string, _pullRequestInfo: any) {
+  public async postDeploymentComments(tickets: Ticket[], _org: string, _pullRequestInfo: CommonPullRequestInfo | null) {
     // No remote server here so do nothing
     return tickets;
   }

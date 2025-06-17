@@ -1,6 +1,6 @@
 import { SfError } from "@salesforce/core";
 import c from "chalk";
-import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { uxLog } from "../utils/index.js";
 import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
 
@@ -43,7 +43,7 @@ export abstract class GitProviderRoot {
     return false;
   }
 
-  public async getPullRequestInfo(): Promise<any> {
+  public async getPullRequestInfo(): Promise<CommonPullRequestInfo | null> {
     uxLog(this, `Method getPullRequestInfo is not implemented yet on ${this.getLabel()}`);
     return null;
   }

@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- CI/CD enhancements
+  - Use CommonPullRequestInfo strong type for better use of cross-platform PR functions
+  - Manage cache to get Pull Request info to improve performances
+
+## [5.41.0] 2025-06-15
+
 - Factorize common prompt text into prompt variables, that can be overridable by user.
 - Implement cache for prompt templates and variables to improve performances
 - New command [hardis:doc:override-prompts](https://sfdx-hardis.cloudity.com/hardis/doc/override-prompts/): Create local override files for AI prompt templates that can be customized to match your organization's specific needs and terminology

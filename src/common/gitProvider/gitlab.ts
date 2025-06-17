@@ -1,6 +1,6 @@
 import { Gitlab } from "@gitbeaker/node";
 import c from "chalk";
-import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { GitProviderRoot } from "./gitProviderRoot.js";
 import { CONSTANTS } from "../../config/index.js";
@@ -50,7 +50,7 @@ export class GitlabProvider extends GitProviderRoot {
   }
 
   // Find pull request info
-  public async getPullRequestInfo(): Promise<any> {
+  public async getPullRequestInfo(): Promise<CommonPullRequestInfo | null> {
     // Case when MR is found in the context
     const projectId = process.env.CI_PROJECT_ID || null;
     const mrNumber = process.env.CI_MERGE_REQUEST_IID || null;
@@ -60,7 +60,8 @@ export class GitlabProvider extends GitProviderRoot {
         iids: [parseInt(mrNumber)],
       });
       if (mergeRequests.length > 0) {
-        return this.completePullRequestInfo(mergeRequests[0]);
+        const mergeRequest = mergeRequests[0];
+        return this.completePullRequestInfo(mergeRequest);
       }
     }
     // Case when we find MR from a commit
@@ -103,7 +104,7 @@ export class GitlabProvider extends GitProviderRoot {
     const pullRequestInfo = await this.getPullRequestInfo();
     if (pullRequestInfo) {
       const projectId = process.env.CI_PROJECT_ID || null;
-      return await this.getDeploymentIdFromPullRequest(projectId || "", pullRequestInfo.iid, null, pullRequestInfo);
+      return await this.getDeploymentIdFromPullRequest(projectId || "", pullRequestInfo.idNumber, null, pullRequestInfo);
     }
     return null;
   }
@@ -179,10 +180,19 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
     }
   }
 
-  private completePullRequestInfo(prData: any) {
-    const prInfo: any = Object.assign({}, prData);
-    prInfo.sourceBranch = (prData?.source_branch || "").replace("refs/heads/", "");
-    prInfo.targetBranch = (prData?.target_branch || "").replace("refs/heads/", "");
+  private completePullRequestInfo(prData: any): CommonPullRequestInfo {
+    const prInfo: CommonPullRequestInfo = {
+      idNumber: prData?.iid || prData?.id || 0,
+      idStr: String(prData?.iid || prData?.id || ""),
+      sourceBranch: (prData?.source_branch || "").replace("refs/heads/", ""),
+      targetBranch: (prData?.target_branch || "").replace("refs/heads/", ""),
+      title: prData?.title || "",
+      description: prData?.description || "",
+      authorName: prData?.author?.name || "",
+      webUrl: prData?.web_url || "",
+      providerInfo: prData
+    }
+
     return prInfo;
   }
 }
