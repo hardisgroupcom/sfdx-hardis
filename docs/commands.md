@@ -35,6 +35,7 @@
 | [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                 |       |
 | [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                   |       |
 | [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)   |       |
+| [**hardis:doc:override-prompts**](hardis/doc/override-prompts.md)           |       |
 | [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)     |       |
 | [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)             |       |
 | [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)           |       |
@@ -62,10 +63,12 @@
 
 ## hardis:misc
 
-| Command                                                             | Title |
-|:--------------------------------------------------------------------|:------|
-| [**hardis:misc:purge-references**](hardis/misc/purge-references.md) |       |
-| [**hardis:misc:toml2csv**](hardis/misc/toml2csv.md)                 |       |
+| Command                                                                               | Title |
+|:--------------------------------------------------------------------------------------|:------|
+| [**hardis:misc:custom-label-translations**](hardis/misc/custom-label-translations.md) |       |
+| [**hardis:misc:purge-references**](hardis/misc/purge-references.md)                   |       |
+| [**hardis:misc:servicenow-report**](hardis/misc/servicenow-report.md)                 |       |
+| [**hardis:misc:toml2csv**](hardis/misc/toml2csv.md)                                   |       |
 
 ## hardis:org
 

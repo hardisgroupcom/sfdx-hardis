@@ -1,6 +1,6 @@
 import { Gitlab } from "@gitbeaker/node";
 import c from "chalk";
-import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { GitProviderRoot } from "./gitProviderRoot.js";
 import { CONSTANTS } from "../../config/index.js";
@@ -50,7 +50,7 @@ export class GitlabProvider extends GitProviderRoot {
   }
 
   // Find pull request info
-  public async getPullRequestInfo(): Promise<any> {
+  public async getPullRequestInfo(): Promise<CommonPullRequestInfo | null> {
     // Case when MR is found in the context
     const projectId = process.env.CI_PROJECT_ID || null;
     const mrNumber = process.env.CI_MERGE_REQUEST_IID || null;
@@ -60,7 +60,8 @@ export class GitlabProvider extends GitProviderRoot {
         iids: [parseInt(mrNumber)],
       });
       if (mergeRequests.length > 0) {
-        return this.completePullRequestInfo(mergeRequests[0]);
+        const mergeRequest = mergeRequests[0];
+        return this.completePullRequestInfo(mergeRequest);
       }
     }
     // Case when we find MR from a commit
@@ -81,9 +82,8 @@ export class GitlabProvider extends GitProviderRoot {
     uxLog(this, c.grey(`[Gitlab Integration] Unable to find related Merge Request Info`));
     return null;
   }
-
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
-    let deploymentCheckId = null;
+    let deploymentCheckId: string | null = null;
     const projectId = process.env.CI_PROJECT_ID || null;
     const latestMergeRequestsOnBranch = await this.gitlabApi.MergeRequests.all({
       projectId: projectId || "",
@@ -94,7 +94,7 @@ export class GitlabProvider extends GitProviderRoot {
     if (latestMergeRequestsOnBranch.length > 0) {
       const latestMergeRequest = latestMergeRequestsOnBranch[0];
       const latestMergeRequestId = latestMergeRequest.iid;
-      deploymentCheckId = await this.getDeploymentIdFromPullRequest(projectId || "", latestMergeRequestId, deploymentCheckId, latestMergeRequest);
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(projectId || "", latestMergeRequestId, deploymentCheckId, this.completePullRequestInfo(latestMergeRequest));
     }
     return deploymentCheckId;
   }
@@ -103,12 +103,12 @@ export class GitlabProvider extends GitProviderRoot {
     const pullRequestInfo = await this.getPullRequestInfo();
     if (pullRequestInfo) {
       const projectId = process.env.CI_PROJECT_ID || null;
-      return await this.getDeploymentIdFromPullRequest(projectId || "", pullRequestInfo.iid, null, pullRequestInfo);
+      return await this.getDeploymentIdFromPullRequest(projectId || "", pullRequestInfo.idNumber, null, pullRequestInfo);
     }
     return null;
   }
 
-  private async getDeploymentIdFromPullRequest(projectId: string, latestMergeRequestId: number, deploymentCheckId: any, latestMergeRequest) {
+  private async getDeploymentIdFromPullRequest(projectId: string, latestMergeRequestId: number, deploymentCheckId: string | null, latestMergeRequest: CommonPullRequestInfo): Promise<string | null> {
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, latestMergeRequestId);
     for (const existingNote of existingNotes) {
       if (existingNote.body.includes("<!-- sfdx-hardis deployment-id ")) {
@@ -179,10 +179,19 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
     }
   }
 
-  private completePullRequestInfo(prData: any) {
-    const prInfo: any = Object.assign({}, prData);
-    prInfo.sourceBranch = (prData?.source_branch || "").replace("refs/heads/", "");
-    prInfo.targetBranch = (prData?.target_branch || "").replace("refs/heads/", "");
-    return prInfo;
+  private completePullRequestInfo(prData: any): CommonPullRequestInfo {
+    const prInfo: CommonPullRequestInfo = {
+      idNumber: prData?.iid || prData?.id || 0,
+      idStr: String(prData?.iid || prData?.id || ""),
+      sourceBranch: (prData?.source_branch || "").replace("refs/heads/", ""),
+      targetBranch: (prData?.target_branch || "").replace("refs/heads/", ""),
+      title: prData?.title || "",
+      description: prData?.description || "",
+      authorName: prData?.author?.name || "",
+      webUrl: prData?.web_url || "",
+      providerInfo: prData,
+      customBehaviors: {}
+    }
+    return this.completeWithCustomBehaviors(prInfo);
   }
 }

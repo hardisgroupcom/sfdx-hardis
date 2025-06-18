@@ -35,6 +35,7 @@ import { ResetMode } from 'simple-git';
 import { isProductionOrg } from './orgUtils.js';
 import { soqlQuery } from './apiUtils.js';
 import { checkSfdxHardisTraceAvailable } from './orgConfigUtils.js';
+import { PullRequestData } from '../gitProvider/index.js';
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -163,7 +164,16 @@ export async function smartDeploy(
   testlevel = 'RunLocalTests',
   debugMode = false,
   commandThis: any = this,
-  options: any = {}
+  options: {
+    targetUsername: string;
+    conn: any; // Connection from Salesforce
+    testClasses: string;
+    postDestructiveChanges?: string;
+    preDestructiveChanges?: string;
+    delta?: boolean;
+    destructiveChangesAfterDeployment?: boolean;
+    extraCommands?: any[]
+  }
 ): Promise<any> {
   elapseStart('all deployments');
   let quickDeploy = false;
@@ -201,7 +211,7 @@ export async function smartDeploy(
 
   // If we have empty package.xml but destructive changes, log it
   if (packageXmlIsEmpty && hasDestructiveChanges) {
-    uxLog(this, c.cyan('Package.xml is empty, but destructive changes are present. Will proceed with deployment.'));
+    uxLog(this, c.cyan('Package.xml is empty, but destructive changes are present. Will proceed with deployment of destructive changes.'));
   }
 
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode, options);
@@ -214,7 +224,7 @@ export async function smartDeploy(
     splitDeployments.push({
       label: 'package-for-destructive-changes',
       packageXmlFile: packageXmlFile,
-      order: 0,
+      order: options.destructiveChangesAfterDeployment ? 999 : 0,
     });
     deployXmlCount = 1;
   } else if (deployXmlCount === 0) {
@@ -224,7 +234,7 @@ export async function smartDeploy(
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
   await replaceQuickActionsWithDummy();
   // Run deployment pre-commands
-  await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn });
+  await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
   // Process items of deployment plan
   uxLog(this, c.cyan('Processing split deployments build from deployment plan...'));
   uxLog(this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
@@ -342,7 +352,7 @@ export async function smartDeploy(
         ` --test-level ${testlevel}` +
         (options.testClasses && testlevel !== 'NoTestRun' ? ` --tests ${options.testClasses}` : '') +
         (options.preDestructiveChanges ? ` --pre-destructive-changes ${options.preDestructiveChanges}` : '') +
-        (options.postDestructiveChanges ? ` --post-destructive-changes ${options.postDestructiveChanges}` : '') +
+        (options.postDestructiveChanges && !(options.destructiveChangesAfterDeployment === true) ? ` --post-destructive-changes ${options.postDestructiveChanges}` : '') +
         (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
         (testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true ? '' : ' --coverage-formatters json-summary') +
         ((testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true) && process.env?.COVERAGE_FORMATTER_JSON === "true" ? '' : ' --coverage-formatters json') +
@@ -416,7 +426,7 @@ export async function smartDeploy(
       } else {
         // Handle notif message when there is no apex
         const existingPrData = globalThis.pullRequestData || {};
-        const prDataCodeCoverage: any = {
+        const prDataCodeCoverage: PullRequestData = {
           messageKey: existingPrData.messageKey ?? 'deployment',
           title: existingPrData.title ?? check ? '✅ Deployment check success' : '✅ Deployment success',
           codeCoverageMarkdownBody:
@@ -478,7 +488,7 @@ export async function smartDeploy(
     messages.push(message);
   }
   // Run deployment post commands
-  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn });
+  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
   elapseEnd('all deployments');
   return { messages, quickDeploy, deployXmlCount };
 }
@@ -613,8 +623,8 @@ async function buildDeploymentPackageXmls(
   const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, options);
   const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
   // Copy main package.xml so it can be dynamically updated before deployment
-  const tmpDeployDir = await createTempDir();
-  const mainPackageXmlCopyFileName = path.join(tmpDeployDir, 'calculated-package.xml');
+  const tmpDir = await createTempDir();
+  const mainPackageXmlCopyFileName = path.join(tmpDir, 'calculated-package.xml');
   await fs.copy(packageXmlFile, mainPackageXmlCopyFileName);
   const mainPackageXmlItem = {
     label: 'calculated-package-xml',
@@ -640,7 +650,7 @@ async function buildDeploymentPackageXmls(
         if (deploymentItem.packageXmlFile) {
           // Copy deployment in temp packageXml file so it can be updated using package-no-overwrite and packageDeployOnChange
           deploymentItem.packageXmlFile = path.resolve(deploymentItem.packageXmlFile);
-          const splitPackageXmlCopyFileName = path.join(tmpDeployDir, path.basename(deploymentItem.packageXmlFile));
+          const splitPackageXmlCopyFileName = path.join(tmpDir, path.basename(deploymentItem.packageXmlFile));
           await fs.copy(deploymentItem.packageXmlFile, splitPackageXmlCopyFileName);
           deploymentItem.packageXmlFile = splitPackageXmlCopyFileName;
           // Remove split of packageXml content from main package.xml
@@ -1148,7 +1158,7 @@ export async function buildOrgManifest(
         matchedType.members = sortCrossPlatform(matchedType.members);
       }
     }
-  
+
     // Complete with missing WaveDataflow Ids build from WaveRecipe Ids
     const waveRecipeTypeList = parsedPackageXml.Package.types.filter((type) => type.name[0] === 'WaveRecipe');
     if (waveRecipeTypeList.length === 1) {
@@ -1190,9 +1200,34 @@ export async function buildOrgManifest(
   return packageXmlFull;
 }
 
-export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection }) {
+/**
+ * Creates an empty package.xml file in a temporary directory and returns its path
+ * Useful for deployment scenarios requiring an empty package.xml (like destructive changes)
+ * @returns {Promise<string>} Path to the created empty package.xml file
+ */
+export async function createEmptyPackageXml(): Promise<string> {
+  // Create temporary directory for the empty package.xml
+  const tmpDir = await createTempDir();
+  const emptyPackageXmlPath = path.join(tmpDir, 'empty-package.xml');
+
+  // Write empty package.xml with API version from constants
+  await fs.writeFile(
+    emptyPackageXmlPath,
+    `<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <version>${CONSTANTS.API_VERSION}</version>
+</Package>`,
+    'utf8'
+  );
+
+  uxLog(this, c.grey(`Created empty package.xml at ${emptyPackageXmlPath}`));
+  return emptyPackageXmlPath;
+}
+
+export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection, extraCommands?: any[] }) {
   const branchConfig = await getConfig('branch');
-  const commands = branchConfig[property] || [];
+  const commands = [...(branchConfig[property] || []), ...(options.extraCommands || [])];
+
   if (commands.length === 0) {
     uxLog(this, c.grey(`No ${property} found to run`));
     return;
@@ -1401,11 +1436,13 @@ async function updatePullRequestResultCoverage(
   options: any
 ) {
   const existingPrData = globalThis.pullRequestData || {};
-  const prDataCodeCoverage: any = {
+  const prDataCodeCoverage: Partial<PullRequestData> = {
     messageKey: existingPrData.messageKey ?? 'deployment',
     title: existingPrData.title ?? options.check ? '✅ Deployment check success' : '✅ Deployment success',
     codeCoverageMarkdownBody: 'Code coverage is valid',
-    deployStatus: existingPrData ?? coverageStatus,
+    deployStatus: (coverageStatus === 'valid' || coverageStatus === 'invalid' || coverageStatus === 'unknown')
+      ? coverageStatus
+      : existingPrData.deployStatus ?? 'unknown',
   };
   // Code coverage failure
   if (coverageStatus === 'invalid') {

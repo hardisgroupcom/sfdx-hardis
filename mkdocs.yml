@@ -206,6 +206,7 @@ nav:
           flow2markdown: hardis/doc/flow2markdown.md
           mkdocs-to-cf: hardis/doc/mkdocs-to-cf.md
           mkdocs-to-salesforce: hardis/doc/mkdocs-to-salesforce.md
+          override-prompts: hardis/doc/override-prompts.md
           packagexml2markdown: hardis/doc/packagexml2markdown.md
           plugin:
             generate: hardis/doc/plugin/generate.md
@@ -221,7 +222,9 @@ nav:
         mdapi:
           deploy: hardis/mdapi/deploy.md
         misc:
+          custom-label-translations: hardis/misc/custom-label-translations.md
           purge-references: hardis/misc/purge-references.md
+          servicenow-report: hardis/misc/servicenow-report.md
           toml2csv: hardis/misc/toml2csv.md
         org:
           community:

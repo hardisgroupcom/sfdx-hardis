@@ -1,8 +1,9 @@
 import { SfError } from "@salesforce/core";
 import c from "chalk";
-import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { uxLog } from "../utils/index.js";
 import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
+import { getEnvVar } from "../../config/index.js";
 
 export abstract class GitProviderRoot {
   public serverUrl: string | null;
@@ -43,7 +44,7 @@ export abstract class GitProviderRoot {
     return false;
   }
 
-  public async getPullRequestInfo(): Promise<any> {
+  public async getPullRequestInfo(): Promise<CommonPullRequestInfo | null> {
     uxLog(this, `Method getPullRequestInfo is not implemented yet on ${this.getLabel()}`);
     return null;
   }
@@ -62,7 +63,7 @@ export abstract class GitProviderRoot {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } = {}, options: {
     formatted?: boolean
-  } = { formatted: false }): Promise<any> {
+  } = { formatted: false }): Promise<any | null> {
     uxLog(this, `Method listPullRequests is not implemented yet on ${this.getLabel()}`);
     return null;
   }
@@ -96,5 +97,28 @@ export abstract class GitProviderRoot {
     }
     markdownBody = replaceImagesInMarkdown(markdownBody, replacements);
     return markdownBody;
+  }
+
+  protected completeWithCustomBehaviors(pullRequestInfo: CommonPullRequestInfo): CommonPullRequestInfo {
+    const desc = pullRequestInfo.description || "";
+    if (desc.includes("NO_DELTA")
+      || getEnvVar("NO_DELTA") === "true"
+      || getEnvVar("NO_DELTA_" + pullRequestInfo.targetBranch) === "true"
+    ) {
+      pullRequestInfo.customBehaviors.noDeltaDeployment = true;
+    }
+    if (desc.includes("PURGE_FLOW_VERSIONS")
+      || getEnvVar("PURGE_FLOW_VERSIONS") === "true"
+      || getEnvVar("PURGE_FLOW_VERSIONS_" + pullRequestInfo.targetBranch) === "true"
+    ) {
+      pullRequestInfo.customBehaviors.purgeFlowVersions = true;
+    }
+    if (desc.includes("DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT")
+      || getEnvVar("DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT") === "true"
+      || getEnvVar("DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT_" + pullRequestInfo.targetBranch) === "true"
+    ) {
+      pullRequestInfo.customBehaviors.destructiveChangesAfterDeployment = true;
+    }
+    return pullRequestInfo;
   }
 }
