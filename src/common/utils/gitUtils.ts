@@ -15,7 +15,7 @@ import {
   git,
   uxLog,
 } from './index.js';
-import { GitProvider } from '../gitProvider/index.js';
+import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { Ticket, TicketProvider } from '../ticketProvider/index.js';
 import { DefaultLogFields, ListLogLine } from 'simple-git';
 import { flowDiffToMarkdownForPullRequest } from '../gitProvider/utilsMarkdown.js';
@@ -101,16 +101,16 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
   return gitDeltaCommandRes;
 }
 
-export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
+export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPullRequestInfo | null = null) {
   uxLog(this, c.cyan('Computing commits summary...'));
   const currentGitBranch = await getCurrentGitBranch();
   let logResults: (DefaultLogFields & ListLogLine)[] = [];
   let previousTargetBranchCommit = "";
   if (checkOnly || GitProvider.isDeployBeforeMerge()) {
-    const prInfo = await GitProvider.getPullRequestInfo();
+    const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
     const deltaScope = await getGitDeltaScope(
-      prInfo?.sourceBranch || currentGitBranch,
-      prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH
+      prInfo?.sourceBranch || currentGitBranch || "",
+      prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH || ""
     );
     logResults = [...deltaScope.logResult.all];
     previousTargetBranchCommit = deltaScope.fromCommit;
@@ -242,7 +242,7 @@ export async function getCommitUpdatedFiles(commitHash) {
 
 export async function buildCheckDeployCommitSummary() {
   try {
-    const pullRequestInfo = await GitProvider.getPullRequestInfo();
+    const pullRequestInfo = await GitProvider.getPullRequestInfo({ useCache: true });
     const commitsSummary = await computeCommitsSummary(true, pullRequestInfo);
     const prDataCommitsSummary = {
       commitsSummary: commitsSummary.markdown,
@@ -255,7 +255,7 @@ export async function buildCheckDeployCommitSummary() {
 }
 
 export async function handlePostDeploymentNotifications(flags, targetUsername: any, quickDeploy: any, delta: boolean, debugMode: boolean, additionalMessage = "") {
-  const pullRequestInfo = await GitProvider.getPullRequestInfo();
+  const pullRequestInfo = await GitProvider.getPullRequestInfo({ useCache: true });
   const attachments: MessageAttachment[] = [];
   try {
     // Build notification attachments & handle ticketing systems comments
@@ -293,11 +293,10 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
     if (debugMode) {
       uxLog(this, c.gray('PR info:\n' + JSON.stringify(pullRequestInfo)));
     }
-    const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
-    const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
-    notifMessage += `\nRelated: <${prUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : '');
+    const prAuthor = pullRequestInfo?.authorName;
+    notifMessage += `\nRelated: <${pullRequestInfo.webUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : '');
     const prButtonText = 'View Pull Request';
-    notifButtons.push({ text: prButtonText, url: prUrl });
+    notifButtons.push({ text: prButtonText, url: pullRequestInfo.webUrl });
   } else {
     uxLog(this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
   }
@@ -317,7 +316,7 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
 }
 
 
-async function collectNotifAttachments(attachments: MessageAttachment[], pullRequestInfo: any) {
+async function collectNotifAttachments(attachments: MessageAttachment[], pullRequestInfo: CommonPullRequestInfo | null) {
   const commitsSummary = await computeCommitsSummary(false, pullRequestInfo);
   // Tickets attachment
   if (commitsSummary.tickets.length > 0) {

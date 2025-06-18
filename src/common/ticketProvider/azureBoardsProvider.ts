@@ -10,6 +10,7 @@ import { SfError } from "@salesforce/core";
 import { getEnvVar } from "../../config/index.js";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces.js";
+import { CommonPullRequestInfo } from "../gitProvider/index.js";
 /* jscpd:ignore-end */
 
 export class AzureBoardsProvider extends TicketProviderRoot {
@@ -49,7 +50,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     return "sfdx-hardis JIRA connector";
   }
 
-  public static async getTicketsFromString(text: string, options: any = {}): Promise<Ticket[]> {
+  public static async getTicketsFromString(text: string, prInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
     // Extract Azure Boards Work Items
     const azureBoardsUrlRegex = /(https:\/\/.*\/_workitems\/edit\/[0-9]+)/g;
@@ -72,12 +73,12 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       return ticketsSorted;
     }
     // Get tickets from Azure commits
-    if (options.commits) {
+    if (prInfo?.providerInfo?.commits) {
       const azureBoardsProvider = new AzureBoardsProvider();
       const azureApi = azureBoardsProvider.azureApi;
       const azureGitApi = await azureApi.getGitApi();
       const repositoryId = getEnvVar("BUILD_REPOSITORY_ID") || "";
-      const commitIds = options.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
+      const commitIds = prInfo?.providerInfo?.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
       const azureCommits: GitCommitRef[] = [];
       for (const commitId of commitIds) {
         const commitRefs = await azureGitApi.getCommits(repositoryId, { fromCommitId: commitId, toCommitId: commitId, includeWorkItems: true });
@@ -97,8 +98,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     }
 
     // Get tickets from Azure PR
-    if (options?.pullRequestInfo?.workItemRefs?.length) {
-      for (const workItemRef of options.pullRequestInfo.workItemRefs) {
+    if (prInfo?.providerInfo?.workItemRefs?.length) {
+      for (const workItemRef of prInfo.providerInfo.workItemRefs) {
         if (!tickets.some((ticket) => ticket.id === workItemRef.id)) {
           tickets.push({
             provider: "AZURE",
@@ -146,7 +147,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     return tickets;
   }
 
-  public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: any) {
+  public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
     uxLog(this, c.cyan(`[AzureBoardsProvider] Try to post comments on ${tickets.length} work items...`));
     const orgMarkdown = await getOrgMarkdown(org, "html");
     const branchMarkdown = await getBranchMarkdown("html");
@@ -158,9 +159,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       if (ticket.foundOnServer) {
         let azureBoardsComment = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
         if (pullRequestInfo) {
-          const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
+          const prUrl = pullRequestInfo.webUrl || "";
           if (prUrl) {
-            const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
+            const prAuthor = pullRequestInfo.authorName;
             azureBoardsComment += `<br/><br/>PR: <a href="${prUrl}">${pullRequestInfo.title}</a>` + (prAuthor ? ` by ${prAuthor}` : "");
           }
         }

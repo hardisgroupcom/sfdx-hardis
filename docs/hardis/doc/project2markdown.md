@@ -20,9 +20,9 @@ Generates a markdown documentation from a SFDX project
   - Apex
   - Lightning Web Components
 - Lightning Pages
+- Packages
 - SFDX-Hardis Config
 - Branches & Orgs
-- Installed Packages
 - Manifests
 
 Can work on any sfdx project, no need for it to be a sfdx-hardis flavored one.
@@ -65,7 +65,11 @@ If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strateg
 
 If [AI integration](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/) is configured, documentation will contain a summary of the Flow.
 
+- Use variable PROMPTS_LANGUAGE (ex: PROMPTS_LANGUAGE=fr) to force language for LLM calls (default:en)
+
 If you have a complex strategy, you might need to input property **mergeTargets** in branch-scoped sfdx-hardis.yml file to have a correct diagram.
+
+Define DO_NOT_OVERWRITE_INDEX_MD=true to avoid overwriting the index.md file in docs folder, useful if you want to keep your own index.md file.
 
 ## Doc HTML Pages
 
@@ -82,17 +86,17 @@ To just generate HTML pages that you can host anywhere, run `mkdocs build -v || 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                         | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                     |         |          |         |
-| diff-only         | boolean | Generate documentation only for changed files (used for monitoring) |         |          |         |
-| flags-dir         | option  | undefined                                                           |         |          |         |
-| json              | boolean | Format output as json.                                              |         |          |         |
-| pdf               | boolean | Also generate the documentation in PDF format                       |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required       |         |          |         |
-| target-org<br/>-o | option  | undefined                                                           |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration           |         |          |         |
-| with-history      | boolean | Generate a markdown file with the history diff of the Flow          |         |          |         |
+| Name              |  Type   | Description                                                         |                 Default                  | Required | Options |
+|:------------------|:-------:|:--------------------------------------------------------------------|:----------------------------------------:|:--------:|:-------:|
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                     |                                          |          |         |
+| diff-only         | boolean | Generate documentation only for changed files (used for monitoring) |                                          |          |         |
+| flags-dir         | option  | undefined                                                           |                                          |          |         |
+| json              | boolean | Format output as json.                                              |                                          |          |         |
+| pdf               | boolean | Also generate the documentation in PDF format                       |                                          |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required       |                                          |          |         |
+| target-org<br/>-o | option  | undefined                                                           | <nicolas.vuillamy@cloudity.com.playnico> |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration           |                                          |          |         |
+| with-history      | boolean | Generate a markdown file with the history diff of the Flow          |                                          |          |         |
 
 ## Examples
 

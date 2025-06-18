@@ -7,6 +7,7 @@ import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/u
 import { findJsonInString, stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
 import { analyzeDeployErrorLogsJson } from "./deployTipJson.js";
+import { PullRequestData } from "../gitProvider/index.js";
 
 let logRes: string | null = null;
 let errorsAndTips: any[] = [];
@@ -282,7 +283,7 @@ function returnErrorLines(strIn) {
 
 // This data will be caught later to build a pull request message
 export async function updatePullRequestResult(errorsAndTips: Array<any>, failedTests: Array<any>, options: any) {
-  const prData: any = {
+  const prData: Partial<PullRequestData> = {
     messageKey: "deployment",
     title: options.check ? "✅ Deployment check success" : "✅ Deployment success",
     deployErrorsMarkdownBody: "No error has been found during the deployment",

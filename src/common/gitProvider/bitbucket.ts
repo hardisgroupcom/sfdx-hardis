@@ -3,7 +3,7 @@ import c from 'chalk';
 import fs from "fs-extra";
 import FormData from 'form-data'
 import * as path from "path";
-import { PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
+import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
 import { git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { CONSTANTS } from '../../config/index.js';
@@ -66,7 +66,7 @@ export class BitbucketProvider extends GitProviderRoot {
   }
 
   // Find pull request info
-  public async getPullRequestInfo(): Promise<any> {
+  public async getPullRequestInfo(): Promise<CommonPullRequestInfo | null> {
     const pullRequestIdStr = process.env.BITBUCKET_PR_ID || null;
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
@@ -111,7 +111,7 @@ export class BitbucketProvider extends GitProviderRoot {
   }
 
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
-    let deploymentCheckId = null;
+    let deploymentCheckId: string | null = null;
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const latestMergedPullRequestsOnBranch = await this.bitbucket.repositories.listPullRequests({
@@ -132,7 +132,7 @@ export class BitbucketProvider extends GitProviderRoot {
         repoSlug || '',
         workspace || '',
         deploymentCheckId,
-        latestPullRequest
+        this.completePullRequestInfo(latestPullRequest)
       );
     }
 
@@ -145,7 +145,7 @@ export class BitbucketProvider extends GitProviderRoot {
       const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
       const workspace = process.env.BITBUCKET_WORKSPACE || null;
       return await this.getDeploymentIdFromPullRequest(
-        pullRequestInfo.id,
+        pullRequestInfo.idNumber || 0,
         repoSlug || '',
         workspace || '',
         null,
@@ -159,9 +159,9 @@ export class BitbucketProvider extends GitProviderRoot {
     latestPullRequestId: number,
     repoSlug: string,
     workspace: string,
-    deploymentCheckId: any,
-    latestPullRequest: Schema.Pullrequest
-  ) {
+    deploymentCheckId: string | null,
+    latestPullRequest: CommonPullRequestInfo
+  ): Promise<string | null> {
     const comments = await this.bitbucket.repositories.listPullRequestComments({
       pull_request_id: latestPullRequestId,
       repo_slug: repoSlug,
@@ -280,11 +280,20 @@ export class BitbucketProvider extends GitProviderRoot {
     }
   }
 
-  private completePullRequestInfo(prData: Schema.Pullrequest) {
-    const prInfo: any = Object.assign({}, prData);
-    prInfo.sourceBranch = prData?.source?.branch?.name || '';
-    prInfo.targetBranch = prData?.destination?.branch?.name || '';
-    return prInfo;
+  private completePullRequestInfo(prData: Schema.Pullrequest): CommonPullRequestInfo {
+    const prInfo: CommonPullRequestInfo = {
+      idNumber: prData?.id || 0,
+      idStr: prData.id ? prData?.id?.toString() : '',
+      sourceBranch: prData?.source?.branch?.name || '',
+      targetBranch: prData?.destination?.branch?.name || '',
+      title: prData?.rendered?.title?.raw || prData?.rendered?.title?.markup || prData?.rendered?.title?.html || '',
+      description: prData?.rendered?.description?.raw || prData?.rendered?.description?.markup || prData?.rendered?.description?.html || '',
+      webUrl: prData?.links?.html?.href || '',
+      authorName: prData?.author?.display_name || '',
+      providerInfo: prData,
+      customBehaviors: {}
+    };
+    return this.completeWithCustomBehaviors(prInfo);
   }
 
   // Upload the image to Bitbucket

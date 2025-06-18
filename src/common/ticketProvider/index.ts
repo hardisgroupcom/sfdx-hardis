@@ -5,6 +5,7 @@ import { TicketProviderRoot } from "./ticketProviderRoot.js";
 import { uxLog } from "../utils/index.js";
 import { GenericTicketingProvider } from "./genericProvider.js";
 import { AzureBoardsProvider } from "./azureBoardsProvider.js";
+import { CommonPullRequestInfo } from "../gitProvider/index.js";
 
 export const allTicketProviders = [JiraProvider, GenericTicketingProvider, AzureBoardsProvider];
 
@@ -46,7 +47,7 @@ export abstract class TicketProvider {
 
   // Process Ticket providers actions after a deployment.
   // Can be comments on JIRA, and maybe later status changes ? :)
-  public static async postDeploymentActions(tickets: Ticket[], org: string, pullRequestInfo: any) {
+  public static async postDeploymentActions(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null) {
     const ticketProviders = this.getInstances();
     for (const ticketProvider of ticketProviders) {
       if (ticketProvider.isActive) {

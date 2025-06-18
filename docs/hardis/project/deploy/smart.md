@@ -74,30 +74,6 @@ If necessary,you can define the following files (that supports wildcards <member
 
 See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/)
 
-### Deployment plan
-
-If you need to deploy in multiple steps, you can define a property `deploymentPlan` in `.sfdx-hardis.yml`.
-
-- If a file `manifest/package.xml` is found, it will be placed with order 0 in the deployment plan
-
-- If a file `manifest/destructiveChanges.xml` is found, it will be executed as --postdestructivechanges
-
-- If env var `SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES` is defined as `false` , split of package.xml will be applied
-
-Example:
-
-```yaml
-deploymentPlan:
-  packages:
-    - label: Deploy Flow-Workflow
-      packageXmlFile: manifest/splits/packageXmlFlowWorkflow.xml
-      order: 6
-    - label: Deploy SharingRules - Case
-      packageXmlFile: manifest/splits/packageXmlSharingRulesCase.xml
-      order: 30
-      waitAfter: 30
-```
-
 ### Packages installation
 
 You can define a list of package to install during deployments using property `installedPackages`
@@ -168,6 +144,47 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 ```
 
+### Pull Requests Custom Behaviors
+
+If some words are found **in the Pull Request description**, special behaviors will be applied
+
+| Word                                 | Behavior                                                                                                                                                                              |
+|:-------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| NO_DELTA                             | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request                                                                        |
+| PURGE_FLOW_VERSIONS                  | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
+| DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package                                                  |
+
+> For example, define `PURGE_FLOW_VERSIONS` and `DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT` in your Pull Request comments if you want to delete fields that are used in an active flow.
+
+Note: it is also possible to define these behaviors as ENV variables:
+
+- For all deployments (example: `PURGE_FLOW_VERSIONS=true`)
+- For a specific branch, by appending the target branch name (example: `PURGE_FLOW_VERSIONS_UAT=true`)
+
+### Deployment plan (deprecated)
+
+If you need to deploy in multiple steps, you can define a property `deploymentPlan` in `.sfdx-hardis.yml`.
+
+- If a file `manifest/package.xml` is found, it will be placed with order 0 in the deployment plan
+
+- If a file `manifest/destructiveChanges.xml` is found, it will be executed as --postdestructivechanges
+
+- If env var `SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES` is defined as `false` , split of package.xml will be applied
+
+Example:
+
+```yaml
+deploymentPlan:
+  packages:
+    - label: Deploy Flow-Workflow
+      packageXmlFile: manifest/splits/packageXmlFlowWorkflow.xml
+      order: 6
+    - label: Deploy SharingRules - Case
+      packageXmlFile: manifest/splits/packageXmlSharingRulesCase.xml
+      order: 30
+      waitAfter: 30
+```
+
 ### Automated fixes post deployments
 
 #### List view with scope Mine
@@ -216,7 +233,7 @@ If you want to disable the calculation and display of Flow Visual Git Diff in Pu
 |runtests<br/>-r|option|If testlevel=RunSpecifiedTests, please provide a list of classes.
 If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo.||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
+|target-org<br/>-o|option|undefined|<nicolas.vuillamy@cloudity.com.playnico>|||
 |testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunAllTestsInOrg|
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 

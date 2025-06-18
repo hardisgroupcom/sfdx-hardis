@@ -10,12 +10,12 @@
 
 ## Parameters
 
-| Name              |  Type   | Description                                | Default | Required | Options |
-|:------------------|:-------:|:-------------------------------------------|:-------:|:--------:|:-------:|
-| flags-dir         | option  | undefined                                  |         |          |         |
-| json              | boolean | Format output as json.                     |         |          |         |
-| sObjects<br/>-s   | option  | Comma-separated list of sObjects to filter |         |          |         |
-| target-org<br/>-o | option  | undefined                                  |         |          |         |
+| Name              |  Type   | Description                                |                 Default                  | Required | Options |
+|:------------------|:-------:|:-------------------------------------------|:----------------------------------------:|:--------:|:-------:|
+| flags-dir         | option  | undefined                                  |                                          |          |         |
+| json              | boolean | Format output as json.                     |                                          |          |         |
+| sObjects<br/>-s   | option  | Comma-separated list of sObjects to filter |                                          |          |         |
+| target-org<br/>-o | option  | undefined                                  | <nicolas.vuillamy@cloudity.com.playnico> |          |         |
 
 ## Examples
 
