@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.42.0] 2025-06-18
+
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): CI/CD enhancements
   - Allow to activate special behaviors when words are written in Pull Request description
     - **NO_DELTA**: Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request
