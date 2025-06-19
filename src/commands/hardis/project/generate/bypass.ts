@@ -165,7 +165,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
   <CustomPermission xmlns="http://soap.sforce.com/2006/04/metadata">
     <isLicensed>false</isLicensed>
     <label>Bypass ${automation}s for ${sObject}</label>
-    <description>If assigned (through a Permission Set), this Custom Permission will disable the execution of ${automation}s defined on ${sObject} object.${creditsText}</description>
+    <description>If assigned (through a Permission Set), this Custom Permission will disable the execution of ${automation}s defined on the ${sObject} sObject.${creditsText}</description>
   </CustomPermission>`;
     } else {
       return `<?xml version="1.0" encoding="UTF-8"?>
@@ -176,7 +176,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
     </customPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Bypass ${automation}s for ${sObject}</label>
-    <description>If assigned, this Permission Set will disable the execution of ${automation}s defined on ${sObject} object.${creditsText}</description>
+    <description>If assigned, this Permission Set will disable the execution of ${automation}s defined on the ${sObject} sObject.${creditsText}</description>
   </PermissionSet>`;
     }
   }
@@ -291,7 +291,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
         ? ""
         : `/* ${CREDITS_TEXT} */
       `;
-      fileContent.ValidationRule.errorConditionFormula[0] = `${creditsText} AND( NOT(${bypassPermissionName}), ${validationRuleContent})`;
+      fileContent.ValidationRule.errorConditionFormula[0] = `${creditsText} AND( AND(NOT(${bypassPermissionName}), NOT($Permission.BypassAllVRs)), ${validationRuleContent})`;
       await writeXmlFile(filePath, fileContent);
       return {
         sObject,
@@ -366,7 +366,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
       }
 
       const sObject = match[1].replace(/__c$/, "");
-      const bypassCheckLine = `if(FeatureManagement.checkPermission('Bypass${sObject}Triggers')) { return; }`;
+      const bypassCheckLine = `if(FeatureManagement.checkPermission('Bypass${sObject}Triggers') && FeatureManagement.checkPermission('BypassAllTriggers')) { return; }`;
 
       if (fileContent.includes(bypassCheckLine)) {
         return {
