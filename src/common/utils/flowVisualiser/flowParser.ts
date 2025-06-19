@@ -15,29 +15,6 @@ interface FlowMap {
     [propName: string]: any;
 }
 
-/*
-// TODO FILL OUT
-interface FlowObj {
-    "description"?: string;
-    "label"?: string;
-    "processType"?: string; // TODO
-    "start"?: {
-        "connector": string;
-        "scheduledPaths": any;
-    };
-    "status"?: "Active" | "Draft";
-    "subflows"?: any | any[];
-    "actionCalls"?: any | any[];
-    "assignments"?: any | any[];
-    "decisions"?: any | any[];
-}
-    */
-
-
-/*===================================================================
- * E X P O R T E D
- *=================================================================*/
-
 const FLOW_NODE_TYPES = [
     'actionCalls',
     'assignments',
@@ -50,7 +27,8 @@ const FLOW_NODE_TYPES = [
     'recordLookups',
     'recordUpdates',
     'screens',
-    'subflows'
+    'subflows',
+    'transforms'
 ];
 
 export async function parseFlow(xml: string, renderAs: "mermaid" | "plantuml" = "mermaid", options: any = {}): Promise<{ flowMap: FlowMap, uml: string }> {
@@ -242,6 +220,7 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
             case 'recordLookups':
             case 'recordUpdates':
             case 'screens':
+            case 'transforms':
                 bodyStr += node.name + " --> " + nextNode + "\n";
                 manageAddEndNode(nextNode, endNodeIds);
                 if (node.faultPath) {

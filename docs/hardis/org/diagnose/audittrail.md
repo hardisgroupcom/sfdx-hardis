@@ -5,6 +5,8 @@
 
 Export Audit trail into a CSV file with selected criteria, and highlight suspect actions
 
+Also detects updates of Custom Settings values (disable by defining `SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS=true`)
+
 Regular setup actions performed in major orgs are filtered.
 
 - ""
@@ -17,8 +19,10 @@ Regular setup actions performed in major orgs are filtered.
 - Custom App Licenses
   - addeduserpackagelicense
   - granteduserpackagelicense
+  - revokeduserpackagelicense
 - Customer Portal
   - createdcustomersuccessuser
+  - CSPUserDisabled
 - Currency
   - updateddatedexchrate
 - Data Management
@@ -43,6 +47,8 @@ Regular setup actions performed in major orgs are filtered.
   - changedinteractionuseronoff
   - changedmarketinguseroffon
   - changedmarketinguseronoff
+  - changedofflineuseroffon
+  - changedprofileforuserstdtostd
   - changedprofileforuser
   - changedprofileforusercusttostd
   - changedprofileforuserstdtocust
@@ -51,6 +57,9 @@ Regular setup actions performed in major orgs are filtered.
   - changedroleforuserfromnone
   - changedUserEmailVerifiedStatusUnverified
   - changedUserEmailVerifiedStatusVerified
+  - changedknowledgeuseroffon
+  - changedsfcontentuseroffon
+  - changedsupportuseroffon
   - changedUserPhoneNumber
   - changedUserPhoneVerifiedStatusUnverified
   - deactivateduser
@@ -70,6 +79,8 @@ Regular setup actions performed in major orgs are filtered.
   - PermSetLicenseUnassign
   - registeredUserPhoneNumber
   - resetpassword
+  - suNetworkAdminLogin
+  - suNetworkAdminLogout
   - suOrgAdminLogin
   - suOrgAdminLogout
   - unfrozeuser
@@ -101,22 +112,30 @@ monitoringAllowedSectionsActions:
   "Some other section": ["actionType1","actionType2","actionType3"] // Will ignore only those 3 actions from section "Some other section". Other actions in the same section will be considered as suspect.
 ```
 
+## Excel output example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-audittrail-excel.jpg)
+
+## Local output example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-audittrail-local.jpg)
+
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-suspect-audit-trail/) and can output Grafana, Slack and MsTeams Notifications.
 
 
 ## Parameters
 
-| Name                |  Type   | Description                                                       | Default | Required | Options |
-|:--------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d        | boolean | Activate debug mode (more logs)                                   |         |          |         |
-| excludeusers<br/>-e | option  | Comma-separated list of usernames to exclude                      |         |          |         |
-| flags-dir           | option  | undefined                                                         |         |          |         |
-| json                | boolean | Format output as json.                                            |         |          |         |
-| lastndays<br/>-t    | option  | Number of days to extract from today (included)                   |         |          |         |
-| outputfile<br/>-f   | option  | Force the path and name of output report file. Must end with .csv |         |          |         |
-| skipauth            | boolean | Skip authentication check when a default username is required     |         |          |         |
-| target-org<br/>-o   | option  | undefined                                                         |         |          |         |
-| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |         |
+| Name                |  Type   | Description                                                       |                 Default                  | Required | Options |
+|:--------------------|:-------:|:------------------------------------------------------------------|:----------------------------------------:|:--------:|:-------:|
+| debug<br/>-d        | boolean | Activate debug mode (more logs)                                   |                                          |          |         |
+| excludeusers<br/>-e | option  | Comma-separated list of usernames to exclude                      |                                          |          |         |
+| flags-dir           | option  | undefined                                                         |                                          |          |         |
+| json                | boolean | Format output as json.                                            |                                          |          |         |
+| lastndays<br/>-t    | option  | Number of days to extract from today (included)                   |                                          |          |         |
+| outputfile<br/>-f   | option  | Force the path and name of output report file. Must end with .csv |                                          |          |         |
+| skipauth            | boolean | Skip authentication check when a default username is required     |                                          |          |         |
+| target-org<br/>-o   | option  | undefined                                                         | <nicolas.vuillamy@cloudity.com.playnico> |          |         |
+| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |                                          |          |         |
 
 ## Examples
 

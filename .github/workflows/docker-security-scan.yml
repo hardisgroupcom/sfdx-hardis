@@ -1,0 +1,90 @@
+name: Docker Security Scan
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docker-security-scan:
+    name: Build and Scan Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=latest
+            SFDX_CLI_VERSION=latest
+          load: true
+          push: false
+          tags: |
+            sfdx-hardis:security-scan
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "sfdx-hardis:security-scan"
+          format: "table"
+          output: "sfdx-hardis-trivy-image-results.txt"
+          exit-code: "1"
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Generate Trivy security report
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: "sfdx-hardis:security-scan"
+          format: "sarif"
+          output: "sfdx-hardis-trivy-image-results.sarif"
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Generate SBOM (CycloneDX format)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: "sfdx-hardis:security-scan"
+          format: "cyclonedx"
+          output: "sfdx-hardis-image-sbom.cyclonedx.json"
+          scan-type: "image"
+
+      - name: Generate SBOM (SPDX format)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: "sfdx-hardis:security-scan"
+          format: "spdx-json"
+          output: "sfdx-hardis-image-sbom.spdx.json"
+          scan-type: "image"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "sfdx-hardis-trivy-image-results.sarif"
+          category: "trivy"
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-and-sbom-documents
+          path: |
+            sfdx-hardis-image-sbom.cyclonedx.json
+            sfdx-hardis-image-sbom.spdx.json
+            sfdx-hardis-trivy-image-results.txt
+            sfdx-hardis-trivy-image-results.sarif

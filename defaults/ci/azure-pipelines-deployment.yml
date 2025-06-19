@@ -32,7 +32,7 @@ jobs:
   - job: Deployment
     timeoutInMinutes: 150
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
     steps:
       # Checkout repo
       - checkout: self
@@ -77,6 +77,7 @@ jobs:
           JIRA_PAT: $(JIRA_HOST)
           JIRA_TICKET_REGEX: $(JIRA_TICKET_REGEX)
           SFDX_DEPLOY_WAIT_MINUTES: 150
+          SFDX_AUTH_URL_TECHNICAL_ORG: $(SFDX_AUTH_URL_TECHNICAL_ORG)
           CI: "true"
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)
           CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)

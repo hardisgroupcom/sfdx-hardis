@@ -7,6 +7,8 @@ import { buildPromptFromTemplate, PromptTemplate } from "./promptTemplates.js";
 import { isCI, uxLog } from "../utils/index.js";
 import { prompts } from "../utils/prompts.js";
 import { AgentforceProvider } from "./agentforceProvider.js";
+import { LangChainProvider } from "./langchainProvider.js";
+import { formatMarkdownForMkDocs } from "../utils/markdownUtils.js";
 
 let IS_AI_AVAILABLE: boolean | null = null;
 
@@ -42,8 +44,12 @@ export abstract class AiProvider {
   }
 
   static getInstance(): AiProviderRoot | null {
+    // LangChain
+    if (UtilsAi.isLangChainAvailable()) {
+      return new LangChainProvider();
+    }
     // OpenAi
-    if (UtilsAi.isOpenAiAvailable()) {
+    else if (UtilsAi.isOpenAiAvailable()) {
       return new OpenAiProvider();
     }
     else if (UtilsAi.isAgentforceAvailable()) {
@@ -57,8 +63,25 @@ export abstract class AiProvider {
     if (!aiInstance) {
       throw new SfError("aiInstance should be set");
     }
+    // Stop calling AI if a timeout has been reached
+    const aiMaxTimeoutMinutes = parseInt(process.env.AI_MAX_TIMEOUT_MINUTES || (isCI ? "30" : "0"), 10);
+    if (aiMaxTimeoutMinutes > 0) {
+      globalThis.currentAiStartTime = globalThis.currentAiStartTime || Date.now();
+      const elapsedMinutes = (Date.now() - globalThis.currentAiStartTime) / 60000; // Convert milliseconds to minutes
+      if (elapsedMinutes >= aiMaxTimeoutMinutes) {
+        uxLog(this, c.yellow(`AI calls reached maximum time allowed of ${aiMaxTimeoutMinutes} minutes. You can either:
+- Run command locally then commit + push
+- Increase using variable \`AI_MAX_TIMEOUT_MINUTES\` in your CI config (ex: AI_MAX_TIMEOUT_MINUTES=120) after making sure than your CI job timeout can handle it :)`));
+        return { success: false, model: "none", forcedTimeout: true };
+      }
+    }
+    // Call AI using API
     try {
-      return await aiInstance.promptAi(prompt, template);
+      const aiResponse = await aiInstance.promptAi(prompt, template);
+      if (aiResponse?.success && aiResponse?.promptResponse) {
+        aiResponse.promptResponse = formatMarkdownForMkDocs(aiResponse.promptResponse);
+      }
+      return aiResponse;
     } catch (e: any) {
       if (e.message.includes("on tokens per min (TPM)")) {
         try {
@@ -86,4 +109,8 @@ export interface AiResponse {
   success: boolean;
   model: string;
   promptResponse?: string;
+  forcedTimeout?: boolean // In case AI_MAX_TIMEOUT_MINUTES has been set
 }
+
+
+

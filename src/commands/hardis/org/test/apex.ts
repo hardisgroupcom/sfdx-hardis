@@ -9,6 +9,7 @@ import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils
 import { CONSTANTS, getConfig, getReportDirectory } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateApexCoverageOutputFile } from '../../../../common/utils/deployUtils.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -78,7 +79,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     this.notifButtons = await getNotificationButtons();
     /* jscpd:ignore-end */
-    await this.runApexTests(testlevel, debugMode);
+    await this.runApexTests(testlevel, debugMode, flags['target-org']?.getUsername());
     // No Apex
     if (this.testRunOutcome === 'NoApex') {
       this.notifSeverity = 'log';
@@ -95,7 +96,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     uxLog(this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
 
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'APEX_TESTS',
       text: this.notifText,
@@ -126,7 +127,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     return { orgId: flags['target-org'].getOrgId(), outputString: this.statusMessage, statusCode: process.exitCode };
   }
 
-  private async runApexTests(testlevel: any, debugMode: any) {
+  private async runApexTests(testlevel: any, debugMode: any, orgUsername: string | null) {
     // Run tests with SFDX commands
     const reportDir = await getReportDirectory();
     const testCommand =
@@ -136,6 +137,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       ` --output-dir ${reportDir}` +
       ` --wait ${process.env.SFDX_TEST_WAIT_MINUTES || '60'}` +
       ` --test-level ${testlevel}` +
+      (orgUsername ? ` --target-org ${orgUsername}` : '') +
       (debugMode ? ' --verbose' : '');
     try {
       const execCommandRes = await execCommand(testCommand, this, {

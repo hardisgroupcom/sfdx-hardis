@@ -107,6 +107,10 @@ If there are more than 10000 items, your monitoring job will crash.
 
 In that case, you can:
 
-- Single Branch scope: Manually update file `manifest/package-skip-items.xml` in the branch corresponding to an org, then commit and push
+- Single Branch scope: Manually update file `manifest/package-skip-items.xml` in the branch corresponding to an org, then commit and push. It works with:
+  - Full wildcard (`<members>*</members>`)
+  - Named metadata (`<members>Account.Name</members>`)
+  - Partial wildcards names (`<members>pi__*</members>` , `<members>*__dlm</members>` , or `<members>prefix*suffix</members>`)
+
 - All branches scope: Define CI/CD env var **MONITORING_BACKUP_SKIP_METADATA_TYPES** with the list of additional metadata types you want to skip
   - example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`

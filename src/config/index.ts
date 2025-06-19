@@ -185,13 +185,7 @@ export const checkConfig = async (options: any) => {
     devHubAliasOk = (process.env.DEVHUB_ALIAS || configProject.devHubAlias) != null;
     // If not found, prompt user project name and store it in user config file
     if (projectName == null) {
-      const promptResponse = await prompts({
-        type: 'text',
-        name: 'value',
-        message: c.cyanBright('Please input your project name without spaces or special characters (ex: MonClient)'),
-        validate: (value: string) => !value.match(/^[0-9a-z]+$/), // check only alphanumeric
-      });
-      projectName = promptResponse.value;
+      projectName = promptForProjectName();
       await setConfig('project', {
         projectName,
         devHubAlias: `DevHub_${projectName}`,
@@ -227,4 +221,32 @@ export function getEnvVar(envVarName: string) {
     return null;
   }
   return varValue;
+}
+
+export async function promptForProjectName() {
+  const projectRes = await prompts({
+    type: 'text',
+    name: 'projectName',
+    message: 'What is the name of your project ? (example: MyClient)',
+  });
+  const userProjectName = projectRes.projectName + '';
+  let projectName = projectRes.projectName.toLowerCase().replace(' ', '_');
+  // Make sure that projectName is compliant with the format of an environment variable
+  projectName = projectName.replace(/[^a-zA-Z0-9_]/g, '_').replace(/^[^a-zA-Z_]+/, '');
+  if (projectName !== userProjectName) {
+    uxLog(this,
+      c.yellow(
+        `Project name has been changed to ${projectName} because it must be compliant with the format of an environment variable.`
+      )
+    );
+    const promptResp = await prompts({
+      type: 'confirm',
+      message: `Are you ok with updated project name "${projectName}" ?`,
+    });
+    if (promptResp.value === true) {
+      return projectName;
+    }
+    return promptForProjectName();
+  }
+  return projectName;
 }

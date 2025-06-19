@@ -1,10 +1,10 @@
-// import c from "chalk";
+import c from "chalk";
 import { glob } from "glob";
 import fs from "fs-extra";
-// import { uxLog } from "../utils/index.js";
 import * as path from "path";
 import { XMLParser } from "fast-xml-parser";
 import { GLOB_IGNORE_PATTERNS } from "../utils/projectUtils.js";
+import { uxLog } from "../utils/index.js";
 
 let ALL_LINKS_CACHE: any[] = [];
 let ALL_OBJECTS_CACHE: any[] = [];
@@ -96,14 +96,19 @@ classDef mainObject fill:#FFB3B3,stroke:#A94442,stroke-width:4px,rx:14px,ry:14px
       const fieldDetail = new XMLParser().parse(fieldXml);
       if (fieldDetail?.CustomField?.type === "MasterDetail" || fieldDetail?.CustomField?.type === "Lookup") {
         const fieldName = path.basename(fieldFile, ".field-meta.xml");
-        const link = {
-          from: objectName,
-          to: fieldDetail.CustomField.referenceTo,
-          field: fieldName,
-          relationshipName: fieldDetail.CustomField.relationshipName,
-          type: fieldDetail.CustomField.type
-        };
-        this.allLinks.push(link);
+        if (fieldDetail?.CustomField?.referenceTo) {
+          const link = {
+            from: objectName,
+            to: fieldDetail.CustomField.referenceTo,
+            field: fieldName,
+            relationshipName: fieldDetail?.CustomField?.relationshipName || fieldDetail?.CustomField?.referenceTo,
+            type: fieldDetail.CustomField.type
+          };
+          this.allLinks.push(link);
+        }
+        else {
+          uxLog(this, c.yellow(`Warning: ${objectName}.${fieldName} has no referenceTo value so has been ignored.`));
+        }
       }
     }
     ALL_LINKS_CACHE = [...this.allLinks];

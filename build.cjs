@@ -1,11 +1,13 @@
 #!/usr/bin/node
 /* eslint-disable */
 const fs = require("fs-extra");
+const yaml = require("js-yaml");
 
 class SfdxHardisBuilder {
   async run() {
     console.log("Start additional building of sfdx-hardis repository...");
     await this.buildDeployTipsDoc();
+    await this.buildPromptTemplatesDocs();
     this.truncateReadme();
   }
 
@@ -98,6 +100,96 @@ class SfdxHardisBuilder {
     tipFileMd.push(...tip.tip.split("\n"));
     tipFileMd.push("```");
     fs.writeFileSync(tipFile, tipFileMd.join("\n") + "\n");
+  }
+
+  async buildPromptTemplatesDocs() {
+    console.log("Building prompt templates documentation...");
+    const { PROMPT_TEMPLATES } = await import("./lib/common/aiProvider/promptTemplates/index.js");
+    const { PROMPT_VARIABLES } = await import("./lib/common/aiProvider/promptTemplates/variablesIndex.js");
+    const docsPromptDir = "./docs/prompt-templates";
+    fs.ensureDirSync(docsPromptDir);
+
+    // Build prompt templates documentation
+    const promptNav = [];
+    for (const templateName of Object.keys(PROMPT_TEMPLATES)) {
+      const templateDocFile = `${docsPromptDir}/${templateName}.md`;
+      const prompt = PROMPT_TEMPLATES[templateName]
+      // Read the template file and extract the prompt text
+      const md = [
+        `---`,
+        `title: ${templateName}`,
+        `description: Prompt template for ${templateName}`,
+        `---`,
+        '',
+        `# ${templateName}`,
+        '',
+        `## Variables`,
+        "| Name | Description | Example |",
+        "| :------|:-------------|:---------|",
+        ...prompt.variables.map(
+          v => {
+            // Escape pipe characters in example to avoid breaking the markdown table
+            let example = String(v.example ?? "");
+            // Replace | with \| and newlines with <br> for markdown table safety
+            example = example.replace(/\|/g, "\\|").replace(/\n/g, "<br>");
+            return `| **${v.name}** | ${v.description} | \`${example}\` |`;
+          }
+        ),
+        '',
+        `## Prompt`,
+        "",
+        "```",
+        prompt.text.en,
+        "```",
+        '', '## How to override',
+
+        '',
+        `To define your own prompt text, you can define a local file **config/prompt-templates/${templateName}.txt**`,
+        ``,
+        `You can also use the command \`sf hardis:doc:override-prompts\` to automatically create all override template files at once.`,
+        ``,
+        `If you do so, please don't forget to use the replacement variables :)`
+      ];
+      fs.writeFileSync(templateDocFile, md.join("\n") + "\n");
+      promptNav.push({ [templateName]: `prompt-templates/${templateName}.md` });
+    }
+
+    // Build prompt variables documentation in the same folder
+    const variablesNav = [];
+    for (const variableName of Object.keys(PROMPT_VARIABLES)) {
+      const variableDocFile = `${docsPromptDir}/${variableName}.md`;
+      const variable = PROMPT_VARIABLES[variableName];
+      // Read the variable file and extract the variable text
+      const md = [
+        `---`,
+        `title: ${variableName}`,
+        `description: Prompt variable for ${variableName}`,
+        `---`,
+        '',
+        `# ${variableName}`,
+        '',
+        `## Description`,
+        '',
+        'This is a reusable prompt variable that provides common instructions across multiple prompt templates.',
+        '',
+        `## Content`,
+        "",
+        "```",
+        variable.text.en,
+        "```",
+        '',
+        '## How to override',
+        '',
+        `To define your own variable content, you can define a local file **config/prompt-templates/${variableName}.txt**`,
+        ``,
+        `You can also use the command \`sf hardis:doc:override-prompts\` to automatically create all override variable files at once.`,
+        ``
+      ];
+      fs.writeFileSync(variableDocFile, md.join("\n") + "\n");
+      promptNav.push({ [variableName]: `prompt-templates/${variableName}.md` });
+    }
+
+    console.log("Prompt templates and variables documentation generated");
   }
 
   truncateReadme() {

@@ -26,8 +26,8 @@ import {
   uxLog,
 } from '../../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
-import { smartDeploy, removePackageXmlContent } from '../../../../common/utils/deployUtils.js';
-import { isProductionOrg, promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
+import { smartDeploy, removePackageXmlContent, createEmptyPackageXml } from '../../../../common/utils/deployUtils.js';
+import { isProductionOrg, promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { getApexTestClasses } from '../../../../common/utils/classUtils.js';
 import { listMajorOrgs, restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
@@ -115,30 +115,6 @@ If necessary,you can define the following files (that supports wildcards <member
 
 See [Overwrite management documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-config-overwrite/)
 
-### Deployment plan
-
-If you need to deploy in multiple steps, you can define a property \`deploymentPlan\` in \`.sfdx-hardis.yml\`.
-
-- If a file \`manifest/package.xml\` is found, it will be placed with order 0 in the deployment plan
-
-- If a file \`manifest/destructiveChanges.xml\` is found, it will be executed as --postdestructivechanges
-
-- If env var \`SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES\` is defined as \`false\` , split of package.xml will be applied
-
-Example:
-
-\`\`\`yaml
-deploymentPlan:
-  packages:
-    - label: Deploy Flow-Workflow
-      packageXmlFile: manifest/splits/packageXmlFlowWorkflow.xml
-      order: 6
-    - label: Deploy SharingRules - Case
-      packageXmlFile: manifest/splits/packageXmlSharingRulesCase.xml
-      order: 30
-      waitAfter: 30
-\`\`\`
-
 ### Packages installation
 
 You can define a list of package to install during deployments using property \`installedPackages\`
@@ -207,6 +183,47 @@ commandsPostDeploy:
     skipIfError: true
     context: process-deployment-only
     runOnlyOnceByOrg: true
+\`\`\`
+
+### Pull Requests Custom Behaviors
+
+If some words are found **in the Pull Request description**, special behaviors will be applied
+
+| Word | Behavior |
+| :--- | :--- |
+| NO_DELTA | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request |
+| PURGE_FLOW_VERSIONS | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
+| DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package |
+
+> For example, define \`PURGE_FLOW_VERSIONS\` and \`DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT\` in your Pull Request comments if you want to delete fields that are used in an active flow.
+
+Note: it is also possible to define these behaviors as ENV variables:
+
+- For all deployments (example: \`PURGE_FLOW_VERSIONS=true\`)
+- For a specific branch, by appending the target branch name (example: \`PURGE_FLOW_VERSIONS_UAT=true\`)
+
+### Deployment plan (deprecated)
+
+If you need to deploy in multiple steps, you can define a property \`deploymentPlan\` in \`.sfdx-hardis.yml\`.
+
+- If a file \`manifest/package.xml\` is found, it will be placed with order 0 in the deployment plan
+
+- If a file \`manifest/destructiveChanges.xml\` is found, it will be executed as --postdestructivechanges
+
+- If env var \`SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES\` is defined as \`false\` , split of package.xml will be applied
+
+Example:
+
+\`\`\`yaml
+deploymentPlan:
+  packages:
+    - label: Deploy Flow-Workflow
+      packageXmlFile: manifest/splits/packageXmlFlowWorkflow.xml
+      order: 6
+    - label: Deploy SharingRules - Case
+      packageXmlFile: manifest/splits/packageXmlSharingRulesCase.xml
+      order: 30
+      waitAfter: 30
 \`\`\`
 
 ### Automated fixes post deployments
@@ -310,7 +327,16 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   protected configInfo: any = {};
   protected testLevel;
   protected testClasses;
-  protected smartDeployOptions: any;
+  protected smartDeployOptions: {
+    targetUsername: string;
+    conn: any; // Connection from Salesforce
+    testClasses: string;
+    postDestructiveChanges?: string;
+    preDestructiveChanges?: string;
+    delta?: boolean;
+    destructiveChangesAfterDeployment?: boolean;
+    extraCommands?: any[];
+  };
   protected packageXmlFile: string;
   protected delta = false;
   protected debugMode = false;
@@ -332,6 +358,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       targetUsername = await promptOrgUsernameDefault(this, targetUsername, { devHub: false, setDefault: false, scratch: false });
     }
 
+    await setConnectionVariables(flags['target-org']?.getConnection(), true);
+
     await this.initTestLevelAndTestClasses(flags);
 
     await this.handlePackages(targetUsername);
@@ -342,10 +370,13 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
 
     // Get package.xml & destructiveChanges.xml
-    this.initPackageXmlAndDestructiveChanges(packageXml, targetUsername, flags);
+    await this.initPackageXmlAndDestructiveChanges(packageXml, targetUsername, flags);
 
     // Compute and apply delta if required
     await this.handleDeltaDeployment(deltaFromArgs, targetUsername, currentGitBranch);
+
+    // Set smart deploy options
+    await this.setAdditionalOptions(targetUsername);
 
     // Process deployment (or deployment check)
     const { messages, quickDeploy, deployXmlCount } = await smartDeploy(
@@ -374,6 +405,52 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     return { orgId: flags['target-org'].getOrgId(), outputString: messages.join('\n') };
   }
 
+
+  private async setAdditionalOptions(targetUsername: string) {
+    const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+    if (prInfo) {
+      this.smartDeployOptions.extraCommands = this.smartDeployOptions.extraCommands || [];
+      if (prInfo.customBehaviors?.purgeFlowVersions === true) {
+        this.smartDeployOptions.extraCommands.push({
+          id: `PURGE_FLOW_VERSIONS`,
+          command: `sf hardis:org:purge:flow --no-prompt --delete-flow-interviews --target-org ${targetUsername}`,
+          label: 'Purge Flow Versions (added from PR config)',
+          skipIfError: true,
+          context: 'process-deployment-only',
+        })
+        uxLog(this, c.cyan('[SmartDeploy] Purge Flow Versions command added to deployment options (from PR config)'));
+      }
+      if (prInfo.customBehaviors?.destructiveChangesAfterDeployment === true) {
+        if (this.smartDeployOptions.postDestructiveChanges) {
+          this.smartDeployOptions.destructiveChangesAfterDeployment = prInfo.customBehaviors?.destructiveChangesAfterDeployment;
+          const emptyPackageXml = await createEmptyPackageXml();
+          const deployCommand =
+            `sf project deploy` +
+            ' start' +
+            ` --manifest "${emptyPackageXml}"` +
+            ' --ignore-warnings' +
+            ' --ignore-conflicts' +
+            ` --post-destructive-changes ${this.smartDeployOptions.postDestructiveChanges}` +
+            ` --target-org ${targetUsername}` +
+            ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
+            (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
+            ` --json`;
+          this.smartDeployOptions.extraCommands.push({
+            id: `DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT`,
+            command: deployCommand,
+            label: 'Destructive Changes After Deployment (added from PR config)',
+            skipIfError: true,
+            context: 'process-deployment-only',
+          });
+          uxLog(this, c.cyan('[SmartDeploy] Destructive Changes After Deployment command added to deployment options (from PR config)'));
+        }
+        else {
+          uxLog(this, c.yellow('[SmartDeploy] Destructive Changes After Deployment is set to true in PR config, but no postDestructiveChanges file found. Skipping this step.'));
+        }
+      }
+    }
+  }
+
   private async handleDeltaDeployment(deltaFromArgs: any, targetUsername: string, currentGitBranch: string | null) {
     this.delta = false;
     if ((deltaFromArgs === true ||
@@ -383,14 +460,14 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       this.delta = true;
       this.smartDeployOptions.delta = true;
       // Define delta deployment depending on context
-      let fromCommit = 'HEAD';
-      let toCommit = 'HEAD^';
+      let fromCommit = 'HEAD^';
+      let toCommit = 'HEAD';
       if (this.checkOnly) {
         // In deployment check context
-        const prInfo = await GitProvider.getPullRequestInfo();
+        const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
         const deltaScope = await getGitDeltaScope(
-          prInfo?.sourceBranch || currentGitBranch,
-          prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH
+          prInfo?.sourceBranch || currentGitBranch || "",
+          prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH || ""
         );
         fromCommit = deltaScope.fromCommit;
         toCommit = deltaScope?.toCommit?.hash || '';
@@ -455,7 +532,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
   }
 
-  private initPackageXmlAndDestructiveChanges(packageXml: any, targetUsername: any, flags) {
+  private async initPackageXmlAndDestructiveChanges(packageXml: any, targetUsername: any, flags) {
     this.packageXmlFile =
       packageXml ||
         process.env.PACKAGE_XML_TO_DEPLOY ||
@@ -467,6 +544,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       targetUsername: targetUsername,
       conn: flags['target-org']?.getConnection(),
       testClasses: this.testClasses,
+      extraCommands: []
     };
     // Get destructiveChanges.xml and add it in options if existing
     const postDestructiveChanges = process.env.PACKAGE_XML_TO_DELETE ||
@@ -566,6 +644,14 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   }
 
   async isDeltaAllowed() {
+    const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+    if (prInfo?.customBehaviors?.noDeltaDeployment === true) {
+      uxLog(
+        this,
+        c.yellow(`[DeltaDeployment] Delta deployment has been disabled for this Pull Request`)
+      );
+      return false;
+    }
     if (process.env?.DISABLE_DELTA_DEPLOYMENT === 'true') {
       uxLog(
         this,
@@ -601,14 +687,13 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       uxLog(
         this,
         c.yellow(
-          `[DeltaDeployment] It is recommended to use delta deployments for merges between major branches, use this config at your own responsibility`
+          `[DeltaDeployment] It is not recommended to use delta deployments for merges between major branches, use this config at your own responsibility`
         )
       );
       return true;
     }
     let currentBranch = await getCurrentGitBranch();
     let parentBranch = process.env.FORCE_TARGET_BRANCH || null;
-    const prInfo = await GitProvider.getPullRequestInfo();
     if (prInfo) {
       currentBranch = prInfo.sourceBranch;
       parentBranch = prInfo.targetBranch;

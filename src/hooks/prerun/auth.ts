@@ -1,21 +1,9 @@
-import {
-  elapseStart,
-  getCurrentGitBranch,
-  isCI,
-  restoreLocalSfdxInfo,
-} from '../../common/utils/index.js';
-import c from "chalk";
-import { checkConfig, getConfig } from '../../config/index.js';
+
 import { Hook } from '@oclif/core';
-import { authOrg } from '../../common/utils/authUtils.js';
 
 const hook: Hook<'prerun'> = async (options) => {
   // Skip hooks from other commands than hardis commands
   const commandId = options?.Command?.id || '';
-
-  if (commandId.startsWith('hardis')) {
-    elapseStart(`${options?.Command?.id} execution time`);
-  }
 
   if (
     !commandId.startsWith('hardis') ||
@@ -36,6 +24,22 @@ const hook: Hook<'prerun'> = async (options) => {
   if (typeof global.it === 'function') {
     return;
   }
+
+  // Dynamic imports to improve performances when other CLI commands are called
+  const { authOrg } = await import('../../common/utils/authUtils.js');
+  const c = (await import('chalk')).default;
+  const { checkConfig, getConfig } = await import('../../config/index.js');
+  const {
+    elapseStart,
+    getCurrentGitBranch,
+    isCI,
+    restoreLocalSfdxInfo,
+  } = await import('../../common/utils/index.js');
+
+  if (commandId.startsWith('hardis')) {
+    elapseStart(`${options?.Command?.id} execution time`);
+  }
+
   await restoreLocalSfdxInfo();
   let configInfo = await getConfig('user');
   if (configInfo.skipAuthCheck === true) {

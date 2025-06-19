@@ -5,6 +5,7 @@ import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
 import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 export default class ProjectDeployStart extends SfCommand<any> {
   public static description = `sfdx-hardis wrapper for **sf project deploy quick** that displays tips to solve deployment errors.
@@ -97,6 +98,7 @@ commandsPostDeploy:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ProjectDeployStart);
     const conn = flags["target-org"].getConnection();
+    await setConnectionVariables(flags['target-org']?.getConnection(), true);
     // Run pre deployment commands if defined
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: false, conn: conn });
     const result = await wrapSfdxCoreCommand("sf project deploy start", this.argv, this, flags.debug);

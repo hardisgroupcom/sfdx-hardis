@@ -3,13 +3,15 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { isCI, sortCrossPlatform, uxLog } from '../../../../common/utils/index.js';
 import { bulkQuery } from '../../../../common/utils/apiUtils.js';
+import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -18,6 +20,8 @@ export default class DiagnoseAuditTrail extends SfCommand<any> {
   public static title = 'Diagnose content of Setup Audit Trail';
 
   public static description = `Export Audit trail into a CSV file with selected criteria, and highlight suspect actions
+
+Also detects updates of Custom Settings values (disable by defining \`SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS=true\`)
 
 Regular setup actions performed in major orgs are filtered.
 
@@ -31,8 +35,10 @@ Regular setup actions performed in major orgs are filtered.
 - Custom App Licenses
   - addeduserpackagelicense
   - granteduserpackagelicense
+  - revokeduserpackagelicense
 - Customer Portal
   - createdcustomersuccessuser
+  - CSPUserDisabled
 - Currency
   - updateddatedexchrate
 - Data Management
@@ -57,6 +63,8 @@ Regular setup actions performed in major orgs are filtered.
   - changedinteractionuseronoff
   - changedmarketinguseroffon
   - changedmarketinguseronoff
+  - changedofflineuseroffon
+  - changedprofileforuserstdtostd
   - changedprofileforuser
   - changedprofileforusercusttostd
   - changedprofileforuserstdtocust
@@ -65,6 +73,9 @@ Regular setup actions performed in major orgs are filtered.
   - changedroleforuserfromnone
   - changedUserEmailVerifiedStatusUnverified
   - changedUserEmailVerifiedStatusVerified
+  - changedknowledgeuseroffon
+  - changedsfcontentuseroffon
+  - changedsupportuseroffon
   - changedUserPhoneNumber
   - changedUserPhoneVerifiedStatusUnverified
   - deactivateduser
@@ -84,6 +95,8 @@ Regular setup actions performed in major orgs are filtered.
   - PermSetLicenseUnassign
   - registeredUserPhoneNumber
   - resetpassword
+  - suNetworkAdminLogin
+  - suNetworkAdminLogout
   - suOrgAdminLogin
   - suOrgAdminLogout
   - unfrozeuser
@@ -114,6 +127,14 @@ monitoringAllowedSectionsActions:
   "Some section": [] // Will ignore all actions from such section
   "Some other section": ["actionType1","actionType2","actionType3"] // Will ignore only those 3 actions from section "Some other section". Other actions in the same section will be considered as suspect.
 \`\`\`
+
+## Excel output example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-audittrail-excel.jpg)
+
+## Local output example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-audittrail-local.jpg)
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-suspect-audit-trail/) and can output Grafana, Slack and MsTeams Notifications.
 `;
@@ -159,6 +180,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   protected allowedSectionsActions = {};
   protected debugMode = false;
 
+  protected suspectRecords: any[] = [];
+  protected suspectUsers: any[] = [];
+  protected suspectUsersAndActions: any = {};
+  protected suspectActions: any[] = [];
+  protected severityIconLog = getSeverityIcon('log');
+  protected severityIconWarning = getSeverityIcon('warning');
+
   protected auditTrailRecords: any[] = [];
   protected outputFile;
   protected outputFilesRes: any = {};
@@ -174,92 +202,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const config = await getConfig('branch');
 
     // If manual mode and lastndays not sent as parameter, prompt user
-    if (!isCI && !this.lastNdays) {
-      const lastNdaysResponse = await prompts({
-        type: 'select',
-        name: 'lastndays',
-        message:
-          'Please select the number of days in the past from today you want to detect suspiscious setup activities',
-        choices: [
-          { title: `1`, value: 1 },
-          { title: `2`, value: 2 },
-          { title: `3`, value: 3 },
-          { title: `4`, value: 4 },
-          { title: `5`, value: 5 },
-          { title: `6`, value: 6 },
-          { title: `7`, value: 7 },
-          { title: `14`, value: 14 },
-          { title: `30`, value: 30 },
-          { title: `60`, value: 60 },
-          { title: `90`, value: 90 },
-          { title: `180`, value: 180 },
-        ],
-      });
-      this.lastNdays = lastNdaysResponse.lastndays;
-    } else {
-      this.lastNdays = this.lastNdays || 1;
-    }
+    await this.manageAuditTimeframe();
 
-    this.allowedSectionsActions = {
-      '': ['createScratchOrg', 'changedsenderemail', 'deleteScratchOrg', 'loginasgrantedtopartnerbt'],
-      'Certificate and Key Management': ['insertCertificate'],
-      'Custom App Licenses': ['addeduserpackagelicense', 'granteduserpackagelicense'],
-      'Customer Portal': ['createdcustomersuccessuser'],
-      Currency: ['updateddatedexchrate'],
-      'Data Management': ['queueMembership'],
-      'Email Administration': ['dkimRotationSuccessful', 'dkimRotationPreparationSuccessful'],
-      Holidays: ['holiday_insert'],
-      'Inbox mobile and legacy desktop apps': ['enableSIQUserNonEAC'],
-      Groups: ['groupMembership'],
-      'Manage Territories': ['tm2_userAddedToTerritory', 'tm2_userRemovedFromTerritory'],
-      'Manage Users': [
-        'activateduser',
-        'createduser',
-        'changedcommunitynickname',
-        'changedemail',
-        'changedfederationid',
-        'changedinteractionuseroffon',
-        'changedinteractionuseronoff',
-        'changedmarketinguseroffon',
-        'changedmarketinguseronoff',
-        'changedManager',
-        'changedprofileforuser',
-        'changedprofileforusercusttostd',
-        'changedprofileforuserstdtocust',
-        'changedroleforusertonone',
-        'changedroleforuser',
-        'changedroleforuserfromnone',
-        'changedpassword',
-        'changedUserEmailVerifiedStatusUnverified',
-        'changedUserEmailVerifiedStatusVerified',
-        'changedUserPhoneNumber',
-        'changedUserPhoneVerifiedStatusUnverified',
-        'deactivateduser',
-        'deleteAuthenticatorPairing',
-        'deleteTwoFactorInfo2',
-        'deleteTwoFactorTempCode',
-        'frozeuser',
-        'insertAuthenticatorPairing',
-        'insertTwoFactorInfo2',
-        'insertTwoFactorTempCode',
-        'lightningloginenroll',
-        'PermSetAssign',
-        'PermSetGroupAssign',
-        'PermSetGroupUnassign',
-        'PermSetLicenseAssign',
-        'PermSetUnassign',
-        'PermSetLicenseUnassign',
-        'registeredUserPhoneNumber',
-        'resetpassword',
-        'suOrgAdminLogin',
-        'suOrgAdminLogout',
-        'unfrozeuser',
-        'useremailchangesent',
-      ],
-      'Mobile Administration': ['assigneduserstomobileconfig'],
-      'Reporting Snapshots': ['createdReportJob', 'deletedReportJob'],
-      Sandboxes: ['DeleteSandbox'],
-    };
+    // Initialize exceptions that will not be considered as suspect
+    this.initializeAllowedSectionsActions();
 
     // Append custom sections & actions considered as not suspect
     if (config.monitoringAllowedSectionsActions) {
@@ -270,85 +216,37 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     uxLog(this, c.cyan(`Extracting Setup Audit Trail and detect suspect actions in ${conn.instanceUrl} ...`));
 
     // Manage exclude users list
-    if (this.excludeUsers.length === 0) {
-      if (config.targetUsername) {
-        this.excludeUsers.push(config.targetUsername);
-      }
-      if (config.monitoringExcludeUsernames) {
-        this.excludeUsers.push(...config.monitoringExcludeUsernames);
-      }
-    }
-    let whereConstraint = `WHERE CreatedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND CreatedBy.Username != NULL `;
-    if (this.excludeUsers.length > 0) {
-      whereConstraint += `AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
-    }
-
-    uxLog(this, c.cyan(`Excluded users are ${this.excludeUsers.join(',') || 'None'}`));
-    uxLog(
-      this,
-      c.cyan(
-        `Use argument --excludeusers or .sfdx-hardis.yml property monitoringExcludeUsernames to exclude more users`
-      )
-    );
+    const whereConstraint = this.manageExcludedUsers(config);
 
     // Fetch SetupAuditTrail records
-    const auditTrailQuery =
-      `SELECT CreatedDate,CreatedBy.Username,CreatedBy.Name,Action,Section,Display,ResponsibleNamespacePrefix,DelegateUser ` +
-      `FROM SetupAuditTrail ` +
-      whereConstraint +
-      `ORDER BY CreatedDate DESC`;
-    uxLog(this, c.grey('Query: ' + c.italic(auditTrailQuery)));
-    const queryRes = await bulkQuery(auditTrailQuery, conn);
-    const suspectRecords: any[] = [];
-    let suspectUsers: any[] = [];
-    const suspectActions: any[] = [];
-    const severityIconLog = getSeverityIcon('log');
-    const severityIconWarning = getSeverityIcon('warning');
-    this.auditTrailRecords = queryRes.records.map((record) => {
-      const section = record?.Section || '';
-      record.Suspect = false;
-      record.severity = 'log';
-      record.severityIcon = severityIconLog;
-      // Unallowed actions
-      if (
-        (this.allowedSectionsActions[section] && !this.allowedSectionsActions[section].includes(record.Action)) ||
-        !this.allowedSectionsActions[section]
-      ) {
-        record.Suspect = true;
-        record.SuspectReason = `Manual config in unallowed section ${section} with action ${record.Action}`;
-        record.severity = 'warning';
-        record.severityIcon = severityIconWarning;
-        suspectRecords.push(record);
-        suspectUsers.push(record['CreatedBy.Username'] + ' - ' + record['CreatedBy.Name']);
-        suspectActions.push(`${section} - ${record.Action}`);
-        return record;
-      }
-      return record;
-    });
+    await this.queryAuditTrail(whereConstraint, conn);
 
+    await this.handleCustomSettingsAudit(conn);
+
+    // Summarize
     let statusCode = 0;
     let msg = 'No suspect Setup Audit Trail records has been found';
     const suspectActionsWithCount: any[] = [];
-    if (suspectRecords.length > 0) {
+    if (this.suspectRecords.length > 0) {
       statusCode = 1;
       uxLog(this, c.yellow('Suspect records list'));
-      uxLog(this, JSON.stringify(suspectRecords, null, 2));
-      msg = `${suspectRecords.length} suspect Setup Audit Trail records has been found`;
+      uxLog(this, JSON.stringify(this.suspectRecords, null, 2));
+      msg = `${this.suspectRecords.length} suspect Setup Audit Trail records has been found`;
       uxLog(this, c.yellow(msg));
-      suspectUsers = [...new Set(suspectUsers)];
-      suspectUsers.sort();
+      this.suspectUsers = [...new Set(this.suspectUsers)];
+      sortCrossPlatform(this.suspectUsers);
       const suspectActionsSummary = {};
-      for (const suspectAction of suspectActions) {
+      for (const suspectAction of this.suspectActions) {
         suspectActionsSummary[suspectAction] = (suspectActionsSummary[suspectAction] || 0) + 1;
       }
       for (const suspectAction of Object.keys(suspectActionsSummary)) {
         suspectActionsWithCount.push(`${suspectAction} (${suspectActionsSummary[suspectAction]})`);
       }
-      suspectActionsWithCount.sort();
+      sortCrossPlatform(suspectActionsWithCount);
       uxLog(this, '');
       uxLog(this, c.yellow('Related users:'));
-      for (const user of suspectUsers) {
-        uxLog(this, c.yellow(`- ${user}`));
+      for (const user of this.suspectUsers) {
+        uxLog(this, c.yellow(`- ${user}` + ' (' + this.suspectUsersAndActions[user].actions.join(', ') + ")"));
       }
       uxLog(this, '');
       uxLog(this, c.yellow('Related actions:'));
@@ -370,13 +268,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     let notifSeverity: NotifSeverity = 'log';
     let notifText = `No suspect Setup Audit Trail records has been found in ${orgMarkdown}`;
     let notifAttachments: any[] = [];
-    if (suspectRecords.length > 0) {
+    if (this.suspectRecords.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${suspectRecords.length} suspect Setup Audit Trail records have been found in ${orgMarkdown}`;
+      notifText = `${this.suspectRecords.length} suspect Setup Audit Trail records have been found in ${orgMarkdown}`;
       let notifDetailText = ``;
       notifDetailText += '*Related users*:\n';
-      for (const user of suspectUsers) {
-        notifDetailText += `• ${user}\n`;
+      for (const user of this.suspectUsers) {
+        notifDetailText += `• ${user + " (" + this.suspectUsersAndActions[user].actions.join(', ') + ")"}\n`;
       }
       notifDetailText += '\n';
       notifDetailText += '*Related actions*:\n';
@@ -386,7 +284,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       notifAttachments = [{ text: notifDetailText }];
     }
 
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'AUDIT_TRAIL',
       text: notifText,
@@ -395,9 +293,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       severity: notifSeverity,
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.auditTrailRecords,
-      data: { metric: suspectRecords.length },
+      data: { metric: this.suspectRecords.length },
       metrics: {
-        SuspectMetadataUpdates: suspectRecords.length,
+        SuspectMetadataUpdates: this.suspectRecords.length,
       },
     });
 
@@ -409,9 +307,260 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     return {
       status: statusCode,
       message: msg,
-      suspectRecords: suspectRecords,
-      suspectUsers: suspectUsers,
+      suspectRecords: this.suspectRecords,
+      suspectUsers: this.suspectUsers,
       csvLogFile: this.outputFile,
     };
+  }
+
+  private async queryAuditTrail(whereConstraint: string, conn: any) {
+    const auditTrailQuery = `SELECT CreatedDate,CreatedBy.Username,CreatedBy.Name,Action,Section,Display,ResponsibleNamespacePrefix,DelegateUser ` +
+      `FROM SetupAuditTrail ` +
+      whereConstraint +
+      `ORDER BY CreatedDate DESC`;
+    uxLog(this, c.grey('Query: ' + c.italic(auditTrailQuery)));
+    const queryRes = await bulkQuery(auditTrailQuery, conn);
+    this.auditTrailRecords = queryRes.records.map((record) => {
+      const section = record?.Section || '';
+      record.Suspect = false;
+      record.severity = 'log';
+      record.severityIcon = this.severityIconLog;
+      // Unallowed actions
+      if ((
+        this.allowedSectionsActions[section] &&
+        this.allowedSectionsActions[section].length > 0 &&
+        !this.allowedSectionsActions[section].includes(record.Action)
+      ) ||
+        !this.allowedSectionsActions[section]) {
+        record.Suspect = true;
+        record.SuspectReason = `Manual config in unallowed section ${section} with action ${record.Action}`;
+        record.severity = 'warning';
+        record.severityIcon = this.severityIconWarning;
+        this.suspectRecords.push(record);
+        const suspectUserDisplayName = `${record['CreatedBy.Name']}`;
+        this.suspectUsers.push(suspectUserDisplayName);
+        const actionFullName = `${section} - ${record.Action}`;
+        this.suspectActions.push(actionFullName);
+        if (!this.suspectUsersAndActions[suspectUserDisplayName]) {
+          this.suspectUsersAndActions[suspectUserDisplayName] = {
+            name: record['CreatedBy.Name'],
+            actions: [],
+          };
+        }
+        const suspectUserActions = this.suspectUsersAndActions[suspectUserDisplayName].actions;
+        if (!suspectUserActions.includes(record.Action)) {
+          suspectUserActions.push(record.Action);
+        }
+        this.suspectUsersAndActions[suspectUserDisplayName].actions = suspectUserActions;
+        return record;
+      }
+      return record;
+    });
+  }
+
+  private async handleCustomSettingsAudit(conn: any) {
+    if (process.env?.SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS === "true") {
+      uxLog(this, c.cyan(`Skipping Custom Settings modifications as SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS=true has been found`));
+      return;
+    }
+    // Add custom settings tracking
+    uxLog(this, c.cyan(`Retrieving Custom Settings modifications...`));
+    uxLog(this, c.cyan(`(Define SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS=true if you don't want them)`));
+    const customSettingsQuery = `SELECT QualifiedApiName, Label FROM EntityDefinition 
+                           WHERE IsCustomSetting = true`;
+    const customSettingsResult = await soqlQuery(customSettingsQuery, conn);
+    uxLog(this, c.cyan(`Found ${customSettingsResult.records.length} Custom Settings`));
+
+    let whereConstraintCustomSetting = `WHERE LastModifiedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND LastModifiedBy.Username != NULL `;
+    if (this.excludeUsers.length > 0) {
+      whereConstraintCustomSetting += `AND LastModifiedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
+    }
+    // Get custom settings modifications
+    const customSettingModifications: any[] = [];
+    for (const cs of customSettingsResult.records) {
+      try {
+        const result = await soqlQuery(
+          `SELECT Id, LastModifiedDate, LastModifiedBy.Name, LastModifiedBy.Username 
+           FROM ${cs.QualifiedApiName} `
+          + whereConstraintCustomSetting,
+          conn
+        );
+
+        if (result.records.length > 0) {
+          for (const record of result.records) {
+            customSettingModifications.push({
+              CreatedDate: record.LastModifiedDate,
+              'CreatedBy.Name': record['LastModifiedBy']?.['Name'],
+              'CreatedBy.Username': record['LastModifiedBy']?.['Username'],
+              'LastModifiedBy.Name': record['LastModifiedBy']?.['Name'],
+              'LastModifiedBy.Username': record['LastModifiedBy']?.['Username'],
+              Action: `customSetting${cs.QualifiedApiName}`,
+              Section: 'Custom Settings',
+              Display: `Updated custom setting ${cs.Label} (${cs.QualifiedApiName})`,
+              ResponsibleNamespacePrefix: null,
+              DelegateUser: null,
+              Suspect: true,
+              severity: 'warning',
+              severityIcon: getSeverityIcon('warning'),
+              SuspectReason: `CustomSettingUpdate`
+            });
+          }
+        }
+      } catch (error) {
+        uxLog(this, c.red(`Error querying Custom Setting ${cs.Label}: ${error}`));
+        continue;
+      }
+    }
+    // Add custom setting updates to audit trail records
+    if (customSettingModifications.length > 0) {
+      uxLog(this, c.yellow(`Found ${customSettingModifications.length} Custom Setting updates`));
+      this.auditTrailRecords.push(...customSettingModifications);
+
+      // Add to suspect records
+      for (const csUpdate of customSettingModifications) {
+        this.suspectRecords.push(csUpdate);
+        const suspectUserDisplayName = csUpdate['LastModifiedBy.Name'];
+        this.suspectUsers.push(suspectUserDisplayName);
+        const actionFullName = `${csUpdate.Section} - ${csUpdate.Display}`;
+        this.suspectActions.push(actionFullName);
+
+        if (!this.suspectUsersAndActions[suspectUserDisplayName]) {
+          this.suspectUsersAndActions[suspectUserDisplayName] = {
+            name: csUpdate['LastModifiedBy.Name'],
+            actions: []
+          };
+        }
+        if (!this.suspectUsersAndActions[suspectUserDisplayName].actions.includes(csUpdate.Action)) {
+          this.suspectUsersAndActions[suspectUserDisplayName].actions.push(csUpdate.Action);
+        }
+      }
+    }
+  }
+
+  private initializeAllowedSectionsActions() {
+    this.allowedSectionsActions = {
+      '': ['createScratchOrg', 'changedsenderemail', 'deleteScratchOrg', 'loginasgrantedtopartnerbt'],
+      'Certificate and Key Management': ['insertCertificate'],
+      'Custom App Licenses': [
+        'addeduserpackagelicense',
+        'granteduserpackagelicense',
+        'revokeduserpackagelicense'
+      ],
+      'Customer Portal': [
+        'createdcustomersuccessuser',
+        'CSPUserDisabled'
+      ],
+      Currency: ['updateddatedexchrate'],
+      'Data Management': ['queueMembership'],
+      'Email Administration': ['dkimRotationSuccessful', 'dkimRotationPreparationSuccessful'],
+      Holidays: ['holiday_insert'],
+      'Inbox mobile and legacy desktop apps': ['enableSIQUserNonEAC'],
+      Groups: ['groupMembership'],
+      'Manage Territories': ['tm2_userAddedToTerritory', 'tm2_userRemovedFromTerritory'],
+      'Manage Users': [
+        'activateduser',
+        'createduser',
+        'changedcommunitynickname',
+        'changedemail',
+        'changedfederationid',
+        'changedinteractionuseroffon',
+        'changedinteractionuseronoff',
+        'changedmarketinguseroffon',
+        'changedmarketinguseronoff',
+        'changedManager',
+        "changedofflineuseroffon",
+        'changedprofileforuser',
+        'changedprofileforusercusttostd',
+        'changedprofileforuserstdtocust',
+        'changedroleforusertonone',
+        'changedroleforuser',
+        'changedroleforuserfromnone',
+        'changedpassword',
+        "changedprofileforuserstdtostd",
+        'changedsfcontentuseroffon',
+        'changedUserEmailVerifiedStatusUnverified',
+        'changedUserEmailVerifiedStatusVerified',
+        'changedknowledgeuseroffon',
+        'changedsupportuseroffon',
+        'changedUserPhoneNumber',
+        'changedUserPhoneVerifiedStatusUnverified',
+        'deactivateduser',
+        'deleteAuthenticatorPairing',
+        'deleteTwoFactorInfo2',
+        'deleteTwoFactorTempCode',
+        'frozeuser',
+        'insertAuthenticatorPairing',
+        'insertTwoFactorInfo2',
+        'insertTwoFactorTempCode',
+        'lightningloginenroll',
+        'PermSetAssign',
+        'PermSetGroupAssign',
+        'PermSetGroupUnassign',
+        'PermSetLicenseAssign',
+        'PermSetUnassign',
+        'PermSetLicenseUnassign',
+        'registeredUserPhoneNumber',
+        'resetpassword',
+        'suNetworkAdminLogin',
+        'suNetworkAdminLogout',
+        'suOrgAdminLogin',
+        'suOrgAdminLogout',
+        'unfrozeuser',
+        'useremailchangesent',
+      ],
+      'Mobile Administration': ['assigneduserstomobileconfig'],
+      'Reporting Snapshots': ['createdReportJob', 'deletedReportJob'],
+      Sandboxes: ['DeleteSandbox'],
+    };
+  }
+
+  private async manageAuditTimeframe() {
+    if (!isCI && !this.lastNdays) {
+      const lastNdaysResponse = await prompts({
+        type: 'select',
+        name: 'lastndays',
+        message: 'Please select the number of days in the past from today you want to detect suspiscious setup activities',
+        choices: [
+          { title: `1`, value: 1 },
+          { title: `2`, value: 2 },
+          { title: `3`, value: 3 },
+          { title: `4`, value: 4 },
+          { title: `5`, value: 5 },
+          { title: `6`, value: 6 },
+          { title: `7`, value: 7 },
+          { title: `14`, value: 14 },
+          { title: `30`, value: 30 },
+          { title: `60`, value: 60 },
+          { title: `90`, value: 90 },
+          { title: `180`, value: 180 },
+        ],
+      });
+      this.lastNdays = lastNdaysResponse.lastndays;
+    } else {
+      this.lastNdays = this.lastNdays || 1;
+    }
+  }
+
+  private manageExcludedUsers(config: any) {
+    if (this.excludeUsers.length === 0) {
+      if (config.targetUsername) {
+        this.excludeUsers.push(config.targetUsername);
+      }
+      if (config.monitoringExcludeUsernames) {
+        this.excludeUsers.push(...config.monitoringExcludeUsernames);
+      }
+    }
+    let whereConstraint = `WHERE CreatedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND CreatedBy.Username != NULL `;
+    if (this.excludeUsers.length > 0) {
+      whereConstraint += `AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
+    }
+    uxLog(this, c.cyan(`Excluded users are ${this.excludeUsers.join(',') || 'None'}`));
+    uxLog(
+      this,
+      c.cyan(
+        `Use argument --excludeusers or .sfdx-hardis.yml property monitoringExcludeUsernames to exclude more users`
+      )
+    );
+    return whereConstraint;
   }
 }

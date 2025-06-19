@@ -124,5 +124,13 @@ export const NODE_CONFIG = {
 	"endClass": {
 		background: "#F9BABA", // Slightly shinier pale re
 		color: "black"
-	}
+	},
+	'transforms': {
+		background: "#FDEAF6", // Light pink
+		color: "black",
+		label: "",
+		mermaidIcon: "♻️",
+		mermaidClose: "}}",
+		mermaidOpen: "{{"
+	},
 };

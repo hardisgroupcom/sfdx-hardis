@@ -1,7 +1,7 @@
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { execCommand, uxLog } from './index.js';
+import { execCommand, sortCrossPlatform, uxLog } from './index.js';
 import { glob } from 'glob';
 import { parseXmlFile } from './xmlUtils.js';
 
@@ -49,11 +49,11 @@ export async function listFlowFiles(packageDirs) {
   }
   if (skippedFlows.length > 0) {
     uxLog(this, c.yellow(`Skipped ${skippedFlows.length} managed flows:`));
-    for (const skippedFlow of skippedFlows.sort()) {
+    for (const skippedFlow of sortCrossPlatform(skippedFlows)) {
       uxLog(this, c.yellow(`  ${skippedFlow}`));
     }
   }
-  return flowFiles.sort();
+  return sortCrossPlatform(flowFiles);
 }
 
 export async function isManagedFlow(flowFile: string) {
@@ -70,6 +70,7 @@ export async function isManagedFlow(flowFile: string) {
     'recordDeletes',
     'recordLookups',
     'recordUpdates',
+    'transforms',
     'screens',
     'subflows',
     'variables',
@@ -99,8 +100,8 @@ export async function listApexFiles(packageDirs) {
   }
   if (skippedApex.length > 0) {
     uxLog(this, c.yellow(`Skipped ${skippedApex.length} managed Apex:`));
-    for (const skippedFlow of skippedApex.sort()) {
-      uxLog(this, c.yellow(`  ${skippedFlow}`));
+    for (const skippedApexItem of sortCrossPlatform(skippedApex)) {
+      uxLog(this, c.yellow(`  ${skippedApexItem}`));
     }
   }
   return apexFiles.sort();
@@ -123,7 +124,7 @@ export async function listPageFiles(packageDirs) {
   }
   if (skippedPages.length > 0) {
     uxLog(this, c.yellow(`Skipped ${skippedPages.length} managed Lightning Pages:`));
-    for (const skippedPage of skippedPages.sort()) {
+    for (const skippedPage of sortCrossPlatform(skippedPages)) {
       uxLog(this, c.yellow(`  ${skippedPage}`));
     }
   }

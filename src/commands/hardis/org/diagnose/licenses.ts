@@ -3,10 +3,11 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { uxLog } from '../../../../common/utils/index.js';
+import { sortCrossPlatform, uxLog } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { NotifProvider } from '../../../../common/notifProvider/index.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -113,7 +114,7 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
     });
     this.licenses.push(...pslLicenses);
 
-    usedLicenses.sort();
+    sortCrossPlatform(usedLicenses);
     console.table(this.licenses);
     uxLog(this, c.cyan('Used licenses: ' + usedLicenses.join(', ')));
 
@@ -121,7 +122,7 @@ export default class DiagnoseUnusedUsers extends SfCommand<any> {
     this.outputFile = await generateReportPath('licenses', this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.licenses, this.outputFile);
 
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'LICENSES',
       text: '',

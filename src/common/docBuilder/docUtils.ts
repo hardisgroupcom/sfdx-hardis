@@ -1,95 +1,12 @@
-import * as path from "path";
 import c from 'chalk';
 import fs from 'fs-extra';
 
 import * as yaml from 'js-yaml';
-import { countPackageXmlItems, parsePackageXmlFile } from "../utils/xmlUtils.js";
-import { CONSTANTS } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
-import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUtils.js";
-import { XMLParser } from "fast-xml-parser";
 import { uxLog, execCommand } from "../utils/index.js";
 
-export async function generatePackageXmlMarkdown(inputFile: string | null, outputFile: string | null = null, packageXmlDefinition: any = null, rootSalesforceUrl: string = "") {
-  // Find packageXml to parse if not defined
-  if (inputFile == null) {
-    inputFile = path.join(process.cwd(), "manifest", "package.xml");
-    if (!fs.existsSync(inputFile)) {
-      throw new SfError("No package.xml found. You need to send the path to a package.xml file in --inputfile option");
-    }
-  }
-  // Build output file if not defined
-  if (outputFile == null) {
-    const packageXmlFileName = path.basename(inputFile);
-    outputFile = path.join(process.cwd(), "docs", `${packageXmlFileName}.md`);
-  }
-  await fs.ensureDir(path.dirname(outputFile));
-
-  uxLog(this, c.cyan(this, `Generating markdown doc from ${inputFile} to ${outputFile}...`));
-
-  // Read content
-  const packageXmlContent = await parsePackageXmlFile(inputFile);
-  const metadataTypes = Object.keys(packageXmlContent);
-  metadataTypes.sort();
-  const nbItems = await countPackageXmlItems(inputFile);
-
-  const mdLines: string[] = []
-
-  if (packageXmlDefinition && packageXmlDefinition.description) {
-    // Header
-    mdLines.push(...[
-      `## Content of ${path.basename(inputFile)}`,
-      '',
-      packageXmlDefinition.description,
-      '',
-      `Metadatas: ${nbItems}`,
-      ''
-    ]);
-  }
-  else {
-    // Header
-    mdLines.push(...[
-      `## Content of ${path.basename(inputFile)}`,
-      '',
-      `Metadatas: ${nbItems}`,
-      ''
-    ]);
-  }
-
-  // Generate package.xml markdown
-  for (const metadataType of metadataTypes) {
-    const members = packageXmlContent[metadataType];
-    members.sort();
-    const memberLengthLabel = members.length === 1 && members[0] === "*" ? "*" : members.length;
-    mdLines.push(`<details><summary>${metadataType} (${memberLengthLabel})</summary>\n\n`);
-    for (const member of members) {
-      const memberLabel = member === "*" ? "ALL (wildcard *)" : member;
-      const setupUrl = SalesforceSetupUrlBuilder.getSetupUrl(metadataType, member);
-      if (setupUrl && rootSalesforceUrl) {
-        mdLines.push(`  • <a href="${rootSalesforceUrl}${setupUrl}" target="_blank">${memberLabel}</a><br/>`);
-      }
-      else {
-        mdLines.push(`  • ${memberLabel}<br/>`);
-      }
-    }
-    mdLines.push("");
-    mdLines.push("</details>");
-    mdLines.push("");
-  }
-  mdLines.push("");
-
-  // Footer
-  mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT})_`);
-
-  // Write output file
-  await fs.writeFile(outputFile, mdLines.join("\n") + "\n");
-
-  uxLog(this, c.green(`Successfully generated ${path.basename(inputFile)} documentation into ${outputFile}`));
-
-  return outputFile;
-}
 
 export function readMkDocsFile(mkdocsYmlFile: string): any {
   const mkdocsYml: any = yaml.load(
@@ -109,7 +26,7 @@ export function readMkDocsFile(mkdocsYmlFile: string): any {
 
 export async function writeMkDocsFile(mkdocsYmlFile: string, mkdocsYml: any) {
   const mkdocsYmlStr = yaml
-    .dump(mkdocsYml)
+    .dump(mkdocsYml, { lineWidth: -1 })
     .replace("!!python/name:materialx.emoji.twemoji", '!!python/name:material.extensions.emoji.twemoji')
     .replace("!!python/name:materialx.emoji.to_svg", '!!python/name:material.extensions.emoji.to_svg')
     .replace("'!!python/name:material.extensions.emoji.twemoji'", '!!python/name:material.extensions.emoji.twemoji')
@@ -230,54 +147,6 @@ export class SalesforceSetupUrlBuilder {
   }
 }
 
-export async function generateObjectMarkdown(objectName: string, objectXmlDefinition: string, allObjectsNames: string, objectLinksDetails: string, outputFile: string) {
-  const mdLines = [
-    '',
-    '<!-- Mermaid schema -->',
-    '',
-    '<!-- Object description -->',
-    '',
-    '<!-- Attributes tables -->',
-    '',
-    '<!-- Flows table -->',
-    '',
-    '<!-- Apex table -->',
-    '',
-    '<!-- Pages table -->'
-  ];
-  mdLines.push("");
-  // Footer
-  mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT})_`);
-  let mdLinesStr = mdLines.join("\n") + "\n";
-  mdLinesStr = await completeObjectDocWithAiDescription(mdLinesStr, objectName, objectXmlDefinition, allObjectsNames, objectLinksDetails);
-  // Write output file
-  await fs.writeFile(outputFile, getMetaHideLines() + mdLinesStr);
-  uxLog(this, c.green(`Successfully generated ${objectName} documentation into ${outputFile}`));
-  return outputFile;
-}
-
-export async function generateLightningPageMarkdown(pageName: string, pageXml: string, outputFile: string) {
-  const pageItem = new XMLParser().parse(pageXml)?.FlexiPage || {};
-  const mdLines = [
-    `## ${pageName}`,
-    '',
-    buildGenericMarkdownTable(pageItem, ["sobjectType", "type", "masterLabel", "template"], "## Lightning Page attributes", []),
-    '',
-    '<!-- Page description -->',
-    '',
-  ];
-  mdLines.push("");
-  // Footer
-  mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT})_`);
-  let mdLinesStr = mdLines.join("\n") + "\n";
-  mdLinesStr = await completePageDocWithAiDescription(mdLinesStr, pageName, pageXml);
-  // Write output file
-  await fs.ensureDir(path.dirname(outputFile));
-  await fs.writeFile(outputFile, getMetaHideLines() + mdLinesStr);
-  uxLog(this, c.green(`Successfully generated ${pageName} documentation into ${outputFile}`));
-  return outputFile;
-}
-
 export async function completeAttributesDescriptionWithAi(attributesMarkdown: string, objectName: string): Promise<string> {
   if (!attributesMarkdown) {
     return attributesMarkdown;
@@ -285,7 +154,7 @@ export async function completeAttributesDescriptionWithAi(attributesMarkdown: st
   const aiCache = await UtilsAi.findAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown], objectName);
   if (aiCache.success === true) {
     uxLog(this, c.grey("Used AI cache for attributes completion (set IGNORE_AI_CACHE=true to force call to AI)"));
-    return aiCache.cacheText ? `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText}` : attributesMarkdown;
+    return aiCache.cacheText ? includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText) : attributesMarkdown;
   }
   if (AiProvider.isAiAvailable()) {
     // Invoke AI Service
@@ -295,99 +164,10 @@ export async function completeAttributesDescriptionWithAi(attributesMarkdown: st
     if (aiResponse?.success) {
       const responseText = aiResponse.promptResponse || "No AI description available";
       await UtilsAi.writeAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown], objectName, responseText);
-      attributesMarkdown = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
+      attributesMarkdown = includeFromFile(aiCache.aiCacheDirFile, responseText);
     }
   }
   return attributesMarkdown;
-}
-
-async function completeObjectDocWithAiDescription(objectMarkdownDoc: string, objectName: string, objectXml: string, allObjectsNames: string, objectLinksDetails: string): Promise<string> {
-  const objectXmlStripped = UtilsAi.stripXmlForAi("CustomObject", objectXml);
-  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_OBJECT", [objectXmlStripped], objectName);
-  if (aiCache.success === true) {
-    uxLog(this, c.grey("Used AI cache for object description (set IGNORE_AI_CACHE=true to force call to AI)"));
-    const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n## Description\n\n${aiCache.cacheText || ""}`;
-    return objectMarkdownDoc.replace("<!-- Object description -->", replaceText);
-  }
-  if (AiProvider.isAiAvailable()) {
-    // Invoke AI Service
-    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_OBJECT", { "OBJECT_NAME": objectName, "OBJECT_XML": objectXmlStripped, "ALL_OBJECTS_LIST": allObjectsNames, "ALL_OBJECT_LINKS": objectLinksDetails });
-    /* jscpd:ignore-start */
-    const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_OBJECT");
-    // Replace description in markdown
-    if (aiResponse?.success) {
-      let responseText = aiResponse.promptResponse || "No AI description available";
-      if (responseText.startsWith("##")) {
-        responseText = responseText.split("\n").slice(1).join("\n");
-      }
-      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_OBJECT", [objectXmlStripped], objectName, responseText);
-      const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n## Description\n\n${responseText}`;
-      const objectMarkdownDocUpdated = objectMarkdownDoc.replace("<!-- Object description -->", replaceText);
-      return objectMarkdownDocUpdated;
-    }
-    /* jscpd:ignore-end */
-  }
-  return objectMarkdownDoc;
-}
-
-export async function completeApexDocWithAiDescription(apexMarkdownDoc: string, className: string, apexCode: string): Promise<string> {
-  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_APEX", [apexCode], className);
-  if (aiCache.success === true) {
-    uxLog(this, c.grey("Used AI cache for apex description (set IGNORE_AI_CACHE=true to force call to AI)"));
-    const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
-    return apexMarkdownDoc.replace("<!-- Apex description -->", replaceText);
-  }
-  if (AiProvider.isAiAvailable()) {
-    // Invoke AI Service
-    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_APEX", { "CLASS_NAME": className, "APEX_CODE": apexCode });
-    /* jscpd:ignore-start */
-    const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_APEX");
-    // Replace description in markdown
-    if (aiResponse?.success) {
-      let responseText = aiResponse.promptResponse || "No AI description available";
-      if (responseText.startsWith("##")) {
-        responseText = responseText.split("\n").slice(1).join("\n");
-      }
-      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_APEX", [apexCode], className, responseText);
-      const replaceText = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
-      const objectMarkdownDocUpdated = apexMarkdownDoc.replace("<!-- Apex description -->", replaceText);
-      return objectMarkdownDocUpdated;
-    }
-    /* jscpd:ignore-end */
-  }
-  else {
-    return apexMarkdownDoc.replace("<!-- Apex description -->", `Activate [AI configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ai-setup/) to generate AI description`);
-  }
-  return apexMarkdownDoc;
-}
-
-async function completePageDocWithAiDescription(pageMarkdownDoc: string, pageName: string, pageXml: string): Promise<string> {
-  const pageXmlStripped = UtilsAi.stripXmlForAi("LightningPage", pageXml);
-  const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_PAGE", [pageXmlStripped], pageName);
-  if (aiCache.success === true) {
-    uxLog(this, c.grey("Used AI cache for lightning page description (set IGNORE_AI_CACHE=true to force call to AI)"));
-    const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
-    return pageMarkdownDoc.replace("<!-- Page description -->", replaceText);
-  }
-  if (AiProvider.isAiAvailable()) {
-    // Invoke AI Service
-    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_PAGE", { "PAGE_NAME": pageName, "PAGE_XML": pageXmlStripped });
-    /* jscpd:ignore-start */
-    const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_PAGE");
-    // Replace description in markdown
-    if (aiResponse?.success) {
-      let responseText = aiResponse.promptResponse || "No AI description available";
-      if (responseText.startsWith("##")) {
-        responseText = responseText.split("\n").slice(1).join("\n");
-      }
-      await UtilsAi.writeAiCache("PROMPT_DESCRIBE_PAGE", [pageXmlStripped], pageName, responseText);
-      const replaceText = `## AI-Generated Description\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
-      const objectMarkdownDocUpdated = pageMarkdownDoc.replace("<!-- Page description -->", replaceText);
-      return objectMarkdownDocUpdated;
-    }
-    /* jscpd:ignore-end */
-  }
-  return pageMarkdownDoc;
 }
 
 export async function replaceInFile(filePath: string, stringToReplace: string, replaceWith: string) {
@@ -419,18 +199,50 @@ export async function generateMkDocsHTML() {
 export async function installMkDocs() {
   uxLog(this, c.cyan("Managing mkdocs-material local installation..."));
   let mkdocsLocalOk = false;
-  const installMkDocsRes = await execCommand("pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists", this, { fail: false, output: true, debug: false });
+  const installMkDocsRes = await execCommand("pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python3 -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py3 -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists", this, { fail: false, output: true, debug: false });
   if (installMkDocsRes.status === 0) {
     mkdocsLocalOk = true;
   }
   return mkdocsLocalOk;
 }
 
-export function getMetaHideLines() {
+export function getMetaHideLines(): string {
   return `---
 hide:
   - path
 ---
 
 `;
+}
+
+export function includeFromFile(cacheFilePath: string, content: string): string {
+  // Detect if cacheFilePath contains a fingerprint at the end after the last "-"
+  const fileNameWithoutExtension = cacheFilePath.substring(0, cacheFilePath.lastIndexOf("."));
+  const fileExtensionWithDot = cacheFilePath.substring(cacheFilePath.lastIndexOf("."));
+  const lastDashIndex = fileNameWithoutExtension.lastIndexOf("-");
+  const cacheFileFingerprint = lastDashIndex !== -1 ? fileNameWithoutExtension.substring(lastDashIndex + 1) : "";
+  // Check if the fingerprint is a valid number
+  const isValidFingerprint = /^\d+$/.test(cacheFileFingerprint);
+  if (isValidFingerprint) {
+    // Remove the fingerprint from the cacheFilePath
+    const cacheFilePathOverridden = fileNameWithoutExtension.substring(0, lastDashIndex) + fileExtensionWithDot;
+    return `<!-- The following part has been generated by AI. -->
+<!-- If you want to override it manually, rename the cache file into ${cacheFilePathOverridden} then update it with the content you want. -->
+<!-- Cache file start: ${cacheFilePath} -->
+
+${content}
+
+<!-- Cache file end: ${cacheFilePath} -->
+`
+  }
+  else {
+    return `<!-- The following part has been generated by AI then manually updated -->
+<!-- If you want AI to recalculate it again, you can delete file ${cacheFilePath} -->
+<!-- Cache file: ${cacheFilePath} -->
+
+${content}
+
+<!-- Cache file end: ${cacheFilePath} -->`
+  }
+
 }

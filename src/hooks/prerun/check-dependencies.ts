@@ -1,8 +1,4 @@
 /* jscpd:ignore-start */
-
-import * as os from 'os';
-import { checkSfdxPlugin, git, uxLog, isCI, checkAppDependency, isGitRepo } from '../../common/utils/index.js';
-import { getConfig } from '../../config/index.js';
 import { Hook } from '@oclif/core';
 
 const hook: Hook<'prerun'> = async (options) => {
@@ -18,6 +14,11 @@ const hook: Hook<'prerun'> = async (options) => {
   ) {
     return;
   }
+
+  // Dynamic imports to improve perfs
+  const os = await import('os');
+  const { checkSfdxPlugin, git, uxLog, isCI, checkAppDependency, isGitRepo } = await import('../../common/utils/index.js');
+  const { getConfig } = await import('../../config/index.js');
 
   /* jscpd:ignore-end */
   // Check Git config and complete it if necessary (asynchronously so the script is not stopped)

@@ -784,6 +784,7 @@ export async function filterPackageXml(
   packageXmlFile: string,
   packageXmlFileOut: string,
   options: any = {
+    keepOnlyNamespaces: [],
     removeNamespaces: [],
     removeMetadatas: [],
     removeStandard: false,
@@ -795,6 +796,22 @@ export async function filterPackageXml(
   let message = `[sfdx-hardis] ${packageXmlFileOut} not updated`;
   const initialFileContent = await fs.readFile(packageXmlFile);
   const manifest = await xml2js.parseStringPromise(initialFileContent);
+
+  // Keep only namespaces
+  if ((options.keepOnlyNamespaces || []).length > 0) {
+    uxLog(this, c.grey(`Keeping items from namespaces ${options.keepOnlyNamespaces.join(',')} ...`));
+    manifest.Package.types = manifest.Package.types.map((type: any) => {
+      type.members = type.members.filter((member: string) => {
+        const containsNamespace = options.keepOnlyNamespaces.filter((ns: string) => member.startsWith(ns) || member.includes(`${ns}__`)).length > 0;
+        if (containsNamespace) {
+          return true;
+        }
+        return false;
+      });
+      return type;
+    });
+  }
+
   // Remove namespaces
   if ((options.removeNamespaces || []).length > 0) {
     uxLog(this, c.grey(`Removing items from namespaces ${options.removeNamespaces.join(',')} ...`));
@@ -830,10 +847,7 @@ export async function filterPackageXml(
         });
         if (destructiveTypes.length > 0) {
           type.members = type.members.filter((member: string) => {
-            return (
-              destructiveTypes[0].members.filter((destructiveMember: string) => destructiveMember === member).length ===
-              0
-            );
+            return shouldRetainMember(destructiveTypes[0].members, member);
           });
         }
         return type;
@@ -855,10 +869,15 @@ export async function filterPackageXml(
   }
   // Remove standard objects
   if (options.removeStandard) {
+    const customFields: Array<string> = manifest.Package.types.filter((t: any) => t.name[0] === 'CustomField')?.[0]?.members || [];
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       if (['CustomObject'].includes(type.name[0])) {
-        type.members = type.members.filter((member: string) => {
-          return member.endsWith('__c');
+        type.members = type.members.filter((customObjectName: string) => {
+          // If a custom field is defined on the standard object, keep the standard object
+          if (customFields.some((field: string) => field.startsWith(customObjectName + '.'))) {
+            return true;
+          }
+          return customObjectName.endsWith('__c');
         });
       }
       type.members = type.members.filter((member: string) => {
@@ -903,6 +922,27 @@ export async function filterPackageXml(
     updated,
     message,
   };
+}
+
+function shouldRetainMember(destructiveMembers: string[], member: string) {
+  if (destructiveMembers.length === 1 && destructiveMembers[0] === '*') {
+    // Whole type will be filtered later in the code
+    return true;
+  }
+  const matchesWithItemsToExclude = destructiveMembers.filter((destructiveMember: string) => {
+    if (destructiveMember === member) {
+      return true;
+    }
+    // Handle cases wild wildcards, like pi__* , *__dlm , or begin*end
+    if (destructiveMember.includes('*')) {
+      const regex = new RegExp(destructiveMember.replace(/\*/g, '.*'));
+      if (regex.test(member)) {
+        return true;
+      }
+    }
+    return false;
+  });
+  return matchesWithItemsToExclude.length === 0;
 }
 
 // Catch matches in files according to criteria
@@ -1400,4 +1440,25 @@ export async function isDockerRunning(): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+export function sortCrossPlatform(arr: any[]) {
+  return arr.sort((a, b) => {
+    // Normalize to string in case elements are not strings
+    const strA = String(a).normalize('NFD');
+    const strB = String(b).normalize('NFD');
+
+    // 1. Base comparison: case-insensitive, accent-insensitive
+    const baseCompare = strA.localeCompare(strB, 'en', { sensitivity: 'base' });
+    if (baseCompare !== 0) return baseCompare;
+
+    // 2. Tie-breaker: uppercase before lowercase
+    const isAUpper = strA[0] === strA[0].toUpperCase();
+    const isBUpper = strB[0] === strB[0].toUpperCase();
+
+    if (isAUpper && !isBUpper) return -1;
+    if (!isAUpper && isBUpper) return 1;
+
+    return 0;
+  });
 }

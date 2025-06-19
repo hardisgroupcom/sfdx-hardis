@@ -11,6 +11,7 @@ import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../.
 import moment from 'moment';
 import columnify from 'columnify';
 import { CONSTANTS } from '../../../../config/index.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -99,7 +100,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       }
       const notifAttachments = [{ text: notifDetailText }];
       // Post notif
-      globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+      await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
       await NotifProvider.postNotifications({
         type: 'RELEASE_UPDATES',
         text: notifText,

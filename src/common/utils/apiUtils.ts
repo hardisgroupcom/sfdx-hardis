@@ -3,8 +3,13 @@ import c from 'chalk';
 import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
 
+// Constants for record limits
+const MAX_CHUNKS = Number(process.env.SOQL_MAX_BATCHES ?? 50);
+const CHUNK_SIZE = Number(process.env.SOQL_CHUNK_SIZE ?? 200);
+const MAX_RECORDS = MAX_CHUNKS * CHUNK_SIZE;
+
 // Perform simple SOQL query (max results: 10000)
-export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
+export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
   uxLog(
     this,
     c.grey(
@@ -14,7 +19,24 @@ export function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
       conn.instanceUrl
     )
   );
-  return Promise.resolve(conn.query(soqlQuery));
+  // First query
+  const res = await conn.query(soqlQuery);
+  let pageRes = Object.assign({}, res);
+  let batchCount = 1;
+
+  // Get all page results
+  while (pageRes.done === false && pageRes.nextRecordsUrl && batchCount < MAX_CHUNKS) {
+    uxLog(this, c.grey(`Fetching batch ${batchCount + 1}/${MAX_CHUNKS}...`));
+    pageRes = await conn.queryMore(pageRes.nextRecordsUrl);
+    res.records.push(...pageRes.records);
+    batchCount++;
+  }
+  if (!pageRes.done) {
+    uxLog(this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
+    uxLog(this, c.yellow(`Consider using bulkQuery for larger datasets.`));
+  }
+  uxLog(this, c.grey(`SOQL REST: Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
+  return res;
 }
 
 // Perform simple SOQL query with Tooling API
@@ -88,6 +110,33 @@ export async function bulkQueryChunksIn(
     const chunkResults = await bulkQuery(soqlQueryWithInConstraint, conn, retries);
     results.records.push(...chunkResults.records);
   }
+  return results;
+}
+
+// New method to bulk query records by chunks of 10000
+export async function bulkQueryByChunks(
+  soqlQuery: string,
+  conn: Connection,
+  batchSize = 100000,
+  retries = 3
+): Promise<any> {
+  const results = { records: [] as any[] };
+  let lastRecordId = null;
+  let hasMoreRecords = true;
+
+  while (hasMoreRecords) {
+    let soqlQueryWithLimit = `${soqlQuery} ORDER BY Id LIMIT ${batchSize}`;
+    if (lastRecordId) {
+      soqlQueryWithLimit = `${soqlQuery} WHERE Id > '${lastRecordId}' ORDER BY Id LIMIT ${batchSize}`;
+    }
+    const chunkResults = await bulkQuery(soqlQueryWithLimit, conn, retries);
+    results.records.push(...chunkResults.records);
+    if (chunkResults.records.length > 0) {
+      lastRecordId = chunkResults.records[chunkResults.records.length - 1].Id;
+    }
+    hasMoreRecords = chunkResults.records.length === batchSize;
+  }
+
   return results;
 }
 

@@ -37,7 +37,7 @@ jobs:
   - job: DeploymentCheck
     timeoutInMinutes: 150
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
     steps:
       # Checkout repo
       - checkout: self
@@ -83,6 +83,7 @@ jobs:
           JIRA_PAT: $(JIRA_HOST)
           JIRA_TICKET_REGEX: $(JIRA_TICKET_REGEX)
           OPENAI_API_KEY: $(OPENAI_API_KEY)
+          SFDX_AUTH_URL_TECHNICAL_ORG: $(SFDX_AUTH_URL_TECHNICAL_ORG)
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)
           CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
           SYSTEM_COLLECTIONURI: $(System.CollectionUri)
@@ -102,7 +103,7 @@ jobs:
   # Config is editable in .mega-linter.yml
   - job: MegaLinter
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
     steps:
       # Pull MegaLinter docker image
       - script: docker pull oxsecurity/megalinter-salesforce:latest

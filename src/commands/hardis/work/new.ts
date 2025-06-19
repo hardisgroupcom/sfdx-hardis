@@ -57,9 +57,76 @@ Under the hood, it can:
       - Use property \`scratchOrgInitApexScripts\`
     - **Load data**
       - Use property \`dataPackages\`
+
+## Override .sfdx-hardis.yml config
+
+### availableTargetBranches
+
+By default, there is only one target branch (value of property **developmentBranch**).
+
+You can define multiple target branches (for the future Pull Request) by setting the property **availableTargetBranches** in your .sfdx-hardis.yml file.
+
+The selected branch will checked out and be used as base to create the user new feature branch.
+
+Examples:
+
+\`\`\`yaml
+availableTargetBranches:
+  - integration
+  - preprod
+\`\`\`
+
+\`\`\`yaml
+availableTargetBranches:
+  - integration,Select this to work from the integration branch (project stream)
+  - preprod,Select this to work from the preprod branch (run stream)
+\`\`\`
+
+### availableProjects
+
+You can add a first question "What is the project your task is for" if you define a property **availableProjects**
+
+The select will be used as first part of the git branch name. (ex: france/features/dev/JIRA123-webservice-get-account)
+
+Examples:
+
+\`\`\`yaml
+availableProjects:
+  - build
+  - run
+  - some-big-project
+  - france
+  - uk
+\`\`\`
+
+\`\`\`yaml
+availableProjects:
+  - build,Select this to work on the build project
+  - run,Select this to work on the run project
+  - some-big-project,Select this to work on the some big project
+  - france,Select this to work on the France project
+  - uk,Select this to work on the UK project
+\`\`\`
+
+### newTaskNameRegex
+
+If you want to force a specific format for the task name, you can define a property **newTaskNameRegex** in your .sfdx-hardis.yml file.
+
+Please also define a property **newTaskNameRegexExample** to give an example to the user.
+
+Example:
+
+\`\`\`yaml
+newTaskNameRegex: '^[A-Z]+-[0-9]+ .*'
+newTaskNameRegexExample: 'MYPROJECT-123 Update account status validation rule'
+\`\`\`
+
+### sharedDevSandboxes
+
+If contributors can share dev sandboxes, let's not ask them if they want to overwrite their colleagues' changes when creating a new task :)
 `;
 
-  public static examples = ['$ sf hardis:work:task:new'];
+  public static examples = ['$ sf hardis:work:new'];
 
   // public static args = [{name: 'file'}];
 
@@ -124,7 +191,10 @@ Under the hood, it can:
         name: 'project',
         message: c.cyanBright('Please select the project your task is for'),
         choices: availableProjects.map((project: string) => {
-          return { title: project, value: project };
+          return {
+            title: project.includes(',') ? project.split(',').join(' - ') : project,
+            value: project.includes(',') ? project.split(',')[0] : project,
+          };
         }),
       });
       projectBranchPart = projectResponse.project + '/';
@@ -161,19 +231,15 @@ Under the hood, it can:
             description: 'Like the unicorn you are, you will update configuration but also write code :)',
           },
         ],
-      },
-      {
-        type: 'text',
-        name: 'taskName',
-        message: c.cyanBright(
-          'What is the name of your new task ? (examples: JIRA123-webservice-get-account, T1000-flow-process-opportunity...). Please avoid accents or special characters'
-        ),
-      },
+      }
     ]);
+
+    // Request task name
+    const taskName = await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
 
     // Checkout development main branch
     const branchName = `${projectBranchPart}${response.branch || 'features'}/${response.sources || 'dev'
-      }/${response.taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-')}`;
+      }/${taskName}`;
     uxLog(
       this,
       c.cyan(`Checking out the most recent version of branch ${c.bold(this.targetBranch)} from git server...`)
@@ -259,6 +325,30 @@ Under the hood, it can:
     uxLog(this, c.cyan(`You are now ready to work in branch ${c.green(branchName)} :)`));
     // Return an object to be displayed with --json
     return { outputString: 'Created new task' };
+  }
+
+  async promptTaskName(validationRegex: string | null, taskNameExample: string | null) {
+    if (taskNameExample == null) {
+      taskNameExample = 'MYPROJECT-123 Update account status validation rule';
+    }
+    const taskResponse = await prompts({
+      type: 'text',
+      name: 'taskName',
+      message: c.cyanBright(
+        `What is the name of your new task ? (example: ${taskNameExample}). Please avoid accents or special characters`
+      ),
+    });
+    const taskName = taskResponse.taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-');
+    if (validationRegex != null && !new RegExp(validationRegex).test(taskName)) {
+      uxLog(
+        this,
+        c.yellow(
+          `The task name ${c.bold(taskName)} does not match the expected pattern ${c.bold(validationRegex)}. Please try again`
+        )
+      );
+      return this.promptTaskName(validationRegex, taskNameExample);
+    }
+    return taskName;
   }
 
   // Select/Create scratch org
@@ -352,88 +442,91 @@ Under the hood, it can:
       orgUsername = promptRes.orgUsername;
       openOrg = promptRes.openOrg;
     }
-    // Initialize / Update existing sandbox if required
-    const initSandboxResponse = await prompts({
-      type: 'select',
-      name: 'value',
-      message: c.cyanBright(
-        `Do you want to update the sandbox according to git branch "${this.targetBranch}" current state ? (packages,SOURCES,permission set assignments,apex scripts,initial data)`
-      ),
-      choices: [
-        {
-          title: '🧑‍🤝‍🧑 No, continue working on my current sandbox state',
-          value: 'no',
-          description: 'Use if you are multiple users in the same SB, or have have uncommitted changes in your sandbox',
-        },
-        {
-          title: '☢️ Yes, please try to update my sandbox !',
-          value: 'init',
-          description: `Integrate new updates from the parent branch "${this.targetBranch}" before working on your new task. WARNING: Will overwrite uncommitted changes in your org !`,
-        },
-      ],
-    });
-    let initSandbox = initSandboxResponse.value === 'init';
-    // Ask the user if he's really sure of what he's doing !
-    if (initSandbox) {
-      const promptConfirm = await prompts({
-        type: 'confirm',
+
+    // Initialize / Update existing sandbox if available
+    if (!(config.sharedDevSandboxes === true)) {
+      const initSandboxResponse = await prompts({
+        type: 'select',
+        name: 'value',
         message: c.cyanBright(
-          `Are you really sure you want to update the dev sandbox with the state of git branch ${this.targetBranch} ? This will overwrite setup updates that you or other users have not committed yet`
+          `Do you want to update the sandbox according to git branch "${this.targetBranch}" current state ? (packages,SOURCES,permission set assignments,apex scripts,initial data)`
         ),
+        choices: [
+          {
+            title: '🧑‍🤝‍🧑 No, continue working on my current sandbox state',
+            value: 'no',
+            description: 'Use if you are multiple users in the same SB, or have have uncommitted changes in your sandbox',
+          },
+          {
+            title: '☢️ Yes, please try to update my sandbox !',
+            value: 'init',
+            description: `Integrate new updates from the parent branch "${this.targetBranch}" before working on your new task. WARNING: Will overwrite uncommitted changes in your org !`,
+          },
+        ],
       });
-      initSandbox = promptConfirm.value === true;
-    }
-    if (initSandbox) {
-      let initSourcesErr: any = null;
-      let initSandboxErr: any = null;
-      try {
-        if (config.installedPackages) {
-          await installPackages(config.installedPackages || [], orgUsername);
-        }
+      let initSandbox = initSandboxResponse.value === 'init';
+      // Ask the user if he's really sure of what he's doing !
+      if (initSandbox) {
+        const promptConfirm = await prompts({
+          type: 'confirm',
+          message: c.cyanBright(
+            `Are you really sure you want to update the dev sandbox with the state of git branch ${this.targetBranch} ? This will overwrite setup updates that you or other users have not committed yet`
+          ),
+        });
+        initSandbox = promptConfirm.value === true;
+      }
+      if (initSandbox) {
+        let initSourcesErr: any = null;
+        let initSandboxErr: any = null;
         try {
-          // Continue initialization even if push did not work... it could work and be not such a problem :)
-          uxLog(this, c.cyan('Resetting local SF Cli tracking...'));
-          await execCommand(`sf project delete tracking --no-prompt -o ${orgUsername}`, this, {
-            fail: false,
-            output: true,
-          });
-          await initOrgMetadatas(config, orgUsername, orgUsername, {}, this.debugMode, { scratch: false });
-        } catch (e1) {
-          initSourcesErr = e1;
+          if (config.installedPackages) {
+            await installPackages(config.installedPackages || [], orgUsername);
+          }
+          try {
+            // Continue initialization even if push did not work... it could work and be not such a problem :)
+            uxLog(this, c.cyan('Resetting local SF Cli tracking...'));
+            await execCommand(`sf project delete tracking --no-prompt -o ${orgUsername}`, this, {
+              fail: false,
+              output: true,
+            });
+            await initOrgMetadatas(config, orgUsername, orgUsername, {}, this.debugMode, { scratch: false });
+          } catch (e1) {
+            initSourcesErr = e1;
+          }
+          await initPermissionSetAssignments(config.initPermissionSets || [], orgUsername);
+          await initApexScripts(config.scratchOrgInitApexScripts || [], orgUsername);
+          await initOrgData(path.join('.', 'scripts', 'data', 'ScratchInit'), orgUsername);
+        } catch (e) {
+          initSandboxErr = e;
         }
-        await initPermissionSetAssignments(config.initPermissionSets || [], orgUsername);
-        await initApexScripts(config.scratchOrgInitApexScripts || [], orgUsername);
-        await initOrgData(path.join('.', 'scripts', 'data', 'ScratchInit'), orgUsername);
-      } catch (e) {
-        initSandboxErr = e;
-      }
-      if (initSandboxErr) {
-        uxLog(
-          this,
-          c.grey('Error(s) while initializing sandbox: ' + initSandboxErr.message + '\n' + initSandboxErr.stack)
-        );
-        uxLog(
-          this,
-          c.yellow(
-            'Your sandbox may not be completely initialized from git. You can send the error above to your release manager'
-          )
-        );
-      }
-      if (initSourcesErr) {
-        uxLog(
-          this,
-          c.grey('Error(s) while pushing sources to sandbox: ' + initSourcesErr.message + '\n' + initSourcesErr.stack)
-        );
-        uxLog(
-          this,
-          c.yellow(`If you really want your sandbox to be up to date with branch ${c.bold(this.targetBranch)}, you may:
+        if (initSandboxErr) {
+          uxLog(
+            this,
+            c.grey('Error(s) while initializing sandbox: ' + initSandboxErr.message + '\n' + initSandboxErr.stack)
+          );
+          uxLog(
+            this,
+            c.yellow(
+              'Your sandbox may not be completely initialized from git. You can send the error above to your release manager'
+            )
+          );
+        }
+        if (initSourcesErr) {
+          uxLog(
+            this,
+            c.grey('Error(s) while pushing sources to sandbox: ' + initSourcesErr.message + '\n' + initSourcesErr.stack)
+          );
+          uxLog(
+            this,
+            c.yellow(`If you really want your sandbox to be up to date with branch ${c.bold(this.targetBranch)}, you may:
   - ${c.bold(
-            'Fix the errors'
-          )} (probably by manually updating the target sandbox in setup), then run new task again and select again the same sandbox
+              'Fix the errors'
+            )} (probably by manually updating the target sandbox in setup), then run new task again and select again the same sandbox
   - ${c.bold('Refresh your sandbox')} (ask your release manager if you don't know how)
   Else, you can start working now (but beware of conflicts ^^):)
         `)
-        );
+          );
+        }
       }
     }
     // Open of if not already open

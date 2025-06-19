@@ -15,13 +15,14 @@ import {
   git,
   uxLog,
 } from './index.js';
-import { GitProvider } from '../gitProvider/index.js';
+import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { Ticket, TicketProvider } from '../ticketProvider/index.js';
 import { DefaultLogFields, ListLogLine } from 'simple-git';
 import { flowDiffToMarkdownForPullRequest } from '../gitProvider/utilsMarkdown.js';
 import { MessageAttachment } from '@slack/types';
 import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from './notifUtils.js';
 import { NotifProvider, UtilsNotifs } from '../notifProvider/index.js';
+import { setConnectionVariables } from './orgUtils.js';
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const message =
@@ -100,16 +101,16 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
   return gitDeltaCommandRes;
 }
 
-export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
+export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPullRequestInfo | null = null) {
   uxLog(this, c.cyan('Computing commits summary...'));
   const currentGitBranch = await getCurrentGitBranch();
   let logResults: (DefaultLogFields & ListLogLine)[] = [];
   let previousTargetBranchCommit = "";
   if (checkOnly || GitProvider.isDeployBeforeMerge()) {
-    const prInfo = await GitProvider.getPullRequestInfo();
+    const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
     const deltaScope = await getGitDeltaScope(
-      prInfo?.sourceBranch || currentGitBranch,
-      prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH
+      prInfo?.sourceBranch || currentGitBranch || "",
+      prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH || ""
     );
     logResults = [...deltaScope.logResult.all];
     previousTargetBranchCommit = deltaScope.fromCommit;
@@ -171,7 +172,11 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
     let ticketsMarkdown = '## Tickets\n\n';
     for (const ticket of ticketsSorted) {
       if (ticket.foundOnServer) {
-        ticketsMarkdown += '- [' + ticket.id + '](' + ticket.url + ') ' + ticket.subject + '\n';
+        ticketsMarkdown += '- [' + ticket.id + '](' + ticket.url + ') ' + ticket.subject;
+        if (ticket.statusLabel) {
+          ticketsMarkdown += ' (' + ticket.statusLabel + ')';
+        }
+        ticketsMarkdown += '\n'
       } else {
         ticketsMarkdown += '- [' + ticket.id + '](' + ticket.url + ')\n';
       }
@@ -237,7 +242,7 @@ export async function getCommitUpdatedFiles(commitHash) {
 
 export async function buildCheckDeployCommitSummary() {
   try {
-    const pullRequestInfo = await GitProvider.getPullRequestInfo();
+    const pullRequestInfo = await GitProvider.getPullRequestInfo({ useCache: true });
     const commitsSummary = await computeCommitsSummary(true, pullRequestInfo);
     const prDataCommitsSummary = {
       commitsSummary: commitsSummary.markdown,
@@ -250,7 +255,7 @@ export async function buildCheckDeployCommitSummary() {
 }
 
 export async function handlePostDeploymentNotifications(flags, targetUsername: any, quickDeploy: any, delta: boolean, debugMode: boolean, additionalMessage = "") {
-  const pullRequestInfo = await GitProvider.getPullRequestInfo();
+  const pullRequestInfo = await GitProvider.getPullRequestInfo({ useCache: true });
   const attachments: MessageAttachment[] = [];
   try {
     // Build notification attachments & handle ticketing systems comments
@@ -288,15 +293,14 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
     if (debugMode) {
       uxLog(this, c.gray('PR info:\n' + JSON.stringify(pullRequestInfo)));
     }
-    const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
-    const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
-    notifMessage += `\nRelated: <${prUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : '');
+    const prAuthor = pullRequestInfo?.authorName;
+    notifMessage += `\nRelated: <${pullRequestInfo.webUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : '');
     const prButtonText = 'View Pull Request';
-    notifButtons.push({ text: prButtonText, url: prUrl });
+    notifButtons.push({ text: prButtonText, url: pullRequestInfo.webUrl });
   } else {
     uxLog(this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
   }
-  globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+  await setConnectionVariables(flags['target-org']?.getConnection(), true);// Required for some notifications providers like Email
   await NotifProvider.postNotifications({
     type: 'DEPLOYMENT',
     text: notifMessage,
@@ -312,7 +316,7 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
 }
 
 
-async function collectNotifAttachments(attachments: MessageAttachment[], pullRequestInfo: any) {
+async function collectNotifAttachments(attachments: MessageAttachment[], pullRequestInfo: CommonPullRequestInfo | null) {
   const commitsSummary = await computeCommitsSummary(false, pullRequestInfo);
   // Tickets attachment
   if (commitsSummary.tickets.length > 0) {
@@ -320,7 +324,11 @@ async function collectNotifAttachments(attachments: MessageAttachment[], pullReq
       text: `*Tickets*\n${commitsSummary.tickets
         .map((ticket) => {
           if (ticket.foundOnServer) {
-            return '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id) + ' ' + ticket.subject;
+            let ticketsMarkdown = '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id) + ' ' + ticket.subject;
+            if (ticket.statusLabel) {
+              ticketsMarkdown += ' (' + ticket.statusLabel + ')';
+            }
+            return ticketsMarkdown;
           } else {
             return '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id);
           }
@@ -349,4 +357,10 @@ async function collectNotifAttachments(attachments: MessageAttachment[], pullReq
     });
   }
   return commitsSummary;
+}
+
+export function makeFileNameGitCompliant(fileName: string) {
+  // Remove all characters that are not alphanumeric, underscore, hyphen, space or dot
+  const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9_. -]/g, '_');
+  return sanitizedFileName;
 }

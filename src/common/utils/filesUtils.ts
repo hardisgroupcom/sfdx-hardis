@@ -2,6 +2,7 @@
 import fs from 'fs-extra';
 import * as path from 'path';
 import c from 'chalk';
+import open from 'open';
 import * as split from 'split';
 import { PromisePool } from '@supercharge/promise-pool';
 
@@ -12,7 +13,7 @@ import ExcelJS from 'exceljs';
 
 // Project Specific Utilities
 import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from './index.js';
-import { bulkQuery, soqlQuery } from './apiUtils.js';
+import { bulkQuery, soqlQuery, bulkQueryByChunks } from './apiUtils.js';
 import { prompts } from './prompts.js';
 import { CONSTANTS, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
@@ -26,6 +27,7 @@ export class FilesExporter {
   private pollTimeout: number;
   private recordsChunkSize: number;
   private startChunkNumber: number;
+  private parentRecordsChunkSize: number;
   private commandThis: any;
 
   private dtl: any = null; // export config
@@ -59,8 +61,9 @@ export class FilesExporter {
   ) {
     this.filesPath = filesPath;
     this.conn = conn;
-    this.pollTimeout = options?.pollTimeout || 300000;
+    this.pollTimeout = options?.pollTimeout || 600000;
     this.recordsChunkSize = options?.recordsChunkSize || 1000;
+    this.parentRecordsChunkSize = 100000;
     this.startChunkNumber = options?.startChunkNumber || 0;
     this.commandThis = commandThis;
     if (options.exportConfig) {
@@ -177,7 +180,9 @@ export class FilesExporter {
     // Query parent records using SOQL defined in export.json file
     this.totalSoqlRequests++;
     this.conn.bulk.pollTimeout = this.pollTimeout || 600000; // Increase timeout in case we are on a bad internet connection or if the bulk api batch is queued
-    const queryRes = await bulkQuery(this.dtl.soqlQuery, this.conn, 3);
+
+    // Use bulkQueryByChunks to handle large queries
+    const queryRes = await bulkQueryByChunks(this.dtl.soqlQuery, this.conn, this.parentRecordsChunkSize);
     for (const record of queryRes.records) {
       this.totalParentRecords++;
       const parentRecordFolderForFiles = path.resolve(
@@ -191,7 +196,7 @@ export class FilesExporter {
           )
         );
         this.recordsIgnored++;
-        return;
+        continue;
       }
       await this.addToRecordsChunk(record);
     }
@@ -225,58 +230,123 @@ export class FilesExporter {
         `Processing parent records chunk #${this.recordChunksNumber} on ${this.chunksNumber} (${records.length} records) ...`
       )
     );
-    // Request all ContentDocumentLink related to all records of the chunk
-    const linkedEntityIdIn = records.map((record: any) => `'${record.Id}'`).join(',');
-    const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
-    this.totalSoqlRequests++;
-    const contentDocumentLinks = await bulkQuery(linkedEntityInQuery, this.conn);
-    if (contentDocumentLinks.records.length === 0) {
-      uxLog(this, c.grey('No ContentDocumentLinks found for the parent records in this chunk'));
-      return;
-    }
-
-    // Retrieve all ContentVersion related to ContentDocumentLink
-    const contentDocIdIn = contentDocumentLinks.records
-      .map((contentDocumentLink: any) => `'${contentDocumentLink.ContentDocumentId}'`)
-      .join(',');
-    const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdIn}) AND IsLatest = true`;
-    this.totalSoqlRequests++;
-    const contentVersions = await bulkQuery(contentVersionSoql, this.conn);
-
-    // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
-    // Because of this when we fetch ContentVersion for ContentDocument it can return less results than there is ContentDocumentLink objects to link.
-    // To fix this we create a list of ContentVersion and ContentDocumentLink pairs.
-    // This way we have multiple pairs and we will download ContentVersion objects for each linked object.
-    const versionsAndLinks: any[] = [];
-    contentVersions.records.forEach((contentVersion) => {
-      contentDocumentLinks.records.forEach((contentDocumentLink) => {
-        if (contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId) {
-          versionsAndLinks.push({
-            contentVersion: contentVersion,
-            contentDocumentLink: contentDocumentLink,
+    // Process records in batches of 200 for Attachments and 1000 for ContentVersions to avoid hitting the SOQL query limit
+    const attachmentBatchSize = 200;
+    const contentVersionBatchSize = 1000;
+    for (let i = 0; i < records.length; i += attachmentBatchSize) {
+      const batch = records.slice(i, i + attachmentBatchSize);
+      // Request all Attachment related to all records of the batch using REST API
+      const parentIdIn = batch.map((record: any) => `'${record.Id}'`).join(',');
+      const attachmentQuery = `SELECT Id, Name, ContentType, ParentId FROM Attachment WHERE ParentId IN (${parentIdIn})`;
+      this.totalSoqlRequests++;
+      const attachments = await this.conn.query(attachmentQuery);
+      if (attachments.records.length > 0) {
+        // Download attachments using REST API
+        await PromisePool.withConcurrency(5)
+          .for(attachments.records)
+          .process(async (attachment: any) => {
+            try {
+              await this.downloadAttachmentFile(attachment, batch);
+            } catch (e) {
+              this.filesErrors++;
+              uxLog(this, c.red('Download file error: ' + attachment.Name + '\n' + e));
+            }
           });
-        }
-      });
-    });
-
-    // Download files
-    await PromisePool.withConcurrency(5)
-      .for(versionsAndLinks)
-      .process(async (versionAndLink: any) => {
-        try {
-          await this.downloadContentVersionFile(
-            versionAndLink.contentVersion,
-            records,
-            versionAndLink.contentDocumentLink
+      } else {
+        uxLog(this, c.grey('No Attachments found for the parent records in this batch'));
+      }
+    }
+    for (let i = 0; i < records.length; i += contentVersionBatchSize) {
+      const batch = records.slice(i, i + contentVersionBatchSize);
+      // Request all ContentDocumentLink related to all records of the batch
+      const linkedEntityIdIn = batch.map((record: any) => `'${record.Id}'`).join(',');
+      const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
+      this.totalSoqlRequests++;
+      const contentDocumentLinks = await bulkQueryByChunks(linkedEntityInQuery, this.conn, this.parentRecordsChunkSize);
+      if (contentDocumentLinks.records.length > 0) {
+        // Retrieve all ContentVersion related to ContentDocumentLink
+        const contentDocIdIn = contentDocumentLinks.records.map((link: any) => `'${link.ContentDocumentId}'`);
+        // Loop on contentDocIdIn by contentVersionBatchSize
+        for (let j = 0; j < contentDocIdIn.length; j += contentVersionBatchSize) {
+          const contentDocIdBatch = contentDocIdIn.slice(j, j + contentVersionBatchSize).join(',');
+          // Log the progression of contentDocIdBatch
+          uxLog(
+            this,
+            c.cyan(
+              `Processing ContentDocumentId chunk #${Math.ceil((j + 1) / contentVersionBatchSize)} on ${Math.ceil(
+                contentDocIdIn.length / contentVersionBatchSize
+              )}`
+            )
           );
-        } catch (e) {
-          this.filesErrors++;
-          uxLog(this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
+          // Request all ContentVersion related to all records of the batch
+          const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
+          this.totalSoqlRequests++;
+          const contentVersions = await bulkQueryByChunks(contentVersionSoql, this.conn, this.parentRecordsChunkSize);
+          // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
+          // Because of this when we fetch ContentVersion for ContentDocument it can return less results than there is ContentDocumentLink objects to link.
+          // To fix this we create a list of ContentVersion and ContentDocumentLink pairs.
+          // This way we have multiple pairs and we will download ContentVersion objects for each linked object.
+          const versionsAndLinks: any[] = [];
+          contentVersions.records.forEach((contentVersion) => {
+            contentDocumentLinks.records.forEach((contentDocumentLink) => {
+              if (contentDocumentLink.ContentDocumentId === contentVersion.ContentDocumentId) {
+                versionsAndLinks.push({
+                  contentVersion: contentVersion,
+                  contentDocumentLink: contentDocumentLink,
+                });
+              }
+            });
+          });
+          // Download files
+          await PromisePool.withConcurrency(5)
+            .for(versionsAndLinks)
+            .process(async (versionAndLink: any) => {
+              try {
+                await this.downloadContentVersionFile(
+                  versionAndLink.contentVersion,
+                  batch,
+                  versionAndLink.contentDocumentLink
+                );
+              } catch (e) {
+                this.filesErrors++;
+                uxLog(this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
+              }
+            });
         }
-      });
+      } else {
+        uxLog(this, c.grey('No ContentDocumentLinks found for the parent records in this batch'));
+      }
+    }
   }
 
-  private async downloadContentVersionFile(contentVersion, records, contentDocumentLink) {
+  private async downloadFile(fetchUrl: string, outputFile: string) {
+    const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
+    if (downloadResult.success) {
+      this.filesDownloaded++;
+    } else {
+      this.filesErrors++;
+    }
+  }
+
+  private async downloadAttachmentFile(attachment: any, records: any[]) {
+    // Retrieve initial record to build output files folder name
+    const parentAttachment = records.filter((record) => record.Id === attachment.ParentId)[0];
+    // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
+    const attachmentParentFolderName = (parentAttachment[this.dtl.outputFolderNameField] || parentAttachment.Id).replace(
+      /[/\\?%*:|"<>]/g,
+      '-'
+    );
+    const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, attachmentParentFolderName));
+    // Define name of the file
+    const outputFile = path.join(parentRecordFolderForFiles, attachment.Name.replace(/[/\\?%*:|"<>]/g, '-'));
+    // Create directory if not existing
+    await fs.ensureDir(parentRecordFolderForFiles);
+    // Download file locally
+    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/Attachment/${attachment.Id}/Body`;
+    await this.downloadFile(fetchUrl, outputFile);
+  }
+
+  private async downloadContentVersionFile(contentVersion: any, records: any[], contentDocumentLink: any) {
     // Retrieve initial record to build output files folder name
     const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
@@ -325,14 +395,8 @@ export class FilesExporter {
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
-    const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
-    if (downloadResult.success) {
-      this.filesDownloaded++;
-    } else {
-      this.filesErrors++;
-    }
+    await this.downloadFile(fetchUrl, outputFile);
   }
-
   // Build stats & result
   private async buildResult() {
     const connAny = this.conn as any;
@@ -684,9 +748,12 @@ export async function countLinesInFile(file: string) {
  * It then joins the report directory, file name prefix, and branch name to form the full path of the report.
  *
  * @param {string} fileNamePrefix - The prefix for the file name.
+ * @param {string} outputFile - The output file path. If null, a new path is generated.
+ * @param {Object} [options] - Additional options for generating the report path.
+ * @param {boolean} [options.withDate=false] - Whether to append a timestamp to the file name.
  * @returns {Promise<string>} - A Promise that resolves to the full path of the report.
  */
-export async function generateReportPath(fileNamePrefix: string, outputFile: string): Promise<string> {
+export async function generateReportPath(fileNamePrefix: string, outputFile: string, options: { withDate: boolean } = { withDate: false }): Promise<string> {
   if (outputFile == null) {
     const reportDir = await getReportDirectory();
     const branchName =
@@ -694,7 +761,13 @@ export async function generateReportPath(fileNamePrefix: string, outputFile: str
         process.env.CI_COMMIT_REF_NAME ||
         (await getCurrentGitBranch({ formatted: true })) ||
         'branch-not-found';
-    return path.join(reportDir, `${fileNamePrefix}-${branchName.split('/').pop()}.csv`);
+    let newOutputFile = path.join(reportDir, `${fileNamePrefix}-${branchName.split('/').pop()}.csv`);
+    if (options.withDate) {
+      // Add date time info
+      const date = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0];
+      newOutputFile = path.join(reportDir, `${fileNamePrefix}-${branchName.split('/').pop()}-${date}.csv`);
+    }
+    return newOutputFile;
   } else {
     await fs.ensureDir(path.dirname(outputFile));
     return outputFile;
@@ -728,6 +801,14 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
         await csvToXls(outputPath, xslxFile);
         uxLog(this, c.italic(c.cyan(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
         result.xlsxFile = xslxFile;
+        if (!isCI && !(process.env.NO_OPEN === 'true')) {
+          try {
+            uxLog(this, c.italic(c.grey(`Opening XSLX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
+            await open(xslxFile, { wait: false });
+          } catch (e) {
+            uxLog(this, c.yellow('Error while opening XSLX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+          }
+        }
       } catch (e2) {
         uxLog(
           this,

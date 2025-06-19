@@ -17,6 +17,7 @@ import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from '../.
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
+import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -24,7 +25,19 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 /* jscpd:ignore-end */
 export default class LintMetadataStatus extends SfCommand<any> {
   public static title = 'check inactive metadatas';
-  public static description = `Check if elements (flows and validation rules) are inactive in the project
+  public static description = `Check if elements are inactive in the project:
+
+- Approval Processes
+- Assignment Rules
+- Auto Response Rules
+- Escalation Rules
+- Flows
+- Forecasting Types
+- Record Types
+- Validation Rules
+- Workflow Rules
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/detect-inactive-metadata.gif)
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-inactive-metadata/) and can output Grafana, Slack and MsTeams Notifications.
 `;
@@ -62,20 +75,69 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(LintMetadataStatus);
-    const draftFlows = await this.verifyFlows();
-    const inactiveValidationRules = await this.verifyValidationRules();
 
+    const inactiveApprovalProcesses = await this.verifyApprovalProcesses();
+    const inactiveAssignmentRules = await this.verifyAssignmentRules();
+    const inactiveAutoResponseRules = await this.verifyAutoResponseRules();
+    const inactiveEscalationRules = await this.verifyEscalationRules();
+    const draftFlows = await this.verifyFlows();
+    const inactiveForecastingTypes = await this.verifyForecastingTypes();
+    const inactiveRecordTypes = await this.verifyRecordTypes();
+    const inactiveValidationRules = await this.verifyValidationRules();
+    const inactiveWorkflows = await this.verifyWorkflowRules();
+
+    this.inactiveItems = [
+      ...inactiveApprovalProcesses,
+      ...inactiveAssignmentRules,
+      ...inactiveAutoResponseRules,
+      ...draftFlows,
+      ...inactiveEscalationRules,
+      ...inactiveForecastingTypes,
+      ...inactiveRecordTypes,
+      ...inactiveValidationRules,
+      ...inactiveWorkflows,
+    ];
     // Prepare notifications
     const branchMd = await getBranchMarkdown();
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = 'log';
     let notifText = `No inactive configuration elements has been found in ${branchMd}`;
     const attachments: MessageAttachment[] = [];
-    if (draftFlows.length > 0 || inactiveValidationRules.length > 0) {
+    if (this.inactiveItems.length > 0) {
       notifSeverity = 'warning';
+      if (inactiveApprovalProcesses.length > 0) {
+        attachments.push({
+          text: `*Inactive Approval Processes*\n${inactiveApprovalProcesses.map((file) => `• ${file.name}`).join('\n')}`,
+        });
+      }
+      if (inactiveAssignmentRules.length > 0) {
+        attachments.push({
+          text: `*Inactive Assignment Rules*\n${inactiveAssignmentRules.map((file) => `• ${file.name}`).join('\n')}`,
+        });
+      }
+      if (inactiveAutoResponseRules.length > 0) {
+        attachments.push({
+          text: `*Inactive Auto Response Rules*\n${inactiveAutoResponseRules.map((file) => `• ${file.name}`).join('\n')}`,
+        });
+      }
+      if (inactiveEscalationRules.length > 0) {
+        attachments.push({
+          text: `*Inactive Escalation Rules*\n${inactiveEscalationRules.map((file) => `• ${file.name}`).join('\n')}`,
+        });
+      }
       if (draftFlows.length > 0) {
         attachments.push({
           text: `*Inactive Flows*\n${draftFlows.map((file) => `• ${file.name}`).join('\n')}`,
+        });
+      }
+      if (inactiveForecastingTypes.length > 0) {
+        attachments.push({
+          text: `*Inactive Forecasting Types*\n${inactiveForecastingTypes.map((file) => `• ${file.name}`).join('\n')}`,
+        });
+      }
+      if (inactiveRecordTypes.length > 0) {
+        attachments.push({
+          text: `*Inactive Record Types*\n${inactiveRecordTypes.map((file) => `• ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveValidationRules.length > 0) {
@@ -83,14 +145,20 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           text: `*Inactive Validation Rules*\n${inactiveValidationRules.map((file) => `• ${file.name}`).join('\n')}`,
         });
       }
-      const numberInactive = draftFlows.length + inactiveValidationRules.length;
-      notifText = `${numberInactive} inactive configuration elements have been found in ${branchMd}`;
-      await this.buildCsvFile(draftFlows, inactiveValidationRules);
+      if (inactiveWorkflows.length > 0) {
+        attachments.push({
+          text: `*Inactive Workflow Rules*\n${inactiveWorkflows.map((file) => `• ${file.name}`).join('\n')}`,
+        });
+      }
+
+      notifText = `${this.inactiveItems.length} inactive configuration elements have been found in ${branchMd}`;
+      // Build result file
+      await this.buildCsvFile();
     } else {
       uxLog(this, 'No draft flow or validation rule files detected.');
     }
     // Post notifications
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'METADATA_STATUS',
       text: notifText,
@@ -124,11 +192,11 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       const flowContent: string = await fs.readFile(file, 'utf-8');
       if (flowContent.includes('<status>Draft</status>')) {
         const fileName = path.basename(file, '.flow-meta.xml');
-        draftFiles.push({ type: 'Draft Flow', name: fileName, severity: 'warning', severityIcon: severityIcon });
+        draftFiles.push({ type: 'Flow (draft)', name: fileName, severity: 'warning', severityIcon: severityIcon });
       }
     }
 
-    return draftFiles;
+    return draftFiles.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /**
@@ -152,7 +220,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         const ruleName = path.basename(file, '.validationRule-meta.xml');
         const objectName = path.basename(path.dirname(path.dirname(file)));
         inactiveRules.push({
-          type: 'Inactive VR',
+          type: 'Validation Rule (inactive)',
           name: `${objectName} - ${ruleName}`,
           severity: 'warning',
           severityIcon: severityIcon,
@@ -160,7 +228,171 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       }
     }
 
-    return inactiveRules;
+    return inactiveRules.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  private async verifyRecordTypes(): Promise<any[]> {
+    const inactiveRecordTypes: any[] = [];
+    const recordTypeFiles: string[] = await glob('**/objects/**/recordTypes/*.recordType-meta.xml', {
+      ignore: this.ignorePatterns,
+    });
+    const severityIcon = getSeverityIcon('warning');
+    for (const file of recordTypeFiles) {
+      const recordTypeName = path.basename(file, '.recordType-meta.xml');
+      const objectName = path.basename(path.dirname(path.dirname(file)));
+      // Skip if record type is from a managed package
+      if (path.basename(recordTypeName).includes('__')) {
+        continue;
+      }
+      const recordTypeXml: string = await fs.readFile(file, 'utf-8');
+      if (recordTypeXml.includes('<active>false</active>')) {
+        inactiveRecordTypes.push({
+          type: 'Record Type (inactive)',
+          name: `${objectName} - ${recordTypeName}`,
+          severity: 'warning',
+          severityIcon: severityIcon,
+        });
+      }
+    }
+
+    return inactiveRecordTypes.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  private async verifyApprovalProcesses(): Promise<any[]> {
+    const inactiveApprovalProcesses: any[] = [];
+    const approvalProcessFiles: string[] = await glob('**/approvalProcesses/**/*.approvalProcess-meta.xml', {
+      ignore: this.ignorePatterns,
+    });
+    const severityIcon = getSeverityIcon('warning');
+    for (const file of approvalProcessFiles) {
+      const approvalProcessFullName = path.basename(file, '.approvalProcess-meta.xml');
+      const [objectName, approvalProcessName] = approvalProcessFullName.split('.');
+      // Skip if approval process is from a managed package
+      if (path.basename(approvalProcessName).includes('__')) {
+        continue;
+      }
+      const approvalProcessXml: string = await fs.readFile(file, 'utf-8');
+      if (approvalProcessXml.includes('<active>false</active>')) {
+        inactiveApprovalProcesses.push({
+          type: 'Approval Process (inactive)',
+          name: `${objectName} - ${approvalProcessName}`,
+          severity: 'warning',
+          severityIcon: severityIcon,
+        });
+      }
+    }
+
+    return inactiveApprovalProcesses.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  private async verifyForecastingTypes(): Promise<any[]> {
+    const inactiveForecastTypes: any[] = [];
+    const forecastTypeFiles: string[] = await glob('**/forecastingTypes/**/*.forecastingType-meta.xml', {
+      ignore: this.ignorePatterns,
+    });
+    const severityIcon = getSeverityIcon('warning');
+    for (const file of forecastTypeFiles) {
+      const forecastingTypeName = path.basename(file, '.forecastingType-meta.xml');
+      const forecastTypeXml: string = await fs.readFile(file, 'utf-8');
+      if (forecastTypeXml.includes('<active>false</active>')) {
+        inactiveForecastTypes.push({
+          type: 'Forecasting Type (inactive)',
+          name: forecastingTypeName,
+          severity: 'warning',
+          severityIcon: severityIcon,
+        });
+      }
+    }
+
+    return inactiveForecastTypes.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  private async verifyWorkflowRules(): Promise<any[]> {
+    const inactiveWorkflowRules: any[] = [];
+    const workflowRuleFiles: string[] = await glob('**/workflows/**/*.workflow-meta.xml', {
+      ignore: this.ignorePatterns,
+    });
+    const severityIcon = getSeverityIcon('warning');
+    for (const file of workflowRuleFiles) {
+      const workflowRuleName = path.basename(file, '.workflow-meta.xml');
+      const workflowRuleXml: string = await fs.readFile(file, 'utf-8');
+      if (workflowRuleXml.includes('<active>false</active>')) {
+        inactiveWorkflowRules.push({
+          type: 'Workflow Rule (inactive)',
+          name: workflowRuleName,
+          severity: 'warning',
+          severityIcon: severityIcon,
+        });
+      }
+    }
+
+    return inactiveWorkflowRules.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  private async verifyAssignmentRules(): Promise<any[]> {
+    const inactiveAssignmentRules: any[] = [];
+    const assignmentRuleFiles: string[] = await glob('**/assignmentRules/**/*.assignmentRules-meta.xml', {
+      ignore: this.ignorePatterns,
+    });
+    const severityIcon = getSeverityIcon('warning');
+    for (const file of assignmentRuleFiles) {
+      const assignmentRuleName = path.basename(file, '.assignmentRules-meta.xml');
+      const assignmentRuleXml: string = await fs.readFile(file, 'utf-8');
+      if (assignmentRuleXml.includes('<active>false</active>')) {
+        inactiveAssignmentRules.push({
+          type: 'Assignment Rule (inactive)',
+          name: assignmentRuleName,
+          severity: 'warning',
+          severityIcon: severityIcon,
+        });
+      }
+    }
+
+    return inactiveAssignmentRules.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  private async verifyAutoResponseRules(): Promise<any[]> {
+    const inactiveAutoResponseRules: any[] = [];
+    const autoResponseRuleFiles: string[] = await glob('**/autoResponseRules/**/*.autoResponseRules-meta.xml', {
+      ignore: this.ignorePatterns,
+    });
+    const severityIcon = getSeverityIcon('warning');
+    for (const file of autoResponseRuleFiles) {
+      const autoResponseRuleName = path.basename(file, '.autoResponseRules-meta.xml');
+      const autoResponseRuleXml: string = await fs.readFile(file, 'utf-8');
+      if (autoResponseRuleXml.includes('<active>false</active>')) {
+        inactiveAutoResponseRules.push({
+          type: 'Auto Response Rule (inactive)',
+          name: autoResponseRuleName,
+          severity: 'warning',
+          severityIcon: severityIcon,
+        });
+      }
+    }
+
+    return inactiveAutoResponseRules.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  private async verifyEscalationRules(): Promise<any[]> {
+    const inactiveEscalationRules: any[] = [];
+    const escalationRuleFiles: string[] = await glob('**/escalationRules/**/*.escalationRules-meta.xml', {
+      ignore: this.ignorePatterns,
+    });
+    const severityIcon = getSeverityIcon('warning');
+    for (const file of escalationRuleFiles) {
+      const escalationRuleName = path.basename(file, '.escalationRules-meta.xml');
+      const escalationRuleXml: string = await fs.readFile(file, 'utf-8');
+      if (escalationRuleXml.includes('<active>false</active>')) {
+        inactiveEscalationRules.push({
+          type: 'Escalation Rule (inactive)',
+          name: escalationRuleName,
+          severity: 'warning',
+          severityIcon: severityIcon,
+        });
+      }
+    }
+
+    return inactiveEscalationRules.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /**
@@ -169,14 +401,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
    * It then maps the draft flows and inactive validation rules into an array of objects, each with a 'type' property set to either "Draft Flow" or "Inactive VR" and a 'name' property set to the file or rule name.
    * Finally, it generates a CSV file from this array and writes it to the output file.
    *
-   * @param {string[]} draftFlows - An array of draft flow names.
-   * @param {string[]} inactiveValidationRules - An array of inactive validation rule names.
    * @returns {Promise<void>} - A Promise that resolves when the CSV file has been successfully generated.
    */
-  private async buildCsvFile(draftFlows: string[], inactiveValidationRules: string[]): Promise<void> {
+  private async buildCsvFile(): Promise<void> {
     this.outputFile = await generateReportPath('lint-metadatastatus', this.outputFile);
-    this.inactiveItems = [...draftFlows, ...inactiveValidationRules];
-
     this.outputFilesRes = await generateCsvFile(this.inactiveItems, this.outputFile);
   }
 }

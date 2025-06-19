@@ -7,6 +7,7 @@ import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { extractRegexMatches, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";
 import { getEnvVar } from "../../config/index.js";
+import { CommonPullRequestInfo } from "../gitProvider/index.js";
 
 export class JiraProvider extends TicketProviderRoot {
   private jiraClient: InstanceType<typeof JiraApi> | any = null;
@@ -143,7 +144,7 @@ export class JiraProvider extends TicketProviderRoot {
     return tickets;
   }
 
-  public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: any) {
+  public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
     uxLog(this, c.cyan(`[JiraProvider] Try to post comments on ${tickets.length} tickets...`));
 
     const genericHtmlResponseError = "Probably config/access error since response is HTML";
@@ -159,10 +160,10 @@ export class JiraProvider extends TicketProviderRoot {
         let prUrl = "";
         let prAuthor = "";
         if (pullRequestInfo) {
-          prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
+          prUrl = pullRequestInfo.webUrl;
           if (prUrl) {
             prTitle = pullRequestInfo.title;
-            prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
+            prAuthor = pullRequestInfo?.authorName;
           }
         }
         const jiraComment = this.getJiraDeploymentCommentAdf(

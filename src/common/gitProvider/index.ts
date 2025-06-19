@@ -125,10 +125,10 @@ export abstract class GitProvider {
       }
       markdownBody = removeMermaidLinks(markdownBody); // Remove "click" elements that are useless and ugly on some providers :)
       const prMessageRequest: PullRequestMessageRequest = {
-        title: prData.title,
+        title: prData.title || '',
         message: markdownBody,
-        status: prData.status,
-        messageKey: prData.messageKey,
+        status: prData.status || 'tovalidate',
+        messageKey: prData.messageKey || '',
       };
       // Post main message
       const postResult = await gitProvider.tryPostPullRequestMessage(prMessageRequest);
@@ -204,16 +204,25 @@ export abstract class GitProvider {
     return gitProvider.supportsSvgAttachments();
   }
 
-  static async getPullRequestInfo(): Promise<any> {
+  static prInfoCache: any = null;
+
+  static async getPullRequestInfo(options: { useCache: boolean } = { useCache: false }): Promise<CommonPullRequestInfo | null> {
+    // Return cached result if available and caching is enabled
+    if (options.useCache && GitProvider.prInfoCache !== null) {
+      debug("[PR Info] Returning cached pull request info");
+      return GitProvider.prInfoCache;
+    }
+
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       debug("[PR Info] No GitProvider instance found");
       return null;
     }
-    let prInfo: any;
+    let prInfo: CommonPullRequestInfo | null = null;
     try {
       prInfo = await gitProvider.getPullRequestInfo();
       debug("[GitProvider][PR Info] " + JSON.stringify(prInfo, null, 2));
+      GitProvider.prInfoCache = prInfo;
     } catch (e) {
       uxLog(this, c.yellow("[GitProvider] Unable to get Pull Request info: " + (e as Error).message));
       uxLog(this, c.yellow(`[GitProvider] Maybe you misconfigured your ${gitProvider.getLabel()} ?`));
@@ -227,6 +236,51 @@ export abstract class GitProvider {
     const deployBeforeMerge = getEnvVar("SFDX_HARDIS_DEPLOY_BEFORE_MERGE") || false;
     return [true, "true"].includes(deployBeforeMerge);
   }
+}
+
+export declare type CommonPullRequestInfo = {
+  idNumber: number;
+  idStr: string;
+  targetBranch: string;
+  sourceBranch: string;
+  title: string;
+  description: string;
+  authorName: string;
+  webUrl: string;
+  customBehaviors: {
+    noDeltaDeployment?: boolean,
+    purgeFlowVersions?: boolean,
+    destructiveChangesAfterDeployment?: boolean
+  }
+  providerInfo: any
+}
+
+export declare type PullRequestData = {
+  messageKey: string;
+  title: string;
+  deployErrorsMarkdownBody?: string;
+  codeCoverageMarkdownBody?: string;
+  commitsSummary?: string;
+  deployStatus?: "valid" | "invalid" | "unknown";
+  status?: "valid" | "invalid" | "tovalidate";
+  flowDiffMarkdown?: {
+    markdownSummary?: string;
+    flowDiffMarkdownList?: Array<{
+      name: string;
+      markdown: string;
+      markdownFile?: string;
+    }>;
+  };
+}
+
+// Global type augmentation for globalThis
+declare global {
+  // eslint-disable-next-line no-var
+  var pullRequestData: Partial<PullRequestData> | undefined;
+  // eslint-disable-next-line no-var
+  var pullRequestCommentSent: boolean | undefined;
+  // eslint-disable-next-line no-var
+  var pullRequestDeploymentId: string | undefined;
 }
 
 export declare type PullRequestMessageRequest = {
