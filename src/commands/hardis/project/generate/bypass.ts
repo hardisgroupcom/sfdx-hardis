@@ -304,7 +304,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
         sObject,
         name,
         action: STATUS.FAILED,
-        comment: "Error processing file",
+        comment: `Error processing file : ${error}`,
       };
     }
   }
@@ -409,7 +409,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
         sObject: null,
         name,
         action: STATUS.FAILED,
-        comment: "Error processing file",
+        comment: `Error processing file : ${error}`,
       };
     }
   }
