@@ -50,13 +50,6 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
       )}`,
       required: false,
     }),
-    global: Flags.boolean({
-      char: "g",
-      description:
-        "Generate global bypasses for all automations (Flow, Trigger, VR) without selecting sObjects.",
-      required: false,
-      default: false,
-    }),
     websocket: Flags.string({
       description: messages.getMessage("websocket"),
     }),
@@ -461,7 +454,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(HardisProjectGenerateBypass);
     const connection = flags["target-org"].getConnection();
-    const { global: generateGlobalBypasses, skipCredits } = flags;
+    const { skipCredits } = flags;
     let { applyToTriggers, applyToVrs } = flags;
 
     const availableSObjects = await this.getFilteredSObjects(connection);
@@ -485,10 +478,8 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
         .filter((s) => ALLOWED_AUTOMATIONS.includes(s));
     }
 
-    // Generate global bypasses if requested
-    if (generateGlobalBypasses) {
-      this.generateFiles({ All: "All" }, ALLOWED_AUTOMATIONS, skipCredits);
-    }
+    // Generate global bypasses
+    this.generateFiles({ All: "All" }, ALLOWED_AUTOMATIONS, skipCredits);
 
     // Handle prompts if needed
     const promptsNeeded: any = [];
