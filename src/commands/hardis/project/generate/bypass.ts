@@ -361,7 +361,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
     try {
       const fileContent = fs.readFileSync(filePath, "utf-8");
       const match = fileContent.match(
-        /^trigger\s+\w+\s+on\s+(\w+)\s*\([^)]*\)\s*{\s*/i
+        /trigger\s+\w+\s+on\s+(\w+)\s*\([^)]*\)\s*{\s*/i
       );
       if (!match) {
         return {
@@ -372,7 +372,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
         };
       }
 
-      const sObject = match[1];
+      const sObject = match[1].replace(/__c$/, "");
       const bypassCheckLine = `if(FeatureManagement.checkPermission('Bypass${sObject}Triggers')) { return; }`;
 
       if (fileContent.includes(bypassCheckLine)) {
