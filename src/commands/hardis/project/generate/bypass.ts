@@ -14,6 +14,7 @@ import { prompts } from "../../../../common/utils/prompts.js";
 import c from "chalk";
 import path from "path";
 import fs from "fs";
+import * as fsExtra from "fs-extra";
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages("sfdx-hardis", "org");
@@ -89,6 +90,8 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
     "$ sf hardis:project:generate:bypass --automations Flow,Trigger,VR",
     "$ sf hardis:project:generate:bypass --sObjects Account,Opportunity --automations Flow,Trigger",
     "$ sf hardis:project:generate:bypass --skipCredits",
+    "$ sf hardis:project:generate:bypass --applyToVrs",
+    "$ sf hardis:project:generate:bypass --applyToTriggers",
   ];
 
   // Query methods
@@ -193,11 +196,13 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
       `force-app/main/default/permissionsets/Bypass${sObject}${automation}s.permissionset-meta.xml`
     );
 
+    fsExtra.ensureDirSync(path.dirname(customPermissionFile));
     fs.writeFileSync(
       customPermissionFile,
       this.generateXML("customPermission", sObject, automation, skipCredits),
       "utf-8"
     );
+    fsExtra.ensureDirSync(path.dirname(permissionSetFile));
     fs.writeFileSync(
       permissionSetFile,
       this.generateXML("permissionSet", sObject, automation, skipCredits),
@@ -229,7 +234,9 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
     metadataType: "ValidationRule" | "ApexTrigger"
   ): Promise<any[]> {
     const recordsChunks = this.chunkArray(records);
-    const commandPromises = recordsChunks.map(async (chunk) => {
+    const results: any[] = [];
+
+    for (const chunk of recordsChunks) {
       let command = `sf project retrieve start --metadata`;
       command += chunk
         .map((record: any) => {
@@ -239,17 +246,26 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
         })
         .join(" ");
 
-      return execCommand(`${command} --ignore-conflicts --json`, this, {
-        debug: false,
-        retry: {
-          retryDelay: 30,
-          retryStringConstraint: "exitCode",
-          retryMaxAttempts: 3,
-        },
-      });
-    });
+      try {
+        const result = await execCommand(
+          `${command} --ignore-conflicts --json`,
+          this,
+          {
+            debug: false,
+            retry: {
+              retryDelay: 30,
+              retryStringConstraint: "error",
+              retryMaxAttempts: 3,
+            },
+          }
+        );
+        results.push(result);
+      } catch (error) {
+        uxLog(this, c.red(`Error retrieving ${metadataType}: ${error}`));
+      }
+    }
 
-    return Promise.all(commandPromises);
+    return results;
   }
 
   public chunkArray<T>(array: T[], chunkSize: number = 25): T[][] {
@@ -265,11 +281,27 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
 
     try {
       const fileContent = await parseXmlFile(filePath);
+      if (
+        !fileContent?.ValidationRule?.errorConditionFormula?.[0] ||
+        typeof fileContent.ValidationRule.errorConditionFormula[0] !== "string"
+      ) {
+        return {
+          sObject,
+          name,
+          action: STATUS.FAILED,
+          comment:
+            "Invalid validation rule format or missing error condition formula",
+        };
+      }
+
       const validationRuleContent =
         fileContent.ValidationRule.errorConditionFormula[0];
       const bypassPermissionName = `$Permission.Bypass${sObject}VRs`;
 
-      if (validationRuleContent.includes(bypassPermissionName)) {
+      if (
+        typeof validationRuleContent === "string" &&
+        validationRuleContent.includes(bypassPermissionName)
+      ) {
         return {
           sObject,
           name,
@@ -278,7 +310,10 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
         };
       }
 
-      if (/bypass/i.test(validationRuleContent)) {
+      if (
+        typeof validationRuleContent === "string" &&
+        /bypass/i.test(validationRuleContent)
+      ) {
         return {
           sObject,
           name,
@@ -318,7 +353,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
       connection,
       sObjects
     );
-    if (validationRuleRecords.records.length === 0) {
+    if (!validationRuleRecords || validationRuleRecords.records.length === 0) {
       uxLog(this, "No validation rules found for the specified sObjects.");
       return;
     }
@@ -327,17 +362,38 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
       this,
       `Processing ${validationRuleRecords.records.length} Validation Rules.`
     );
-    const retrievedValidationRules = await this.retrieveMetadataFiles(
+
+    const retrievedValidationRulesChunks = await this.retrieveMetadataFiles(
       validationRuleRecords.records,
       "ValidationRule"
     );
 
     const validationRulesTableReport: any = [];
-    for (const metadataFile of retrievedValidationRules[0].result.files) {
-      if (metadataFile.type !== "ValidationRule") continue;
-      validationRulesTableReport.push(
-        await this.handleValidationRuleFile(metadataFile, skipCredits)
-      );
+
+    for (const retrievedValidationRules of retrievedValidationRulesChunks) {
+      if (
+        retrievedValidationRules?.status !== 1 &&
+        retrievedValidationRules?.result?.files &&
+        Array.isArray(retrievedValidationRules.result.files) &&
+        retrievedValidationRules.result.files.length > 0
+      ) {
+        for (const metadataFile of retrievedValidationRules.result.files) {
+          if (
+            metadataFile?.type !== "ValidationRule" ||
+            metadataFile?.problemType === "Error"
+          ) {
+            continue;
+          }
+          validationRulesTableReport.push(
+            await this.handleValidationRuleFile(metadataFile, skipCredits)
+          );
+        }
+      } else {
+        uxLog(
+          this,
+          "No Validation Rule files found in the retrieved metadata chunk."
+        );
+      }
     }
 
     console.table(validationRulesTableReport);
@@ -352,7 +408,26 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
     const name = file.fullName;
 
     try {
+      if (!fs.existsSync(filePath)) {
+        return {
+          sObject: null,
+          name,
+          action: STATUS.FAILED,
+          comment: "File not found",
+        };
+      }
+
       const fileContent = fs.readFileSync(filePath, "utf-8");
+
+      if (typeof fileContent !== "string") {
+        return {
+          sObject: null,
+          name,
+          action: STATUS.FAILED,
+          comment: "Invalid file content format",
+        };
+      }
+
       const match = fileContent.match(
         /trigger\s+\w+\s+on\s+(\w+)\s*\([^)]*\)\s*{\s*/i
       );
@@ -366,7 +441,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
       }
 
       const sObject = match[1].replace(/__c$/, "");
-      const bypassCheckLine = `if(FeatureManagement.checkPermission('Bypass${sObject}Triggers') && FeatureManagement.checkPermission('BypassAllTriggers')) { return; }`;
+      const bypassCheckLine = `if(FeatureManagement.checkPermission('Bypass${sObject}Triggers') || FeatureManagement.checkPermission('BypassAllTriggers')) { return; }`;
 
       if (fileContent.includes(bypassCheckLine)) {
         return {
@@ -393,9 +468,10 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
       const beforeBrace = fileContent.substring(0, openBraceIndex + 1);
       const afterBrace = fileContent.substring(openBraceIndex + 1).trimStart();
 
+      fsExtra.ensureDirSync(path.dirname(filePath));
       fs.writeFileSync(
         filePath,
-        `${beforeBrace}\n\t${fullBypassLine}\n${afterBrace}`,
+        `${beforeBrace}\n\t${fullBypassLine}\n\t${afterBrace}`,
         "utf-8"
       );
       return {
@@ -420,31 +496,45 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
     skipCredits: boolean
   ): Promise<void> {
     const triggerResults = await this.queryTriggers(connection);
+
     const filteredTriggersResults = this.filterTriggerResults(
       triggerResults,
       sObjects
     );
 
-    if (filteredTriggersResults.length === 0) {
+    if (!filteredTriggersResults || filteredTriggersResults?.length === 0) {
       uxLog(this, "No triggers found for the specified sObjects.");
       return;
     }
 
-    const retrievedTriggers = await this.retrieveMetadataFiles(
+    const retrievedTriggersChunks = await this.retrieveMetadataFiles(
       filteredTriggersResults,
       "ApexTrigger"
     );
     const triggerReport: any = [];
 
-    for (const metadataFile of retrievedTriggers[0].result.files) {
+    for (const retrievedTriggers of retrievedTriggersChunks) {
       if (
-        metadataFile.type !== "ApexTrigger" ||
-        !metadataFile.filePath.endsWith(".trigger")
-      )
-        continue;
-      triggerReport.push(
-        await this.handleTriggerFile(metadataFile, skipCredits)
-      );
+        retrievedTriggers?.status !== 1 &&
+        retrievedTriggers?.result?.files &&
+        Array.isArray(retrievedTriggers.result.files) &&
+        retrievedTriggers.result.files.length > 0
+      ) {
+        for (const metadataFile of retrievedTriggers.result.files) {
+          if (
+            metadataFile?.type !== "ApexTrigger" ||
+            !metadataFile?.filePath?.endsWith(".trigger") ||
+            metadataFile?.problemType === "Error"
+          ) {
+            continue;
+          }
+          triggerReport.push(
+            await this.handleTriggerFile(metadataFile, skipCredits)
+          );
+        }
+      } else {
+        uxLog(this, "No Trigger files found in the retrieved metadata chunk.");
+      }
     }
 
     console.table(triggerReport);
