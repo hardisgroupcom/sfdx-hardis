@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { sortCrossPlatform } from "../utils/index.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
@@ -47,42 +48,93 @@ export class DocBuilderApex extends DocBuilderRoot {
     const lines: string[] = ["## Class Diagram"];
     lines.push("");
     lines.push("```mermaid");
-    lines.push("classDiagram");
-    lines.push(`  class ${className} {`);
-    lines.push("  }");
+    lines.push("graph TD");
+    lines.push(`  ${className}["${className}"]:::mainApexClass`);
+    if (fs.existsSync(`docs/apex/${className}.md`)) {
+      lines.push(`  click ${className} "/objects/${className}/"`);
+    }
 
     // Declare all classes related to the className
     for (const relatedClassName of allRelatedClasses) {
-      lines.push(`  class ${relatedClassName} {`);
-      lines.push("  }");
+      const relatedClassDescription = apexDescriptions.find(apex => apex.name === relatedClassName);
+      if (relatedClassDescription?.type.includes("Test")) {
+        lines.push(`  ${relatedClassName}["${relatedClassName}"]:::apexTestClass`);
+      }
+      else {
+        lines.push(`  ${relatedClassName}["${relatedClassName}"]:::apexClass`);
+      }
+      if (fs.existsSync(`docs/apex/${relatedClassName}.md`)) {
+        lines.push(`  click ${relatedClassName} "/apex/${relatedClassName}/"`);
+      }
     }
-
+    lines.push("");
+    let pos = 0;
+    const directLinksPos: number[] = [];
+    const reverseLinksPos: number[] = [];
+    const transverseLinksPos: number[] = [];
     // Add relationships
     for (const relatedClassName of relatedClasses) {
       if (relatedClassName !== className) {
-        lines.push(`  ${className} --|> ${relatedClassName}`);
+        lines.push(`  ${className} --> ${relatedClassName}`);
+        directLinksPos.push(pos);
+        pos++;
       }
     }
+    lines.push("");
     // Add reverse relationships
     for (const relatedClassName of reverseRelatedClasses) {
       if (relatedClassName !== className) {
-        lines.push(`  ${relatedClassName} --|> ${className}`);
+        lines.push(`  ${relatedClassName} --> ${className}`);
+        reverseLinksPos.push(pos);
+        pos++;
       }
     }
+    lines.push("");
 
-    // Calculate relations between related classes using allRelatedClasses and apexdDescriptions
-    for (const relatedClassName of allRelatedClasses) {
-      const relatedClassDescription = apexDescriptions.find(apex => apex.name === relatedClassName);
-      if (relatedClassDescription) {
-        const relatedRelatedClasses = relatedClassDescription.relatedClasses || [];
-        for (const otherRelatedClassName of relatedRelatedClasses) {
-          if (otherRelatedClassName !== className && allRelatedClasses.includes(otherRelatedClassName) && otherRelatedClassName !== relatedClassName) {
-            lines.push(`  ${relatedClassName} --|> ${otherRelatedClassName}`);
+    // If the number of lines is not too big, calculate relations between related classes using allRelatedClasses and apexdDescriptions
+    // This is to avoid too many links in the diagram
+    if (allRelatedClasses.length > 10) {
+      lines.push("  %% Too many related classes, skipping transverse links");
+      lines.push("");
+    }
+    else {
+      for (const relatedClassName of allRelatedClasses) {
+        const relatedClassDescription = apexDescriptions.find(apex => apex.name === relatedClassName);
+        if (relatedClassDescription) {
+          const relatedRelatedClasses = relatedClassDescription.relatedClasses || [];
+          for (const otherRelatedClassName of relatedRelatedClasses) {
+            if (otherRelatedClassName !== className && allRelatedClasses.includes(otherRelatedClassName) && otherRelatedClassName !== relatedClassName) {
+              lines.push(`  ${relatedClassName} --> ${otherRelatedClassName}`);
+              transverseLinksPos.push(pos);
+              pos++;
+            }
           }
         }
       }
     }
+
+    // Add styles for classes
+    lines.push("");
+    lines.push(`classDef apexClass fill:#FFF4C2,stroke:#CCAA00,stroke-width:3px,rx:12px,ry:12px,shadow:drop,color:#333;`);
+    lines.push(`classDef apexTestClass fill:#F5F5F5,stroke:#999999,stroke-width:3px,rx:12px,ry:12px,shadow:drop,color:#333;`);
+    lines.push(`classDef mainApexClass fill:#FFB3B3,stroke:#A94442,stroke-width:4px,rx:14px,ry:14px,shadow:drop,color:#333,font-weight:bold;`);
+    lines.push("");
+    // Add classes to links
+    if (directLinksPos.length > 0) {
+      lines.push("linkStyle " + directLinksPos.join(",") + " stroke:#4C9F70,stroke-width:4px;");
+    }
+    if (reverseLinksPos.length > 0) {
+      lines.push("linkStyle " + reverseLinksPos.join(",") + " stroke:#FF8C00,stroke-width:2px;");
+    }
+    if (transverseLinksPos.length > 0) {
+      lines.push("linkStyle " + transverseLinksPos.join(",") + " stroke:#A6A6A6,stroke-width:2px;");
+    }
     lines.push("```");
+
+    // Use Graph LR if there are too many lines for a nice mermaid display
+    if (lines.length > 50) {
+      lines[3] = "graph LR";
+    }
 
     return lines.join("\n");
   }
