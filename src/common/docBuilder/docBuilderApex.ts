@@ -91,7 +91,7 @@ export class DocBuilderApex extends DocBuilderRoot {
     }
     lines.push("");
 
-    // If the number of lines is not too big, calculate relations between related classes using allRelatedClasses and apexdDescriptions
+    // If the number of lines is not too big, calculate relations between related classes using allRelatedClasses and apexDescriptions
     // This is to avoid too many links in the diagram
     if (allRelatedClasses.length > 10) {
       lines.push("  %% Too many related classes, skipping transverse links");
