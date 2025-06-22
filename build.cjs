@@ -6,6 +6,7 @@ const yaml = require("js-yaml");
 class SfdxHardisBuilder {
   async run() {
     console.log("Start additional building of sfdx-hardis repository...");
+    await this.generatePagesFromReadme();
     await this.buildDeployTipsDoc();
     await this.buildPromptTemplatesDocs();
     this.truncateReadme();
@@ -190,6 +191,25 @@ class SfdxHardisBuilder {
     }
 
     console.log("Prompt templates and variables documentation generated");
+  }
+
+  // Read README.md 
+  // Find sub-content between HTML comments <!-- PAGENAME.md start --> and <!-- PAGENAME.md end --> (example: <!-- contributing.md start --> & <!-- contributing.md end -->)
+  // For each start & and found, generate a new markdown file in docs/ folder with the name PAGENAME.md (example: contributing.md)
+  async generatePagesFromReadme() {
+    console.log("Generating pages from README.md...");
+    const readmeFile = "./README.md";
+    const readmeContent = fs.readFileSync(readmeFile, "utf-8");
+    const regex = /<!-- (.+?) start -->([\s\S]*?)<!-- \1 end -->/g;
+    let match;
+    while ((match = regex.exec(readmeContent)) !== null) {
+      const pageName = match[1].trim();
+      const pageContent = match[2].trim();
+      const pageFile = `./docs/${pageName}`;
+      fs.writeFileSync(pageFile, pageContent + "\n");
+      console.log(`Generated ${pageFile}`);
+    }
+    console.log("All pages generated from README.md");
   }
 
   truncateReadme() {
