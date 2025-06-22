@@ -1,6 +1,6 @@
 ### Organization
 
-sfdx-hardis is primarly led by Nicolas Vuillamy & [Cloudity](https://www.cloudity.com/), but has many external contributors that we cant thank enough !
+sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudity.com/), but has many external contributors that we cant thank enough !
 
 ### Pull Requests Authors
 
