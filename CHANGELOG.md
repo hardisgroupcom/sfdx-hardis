@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.43.0] 2025-06-22
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) enhancements
+  - Generate Apex Class relationship diagram on each apex doc page
+  - Improve display of Object and Class diagrams when there are too many items
+
+- Upgrade npm dependencies
+
 ## [5.42.0] 2025-06-18
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): CI/CD enhancements
