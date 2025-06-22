@@ -6,7 +6,7 @@ Auto-generate your SF project Documentation site with open-source and Agentforce
 
 ### Czech Dreamin '25, Prague
 
-Auto-generate your SF project Documentation site with open-source and Agentfforce, with [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/)
+Auto-generate your SF project Documentation site with open-source and Agentforce, with [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/)
 
 ![Czech Dreamin 2025](https://github.com/user-attachments/assets/fa7b7f12-6d6a-437c-badd-20a626bb2163)
 

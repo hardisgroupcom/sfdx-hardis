@@ -121,7 +121,7 @@ Auto-generate your SF project Documentation site with open-source and Agentforce
 
 ### Czech Dreamin '25, Prague
 
-Auto-generate your SF project Documentation site with open-source and Agentfforce, with [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/)
+Auto-generate your SF project Documentation site with open-source and Agentforce, with [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/)
 
 ![Czech Dreamin 2025](https://github.com/user-attachments/assets/fa7b7f12-6d6a-437c-badd-20a626bb2163)
 
@@ -250,7 +250,7 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 - Complete CI/CD workflow for Salesforce projects - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 
-[![Dreamforce demo video: Easy Salesforce CI/CD with sdfx-hardis and open-source only !](https://img.youtube.com/vi/zEYqTd2txU4/0.jpg)](https://www.youtube.com/watch?v=zEYqTd2txU4){target=blank}
+[![Dreamforce demo video: Easy Salesforce CI/CD with sfdx-hardis and open-source only !](https://img.youtube.com/vi/zEYqTd2txU4/0.jpg)](https://www.youtube.com/watch?v=zEYqTd2txU4){target=blank}
 
 - How to start a new task in sandbox - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/)
 
@@ -333,7 +333,7 @@ Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you
 
 ### Organization
 
-sfdx-hardis is primarely led by Nicolas Vuillamy & [Cloudity](https://www.cloudity.com/), but has many external contributors that we cant thank enough !
+sfdx-hardis is primarly led by Nicolas Vuillamy & [Cloudity](https://www.cloudity.com/), but has many external contributors that we cant thank enough !
 
 ### Pull Requests Authors
 
