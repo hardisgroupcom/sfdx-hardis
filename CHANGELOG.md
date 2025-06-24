@@ -6,6 +6,19 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/): Code rework + removed global flag + Added ability to apply the bypass to VRs and Triggers
 
+## [5.43.1] 2025-06-24
+
+- Refactor part of the documentation + add pages about events and videos
+- Upgrade dependency @cparra/apexdocs
+
+## [5.43.0] 2025-06-22
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) enhancements
+  - Generate Apex Class relationship diagram on each apex doc page
+  - Improve display of Object and Class diagrams when there are too many items
+
+- Upgrade npm dependencies
+
 ## [5.42.0] 2025-06-18
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): CI/CD enhancements

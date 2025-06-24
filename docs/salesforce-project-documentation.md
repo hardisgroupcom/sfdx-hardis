@@ -34,6 +34,8 @@ The documentation will be [**supercharged with AI**](salesforce-ai-setup.md) if 
 
 ![](assets/images/screenshot-object-diagram.jpg)
 
+![](assets/images/screenshot-doc-apex.png)
+
 ![](assets/images/screenshot-project-doc-profile.gif)
 
 If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strategy will be generated.
