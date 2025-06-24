@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update default API version to 63.0, but if --skipauth is not used, get the apiVersion of default org
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): Automate update of sfdx-project.json and package.xml at the beginning of the command
+
 ## [5.43.1] 2025-06-24
 
 - Refactor part of the documentation + add pages about events and videos

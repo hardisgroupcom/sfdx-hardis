@@ -19,6 +19,7 @@ import MkDocsToSalesforce from '../../doc/mkdocs-to-salesforce.js';
 import MkDocsToCloudflare from '../../doc/mkdocs-to-cf.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../../common/utils/gitUtils.js';
+import { updateSfdxProjectApiVersion } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -179,6 +180,9 @@ If Flow history doc always display a single state, you probably need to update y
     this.skipDoc = flags["skip-doc"] === true ? true : false;
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
+
+    // Update apiVersion if necessary
+    await updateSfdxProjectApiVersion();
 
     // Build target org full manifest
     uxLog(
