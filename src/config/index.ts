@@ -34,7 +34,7 @@ const userConfigFiles = [`config/user/.${moduleName}.${username}.yaml`, `config/
 const REMOTE_CONFIGS: any = {};
 
 export const CONSTANTS = {
-  API_VERSION: process.env.SFDX_API_VERSION || '62.0',
+  API_VERSION: process.env.SFDX_API_VERSION || '64.0',
   DOC_URL_ROOT: "https://sfdx-hardis.cloudity.com",
   WEBSITE_URL: "https://cloudity.com",
   CONTACT_URL: "https://cloudity.com/#form",

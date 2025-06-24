@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update default API version to 64.0
+
 ## [5.43.1] 2025-06-24
 
 - Refactor part of the documentation + add pages about events and videos
