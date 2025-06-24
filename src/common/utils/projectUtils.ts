@@ -4,6 +4,7 @@ import * as path from 'path';
 import { execCommand, sortCrossPlatform, uxLog } from './index.js';
 import { glob } from 'glob';
 import { parseXmlFile } from './xmlUtils.js';
+import { CONSTANTS } from '../../config/index.js';
 
 export const GLOB_IGNORE_PATTERNS = [
   '**/node_modules/**',
@@ -149,4 +150,46 @@ export function returnApexType(apexCode: string) {
                             apexContentlower.includes("jsonparser parser") ? "JSON" :
                               apexContentlower.includes("public class soaprequest") ? "SOAP" :
                                 "Class";
+}
+
+// Update only if found API version is inferior to the candidate API version (convert to number)
+export async function updateSfdxProjectApiVersion() {
+  const candidateApiVersion: string = CONSTANTS.API_VERSION;
+  // Handle sfdx-project.json file
+  const sfdxProjectFile = path.join(process.cwd(), 'sfdx-project.json');
+  if (await fs.pathExists(sfdxProjectFile)) {
+    const sfdxProject = await fs.readJson(sfdxProjectFile);
+    if (sfdxProject?.sourceApiVersion) {
+      const currentApiVersionStr = sfdxProject.sourceApiVersion;
+      const currentApiVersion = parseFloat(currentApiVersionStr);
+      if (currentApiVersion < parseFloat(candidateApiVersion)) {
+        sfdxProject.sourceApiVersion = candidateApiVersion;
+        await fs.writeJson(sfdxProjectFile, sfdxProject, { spaces: 2 });
+        uxLog(this, c.cyan(`Updated API version in sfdx-project.json from ${currentApiVersionStr} to ${candidateApiVersion}`));
+      }
+    }
+  }
+  // Handle all .xml files found in manifest folder
+  const manifestDir = path.join(process.cwd(), 'manifest');
+  if (fs.existsSync(manifestDir)) {
+    const manifestFiles = await glob('**/*.xml', { cwd: manifestDir });
+    for (const manifestFile of manifestFiles) {
+      const fullPath = path.join(manifestDir, manifestFile);
+      if (fs.existsSync(fullPath)) {
+        const xmlContent = await fs.readFile(fullPath, 'utf-8');
+        if (xmlContent.includes('version')) {
+          const regex = /<version>(\d+\.\d+)<\/version>/;
+          const match = xmlContent.match(regex);
+          if (match && match[1]) {
+            const currentApiVersion = parseFloat(match[1]);
+            if (currentApiVersion < parseFloat(candidateApiVersion)) {
+              const updatedXmlContent = xmlContent.replace(regex, `<version>${candidateApiVersion}</version>`);
+              await fs.writeFile(fullPath, updatedXmlContent, 'utf-8');
+              uxLog(this, c.cyan(`Updated API version in ${manifestFile} from ${match[1]} to ${candidateApiVersion}`));
+            }
+          }
+        }
+      }
+    }
+  }
 }

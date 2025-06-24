@@ -68,13 +68,17 @@ export async function authOrg(orgAlias: string, options: any) {
         (orgInfoResult.result.username === orgAlias && orgInfoResult.result.id != null) ||
         (isDevHub && orgInfoResult.result.id != null))
     ) {
+      if (orgInfoResult.result.apiVersion) {
+        globalThis.currentOrgApiVersion = orgInfoResult.result.apiVersion;
+      }
       // Set as default username or devhubusername
       uxLog(
         this,
         `[sfdx-hardis] You are already ${c.green('connected')} as ${c.green(
           orgInfoResult.result.username
-        )} on org ${c.green(orgInfoResult.result.instanceUrl)}`
+        )} on org ${c.green(orgInfoResult.result.instanceUrl)} (apiVersion ${globalThis.currentOrgApiVersion})`
       );
+
       if (orgInfoResult.result.expirationDate) {
         uxLog(this, c.cyan(`[sfdx-hardis] Org expiration date: ${c.yellow(orgInfoResult.result.expirationDate)}`));
       }
