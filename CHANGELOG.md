@@ -6,6 +6,24 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - [hardis:project:audit:apiversion](https://sfdx-hardis.cloudity.com/hardis/project/audit/apiversion/): Add the fixApiVersion parameter to specify the target version for the upgrade.
 
+## [5.43.2] 2025-06-25
+
+- Update default API version to 63.0, but if --skipauth is not used, get the apiVersion of default org
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): Automate update of sfdx-project.json and package.xml at the beginning of the command
+
+## [5.43.1] 2025-06-24
+
+- Refactor part of the documentation + add pages about events and videos
+- Upgrade dependency @cparra/apexdocs
+
+## [5.43.0] 2025-06-22
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) enhancements
+  - Generate Apex Class relationship diagram on each apex doc page
+  - Improve display of Object and Class diagrams when there are too many items
+
+- Upgrade npm dependencies
+
 ## [5.42.0] 2025-06-18
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): CI/CD enhancements

@@ -116,6 +116,8 @@ If Flow history doc always display a single state, you probably need to update y
 
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc-profile.gif)
 
+![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-doc-apex.png)
+
 If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strategy will be generated.
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-doc-branches-strategy.jpg)
@@ -401,21 +403,29 @@ ${Project2Markdown.htmlInstructions}
       */
     }
     const apexFiles = await listApexFiles(packageDirs);
+    const apexClassNames = apexFiles.map(file => path.basename(file, ".cls")).filter(name => !name.endsWith(".trigger"));
+
+    // Build relationship between apex classes and objects
+    for (const apexFile of apexFiles) {
+      const apexName = path.basename(apexFile, ".cls").replace(".trigger", "");
+      const apexContent = await fs.readFile(apexFile, "utf8");
+      this.apexDescriptions.push({
+        name: apexName,
+        type: returnApexType(apexContent),
+        impactedObjects: this.allObjectsNames.filter(objectName => apexContent.includes(`${objectName}`)),
+        relatedClasses: apexClassNames.filter(name => apexContent.includes(`${name}`) && name !== apexName),
+      });
+    }
+
+    // Complete generated documentation
     const apexForMenu: any = { "All Apex Classes": "apex/index.md" }
     for (const apexFile of apexFiles) {
       const apexName = path.basename(apexFile, ".cls").replace(".trigger", "");
+      const apexContent = await fs.readFile(apexFile, "utf8");
       const mdFile = path.join(this.outputMarkdownRoot, "apex", apexName + ".md");
       if (fs.existsSync(mdFile)) {
+        const apexName = path.basename(apexFile, ".cls").replace(".trigger", "");
         apexForMenu[apexName] = "apex/" + apexName + ".md";
-
-        // Add apex code in documentation
-        const apexContent = await fs.readFile(apexFile, "utf8");
-        this.apexDescriptions.push({
-          name: apexName,
-          type: returnApexType(apexContent),
-          impactedObjects: this.allObjectsNames.filter(objectName => apexContent.includes(`${objectName}`)).join(", ")
-        });
-
         let apexMdContent = await fs.readFile(mdFile, "utf8");
         // Replace object links
         apexMdContent = apexMdContent.replaceAll("..\\custom-objects\\", "../objects/").replaceAll("../custom-objects/", "../objects/")
@@ -423,7 +433,8 @@ ${Project2Markdown.htmlInstructions}
         if (!["MetadataService"].includes(apexName) &&
           // Do not mess with existing apex doc if generation has crashed
           !apexMdContent.includes(getMetaHideLines())) {
-          const insertion = `<!-- Apex description -->\n\n## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`
+          const mermaidClassDiagram = DocBuilderApex.buildMermaidClassDiagram(apexName, this.apexDescriptions);
+          const insertion = `${mermaidClassDiagram}\n\n<!-- Apex description -->\n\n## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`
           const firstHeading = apexMdContent.indexOf("## ");
           apexMdContent = apexMdContent.substring(0, firstHeading) + insertion + apexMdContent.substring(firstHeading);
           const apexDocBuilder = new DocBuilderApex(apexName, apexContent, "", {
@@ -522,7 +533,7 @@ ${Project2Markdown.htmlInstructions}
       this.pageDescriptions.push({
         name: pageName,
         type: prettifyFieldName(pageXmlParsed?.FlexiPage?.type || "Unknown"),
-        impactedObjects: this.allObjectsNames.filter(objectName => pageXml.includes(`${objectName}`)).join(", ")
+        impactedObjects: this.allObjectsNames.filter(objectName => pageXml.includes(`${objectName}`))
       });
       await new DocBuilderPage(pageName, pageXml, mdFile).generateMarkdownFileFromXml();
       if (this.withPdf) {
@@ -551,7 +562,7 @@ ${Project2Markdown.htmlInstructions}
       this.profileDescriptions.push({
         name: profileName,
         userLicense: prettifyFieldName(profileXmlParsed?.Profile?.userLicense || "Unknown"),
-        impactedObjects: this.allObjectsNames.filter(objectName => profileXml.includes(`${objectName}`)).join(", ")
+        impactedObjects: this.allObjectsNames.filter(objectName => profileXml.includes(`${objectName}`))
       });
       // Add Profiles code in documentation
       await new DocBuilderProfile(profileName, profileXml, mdFile).generateMarkdownFileFromXml();
@@ -580,7 +591,7 @@ ${Project2Markdown.htmlInstructions}
       this.permissionSetsDescriptions.push({
         name: psName,
         userLicense: prettifyFieldName(psXmlParsed?.PermissionSet?.license || "Unknown"),
-        impactedObjects: this.allObjectsNames.filter(objectName => psXml.includes(`${objectName}`)).join(", ")
+        impactedObjects: this.allObjectsNames.filter(objectName => psXml.includes(`${objectName}`))
       });
       // Add Permission Sets code in documentation
       await new DocBuilderPermissionSet(psName, psXml, mdFile).generateMarkdownFileFromXml();
@@ -731,7 +742,7 @@ ${Project2Markdown.htmlInstructions}
       this.approvalProcessesDescriptions.push({
         name: approvalProcessName,
         active: approvalProcessXmlParsed?.ApprovalProcess?.active,
-        impactedObjects: this.allObjectsNames.filter(objectName => approvalProcessXml.includes(`${objectName}`)).join(", ")
+        impactedObjects: this.allObjectsNames.filter(objectName => approvalProcessXml.includes(`${objectName}`))
       });
 
       await new DocBuilderApprovalProcess(approvalProcessName, approvalProcessXml, mdFile).generateMarkdownFileFromXml();
@@ -1138,7 +1149,7 @@ ${Project2Markdown.htmlInstructions}
         description: flowContent?.Flow?.description?.[0] || "",
         type: flowContent?.Flow?.processType?.[0] === "Flow" ? "ScreenFlow" : flowContent?.Flow?.start?.[0]?.triggerType?.[0] ?? (flowContent?.Flow?.processType?.[0] || "ERROR (Unknown)"),
         object: flowContent?.Flow?.start?.[0]?.object?.[0] || flowContent?.Flow?.processMetadataValues?.filter(pmv => pmv.name[0] === "ObjectType")?.[0]?.value?.[0]?.stringValue?.[0] || "",
-        impactedObjects: this.allObjectsNames.filter(objectName => flowXml.includes(`>${objectName}<`)).join(", ")
+        impactedObjects: this.allObjectsNames.filter(objectName => flowXml.includes(`>${objectName}<`))
       });
       flowsForMenu[flowName] = "flows/" + flowName + ".md";
       const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", flowName + ".md");
@@ -1366,7 +1377,7 @@ ${Project2Markdown.htmlInstructions}
           impactedObjects: this.allObjectsNames.filter(objectName =>
             lwcMetaXml.includes(`${objectName}`) ||
             jsContent.includes(`${objectName}`)
-          ).join(", ")
+          )
         });
 
         // Generate the documentation file
