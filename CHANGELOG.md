@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:project:audit:apiversion](https://sfdx-hardis.cloudity.com/hardis/project/audit/apiversion/): Add the fixApiVersion parameter to specify the target version for the upgrade.
+
 ## [5.42.0] 2025-06-18
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): CI/CD enhancements
