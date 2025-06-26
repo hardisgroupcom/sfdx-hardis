@@ -68,7 +68,7 @@ export default class CallInCallOut extends SfCommand<any> {
     }),
     newapiversion: Flags.integer({
       char: 'n',
-      description: 'Define an API version to apply when updating files.',
+      description: 'Define an API version value to apply when updating files',
     }),
   };
 
