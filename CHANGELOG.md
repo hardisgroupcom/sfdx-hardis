@@ -6,6 +6,15 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/): Code rework + removed global flag + Added ability to apply the bypass to VRs and Triggers
 
+## [5.43.3] 2025-06-25
+
+- [hardis:project:audit:apiversion](https://sfdx-hardis.cloudity.com/hardis/project/audit/apiversion/): Add the newApiVersion parameter to specify the target version for the upgrade.
+
+## [5.43.2] 2025-06-25
+
+- Update default API version to 63.0, but if --skipauth is not used, get the apiVersion of default org
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): Automate update of sfdx-project.json and package.xml at the beginning of the command
+
 ## [5.43.1] 2025-06-24
 
 - Refactor part of the documentation + add pages about events and videos
