@@ -1189,9 +1189,18 @@ export async function buildOrgManifest(
     }
 
     // Delete stuff we don't want
-    parsedPackageXml.Package.types = parsedPackageXml.Package.types.filter(
-      (type) => !['CustomLabels'].includes(type.name[0])
-    );
+    const filteredTypes = [
+      'CustomLabels',
+      'WorkflowFlowAutomation' // Added as a workaround for https://github.com/forcedotcom/cli/issues/3324
+    ];
+    const typesToRemove = parsedPackageXml.Package.types.filter(type => filteredTypes.includes(type.name[0]));
+
+    if (typesToRemove.length > 0) {
+      uxLog(this, c.grey(`Force filtering out metadata types from org-generated package.xml: ${typesToRemove.map(type => type.name[0]).join(', ')}`));
+      parsedPackageXml.Package.types = parsedPackageXml.Package.types.filter(
+        (type) => !filteredTypes.includes(type.name[0])
+      );
+    }
     await writeXmlFile(packageXmlFull, parsedPackageXml);
   }
 
