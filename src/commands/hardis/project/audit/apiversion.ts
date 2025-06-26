@@ -18,17 +18,20 @@ export default class CallInCallOut extends SfCommand<any> {
 
   public static description = `This command identifies metadata with an apiVersion lower than the value specified in the --minimumapiversion parameter.
 
-  It can also update the apiVersion to a specific value if the --fixapiversion parameter is provided.
+  It can also update the apiVersion to a specific value:
+  - When --fix parameter is provided (updates to minimumapiversion)
+  - When --newapiversion is specified (updates to that version)
 
   Example to handle [ApexClass / Trigger & ApexPage mandatory version upgrade](https://help.salesforce.com/s/articleView?id=sf.admin_locales_update_api.htm&type=5) :
    
-   \`sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --fixapiversion 50\`
+   \`sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --newapiversion 50\`
   `
 
   public static examples = [
     '$ sf hardis:project:audit:apiversion',
     '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45',
-    '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --fixapiversion 50'
+    '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --fix',
+    '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --newapiversion 50'
   ];
 
   // public static args = [{name: 'file'}];
@@ -58,9 +61,14 @@ export default class CallInCallOut extends SfCommand<any> {
     metadatatype: Flags.string({
       description: 'Metadata Types to fix. Comma separated. Supported Metadata types: ApexClass, ApexTrigger, ApexPage'
     }),
-    fixapiversion: Flags.integer({
+    fix: Flags.boolean({
       // can't use "f", already use for failiferror
-      description: 'Fix ApiVersion on specified Metadata Types.',
+      default: false,
+      description: 'Automatically update API versions in files that are below the minimum version threshold to match the minimum version',
+    }),
+    newapiversion: Flags.integer({
+      char: 'n',
+      description: 'Define an API version to apply when updating files.',
     }),
   };
 
@@ -73,7 +81,10 @@ export default class CallInCallOut extends SfCommand<any> {
     const { flags } = await this.parse(CallInCallOut);
     const minimumApiVersion = flags.minimumapiversion || false;
     const failIfError = flags.failiferror || false;
-    const fixApiVersion = flags.fixapiversion;
+    const newApiVersion = flags.newapiversion;
+    // Apply fixes if either fix flag is present or a new API version is specified
+    const shouldFix = flags.fix || (newApiVersion !== undefined);
+    const fixApiVersion = newApiVersion || minimumApiVersion;
     const metadataType = flags.metadatatype || '';
 
     const fixAllowedExtensions = {
@@ -85,7 +96,7 @@ export default class CallInCallOut extends SfCommand<any> {
 
     const fixTargetedMetadataTypes = metadataType.trim() === '' ? [] : (metadataType || '').replace(/\s+/g, '').split(',');
     const fixInvalidMetadataTypes = fixTargetedMetadataTypes.filter(value => !fixAllowedMetadataTypes.includes(value));
-    if (fixTargetedMetadataTypes.length > 0 && fixInvalidMetadataTypes.length > 0 && fixApiVersion) {
+    if (fixTargetedMetadataTypes.length > 0 && fixInvalidMetadataTypes.length > 0 && shouldFix) {
       uxLog(
         this,
         c.yellow(
@@ -140,7 +151,7 @@ export default class CallInCallOut extends SfCommand<any> {
       const fileText = await fs.readFile(file, 'utf8');
       // Update ApiVersion on file
       let fixed = false;
-      if (fixApiVersion && fixTargetedMetadataTypes.length > 0 && fixTargetedMetadataTypesPattern.test(file)) {
+      if (shouldFix && fixTargetedMetadataTypes.length > 0 && fixTargetedMetadataTypesPattern.test(file)) {
         const apiVersionMatch = fileText.match(/<apiVersion>(.*?)<\/apiVersion>/);
         if (apiVersionMatch && apiVersionMatch[1]) {
           const currentApiVersion = parseFloat(apiVersionMatch[1]);
