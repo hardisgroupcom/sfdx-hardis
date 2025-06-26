@@ -8,7 +8,7 @@ import * as path from 'path';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
 import { execCommand, filterPackageXml, uxLog } from '../../../../common/utils/index.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
-import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';
+import { CONSTANTS, getApiVersion, getConfig, getEnvVar } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { MessageAttachment } from '@slack/web-api';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
@@ -350,7 +350,7 @@ If Flow history doc always display a single state, you probably need to update y
         removeNamespaces: namespacesToFilter,
         removeStandard: this.fullApplyFilters,
         removeFromPackageXmlFile: this.packageXmlToRemove,
-        updateApiVersion: CONSTANTS.API_VERSION,
+        updateApiVersion: getApiVersion(),
       });
       packageXmlToExtract = packageXmlFullFileWithoutNamespace;
     }
@@ -452,7 +452,7 @@ If Flow history doc always display a single state, you probably need to update y
       removeNamespaces: this.namespaces,
       removeStandard: true,
       removeFromPackageXmlFile: this.packageXmlToRemove,
-      updateApiVersion: CONSTANTS.API_VERSION,
+      updateApiVersion: getApiVersion(),
     });
 
     // Retrieve sfdx sources in local git repo
