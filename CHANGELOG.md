@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.43.5] 2025-06-27
+
+- Filter WorkflowFlowAutomation from org-generated package.xml (workaround attempt for https://github.com/forcedotcom/cli/issues/3324)
+
 ## [5.43.4] 2025-06-26
 
 - Fix use of org API version
