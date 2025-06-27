@@ -26,7 +26,7 @@ import {
   writeXmlFile,
 } from '../../../common/utils/xmlUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { CONSTANTS, getConfig, setConfig } from '../../../config/index.js';
+import { CONSTANTS, getApiVersion, getConfig, setConfig } from '../../../config/index.js';
 import CleanReferences from '../project/clean/references.js';
 import CleanXml from '../project/clean/xml.js';
 
@@ -343,7 +343,7 @@ autoRemoveUserPermissions:
         // Create default destructiveChanges.xml if not defined
         const blankDestructiveChanges = `<?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-    <version>${CONSTANTS.API_VERSION}</version>
+    <version>${getApiVersion()}</version>
 </Package>
 `;
         await fs.writeFile(localDestructiveChangesXml, blankDestructiveChanges);

@@ -6,7 +6,7 @@ import * as path from 'path';
 import * as util from 'util';
 import * as xml2js from 'xml2js';
 import { sortCrossPlatform, uxLog } from './index.js';
-import { CONSTANTS } from '../../config/index.js';
+import { getApiVersion } from '../../config/index.js';
 
 export async function parseXmlFile(xmlFile: string) {
   const packageXmlString = await fs.readFile(xmlFile, 'utf8');
@@ -61,7 +61,7 @@ export async function countPackageXmlItems(packageXmlFile: string): Promise<numb
 }
 
 export async function writePackageXmlFile(packageXmlFile: string, packageXmlObject: any) {
-  let packageXmlContent: any = { Package: { types: [], version: [CONSTANTS.API_VERSION] } };
+  let packageXmlContent: any = { Package: { types: [], version: [getApiVersion()] } };
   if (fs.existsSync(packageXmlFile)) {
     packageXmlContent = await parseXmlFile(packageXmlFile);
   }

@@ -15,7 +15,7 @@ import ExcelJS from 'exceljs';
 import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from './index.js';
 import { bulkQuery, soqlQuery, bulkQueryByChunks } from './apiUtils.js';
 import { prompts } from './prompts.js';
-import { CONSTANTS, getReportDirectory } from '../../config/index.js';
+import { getApiVersion, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { FileDownloader } from './fileDownloader.js';
 
@@ -342,7 +342,7 @@ export class FilesExporter {
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
-    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/Attachment/${attachment.Id}/Body`;
+    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/Attachment/${attachment.Id}/Body`;
     await this.downloadFile(fetchUrl, outputFile);
   }
 
@@ -394,7 +394,7 @@ export class FilesExporter {
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
-    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
+    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
     await this.downloadFile(fetchUrl, outputFile);
   }
   // Build stats & result
