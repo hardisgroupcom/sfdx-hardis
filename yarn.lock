@@ -5268,10 +5268,10 @@ clone@^2.1.2:
   resolved "https://registry.npmjs.org/clone/-/clone-2.1.2.tgz"
   integrity sha512-3Pe/CF1Nn94hyhIYpjtiLhdCoEoz0DqQ+988E9gmeEdQZlojxnOb74wctFyuwWQHzqyf9X7C7MG8juUpqBJT8w==
 
-cloudflare@^4.3.0:
-  version "4.3.0"
-  resolved "https://registry.yarnpkg.com/cloudflare/-/cloudflare-4.3.0.tgz#e4e9d282d05b3ee0a2b242b681f87f933f82d4c5"
-  integrity sha512-C+4Jhsl/OY4V5sykRB1yJxComDld5BkKW1xd3s0MDJ1yYamT2sFAoC2FEUQg5zipyxMaaGU4N7hZ6il+gfJxZg==
+cloudflare@^4.4.1:
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/cloudflare/-/cloudflare-4.4.1.tgz#a3a395b2eed46e6b2e5175a62cc962267cef3981"
+  integrity sha512-wrtQ9WMflnfRcmdQZf/XfVVkeucgwzzYeqFDfgbNdADTaexsPwrtt3etzUvPGvVUeEk9kOPfNkl8MSzObxrIsg==
   dependencies:
     "@types/node" "^18.11.18"
     "@types/node-fetch" "^2.6.4"
