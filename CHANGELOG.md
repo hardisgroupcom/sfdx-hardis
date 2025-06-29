@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.44.0] 2025-06-29
+
+- [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/): Code rework + removed global flag + Added ability to apply the bypass to VRs and Triggers
 - Refactored logic to ensure preprod branches are only added if they exist, preventing null pointer exceptions.
 
 ## [5.43.5] 2025-06-27
