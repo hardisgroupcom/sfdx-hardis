@@ -39,3 +39,13 @@ SPELL_LYCHEE_ARGUMENTS:
   - "429"
 SPELL_LYCHEE_UNSECURED_ENV_VARIABLES:
   - GITHUB_TOKEN
+
+# LLM Advisor
+# Enable AI-powered fix suggestions
+LLM_ADVISOR_ENABLED: true
+
+# Choose your provider and model
+LLM_PROVIDER: openai # openai, anthropic, google, huggingface, mistral, deepseek, grok, ollama
+LLM_MODEL_NAME: gpt-4.1-mini
+LLM_MAX_TOKENS: 1000
+LLM_TEMPERATURE: 0.1
