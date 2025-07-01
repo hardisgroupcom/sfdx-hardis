@@ -51,7 +51,7 @@ REPORTERS_MARKDOWN_SUMMARY_TYPE: table-sections
 LLM_ADVISOR_ENABLED: true
 LLM_ADVISOR_LEVEL: warning
 
-# Choose your provider and model :)
+# Choose your provider and model
 LLM_PROVIDER: openai # openai, anthropic, google, huggingface, mistral, deepseek, grok, ollama
 LLM_MODEL_NAME: gpt-4.1-mini
 LLM_MAX_TOKENS: 1000
