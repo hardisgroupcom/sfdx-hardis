@@ -62,8 +62,8 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
       const connectedApps = await this.findConnectedAppsInProject(nameFilter);
       
       if (connectedApps.length === 0) {
-        uxLog(this, c.yellow(messages.getMessage('connectedAppListEmpty')));
-        return { success: false, message: messages.getMessage('connectedAppListEmpty') };
+        uxLog(this, c.yellow('No Connected Apps found in the project'));
+        return { success: false, message: 'No Connected Apps found in the project' };
       }
       
       uxLog(this, c.cyan(`Found ${connectedApps.length} Connected App(s) in project`));
@@ -78,7 +78,7 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
       if (nameFilter) {
         // Use all connected apps from the list (which is already filtered by nameFilter)
         selectedApps = connectedApps;
-        uxLog(this, c.cyan(messages.getMessage('connectedAppProcessing', [selectedApps.length])));
+        uxLog(this, c.cyan(`Processing ${selectedApps.length} Connected App(s)`));
       } else {
         // Always prompt for selection when no name filter is provided
         const choices = connectedApps.map(app => {
@@ -93,14 +93,14 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
         });
         
         if (!promptResponse.selectedApps || promptResponse.selectedApps.length === 0) {
-          uxLog(this, c.yellow(messages.getMessage('connectedAppNoSelection')));
-          return { success: false, message: messages.getMessage('connectedAppNoSelection') };
+          uxLog(this, c.yellow('No Connected Apps selected'));
+          return { success: false, message: 'No Connected Apps selected' };
         }
         
         selectedApps = connectedApps.filter(app => 
           promptResponse.selectedApps.includes(app.fullName)
         );
-        uxLog(this, c.cyan(messages.getMessage('connectedAppProcessing', [selectedApps.length])));
+        uxLog(this, c.cyan(`Processing ${selectedApps.length} Connected App(s)`));
       }
       
       // First, delete existing Connected Apps - necessary step for clean deployment

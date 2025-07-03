@@ -70,8 +70,8 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       const connectedApps = await this.listConnectedApps(orgUsername, nameFilter || undefined);
       
       if (connectedApps.length === 0) {
-        uxLog(this, c.yellow(messages.getMessage('connectedAppListEmpty')));
-        return { success: false, message: messages.getMessage('connectedAppListEmpty') };
+        uxLog(this, c.yellow('No Connected Apps found'));
+        return { success: false, message: 'No Connected Apps found' };
       }
       
       uxLog(this, c.cyan(`Found ${connectedApps.length} Connected App(s) to process`));
@@ -86,7 +86,7 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       if (nameFilter) {
         // Use all connected apps from the list (which is already filtered by nameFilter)
         selectedApps = connectedApps;
-        uxLog(this, c.cyan(messages.getMessage('connectedAppProcessing', [selectedApps.length])));
+        uxLog(this, c.cyan(`Processing ${selectedApps.length} Connected App(s)`));
       } else {
         // Prompt user to select Connected Apps
         const choices = connectedApps.map(app => {
@@ -101,14 +101,14 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
         });
         
         if (!promptResponse.selectedApps || promptResponse.selectedApps.length === 0) {
-          uxLog(this, c.yellow(messages.getMessage('connectedAppNoSelection')));
-          return { success: false, message: messages.getMessage('connectedAppNoSelection') };
+          uxLog(this, c.yellow('No Connected Apps selected'));
+          return { success: false, message: 'No Connected Apps selected' };
         }
         
         selectedApps = connectedApps.filter(app => 
           promptResponse.selectedApps.includes(app.fullName)
         );
-        uxLog(this, c.cyan(messages.getMessage('connectedAppProcessing', [selectedApps.length])));
+        uxLog(this, c.cyan(`Processing ${selectedApps.length} Connected App(s)`));
       }
       
       // Process the selected Connected Apps
@@ -136,7 +136,7 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       
       return {
         success: true, 
-        message: messages.getMessage('connectedAppSuccess', [updatedApps.length]),
+        message: `Successfully processed ${updatedApps.length} Connected App(s)`,
         connectedAppsProcessed: updatedApps.map(app => app.fullName),
         consumerSecretsAdded: updatedApps.map(app => app.consumerSecret ? app.fullName : null).filter(Boolean)
       };
