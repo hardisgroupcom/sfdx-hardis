@@ -12,7 +12,7 @@
     "@langchain/community": "^0.3.44",
     "@langchain/core": "^0.3.57",
     "@langchain/google-genai": "^0.2.10",
-    "@langchain/ollama": "^0.2.0",
+    "@langchain/ollama": "^0.2.1",
     "@oclif/core": "^4.3.2",
     "@salesforce/core": "^8.15.0",
     "@salesforce/sf-plugins-core": "^11.3.12",

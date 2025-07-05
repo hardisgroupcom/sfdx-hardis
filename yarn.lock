@@ -1949,10 +1949,10 @@
     uuid "^11.1.0"
     zod-to-json-schema "^3.22.4"
 
-"@langchain/ollama@^0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@langchain/ollama/-/ollama-0.2.0.tgz#43b3c90e9bd82256e26b70edf37304694aeaf5d1"
-  integrity sha512-jLlYFqt+nbhaJKLakk7lRTWHZJ7wHeJLM6yuv4jToQ8zPzpL//372+MjggDoW0mnw8ofysg1T2C6mEJspKJtiA==
+"@langchain/ollama@^0.2.1":
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/@langchain/ollama/-/ollama-0.2.1.tgz#063fb1db5320dc8bb1b4eb7faf85d6e91fd150bc"
+  integrity sha512-9WQ/rJV002n2f/aBPzNKBZU7kJfhqDnaGTWeIKO5gM0wZ+Rb2mfk7psluFIedachwsM/FQ+oIBcViHriaXngzA==
   dependencies:
     ollama "^0.5.12"
     uuid "^10.0.0"
