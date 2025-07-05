@@ -9278,10 +9278,10 @@ mdurl@^2.0.0:
   resolved "https://registry.yarnpkg.com/mdurl/-/mdurl-2.0.0.tgz#80676ec0433025dd3e17ee983d0fe8de5a2237e0"
   integrity sha512-Lf+9+2r+Tdp5wXDXC4PcIBjTDtq4UKjCPMQhKIuzpJNW0b96kVqSwW0bT7FhRSfmAiFYgP+SCRvdrDozfh0U5w==
 
-mega-linter-runner@^8.6.0:
-  version "8.6.0"
-  resolved "https://registry.npmjs.org/mega-linter-runner/-/mega-linter-runner-8.6.0.tgz"
-  integrity "sha1-UCQGROuwQD9SkDDuzxZ1eZxFCr4= sha512-pwoYyEDAm2cIdYqxkxQfHEtxWrQoKam19XZBooK79UvHkXw/Cvf2ks14NyeKSae2Ef0aMLRJ+qVFMAIMC6vWpQ=="
+mega-linter-runner@^8.8.0:
+  version "8.8.0"
+  resolved "https://registry.yarnpkg.com/mega-linter-runner/-/mega-linter-runner-8.8.0.tgz#ed33b9907d5bdcbd5b13d3f5e4c4e5013269338d"
+  integrity sha512-ntFdcIZPNl5QvSOwU+ADbKfyyuOG9oyh1TehsGEQ+bcCfi2DNNgOeeDHwir+Ame4APPAC1FozZC8xm0UYo+W+A==
   dependencies:
     chalk "^5.3.0"
     find-package-json "^1.2.0"
