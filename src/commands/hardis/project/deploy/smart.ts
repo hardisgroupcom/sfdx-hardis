@@ -657,7 +657,6 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         this,
         c.yellow(`[DeltaDeployment] Delta deployment has been explicitly disabled with variable DISABLE_DELTA_DEPLOYMENT=true`)
       );
-      let foo = ; // <-- ESLint error: SyntaxError (unexpected token)
       return false;
     }
     const latestCommit = await getLatestGitCommit();
