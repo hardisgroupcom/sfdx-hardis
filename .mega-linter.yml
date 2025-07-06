@@ -50,9 +50,7 @@ SPELL_LYCHEE_UNSECURED_ENV_VARIABLES:
 
 REPORTERS_MARKDOWN_SUMMARY_TYPE: table-sections
 # LLM Advisor
-# Enable AI-powered fix suggestions
-LLM_ADVISOR_ENABLED: true
-LLM_ADVISOR_LEVEL: warning
+LLM_ADVISOR_LEVEL: error
 
 # Choose your provider and model
 LLM_PROVIDER: openai # openai, anthropic, google, huggingface, mistral, deepseek, grok, ollama
