@@ -46,6 +46,8 @@ Regular setup actions performed in major orgs are filtered.
 - Email Administration
   - dkimRotationPreparationSuccessful
   - dkimRotationSuccessful
+- External Objects
+  - xdsEncryptedFieldChange
 - Groups
   - groupMembership
 - Holidays
@@ -71,13 +73,16 @@ Regular setup actions performed in major orgs are filtered.
   - changedroleforusertonone
   - changedroleforuser
   - changedroleforuserfromnone
+  - changedUserAdminVerifiedStatusVerified
   - changedUserEmailVerifiedStatusUnverified
   - changedUserEmailVerifiedStatusVerified
   - changedknowledgeuseroffon
   - changedsfcontentuseroffon
   - changedsupportuseroffon
+  - changedusername
   - changedUserPhoneNumber
   - changedUserPhoneVerifiedStatusUnverified
+  - changedUserPhoneVerifiedStatusVerified
   - deactivateduser
   - deleteAuthenticatorPairing
   - deleteTwoFactorInfo2
@@ -453,6 +458,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       Currency: ['updateddatedexchrate'],
       'Data Management': ['queueMembership'],
       'Email Administration': ['dkimRotationSuccessful', 'dkimRotationPreparationSuccessful'],
+      'External Objects': ['xdsEncryptedFieldChange'],
       Holidays: ['holiday_insert'],
       'Inbox mobile and legacy desktop apps': ['enableSIQUserNonEAC'],
       Groups: ['groupMembership'],
@@ -478,12 +484,15 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         'changedpassword',
         "changedprofileforuserstdtostd",
         'changedsfcontentuseroffon',
+        'changedUserAdminVerifiedStatusVerified',
         'changedUserEmailVerifiedStatusUnverified',
         'changedUserEmailVerifiedStatusVerified',
         'changedknowledgeuseroffon',
         'changedsupportuseroffon',
+        'changedusername',
         'changedUserPhoneNumber',
         'changedUserPhoneVerifiedStatusUnverified',
+        'changedUserPhoneVerifiedStatusVerified',
         'deactivateduser',
         'deleteAuthenticatorPairing',
         'deleteTwoFactorInfo2',
