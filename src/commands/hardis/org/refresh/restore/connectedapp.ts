@@ -205,21 +205,33 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
     const backupInfo = await disableConnectedAppIgnore(this);
     
     try {
-      // Deploy each Connected App separately to handle any failures
-      for (const app of connectedApps) {
-        uxLog(this, c.cyan(`Deploying Connected App: ${app.fullName}`));
-        
-        // Use sf project deploy to deploy the Connected App
+      // Build a single deploy command with multiple metadata flags
+      uxLog(this, c.cyan(`Deploying ${connectedApps.length} Connected App(s) at once...`));
+      
+      // Create command with multiple -m flags for each Connected App
+      let deployCommand = `sf project deploy start`;
+      connectedApps.forEach(app => {
+        deployCommand += ` -m "ConnectedApp:${app.fullName}"`;
+      });
+      deployCommand += ` --target-org ${orgUsername} --ignore-warnings --json`;
+      
+      uxLog(this, c.grey(`Running command: ${deployCommand}`));
+      
+      // Execute the deployment command
+      try {
         await execCommand(
-          `sf project deploy start -s -m "ConnectedApp:${app.fullName}" --target-org ${orgUsername} --ignore-warnings --json`,
+          deployCommand,
           this,
-          { output: true, fail: false } // Continue even if deployment fails
+          { output: true, fail: true } // Stop if deployment fails
         );
+      } catch (deployError: any) {
+        throw new Error(`Failed to deploy Connected Apps: ${deployError.message || String(deployError)}`);
       }
       
-      uxLog(this, c.green(`Deployment of Connected Apps completed`));
-    } catch (error) {
-      uxLog(this, c.red(`Error deploying Connected Apps: ${error}`));
+      uxLog(this, c.green(`Deployment of ${connectedApps.length} Connected App(s) completed successfully`));
+    } catch (error: any) {
+      // This catch block will handle any other errors that might occur outside the deployment
+      uxLog(this, c.red(`Error in deployment process: ${error}`));
       throw error;
     } finally {
       // Restore original .forceignore
