@@ -20,7 +20,7 @@
     "@slack/web-api": "^7.9.3",
     "@supercharge/promise-pool": "^3.2.0",
     "@xmldom/xmldom": "^0.9.8",
-    "axios": "^1.10.0",
+    "axios": "^0.21.1",
     "azure-devops-node-api": "^14.1.0",
     "bitbucket": "^2.12.0",
     "chalk": "^5.4.1",
