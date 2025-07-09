@@ -7,6 +7,8 @@ import c from 'chalk';
 import open from 'open';
 import { glob } from 'glob';
 import { execSync } from 'child_process';
+import puppeteer, { Browser } from 'puppeteer-core';
+import * as chromeLauncher from 'chrome-launcher';
 import { execCommand, execSfdxJson, uxLog } from '../../../../../common/utils/index.js';
 import { prompts } from '../../../../../common/utils/prompts.js';
 import { parseXmlFile } from '../../../../../common/utils/xmlUtils.js';
@@ -32,6 +34,8 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     `$ sf hardis:org:refresh:save:connectedapp`,
     `$ sf hardis:org:refresh:save:connectedapp --name "MyConnectedApp"`,
     `$ sf hardis:org:refresh:save:connectedapp --name "App1,App2,App3"`,
+    `$ sf hardis:org:refresh:save:connectedapp --all`,
+    `$ sf hardis:org:refresh:save:connectedapp --nodelete`,
   ];
 
   public static flags = {
@@ -41,6 +45,16 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       summary: messages.getMessage('nameFilter'),
       description: 'Connected App name(s) to process. For multiple apps, separate with commas (e.g., "App1,App2")'
     }),
+    all: Flags.boolean({
+      char: 'a',
+      summary: 'Process all Connected Apps without selection prompt',
+      description: 'If set, all Connected Apps from the org will be processed. Takes precedence over --name if both are specified.'
+    }),
+    nodelete: Flags.boolean({
+      char: 'd',
+      summary: 'Do not delete Connected Apps from org after saving',
+      description: 'By default, Connected Apps are deleted from the org after saving. Set this flag to keep them in the org.'
+    }),
     websocket: Flags.string({
      description: messages.getMessage('websocket'),
     }),
@@ -49,7 +63,6 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     })
   };
 
-  // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
@@ -58,17 +71,18 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     const orgUsername = flags["target-org"].getUsername() as string; // Cast to string to avoid TypeScript error
     const instanceUrl = conn.instanceUrl;
     const accessToken = conn.accessToken || ''; // Ensure accessToken is a string
-    const nameFilter = flags.name;
+    const processAll = flags.all || false;
+    const nameFilter = processAll ? undefined : flags.name; // If --all is set, ignore --name
 
     try {
-      // Get Connected Apps based on name parameter or list from org
-      if (nameFilter) {
+      // Get Connected Apps based on parameters
+      if (processAll) {
+        uxLog(this, c.cyan('Processing all Connected Apps from org (selection prompt bypassed)'));
+      } else if (nameFilter) {
         uxLog(this, c.cyan(`Processing specified Connected App(s): ${nameFilter} (selection prompt bypassed)`));
       } else {
         uxLog(this, c.cyan('Retrieving list of Connected Apps from org...'));
       }
-      
-      // Get Connected Apps to process
       const connectedApps = await this.listConnectedApps(orgUsername, nameFilter || undefined);
       
       if (connectedApps.length === 0) {
@@ -81,16 +95,12 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
         uxLog(this, `${c.green(app.fullName)} (${app.fileName})`);
       });
       
-      // Determine which Connected Apps to process
       let selectedApps: ConnectedApp[] = [];
-      
-      // If name is provided, use all connected apps from the list
-      if (nameFilter) {
-        // Use all connected apps from the list (which is already filtered by nameFilter)
+      if (processAll || nameFilter) {
         selectedApps = connectedApps;
-        uxLog(this, c.cyan(`Processing ${selectedApps.length} Connected App(s)`));
+        const selectionReason = processAll ? 'all flag' : 'name filter';
+        uxLog(this, c.cyan(`Processing ${selectedApps.length} Connected App(s) based on ${selectionReason}`));
       } else {
-        // Prompt user to select Connected Apps
         const choices = connectedApps.map(app => {
           return { title: app.fullName, value: app.fullName };
         });
@@ -110,25 +120,17 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
         selectedApps = connectedApps.filter(app => 
           promptResponse.selectedApps.includes(app.fullName)
         );
-        uxLog(this, c.cyan(`Processing ${selectedApps.length} Connected App(s)`));
+        uxLog(this, c.cyan(`Processing ${selectedApps.length} Connected App(s) from selection`));
       }
-      
-      // Process the selected Connected Apps
       const updatedApps = await this.processConnectedApps(orgUsername, selectedApps, instanceUrl, accessToken);
+      const noDelete = flags.nodelete || false;
       
-      // Always ask if the user wants to delete the Connected Apps from the org
-      const deletePromptResponse = await prompts({
-        type: 'confirm',
-        name: 'confirmDelete',
-        message: 'Do you want to delete the selected Connected Apps from the org?',
-        initial: false
-      });
-      
-      if (deletePromptResponse.confirmDelete) {
+      if (noDelete) {
+        uxLog(this, c.blue('Connected Apps will remain in the org (--nodelete flag specified).'));
+      } else {
+        uxLog(this, c.cyan('Deleting Connected Apps from the org (default behavior)...'));
         await deleteConnectedApps(orgUsername, updatedApps, this);
         uxLog(this, c.green('Connected Apps were successfully deleted from the org.'));
-      } else {
-        uxLog(this, c.blue('Connected Apps will remain in the org. Operation completed.'));
       }
       
       // Add a summary message at the end
@@ -150,13 +152,10 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
   }
   
   private async listConnectedApps(orgUsername: string, nameFilter: string | undefined): Promise<ConnectedApp[]> {
-    // If name filter is provided, directly prepare those specific Connected Apps
     if (nameFilter) {
-      // Split by comma and trim each item
       const appNames = nameFilter.split(',').map(name => name.trim());
       uxLog(this, c.cyan(`Directly processing specified Connected App(s): ${appNames.join(', ')}`));
-      
-      // Create ConnectedApp objects for each name
+
       const connectedApps = appNames.map(name => {
         return {
           fullName: name,
@@ -179,18 +178,27 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     return result.result;
   }
   
-  private async processConnectedApps(orgUsername: string | undefined, connectedApps: ConnectedApp[], instanceUrl: string, accessToken: string = ''): Promise<ConnectedApp[]> {
+  private async processConnectedApps(
+    orgUsername: string | undefined, 
+    connectedApps: ConnectedApp[], 
+    instanceUrl: string, 
+    accessToken: string = ''
+  ): Promise<ConnectedApp[]> {
     if (!orgUsername) {
       throw new Error('Organization username is required');
     }
     
-    // Retrieve all Connected Apps using multiple -m flags
-    uxLog(this, c.cyan(`Retrieving ${connectedApps.length} Connected App(s)...`));
+    const connectedAppIdMap: Record<string, string> = {};
+    let browser: Browser | null = null;
+    const updatedApps: ConnectedApp[] = [];
     
     // Temporarily modify .forceignore to allow Connected App retrieval
     const backupInfo = await disableConnectedAppIgnore(this);
     
     try {
+      // STEP 1: Retrieve all Connected Apps using multiple -m flags
+      uxLog(this, c.cyan(`Retrieving ${connectedApps.length} Connected App(s)...`));
+      
       // Build the command with multiple -m flags for each Connected App
       let retrieveCommand = `sf project retrieve start`;
       connectedApps.forEach(app => {
@@ -205,178 +213,229 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
         { output: true, fail: true }
       );
       
-      // Wait a moment to ensure files are written to disk
       uxLog(this, c.grey('Waiting for files to be written to disk...'));
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Check if any files were retrieved by doing a quick search
       const retrievedFiles = await glob('**/*.connectedApp-meta.xml', { ignore: GLOB_IGNORE_PATTERNS, cwd: process.cwd() });
-      uxLog(this, c.cyan(`Found ${retrievedFiles.length} Connected App files `));
+      uxLog(this, c.cyan(`Found ${retrievedFiles.length} Connected App files`));
       
-    } catch (error) {
-      uxLog(this, c.yellow(`Error retrieving Connected Apps: ${error}`));
-      uxLog(this, c.cyan('Will attempt to continue with available files...'));
-    } finally {
-      // Restore original .forceignore
-      await restoreConnectedAppIgnore(backupInfo, this);
-    }
-    
-    // Create a map of applicationIds for all Connected Apps
-    const connectedAppIdMap: Record<string, string> = {};
-    
-    // Build a comma-separated list of app names for the query
-    const appNamesForQuery = connectedApps.map(app => `'${app.fullName}'`).join(',');
-    
-    // Query for all applicationIds at once
-    if (appNamesForQuery.length > 0) {
-      uxLog(this, c.cyan('Retrieving applicationIds for all Connected Apps...'));
-      const queryCommand = `sf data query --query "SELECT Id, Name FROM ConnectedApplication WHERE Name IN (${appNamesForQuery})" --target-org ${orgUsername} --json`;
-      
-      try {
-        const queryResult = await execSfdxJson(queryCommand, this, { output: false });
+      // STEP 2: Query for applicationIds for all Connected Apps
+      const appNamesForQuery = connectedApps.map(app => `'${app.fullName}'`).join(',');
+      if (appNamesForQuery.length > 0) {
+        uxLog(this, c.cyan('Retrieving applicationIds for all Connected Apps...'));
+        const queryCommand = `sf data query --query "SELECT Id, Name FROM ConnectedApplication WHERE Name IN (${appNamesForQuery})" --target-org ${orgUsername} --json`;
         
-        if (queryResult?.result?.records?.length > 0) {
-          // Populate the map with applicationIds
-          queryResult.result.records.forEach((record: any) => {
-            connectedAppIdMap[record.Name] = record.Id;
-            uxLog(this, c.grey(`Found applicationId for ${record.Name}: ${record.Id}`));
-          });
-        } else {
-          uxLog(this, c.yellow('No applicationIds found in the org. Will use the fallback URL.'));
-        }
-      } catch (queryError) {
-        uxLog(this, c.yellow(`Error retrieving applicationIds: ${queryError}`));
-      }
-    }
-    
-    // Find and update the retrieved Connected Apps
-    const updatedApps: ConnectedApp[] = [];
-    for (const app of connectedApps) {
-      try {
-        // Locate the retrieved XML file - search in project directories
-        const packageDirectories = this.project?.getPackageDirectories() || [];
-        
-        // Use our helper method to find the Connected App file
-        const connectedAppFile = await this.findConnectedAppFile(packageDirectories, app.fullName);
-        
-        if (!connectedAppFile) {
-          uxLog(this, c.yellow(`Connected App file not found for ${app.fullName}`));
-          continue;
-        }
-        
-        // Use the connectedAppId from our map
-        const connectedAppId = connectedAppIdMap[app.fullName];
-        
-        if (connectedAppId) {
-          // Construct the direct URL to the Connected App detail page
-          uxLog(this, c.cyan(`Retrieving application ID for Connected App: ${app.fullName}...`));
-          let viewLink: string;
+        try {
+          const queryResult = await execSfdxJson(queryCommand, this, { output: false });
           
-          try {
-            // Build the curl command, adding the authorization header only if we have an accessToken
-            const curlCommand = accessToken 
-              ? `curl --silent --location --request GET "${instanceUrl}/${connectedAppId}" --header "Cookie: sid=${accessToken}"`
-              : `curl --silent --location --request GET "${instanceUrl}/${connectedAppId}"`;
-            
-            // Execute curl command to get the HTML content
-            const html = execSync(curlCommand).toString();
-            
-            // Extract the application ID using a more flexible regex pattern
-            const appIdMatch = html.match(/applicationId=([a-zA-Z0-9]+)/i);
-            
-            if (!appIdMatch || !appIdMatch[1]) {
-              throw new Error('Could not extract application ID from HTML');
-            }
-            
-            // Successfully extracted the application ID
-            const applicationId = appIdMatch[1];
-            viewLink = `${instanceUrl}/app/mgmt/forceconnectedapps/forceAppDetail.apexp?applicationId=${applicationId}`;
-            uxLog(this, c.green(`Successfully extracted application ID: ${applicationId}`));
-          } catch (error) {
-            uxLog(this, c.yellow(`Could not extract application ID for ${app.fullName}. Using fallback approach.`));
-            viewLink = `${instanceUrl}/${connectedAppId}`;
-            uxLog(this, c.cyan(`Opening Connected App list page. Please manually find ${app.fullName}.`));
-          }
-          uxLog(this, c.cyan(`Opening Connected App detail page in your browser for: ${app.fullName}`));
-          uxLog(this, c.cyan('Please follow these steps:'));
-          uxLog(this, c.cyan('1.Click "Manage Consumer Details" button'));
-          uxLog(this, c.cyan('2. Copy the ' + c.green('Consumer Secret') + ' value'));
-          uxLog(this, c.cyan('The Consumer Secret will be added to the Connected App XML file.'));
-          
-          await open(viewLink);
-        } else {
-          // Fallback to the connected apps list page if applicationId can't be found
-          uxLog(this, c.yellow(`No applicationId found for ${app.fullName}, opening general Connected Apps page instead`));
-          const fallbackUrl = `${instanceUrl}/lightning/setup/ConnectedApplication/home`;
-          await open(fallbackUrl);
-        }
-        
-        // Prompt for the Consumer Secret
-        const secretPromptResponse = await prompts({
-          type: 'text',
-          name: 'consumerSecret',
-          message: `Enter the Consumer Secret for ${app.fullName}:`,
-          validate: (value) => value && value.trim() !== '' ? true : 'Consumer Secret is required'
-        });
-        
-        if (!secretPromptResponse.consumerSecret) {
-          uxLog(this, c.yellow(`Skipping ${app.fullName} due to missing Consumer Secret`));
-          continue;
-        }
-        
-        // Parse the Connected App XML file
-        const xmlData = await parseXmlFile(connectedAppFile);
-        
-        // Add the Consumer Secret to the ConnectedApp XML
-        if (xmlData && xmlData.ConnectedApp) {
-          // Store the consumer secret
-          const consumerSecret = secretPromptResponse.consumerSecret;
-          
-          // Read the existing consumer key for reference
-          const consumerKey = xmlData.ConnectedApp.consumerKey ? xmlData.ConnectedApp.consumerKey[0] : 'unknown';
-          
-          // We need to properly order the XML elements by creating a new XML content string
-          // First, convert XML to string
-          const xmlString = await fs.readFile(connectedAppFile, 'utf8');
-          
-          // Check if the consumerSecret already exists
-          if (xmlString.includes('<consumerSecret>')) {
-            // Replace the existing consumerSecret value
-            const updatedXmlString = xmlString.replace(
-              /<consumerSecret>.*?<\/consumerSecret>/,
-              `<consumerSecret>${consumerSecret}</consumerSecret>`
-            );
-            await fs.writeFile(connectedAppFile, updatedXmlString);
+          if (queryResult?.result?.records?.length > 0) {
+            // Populate the map with applicationIds
+            queryResult.result.records.forEach((record: any) => {
+              connectedAppIdMap[record.Name] = record.Id;
+              uxLog(this, c.grey(`Found applicationId for ${record.Name}: ${record.Id}`));
+            });
           } else {
-            // Insert consumerSecret right after consumerKey
-            const updatedXmlString = xmlString.replace(
-              /<consumerKey>.*?<\/consumerKey>/,
-              `$&\n    <consumerSecret>${consumerSecret}</consumerSecret>`
-            );
-            await fs.writeFile(connectedAppFile, updatedXmlString);
+            uxLog(this, c.yellow('No applicationIds found in the org. Will use the fallback URL.'));
+          }
+        } catch (queryError) {
+          uxLog(this, c.yellow(`Error retrieving applicationIds: ${queryError}`));
+        }
+      }
+      
+      // STEP 3: Initialize browser ONLY AFTER all CLI operations are complete
+      if (accessToken) {
+        try {
+          // Get chrome/chromium executable path
+          let chromeExecutablePath = process.env?.PUPPETEER_EXECUTABLE_PATH || "";
+          if (chromeExecutablePath === "" || !fs.existsSync(chromeExecutablePath)) {
+            const chromePaths = chromeLauncher.Launcher.getInstallations();
+            if (chromePaths && chromePaths.length > 0) {
+              chromeExecutablePath = chromePaths[0];
+            }
+          }
+          uxLog(this, c.cyan(`chromeExecutablePath: ${chromeExecutablePath}`));
+          
+          browser = await puppeteer.launch({
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            headless: false, // Always show the browser window
+            executablePath: chromeExecutablePath
+          });
+          
+          // Log in once for the session
+          const loginUrl = `${instanceUrl}/secur/frontdoor.jsp?sid=${accessToken}`;
+          uxLog(this, c.cyan(`Logging in to Salesforce via frontdoor.jsp...`));
+          const page = await browser.newPage();
+          await page.goto(loginUrl, { waitUntil: ['domcontentloaded', 'networkidle0'] });
+          await page.close();
+        } catch (e: any) {
+          uxLog(this, c.red("Error initializing browser for automated Consumer Secret extraction:"));
+          uxLog(this, c.red(e.message));
+          uxLog(this, c.red("You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Chrome/Chromium path. example: /usr/bin/chromium-browser"));
+          // Continue without browser automation - will fall back to manual entry
+        }
+      }
+    
+      // STEP 4: Process each Connected App
+      for (const app of connectedApps) {
+        try {
+          const packageDirectories = this.project?.getPackageDirectories() || [];
+          const connectedAppFile = await this.findConnectedAppFile(packageDirectories, app.fullName);
+          
+          if (!connectedAppFile) {
+            uxLog(this, c.yellow(`Connected App file not found for ${app.fullName}`));
+            continue;
           }
           
-          // Also update our in-memory XML object for further processing
-          xmlData.ConnectedApp.consumerSecret = [consumerSecret];
+          const connectedAppId = connectedAppIdMap[app.fullName];
           
-          // Log success message - using files already retrieved
-          uxLog(this, c.green(`Successfully added Consumer Secret to ${app.fullName} in ${connectedAppFile}`));
+          if (connectedAppId) {
+            uxLog(this, c.cyan(`Retrieving application ID for Connected App: ${app.fullName}...`));
+            let viewLink: string;
+            
+            try {
+              const curlCommand = accessToken 
+                ? `curl --silent --location --request GET "${instanceUrl}/${connectedAppId}" --header "Cookie: sid=${accessToken}"`
+                : `curl --silent --location --request GET "${instanceUrl}/${connectedAppId}"`;
+            
+              const html = execSync(curlCommand).toString();
+              const appIdMatch = html.match(/applicationId=([a-zA-Z0-9]+)/i);
+              
+              if (!appIdMatch || !appIdMatch[1]) {
+                throw new Error('Could not extract application ID from HTML');
+              }
+            
+              const applicationId = appIdMatch[1];
+              viewLink = `${instanceUrl}/app/mgmt/forceconnectedapps/forceAppDetail.apexp?applicationId=${applicationId}`;
+              uxLog(this, c.green(`Successfully extracted application ID: ${applicationId}`));
+              uxLog(this, c.green(`viewLink: ${viewLink}`));
+              
+              let consumerSecretValue: string | null = null;
+              if (browser) {
+                uxLog(this, c.cyan(`Attempting to automatically extract Consumer Secret for ${app.fullName}...`));
+                try {
+                  consumerSecretValue = await this.extractConsumerSecret(
+                    browser,
+                    instanceUrl,
+                    applicationId
+                  );
+                } catch (puppeteerError) {
+                  uxLog(this, c.yellow(`Error extracting Consumer Secret with Puppeteer: ${puppeteerError}`));
+                  consumerSecretValue = null;
+                }
+              } else {
+                uxLog(this, c.yellow(`No browser instance available to extract Consumer Secret for ${app.fullName}`));
+              }
+              
+              if (consumerSecretValue) {
+                const xmlData = await parseXmlFile(connectedAppFile);
+                if (xmlData && xmlData.ConnectedApp) {
+                  const consumerKey = xmlData.ConnectedApp.consumerKey ? xmlData.ConnectedApp.consumerKey[0] : 'unknown';
+                  await this.updateConnectedAppXml(connectedAppFile, xmlData, consumerSecretValue, app, consumerKey, updatedApps);
+                  continue; // Skip the manual prompt flow
+                }
+              } else {
+                uxLog(this, c.yellow(`Could not automatically extract Consumer Secret for ${app.fullName}. Falling back to manual entry.`));
+                
+                // If automated extraction failed, open the browser for manual entry
+                uxLog(this, c.cyan(`Opening Connected App detail page in your browser for: ${app.fullName}`));
+                uxLog(this, c.cyan('Please follow these steps:'));
+                uxLog(this, c.cyan('1. Click "Manage Consumer Details" button'));
+                uxLog(this, c.cyan('2. Copy the ' + c.green('Consumer Secret') + ' value'));
+                
+                await open(viewLink);
+              }
+            } catch (error) {
+              uxLog(this, c.yellow(`Could not extract application ID for ${app.fullName}. Using fallback approach.`));
+              viewLink = `${instanceUrl}/lightning/setup/ConnectedApplication/home`;
+              uxLog(this, c.cyan(`Opening Connected App list page. Please manually find ${app.fullName}.`));
+              
+              await open(viewLink);
+            }
+          } else {
+            // Fallback to the connected apps list page if applicationId can't be found
+            uxLog(this, c.yellow(`No applicationId found for ${app.fullName}, opening general Connected Apps page instead`));
+            const fallbackUrl = `${instanceUrl}/lightning/setup/ConnectedApplication/home`;
+            await open(fallbackUrl);
+          }
           
-          const updatedApp: ConnectedApp = { 
-            ...app, 
-            consumerKey: consumerKey,
-            consumerSecret: secretPromptResponse.consumerSecret
-          };
-          updatedApps.push(updatedApp);
-        } else {
-          uxLog(this, c.yellow(`Could not parse XML for ${app.fullName}`));
+          // Prompt for the Consumer Secret (manual entry)
+          const secretPromptResponse = await prompts({
+            type: 'text',
+            name: 'consumerSecret',
+            message: `Enter the Consumer Secret for ${app.fullName}:`,
+            validate: (value) => value && value.trim() !== '' ? true : 'Consumer Secret is required'
+          });
+          
+          if (!secretPromptResponse.consumerSecret) {
+            uxLog(this, c.yellow(`Skipping ${app.fullName} due to missing Consumer Secret`));
+            continue;
+          }
+          
+          // Parse the Connected App XML file
+          const xmlData = await parseXmlFile(connectedAppFile);
+          if (xmlData && xmlData.ConnectedApp) {
+            // Store the consumer secret
+            const consumerSecret = secretPromptResponse.consumerSecret;
+            const consumerKey = xmlData.ConnectedApp.consumerKey ? xmlData.ConnectedApp.consumerKey[0] : 'unknown';
+            await this.updateConnectedAppXml(connectedAppFile, xmlData, consumerSecret, app, consumerKey, updatedApps);
+          } else {
+            uxLog(this, c.yellow(`Could not parse XML for ${app.fullName}`));
+          }
+        } catch (error: any) {
+          uxLog(this, c.yellow(`Error processing ${app.fullName}: ${error.message || error}`));
         }
-      } catch (error: any) {
-        uxLog(this, c.yellow(`Error processing ${app.fullName}: ${error.message || error}`));
+      }
+      
+      return updatedApps;
+    } catch (e: any) {
+      uxLog(this, c.red(`Error processing Connected Apps: ${e.message}`));
+      throw e;
+    } finally {
+      // Close browser if it was opened
+      if (browser) {
+        uxLog(this, c.cyan('Closing browser...'));
+        await browser.close();
+      }
+      
+      // Make sure .forceignore is restored
+      if (backupInfo) {
+        await restoreConnectedAppIgnore(backupInfo, this);
       }
     }
-    
-    return updatedApps;
+  }
+  
+  private async extractConsumerSecret(
+    browser: Browser,
+    instanceUrl: string,
+    applicationId: string
+  ): Promise<string | null> {
+    let page;
+    try {
+      page = await browser.newPage();
+      
+      const appUrl = `${instanceUrl}/app/mgmt/forceconnectedapps/forceAppDetail.apexp?applicationId=${applicationId}`;
+      uxLog(this, c.cyan(`Navigating to Connected App detail page...`));
+      await page.goto(appUrl, { waitUntil: ['domcontentloaded', 'networkidle0'] });
+      uxLog(this, c.cyan(`Attempting to extract Consumer Secret...`));
+      
+      // Click Manage Consumer Details button
+      const manageBtnId = 'input[id="appsetup:setupForm:details:oauthSettingsSection:manageConsumerKeySecretSection:manageConsumer"]';
+      await page.waitForSelector(manageBtnId, { timeout: 60000 });
+      await page.click(manageBtnId);
+      await page.waitForNavigation();
+      
+      // Extract Consumer Secret value
+      const consumerSecretSpanId = '#appsetup\\:setupForm\\:consumerDetails\\:oauthConsumerSection\\:consumerSecretSection\\:consumerSecret';
+      await page.waitForSelector(consumerSecretSpanId, { timeout: 60000 });
+      const consumerSecretValue = await page.$eval(consumerSecretSpanId, element => element.textContent);
+      uxLog(this, c.green(`Successfully extracted Consumer Secret`));
+      await page.close();
+      
+      return consumerSecretValue || null;
+    } catch (error) {
+      uxLog(this, c.red(`Error extracting Consumer Secret: ${error}`));
+      if (page) await page.close();
+      return null;
+    }
   }
   
   // Simple method to find Connected App files throughout the project
@@ -426,5 +485,42 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     return null;
   }
   
+  private async updateConnectedAppXml(
+    connectedAppFile: string,
+    xmlData: any,
+    consumerSecret: string,
+    app: ConnectedApp,
+    consumerKey: string,
+    updatedApps: ConnectedApp[]
+  ): Promise<void> {
+
+    const xmlString = await fs.readFile(connectedAppFile, 'utf8');
+    
+    if (xmlString.includes('<consumerSecret>')) {
+      const updatedXmlString = xmlString.replace(
+        /<consumerSecret>.*?<\/consumerSecret>/,
+        `<consumerSecret>${consumerSecret}</consumerSecret>`
+      );
+      await fs.writeFile(connectedAppFile, updatedXmlString);
+    } else {
+      // Insert consumerSecret right after consumerKey
+      const updatedXmlString = xmlString.replace(
+        /<consumerKey>.*?<\/consumerKey>/,
+        `$&\n    <consumerSecret>${consumerSecret}</consumerSecret>`
+      );
+      await fs.writeFile(connectedAppFile, updatedXmlString);
+    }
+    
+    xmlData.ConnectedApp.consumerSecret = [consumerSecret];
+  
+    uxLog(this, c.green(`Successfully added Consumer Secret to ${app.fullName} in ${connectedAppFile}`));
+    
+    const updatedApp: ConnectedApp = { 
+      ...app, 
+      consumerKey: consumerKey,
+      consumerSecret: consumerSecret
+    };
+    updatedApps.push(updatedApp);
+  }
 
 }

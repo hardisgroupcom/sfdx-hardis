@@ -27,6 +27,7 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
     `$ sf hardis:org:refresh:restore:connectedapp`,
     `$ sf hardis:org:refresh:restore:connectedapp --name "MyConnectedApp" // Process specific app, no selection prompt`,
     `$ sf hardis:org:refresh:restore:connectedapp --name "App1,App2,App3" // Process multiple apps, no selection prompt`,
+    `$ sf hardis:org:refresh:restore:connectedapp --all // Process all apps, no selection prompt`,
     `$ sf hardis:org:refresh:restore:connectedapp --target-org myDevOrg`,
   ];
 
@@ -36,6 +37,11 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
       char: 'n',
       summary: messages.getMessage('nameFilter'),
       description: 'Connected App name(s) to process (bypasses selection prompt). For multiple apps, separate with commas (e.g., "App1,App2")'
+    }),
+    all: Flags.boolean({
+      char: 'a',
+      summary: 'Process all Connected Apps without selection prompt',
+      description: 'If set, all Connected Apps from the local repository will be processed. Takes precedence over --name if both are specified.'
     }),
     websocket: Flags.string({
       summary: messages.getMessage('websocket'),
@@ -54,11 +60,20 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgRefreshRestoreConnectedApp);
     const orgUsername = flags["target-org"].getUsername() as string;
-    const nameFilter = flags.name;
+    const processAll = flags.all || false;
+    const nameFilter = processAll ? undefined : flags.name; // If --all is set, ignore --name
 
     try {
+      // Get Connected Apps based on parameters
+      if (processAll) {
+        uxLog(this, c.cyan('Processing all Connected Apps from local repository (selection prompt bypassed)'));
+      } else if (nameFilter) {
+        uxLog(this, c.cyan(`Processing specified Connected App(s): ${nameFilter} (selection prompt bypassed)`));
+      } else {
+        uxLog(this, c.cyan('Scanning project for Connected Apps...'));
+      }
+      
       // Find Connected Apps in project
-      uxLog(this, c.cyan('Scanning project for Connected Apps...'));
       const connectedApps = await this.findConnectedAppsInProject(nameFilter);
       
       if (connectedApps.length === 0) {
@@ -74,11 +89,12 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
       // Determine which Connected Apps to process
       let selectedApps: ProjectConnectedApp[] = [];
       
-      // If name is provided, use all connected apps from the list without prompting
-      if (nameFilter) {
-        // Use all connected apps from the list (which is already filtered by nameFilter)
+      // If all flag or name is provided, use all connected apps from the list without prompting
+      if (processAll || nameFilter) {
+        // Use all connected apps from the list (which is already filtered by nameFilter if provided)
         selectedApps = connectedApps;
-        uxLog(this, c.cyan(`Processing ${selectedApps.length} Connected App(s)`));
+        const selectionReason = processAll ? 'all flag' : 'name filter';
+        uxLog(this, c.cyan(`Processing ${selectedApps.length} Connected App(s) based on ${selectionReason}`));
       } else {
         // Always prompt for selection when no name filter is provided
         const choices = connectedApps.map(app => {
@@ -165,7 +181,7 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
             // Get the name from the fullName property in the XML or from the filename
             const fullName = xmlData.ConnectedApp.fullName?.[0] || path.basename(filePath, '.connectedApp-meta.xml');
             
-            // Filter by name if specified
+            // Filter by name if specified (skip this check when --all is used as nameFilter will be undefined)
             if (nameFilter) {
               const appNames = nameFilter.split(',').map(name => name.trim());
               if (!appNames.some(name => name.toLowerCase() === fullName.toLowerCase())) {
