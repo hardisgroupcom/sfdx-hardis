@@ -154,7 +154,6 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       uxLog(this, c.cyan('Retrieving list of Connected Apps from org...'));
     }
     
-    // Always query the org to get all available Connected Apps
     const command = `sf org list metadata --metadata-type ConnectedApp --target-org ${orgUsername}`;
     const result = await execSfdxJson(command, this, { output: true });
     
@@ -173,7 +172,6 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       const appNames = nameFilter.split(',').map(name => name.trim());
       uxLog(this, c.cyan(`Validating specified Connected App(s): ${appNames.join(', ')}`));
       
-      // Use the shared validation function
       validateConnectedApps(appNames, availableAppNames, this, 'org');
       
       // Filter available apps to only include the ones specified in the name filter (case-insensitive)
@@ -211,8 +209,7 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       uxLog(this, c.cyan(`Processing ${connectedApps.length} Connected App(s) based on ${selectionReason}`));
       return connectedApps;
     } 
-    
-    // Use the shared function for user selection
+
     return await promptForConnectedAppSelection(
       connectedApps,
       'Select Connected Apps to save:',
@@ -298,11 +295,7 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     connectedApps: ConnectedApp[]
   ): Promise<void> {
     uxLog(this, c.cyan(`Retrieving ${connectedApps.length} Connected App(s)...`));
-    
-    // Retrieve the Connected Apps
     await retrieveConnectedApps(orgUsername, connectedApps, this);
-    
-    // Verify that all Connected Apps were retrieved successfully
     this.verifyConnectedAppsRetrieval(connectedApps);
   }
   
@@ -466,8 +459,7 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
           try {
             consumerSecretValue = await this.extractConsumerSecret(
               browserContext.browser,
-              instanceUrl,
-              applicationId
+              viewLink
             );
           } catch (puppeteerError) {
             uxLog(this, c.yellow(`Error extracting Consumer Secret with Puppeteer: ${puppeteerError}`));
@@ -576,20 +568,17 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
   /**
    * Extract Consumer Secret using Puppeteer browser automation
    * @param browser Puppeteer browser instance
-   * @param instanceUrl Salesforce instance URL
-   * @param applicationId Application ID
+   * @param appUrl The full URL to the Connected App detail page
    * @returns Consumer Secret string
    */
   private async extractConsumerSecret(
     browser: Browser,
-    instanceUrl: string,
-    applicationId: string
+    appUrl: string
   ): Promise<string | null> {
     let page: Page | undefined;
     try {
       page = await browser.newPage();
       
-      const appUrl = `${instanceUrl}/app/mgmt/forceconnectedapps/forceAppDetail.apexp?applicationId=${applicationId}`;
       uxLog(this, c.cyan(`Navigating to Connected App detail page...`));
       await page.goto(appUrl, { waitUntil: ['domcontentloaded', 'networkidle0'] });
       uxLog(this, c.cyan(`Attempting to extract Consumer Secret...`));

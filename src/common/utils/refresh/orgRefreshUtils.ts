@@ -545,6 +545,3 @@ export async function findConnectedAppFile(
     return null;
   }
 }
-
-// Note: We don't need to create a separate utility function since the existing createConnectedAppManifest
-// and withConnectedAppIgnoreHandling functions already handle this functionality efficiently.

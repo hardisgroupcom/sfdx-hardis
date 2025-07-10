@@ -166,7 +166,6 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
         const availableAppNames = allFoundApps.map(app => app.fullName);
         
         // Case-insensitive matching for app names
-        // Use the shared validation function
         validateConnectedApps(appNames, availableAppNames, this, 'project');
         
         // Filter apps based on name filter
@@ -230,7 +229,6 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
       return connectedApps;
     }
     
-    // Use the shared function for user selection
     return await promptForConnectedAppSelection<ProjectConnectedApp>(
       connectedApps,
       'Select Connected Apps to restore:',
@@ -276,8 +274,6 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
     
     // Convert ProjectConnectedApp to the format needed by deployConnectedApps
     const connectedAppsList = toConnectedAppFormat(connectedApps);
-    
-    // Use the centralized utility function to deploy Connected Apps
     await deployConnectedApps(orgUsername, connectedAppsList, this);
     
     uxLog(this, c.green(`Deployment of ${connectedApps.length} Connected App(s) completed successfully`));
