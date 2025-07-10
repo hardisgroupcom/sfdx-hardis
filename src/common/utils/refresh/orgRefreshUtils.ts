@@ -5,6 +5,7 @@ import { execCommand, createTempDir, uxLog } from '../index.js';
 import { writeXmlFile } from '../xmlUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
+import { prompts } from '../prompts.js';
 
 // Define interface for Connected App metadata
 export interface ConnectedApp {
@@ -118,10 +119,12 @@ export async function deleteConnectedApps(
   connectedApps: ConnectedApp[],
   command: SfCommand<any>
 ): Promise<void> {
-  if (!orgUsername) {
-    throw new Error('Organization username is required');
+  try {
+    validateConnectedAppParams(orgUsername, connectedApps);
+  } catch (error: any) {
+    uxLog(command, c.yellow(`Skipping delete operation: ${error.message}`));
+    return;
   }
-  if (connectedApps.length === 0) return;
   
   // Create a destructive changes XML file
   const tmpDir = await createTempDir();
@@ -246,10 +249,12 @@ export async function retrieveConnectedApps(
   connectedApps: ConnectedApp[],
   command: SfCommand<any>
 ): Promise<void> {
-  if (!orgUsername) {
-    throw new Error('Organization username is required');
+  try {
+    validateConnectedAppParams(orgUsername, connectedApps);
+  } catch (error: any) {
+    uxLog(command, c.yellow(`Skipping retrieve operation: ${error.message}`));
+    return;
   }
-  if (connectedApps.length === 0) return;
 
   // Use withConnectedAppIgnoreHandling to handle .forceignore modifications
   await withConnectedAppIgnoreHandling(async () => {
@@ -286,10 +291,12 @@ export async function deployConnectedApps(
   connectedApps: ConnectedApp[],
   command: SfCommand<any>
 ): Promise<void> {
-  if (!orgUsername) {
-    throw new Error('Organization username is required');
+  try {
+    validateConnectedAppParams(orgUsername, connectedApps);
+  } catch (error: any) {
+    uxLog(command, c.yellow(`Skipping deploy operation: ${error.message}`));
+    return;
   }
-  if (connectedApps.length === 0) return;
 
   // Use withConnectedAppIgnoreHandling to handle .forceignore modifications
   await withConnectedAppIgnoreHandling(async () => {
@@ -328,4 +335,131 @@ export function toConnectedAppFormat(apps: Array<{ fullName: string; fileName?: 
       type: 'ConnectedApp'
     };
   });
+}
+
+/**
+ * Shared utility functions for Connected App operations
+ */
+
+/**
+ * Common validation function to check if Connected Apps exist and provide helpful error messages
+ * @param requestedApps - Array of requested app names
+ * @param availableApps - Array of available app names
+ * @param command - Command context for logging
+ * @param context - Context string to indicate whether checking in "org" or "project"
+ * @returns { missingApps, validApps } - Arrays of missing and valid app names
+ * @throws Error if any apps are missing
+ */
+export function validateConnectedApps(
+  requestedApps: string[], 
+  availableApps: string[], 
+  command: SfCommand<any>,
+  context: 'org' | 'project'
+): { missingApps: string[], validApps: string[] } {
+  // Case-insensitive matching for app names
+  const missingApps = requestedApps.filter(name => 
+    !availableApps.some(availableName => 
+      availableName.toLowerCase() === name.toLowerCase()
+    )
+  );
+  
+  if (missingApps.length > 0) {
+    const errorMsg = `The following Connected App(s) could not be found in the ${context}: ${missingApps.join(', ')}`;
+    uxLog(command, c.red(errorMsg));
+    
+    if (availableApps.length > 0) {
+      uxLog(command, c.yellow(`Available Connected Apps in the ${context}:`));
+      availableApps.forEach(name => {
+        uxLog(command, c.grey(`  - ${name}`));
+      });
+      
+      // Suggest similar names to help the user
+      missingApps.forEach(missingApp => {
+        const similarNames = availableApps
+          .filter(name => 
+            name.toLowerCase().includes(missingApp.toLowerCase()) || 
+            missingApp.toLowerCase().includes(name.toLowerCase())
+          )
+          .slice(0, 3);
+          
+        if (similarNames.length > 0) {
+          uxLog(command, c.yellow(`Did you mean one of these instead of "${missingApp}"?`));
+          similarNames.forEach(name => {
+            uxLog(command, c.grey(`  - ${name}`));
+          });
+        }
+      });
+    } else {
+      uxLog(command, c.yellow(`No Connected Apps were found in the ${context}.`));
+    }
+    
+    uxLog(command, c.yellow('Please check the app name(s) and try again.'));
+    throw new Error(errorMsg);
+  }
+  
+  // Return the list of valid apps
+  const validApps = requestedApps.filter(name => 
+    availableApps.some(availableName => 
+      availableName.toLowerCase() === name.toLowerCase()
+    )
+  );
+  
+  return { missingApps, validApps };
+}
+
+/**
+ * Common function to validate Connected App operation parameters
+ * @param orgUsername - Username of the target org
+ * @param connectedApps - Array of ConnectedApp objects
+ * @returns void
+ * @throws Error if parameters are invalid
+ */
+export function validateConnectedAppParams(
+  orgUsername: string | undefined, 
+  connectedApps: Array<any>
+): void {
+  if (!orgUsername) {
+    throw new Error('Organization username is required');
+  }
+  if (!connectedApps || connectedApps.length === 0) {
+    throw new Error('No Connected Apps specified');
+  }
+}
+
+/**
+ * Common function to handle user prompt for Connected App selection
+ * @param connectedApps - Array of available ConnectedApp objects
+ * @param promptMessage - Message to display in the prompt
+ * @param command - Command context for logging
+ * @returns Promise<Array<T>> - Array of selected apps
+ */
+export async function promptForConnectedAppSelection<T extends { fullName: string }>(
+  connectedApps: T[],
+  promptMessage: string,
+  command: SfCommand<any>
+): Promise<T[]> {
+  // Create choices for the prompt
+  const choices = connectedApps.map(app => {
+    return { title: app.fullName, value: app.fullName };
+  });
+  
+  // Prompt user for selection
+  const promptResponse = await prompts({
+    type: 'multiselect',
+    name: 'selectedApps',
+    message: promptMessage,
+    choices: choices
+  });
+  
+  if (!promptResponse.selectedApps || promptResponse.selectedApps.length === 0) {
+    return [];
+  }
+  
+  // Filter apps based on selection
+  const selectedApps = connectedApps.filter(app => 
+    promptResponse.selectedApps.includes(app.fullName)
+  );
+  
+  uxLog(command, c.cyan(`Processing ${selectedApps.length} Connected App(s)`));
+  return selectedApps;
 }

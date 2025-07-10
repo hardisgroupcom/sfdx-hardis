@@ -13,7 +13,12 @@ import { execSfdxJson, uxLog } from '../../../../../common/utils/index.js';
 import { prompts } from '../../../../../common/utils/prompts.js';
 import { parseXmlFile } from '../../../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../../common/utils/projectUtils.js';
-import { deleteConnectedApps, retrieveConnectedApps } from '../../../../../common/utils/refresh/orgRefreshUtils.js';
+import { 
+  deleteConnectedApps, 
+  retrieveConnectedApps,
+  validateConnectedApps,
+  promptForConnectedAppSelection
+} from '../../../../../common/utils/refresh/orgRefreshUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -170,43 +175,8 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       const appNames = nameFilter.split(',').map(name => name.trim());
       uxLog(this, c.cyan(`Validating specified Connected App(s): ${appNames.join(', ')}`));
       
-      // Check if all specified apps exist in the org
-      const missingApps = appNames.filter(name => 
-        !availableAppNames.some(availableName => 
-          availableName.toLowerCase() === name.toLowerCase()
-        )
-      );
-      
-      if (missingApps.length > 0) {
-        const errorMsg = `The following Connected App(s) could not be found in the org: ${missingApps.join(', ')}`;
-        uxLog(this, c.red(errorMsg));
-        
-        // Suggest possible corrections if available apps exist
-        if (availableAppNames.length > 0) {
-          uxLog(this, c.yellow('Available Connected Apps in the org:'));
-          availableAppNames.forEach(name => {
-            uxLog(this, c.grey(`  - ${name}`));
-          });
-          
-          // Try to suggest similar names to help the user
-          missingApps.forEach(missingApp => {
-            const similarNames = availableAppNames
-              .filter(name => name.toLowerCase().includes(missingApp.toLowerCase()) || 
-                              missingApp.toLowerCase().includes(name.toLowerCase()))
-              .slice(0, 3);
-              
-            if (similarNames.length > 0) {
-              uxLog(this, c.yellow(`Did you mean one of these instead of "${missingApp}"?`));
-              similarNames.forEach(name => {
-                uxLog(this, c.grey(`  - ${name}`));
-              });
-            }
-          });
-        }
-        
-        uxLog(this, c.yellow('Please check the app name(s) and try again.'));
-        throw new Error(errorMsg);
-      }
+      // Use the shared validation function
+      validateConnectedApps(appNames, availableAppNames, this, 'org');
       
       // Filter available apps to only include the ones specified in the name filter (case-insensitive)
       const connectedApps = availableApps.filter(app => 
@@ -244,28 +214,12 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       return connectedApps;
     } 
     
-    // Prompt user for selection
-    const choices = connectedApps.map(app => {
-      return { title: app.fullName, value: app.fullName };
-    });
-    
-    const promptResponse = await prompts({
-      type: 'multiselect',
-      name: 'selectedApps',
-      message: 'Select Connected Apps to save:',
-      choices: choices
-    });
-    
-    if (!promptResponse.selectedApps || promptResponse.selectedApps.length === 0) {
-      return [];
-    }
-    
-    const selectedApps = connectedApps.filter(app => 
-      promptResponse.selectedApps.includes(app.fullName)
+    // Use the shared function for user selection
+    return await promptForConnectedAppSelection(
+      connectedApps,
+      'Select Connected Apps to save:',
+      this
     );
-    uxLog(this, c.cyan(`Processing ${selectedApps.length} Connected App(s) from selection`));
-    
-    return selectedApps;
   }
   
   /**

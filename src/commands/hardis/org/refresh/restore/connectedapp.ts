@@ -5,10 +5,15 @@ import * as path from 'path';
 import c from 'chalk';
 import { glob } from 'glob';
 import { uxLog } from '../../../../../common/utils/index.js';
-import { prompts } from '../../../../../common/utils/prompts.js';
 import { parseXmlFile } from '../../../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../../common/utils/projectUtils.js';
-import { deleteConnectedApps, deployConnectedApps, toConnectedAppFormat } from '../../../../../common/utils/refresh/orgRefreshUtils.js';
+import { 
+  deleteConnectedApps, 
+  deployConnectedApps, 
+  toConnectedAppFormat,
+  validateConnectedApps,
+  promptForConnectedAppSelection
+} from '../../../../../common/utils/refresh/orgRefreshUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -161,46 +166,8 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
         const availableAppNames = allFoundApps.map(app => app.fullName);
         
         // Case-insensitive matching for app names
-        const missingApps = appNames.filter(name => 
-          !availableAppNames.some(availableName => 
-            availableName.toLowerCase() === name.toLowerCase()
-          )
-        );
-        
-        // If any specified apps are missing, show error and exit
-        if (missingApps.length > 0) {
-          const errorMsg = `The following Connected App(s) could not be found in the project: ${missingApps.join(', ')}`;
-          uxLog(this, c.red(errorMsg));
-          
-          if (availableAppNames.length > 0) {
-            uxLog(this, c.yellow('Available Connected Apps in the project:'));
-            availableAppNames.forEach(name => {
-              uxLog(this, c.grey(`  - ${name}`));
-            });
-            
-            // Suggest similar names to help the user
-            missingApps.forEach(missingApp => {
-              const similarNames = availableAppNames
-                .filter(name => 
-                  name.toLowerCase().includes(missingApp.toLowerCase()) || 
-                  missingApp.toLowerCase().includes(name.toLowerCase())
-                )
-                .slice(0, 3);
-                
-              if (similarNames.length > 0) {
-                uxLog(this, c.yellow(`Did you mean one of these instead of "${missingApp}"?`));
-                similarNames.forEach(name => {
-                  uxLog(this, c.grey(`  - ${name}`));
-                });
-              }
-            });
-          } else {
-            uxLog(this, c.yellow('No Connected Apps were found in the project.'));
-          }
-          
-          uxLog(this, c.yellow('Please check the app name(s) and try again.'));
-          throw new Error(errorMsg);
-        }
+        // Use the shared validation function
+        validateConnectedApps(appNames, availableAppNames, this, 'project');
         
         // Filter apps based on name filter
         for (const app of allFoundApps) {
@@ -263,28 +230,12 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
       return connectedApps;
     }
     
-    // Always prompt for selection when no name filter is provided
-    const choices = connectedApps.map(app => {
-      return { title: app.fullName, value: app.fullName };
-    });
-    
-    const promptResponse = await prompts({
-      type: 'multiselect',
-      name: 'selectedApps',
-      message: 'Select Connected Apps to restore:',
-      choices: choices
-    });
-    
-    if (!promptResponse.selectedApps || promptResponse.selectedApps.length === 0) {
-      return [];
-    }
-    
-    const selectedApps = connectedApps.filter(app => 
-      promptResponse.selectedApps.includes(app.fullName)
+    // Use the shared function for user selection
+    return await promptForConnectedAppSelection<ProjectConnectedApp>(
+      connectedApps,
+      'Select Connected Apps to restore:',
+      this
     );
-    uxLog(this, c.cyan(`Processing ${selectedApps.length} Connected App(s)`));
-    
-    return selectedApps;
   }
   
   /**
