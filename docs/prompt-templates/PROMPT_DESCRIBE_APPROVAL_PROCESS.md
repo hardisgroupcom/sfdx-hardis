@@ -6,7 +6,6 @@ description: Prompt template for PROMPT_DESCRIBE_APPROVAL_PROCESS
 # PROMPT_DESCRIBE_APPROVAL_PROCESS
 
 ## Variables
-
 | Name                     | Description                                              | Example                                  |
 |:-------------------------|:---------------------------------------------------------|:-----------------------------------------|
 | **APPROVALPROCESS_NAME** | The name of the Salesforce Approval Process to describe. | `Opportunity_Approval`                   |
