@@ -13,7 +13,7 @@ import {
   toConnectedAppFormat,
   validateConnectedApps,
   selectConnectedAppsForProcessing
-} from '../../../../../common/utils/refresh/orgRefreshUtils.js';
+} from '../../../../../common/utils/refresh/connectedAppUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -104,13 +104,6 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
     }
   }
   
-  /**
-   * Find Connected Apps in the project, optionally filtered by name
-   * This method optimizes file scanning and performs robust validation
-   * @param nameFilter Optional filter for app names
-   * @param processAll Whether to process all Connected Apps
-   * @returns Array of Connected Apps found in the project
-   */
   private async findConnectedAppsInProject(
     nameFilter?: string, 
     processAll?: boolean
@@ -210,13 +203,6 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
     }
   }
 
-  /**
-   * Select which Connected Apps to process based on flags or user selection
-   * @param connectedApps All Connected Apps found in the project
-   * @param processAll Whether to process all Connected Apps
-   * @param nameFilter Optional name filter
-   * @returns Selected Connected Apps
-   */
   private async selectConnectedApps(
     connectedApps: ProjectConnectedApp[],
     processAll: boolean,
@@ -231,12 +217,6 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
     );
   }
   
-  /**
-   * Delete existing Connected Apps from the org before deployment
-   * @param orgUsername Username of the target org
-   * @param connectedApps Connected Apps to delete
-   * @returns Promise<void>
-   */
   private async deleteExistingConnectedApps(
     orgUsername: string, 
     connectedApps: ProjectConnectedApp[]
@@ -252,13 +232,7 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
     await deleteConnectedApps(orgUsername, appsToDelete, this);
     uxLog(this, c.green('Connected Apps were successfully deleted from the org.'));
   }
-  
-  /**
-   * Deploy Connected Apps to the org
-   * @param orgUsername Username of the target org
-   * @param connectedApps Connected Apps to deploy
-   * @returns Promise<void>
-   */
+
   private async deployConnectedApps(
     orgUsername: string, 
     connectedApps: ProjectConnectedApp[]

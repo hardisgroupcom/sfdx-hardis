@@ -16,7 +16,7 @@ import {
   validateConnectedApps,
   findConnectedAppFile,
   selectConnectedAppsForProcessing
-} from '../../../../../common/utils/refresh/orgRefreshUtils.js';
+} from '../../../../../common/utils/refresh/connectedAppUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -131,15 +131,7 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       return { success: false, error: error.message || error };
     }
   }
-  
-  /**
-   * Get Connected Apps based on name filter or by listing all from org
-   * This method always queries the org once and then filters as needed
-   * @param orgUsername Target org username
-   * @param nameFilter Optional name filter
-   * @param processAll Whether to process all Connected Apps
-   * @returns Array of Connected App objects
-   */
+
   private async getConnectedApps(
     orgUsername: string, 
     nameFilter: string | undefined,
@@ -187,13 +179,6 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     return availableApps;
   }
   
-  /**
-   * Select which Connected Apps to process based on user input or flags
-   * @param connectedApps All available Connected Apps
-   * @param processAll Whether to process all Connected Apps
-   * @param nameFilter Optional name filter
-   * @returns Array of selected Connected App objects
-   */
   private async selectConnectedApps(
     connectedApps: ConnectedApp[], 
     processAll: boolean, 
@@ -208,14 +193,6 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     );
   }
   
-  /**
-   * Process Connected Apps to retrieve them and add Consumer Secrets
-   * @param orgUsername Target org username
-   * @param connectedApps Connected Apps to process
-   * @param instanceUrl Salesforce instance URL
-   * @param accessToken Salesforce access token
-   * @returns Array of updated Connected App objects
-   */
   private async processConnectedApps(
     orgUsername: string | undefined, 
     connectedApps: ConnectedApp[], 
@@ -276,11 +253,6 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     }
   }
 
-  /**
-   * Retrieve Connected Apps from org using package.xml manifest
-   * @param orgUsername Target org username
-   * @param connectedApps Connected Apps to retrieve
-   */
   private async retrieveConnectedAppsFromOrg(
     orgUsername: string, 
     connectedApps: ConnectedApp[]
@@ -290,13 +262,6 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     this.verifyConnectedAppsRetrieval(connectedApps);
   }
   
-  /**
-   * Verify that all requested Connected Apps were properly retrieved
-   * This adds an extra validation step after retrieval to ensure everything worked as expected
-   * @param connectedApps List of Connected Apps that were requested
-   * @returns void
-   * @throws Error if any Connected Apps were not retrieved
-   */
   private verifyConnectedAppsRetrieval(connectedApps: ConnectedApp[]): void {
     if (connectedApps.length === 0) return;
     
@@ -334,12 +299,6 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     }
   }
   
-  /**
-   * Query for Connected App IDs from Salesforce
-   * @param orgUsername Target org username
-   * @param connectedApps Connected Apps to query
-   * @returns Map of app names to IDs
-   */
   private async queryConnectedAppIds(
     orgUsername: string, 
     connectedApps: ConnectedApp[]
@@ -372,13 +331,7 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     
     return connectedAppIdMap;
   }
-  
-  /**
-   * Initialize browser for automated Consumer Secret extraction
-   * @param instanceUrl Salesforce instance URL
-   * @param accessToken Salesforce access token
-   * @returns Browser context object
-   */
+
   private async initializeBrowser(
     instanceUrl: string, 
     accessToken: string
@@ -403,22 +356,6 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     return { browser, instanceUrl, accessToken };
   }
   
-  /**
-   * Process an individual Connected App
-   * @param app Connected App to process
-   * @param connectedAppIdMap Map of app names to IDs
-   * @param browserContext Browser context (if available)
-   * @param instanceUrl Salesforce instance URL
-   * @returns Updated Connected App or undefined if processing failed
-   */
-  /**
-   * Process an individual Connected App
-   * @param app Connected App to process
-   * @param connectedAppIdMap Map of app names to IDs
-   * @param browserContext Browser context (if available)
-   * @param instanceUrl Salesforce instance URL
-   * @returns Updated Connected App or undefined if processing failed
-   */
   private async processIndividualApp(
     app: ConnectedApp, 
     connectedAppIdMap: Record<string, string>, 
@@ -528,13 +465,6 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     return undefined;
   }
   
-  /**
-   * Extract application ID from Connected App page
-   * @param instanceUrl Salesforce instance URL
-   * @param connectedAppId Connected App ID
-   * @param accessToken Salesforce access token (optional)
-   * @returns Application ID string
-   */
   private async extractApplicationId(
     instanceUrl: string,
     connectedAppId: string,
@@ -556,12 +486,6 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     return appIdMatch[1];
   }
   
-  /**
-   * Extract Consumer Secret using Puppeteer browser automation
-   * @param browser Puppeteer browser instance
-   * @param appUrl The full URL to the Connected App detail page
-   * @returns Consumer Secret string
-   */
   private async extractConsumerSecret(
     browser: Browser,
     appUrl: string
@@ -595,17 +519,6 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     }
   }
   
-  // Removed duplicated findConnectedAppFile method - now using the shared utility function from orgRefreshUtils.js
-  
-  /**
-   * Update Connected App XML file with Consumer Secret
-   * @param connectedAppFile Path to Connected App XML file
-   * @param xmlData Parsed XML data
-   * @param consumerSecret Consumer Secret value
-   * @param app Connected App object
-   * @param consumerKey Consumer Key value
-   * @returns Updated Connected App object
-   */
   private async updateConnectedAppWithSecret(
     connectedAppFile: string,
     xmlData: any,

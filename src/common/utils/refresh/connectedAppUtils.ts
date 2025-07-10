@@ -18,11 +18,6 @@ export interface ConnectedApp {
   consumerSecret?: string;
 }
 
-/**
- * Generate a package.xml object for Connected Apps
- * @param connectedApps - Array of ConnectedApp objects
- * @returns Object representing package.xml content
- */
 export function generateConnectedAppPackageXml(connectedApps: ConnectedApp[]): any {
   return {
     Package: {
@@ -40,10 +35,6 @@ export function generateConnectedAppPackageXml(connectedApps: ConnectedApp[]): a
   };
 }
 
-/**
- * Generate an empty package.xml object (used for destructive changes)
- * @returns Object representing empty package.xml content
- */
 export function generateEmptyPackageXml(): any {
   return {
     Package: {
@@ -55,12 +46,6 @@ export function generateEmptyPackageXml(): any {
   };
 }
 
-/**
- * Create a temporary manifest file for Connected Apps
- * @param connectedApps - Array of ConnectedApp objects
- * @param command - Command context for logging
- * @returns Promise with path to the manifest file and temp directory
- */
 export async function createConnectedAppManifest(
   connectedApps: ConnectedApp[],
   command: SfCommand<any>
@@ -83,12 +68,6 @@ export async function createConnectedAppManifest(
   return { manifestPath, tmpDir };
 }
 
-/**
- * Handle Connected App operations with proper .forceignore management
- * @param operationFn - Function to perform the operation
- * @param command - Command context for logging
- * @returns Promise with result of the operation
- */
 export async function withConnectedAppIgnoreHandling<T>(
   operationFn: (backupInfo: { 
     forceignorePath: string; 
@@ -109,12 +88,6 @@ export async function withConnectedAppIgnoreHandling<T>(
   }
 }
 
-/**
- * Create a destructive changes manifest for Connected Apps
- * @param connectedApps - Array of ConnectedApp objects
- * @param command - Command context for logging
- * @returns Promise with paths to the manifest files and temp directory
- */
 export async function createDestructiveChangesManifest(
   connectedApps: ConnectedApp[],
   command: SfCommand<any>
@@ -150,13 +123,6 @@ export async function createDestructiveChangesManifest(
   return { destructiveChangesPath, packageXmlPath, tmpDir };
 }
 
-/**
- * Delete Connected Apps from org using destructive changes
- * @param orgUsername - Username of the target org
- * @param connectedApps - Array of ConnectedApp objects to delete
- * @param command - Command context for logging
- * @returns Promise<void>
- */
 export async function deleteConnectedApps(
   orgUsername: string | undefined, 
   connectedApps: ConnectedApp[],
@@ -190,11 +156,6 @@ export async function deleteConnectedApps(
   });
 }
 
-/**
- * Temporarily modify .forceignore to allow retrieving Connected Apps
- * @param command - Command context for logging
- * @returns Object with original content and backup path, or null if no .forceignore exists
- */
 export async function disableConnectedAppIgnore(command: SfCommand<any>): Promise<{ 
   forceignorePath: string; 
   originalContent: string; 
@@ -237,11 +198,6 @@ export async function disableConnectedAppIgnore(command: SfCommand<any>): Promis
   return { forceignorePath, originalContent, tempBackupPath };
 }
 
-/**
- * Restore original .forceignore content after retrieval
- * @param backupInfo - Object containing backup information, or null if no backup was made
- * @param command - Command context for logging
- */
 export async function restoreConnectedAppIgnore(
   backupInfo: { 
     forceignorePath: string; 
@@ -264,13 +220,6 @@ export async function restoreConnectedAppIgnore(
   }
 }
 
-/**
- * Retrieve Connected Apps from org using a package.xml manifest
- * @param orgUsername - Username of the target org
- * @param connectedApps - Array of ConnectedApp objects to retrieve
- * @param command - Command context for logging
- * @returns Promise<void>
- */
 export async function retrieveConnectedApps(
   orgUsername: string | undefined,
   connectedApps: ConnectedApp[],
@@ -295,13 +244,6 @@ export async function retrieveConnectedApps(
   });
 }
 
-/**
- * Deploy Connected Apps to the org using a package.xml manifest
- * @param orgUsername - Username of the target org
- * @param connectedApps - Array of ConnectedApp objects to deploy
- * @param command - Command context for logging
- * @returns Promise<void>
- */
 export async function deployConnectedApps(
   orgUsername: string | undefined,
   connectedApps: ConnectedApp[],
@@ -326,12 +268,6 @@ export async function deployConnectedApps(
   });
 }
 
-/**
- * Convert any connected app format to the standard ConnectedApp interface
- * This utility makes it easier to convert between different formats of connected app objects
- * @param apps - Array of objects with at least a fullName property
- * @returns Array of ConnectedApp objects
- */
 export function toConnectedAppFormat(apps: Array<{ fullName: string; fileName?: string; filePath?: string; }>): ConnectedApp[] {
   return apps.map(app => {
     return {
@@ -342,19 +278,6 @@ export function toConnectedAppFormat(apps: Array<{ fullName: string; fileName?: 
   });
 }
 
-/**
- * Shared utility functions for Connected App operations
- */
-
-/**
- * Common validation function to check if Connected Apps exist and provide helpful error messages
- * @param requestedApps - Array of requested app names
- * @param availableApps - Array of available app names
- * @param command - Command context for logging
- * @param context - Context string to indicate whether checking in "org" or "project"
- * @returns { missingApps, validApps } - Arrays of missing and valid app names
- * @throws Error if any apps are missing
- */
 export function validateConnectedApps(
   requestedApps: string[], 
   availableApps: string[], 
@@ -412,13 +335,6 @@ export function validateConnectedApps(
   return { missingApps, validApps };
 }
 
-/**
- * Common function to validate Connected App operation parameters
- * @param orgUsername - Username of the target org
- * @param connectedApps - Array of ConnectedApp objects
- * @returns void
- * @throws Error if parameters are invalid
- */
 export function validateConnectedAppParams(
   orgUsername: string | undefined, 
   connectedApps: Array<any>
@@ -431,13 +347,6 @@ export function validateConnectedAppParams(
   }
 }
 
-/**
- * Common function to handle user prompt for Connected App selection
- * @param connectedApps - Array of available ConnectedApp objects
- * @param promptMessage - Message to display in the prompt
- * @param command - Command context for logging
- * @returns Promise<Array<T>> - Array of selected apps
- */
 export async function promptForConnectedAppSelection<T extends { fullName: string }>(
   connectedApps: T[],
   promptMessage: string,
@@ -469,12 +378,6 @@ export async function promptForConnectedAppSelection<T extends { fullName: strin
   return selectedApps;
 }
 
-/**
- * Find Connected App file in the project by app name
- * @param appName - Name of the Connected App to find
- * @param command - Command context for logging
- * @returns Promise<string | null> - Path to the Connected App file or null if not found
- */
 export async function findConnectedAppFile(
   appName: string, 
   command: SfCommand<any>
@@ -542,16 +445,6 @@ export async function findConnectedAppFile(
   }
 }
 
-/**
- * Shared logic for selecting and processing Connected Apps
- * Refactored to eliminate code duplication between save and restore commands
- * @param connectedApps Array of ConnectedApp objects
- * @param processAll Whether to process all ConnectedApps without selection prompt
- * @param nameFilter Optional filter for app names
- * @param promptMessage Message to display in the prompt
- * @param command Command context for logging
- * @returns Selected ConnectedApp objects
- */
 export async function selectConnectedAppsForProcessing<T extends { fullName: string }>(
   connectedApps: T[],
   processAll: boolean,
@@ -580,15 +473,6 @@ export async function selectConnectedAppsForProcessing<T extends { fullName: str
   );
 }
 
-/**
- * Wrapper function for connected app operations to standardize validation and error handling
- * @param orgUsername - Username of the target org
- * @param connectedApps - Array of ConnectedApp objects
- * @param command - Command context for logging
- * @param operationName - Name of the operation for logging purposes
- * @param operationFn - Function to perform if validation passes
- * @returns Promise<void>
- */
 export async function withConnectedAppValidation(
   orgUsername: string | undefined,
   connectedApps: ConnectedApp[],
@@ -606,16 +490,6 @@ export async function withConnectedAppValidation(
   await operationFn();
 }
 
-/**
- * Common function to perform a Connected App operation with manifest file
- * Eliminates duplicate code between retrieve and deploy operations
- * @param orgUsername - Username of the target org
- * @param connectedApps - Array of ConnectedApp objects
- * @param command - Command context for logging
- * @param operationName - Name of the operation (retrieve or deploy)
- * @param commandFn - Function to execute the command with manifest
- * @returns Promise<void>
- */
 export async function performConnectedAppOperationWithManifest(
   orgUsername: string,
   connectedApps: ConnectedApp[],
