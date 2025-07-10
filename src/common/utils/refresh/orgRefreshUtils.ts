@@ -4,7 +4,7 @@ import c from 'chalk';
 import { glob } from 'glob';
 import { execCommand, createTempDir, uxLog } from '../index.js';
 import { writeXmlFile } from '../xmlUtils.js';
-import { CONSTANTS } from '../../../config/index.js';
+import { getApiVersion } from '../../../config/index.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
 import { prompts } from '../prompts.js';
 import { GLOB_IGNORE_PATTERNS } from '../projectUtils.js';
@@ -35,7 +35,7 @@ export function generateConnectedAppPackageXml(connectedApps: ConnectedApp[]): a
           name: ['ConnectedApp']
         }
       ],
-      version: [CONSTANTS.API_VERSION]
+      version: [getApiVersion()]
     }
   };
 }
@@ -50,7 +50,7 @@ export function generateEmptyPackageXml(): any {
       $: {
         xmlns: 'http://soap.sforce.com/2006/04/metadata'
       },
-      version: [CONSTANTS.API_VERSION]
+      version: [getApiVersion()]
     }
   };
 }
