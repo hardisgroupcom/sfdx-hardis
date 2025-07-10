@@ -32,13 +32,27 @@ jobs:
         id: ml
         # You can override Mega-Linter flavor used to have faster performances
         # More info at https://megalinter.io/latest/flavors/
-        uses: oxsecurity/megalinter/flavors/javascript@latest
+        uses: oxsecurity/megalinter/flavors/javascript@beta
         env:
           # All available variables are described in documentation
           # https://megalinter.io/latest/config-file/
           VALIDATE_ALL_CODEBASE: true # Set ${{ github.event_name == &#39;push&#39; &amp;&amp; github.ref == &#39;refs/heads/master&#39; }} to validate only diff with master branch
+          # Disable LLM Advisor for bot PRs (dependabot, renovate, etc.)
+          LLM_ADVISOR_ENABLED: >-
+            ${{
+              github.event_name != 'pull_request' ||
+              (
+                github.event.pull_request.user.login != 'dependabot[bot]' &&
+                github.event.pull_request.user.login != 'renovate[bot]' &&
+                github.event.pull_request.user.login != 'github-actions[bot]' &&
+                !startsWith(github.event.pull_request.user.login, 'dependabot') &&
+                !startsWith(github.event.pull_request.user.login, 'renovate')
+              )
+            }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
+
 
       # Upload Mega-Linter artifacts
       - name: Archive production artifacts

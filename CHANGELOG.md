@@ -8,6 +8,14 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - New command [hardis:org:refresh:restore:connectedapp](https://sfdx-hardis.cloudity.com/hardis/org/refresh/restore/connectedapp/) : Restore Connected Apps after refreshing a sandbox.
 
+- [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/):Add new ignored items in audit trail
+
+## [5.44.0] 2025-06-29
+
+- [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/): Code rework + removed global flag + Added ability to apply the bypass to VRs and Triggers
+- Refactored logic to ensure preprod branches are only added if they exist, preventing null pointer exceptions.
+- Upgrade npm dependencies
+
 ## [5.43.5] 2025-06-27
 
 - Filter WorkflowFlowAutomation from org-generated package.xml (workaround attempt for <https://github.com/forcedotcom/cli/issues/3324>)
