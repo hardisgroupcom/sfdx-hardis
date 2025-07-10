@@ -529,14 +529,14 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
           }
         }
       } catch (error) {
-        uxLog(this, c.yellow(`Could not extract application ID for ${app.fullName}. Using fallback approach.`));
-        viewLink = `${instanceUrl}/lightning/setup/ConnectedApplication/home`;
-        uxLog(this, c.cyan(`Opening Connected App list page. Please manually find ${app.fullName}.`));
+        uxLog(this, c.red(`Could not extract application ID for :  ${app.fullName}. Error message : ${error}`));
+        viewLink = `${instanceUrl}/lightning/setup/NavigationMenus/home`;
+        uxLog(this, c.cyan(`Opening application list page. Please manually find ${app.fullName}.`));
       }
     } else {
       // Fallback to the connected apps list page if applicationId can't be found
-      uxLog(this, c.yellow(`No applicationId found for ${app.fullName}, opening general Connected Apps page instead`));
-      viewLink = `${instanceUrl}/lightning/setup/ConnectedApplication/home`;
+      uxLog(this, c.yellow(`No applicationId found for ${app.fullName}, opening application list page instead`));
+      viewLink = `${instanceUrl}/lightning/setup/NavigationMenus/home`;
     }
     
     try {
