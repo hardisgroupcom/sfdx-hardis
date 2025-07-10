@@ -33,9 +33,12 @@ const username = os.userInfo().username;
 const userConfigFiles = [`config/user/.${moduleName}.${username}.yaml`, `config/user/.${moduleName}.${username}.yml`];
 const REMOTE_CONFIGS: any = {};
 
-export const CONSTANTS = {
+export const getApiVersion = () => {
   // globalThis.currentOrgApiVersion is set during authentication check (so not set if --skipauth option is used)
-  API_VERSION: process.env.SFDX_API_VERSION || globalThis.currentOrgApiVersion || '63.0',
+  return process.env.SFDX_API_VERSION || globalThis.currentOrgApiVersion || '63.0';
+}
+
+export const CONSTANTS = {
   DOC_URL_ROOT: "https://sfdx-hardis.cloudity.com",
   WEBSITE_URL: "https://cloudity.com",
   CONTACT_URL: "https://cloudity.com/#form",

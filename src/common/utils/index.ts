@@ -14,7 +14,7 @@ const exec = util.promisify(child.exec);
 import { SfError } from '@salesforce/core';
 import ora from 'ora';
 import { simpleGit, FileStatusResult, SimpleGit } from 'simple-git';
-import { CONSTANTS, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
+import { CONSTANTS, getApiVersion, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import { encryptFile } from '../cryptoUtils.js';
 import { deployMetadatas, shortenLogLines } from './deployUtils.js';
@@ -1264,7 +1264,7 @@ export async function generateSSLCertificate(
     <members>${promptResponses.appName}</members>
     <name>ConnectedApp</name>
   </types>
-  <version>${CONSTANTS.API_VERSION}</version>
+  <version>${getApiVersion()}</version>
 </Package>
 `;
     // create metadata folder

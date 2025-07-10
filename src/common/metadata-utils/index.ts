@@ -15,7 +15,7 @@ import {
   sortCrossPlatform,
   uxLog,
 } from '../../common/utils/index.js';
-import { CONSTANTS } from '../../config/index.js';
+import { getApiVersion } from '../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { getCache, setCache } from '../cache/index.js';
 import { buildOrgManifest } from '../utils/deployUtils.js';
@@ -312,7 +312,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         removeNamespaces: namespaces,
         removeStandard: removeStandard,
         removeFromPackageXmlFile: packageXmlToRemove,
-        updateApiVersion: CONSTANTS.API_VERSION,
+        updateApiVersion: getApiVersion(),
       });
       uxLog(commandThis, filterNamespaceRes.message);
     }
@@ -320,7 +320,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     else if (fs.existsSync('./remove-items-package.xml')) {
       const filterNamespaceRes = await filterPackageXml(packageXml, packageXml, {
         removeFromPackageXmlFile: path.resolve('./remove-items-package.xml'),
-        updateApiVersion: CONSTANTS.API_VERSION,
+        updateApiVersion: getApiVersion(),
       });
       uxLog(commandThis, filterNamespaceRes.message);
     }

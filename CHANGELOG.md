@@ -8,7 +8,15 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - New command [hardis:org:refresh:restore:connectedapp](https://sfdx-hardis.cloudity.com/hardis/org/refresh/restore/connectedapp/) : Restore Connected Apps after refreshing a sandbox.
 
-## [5.43.3] 2025-06-25
+## [5.43.5] 2025-06-27
+
+- Filter WorkflowFlowAutomation from org-generated package.xml (workaround attempt for <https://github.com/forcedotcom/cli/issues/3324>)
+
+## [5.43.4] 2025-06-26
+
+- Fix use of org API version
+
+## [5.43.3] 2025-06-26
 
 - [hardis:project:audit:apiversion](https://sfdx-hardis.cloudity.com/hardis/project/audit/apiversion/): Add the newApiVersion parameter to specify the target version for the upgrade.
 

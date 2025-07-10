@@ -4,7 +4,7 @@ import * as path from 'path';
 import { execCommand, sortCrossPlatform, uxLog } from './index.js';
 import { glob } from 'glob';
 import { parseXmlFile } from './xmlUtils.js';
-import { CONSTANTS } from '../../config/index.js';
+import { getApiVersion } from '../../config/index.js';
 
 export const GLOB_IGNORE_PATTERNS = [
   '**/node_modules/**',
@@ -154,7 +154,7 @@ export function returnApexType(apexCode: string) {
 
 // Update only if found API version is inferior to the candidate API version (convert to number)
 export async function updateSfdxProjectApiVersion() {
-  const candidateApiVersion: string = CONSTANTS.API_VERSION;
+  const candidateApiVersion: string = getApiVersion();
   // Handle sfdx-project.json file
   const sfdxProjectFile = path.join(process.cwd(), 'sfdx-project.json');
   if (await fs.pathExists(sfdxProjectFile)) {

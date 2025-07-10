@@ -20,7 +20,7 @@ import {
   sortCrossPlatform,
   uxLog,
 } from './index.js';
-import { CONSTANTS, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
+import { getApiVersion, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { deployCodeCoverageToMarkdown } from '../gitProvider/utilsMarkdown.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
@@ -899,7 +899,7 @@ export async function deployDestructiveChanges(
     emptyPackageXmlFile,
     `<?xml version="1.0" encoding="UTF-8"?>
     <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-        <version>${CONSTANTS.API_VERSION}</version>
+        <version>${getApiVersion()}</version>
     </Package>`,
     'utf8'
   );
@@ -963,7 +963,7 @@ export async function deployMetadatas(
     ` --metadata-dir ${options.deployDir || '.'}` +
     ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
     ` --test-level ${options.testlevel || 'RunLocalTests'}` +
-    ` --api-version ${options.apiVersion || CONSTANTS.API_VERSION}` +
+    ` --api-version ${options.apiVersion || getApiVersion()}` +
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : '') +
     (options.debug ? ' --verbose' : '') +
     ' --json';
@@ -1129,7 +1129,7 @@ export async function buildOrgManifest(
   if (conn) {
     uxLog(this, c.grey('Looking for package.xml elements that are not returned by manifest create command...'));
     const mdTypes = [{ type: 'ListView' }, { type: 'CustomLabel' }];
-    const mdList = await conn.metadata.list(mdTypes, CONSTANTS.API_VERSION);
+    const mdList = await conn.metadata.list(mdTypes, getApiVersion());
     const parsedPackageXml = await parseXmlFile(packageXmlFull);
     for (const element of mdList) {
       const matchTypes = parsedPackageXml.Package.types.filter((type) => type.name[0] === element.type);
@@ -1189,9 +1189,18 @@ export async function buildOrgManifest(
     }
 
     // Delete stuff we don't want
-    parsedPackageXml.Package.types = parsedPackageXml.Package.types.filter(
-      (type) => !['CustomLabels'].includes(type.name[0])
-    );
+    const filteredTypes = [
+      'CustomLabels',
+      'WorkflowFlowAutomation' // Added as a workaround for https://github.com/forcedotcom/cli/issues/3324
+    ];
+    const typesToRemove = parsedPackageXml.Package.types.filter(type => filteredTypes.includes(type.name[0]));
+
+    if (typesToRemove.length > 0) {
+      uxLog(this, c.grey(`Force filtering out metadata types from org-generated package.xml: ${typesToRemove.map(type => type.name[0]).join(', ')}`));
+      parsedPackageXml.Package.types = parsedPackageXml.Package.types.filter(
+        (type) => !filteredTypes.includes(type.name[0])
+      );
+    }
     await writeXmlFile(packageXmlFull, parsedPackageXml);
   }
 
@@ -1215,7 +1224,7 @@ export async function createEmptyPackageXml(): Promise<string> {
     emptyPackageXmlPath,
     `<?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-    <version>${CONSTANTS.API_VERSION}</version>
+    <version>${getApiVersion()}</version>
 </Package>`,
     'utf8'
   );
