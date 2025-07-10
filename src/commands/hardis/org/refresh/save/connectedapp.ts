@@ -131,6 +131,7 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
   
   /**
    * Get Connected Apps based on name filter or by listing all from org
+   * This method always queries the org once and then filters as needed
    * @param orgUsername Target org username
    * @param nameFilter Optional name filter
    * @param processAll Whether to process all Connected Apps
@@ -141,6 +142,7 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     nameFilter: string | undefined,
     processAll: boolean
   ): Promise<ConnectedApp[]> {
+    // Set appropriate log message based on flags
     if (processAll) {
       uxLog(this, c.cyan('Processing all Connected Apps from org (selection prompt bypassed)'));
     } else if (nameFilter) {
@@ -149,30 +151,74 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       uxLog(this, c.cyan('Retrieving list of Connected Apps from org...'));
     }
     
-    if (nameFilter) {
-      const appNames = nameFilter.split(',').map(name => name.trim());
-      uxLog(this, c.cyan(`Directly processing specified Connected App(s): ${appNames.join(', ')}`));
-
-      const connectedApps = appNames.map(name => {
-        return {
-          fullName: name,
-          fileName: name,
-          type: 'ConnectedApp'
-        };
-      });
-      
-      return connectedApps;
-    }
-    
-    // If no name filter, list all Connected Apps from the org
+    // Always query the org to get all available Connected Apps
     const command = `sf org list metadata --metadata-type ConnectedApp --target-org ${orgUsername}`;
     const result = await execSfdxJson(command, this, { output: true });
     
-    if (!result || !result.result || !Array.isArray(result.result) || result.result.length === 0) {
+    const availableApps: ConnectedApp[] = result?.result && Array.isArray(result.result) ? result.result : [];
+    
+    if (availableApps.length === 0) {
+      uxLog(this, c.yellow('No Connected Apps were found in the org.'));
       return [];
     }
     
-    return result.result;
+    const availableAppNames = availableApps.map(app => app.fullName);
+    uxLog(this, c.grey(`Found ${availableApps.length} Connected App(s) in the org`));
+    
+    // If name filter is provided, validate and filter the requested apps
+    if (nameFilter) {
+      const appNames = nameFilter.split(',').map(name => name.trim());
+      uxLog(this, c.cyan(`Validating specified Connected App(s): ${appNames.join(', ')}`));
+      
+      // Check if all specified apps exist in the org
+      const missingApps = appNames.filter(name => 
+        !availableAppNames.some(availableName => 
+          availableName.toLowerCase() === name.toLowerCase()
+        )
+      );
+      
+      if (missingApps.length > 0) {
+        const errorMsg = `The following Connected App(s) could not be found in the org: ${missingApps.join(', ')}`;
+        uxLog(this, c.red(errorMsg));
+        
+        // Suggest possible corrections if available apps exist
+        if (availableAppNames.length > 0) {
+          uxLog(this, c.yellow('Available Connected Apps in the org:'));
+          availableAppNames.forEach(name => {
+            uxLog(this, c.grey(`  - ${name}`));
+          });
+          
+          // Try to suggest similar names to help the user
+          missingApps.forEach(missingApp => {
+            const similarNames = availableAppNames
+              .filter(name => name.toLowerCase().includes(missingApp.toLowerCase()) || 
+                              missingApp.toLowerCase().includes(name.toLowerCase()))
+              .slice(0, 3);
+              
+            if (similarNames.length > 0) {
+              uxLog(this, c.yellow(`Did you mean one of these instead of "${missingApp}"?`));
+              similarNames.forEach(name => {
+                uxLog(this, c.grey(`  - ${name}`));
+              });
+            }
+          });
+        }
+        
+        uxLog(this, c.yellow('Please check the app name(s) and try again.'));
+        throw new Error(errorMsg);
+      }
+      
+      // Filter available apps to only include the ones specified in the name filter (case-insensitive)
+      const connectedApps = availableApps.filter(app => 
+        appNames.some(name => name.toLowerCase() === app.fullName.toLowerCase())
+      );
+      
+      uxLog(this, c.green(`Successfully validated ${connectedApps.length} Connected App(s) in the org`));
+      return connectedApps;
+    }
+    
+    // If no name filter, return all available apps
+    return availableApps;
   }
   
   /**
@@ -300,7 +346,56 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     connectedApps: ConnectedApp[]
   ): Promise<void> {
     uxLog(this, c.cyan(`Retrieving ${connectedApps.length} Connected App(s)...`));
+    
+    // Retrieve the Connected Apps
     await retrieveConnectedApps(orgUsername, connectedApps, this);
+    
+    // Verify that all Connected Apps were retrieved successfully
+    this.verifyConnectedAppsRetrieval(connectedApps);
+  }
+  
+  /**
+   * Verify that all requested Connected Apps were properly retrieved
+   * This adds an extra validation step after retrieval to ensure everything worked as expected
+   * @param connectedApps List of Connected Apps that were requested
+   * @returns void
+   * @throws Error if any Connected Apps were not retrieved
+   */
+  private verifyConnectedAppsRetrieval(connectedApps: ConnectedApp[]): void {
+    if (connectedApps.length === 0) return;
+    
+    // Check if the Connected App files exist in the project
+    const missingApps: string[] = [];
+    
+    for (const app of connectedApps) {
+      // Try to find the app in the standard location
+      const appPath = `force-app/main/default/connectedApps/${app.fullName}.connectedApp-meta.xml`;
+      
+      if (!fs.existsSync(appPath)) {
+        // Also check in alternative locations where it might have been retrieved
+        const altPaths = [
+          `force-app/main/default/connectedApps/${app.fileName}.connectedApp-meta.xml`,
+          `force-app/main/default/connectedApps/${app.fullName.replace(/\s/g, '_')}.connectedApp-meta.xml`
+        ];
+        
+        const found = altPaths.some(path => fs.existsSync(path));
+        if (!found) {
+          missingApps.push(app.fullName);
+        }
+      }
+    }
+    
+    // If any apps are missing, throw an error
+    if (missingApps.length > 0) {
+      const errorMsg = `Failed to retrieve the following Connected App(s): ${missingApps.join(', ')}`;
+      uxLog(this, c.red(errorMsg));
+      uxLog(this, c.yellow('This could be due to:'));
+      uxLog(this, c.grey('  - Temporary Salesforce API issues'));
+      uxLog(this, c.grey('  - Permissions or profile issues in the org'));
+      uxLog(this, c.grey('  - Connected Apps that exist but are not accessible'));
+      uxLog(this, c.yellow('Please try again or check your permissions in the org.'));
+      throw new Error(errorMsg);
+    }
   }
   
   /**
@@ -384,7 +479,6 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
    * @param connectedAppIdMap Map of app names to IDs
    * @param browserContext Browser context (if available)
    * @param instanceUrl Salesforce instance URL
-   * @param updatedApps Array of already updated apps
    * @returns Updated Connected App or undefined if processing failed
    */
   /**
@@ -576,9 +670,9 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
   }
   
   /**
-   * Find Connected App file in the project
-   * @param appName Name of the Connected App
-   * @returns Path to the Connected App file or null if not found
+   * Find a Connected App file in the project with robust error handling
+   * @param appName Connected App name to find
+   * @returns File path if found, null if not found
    */
   private async findConnectedAppFile(appName: string): Promise<string | null> {
     uxLog(this, c.cyan(`Searching for Connected App: ${appName}`));
@@ -593,6 +687,20 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
         return exactMatches[0];
       }
       
+      // Try standard locations with possible name variations
+      const possiblePaths = [
+        `force-app/main/default/connectedApps/${appName}.connectedApp-meta.xml`,
+        `force-app/main/default/connectedApps/${appName.replace(/\s/g, '_')}.connectedApp-meta.xml`,
+        `force-app/main/default/connectedApps/${appName.replace(/\s/g, '')}.connectedApp-meta.xml`
+      ];
+      
+      for (const potentialPath of possiblePaths) {
+        if (fs.existsSync(potentialPath)) {
+          uxLog(this, c.green(`✓ Found Connected App at standard path: ${potentialPath}`));
+          return potentialPath;
+        }
+      }
+      
       // If no exact match, try case-insensitive search by getting all ConnectedApp files
       uxLog(this, c.yellow(`No exact match found, trying case-insensitive search...`));
       const allConnectedAppFiles = await glob('**/*.connectedApp-meta.xml', { ignore: GLOB_IGNORE_PATTERNS });
@@ -603,9 +711,12 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       }
       
       // Find a case-insensitive match
-      const caseInsensitiveMatch = allConnectedAppFiles.find(file => 
-        path.basename(file).toLowerCase() === `${appName.toLowerCase()}.connectedapp-meta.xml`
-      );
+      const caseInsensitiveMatch = allConnectedAppFiles.find(file => {
+        const baseName = path.basename(file, '.connectedApp-meta.xml');
+        return baseName.toLowerCase() === appName.toLowerCase() || 
+               baseName.toLowerCase() === appName.toLowerCase().replace(/\s/g, '_') ||
+               baseName.toLowerCase() === appName.toLowerCase().replace(/\s/g, '');
+      });
       
       if (caseInsensitiveMatch) {
         uxLog(this, c.green(`✓ Found case-insensitive match: ${caseInsensitiveMatch}`));
@@ -614,16 +725,17 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       
       // If still not found, list available Connected Apps
       uxLog(this, c.red(`✗ Could not find Connected App "${appName}"`));
-      uxLog(this, c.yellow(`Available Connected Apps in the project:`));
+      uxLog(this, c.yellow('Available Connected Apps:'));
       allConnectedAppFiles.forEach(file => {
-        uxLog(this, c.grey(`  - ${path.basename(file, '.connectedApp-meta.xml')}`));
+        const baseName = path.basename(file, '.connectedApp-meta.xml');
+        uxLog(this, c.grey(`  - ${baseName}`));
       });
       
+      return null;
     } catch (error) {
-      uxLog(this, c.red(`Error searching for Connected App files: ${error}`));
+      uxLog(this, c.red(`Error searching for Connected App: ${error}`));
+      return null;
     }
-    
-    return null;
   }
   
   /**

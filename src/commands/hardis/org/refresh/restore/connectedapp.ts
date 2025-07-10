@@ -101,6 +101,7 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
   
   /**
    * Find Connected Apps in the project, optionally filtered by name
+   * This method optimizes file scanning and performs robust validation
    * @param nameFilter Optional filter for app names
    * @param processAll Whether to process all Connected Apps
    * @returns Array of Connected Apps found in the project
@@ -118,42 +119,111 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
     }
     
     try {
-      // Get all Connected App files in the project
+      // Get all Connected App files in the project once
       const connectedAppFiles = await glob('**/*.connectedApp-meta.xml', { 
         ignore: GLOB_IGNORE_PATTERNS,
         cwd: process.cwd()
       });
       
       if (connectedAppFiles.length === 0) {
+        uxLog(this, c.yellow('No Connected App files found in the project'));
         return [];
       }
       
+      uxLog(this, c.grey(`Found ${connectedAppFiles.length} Connected App files in the project`));
+      
       // Create ConnectedApp objects from the files
       const connectedApps: ProjectConnectedApp[] = [];
+      const allFoundApps: { fullName: string; filePath: string }[] = [];
+      
+      // First, collect all available Connected Apps in the project in one pass
       for (const filePath of connectedAppFiles) {
         try {
           const xmlData = await parseXmlFile(filePath);
           if (xmlData && xmlData.ConnectedApp) {
-            // Get the name from the fullName property in the XML or from the filename
             const fullName = xmlData.ConnectedApp.fullName?.[0] || path.basename(filePath, '.connectedApp-meta.xml');
-            
-            // Filter by name if specified (skip this check when --all is used as nameFilter will be undefined)
-            if (nameFilter) {
-              const appNames = nameFilter.split(',').map(name => name.trim());
-              if (!appNames.some(name => name.toLowerCase() === fullName.toLowerCase())) {
-                continue;
-              }
-            }
-            
-            connectedApps.push({
-              fullName: fullName,
-              filePath: filePath,
-              type: 'ConnectedApp'
-            });
+            allFoundApps.push({ fullName, filePath });
           }
         } catch (error) {
           uxLog(this, c.yellow(`Error parsing ${filePath}: ${error}`));
           // Continue with the next file
+        }
+      }
+      
+      if (allFoundApps.length === 0) {
+        uxLog(this, c.yellow('No valid Connected Apps found in the project'));
+        return [];
+      }
+      
+      // If name filter is specified, validate that all requested apps exist
+      if (nameFilter) {
+        const appNames = nameFilter.split(',').map(name => name.trim());
+        const availableAppNames = allFoundApps.map(app => app.fullName);
+        
+        // Case-insensitive matching for app names
+        const missingApps = appNames.filter(name => 
+          !availableAppNames.some(availableName => 
+            availableName.toLowerCase() === name.toLowerCase()
+          )
+        );
+        
+        // If any specified apps are missing, show error and exit
+        if (missingApps.length > 0) {
+          const errorMsg = `The following Connected App(s) could not be found in the project: ${missingApps.join(', ')}`;
+          uxLog(this, c.red(errorMsg));
+          
+          if (availableAppNames.length > 0) {
+            uxLog(this, c.yellow('Available Connected Apps in the project:'));
+            availableAppNames.forEach(name => {
+              uxLog(this, c.grey(`  - ${name}`));
+            });
+            
+            // Suggest similar names to help the user
+            missingApps.forEach(missingApp => {
+              const similarNames = availableAppNames
+                .filter(name => 
+                  name.toLowerCase().includes(missingApp.toLowerCase()) || 
+                  missingApp.toLowerCase().includes(name.toLowerCase())
+                )
+                .slice(0, 3);
+                
+              if (similarNames.length > 0) {
+                uxLog(this, c.yellow(`Did you mean one of these instead of "${missingApp}"?`));
+                similarNames.forEach(name => {
+                  uxLog(this, c.grey(`  - ${name}`));
+                });
+              }
+            });
+          } else {
+            uxLog(this, c.yellow('No Connected Apps were found in the project.'));
+          }
+          
+          uxLog(this, c.yellow('Please check the app name(s) and try again.'));
+          throw new Error(errorMsg);
+        }
+        
+        // Filter apps based on name filter
+        for (const app of allFoundApps) {
+          const matchesFilter = appNames.some(name => 
+            name.toLowerCase() === app.fullName.toLowerCase()
+          );
+          
+          if (matchesFilter) {
+            connectedApps.push({
+              fullName: app.fullName,
+              filePath: app.filePath,
+              type: 'ConnectedApp'
+            });
+          }
+        }
+      } else {
+        // No filter - add all apps
+        for (const app of allFoundApps) {
+          connectedApps.push({
+            fullName: app.fullName,
+            filePath: app.filePath,
+            type: 'ConnectedApp'
+          });
         }
       }
       
@@ -163,6 +233,8 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
         connectedApps.forEach(app => {
           uxLog(this, `${c.green(app.fullName)} (${app.filePath})`);
         });
+      } else if (nameFilter) {
+        uxLog(this, c.yellow(`No Connected Apps matching the filter "${nameFilter}" found in the project`));
       }
       
       return connectedApps;
