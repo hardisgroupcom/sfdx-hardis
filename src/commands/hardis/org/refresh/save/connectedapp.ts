@@ -2,22 +2,20 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import fs from 'fs-extra';
-import * as path from 'path';
 import c from 'chalk';
 import open from 'open';
-import { glob } from 'glob';
 import { execSync } from 'child_process';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
-import * as chromeLauncher from 'chrome-launcher';
 import { execSfdxJson, uxLog } from '../../../../../common/utils/index.js';
 import { prompts } from '../../../../../common/utils/prompts.js';
 import { parseXmlFile } from '../../../../../common/utils/xmlUtils.js';
-import { GLOB_IGNORE_PATTERNS } from '../../../../../common/utils/projectUtils.js';
+import { getChromeExecutablePath } from '../../../../../common/utils/orgConfigUtils.js';
 import { 
   deleteConnectedApps, 
   retrieveConnectedApps,
   validateConnectedApps,
-  promptForConnectedAppSelection
+  promptForConnectedAppSelection,
+  findConnectedAppFile
 } from '../../../../../common/utils/refresh/orgRefreshUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -401,14 +399,8 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     instanceUrl: string, 
     accessToken: string
   ): Promise<BrowserContext> {
-    // Get chrome/chromium executable path
-    let chromeExecutablePath = process.env?.PUPPETEER_EXECUTABLE_PATH || "";
-    if (chromeExecutablePath === "" || !fs.existsSync(chromeExecutablePath)) {
-      const chromePaths = chromeLauncher.Launcher.getInstallations();
-      if (chromePaths && chromePaths.length > 0) {
-        chromeExecutablePath = chromePaths[0];
-      }
-    }
+    // Get chrome/chromium executable path using shared utility
+    const chromeExecutablePath = getChromeExecutablePath();
     uxLog(this, c.cyan(`chromeExecutablePath: ${chromeExecutablePath}`));
     
     const browser = await puppeteer.launch({
@@ -449,7 +441,7 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     browserContext: BrowserContext | null,
     instanceUrl: string
   ): Promise<ConnectedApp | undefined> {
-    const connectedAppFile = await this.findConnectedAppFile(app.fullName);
+    const connectedAppFile = await findConnectedAppFile(app.fullName, this);
     
     if (!connectedAppFile) {
       uxLog(this, c.yellow(`Connected App file not found for ${app.fullName}`));
@@ -623,74 +615,7 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     }
   }
   
-  /**
-   * Find a Connected App file in the project with robust error handling
-   * @param appName Connected App name to find
-   * @returns File path if found, null if not found
-   */
-  private async findConnectedAppFile(appName: string): Promise<string | null> {
-    uxLog(this, c.cyan(`Searching for Connected App: ${appName}`));
-    
-    try {
-      // First, try an exact case-sensitive match
-      const exactPattern = `**/${appName}.connectedApp-meta.xml`;
-      const exactMatches = await glob(exactPattern, { ignore: GLOB_IGNORE_PATTERNS });
-      
-      if (exactMatches.length > 0) {
-        uxLog(this, c.green(`✓ Found Connected App: ${exactMatches[0]}`));
-        return exactMatches[0];
-      }
-      
-      // Try standard locations with possible name variations
-      const possiblePaths = [
-        `force-app/main/default/connectedApps/${appName}.connectedApp-meta.xml`,
-        `force-app/main/default/connectedApps/${appName.replace(/\s/g, '_')}.connectedApp-meta.xml`,
-        `force-app/main/default/connectedApps/${appName.replace(/\s/g, '')}.connectedApp-meta.xml`
-      ];
-      
-      for (const potentialPath of possiblePaths) {
-        if (fs.existsSync(potentialPath)) {
-          uxLog(this, c.green(`✓ Found Connected App at standard path: ${potentialPath}`));
-          return potentialPath;
-        }
-      }
-      
-      // If no exact match, try case-insensitive search by getting all ConnectedApp files
-      uxLog(this, c.yellow(`No exact match found, trying case-insensitive search...`));
-      const allConnectedAppFiles = await glob('**/*.connectedApp-meta.xml', { ignore: GLOB_IGNORE_PATTERNS });
-      
-      if (allConnectedAppFiles.length === 0) {
-        uxLog(this, c.red(`No Connected App files found in the project.`));
-        return null;
-      }
-      
-      // Find a case-insensitive match
-      const caseInsensitiveMatch = allConnectedAppFiles.find(file => {
-        const baseName = path.basename(file, '.connectedApp-meta.xml');
-        return baseName.toLowerCase() === appName.toLowerCase() || 
-               baseName.toLowerCase() === appName.toLowerCase().replace(/\s/g, '_') ||
-               baseName.toLowerCase() === appName.toLowerCase().replace(/\s/g, '');
-      });
-      
-      if (caseInsensitiveMatch) {
-        uxLog(this, c.green(`✓ Found case-insensitive match: ${caseInsensitiveMatch}`));
-        return caseInsensitiveMatch;
-      }
-      
-      // If still not found, list available Connected Apps
-      uxLog(this, c.red(`✗ Could not find Connected App "${appName}"`));
-      uxLog(this, c.yellow('Available Connected Apps:'));
-      allConnectedAppFiles.forEach(file => {
-        const baseName = path.basename(file, '.connectedApp-meta.xml');
-        uxLog(this, c.grey(`  - ${baseName}`));
-      });
-      
-      return null;
-    } catch (error) {
-      uxLog(this, c.red(`Error searching for Connected App: ${error}`));
-      return null;
-    }
-  }
+  // Removed duplicated findConnectedAppFile method - now using the shared utility function from orgRefreshUtils.js
   
   /**
    * Update Connected App XML file with Consumer Secret

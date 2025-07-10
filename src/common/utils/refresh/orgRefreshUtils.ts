@@ -1,11 +1,13 @@
 import fs from 'fs-extra';
 import * as path from 'path';
 import c from 'chalk';
+import { glob } from 'glob';
 import { execCommand, createTempDir, uxLog } from '../index.js';
 import { writeXmlFile } from '../xmlUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
 import { prompts } from '../prompts.js';
+import { GLOB_IGNORE_PATTERNS } from '../projectUtils.js';
 
 // Define interface for Connected App metadata
 export interface ConnectedApp {
@@ -108,7 +110,7 @@ export async function withConnectedAppIgnoreHandling<T>(
 }
 
 /**
- * Delete Connected Apps from the org using destructive changes deployment
+ * Delete Connected Apps from org using destructive changes
  * @param orgUsername - Username of the target org
  * @param connectedApps - Array of ConnectedApp objects to delete
  * @param command - Command context for logging
@@ -126,41 +128,48 @@ export async function deleteConnectedApps(
     return;
   }
   
-  // Create a destructive changes XML file
-  const tmpDir = await createTempDir();
-  const destructiveChangesXmlPath = path.join(tmpDir, 'destructiveChanges.xml');
-  const packageXmlPath = path.join(tmpDir, 'package.xml');
-  
-  // Generate destructiveChanges.xml using the Connected App Package XML generator
-  const destructiveChangesXml = generateConnectedAppPackageXml(connectedApps);
-  
-  // Generate empty package.xml required for deployment
-  const packageXml = generateEmptyPackageXml();
-  
-  await writeXmlFile(destructiveChangesXmlPath, destructiveChangesXml);
-  await writeXmlFile(packageXmlPath, packageXml);
-  
-  // Display the XML content for destructive changes
-  const destructiveXmlContent = await fs.readFile(destructiveChangesXmlPath, 'utf8');
-  uxLog(command, c.cyan(`Destructive Changes XML for deleting ${connectedApps.length} Connected App(s):`));
-  uxLog(command, c.yellow('----------------------------------------'));
-  uxLog(command, destructiveXmlContent);
-  uxLog(command, c.yellow('----------------------------------------'));
-  
-  // Display the XML content for the empty package.xml
-  const packageXmlContent = await fs.readFile(packageXmlPath, 'utf8');
-  uxLog(command, c.cyan('Empty Package.xml for deployment:'));
-  uxLog(command, c.yellow('----------------------------------------'));
-  uxLog(command, packageXmlContent);
-  uxLog(command, c.yellow('----------------------------------------'));
-  
-  // Deploy the destructive changes
-  uxLog(command, c.cyan(`Deleting ${connectedApps.length} Connected App(s) from org...`));
-  await execCommand(
-    `sf project deploy start --manifest ${packageXmlPath} --post-destructive-changes ${destructiveChangesXmlPath} --target-org ${orgUsername} --ignore-warnings --ignore-conflicts --json`,
-    command,
-    { output: true, fail: true }
-  );
+  // Use withConnectedAppIgnoreHandling to handle .forceignore modifications
+  await withConnectedAppIgnoreHandling(async () => {
+    // Create a destructive changes XML file
+    const tmpDir = await createTempDir();
+    const destructiveChangesXmlPath = path.join(tmpDir, 'destructiveChanges.xml');
+    const packageXmlPath = path.join(tmpDir, 'package.xml');
+    
+    // Generate destructiveChanges.xml using the Connected App Package XML generator
+    const destructiveChangesXml = generateConnectedAppPackageXml(connectedApps);
+    
+    // Generate empty package.xml required for deployment
+    const packageXml = generateEmptyPackageXml();
+    
+    await writeXmlFile(destructiveChangesXmlPath, destructiveChangesXml);
+    await writeXmlFile(packageXmlPath, packageXml);
+    
+    // Display the XML content for destructive changes
+    const destructiveXmlContent = await fs.readFile(destructiveChangesXmlPath, 'utf8');
+    uxLog(command, c.cyan(`Destructive Changes XML for deleting ${connectedApps.length} Connected App(s):`));
+    uxLog(command, c.yellow('----------------------------------------'));
+    uxLog(command, destructiveXmlContent);
+    uxLog(command, c.yellow('----------------------------------------'));
+    
+    // Display the XML content for the empty package.xml
+    const packageXmlContent = await fs.readFile(packageXmlPath, 'utf8');
+    uxLog(command, c.cyan('Empty Package.xml for deployment:'));
+    uxLog(command, c.yellow('----------------------------------------'));
+    uxLog(command, packageXmlContent);
+    uxLog(command, c.yellow('----------------------------------------'));
+    
+    // Deploy the destructive changes
+    uxLog(command, c.cyan(`Deleting ${connectedApps.length} Connected App(s) from org...`));
+    await execCommand(
+      `sf project deploy start --manifest ${packageXmlPath} --post-destructive-changes ${destructiveChangesXmlPath} --target-org ${orgUsername} --ignore-warnings --ignore-conflicts --json`,
+      command,
+      { output: true, fail: true }
+    );
+    
+    // Clean up
+    await fs.remove(tmpDir);
+    uxLog(command, c.grey('Removed temporary deployment files'));
+  }, command);
 }
 
 /**
@@ -463,3 +472,79 @@ export async function promptForConnectedAppSelection<T extends { fullName: strin
   uxLog(command, c.cyan(`Processing ${selectedApps.length} Connected App(s)`));
   return selectedApps;
 }
+
+/**
+ * Find Connected App file in the project by app name
+ * @param appName - Name of the Connected App to find
+ * @param command - Command context for logging
+ * @returns Promise<string | null> - Path to the Connected App file or null if not found
+ */
+export async function findConnectedAppFile(
+  appName: string, 
+  command: SfCommand<any>
+): Promise<string | null> {
+  uxLog(command, c.cyan(`Searching for Connected App: ${appName}`));
+  
+  try {
+    // First, try an exact case-sensitive match
+    const exactPattern = `**/${appName}.connectedApp-meta.xml`;
+    const exactMatches = await glob(exactPattern, { ignore: GLOB_IGNORE_PATTERNS });
+    
+    if (exactMatches.length > 0) {
+      uxLog(command, c.green(`✓ Found Connected App: ${exactMatches[0]}`));
+      return exactMatches[0];
+    }
+    
+    // Try standard locations with possible name variations
+    const possiblePaths = [
+      `force-app/main/default/connectedApps/${appName}.connectedApp-meta.xml`,
+      `force-app/main/default/connectedApps/${appName.replace(/\s/g, '_')}.connectedApp-meta.xml`,
+      `force-app/main/default/connectedApps/${appName.replace(/\s/g, '')}.connectedApp-meta.xml`
+    ];
+    
+    for (const potentialPath of possiblePaths) {
+      if (fs.existsSync(potentialPath)) {
+        uxLog(command, c.green(`✓ Found Connected App at standard path: ${potentialPath}`));
+        return potentialPath;
+      }
+    }
+    
+    // If no exact match, try case-insensitive search by getting all ConnectedApp files
+    uxLog(command, c.yellow(`No exact match found, trying case-insensitive search...`));
+    const allConnectedAppFiles = await glob('**/*.connectedApp-meta.xml', { ignore: GLOB_IGNORE_PATTERNS });
+    
+    if (allConnectedAppFiles.length === 0) {
+      uxLog(command, c.red(`No Connected App files found in the project.`));
+      return null;
+    }
+    
+    // Find a case-insensitive match
+    const caseInsensitiveMatch = allConnectedAppFiles.find(file => {
+      const baseName = path.basename(file, '.connectedApp-meta.xml');
+      return baseName.toLowerCase() === appName.toLowerCase() || 
+             baseName.toLowerCase() === appName.toLowerCase().replace(/\s/g, '_') ||
+             baseName.toLowerCase() === appName.toLowerCase().replace(/\s/g, '');
+    });
+    
+    if (caseInsensitiveMatch) {
+      uxLog(command, c.green(`✓ Found case-insensitive match: ${caseInsensitiveMatch}`));
+      return caseInsensitiveMatch;
+    }
+    
+    // If still not found, list available Connected Apps
+    uxLog(command, c.red(`✗ Could not find Connected App "${appName}"`));
+    uxLog(command, c.yellow('Available Connected Apps:'));
+    allConnectedAppFiles.forEach(file => {
+      const baseName = path.basename(file, '.connectedApp-meta.xml');
+      uxLog(command, c.grey(`  - ${baseName}`));
+    });
+    
+    return null;
+  } catch (error) {
+    uxLog(command, c.red(`Error searching for Connected App: ${error}`));
+    return null;
+  }
+}
+
+// Note: We don't need to create a separate utility function since the existing createConnectedAppManifest
+// and withConnectedAppIgnoreHandling functions already handle this functionality efficiently.
