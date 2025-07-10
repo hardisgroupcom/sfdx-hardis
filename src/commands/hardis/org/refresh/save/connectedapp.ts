@@ -15,7 +15,9 @@ import {
   retrieveConnectedApps,
   validateConnectedApps,
   findConnectedAppFile,
-  selectConnectedAppsForProcessing
+  selectConnectedAppsForProcessing,
+  createConnectedAppSuccessResponse,
+  handleConnectedAppError
 } from '../../../../../common/utils/refresh/connectedAppUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -119,16 +121,16 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
         uxLog(this, c.green(`Summary: Successfully updated ${updatedApps.length} Connected App(s) with their Consumer Secrets`));
       }
       
-      return {
-        success: true, 
-        message: `Successfully processed ${updatedApps.length} Connected App(s)`,
-        connectedAppsProcessed: updatedApps.map(app => app.fullName),
-        consumerSecretsAdded: updatedApps.map(app => app.consumerSecret ? app.fullName : null).filter(Boolean)
-      };
+      return createConnectedAppSuccessResponse(
+        `Successfully processed ${updatedApps.length} Connected App(s)`,
+        updatedApps.map(app => app.fullName),
+        {
+          consumerSecretsAdded: updatedApps.map(app => app.consumerSecret ? app.fullName : null).filter(Boolean)
+        }
+      );
       
     } catch (error: any) {
-      uxLog(this, c.red(`Error: ${error.message || JSON.stringify(error)}`));
-      return { success: false, error: error.message || error };
+      return handleConnectedAppError(error, this);
     }
   }
 

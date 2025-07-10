@@ -522,3 +522,25 @@ export async function performConnectedAppOperationWithManifest(
     uxLog(command, c.grey('Removed temporary manifest file'));
   }, command);
 }
+
+export function createConnectedAppSuccessResponse(
+  message: string,
+  processedApps: string[],
+  additionalData: Record<string, any> = {}
+): { success: true; message: string; connectedAppsProcessed: string[] } & Record<string, any> {
+  return {
+    success: true,
+    message,
+    connectedAppsProcessed: processedApps,
+    ...additionalData
+  };
+}
+
+export function handleConnectedAppError(
+  error: any,
+  command: SfCommand<any>
+): { success: false; error: string } {
+  const errorMessage = error.message || JSON.stringify(error);
+  uxLog(command, c.red(`Error: ${errorMessage}`));
+  return { success: false, error: errorMessage };
+}

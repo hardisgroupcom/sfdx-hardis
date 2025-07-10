@@ -12,7 +12,9 @@ import {
   deployConnectedApps, 
   toConnectedAppFormat,
   validateConnectedApps,
-  selectConnectedAppsForProcessing
+  selectConnectedAppsForProcessing,
+  createConnectedAppSuccessResponse,
+  handleConnectedAppError
 } from '../../../../../common/utils/refresh/connectedAppUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -93,14 +95,12 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
       
       // Return the result
       uxLog(this, c.green(`Successfully restored ${selectedApps.length} Connected App(s) to the org`));
-      return {
-        success: true, 
-        message: `Successfully restored ${selectedApps.length} Connected App(s) to the org`,
-        connectedAppsProcessed: selectedApps.map(app => app.fullName)
-      };
+      return createConnectedAppSuccessResponse(
+        `Successfully restored ${selectedApps.length} Connected App(s) to the org`,
+        selectedApps.map(app => app.fullName)
+      );
     } catch (error: any) {
-      uxLog(this, c.red(`Error: ${error.message || JSON.stringify(error)}`));
-      return { success: false, error: error.message || error };
+      return handleConnectedAppError(error, this);
     }
   }
   
