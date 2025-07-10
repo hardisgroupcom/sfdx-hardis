@@ -14,8 +14,8 @@ import {
   deleteConnectedApps, 
   retrieveConnectedApps,
   validateConnectedApps,
-  promptForConnectedAppSelection,
-  findConnectedAppFile
+  findConnectedAppFile,
+  selectConnectedAppsForProcessing
 } from '../../../../../common/utils/refresh/orgRefreshUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -199,19 +199,10 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
     processAll: boolean, 
     nameFilter: string | undefined
   ): Promise<ConnectedApp[]> {
-    uxLog(this, c.cyan(`Found ${connectedApps.length} Connected App(s) from org`));
-    connectedApps.forEach(app => {
-      uxLog(this, `${c.green(app.fullName)} (${app.fileName})`);
-    });
-    
-    if (processAll || nameFilter) {
-      const selectionReason = processAll ? 'all flag' : 'name filter';
-      uxLog(this, c.cyan(`Processing ${connectedApps.length} Connected App(s) based on ${selectionReason}`));
-      return connectedApps;
-    } 
-
-    return await promptForConnectedAppSelection(
+    return selectConnectedAppsForProcessing(
       connectedApps,
+      processAll,
+      nameFilter,
       'Select Connected Apps to save:',
       this
     );

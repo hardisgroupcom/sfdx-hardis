@@ -12,7 +12,7 @@ import {
   deployConnectedApps, 
   toConnectedAppFormat,
   validateConnectedApps,
-  promptForConnectedAppSelection
+  selectConnectedAppsForProcessing
 } from '../../../../../common/utils/refresh/orgRefreshUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -222,15 +222,10 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
     processAll: boolean,
     nameFilter?: string
   ): Promise<ProjectConnectedApp[]> {
-    // If all flag or name is provided, use all connected apps from the list without prompting
-    if (processAll || nameFilter) {
-      const selectionReason = processAll ? 'all flag' : 'name filter';
-      uxLog(this, c.cyan(`Processing ${connectedApps.length} Connected App(s) based on ${selectionReason}`));
-      return connectedApps;
-    }
-    
-    return await promptForConnectedAppSelection<ProjectConnectedApp>(
+    return selectConnectedAppsForProcessing(
       connectedApps,
+      processAll,
+      nameFilter,
       'Select Connected Apps to restore:',
       this
     );

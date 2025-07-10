@@ -110,6 +110,47 @@ export async function withConnectedAppIgnoreHandling<T>(
 }
 
 /**
+ * Create a destructive changes manifest for Connected Apps
+ * @param connectedApps - Array of ConnectedApp objects
+ * @param command - Command context for logging
+ * @returns Promise with paths to the manifest files and temp directory
+ */
+export async function createDestructiveChangesManifest(
+  connectedApps: ConnectedApp[],
+  command: SfCommand<any>
+): Promise<{ destructiveChangesPath: string; packageXmlPath: string; tmpDir: string }> {
+  // Create a temporary directory for the manifest
+  const tmpDir = await createTempDir();
+  const destructiveChangesPath = path.join(tmpDir, 'destructiveChanges.xml');
+  const packageXmlPath = path.join(tmpDir, 'package.xml');
+  
+  // Generate destructiveChanges.xml using the Connected App Package XML generator
+  const destructiveChangesXml = generateConnectedAppPackageXml(connectedApps);
+  
+  // Generate empty package.xml required for deployment
+  const packageXml = generateEmptyPackageXml();
+  
+  await writeXmlFile(destructiveChangesPath, destructiveChangesXml);
+  await writeXmlFile(packageXmlPath, packageXml);
+  
+  // Display the XML content for destructive changes
+  const destructiveXmlContent = await fs.readFile(destructiveChangesPath, 'utf8');
+  uxLog(command, c.cyan(`Destructive Changes XML for deleting ${connectedApps.length} Connected App(s):`));
+  uxLog(command, c.yellow('----------------------------------------'));
+  uxLog(command, destructiveXmlContent);
+  uxLog(command, c.yellow('----------------------------------------'));
+  
+  // Display the XML content for the empty package.xml
+  const packageXmlContent = await fs.readFile(packageXmlPath, 'utf8');
+  uxLog(command, c.cyan('Empty Package.xml for deployment:'));
+  uxLog(command, c.yellow('----------------------------------------'));
+  uxLog(command, packageXmlContent);
+  uxLog(command, c.yellow('----------------------------------------'));
+  
+  return { destructiveChangesPath, packageXmlPath, tmpDir };
+}
+
+/**
  * Delete Connected Apps from org using destructive changes
  * @param orgUsername - Username of the target org
  * @param connectedApps - Array of ConnectedApp objects to delete
@@ -121,55 +162,32 @@ export async function deleteConnectedApps(
   connectedApps: ConnectedApp[],
   command: SfCommand<any>
 ): Promise<void> {
-  try {
-    validateConnectedAppParams(orgUsername, connectedApps);
-  } catch (error: any) {
-    uxLog(command, c.yellow(`Skipping delete operation: ${error.message}`));
-    return;
-  }
-  
-  // Use withConnectedAppIgnoreHandling to handle .forceignore modifications
-  await withConnectedAppIgnoreHandling(async () => {
-    // Create a destructive changes XML file
-    const tmpDir = await createTempDir();
-    const destructiveChangesXmlPath = path.join(tmpDir, 'destructiveChanges.xml');
-    const packageXmlPath = path.join(tmpDir, 'package.xml');
+  await withConnectedAppValidation(orgUsername, connectedApps, command, 'delete', async () => {
+    if (!orgUsername) return; // This should never happen due to validation, but TypeScript needs it
     
-    // Generate destructiveChanges.xml using the Connected App Package XML generator
-    const destructiveChangesXml = generateConnectedAppPackageXml(connectedApps);
-    
-    // Generate empty package.xml required for deployment
-    const packageXml = generateEmptyPackageXml();
-    
-    await writeXmlFile(destructiveChangesXmlPath, destructiveChangesXml);
-    await writeXmlFile(packageXmlPath, packageXml);
-    
-    // Display the XML content for destructive changes
-    const destructiveXmlContent = await fs.readFile(destructiveChangesXmlPath, 'utf8');
-    uxLog(command, c.cyan(`Destructive Changes XML for deleting ${connectedApps.length} Connected App(s):`));
-    uxLog(command, c.yellow('----------------------------------------'));
-    uxLog(command, destructiveXmlContent);
-    uxLog(command, c.yellow('----------------------------------------'));
-    
-    // Display the XML content for the empty package.xml
-    const packageXmlContent = await fs.readFile(packageXmlPath, 'utf8');
-    uxLog(command, c.cyan('Empty Package.xml for deployment:'));
-    uxLog(command, c.yellow('----------------------------------------'));
-    uxLog(command, packageXmlContent);
-    uxLog(command, c.yellow('----------------------------------------'));
-    
-    // Deploy the destructive changes
-    uxLog(command, c.cyan(`Deleting ${connectedApps.length} Connected App(s) from org...`));
-    await execCommand(
-      `sf project deploy start --manifest ${packageXmlPath} --post-destructive-changes ${destructiveChangesXmlPath} --target-org ${orgUsername} --ignore-warnings --ignore-conflicts --json`,
-      command,
-      { output: true, fail: true }
-    );
-    
-    // Clean up
-    await fs.remove(tmpDir);
-    uxLog(command, c.grey('Removed temporary deployment files'));
-  }, command);
+    // Use withConnectedAppIgnoreHandling to handle .forceignore modifications
+    await withConnectedAppIgnoreHandling(async () => {
+      // Create destructive changes manifests
+      const { destructiveChangesPath, packageXmlPath, tmpDir } = 
+        await createDestructiveChangesManifest(connectedApps, command);
+      
+      // Deploy the destructive changes
+      uxLog(command, c.cyan(`Deleting ${connectedApps.length} Connected App(s) from org...`));
+      try {
+        await execCommand(
+          `sf project deploy start --manifest ${packageXmlPath} --post-destructive-changes ${destructiveChangesPath} --target-org ${orgUsername} --ignore-warnings --ignore-conflicts --json`,
+          command,
+          { output: true, fail: true }
+        );
+      } catch (deleteError: any) {
+        throw new Error(`Failed to delete Connected Apps: ${deleteError.message || String(deleteError)}`);
+      }
+      
+      // Clean up
+      await fs.remove(tmpDir);
+      uxLog(command, c.grey('Removed temporary deployment files'));
+    }, command);
+  });
 }
 
 /**
@@ -258,34 +276,23 @@ export async function retrieveConnectedApps(
   connectedApps: ConnectedApp[],
   command: SfCommand<any>
 ): Promise<void> {
-  try {
-    validateConnectedAppParams(orgUsername, connectedApps);
-  } catch (error: any) {
-    uxLog(command, c.yellow(`Skipping retrieve operation: ${error.message}`));
-    return;
-  }
-
-  // Use withConnectedAppIgnoreHandling to handle .forceignore modifications
-  await withConnectedAppIgnoreHandling(async () => {
-    // Create a manifest for the Connected Apps
-    const { manifestPath, tmpDir } = await createConnectedAppManifest(connectedApps, command);
+  await withConnectedAppValidation(orgUsername, connectedApps, command, 'retrieve', async () => {
+    if (!orgUsername) return; // This should never happen due to validation, but TypeScript needs it
     
-    // Retrieve the Connected Apps using the manifest
-    uxLog(command, c.cyan(`Retrieving ${connectedApps.length} Connected App(s) from org...`));
-    await execCommand(
-      `sf project retrieve start --manifest ${manifestPath} --target-org ${orgUsername} --ignore-conflicts --json`,
+    await performConnectedAppOperationWithManifest(
+      orgUsername,
+      connectedApps,
       command,
-      { output: true, fail: true }
+      'retrieve',
+      async (manifestPath, orgUsername, command) => {
+        await execCommand(
+          `sf project retrieve start --manifest ${manifestPath} --target-org ${orgUsername} --ignore-conflicts --json`,
+          command,
+          { output: true, fail: true }
+        );
+      }
     );
-    
-    // Wait a moment to ensure files are written to disk
-    uxLog(command, c.grey('Waiting for files to be written to disk...'));
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Clean up
-    await fs.remove(tmpDir);
-    uxLog(command, c.grey('Removed temporary manifest file'));
-  }, command);
+  });
 }
 
 /**
@@ -300,34 +307,23 @@ export async function deployConnectedApps(
   connectedApps: ConnectedApp[],
   command: SfCommand<any>
 ): Promise<void> {
-  try {
-    validateConnectedAppParams(orgUsername, connectedApps);
-  } catch (error: any) {
-    uxLog(command, c.yellow(`Skipping deploy operation: ${error.message}`));
-    return;
-  }
-
-  // Use withConnectedAppIgnoreHandling to handle .forceignore modifications
-  await withConnectedAppIgnoreHandling(async () => {
-    // Create a manifest for the Connected Apps
-    const { manifestPath, tmpDir } = await createConnectedAppManifest(connectedApps, command);
+  await withConnectedAppValidation(orgUsername, connectedApps, command, 'deploy', async () => {
+    if (!orgUsername) return; // This should never happen due to validation, but TypeScript needs it
     
-    // Deploy the Connected Apps using the manifest
-    uxLog(command, c.cyan(`Deploying ${connectedApps.length} Connected App(s) to org...`));
-    try {
-      await execCommand(
-        `sf project deploy start --manifest ${manifestPath} --target-org ${orgUsername} --ignore-warnings --json`,
-        command,
-        { output: true, fail: true }
-      );
-    } catch (deployError: any) {
-      throw new Error(`Failed to deploy Connected Apps: ${deployError.message || String(deployError)}`);
-    }
-    
-    // Clean up
-    await fs.remove(tmpDir);
-    uxLog(command, c.grey('Removed temporary manifest file'));
-  }, command);
+    await performConnectedAppOperationWithManifest(
+      orgUsername,
+      connectedApps,
+      command,
+      'deploy',
+      async (manifestPath, orgUsername, command) => {
+        await execCommand(
+          `sf project deploy start --manifest ${manifestPath} --target-org ${orgUsername} --ignore-warnings --json`,
+          command,
+          { output: true, fail: true }
+        );
+      }
+    );
+  });
 }
 
 /**
@@ -544,4 +540,111 @@ export async function findConnectedAppFile(
     uxLog(command, c.red(`Error searching for Connected App: ${error}`));
     return null;
   }
+}
+
+/**
+ * Shared logic for selecting and processing Connected Apps
+ * Refactored to eliminate code duplication between save and restore commands
+ * @param connectedApps Array of ConnectedApp objects
+ * @param processAll Whether to process all ConnectedApps without selection prompt
+ * @param nameFilter Optional filter for app names
+ * @param promptMessage Message to display in the prompt
+ * @param command Command context for logging
+ * @returns Selected ConnectedApp objects
+ */
+export async function selectConnectedAppsForProcessing<T extends { fullName: string }>(
+  connectedApps: T[],
+  processAll: boolean,
+  nameFilter: string | undefined,
+  promptMessage: string,
+  command: SfCommand<any>
+): Promise<T[]> {
+  // Display found Connected Apps
+  uxLog(command, c.cyan(`Found ${connectedApps.length} Connected App(s)`));
+  connectedApps.forEach(app => {
+    uxLog(command, `${c.green(app.fullName)} (${(app as any).fileName || (app as any).filePath || ''})`);
+  });
+  
+  // If all flag or name is provided, use all connected apps from the list without prompting
+  if (processAll || nameFilter) {
+    const selectionReason = processAll ? 'all flag' : 'name filter';
+    uxLog(command, c.cyan(`Processing ${connectedApps.length} Connected App(s) based on ${selectionReason}`));
+    return connectedApps;
+  }
+
+  // Otherwise, prompt for selection
+  return await promptForConnectedAppSelection(
+    connectedApps,
+    promptMessage,
+    command
+  );
+}
+
+/**
+ * Wrapper function for connected app operations to standardize validation and error handling
+ * @param orgUsername - Username of the target org
+ * @param connectedApps - Array of ConnectedApp objects
+ * @param command - Command context for logging
+ * @param operationName - Name of the operation for logging purposes
+ * @param operationFn - Function to perform if validation passes
+ * @returns Promise<void>
+ */
+export async function withConnectedAppValidation(
+  orgUsername: string | undefined,
+  connectedApps: ConnectedApp[],
+  command: SfCommand<any>,
+  operationName: string,
+  operationFn: () => Promise<void>
+): Promise<void> {
+  try {
+    validateConnectedAppParams(orgUsername, connectedApps);
+  } catch (error: any) {
+    uxLog(command, c.yellow(`Skipping ${operationName} operation: ${error.message}`));
+    return;
+  }
+  
+  await operationFn();
+}
+
+/**
+ * Common function to perform a Connected App operation with manifest file
+ * Eliminates duplicate code between retrieve and deploy operations
+ * @param orgUsername - Username of the target org
+ * @param connectedApps - Array of ConnectedApp objects
+ * @param command - Command context for logging
+ * @param operationName - Name of the operation (retrieve or deploy)
+ * @param commandFn - Function to execute the command with manifest
+ * @returns Promise<void>
+ */
+export async function performConnectedAppOperationWithManifest(
+  orgUsername: string,
+  connectedApps: ConnectedApp[],
+  command: SfCommand<any>,
+  operationName: 'retrieve' | 'deploy',
+  commandFn: (manifestPath: string, orgUsername: string, command: SfCommand<any>) => Promise<void>
+): Promise<void> {
+  // Use withConnectedAppIgnoreHandling to handle .forceignore modifications
+  await withConnectedAppIgnoreHandling(async () => {
+    // Create a manifest for the Connected Apps
+    const { manifestPath, tmpDir } = await createConnectedAppManifest(connectedApps, command);
+    
+    // Execute the operation using the manifest
+    uxLog(command, c.cyan(`${operationName === 'retrieve' ? 'Retrieving' : 'Deploying'} ${connectedApps.length} Connected App(s) ${operationName === 'retrieve' ? 'from' : 'to'} org...`));
+    
+    try {
+      await commandFn(manifestPath, orgUsername, command);
+      
+      // Wait a moment to ensure files are written to disk (especially for retrieve operations)
+      if (operationName === 'retrieve') {
+        uxLog(command, c.grey('Waiting for files to be written to disk...'));
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } catch (error: any) {
+      throw new Error(`Failed to ${operationName} Connected Apps: ${error.message || String(error)}`);
+    }
+    
+    // Clean up
+    await fs.remove(tmpDir);
+    uxLog(command, c.grey('Removed temporary manifest file'));
+  }, command);
 }
