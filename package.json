@@ -16,7 +16,7 @@
     "@oclif/core": "^4.3.2",
     "@salesforce/core": "^8.17.0",
     "@salesforce/sf-plugins-core": "^11.3.12",
-    "@slack/types": "^2.14.0",
+    "@slack/types": "^2.15.0",
     "@slack/web-api": "^7.9.3",
     "@supercharge/promise-pool": "^3.2.0",
     "@xmldom/xmldom": "^0.9.8",
