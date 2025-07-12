@@ -13,7 +13,7 @@
     "@langchain/core": "^0.3.57",
     "@langchain/google-genai": "^0.2.10",
     "@langchain/ollama": "^0.2.1",
-    "@oclif/core": "^4.3.2",
+    "@oclif/core": "^4.5.0",
     "@salesforce/core": "^8.17.0",
     "@salesforce/sf-plugins-core": "^11.3.12",
     "@slack/types": "^2.14.0",
