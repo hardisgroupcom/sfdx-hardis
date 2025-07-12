@@ -5603,10 +5603,10 @@ csv-parse@^5.5.2:
   resolved "https://registry.npmjs.org/csv-parse/-/csv-parse-5.5.5.tgz"
   integrity sha512-erCk7tyU3yLWAhk6wvKxnyPtftuy/6Ak622gOO7BCJ05+TYffnPCJF905wmOQm+BpkX54OdAl8pveJwUdpnCXQ==
 
-csv-stringify@^6.4.4, csv-stringify@^6.5.2:
-  version "6.5.2"
-  resolved "https://registry.npmjs.org/csv-stringify/-/csv-stringify-6.5.2.tgz"
-  integrity sha512-RFPahj0sXcmUyjrObAK+DOWtMvMIFV328n4qZJhgX3x2RqkQgOTU2mCUmiFR0CzM6AzChlRSUErjiJeEt8BaQA==
+csv-stringify@^6.4.4, csv-stringify@^6.6.0:
+  version "6.6.0"
+  resolved "https://registry.yarnpkg.com/csv-stringify/-/csv-stringify-6.6.0.tgz#d384859cfb71d0a4a73c5bcc36a4daf5440cb033"
+  integrity sha512-YW32lKOmIBgbxtu3g5SaiqWNwa/9ISQt2EcgOq0+RAIFufFp9is6tqNnKahqE5kuKvrnYAzs28r+s6pXJR8Vcw==
 
 current-module-paths@^1.1.2:
   version "1.1.2"
