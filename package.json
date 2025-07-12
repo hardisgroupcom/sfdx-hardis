@@ -102,7 +102,7 @@
     "@types/which": "^3.0.4",
     "@types/ws": "^8.18.1",
     "@types/xml2js": "^0.4.14",
-    "eslint-plugin-sf-plugin": "^1.20.26",
+    "eslint-plugin-sf-plugin": "^1.20.27",
     "oclif": "^4.19.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
