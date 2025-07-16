@@ -6,7 +6,6 @@ description: Prompt template for PROMPT_DESCRIBE_PERMISSION_SET
 # PROMPT_DESCRIBE_PERMISSION_SET
 
 ## Variables
-
 | Name                   | Description                                            | Example                              |
 |:-----------------------|:-------------------------------------------------------|:-------------------------------------|
 | **PERMISSIONSET_NAME** | The name of the Salesforce Permission Set to describe. | `PS_CloudityAccount`                 |
