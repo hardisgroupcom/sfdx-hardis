@@ -2180,10 +2180,10 @@
     proc-log "^4.0.0"
     which "^4.0.0"
 
-"@oclif/core@^4", "@oclif/core@^4.0.27", "@oclif/core@^4.3.2", "@oclif/core@^4.3.3":
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.4.0.tgz#82fb972822270c8e585587bd1c8a01ffbac588e2"
-  integrity sha512-wH5g3SLmbRutnr7UzQBSozRFEAZ7U9YGB/wFuBRr0ZghTgv5DE+KQaf6ZtU7iFb9pvkvoVRnT5XheNAtbjRDaQ==
+"@oclif/core@^4", "@oclif/core@^4.0.27", "@oclif/core@^4.3.3", "@oclif/core@^4.5.0":
+  version "4.5.0"
+  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.5.0.tgz#0163f933098bfa52f86387f11900da1ad13235d3"
+  integrity sha512-UYWyDFNKFyzgXVXO0DHfOvJ/8qpw4yPYe7fOHausDEVU44qjDr90ZnfYTljZPK8dhgMggxiZs9n+TFajnXRp7g==
   dependencies:
     ansi-escapes "^4.3.2"
     ansis "^3.17.0"
@@ -2594,7 +2594,7 @@
     strip-ansi "6.0.1"
     ts-retry-promise "^0.8.1"
 
-"@salesforce/core@^8.12.0", "@salesforce/core@^8.14.0", "@salesforce/core@^8.17.0", "@salesforce/core@^8.5.1", "@salesforce/core@^8.8.0":
+"@salesforce/core@^8.12.0", "@salesforce/core@^8.17.0", "@salesforce/core@^8.5.1", "@salesforce/core@^8.8.0":
   version "8.17.0"
   resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-8.17.0.tgz#f7e54324f06d5cd541276e743a8d1cb4983d52c7"
   integrity sha512-2pZfBtwA1oX5IuxS8/gVnrFXzPAJpf6ZA5bfImN1dWGbWlwrfocXzXTNRFdQ2gP0FG4o+PFSlc6d4g8Vwz25IA==
@@ -2854,10 +2854,10 @@
   dependencies:
     "@types/node" ">=18.0.0"
 
-"@slack/types@^2.14.0", "@slack/types@^2.9.0":
-  version "2.14.0"
-  resolved "https://registry.npmjs.org/@slack/types/-/types-2.14.0.tgz"
-  integrity sha512-n0EGm7ENQRxlXbgKSrQZL69grzg1gHLAVd+GlRVQJ1NSORo0FrApR7wql/gaKdu2n4TO83Sq/AmeUOqD60aXUA==
+"@slack/types@^2.15.0", "@slack/types@^2.9.0":
+  version "2.15.0"
+  resolved "https://registry.yarnpkg.com/@slack/types/-/types-2.15.0.tgz#c277c39545d4d06301279cdec0fe4ecfc899e0e9"
+  integrity sha512-livb1gyG3J8ATLBJ3KjZfjHpTRz9btY1m5cgNuXxWJbhwRB1Gwb8Ly6XLJm2Sy1W6h+vLgqIHg7IwKrF1C1Szg==
 
 "@slack/web-api@^7.9.3":
   version "7.9.3"
@@ -5603,10 +5603,10 @@ csv-parse@^5.5.2:
   resolved "https://registry.npmjs.org/csv-parse/-/csv-parse-5.5.5.tgz"
   integrity sha512-erCk7tyU3yLWAhk6wvKxnyPtftuy/6Ak622gOO7BCJ05+TYffnPCJF905wmOQm+BpkX54OdAl8pveJwUdpnCXQ==
 
-csv-stringify@^6.4.4, csv-stringify@^6.5.2:
-  version "6.5.2"
-  resolved "https://registry.npmjs.org/csv-stringify/-/csv-stringify-6.5.2.tgz"
-  integrity sha512-RFPahj0sXcmUyjrObAK+DOWtMvMIFV328n4qZJhgX3x2RqkQgOTU2mCUmiFR0CzM6AzChlRSUErjiJeEt8BaQA==
+csv-stringify@^6.4.4, csv-stringify@^6.6.0:
+  version "6.6.0"
+  resolved "https://registry.yarnpkg.com/csv-stringify/-/csv-stringify-6.6.0.tgz#d384859cfb71d0a4a73c5bcc36a4daf5440cb033"
+  integrity sha512-YW32lKOmIBgbxtu3g5SaiqWNwa/9ISQt2EcgOq0+RAIFufFp9is6tqNnKahqE5kuKvrnYAzs28r+s6pXJR8Vcw==
 
 current-module-paths@^1.1.2:
   version "1.1.2"
@@ -6322,12 +6322,12 @@ eslint-plugin-jsdoc@^46.10.1:
     semver "^7.5.4"
     spdx-expression-parse "^4.0.0"
 
-eslint-plugin-sf-plugin@^1.20.26:
-  version "1.20.26"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-sf-plugin/-/eslint-plugin-sf-plugin-1.20.26.tgz#3ffada40ee1aeab70384c16ed717769946b1473e"
-  integrity sha512-kK1Kj+PpkVaGHWR+/FGdSW4lT7nbD+g2mSLkYFFQ4X9L9VnDSGI2mbNfByCeJ0RELC2GxM0jhw/T1pgSKc7aQw==
+eslint-plugin-sf-plugin@^1.20.27:
+  version "1.20.27"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-sf-plugin/-/eslint-plugin-sf-plugin-1.20.27.tgz#77e1b8edddc3fa03060d1ab965cba2ce69e8da43"
+  integrity sha512-OjadAKTrk0lyQ8ss/cba3zZ3vsngfI1xNINdOrPbBPQ6Nz5SgfqJXXLeDPVfy8BZbJKJK+r4Xf4xn+1p509i3g==
   dependencies:
-    "@salesforce/core" "^8.14.0"
+    "@salesforce/core" "^8.17.0"
     "@typescript-eslint/utils" "^7.18.0"
 
 eslint-plugin-unicorn@^50.0.1:
@@ -13289,10 +13289,10 @@ write-file-atomic@^5.0.0:
     imurmurhash "^0.1.4"
     signal-exit "^4.0.1"
 
-ws@^8.18.0, ws@^8.18.2:
-  version "8.18.2"
-  resolved "https://registry.yarnpkg.com/ws/-/ws-8.18.2.tgz#42738b2be57ced85f46154320aabb51ab003705a"
-  integrity sha512-DMricUmwGZUVr++AEAe2uiVM7UoO9MAVZMDu05UQOaUII0lp+zOzLLU4Xqh/JvTqklB1T4uELaaPBKyjE1r4fQ==
+ws@^8.18.0, ws@^8.18.3:
+  version "8.18.3"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-8.18.3.tgz#b56b88abffde62791c639170400c93dcb0c95472"
+  integrity sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg==
 
 xcase@^2.0.1:
   version "2.0.1"
