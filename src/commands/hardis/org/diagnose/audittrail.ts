@@ -54,6 +54,7 @@ Regular setup actions performed in major orgs are filtered.
   - holiday_insert
 - Inbox mobile and legacy desktop apps
   - enableSIQUserNonEAC
+  - siqUserAcceptedTOS
 - Manage Users
   - activateduser
   - createduser
@@ -460,7 +461,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       'Email Administration': ['dkimRotationSuccessful', 'dkimRotationPreparationSuccessful'],
       'External Objects': ['xdsEncryptedFieldChange'],
       Holidays: ['holiday_insert'],
-      'Inbox mobile and legacy desktop apps': ['enableSIQUserNonEAC'],
+      'Inbox mobile and legacy desktop apps': [
+        'enableSIQUserNonEAC',
+        'siqUserAcceptedTOS'
+      ],
       Groups: ['groupMembership'],
       'Manage Territories': ['tm2_userAddedToTerritory', 'tm2_userRemovedFromTerritory'],
       'Manage Users': [
