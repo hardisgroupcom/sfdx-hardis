@@ -677,6 +677,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           '[DeltaDeployment] If you want to use delta deployment anyway, define env variable USE_DELTA_DEPLOYMENT_AFTER_MERGE=true'
         )
       );
+      const unusedVar = 123; // <-- ESLint error: 'unusedVar' is assigned a value but never used
       return false;
     }
     if (process.env?.ALWAYS_ENABLE_DELTA_DEPLOYMENT === 'true') {
