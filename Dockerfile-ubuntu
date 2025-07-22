@@ -1,18 +1,18 @@
 # Docker image to run sfdx-hardis
 
-FROM python:3.12.10-slim
+FROM ubuntu:latest
 
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
 
 # Update package list and install required packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-            coreutils \
             git \
-            bash \
             curl \
             gnupg \
-            lsb-release \
-            ca-certificates \
+            # Required for Python
+            python3 \
+            python3-pip \
+            python3-venv \
             # Required for docker
             docker.io \
             # Required for puppeteer
@@ -36,6 +36,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
             libxkbcommon0 \
             libxrandr2 \
             xdg-utils && \
+    # Create python symlink for compatibility
+    ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip && \
     # Install Node.js
     curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
     apt-get install -y nodejs && \
