@@ -67,7 +67,10 @@ RUN npm install --no-cache yarn -g && \
     echo 'y' | sf plugins install sfdx-git-delta && \
     echo 'y' | sf plugins install texei-sfdx-plugin && \
     sf version --verbose --json && \
-    rm -rf /root/.npm/_cacache
+    # Clean up npm cache and temporary files
+    rm -rf /root/.npm/_cacache && \
+    rm -rf /tmp/* && \
+    npm cache clean --force
 
 ENV MERMAID_MODES="docker"
 
