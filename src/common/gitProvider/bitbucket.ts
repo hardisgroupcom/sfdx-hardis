@@ -199,7 +199,7 @@ export class BitbucketProvider extends GitProviderRoot {
     const bitbucketBuildNumber = process.env.BITBUCKET_BUILD_NUMBER || null;
     const bitbucketJobUrl = await this.getCurrentJobUrl();
 
-    const messageKey = `${prMessage.messageKey}-${bitbucketBuildNumber}-${pullRequestId}`;
+    const messageKey = `${prMessage.messageKey}-${pullRequestId}`;
     let messageBody = `**${prMessage.title || ''}**
 
         ${prMessage.message}
