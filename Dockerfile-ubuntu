@@ -9,15 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
             git \
             curl \
             gnupg \
-            snapd \
             # Required for Python
             python3 \
             python3-pip \
             python3-venv \
             # Required for docker
-            docker.io && \
-    # Install Chromium via snap (self-contained, no extra libs needed)
-    snap install chromium && \
+            docker.io \
+            fonts-liberation \
     # Create python symlink for compatibility
     ln -sf /usr/bin/python3 /usr/bin/python && \
     ln -sf /usr/bin/pip3 /usr/bin/pip && \
@@ -27,11 +25,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Clean up
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-# Do not use puppeteer embedded chromium
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
-ENV CHROMIUM_PATH="/snap/bin/chromium"
-ENV PUPPETEER_EXECUTABLE_PATH="${CHROMIUM_PATH}"
 
 # Add node packages to path
 ENV PATH="/node_modules/.bin:${PATH}"
