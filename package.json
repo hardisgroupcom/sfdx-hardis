@@ -75,7 +75,8 @@
     "xpath": "^0.0.34"
   },
   "resolutions": {
-    "@langchain/core": "0.3.57"
+    "@langchain/core": "0.3.57",
+    "form-data": "4.0.4"
   },
   "devDependencies": {
     "@oclif/plugin-command-snapshot": "^5.3.4",
