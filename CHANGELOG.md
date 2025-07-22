@@ -9,6 +9,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Generate ubuntu-based Docker images
   - docker.io/hardisgroupcom/sfdx-hardis-ubuntu
   - ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu
+- Display commands in blue for better readability on BitBucket
 
 ## [5.44.1] 2025-07-16
 
