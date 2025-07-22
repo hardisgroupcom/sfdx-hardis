@@ -1,0 +1,54 @@
+# Docker image to run sfdx-hardis
+
+FROM ubuntu:latest
+
+LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
+
+# Update package list and install required packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+            git \
+            curl \
+            gnupg \
+            # Required for Python
+            python3 \
+            python3-pip \
+            python3-venv \
+            # Required for docker
+            docker.io \
+            fonts-liberation && \
+    # Create python symlink for compatibility
+    ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip && \
+    # Install Node.js
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
+    apt-get install -y nodejs && \
+    # Clean up
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add node packages to path
+ENV PATH="/node_modules/.bin:${PATH}"
+
+ARG SFDX_CLI_VERSION=latest
+ARG SFDX_HARDIS_VERSION=latest
+
+# Install npm packages +install sfdx plugins & display versions
+RUN npm install --no-cache yarn -g && \
+    npm install --no-cache @salesforce/cli@${SFDX_CLI_VERSION} -g && \
+    sf plugins install @salesforce/plugin-packaging && \
+    sf plugins install @salesforce/plugin-deploy-retrieve && \
+    echo 'y' | sf plugins install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
+    echo 'y' | sf plugins install sfdmu && \
+    echo 'y' | sf plugins install sfdx-git-delta && \
+    echo 'y' | sf plugins install texei-sfdx-plugin && \
+    sf version --verbose --json && \
+    # Clean up npm cache and temporary files
+    rm -rf /root/.npm/_cacache && \
+    rm -rf /tmp/* && \
+    npm cache clean --force
+
+ENV MERMAID_MODES="docker"
+
+# Workaround for https://github.com/forcedotcom/salesforcedx-apex/issues/213
+COPY ref/workarounds/dateUtil.js /usr/local/lib/node_modules/@salesforce/cli/node_modules/@salesforce/apex-node/lib/src/utils/dateUtil.js
+COPY ref/workarounds/junitReporter.js /usr/local/lib/node_modules/@salesforce/cli/node_modules/@salesforce/apex-node/lib/src/reporters/junitReporter.js

@@ -199,3 +199,167 @@ jobs:
           exit-code: "1"
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
+
+  push_ubuntu_to_registry:
+    name: Push Ubuntu Docker image to Docker Hub
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      security-events: write # Added permission for security-events
+    environment:
+      name: release
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Ubuntu Docker Image (Latest)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile-ubuntu
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=latest
+            SFDX_CLI_VERSION=latest
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+            ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+            ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+          format: "table"
+          output: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.txt
+          exit-code: "1"
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Generate Trivy security report
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+          format: "sarif"
+          output: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Generate SBOM (CycloneDX format)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+          format: "cyclonedx"
+          output: "sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json"
+          scan-type: "image"
+
+      - name: Generate SBOM (SPDX format)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+          format: "spdx-json"
+          output: "sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.spdx.json"
+          scan-type: "image"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+          category: "trivy-ubuntu"
+
+      - name: Upload SBOM and Security artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-and-sbom-documents-ubuntu
+          path: |
+            sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
+            sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.spdx.json
+            sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.txt
+            sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+
+  push_ubuntu_to_registry_sfdx_recommended:
+    name: Push Ubuntu Docker image to Docker Hub (with @salesforce/cli version recommended by hardis)
+    needs: deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+    permissions:
+      packages: write
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Ubuntu Docker Image (Latest recommended)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile-ubuntu
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=latest
+            SFDX_CLI_VERSION=latest
+          load: false
+          push: true
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          tags: |
+            docker.io/hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended
+            ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "docker.io/hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended"
+          format: "table"
+          exit-code: "1"
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"

@@ -52,7 +52,7 @@ export function git(options: any = { output: false, displayCommand: true }): Sim
         const gitArgsStr = (gitArgs || []).join(' ');
         if (!(gitArgsStr.includes('branch -v') || gitArgsStr.includes('config --list --show-origin --null'))) {
           if (options.displayCommand) {
-            uxLog(this, `[command] ${c.bold(c.bgWhite(c.grey(command + ' ' + gitArgsStr)))}`);
+            uxLog(this, `[command] ${c.bold(c.bgWhite(c.blue(command + ' ' + gitArgsStr)))}`);
           }
         }
       }
@@ -608,7 +608,7 @@ export async function execCommand(
     spinner: true,
   }
 ): Promise<any> {
-  let commandLog = `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.grey(command)))}`;
+  let commandLog = `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.blue(command)))}`;
   const execOptions: any = { maxBuffer: 10000 * 10000 };
   if (options.cwd) {
     execOptions.cwd = options.cwd;

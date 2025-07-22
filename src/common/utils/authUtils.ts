@@ -250,7 +250,7 @@ export async function authOrg(orgAlias: string, options: any) {
           loginCommandArgs.push('--set-default');
         }
         const commandStr = 'sf ' + loginCommandArgs.join(' ');
-        uxLog(this, `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.grey(commandStr)))}`);
+        uxLog(this, `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.blue(commandStr)))}`);
         loginResult = crossSpawn.sync('sf', loginCommandArgs, { stdio: 'inherit' });
       }
       // Web Login if device login not used

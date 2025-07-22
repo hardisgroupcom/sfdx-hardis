@@ -4,6 +4,15 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [5.45.0] 2025-07-22
+
+- Generate ubuntu-based Docker images
+  - docker.io/hardisgroupcom/sfdx-hardis-ubuntu
+  - ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu
+- Display commands in blue for better readability on BitBucket
+- Fix bug that did not replace existing comments on BitBucket
+- Decrease docker images size
+
 ## [5.44.1] 2025-07-16
 
 - [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/):Add new ignored items in audit trail
