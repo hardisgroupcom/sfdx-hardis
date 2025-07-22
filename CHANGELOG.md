@@ -10,6 +10,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - docker.io/hardisgroupcom/sfdx-hardis-ubuntu
   - ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu
 - Display commands in blue for better readability on BitBucket
+- Fix bug that did not replace existing comments on BitBucket
 
 ## [5.44.1] 2025-07-16
 
