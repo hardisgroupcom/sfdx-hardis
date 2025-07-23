@@ -59,6 +59,17 @@ docs/                 # Project documentation
 - Use ESLint and Prettier configurations provided
 - Import statements should use `.js` extensions for compiled compatibility
 - Use `/* jscpd:ignore-start */` and `/* jscpd:ignore-end */` to ignore code duplication checks where appropriate
+- Do not create test files if not explicitely requested
+- Command instructions are documented in property `static description` and `static examples` on command classes
+
+### SDK Information
+
+- Queries (from common/utils/apiUtils.ts)
+  - Use soqlQuery and soqlQueryTooling for querying Salesforce data
+  - Use soqlQueryTooling for Tooling API queries
+  - Use bulkQuery and bulkUpdate for bulk data operations
+- Use uxLog (from src/common/utils\index.ts) for logging output
+- Use prompts (from src/common/utils/prompts.ts) to prompt users for input
 
 ### AI Features
 

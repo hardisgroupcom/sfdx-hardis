@@ -5,6 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
 import path from 'path';
+import { createGzip } from 'zlib';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
@@ -57,14 +58,6 @@ interface WaveDatasetUploadResponse {
   name: string;
   label: string;
   datasetVersion: WaveDatasetVersion;
-}
-
-interface WaveDatasetUploadJobResponse {
-  id: string;
-  object: string;
-  state: string;
-  createdDate: string;
-  systemModstamp: string;
 }
 
 export default class DataEventlogExtract extends SfCommand<any> {
@@ -131,15 +124,6 @@ Use this for comprehensive event log analysis and monitoring in CRM Analytics.
     this.outputDir = flags.outputdir || path.join(await getReportDirectory(), 'eventlog-extract', `${new Date().toISOString().replace(/:/g, '-').replace(/\./g, '-')}`);
     this.debugMode = flags.debug || false;
 
-    // Get event types - either from flag or prompt user for selection
-    let eventTypes: string[] | null = null;
-    if (flags.eventtype) {
-      eventTypes = flags.eventtype.split(',').map(type => type.trim());
-    } else {
-      // Prompt will always return a string array, never null
-      eventTypes = await this.promptForEventTypes();
-    }
-
     // Get number of days - either from flag or prompt user for selection
     let daysBack: number;
     if (flags.days !== undefined) {
@@ -147,6 +131,17 @@ Use this for comprehensive event log analysis and monitoring in CRM Analytics.
     } else {
       daysBack = await this.promptForDays();
     }
+
+    // Get event types - either from flag or prompt user for selection
+    let eventTypes: string[] | null = null;
+    if (flags.eventtype) {
+      eventTypes = flags.eventtype.split(',').map(type => type.trim());
+    } else {
+      // Prompt will always return a string array, never null
+      eventTypes = await this.promptForEventTypes(daysBack);
+    }
+
+
 
     uxLog(this, c.cyan(`Starting EventLogFile extraction to CRM Analytics...`));
 
@@ -201,14 +196,14 @@ Use this for comprehensive event log analysis and monitoring in CRM Analytics.
    * Get available event types from the EventLogFile object and prompt user for specific selection
    * Users must select at least one event type - no "all types" option is provided
    */
-  private async promptForEventTypes(): Promise<string[]> {
+  private async promptForEventTypes(daysBack: number): Promise<string[]> {
     try {
       uxLog(this, c.cyan('Fetching available EventLogFile event types...'));
 
       // Query the EventLogFile object to get available event types
       // We'll get distinct event types from existing records in the last 90 days
       const dateFilter = new Date();
-      dateFilter.setDate(dateFilter.getDate() - 90);
+      dateFilter.setDate(dateFilter.getDate() - daysBack);
       const dateString = dateFilter.toISOString().split('T')[0];
 
       const eventTypesQuery = `
@@ -467,62 +462,19 @@ Use this for comprehensive event log analysis and monitoring in CRM Analytics.
   }
 
   /**
-   * Create or update a CRM Analytics dataset
+   * Create or overwrite a CRM Analytics dataset
    */
   private async createOrUpdateDataset(datasetName: string, eventType: string, files: DownloadedFile[]): Promise<any> {
-    uxLog(this, c.cyan(`Creating/updating CRM Analytics dataset: ${datasetName}`));
+    uxLog(this, c.cyan(`Creating/overwriting CRM Analytics dataset: ${datasetName}`));
 
     try {
-      // Check if dataset already exists using Wave API
-      const existingDataset = await this.checkDatasetExists(datasetName);
-
-      if (existingDataset) {
-        uxLog(this, c.gray(`Dataset ${datasetName} already exists (ID: ${existingDataset.id}), will append data...`));
-        return await this.appendDataToDataset(existingDataset.id, files);
-      } else {
-        uxLog(this, c.gray(`Creating new dataset: ${datasetName}`));
-        return await this.createNewDataset(datasetName, eventType, files);
-      }
+      // Always create/overwrite the dataset (no append logic)
+      uxLog(this, c.gray(`Creating/overwriting dataset: ${datasetName}`));
+      return await this.createNewDataset(datasetName, eventType, files);
 
     } catch (error) {
-      throw new Error(`Failed to create/update dataset ${datasetName}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Failed to create/overwrite dataset ${datasetName}: ${error instanceof Error ? error.message : String(error)}`);
     }
-  }
-
-  /**
-   * Check if a dataset exists using Wave API
-   */
-  private async checkDatasetExists(datasetName: string): Promise<any | null> {
-    const apiVersion = this.conn.getApiVersion();
-    const datasetsUrl = `${this.conn.instanceUrl}/services/data/v${apiVersion}/wave/datasets`;
-
-    if (this.debugMode) {
-      uxLog(this, c.gray(`Checking dataset existence at: ${datasetsUrl}`));
-    }
-
-    // Get all datasets and filter by name
-    const response = await this.conn.request({
-      method: 'GET',
-      url: datasetsUrl,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }) as any;
-
-    // Look for dataset with matching name or developerName
-    const existingDataset = response.datasets?.find((dataset: any) =>
-      dataset.name === datasetName ||
-      dataset.developerName === datasetName
-    );
-
-    if (existingDataset) {
-      if (this.debugMode) {
-        uxLog(this, c.gray(`Found existing dataset: ${JSON.stringify(existingDataset, null, 2)}`));
-      }
-      return existingDataset;
-    }
-
-    return null;
   }
 
   /**
@@ -633,7 +585,7 @@ Use this for comprehensive event log analysis and monitoring in CRM Analytics.
         const progressText = `[${i + 1}/${files.length}]`;
 
         try {
-          await this.uploadFileToDataset(datasetResponse.id, file, progressText);
+          await this.uploadFileToDataset(file, progressText); // Always overwrite
           successCount++;
         } catch (error) {
           uxLog(this, c.yellow(`${progressText} Warning: Failed to upload ${file.fileName}: ${error instanceof Error ? error.message : String(error)}`));
@@ -652,114 +604,136 @@ Use this for comprehensive event log analysis and monitoring in CRM Analytics.
   }
 
   /**
-   * Append data to an existing dataset using Wave API
+   * Upload a single CSV file to a CRM Analytics dataset using InsightsExternalDataPart API
+   * Implementation inspired by shane-sfdx-plugins for better reliability
    */
-  private async appendDataToDataset(datasetId: string, files: DownloadedFile[]): Promise<any> {
+  private async uploadFileToDataset(file: DownloadedFile, progressText?: string): Promise<void> {
     try {
-      let successCount = 0;
+      const prefix = progressText || '';
+      uxLog(this, c.gray(`${prefix} Uploading ${file.fileName} to dataset using InsightsExternalDataPart API...`));
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const progressText = `[${i + 1}/${files.length}]`;
-
-        try {
-          await this.uploadFileToDataset(datasetId, file, progressText);
-          successCount++;
-        } catch (error) {
-          uxLog(this, c.yellow(`${progressText} Warning: Failed to upload ${file.fileName}: ${error instanceof Error ? error.message : String(error)}`));
-        }
-      }
-
-      return {
-        success: successCount > 0,
-        datasetId,
-        message: `Appended ${successCount}/${files.length} files to existing dataset`
+      // Step 1: Create InsightsExternalData record with metadata
+      const externalDataMetadata = {
+        EdgemartAlias: `DSInput_${file.eventType}`,
+        EdgemartLabel: `DSInput EventLogFile ${file.eventType}`,
+        Description: `EventLogFile data for ${file.eventType} events`,
+        Format: 'Csv',
+        Action: 'Replace', // Replace existing dataset data
+        NotificationSent: 'Never',
+        FileName: `${file.eventType}_eventlog.csv`
       };
 
+      uxLog(this, c.gray(`${prefix} Creating InsightsExternalData record...`));
+      if (this.debugMode) {
+        uxLog(this, c.gray(`${prefix} Metadata: ${JSON.stringify(externalDataMetadata, null, 2)}`));
+      }
+
+      const createUploadResult = (await this.conn.request({
+        method: 'POST',
+        url: `${this.conn.baseUrl()}/sobjects/InsightsExternalData`,
+        body: JSON.stringify(externalDataMetadata)
+      })) as any;
+
+      const externalDataId = createUploadResult.id;
+      uxLog(this, c.gray(`${prefix} Created InsightsExternalData record: ${externalDataId}`));
+
+      // Step 2: Compress the CSV file for better upload performance
+      const tempFileName = `${file.fileName}.gz`;
+      const tempFilePath = path.join(path.dirname(file.filePath), tempFileName);
+
+      uxLog(this, c.gray(`${prefix} Compressing CSV file...`));
+      await this.compressFile(file.filePath, tempFilePath);
+
+      // Step 3: Upload the compressed file in chunks using InsightsExternalDataPart
+      uxLog(this, c.gray(`${prefix} Uploading file chunks...`));
+      await this.uploadFileChunks(tempFilePath, externalDataId, prefix);
+
+      // Clean up temporary compressed file
+      await fs.remove(tempFilePath);
+
+      // Step 4: Process the external data by updating the status
+      uxLog(this, c.gray(`${prefix} Starting data processing...`));
+      const processDataMetadata = {
+        Action: 'Process'
+      };
+
+      await this.conn.request({
+        method: 'PATCH',
+        url: `${this.conn.baseUrl()}/sobjects/InsightsExternalData/${externalDataId}`,
+        body: JSON.stringify(processDataMetadata)
+      });
+
+      // Step 5: Poll for completion (optional - don't wait by default for better performance)
+      uxLog(this, c.green(`${prefix} Successfully uploaded and initiated processing: ${file.fileName} (External Data ID: ${externalDataId})`));
+      uxLog(this, c.gray(`${prefix} Processing will continue in the background. Check CRM Analytics for completion status.`));
+
     } catch (error) {
-      throw new Error(`Failed to append data to dataset: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Failed to upload file ${file.fileName}: ${error instanceof Error ? error.message : JSON.stringify(error, null, 2)}`);
     }
   }
 
   /**
-   * Upload a single CSV file to a CRM Analytics dataset using Wave API
+   * Compress a file using gzip compression
    */
-  private async uploadFileToDataset(datasetId: string, file: DownloadedFile, progressText?: string): Promise<void> {
-    try {
-      const prefix = progressText || '';
-      uxLog(this, c.gray(`${prefix} Uploading ${file.fileName} to dataset...`));
+  private async compressFile(inputFile: string, outputFile: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const fileContents = fs.createReadStream(inputFile, { encoding: 'utf8' });
+      const writeStream = fs.createWriteStream(outputFile, { encoding: 'base64' });
 
-      const apiVersion = this.conn.getApiVersion();
-      const uploadUrl = `${this.conn.instanceUrl}/services/data/v${apiVersion}/wave/datasets/${datasetId}/versions`;
+      fileContents
+        .pipe(createGzip())
+        .pipe(writeStream)
+        .on('finish', () => resolve())
+        .on('error', reject);
+    });
+  }
 
-      // Read the CSV file content
-      const fileContent = await fs.readFile(file.filePath, 'utf8');
+  /**
+   * Upload file in chunks using InsightsExternalDataPart API
+   */
+  private async uploadFileChunks(compressedFilePath: string, externalDataId: string, prefix: string): Promise<void> {
+    const byteLimit = 10000000; // 10MB per chunk as per Salesforce API docs
+    const uploadInterval = 500; // 500ms between chunks
 
-      // Create upload job
-      const uploadJobMetadata = {
-        Format: 'CSV',
-        EdgemartAlias: null,
-        MetadataJson: JSON.stringify({
-          fileFormat: {
-            charsetName: 'UTF-8',
-            fieldsDelimitedBy: ',',
-            fieldsEnclosedBy: '"',
-            numberOfLinesToIgnore: 1
-          }
-        }),
-        Action: 'Overwrite',
-        NotificationSent: false,
-        NotificationEmail: null
+    let partNumber = 0;
+    const uploads: Promise<any>[] = [];
+
+    // Read file in chunks and upload each part
+    const stream = fs.createReadStream(compressedFilePath, {
+      highWaterMark: byteLimit,
+      encoding: 'base64'
+    });
+
+    for await (const chunk of stream) {
+      // Add delay between uploads to prevent rate limiting
+      if (partNumber > 0) {
+        await new Promise(resolve => setTimeout(resolve, uploadInterval));
+      }
+
+      partNumber++;
+      const partMetadata = {
+        DataFile: chunk,
+        InsightsExternalDataId: externalDataId,
+        PartNumber: partNumber
       };
 
       if (this.debugMode) {
-        uxLog(this, c.gray(`${prefix} Creating upload job at: ${uploadUrl}`));
-        uxLog(this, c.gray(`${prefix} Upload metadata: ${JSON.stringify(uploadJobMetadata, null, 2)}`));
+        uxLog(this, c.gray(`${prefix} Uploading part ${partNumber} (${chunk.length} bytes)...`));
       }
 
-      // Step 1: Create upload job
-      const jobResponse = await this.conn.request({
+      // Upload part
+      const uploadPromise = this.conn.request({
         method: 'POST',
-        url: uploadUrl,
-        body: JSON.stringify(uploadJobMetadata),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }) as WaveDatasetUploadJobResponse;
-
-      uxLog(this, c.gray(`${prefix} Created upload job: ${jobResponse.id}`));
-
-      // Step 2: Upload CSV data
-      const dataUploadUrl = `${uploadUrl}/${jobResponse.id}/parts/1`;
-
-      await this.conn.request({
-        method: 'PUT',
-        url: dataUploadUrl,
-        body: fileContent,
-        headers: {
-          'Content-Type': 'text/csv',
-          'Content-Length': Buffer.byteLength(fileContent, 'utf8').toString()
-        }
+        url: `${this.conn.baseUrl()}/sobjects/InsightsExternalDataPart`,
+        body: JSON.stringify(partMetadata)
       });
 
-      uxLog(this, c.gray(`${prefix} Uploaded CSV data for ${file.fileName}`));
-
-      // Step 3: Start processing
-      const processUrl = `${uploadUrl}/${jobResponse.id}`;
-      await this.conn.request({
-        method: 'PATCH',
-        url: processUrl,
-        body: JSON.stringify({ action: 'Process' }),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      uxLog(this, c.green(`${prefix} Successfully uploaded: ${file.fileName}`));
-
-    } catch (error) {
-      throw new Error(`Failed to upload file ${file.fileName}: ${error instanceof Error ? error.message : String(error)}`);
+      uploads.push(uploadPromise);
     }
+
+    // Wait for all uploads to complete
+    await Promise.all(uploads);
+    uxLog(this, c.gray(`${prefix} Uploaded ${partNumber} file chunks successfully`));
   }
 
   /**
