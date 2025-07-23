@@ -67,8 +67,8 @@ const maxRetry = Number(process.env.BULK_QUERY_RETRY || 5);
 export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3): Promise<any> {
   const queryLabel = soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery;
   uxLog(this, c.grey('[BulkApiV2] ' + c.italic(queryLabel)));
-  conn.bulk.pollInterval = 5000; // 5 sec
-  conn.bulk.pollTimeout = 60000; // 60 sec
+  conn.bulk2.pollInterval = 5000; // 5 sec
+  conn.bulk2.pollTimeout = 30 * 60 * 1000; // 30 mn
   // Start query
   try {
     spinnerQ = ora({ text: `[BulkApiV2] Bulk Query: ${queryLabel}`, spinner: 'moon' }).start();
