@@ -13,7 +13,7 @@ import { stringify } from 'csv-stringify';
 import { generateReports, uxLog } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import { getReportDirectory } from '../../../../config/index.js';
-import { bulkQuery, soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { bulkQueryStream, soqlQuery } from '../../../../common/utils/apiUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -71,7 +71,8 @@ Use this command to:
   protected outputDir: string;
   protected debugMode: boolean;
   protected conn: Connection;
-  protected cpqObjects: Array<{ object: string, csvFile: string }> = [];
+  protected summaryData: Array<{ object: string, recordCount: number, fileSizeMB: number, status: string }> = [];
+  protected outputTabs: Array<{ tabName: string, csvFile: string, order: number }> = [];
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(CpqExtract);
@@ -84,6 +85,8 @@ Use this command to:
     await fs.ensureDir(this.outputDir);
     // Extract all CPQ related records
     await this.extractObjects();
+    // Generate summary data
+    await this.generateSummary();
     // Merge CSV files into a single excel file, with one tab by Object
     await this.mergeCsvInExcelFile();
 
@@ -94,9 +97,9 @@ Use this command to:
     const objectsToExtract = [
       'Product2',
       'PricebookEntry',
-      //      'SBQQ__Quote__c',
-      //      'SBQQ__QuoteLine__c',
-      //      'SBQQ__QuoteLineGroup__c',
+      'SBQQ__Quote__c',
+      'SBQQ__QuoteLine__c',
+      'SBQQ__QuoteLineGroup__c',
       'SBQQ__ProductRule__c',
       'SBQQ__PriceRule__c',
       'SBQQ__SummaryVariable__c',
@@ -136,28 +139,50 @@ Use this command to:
       uxLog(this, c.yellow(`The following CPQ objects were found but have no fields: ${objectsWithoutFields.join(', ')}.`));
       uxLog(this, c.yellow(`This might indicate that these objects are not used in your CPQ configuration or are not standard CPQ objects.`));
     }
-    // Extract records using Bulk API
+    // Extract records using Bulk API with streaming for memory efficiency
     uxLog(this, c.cyan(`Extracting records for ${objectsWithFields.length} CPQ objects: ${objectsWithFields.map(o => o.objectName).join(', ')}`));
     for (const object of objectsWithFields) {
       uxLog(this, c.cyan(`Extracting records for ${object.objectName}...`));
       const bulkQueryRecords = `SELECT ${object.fields.join(', ')} FROM ${object.objectName} ORDER BY ${object.order}`;
-      const queryRes = await bulkQuery(bulkQueryRecords, this.conn);
-      uxLog(this, c.grey(`Extracted ${queryRes.records.length} records for ${object.objectName}`));
 
-      // Write records to CSV file using streaming for memory efficiency
-      if (queryRes.records && queryRes.records.length > 0) {
-        const csvFileName = `${object.objectName}.csv`;
-        const csvFilePath = path.join(this.outputDir, csvFileName);
+      // Use streaming to handle large datasets without loading all into memory
+      const recordStream = await bulkQueryStream(bulkQueryRecords, this.conn);
 
-        await this.writeRecordsToCSVStream(queryRes.records, object.fields, csvFilePath);
+      const csvFileName = `${object.objectName}.csv`;
+      const csvFilePath = path.join(this.outputDir, csvFileName);
 
-        // Add to cpqObjects property
-        this.cpqObjects.push({
-          object: object.objectName,
-          csvFile: csvFilePath
+      // Process the stream and write directly to CSV
+      const recordCount = await this.writeRecordsFromStreamToCSV(recordStream, object.fields, csvFilePath);
+
+      if (recordCount > 0) {
+        // Get file size for summary
+        const fileStats = await fs.stat(csvFilePath);
+        const fileSizeMB = fileStats.size / (1024 * 1024);
+
+        // Add to outputTabs for Excel generation (with order for proper tab sequencing)
+        this.outputTabs.push({
+          tabName: object.objectName,
+          csvFile: csvFilePath,
+          order: this.outputTabs.length + 2 // Start from 2 to leave room for summary at position 1
         });
 
-        uxLog(this, c.green(`Saved ${queryRes.records.length} records to ${csvFileName}`));
+        // Add to summary data
+        this.summaryData.push({
+          object: object.objectName,
+          recordCount: recordCount,
+          fileSizeMB: parseFloat(fileSizeMB.toFixed(2)),
+          status: 'Success'
+        });
+
+        uxLog(this, c.green(`Saved ${recordCount} records to ${csvFileName}`));
+      } else {
+        // Add to summary data for empty objects
+        this.summaryData.push({
+          object: object.objectName,
+          recordCount: 0,
+          fileSizeMB: 0,
+          status: 'No Records'
+        });
       }
     }
   }
@@ -165,6 +190,90 @@ Use this command to:
   /**
    * Write records to CSV file using streaming for memory efficiency
    */
+  private async generateSummary(): Promise<void> {
+    uxLog(this, c.cyan('Generating summary...'));
+
+    // Generate summary CSV file
+    const summaryFileName = 'CPQ_Summary.csv';
+    const summaryFilePath = path.join(this.outputDir, summaryFileName);
+
+    const summaryHeaders = ['Object', 'Record Count', 'File Size (MB)', 'Status'];
+    const summaryRows = this.summaryData.map(item => ({
+      'Object': item.object,
+      'Record Count': item.recordCount.toString(),
+      'File Size (MB)': item.fileSizeMB.toString(),
+      'Status': item.status
+    }));
+
+    await this.writeRecordsToCSVStream(
+      summaryRows,
+      summaryHeaders,
+      summaryFilePath
+    );
+
+    // Add summary to outputTabs at the beginning (order 1 for first tab)
+    this.outputTabs.unshift({
+      tabName: 'Summary',
+      csvFile: summaryFilePath,
+      order: 1
+    });
+
+    uxLog(this, c.green(`Summary saved to ${summaryFileName}`));
+  }
+
+  /**
+   * Write records from a stream directly to CSV file for memory efficiency
+   * Returns the total number of records processed
+   */
+  private async writeRecordsFromStreamToCSV(recordStream: NodeJS.ReadableStream, fields: string[], filePath: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      uxLog(this, c.grey(`Writing records from stream to CSV file: ${filePath}...`));
+      const writeStream = fs.createWriteStream(filePath, { encoding: 'utf8' });
+      const csvStream = stringify({
+        header: true,
+        columns: fields,
+        quoted: true,
+        quoted_empty: false,
+        quoted_string: true
+      });
+
+      let recordCount = 0;
+
+      // Handle stream events
+      csvStream.on('error', reject);
+      writeStream.on('error', reject);
+      writeStream.on('finish', () => resolve(recordCount));
+
+      // Pipe CSV stream to file
+      csvStream.pipe(writeStream);
+
+      // Process records from the stream
+      recordStream.on('record', (record: any) => {
+        const row: any = {};
+        fields.forEach(field => {
+          row[field] = record[field] ?? '';
+        });
+        csvStream.write(row);
+        recordCount++;
+
+        // Log progress for large datasets
+        if (recordCount % 10000 === 0) {
+          uxLog(this, c.gray(`    Processed ${recordCount} records...`));
+        }
+      });
+
+      recordStream.on('end', () => {
+        uxLog(this, c.gray(`    Finished processing ${recordCount} records.`));
+        csvStream.end();
+      });
+
+      recordStream.on('error', (error) => {
+        uxLog(this, c.red(`Error reading from record stream: ${error.message}`));
+        reject(error);
+      });
+    });
+  }
+
   private async writeRecordsToCSVStream(records: any[], fields: string[], filePath: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const writeStream = fs.createWriteStream(filePath, { encoding: 'utf8' });
@@ -235,21 +344,24 @@ Use this command to:
     workbook.lastModifiedBy = 'sfdx-hardis';
     workbook.created = new Date();
 
+    // Sort outputTabs by order to ensure proper tab sequencing (Summary first, then data tabs)
+    const sortedTabs = this.outputTabs.sort((a, b) => a.order - b.order);
+
     // Process each CSV file using streaming
-    for (const cpqObject of this.cpqObjects) {
+    for (const outputTab of sortedTabs) {
       try {
         // Check file size to determine which streaming method to use
-        const fileStats = await fs.stat(cpqObject.csvFile);
+        const fileStats = await fs.stat(outputTab.csvFile);
         const fileSizeMB = fileStats.size / (1024 * 1024);
 
         if (fileSizeMB > 50) { // Use line-by-line streaming for files larger than 50MB
-          uxLog(this, c.cyan(`Large file detected (${fileSizeMB.toFixed(1)}MB): ${cpqObject.object}, using line-by-line streaming`));
-          await this.addLargeCsvToWorkbookStream(workbook, cpqObject);
+          uxLog(this, c.cyan(`Large file detected (${fileSizeMB.toFixed(1)}MB): ${outputTab.tabName}, using line-by-line streaming`));
+          await this.addLargeCsvToWorkbookStream(workbook, outputTab);
         } else {
-          await this.addCsvToWorkbookStream(workbook, cpqObject);
+          await this.addCsvToWorkbookStream(workbook, outputTab);
         }
       } catch (error) {
-        uxLog(this, c.red(`Error processing CSV file ${cpqObject.csvFile}: ${error instanceof Error ? error.message : String(error)}`));
+        uxLog(this, c.red(`Error processing CSV file ${outputTab.csvFile}: ${error instanceof Error ? error.message : String(error)}`));
       }
     }
 
@@ -266,16 +378,16 @@ Use this command to:
   /**
    * Add CSV data to workbook using streaming for memory efficiency
    */
-  private async addCsvToWorkbookStream(workbook: any, cpqObject: { object: string, csvFile: string }): Promise<void> {
-    const worksheetName = cpqObject.object.substring(0, 31); // Excel worksheet names are limited to 31 characters
-    uxLog(this, c.gray(`Processing ${cpqObject.object} for worksheet "${worksheetName}"...`));
+  private async addCsvToWorkbookStream(workbook: any, outputTab: { tabName: string, csvFile: string, order: number }): Promise<void> {
+    const worksheetName = outputTab.tabName.substring(0, 31); // Excel worksheet names are limited to 31 characters
+    uxLog(this, c.gray(`Processing ${outputTab.tabName} for worksheet "${worksheetName}"...`));
 
     // Create worksheet
     const worksheet = workbook.addWorksheet(worksheetName);
 
     return new Promise((resolve, reject) => {
       // Create readable stream for CSV file
-      const readStream = fs.createReadStream(cpqObject.csvFile, { encoding: 'utf8' });
+      const readStream = fs.createReadStream(outputTab.csvFile, { encoding: 'utf8' });
 
       let headers: string[] = [];
       let rowCount = 0;
@@ -295,7 +407,7 @@ Use this command to:
           });
 
           if (parseResult.errors.length > 0) {
-            uxLog(this, c.yellow(`Warning: CSV parsing errors for ${cpqObject.object}:`));
+            uxLog(this, c.yellow(`Warning: CSV parsing errors for ${outputTab.tabName}:`));
             parseResult.errors.forEach(error => {
               uxLog(this, c.yellow(`  - Row ${error.row}: ${error.message}`));
             });
@@ -323,7 +435,7 @@ Use this command to:
 
               // Log progress for large datasets
               if (rowCount % 5000 === 0) {
-                uxLog(this, c.gray(`  Processed ${rowCount} rows for ${cpqObject.object}...`));
+                uxLog(this, c.gray(`  Processed ${rowCount} rows for ${outputTab.tabName}...`));
               }
             }
 
@@ -338,13 +450,13 @@ Use this command to:
           resolve();
 
         } catch (error) {
-          uxLog(this, c.red(`Error processing CSV data for ${cpqObject.object}: ${error instanceof Error ? error.message : String(error)}`));
+          uxLog(this, c.red(`Error processing CSV data for ${outputTab.tabName}: ${error instanceof Error ? error.message : String(error)}`));
           reject(error);
         }
       });
 
       readStream.on('error', (error) => {
-        uxLog(this, c.red(`Error reading CSV file ${cpqObject.csvFile}: ${error.message}`));
+        uxLog(this, c.red(`Error reading CSV file ${outputTab.csvFile}: ${error.message}`));
         reject(error);
       });
     });
@@ -377,14 +489,14 @@ Use this command to:
    * Alternative implementation for very large CSV files using true streaming
    * This method processes CSV line by line without loading the entire file into memory
    */
-  private async addLargeCsvToWorkbookStream(workbook: any, cpqObject: { object: string, csvFile: string }): Promise<void> {
-    const worksheetName = cpqObject.object.substring(0, 31);
-    uxLog(this, c.gray(`Processing large CSV ${cpqObject.object} for worksheet "${worksheetName}" using line-by-line streaming...`));
+  private async addLargeCsvToWorkbookStream(workbook: any, outputTab: { tabName: string, csvFile: string, order: number }): Promise<void> {
+    const worksheetName = outputTab.tabName.substring(0, 31);
+    uxLog(this, c.gray(`Processing large CSV ${outputTab.tabName} for worksheet "${worksheetName}" using line-by-line streaming...`));
 
     const worksheet = workbook.addWorksheet(worksheetName);
 
     return new Promise((resolve, reject) => {
-      const readStream = fs.createReadStream(cpqObject.csvFile, { encoding: 'utf8' });
+      const readStream = fs.createReadStream(outputTab.csvFile, { encoding: 'utf8' });
       let lineBuffer = '';
       let isFirstLine = true;
       let headers: string[] = [];
@@ -419,12 +531,12 @@ Use this command to:
 
               // Log progress for very large datasets
               if (rowCount % 10000 === 0) {
-                uxLog(this, c.gray(`    Streamed ${rowCount} rows for ${cpqObject.object}...`));
+                uxLog(this, c.gray(`    Streamed ${rowCount} rows for ${outputTab.tabName}...`));
               }
             }
           } catch (error) {
             if (this.debugMode) {
-              uxLog(this, c.yellow(`Warning: Error parsing line in ${cpqObject.object}: ${error instanceof Error ? error.message : String(error)}`));
+              uxLog(this, c.yellow(`Warning: Error parsing line in ${outputTab.tabName}: ${error instanceof Error ? error.message : String(error)}`));
             }
           }
         }

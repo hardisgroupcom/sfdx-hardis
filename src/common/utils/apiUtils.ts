@@ -65,10 +65,10 @@ let spinnerQ;
 const maxRetry = Number(process.env.BULK_QUERY_RETRY || 5);
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3): Promise<any> {
-  const queryLabel = soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery;
+  const queryLabel = soqlQuery.length > 1000 ? soqlQuery.substr(0, 1000) + '...' : soqlQuery;
   uxLog(this, c.grey('[BulkApiV2] ' + c.italic(queryLabel)));
   conn.bulk2.pollInterval = 5000; // 5 sec
-  conn.bulk2.pollTimeout = 30 * 60 * 1000; // 30 mn
+  conn.bulk2.pollTimeout = 60 * 60 * 1000; // 60 mn
   // Start query
   try {
     spinnerQ = ora({ text: `[BulkApiV2] Bulk Query: ${queryLabel}`, spinner: 'moon' }).start();
@@ -87,6 +87,64 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
     if ((e + '').includes('ETIMEDOUT') && retries < maxRetry) {
       uxLog(this, c.yellow('[BulkApiV2] Bulk Query retry attempt #' + retries + 1));
       return await bulkQuery(soqlQuery, conn, retries + 1);
+    } else {
+      throw e;
+    }
+  }
+}
+
+/**
+ * Performs a bulk SOQL query and returns a stream for memory-efficient processing of large datasets.
+ * Unlike bulkQuery, this method doesn't load all records into memory at once.
+ * 
+ * @param soqlQuery - The SOQL query to execute
+ * @param conn - Salesforce connection object
+ * @param retries - Number of retry attempts (default: 3)
+ * @returns Promise<NodeJS.ReadableStream> - A readable stream of records
+ * 
+ * @example
+ * // Basic usage with stream processing
+ * const stream = await bulkQueryStream('SELECT Id, Name FROM Account', conn);
+ * stream.on('data', (record) => {
+ *   console.log('Processing record:', record);
+ * });
+ * stream.on('end', () => {
+ *   console.log('Stream processing completed');
+ * });
+ * stream.on('error', (err) => {
+ *   console.error('Stream error:', err);
+ * });
+ * 
+ * @example
+ * // Using with async iteration
+ * const stream = await bulkQueryStream('SELECT Id, Name FROM Contact LIMIT 100000', conn);
+ * for await (const record of stream) {
+ *   // Process each record individually without loading all into memory
+ *   await processRecord(record);
+ * }
+ */
+export async function bulkQueryStream(soqlQuery: string, conn: Connection, retries = 3): Promise<NodeJS.ReadableStream> {
+  const queryLabel = soqlQuery.length > 1000 ? soqlQuery.substr(0, 1000) + '...' : soqlQuery;
+  uxLog(this, c.grey('[BulkApiV2] ' + c.italic(queryLabel)) + '(this might be long !)');
+  conn.bulk2.pollInterval = 5000; // 5 sec
+  conn.bulk2.pollTimeout = 60 * 60 * 1000; // 60 mn
+  // Start query
+  try {
+    const recordStream = await conn.bulk2.query(soqlQuery);
+    // Set up error handling for the stream
+    recordStream.on('error', (err) => {
+      uxLog(this, c.yellow('Bulk Query Stream error: ' + err));
+      globalThis.sfdxHardisFatalError = true;
+    });
+
+    // Return the stream directly for memory-efficient processing
+    return recordStream;
+  } catch (e: any) {
+    spinnerQ.fail(`[BulkApiV2] Bulk query stream error: ${e.message}`);
+    // Try again if the reason is a timeout and max number of retries is not reached yet
+    if ((e + '').includes('ETIMEDOUT') && retries < maxRetry) {
+      uxLog(this, c.yellow('[BulkApiV2] Bulk Query Stream retry attempt #' + (retries + 1)));
+      return await bulkQueryStream(soqlQuery, conn, retries + 1);
     } else {
       throw e;
     }
