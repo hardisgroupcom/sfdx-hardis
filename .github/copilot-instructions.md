@@ -59,6 +59,7 @@ docs/                 # Project documentation
 - Use ESLint and Prettier configurations provided
 - Import statements should use `.js` extensions for compiled compatibility
 - Use `/* jscpd:ignore-start */` and `/* jscpd:ignore-end */` to ignore code duplication checks where appropriate
+- Do not use forEach, use for of loops instead for better performance and readability
 
 ### AI Features
 

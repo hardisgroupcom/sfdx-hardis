@@ -4,16 +4,13 @@ import { Connection, Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
-import { glob } from 'glob';
 import path from 'path';
-import sortArray from 'sort-array';
 import Excel from 'exceljs';
 import Papa from 'papaparse';
-import { stringify } from 'csv-stringify/sync';
-import { generateReports, uxLog } from '../../../../common/utils/index.js';
-import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { createReadStream } from 'fs';
+import { uxLog } from '../../../../common/utils/index.js';
 import { getReportDirectory } from '../../../../config/index.js';
-import { bulkQuery, soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { bulkQueryWithCLI, soqlQuery } from '../../../../common/utils/apiUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -64,6 +61,8 @@ Use this command to:
   protected debugMode: boolean;
   protected conn: Connection;
   protected cpqObjects: Array<{ object: string, csvFile: string }> = [];
+  protected outputTabs: Array<{ tabName: string, recordCount: number, object: string, hasData: boolean, csvFile?: string }> = [];
+  protected skippedObjects: string[] = [];
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(CpqExtract);
@@ -79,6 +78,10 @@ Use this command to:
     // Merge CSV files into a single excel file, with one tab by Object
     await this.mergeCsvInExcelFile();
 
+    uxLog(this, c.green(`CPQ extraction completed successfully!`));
+    uxLog(this, c.cyan(`Output directory: ${this.outputDir}`));
+    uxLog(this, c.cyan(`SOQL queries logged to: ${path.join(this.outputDir, 'soqlQueries')}`));
+
     return { success: true };
   }
 
@@ -86,9 +89,9 @@ Use this command to:
     const objectsToExtract = [
       'Product2',
       'PricebookEntry',
-      'SBQQ__Quote__c',
-      'SBQQ__QuoteLine__c',
-      'SBQQ__QuoteLineGroup__c',
+      // 'SBQQ__Quote__c',
+      // 'SBQQ__QuoteLine__c',
+      //  'SBQQ__QuoteLineGroup__c',
       'SBQQ__ProductRule__c',
       'SBQQ__PriceRule__c',
       'SBQQ__SummaryVariable__c',
@@ -103,13 +106,36 @@ Use this command to:
       'SBQQ__DocumentTemplate__c',
       'SBQQ__ConstraintRule__c'
     ];
+
+    // Create soqlQueries directory for logging queries
+    const soqlQueriesDir = path.join(this.outputDir, 'soqlQueries');
+    await fs.ensureDir(soqlQueriesDir);
+    uxLog(this, c.grey(`Created SOQL queries log directory: ${soqlQueriesDir}`));
     // Use tooling API to list fields of each object
     const objectsWithFields: any = [
     ]
     for (const objectName of objectsToExtract) {
       const fieldsQuery = `SELECT QualifiedApiName FROM FieldDefinition WHERE EntityDefinition.QualifiedApiName = '${objectName}'`;
+
+      // Log the fields query
+      const fieldsQueryLogFileName = `${objectName}_fields_query.soql`;
+      const fieldsQueryLogFilePath = path.join(soqlQueriesDir, fieldsQueryLogFileName);
+      try {
+        await fs.writeFile(fieldsQueryLogFilePath, fieldsQuery, 'utf8');
+        uxLog(this, c.grey(`Logged fields query to: ${fieldsQueryLogFileName}`));
+      } catch (logError) {
+        uxLog(this, c.yellow(`Warning: Could not log fields query for ${objectName}: ${logError instanceof Error ? logError.message : String(logError)}`));
+      }
+
       const fieldsQueryResult = await soqlQuery(fieldsQuery, this.conn);
       const fields = fieldsQueryResult.records.map((field: any) => field.QualifiedApiName);
+
+      if (fields.length === 0) {
+        uxLog(this, c.yellow(`No fields found for ${objectName}, skipping extraction`));
+        this.skippedObjects.push(objectName);
+        continue;
+      }
+
       objectsWithFields.push({
         objectName: objectName,
         fields: fields,
@@ -121,351 +147,273 @@ Use this command to:
     for (const object of objectsWithFields) {
       uxLog(this, c.cyan(`Extracting records for ${object.objectName}...`));
       const bulkQueryRecords = `SELECT ${object.fields.join(', ')} FROM ${object.objectName} ORDER BY ${object.order}`;
-      const queryRes = await bulkQuery(bulkQueryRecords, this.conn);
-      uxLog(this, c.grey(`Extracted ${queryRes.records.length} records for ${object.objectName}`));
 
-      // Write records to CSV file
-      if (queryRes.records && queryRes.records.length > 0) {
-        const csvFileName = `${object.objectName}.csv`;
-        const csvFilePath = path.join(this.outputDir, csvFileName);
+      // Log the SOQL query to a file in soqlQueries directory
+      const queryLogFileName = `${object.objectName}_query.soql`;
+      const queryLogFilePath = path.join(soqlQueriesDir, queryLogFileName);
+      try {
+        await fs.writeFile(queryLogFilePath, bulkQueryRecords, 'utf8');
+        uxLog(this, c.grey(`Logged SOQL query to: ${queryLogFileName}`));
+      } catch (logError) {
+        uxLog(this, c.yellow(`Warning: Could not log query for ${object.objectName}: ${logError instanceof Error ? logError.message : String(logError)}`));
+      }
 
-        // Prepare data for CSV with headers
-        const csvData = [
-          object.fields, // Header row
-          ...queryRes.records.map((record: any) =>
-            object.fields.map((field: string) => record[field] ?? '')
-          )
-        ];
+      // Define CSV file path
+      const csvFileName = `${object.objectName}.csv`;
+      const csvFilePath = path.join(this.outputDir, csvFileName);
 
-        // Generate CSV content using csv-stringify
-        const csvContent = stringify(csvData, {
-          quoted: true,
-          quoted_empty: false,
-          quoted_string: true
-        });
+      try {
+        // Use SF CLI bulk export to directly create CSV file
+        const queryRes = await bulkQueryWithCLI(bulkQueryRecords, this.conn, csvFilePath, 60);
 
-        await fs.writeFile(csvFilePath, csvContent, 'utf8');
+        if (queryRes.success) {
+          // Count records in the CSV file to provide feedback
+          const csvContent = await fs.readFile(csvFilePath, 'utf8');
+          const lines = csvContent.split('\n').filter(line => line.trim() !== '');
+          const recordCount = Math.max(0, lines.length - 1); // Subtract header row
 
-        // Add to cpqObjects property
-        this.cpqObjects.push({
-          object: object.objectName,
-          csvFile: csvFilePath
-        });
+          uxLog(this, c.grey(`Extracted ${recordCount} records for ${object.objectName}`));
 
-        uxLog(this, c.green(`Saved ${queryRes.records.length} records to ${csvFileName}`));
+          // Add to cpqObjects property
+          this.cpqObjects.push({
+            object: object.objectName,
+            csvFile: csvFilePath
+          });
+
+          // Add to outputTabs property for summary
+          const tabName = object.objectName.substring(0, 31);
+
+          this.outputTabs.push({
+            tabName: tabName,
+            recordCount: recordCount,
+            object: object.objectName,
+            hasData: recordCount > 0,
+            csvFile: csvFilePath
+          });
+
+          uxLog(this, c.green(`Saved ${recordCount} records to ${csvFileName}`));
+        }
+      } catch (error) {
+        uxLog(this, c.red(`Error extracting ${object.objectName}: ${error instanceof Error ? error.message : String(error)}`));
+        // Continue with next object even if one fails
       }
     }
   }
 
   public async mergeCsvInExcelFile(): Promise<void> {
-    uxLog(this, c.cyan('Creating Excel file with CPQ data...'));
+    uxLog(this, c.cyan('Creating Excel file with CPQ data using streaming...'));
 
-    // Create a new workbook
-    const workbook = new Excel.Workbook();
+    // Create a new workbook with streaming support
+    const workbook = new Excel.stream.xlsx.WorkbookWriter({
+      filename: path.join(this.outputDir, 'CPQ_Extract.xlsx'),
+      useStyles: true,
+      useSharedStrings: false
+    });
+
     workbook.creator = 'sfdx-hardis CPQ Extract';
     workbook.lastModifiedBy = 'sfdx-hardis';
     workbook.created = new Date();
 
-    // Process each CSV file
-    for (const cpqObject of this.cpqObjects) {
+    // Create summary worksheet first
+    await this.createSummaryWorksheetStreaming(workbook);
+
+    // Process each CSV file using outputTabs with streaming
+    for (const tabInfo of this.outputTabs) {
+      // Skip if no CSV file was created (e.g., extraction failed)
+      if (!tabInfo.csvFile) {
+        continue;
+      }
+
       try {
-        // Read CSV file content
-        const csvContent = await fs.readFile(cpqObject.csvFile, 'utf8');
-
-        // Parse CSV content
-        const parseResult = Papa.parse(csvContent, {
-          header: true,
-          skipEmptyLines: true,
-          transform: (value: string) => {
-            // Convert empty strings to null for better Excel display
-            return value === '' ? null : value;
-          }
-        });
-
-        if (parseResult.errors.length > 0) {
-          uxLog(this, c.yellow(`Warning: CSV parsing errors for ${cpqObject.object}:`));
-          parseResult.errors.forEach(error => {
-            uxLog(this, c.yellow(`  - Row ${error.row}: ${error.message}`));
-          });
-        }
-
-        // Create worksheet name (remove SBQQ__ prefix and __c suffix for cleaner names)
-        const worksheetName = cpqObject.object
-          .replace('SBQQ__', '')
-          .replace('__c', '')
-          .substring(0, 31); // Excel worksheet names are limited to 31 characters
-
-        // Add worksheet
-        const worksheet = workbook.addWorksheet(worksheetName);
-
-        if (parseResult.data.length > 0) {
-          // Get headers from the first row
-          const headers = Object.keys(parseResult.data[0] as any);
-
-          // Add headers
-          worksheet.addRow(headers);
-
-          // Style the header row
-          const headerRow = worksheet.getRow(1);
-          headerRow.font = { bold: true };
-          headerRow.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFE0E0E0' }
-          };
-
-          // Add data rows
-          parseResult.data.forEach((row: any) => {
-            const values = headers.map(header => row[header]);
-            worksheet.addRow(values);
-          });
-
-          // Auto-fit columns
-          worksheet.columns.forEach((column, index) => {
-            let maxLength = headers[index]?.length || 10;
-
-            // Check data rows for max length (limit to first 100 rows for performance)
-            const sampleSize = Math.min(parseResult.data.length, 100);
-            for (let i = 0; i < sampleSize; i++) {
-              const row = parseResult.data[i] as any;
-              const cellValue = String(row[headers[index]] || '');
-              maxLength = Math.max(maxLength, cellValue.length);
-            }
-
-            // Set column width (with reasonable limits)
-            column.width = Math.min(Math.max(maxLength + 2, 10), 50);
-          });
-
-          uxLog(this, c.grey(`Added worksheet "${worksheetName}" with ${parseResult.data.length} rows`));
-        } else {
-          // Add empty worksheet with just headers if no data
-          worksheet.addRow(['No data available']);
-          uxLog(this, c.grey(`Added empty worksheet "${worksheetName}" (no data)`));
-        }
-
+        await this.processCSVFileStreaming(workbook, tabInfo);
       } catch (error) {
-        uxLog(this, c.red(`Error processing CSV file ${cpqObject.csvFile}: ${error instanceof Error ? error.message : String(error)}`));
+        uxLog(this, c.red(`Error processing CSV file ${tabInfo.csvFile}: ${error instanceof Error ? error.message : String(error)}`));
       }
     }
 
-    // Save the Excel file
-    const excelFileName = 'CPQ_Extract.xlsx';
-    const excelFilePath = path.join(this.outputDir, excelFileName);
-
+    // Commit the workbook to finish writing
     try {
-      await workbook.xlsx.writeFile(excelFilePath);
-      uxLog(this, c.green(`Excel file created successfully: ${excelFileName}`));
-      uxLog(this, c.cyan(`File location: ${excelFilePath}`));
+      await workbook.commit();
+      uxLog(this, c.green(`Excel file created successfully: CPQ_Extract.xlsx`));
+      uxLog(this, c.cyan(`File location: ${path.join(this.outputDir, 'CPQ_Extract.xlsx')}`));
     } catch (error) {
       uxLog(this, c.red(`Error creating Excel file: ${error instanceof Error ? error.message : String(error)}`));
     }
   }
 
-
-  public async murf(): Promise<AnyJson> {
-    // Define CPQ-related patterns to search for
-    const cpqPatterns = [
-      '**/*CPQ*/**/*.xml',
-      '**/objects/SBQQ__*.xml',
-      '**/customMetadata/SBQQ__*.xml',
-      '**/workflows/SBQQ__*.xml',
-      '**/flows/*CPQ*.xml',
-      '**/flows/*Quote*.xml'
-    ];
-
-    let allCpqFiles: string[] = [];
-
-    // Search for CPQ-related files
-    for (const pattern of cpqPatterns) {
-      try {
-        const files = await glob(pattern, { ignore: GLOB_IGNORE_PATTERNS });
-        allCpqFiles = [...allCpqFiles, ...files];
-        if (this.debugMode) {
-          uxLog(this, c.gray(`Found ${files.length} files matching pattern: ${pattern}`));
+  private async processCSVFileStreaming(workbook: any, tabInfo: any): Promise<void> {
+    return new Promise((resolve, reject) => {
+      uxLog(this, c.grey(`Processing ${tabInfo.tabName} with streaming...`));
+      // Add worksheet using streaming
+      const worksheet = workbook.addWorksheet(tabInfo.tabName);
+      let isFirstRow = true;
+      let rowCount = 0;
+      let headers: string[] = [];
+      // Create read stream for the CSV file
+      const csvStream = createReadStream(tabInfo.csvFile, { encoding: 'utf8' });
+      let csvBuffer = '';
+      csvStream.on('data', (chunk: string | Buffer) => {
+        const chunkStr = typeof chunk === 'string' ? chunk : chunk.toString('utf8');
+        csvBuffer += chunkStr;
+        const lines = csvBuffer.split('\n');
+        // Keep the last incomplete line in the buffer
+        csvBuffer = lines.pop() || '';
+        for (const line of lines) {
+          if (line.trim() === '') {
+            continue;
+          }
+          try {
+            // Parse individual line
+            const parseResult = Papa.parse(line, {
+              header: false,
+              skipEmptyLines: true
+            });
+            if (parseResult.data.length > 0) {
+              const row = parseResult.data[0] as string[];
+              if (isFirstRow) {
+                // First row contains headers
+                headers = row;
+                // Add headers to worksheet
+                const headerRow = worksheet.addRow(headers);
+                headerRow.font = { bold: true };
+                headerRow.fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: 'FFE0E0E0' }
+                };
+                // Set column widths based on header length (initial estimate)
+                headers.forEach((header, index) => {
+                  const column = worksheet.getColumn(index + 1);
+                  column.width = Math.max(header.length + 2, 15);
+                });
+                isFirstRow = false;
+              } else if (row.length > 0 && row.some((cell: any) => cell !== null && cell !== '')) {
+                // Add data row, ensuring we have the right number of columns
+                const dataRow = headers.map((_, index) => row[index] || '');
+                worksheet.addRow(dataRow);
+                rowCount++;
+                // Commit rows in batches to manage memory
+                if (rowCount % 1000 === 0) {
+                  worksheet.commit();
+                  uxLog(this, c.grey(`  Processed ${rowCount} rows for ${tabInfo.tabName}...`));
+                }
+              }
+            }
+          } catch (error) {
+            // Skip problematic lines and continue
+            uxLog(this, c.yellow(`Warning: Skipping malformed line in ${tabInfo.tabName}: ${error instanceof Error ? error.message : String(error)}`));
+          }
         }
-      } catch (error) {
-        if (this.debugMode) {
-          uxLog(this, c.yellow(`Warning: Could not search pattern ${pattern}: ${error instanceof Error ? error.message : String(error)}`));
+      });
+
+      csvStream.on('end', () => {
+        try {
+          // Process any remaining data in buffer
+          if (csvBuffer.trim()) {
+            const parseResult = Papa.parse(csvBuffer, {
+              header: false,
+              skipEmptyLines: true
+            });
+            if (parseResult.data.length > 0) {
+              const row = parseResult.data[0] as string[];
+              if (!isFirstRow && row.length > 0 && row.some((cell: any) => cell !== null && cell !== '')) {
+                const dataRow = headers.map((_, index) => row[index] || '');
+                worksheet.addRow(dataRow);
+                rowCount++;
+              }
+            }
+          }
+
+          // Final commit for any remaining rows
+          worksheet.commit();
+          if (rowCount === 0) {
+            // If no data rows, add a placeholder
+            worksheet.addRow(['No data available']);
+            worksheet.commit();
+          }
+          uxLog(this, c.grey(`Added worksheet "${tabInfo.tabName}" with ${rowCount} rows (streaming)`));
+          resolve(undefined);
+        } catch (error) {
+          reject(error);
         }
-      }
-    }
+      });
 
-    // Remove duplicates
-    allCpqFiles = [...new Set(allCpqFiles)];
-
-    uxLog(this, `Found ${c.bold(allCpqFiles.length)} CPQ-related files to analyze`);
-
-    this.extractResults = [];
-
-    // Process each CPQ file
-    for (const file of allCpqFiles) {
-      try {
-        const fileText = await fs.readFile(file, 'utf8');
-        const fileStats = await fs.stat(file);
-
-        // Determine file type and namespace
-        const fileName = file.split(/[/\\]/).pop() || '';
-        const fileType = this.determineCpqFileType(file, fileText);
-        const namespace = fileName.includes('SBQQ__') ? 'SBQQ' : 'Custom';
-
-        const extractResult = {
-          fileName,
-          filePath: file,
-          fileType,
-          namespace,
-          size: fileStats.size,
-          lastModified: fileStats.mtime,
-          hasCustomizations: this.hasCustomizations(fileText),
-          isActive: this.isActive(fileText),
-        };
-
-        this.extractResults.push(extractResult);
-
-        if (this.debugMode) {
-          uxLog(this, c.gray(`Processed: ${fileName} (${fileType})`));
-        }
-
-      } catch (error) {
-        uxLog(this, c.yellow(`Warning: Could not process file ${file}: ${error instanceof Error ? error.message : String(error)}`));
-      }
-    }
-
-    // Sort results
-    const resultSorted = sortArray(this.extractResults, {
-      by: ['fileType', 'namespace', 'fileName'],
-      order: ['asc', 'asc', 'asc'],
+      csvStream.on('error', (error: any) => {
+        reject(error);
+      });
     });
+  }
 
-    // Display summary table
-    const resultsLight = JSON.parse(JSON.stringify(resultSorted));
-    console.table(
-      resultsLight.map((item: any) => {
-        return {
-          fileName: item.fileName,
-          fileType: item.fileType,
-          namespace: item.namespace,
-          size: `${Math.round(item.size / 1024)}KB`,
-          hasCustomizations: item.hasCustomizations ? 'Yes' : 'No',
-          isActive: item.isActive ? 'Yes' : 'No'
-        };
-      })
-    );
-
-    // Generate summary statistics
-    const totalFiles = resultSorted.length;
-    const customFiles = resultSorted.filter(item => item.hasCustomizations).length;
-    const activeFiles = resultSorted.filter(item => item.isActive).length;
-    const fileTypes = [...new Set(resultSorted.map(item => item.fileType))];
-
-    uxLog(this, c.green(`[sfdx-hardis] SUCCESS: Extracted ${c.bold(totalFiles)} CPQ configuration files`));
-    uxLog(this, c.cyan(`- File types found: ${fileTypes.join(', ')}`));
-    uxLog(this, c.cyan(`- Files with customizations: ${customFiles}`));
-    uxLog(this, c.cyan(`- Active configurations: ${activeFiles}`));
-
-    // Generate output files
-    const columns = [
-      { key: 'fileName', header: 'File Name' },
-      { key: 'fileType', header: 'Type' },
-      { key: 'namespace', header: 'Namespace' },
-      { key: 'size', header: 'Size (bytes)' },
-      { key: 'hasCustomizations', header: 'Has Customizations' },
-      { key: 'isActive', header: 'Is Active' },
-      { key: 'filePath', header: 'File Path' },
-    ];
-
-    const reportFiles = await generateReports(resultSorted, columns, this, {
-      logFileName: 'cpq-extract',
-      logLabel: 'CPQ Configuration Extract',
-    });
-
-    // Save detailed results to output directory
-    const format = "json";
-    const detailedResultsFile = `${this.outputDir}/cpq-extract-detailed.${format}`;
-    if (format === 'json') {
-      await fs.writeJson(detailedResultsFile, resultSorted, { spaces: 2 });
-    } else if (format === 'csv') {
-      // For CSV, we would need to implement CSV conversion
-      uxLog(this, c.yellow(`CSV format not yet implemented, saved as JSON instead`));
-      await fs.writeJson(detailedResultsFile.replace('.csv', '.json'), resultSorted, { spaces: 2 });
-    }
-
-    uxLog(this, c.green(`Detailed results saved to: ${detailedResultsFile}`));
-
-    // Return an object to be displayed with --json
-    return {
-      outputString: 'CPQ configuration extraction completed',
-      totalFiles,
-      customFiles,
-      activeFiles,
-      fileTypes,
-      result: resultSorted,
-      reportFiles,
-      outputDir: this.outputDir,
+  private async createSummaryWorksheetStreaming(workbook: any): Promise<void> {
+    const summaryWorksheet = workbook.addWorksheet('Summary');
+    // Add title
+    const titleRow = summaryWorksheet.addRow(['CPQ Extract Summary']);
+    titleRow.font = { bold: true, size: 16 };
+    titleRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' }
     };
+    summaryWorksheet.addRow(['Generated on:', new Date().toISOString()]);
+    summaryWorksheet.addRow([]);
+    // Add headers for summary table
+    const headerRow = summaryWorksheet.addRow(['Object Name', 'Tab Name', 'Record Count', 'Has Data']);
+    headerRow.font = { bold: true };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+    // Add summary data
+    let totalRecords = 0;
+    let objectsWithData = 0;
+    for (const tab of this.outputTabs) {
+      summaryWorksheet.addRow([
+        tab.object,
+        tab.tabName,
+        tab.recordCount,
+        tab.hasData ? 'Yes' : 'No'
+      ]);
+      totalRecords += tab.recordCount;
+      if (tab.hasData) {
+        objectsWithData++;
+      }
+    }
+
+    // Add totals
+    summaryWorksheet.addRow([]);
+    const totalObjectsRow = summaryWorksheet.addRow(['Total Objects Extracted:', this.outputTabs.length]);
+    totalObjectsRow.font = { bold: true };
+    const objectsWithDataRow = summaryWorksheet.addRow(['Objects with Data:', objectsWithData]);
+    objectsWithDataRow.font = { bold: true };
+    const totalRecordsRow = summaryWorksheet.addRow(['Total Records:', totalRecords]);
+    totalRecordsRow.font = { bold: true };
+
+    // Add skipped objects section if any
+    if (this.skippedObjects.length > 0) {
+      summaryWorksheet.addRow([]);
+
+      const skippedHeaderRow = summaryWorksheet.addRow(['Objects Skipped (No Fields Found):']);
+      skippedHeaderRow.font = { bold: true, color: { argb: 'FFFF6600' } };
+
+      for (const skippedObject of this.skippedObjects) {
+        summaryWorksheet.addRow([skippedObject, 'No fields accessible', 0, 'No']);
+      }
+
+      const skippedCountRow = summaryWorksheet.addRow(['Total Skipped Objects:', this.skippedObjects.length]);
+      skippedCountRow.font = { bold: true, color: { argb: 'FFFF6600' } };
+    }
+
+    // Set column widths
+    summaryWorksheet.getColumn(1).width = 25;
+    summaryWorksheet.getColumn(2).width = 20;
+    summaryWorksheet.getColumn(3).width = 15;
+    summaryWorksheet.getColumn(4).width = 10;
+
+    // Commit the summary worksheet
+    summaryWorksheet.commit();
+
+    uxLog(this, c.grey('Created summary worksheet with extraction overview (streaming)'));
   }
 
-  /**
-   * Determine the type of CPQ file based on its path and content
-   */
-  private determineCpqFileType(filePath: string, content: string): string {
-    if (filePath.includes('/objects/')) {
-      return 'Custom Object';
-    }
-    if (filePath.includes('/customMetadata/')) {
-      return 'Custom Metadata';
-    }
-    if (filePath.includes('/workflows/')) {
-      return 'Workflow';
-    }
-    if (filePath.includes('/flows/')) {
-      return 'Flow';
-    }
-    if (filePath.includes('/permissionsets/')) {
-      return 'Permission Set';
-    }
-    if (filePath.includes('/profiles/')) {
-      return 'Profile';
-    }
-    if (content.includes('<CustomField>')) {
-      return 'Custom Field';
-    }
-    if (content.includes('<ValidationRule>')) {
-      return 'Validation Rule';
-    }
-    return 'Other';
-  }
-
-  /**
-   * Check if the file contains customizations (non-standard configurations)
-   */
-  private hasCustomizations(content: string): boolean {
-    // Look for indicators of customizations
-    const customizationIndicators = [
-      '<formula>',
-      '<validationRule>',
-      '<workflow>',
-      'Custom',
-      '__c',
-    ];
-
-    return customizationIndicators.some(indicator =>
-      content.toLowerCase().includes(indicator.toLowerCase())
-    );
-  }
-
-  /**
-   * Check if the configuration is active
-   */
-  private isActive(content: string): boolean {
-    // Look for active status indicators
-    if (content.includes('<active>true</active>')) {
-      return true;
-    }
-    if (content.includes('<active>false</active>')) {
-      return false;
-    }
-    // Default to true if no explicit active flag found
-    return true;
-  }
-  /* jscpd:ignore-end */
 }

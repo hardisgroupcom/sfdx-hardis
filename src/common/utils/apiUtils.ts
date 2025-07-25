@@ -2,6 +2,9 @@ import { execSfdxJson, uxLog } from './index.js';
 import c from 'chalk';
 import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
+import fs from 'fs-extra';
+import path from 'path';
+import { tmpdir } from 'os';
 
 // Constants for record limits
 const MAX_CHUNKS = Number(process.env.SOQL_MAX_BATCHES ?? 50);
@@ -138,6 +141,71 @@ export async function bulkQueryByChunks(
   }
 
   return results;
+}
+
+// Bulk query using SF CLI data export bulk command
+export async function bulkQueryWithCLI(
+  soqlQuery: string,
+  conn: Connection,
+  outputFilePath: string,
+  waitMinutes = 60
+): Promise<any> {
+  const queryLabel = soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery;
+  uxLog(this, c.grey(`[SF CLI Bulk Export] ${c.italic(queryLabel)}`));
+
+  let command: string;
+  let tempQueryFile: string | null = null;
+
+  try {
+    const username = conn.getUsername();
+
+    // Check if query is too long for command line (Windows limit ~8000 chars, being conservative)
+    const baseCommand = `sf data export bulk --output-file "${outputFilePath}" --wait ${waitMinutes} --target-org ${username}`;
+    const queryParam = `--query "${soqlQuery}"`;
+    const fullCommand = `${baseCommand} ${queryParam}`;
+
+    if (fullCommand.length > 300) {
+      // Use temporary file for long queries
+      tempQueryFile = path.join(tmpdir(), `query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.soql`);
+      await fs.writeFile(tempQueryFile, soqlQuery, 'utf8');
+      command = `${baseCommand} --query-file "${tempQueryFile}"`;
+      uxLog(this, c.grey(`[SF CLI Bulk Export] Using temporary query file due to long query: ${tempQueryFile}`));
+    } else {
+      // Use inline query for shorter queries
+      command = fullCommand;
+    }
+
+    uxLog(this, c.grey(`[SF CLI Bulk Export] Exporting data to ${outputFilePath}`));
+
+    const result = await execSfdxJson(command, this, {
+      fail: true,
+      output: true
+    });
+
+    if (result.status === 0) {
+      uxLog(this, c.green(`[SF CLI Bulk Export] Export completed successfully: ${outputFilePath}`));
+      return {
+        success: true,
+        outputFile: outputFilePath,
+        result: result.result
+      };
+    } else {
+      throw new Error(`SF CLI bulk export failed: ${JSON.stringify(result)}`);
+    }
+  } catch (e: any) {
+    uxLog(this, c.red(`[SF CLI Bulk Export] Error: ${e.message}`));
+    throw e;
+  } finally {
+    // Clean up temporary query file if it was created
+    if (tempQueryFile) {
+      try {
+        await fs.unlink(tempQueryFile);
+        uxLog(this, c.grey(`[SF CLI Bulk Export] Cleaned up temporary query file: ${tempQueryFile}`));
+      } catch (cleanupError) {
+        uxLog(this, c.yellow(`[SF CLI Bulk Export] Warning: Could not cleanup temporary file ${tempQueryFile}: ${cleanupError}`));
+      }
+    }
+  }
 }
 
 let spinner: Ora;
