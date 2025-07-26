@@ -9926,10 +9926,10 @@ object.values@^1.2.1:
     define-properties "^1.2.1"
     es-object-atoms "^1.0.0"
 
-oclif@^4.21.0:
-  version "4.22.0"
-  resolved "https://registry.yarnpkg.com/oclif/-/oclif-4.22.0.tgz#a9e14c8ed627bd9b30f0135bac54470e98489c27"
-  integrity sha512-u6TnSY2pTTO4v1QZVf3Ql54BJNTyO03THGlVFdjeJtUsqy6eSz5cvNJP3v5hZBf7SYxzHF2K3JrgAV0bfcqXbg==
+oclif@^4.22.1:
+  version "4.22.1"
+  resolved "https://registry.yarnpkg.com/oclif/-/oclif-4.22.1.tgz#3089db11b47b8515659cddd5e92c78f0478b2dab"
+  integrity sha512-TU4L1XTQuxeF+mvcvSKfYeh5Zs3XeiQdKUCVLBDumalxhc4j3HwO5lFHnp3vDbP9NWyvSrvbcj+qXLBbELJfbA==
   dependencies:
     "@aws-sdk/client-cloudfront" "^3.844.0"
     "@aws-sdk/client-s3" "^3.848.0"
