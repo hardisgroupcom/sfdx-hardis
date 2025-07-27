@@ -1636,10 +1636,10 @@
     zod "^3.25.32"
     zod-to-json-schema "^3.22.3"
 
-"@langchain/google-genai@^0.2.10":
-  version "0.2.15"
-  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-0.2.15.tgz#bf8c7f14ee5a0c16aaafc71f902ad8619e8089f2"
-  integrity sha512-fAD3xjzd5TxWQCKlttNeEc+b5tUX43hBqKH3rk3g+wbl1ToLqe3ocWawKRmGotEuI5jhDVmoHjDxoNMifFDgmg==
+"@langchain/google-genai@^0.2.16":
+  version "0.2.16"
+  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-0.2.16.tgz#652cec6186b3bd1cb15ef2d68352ddd34feb3767"
+  integrity sha512-7xgQfZtn4EcKL7HYV7c5ZZUTjzjY0eh1Ex2570uwEBIUlyP5GFYeRe7gizx6965DYu6rktkXRMHaU0CuOXxAXQ==
   dependencies:
     "@google/generative-ai" "^0.24.0"
     uuid "^11.1.0"
