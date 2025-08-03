@@ -636,15 +636,47 @@ export async function execCommand(
   } else {
     uxLog(this, commandLog);
   }
+  if (WebSocketClient.isAlive()) {
+    WebSocketClient.sendMessage({
+      event: 'commandSubCommandStart',
+      data: {
+        command: command,
+        cwd: execOptions.cwd || process.cwd(),
+        options: options,
+      },
+    });
+  }
   try {
     commandResult = await exec(command, execOptions);
     if (spinner) {
       spinner.succeed(commandLog);
     }
+    if (WebSocketClient.isAlive()) {
+      WebSocketClient.sendMessage({
+        event: 'commandSubCommandEnd',
+        data: {
+          command: command,
+          cwd: execOptions.cwd || process.cwd(),
+          options: options,
+          success: true,
+          result: commandResult,
+        },
+      });
+    }
   } catch (e) {
     if (spinner) {
       spinner.fail(commandLog);
     }
+    WebSocketClient.sendMessage({
+      event: 'commandSubCommandEnd',
+      data: {
+        command: command,
+        cwd: execOptions.cwd || process.cwd(),
+        options: options,
+        success: false,
+        result: e,
+      },
+    });
     // Display error in red if not json
     if (!command.includes('--json') || options.fail) {
       const strErr = shortenLogLines(`${(e as any).stdout}\n${(e as any).stderr}`);
@@ -1100,6 +1132,35 @@ export function uxLog(commandThis: any, text: string, sensitive = false) {
     }
     else {
       globalThis.hardisLogFileStream.write(stripAnsi(text) + '\n');
+    }
+  }
+  if (WebSocketClient.isAlive()) {
+    if (sensitive) {
+      WebSocketClient.sendMessage({ event: "commandLogLine", message: 'OBFUSCATED LOG LINE' });
+    }
+    else {
+      text = text.replace("[sfdx-hardis]", '').trim();
+      // Calculate type of message according to its chalk color
+      let logType = 'none';
+      if (text.startsWith(c.grey(''))) {
+        logType = 'log';
+      } else if (text.startsWith(c.cyan(''))) {
+        logType = 'action';
+      } else if (text.startsWith(c.yellow(''))) {
+        logType = 'warning';
+      } else if (text.startsWith(c.red(''))) {
+        logType = 'error';
+      } else if (text.startsWith(c.green(''))) {
+        logType = 'success';
+      }
+      // Send message to WebSocket client
+      if (logType !== 'none') {
+        WebSocketClient.sendMessage({
+          event: "commandLogLine",
+          logType: logType,
+          message: text
+        });
+      }
     }
   }
 }
