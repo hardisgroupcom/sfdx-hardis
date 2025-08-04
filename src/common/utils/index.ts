@@ -52,7 +52,29 @@ export function git(options: any = { output: false, displayCommand: true }): Sim
         const gitArgsStr = (gitArgs || []).join(' ');
         if (!(gitArgsStr.includes('branch -v') || gitArgsStr.includes('config --list --show-origin --null'))) {
           if (options.displayCommand) {
+            if (WebSocketClient.isAlive()) {
+              WebSocketClient.sendMessage({
+                event: 'commandSubCommandStart',
+                data: {
+                  command: command + ' ' + gitArgsStr,
+                  cwd: process.cwd(),
+                  options: options,
+                },
+              });
+            }
             uxLog(this, `[command] ${c.bold(c.bgWhite(c.blue(command + ' ' + gitArgsStr)))}`);
+            if (WebSocketClient.isAlive()) {
+              WebSocketClient.sendMessage({
+                event: 'commandSubCommandEnd',
+                data: {
+                  command: command + ' ' + gitArgsStr,
+                  cwd: process.cwd(),
+                  options: options,
+                  success: true,
+                  result: '',
+                },
+              });
+            }
           }
         }
       }
@@ -1127,8 +1149,8 @@ export async function generateReports(
   ];
 }
 
-export function uxLog(commandThis: any, text: string, sensitive = false) {
-  text = text.includes('[sfdx-hardis]') ? text : '[sfdx-hardis]' + (text.startsWith('[') ? '' : ' ') + text;
+export function uxLog(commandThis: any, textInit: string, sensitive = false) {
+  const text = textInit.includes('[sfdx-hardis]') ? textInit : '[sfdx-hardis]' + (textInit.startsWith('[') ? '' : ' ') + textInit;
   if (commandThis?.ux) {
     commandThis.ux.log(text);
   } else if (!(globalThis?.processArgv || process?.argv || "").includes('--json')) {
@@ -1142,23 +1164,28 @@ export function uxLog(commandThis: any, text: string, sensitive = false) {
       globalThis.hardisLogFileStream.write(stripAnsi(text) + '\n');
     }
   }
-  if (WebSocketClient.isAlive()) {
+  if (WebSocketClient.isAlive() && !text.includes('[command]')) {
     if (sensitive) {
       WebSocketClient.sendMessage({ event: "commandLogLine", message: 'OBFUSCATED LOG LINE' });
     }
     else {
-      text = text.replace("[sfdx-hardis]", '').trim();
-      // Calculate type of message according to its chalk color
+      // Get ANSI color codes by extracting characters before the first space
+      const greyAnsi = c.grey(' ').split(' ')[0];
+      const cyanAnsi = c.cyan(' ').split(' ')[0];
+      const yellowAnsi = c.yellow(' ').split(' ')[0];
+      const redAnsi = c.red(' ').split(' ')[0];
+      const greenAnsi = c.green(' ').split(' ')[0];
+
       let logType = 'none';
-      if (text.startsWith(c.grey(''))) {
+      if (textInit.startsWith(greyAnsi)) {
         logType = 'log';
-      } else if (text.startsWith(c.cyan(''))) {
+      } else if (textInit.startsWith(cyanAnsi)) {
         logType = 'action';
-      } else if (text.startsWith(c.yellow(''))) {
+      } else if (textInit.startsWith(yellowAnsi)) {
         logType = 'warning';
-      } else if (text.startsWith(c.red(''))) {
+      } else if (textInit.startsWith(redAnsi)) {
         logType = 'error';
-      } else if (text.startsWith(c.green(''))) {
+      } else if (textInit.startsWith(greenAnsi)) {
         logType = 'success';
       }
       // Send message to WebSocket client
@@ -1166,7 +1193,7 @@ export function uxLog(commandThis: any, text: string, sensitive = false) {
         WebSocketClient.sendMessage({
           event: "commandLogLine",
           logType: logType,
-          message: text
+          message: textInit
         });
       }
     }
