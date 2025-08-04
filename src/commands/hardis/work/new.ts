@@ -190,6 +190,8 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         type: 'select',
         name: 'project',
         message: c.cyanBright('Please select the project your task is for'),
+        description: 'Choose which project this new work item belongs to',
+        placeholder: 'Select a project',
         choices: availableProjects.map((project: string) => {
           return {
             title: project.includes(',') ? project.split(',').join(' - ') : project,
@@ -206,6 +208,8 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         type: 'select',
         name: 'branch',
         message: c.cyanBright('What is the type of the task you want to do ?'),
+        description: 'Select the category of work that best describes your task',
+        placeholder: 'Select task type',
         initial: 0,
         choices: branchPrefixChoices,
       },
@@ -213,6 +217,8 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         type: 'select',
         name: 'sources',
         message: c.cyanBright('What type(s) of Salesforce updates will you have to perform for this task ?'),
+        description: 'Choose the type of changes you will make to help set up the appropriate development environment',
+        placeholder: 'Select update type',
         initial: 0,
         choices: [
           {
@@ -258,6 +264,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         message: c.cyanBright(
           `Do you want to update your default target git branch to ${c.green(this.targetBranch)} ?`
         ),
+        description: 'Set this branch as your default target for future work items',
         default: false,
       });
       if (updateDefaultBranchRes.value === true) {
@@ -306,6 +313,8 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
       type: 'select',
       name: 'value',
       message: c.cyanBright(`Do you want to use a scratch org or a tracked sandbox org ?`),
+      description: 'Choose the type of Salesforce org to use for your development work',
+      placeholder: 'Select org type',
       initial: 0,
       choices: orgTypeChoices,
     });
@@ -335,8 +344,10 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
       type: 'text',
       name: 'taskName',
       message: c.cyanBright(
-        `What is the name of your new task ? (example: ${taskNameExample}). Please avoid accents or special characters`
+        `What is the name of your new task ? Please avoid accents or special characters`
       ),
+      description: 'Enter a descriptive name for your task that will be used in the git branch name',
+      placeholder: `Ex: ${taskNameExample}`,
     });
     const taskName = taskResponse.taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-');
     if (validationRegex != null && !new RegExp(validationRegex).test(taskName)) {
@@ -374,6 +385,8 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
       type: 'select',
       name: 'value',
       message: c.cyanBright(`Please select a scratch org to use for your branch ${c.green(branchName)}`),
+      description: 'Choose whether to create a new scratch org or reuse an existing one',
+      placeholder: 'Select scratch org option',
       initial: 0,
       choices: [
         ...baseChoices,
@@ -449,8 +462,10 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         type: 'select',
         name: 'value',
         message: c.cyanBright(
-          `Do you want to update the sandbox according to git branch "${this.targetBranch}" current state ? (packages,SOURCES,permission set assignments,apex scripts,initial data)`
+          `Do you want to update the sandbox according to git branch "${this.targetBranch}" current state ?`
         ),
+        description: 'Choose whether to sync your sandbox with the latest changes from the target branch (packages, sources, permission sets, apex scripts, initial data)',
+        placeholder: 'Select sync option',
         choices: [
           {
             title: '🧑‍🤝‍🧑 No, continue working on my current sandbox state',
@@ -472,6 +487,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
           message: c.cyanBright(
             `Are you really sure you want to update the dev sandbox with the state of git branch ${this.targetBranch} ? This will overwrite setup updates that you or other users have not committed yet`
           ),
+          description: 'Confirm that you want to reset your sandbox to match the target branch state',
         });
         initSandbox = promptConfirm.value === true;
       }
@@ -553,6 +569,8 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
           branchName
         )} (if you want to avoid conflicts, you should often refresh your sandbox)`
       ),
+      description: 'Choose an existing sandbox or connect to a new one for this branch',
+      placeholder: 'Select sandbox',
       initial: 0,
       choices: [
         ...[

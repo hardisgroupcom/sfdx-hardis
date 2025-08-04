@@ -107,6 +107,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
         type: 'multiselect',
         message:
           'If you want to try again with updated .forceignore file, please select elements you want to add, else escape',
+        description: 'Select metadata elements to add to .forceignore to resolve deployment conflicts',
         name: 'value',
         choices: forceIgnoreElements.map((forceIgnoreElt) => {
           return {

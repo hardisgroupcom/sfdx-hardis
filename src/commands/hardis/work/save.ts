@@ -251,6 +251,8 @@ autoRemoveUserPermissions:
       type: 'select',
       name: 'value',
       message: c.cyanBright('Have you already committed the updated metadata you want to deploy ?'),
+      description: 'Select your current state regarding git commits and metadata updates',
+      placeholder: 'Select commit status',
       choices: [
         {
           title: '😎 Yes, my commit(s) is ready ! I staged my files then created one or multiple commits !',
@@ -305,6 +307,7 @@ autoRemoveUserPermissions:
           type: 'confirm',
           name: 'value',
           message: c.cyan(`Did you update ${c.green(dataSource.label)} and want to export related data ?`),
+          description: 'Confirm if you want to export data that may have been updated for this data source',
         });
         if (exportDataRes.value === true) {
           await exportData(dataSource.dataPath, this, {
@@ -586,6 +589,7 @@ autoRemoveUserPermissions:
             this.currentBranch
           )})`
         ),
+        description: 'Choose whether to push your commits to the remote git repository',
       });
       if (pushResponse.push === true) {
         uxLog(this, c.cyan(`Pushing new commit(s) in remote git branch ${c.green(`origin/${this.currentBranch}`)}...`));

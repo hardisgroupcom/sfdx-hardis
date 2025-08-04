@@ -211,6 +211,7 @@ export async function promptInstanceUrl(
     type: 'select',
     name: 'value',
     message: c.cyanBright(`What is the base URL or the org you want to connect to, as ${alias} ?`),
+    description: 'Select the Salesforce environment type or specify a custom URL for authentication',
     choices: choices,
     initial: 1,
   });
@@ -223,7 +224,9 @@ export async function promptInstanceUrl(
   const customUrlResponse = await prompts({
     type: 'text',
     name: 'value',
-    message: c.cyanBright('Please input the base URL of the salesforce org (ex: https://myclient.my.salesforce.com)'),
+    message: c.cyanBright('Please input the base URL of the salesforce org'),
+    description: 'Enter the custom Salesforce org URL for authentication',
+    placeholder: 'Ex: https://myclient.my.salesforce.com',
   });
   const urlCustom = (customUrlResponse?.value || "").replace('.lightning.force.com', '.my.salesforce.com');
   return urlCustom;
@@ -246,8 +249,10 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
           type: 'text',
           name: 'value',
           message: c.cyanBright(
-            'What is the URL of your git repository ? example: https://gitlab.hardis-group.com/busalesforce/monclient/monclient-org-monitoring.git'
+            'What is the URL of your git repository ?'
           ),
+          description: 'Enter the full URL of the git repository to clone',
+          placeholder: 'Ex: https://gitlab.hardis-group.com/busalesforce/monclient/monclient-org-monitoring.git',
         });
         cloneUrl = cloneUrlPrompt.value;
       }
@@ -313,6 +318,7 @@ export async function selectGitBranch(
     type: 'select',
     name: 'value',
     message: options.message || 'Please select a Git branch',
+    description: 'Choose a git branch to work with',
     choices: branches.all.map((branchName) => {
       return { title: branchName.replace('origin/', ''), value: branchName.replace('origin/', '') };
     }),
@@ -451,10 +457,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         type: 'multiselect',
         name: 'files',
         message: c.cyanBright(
-          `Please select ${c.red('carefully')} the ${c.bgWhite(
+          `Please select the ${c.bgWhite(
             c.red(c.bold(group.label.toUpperCase()))
           )} files you want to commit (save)}`
         ),
+        description: 'Choose files to include in the git commit. Be careful with your selection.',
         choices: matchingFiles.map((fileStatus: FileStatusResult) => {
           return {
             title: `(${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`,
@@ -511,6 +518,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
       type: 'select',
       name: 'addFiles',
       message: c.cyanBright(`Do you confirm that you want to add the following list of files ?\n${confirmationText}`),
+      description: 'Confirm your file selection for the git commit',
       choices: [
         { title: 'Yes, my selection is complete !', value: 'yes' },
         { title: 'No, I want to select again', value: 'no' },
@@ -1247,8 +1255,9 @@ export async function generateSSLCertificate(
     name: 'value',
     initial: true,
     message: c.cyanBright(
-      "Do you want sfdx-hardis to configure the SFDX connected app on your org ? (say yes if you don't know)"
+      "Do you want sfdx-hardis to configure the SFDX connected app on your org ?"
     ),
+    description: 'Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.',
   });
   if (confirmResponse.value === true) {
     uxLog(
@@ -1275,7 +1284,8 @@ export async function generateSSLCertificate(
     );
     await prompts({
       type: 'confirm',
-      message: c.cyanBright('Hit ENTER when the CI/CD variables are set (check info in the console below)'),
+      message: c.cyanBright('Hit ENTER when the CI/CD variables are set'),
+      description: 'Confirm when you have configured the required CI/CD environment variables in your deployment platform',
     });
     // Request info for deployment
     const promptResponses = await prompts([
@@ -1283,7 +1293,9 @@ export async function generateSSLCertificate(
         type: 'text',
         name: 'appName',
         initial: 'sfdxhardis' + Math.floor(Math.random() * 9) + 1,
-        message: c.cyanBright('How would you like to name the Connected App (ex: sfdx_hardis) ?'),
+        message: c.cyanBright('How would you like to name the Connected App ?'),
+        description: 'Name for the Connected App that will be created in your Salesforce org',
+        placeholder: 'Ex: sfdx_hardis',
       },
     ]);
     const contactEmail = await promptUserEmail(
@@ -1385,6 +1397,7 @@ If this is a Test class issue (production env), you may have to create manually 
         message: c.cyanBright(
           'You need to manually configure the connected app. Follow the MANUAL INSTRUCTIONS in the console, then continue here'
         ),
+        description: 'Confirm when you have completed the manual Connected App configuration steps',
       });
     }
   } else {

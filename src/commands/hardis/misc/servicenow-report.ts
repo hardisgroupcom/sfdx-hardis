@@ -264,6 +264,8 @@ Example:
         const whereChoiceRes = await prompts({
           type: 'select',
           message: 'Select a WHERE condition for user stories:',
+          description: 'Choose a predefined WHERE condition to filter user stories',
+          placeholder: 'Select a condition',
           choices: whereChoices,
         });
         this.whereChoice = whereChoiceRes.value;
@@ -294,6 +296,8 @@ Example:
         const configFileRes = await prompts({
           type: 'select',
           message: 'Multiple configuration files found. Please select one:',
+          description: 'Choose which configuration file to use for the ServiceNow report',
+          placeholder: 'Select a config file',
           choices: configFiles.map((file) => ({ title: file, value: file })),
         });
         this.configFile = configFileRes.value;

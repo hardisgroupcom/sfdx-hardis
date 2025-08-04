@@ -269,6 +269,7 @@ export default class CustomLabelTranslations extends SfCommand<any> {
       const labelSelectRes = await prompts({
         type: 'multiselect',
         message: 'Please select the Custom Labels you want to extract from translations',
+        description: 'Choose which custom labels to include in the translation extraction',
         choices: choices
       });
 
@@ -327,6 +328,8 @@ export default class CustomLabelTranslations extends SfCommand<any> {
         type: 'select',
         name: 'value',
         message: 'Select a Lightning Web Component to extract custom labels from',
+        description: 'Choose which LWC component to analyze for custom label usage',
+        placeholder: 'Select a component',
         choices: choices
       });
 
@@ -343,6 +346,8 @@ export default class CustomLabelTranslations extends SfCommand<any> {
         type: 'select',
         name: 'method',
         message: 'How would you like to extract custom label translations?',
+        description: 'Choose your preferred method for extracting custom label translations',
+        placeholder: 'Select extraction method',
         choices: [
           {
             value: 'labels',

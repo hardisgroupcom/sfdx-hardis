@@ -220,7 +220,8 @@ export async function authOrg(orgAlias: string, options: any) {
       const loginTypeRes = await prompts({
         name: 'loginType',
         type: 'select',
-        message: "Select a login type (if you don't know, use Web)",
+        message: "Select a login type",
+        description: 'Choose the authentication method that works best for your environment. Use Web if unsure.',
         choices: [
           {
             title: '🌐 Web Login (If VsCode is locally installed on your computer)',

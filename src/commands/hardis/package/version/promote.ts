@@ -82,6 +82,8 @@ export default class PackageVersionPromote extends SfCommand<any> {
           message: c.cyanBright(
             `Please select a package (this is not a drill, it will create an official new version !)`
           ),
+          description: 'Choose which package to promote - this will create a new official version that cannot be undone',
+          placeholder: 'Select a package',
           choices: Object.values(availablePackageAliases).map((packageAlias) => {
             return { title: packageAlias, value: packageAlias };
           }),

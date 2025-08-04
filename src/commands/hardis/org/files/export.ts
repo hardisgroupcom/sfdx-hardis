@@ -93,6 +93,7 @@ See article below:
       const defaultConfigRes = await prompts({
         type: 'confirm',
         message: c.cyanBright('Do you want to use default configuration for ' + exportConfigInitial.label + ' ?'),
+        description: 'Use the saved configuration settings or customize them for this export operation',
       });
       if (defaultConfigRes.value !== true) {
         const exportConfig = await promptFilesExportConfiguration(exportConfigInitial, true);

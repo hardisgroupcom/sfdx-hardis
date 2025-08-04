@@ -134,6 +134,8 @@ export default class GitPullRequestsExtract extends SfCommand<any> {
       const statusRes = await prompts({
         message: "Please select a status criteria, or all",
         type: "select",
+        description: "Choose which pull request status to filter by",
+        placeholder: "Select status",
         choices: [
           { title: "All status", value: "all" },
           { title: "Merged", value: "merged" },

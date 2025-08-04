@@ -66,7 +66,8 @@ See article below to see how to Export them.
         type: 'confirm',
         name: 'value',
         message:
-          'Do you want to overwrite the existing files with the same name ? (doubles the number of used API calls)',
+          'Do you want to overwrite the existing files with the same name ?',
+        description: 'Replace existing files in Salesforce with local versions (doubles the number of API calls used)',
       });
       this.handleOverwrite = handleOverwriteRes.value;
     }

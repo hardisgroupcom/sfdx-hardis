@@ -372,6 +372,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       const confirmRes = await prompts({
         type: 'select',
         message: 'Do you want to delete unused Permission Set License Assignments ?',
+        description: 'Remove permission set license assignments that are not being used, freeing up licenses for other users',
+        placeholder: 'Select an option',
         choices: [
           {
             title: `Yes, delete the ${this.unusedPermissionSetLicenseAssignments.length} useless Permission Set License Assignments !`,

@@ -111,6 +111,8 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
       type: 'select',
       name: 'template',
       message: c.cyanBright('Please select a Files import/export template, or the blank one'),
+      description: 'Choose a pre-configured template for file operations or start with a blank configuration',
+      placeholder: 'Select a template',
       choices: [...[defaultTemplateChoice], ...templateFileChoices],
     });
     return templateResp.template;

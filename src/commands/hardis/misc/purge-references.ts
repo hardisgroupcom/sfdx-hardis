@@ -66,6 +66,8 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
       const refPromptResult = await prompts({
         type: 'text',
         message: 'Please input a comma-separated list of strings that you want to purge (example: Affaire__c)',
+        description: 'Enter the reference strings to purge from your metadata files',
+        placeholder: 'Ex: Affaire__c,MyField__c,CustomObject__c',
       });
       this.referenceStrings = refPromptResult.value.split(',');
     }
@@ -85,6 +87,8 @@ USE WITH EXTREME CAUTION AND CAREFULLY READ THE MESSAGES !`;
       message: `Are your local sources up to date with target org ${flags[
         'target-org'
       ].getUsername()}, or do you need to retrieve some of them ?`,
+      description: 'Confirm whether your local metadata is synchronized with the target org',
+      placeholder: 'Select an option',
       choices: [
         { value: true, title: 'My local sfdx sources are up to date with the target org' },
         { value: false, title: 'I need to retrieve metadatas :)' },

@@ -178,8 +178,9 @@ export default class OrgFreezeUser extends SfCommand<any> {
         message: c.cyanBright(
           `Are you sure you want to freeze these ${c.bold(userLoginsToFreeze.length)} users in org ${c.green(
             flags['target-org'].getUsername()
-          )} (y/n)?`
+          )} ?`
         ),
+        description: 'Confirm freezing selected users, which will deactivate their accounts in the Salesforce org',
       });
       if (confirmfreeze.value !== true) {
         const outputString = 'Script cancelled by user';

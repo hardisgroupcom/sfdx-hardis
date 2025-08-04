@@ -74,6 +74,7 @@ export default class HardisOrgCommunityUpdate extends SfCommand<any> {
             flags['target-org'].getUsername()
           )} (y/n)?`
         ),
+        description: 'Confirm that you want to change the status of the selected community networks',
       });
       if (confirmUpdate.value !== true) {
         const outputString = 'Script cancelled by user';

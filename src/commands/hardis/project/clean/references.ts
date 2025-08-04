@@ -168,6 +168,7 @@ export default class CleanReferences extends SfCommand<any> {
           type: 'multiselect',
           name: 'value',
           message: c.cyanBright('What references do you want to clean from your SFDX project sources ?'),
+          description: 'Select which types of reference cleaning to perform on your project',
           choices: this.allCleaningTypes,
         });
         this.cleaningTypes = typesResponse.value;
@@ -185,6 +186,7 @@ export default class CleanReferences extends SfCommand<any> {
         message: c.cyanBright(
           'Do you want to save this action in your project configuration, so it is executed at each Work Save ?'
         ),
+        description: 'Choose whether to automatically apply these cleaning types during future work saves',
       });
       if (saveResponse.value === true) {
         autoCleanTypes.push(...this.cleaningTypes);

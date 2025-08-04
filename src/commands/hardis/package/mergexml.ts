@@ -85,6 +85,7 @@ export default class MergePackageXml extends SfCommand<any> {
         type: 'multiselect',
         name: 'files',
         message: 'Please select the package.xml files you want to merge',
+        description: 'Choose which package.xml files to combine into a single merged file',
         choices: matchingFiles.map((file) => {
           const relativeFile = path.relative(process.cwd(), file);
           return { title: relativeFile, value: relativeFile };

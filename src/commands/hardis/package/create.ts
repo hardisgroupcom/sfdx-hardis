@@ -48,16 +48,22 @@ export default class PackageCreate extends SfCommand<any> {
         type: 'text',
         name: 'packageName',
         message: c.cyanBright(`Please input the name of the package (ex: MyPackage)`),
+        description: 'Enter a clear name for your new Salesforce package',
+        placeholder: 'Ex: MyPackage',
       },
       {
         type: 'text',
         name: 'packagePath',
         message: c.cyanBright(`Please input the path of the package (ex: sfdx-source/apex-mocks)`),
+        description: 'Specify the directory path where the package source code is located',
+        placeholder: 'Ex: sfdx-source/apex-mocks',
       },
       {
         type: 'select',
         name: 'packageType',
         message: c.cyanBright(`Please select the type of the package`),
+        description: 'Choose whether this is an unlocked package or managed package',
+        placeholder: 'Select package type',
         choices: [
           {
             title: 'Managed',

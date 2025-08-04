@@ -53,6 +53,7 @@ export default class OrgConnect extends SfCommand<any> {
         type: 'confirm',
         name: 'value',
         message: 'Do you want to open this org in Web Browser ?',
+        description: 'Launch the Salesforce org in your default web browser for immediate access',
       });
       if (openRes.value === true) {
         const openCommand = `sf org open --target-org ${org.username}`;

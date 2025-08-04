@@ -42,6 +42,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       type: availableTargetBranches ? 'select' : 'text',
       name: 'targetBranch',
       message: c.cyanBright(message),
+      description: availableTargetBranches ? 'Choose the target branch for this operation' : 'Enter the name of the target branch',
+      placeholder: availableTargetBranches ? undefined : 'Ex: integration',
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
           return {

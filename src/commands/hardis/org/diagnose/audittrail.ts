@@ -533,6 +533,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         type: 'select',
         name: 'lastndays',
         message: 'Please select the number of days in the past from today you want to detect suspiscious setup activities',
+        description: 'Choose the timeframe for analyzing audit trail records to detect suspicious administrative activities',
+        placeholder: 'Select number of days',
         choices: [
           { title: `1`, value: 1 },
           { title: `2`, value: 2 },

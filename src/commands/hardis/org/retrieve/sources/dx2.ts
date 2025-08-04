@@ -72,7 +72,9 @@ export default class DxSources2 extends SfCommand<any> {
     // Prompt for package.xml if not sent
     if (packageXml === null) {
       const packageXmlRes = await prompts({
-        message: c.cyanBright('Please input the path to the package.xml file to use force sf project retrieve start'),
+        message: c.cyanBright('Please input the path to the package.xml file'),
+        description: 'Specify the package.xml file that defines which metadata to retrieve from the org',
+        placeholder: 'Ex: manifest/package.xml',
         type: 'text',
         name: 'value',
       });

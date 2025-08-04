@@ -70,6 +70,7 @@ export async function promptProfiles(
     const profilesSelection = await prompts({
       type: options.multiselect ? 'multiselect' : 'select',
       message: options.message || 'Please select profile(s)',
+      description: 'Select one or more Salesforce profiles for the operation',
       name: 'value',
       choices: profiles.map((profile: any) => {
         return {
@@ -106,6 +107,8 @@ export async function promptProfiles(
     const profilesSelection = await prompts({
       type: 'text',
       message: options.message || 'Please input profile name',
+      description: 'Enter the Salesforce profile name manually',
+      placeholder: 'Ex: System Administrator',
       name: 'value',
       initial: options?.initialSelection[0] || null,
     });
@@ -157,6 +160,7 @@ export async function promptOrg(
     type: 'select',
     name: 'org',
     message: c.cyanBright(options.promptMessage || 'Please select an org'),
+    description: 'Choose a Salesforce org from the list of authenticated orgs',
     choices: orgList.map((org: any) => {
       const title = org.username || org.alias || org.instanceUrl;
       const description =
@@ -258,6 +262,7 @@ export async function promptOrgList(options: { promptMessage?: string } = {}) {
     type: 'multiselect',
     name: 'orgs',
     message: c.cyanBright(options.promptMessage || 'Please select orgs'),
+    description: 'Choose multiple Salesforce orgs from the list of authenticated orgs',
     choices: orgListSorted.map((org: any) => {
       const title = org.username || org.alias || org.instanceUrl;
       const description =
@@ -317,6 +322,7 @@ export async function promptOrgUsernameDefault(
   const defaultOrgRes = await prompts({
     type: 'confirm',
     message: options.message || `Do you want to use org ${defaultOrg} ?`,
+    description: 'Confirms whether to use the currently configured default org or select a different one',
   });
   if (defaultOrgRes.value === true) {
     return defaultOrg;
@@ -332,7 +338,9 @@ export async function promptUserEmail(promptMessage: string | null = null) {
     type: 'text',
     name: 'value',
     initial: userConfig.userEmail || '',
-    message: c.cyanBright(promptMessage || 'Please input your email address (it will be stored locally for later use)'),
+    message: c.cyanBright(promptMessage || 'Please input your email address'),
+    description: 'Your email address will be stored locally and used for CI/CD operations',
+    placeholder: 'Ex: john.doe@company.com',
     validate: (value: string) => EmailValidator.validate(value),
   });
   const userEmail = promptResponse.value;
@@ -412,6 +420,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
         message: c.cyanBright(
           `Please select the install configuration for ${c.bold(installedPackage.SubscriberPackageName)}`
         ),
+        description: 'Configure how this package should be automatically installed during CI/CD operations',
         choices: [
           {
             title: `Install automatically ${c.bold(installedPackage.SubscriberPackageName)} on scratch orgs only`,

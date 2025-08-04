@@ -122,6 +122,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
         type: 'confirm',
         name: 'value',
         message: c.cyanBright(`Do you confirm you want to delete these ${this.flowRecords.length} flow versions ?`),
+        description: 'Permanently delete the selected flow versions from the Salesforce org',
       });
 
       if (confirmDelete.value === false) {
@@ -163,9 +164,8 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     }
 
     if (this.deletedErrors.length > 0) {
-      const errMsg = `[sfdx-hardis] There have been errors while deleting ${
-        this.deletedErrors.length
-      } record(s): \n${JSON.stringify(this.deletedErrors)}`;
+      const errMsg = `[sfdx-hardis] There have been errors while deleting ${this.deletedErrors.length
+        } record(s): \n${JSON.stringify(this.deletedErrors)}`;
       if (this.allowPurgeFailure) {
         uxLog(this, c.yellow(errMsg));
       } else {
@@ -200,6 +200,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
         type: 'confirm',
         name: 'value',
         message: c.cyanBright(`Do you confirm you want to delete ${flowInterviewsIds.length} Flow Interviews ?`),
+        description: 'Permanently delete the selected flow interview records from the Salesforce org',
       });
       if (confirmDelete.value === false) {
         uxLog(this, c.magenta('Action cancelled by user'));
@@ -285,12 +286,15 @@ export default class OrgPurgeFlow extends SfCommand<any> {
           type: 'select',
           name: 'name',
           message: 'Please select the flow you want to clean',
+          description: 'Choose a specific flow to clean or select all flows',
+          placeholder: 'Select a flow',
           choices: flowNamesChoice,
         },
         {
           type: 'multiselect',
           name: 'status',
           message: 'Please select the status(es) you want to delete',
+          description: 'Choose which flow version statuses should be deleted',
           choices: [
             { title: `Draft`, value: 'Draft' },
             { title: `Inactive`, value: 'Inactive' },

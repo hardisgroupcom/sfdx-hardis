@@ -56,6 +56,7 @@ export default class RetrievePackageConfig extends SfCommand<any> {
       type: 'confirm',
       name: 'value',
       message: c.cyanBright('Do you want to update your project configuration with this list of packages ?'),
+      description: 'Update your local project files with the list of installed packages for deployment automation',
     });
     if (updateConfigRes.value === true) {
       await managePackageConfig(installedPackages, installedPackages, true);

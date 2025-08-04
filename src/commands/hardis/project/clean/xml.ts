@@ -199,6 +199,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
         message: c.cyanBright(
           `Do you want to ALWAYS apply removal of xpath ${xpath} from files of pattern ${globPattern} ?`
         ),
+        description: 'Choose whether to save this xpath removal as a permanent cleaning rule',
       });
       if (addConfigRes.value === true) {
         let updated = false;

@@ -213,6 +213,7 @@ export default class ScratchCreate extends SfCommand<any> {
           )}`
         ),
         default: false,
+        description: 'Confirm that you want to reuse this existing scratch org instead of creating a new one',
       });
       if (checkRes.value === false) {
         process.exit(0);

@@ -67,6 +67,7 @@ export default class ScratchDelete extends SfCommand<any> {
       type: 'multiselect',
       name: 'value',
       message: c.cyanBright('Please select the list of scratch orgs you want to delete'),
+      description: 'Choose which scratch orgs to permanently delete (this action cannot be undone)',
       choices: scratchOrgChoices,
     });
 

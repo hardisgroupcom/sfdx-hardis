@@ -168,26 +168,33 @@ If you don't have unique field to identify an object, use composite external ids
       {
         type: 'text',
         name: 'dataPath',
-        message: c.cyanBright('Please input the SFDMU folder name (PascalCase format). Ex: "ProductsActive"'),
+        message: c.cyanBright('Please input the SFDMU folder name (PascalCase format)'),
+        description: 'The folder name that will contain the SFDMU data configuration files',
+        placeholder: 'Ex: ProductsActive',
       },
       {
         type: 'text',
         name: 'sfdxHardisLabel',
-        message: c.cyanBright('Please input the SFDMU config label. Ex: "Active Products"'),
+        message: c.cyanBright('Please input the SFDMU config label'),
+        description: 'A human-readable label for this data configuration',
+        placeholder: 'Ex: Active Products',
       },
       {
         type: 'text',
         name: 'sfdxHardisDescription',
         message: c.cyanBright(
-          'Please input the SFDMU config description. Ex: "Active products are used for scratch org initialization and in deployments"'
+          'Please input the SFDMU config description'
         ),
+        description: 'A detailed description explaining what this data configuration does',
+        placeholder: 'Ex: Active products are used for scratch org initialization and in deployments',
       },
       {
         type: 'multiselect',
         name: 'additional',
         message: c.cyanBright(
-          'Please select additional options if you need them. If not, just select nothing and continue'
+          'Please select additional options if you need them'
         ),
+        description: 'Choose optional features to include in the data configuration (select nothing to skip)',
         choices: [
           {
             title: 'Bad words detector',
@@ -222,6 +229,8 @@ If you don't have unique field to identify an object, use composite external ids
       type: 'select',
       name: 'template',
       message: c.cyanBright('Please select a SFDMU template, or the blank one'),
+      description: 'Choose a pre-configured SFDMU template for data operations or start with a blank configuration',
+      placeholder: 'Select a template',
       choices: [...[defaultTemplateChoice], ...templateChoices],
     });
     return templateResp.template;
@@ -240,6 +249,7 @@ If you don't have unique field to identify an object, use composite external ids
       message: c.cyanBright(
         'Do you want this SFDMU config to be used to import data when initializing a new scratch org ?'
       ),
+      description: 'Automatically import this data set when creating new scratch orgs for development and testing',
       default: false,
     });
     this.importInScratchOrgs = importResp.importInScratchOrgs === true;

@@ -67,6 +67,8 @@ export default class RefreshTask extends SfCommand<any> {
         `This is a SENSITIVE OPERATION. Did you run ${c.green('hardis:work:save')} BEFORE running this command ?`
       ),
       name: 'value',
+      description: 'Confirm that you have saved your current work before proceeding with this sensitive operation',
+      placeholder: 'Select an option',
       choices: [
         {
           title: 'Yes I did save my current updates before merging updates from others !',
@@ -97,6 +99,8 @@ export default class RefreshTask extends SfCommand<any> {
       type: 'select',
       message: `Please select the branch that you want to merge in your current branch ${c.green(localBranch)}`,
       name: 'value',
+      description: 'Choose which branch to merge into your current working branch',
+      placeholder: 'Select a branch to merge',
       choices: branchChoices,
     });
     this.mergeBranch = branchRes.value;
@@ -174,6 +178,8 @@ export default class RefreshTask extends SfCommand<any> {
           message: c.cyanBright(
             'There are merge conflicts, please solve them, then select YES here. Otherwise, exit the script and call a developer for help :)'
           ),
+          description: 'Choose your next action after attempting to resolve merge conflicts',
+          placeholder: 'Select an option',
           choices: [
             { value: true, title: 'If finished to merge conflicts' },
             {

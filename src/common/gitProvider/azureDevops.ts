@@ -52,7 +52,8 @@ export class AzureDevopsProvider extends GitProviderRoot {
       uxLog(this, c.yellow("Then please save it in a secured password tracker !"));
       const accessTokenResp = await prompts({
         name: "token",
-        message: "Please input an Azure Personal Access Token (it won't be stored)",
+        message: "Please input an Azure Personal Access Token",
+        description: "Enter your Azure DevOps Personal Access Token for API authentication (will not be stored permanently)",
         type: "text"
       });
       process.env.SYSTEM_ACCESSTOKEN = accessTokenResp.token;

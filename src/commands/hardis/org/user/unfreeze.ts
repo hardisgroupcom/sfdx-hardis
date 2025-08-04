@@ -175,8 +175,9 @@ export default class OrgUnfreezeUser extends SfCommand<any> {
         message: c.cyanBright(
           `Are you sure you want to unfreeze these ${c.bold(userLoginsToUnfreeze.length)} users in org ${c.green(
             flags['target-org'].getUsername()
-          )} (y/n)?`
+          )} ?`
         ),
+        description: 'Confirm unfreezing selected users, which will reactivate their accounts in the Salesforce org',
       });
       if (confirmunfreeze.value !== true) {
         const outputString = 'Script cancelled by user';

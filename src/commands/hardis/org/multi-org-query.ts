@@ -212,6 +212,8 @@ If you use the command from a CI/CD job, you must previously authenticate to the
       const baseQueryPromptRes = await prompts({
         type: "select",
         message: "Please select a predefined query, or custom SOQL option",
+        description: "Choose a ready-made SOQL query template or enter your own custom query",
+        placeholder: "Select a query template",
         choices: [
           ...Object.keys(this.allQueryTemplates).map(templateId => {
             return {
@@ -231,6 +233,8 @@ If you use the command from a CI/CD job, you must previously authenticate to the
         const queryPromptRes = await prompts({
           type: 'text',
           message: 'Please input the SOQL Query to run in multiple orgs',
+          description: 'Enter a custom SOQL query that will be executed across all selected Salesforce orgs',
+          placeholder: 'Ex: SELECT Id, Name FROM Account LIMIT 10',
         });
         this.query = queryPromptRes.value;
       }

@@ -68,12 +68,15 @@ export default class FixV53Flexipages extends SfCommand<any> {
         type: 'multiselect',
         name: 'tabs',
         message: 'Please select the tabs you want to display or hide in Profile(s)',
+        description: 'Choose which tabs should be configured for profiles',
         choices: choices,
       },
       {
         type: 'select',
         name: 'visibility',
         message: 'Please select the flag you want the tabs to be applied on profiles you will select',
+        description: 'Choose the visibility setting for the selected tabs',
+        placeholder: 'Select visibility',
         choices: [
           {
             title: 'Visible (DefaultOn)',
@@ -101,6 +104,7 @@ export default class FixV53Flexipages extends SfCommand<any> {
         tabsToUpdate.join(', ') +
         '] with visibility ' +
         visibility,
+      description: 'Choose which profiles should receive the tab visibility updates',
       choices: profileSourceFiles.map((profileFile) => {
         return {
           title: (profileFile.replace(/\\/g, '/').split('/').pop() || '').replace('.profile-meta.xml', ''),

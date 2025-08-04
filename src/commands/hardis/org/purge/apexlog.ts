@@ -82,6 +82,7 @@ export default class PurgeApexLogs extends SfCommand<any> {
         message: `Do you want to delete ${c.bold(apexLogsNumber)} Apex Logs of org ${c.green(
           flags['target-org'].getUsername()
         )} ?`,
+        description: 'Permanently delete all Apex debug logs from the Salesforce org to free up storage space',
       });
       if (confirmRes.value === false) {
         return {};

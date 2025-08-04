@@ -88,6 +88,8 @@ export default class PackageVersionCreate extends SfCommand<any> {
           message: c.cyanBright(
             `Please select a package (this is not a drill, it will create an official new version !)`
           ),
+          description: 'Choose which package to create a new version for - this action creates a permanent version',
+          placeholder: 'Select a package',
           choices: packageDirectories.map((packageDirectory) => {
             return {
               title: packageDirectory?.package || packageDirectory?.path || packageDirectory?.fullPath || packageDirectory?.name,
@@ -98,7 +100,11 @@ export default class PackageVersionCreate extends SfCommand<any> {
         {
           type: 'text',
           name: 'packageInstallationKey',
-          message: c.cyanBright(`Please input an installation password (or let empty)`),
+          message: c.cyanBright(
+            'Do you want to password protect your package ? (blank means no)'
+          ),
+          description: 'Optionally set a password to protect the package installation',
+          placeholder: 'Ex: mySecretPassword123',
           initial: config.defaultPackageInstallationKey || '',
         },
       ]);

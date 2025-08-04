@@ -508,6 +508,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       const promptUpdate = await prompts({
         type: 'confirm',
         message: c.cyanBright('Do you want to add the missing accesses in permission sets ?'),
+        description: 'Confirm if you want to automatically fix missing access issues',
       });
       if (promptUpdate.value === true) {
         const availablePermissionSets = await this.listLocalPermissionSets();
@@ -516,6 +517,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
             type: 'multiselect',
             name: 'elements',
             message: 'Please select the elements you want to add in Permission Set(s)',
+            description: 'Choose which missing access elements to add to permission sets',
             choices: this.missingElements.map((elt) => {
               return { title: `${elt.type}: ${elt.element}`, value: elt };
             }),
@@ -524,6 +526,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
             type: 'multiselect',
             name: 'permissionSets',
             message: 'Please select the permission sets you want to update with selected elements',
+            description: 'Choose which permission sets should receive the selected access elements',
             choices: availablePermissionSets.map((elt) => {
               return { title: elt.name, value: elt.filePath };
             }),
@@ -532,6 +535,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
             type: 'select',
             name: 'access',
             message: 'Please select the accesses to set for the custom fields',
+            description: 'Choose the level of access to grant for custom fields',
+            placeholder: 'Select access level',
             choices: [
               { title: 'Readable', value: 'readable' },
               { title: 'Readable & Editable', value: 'editable' },

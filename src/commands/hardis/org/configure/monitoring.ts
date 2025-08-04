@@ -72,8 +72,10 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
           { title: 'Mmmmm no, let me create another repo with the word "monitoring" in its name !', value: 'no' },
         ],
         message: c.cyanBright(
-          "It's safer to have monitoring in a separate repo. Are you sure you want to mix monitoring and deployment sources ?"
+          "Are you sure you want to mix monitoring and deployment sources ?"
         ),
+        description: 'It is recommended to separate monitoring configuration from deployment sources in different repositories',
+        placeholder: 'Select an option',
       });
       if (confirmMix.value === 'no') {
         throw new SfError('Your git repository name must contain the expression "monitoring"');
@@ -89,6 +91,8 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
         { title: 'No, help me !', value: 'no' },
       ],
       message: c.cyanBright('Did you configure the sfdx-hardis monitoring pre-requisites on your Git server ?'),
+      description: 'Confirm that you have set up the required CI/CD variables and permissions for monitoring',
+      placeholder: 'Select an option',
     });
     if (confirmPreRequisites.value === 'no') {
       const msg =
@@ -188,8 +192,9 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
       name: 'value',
       initial: true,
       message: c.cyanBright(
-        '(RECOMMENDED) Do you want sfdx-hardis to save your configuration on server ? (git stage, commit & push)'
+        'Do you want sfdx-hardis to save your configuration on server ?'
       ),
+      description: 'Automatically commit and push the monitoring configuration files to your git repository (recommended)',
     });
 
     if (confirmPush.value === true) {

@@ -186,6 +186,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           type: 'select',
           name: 'licensetypes',
           message: 'Please select the type of licenses you want to detect ',
+          description: 'Choose which categories of user licenses to analyze for unused accounts',
+          placeholder: 'Select license type',
           choices: [
             { value: 'all', title: 'All licenses types' },
             { value: `all-crm`, title: 'Salesforce Licenses' },
@@ -209,6 +211,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           type: 'select',
           name: 'days',
           message: 'Please select the period to detect users.',
+          description: 'Choose how far back to look for user activity when determining if users are inactive',
+          placeholder: 'Select time period',
           choices: [
             { title: `1 day`, value: 1 },
             { title: `2 days`, value: 2 },

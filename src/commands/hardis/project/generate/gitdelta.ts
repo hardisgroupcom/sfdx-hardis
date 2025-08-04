@@ -97,6 +97,8 @@ export default class GenerateGitDelta extends SfCommand<any> {
         type: 'select',
         name: 'value',
         message: 'Please select the commit that you want to start from',
+        description: 'Choose the starting commit for the delta generation',
+        placeholder: 'Select a commit',
         choices: [headItem, ...branchCommitsChoices],
       });
       fromCommit = commitFromResp.value.hash;
@@ -120,6 +122,8 @@ export default class GenerateGitDelta extends SfCommand<any> {
         type: 'select',
         name: 'value',
         message: 'Please select the commit hash that you want to go to',
+        description: 'Choose the ending commit for the delta generation',
+        placeholder: 'Select a commit',
         choices: [currentItem, singleCommitChoice, ...branchCommitsChoices],
       });
       toCommit = commitToResp.value.hash;

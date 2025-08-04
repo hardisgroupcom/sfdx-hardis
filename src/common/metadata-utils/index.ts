@@ -371,6 +371,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const metadataResp = await prompts({
       type: 'multiselect',
       message: c.cyanBright('Please select metadata types'),
+      description: 'Choose the Salesforce metadata types to include in this operation',
       choices: metadataTypes.map((metadataType: any) => {
         return {
           title: c.cyan(`${metadataType.xmlName || 'no xml name'} (${metadataType.directoryName || 'no dir name'})`),
@@ -483,6 +484,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const flowSelectRes = await prompts({
       type: 'select',
       message: 'Please select the Flow you want to visually compare',
+      description: 'Choose a Flow file to perform visual comparison operations on',
       choices: flowFiles.map(flowFile => {
         return { value: flowFile, title: path.basename(flowFile, ".flow-meta.xml") }
       })
@@ -496,6 +498,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const flowSelectRes = await prompts({
       type: 'multiselect',
       message: 'Please select the Flows you want to create the documentation',
+      description: 'Choose multiple Flow files to generate documentation for',
       choices: flowFiles.map(flowFile => {
         return { value: flowFile, title: path.basename(flowFile, ".flow-meta.xml") }
       })

@@ -165,6 +165,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
         type: "multiselect",
         name: "sobjects",
         message: "Select sObjects for bypass",
+        description: "Choose which sObjects should have automation bypass functionality",
         choices: Object.entries(availableSObjects).map(([devName, label]) => ({
           title: label,
           value: devName,
@@ -177,6 +178,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
         type: "multiselect",
         name: "automations",
         message: "Select automations to bypass",
+        description: "Choose which types of automation should be bypassed",
         choices: ALLOWED_AUTOMATIONS.map((a) => ({ title: a, value: a })),
       });
     }
@@ -187,6 +189,7 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
         name: "applyTo",
         message:
           "To which automations do you want to automatically apply the bypass?",
+        description: "Select which automation types should have automatic bypass logic applied",
         choices: [
           { title: "Validation Rules", value: "applyToVrs" },
           { title: "Triggers", value: "applyToTriggers" },
@@ -199,6 +202,8 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
         type: "select",
         name: "elementSource",
         message: "Where do you want to get the elements to apply bypass to?",
+        description: "Choose the source for retrieving automation elements",
+        placeholder: "Select source",
         choices: [
           { title: "Retrieve from org (recommended)", value: "org" },
           { title: "Use local elements in the project", value: "local" },
@@ -311,8 +316,8 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
   ) {
     const query = `SELECT ValidationName, EntityDefinition.QualifiedApiName, ManageableState FROM ValidationRule 
       WHERE ManageableState != 'installed' AND EntityDefinition.DeveloperName IN (${Object.keys(
-        sObjects
-      )
+      sObjects
+    )
         .map((s) => `'${s}'`)
         .join(", ")})`;
     const results = await soqlQueryTooling(query, connection);
@@ -656,9 +661,8 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
         };
       }
 
-      const fullBypassLine = `${bypassCheckLine}${
-        this.skipCredits ? "" : "// Updated " + CREDITS_TEXT
-      }`;
+      const fullBypassLine = `${bypassCheckLine}${this.skipCredits ? "" : "// Updated " + CREDITS_TEXT
+        }`;
       const openBraceIndex = fileContent.indexOf("{");
       const beforeBrace = fileContent.substring(0, openBraceIndex + 1);
       const afterBrace = fileContent.substring(openBraceIndex + 1).trimStart();

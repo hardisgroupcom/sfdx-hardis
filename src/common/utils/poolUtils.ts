@@ -213,6 +213,7 @@ async function initializeProvider(options: any) {
       const resp = await prompts({
         type: 'confirm',
         message: 'Scratch org pool credentials are missing, do you want to configure them ?',
+        description: 'Set up authentication credentials required to access the scratch org pool service',
       });
       if (resp.value === true) {
         await keyValueProvider.userAuthenticate(options);

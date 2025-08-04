@@ -52,6 +52,8 @@ export default class ProjectCreate extends SfCommand<any> {
       name: 'orgType',
       type: 'select',
       message: 'To perform implementation, will your project use scratch org or source tracked sandboxes only ?',
+      description: 'Choose the type of development orgs your project will use',
+      placeholder: 'Select org type',
       choices: [
         {
           title: 'Scratch orgs only',
@@ -118,6 +120,8 @@ export default class ProjectCreate extends SfCommand<any> {
         message:
           'What is the name of your default development branch ? (Examples: if you manage RUN and BUILD, it can be integration. If you manage RUN only, it can be preprod)',
         initial: 'integration',
+        description: 'Enter the name of your main development branch',
+        placeholder: 'Ex: integration',
       });
       await setConfig('project', { developmentBranch: devBranchRes.devBranch });
     }

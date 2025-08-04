@@ -98,6 +98,8 @@ export default class ConfigureAuth extends SfCommand<any> {
         message: c.cyanBright(
           'What is the name of the git branch you want to configure ? Examples: developpement,recette,production'
         ),
+        description: 'Enter the git branch name for this org configuration',
+        placeholder: 'Ex: production',
       });
       branchName = branchResponse.value.replace(/\s/g, '-');
       /* if (["main", "master"].includes(branchName)) {
@@ -118,6 +120,8 @@ export default class ConfigureAuth extends SfCommand<any> {
         `What is the Salesforce username that will be ${devHub ? 'used as Dev Hub' : 'used for deployments by CI server'
         } ? Example: admin.sfdx@myclient.com`
       ),
+      description: 'Enter the Salesforce username for this configuration',
+      placeholder: 'Ex: admin.sfdx@myclient.com',
     });
     if (devHub) {
       await setConfig('project', {

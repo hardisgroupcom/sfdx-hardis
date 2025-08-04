@@ -7,6 +7,8 @@ import { WebSocketClient } from "../websocketClient.js";
 
 export interface PromptsQuestion {
   message: string;
+  description: string;
+  placeholder?: string;
   type: "select" | "multiselect" | "confirm" | "text" | "number";
   name?: string;
   choices?: Array<any>;
