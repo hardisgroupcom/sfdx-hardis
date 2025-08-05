@@ -75,6 +75,10 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
   for (const answer of Object.keys(answers)) {
     if (answers[answer] === "exitNow") {
       uxLog(this, "Script stopped by user request");
+      // Send close client message with aborted status if WebSocket is alive
+      if (WebSocketClient.isAlive()) {
+        WebSocketClient.sendCloseClientMessage("aborted");
+      }
       process.exit(0);
     }
   }

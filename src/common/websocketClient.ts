@@ -124,6 +124,21 @@ export class WebSocketClient {
     throw new SfError('globalWs should be set in sendPrompts');
   }
 
+  // Send close client message with status
+  static sendCloseClientMessage(status?: string) {
+    WebSocketClient.sendMessage({
+      event: 'closeClient',
+      status: status,
+    });
+  }
+
+  // Close the WebSocket connection externally
+  static closeClient(status?: string) {
+    if (globalWs) {
+      globalWs.dispose(status);
+    }
+  }
+
   start() {
     this.ws.on('open', () => {
       isWsOpen = true;
@@ -190,11 +205,12 @@ export class WebSocketClient {
     });
   }
 
-  dispose() {
+  dispose(status?: string) {
     this.ws.send(
       JSON.stringify({
         event: 'closeClient',
         context: this.wsContext,
+        status: status,
       })
     );
     this.ws.terminate();
