@@ -616,7 +616,7 @@ autoRemoveUserPermissions:
           }
           // Update user config file & send Websocket event
           await setConfig('user', { mergeRequests: mergeRequestsStored.filter((mr: any) => mr !== null) });
-          WebSocketClient.sendMessage({ event: 'refreshStatus' });
+          WebSocketClient.sendRefreshStatusMessage();
         }
       }
     }

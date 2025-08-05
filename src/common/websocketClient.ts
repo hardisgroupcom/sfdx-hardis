@@ -6,6 +6,7 @@ import { SfError } from '@salesforce/core';
 
 let globalWs: WebSocketClient | null;
 let isWsOpen = false;
+let userInput = "ui";
 
 const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
 
@@ -33,6 +34,10 @@ export class WebSocketClient {
     return !isCI && globalWs != null && isWsOpen === true;
   }
 
+  static isAliveWithLwcUI(): boolean {
+    return this.isAlive() && userInput === 'ui-lwc';
+  }
+
   static sendMessage(data: any) {
     if (globalWs) {
       globalWs.sendMessageToServer(data);
@@ -42,6 +47,74 @@ export class WebSocketClient {
   // Requests open file within VsCode if linked
   static requestOpenFile(file: string) {
     WebSocketClient.sendMessage({ event: 'openFile', file: file.replace(/\\/g, '/') });
+  }
+
+  // Send refresh status message
+  static sendRefreshStatusMessage() {
+    WebSocketClient.sendMessage({ event: 'refreshStatus' });
+  }
+
+  // Send refresh commands message
+  static sendRefreshCommandsMessage() {
+    WebSocketClient.sendMessage({ event: 'refreshCommands' });
+  }
+
+  // Send refresh plugins message
+  static sendRefreshPluginsMessage() {
+    WebSocketClient.sendMessage({ event: 'refreshPlugins' });
+  }
+
+  // Send command sub-command start message
+  static sendCommandSubCommandStartMessage(command: string, cwd: string, options: any) {
+    WebSocketClient.sendMessage({
+      event: 'commandSubCommandStart',
+      data: {
+        command: command,
+        cwd: cwd,
+        options: options,
+      },
+    });
+  }
+
+  // Send command sub-command end message
+  static sendCommandSubCommandEndMessage(command: string, cwd: string, options: any, success: boolean, result: any) {
+    WebSocketClient.sendMessage({
+      event: 'commandSubCommandEnd',
+      data: {
+        command: command,
+        cwd: cwd,
+        options: options,
+        success: success,
+        result: result,
+      },
+    });
+  }
+
+  // Send command log line message
+  static sendCommandLogLineMessage(message: string, logType?: string, isQuestion?: boolean) {
+    WebSocketClient.sendMessage({
+      event: 'commandLogLine',
+      logType: logType,
+      message: message,
+      isQuestion: isQuestion,
+    });
+  }
+
+  // Send run SFDX Hardis command message
+  static sendRunSfdxHardisCommandMessage(sfdxHardisCommand: string) {
+    WebSocketClient.sendMessage({
+      event: 'runSfdxHardisCommand',
+      sfdxHardisCommand: sfdxHardisCommand,
+    });
+  }
+
+  // Sends info about downloadable report file
+  static sendReportFileMessage(file: string, title: string) {
+    WebSocketClient.sendMessage({
+      event: 'reportFile',
+      file: file.replace(/\\/g, '/'),
+      title: title,
+    });
   }
 
   static sendPrompts(prompts: any): Promise<any> {
@@ -82,6 +155,9 @@ export class WebSocketClient {
     }
     if (data.event === 'promptsResponse') {
       this.promptResponse = data.promptsResponse;
+    }
+    if (data.event === 'userInput') {
+      userInput = data.userInput;
     }
   }
 

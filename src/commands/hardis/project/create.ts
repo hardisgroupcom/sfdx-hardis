@@ -145,7 +145,7 @@ export default class ProjectCreate extends SfCommand<any> {
     );
 
     // Trigger commands refresh on VsCode WebSocket Client
-    WebSocketClient.sendMessage({ event: 'refreshCommands' });
+    WebSocketClient.sendRefreshCommandsMessage();
 
     // Return an object to be displayed with --json
     return { outputString: 'Created SFDX Project' };

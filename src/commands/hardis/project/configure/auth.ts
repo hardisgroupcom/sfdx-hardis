@@ -80,10 +80,7 @@ export default class ConfigureAuth extends SfCommand<any> {
         'Default org changed. Please restart the same command if VsCode does not do that automatically for you :)';
       uxLog(this, c.yellow(infoMsg));
       const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ');
-      WebSocketClient.sendMessage({
-        event: 'runSfdxHardisCommand',
-        sfdxHardisCommand: currentCommand,
-      });
+      WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);
       return { outputString: infoMsg };
     }
 

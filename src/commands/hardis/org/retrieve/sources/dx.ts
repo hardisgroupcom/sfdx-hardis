@@ -181,7 +181,7 @@ export default class DxSources extends SfCommand<any> {
     }
 
     // Trigger commands refresh on VsCode WebSocket Client
-    WebSocketClient.sendMessage({ event: 'refreshCommands' });
+    WebSocketClient.sendRefreshCommandsMessage();
 
     // Set bac initial cwd
     const message = `[sfdx-hardis] Successfully retrieved sfdx project in ${folder}`;

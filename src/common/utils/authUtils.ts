@@ -307,7 +307,7 @@ export async function authOrg(orgAlias: string, options: any) {
         }
       }
       uxLog(this, `Successfully logged to ${c.green(instanceUrl)} with ${c.green(username)}`);
-      WebSocketClient.sendMessage({ event: 'refreshStatus' });
+      WebSocketClient.sendRefreshStatusMessage();
       // Assign org to SfCommands
       // if (isDevHub) {
       // options.Command.flags["target-org"] = username;

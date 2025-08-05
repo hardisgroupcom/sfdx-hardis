@@ -437,7 +437,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         debug: this.debugMode,
       });
       // Trigger a status refresh on VsCode WebSocket Client
-      WebSocketClient.sendMessage({ event: 'refreshStatus' });
+      WebSocketClient.sendRefreshStatusMessage();
     }
   }
 
@@ -555,7 +555,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
     }
 
     // Trigger a status refresh on VsCode WebSocket Client
-    WebSocketClient.sendMessage({ event: 'refreshStatus' });
+    WebSocketClient.sendRefreshStatusMessage();
   }
 
   private async promptSandbox(flags: any, branchName: any) {

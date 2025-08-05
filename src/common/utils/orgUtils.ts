@@ -229,7 +229,7 @@ export async function promptOrg(
       });
     }
 
-    WebSocketClient.sendMessage({ event: 'refreshStatus' });
+    WebSocketClient.sendRefreshStatusMessage();
     // Update local user .sfdx-hardis.yml file with response if scratch has been selected
     if (org.username.includes('scratch')) {
       await setConfig('user', {

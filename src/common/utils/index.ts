@@ -53,27 +53,21 @@ export function git(options: any = { output: false, displayCommand: true }): Sim
         if (!(gitArgsStr.includes('branch -v') || gitArgsStr.includes('config --list --show-origin --null'))) {
           if (options.displayCommand) {
             if (WebSocketClient.isAlive()) {
-              WebSocketClient.sendMessage({
-                event: 'commandSubCommandStart',
-                data: {
-                  command: command + ' ' + gitArgsStr,
-                  cwd: process.cwd(),
-                  options: options,
-                },
-              });
+              WebSocketClient.sendCommandSubCommandStartMessage(
+                command + ' ' + gitArgsStr,
+                process.cwd(),
+                options,
+              );
             }
             uxLog(this, `[command] ${c.bold(c.bgWhite(c.blue(command + ' ' + gitArgsStr)))}`);
             if (WebSocketClient.isAlive()) {
-              WebSocketClient.sendMessage({
-                event: 'commandSubCommandEnd',
-                data: {
-                  command: command + ' ' + gitArgsStr,
-                  cwd: process.cwd(),
-                  options: options,
-                  success: true,
-                  result: '',
-                },
-              });
+              WebSocketClient.sendCommandSubCommandEndMessage(
+                command + ' ' + gitArgsStr,
+                process.cwd(),
+                options,
+                true,
+                '',
+              );
             }
           }
         }
@@ -349,7 +343,7 @@ export async function selectGitBranch(
   // Checkout & pull if requested
   if (options.checkOutPull && branch !== "ALL BRANCHES") {
     await gitCheckOutRemote(branch);
-    WebSocketClient.sendMessage({ event: 'refreshStatus' });
+    WebSocketClient.sendRefreshStatusMessage();
   }
   return branch;
 }
@@ -667,14 +661,11 @@ export async function execCommand(
     uxLog(this, commandLog);
   }
   if (WebSocketClient.isAlive()) {
-    WebSocketClient.sendMessage({
-      event: 'commandSubCommandStart',
-      data: {
-        command: command,
-        cwd: execOptions.cwd || process.cwd(),
-        options: options,
-      },
-    });
+    WebSocketClient.sendCommandSubCommandStartMessage(
+      command,
+      execOptions.cwd || process.cwd(),
+      options,
+    );
   }
   try {
     commandResult = await exec(command, execOptions);
@@ -682,31 +673,25 @@ export async function execCommand(
       spinner.succeed(commandLog);
     }
     if (WebSocketClient.isAlive()) {
-      WebSocketClient.sendMessage({
-        event: 'commandSubCommandEnd',
-        data: {
-          command: command,
-          cwd: execOptions.cwd || process.cwd(),
-          options: options,
-          success: true,
-          result: commandResult,
-        },
-      });
+      WebSocketClient.sendCommandSubCommandEndMessage(
+        command,
+        execOptions.cwd || process.cwd(),
+        options,
+        true,
+        commandResult,
+      );
     }
   } catch (e) {
     if (spinner) {
       spinner.fail(commandLog);
     }
-    WebSocketClient.sendMessage({
-      event: 'commandSubCommandEnd',
-      data: {
-        command: command,
-        cwd: execOptions.cwd || process.cwd(),
-        options: options,
-        success: false,
-        result: e,
-      },
-    });
+    WebSocketClient.sendCommandSubCommandEndMessage(
+      command,
+      execOptions.cwd || process.cwd(),
+      options,
+      false,
+      e,
+    );
     // Display error in red if not json
     if (!command.includes('--json') || options.fail) {
       const strErr = shortenLogLines(`${(e as any).stdout}\n${(e as any).stderr}`);
@@ -1166,7 +1151,7 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
   }
   if (WebSocketClient.isAlive() && !text.includes('[command]')) {
     if (sensitive) {
-      WebSocketClient.sendMessage({ event: "commandLogLine", message: 'OBFUSCATED LOG LINE' });
+      WebSocketClient.sendCommandLogLineMessage('OBFUSCATED LOG LINE');
     }
     else {
       // Get ANSI color codes by extracting characters before the first space
@@ -1197,12 +1182,7 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
       }
       // Send message to WebSocket client
       if (logType !== 'none') {
-        WebSocketClient.sendMessage({
-          event: "commandLogLine",
-          logType: logType,
-          message: textToSend,
-          isQuestion: isQuestion
-        });
+        WebSocketClient.sendCommandLogLineMessage(textToSend, logType, isQuestion);
       }
     }
   }

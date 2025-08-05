@@ -167,7 +167,7 @@ export default class SandboxCreate extends SfCommand<any> {
     this.sandboxOrgInfo = createResult.result;
     this.sandboxOrgUsername = this.sandboxOrgInfo.username;
     // Trigger a status refresh on VsCode WebSocket Client
-    WebSocketClient.sendMessage({ event: 'refreshStatus' });
+    WebSocketClient.sendRefreshStatusMessage();
 
     // Open sandbox org for user if not in CI
     await execSfdxJson('sf org open', this, {
@@ -219,9 +219,8 @@ export default class SandboxCreate extends SfCommand<any> {
       (this.projectSandboxDef.features || []).includes('StateAndCountryPicklist') &&
       userQueryRes.result.CountryCode == null
     ) {
-      updatedUserValues += ` CountryCode='${config.defaultCountryCode || 'FR'}' Country='${
-        config.defaultCountry || 'France'
-      }'`;
+      updatedUserValues += ` CountryCode='${config.defaultCountryCode || 'FR'}' Country='${config.defaultCountry || 'France'
+        }'`;
     }
     if (
       (this.projectSandboxDef.features || []).includes('MarketingUser') &&
