@@ -808,7 +808,7 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
   try {
     const csvContent = Papa.unparse(data);
     await fs.writeFile(outputPath, csvContent, 'utf8');
-    uxLog(this, c.italic(c.cyan(`Please see detailed CSV log in ${c.bold(outputPath)}`)));
+    uxLog(this, c.cyan(c.italic(`Please see detailed CSV log in ${c.bold(outputPath)}`)));
     result.csvFile = outputPath;
     WebSocketClient.requestOpenFile(outputPath);
     if (data.length > 0) {
@@ -819,7 +819,7 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
         const xslxFile = path.join(xlsDirName, xslFileName);
         await fs.ensureDir(xlsDirName);
         await csvToXls(outputPath, xslxFile);
-        uxLog(this, c.italic(c.cyan(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
+        uxLog(this, c.cyan(c.italic(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
         result.xlsxFile = xslxFile;
         if (!isCI && !(process.env.NO_OPEN === 'true')) {
           try {

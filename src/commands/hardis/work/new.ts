@@ -159,7 +159,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
     this.debugMode = flags.debug || false;
 
     uxLog(this, c.cyan('This tool will assist you to create a new task (dev or config) with Hardis CI/CD'));
-    uxLog(this, c.cyan("When you don't know what to answer, you can let the default value and push ENTER"));
+    uxLog(this, c.grey("When you don't know what to answer, you can let the default value and push ENTER"));
 
     // Make sure the git status is clean, to not delete uncommitted updates
     await checkGitClean({ allowStash: true });

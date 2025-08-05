@@ -1177,6 +1177,13 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
       const greenAnsi = c.green(' ').split(' ')[0];
 
       let logType = 'none';
+      let isQuestion = false;
+      let textToSend = textInit;
+      if (textInit.includes("Look up in VsCode")) {
+        // Remove "Look up in VsCode" and everything after 
+        textToSend = textInit.split("Look up in VsCode")[0].trim();
+        isQuestion = true;
+      }
       if (textInit.startsWith(greyAnsi)) {
         logType = 'log';
       } else if (textInit.startsWith(cyanAnsi)) {
@@ -1193,7 +1200,8 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
         WebSocketClient.sendMessage({
           event: "commandLogLine",
           logType: logType,
-          message: textInit
+          message: textToSend,
+          isQuestion: isQuestion
         });
       }
     }
