@@ -271,6 +271,7 @@ ${this.htmlInstructions}
 
     this.tempDir = await createTempDir()
     // Convert source to metadata API format to build prompts
+    uxLog(this, c.cyan("Converting source to metadata API format..."));
     await execCommand(`sf project convert source --metadata CustomObject --output-dir ${this.tempDir}`, this, { fail: true, output: true, debug: this.debugMode });
     this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(this.objectFiles);
@@ -460,6 +461,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePackagesDocumentation() {
+    uxLog(this, c.cyan("Generating Installed Packages documentation..."));
     const packagesForMenu: any = { "All Packages": "packages/index.md" }
     // List packages
     const packages = this.sfdxHardisConfig.installedPackages || [];     // CI/CD context
@@ -1267,6 +1269,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async manageLocalPackages() {
+    uxLog(this, c.cyan("Generating package.xml files for local packages..."));
     const packageDirs = this.project?.getPackageDirectories();
     if (!(packageDirs?.length === 1 && packageDirs[0].name === "force-app" && fs.existsSync("manifest/package.xml"))) {
       for (const packageDir of packageDirs || []) {
@@ -1310,6 +1313,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePackageXmlMarkdown(packageXmlCandidates, instanceUrl) {
+    uxLog(this, c.cyan("Generating package.xml documentation..."));
     // Generate packageXml doc when found
     for (const packageXmlCandidate of packageXmlCandidates) {
       if (fs.existsSync(packageXmlCandidate.path)) {

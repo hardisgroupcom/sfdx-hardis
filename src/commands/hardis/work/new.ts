@@ -431,6 +431,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         )
       );
       // Open selected org
+      uxLog(this, c.cyan('Opening scratch org in browser...'));
       await execSfdxJson('sf org open', this, {
         fail: true,
         output: false,
@@ -547,6 +548,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
     }
     // Open of if not already open
     if (openOrg === true) {
+      uxLog(this, c.cyan(`Opening sandbox org...`));
       await execSfdxJson('sf org open', this, {
         fail: true,
         output: false,
