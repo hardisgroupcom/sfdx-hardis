@@ -139,15 +139,30 @@ export class WebSocketClient {
     }
   }
 
+  private getCommandDocUrl(): string | undefined {
+    // Extract command from context to build documentation URL
+    if (this.wsContext?.command) {
+      const command = this.wsContext.command;
+      // Convert command format like "hardis:doc:flow2markdown" to URL path
+      const urlPath = command.replace(/:/g, '/');
+      return `https://sfdx-hardis.cloudity.com/${urlPath}/`;
+    }
+    // Return undefined if no specific command
+    return undefined;
+  }
+
   start() {
     this.ws.on('open', () => {
       isWsOpen = true;
-      this.ws.send(
-        JSON.stringify({
-          event: 'initClient',
-          context: this.wsContext,
-        })
-      );
+      const commandDocUrl = this.getCommandDocUrl();
+      const message: any = {
+        event: 'initClient',
+        context: this.wsContext,
+      };
+      if (commandDocUrl) {
+        message.commandDocUrl = commandDocUrl;
+      }
+      this.ws.send(JSON.stringify(message));
       // uxLog(this,c.grey('Initialized WebSocket connection with VsCode SFDX Hardis'));
     });
 
