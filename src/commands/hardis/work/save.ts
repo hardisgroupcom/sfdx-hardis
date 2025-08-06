@@ -184,10 +184,6 @@ autoRemoveUserPermissions:
     uxLog(this, `${c.yellow('When your Merge Request will have been merged:')}
 - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
 - Use New task menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`);
-    uxLog(this, c.grey(`If you are working with a ticketing system like JIRA, try to add the FULL URL of the tickets in the MR/PR description
-- Good example: https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4
-- Less good example but will work anyway on most cases: CLOUDITY-4
-`));
     uxLog(this, c.grey(`Merge request documentation is available here -> ${c.bold(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`)}`));
 
     // Return an object to be displayed with --json
