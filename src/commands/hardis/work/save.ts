@@ -177,35 +177,19 @@ autoRemoveUserPermissions:
 
 
     // Merge request
-    const summaryLines = [
-      c.cyan('Summary'),
-      c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold('merge request')}:`),
-      c.cyan(
-        `- click on the link in the upper text, below ${c.italic(
-          'To create a merge request for ' + this.currentBranch + ', visit'
-        )}`
-      ),
-      c.cyan(`- or manually create the merge request on repository UI: ${c.green(this.gitUrl)}`),
-      c.cyan(
-        c.bold(
-          `${c.yellow('When your Merge Request will have been merged:')}
-    - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
-    - Use New task menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`
-        )
-      ),
-      c.cyan(
-        `If you are working with a ticketing system like JIRA, try to add the FULL URL of the tickets in the MR/PR description
-  - Good example: https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4
-  - Less good example but will work anyway on most cases: CLOUDITY-4
-  `
-      ),
-      c.cyan(
-        `Merge request documentation is available here -> ${c.bold(
-          `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`
-        )}`
-      ),
-    ].join('\n');
-    uxLog(this, summaryLines);
+    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold('merge request')}:`));
+    uxLog(this, c.grey(`Repository: ${c.green(this.gitUrl.replace('.git', ''))}`));
+    uxLog(this, c.grey(`Source branch: ${c.green(this.currentBranch)}`));
+    uxLog(this, c.grey(`Target branch: ${c.green(this.targetBranch)}`));
+    uxLog(this, `${c.yellow('When your Merge Request will have been merged:')}
+- ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
+- Use New task menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`);
+    uxLog(this, c.grey(`If you are working with a ticketing system like JIRA, try to add the FULL URL of the tickets in the MR/PR description
+- Good example: https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4
+- Less good example but will work anyway on most cases: CLOUDITY-4
+`));
+    uxLog(this, c.grey(`Merge request documentation is available here -> ${c.bold(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`)}`));
+
     // Return an object to be displayed with --json
     return { outputString: 'Saved the task' };
   }
