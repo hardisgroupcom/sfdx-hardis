@@ -85,15 +85,21 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       this.notifSeverity = 'log';
       this.statusMessage = 'No Apex found in the org';
       this.notifText = `No Apex found in org ${this.orgMarkdown}`;
+      uxLog(this, c.grey(this.statusMessage));
     }
     // Failed tests
     else if (this.testRunOutcome === 'Failed') {
+      uxLog(this, c.red(`Apex tests passed (${this.testRunOutcome})`));
       await this.processApexTestsFailure();
+    }
+    else if (this.testRunOutcome === 'Passed') {
+      uxLog(this, c.green(`Apex tests passed (${this.testRunOutcome})`));
     }
     // Get test coverage (and fail if not reached)
     await this.checkOrgWideCoverage();
     await this.checkTestRunCoverage();
 
+    uxLog(this, c.grey(this.statusMessage));
     uxLog(this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
 
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email

@@ -660,7 +660,7 @@ export async function execCommand(
   } else {
     uxLog(this, commandLog);
   }
-  if (WebSocketClient.isAlive()) {
+  if (WebSocketClient.isAlive() && !command.startsWith("sf hardis")) {
     WebSocketClient.sendCommandSubCommandStartMessage(
       command,
       execOptions.cwd || process.cwd(),
@@ -672,7 +672,7 @@ export async function execCommand(
     if (spinner) {
       spinner.succeed(commandLog);
     }
-    if (WebSocketClient.isAlive()) {
+    if (WebSocketClient.isAlive() && !command.startsWith("sf hardis")) {
       WebSocketClient.sendCommandSubCommandEndMessage(
         command,
         execOptions.cwd || process.cwd(),

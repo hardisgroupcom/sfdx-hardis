@@ -248,9 +248,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       }
       sortCrossPlatform(suspectActionsWithCount);
 
+      uxLog(this, 'Suspect records list');
+      uxLog(this, JSON.stringify(this.suspectRecords, null, 2));
+
       let logMsg = '';
-      logMsg += c.yellow('Suspect records list') + '\n';
-      logMsg += JSON.stringify(this.suspectRecords, null, 2) + '\n';
       logMsg += c.yellow(msg) + '\n\n';
       logMsg += c.yellow('Related users:') + '\n';
       for (const user of this.suspectUsers) {

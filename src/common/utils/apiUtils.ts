@@ -15,9 +15,7 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
     this,
     c.grey(
       '[SOQL Query] ' +
-      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
-      ' on ' +
-      conn.instanceUrl
+      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery)
     )
   );
   // First query
@@ -51,9 +49,7 @@ export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Pro
     this,
     c.grey(
       '[SOQL Query Tooling] ' +
-      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
-      ' on ' +
-      conn.instanceUrl
+      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery)
     )
   );
   // First query

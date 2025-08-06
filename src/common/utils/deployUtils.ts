@@ -36,6 +36,7 @@ import { isProductionOrg } from './orgUtils.js';
 import { soqlQuery } from './apiUtils.js';
 import { checkSfdxHardisTraceAvailable } from './orgConfigUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
+import { WebSocketClient } from '../websocketClient.js';
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -1489,7 +1490,10 @@ export async function generateApexCoverageOutputFile(): Promise<void> {
     }
     if (coverageObject !== null) {
       await fs.writeFile(coverageFileName, JSON.stringify(coverageObject, null, 2), 'utf8');
-      uxLog(this, c.cyan(`Written Apex coverage results in file ${coverageFileName}`));
+      uxLog(this, c.grey(`Written Apex coverage results in file ${coverageFileName}`));
+      if (WebSocketClient.isAliveWithLwcUI()) {
+        WebSocketClient.sendReportFileMessage(coverageFileName, "Coverage Results JSON")
+      }
     }
   } catch (e: any) {
     uxLog(this, c.red(`Error while generating Apex coverage output file: ${e.message}`));
