@@ -36,7 +36,12 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
     uxLog(this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
     uxLog(this, c.yellow(`Consider using bulkQuery for larger datasets.`));
   }
-  uxLog(this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
+  if (batchCount > 1) {
+    uxLog(this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
+  }
+  else {
+    uxLog(this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records`));
+  }
   return res;
 }
 
@@ -45,7 +50,7 @@ export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Pro
   uxLog(
     this,
     c.grey(
-      'SOQL REST Tooling: ' +
+      '[SOQL Query Tooling] ' +
       c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
       ' on ' +
       conn.instanceUrl
@@ -54,10 +59,17 @@ export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Pro
   // First query
   const res = await conn.tooling.query(soqlQuery);
   let pageRes = Object.assign({}, res);
+  let batchCount = 1;
   // Get all page results
   while (pageRes.done === false && pageRes.nextRecordsUrl) {
     pageRes = await conn.tooling.queryMore(pageRes.nextRecordsUrl || "");
     res.records.push(...pageRes.records);
+    batchCount++;
+  }
+  if (batchCount > 1) {
+    uxLog(this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
+  } else {
+    uxLog(this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records`));
   }
   return res;
 }

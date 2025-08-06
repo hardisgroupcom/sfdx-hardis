@@ -230,19 +230,16 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     await this.handleCustomSettingsAudit(conn);
 
     // Summarize
-    uxLog(this, c.cyan(`Summary:`));
+    uxLog(this, c.cyan(`Results summary:`));
     let statusCode = 0;
     let msg = 'No suspect Setup Audit Trail records has been found';
     const suspectActionsWithCount: any[] = [];
     if (this.suspectRecords.length > 0) {
       statusCode = 1;
-      uxLog(this, c.yellow('Suspect records list'));
-      uxLog(this, JSON.stringify(this.suspectRecords, null, 2));
       msg = `${this.suspectRecords.length} suspect Setup Audit Trail records has been found`;
-      uxLog(this, c.yellow(msg));
       this.suspectUsers = [...new Set(this.suspectUsers)];
       sortCrossPlatform(this.suspectUsers);
-      const suspectActionsSummary = {};
+      const suspectActionsSummary: Record<string, number> = {};
       for (const suspectAction of this.suspectActions) {
         suspectActionsSummary[suspectAction] = (suspectActionsSummary[suspectAction] || 0) + 1;
       }
@@ -250,17 +247,21 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         suspectActionsWithCount.push(`${suspectAction} (${suspectActionsSummary[suspectAction]})`);
       }
       sortCrossPlatform(suspectActionsWithCount);
-      uxLog(this, '');
-      uxLog(this, c.yellow('Related users:'));
+
+      let logMsg = '';
+      logMsg += c.yellow('Suspect records list') + '\n';
+      logMsg += JSON.stringify(this.suspectRecords, null, 2) + '\n';
+      logMsg += c.yellow(msg) + '\n\n';
+      logMsg += c.yellow('Related users:') + '\n';
       for (const user of this.suspectUsers) {
-        uxLog(this, c.yellow(`- ${user}` + ' (' + this.suspectUsersAndActions[user].actions.join(', ') + ")"));
+        logMsg += c.yellow(`- ${user}` + ' (' + this.suspectUsersAndActions[user].actions.join(', ') + ")") + '\n';
       }
-      uxLog(this, '');
-      uxLog(this, c.yellow('Related actions:'));
+      logMsg += '\n' + c.yellow('Related actions:') + '\n';
       for (const action of suspectActionsWithCount) {
-        uxLog(this, c.yellow(`- ${action}`));
+        logMsg += c.yellow(`- ${action}`) + '\n';
       }
-      uxLog(this, '');
+      logMsg += '\n';
+      uxLog(this, logMsg);
     } else {
       uxLog(this, c.green(msg));
     }
@@ -370,12 +371,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       return;
     }
     // Add custom settings tracking
-    uxLog(this, c.cyan(`Retrieving Custom Settings modifications...`));
+    uxLog(this, c.cyan(`List available custom settings...`));
     uxLog(this, c.grey(`(Define SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS=true if you don't want them)`));
     const customSettingsQuery = `SELECT QualifiedApiName, Label FROM EntityDefinition 
                            WHERE IsCustomSetting = true`;
     const customSettingsResult = await soqlQuery(customSettingsQuery, conn);
-    uxLog(this, c.cyan(`Found ${customSettingsResult.records.length} Custom Settings`));
+    uxLog(this, c.cyan(`Analyze updates in ${customSettingsResult.records.length} Custom Settings...`));
 
     let whereConstraintCustomSetting = `WHERE LastModifiedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND LastModifiedBy.Username != NULL `;
     if (this.excludeUsers.length > 0) {
