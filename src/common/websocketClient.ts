@@ -3,6 +3,10 @@ import * as util from 'util';
 import WebSocket from 'ws';
 import { isCI, uxLog } from './utils/index.js';
 import { SfError } from '@salesforce/core';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let globalWs: WebSocketClient | null;
 let isWsOpen = false;
@@ -165,18 +169,17 @@ export class WebSocketClient {
       // Dynamically import command class and send static uiConfig if present
       if (this.wsContext?.command) {
         try {
-          // Convert command string to file path, e.g. hardis:cache:clear -> src/commands/hardis/cache/clear.ts
+          // Convert command string to file path, e.g. hardis:cache:clear -> lib/commands/hardis/cache/clear.js
           const commandParts = this.wsContext.command.split(':');
-          const commandPath = `../../../commands/${commandParts.join('/')}.js`;
-          // Use dynamic import
-          const imported = await import(commandPath);
-          // Find the default export class
+          const commandPath = path.resolve(__dirname, '../../lib/commands', ...commandParts) + '.js';
+          const fileUrl = 'file://' + commandPath.replace(/\\/g, '/');
+          const imported = await import(fileUrl);
           const CommandClass = imported.default;
           if (CommandClass && CommandClass.uiConfig) {
             message.uiConfig = CommandClass.uiConfig;
           }
         } catch (e) {
-          // Ignore if not found or error
+          uxLog(this, c.yellow(`Warning: Unable to import command class for ${this.wsContext.command}: ${e instanceof Error ? e.message : String(e)}`));
         }
       }
       this.ws.send(JSON.stringify(message));

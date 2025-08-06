@@ -1149,7 +1149,7 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
       globalThis.hardisLogFileStream.write(stripAnsi(text) + '\n');
     }
   }
-  if (WebSocketClient.isAlive() && !text.includes('[command]')) {
+  if (WebSocketClient.isAlive() && !text.includes('[command]') && !text.includes('[NotifProvider]')) {
     if (sensitive) {
       WebSocketClient.sendCommandLogLineMessage('OBFUSCATED LOG LINE');
     }

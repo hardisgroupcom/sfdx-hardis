@@ -12,6 +12,8 @@ export default class WebSocketAction extends SfCommand<any> {
 
   public static description = 'Technical calls to WebSocket functions';
 
+  public static uiConfig = { hide: true };
+
   public static examples = ['$ sf hardis:work:ws --event refreshStatus'];
 
   // public static args = [{name: 'file'}];

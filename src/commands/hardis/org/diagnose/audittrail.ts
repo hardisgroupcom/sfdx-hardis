@@ -230,6 +230,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     await this.handleCustomSettingsAudit(conn);
 
     // Summarize
+    uxLog(this, c.cyan(`Summary:`));
     let statusCode = 0;
     let msg = 'No suspect Setup Audit Trail records has been found';
     const suspectActionsWithCount: any[] = [];
@@ -324,7 +325,6 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       `FROM SetupAuditTrail ` +
       whereConstraint +
       `ORDER BY CreatedDate DESC`;
-    uxLog(this, c.grey('Query: ' + c.italic(auditTrailQuery)));
     const queryRes = await bulkQuery(auditTrailQuery, conn);
     this.auditTrailRecords = queryRes.records.map((record) => {
       const section = record?.Section || '';
@@ -371,7 +371,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     }
     // Add custom settings tracking
     uxLog(this, c.cyan(`Retrieving Custom Settings modifications...`));
-    uxLog(this, c.cyan(`(Define SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS=true if you don't want them)`));
+    uxLog(this, c.grey(`(Define SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS=true if you don't want them)`));
     const customSettingsQuery = `SELECT QualifiedApiName, Label FROM EntityDefinition 
                            WHERE IsCustomSetting = true`;
     const customSettingsResult = await soqlQuery(customSettingsQuery, conn);
@@ -569,10 +569,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     if (this.excludeUsers.length > 0) {
       whereConstraint += `AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
     }
-    uxLog(this, c.cyan(`Excluded users are ${this.excludeUsers.join(',') || 'None'}`));
+    uxLog(this, c.grey(`Excluded users are ${this.excludeUsers.join(',') || 'None'}`));
     uxLog(
       this,
-      c.cyan(
+      c.grey(
         `Use argument --excludeusers or .sfdx-hardis.yml property monitoringExcludeUsernames to exclude more users`
       )
     );

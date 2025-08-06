@@ -2,6 +2,7 @@ import { execSfdxJson, uxLog } from './index.js';
 import c from 'chalk';
 import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
+import { WebSocketClient } from '../websocketClient.js';
 
 // Constants for record limits
 const MAX_CHUNKS = Number(process.env.SOQL_MAX_BATCHES ?? 50);
@@ -13,7 +14,7 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
   uxLog(
     this,
     c.grey(
-      'SOQL REST: ' +
+      '[SOQL Query] ' +
       c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
       ' on ' +
       conn.instanceUrl
@@ -35,7 +36,7 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
     uxLog(this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
     uxLog(this, c.yellow(`Consider using bulkQuery for larger datasets.`));
   }
-  uxLog(this, c.grey(`SOQL REST: Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
+  uxLog(this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
   return res;
 }
 
@@ -80,6 +81,9 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
     // Wait for all results
     const records = await recordStream.toArray();
     spinnerQ.succeed(`[BulkApiV2] Bulk Query completed with ${records.length} results.`);
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      uxLog(this, c.grey(`[BulkApiV2] Bulk Query completed with ${records.length} results.`));
+    }
     return { records: records };
   } catch (e: any) {
     spinnerQ.fail(`[BulkApiV2] Bulk query error: ${e.message}`);
