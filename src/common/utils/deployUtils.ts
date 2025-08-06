@@ -93,6 +93,19 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
       output: true,
       debug: debug,
     });
+    // Parse json in stdout and if json.result.status and json.result.files, create a list of files with "type" + "file name", then order it, then display it in logs
+    if (pullCommandResult && pullCommandResult.result && pullCommandResult.result.status === 'Succeeded' && pullCommandResult.result.files) {
+      const files = pullCommandResult.result.files
+        .filter((file: any) => file?.state !== "Failed")
+        .map((file: any) => {
+          return `- ${file.type} ${file.fullName}`;
+        });
+      sortCrossPlatform(files);
+      uxLog(this, c.green('Successfully pulled sources from scratch org / source-tracked sandbox'));
+      uxLog(this, c.grey(files.join('\n')));
+    } else {
+      uxLog(this, c.red('Pull command did not return expected results'));
+    }
   } catch (e) {
     // Manage beta/legacy boza
     const stdOut = (e as any).stdout + (e as any).stderr;
@@ -146,7 +159,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
 
   // If there are SharingRules, retrieve all of them to avoid the previous one are deleted (SF Cli strange/buggy behavior)
   if (pullCommandResult?.stdout?.includes("SharingRules")) {
-    uxLog(this, c.yellow('Detected Sharing Rules in the pull: retrieving the whole of them to avoid silly overrides !'));
+    uxLog(this, c.cyan('Detected Sharing Rules in the pull: retrieving the whole of them to avoid silly overrides !'));
     const sharingRulesNamesMatches = [...pullCommandResult.stdout.matchAll(/([^ \\/]+)\.sharingRules-meta\.xml/gm)];
     for (const match of sharingRulesNamesMatches) {
       uxLog(this, c.grey(`Retrieve the whole ${match[1]} SharingRules...`));

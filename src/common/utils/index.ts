@@ -652,6 +652,9 @@ export async function execCommand(
     env.JSFORCE_LOG_LEVEL = "";
   }
   execOptions.env = env;
+  if (command.startsWith('sf hardis')) {
+    execOptions.env.NO_NEW_COMMAND_TAB = 'true';
+  }
   let commandResult: any = {};
   const output = options.output !== null ? options.output : !commandThis?.argv?.includes('--json');
   let spinner: any;
@@ -660,7 +663,7 @@ export async function execCommand(
   } else {
     uxLog(this, commandLog);
   }
-  if (WebSocketClient.isAlive() && !command.startsWith("sf hardis")) {
+  if (WebSocketClient.isAlive()) {
     WebSocketClient.sendCommandSubCommandStartMessage(
       command,
       execOptions.cwd || process.cwd(),
@@ -672,7 +675,7 @@ export async function execCommand(
     if (spinner) {
       spinner.succeed(commandLog);
     }
-    if (WebSocketClient.isAlive() && !command.startsWith("sf hardis")) {
+    if (WebSocketClient.isAlive()) {
       WebSocketClient.sendCommandSubCommandEndMessage(
         command,
         execOptions.cwd || process.cwd(),

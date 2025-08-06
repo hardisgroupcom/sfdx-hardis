@@ -4,6 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { forceSourcePull } from '../../../common/utils/deployUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
+import c from "chalk";
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -61,7 +62,7 @@ autoRetrieveWhenPull:
     const targetUsername = flags['target-org'].getUsername() || '';
     await forceSourcePull(targetUsername, debugMode);
 
-    uxLog(this, `If you don't see your updated items in the results, check the following documentation: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas`);
+    uxLog(this, c.grey(`If you don't see your updated items in the results, check the following documentation: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas`));
 
     // Return an object to be displayed with --json
     return { outputString: 'Pulled scratch org / source-tracked sandbox updates' };

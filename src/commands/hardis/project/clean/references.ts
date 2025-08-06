@@ -206,7 +206,7 @@ export default class CleanReferences extends SfCommand<any> {
         if (this.argv.indexOf('--websocket') > -1) {
           command += ` --websocket ${this.argv[this.argv.indexOf('--websocket') + 1]}`;
         }
-        uxLog(this, c.cyan(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
+        uxLog(this, c.grey(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
         // Command based cleaning
         await execCommand(command, this, {
           fail: true,
@@ -215,7 +215,7 @@ export default class CleanReferences extends SfCommand<any> {
         });
       } else {
         // Template based cleaning
-        uxLog(this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
+        uxLog(this, c.grey(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
         const filterConfigFile = await this.getFilterConfigFile(cleaningType);
         const packageDirectories = this.project?.getPackageDirectories() || [];
         for (const packageDirectory of packageDirectories) {

@@ -177,7 +177,7 @@ autoRemoveUserPermissions:
 
 
     // Merge request
-    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold('merge request')}:`));
+    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold('merge request')}`));
     uxLog(this, c.grey(`Repository: ${c.green(this.gitUrl.replace('.git', ''))}`));
     uxLog(this, c.grey(`Source branch: ${c.green(this.currentBranch)}`));
     uxLog(this, c.grey(`Target branch: ${c.green(this.targetBranch)}`));
@@ -392,7 +392,7 @@ autoRemoveUserPermissions:
       const gitStatusFilesBeforeClean = (await git().status()).files.map((file) => file.path);
       uxLog(this, JSON.stringify(gitStatusFilesBeforeClean, null, 2));
       // References cleaning
-      uxLog(this, c.cyan('Cleaning sfdx project from obsolete references...'));
+      uxLog(this, c.cyan('Applying automated cleaning of the sfdx sources (can create new commits)'));
       // User defined cleaning
       await CleanReferences.run(['--type', 'all']);
       if (globalThis?.displayProfilesWarning === true) {
@@ -402,7 +402,7 @@ autoRemoveUserPermissions:
         );
       }
 
-      uxLog(this, c.cyan('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
+      uxLog(this, c.grey('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
       await CleanXml.run([]);
       // Manage git after cleaning
       const gitStatusAfterClean = await git().status();
@@ -411,7 +411,7 @@ autoRemoveUserPermissions:
         .filter((file) => !gitStatusFilesBeforeClean.includes(file.path))
         .map((file) => normalizeFileStatusPath(file.path, config));
       if (cleanedFiles.length > 0) {
-        uxLog(this, c.cyan(`Cleaned the following list of files:\n${cleanedFiles.join('\n')}`));
+        uxLog(this, c.grey(`Cleaned the following list of files:\n${cleanedFiles.join('\n')}`));
         if (!this.noGit) {
           try {
             await git().add(cleanedFiles);

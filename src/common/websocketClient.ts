@@ -175,7 +175,10 @@ export class WebSocketClient {
           const fileUrl = 'file://' + commandPath.replace(/\\/g, '/');
           const imported = await import(fileUrl);
           const CommandClass = imported.default;
-          if (CommandClass && CommandClass.uiConfig) {
+          if (process.env.NO_NEW_COMMAND_TAB === "true") {
+            message.uiConfig = { hide: true };
+          }
+          else if (CommandClass && CommandClass.uiConfig) {
             message.uiConfig = CommandClass.uiConfig;
           }
         } catch (e) {
