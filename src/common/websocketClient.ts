@@ -151,16 +151,33 @@ export class WebSocketClient {
     return undefined;
   }
 
-  start() {
-    this.ws.on('open', () => {
+  async start() {
+    this.ws.on('open', async () => {
       isWsOpen = true;
       const commandDocUrl = this.getCommandDocUrl();
-      const message: any = {
+      const message = {
         event: 'initClient',
         context: this.wsContext,
-      };
+      } as any;
       if (commandDocUrl) {
         message.commandDocUrl = commandDocUrl;
+      }
+      // Dynamically import command class and send static uiConfig if present
+      if (this.wsContext?.command) {
+        try {
+          // Convert command string to file path, e.g. hardis:cache:clear -> src/commands/hardis/cache/clear.ts
+          const commandParts = this.wsContext.command.split(':');
+          const commandPath = `../../../commands/${commandParts.join('/')}.js`;
+          // Use dynamic import
+          const imported = await import(commandPath);
+          // Find the default export class
+          const CommandClass = imported.default;
+          if (CommandClass && CommandClass.uiConfig) {
+            message.uiConfig = CommandClass.uiConfig;
+          }
+        } catch (e) {
+          // Ignore if not found or error
+        }
       }
       this.ws.send(JSON.stringify(message));
       // uxLog(this,c.grey('Initialized WebSocket connection with VsCode SFDX Hardis'));
