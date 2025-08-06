@@ -62,7 +62,7 @@ This script requires a filter-config.json file`;
       './' + path.dirname(this.inputFolder) + '/' + path.basename(this.inputFolder) + '_xml_content_filtered';
     uxLog(
       this,
-      c.cyan(
+      c.grey(
         `Initialize XML content filtering of ${this.inputFolder}, using ${c.bold(this.configFile)} , into ${this.outputFolder
         }`
       )

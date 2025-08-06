@@ -175,47 +175,37 @@ autoRemoveUserPermissions:
     // Push new commit(s)
     await this.manageCommitPush(gitStatusWithConfig, gitStatusAfterDeployPlan);
 
+
     // Merge request
-    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold('merge request')}:`));
-    uxLog(
-      this,
+    const summaryLines = [
+      c.cyan('Summary'),
+      c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold('merge request')}:`),
       c.cyan(
         `- click on the link in the upper text, below ${c.italic(
           'To create a merge request for ' + this.currentBranch + ', visit'
         )}`
-      )
-    );
-    uxLog(this, c.cyan(`- or manually create the merge request on repository UI: ${c.green(this.gitUrl)}`));
-    // const remote = await git().listRemote();
-    // const remoteMergeRequest = `${remote.replace('.git','-/merge_requests/new')}`;
-    // await open(remoteMergeRequest, {wait: true});
-    uxLog(
-      this,
+      ),
+      c.cyan(`- or manually create the merge request on repository UI: ${c.green(this.gitUrl)}`),
       c.cyan(
         c.bold(
           `${c.yellow('When your Merge Request will have been merged:')}
-  - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
-  - Use New task menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`
+    - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
+    - Use New task menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`
         )
-      )
-    );
-    uxLog(
-      this,
+      ),
       c.cyan(
         `If you are working with a ticketing system like JIRA, try to add the FULL URL of the tickets in the MR/PR description
-- Good example: https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4
-- Less good example but will work anyway on most cases: CLOUDITY-4
-`
-      )
-    );
-    uxLog(
-      this,
+  - Good example: https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4
+  - Less good example but will work anyway on most cases: CLOUDITY-4
+  `
+      ),
       c.cyan(
         `Merge request documentation is available here -> ${c.bold(
           `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`
         )}`
-      )
-    );
+      ),
+    ].join('\n');
+    uxLog(this, summaryLines);
     // Return an object to be displayed with --json
     return { outputString: 'Saved the task' };
   }
@@ -319,6 +309,7 @@ autoRemoveUserPermissions:
   }
 
   private async upgradePackageXmlFilesWithDelta() {
+    uxLog(this, c.cyan('Updating package.xml files using sfdx-git-delta...'));
     // Retrieving info about current branch latest commit and master branch latest commit
     const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch || '');
 
@@ -327,7 +318,7 @@ autoRemoveUserPermissions:
     const toCommitMessage = gitDeltaScope.toCommit ? gitDeltaScope.toCommit.message : '';
     uxLog(
       this,
-      c.cyan(
+      c.grey(
         `Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(
           this.currentBranch
         )} - ${c.green(toCommitMessage)}]`
@@ -355,7 +346,7 @@ autoRemoveUserPermissions:
       const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
       uxLog(
         this,
-        c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
+        c.bold(c.grey(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
         c.red(destructivePackageXmlDiffStr)
       );
       await appendPackageXmlFilesContent(
