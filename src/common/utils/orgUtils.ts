@@ -124,11 +124,11 @@ export async function promptOrg(
   const orgListResult = await MetadataUtils.listLocalOrgs(options.devSandbox === true ? 'sandbox' : 'any', { quickOrgList: options.quickOrgList });
   let orgList = [
     ...sortArray(orgListResult?.scratchOrgs || [], {
-      by: ['devHubUsername', 'username', 'alias', 'instanceUrl'],
+      by: ['instanceUrl', 'devHubUsername', 'username', 'alias'],
       order: ['asc', 'asc', 'asc'],
     }),
     ...sortArray(orgListResult?.nonScratchOrgs || [], {
-      by: ['username', 'alias', 'instanceUrl'],
+      by: ['instanceUrl', 'username', 'alias',],
       order: ['asc', 'asc', 'asc'],
     }),
     {
@@ -162,12 +162,11 @@ export async function promptOrg(
     message: c.cyanBright(options.promptMessage || 'Please select an org'),
     description: 'Choose a Salesforce org from the list of authenticated orgs',
     choices: orgList.map((org: any) => {
-      const title = org.username || org.alias || org.instanceUrl;
-      const description =
-        (title !== org.instanceUrl ? org.instanceUrl : '') +
-        (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '-');
+      const title = org.instanceUrl || org.username || org.alias || "ERROR";
+      const description = `Connected with ${org.username || org.alias || 'unknown user'} ` +
+        (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '');
       return {
-        title: c.cyan(title),
+        title: title,
         description: org.descriptionForUi ? org.descriptionForUi : description || '-',
         value: org,
       };
@@ -179,7 +178,7 @@ export async function promptOrg(
 
   // Cancel
   if (org.cancel === true) {
-    uxLog(commandThis, c.cyan('Cancelled'));
+    uxLog(commandThis, c.red('Cancelled'));
     process.exit(0);
   }
 
@@ -247,7 +246,7 @@ export async function promptOrg(
     }
   }
   // uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
-  uxLog(commandThis, c.cyan(`Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
+  uxLog(commandThis, c.grey(`Seletected Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
   return orgResponse.org;
 }
 
@@ -451,7 +450,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
     }
   }
   if (updated) {
-    uxLog(this, 'Updated package configuration in sfdx-hardis config');
+    uxLog(this, c.cyan('Updated package configuration in .sfdx-hardis.yml config file'));
     await setConfig('project', { installedPackages: projectPackages });
   }
 }

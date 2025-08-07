@@ -1242,7 +1242,7 @@ export async function generateSSLCertificate(
   conn: any,
   options: any
 ) {
-  uxLog(commandThis, 'Generating SSL certificate...');
+  uxLog(commandThis, c.cyan('Generating SSL certificate...'));
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
   process.chdir(tmpDir);
@@ -1278,31 +1278,33 @@ export async function generateSSLCertificate(
     description: 'Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.',
   });
   if (confirmResponse.value === true) {
+    uxLog(commandThis, c.cyan('Please configure both below variables in your CI/CD platform:'));
     uxLog(
       commandThis,
-      c.cyanBright(
-        `You must configure CI variable ${c.green(
-          c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
-        )} with value ${c.bold(c.green(consumerKey))}`
-      ),
+      c.grey(
+        c.cyanBright(
+          `${c.green(
+            c.bold(`- SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
+          )} with value ${c.bold(c.green(consumerKey))}`
+        )),
       true
     );
     uxLog(
       commandThis,
-      c.cyanBright(
-        `You must configure CI variable ${c.green(
-          c.bold(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)
+      c.grey(c.cyanBright(
+        `${c.green(
+          c.bold(`- SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)
         )} with value ${c.bold(c.green(encryptionKey))}`
-      ),
+      )),
       true
     );
     uxLog(
       commandThis,
-      c.yellow(`Help to configure CI variables are here: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
+      c.grey(c.yellow(`Help to configure CI variables is here: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`))
     );
     await prompts({
       type: 'confirm',
-      message: c.cyanBright('Hit ENTER when the CI/CD variables are set'),
+      message: c.cyanBright('Please confirm when variables have been set'),
       description: 'Confirm when you have configured the required CI/CD environment variables in your deployment platform',
     });
     // Request info for deployment
@@ -1376,9 +1378,9 @@ export async function generateSSLCertificate(
       );
       uxLog(
         commandThis,
-        c.yellow(
+        c.grey(c.yellow(
           `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file :)`
-        )
+        ))
       );
       const isProduction = await isProductionOrg(options.targetUsername || null, { conn: conn });
       const deployRes = await deployMetadatas({
@@ -1420,30 +1422,38 @@ If this is a Test class issue (production env), you may have to create manually 
     }
   } else {
     // Tell infos to install manually
-    uxLog(commandThis, c.yellow('Now you can configure the SF CLI connected app'));
+    uxLog(commandThis, c.cyan('Now you can configure the SF CLI connected app'));
     uxLog(
       commandThis,
-      `Follow instructions here: ${c.bold(
-        'https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm'
-      )}`
+      c.grey(
+        `Follow instructions here: ${c.bold(
+          'https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm'
+        )}`
+      )
     );
     uxLog(
       commandThis,
-      `Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(
-        `then delete ${crtFile} for security`
-      )}`
+      c.grey(
+        `Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(
+          `then delete ${crtFile} for security`
+        )}`
+      )
     );
     uxLog(
       commandThis,
-      `- configure CI variable ${c.green(
-        `SFDX_CLIENT_ID_${branchName.toUpperCase()}`
-      )} with value of ConsumerKey on Connected App configuration page`
+      c.grey(
+        `- configure CI variable ${c.green(
+          `SFDX_CLIENT_ID_${branchName.toUpperCase()}`
+        )} with value of ConsumerKey on Connected App configuration page`
+      )
     );
     uxLog(
       commandThis,
-      `- configure CI variable ${c.green(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)} with value ${c.green(
-        encryptionKey
-      )} key`
+      c.grey(
+        `- configure CI variable ${c.green(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)} with value ${c.green(
+          encryptionKey
+        )} key`
+      )
     );
   }
 }

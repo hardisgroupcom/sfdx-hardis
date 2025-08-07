@@ -20,7 +20,12 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class ConfigureAuth extends SfCommand<any> {
   public static title = 'Configure authentication';
 
-  public static description = 'Configure authentication from git branch to target org';
+  public static description = `Configure authentication from a git branch to a target Salesforce org.
+
+This authentication enables CI/CD pipelines to deploy changes from specific git branches directly to Salesforce orgs.
+
+Supports both standard orgs and Dev Hub configuration for enterprise deployment workflows.
+`;
 
   public static examples = ['$ sf hardis:project:configure:auth'];
 
@@ -56,6 +61,8 @@ export default class ConfigureAuth extends SfCommand<any> {
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ConfigureAuth);
     const devHub = flags.devhub || false;
+
+    uxLog(this, c.cyan("This command will configure the authentication between a git branch and a Salesforce org."));
 
     // Ask user to login to org
     const prevUserName = devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername();
