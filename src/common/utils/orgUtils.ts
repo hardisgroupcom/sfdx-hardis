@@ -118,9 +118,11 @@ export async function promptProfiles(
 
 export async function promptOrg(
   commandThis: SfCommand<any>,
-  options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false, promptMessage: null, quickOrgList: false }
+  options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false, promptMessage: null, quickOrgList: false, defaultOrgUsername: null }
 ) {
   // List all local orgs and request to user
+  // Access flags via commandThis, fallback to options if not present
+  const defaultOrgUsername = options.defaultOrgUsername || ''
   const orgListResult = await MetadataUtils.listLocalOrgs(options.devSandbox === true ? 'sandbox' : 'any', { quickOrgList: options.quickOrgList });
   let orgList = [
     ...sortArray(orgListResult?.scratchOrgs || [], {
@@ -154,6 +156,8 @@ export async function promptOrg(
     orgList = orgList.filter((org: any) => org.status === 'Active' && org.devHubUsername === hubOrgUsername);
   }
 
+  const defaultOrg = orgList.find((org: any) => org.username === defaultOrgUsername) || null;
+
   // Prompt user
   /* jscpd:ignore-start */
   const orgResponse = await prompts({
@@ -161,6 +165,7 @@ export async function promptOrg(
     name: 'org',
     message: c.cyanBright(options.promptMessage || 'Please select an org'),
     description: 'Choose a Salesforce org from the list of authenticated orgs',
+    default: defaultOrg || '',
     choices: orgList.map((org: any) => {
       const title = org.instanceUrl || org.username || org.alias || "ERROR";
       const description = `Connected with ${org.username || org.alias || 'unknown user'} ` +

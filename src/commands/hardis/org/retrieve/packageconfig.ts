@@ -44,7 +44,7 @@ export default class RetrievePackageConfig extends SfCommand<any> {
 
     // Prompt for organization if not sent
     if (targetUsername == null) {
-      const org = await promptOrg(this, { setDefault: false });
+      const org = await promptOrg(this, { setDefault: false, defaultOrgUsername: flags['target-org']?.getUsername() });
       targetUsername = org.username;
     }
 

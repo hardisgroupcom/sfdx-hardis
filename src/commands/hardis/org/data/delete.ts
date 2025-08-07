@@ -62,7 +62,7 @@ If you need to run this command in production, you need to:
     // Select org that where records will be imported
     let orgUsername = flags['target-org'].getUsername();
     if (!isCI) {
-      orgUsername = await promptOrgUsernameDefault(this, orgUsername || '', { devHub: false, setDefault: false });
+      orgUsername = await promptOrgUsernameDefault(this, orgUsername || '', { devHub: false, setDefault: false, defaultOrgUsername: flags['target-org']?.getUsername() });
     }
 
     // Export data from org

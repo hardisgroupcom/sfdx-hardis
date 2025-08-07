@@ -70,6 +70,7 @@ Supports both standard orgs and Dev Hub configuration for enterprise deployment 
       setDefault: true,
       devHub: devHub,
       promptMessage: 'Please select or login into the org you want to configure the SF CLI Authentication',
+      defaultOrgUsername: flags['target-org']?.getUsername(),
     });
     await checkConfig(this);
 

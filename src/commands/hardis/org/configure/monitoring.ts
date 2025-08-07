@@ -120,6 +120,7 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
         setDefault: true,
         scratch: false,
         promptMessage: 'Please select or connect to the org that you want to monitor',
+        defaultOrgUsername: flags['target-org']?.getUsername(),
       });
 
       // Restart command so the org is selected as default org (will help to select profiles)

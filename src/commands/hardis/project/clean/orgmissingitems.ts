@@ -94,7 +94,7 @@ export default class OrgMissingItems extends SfCommand<any> {
     if (this.packageXmlFull === null) {
       // Request user to select an org if not provided
       if (this.targetOrgUsernameAlias == null) {
-        const targetOrg = await promptOrg(this, { devHub: false, setDefault: false });
+        const targetOrg = await promptOrg(this, { devHub: false, setDefault: false, defaultOrgUsername: flags['target-org']?.getUsername() });
         this.targetOrgUsernameAlias = targetOrg.username;
       }
       this.packageXmlFull = await buildOrgManifest(this.targetOrgUsernameAlias);
