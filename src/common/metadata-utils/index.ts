@@ -84,8 +84,12 @@ class MetadataUtils {
     }
     // Sandbox
     else if (type === 'devSandbox') {
+      const orgListSorted = sortArray(orgListResult?.result?.nonScratchOrgs || [], {
+        by: ['instanceUrl', 'username', 'alias'],
+        order: ['asc', 'asc', 'asc'],
+      });
       const allSandboxes =
-        orgListResult?.result?.nonScratchOrgs?.filter((org: any) => {
+        orgListSorted.filter((org: any) => {
           return org.loginUrl.includes('--') || org.loginUrl.includes('test.salesforce.com');
         }) || [];
       const majorOrgs = await listMajorOrgs();

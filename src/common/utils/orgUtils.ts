@@ -258,7 +258,7 @@ export async function promptOrg(
 export async function promptOrgList(options: { promptMessage?: string } = {}) {
   const orgListResult = await MetadataUtils.listLocalOrgs('any');
   const orgListSorted = sortArray(orgListResult?.nonScratchOrgs || [], {
-    by: ['username', 'alias', 'instanceUrl'],
+    by: ['instanceUrl', 'username', 'alias',],
     order: ['asc', 'asc', 'asc'],
   });
   // Prompt user
@@ -268,12 +268,11 @@ export async function promptOrgList(options: { promptMessage?: string } = {}) {
     message: c.cyanBright(options.promptMessage || 'Please select orgs'),
     description: 'Choose multiple Salesforce orgs from the list of authenticated orgs',
     choices: orgListSorted.map((org: any) => {
-      const title = org.username || org.alias || org.instanceUrl;
-      const description =
-        (title !== org.instanceUrl ? org.instanceUrl : '') +
-        (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '-');
+      const title = org.instanceUrl || org.username || org.alias || "ERROR";
+      const description = `Connected with ${org.username || org.alias || 'unknown user'} ` +
+        (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '');
       return {
-        title: c.cyan(title),
+        title: title,
         description: org.descriptionForUi ? org.descriptionForUi : description || '-',
         value: org,
       };

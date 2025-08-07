@@ -75,6 +75,7 @@ Supports both standard orgs and Dev Hub configuration for enterprise deployment 
     await checkConfig(this);
 
     // Check if the user has changed. If yes, ask to run the command again
+    uxLog(this, c.cyan(`Checking if the org username has changed from ${c.bold(prevUserName)}...`));
     const configGetRes = await execSfdxJson('sf config get ' + (devHub ? 'target-dev-hub' : 'target-org'), this, {
       output: false,
       fail: false,

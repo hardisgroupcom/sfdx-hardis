@@ -563,6 +563,9 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
   private async promptSandbox(flags: any, branchName: any) {
     const hubOrgUsername = flags['target-dev-hub']?.getUsername();
     const sandboxOrgList = await MetadataUtils.listLocalOrgs('devSandbox', { devHubUsername: hubOrgUsername });
+    const defaultSandbox = sandboxOrgList.find((org: any) => {
+      return org.username === flags['target-org']?.getUsername();
+    });
     const sandboxResponse = await prompts({
       type: 'select',
       name: 'value',
@@ -573,7 +576,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
       ),
       description: 'Choose an existing sandbox or connect to a new one for this branch',
       placeholder: 'Select sandbox',
-      initial: 0,
+      default: defaultSandbox ? defaultSandbox : undefined,
       choices: [
         ...[
           {
@@ -588,8 +591,8 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         ],
         ...sandboxOrgList.map((sandboxOrg: any) => {
           return {
-            title: `☁️ Use sandbox org ${c.yellow(sandboxOrg.username || sandboxOrg.alias)}`,
-            description: sandboxOrg.instanceUrl,
+            title: sandboxOrg.instanceUrl,
+            description: `☁️ Use sandbox org ${c.yellow(sandboxOrg.username || sandboxOrg.alias)}`,
             value: sandboxOrg,
           };
         }),
