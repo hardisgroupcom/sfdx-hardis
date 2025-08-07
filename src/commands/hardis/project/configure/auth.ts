@@ -8,7 +8,7 @@ import {
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execSfdxJson, generateSSLCertificate, promptInstanceUrl, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, generateSSLCertificate, git, promptInstanceUrl, uxLog } from '../../../../common/utils/index.js';
 import { getOrgAliasUsername, promptOrg } from '../../../../common/utils/orgUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { checkConfig, getConfig, setConfig, setInConfigFile } from '../../../../config/index.js';
@@ -96,15 +96,22 @@ Supports both standard orgs and Dev Hub configuration for enterprise deployment 
     // Get branch name to configure if not Dev Hub
     let branchName = '';
     let instanceUrl = 'https://login.salesforce.com';
+    const branches = await git().branch(["--list", "-r"]);
     if (!devHub) {
       const branchResponse = await prompts({
-        type: 'text',
+        type: 'select',
         name: 'value',
         message: c.cyanBright(
-          'What is the name of the git branch you want to configure ? Examples: developpement,recette,production'
+          'What is the name of the git branch you want to configure Automated CI/CD deployments from ? (Ex: integration,uat,preprod,main)'
         ),
+        choices: branches.all.map((branch: string) => {
+          return {
+            title: branch.replace('origin/', ''),
+            value: branch.replace('origin/', ''),
+          };
+        }),
         description: 'Enter the git branch name for this org configuration',
-        placeholder: 'Ex: production',
+        placeholder: 'Select the git branch name',
       });
       branchName = branchResponse.value.replace(/\s/g, '-');
       /* if (["main", "master"].includes(branchName)) {
@@ -116,6 +123,34 @@ Supports both standard orgs and Dev Hub configuration for enterprise deployment 
           : flags['target-org']?.getConnection()?.instanceUrl || "",
       });
     }
+    // Request merge targets
+    if (!devHub) {
+      const mergeTargetsResponse = await prompts({
+        type: 'multiselect',
+        name: 'value',
+        message: c.cyanBright(
+          `What are the target git branches that ${branchName} will be able to merge in ? (Ex: for integration, the target will be uat)`
+        ),
+        choices: branches.all.map((branch: string) => {
+          return {
+            title: branch.replace('origin/', ''),
+            value: branch.replace('origin/', ''),
+          };
+        }),
+        description: 'Select the git branches that this branch will be able to merge in',
+        placeholder: 'Select the target git branches',
+      });
+      const mergeTargets = mergeTargetsResponse.value.map((branch: string) => branch.replace(/\s/g, '-'));
+      // Update config file
+      await setInConfigFile(
+        [],
+        {
+          mergeTargets: mergeTargets,
+        },
+        `./config/branches/.sfdx-hardis.${branchName}.yml`
+      );
+    }
+
     // Request username
     const usernameResponse = await prompts({
       type: 'text',

@@ -217,7 +217,7 @@ export async function promptInstanceUrl(
     return true;
   });
   if (defaultOrgChoice != null) {
-    choices.push({
+    choices.unshift({
       title: `♻️ ${defaultOrgChoice.instanceUrl}`,
       description: 'Your current default org',
       value: defaultOrgChoice.instanceUrl,
