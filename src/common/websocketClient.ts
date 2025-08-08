@@ -112,6 +112,11 @@ export class WebSocketClient {
     });
   }
 
+  // Sends refresh pipeline message
+  static sendRefreshPipelineMessage() {
+    WebSocketClient.sendMessage({ event: 'refreshPipeline' });
+  }
+
   // Sends info about downloadable report file
   static sendReportFileMessage(file: string, title: string) {
     WebSocketClient.sendMessage({

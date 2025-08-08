@@ -180,6 +180,8 @@ Supports both standard orgs and Dev Hub configuration for enterprise deployment 
       );
     }
 
+    WebSocketClient.sendRefreshPipelineMessage();
+
     // Generate SSL certificate (requires openssl to be installed on computer)
     const certFolder = devHub ? './config/.jwt' : './config/branches/.jwt';
     const certName = devHub ? config.devHubAlias : branchName;
@@ -188,6 +190,7 @@ Supports both standard orgs and Dev Hub configuration for enterprise deployment 
       targetUsername: devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername(),
     };
     await generateSSLCertificate(certName, certFolder, this, orgConn, sslGenOptions);
+
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };
   }
