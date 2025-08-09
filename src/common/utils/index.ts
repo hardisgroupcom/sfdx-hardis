@@ -1307,12 +1307,17 @@ export async function generateSSLCertificate(
       message: c.cyanBright('Please confirm when variables have been set'),
       description: 'Confirm when you have configured the required CI/CD environment variables in your deployment platform',
     });
+    // Build default app name from branch name by replacing all non-alphanumeric characters with empty string
+    let appNameDflt = branchName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+    if (appNameDflt.length > 20) {
+      appNameDflt = appNameDflt.substring(0, 20);
+    }
     // Request info for deployment
     const promptResponses = await prompts([
       {
         type: 'text',
         name: 'appName',
-        initial: 'sfdxhardis' + Math.floor(Math.random() * 9) + 1,
+        initial: 'sfdxhardis' + appNameDflt,
         message: c.cyanBright('How would you like to name the Connected App ?'),
         description: 'Name for the Connected App that will be created in your Salesforce org',
         placeholder: 'Ex: sfdx_hardis',
@@ -1331,7 +1336,7 @@ export async function generateSSLCertificate(
     const connectedAppMetadata = `<?xml version="1.0" encoding="UTF-8"?>
 <ConnectedApp xmlns="http://soap.sforce.com/2006/04/metadata">
   <contactEmail>${contactEmail}</contactEmail>
-  <label>${promptResponses.appName.replace(/\s/g, '_') || 'sfdx-hardis'}</label>
+  <label>${promptResponses.appName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() || 'sfdxhardis'}</label>
   <oauthConfig>
       <callbackUrl>http://localhost:1717/OauthRedirect</callbackUrl>
       <certificate>${crtContent}</certificate>

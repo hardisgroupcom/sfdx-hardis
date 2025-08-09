@@ -108,7 +108,7 @@ The command's technical implementation involves:
     await git({ output: true }).checkout(['--', 'manifest/package.xml']);
     await git({ output: true }).checkout(['--', 'manifest/destructiveChanges.xml']);
     await git({ output: true }).status();
-    uxLog(this, c.cyan('The following items are not available for selection'));
+    uxLog(this, c.cyan('The following items are now available for selection'));
     uxLog(this, c.cyan('Selection has been reset'));
     // Return an object to be displayed with --json
     return { outputString: 'Reset selection pocessed' };
