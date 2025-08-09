@@ -174,7 +174,7 @@ The command's technical implementation involves:
 
     this.customSettingsNames = (await this.listLocalCustomSettings()).map((cs) => cs.name);
 
-    uxLog(this, c.green(LintAccess.messages.header));
+    uxLog(this, c.cyan(LintAccess.messages.header));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
 
@@ -433,11 +433,11 @@ The command's technical implementation involves:
           //only readable(for fields) or enabled(apex class) rights are relevant
           if (
             permission &&
-            permission[currentType.xmlAccessField][0] == 'true' &&
-            elementsToCheckByType[currentType.xmlField].includes(permission[currentType.xmlField][0])
+            permission[currentType.xmlAccessField]?.[0] == 'true' &&
+            elementsToCheckByType[currentType.xmlField].includes(permission[currentType.xmlField]?.[0])
           ) {
             remainingElements[currentType.xmlField] = remainingElements[currentType.xmlField].filter(
-              (e) => e !== permission[currentType.xmlField][0]
+              (e) => e !== permission[currentType.xmlField]?.[0]
             );
           }
         }
@@ -662,6 +662,8 @@ The command's technical implementation involves:
       }
       await writeXmlFile(permissionSetFile, psFileXml);
     }
+    uxLog(this, c.cyan('Permission sets updated successfully!'));
+    uxLog(this, c.yellow('Please commit and push your changes to the repository!'));
     throw new SfError(c.red('Your permission sets has been updated: please CHECK THE UPDATES then commit and push !'));
   }
 

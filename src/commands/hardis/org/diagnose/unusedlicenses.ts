@@ -191,17 +191,11 @@ The command's technical implementation involves extensive querying of Salesforce
     let msg = `No unused permission set license assignment has been found`;
     if (this.unusedPermissionSetLicenseAssignments.length > 0) {
       this.statusCode = 1;
-      msg = `${this.unusedPermissionSetLicenseAssignments.length} unused Permission Set License Assignments have been found`;
-      uxLog(this, c.red(msg));
-      for (const pslMasterLabel of Object.keys(summary).sort()) {
-        const psl = this.getPermissionSetLicenseByMasterLabel(pslMasterLabel);
-        uxLog(
-          this,
-          c.red(
-            `- ${pslMasterLabel}: ${summary[pslMasterLabel]} (${psl.UsedLicenses} used on ${psl.TotalLicenses} available)`
-          )
-        );
-      }
+      const pslMasterLabels = Object.keys(summary).sort().map((pslMasterLabel) => {
+        return "- " + this.getPermissionSetLicenseByMasterLabel(pslMasterLabel).MasterLabel;
+      }).join('\n');
+      msg = `Unused Permission Set License Assignments:\n${pslMasterLabels}`;
+      uxLog(this, c.yellow(msg));
     } else {
       uxLog(this, c.green(msg));
     }

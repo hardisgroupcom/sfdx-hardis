@@ -167,6 +167,7 @@ The command's technical implementation involves:
   }
 
   private async processDeleteFlowVersions(conn: any, tryDeleteInterviews: boolean) {
+    uxLog(this, c.cyan(`Deleting Flow versions...`));
     const recordsIds = this.flowRecords.map((record) => record.Id);
     const deleteResults = await bulkDeleteTooling('Flow', recordsIds, conn);
     for (const deleteRes of deleteResults.results) {
@@ -240,23 +241,37 @@ The command's technical implementation involves:
   }
 
   private formatFlowRecords() {
-    this.flowRecords = this.flowRecordsRaw.map((record: any) => {
-      return {
-        Id: record.Id,
-        MasterLabel: record.MasterLabel,
-        VersionNumber: record.VersionNumber,
-        DefinitionDevName: record.Definition.DeveloperName,
-        Status: record.Status,
-        Description: record.Description,
-      };
-    });
+    this.flowRecords = this.flowRecordsRaw.map((record: any) => ({
+      Id: record.Id,
+      MasterLabel: record.MasterLabel,
+      VersionNumber: record.VersionNumber,
+      DefinitionDevName: record.Definition.DeveloperName,
+      Status: record.Status,
+      Description: record.Description,
+    }));
+
+    if (this.flowRecords.length === 0) {
+      uxLog(this, c.yellow('No Flow versions found to delete.'));
+      return;
+    }
+
+    const flowList = this.flowRecords
+      .map(
+        (flow) =>
+          `- ${c.bold(flow.DefinitionDevName)} v${c.green(flow.VersionNumber)} (${c.yellow(flow.Status)})${flow.Description ? ` - ${c.gray(flow.Description)}` : ''}`
+      )
+      .join('\n');
+
     uxLog(
       this,
-      `[sfdx-hardis] Found ${c.bold(this.flowRecords.length)} records:\n${c.yellow(columnify(this.flowRecords))}`
+      c.cyan(
+        `Found ${this.flowRecords.length} Flow version(s) to delete:\n${flowList}`
+      )
     );
   }
 
   private async listFlowVersionsToDelete(manageableConstraint: string) {
+    uxLog(this, c.cyan('Querying Flow versions to delete...'));
     let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description,Definition.DeveloperName FROM Flow WHERE ${manageableConstraint} AND Status IN ('${this.statusFilter.join(
       "','"
     )}')`;
@@ -285,6 +300,7 @@ The command's technical implementation involves:
       this.statusFilter = ['Obsolete'];
     } else {
       // Query all flows definitions
+      uxLog(this, c.cyan('Querying all Flow definitions to select from...'));
       const allFlowQueryCommand =
         'sf data query ' +
         ` --query "SELECT Id,DeveloperName,MasterLabel,ManageableState FROM FlowDefinition WHERE ${manageableConstraint} ORDER BY DeveloperName"` +
@@ -336,9 +352,17 @@ The command's technical implementation involves:
       `FROM FlowInterview WHERE Id IN ('${flowVInterviewIds.join("','")}')` +
       ' ORDER BY Name';
     const flowsInterviewsToDelete = (await bulkQuery(query, conn)).records;
-    uxLog(
-      this,
-      c.yellow(`Flow interviews to be deleted would be the following:\n${columnify(flowsInterviewsToDelete)}`)
-    );
+    if (flowsInterviewsToDelete.length === 0) {
+      uxLog(this, c.yellow('No Flow Interviews found to delete.'));
+      return;
+    }
+    // Display Flow Interviews to delete
+    const flowList = flowsInterviewsToDelete
+      .map(
+        (flow) =>
+          `- ${c.bold(flow.Name)} (${c.green(flow.InterviewLabel)}) - ${c.yellow(flow.InterviewStatus)}`
+      )
+      .join('\n');
+    uxLog(this, c.cyan(`Found ${flowsInterviewsToDelete.length} Flow Interviews to delete:\n${flowList}`));
   }
 }

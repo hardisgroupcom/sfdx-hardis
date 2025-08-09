@@ -4,6 +4,7 @@ import { glob } from 'glob';
 import fs from 'fs-extra';
 import * as xml2js from 'xml2js';
 import * as path from 'path';
+import c from 'chalk';
 
 // Salesforce Specific
 import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
@@ -90,7 +91,9 @@ The command's technical implementation involves:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(UnusedMetadatas);
     await this.setProjectFiles();
+    uxLog(this, c.cyan('Checking for unused labels...'));
     const unusedLabels = await this.verifyLabels();
+    uxLog(this, c.cyan('Checking for unused custom permissions...'));
     const unusedCustomPermissions = await this.verifyCustomPermissions();
 
     // Build notification
@@ -111,12 +114,19 @@ The command's technical implementation involves:
           .join('\n')}`,
       });
     }
+    uxLog(this, c.cyan("Summary"));
     if (unusedLabels.length > 0 || unusedCustomPermissions.length > 0) {
       notifSeverity = 'warning';
       notifText = `${this.unusedData.length} unused metadatas have been detected in ${branchMd}`;
+      if (unusedLabels.length > 0) {
+        uxLog(this, c.yellow(`Unused Labels: ${unusedLabels.length}`));
+      }
+      if (unusedCustomPermissions.length > 0) {
+        uxLog(this, c.yellow(`Unused Custom Permissions: ${unusedCustomPermissions.length}`));
+      }
       await this.buildCsvFile(unusedLabels, unusedCustomPermissions);
     } else {
-      uxLog(this, 'No unused labels or custom permissions detected.');
+      uxLog(this, c.green('No unused labels or custom permissions detected.'));
     }
     // Post notification
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
@@ -146,47 +156,61 @@ The command's technical implementation involves:
     const labelFilePath = labelFiles[0];
 
     if (!labelFilePath) {
-      console.warn('No label file found.');
+      uxLog(this, c.yellow('No label file found.'));
       return [];
     }
 
     return new Promise((resolve, reject) => {
-      fs.readFile(labelFilePath, 'utf-8', (errorReadingFile, data) => {
-        if (errorReadingFile) {
-          reject(errorReadingFile);
-          return;
-        }
-
-        xml2js.parseString(data, (errorParseString, result: any) => {
-          if (errorParseString) {
-            reject(errorParseString);
+      try {
+        fs.readFile(labelFilePath, 'utf-8', (errorReadingFile, data) => {
+          if (errorReadingFile) {
+            reject(errorReadingFile);
             return;
           }
-          const severityIconInfo = getSeverityIcon('info');
-          const labelsArray: string[] = result.CustomLabels.labels.map((label: any) => label.fullName[0]);
-          const unusedLabels: any[] = labelsArray
-            .filter((label) => {
-              const labelLower = `label.${label.toLowerCase()}`;
-              const cLower = `c.${label.toLowerCase()}`;
-              const auraPattern = `{!$Label.c.${label.toLowerCase()}}`;
-              return !this.projectFiles.some((filePath) => {
-                const fileContent = fs.readFileSync(filePath, 'utf-8').toLowerCase();
-                return (
-                  fileContent.includes(labelLower) || fileContent.includes(cLower) || fileContent.includes(auraPattern)
-                );
-              });
-            })
-            .map((label) => {
-              return {
-                name: label,
-                severity: 'info',
-                severityIcon: severityIconInfo,
-              };
-            });
 
-          resolve(unusedLabels);
+          xml2js.parseString(data, (errorParseString, result: any) => {
+            if (errorParseString) {
+              reject(errorParseString);
+              return;
+            }
+            const severityIconInfo = getSeverityIcon('info');
+            const labelsArray: string[] = result.CustomLabels.labels.map((label: any) => label.fullName[0]);
+            const unusedLabels: any[] = labelsArray
+              .filter((label) => {
+                const labelLower = `label.${label.toLowerCase()}`;
+                const cLower = `c.${label.toLowerCase()}`;
+                const auraPattern = `{!$Label.c.${label.toLowerCase()}}`;
+                return !this.projectFiles.some((filePath) => {
+                  if (!fs.existsSync(filePath)) {
+                    uxLog(this, c.yellow(`File not found: ${filePath}`));
+                    return false;
+                  }
+                  try {
+                    const fileContent = fs.readFileSync(filePath, 'utf-8').toLowerCase();
+                    return (
+                      fileContent.includes(labelLower) || fileContent.includes(cLower) || fileContent.includes(auraPattern)
+                    );
+                  } catch (error) {
+                    uxLog(this, c.yellow(`Error reading file ${filePath}: ${error}`));
+                    return false;
+                  }
+                });
+              })
+              .map((label) => {
+                return {
+                  name: label,
+                  severity: 'info',
+                  severityIcon: severityIconInfo,
+                };
+              });
+
+            resolve(unusedLabels);
+          });
         });
-      });
+      } catch (error) {
+        uxLog(this, c.yellow(`Error processing label file: ${error}`));
+        reject(error);
+      }
     });
   }
 
@@ -201,28 +225,32 @@ The command's technical implementation involves:
     });
 
     if (!customPermissionFiles) {
-      console.warn('No custom permission file found.');
+      uxLog(this, c.yellow('No custom permission file found.'));
       return [];
     }
 
     for (const file of customPermissionFiles) {
-      const fileData = await fs.readFile(file, 'utf-8');
-      const fileName = path.basename(file, '.customPermission-meta.xml');
-      let label = '';
+      try {
+        const fileData = await fs.readFile(file, 'utf-8');
+        const fileName = path.basename(file, '.customPermission-meta.xml');
+        let label = '';
 
-      xml2js.parseString(fileData, (error, result) => {
-        if (error) {
-          console.error(`Error parsing XML: ${error}`);
-          return;
+        xml2js.parseString(fileData, (error, result) => {
+          if (error) {
+            uxLog(this, c.yellow(`Error parsing XML: ${error}`));
+            return;
+          }
+          label = result.CustomPermission.label[0];
+        });
+        for (const filePath of this.projectFiles) {
+          const fileContent: string = fs.readFileSync(filePath, 'utf-8');
+          if (fileContent.includes(fileName) || fileContent.includes(label)) {
+            const currentCount = foundLabels.get(fileName) || 0;
+            foundLabels.set(fileName, currentCount + 1);
+          }
         }
-        label = result.CustomPermission.label[0];
-      });
-      for (const filePath of this.projectFiles) {
-        const fileContent: string = fs.readFileSync(filePath, 'utf-8');
-        if (fileContent.includes(fileName) || fileContent.includes(label)) {
-          const currentCount = foundLabels.get(fileName) || 0;
-          foundLabels.set(fileName, currentCount + 1);
-        }
+      } catch (error) {
+        uxLog(this, c.yellow(`Error processing custom permission file ${file}: ${error}`));
       }
     }
     const severityIconInfo = getSeverityIcon('info');
@@ -245,8 +273,8 @@ The command's technical implementation involves:
   private async buildCsvFile(unusedLabels: string[], unusedCustomPermissions: string[]): Promise<void> {
     this.outputFile = await generateReportPath('lint-unusedmetadatas', this.outputFile);
     this.unusedData = [
-      ...unusedLabels.map((label) => ({ type: 'Label', name: label })),
-      ...unusedCustomPermissions.map((permission) => ({ type: 'Custom Permission', name: permission })),
+      ...unusedLabels.map((label: any) => ({ type: 'Label', name: label?.name || label })),
+      ...unusedCustomPermissions.map((permission: any) => ({ type: 'Custom Permission', name: permission.name || permission })),
     ];
 
     this.outputFilesRes = await generateCsvFile(this.unusedData, this.outputFile);

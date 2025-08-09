@@ -1023,7 +1023,7 @@ ${Project2Markdown.htmlInstructions}
         uxLog(this, c.grey(`Skip Data Cloud Object ${objectName}... (use INCLUDE_DATA_CLOUD_DOC=true to enforce it)`));
         continue;
       }
-      uxLog(this, c.cyan(`Generating markdown for Object ${objectName}...`));
+      uxLog(this, c.grey(`Generating markdown for Object ${objectName}...`));
       const objectXml = (await fs.readFile(path.join(this.tempDir, objectFile), "utf8")).toString();
       const objectMdFile = path.join(this.outputMarkdownRoot, "objects", objectName + ".md");
       // Build filtered XML
