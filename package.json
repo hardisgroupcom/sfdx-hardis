@@ -76,7 +76,8 @@
   },
   "resolutions": {
     "@langchain/core": "0.3.57",
-    "form-data": "4.0.4"
+    "form-data": "4.0.4",
+    "tmp": "0.2.5"
   },
   "devDependencies": {
     "@oclif/plugin-command-snapshot": "^5.3.5",
@@ -105,6 +106,7 @@
     "@types/xml2js": "^0.4.14",
     "eslint-plugin-sf-plugin": "^1.20.27",
     "oclif": "^4.22.1",
+    "tmp": "0.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   },
