@@ -10,13 +10,36 @@ import { writeXmlFile } from '../../../../common/utils/xmlUtils.js';
 
 // The code of this method is awful... it's migrated from sfdx-essentials, written when async / await were not existing ^^
 export class FilterXmlContent extends SfCommand<any> {
-  public static readonly description = `Filter content of metadatas (XML) in order to be able to deploy only part of them on an org (See [Example configuration](https://github.com/nvuillam/sfdx-essentials/blob/master/examples/filter-xml-content-config.json))
+  public static readonly description = `
+## Command Behavior
 
-When you perform deployments from one org to another, the features activated in the target org may not fit the content of the sfdx/metadata files extracted from the source org.
+**Filters the content of Salesforce metadata XML files to remove specific elements, enabling more granular deployments.**
 
-You may need to filter some elements in the XML files, for example in the Profiles
+This command addresses a common challenge in Salesforce development: deploying only a subset of metadata from an XML file when the target org might not support all elements or when certain elements are not desired. It allows you to define rules in a JSON configuration file to remove unwanted XML nodes.
 
-This script requires a filter-config.json file`;
+Key functionalities:
+
+- **Configurable Filtering:** Uses a JSON configuration file (e.g., \`filter-config.json\`) to define which XML elements to remove. This configuration specifies the XML tags to target and the values within those tags that should trigger removal.
+- **Targeted File Processing:** Processes XML files within a specified input folder (defaults to current directory) and writes the filtered content to an output folder.
+- **Example Use Cases:** Useful for scenarios like:
+  - Removing references to features not enabled in the target org.
+  - Stripping out specific profile permissions or field-level security settings.
+  - Cleaning up metadata that is not relevant to a particular deployment.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **Configuration Loading:** Reads the \`filter-config.json\` file, which contains an array of \`filters\`. Each filter defines a \`name\`, \`description\`, \`folders\` (where to apply the filter), \`file_extensions\`, and an \`exclude_list\`.
+- **File System Operations:** Copies the input folder to an output folder (if different) to avoid modifying original files directly. It then iterates through the files in the output folder that match the specified file extensions.
+- **XML Parsing and Manipulation:** For each matching XML file:
+  - It uses \`xml2js.Parser\` to parse the XML content into a JavaScript object.
+  - It recursively traverses the JavaScript object, applying the \`filterElement\` function.
+  - The \`filterElement\` function checks for \`type_tag\` and \`identifier_tag\` defined in the \`exclude_list\`. If a match is found and the value is in the \`excludeDef.values\`, the element is removed from the XML structure.
+  - After filtering, it uses \`writeXmlFile\` to write the modified JavaScript object back to the XML file.
+- **Logging:** Provides detailed logs about the filtering process, including which files are being processed and which elements are being filtered.
+- **Summary Reporting:** Tracks and reports on the files that have been updated due to filtering.
+`;
   public static readonly examples = [
     'sf hardis:project:clean:filter-xml-content -i "./mdapi_output"',
     'sf hardis:project:clean:filter-xml-content -i "retrieveUnpackaged"',

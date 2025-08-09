@@ -12,8 +12,28 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class OrgConnect extends SfCommand<any> {
   public static title = 'Connect to an org';
 
-  public static description = `Connect to an org without setting it as default username, then proposes to open the org in web browser
-  `;
+  public static description = `
+## Command Behavior
+
+**Connects to a Salesforce org without setting it as the default username, and optionally opens the org in a web browser.**
+
+This command provides a quick way to establish a connection to a Salesforce organization for one-off tasks or when you don't want to change your default org. It's useful for accessing different environments without disrupting your primary development setup.
+
+Key functionalities:
+
+- **Org Selection:** Prompts the user to select an existing Salesforce org or connect to a new one.
+- **Non-Default Connection:** Ensures that the selected org is connected but does not set it as the default username for subsequent Salesforce CLI commands.
+- **Browser Launch (Optional):** Offers to open the connected org directly in your default web browser, providing immediate access to the Salesforce UI.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **Interactive Org Prompt:** Uses the \`promptOrg\` utility to display a list of available Salesforce orgs and allows the user to select one or initiate a new authentication flow.
+- **Salesforce CLI Integration:** Internally, it leverages Salesforce CLI commands to establish the connection to the chosen org. It does not use \`sf config set target-org\` to avoid changing the default org.
+- **Browser Launch:** If the user opts to open the org in a browser, it executes the \`sf org open\` command, passing the selected org's username as the target.
+- **Environment Awareness:** Checks the \`isCI\` flag to determine whether to offer the browser launch option, as it's typically not applicable in continuous integration environments.
+`;
 
   public static examples = ['$ sf hardis:org:connect'];
 

@@ -16,7 +16,33 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class OrgUnfreezeUser extends SfCommand<any> {
   public static title = 'Unfreeze user logins';
 
-  public static description = messages.getMessage('orgUnfreezeUser');
+  public static description = `
+## Command Behavior
+
+**Unfreezes Salesforce user logins, restoring access for selected users.**
+
+This command allows administrators to unfreeze Salesforce user logins, reactivating their access to the Salesforce org. This is the counterpart to the \`freeze\` command and is used to restore access after a temporary suspension.
+
+Key functionalities:
+
+- **User Selection:** You can select users to unfreeze based on their assigned profiles.
+  - \`--includeprofiles\`: Unfreeze users belonging to a comma-separated list of specified profiles.
+  - \`--excludeprofiles\`: Unfreeze users belonging to all profiles *except* those specified in a comma-separated list.
+  - If no profile flags are provided, an interactive menu will allow you to select profiles.
+- **Interactive Confirmation:** In non-CI environments, it prompts for confirmation before unfreezing the selected users.
+- **Bulk Unfreezing:** Efficiently unfreezes multiple user logins using Salesforce's Bulk API.
+- **Reporting:** Generates CSV and XLSX reports of the users that are about to be unfrozen.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **SOQL Queries (Bulk API):** It executes SOQL queries against the \`User\` and \`Profile\` objects to identify active users based on the provided profile filters. It then queries the \`UserLogin\` object to find frozen login sessions for these users.
+- **Interactive Prompts:** Uses the \`prompts\` library to guide the user through profile selection and to confirm the unfreezing operation.
+- **Bulk Update:** It constructs an array of \`UserLogin\` records with their \`Id\` and \`IsFrozen\` set to \`false\`, then uses \`bulkUpdate\` to perform the mass update operation on the Salesforce org.
+- **Reporting:** It uses \`generateReports\` to create CSV and XLSX files containing details of the users to be unfrozen.
+- **Logging:** Provides clear messages about the number of users found and the success of the unfreezing process.
+`;
 
   public static examples = [
     `$ sf hardis:org:user:unfreeze`,

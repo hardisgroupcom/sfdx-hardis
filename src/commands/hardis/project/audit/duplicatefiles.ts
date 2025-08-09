@@ -13,7 +13,29 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class AuditDuplicateFiles extends SfCommand<any> {
   public static title = 'Find duplicate sfdx files';
 
-  public static description = 'Find duplicate files in sfdx folder (often from past @salesforce/cli bugs)';
+  public static description = `
+## Command Behavior
+
+**Identifies and reports on duplicate file names within your Salesforce DX project folder.**
+
+This command helps detect instances where files with the same name exist in different directories within your SFDX project. While some duplicates are expected (e.g., metadata files for different components of the same object), others can be a result of past Salesforce CLI bugs or improper source control practices, leading to confusion and potential deployment issues.
+
+Key functionalities:
+
+- **File Scan:** Recursively scans a specified root path (defaults to the current working directory) for all files.
+- **Duplicate Detection:** Identifies files that share the same name but reside in different locations.
+- **Intelligent Filtering:** Accounts for known patterns where duplicate file names are legitimate (e.g., \`field-meta.xml\`, \`listView-meta.xml\`, \`recordType-meta.xml\`, \`webLink-meta.xml\` files within object subdirectories).
+- **Reporting:** Outputs a JSON object detailing the detected duplicates, including the file name and the full paths of its occurrences.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **File System Traversal:** Uses \`fs-readdir-recursive\` to list all files within the specified directory, excluding \`node_modules\`.
+- **Duplicate Logic:** Iterates through the list of all files and compares their base names. If two files have the same base name but different full paths, they are considered potential duplicates.
+- **Exclusion Logic:** The \`checkDoublingAllowed\` function contains regular expressions to identify specific file path patterns where duplicate names are acceptable (e.g., \`objects/Account/fields/MyField__c.field-meta.xml\` and \`objects/Contact/fields/MyField__c.field-meta.xml\`). This prevents false positives.
+- **Data Structuring:** Organizes the results into a JavaScript object where keys are duplicate file names and values are arrays of their full paths.
+`;
 
   public static examples = ['$ sf hardis:project:audit:duplicatefiles'];
 

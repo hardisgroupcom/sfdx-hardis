@@ -14,34 +14,38 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OverridePrompts extends SfCommand<any> {
   public static title = 'Override AI Prompt Templates';
-  public static description = `Create local override files for AI prompt templates and variables
+  public static description = `
+## Command Behavior
 
-This command creates a folder config/prompt-templates/ and copies all the default AI prompt templates and variables as .txt files that can be customized.
+**Creates local override files for AI prompt templates and variables, allowing for customization of sfdx-hardis AI interactions.**
 
-The templates are used by sfdx-hardis for:
-- Generating documentation with AI
-- Solving deployment errors
-- Describing Salesforce metadata
+This command sets up a \`config/prompt-templates/\` folder within your project. It populates this folder with \`.txt\` files containing the default AI prompt templates and variables used by sfdx-hardis. This enables you to tailor the AI's behavior and responses to your organization's specific needs, terminology, and coding standards.
 
-The variables contain common instruction patterns that are reused across multiple templates, such as:
-- Role definitions (business analyst, developer, etc.)
-- Formatting requirements for markdown output
-- Security caution instructions
-- Output format specifications
+Key functionalities:
 
-You can customize these prompts and variables to match your organization's specific needs and terminology.
+- **Template Customization:** Modify templates used for generating documentation, solving deployment errors, and describing Salesforce metadata.
+- **Variable Customization:** Adjust common instruction patterns (e.g., role definitions, formatting requirements, security cautions) that are reused across multiple templates.
+- **Persistent Overrides:** Once created, these local files will override the default sfdx-hardis templates and variables, and they will not be overwritten by future sfdx-hardis updates unless explicitly requested with the \`--overwrite\` flag.
 
-After running this command, you can modify any of the .txt files in config/prompt-templates/ to override the default prompts and variables.
-
-**Important**: Once created, existing template and variable files will never be overwritten with newer versions from sfdx-hardis updates, unless you explicitly use the --overwrite flag. This ensures your customizations are preserved.
+**Important:** After running this command, you can modify any of the \`.txt\` files in \`config/prompt-templates/\` to customize the AI's behavior.
 
 Available templates:
-${Object.keys(PROMPT_TEMPLATES).map(name => `- ${name}`).join('\n')}
+${Object.keys(PROMPT_TEMPLATES).map(name => `- ${name}`).join('\\n')}
 
 Available variables:
-${Object.keys(PROMPT_VARIABLES).map(name => `- ${name}`).join('\n')}
+${Object.keys(PROMPT_VARIABLES).map(name => `- ${name}`).join('\\n')}
 
 More info on [AI Prompts documentation](https://sfdx-hardis.cloudity.com/salesforce-ai-prompts/)
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **Directory Creation:** Ensures the \`config/prompt-templates/\` directory exists using \`fs.ensureDirSync()\`.
+- **File Copying:** Iterates through predefined \`PROMPT_TEMPLATES\` and \`PROMPT_VARIABLES\` objects. For each template/variable, it extracts the English text content and writes it to a corresponding \`.txt\` file in the \`config/prompt-templates/\` directory.
+- **Overwrite Logic:** Checks if a file already exists. If the \`--overwrite\` flag is provided, it overwrites the existing file; otherwise, it skips the file and logs a message.
+- **User Feedback:** Provides detailed logs about created, overwritten, and skipped files, along with instructions on how to use the customized prompts and variables.
+- **Dynamic Content:** The description itself dynamically lists available templates and variables by iterating over \`PROMPT_TEMPLATES\` and \`PROMPT_VARIABLES\` objects.
 `;
   public static examples = [
     '$ sf hardis:doc:override-prompts',

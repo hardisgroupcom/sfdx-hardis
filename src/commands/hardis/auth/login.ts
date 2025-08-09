@@ -12,16 +12,30 @@ export default class Login extends SfCommand<any> {
   public static title = 'Login';
 
   public static description = `
-Logins to a Salesforce org from CI/CD workflows.
+## Command Behavior
 
-Will use the variables and files defined by configuration commands:
+**Authenticates to a Salesforce org, primarily designed for CI/CD workflows.**
 
-- CI/CD repos: [Configure Org CI Authentication](${CONSTANTS.DOC_URL_ROOT}/hardis/project/configure/auth/)
-- Monitoring repos: [Configure Org Monitoring](${CONSTANTS.DOC_URL_ROOT}/hardis/org/configure/monitoring/)
+This command facilitates secure and automated logins to Salesforce organizations within continuous integration and continuous delivery pipelines. It leverages pre-configured authentication details, ensuring that CI/CD processes can interact with Salesforce without manual intervention.
 
-If you have a technical org (for example to call Agentforce from another org, you can define variable SFDX_AUTH_URL_TECHNICAL_ORG and it will authenticate it with alias TECHNICAL_ORG)
+Key aspects:
 
-You can get SFDX_AUTH_URL_TECHNICAL_ORG value by running the command: \`sf org display --verbose --json\` and copy the value of the field \`sfdxAuthUrl\` in the output.
+- **Configuration-Driven:** It relies on authentication variables and files set up by dedicated configuration commands:
+  - For CI/CD repositories: [Configure Org CI Authentication](${CONSTANTS.DOC_URL_ROOT}/hardis/project/configure/auth/)
+  - For Monitoring repositories: [Configure Org Monitoring](${CONSTANTS.DOC_URL_ROOT}/hardis/org/configure/monitoring/)
+- **Technical Org Support:** Supports authentication to a 'technical org' (e.g., for calling Agentforce from another org) by utilizing the \`SFDX_AUTH_URL_TECHNICAL_ORG\` environment variable. If this variable is set, the command authenticates to this org with the alias \`TECHNICAL_ORG\`.
+
+To obtain the \`SFDX_AUTH_URL_TECHNICAL_ORG\` value, you can run \`sf org display --verbose --json\` and copy the \`sfdxAuthUrl\` field from the output.
+
+## Technical explanations
+
+The command's technical flow involves:
+
+- **Flag Parsing:** It parses command-line flags such as \`instanceurl\`, \`devhub\`, \`scratchorg\`, and \`debug\` to determine the authentication context.
+- **Authentication Hook:** It triggers an internal authentication hook (\`this.config.runHook('auth', ...\`)) which is responsible for executing the actual authentication logic based on the provided flags (e.g., whether it's a Dev Hub or a scratch org).
+- **Environment Variable Check:** It checks for the presence of \`SFDX_AUTH_URL_TECHNICAL_ORG\` or \`TECHNICAL_ORG_ALIAS\` environment variables.
+- **\`authOrg\` Utility:** If a technical org is configured, it calls the \`authOrg\` utility function to perform the authentication for that specific org, ensuring it's connected and available for subsequent operations.
+- **Salesforce CLI Integration:** It integrates with the Salesforce CLI's authentication mechanisms to establish and manage org connections.
 `;
 
   public static examples = [

@@ -11,7 +11,33 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class HardisOrgCommunityUpdate extends SfCommand<any> {
   public static readonly summary = messages.getMessage('orgCommunityUpdate');
-  public static readonly description = messages.getMessage('orgCommunityUpdateDesc');
+  public static readonly description = `
+## Command Behavior
+
+**Updates the status of one or more Salesforce Experience Cloud (Community) networks.**
+
+This command provides a way to programmatically change the status of your Salesforce Communities, allowing you to manage their availability. This is particularly useful for:
+
+- **Maintenance:** Taking communities offline for planned maintenance (\`DownForMaintenance\`).
+- **Activation/Deactivation:** Bringing communities online or offline (\`Live\`, \`DownForMaintenance\`).
+- **Automation:** Integrating community status changes into CI/CD pipelines or scheduled jobs.
+
+Key functionalities:
+
+- **Network Selection:** You can specify one or more community network names (separated by commas) using the \`--name\` flag.
+- **Status Update:** You can set the new status for the selected communities using the \`--status\` flag. Supported values are \`Live\` and \`DownForMaintenance\`.
+- **Confirmation Prompt:** In non-CI environments, it provides a confirmation prompt before executing the update, ensuring intentional changes.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **Salesforce SOQL Query:** It first queries the Salesforce \`Network\` object using SOQL to retrieve the \`Id\`, \`Name\`, and \`Status\` of the specified communities. This ensures that only existing communities are targeted.
+- **SObject Update:** It then constructs an array of \`Network\` sObjects with their \`Id\` and the new \`Status\` and performs a DML update operation using \`conn.sobject("Network").update()\`. The \`allOrNone: false\` option is used to allow partial success in case some updates fail.
+- **Error Handling and Reporting:** It iterates through the update results, logging success or failure for each community. It also provides a summary of successful and erroneous updates.
+- **User Interaction:** Uses \`prompts\` to confirm the update action with the user when not running in a CI environment.
+- **Salesforce Connection:** Establishes a connection to the target Salesforce org using the \`target-org\` flag.
+`;
 
   public static examples = [
     `$ sf hardis:org:community:update --name 'MyNetworkName' --status DownForMaintenance`,

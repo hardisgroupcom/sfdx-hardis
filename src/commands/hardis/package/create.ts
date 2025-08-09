@@ -12,7 +12,30 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class PackageCreate extends SfCommand<any> {
   public static title = 'Create a new package';
 
-  public static description = messages.getMessage('packageCreate');
+  public static description = `
+## Command Behavior
+
+**Creates a new Salesforce package (either Managed or Unlocked) in your Dev Hub.**
+
+This command streamlines the process of setting up a new Salesforce package, which is a fundamental step for modularizing your Salesforce metadata and enabling continuous integration and delivery practices. It guides you through defining the package's essential properties.
+
+Key functionalities:
+
+- **Interactive Package Definition:** Prompts you for the package name, the path to its source code, and the package type (Managed or Unlocked).
+- **Package Type Selection:**
+  - **Managed Packages:** Ideal for AppExchange solutions, where code is hidden in subscriber orgs.
+  - **Unlocked Packages:** Suitable for client projects or shared tooling, where code is readable and modifiable in subscriber orgs.
+- **Package Creation:** Executes the Salesforce CLI command to create the package in your connected Dev Hub.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **Interactive Prompts:** Uses the \`prompts\` library to gather necessary information from the user, such as \`packageName\`, \`packagePath\`, and \`packageType\`.
+- **Salesforce CLI Integration:** It constructs and executes the \`sf package create\` command, passing the user-provided details as arguments.
+- **\`execSfdxJson\`:** This utility is used to execute the Salesforce CLI command and capture its JSON output, which includes the newly created package's ID.
+- **User Feedback:** Provides clear messages to the user about the successful creation of the package, including its ID and the associated Dev Hub.
+`;
 
   public static examples = ['$ sf hardis:package:create'];
 

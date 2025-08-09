@@ -17,7 +17,33 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class FixV53Flexipages extends SfCommand<any> {
   public static title = 'Fix profiles to add tabs that are not retrieved by SF CLI';
 
-  public static description = `Interactive prompts to add tab visibilities that are not retrieved by project retrieve start`;
+  public static description: string = `
+## Command Behavior
+
+**Interactively updates tab visibility settings in Salesforce profiles, addressing a common issue where tab visibilities are not correctly retrieved by \`sf project retrieve start\`.**
+
+This command provides a user-friendly interface to manage tab settings within your profile XML files, ensuring that your local project accurately reflects the intended tab configurations in your Salesforce org.
+
+Key functionalities:
+
+- **Interactive Tab Selection:** Displays a multi-select menu of all available tabs in your org, allowing you to choose which tabs to update.
+- **Visibility Control:** Lets you set the visibility for the selected tabs to either \`DefaultOn\` (Visible) or \`Hidden\`.
+- **Profile Selection:** Presents a multi-select menu of all .profile-meta.xml files in your project, allowing you to apply the tab visibility changes to specific profiles.
+- **XML Updates:** Modifies the <tabVisibilities> section of the selected profile XML files to reflect the chosen tab settings. If a tab visibility setting already exists for a selected tab, it will be updated; otherwise, a new one will be added.
+- **Sorted Output:** The <tabVisibilities> in the updated profile XML files are sorted alphabetically for consistency and readability.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **SOQL Queries (Tooling API):** It queries the \`TabDefinition\` object using \`soqlQueryTooling\` to retrieve a list of all available tabs in the target org.
+- **File Discovery:** Uses \`glob\` to find all .profile-meta.xml files within the specified project path.
+- **Interactive Prompts:** Leverages the \`prompts\` library to create interactive menus for selecting tabs, visibility settings, and profiles.
+- **XML Parsing and Manipulation:** Uses \`parseXmlFile\` to read the content of profile XML files and \`writeXmlFile\` to write the modified content back. It manipulates the \`tabVisibilities\` array within the parsed XML to add or update tab settings.
+- **Array Sorting:** Employs the \`sort-array\` library to sort the \`tabVisibilities\` alphabetically by tab name.
+- **Logging:** Provides feedback to the user about which profiles have been updated and a summary of the changes.
+`;
+
 
   public static examples = ['$ sf hardis:project:fix:profiletabs'];
 
