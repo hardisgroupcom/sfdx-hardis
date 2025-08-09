@@ -8,13 +8,13 @@
     "@actions/github": "^6.0.1",
     "@cparra/apexdocs": "^3.14.0",
     "@gitbeaker/node": "^35.8.1",
-    "@langchain/anthropic": "^0.3.21",
+    "@langchain/anthropic": "^0.3.26",
     "@langchain/community": "^0.3.44",
     "@langchain/core": "^0.3.57",
     "@langchain/google-genai": "^0.2.16",
     "@langchain/ollama": "^0.2.1",
     "@oclif/core": "^4.5.2",
-    "@salesforce/core": "^8.18.5",
+    "@salesforce/core": "^8.19.1",
     "@salesforce/sf-plugins-core": "^11.3.12",
     "@slack/types": "^2.15.0",
     "@slack/web-api": "^7.9.3",
@@ -106,7 +106,7 @@
     "eslint-plugin-sf-plugin": "^1.20.27",
     "oclif": "^4.22.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
   },
   "engines": {
     "node": ">=20.0.0"
