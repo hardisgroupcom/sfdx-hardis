@@ -80,7 +80,7 @@ The command's technical implementation involves:
     );
 
     // Find duplicates
-    const duplicates = {};
+    const duplicates: Record<string, string[]> = {};
     for (const file of allFiles) {
       const doublingFiles = allFiles.filter(
         (f) => f.fileName === file.fileName && f.fullPath !== file.fullPath && !this.checkDoublingAllowed(file, f)
@@ -91,7 +91,21 @@ The command's technical implementation involves:
         duplicates[file.fileName] = doublingFullPaths;
       }
     }
-    uxLog(this, JSON.stringify(duplicates, null, 2));
+    // Build summary
+    const duplicateCount = Object.keys(duplicates).length;
+    if (duplicateCount > 0) {
+      const duplicateList = Object.entries(duplicates)
+        .map(([fileName, paths]) => `${c.bold(fileName)}:\n  - ${paths.join('\n  - ')}`)
+        .join('\n');
+      uxLog(
+        this,
+        c.cyan(`Found ${c.bold(duplicateCount)} duplicate file names in ${c.bold(pathToBrowser)}.`)
+      );
+      uxLog(this, c.yellow(`Duplicate files:\n${duplicateList}`));
+    }
+    else {
+      uxLog(this, c.cyan(`No duplicate file names found in ${c.bold(pathToBrowser)}.`));
+    }
     return { duplicates: duplicates };
   }
 
