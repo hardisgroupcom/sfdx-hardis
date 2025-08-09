@@ -68,7 +68,15 @@ The command's technical implementation involves:
     }
 
     // Retrieve list of installed packages
+    uxLog(this, c.cyan('Retrieving installed packages from org ' + targetUsername + '...'));
     const installedPackages = await MetadataUtils.listInstalledPackages(targetUsername || '', this);
+
+    const packageNames = installedPackages
+      .map((pkg: any) => `- ${pkg.SubscriberPackageName} (${pkg.SubscriberPackageVersionNumber})`)
+      .sort((a: string, b: string) => a.localeCompare(b))
+      .join('\n');
+
+    uxLog(this, c.cyan(`Successfully retrieved ${installedPackages.length} installed packages from org ${targetUsername}.\n${packageNames}`));
 
     // Store list in config
     const updateConfigRes = await prompts({
@@ -81,7 +89,7 @@ The command's technical implementation involves:
       await managePackageConfig(installedPackages, installedPackages, true);
     }
 
-    const message = `[sfdx-hardis] Successfully retrieved package config`;
+    const message = `Successfully retrieved installed packages configuration`;
     uxLog(this, c.green(message));
     return { orgId: flags['target-org'].getOrgId(), outputString: message };
   }

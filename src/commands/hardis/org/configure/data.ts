@@ -98,11 +98,10 @@ The command's technical implementation involves:
     // Set bac initial cwd
     const message = c.cyan(`Successfully initialized sfdmu project ${c.green(sfdmuProjectFolder)}, with ${c.green(
       'export.json'
-    )} file.
-You can now configure it using SFDMU documentation: https://help.sfdmu.com/plugin-basics/basic-usage/minimal-configuration
-If you don't have unique field to identify an object, use composite external ids: https://help.sfdmu.com/full-documentation/advanced-features/composite-external-id-keys
-`);
+    )} file.`);
     uxLog(this, message);
+    uxLog(this, c.grey("You can now configure it using SFDMU documentation: https://help.sfdmu.com/plugin-basics/basic-usage/minimal-configuration"));
+    uxLog(this, c.grey("If you don't have unique field to identify an object, use composite external ids: https://help.sfdmu.com/full-documentation/advanced-features/composite-external-id-keys"));
 
     // Trigger command to open SFDMU config file in VsCode extension
     WebSocketClient.requestOpenFile(exportJsonFile);

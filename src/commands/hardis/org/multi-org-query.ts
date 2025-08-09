@@ -143,6 +143,7 @@ The command's technical implementation involves:
   }
 
   private displayResults() {
+    uxLog(this, c.cyan(`Query results from ${this.targetOrgsIds.length} orgs`));
     if (this.successOrgs.length > 0) {
       uxLog(this, c.green(`Successfully performed query on ${this.successOrgs.length} orgs`));
       for (const org of this.successOrgs) {

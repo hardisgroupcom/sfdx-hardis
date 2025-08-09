@@ -220,6 +220,7 @@ The command's technical implementation involves several steps:
       }
     }
 
+    uxLog(this, c.cyan(`Running cleaning commands...`));
     // Process cleaning
     for (const cleaningType of this.cleaningTypes) {
       const cleaningTypeObj = this.allCleaningTypes.filter(

@@ -150,6 +150,7 @@ class MetadataUtils {
     commandThis: any = null,
     context = 'none'
   ) {
+    uxLog(commandThis, c.cyan(`Listing packages installed on ` + (orgAlias ? c.green(orgAlias) : 'current org') + '...'));
     const alreadyInstalled = await MetadataUtils.listInstalledPackages(orgAlias, this);
     if (globalThis?.workaroundCliPackages === true) {
       uxLog(
@@ -169,7 +170,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         if (context === 'scratch' && package1.installOnScratchOrgs === false) {
           uxLog(
             commandThis,
-            c.cyan(
+            c.grey(
               `Skip installation of ${c.green(
                 package1.SubscriberPackageName
               )} as it is configured to not be installed on scratch orgs`
@@ -180,7 +181,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         if (context === 'deploy' && package1.installDuringDeployments === false) {
           uxLog(
             commandThis,
-            c.cyan(
+            c.grey(
               `Skip installation of ${c.green(
                 package1.SubscriberPackageName
               )} as it is configured to not be installed on scratch orgs`
@@ -262,7 +263,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
       } else {
         uxLog(
           commandThis,
-          c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is already installed`)
+          c.grey(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is already installed`)
         );
       }
     }

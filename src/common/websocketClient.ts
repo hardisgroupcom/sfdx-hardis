@@ -211,11 +211,21 @@ export class WebSocketClient {
     if (process.env.DEBUG) {
       console.debug('websocket: received: %s', util.inspect(data));
     }
-    if (data.event === 'promptsResponse') {
+    if (data.event === 'ping') {
+      // Respond to ping messages to keep the connection alive
+      this.ws.send(JSON.stringify({ event: 'pong' }));
+    }
+    else if (data.event === 'promptsResponse') {
       this.promptResponse = data.promptsResponse;
     }
-    if (data.event === 'userInput') {
+    else if (data.event === 'userInput') {
       userInput = data.userInput;
+    }
+    else if (data.event === 'cancelCommand') {
+      if (this.wsContext?.command === data?.context?.command && this.wsContext.id === data?.context?.id) {
+        uxLog(this, c.red('Command cancelled by user'));
+        process.exit(1);
+      }
     }
   }
 

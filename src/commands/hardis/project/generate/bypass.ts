@@ -191,6 +191,7 @@ The command's technical implementation involves:
     }
 
     // Generate global bypasses
+    uxLog(this, c.cyan(`Generating global bypasses...`));
     this.generateFiles({ All: "All" }, ALLOWED_AUTOMATIONS);
 
     // Handle prompts if needed
@@ -282,13 +283,16 @@ The command's technical implementation involves:
     }
 
     // Generate files and apply bypasses
+    uxLog(this, c.cyan(`Generating bypass files for selected sObjects and automations...`));
     this.generateFiles(targetSObjects, targetAutomations);
 
     if (applyToVrs) {
+      uxLog(this, c.cyan(`Applying bypass to Validation Rules...`));
       await this.applyBypassToValidationRules(connection, targetSObjects);
     }
 
     if (applyToTriggers) {
+      uxLog(this, c.cyan(`Applying bypass to Triggers...`));
       await this.applyBypassToTriggers(connection, targetSObjects);
     }
 
@@ -303,7 +307,7 @@ The command's technical implementation involves:
     Select Id, Label, DeveloperName, QualifiedApiName, DurableId, IsTriggerable, IsCustomizable, IsApexTriggerable 
       FROM EntityDefinition WHERE IsTriggerable = true AND IsCustomizable = true and IsCustomSetting = false ORDER BY DeveloperName`;
     const results = await soqlQuery(sObjectsQuery, connection);
-    uxLog(this, `Found ${results.records.length} sObjects.`);
+    uxLog(this, c.grey(`Found ${results.records.length} sObjects.`));
     return results;
   }
 
@@ -330,7 +334,7 @@ The command's technical implementation involves:
   public async queryTriggers(connection: Connection) {
     const query = `SELECT Id, Name, Status, IsValid, Body, BodyCrc, TableEnumOrId, ManageableState From ApexTrigger WHERE ManageableState != 'installed'`;
     const results = await soqlQueryTooling(query, connection);
-    uxLog(this, `Found ${results.records.length} Triggers.`);
+    uxLog(this, c.grey(`Found ${results.records.length} Triggers.`));
     return results;
   }
 
@@ -356,7 +360,7 @@ The command's technical implementation involves:
         .map((s) => `'${s}'`)
         .join(", ")})`;
     const results = await soqlQueryTooling(query, connection);
-    uxLog(this, `Found ${results.records.length} Validation Rules.`);
+    uxLog(this, c.grey(`Found ${results.records.length} Validation Rules.`));
     return results;
   }
 
@@ -412,9 +416,9 @@ The command's technical implementation involves:
 
     uxLog(
       this,
-      `Created: ${path.basename(customPermissionFile)} for ${sObject}`
+      c.grey(`Created: ${path.basename(customPermissionFile)} for ${sObject}`)
     );
-    uxLog(this, `Created: ${path.basename(permissionSetFile)} for ${sObject}`);
+    uxLog(this, c.grey(`Created: ${path.basename(permissionSetFile)} for ${sObject}`));
   }
 
   generateFiles(
@@ -556,13 +560,13 @@ The command's technical implementation involves:
     );
 
     if (!validationRuleRecords || validationRuleRecords.records.length === 0) {
-      uxLog(this, "No validation rules found for the specified sObjects.");
+      uxLog(this, c.grey("No validation rules found for the specified sObjects."));
       return;
     }
 
     uxLog(
       this,
-      `Processing ${validationRuleRecords.records.length} Validation Rules.`
+      c.grey(`Processing ${validationRuleRecords.records.length} Validation Rules.`)
     );
 
     const validationRulesTableReport: any = [];
@@ -598,7 +602,7 @@ The command's technical implementation involves:
         } else {
           uxLog(
             this,
-            "No Validation Rule files found in the retrieved metadata chunk."
+            c.grey("No Validation Rule files found in the retrieved metadata chunk.")
           );
         }
       }
@@ -615,7 +619,7 @@ The command's technical implementation involves:
             // TODO: add to report instead of log
             uxLog(
               this,
-              `The validation rule ${name} for sObject ${sObject} does not have a corresponding metadata file locally. Skipping.`
+              c.grey(`The validation rule ${name} for sObject ${sObject} does not have a corresponding metadata file locally. Skipping.`)
             );
           } else {
             eligibleMetadataFilePaths.push({ filePath, sObject, name });
@@ -736,7 +740,7 @@ The command's technical implementation involves:
     );
 
     if (!filteredTriggersResults || filteredTriggersResults?.length === 0) {
-      uxLog(this, "No triggers found for the specified sObjects.");
+      uxLog(this, c.grey("No triggers found for the specified sObjects."));
       return;
     }
 
@@ -772,7 +776,7 @@ The command's technical implementation involves:
         } else {
           uxLog(
             this,
-            "No Trigger files found in the retrieved metadata chunk."
+            c.grey("No Trigger files found in the retrieved metadata chunk.")
           );
         }
       }
@@ -788,7 +792,7 @@ The command's technical implementation involves:
             // TODO: add to report instead of log
             uxLog(
               this,
-              `The trigger ${name} does not have a corresponding metadata file locally. Skipping.`
+              c.grey(`The trigger ${name} does not have a corresponding metadata file locally. Skipping.`)
             );
           } else {
             eligibleMetadataFilePaths.push({ filePath, name });

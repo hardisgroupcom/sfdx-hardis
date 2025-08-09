@@ -412,7 +412,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
           "Sales Insights"
         ].includes(installedPackage.SubscriberPackageName)
       ) {
-        uxLog(this, c.grey(`Skip ${installedPackage.SubscriberPackageName} as it is a Salesforce standard package`))
+        uxLog(this, c.cyan(`Skip ${installedPackage.SubscriberPackageName} as it is a Salesforce standard package`))
         continue;
       }
 
