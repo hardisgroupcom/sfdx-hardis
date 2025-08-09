@@ -39,15 +39,15 @@ The command's technical implementation involves:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|label<br/>-l|option|Developer name(s) of the custom label(s), comma-separated||||
-|lwc<br/>-c|option|Developer name of the Lightning Web Component||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name         |  Type   | Description                                                   | Default | Required | Options |
+|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
+| flags-dir    | option  | undefined                                                     |         |          |         |
+| json         | boolean | Format output as json.                                        |         |          |         |
+| label<br/>-l | option  | Developer name(s) of the custom label(s), comma-separated     |         |          |         |
+| lwc<br/>-c   | option  | Developer name of the Lightning Web Component                 |         |          |         |
+| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
+| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
 
 ## Examples
 
