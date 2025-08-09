@@ -8,6 +8,7 @@ import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { getReportDirectory } from '../../../../config/index.js';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
 import { promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -96,7 +97,14 @@ The command's technical implementation involves:
 
     await buildOrgManifest(orgUsername, this.outputFile, conn);
 
-    uxLog(this, c.cyan(`Generated full package.xml for ${orgUsername} at location ${c.green(this.outputFile)}`));
+    uxLog(this, c.cyan(`Generated full package.xml for ${orgUsername}`));
+    uxLog(this, c.grey(`Output file: ${c.green(this.outputFile)}`));
+
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      WebSocketClient.sendReportFileMessage(this.outputFile, 'Full Org package.xml');
+    } else {
+      WebSocketClient.requestOpenFile(this.outputFile);
+    }
 
     // Return an object to be displayed with --json
     return { outputString: `Generated full package.xml for ${orgUsername}`, outputFile: this.outputFile };

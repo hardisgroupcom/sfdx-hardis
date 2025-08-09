@@ -77,7 +77,7 @@ The command's technical implementation involves:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DxSources2);
     let packageXml = flags.packagexml || null;
-    let targetUsername = flags['target-org'] || null;
+    let targetUsername = flags['target-org']?.getUsername() || null;
     const template = flags.template || null;
     this.debugMode = flags.debug || false;
 
