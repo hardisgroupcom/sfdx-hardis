@@ -14,6 +14,7 @@ import {
 } from '../../../../common/utils/index.js';
 import { callSfdxGitDelta } from '../../../../common/utils/gitUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -155,14 +156,23 @@ The command's technical implementation involves:
     }
 
     // Generate package.xml & destructiveChanges.xml using sfdx-git-delta
+    uxLog(this, c.cyan(`Generating delta from commit ${c.bold(fromCommit)} to commit ${c.bold(toCommit)} on branch ${c.bold(gitBranch)}`));
     const tmpDir = await createTempDir();
     await callSfdxGitDelta(fromCommit || '', toCommit || '', tmpDir, { debug: this.debugMode });
 
     const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
     const diffDestructiveChangesXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
 
-    uxLog(this, c.cyan(`Generated diff package.xml at ${c.green(diffPackageXml)}`));
-    uxLog(this, c.cyan(`Generated diff destructiveChanges.xml at ${c.green(diffDestructiveChangesXml)}`));
+    uxLog(this, c.grey(`Generated diff package.xml at ${c.green(diffPackageXml)}`));
+    uxLog(this, c.grey(`Generated diff destructiveChanges.xml at ${c.green(diffDestructiveChangesXml)}`));
+
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      WebSocketClient.sendReportFileMessage(diffPackageXml, 'Git Delta package.xml');
+      WebSocketClient.sendReportFileMessage(diffDestructiveChangesXml, 'Git Delta destructiveChanges.xml');
+    } else {
+      WebSocketClient.requestOpenFile(diffPackageXml);
+      WebSocketClient.requestOpenFile(diffDestructiveChangesXml);
+    }
 
     // Return an object to be displayed with --json
     return {

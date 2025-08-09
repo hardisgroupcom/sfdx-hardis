@@ -91,6 +91,7 @@ The command's technical implementation involves:
     let overwrittenCount = 0;
     let skippedCount = 0;
 
+    uxLog(this, c.cyan('Creating prompt templates and variables...'));
     // Copy all prompt templates as .txt files
     for (const [templateName, templateDefinition] of Object.entries(PROMPT_TEMPLATES)) {
       const targetFile = path.join(promptTemplatesDir, `${templateName}.txt`);
@@ -102,7 +103,7 @@ The command's technical implementation involves:
 
           // Overwrite the existing file
           fs.writeFileSync(targetFile, promptText);
-          uxLog(this, c.cyan(`Overwritten: ${templateName}.txt`));
+          uxLog(this, c.grey(`Overwritten: ${templateName}.txt`));
           overwrittenCount++;
         } else {
           uxLog(this, c.yellow(`Template already exists: ${templateName}.txt`));
@@ -131,7 +132,7 @@ The command's technical implementation involves:
 
           // Overwrite the existing file
           fs.writeFileSync(targetFile, variableText);
-          uxLog(this, c.cyan(`Overwritten: ${variableName}.txt`));
+          uxLog(this, c.grey(`Overwritten: ${variableName}.txt`));
           overwrittenCount++;
         } else {
           uxLog(this, c.yellow(`Variable already exists: ${variableName}.txt`));
@@ -149,33 +150,33 @@ The command's technical implementation involves:
       createdCount++;
     }    // Summary
     uxLog(this, '');
-    uxLog(this, c.cyan('Summary:'));
-    uxLog(this, c.green(`Created ${createdCount} new prompt template and variable files`));
+    const actionMessage = overwrittenCount > 0 ?
+      `Created ${createdCount} and overwritten ${overwrittenCount} prompt template and variable files` :
+      `Created ${createdCount} prompt template and variable files`;
+    uxLog(this, c.cyan(actionMessage));
 
     if (overwrittenCount > 0) {
-      uxLog(this, c.cyan(`Overwritten ${overwrittenCount} existing files`));
+      uxLog(this, c.yellow(`Overwritten ${overwrittenCount} existing files`));
     }
 
     if (skippedCount > 0) {
       uxLog(this, c.yellow(`Skipped ${skippedCount} existing files`));
     }
 
-    uxLog(this, '');
-    uxLog(this, c.cyan('Prompt templates and variables location:'));
-    uxLog(this, c.white(`   ${promptTemplatesDir}`));
-    uxLog(this, '');
-    uxLog(this, c.cyan('Usage:'));
-    uxLog(this, c.white('   - Edit template .txt files to customize AI prompts'));
-    uxLog(this, c.white('   - Edit variable .txt files to customize common instruction patterns'));
-    uxLog(this, c.white('   - Use {{VARIABLE_NAME}} placeholders for dynamic content'));
-    uxLog(this, c.white('   - Templates can reference variables with {{VARIABLE_NAME}} syntax'));
-    uxLog(this, c.white('   - Your custom prompts and variables will override the defaults automatically'));
-    uxLog(this, '');
-    uxLog(this, c.cyan('Documentation:')); uxLog(this, c.white('   https://sfdx-hardis.cloudity.com/salesforce-ai-prompts/'));
-
-    const actionMessage = overwrittenCount > 0 ?
-      `Created ${createdCount} and overwritten ${overwrittenCount} prompt template and variable files` :
-      `Created ${createdCount} prompt template and variable files`;
+    const usageMessage = [
+      '',
+      'Prompt templates and variables location:',
+      `   ${promptTemplatesDir}`,
+      '',
+      'Usage:',
+      '   - Edit template .txt files to customize AI prompts',
+      '   - Edit variable .txt files to customize common instruction patterns',
+      '   - Use {{VARIABLE_NAME}} placeholders for dynamic content',
+      '   - Templates can reference variables with {{VARIABLE_NAME}} syntax',
+      '   - Your custom prompts and variables will override the defaults automatically',
+    ].join('\n');
+    uxLog(this, c.grey(usageMessage));
+    uxLog(this, c.grey('Documentation: https://sfdx-hardis.cloudity.com/salesforce-ai-prompts/'));
 
     return {
       status: 'success',

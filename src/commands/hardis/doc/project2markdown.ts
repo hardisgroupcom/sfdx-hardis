@@ -366,7 +366,12 @@ ${Project2Markdown.htmlInstructions}
 
 
     // Open file in a new VsCode tab if available
-    WebSocketClient.requestOpenFile(this.outputMarkdownIndexFile);
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      WebSocketClient.sendReportFileMessage(this.outputMarkdownIndexFile, "Project documentation Index");
+    }
+    else {
+      WebSocketClient.requestOpenFile(this.outputMarkdownIndexFile);
+    }
 
     return { outputPackageXmlMarkdownFiles: this.outputPackageXmlMarkdownFiles };
   }
