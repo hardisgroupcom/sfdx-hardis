@@ -251,7 +251,7 @@ export async function promptOrg(
     }
   }
   // uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
-  uxLog(commandThis, c.grey(`Seletected Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
+  uxLog(commandThis, c.grey(`Selected Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
   return orgResponse.org;
 }
 
