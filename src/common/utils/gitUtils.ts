@@ -32,7 +32,7 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
   const availableTargetBranches = config.availableTargetBranches || null;
   // There is only once choice so return it
   if (availableTargetBranches === null && config.developmentBranch) {
-    uxLog(this, c.cyan(`Selected target branch is ${c.green(config.developmentBranch)}`));
+    uxLog(this, c.cyan(`Automatically selected target branch is ${c.green(config.developmentBranch)}`));
     return config.developmentBranch;
   }
 
