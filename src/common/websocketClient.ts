@@ -134,11 +134,20 @@ export class WebSocketClient {
   }
 
   // Send close client message with status
-  static sendCloseClientMessage(status?: string) {
-    WebSocketClient.sendMessage({
+  static sendCloseClientMessage(status?: string, error: any = null) {
+    const message: any = {
       event: 'closeClient',
+      context: globalWs?.wsContext,
       status: status,
-    });
+    };
+    if (error) {
+      message.error = {
+        type: error.type || 'unknown',
+        message: error.message || 'An error occurred',
+        stack: error.stack || '',
+      };
+    }
+    WebSocketClient.sendMessage(message);
   }
 
   // Close the WebSocket connection externally
@@ -258,14 +267,8 @@ export class WebSocketClient {
     });
   }
 
-  dispose(status?: string) {
-    this.ws.send(
-      JSON.stringify({
-        event: 'closeClient',
-        context: this.wsContext,
-        status: status,
-      })
-    );
+  dispose(status?: string, error: any = null) {
+    WebSocketClient.sendCloseClientMessage(status, error);
     this.ws.terminate();
     globalWs = null;
     // uxLog(this,c.grey('Closed WebSocket connection with VsCode SFDX Hardis'));

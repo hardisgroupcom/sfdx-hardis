@@ -180,8 +180,10 @@
         "./lib/hooks/auth/auth"
       ],
       "postrun": [
-        "./lib/hooks/postrun/notify",
         "./lib/hooks/postrun/store-cache"
+      ],
+      "finally": [
+        "./lib/hooks/finally/notify"
       ]
     }
   },

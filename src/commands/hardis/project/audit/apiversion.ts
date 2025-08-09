@@ -148,30 +148,38 @@ export default class CallInCallOut extends SfCommand<any> {
     uxLog(this, `Browsing ${xmlFiles.length} files`);
     // Loop in files
     for (const file of xmlFiles) {
-      const fileText = await fs.readFile(file, 'utf8');
-      // Update ApiVersion on file
-      let fixed = false;
-      if (shouldFix && fixTargetedMetadataTypes.length > 0 && fixTargetedMetadataTypesPattern.test(file)) {
-        const apiVersionMatch = fileText.match(/<apiVersion>(.*?)<\/apiVersion>/);
-        if (apiVersionMatch && apiVersionMatch[1]) {
-          const currentApiVersion = parseFloat(apiVersionMatch[1]);
-          if (currentApiVersion < minimumApiVersion) {
-            const updatedContent = fileText.replace(/<apiVersion>(.*?)<\/apiVersion>/, `<apiVersion>${fixApiVersion}.0</apiVersion>`);
-            await fs.promises.writeFile(file, updatedContent, 'utf-8');
-            fixed = true;
-            uxLog(this, `Updated apiVersion in file: ${file} from ${currentApiVersion}.0 to ${fixApiVersion}.0`);
+      try {
+        const fileText = await fs.readFile(file, 'utf8');
+        // Update ApiVersion on file
+        let fixed = false;
+        if (shouldFix && fixTargetedMetadataTypes.length > 0 && fixTargetedMetadataTypesPattern.test(file)) {
+          const apiVersionMatch = fileText.match(/<apiVersion>(.*?)<\/apiVersion>/);
+          if (apiVersionMatch && apiVersionMatch[1]) {
+            const currentApiVersion = parseFloat(apiVersionMatch[1]);
+            if (currentApiVersion < minimumApiVersion) {
+              const updatedContent = fileText.replace(/<apiVersion>(.*?)<\/apiVersion>/, `<apiVersion>${fixApiVersion}.0</apiVersion>`);
+              await fs.promises.writeFile(file, updatedContent, 'utf-8');
+              fixed = true;
+              uxLog(this, `Updated apiVersion in file: ${file} from ${currentApiVersion}.0 to ${fixApiVersion}.0`);
+            }
           }
         }
-      }
-      // Loop on criteria to find matches in this file
-      for (const catcher of catchers) {
-        const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
-        // Add the "fixed" flag
-        const enrichedResults = catcherMatchResults.map(result => ({
-          ...result,
-          fixed,
-        }));
-        this.matchResults.push(...enrichedResults);
+        // Loop on criteria to find matches in this file
+        for (const catcher of catchers) {
+          const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
+          // Add the "fixed" flag
+          const enrichedResults = catcherMatchResults.map(result => ({
+            ...result,
+            fixed,
+          }));
+          this.matchResults.push(...enrichedResults);
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          uxLog(this, c.yellow(`Error processing file ${file}: ${error.message}`));
+        } else {
+          uxLog(this, c.yellow(`Error processing file ${file}: ${String(error)}`));
+        }
       }
     }
     // Format result
@@ -200,27 +208,28 @@ export default class CallInCallOut extends SfCommand<any> {
       })
     );
 
+    uxLog(this, c.cyan(`Found ${c.bold(resultSorted.length)} metadata files with API Version.`));
     const numberOfInvalid = result.filter((res: any) => res.valid === 'no').length;
     const numberOfValid = result.length - numberOfInvalid;
     if (numberOfInvalid > 0) {
       uxLog(
         this,
         c.yellow(
-          `[sfdx-hardis] WARNING: Your sources contain ${c.bold(
+          `WARNING: Your sources contain ${c.bold(
             numberOfInvalid
           )} metadata files with API Version lesser than ${c.bold(minimumApiVersion)}`
         )
       );
       if (failIfError) {
         throw new SfError(
-          c.red(`[sfdx-hardis][ERROR] ${c.bold(numberOfInvalid)} metadata files with wrong API version detected`)
+          c.red(`${c.bold(numberOfInvalid)} metadata files with wrong API version detected`)
         );
       }
     } else {
       uxLog(
         this,
         c.green(
-          `[sfdx-hardis] SUCCESS: Your sources contain ${c.bold(
+          `SUCCESS: Your sources contain ${c.bold(
             numberOfValid
           )} metadata files with API Version superior to ${c.bold(minimumApiVersion)}`
         )
