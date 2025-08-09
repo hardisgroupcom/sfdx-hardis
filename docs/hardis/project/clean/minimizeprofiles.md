@@ -3,13 +3,16 @@
 
 ## Description
 
-Remove all profile attributes that exist on Permission Sets
+
+## Command Behavior
+
+**Removes all profile attributes that exist on Permission Sets**
 
 It is a bad practice to define on Profiles elements that can be defined on Permission Sets.
 
 Salesforce will deprecate such capability in Spring 26.
 
-Don't wait for that, and use minimizeProfiles cleaning to automatically remove from Profiles any permission that exists on a Permission Set !
+Don't wait for that, and use minimizeProfiles cleaning to automatically remove from Profiles any permission that exists on a Permission Set!
 
 The following XML tags are removed automatically:
 
@@ -21,14 +24,14 @@ The following XML tags are removed automatically:
 - pageAccesses
 - userPermissions (except on Admin Profile)
 
-You can override this list by defining a property minimizeProfilesNodesToRemove in your .sfdx-hardis.yml config file.
+You can override this list by defining a property `minimizeProfilesNodesToRemove` in your `.sfdx-hardis.yml` config file.
 
-You can also skip profiles using property skipMinimizeProfiles
+You can also skip profiles using property `skipMinimizeProfiles`.
 
 Example:
 
 ```yaml
-skipMinimizeProfiles
+skipMinimizeProfiles:
   - MyClient Customer Community Login User
   - MyClientPortail Profile
 ```
@@ -36,19 +39,19 @@ skipMinimizeProfiles
 
 ## Parameters
 
-| Name          |  Type   | Description                                                   |  Default  | Required | Options |
-|:--------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
-| debug<br/>-d  | boolean | Activate debug mode (more logs)                               |           |          |         |
-| flags-dir     | option  | undefined                                                     |           |          |         |
-| folder<br/>-f | option  | Root folder                                                   | force-app |          |         |
-| json          | boolean | Format output as json.                                        |           |          |         |
-| skipauth      | boolean | Skip authentication check when a default username is required |           |          |         |
-| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |           |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|force-app|||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:project:clean:minimizeprofiles
+$ sf hardis:project:clean:minimizeprofiles
 ```
 
 

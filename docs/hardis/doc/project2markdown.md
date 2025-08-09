@@ -59,6 +59,8 @@ If Flow history doc always display a single state, you probably need to update y
 
 ![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-project-doc-profile.gif)
 
+![Screenshot project documentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-doc-apex.png)
+
 If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strategy will be generated.
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-doc-branches-strategy.jpg)
@@ -86,30 +88,30 @@ To just generate HTML pages that you can host anywhere, run `mkdocs build -v || 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                         |                 Default                  | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------------|:----------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                     |                                          |          |         |
-| diff-only         | boolean | Generate documentation only for changed files (used for monitoring) |                                          |          |         |
-| flags-dir         | option  | undefined                                                           |                                          |          |         |
-| json              | boolean | Format output as json.                                              |                                          |          |         |
-| pdf               | boolean | Also generate the documentation in PDF format                       |                                          |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required       |                                          |          |         |
-| target-org<br/>-o | option  | undefined                                                           | <nicolas.vuillamy@cloudity.com.playnico> |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration           |                                          |          |         |
-| with-history      | boolean | Generate a markdown file with the history diff of the Flow          |                                          |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|diff-only|boolean|Generate documentation only for changed files (used for monitoring)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|pdf|boolean|Also generate the documentation in PDF format||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+|with-history|boolean|Generate a markdown file with the history diff of the Flow||||
 
 ## Examples
 
 ```shell
-sf hardis:doc:project2markdown
+$ sf hardis:doc:project2markdown
 ```
 
 ```shell
-sf hardis:doc:project2markdown --with-history
+$ sf hardis:doc:project2markdown --with-history
 ```
 
 ```shell
-sf hardis:doc:project2markdown --with-history --pdf
+$ sf hardis:doc:project2markdown --with-history --pdf
 ```
 
 

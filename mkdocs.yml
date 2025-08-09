@@ -363,7 +363,6 @@ nav:
           ws: hardis/work/ws.md
       hello:
         world: hello/world.md
-
   - Community Events: events.md
   - Articles & Videos: articles-videos.md
   - Meet the team: contributors.md
