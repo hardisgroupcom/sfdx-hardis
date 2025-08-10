@@ -48,6 +48,10 @@ CVE-2021-23337
 # Use of Insufficiently Random Values vulnerability: HTTP Parameter Pollution (HPP), not risky for sfdx-hardis uses as it is not used as a HTTP server
 CVE-2025-7783
 
+# sqlite https://avd.aquasec.com/nvd/cve-2025-6965
+# Integer Truncation in SQLite, not risky for sfdx-hardis use
+CVE-2025-6965
+
 # Dockerfile https://avd.aquasec.com/misconfig/ds002
 # Image using root user, that's ok as we are using it in CI/CD jobs containers, so not risky for sfdx-hardis
 DS002
