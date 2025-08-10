@@ -3,8 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import columnify from 'columnify';
-import { generateReports, isCI, uxLog } from '../../../../common/utils/index.js';
+import { generateReports, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { promptProfiles } from '../../../../common/utils/orgUtils.js';
 //import { executeApex } from "../../../../common/utils/deployUtils.js";
 import { prompts } from '../../../../common/utils/prompts.js';
@@ -180,15 +179,15 @@ The command's technical implementation involves:
         Profile: profileNames.filter((profile) => profile[0] === matchingUser.ProfileId)[1],
       };
     });
-    uxLog(
+    uxLog(this, c.cyan(`List of ${userLoginsToFreeze.length} users that will be frozen:`));
+    uxLogTable(
       this,
-      '\n' +
-      c.white(columnify(this.debugMode ? usersToFreezeDisplay : usersToFreezeDisplay.slice(0, this.maxUsersDisplay)))
+      this.debugMode ? usersToFreezeDisplay : usersToFreezeDisplay.slice(0, this.maxUsersDisplay)
     );
-    if (!this.debugMode === false && usersToFreezeDisplay.length > this.maxUsersDisplay) {
+    if (!this.debugMode && usersToFreezeDisplay.length > this.maxUsersDisplay) {
       uxLog(this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
     }
-    uxLog(this, c.cyan(`${c.bold(userLoginsToFreeze.length)} users can be frozen.`));
+
     // Generate csv + xls of users about to be frozen
     await generateReports(usersToFreezeDisplay, ['Username', 'Name', 'Profile'], this, {
       logFileName: 'users-to-freeze',

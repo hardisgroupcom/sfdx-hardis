@@ -3,14 +3,13 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { git, isGitRepo, uxLog } from '../../../../common/utils/index.js';
+import { git, isGitRepo, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import moment from 'moment';
-import columnify from 'columnify';
 import sortArray from 'sort-array';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
@@ -132,7 +131,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private displaySummaryOutput() {
-    uxLog(this, c.cyan(`Summary of async Apex classes`));
+    uxLog(this, c.cyan(`Found ${this.unusedNumber} async Apex classes that might not be used anymore:`));
     let summary = `All async apex classes have been called during the latest ${this.lastNdays} days.`;
     if (this.unusedNumber > 0) {
       summary = `${this.unusedNumber} apex classes might not be used anymore.
@@ -151,7 +150,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
           classCreatedBy: apexClass.ClassCreatedBy
         };
       });
-      uxLog(this, c.yellow("\n" + columnify(summaryClasses)));
+      uxLogTable(this, summaryClasses);
     }
 
     if (this.unusedNumber > 0) {
