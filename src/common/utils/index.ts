@@ -1195,6 +1195,47 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
   }
 }
 
+export function uxLogTable(commandThis: any, tableData: any[]) {
+  // Build a table string as tableData is an array of objects compliant with console.table
+  // This string will be used to display the table in the console
+  // Compute column widths based on the longest value in each column
+  if (!tableData || tableData.length === 0) {
+    return;
+  }
+  const columns = Object.keys(tableData[0]);
+  const colWidths = columns.map(col =>
+    Math.max(
+      col.length,
+      ...tableData.map(row => String(row[col] ?? '').replace(/\n/g, ' ').length)
+    )
+  );
+  // Build header
+  const header = columns
+    .map((col, i) => c.bold(col.padEnd(colWidths[i])))
+    .join(' | ');
+  // Build separator
+  const separator = colWidths.map(w => '-'.repeat(w)).join('-|-');
+  // Build rows
+  const rows = tableData.map(row =>
+    columns
+      .map((col, i) => {
+        let val = row[col] ?? '';
+        if (typeof val === 'boolean') {
+          val = bool2emoji(val);
+        }
+        return String(val).replace(/\n/g, ' ').padEnd(colWidths[i]);
+      })
+      .join(' | ')
+  );
+  const tableString = [header, separator, ...rows].join('\n');
+  uxLog(commandThis, c.italic("\n" + tableString));
+  // Send table to WebSocket client
+  if (WebSocketClient.isAliveWithLwcUI()) {
+    WebSocketClient.sendCommandLogLineMessage(JSON.stringify(tableData), 'table')
+  }
+
+}
+
 export function bool2emoji(bool: boolean): string {
   return bool ? "✅" : "⬜"
 }

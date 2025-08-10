@@ -15,7 +15,7 @@ let userInput = "ui";
 const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
 
 // Define allowed log types and type alias outside the class
-export const LOG_TYPES = ['log', 'action', 'warning', 'error', 'success'] as const;
+export const LOG_TYPES = ['log', 'action', 'warning', 'error', 'success', 'table'] as const;
 export type LogType = typeof LOG_TYPES[number];
 
 export class WebSocketClient {
