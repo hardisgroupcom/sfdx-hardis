@@ -1,8 +1,8 @@
 import { Hook } from '@oclif/core';
 
-const hook: Hook<'init'> = async (options) => {
+const hook: Hook<'prerun'> = async (options) => {
   // Skip hooks from other commands than hardis:scratch commands
-  const commandId = options?.id || '';
+  const commandId = options?.Command?.id || '';
 
   if (!commandId.startsWith('hardis')) {
     return;

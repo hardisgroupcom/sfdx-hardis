@@ -169,12 +169,12 @@
       "init": [
         "./lib/hooks/init/log",
         "./lib/hooks/init/check-upgrade",
-        "./lib/hooks/init/check-local-sfdx-hardis-files",
         "./lib/hooks/init/start-ws-client"
       ],
       "prerun": [
         "./lib/hooks/prerun/auth",
-        "./lib/hooks/prerun/check-dependencies"
+        "./lib/hooks/prerun/check-dependencies",
+        "./lib/hooks/prerun/check-local-sfdx-hardis-files"
       ],
       "auth": [
         "./lib/hooks/auth/auth"
