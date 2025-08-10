@@ -8,6 +8,7 @@ import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { getReportDirectory } from '../../../../config/index.js';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
 import { promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -15,7 +16,30 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class GeneratePackageXmlFull extends SfCommand<any> {
   public static title = 'Generate Full Org package.xml';
 
-  public static description = 'Generates full org package.xml, including managed items';
+  public static description = `
+## Command Behavior
+
+**Generates a comprehensive \`package.xml\` file for a Salesforce org, including all metadata components, even managed ones.**
+
+This command is essential for various Salesforce development and administration tasks, especially when you need a complete snapshot of an org's metadata. It goes beyond typical source tracking by including managed package components, which is crucial for understanding the full metadata footprint of an org.
+
+Key functionalities:
+
+- **Full Org Metadata Retrieval:** Connects to a specified Salesforce org (or prompts for one if not provided) and retrieves a complete list of all metadata types and their members.
+- **Managed Package Inclusion:** Unlike standard source retrieval, this command explicitly includes metadata from managed packages, providing a truly comprehensive \`package.xml\`.
+- **Customizable Output:** Allows you to specify the output file path for the generated \`package.xml\`.
+- **Interactive Org Selection:** If no target org is specified, it interactively prompts the user to choose an org.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **Salesforce Metadata API Interaction:** It leverages the Salesforce Metadata API to list all available metadata types and then retrieve all components for each type.
+- **\`buildOrgManifest\` Utility:** The core logic for querying the org's metadata and constructing the \`package.xml\` is encapsulated within the \`buildOrgManifest\` utility function.
+- **XML Generation:** It dynamically builds the XML structure of the \`package.xml\` file, including the \`types\` and \`members\` elements for all retrieved metadata.
+- **File System Operations:** It writes the generated \`package.xml\` file to the specified output path.
+- **Interactive Prompts:** Uses \`promptOrgUsernameDefault\` to guide the user in selecting the target Salesforce org.
+`;
 
   public static examples = [
     '$ sf hardis:org:generate:packagexmlfull',
@@ -73,7 +97,14 @@ export default class GeneratePackageXmlFull extends SfCommand<any> {
 
     await buildOrgManifest(orgUsername, this.outputFile, conn);
 
-    uxLog(this, c.cyan(`Generated full package.xml for ${orgUsername} at location ${c.green(this.outputFile)}`));
+    uxLog(this, c.cyan(`Generated full package.xml for ${orgUsername}`));
+    uxLog(this, c.grey(`Output file: ${c.green(this.outputFile)}`));
+
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      WebSocketClient.sendReportFileMessage(this.outputFile, 'Full Org package.xml');
+    } else {
+      WebSocketClient.requestOpenFile(this.outputFile);
+    }
 
     // Return an object to be displayed with --json
     return { outputString: `Generated full package.xml for ${orgUsername}`, outputFile: this.outputFile };

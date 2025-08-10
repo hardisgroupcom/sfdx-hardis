@@ -16,7 +16,31 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class CleanEmptyItems extends SfCommand<any> {
   public static title = 'Clean retrieved empty items in dx sources';
 
-  public static description = 'Remove unwanted empty items within sfdx project sources';
+  public static description: string = `
+## Command Behavior
+
+**Removes empty or irrelevant metadata items from your Salesforce DX project sources.**
+
+This command helps maintain a clean and efficient Salesforce codebase by deleting metadata files that are essentially empty or contain no meaningful configuration. These files can sometimes be generated during retrieval processes or remain after refactoring, contributing to unnecessary clutter in your project.
+
+Key functionalities:
+
+- **Targeted Cleaning:** Specifically targets and removes empty instances of:
+  - Global Value Set Translations (\`.globalValueSetTranslation-meta.xml\`)
+  - Standard Value Sets (\`.standardValueSet-meta.xml\`)
+  - Sharing Rules (\`.sharingRules-meta.xml\`)
+- **Content-Based Deletion:** It checks the XML content of these files for the presence of specific tags (e.g., \`valueTranslation\` for Global Value Set Translations) to determine if they are truly empty or lack relevant data.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **File Discovery:** Uses \`glob\` to find files matching predefined patterns for Global Value Set Translations, Standard Value Sets, and Sharing Rules within the specified root folder (defaults to \`force-app\`).
+- **XML Parsing:** For each matching file, it reads and parses the XML content using \`parseXmlFile\`.
+- **Content Validation:** It then checks the parsed XML object for the existence of specific nested properties (e.g., \`xmlContent.GlobalValueSetTranslation.valueTranslation\`). If these properties are missing or empty, the file is considered empty.
+- **File Deletion:** If a file is determined to be empty, it is removed from the file system using \`fs.remove\`.
+- **Logging:** Provides clear messages about which files are being removed and a summary of the total number of items cleaned.
+`;
 
   public static examples = ['$ sf hardis:project:clean:emptyitems'];
 

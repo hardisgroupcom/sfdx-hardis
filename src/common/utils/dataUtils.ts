@@ -122,6 +122,7 @@ export async function selectDataWorkspace(opts = { selectDataLabel: 'Please sele
     type: 'select',
     name: 'value',
     message: c.cyanBright(opts.selectDataLabel),
+    description: 'Select the SFDMU data configuration to use for this operation',
     choices: choices,
   });
   return sfdmuDirResult.value;

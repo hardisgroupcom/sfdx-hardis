@@ -147,11 +147,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     // Fetch EventLogFiles with ApiTotalUsage entries
     const logCollectQuery =
       `SELECT LogFile FROM EventLogFile WHERE EventType = '${eventType}' ORDER BY LogDate DESC` + limitConstraint;
-    uxLog(this, c.grey('Query: ' + c.italic(logCollectQuery)));
     const eventLogRes: any = await soqlQuery(logCollectQuery, conn);
 
     // Collect legacy api calls from logs
-    uxLog(this, c.grey('Calling org API to get CSV content of each EventLogFile record, then parse and analyze it...'));
+    uxLog(this, c.cyan('Calling org API to get CSV content of each EventLogFile record, then parse and analyze it...'));
     for (const eventLogFile of eventLogRes.records) {
       await this.collectDeprecatedApiCalls(eventLogFile.LogFile, conn);
     }

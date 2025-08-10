@@ -10,9 +10,24 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class SourcePush extends SfCommand<any> {
   public static title = 'Scratch PUSH';
 
-  public static description = `Push local files to scratch org
+  public static description = `## Command Behavior
 
-Calls \`sf project deploy start\` under the hood
+**Pushes local Salesforce DX source files to a scratch org or source-tracked sandbox.**
+
+This command is a fundamental operation in Salesforce DX development, allowing developers to synchronize their local codebase with their development org. It ensures that changes made locally are reflected in the scratch org, enabling testing and validation.
+
+Key functionalities:
+
+- **Source Synchronization:** Deploys all local changes (metadata and code) to the target scratch org.
+- **Underlying Command:** Internally, this command executes \`sf project deploy start\` to perform the push operation.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **Salesforce CLI Wrapper:** It acts as a wrapper around the standard Salesforce CLI \`sf project deploy start\` command.
+- **\`forceSourcePush\` Utility:** The core logic resides in the \`forceSourcePush\` utility function, which orchestrates the deployment process.
+- **Connection Handling:** It uses the connection to the target org to perform the push operation.
 `;
 
   public static examples = ['$ sf hardis:scratch:push'];

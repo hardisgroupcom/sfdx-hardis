@@ -6,7 +6,6 @@ description: Prompt template for PROMPT_DESCRIBE_OBJECT
 # PROMPT_DESCRIBE_OBJECT
 
 ## Variables
-
 | Name                 | Description                                                               | Example                                                          |
 |:---------------------|:--------------------------------------------------------------------------|:-----------------------------------------------------------------|
 | **OBJECT_NAME**      | The API name of the Salesforce object to describe.                        | `Account`                                                        |

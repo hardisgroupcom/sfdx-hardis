@@ -3,7 +3,28 @@
 
 ## Description
 
-Calls the related storage service to request api keys and secrets that allows a local user to fetch a scratch org from scratch org pool
+
+## Command Behavior
+
+**Authenticates a local user to the configured scratch org pool storage service, enabling them to fetch and manage scratch orgs from the pool.**
+
+This command is essential for developers who want to utilize a shared scratch org pool for their local development. It establishes the necessary authentication with the backend storage service (e.g., Salesforce Custom Object, Redis) that manages the pool's state, allowing the user to retrieve available scratch orgs for their work.
+
+Key functionalities:
+
+- **Storage Service Authentication:** Initiates the authentication process with the chosen storage service to obtain the required API keys or secrets.
+- **Enables Pool Access:** Once authenticated, the local user can then use other sfdx-hardis commands to fetch, use, and return scratch orgs from the pool.
+- **Configuration Check:** Verifies if a scratch org pool is already configured for the current project and provides guidance if it's not.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **Configuration Loading:** It retrieves the `poolConfig` from the project's .sfdx-hardis.yml file to identify the configured storage service.
+- **Provider Instantiation:** It uses the `instantiateProvider` utility function to create an instance of the `KeyValueProviderInterface` corresponding to the configured storage service.
+- **User Authentication:** It then calls the `userAuthenticate()` method on the instantiated provider. This method encapsulates the specific logic for authenticating with the chosen storage service (e.g., prompting for API keys, performing OAuth flows).
+- **Error Handling:** It checks for the absence of a configured scratch org pool and provides a user-friendly message.
+
 
 ## Parameters
 
@@ -19,7 +40,7 @@ Calls the related storage service to request api keys and secrets that allows a 
 ## Examples
 
 ```shell
-sf hardis:scratch:pool:localauth
+$ sf hardis:scratch:pool:localauth
 ```
 
 

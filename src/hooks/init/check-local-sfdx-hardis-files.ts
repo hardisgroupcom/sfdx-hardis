@@ -55,9 +55,8 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
           type: 'select',
           name: 'value',
           initial: true,
-          message: c.cyanBright(
-            'Your .gitignore is deprecated, do you agree to upgrade it ? (If you hesitate, just trust us and accept)'
-          ),
+          message: c.cyanBright('Your .gitignore is deprecated, do you agree to upgrade it ?'),
+          description: 'Updates your .gitignore file with latest sfdx-hardis best practices and removes duplicate entries',
           choices: [
             { title: 'Yes', value: 'true' },
             { title: 'No  ', value: 'false' },
@@ -102,6 +101,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
           name: 'value',
           initial: true,
           message: c.cyanBright('Your .forceignore is deprecated, do you agree to upgrade it ?'),
+          description: 'Updates your .forceignore file with latest sfdx-hardis best practices and removes duplicate entries',
           choices: [
             { title: 'Yes', value: 'true' },
             { title: 'No  ', value: 'false' },

@@ -84,8 +84,12 @@ class MetadataUtils {
     }
     // Sandbox
     else if (type === 'devSandbox') {
+      const orgListSorted = sortArray(orgListResult?.result?.nonScratchOrgs || [], {
+        by: ['instanceUrl', 'username', 'alias'],
+        order: ['asc', 'asc', 'asc'],
+      });
       const allSandboxes =
-        orgListResult?.result?.nonScratchOrgs?.filter((org: any) => {
+        orgListSorted.filter((org: any) => {
           return org.loginUrl.includes('--') || org.loginUrl.includes('test.salesforce.com');
         }) || [];
       const majorOrgs = await listMajorOrgs();
@@ -146,6 +150,7 @@ class MetadataUtils {
     commandThis: any = null,
     context = 'none'
   ) {
+    uxLog(commandThis, c.cyan(`Listing packages installed on ` + (orgAlias ? c.green(orgAlias) : 'current org') + '...'));
     const alreadyInstalled = await MetadataUtils.listInstalledPackages(orgAlias, this);
     if (globalThis?.workaroundCliPackages === true) {
       uxLog(
@@ -165,7 +170,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         if (context === 'scratch' && package1.installOnScratchOrgs === false) {
           uxLog(
             commandThis,
-            c.cyan(
+            c.grey(
               `Skip installation of ${c.green(
                 package1.SubscriberPackageName
               )} as it is configured to not be installed on scratch orgs`
@@ -176,7 +181,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         if (context === 'deploy' && package1.installDuringDeployments === false) {
           uxLog(
             commandThis,
-            c.cyan(
+            c.grey(
               `Skip installation of ${c.green(
                 package1.SubscriberPackageName
               )} as it is configured to not be installed on scratch orgs`
@@ -258,7 +263,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
       } else {
         uxLog(
           commandThis,
-          c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is already installed`)
+          c.grey(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is already installed`)
         );
       }
     }
@@ -371,6 +376,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const metadataResp = await prompts({
       type: 'multiselect',
       message: c.cyanBright('Please select metadata types'),
+      description: 'Choose the Salesforce metadata types to include in this operation',
       choices: metadataTypes.map((metadataType: any) => {
         return {
           title: c.cyan(`${metadataType.xmlName || 'no xml name'} (${metadataType.directoryName || 'no dir name'})`),
@@ -483,6 +489,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const flowSelectRes = await prompts({
       type: 'select',
       message: 'Please select the Flow you want to visually compare',
+      description: 'Choose a Flow file to perform visual comparison operations on',
       choices: flowFiles.map(flowFile => {
         return { value: flowFile, title: path.basename(flowFile, ".flow-meta.xml") }
       })
@@ -496,6 +503,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const flowSelectRes = await prompts({
       type: 'multiselect',
       message: 'Please select the Flows you want to create the documentation',
+      description: 'Choose multiple Flow files to generate documentation for',
       choices: flowFiles.map(flowFile => {
         return { value: flowFile, title: path.basename(flowFile, ".flow-meta.xml") }
       })

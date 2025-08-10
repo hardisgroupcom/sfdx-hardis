@@ -26,11 +26,11 @@ Run `npm install @mermaid-js/mermaid-cli --global`
 ## Examples
 
 ```shell
-sf hardis:project:generate:flow-git-diff
+$ sf hardis:project:generate:flow-git-diff
 ```
 
 ```shell
-sf hardis:project:generate:flow-git-diff --flow "force-app/main/default/flows/Opportunity_AfterUpdate_Cloudity.flow-meta.xml" --commit-before 8bd290e914c9dbdde859dad7e3c399776160d704 --commit-after e0835251bef6e400fb91e42f3a31022f37840f65
+$ sf hardis:project:generate:flow-git-diff --flow "force-app/main/default/flows/Opportunity_AfterUpdate_Cloudity.flow-meta.xml" --commit-before 8bd290e914c9dbdde859dad7e3c399776160d704 --commit-after e0835251bef6e400fb91e42f3a31022f37840f65
 ```
 
 

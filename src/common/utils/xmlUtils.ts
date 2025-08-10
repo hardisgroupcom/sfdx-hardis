@@ -111,7 +111,7 @@ export async function isPackageXmlEmpty(
 
 // Read package.xml files and build concatenated list of items
 export async function appendPackageXmlFilesContent(packageXmlFileList: string[], outputXmlFile: string) {
-  uxLog(this, c.cyan(`Appending ${packageXmlFileList.join(',')} into ${outputXmlFile}...`));
+  uxLog(this, c.grey(`Appending ${packageXmlFileList.join(',')} into ${outputXmlFile}...`));
   let firstPackageXmlContent: any = null;
   let allPackageXmlFilesTypes = {};
   // loop on packageXml files

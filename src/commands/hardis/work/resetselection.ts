@@ -14,9 +14,33 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class RebuildSelection extends SfCommand<any> {
   public static title = 'Select again';
 
-  public static description = `Resets the selection that we want to add in the merge request
+  public static description = `
+## Command Behavior
 
-Calls a soft git reset behind the hood  
+**Resets the local Git repository to allow for a new selection of files to be included in a merge request.**
+
+This command is designed to be used when you need to re-evaluate which changes should be part of your next merge request. It performs a soft Git reset, effectively unstaging all committed changes since the last merge with the target branch, and then cleans up any generated files.
+
+Key functionalities:
+
+- **Target Branch Selection:** Prompts you to select the target branch of your current or future merge request.
+- **Soft Git Reset:** Performs a \`git reset --soft\` operation to uncommit changes, moving the HEAD pointer back but keeping the changes in your working directory.
+- **Generated File Cleanup:** Resets and checks out \`manifest/package.xml\` and \`manifest/destructiveChanges.xml\` to their state before the reset, ensuring a clean slate for new selections.
+- **Force Push Authorization:** Sets a flag in your user configuration (\`canForcePush: true\`) to allow a force push in the subsequent \`hardis:work:save\` command, as the history will have been rewritten.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **Git Integration:** Uses \`simple-git\` (\`git()\`) to interact with the Git repository:
+  - \`git().branch()\`: Retrieves information about local and remote branches.
+  - \`git().log()\`: Fetches the commit history to determine which commits to reset.
+  - \`git().reset()\`: Performs the soft reset operation.
+  - \`git().checkout()\`: Resets specific files (\`package.xml\`, \`destructiveChanges.xml\`) to their previous state.
+  - \`git().status()\`: Displays the current status of the Git repository after the reset.
+- **Interactive Prompts:** Uses the \`prompts\` library to confirm the reset operation with the user and to select the target branch.
+- **Configuration Management:** Updates the user's configuration (\`.sfdx-hardis.yml\`) using \`setConfig\` to set the \`canForcePush\` flag.
+- **Error Handling:** Includes a check to prevent resetting protected branches.
 `;
 
   public static examples = ['$ sf hardis:work:resetsave'];
@@ -62,6 +86,7 @@ Calls a soft git reset behind the hood
     const confirm = await prompts({
       type: 'confirm',
       message: `This command will git reset (soft) your branch ${currentGitBranch}. You will need to select and commit again your files. Are you sure ?`,
+      description: 'Confirm that you want to perform a soft git reset on your current branch',
     });
     if (confirm.value === false) {
       throw new SfError(c.red('[sfdx-hardis] Cancelled by user'));
@@ -83,7 +108,7 @@ Calls a soft git reset behind the hood
     await git({ output: true }).checkout(['--', 'manifest/package.xml']);
     await git({ output: true }).checkout(['--', 'manifest/destructiveChanges.xml']);
     await git({ output: true }).status();
-    uxLog(this, c.cyan('The following items are not available for selection'));
+    uxLog(this, c.cyan('The following items are now available for selection'));
     uxLog(this, c.cyan('Selection has been reset'));
     // Return an object to be displayed with --json
     return { outputString: 'Reset selection pocessed' };

@@ -6,7 +6,6 @@ description: Prompt template for PROMPT_DESCRIBE_AUTORESPONSE_RULES
 # PROMPT_DESCRIBE_AUTORESPONSE_RULES
 
 ## Variables
-
 | Name                       | Description                                                | Example                                      |
 |:---------------------------|:-----------------------------------------------------------|:---------------------------------------------|
 | **AUTORESPONSERULES_NAME** | The name of the Salesforce AutoResponse Rules to describe. | `Case_AutoResponse_Rules`                    |

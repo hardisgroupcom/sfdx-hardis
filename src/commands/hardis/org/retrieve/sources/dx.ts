@@ -20,7 +20,38 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class DxSources extends SfCommand<any> {
   public static title = 'Retrieve sfdx sources from org';
 
-  public static description = messages.getMessage('retrieveDx');
+  public static description = `
+## Command Behavior
+
+**Retrieves Salesforce metadata from an org and converts it into Salesforce DX (SFDX) source format.**
+
+This command provides a flexible way to pull metadata from any Salesforce org into your local SFDX project. It's particularly useful for:
+
+- **Initial Project Setup:** Populating a new SFDX project with existing org metadata.
+- **Environment Synchronization:** Bringing changes from a Salesforce org (e.g., a sandbox) into your local development environment.
+- **Selective Retrieval:** Allows you to specify which metadata types to retrieve, or to filter out certain types.
+- **Org Shape Creation:** Can optionally create an org shape, which is useful for defining the characteristics of scratch orgs.
+
+Key functionalities:
+
+- **Metadata Retrieval:** Connects to a target Salesforce org and retrieves metadata based on specified filters.
+- **MDAPI to SFDX Conversion:** Converts the retrieved metadata from Metadata API format to SFDX source format.
+- **Org Shape Generation (Optional):** If the \`--shape\` flag is used, it also captures the org's shape and stores installed package information.
+- **Temporary File Management:** Uses temporary folders for intermediate steps, ensuring a clean working directory.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **Temporary Directory Management:** It creates and manages temporary directories (\`./tmp\`, \`mdapipkg\`, \`sfdx-project\`) to stage the retrieved metadata and the converted SFDX sources.
+- **\`MetadataUtils.retrieveMetadatas\`:** This utility is used to connect to the Salesforce org and retrieve metadata in Metadata API format. It supports filtering by metadata types and excluding certain items.
+- **SFDX Project Creation:** It executes \`sf project generate\` to create a new SFDX project structure within a temporary directory.
+- **MDAPI to SFDX Conversion:** It then uses \`sf project convert mdapi\` to convert the retrieved metadata from the MDAPI format to the SFDX source format.
+- **File System Operations:** It uses \`fs-extra\` to copy the converted SFDX sources to the main project folder, while preserving important project files like \`.gitignore\` and \`sfdx-project.json\`.
+- **Org Shape Handling:** If \`--shape\` is enabled, it copies the generated \`package.xml\` and stores information about installed packages using \`setConfig\`.
+- **Error Handling:** Includes robust error handling for Salesforce CLI commands and file system operations.
+- **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshCommandsMessage\` to notify connected VS Code clients about changes to the project.
+`;
 
   public static examples = ['$ sf hardis:org:retrieve:sources:dx'];
 
@@ -181,7 +212,7 @@ export default class DxSources extends SfCommand<any> {
     }
 
     // Trigger commands refresh on VsCode WebSocket Client
-    WebSocketClient.sendMessage({ event: 'refreshCommands' });
+    WebSocketClient.sendRefreshCommandsMessage();
 
     // Set bac initial cwd
     const message = `[sfdx-hardis] Successfully retrieved sfdx project in ${folder}`;

@@ -36,6 +36,7 @@ import { isProductionOrg } from './orgUtils.js';
 import { soqlQuery } from './apiUtils.js';
 import { checkSfdxHardisTraceAvailable } from './orgConfigUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
+import { WebSocketClient } from '../websocketClient.js';
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -92,6 +93,19 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
       output: true,
       debug: debug,
     });
+    // Parse json in stdout and if json.result.status and json.result.files, create a list of files with "type" + "file name", then order it, then display it in logs
+    if (pullCommandResult && pullCommandResult.result && pullCommandResult.result.status === 'Succeeded' && pullCommandResult.result.files) {
+      const files = pullCommandResult.result.files
+        .filter((file: any) => file?.state !== "Failed")
+        .map((file: any) => {
+          return `- ${file.type} ${file.fullName}`;
+        });
+      sortCrossPlatform(files);
+      uxLog(this, c.green('Successfully pulled sources from scratch org / source-tracked sandbox'));
+      uxLog(this, c.grey(files.join('\n')));
+    } else {
+      uxLog(this, c.red('Pull command did not return expected results'));
+    }
   } catch (e) {
     // Manage beta/legacy boza
     const stdOut = (e as any).stdout + (e as any).stderr;
@@ -107,6 +121,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
         type: 'multiselect',
         message:
           'If you want to try again with updated .forceignore file, please select elements you want to add, else escape',
+        description: 'Select metadata elements to add to .forceignore to resolve deployment conflicts',
         name: 'value',
         choices: forceIgnoreElements.map((forceIgnoreElt) => {
           return {
@@ -144,7 +159,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
 
   // If there are SharingRules, retrieve all of them to avoid the previous one are deleted (SF Cli strange/buggy behavior)
   if (pullCommandResult?.stdout?.includes("SharingRules")) {
-    uxLog(this, c.yellow('Detected Sharing Rules in the pull: retrieving the whole of them to avoid silly overrides !'));
+    uxLog(this, c.cyan('Detected Sharing Rules in the pull: retrieving the whole of them to avoid silly overrides !'));
     const sharingRulesNamesMatches = [...pullCommandResult.stdout.matchAll(/([^ \\/]+)\.sharingRules-meta\.xml/gm)];
     for (const match of sharingRulesNamesMatches) {
       uxLog(this, c.grey(`Retrieve the whole ${match[1]} SharingRules...`));
@@ -1488,7 +1503,10 @@ export async function generateApexCoverageOutputFile(): Promise<void> {
     }
     if (coverageObject !== null) {
       await fs.writeFile(coverageFileName, JSON.stringify(coverageObject, null, 2), 'utf8');
-      uxLog(this, c.cyan(`Written Apex coverage results in file ${coverageFileName}`));
+      uxLog(this, c.grey(`Written Apex coverage results in file ${coverageFileName}`));
+      if (WebSocketClient.isAliveWithLwcUI()) {
+        WebSocketClient.sendReportFileMessage(coverageFileName, "Coverage Results JSON")
+      }
     }
   } catch (e: any) {
     uxLog(this, c.red(`Error while generating Apex coverage output file: ${e.message}`));

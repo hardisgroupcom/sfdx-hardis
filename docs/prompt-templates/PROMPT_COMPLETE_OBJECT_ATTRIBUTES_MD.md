@@ -6,7 +6,6 @@ description: Prompt template for PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD
 # PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD
 
 ## Variables
-
 | Name            | Description                                                                                  | Example                                                                                    |
 |:----------------|:---------------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------------------|
 | **OBJECT_NAME** | The API name of the Salesforce object whose fields and validation rules are being described. | `Account`                                                                                  |
