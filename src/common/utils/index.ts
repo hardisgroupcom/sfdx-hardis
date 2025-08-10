@@ -1121,7 +1121,7 @@ export async function generateReports(
     if (!WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.requestOpenFile(reportFile);
     }
-    WebSocketClient.sendReportFileMessage(reportFile, "CSV Report");
+    WebSocketClient.sendReportFileMessage(reportFile, "CSV Report", "report");
   } catch (e: any) {
     uxLog(commandThis, c.yellow(`[sfdx-hardis] Error opening file in VsCode: ${e.message}`));
   }
@@ -1131,7 +1131,7 @@ export async function generateReports(
     columns,
   });
   await fs.writeFile(reportFileExcel, excel, 'utf8');
-  WebSocketClient.sendReportFileMessage(reportFileExcel, "Excel Report");
+  WebSocketClient.sendReportFileMessage(reportFileExcel, "Excel Report", "report");
   uxLog(commandThis, c.cyan(logLabel));
   uxLog(commandThis, c.grey(c.cyan(`- CSV: ${reportFile}`)));
   uxLog(commandThis, c.grey(c.cyan(`- XLS: ${reportFileExcel}`)));

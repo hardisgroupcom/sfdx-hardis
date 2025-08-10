@@ -813,7 +813,7 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
     if (!WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.requestOpenFile(outputPath);
     }
-    WebSocketClient.sendReportFileMessage(outputPath, "CSV Report");
+    WebSocketClient.sendReportFileMessage(outputPath, "CSV Report", "report");
     if (data.length > 0) {
       try {
         // Generate mirror XSLX file
@@ -823,7 +823,7 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
         await fs.ensureDir(xlsDirName);
         await csvToXls(outputPath, xslxFile);
         uxLog(this, c.cyan(c.italic(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
-        WebSocketClient.sendReportFileMessage(xslxFile, "Excel Report");
+        WebSocketClient.sendReportFileMessage(xslxFile, "Excel Report", "report");
         result.xlsxFile = xslxFile;
         if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
           try {

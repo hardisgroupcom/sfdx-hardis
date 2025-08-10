@@ -118,11 +118,16 @@ export class WebSocketClient {
   }
 
   // Sends info about downloadable report file
-  static sendReportFileMessage(file: string, title: string) {
+  static sendReportFileMessage(
+    file: string,
+    title: string,
+    type: "actionCommand" | "actionUrl" | "report" | "docUrl"
+  ) {
     WebSocketClient.sendMessage({
       event: 'reportFile',
       file: file.replace(/\\/g, '/'),
       title: title,
+      type: type
     });
   }
 
