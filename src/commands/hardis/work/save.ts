@@ -36,17 +36,26 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class SaveTask extends SfCommand<any> {
   public static title = 'Save work task';
 
-  public static description = `When a work task is completed, guide user to create a merge request
+  public static description = `
+## Command Behavior
 
-Advanced instructions in [Publish a task](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/)
+**Guides the user through the process of saving their work, preparing it for a merge request, and pushing changes to the remote Git repository.**
 
-- Generate package-xml diff using sfdx-git-delta
-- Automatically update \`manifest/package.xml\` and \`manifest/destructiveChanges.xml\` according to the committed updates
-- Automatically Clean XML files using \`.sfdx-hardis.yml\` properties
-  - \`autocleantypes\`: List of auto-performed sources cleanings, available on command [hardis:project:clean:references](${CONSTANTS.DOC_URL_ROOT}/hardis/project/clean/references/)
-  - \`autoRemoveUserPermissions\`: List of userPermission to automatically remove from profile metadatas
+This command automates several critical steps involved in finalizing a development task and integrating it into the main codebase. It ensures that your local changes are properly synchronized, cleaned, and committed before being pushed.
 
-Example:
+Key functionalities include:
+
+- **Git Status Management:** Ensures a clean Git working directory by handling ongoing merges and unstaging files.
+- **Org Synchronization (Optional):** Prompts the user to pull the latest metadata updates from their scratch org or source-tracked sandbox, ensuring local files reflect the org's state.
+- **Package.xml Updates:** Automatically generates \`package.xml\` and \`destructiveChanges.xml\` files based on the Git delta between your current branch and the target branch, reflecting added, modified, and deleted metadata.
+- **Automated Source Cleaning:** Applies predefined cleaning operations to your local Salesforce sources, such as removing unwanted references, minimizing profiles, or cleaning XML files based on configurations in your \`.sfdx-hardis.yml\`.
+  - \`autoCleanTypes\`: A list of automated source cleanings, configurable via [hardis:project:clean:references]($\{CONSTANTS.DOC_URL_ROOT}/hardis/project/clean/references/).
+  - \`autoRemoveUserPermissions\`: A list of user permissions to automatically remove from profile metadata.
+- **Deployment Plan Generation:** Builds an automated deployment plan based on the updated \`package.xml\` and configured deployment splits.
+- **Commit and Push:** Guides the user to commit the changes and push them to the remote Git repository, optionally handling force pushes if a branch reset occurred.
+- **Merge Request Guidance:** Provides information and links to facilitate the creation of a merge request after the changes are pushed.
+
+Example \`.sfdx-hardis.yml\` configuration:
 
 \`\`\`yaml
 autoCleanTypes:
@@ -67,8 +76,22 @@ autoRemoveUserPermissions:
   - WorkCalibrationUser
 \`\`\`
 
-- Push commit to server
-  `;
+Advanced instructions are available in the [Publish a task documentation]($\{CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/).
+
+## Technical explanations
+
+The command's technical implementation involves a series of orchestrated steps:
+
+- **Git Integration:** Extensively uses the \`git\` utility for status checks, adding files, committing, and pushing. It also leverages \`sfdx-git-delta\` for generating metadata differences between Git revisions.
+- **Interactive Prompts:** Employs the \`prompts\` library to interact with the user for decisions like pulling sources or pushing commits.
+- **Configuration Management:** Reads and updates project and user configurations using \`getConfig\` and \`setConfig\` to store preferences and deployment plans.
+- **Metadata Synchronization:** Calls \`forceSourcePull\` to retrieve metadata from the org and \`callSfdxGitDelta\` to generate \`package.xml\` and \`destructiveChanges.xml\` based on Git changes.
+- **XML Manipulation:** Utilizes \`appendPackageXmlFilesContent\`, \`removePackageXmlFilesContent\`, \`parseXmlFile\`, and \`writeXmlFile\` for modifying \`package.xml\` and \`destructiveChanges.xml\` files.
+- **Automated Cleaning:** Integrates with \`CleanReferences.run\` and \`CleanXml.run\` commands to perform automated cleaning operations on the Salesforce source files.
+- **Deployment Plan Building:** Dynamically constructs a deployment plan by analyzing the \`package.xml\` content and applying configured deployment splits.
+- **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshStatusMessage\` to notify connected VS Code clients about status updates.
+- **External Tool Integration:** Requires the \`sfdx-git-delta\` plugin to be installed for its core functionality.
+`;
 
   public static examples = ['$ sf hardis:work:task:save', '$ sf hardis:work:task:save --nopull --nogit --noclean'];
 
@@ -175,47 +198,17 @@ autoRemoveUserPermissions:
     // Push new commit(s)
     await this.manageCommitPush(gitStatusWithConfig, gitStatusAfterDeployPlan);
 
+
     // Merge request
-    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold('merge request')}:`));
-    uxLog(
-      this,
-      c.cyan(
-        `- click on the link in the upper text, below ${c.italic(
-          'To create a merge request for ' + this.currentBranch + ', visit'
-        )}`
-      )
-    );
-    uxLog(this, c.cyan(`- or manually create the merge request on repository UI: ${c.green(this.gitUrl)}`));
-    // const remote = await git().listRemote();
-    // const remoteMergeRequest = `${remote.replace('.git','-/merge_requests/new')}`;
-    // await open(remoteMergeRequest, {wait: true});
-    uxLog(
-      this,
-      c.cyan(
-        c.bold(
-          `${c.yellow('When your Merge Request will have been merged:')}
-  - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
-  - Use New task menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`
-        )
-      )
-    );
-    uxLog(
-      this,
-      c.cyan(
-        `If you are working with a ticketing system like JIRA, try to add the FULL URL of the tickets in the MR/PR description
-- Good example: https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4
-- Less good example but will work anyway on most cases: CLOUDITY-4
-`
-      )
-    );
-    uxLog(
-      this,
-      c.cyan(
-        `Merge request documentation is available here -> ${c.bold(
-          `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`
-        )}`
-      )
-    );
+    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold('merge request')}`));
+    uxLog(this, c.grey(`Repository: ${c.green(this.gitUrl.replace('.git', ''))}`));
+    uxLog(this, c.grey(`Source branch: ${c.green(this.currentBranch)}`));
+    uxLog(this, c.grey(`Target branch: ${c.green(this.targetBranch)}`));
+    uxLog(this, `${c.yellow('When your Merge Request will have been merged:')}
+- ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
+- Use New task menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`);
+    uxLog(this, c.grey(`Merge request documentation is available here -> ${c.bold(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`)}`));
+
     // Return an object to be displayed with --json
     return { outputString: 'Saved the task' };
   }
@@ -251,6 +244,8 @@ autoRemoveUserPermissions:
       type: 'select',
       name: 'value',
       message: c.cyanBright('Have you already committed the updated metadata you want to deploy ?'),
+      description: 'Select your current state regarding git commits and metadata updates',
+      placeholder: 'Select commit status',
       choices: [
         {
           title: '😎 Yes, my commit(s) is ready ! I staged my files then created one or multiple commits !',
@@ -305,6 +300,7 @@ autoRemoveUserPermissions:
           type: 'confirm',
           name: 'value',
           message: c.cyan(`Did you update ${c.green(dataSource.label)} and want to export related data ?`),
+          description: 'Confirm if you want to export data that may have been updated for this data source',
         });
         if (exportDataRes.value === true) {
           await exportData(dataSource.dataPath, this, {
@@ -316,6 +312,7 @@ autoRemoveUserPermissions:
   }
 
   private async upgradePackageXmlFilesWithDelta() {
+    uxLog(this, c.cyan('Updating package.xml files using sfdx-git-delta...'));
     // Retrieving info about current branch latest commit and master branch latest commit
     const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch || '');
 
@@ -324,7 +321,7 @@ autoRemoveUserPermissions:
     const toCommitMessage = gitDeltaScope.toCommit ? gitDeltaScope.toCommit.message : '';
     uxLog(
       this,
-      c.cyan(
+      c.grey(
         `Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(
           this.currentBranch
         )} - ${c.green(toCommitMessage)}]`
@@ -352,7 +349,7 @@ autoRemoveUserPermissions:
       const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
       uxLog(
         this,
-        c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
+        c.bold(c.grey(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
         c.red(destructivePackageXmlDiffStr)
       );
       await appendPackageXmlFilesContent(
@@ -418,7 +415,7 @@ autoRemoveUserPermissions:
       const gitStatusFilesBeforeClean = (await git().status()).files.map((file) => file.path);
       uxLog(this, JSON.stringify(gitStatusFilesBeforeClean, null, 2));
       // References cleaning
-      uxLog(this, c.cyan('Cleaning sfdx project from obsolete references...'));
+      uxLog(this, c.cyan('Applying automated cleaning of the sfdx sources (can create new commits)'));
       // User defined cleaning
       await CleanReferences.run(['--type', 'all']);
       if (globalThis?.displayProfilesWarning === true) {
@@ -428,7 +425,7 @@ autoRemoveUserPermissions:
         );
       }
 
-      uxLog(this, c.cyan('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
+      uxLog(this, c.grey('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
       await CleanXml.run([]);
       // Manage git after cleaning
       const gitStatusAfterClean = await git().status();
@@ -437,7 +434,7 @@ autoRemoveUserPermissions:
         .filter((file) => !gitStatusFilesBeforeClean.includes(file.path))
         .map((file) => normalizeFileStatusPath(file.path, config));
       if (cleanedFiles.length > 0) {
-        uxLog(this, c.cyan(`Cleaned the following list of files:\n${cleanedFiles.join('\n')}`));
+        uxLog(this, c.grey(`Cleaned the following list of files:\n${cleanedFiles.join('\n')}`));
         if (!this.noGit) {
           try {
             await git().add(cleanedFiles);
@@ -586,6 +583,7 @@ autoRemoveUserPermissions:
             this.currentBranch
           )})`
         ),
+        description: 'Choose whether to push your commits to the remote git repository',
       });
       if (pushResponse.push === true) {
         uxLog(this, c.cyan(`Pushing new commit(s) in remote git branch ${c.green(`origin/${this.currentBranch}`)}...`));
@@ -612,7 +610,7 @@ autoRemoveUserPermissions:
           }
           // Update user config file & send Websocket event
           await setConfig('user', { mergeRequests: mergeRequestsStored.filter((mr: any) => mr !== null) });
-          WebSocketClient.sendMessage({ event: 'refreshStatus' });
+          WebSocketClient.sendRefreshStatusMessage();
         }
       }
     }

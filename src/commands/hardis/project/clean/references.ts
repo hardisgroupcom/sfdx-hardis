@@ -25,7 +25,31 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class CleanReferences extends SfCommand<any> {
   public static title = 'Clean references in dx sources';
 
-  public static description = 'Remove unwanted references within sfdx project sources';
+  public static description = `
+## Command Behavior
+
+**Removes unwanted references and cleans up metadata within your Salesforce DX project sources.**
+
+This command provides a powerful way to maintain a clean and efficient Salesforce codebase by eliminating unnecessary or problematic metadata. It supports various cleaning types, from removing hardcoded user references in dashboards to minimizing profile attributes.
+
+Key functionalities include:
+
+- **Configurable Cleaning Types:** You can specify a particular cleaning type (e.g., 
+- **JSON/XML Configuration:** Cleaning operations can be driven by a JSON configuration file or a 
+- **Interactive Selection:** If no cleaning type is specified, the command interactively prompts you to select which references to clean.
+- **Persistent Configuration:** You can choose to save your cleaning selections in your project's configuration (\`.sfdx-hardis.yml\`) so they are automatically applied during future Work Save operations.
+- **File Deletion:** Beyond just cleaning XML content, it can also delete related files (e.g., custom field files and their translations when a custom field is marked for deletion).
+
+## Technical explanations
+
+The command's technical implementation involves several steps:
+
+- **Configuration Loading:** It reads the project's configuration to determine default cleaning types and user preferences.
+- **Cleaning Type Processing:** For each selected cleaning type, it either executes a dedicated sub-command (e.g., 
+- **XML Filtering:** For template-based cleanings, it constructs a temporary JSON configuration file based on predefined templates or user-provided 
+- **Package.xml Cleanup:** It iterates through 
+- **Object Property Removal:** The 
+`;
 
   public static examples = [
     '$ sf hardis:project:clean:references',
@@ -168,6 +192,7 @@ export default class CleanReferences extends SfCommand<any> {
           type: 'multiselect',
           name: 'value',
           message: c.cyanBright('What references do you want to clean from your SFDX project sources ?'),
+          description: 'Select which types of reference cleaning to perform on your project',
           choices: this.allCleaningTypes,
         });
         this.cleaningTypes = typesResponse.value;
@@ -185,6 +210,7 @@ export default class CleanReferences extends SfCommand<any> {
         message: c.cyanBright(
           'Do you want to save this action in your project configuration, so it is executed at each Work Save ?'
         ),
+        description: 'Choose whether to automatically apply these cleaning types during future work saves',
       });
       if (saveResponse.value === true) {
         autoCleanTypes.push(...this.cleaningTypes);
@@ -194,6 +220,7 @@ export default class CleanReferences extends SfCommand<any> {
       }
     }
 
+    uxLog(this, c.cyan(`Running cleaning commands...`));
     // Process cleaning
     for (const cleaningType of this.cleaningTypes) {
       const cleaningTypeObj = this.allCleaningTypes.filter(
@@ -204,7 +231,7 @@ export default class CleanReferences extends SfCommand<any> {
         if (this.argv.indexOf('--websocket') > -1) {
           command += ` --websocket ${this.argv[this.argv.indexOf('--websocket') + 1]}`;
         }
-        uxLog(this, c.cyan(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
+        uxLog(this, c.grey(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
         // Command based cleaning
         await execCommand(command, this, {
           fail: true,
@@ -213,7 +240,7 @@ export default class CleanReferences extends SfCommand<any> {
         });
       } else {
         // Template based cleaning
-        uxLog(this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
+        uxLog(this, c.grey(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
         const filterConfigFile = await this.getFilterConfigFile(cleaningType);
         const packageDirectories = this.project?.getPackageDirectories() || [];
         for (const packageDirectory of packageDirectories) {

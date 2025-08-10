@@ -34,6 +34,7 @@ export abstract class AiProvider {
         type: 'text',
         name: 'token',
         message: 'Input your OpenAi API token if you want to use it. Leave empty to skip.',
+        description: 'Provide your OpenAI API key to enable AI-powered features in sfdx-hardis',
       });
       if (promptRes.token) {
         process.env.OPENAI_API_KEY = promptRes.token;

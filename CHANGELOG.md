@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.0.0] 2025-09-08
+
+- Implement advanced websocket messaging for vscode sfdx-hardis LWC UI
+- Refactor logging within commands for better display on vscode sfdx-hardis LWC UI
+- Generate commands documentation with AI
+- Refactor [hardis:org:configure:auth](https://sfdx-hardis.cloudity.com/hardis/org/configure/auth/) for better UX
+- Enhance org selection prompt
+
 ## [5.45.0] 2025-07-22
 
 - Generate ubuntu-based Docker images

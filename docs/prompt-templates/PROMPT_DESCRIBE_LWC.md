@@ -6,7 +6,6 @@ description: Prompt template for PROMPT_DESCRIBE_LWC
 # PROMPT_DESCRIBE_LWC
 
 ## Variables
-
 | Name              | Description                                                  | Example                                                    |
 |:------------------|:-------------------------------------------------------------|:-----------------------------------------------------------|
 | **LWC_NAME**      | The name of the Lightning Web Component to describe.         | `myCustomComponent`                                        |

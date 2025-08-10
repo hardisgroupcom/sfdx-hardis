@@ -101,6 +101,8 @@ See article below
             usersToActivate.length
           )} found users in org ${c.green(flags['target-org'].getUsername())} ?`
         ),
+        description: 'Choose whether to update email addresses for all found users or select specific ones',
+        placeholder: 'Select an option',
         choices: [
           { title: `Yes, all ${c.bold(usersToActivate.length)} users`, value: 'all' },
           { title: 'No, i want to manually select by profile(s)', value: 'selectProfiles' },
@@ -126,6 +128,7 @@ See article below
           type: 'multiselect',
           name: 'value',
           message: 'Please select users that you want to remove the .invalid from emails',
+          description: 'Choose specific users to reactivate by removing .invalid suffix from their email addresses',
           choices: usersSorted.map((user: any) => {
             return { title: `${user.Name} - ${user.Email}`, value: user };
           }),

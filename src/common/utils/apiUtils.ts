@@ -2,6 +2,7 @@ import { execSfdxJson, uxLog } from './index.js';
 import c from 'chalk';
 import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
+import { WebSocketClient } from '../websocketClient.js';
 
 // Constants for record limits
 const MAX_CHUNKS = Number(process.env.SOQL_MAX_BATCHES ?? 50);
@@ -13,10 +14,8 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
   uxLog(
     this,
     c.grey(
-      'SOQL REST: ' +
-      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
-      ' on ' +
-      conn.instanceUrl
+      '[SOQL Query] ' +
+      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery)
     )
   );
   // First query
@@ -35,7 +34,12 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
     uxLog(this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
     uxLog(this, c.yellow(`Consider using bulkQuery for larger datasets.`));
   }
-  uxLog(this, c.grey(`SOQL REST: Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
+  if (batchCount > 1) {
+    uxLog(this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
+  }
+  else {
+    uxLog(this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records`));
+  }
   return res;
 }
 
@@ -44,19 +48,24 @@ export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Pro
   uxLog(
     this,
     c.grey(
-      'SOQL REST Tooling: ' +
-      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery) +
-      ' on ' +
-      conn.instanceUrl
+      '[SOQL Query Tooling] ' +
+      c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery)
     )
   );
   // First query
   const res = await conn.tooling.query(soqlQuery);
   let pageRes = Object.assign({}, res);
+  let batchCount = 1;
   // Get all page results
   while (pageRes.done === false && pageRes.nextRecordsUrl) {
     pageRes = await conn.tooling.queryMore(pageRes.nextRecordsUrl || "");
     res.records.push(...pageRes.records);
+    batchCount++;
+  }
+  if (batchCount > 1) {
+    uxLog(this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
+  } else {
+    uxLog(this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records`));
   }
   return res;
 }
@@ -80,6 +89,9 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
     // Wait for all results
     const records = await recordStream.toArray();
     spinnerQ.succeed(`[BulkApiV2] Bulk Query completed with ${records.length} results.`);
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      uxLog(this, c.grey(`[BulkApiV2] Bulk Query completed with ${records.length} results.`));
+    }
     return { records: records };
   } catch (e: any) {
     spinnerQ.fail(`[BulkApiV2] Bulk query error: ${e.message}`);

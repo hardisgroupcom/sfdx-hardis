@@ -32,7 +32,7 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
   const availableTargetBranches = config.availableTargetBranches || null;
   // There is only once choice so return it
   if (availableTargetBranches === null && config.developmentBranch) {
-    uxLog(this, c.cyan(`Selected target branch is ${c.green(config.developmentBranch)}`));
+    uxLog(this, c.cyan(`Automatically selected target branch is ${c.green(config.developmentBranch)}`));
     return config.developmentBranch;
   }
 
@@ -42,6 +42,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       type: availableTargetBranches ? 'select' : 'text',
       name: 'targetBranch',
       message: c.cyanBright(message),
+      description: availableTargetBranches ? 'Choose the target branch for this operation' : 'Enter the name of the target branch',
+      placeholder: availableTargetBranches ? undefined : 'Ex: integration',
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
           return {

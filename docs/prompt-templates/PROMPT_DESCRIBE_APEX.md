@@ -6,7 +6,6 @@ description: Prompt template for PROMPT_DESCRIBE_APEX
 # PROMPT_DESCRIBE_APEX
 
 ## Variables
-
 | Name           | Description                                        | Example                                   |
 |:---------------|:---------------------------------------------------|:------------------------------------------|
 | **CLASS_NAME** | The name of the Salesforce Apex class to describe. | `MyCustomController`                      |

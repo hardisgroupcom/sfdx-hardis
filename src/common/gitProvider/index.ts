@@ -80,6 +80,7 @@ export abstract class GitProvider {
   private static async handleManualGitServerAuth() {
     const promptRes = await prompts({
       message: "Please select your Git Service Provider",
+      description: "Choose your git hosting service to enable CI/CD integration features",
       type: "select",
       choices: [
         { title: "Azure DevOps", value: "azure" },

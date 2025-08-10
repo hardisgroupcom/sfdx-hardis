@@ -70,6 +70,7 @@ export async function promptProfiles(
     const profilesSelection = await prompts({
       type: options.multiselect ? 'multiselect' : 'select',
       message: options.message || 'Please select profile(s)',
+      description: 'Select one or more Salesforce profiles for the operation',
       name: 'value',
       choices: profiles.map((profile: any) => {
         return {
@@ -106,6 +107,8 @@ export async function promptProfiles(
     const profilesSelection = await prompts({
       type: 'text',
       message: options.message || 'Please input profile name',
+      description: 'Enter the Salesforce profile name manually',
+      placeholder: 'Ex: System Administrator',
       name: 'value',
       initial: options?.initialSelection[0] || null,
     });
@@ -115,17 +118,19 @@ export async function promptProfiles(
 
 export async function promptOrg(
   commandThis: SfCommand<any>,
-  options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false, promptMessage: null, quickOrgList: false }
+  options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false, promptMessage: null, quickOrgList: false, defaultOrgUsername: null }
 ) {
   // List all local orgs and request to user
+  // Access flags via commandThis, fallback to options if not present
+  const defaultOrgUsername = options.defaultOrgUsername || ''
   const orgListResult = await MetadataUtils.listLocalOrgs(options.devSandbox === true ? 'sandbox' : 'any', { quickOrgList: options.quickOrgList });
   let orgList = [
     ...sortArray(orgListResult?.scratchOrgs || [], {
-      by: ['devHubUsername', 'username', 'alias', 'instanceUrl'],
+      by: ['instanceUrl', 'devHubUsername', 'username', 'alias'],
       order: ['asc', 'asc', 'asc'],
     }),
     ...sortArray(orgListResult?.nonScratchOrgs || [], {
-      by: ['username', 'alias', 'instanceUrl'],
+      by: ['instanceUrl', 'username', 'alias',],
       order: ['asc', 'asc', 'asc'],
     }),
     {
@@ -151,19 +156,22 @@ export async function promptOrg(
     orgList = orgList.filter((org: any) => org.status === 'Active' && org.devHubUsername === hubOrgUsername);
   }
 
+  const defaultOrg = orgList.find((org: any) => org.username === defaultOrgUsername) || null;
+
   // Prompt user
   /* jscpd:ignore-start */
   const orgResponse = await prompts({
     type: 'select',
     name: 'org',
     message: c.cyanBright(options.promptMessage || 'Please select an org'),
+    description: 'Choose a Salesforce org from the list of authenticated orgs',
+    default: defaultOrg || '',
     choices: orgList.map((org: any) => {
-      const title = org.username || org.alias || org.instanceUrl;
-      const description =
-        (title !== org.instanceUrl ? org.instanceUrl : '') +
-        (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '-');
+      const title = org.instanceUrl || org.username || org.alias || "ERROR";
+      const description = `Connected with ${org.username || org.alias || 'unknown user'} ` +
+        (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '');
       return {
-        title: c.cyan(title),
+        title: title,
         description: org.descriptionForUi ? org.descriptionForUi : description || '-',
         value: org,
       };
@@ -175,7 +183,7 @@ export async function promptOrg(
 
   // Cancel
   if (org.cancel === true) {
-    uxLog(commandThis, c.cyan('Cancelled'));
+    uxLog(commandThis, c.red('Cancelled'));
     process.exit(0);
   }
 
@@ -225,7 +233,7 @@ export async function promptOrg(
       });
     }
 
-    WebSocketClient.sendMessage({ event: 'refreshStatus' });
+    WebSocketClient.sendRefreshStatusMessage();
     // Update local user .sfdx-hardis.yml file with response if scratch has been selected
     if (org.username.includes('scratch')) {
       await setConfig('user', {
@@ -243,14 +251,14 @@ export async function promptOrg(
     }
   }
   // uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
-  uxLog(commandThis, c.cyan(`Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
+  uxLog(commandThis, c.grey(`Selected Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
   return orgResponse.org;
 }
 
 export async function promptOrgList(options: { promptMessage?: string } = {}) {
   const orgListResult = await MetadataUtils.listLocalOrgs('any');
   const orgListSorted = sortArray(orgListResult?.nonScratchOrgs || [], {
-    by: ['username', 'alias', 'instanceUrl'],
+    by: ['instanceUrl', 'username', 'alias',],
     order: ['asc', 'asc', 'asc'],
   });
   // Prompt user
@@ -258,13 +266,13 @@ export async function promptOrgList(options: { promptMessage?: string } = {}) {
     type: 'multiselect',
     name: 'orgs',
     message: c.cyanBright(options.promptMessage || 'Please select orgs'),
+    description: 'Choose multiple Salesforce orgs from the list of authenticated orgs',
     choices: orgListSorted.map((org: any) => {
-      const title = org.username || org.alias || org.instanceUrl;
-      const description =
-        (title !== org.instanceUrl ? org.instanceUrl : '') +
-        (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '-');
+      const title = org.instanceUrl || org.username || org.alias || "ERROR";
+      const description = `Connected with ${org.username || org.alias || 'unknown user'} ` +
+        (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '');
       return {
-        title: c.cyan(title),
+        title: title,
         description: org.descriptionForUi ? org.descriptionForUi : description || '-',
         value: org,
       };
@@ -317,6 +325,7 @@ export async function promptOrgUsernameDefault(
   const defaultOrgRes = await prompts({
     type: 'confirm',
     message: options.message || `Do you want to use org ${defaultOrg} ?`,
+    description: 'Confirms whether to use the currently configured default org or select a different one',
   });
   if (defaultOrgRes.value === true) {
     return defaultOrg;
@@ -332,7 +341,9 @@ export async function promptUserEmail(promptMessage: string | null = null) {
     type: 'text',
     name: 'value',
     initial: userConfig.userEmail || '',
-    message: c.cyanBright(promptMessage || 'Please input your email address (it will be stored locally for later use)'),
+    message: c.cyanBright(promptMessage || 'Please input your email address'),
+    description: 'Your email address will be stored locally and used for CI/CD operations',
+    placeholder: 'Ex: john.doe@company.com',
     validate: (value: string) => EmailValidator.validate(value),
   });
   const userEmail = promptResponse.value;
@@ -401,7 +412,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
           "Sales Insights"
         ].includes(installedPackage.SubscriberPackageName)
       ) {
-        uxLog(this, c.grey(`Skip ${installedPackage.SubscriberPackageName} as it is a Salesforce standard package`))
+        uxLog(this, c.cyan(`Skip ${installedPackage.SubscriberPackageName} as it is a Salesforce standard package`))
         continue;
       }
 
@@ -412,6 +423,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
         message: c.cyanBright(
           `Please select the install configuration for ${c.bold(installedPackage.SubscriberPackageName)}`
         ),
+        description: 'Configure how this package should be automatically installed during CI/CD operations',
         choices: [
           {
             title: `Install automatically ${c.bold(installedPackage.SubscriberPackageName)} on scratch orgs only`,
@@ -442,7 +454,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
     }
   }
   if (updated) {
-    uxLog(this, 'Updated package configuration in sfdx-hardis config');
+    uxLog(this, c.cyan('Updated package configuration in .sfdx-hardis.yml config file'));
     await setConfig('project', { installedPackages: projectPackages });
   }
 }

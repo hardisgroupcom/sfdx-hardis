@@ -17,7 +17,35 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class OrgMissingItems extends SfCommand<any> {
   public static title = 'Clean SFDX items using target org definition';
 
-  public static description = 'Clean SFDX sources from items present neither in target org nor local package.xml';
+  public static description: string = `
+## Command Behavior
+
+**Cleans Salesforce DX project sources by removing metadata components that are not present in a target Salesforce org or the local \`package.xml\` file.**
+
+This command helps maintain a lean and accurate codebase by identifying and removing metadata that is either obsolete in the target org or not explicitly included in your project's \`package.xml\`. This is particularly useful for:
+
+- **Reducing Deployment Size:** Eliminating unnecessary metadata reduces the size of deployments, leading to faster deployments and fewer conflicts.
+- **Ensuring Consistency:** Synchronizing your local codebase with the actual state of a Salesforce org.
+- **Cleaning Up Orphaned Metadata:** Removing components that might have been deleted from the org but still exist in your local project.
+
+Key features:
+
+- **Target Org Integration:** Connects to a specified Salesforce org (or prompts for one) to retrieve its metadata manifest.
+- **\`package.xml\` Comparison:** Compares your local project's metadata with the target org's metadata and your local \`package.xml\` to identify missing items.
+- **Report Type Cleaning:** Specifically targets and cleans \`reportType-meta.xml\` files by removing references to fields or objects that are not present in the target org or your \`package.xml\`.
+
+## Technical explanations
+
+The command's technical implementation involves several steps:
+
+- **Org Manifest Generation:** If not provided, it generates a full \`package.xml\` from the target Salesforce org using \`buildOrgManifest\`.
+- **XML Parsing and Merging:** It parses the generated org manifest and merges it with the local \`package.xml\` and \`destructiveChanges.xml\` files to create a comprehensive list of existing and deleted metadata.
+- **Metadata Analysis:** It iterates through specific metadata types (currently \`reportType-meta.xml\` files) within the configured source folder.
+- **Field and Object Validation:** For each \`reportType-meta.xml\` file, it examines the columns and filters out references to custom fields or objects that are not found in the merged \`package.xml\` content or are marked for destruction.
+- **XML Modification:** If changes are detected, it updates the \`reportType-meta.xml\` file by writing the modified XML content back to the file using \`writeXmlFile\`.
+- **File System Operations:** It uses \`fs-extra\` for file system operations and \`glob\` for pattern matching to find relevant metadata files.
+- **SOQL Queries:** The \`buildOrgManifest\` utility (used internally) performs SOQL queries to retrieve metadata information from the Salesforce org.
+`;
 
   public static examples = ['$ sf hardis:project:clean:orgmissingitems'];
 
@@ -94,7 +122,7 @@ export default class OrgMissingItems extends SfCommand<any> {
     if (this.packageXmlFull === null) {
       // Request user to select an org if not provided
       if (this.targetOrgUsernameAlias == null) {
-        const targetOrg = await promptOrg(this, { devHub: false, setDefault: false });
+        const targetOrg = await promptOrg(this, { devHub: false, setDefault: false, defaultOrgUsername: flags['target-org']?.getUsername() });
         this.targetOrgUsernameAlias = targetOrg.username;
       }
       this.packageXmlFull = await buildOrgManifest(this.targetOrgUsernameAlias);

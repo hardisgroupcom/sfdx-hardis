@@ -77,6 +77,8 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
         type: 'select',
         name: 'storageService',
         message: c.cyanBright('What storage service do you want to use for your scratch orgs pool ?'),
+        description: 'Choose a storage backend for managing and tracking scratch org pools',
+        placeholder: 'Select a storage service',
         initial: 0,
         choices: allProviders.map((provider: KeyValueProviderInterface) => {
           return { title: provider.name, description: provider.description, value: provider.name };
@@ -86,6 +88,8 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
         type: 'number',
         name: 'maxScratchOrgsNumber',
         message: c.cyanBright('What is the maximum number of scratch orgs in the pool ?'),
+        description: 'Set the maximum number of scratch orgs that can exist in the pool at any time',
+        placeholder: 'Ex: 5',
         initial: poolConfig.maxScratchOrgsNumber || 5,
       },
     ]);

@@ -14,7 +14,42 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class RefreshTask extends SfCommand<any> {
   public static title = 'Refresh work task';
 
-  public static description = messages.getMessage('refreshWorkTask');
+  public static description = `
+## Command Behavior
+
+**Refreshes your local Git branch and Salesforce org with the latest content from another Git branch.**
+
+This command is designed to help developers keep their local development environment synchronized with changes made by other team members. It automates the process of pulling updates from a designated branch, merging them into your current working branch, and then pushing those changes to your scratch org or source-tracked sandbox.
+
+Key functionalities:
+
+- **Pre-Merge Check:** Prompts the user to confirm that they have saved their current work before proceeding with the merge, preventing accidental data loss.
+- **Branch Selection:** Allows you to select a target Git branch (e.g., \`integration\`, \`preprod\`) from which to pull updates.
+- **Git Operations:** Performs a series of Git operations:
+  - Pulls the latest version of the selected merge branch.
+  - Stashes your uncommitted local changes before merging.
+  - Merges the selected branch into your current local branch.
+  - Handles merge conflicts interactively, prompting the user to resolve them.
+  - Restores your stashed changes after the merge.
+- **Org Synchronization:** Pushes the updated local branch content to your scratch org or source-tracked sandbox, ensuring your org reflects the latest merged code.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **Configuration Loading:** It retrieves project configurations using \`getConfig\` to determine the default development branch.
+- **Git Integration:** Extensively uses \`simple-git\` (\`git()\`) for various Git operations:
+  - \`git().branch()\`: Lists local and remote branches.
+  - \`git().stash()\`: Saves and restores uncommitted changes.
+  - \`git().fetch()\`: Fetches updates from remote repositories.
+  - \`git().checkout()\`: Switches between branches.
+  - \`git().pull()\`: Pulls changes from a remote branch.
+  - \`git().merge()\`: Merges one branch into another, handling conflicts.
+- **Interactive Prompts:** Uses the \`prompts\` library to guide the user through confirmations (e.g., saving work) and branch selection.
+- **Salesforce CLI Integration:** It uses \`forceSourcePull\` to pull changes from the scratch org and \`forceSourcePush\` to push changes to the scratch org.
+- **Error Handling:** Includes robust error handling for Git operations (e.g., merge conflicts) and provides guidance to the user for resolution.
+- **Environment Variable Check:** Checks for an \`EXPERIMENTAL\` environment variable to gate access to this command, indicating it might not be fully stable.
+`;
 
   public static examples = ['$ sf hardis:work:refresh'];
 
@@ -67,6 +102,8 @@ export default class RefreshTask extends SfCommand<any> {
         `This is a SENSITIVE OPERATION. Did you run ${c.green('hardis:work:save')} BEFORE running this command ?`
       ),
       name: 'value',
+      description: 'Confirm that you have saved your current work before proceeding with this sensitive operation',
+      placeholder: 'Select an option',
       choices: [
         {
           title: 'Yes I did save my current updates before merging updates from others !',
@@ -97,6 +134,8 @@ export default class RefreshTask extends SfCommand<any> {
       type: 'select',
       message: `Please select the branch that you want to merge in your current branch ${c.green(localBranch)}`,
       name: 'value',
+      description: 'Choose which branch to merge into your current working branch',
+      placeholder: 'Select a branch to merge',
       choices: branchChoices,
     });
     this.mergeBranch = branchRes.value;
@@ -174,6 +213,8 @@ export default class RefreshTask extends SfCommand<any> {
           message: c.cyanBright(
             'There are merge conflicts, please solve them, then select YES here. Otherwise, exit the script and call a developer for help :)'
           ),
+          description: 'Choose your next action after attempting to resolve merge conflicts',
+          placeholder: 'Select an option',
           choices: [
             { value: true, title: 'If finished to merge conflicts' },
             {

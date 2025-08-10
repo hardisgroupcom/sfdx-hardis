@@ -46,7 +46,7 @@ autoCleanTypes:
 ## Examples
 
 ```shell
-sf hardis:project:clean:flowpositions
+$ sf hardis:project:clean:flowpositions
 ```
 
 

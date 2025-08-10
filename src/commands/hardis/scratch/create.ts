@@ -213,6 +213,7 @@ export default class ScratchCreate extends SfCommand<any> {
           )}`
         ),
         default: false,
+        description: 'Confirm that you want to reuse this existing scratch org instead of creating a new one',
       });
       if (checkRes.value === false) {
         process.exit(0);
@@ -299,7 +300,7 @@ export default class ScratchCreate extends SfCommand<any> {
             debug: this.debugMode,
           });
           // Trigger a status refresh on VsCode WebSocket Client
-          WebSocketClient.sendMessage({ event: 'refreshStatus' });
+          WebSocketClient.sendRefreshStatusMessage();
         }
         return;
       }
@@ -347,7 +348,7 @@ export default class ScratchCreate extends SfCommand<any> {
       scratchOrgPassword: this.scratchOrgPassword,
     });
     // Trigger a status refresh on VsCode WebSocket Client
-    WebSocketClient.sendMessage({ event: 'refreshStatus' });
+    WebSocketClient.sendRefreshStatusMessage();
 
     if (isCI || this.pool === true) {
       // Try to store sfdxAuthUrl for scratch org reuse during CI

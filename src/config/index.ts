@@ -231,7 +231,9 @@ export async function promptForProjectName() {
   const projectRes = await prompts({
     type: 'text',
     name: 'projectName',
-    message: 'What is the name of your project ? (example: MyClient)',
+    message: 'What is the name of your project ?',
+    description: 'Used to generate environment variables and configuration files for your Salesforce project',
+    placeholder: 'Ex: MyClient',
   });
   const userProjectName = projectRes.projectName + '';
   let projectName = projectRes.projectName.toLowerCase().replace(' ', '_');
@@ -246,6 +248,7 @@ export async function promptForProjectName() {
     const promptResp = await prompts({
       type: 'confirm',
       message: `Are you ok with updated project name "${projectName}" ?`,
+      description: 'Confirms the use of the sanitized project name which must be compliant with environment variable format',
     });
     if (promptResp.value === true) {
       return projectName;

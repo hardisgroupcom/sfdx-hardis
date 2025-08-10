@@ -230,18 +230,16 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     await this.handleCustomSettingsAudit(conn);
 
     // Summarize
+    uxLog(this, c.cyan(`Results summary:`));
     let statusCode = 0;
     let msg = 'No suspect Setup Audit Trail records has been found';
     const suspectActionsWithCount: any[] = [];
     if (this.suspectRecords.length > 0) {
       statusCode = 1;
-      uxLog(this, c.yellow('Suspect records list'));
-      uxLog(this, JSON.stringify(this.suspectRecords, null, 2));
       msg = `${this.suspectRecords.length} suspect Setup Audit Trail records has been found`;
-      uxLog(this, c.yellow(msg));
       this.suspectUsers = [...new Set(this.suspectUsers)];
       sortCrossPlatform(this.suspectUsers);
-      const suspectActionsSummary = {};
+      const suspectActionsSummary: Record<string, number> = {};
       for (const suspectAction of this.suspectActions) {
         suspectActionsSummary[suspectAction] = (suspectActionsSummary[suspectAction] || 0) + 1;
       }
@@ -249,17 +247,22 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         suspectActionsWithCount.push(`${suspectAction} (${suspectActionsSummary[suspectAction]})`);
       }
       sortCrossPlatform(suspectActionsWithCount);
-      uxLog(this, '');
-      uxLog(this, c.yellow('Related users:'));
+
+      uxLog(this, 'Suspect records list');
+      uxLog(this, JSON.stringify(this.suspectRecords, null, 2));
+
+      let logMsg = '';
+      logMsg += c.yellow(msg) + '\n\n';
+      logMsg += c.yellow('Related users:') + '\n';
       for (const user of this.suspectUsers) {
-        uxLog(this, c.yellow(`- ${user}` + ' (' + this.suspectUsersAndActions[user].actions.join(', ') + ")"));
+        logMsg += c.yellow(`- ${user}` + ' (' + this.suspectUsersAndActions[user].actions.join(', ') + ")") + '\n';
       }
-      uxLog(this, '');
-      uxLog(this, c.yellow('Related actions:'));
+      logMsg += '\n' + c.yellow('Related actions:') + '\n';
       for (const action of suspectActionsWithCount) {
-        uxLog(this, c.yellow(`- ${action}`));
+        logMsg += c.yellow(`- ${action}`) + '\n';
       }
-      uxLog(this, '');
+      logMsg += '\n';
+      uxLog(this, logMsg);
     } else {
       uxLog(this, c.green(msg));
     }
@@ -324,7 +327,6 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       `FROM SetupAuditTrail ` +
       whereConstraint +
       `ORDER BY CreatedDate DESC`;
-    uxLog(this, c.grey('Query: ' + c.italic(auditTrailQuery)));
     const queryRes = await bulkQuery(auditTrailQuery, conn);
     this.auditTrailRecords = queryRes.records.map((record) => {
       const section = record?.Section || '';
@@ -370,12 +372,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       return;
     }
     // Add custom settings tracking
-    uxLog(this, c.cyan(`Retrieving Custom Settings modifications...`));
-    uxLog(this, c.cyan(`(Define SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS=true if you don't want them)`));
+    uxLog(this, c.cyan(`List available custom settings...`));
+    uxLog(this, c.grey(`(Define SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS=true if you don't want them)`));
     const customSettingsQuery = `SELECT QualifiedApiName, Label FROM EntityDefinition 
                            WHERE IsCustomSetting = true`;
     const customSettingsResult = await soqlQuery(customSettingsQuery, conn);
-    uxLog(this, c.cyan(`Found ${customSettingsResult.records.length} Custom Settings`));
+    uxLog(this, c.cyan(`Analyze updates in ${customSettingsResult.records.length} Custom Settings...`));
 
     let whereConstraintCustomSetting = `WHERE LastModifiedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND LastModifiedBy.Username != NULL `;
     if (this.excludeUsers.length > 0) {
@@ -533,6 +535,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         type: 'select',
         name: 'lastndays',
         message: 'Please select the number of days in the past from today you want to detect suspiscious setup activities',
+        description: 'Choose the timeframe for analyzing audit trail records to detect suspicious administrative activities',
+        placeholder: 'Select number of days',
         choices: [
           { title: `1`, value: 1 },
           { title: `2`, value: 2 },
@@ -567,10 +571,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     if (this.excludeUsers.length > 0) {
       whereConstraint += `AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
     }
-    uxLog(this, c.cyan(`Excluded users are ${this.excludeUsers.join(',') || 'None'}`));
+    uxLog(this, c.grey(`Excluded users are ${this.excludeUsers.join(',') || 'None'}`));
     uxLog(
       this,
-      c.cyan(
+      c.grey(
         `Use argument --excludeusers or .sfdx-hardis.yml property monitoringExcludeUsernames to exclude more users`
       )
     );

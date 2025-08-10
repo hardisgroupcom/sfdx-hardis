@@ -13,12 +13,34 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class DataExport extends SfCommand<any> {
   public static title = 'Delete data';
 
-  public static description = `Delete records in multiple objects using SFDMU Workspace
-  
-If you need to run this command in production, you need to:
+  public static description = `
+## Command Behavior
 
-- define runnableInProduction in export.json
-- define sfdmuCanModify: YOUR_INSTANCE_URL in config/branches/.sfdx-hardis.YOUR_BRANCH.yml
+**Deletes records in multiple Salesforce objects using an SFDMU (Salesforce Data Migration Utility) workspace.**
+
+This command provides a powerful and controlled way to remove data from your Salesforce orgs based on configurations defined in an SFDMU workspace. It's particularly useful for:
+
+- **Data Cleanup:** Removing test data, obsolete records, or sensitive information.
+- **Environment Reset:** Preparing sandboxes for new development cycles by clearing specific data sets.
+- **Compliance:** Deleting data to meet regulatory requirements.
+
+**Important Considerations for Production Environments:**
+
+If you intend to run this command in a production environment, you must:
+
+- Set \`runnableInProduction\` to \`true\` in your \`export.json\` file within the SFDMU workspace.
+- Define \`sfdmuCanModify: YOUR_INSTANCE_URL\` in your branch-specific configuration file (e.g., \`config/branches/.sfdx-hardis.YOUR_BRANCH.yml\`) to explicitly authorize data modification for that instance.
+
+## Technical explanations
+
+The command's technical implementation relies heavily on the SFDMU plugin:
+
+- **SFDMU Integration:** It leverages the \`sfdmu\` plugin to perform the actual data deletion operations. The command acts as a wrapper, providing an assisted interface for SFDMU execution.
+- **Workspace Selection:** If the SFDMU workspace path is not provided via the \`--path\` flag, it interactively prompts the user to select a data workspace using \`selectDataWorkspace\`.
+- **Org Selection:** It ensures that a target Salesforce org is selected (either via the \`--target-org\` flag or through an interactive prompt using \`promptOrgUsernameDefault\`) to specify where the data deletion will occur.
+- **\`deleteData\` Utility:** The core logic for executing the SFDMU deletion process is encapsulated within the \`deleteData\` utility function, which takes the SFDMU workspace path and the target username as arguments.
+- **Environment Awareness:** It checks the \`isCI\` flag to determine whether to run in an interactive mode (prompting for user input) or a non-interactive mode (relying solely on command-line flags).
+- **Required Plugin:** It explicitly lists \`sfdmu\` as a required plugin, ensuring that the necessary dependency is in place before execution.
 `;
 
   public static examples = ['$ sf hardis:org:data:delete'];
@@ -62,7 +84,7 @@ If you need to run this command in production, you need to:
     // Select org that where records will be imported
     let orgUsername = flags['target-org'].getUsername();
     if (!isCI) {
-      orgUsername = await promptOrgUsernameDefault(this, orgUsername || '', { devHub: false, setDefault: false });
+      orgUsername = await promptOrgUsernameDefault(this, orgUsername || '', { devHub: false, setDefault: false, defaultOrgUsername: flags['target-org']?.getUsername() });
     }
 
     // Export data from org

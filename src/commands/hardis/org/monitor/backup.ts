@@ -498,9 +498,10 @@ If Flow history doc always display a single state, you probably need to update y
     const nbRetrievedItems = await countPackageXmlItems(packageXmlBackUpItemsFile);
     const packageXml = await parsePackageXmlFile(packageXmlBackUpItemsFile);
     uxLog(this, c.cyan(`Run the retrieve command for ${path.basename(packageXmlBackUpItemsFile)}, containing ${nbRetrievedItems} items:`));
-    for (const mdType of Object.keys(packageXml)) {
-      uxLog(this, c.cyan(`- ${mdType} (${packageXml?.[mdType]?.length || 0})`));
-    }
+    const mdTypesString = Object.keys(packageXml).map((mdType) => {
+      return `- ${mdType} (${packageXml?.[mdType]?.length || 0})`;
+    }).join('\n');
+    uxLog(this, c.grey(mdTypesString));
     try {
       await execCommand(
         `sf project retrieve start -x "${packageXmlBackUpItemsFile}" -o ${flags['target-org'].getUsername()} --ignore-conflicts --wait 120`,

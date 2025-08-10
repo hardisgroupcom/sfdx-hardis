@@ -13,7 +13,26 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class CleanRetrieveFolders extends SfCommand<any> {
   public static title = 'Retrieve dashboards, documents and report folders in DX sources';
 
-  public static description = 'Retrieve dashboards, documents and report folders in DX sources. Use -u ORGALIAS';
+  public static description: string = `
+## Command Behavior
+
+**Retrieves specific folders of Dashboards, Documents, Email Templates, and Reports from a Salesforce org into your DX project sources.**
+
+This command is designed to help developers and administrators synchronize their local Salesforce DX project with the latest versions of these folder-based metadata types. It's particularly useful for:
+
+- **Selective Retrieval:** Instead of retrieving all dashboards or reports, it allows you to retrieve specific folders, which can be more efficient for targeted development or backup.
+- **Maintaining Folder Structure:** Ensures that the folder structure of these metadata types is preserved in your local project.
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **Folder Iteration:** It defines a list of folder-based metadata types (\`dashboards\`, \`documents\`, \`email\`, \`reports\`).
+- **File System Check:** For each type, it checks if the corresponding folder exists in \`force-app/main/default/\`.
+- **Recursive Retrieval:** It iterates through subfolders within these main folders. For each subfolder, it constructs and executes a \`sf project retrieve start\` command.
+- **Salesforce CLI Integration:** It uses \`sf project retrieve start -m <MetadataType>:<FolderName>\` to retrieve the content of individual folders. This ensures that only the specified folder and its contents are retrieved.
+- **Error Handling:** It includes basic error handling for the \`execCommand\` calls.
+`;
 
   public static examples = ['$ sf hardis:project:clean:retrievefolders'];
 

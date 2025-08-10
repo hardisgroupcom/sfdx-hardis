@@ -3,52 +3,38 @@
 
 ## Description
 
-Create local override files for AI prompt templates and variables
 
-This command creates a folder config/prompt-templates/ and copies all the default AI prompt templates and variables as .txt files that can be customized.
+## Command Behavior
 
-The templates are used by sfdx-hardis for:
-- Generating documentation with AI
-- Solving deployment errors
-- Describing Salesforce metadata
+**Creates local override files for AI prompt templates and variables, allowing for customization of sfdx-hardis AI interactions.**
 
-The variables contain common instruction patterns that are reused across multiple templates, such as:
-- Role definitions (business analyst, developer, etc.)
-- Formatting requirements for markdown output
-- Security caution instructions
-- Output format specifications
+This command sets up a `config/prompt-templates/` folder within your project. It populates this folder with `.txt` files containing the default AI prompt templates and variables used by sfdx-hardis. This enables you to tailor the AI's behavior and responses to your organization's specific needs, terminology, and coding standards.
 
-You can customize these prompts and variables to match your organization's specific needs and terminology.
+Key functionalities:
 
-After running this command, you can modify any of the .txt files in config/prompt-templates/ to override the default prompts and variables.
+- **Template Customization:** Modify templates used for generating documentation, solving deployment errors, and describing Salesforce metadata.
+- **Variable Customization:** Adjust common instruction patterns (e.g., role definitions, formatting requirements, security cautions) that are reused across multiple templates.
+- **Persistent Overrides:** Once created, these local files will override the default sfdx-hardis templates and variables, and they will not be overwritten by future sfdx-hardis updates unless explicitly requested with the `--overwrite` flag.
 
-**Important**: Once created, existing template and variable files will never be overwritten with newer versions from sfdx-hardis updates, unless you explicitly use the --overwrite flag. This ensures your customizations are preserved.
+**Important:** After running this command, you can modify any of the `.txt` files in `config/prompt-templates/` to customize the AI's behavior.
 
 Available templates:
-- PROMPT_SOLVE_DEPLOYMENT_ERROR
-- PROMPT_DESCRIBE_FLOW
-- PROMPT_DESCRIBE_FLOW_DIFF
-- PROMPT_DESCRIBE_OBJECT
-- PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD
-- PROMPT_DESCRIBE_APEX
-- PROMPT_DESCRIBE_PAGE
-- PROMPT_DESCRIBE_PACKAGE
-- PROMPT_DESCRIBE_PROFILE
-- PROMPT_DESCRIBE_PERMISSION_SET
-- PROMPT_DESCRIBE_PERMISSION_SET_GROUP
-- PROMPT_DESCRIBE_ASSIGNMENT_RULES
-- PROMPT_DESCRIBE_APPROVAL_PROCESS
-- PROMPT_DESCRIBE_LWC
-- PROMPT_DESCRIBE_AUTORESPONSE_RULES
-- PROMPT_DESCRIBE_ESCALATION_RULES
-- PROMPT_DESCRIBE_ROLES
+- PROMPT_SOLVE_DEPLOYMENT_ERROR\n- PROMPT_DESCRIBE_FLOW\n- PROMPT_DESCRIBE_FLOW_DIFF\n- PROMPT_DESCRIBE_OBJECT\n- PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD\n- PROMPT_DESCRIBE_APEX\n- PROMPT_DESCRIBE_PAGE\n- PROMPT_DESCRIBE_PACKAGE\n- PROMPT_DESCRIBE_PROFILE\n- PROMPT_DESCRIBE_PERMISSION_SET\n- PROMPT_DESCRIBE_PERMISSION_SET_GROUP\n- PROMPT_DESCRIBE_ASSIGNMENT_RULES\n- PROMPT_DESCRIBE_APPROVAL_PROCESS\n- PROMPT_DESCRIBE_LWC\n- PROMPT_DESCRIBE_AUTORESPONSE_RULES\n- PROMPT_DESCRIBE_ESCALATION_RULES\n- PROMPT_DESCRIBE_ROLES
 
 Available variables:
-- VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC
-- VARIABLE_FORMATTING_REQUIREMENTS
-- VARIABLE_ADDITIONAL_INSTRUCTIONS
+- VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC\n- VARIABLE_FORMATTING_REQUIREMENTS\n- VARIABLE_ADDITIONAL_INSTRUCTIONS
 
 More info on [AI Prompts documentation](https://sfdx-hardis.cloudity.com/salesforce-ai-prompts/)
+
+## Technical explanations
+
+The command's technical implementation involves:
+
+- **Directory Creation:** Ensures the `config/prompt-templates/` directory exists using `fs.ensureDirSync()`.
+- **File Copying:** Iterates through predefined `PROMPT_TEMPLATES` and `PROMPT_VARIABLES` objects. For each template/variable, it extracts the English text content and writes it to a corresponding `.txt` file in the `config/prompt-templates/` directory.
+- **Overwrite Logic:** Checks if a file already exists. If the `--overwrite` flag is provided, it overwrites the existing file; otherwise, it skips the file and logs a message.
+- **User Feedback:** Provides detailed logs about created, overwritten, and skipped files, along with instructions on how to use the customized prompts and variables.
+- **Dynamic Content:** The description itself dynamically lists available templates and variables by iterating over `PROMPT_TEMPLATES` and `PROMPT_VARIABLES` objects.
 
 
 ## Parameters
@@ -65,11 +51,11 @@ More info on [AI Prompts documentation](https://sfdx-hardis.cloudity.com/salesfo
 ## Examples
 
 ```shell
-sf hardis:doc:override-prompts
+$ sf hardis:doc:override-prompts
 ```
 
 ```shell
-sf hardis:doc:override-prompts --overwrite
+$ sf hardis:doc:override-prompts --overwrite
 ```
 
 
