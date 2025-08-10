@@ -14,6 +14,10 @@ let userInput = "ui";
 
 const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
 
+// Define allowed log types and type alias outside the class
+export const LOG_TYPES = ['log', 'action', 'warning', 'error', 'success'] as const;
+export type LogType = typeof LOG_TYPES[number];
+
 export class WebSocketClient {
   private ws: any;
   private wsContext: any;
@@ -95,7 +99,7 @@ export class WebSocketClient {
   }
 
   // Send command log line message
-  static sendCommandLogLineMessage(message: string, logType?: string, isQuestion?: boolean) {
+  static sendCommandLogLineMessage(message: string, logType?: LogType, isQuestion?: boolean) {
     WebSocketClient.sendMessage({
       event: 'commandLogLine',
       logType: logType,

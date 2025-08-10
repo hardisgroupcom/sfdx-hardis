@@ -19,7 +19,7 @@ import { prompts } from './prompts.js';
 import { encryptFile } from '../cryptoUtils.js';
 import { deployMetadatas, shortenLogLines } from './deployUtils.js';
 import { isProductionOrg, promptProfiles, promptUserEmail } from './orgUtils.js';
-import { WebSocketClient } from '../websocketClient.js';
+import { LogType, WebSocketClient } from '../websocketClient.js';
 import moment from 'moment';
 import { writeXmlFile } from './xmlUtils.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
@@ -1168,7 +1168,7 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
       const redAnsi = c.red(' ').split(' ')[0];
       const greenAnsi = c.green(' ').split(' ')[0];
 
-      let logType = 'none';
+      let logType: LogType | null = null;
       let isQuestion = false;
       let textToSend = textInit;
       if (textInit.includes("Look up in VsCode")) {
@@ -1188,7 +1188,7 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
         logType = 'success';
       }
       // Send message to WebSocket client
-      if (logType !== 'none') {
+      if (logType) {
         WebSocketClient.sendCommandLogLineMessage(textToSend, logType, isQuestion);
       }
     }
