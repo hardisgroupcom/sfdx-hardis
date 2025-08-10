@@ -2,7 +2,9 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
+import c from "chalk";
 import { makeSureOrgIsConnected, promptOrg } from '../../../common/utils/orgUtils.js';
+import { uxLog } from '../../../common/utils/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -80,7 +82,10 @@ The command's technical implementation involves:
     const org = await promptOrg(this, { devHub: devHub, setDefault: true, scratch: scratch });
 
     // If the org is not connected, ask the user to authenticate again
+    uxLog(this, c.cyan(`Checking that user ${org.username} is connected on org ${org.instanceUrl}...`));
     await makeSureOrgIsConnected(org.username);
+
+    uxLog(this, c.cyan(`Your default org is now ${org.instanceUrl} (${org.username})`));
 
     // Return an object to be displayed with --json
     return { outputString: `Selected org ${org.username}` };
