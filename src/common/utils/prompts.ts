@@ -74,7 +74,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
   // Stop script if requested
   for (const answer of Object.keys(answers)) {
     if (answers[answer] === "exitNow") {
-      uxLog(this, "Script stopped by user request");
+      uxLog(this, c.red("Script terminated at user request"));
       // Send close client message with aborted status if WebSocket is alive
       if (WebSocketClient.isAlive()) {
         WebSocketClient.sendCloseClientMessage("aborted");

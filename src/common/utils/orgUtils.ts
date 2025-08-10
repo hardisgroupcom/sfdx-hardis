@@ -125,6 +125,11 @@ export async function promptOrg(
   const defaultOrgUsername = options.defaultOrgUsername || ''
   const orgListResult = await MetadataUtils.listLocalOrgs(options.devSandbox === true ? 'sandbox' : 'any', { quickOrgList: options.quickOrgList });
   let orgList = [
+    {
+      username: '🌍 Login to another org',
+      otherOrg: true,
+      descriptionForUi: 'Connect in Web Browser to a Sandbox, a Production Org, a Dev Org or a Scratch Org',
+    },
     ...sortArray(orgListResult?.scratchOrgs || [], {
       by: ['instanceUrl', 'devHubUsername', 'username', 'alias'],
       order: ['asc', 'asc', 'asc'],
@@ -133,11 +138,6 @@ export async function promptOrg(
       by: ['instanceUrl', 'username', 'alias',],
       order: ['asc', 'asc', 'asc'],
     }),
-    {
-      username: '🌍 Connect to another org',
-      otherOrg: true,
-      descriptionForUi: 'Connect in Web Browser to a Sandbox, a Production Org, a Dev Org or a Scratch Org',
-    },
     {
       username: "😱 I already authenticated my org but I don't see it !",
       clearCache: true,
