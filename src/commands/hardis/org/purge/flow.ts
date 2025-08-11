@@ -3,8 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import columnify from 'columnify';
-import { execSfdxJson, extractRegexMatches, isCI, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, extractRegexMatches, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkDelete, bulkDeleteTooling, bulkQuery } from '../../../../common/utils/apiUtils.js';
 
@@ -159,9 +158,12 @@ The command's technical implementation involves:
 
     const summary =
       this.deletedRecords.length > 0
-        ? `[sfdx-hardis] Deleted the following list of record(s):\n${columnify(this.deletedRecords)}`
-        : '[sfdx-hardis] No record(s) to delete';
-    uxLog(this, c.green(summary));
+        ? `Deleted the following list of record(s)`
+        : 'No record(s) to delete';
+    uxLog(this, c.cyan(summary));
+    if (this.deletedRecords.length > 0) {
+      uxLogTable(this, this.deletedRecords);
+    }
     // Return an object to be displayed with --json
     return { orgId: flags['target-org'].getOrgId(), outputString: summary };
   }

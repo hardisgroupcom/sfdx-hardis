@@ -2,10 +2,11 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
 import sortArray from 'sort-array';
-import { catchMatches, generateReports, uxLog } from '../../../../common/utils/index.js';
+import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -144,7 +145,8 @@ The command's technical implementation involves:
 
     // Display as table
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
-    console.table(
+    uxLog(this, c.cyan(`Found ${c.bold(resultsLight.length)} call-ins and call-outs.`));
+    uxLogTable(this,
       resultsLight.map((item: any) => {
         delete item.detail;
         return item;

@@ -3,9 +3,8 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import columnify from 'columnify';
 import sortArray from 'sort-array';
-import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkQuery, bulkUpdate, soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { promptProfiles } from '../../../../common/utils/orgUtils.js';
@@ -148,13 +147,14 @@ See article below
     });
     const bulkUpdateRes = await bulkUpdate('User', 'update', userToActivateUpdated, conn);
 
-    uxLog(
+    uxLog(this, c.cyan(`Results of the reactivation of ${userToActivateUpdated.length} users by removing the .invalid from their email`));
+    uxLogTable(
       this,
-      '\n' +
-      c.white(
-        columnify(this.debugMode ? userToActivateUpdated : userToActivateUpdated.slice(0, this.maxUsersDisplay))
-      )
+      this.debugMode ? userToActivateUpdated : userToActivateUpdated.slice(0, this.maxUsersDisplay)
     );
+    if (!this.debugMode && userToActivateUpdated.length > this.maxUsersDisplay) {
+      uxLog(this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
+    }
 
     const activateSuccessNb = bulkUpdateRes.successfulResults.length;
     const activateErrorNb = bulkUpdateRes.failedResults.length;

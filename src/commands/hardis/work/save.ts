@@ -29,6 +29,7 @@ import { WebSocketClient } from '../../../common/websocketClient.js';
 import { CONSTANTS, getApiVersion, getConfig, setConfig } from '../../../config/index.js';
 import CleanReferences from '../project/clean/references.js';
 import CleanXml from '../project/clean/xml.js';
+import { GitProvider } from '../../../common/gitProvider/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -39,7 +40,7 @@ export default class SaveTask extends SfCommand<any> {
   public static description = `
 ## Command Behavior
 
-**Guides the user through the process of saving their work, preparing it for a merge request, and pushing changes to the remote Git repository.**
+**Guides the user through the process of saving their work, preparing it for a Merge Request (also named Pull Request), and pushing changes to the remote Git repository.**
 
 This command automates several critical steps involved in finalizing a development task and integrating it into the main codebase. It ensures that your local changes are properly synchronized, cleaned, and committed before being pushed.
 
@@ -159,7 +160,7 @@ The command's technical implementation involves a series of orchestrated steps:
     const localBranch = (await getCurrentGitBranch()) || '';
 
     // Define current and target branches
-    this.gitUrl = await git().listRemote(['--get-url']);
+    this.gitUrl = (await git().listRemote(['--get-url']))?.trim() || '';
     this.currentBranch = (await getCurrentGitBranch()) || '';
     if (this.targetBranch == null) {
       const userConfig = await getConfig('user');
@@ -169,14 +170,14 @@ The command's technical implementation involves a series of orchestrated steps:
     }
     if (this.targetBranch == null) {
       this.targetBranch = await selectTargetBranch({
-        message: 'Please select the target branch of your Merge Request',
+        message: `Please select the target branch of your ${GitProvider.getMergeRequestName(this.gitUrl)}`,
       });
     }
     // User log info
     uxLog(
       this,
       c.cyan(
-        `This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(
+        `This script will prepare the ${GitProvider.getMergeRequestName(this.gitUrl)} from your local branch ${c.green(localBranch)} to remote ${c.green(
           this.targetBranch
         )}`
       )
@@ -199,15 +200,21 @@ The command's technical implementation involves a series of orchestrated steps:
     await this.manageCommitPush(gitStatusWithConfig, gitStatusAfterDeployPlan);
 
 
+    const mergeRequestUrl = GitProvider.getMergeRequestCreateUrl(this.gitUrl, this.targetBranch || '', this.currentBranch);
+
     // Merge request
-    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold('merge request')}`));
+    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold(GitProvider.getMergeRequestName(this.gitUrl))}`));
+    if (mergeRequestUrl) {
+      uxLog(this, c.grey(`New ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}`));
+      WebSocketClient.sendReportFileMessage(mergeRequestUrl, `Create ${GitProvider.getMergeRequestName(this.gitUrl)}`, 'actionUrl');
+    }
     uxLog(this, c.grey(`Repository: ${c.green(this.gitUrl.replace('.git', ''))}`));
     uxLog(this, c.grey(`Source branch: ${c.green(this.currentBranch)}`));
     uxLog(this, c.grey(`Target branch: ${c.green(this.targetBranch)}`));
-    uxLog(this, `${c.yellow('When your Merge Request will have been merged:')}
+    uxLog(this, `${c.yellow(`When your ${GitProvider.getMergeRequestName(this.gitUrl)} will have been merged:`)}
 - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
 - Use New task menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`);
-    uxLog(this, c.grey(`Merge request documentation is available here -> ${c.bold(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`)}`));
+    uxLog(this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`)}`));
 
     // Return an object to be displayed with --json
     return { outputString: 'Saved the task' };

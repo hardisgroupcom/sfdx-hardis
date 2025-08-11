@@ -12,7 +12,7 @@ import fs from 'fs-extra';
 import { AnyJson } from '@salesforce/ts-types';
 
 // Common Utilities
-import { isCI, uxLog } from '../../../common/utils/index.js';
+import { isCI, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { parseXmlFile, writeXmlFile } from '../../../common/utils/xmlUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
@@ -474,8 +474,8 @@ The command's technical implementation involves:
 
     //we create an object to have a custom header in the table
     if (!this.hasToDisplayJsonOnly) {
-      uxLog(this, c.red(LintAccess.messages.someElementsDontHaveRights));
-      console.table(remainingElementsTable);
+      uxLog(this, c.cyan(LintAccess.messages.someElementsDontHaveRights));
+      uxLogTable(this, remainingElementsTable);
     }
 
     return remainingElements;

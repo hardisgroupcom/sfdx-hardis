@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { sortCrossPlatform, uxLog } from '../../../../common/utils/index.js';
+import { sortCrossPlatform, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { NotifProvider } from '../../../../common/notifProvider/index.js';
@@ -143,8 +143,9 @@ The command's technical implementation involves:
     this.licenses.push(...pslLicenses);
 
     sortCrossPlatform(usedLicenses);
-    console.table(this.licenses);
     uxLog(this, c.cyan('Used licenses: ' + usedLicenses.join(', ')));
+    uxLogTable(this, this.licenses);
+
 
     // Generate output CSV file
     this.outputFile = await generateReportPath('licenses', this.outputFile);

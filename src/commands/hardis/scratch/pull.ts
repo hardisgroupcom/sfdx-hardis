@@ -6,6 +6,7 @@ import { forceSourcePull } from '../../../common/utils/deployUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
 import c from "chalk";
 import { CONSTANTS } from '../../../config/index.js';
+import { WebSocketClient } from '../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -81,6 +82,8 @@ The command's technical implementation focuses on robust metadata synchronizatio
     await forceSourcePull(targetUsername, debugMode);
 
     uxLog(this, c.yellow(`If you don't see your updated items in the results, check the following documentation: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas`));
+
+    WebSocketClient.sendReportFileMessage("workbench.view.scm", "Commit your retrieved files", "actionCommand");
 
     // Return an object to be displayed with --json
     return { outputString: 'Pulled scratch org / source-tracked sandbox updates' };

@@ -2,8 +2,9 @@ import { requiredOrgFlagWithDeprecations, SfCommand } from '@salesforce/sf-plugi
 import { Flags } from '@salesforce/sf-plugins-core';
 import { Connection } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
 import sortArray from 'sort-array';
-import { generateReports, uxLog } from '../../../common/utils/index.js';
+import { generateReports, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../../../common/utils/apiUtils.js';
 
 export default class HardisDocFieldusage extends SfCommand<any> {
@@ -178,7 +179,8 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
       order: ['asc', 'asc', 'asc'],
     });
 
-    console.table(rows);
+    uxLog(this, c.cyan(`Found ${resultSorted.length} custom fields usage records.`));
+    uxLogTable(this, rows);
 
     const reportFiles = await generateReports(resultSorted, columns, this, {
       logFileName: 'fields-usage',
