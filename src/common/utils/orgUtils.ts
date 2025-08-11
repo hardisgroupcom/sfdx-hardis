@@ -171,7 +171,7 @@ export async function promptOrg(
       const description = `Connected with ${org.username || org.alias || 'unknown user'} ` +
         (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '');
       return {
-        title: title,
+        title: title.replace("https://", ""),
         description: org.descriptionForUi ? org.descriptionForUi : description || '-',
         value: org,
       };

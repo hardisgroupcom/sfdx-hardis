@@ -96,15 +96,24 @@ The command's technical implementation involves:
     await this.promptImportInScratchOrgs(sfdmuProjectFolder);
 
     // Set bac initial cwd
+    const sfdmuBaseDoc = "https://help.sfdmu.com/configuration";
+    const sfdmuExternalIdsDoc = "https://help.sfdmu.com/full-documentation/advanced-features/composite-external-id-keys";
     const message = c.cyan(`Successfully initialized sfdmu project ${c.green(sfdmuProjectFolder)}, with ${c.green(
       'export.json'
     )} file.`);
     uxLog(this, message);
-    uxLog(this, c.grey("You can now configure it using SFDMU documentation: https://help.sfdmu.com/plugin-basics/basic-usage/minimal-configuration"));
-    uxLog(this, c.grey("If you don't have unique field to identify an object, use composite external ids: https://help.sfdmu.com/full-documentation/advanced-features/composite-external-id-keys"));
+    uxLog(this, c.grey(`You can now configure it using SFDMU documentation: ${c.yellow(sfdmuBaseDoc)}`));
+    uxLog(this, c.grey(`If you don't have unique field to identify an object, use composite external ids: ${c.yellow(sfdmuExternalIdsDoc)}`));
 
     // Trigger command to open SFDMU config file in VsCode extension
-    WebSocketClient.requestOpenFile(exportJsonFile);
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      WebSocketClient.sendReportFileMessage(exportJsonFile, 'Edit your SFDMU export.json file', 'report');
+      WebSocketClient.sendReportFileMessage(sfdmuBaseDoc, 'SFDMU documentation (Basic)', 'docUrl');
+      WebSocketClient.sendReportFileMessage(sfdmuExternalIdsDoc, 'SFDMU documentation (External Ids)', 'docUrl');
+    }
+    else {
+      WebSocketClient.requestOpenFile(exportJsonFile);
+    }
 
     return { outputString: message };
   }
@@ -119,13 +128,18 @@ The command's technical implementation involves:
     await fs.ensureDir(sfdmuProjectFolder);
     const exportJsonFile = path.join(sfdmuProjectFolder, 'export.json');
     await fs.writeFile(exportJsonFile, JSON.stringify(this.sfdmuConfig, null, 2));
-    uxLog(this, 'Generated SFDMU config file ' + exportJsonFile);
+    uxLog(this, c.cyan('Generated SFDMU config file ' + exportJsonFile));
 
     for (const additionalFile of this.additionalFiles) {
       const additionalFileFull = path.join(sfdmuProjectFolder, additionalFile.path);
       await fs.writeFile(additionalFileFull, additionalFile.text);
       uxLog(this, c.cyan(additionalFile.message + ': ') + c.yellow(additionalFileFull));
-      WebSocketClient.requestOpenFile(additionalFileFull);
+      if (WebSocketClient.isAliveWithLwcUI()) {
+        WebSocketClient.sendReportFileMessage(additionalFileFull, additionalFile.message, 'report');
+      }
+      else {
+        WebSocketClient.requestOpenFile(additionalFileFull);
+      }
     }
     return { exportJsonFile, sfdmuProjectFolder };
   }
