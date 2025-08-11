@@ -5,6 +5,7 @@ import { isCI, uxLog } from './utils/index.js';
 import { SfError } from '@salesforce/core';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { CONSTANTS } from '../config/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -172,7 +173,7 @@ export class WebSocketClient {
       const command = this.wsContext.command;
       // Convert command format like "hardis:doc:flow2markdown" to URL path
       const urlPath = command.replace(/:/g, '/');
-      return `https://sfdx-hardis.cloudity.com/${urlPath}/`;
+      return `${CONSTANTS.DOC_URL_ROOT}/${urlPath}/`;
     }
     // Return undefined if no specific command
     return undefined;

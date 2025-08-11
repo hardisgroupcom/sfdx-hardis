@@ -44,7 +44,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
       question.name = "value";
     }
     // Add exit option when possible
-    if (question.type === "select") {
+    if (question.type === "select" && !WebSocketClient.isAliveWithLwcUI()) {
       question.choices = question.choices || [];
       question.choices.push({ title: "⛔ Exit this script", value: "exitNow" });
     }

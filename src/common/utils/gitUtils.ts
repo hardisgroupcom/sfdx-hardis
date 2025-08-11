@@ -23,6 +23,8 @@ import { MessageAttachment } from '@slack/types';
 import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from './notifUtils.js';
 import { NotifProvider, UtilsNotifs } from '../notifProvider/index.js';
 import { setConnectionVariables } from './orgUtils.js';
+import { WebSocketClient } from '../websocketClient.js';
+import { countPackageXmlItems } from './xmlUtils.js';
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const message =
@@ -65,10 +67,8 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
   } catch (e) {
     uxLog(
       this,
-      c.gray(
-        `[Warning] Unable to fetch target branch ${targetBranch} to prepare call to sfdx-git-delta\n` +
-        JSON.stringify(e)
-      )
+      `[Warning] Unable to fetch target branch ${targetBranch} to prepare call to sfdx-git-delta\n` +
+      JSON.stringify(e)
     );
   }
   try {
@@ -76,10 +76,8 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
   } catch (e) {
     uxLog(
       this,
-      c.gray(
-        `[Warning] Unable to fetch current branch ${currentBranch} to prepare call to sfdx-git-delta\n` +
-        JSON.stringify(e)
-      )
+      `[Warning] Unable to fetch current branch ${currentBranch} to prepare call to sfdx-git-delta\n` +
+      JSON.stringify(e)
     );
   }
   const logResult = await git().log([`${targetBranch}..${currentBranch}`]);
@@ -100,6 +98,25 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
     debug: options?.debugMode || false,
     cwd: await getGitRepoRoot(),
   });
+  // Send results to UI if there is one
+  if (WebSocketClient.isAliveWithLwcUI()) {
+    const deltaPackageXml = path.join(outputDir, 'package', 'package.xml');
+    const deltaPackageXmlExists = await fs.exists(deltaPackageXml);
+    if (deltaPackageXmlExists) {
+      const deltaNumberOfItems = await countPackageXmlItems(deltaPackageXml);
+      if (deltaNumberOfItems > 0) {
+        WebSocketClient.sendReportFileMessage(deltaPackageXml, `Git Delta package.xml (${deltaNumberOfItems})`, "report");
+      }
+    }
+    const deltaDestructiveChangesXml = path.join(outputDir, 'destructiveChanges', 'destructiveChanges.xml');
+    const deltaDestructiveChangesXmlExists = await fs.exists(deltaDestructiveChangesXml);
+    if (deltaDestructiveChangesXmlExists) {
+      const deltaDestructiveChangesNumberOfItems = await countPackageXmlItems(deltaDestructiveChangesXml);
+      if (deltaDestructiveChangesNumberOfItems > 0) {
+        WebSocketClient.sendReportFileMessage(deltaDestructiveChangesXml, `Git Delta destructiveChanges.xml (${deltaDestructiveChangesNumberOfItems})`, "report");
+      }
+    }
+  }
   return gitDeltaCommandRes;
 }
 

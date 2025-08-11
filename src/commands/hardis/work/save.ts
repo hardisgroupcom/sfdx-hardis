@@ -203,7 +203,7 @@ The command's technical implementation involves a series of orchestrated steps:
     const mergeRequestUrl = GitProvider.getMergeRequestCreateUrl(this.gitUrl, this.targetBranch || '', this.currentBranch);
 
     // Merge request
-    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold(GitProvider.getMergeRequestName(this.gitUrl))}`));
+    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold(GitProvider.getMergeRequestName(this.gitUrl))}, otherwise you can push new commits on ${c.green(this.currentBranch)} branch.`));
     if (mergeRequestUrl) {
       uxLog(this, c.grey(`New ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}`));
       WebSocketClient.sendReportFileMessage(mergeRequestUrl, `Create ${GitProvider.getMergeRequestName(this.gitUrl)}`, 'actionUrl');
@@ -319,7 +319,7 @@ The command's technical implementation involves a series of orchestrated steps:
   }
 
   private async upgradePackageXmlFilesWithDelta() {
-    uxLog(this, c.cyan('Updating package.xml files using sfdx-git-delta...'));
+    uxLog(this, c.cyan('Updating manifest/package.xml and manifest/destructiveChanges.xml using sfdx-git-delta...'));
     // Retrieving info about current branch latest commit and master branch latest commit
     const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch || '');
 
@@ -356,7 +356,7 @@ The command's technical implementation involves a series of orchestrated steps:
       const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
       uxLog(
         this,
-        c.bold(c.grey(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
+        c.grey(c.bold(`Delta destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
         c.red(destructivePackageXmlDiffStr)
       );
       await appendPackageXmlFilesContent(
@@ -372,7 +372,7 @@ The command's technical implementation involves a series of orchestrated steps:
       const packageXmlDiffStr = await fs.readFile(diffPackageXml, 'utf8');
       uxLog(
         this,
-        c.bold(c.cyan(`package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) +
+        c.grey(c.bold(`Delta package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) +
         c.green(packageXmlDiffStr)
       );
       await appendPackageXmlFilesContent([localPackageXml, diffPackageXml], localPackageXml);
@@ -397,7 +397,7 @@ The command's technical implementation involves a series of orchestrated steps:
     // Commit updates
     let gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0 && !this.noGit) {
-      uxLog(this, `Committing files in local git branch ${c.green(this.currentBranch)}...`);
+      uxLog(this, c.grey(`Committing updated files in local git branch ${c.green(this.currentBranch)}...`));
       try {
         await git({ output: true }).commit('[sfdx-hardis] Update package content');
       } catch (e) {
@@ -422,8 +422,6 @@ The command's technical implementation involves a series of orchestrated steps:
       const gitStatusFilesBeforeClean = (await git().status()).files.map((file) => file.path);
       uxLog(this, JSON.stringify(gitStatusFilesBeforeClean, null, 2));
       // References cleaning
-      uxLog(this, c.cyan('Applying automated cleaning of the sfdx sources (can create new commits)'));
-      // User defined cleaning
       await CleanReferences.run(['--type', 'all']);
       if (globalThis?.displayProfilesWarning === true) {
         uxLog(
@@ -432,7 +430,7 @@ The command's technical implementation involves a series of orchestrated steps:
         );
       }
 
-      uxLog(this, c.grey('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
+      uxLog(this, c.cyan('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
       await CleanXml.run([]);
       // Manage git after cleaning
       const gitStatusAfterClean = await git().status();
