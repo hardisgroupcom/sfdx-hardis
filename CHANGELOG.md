@@ -4,7 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [6.0.0] 2025-09-08
+## [6.0.1 (beta)] 2025-08-11
+
+- Send messages to VsCode to enhance buttons and links
+- Send messages to VsCode to display tables
+- Unify the way to handle table display in all commands formerly using console.table or columnify
+
+## [6.0.0 (beta)] 2025-08-09
 
 - Implement advanced websocket messaging for vscode sfdx-hardis LWC UI
 - Refactor logging within commands for better display on vscode sfdx-hardis LWC UI
