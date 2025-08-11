@@ -1231,7 +1231,17 @@ export function uxLogTable(commandThis: any, tableData: any[]) {
   uxLog(commandThis, c.italic("\n" + tableString));
   // Send table to WebSocket client
   if (WebSocketClient.isAliveWithLwcUI()) {
-    WebSocketClient.sendCommandLogLineMessage(JSON.stringify(tableData), 'table')
+    const maxLen = 20;
+    let sendRows = tableData;
+    if (tableData.length > maxLen) {
+      sendRows = tableData.slice(0, maxLen);
+      sendRows.push({
+        sfdxHardisTruncatedMessage: `Truncated to the first ${maxLen} lines on ${tableData.length} total lines, see full report for more details.`,
+        returnedNumber: maxLen,
+        totalNumber: tableData.length
+      });
+    }
+    WebSocketClient.sendCommandLogLineMessage(JSON.stringify(sendRows), 'table');
   }
 
 }
