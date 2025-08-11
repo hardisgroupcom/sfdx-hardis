@@ -35,14 +35,14 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class SaveTask extends SfCommand<any> {
-  public static title = 'Save work task';
+  public static title = 'Save User Story';
 
   public static description = `
 ## Command Behavior
 
 **Guides the user through the process of saving their work, preparing it for a Merge Request (also named Pull Request), and pushing changes to the remote Git repository.**
 
-This command automates several critical steps involved in finalizing a development task and integrating it into the main codebase. It ensures that your local changes are properly synchronized, cleaned, and committed before being pushed.
+This command automates several critical steps involved in finalizing a development User Story and integrating it into the main codebase. It ensures that your local changes are properly synchronized, cleaned, and committed before being pushed.
 
 Key functionalities include:
 
@@ -77,7 +77,7 @@ autoRemoveUserPermissions:
   - WorkCalibrationUser
 \`\`\`
 
-Advanced instructions are available in the [Publish a task documentation]($\{CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/).
+Advanced instructions are available in the [Publish a User Story documentation]($\{CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/).
 
 ## Technical explanations
 
@@ -203,7 +203,7 @@ The command's technical implementation involves a series of orchestrated steps:
     const mergeRequestUrl = GitProvider.getMergeRequestCreateUrl(this.gitUrl, this.targetBranch || '', this.currentBranch);
 
     // Merge request
-    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold(GitProvider.getMergeRequestName(this.gitUrl))}`));
+    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold(GitProvider.getMergeRequestName(this.gitUrl))}, otherwise you can push new commits on ${c.green(this.currentBranch)} branch.`));
     if (mergeRequestUrl) {
       uxLog(this, c.grey(`New ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}`));
       WebSocketClient.sendReportFileMessage(mergeRequestUrl, `Create ${GitProvider.getMergeRequestName(this.gitUrl)}`, 'actionUrl');
@@ -213,11 +213,11 @@ The command's technical implementation involves a series of orchestrated steps:
     uxLog(this, c.grey(`Target branch: ${c.green(this.targetBranch)}`));
     uxLog(this, `${c.yellow(`When your ${GitProvider.getMergeRequestName(this.gitUrl)} will have been merged:`)}
 - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
-- Use New task menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`);
+- Use New User Story menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`);
     uxLog(this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`)}`));
 
     // Return an object to be displayed with --json
-    return { outputString: 'Saved the task' };
+    return { outputString: 'Saved the User Story' };
   }
 
   // Clean git status
@@ -319,7 +319,7 @@ The command's technical implementation involves a series of orchestrated steps:
   }
 
   private async upgradePackageXmlFilesWithDelta() {
-    uxLog(this, c.cyan('Updating package.xml files using sfdx-git-delta...'));
+    uxLog(this, c.cyan('Updating manifest/package.xml and manifest/destructiveChanges.xml using sfdx-git-delta...'));
     // Retrieving info about current branch latest commit and master branch latest commit
     const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch || '');
 
@@ -356,7 +356,7 @@ The command's technical implementation involves a series of orchestrated steps:
       const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
       uxLog(
         this,
-        c.bold(c.grey(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
+        c.grey(c.bold(`Delta destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
         c.red(destructivePackageXmlDiffStr)
       );
       await appendPackageXmlFilesContent(
@@ -372,7 +372,7 @@ The command's technical implementation involves a series of orchestrated steps:
       const packageXmlDiffStr = await fs.readFile(diffPackageXml, 'utf8');
       uxLog(
         this,
-        c.bold(c.cyan(`package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) +
+        c.grey(c.bold(`Delta package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) +
         c.green(packageXmlDiffStr)
       );
       await appendPackageXmlFilesContent([localPackageXml, diffPackageXml], localPackageXml);
@@ -397,7 +397,7 @@ The command's technical implementation involves a series of orchestrated steps:
     // Commit updates
     let gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0 && !this.noGit) {
-      uxLog(this, `Committing files in local git branch ${c.green(this.currentBranch)}...`);
+      uxLog(this, c.grey(`Committing updated files in local git branch ${c.green(this.currentBranch)}...`));
       try {
         await git({ output: true }).commit('[sfdx-hardis] Update package content');
       } catch (e) {
@@ -422,8 +422,6 @@ The command's technical implementation involves a series of orchestrated steps:
       const gitStatusFilesBeforeClean = (await git().status()).files.map((file) => file.path);
       uxLog(this, JSON.stringify(gitStatusFilesBeforeClean, null, 2));
       // References cleaning
-      uxLog(this, c.cyan('Applying automated cleaning of the sfdx sources (can create new commits)'));
-      // User defined cleaning
       await CleanReferences.run(['--type', 'all']);
       if (globalThis?.displayProfilesWarning === true) {
         uxLog(
@@ -432,7 +430,7 @@ The command's technical implementation involves a series of orchestrated steps:
         );
       }
 
-      uxLog(this, c.grey('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
+      uxLog(this, c.cyan('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
       await CleanXml.run([]);
       // Manage git after cleaning
       const gitStatusAfterClean = await git().status();

@@ -19,6 +19,7 @@ import {
   replaceJsonInString,
   sortCrossPlatform,
   uxLog,
+  uxLogTable,
 } from './index.js';
 import { getApiVersion, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
@@ -95,14 +96,25 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
     });
     // Parse json in stdout and if json.result.status and json.result.files, create a list of files with "type" + "file name", then order it, then display it in logs
     if (pullCommandResult && pullCommandResult.result && pullCommandResult.result.status === 'Succeeded' && pullCommandResult.result.files) {
+      // Build an array of objects for table display
       const files = pullCommandResult.result.files
         .filter((file: any) => file?.state !== "Failed")
-        .map((file: any) => {
-          return `- ${file.type} ${file.fullName}`;
-        });
-      sortCrossPlatform(files);
+        .map((file: any) => ({
+          Type: file.type,
+          Name: file.fullName,
+          State: file.state,
+          Path: file.filePath || ''
+        }));
+      // Sort files by Type then Name
+      sortArray(files, { by: ['Type', 'Name'], order: ['asc', 'asc'] });
       uxLog(this, c.green('Successfully pulled sources from scratch org / source-tracked sandbox'));
-      uxLog(this, c.grey(files.join('\n')));
+      // Display as a table
+      if (files.length > 0) {
+        // Use the uxLogTable utility for consistent table output
+        uxLogTable(this, files, ['Type', 'Name', 'State']);
+      } else {
+        uxLog(this, c.grey('No files pulled.'));
+      }
     } else {
       uxLog(this, c.red('Pull command did not return expected results'));
     }

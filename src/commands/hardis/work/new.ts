@@ -34,31 +34,31 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class NewTask extends SfCommand<any> {
-  public static title = 'New work task';
+  public static title = 'New User Story';
 
   public static description = `
 ## Command Behavior
 
-**Assisted menu to start working on a Salesforce task, streamlining the setup of your development environment.**
+**Assisted menu to start working on a Salesforce User Story, streamlining the setup of your development environment.**
 
-This command guides you through the process of preparing your local environment and a Salesforce org for a new development or configuration task. It automates several steps, ensuring consistency and adherence to project standards.
+This command guides you through the process of preparing your local environment and a Salesforce org for a new development or configuration based User Story. It automates several steps, ensuring consistency and adherence to project standards.
 
 Key features include:
 
-- **Git Branch Management:** Ensures your local Git repository is up-to-date with the target branch and creates a new Git branch with a formatted name based on your task details. Branch naming conventions can be customized via the \`branchPrefixChoices\` property in \`.sfdx-hardis.yml\`.
+- **Git Branch Management:** Ensures your local Git repository is up-to-date with the target branch and creates a new Git branch with a formatted name based on your User Story details. Branch naming conventions can be customized via the \`branchPrefixChoices\` property in \`.sfdx-hardis.yml\`.
 - **Org Provisioning & Initialization:** Facilitates the creation and initialization of either a scratch org or a source-tracked sandbox. The configuration for org initialization (e.g., package installation, source push, permission set assignments, Apex script execution, data loading) can be defined in \`config/.sfdx-hardis.yml\
-- **Project-Specific Configuration:** Supports defining multiple target branches (\`availableTargetBranches\`) and projects (\`availableProjects\`) in \`.sfdx-hardis.yml\`, allowing for tailored task workflows.
-- **Task Name Validation:** Enforces task name formatting using \`newTaskNameRegex\` and provides examples via \`newTaskNameRegexExample\
+- **Project-Specific Configuration:** Supports defining multiple target branches (\`availableTargetBranches\`) and projects (\`availableProjects\`) in \`.sfdx-hardis.yml\`, allowing for tailored User Stories workflows.
+- **User Story Name Validation:** Enforces User Story name formatting using \`newTaskNameRegex\` and provides examples via \`newTaskNameRegexExample\
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
 
-Advanced instructions are available in the [Create New Task documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-create-new-task/).
+Advanced instructions are available in the [Create New User Story documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-create-new-task/).
 
 ## Technical explanations
 
 The command's logic orchestrates various underlying processes:
 
 - **Git Operations:** Utilizes \`checkGitClean\`, \`ensureGitBranch\`, \`gitCheckOutRemote\`, and \`git().pull()\` to manage Git repository state and branches.
-- **Interactive Prompts:** Leverages the \`prompts\` library to gather user input for task type, source types, and task names.
+- **Interactive Prompts:** Leverages the \`prompts\` library to gather user input for User Story type, source types, and User Story names.
 - **Configuration Management:** Reads and applies project-specific configurations from \`.sfdx-hardis.yml\` using \`getConfig\` and \`setConfig\
 - **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including \`initApexScripts\`, \`initOrgData\`, \`initOrgMetadatas\`, \`initPermissionSetAssignments\`, \`installPackages\`, and \`makeSureOrgIsConnected\
 - **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., \`sf config set target-org\`, \`sf org open\`, \`sf project delete tracking\`) via \`execCommand\` and \`execSfdxJson\
@@ -98,7 +98,7 @@ The command's logic orchestrates various underlying processes:
     const { flags } = await this.parse(NewTask);
     this.debugMode = flags.debug || false;
 
-    uxLog(this, c.cyan('This tool will assist you to create a new task (dev or config) with Hardis CI/CD'));
+    uxLog(this, c.cyan('This tool will assist you to create a new User Story (dev or config) with Hardis CI/CD'));
     uxLog(this, c.grey("When you don't know what to answer, you can let the default value and push ENTER"));
 
     // Make sure the git status is clean, to not delete uncommitted updates
@@ -129,7 +129,7 @@ The command's logic orchestrates various underlying processes:
       const projectResponse = await prompts({
         type: 'select',
         name: 'project',
-        message: c.cyanBright('Please select the project your task is for'),
+        message: c.cyanBright('Please select the project your User Story is for'),
         description: 'Choose which project this new work item belongs to',
         placeholder: 'Select a project',
         choices: availableProjects.map((project: string) => {
@@ -147,16 +147,16 @@ The command's logic orchestrates various underlying processes:
       {
         type: 'select',
         name: 'branch',
-        message: c.cyanBright('What is the type of the task you want to do ?'),
-        description: 'Select the category of work that best describes your task',
-        placeholder: 'Select task type',
+        message: c.cyanBright('What is the type of the User Story you want to do ?'),
+        description: 'Select the category of work that best describes your User Story',
+        placeholder: 'Select User Story type',
         initial: 0,
         choices: branchPrefixChoices,
       },
       {
         type: 'select',
         name: 'sources',
-        message: c.cyanBright('What type(s) of Salesforce updates will you have to perform for this task ?'),
+        message: c.cyanBright('What type(s) of Salesforce updates will you implement to perform this User Story ?'),
         description: 'Choose the type of changes you will make to help set up the appropriate development environment',
         placeholder: 'Select update type',
         initial: 0,
@@ -272,7 +272,7 @@ The command's logic orchestrates various underlying processes:
 
     uxLog(this, c.cyan(`You are now ready to work in branch ${c.green(branchName)} :)`));
     // Return an object to be displayed with --json
-    return { outputString: 'Created new task' };
+    return { outputString: 'Created new User Story' };
   }
 
   async promptTaskName(validationRegex: string | null, taskNameExample: string | null) {
@@ -283,9 +283,9 @@ The command's logic orchestrates various underlying processes:
       type: 'text',
       name: 'taskName',
       message: c.cyanBright(
-        `What is the name of your new task ? Please avoid accents or special characters`
+        `What is the name of your new User Story ? Please avoid accents or special characters`
       ),
-      description: 'Enter a descriptive name for your task that will be used in the git branch name',
+      description: 'Enter a descriptive name for your User Story that will be used in the git branch name',
       placeholder: `Ex: ${taskNameExample}`,
     });
     const taskName = taskResponse.taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-');
@@ -293,7 +293,7 @@ The command's logic orchestrates various underlying processes:
       uxLog(
         this,
         c.yellow(
-          `The task name ${c.bold(taskName)} does not match the expected pattern ${c.bold(validationRegex)}. Please try again`
+          `The User Story name ${c.bold(taskName)} does not match the expected pattern ${c.bold(validationRegex)}. Please try again`
         )
       );
       return this.promptTaskName(validationRegex, taskNameExample);
@@ -415,7 +415,7 @@ The command's logic orchestrates various underlying processes:
           {
             title: '☢️ Yes, please try to update my sandbox !',
             value: 'init',
-            description: `Integrate new updates from the parent branch "${this.targetBranch}" before working on your new task. WARNING: Will overwrite uncommitted changes in your org !`,
+            description: `Integrate new updates from the parent branch "${this.targetBranch}" before working on your new User Story. WARNING: Will overwrite uncommitted changes in your org !`,
           },
         ],
       });
@@ -477,7 +477,7 @@ The command's logic orchestrates various underlying processes:
             c.yellow(`If you really want your sandbox to be up to date with branch ${c.bold(this.targetBranch)}, you may:
   - ${c.bold(
               'Fix the errors'
-            )} (probably by manually updating the target sandbox in setup), then run new task again and select again the same sandbox
+            )} (probably by manually updating the target sandbox in setup), then run "New User Story" again and select again the same sandbox
   - ${c.bold('Refresh your sandbox')} (ask your release manager if you don't know how)
   Else, you can start working now (but beware of conflicts ^^):)
         `)

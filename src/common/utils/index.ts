@@ -1195,18 +1195,33 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
   }
 }
 
-export function uxLogTable(commandThis: any, tableData: any[]) {
+export function uxLogTable(commandThis: any, tableData: any[], columnsOrder: string[] = []) {
   // Build a table string as tableData is an array of objects compliant with console.table
   // This string will be used to display the table in the console
-  // Compute column widths based on the longest value in each column
   if (!tableData || tableData.length === 0) {
     return;
   }
-  const columns = Object.keys(tableData[0]);
+  let columns: string[];
+  let displayData = tableData;
+  if (columnsOrder && columnsOrder.length > 0) {
+    columns = columnsOrder;
+    // Rebuild each row to contain only the columns in columnsOrder, in order
+    displayData = tableData.map(row => {
+      const newRow: any = {};
+      for (const col of columnsOrder) {
+        newRow[col] = row[col] ?? '';
+      }
+      return newRow;
+    });
+  } else {
+    columns = Object.keys(tableData[0]);
+    displayData = tableData;
+  }
+  // Compute column widths based on the longest value in each column
   const colWidths = columns.map(col =>
     Math.max(
       col.length,
-      ...tableData.map(row => String(row[col] ?? '').replace(/\n/g, ' ').length)
+      ...displayData.map(row => String(row[col] ?? '').replace(/\n/g, ' ').length)
     )
   );
   // Build header
@@ -1216,7 +1231,7 @@ export function uxLogTable(commandThis: any, tableData: any[]) {
   // Build separator
   const separator = colWidths.map(w => '-'.repeat(w)).join('-|-');
   // Build rows
-  const rows = tableData.map(row =>
+  const rows = displayData.map(row =>
     columns
       .map((col, i) => {
         let val = row[col] ?? '';
@@ -1232,13 +1247,13 @@ export function uxLogTable(commandThis: any, tableData: any[]) {
   // Send table to WebSocket client
   if (WebSocketClient.isAliveWithLwcUI()) {
     const maxLen = 20;
-    let sendRows = tableData;
-    if (tableData.length > maxLen) {
-      sendRows = tableData.slice(0, maxLen);
+    let sendRows = displayData;
+    if (displayData.length > maxLen) {
+      sendRows = displayData.slice(0, maxLen);
       sendRows.push({
-        sfdxHardisTruncatedMessage: `Truncated to the first ${maxLen} lines on ${tableData.length} total lines, see full report for more details.`,
+        sfdxHardisTruncatedMessage: `Truncated to the first ${maxLen} lines on ${displayData.length} total lines, see full report for more details.`,
         returnedNumber: maxLen,
-        totalNumber: tableData.length
+        totalNumber: displayData.length
       });
     }
     WebSocketClient.sendCommandLogLineMessage(JSON.stringify(sendRows), 'table');

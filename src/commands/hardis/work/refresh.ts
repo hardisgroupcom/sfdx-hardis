@@ -12,7 +12,7 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class RefreshTask extends SfCommand<any> {
-  public static title = 'Refresh work task';
+  public static title = 'Refresh User Story branch';
 
   public static description = `
 ## Command Behavior
@@ -247,6 +247,6 @@ The command's technical implementation involves:
     });
 
     // Return an object to be displayed with --json
-    return { outputString: 'Refreshed the task & org' };
+    return { outputString: 'Refreshed the User Story branch & org' };
   }
 }

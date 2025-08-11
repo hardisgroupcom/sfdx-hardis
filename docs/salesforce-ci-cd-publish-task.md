@@ -1,5 +1,5 @@
 ---
-title: Publish a task on a Salesforce CI/CD project
+title: Publish a User Story on a Salesforce CI/CD project
 description: Learn how to commit and create a merge request
 ---
 <!-- markdownlint-disable MD013 -->
@@ -66,7 +66,7 @@ ___
 
 ## Prepare merge request
 
-- **Once your commit is completed**, run command ![Save / publish my current task button](assets/images/btn-save-publish-task.jpg) to prepare your merge request.
+- **Once your commit is completed**, run command ![Save User Story button](assets/images/btn-save-publish-task.jpg) to prepare your merge request.
 
 - As you committed your files like explained in the previous section, select option ![Message my commit is ready](assets/images/msg-commit-ready.jpg) when prompted.
 

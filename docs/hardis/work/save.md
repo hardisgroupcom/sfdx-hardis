@@ -6,9 +6,9 @@
 
 ## Command Behavior
 
-**Guides the user through the process of saving their work, preparing it for a merge request, and pushing changes to the remote Git repository.**
+**Guides the user through the process of saving their work, preparing it for a Merge Request (also named Pull Request), and pushing changes to the remote Git repository.**
 
-This command automates several critical steps involved in finalizing a development task and integrating it into the main codebase. It ensures that your local changes are properly synchronized, cleaned, and committed before being pushed.
+This command automates several critical steps involved in finalizing a development User Story and integrating it into the main codebase. It ensures that your local changes are properly synchronized, cleaned, and committed before being pushed.
 
 Key functionalities include:
 
@@ -43,7 +43,7 @@ autoRemoveUserPermissions:
   - WorkCalibrationUser
 ```
 
-Advanced instructions are available in the [Publish a task documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/).
+Advanced instructions are available in the [Publish a User Story documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/).
 
 ## Technical explanations
 
