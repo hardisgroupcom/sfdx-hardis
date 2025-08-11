@@ -208,14 +208,15 @@ The command's technical implementation involves a series of orchestrated steps:
       uxLog(this, c.grey(`New ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}`));
       WebSocketClient.sendReportFileMessage(mergeRequestUrl, `Create ${GitProvider.getMergeRequestName(this.gitUrl)}`, 'actionUrl');
     }
+    const mergeRequestDoc = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`;
     uxLog(this, c.grey(`Repository: ${c.green(this.gitUrl.replace('.git', ''))}`));
     uxLog(this, c.grey(`Source branch: ${c.green(this.currentBranch)}`));
     uxLog(this, c.grey(`Target branch: ${c.green(this.targetBranch)}`));
     uxLog(this, `${c.yellow(`When your ${GitProvider.getMergeRequestName(this.gitUrl)} will have been merged:`)}
 - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
 - Use New User Story menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`);
-    uxLog(this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`)}`));
-
+    uxLog(this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(mergeRequestDoc)}`));
+    WebSocketClient.sendReportFileMessage(mergeRequestDoc, `View ${GitProvider.getMergeRequestName(this.gitUrl)} documentation`, 'docUrl');
     // Return an object to be displayed with --json
     return { outputString: 'Saved the User Story' };
   }
