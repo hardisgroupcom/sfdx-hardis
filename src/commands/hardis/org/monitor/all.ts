@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execCommand, uxLog } from '../../../../common/utils/index.js';
+import { execCommand, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -246,8 +246,8 @@ ${this.getDefaultCommandsMarkdown()}
     }
 
     uxLog(this, c.cyan('Summary of monitoring scripts'));
-    console.table(commandsSummary);
-    uxLog(this, c.cyan('You can check details in reports in Job Artifacts'));
+    uxLogTable(this, commandsSummary);
+    uxLog(this, c.grey('You can check details in reports in Job Artifacts'));
 
     uxLog(
       this,

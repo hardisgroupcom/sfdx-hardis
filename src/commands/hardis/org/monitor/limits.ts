@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { CONSTANTS, getEnvVar } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { MessageAttachment } from '@slack/web-api';
@@ -117,7 +117,7 @@ The command's technical implementation involves:
         return limit;
       });
 
-    console.table(this.limitEntries);
+    uxLogTable(this, this.limitEntries);
 
     this.outputFile = await generateReportPath('org-limits', this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.limitEntries, this.outputFile);

@@ -26,7 +26,6 @@
     "chalk": "^5.4.1",
     "chrome-launcher": "^1.2.0",
     "cloudflare": "^4.4.1",
-    "columnify": "^1.6.0",
     "cosmiconfig": "^9.0.0",
     "cross-spawn": "^7.0.6",
     "csv-stringify": "^6.6.0",

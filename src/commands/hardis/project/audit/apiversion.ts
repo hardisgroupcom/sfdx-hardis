@@ -6,7 +6,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
 import sortArray from 'sort-array';
-import { catchMatches, generateReports, uxLog } from '../../../../common/utils/index.js';
+import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -200,15 +200,16 @@ export default class CallInCallOut extends SfCommand<any> {
     });
 
     // Display as table
+    uxLog(this, c.cyan(`Found ${c.bold(resultSorted.length)} metadata files with API Version.`));
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
-    console.table(
+    uxLogTable(this,
       resultsLight.map((item: any) => {
         delete item.detail;
         return item;
       })
     );
 
-    uxLog(this, c.cyan(`Found ${c.bold(resultSorted.length)} metadata files with API Version.`));
+
     const numberOfInvalid = result.filter((res: any) => res.valid === 'no').length;
     const numberOfValid = result.length - numberOfInvalid;
     if (numberOfInvalid > 0) {

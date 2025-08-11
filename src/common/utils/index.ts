@@ -19,7 +19,7 @@ import { prompts } from './prompts.js';
 import { encryptFile } from '../cryptoUtils.js';
 import { deployMetadatas, shortenLogLines } from './deployUtils.js';
 import { isProductionOrg, promptProfiles, promptUserEmail } from './orgUtils.js';
-import { WebSocketClient } from '../websocketClient.js';
+import { LogType, WebSocketClient } from '../websocketClient.js';
 import moment from 'moment';
 import { writeXmlFile } from './xmlUtils.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
@@ -1121,7 +1121,7 @@ export async function generateReports(
     if (!WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.requestOpenFile(reportFile);
     }
-    WebSocketClient.sendReportFileMessage(reportFile, "CSV Report");
+    WebSocketClient.sendReportFileMessage(reportFile, "CSV Report", "report");
   } catch (e: any) {
     uxLog(commandThis, c.yellow(`[sfdx-hardis] Error opening file in VsCode: ${e.message}`));
   }
@@ -1131,7 +1131,7 @@ export async function generateReports(
     columns,
   });
   await fs.writeFile(reportFileExcel, excel, 'utf8');
-  WebSocketClient.sendReportFileMessage(reportFileExcel, "Excel Report");
+  WebSocketClient.sendReportFileMessage(reportFileExcel, "Excel Report", "report");
   uxLog(commandThis, c.cyan(logLabel));
   uxLog(commandThis, c.grey(c.cyan(`- CSV: ${reportFile}`)));
   uxLog(commandThis, c.grey(c.cyan(`- XLS: ${reportFileExcel}`)));
@@ -1168,7 +1168,7 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
       const redAnsi = c.red(' ').split(' ')[0];
       const greenAnsi = c.green(' ').split(' ')[0];
 
-      let logType = 'none';
+      let logType: LogType | null = null;
       let isQuestion = false;
       let textToSend = textInit;
       if (textInit.includes("Look up in VsCode")) {
@@ -1188,11 +1188,62 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
         logType = 'success';
       }
       // Send message to WebSocket client
-      if (logType !== 'none') {
+      if (logType) {
         WebSocketClient.sendCommandLogLineMessage(textToSend, logType, isQuestion);
       }
     }
   }
+}
+
+export function uxLogTable(commandThis: any, tableData: any[]) {
+  // Build a table string as tableData is an array of objects compliant with console.table
+  // This string will be used to display the table in the console
+  // Compute column widths based on the longest value in each column
+  if (!tableData || tableData.length === 0) {
+    return;
+  }
+  const columns = Object.keys(tableData[0]);
+  const colWidths = columns.map(col =>
+    Math.max(
+      col.length,
+      ...tableData.map(row => String(row[col] ?? '').replace(/\n/g, ' ').length)
+    )
+  );
+  // Build header
+  const header = columns
+    .map((col, i) => c.bold(col.padEnd(colWidths[i])))
+    .join(' | ');
+  // Build separator
+  const separator = colWidths.map(w => '-'.repeat(w)).join('-|-');
+  // Build rows
+  const rows = tableData.map(row =>
+    columns
+      .map((col, i) => {
+        let val = row[col] ?? '';
+        if (typeof val === 'boolean') {
+          val = bool2emoji(val);
+        }
+        return String(val).replace(/\n/g, ' ').padEnd(colWidths[i]);
+      })
+      .join(' | ')
+  );
+  const tableString = [header, separator, ...rows].join('\n');
+  uxLog(commandThis, c.italic("\n" + tableString));
+  // Send table to WebSocket client
+  if (WebSocketClient.isAliveWithLwcUI()) {
+    const maxLen = 20;
+    let sendRows = tableData;
+    if (tableData.length > maxLen) {
+      sendRows = tableData.slice(0, maxLen);
+      sendRows.push({
+        sfdxHardisTruncatedMessage: `Truncated to the first ${maxLen} lines on ${tableData.length} total lines, see full report for more details.`,
+        returnedNumber: maxLen,
+        totalNumber: tableData.length
+      });
+    }
+    WebSocketClient.sendCommandLogLineMessage(JSON.stringify(sendRows), 'table');
+  }
+
 }
 
 export function bool2emoji(bool: boolean): string {

@@ -3,11 +3,12 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import fs from 'fs-extra';
+import c from 'chalk';
 import { glob } from 'glob';
 import * as psl from 'psl';
 import sortArray from 'sort-array';
 import * as url from 'url';
-import { catchMatches, generateReports, uxLog } from '../../../../common/utils/index.js';
+import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -120,8 +121,9 @@ The command's technical implementation involves:
     });
 
     // Display as table
+    uxLog(this, c.cyan(`Found ${c.bold(resultSorted.length)} remote sites.`));
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
-    console.table(
+    uxLogTable(this,
       resultsLight.map((item: any) => {
         delete item.fileName;
         delete item.detail;

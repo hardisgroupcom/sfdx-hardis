@@ -5,13 +5,12 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from "path";
-import { createTempDir, execCommand, uxLog } from '../../../../common/utils/index.js';
+import { createTempDir, execCommand, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import moment from 'moment';
-import columnify from 'columnify';
 import { CONSTANTS } from '../../../../config/index.js';
 import sortArray from 'sort-array';
 import { createBlankSfdxProject } from '../../../../common/utils/projectUtils.js';
@@ -208,8 +207,8 @@ The command's technical implementation involves:
           SeverityReason: connectedApp.severityReason,
         }
       })
-      uxLog(this, c.yellow(`${numberWarnings} Connected Apps to check have been found` + "\n" + columnify(connectedAppsLight)));
-      uxLog(this, c.yellow("See more details in report files below"));
+      uxLog(this, c.cyan(`Found ${c.bold(numberWarnings)} Connected Apps to check.`));
+      uxLogTable(this, connectedAppsLight);
 
       // Generate output CSV file
       this.outputFile = await generateReportPath('connected-apps', this.outputFile);

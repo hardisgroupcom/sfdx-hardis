@@ -9,7 +9,7 @@ import {
   soqlQuery,
   soqlQueryTooling,
 } from "../../../../common/utils/apiUtils.js";
-import { execCommand, uxLog } from "../../../../common/utils/index.js";
+import { execCommand, uxLog, uxLogTable } from "../../../../common/utils/index.js";
 import { prompts } from "../../../../common/utils/prompts.js";
 import c from "chalk";
 import path from "path";
@@ -637,8 +637,8 @@ The command's technical implementation involves:
         )
       );
     }
-
-    console.table(validationRulesTableReport);
+    uxLog(this, c.cyan(`Validation Rules bypass report:`));
+    uxLogTable(this, validationRulesTableReport);
   }
 
   // Triggers
@@ -809,7 +809,7 @@ The command's technical implementation involves:
         )
       );
     }
-
-    console.table(triggerReport);
+    uxLog(this, c.cyan(`Trigger bypass report:`));
+    uxLogTable(this, triggerReport);
   }
 }
