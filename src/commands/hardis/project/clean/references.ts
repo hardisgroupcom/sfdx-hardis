@@ -220,7 +220,6 @@ The command's technical implementation involves several steps:
       }
     }
 
-    uxLog(this, c.cyan(`Running cleaning commands...`));
     // Process cleaning
     for (const cleaningType of this.cleaningTypes) {
       const cleaningTypeObj = this.allCleaningTypes.filter(
@@ -231,7 +230,7 @@ The command's technical implementation involves several steps:
         if (this.argv.indexOf('--websocket') > -1) {
           command += ` --websocket ${this.argv[this.argv.indexOf('--websocket') + 1]}`;
         }
-        uxLog(this, c.grey(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
+        uxLog(this, c.cyan(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
         // Command based cleaning
         await execCommand(command, this, {
           fail: true,
@@ -240,7 +239,7 @@ The command's technical implementation involves several steps:
         });
       } else {
         // Template based cleaning
-        uxLog(this, c.grey(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
+        uxLog(this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
         const filterConfigFile = await this.getFilterConfigFile(cleaningType);
         const packageDirectories = this.project?.getPackageDirectories() || [];
         for (const packageDirectory of packageDirectories) {
@@ -253,7 +252,7 @@ The command's technical implementation involves several steps:
     }
 
     // Clean package.xml file from deleted items
-    uxLog(this, c.grey(`Cleaning package.xml files...`));
+    uxLog(this, c.grey(`Cleaning package.xml & files from deleted items...`));
     const patternPackageXml = '**/manifest/**/package*.xml';
     const packageXmlFiles = await glob(patternPackageXml, {
       cwd: process.cwd(),

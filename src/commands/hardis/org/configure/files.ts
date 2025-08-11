@@ -89,7 +89,12 @@ The command's technical implementation involves:
     const { exportJsonFile, filesProjectFolder } = await this.createConfigFiles();
 
     // Trigger command to open SFDMU config file in VsCode extension
-    WebSocketClient.requestOpenFile(exportJsonFile);
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      WebSocketClient.sendReportFileMessage(exportJsonFile, 'Edit your Files export configuration', 'report');
+    }
+    else {
+      WebSocketClient.requestOpenFile(exportJsonFile);
+    }
 
     // Set bac initial cwd
     const message = c.cyan(`Successfully initialized files export project ${c.green(

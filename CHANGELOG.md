@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.0.2 (beta)] 2025-08-11
+
+- Renaming "task" to "User Story" across the codebase and documentation for clarity.
+- Enhancing SFDMU integration by improving UX and linking external docs.
+- Improving CLI command outputs and workflows.
+
 ## [6.0.1 (beta)] 2025-08-11
 
 - Send messages to VsCode to enhance buttons and links

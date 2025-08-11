@@ -76,7 +76,7 @@ ___
 ### Effective merge
 
 - **Click on Merge**
-  - If the merge request is from a **minor branch** (dev or config task), make sure that **Squash commits** and **Delete after merge** are **checked**
+  - If the merge request is from a **minor branch** (dev or config User Story), make sure that **Squash commits** and **Delete after merge** are **checked**
   - If the merge request if from a major branch (develop, recette, uat, preprod...), make sure that **Squash commits** and **Delete after merge** are **NOT checked**
 
 - The merge commit in the target branch will **trigger a new job** that will automatically **deploy the updated source to the corresponding Salesforce org**
