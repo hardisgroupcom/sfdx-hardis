@@ -29,14 +29,14 @@ The command's technical implementation involves:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|path<br/>-p|option|Root path to check|C:\git\pro\sfdx-hardis2|||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name         |  Type   | Description                                                   |         Default         | Required | Options |
+|:-------------|:-------:|:--------------------------------------------------------------|:-----------------------:|:--------:|:-------:|
+| debug<br/>-d | boolean | Activate debug mode (more logs)                               |                         |          |         |
+| flags-dir    | option  | undefined                                                     |                         |          |         |
+| json         | boolean | Format output as json.                                        |                         |          |         |
+| path<br/>-p  | option  | Root path to check                                            | C:\git\pro\sfdx-hardis2 |          |         |
+| skipauth     | boolean | Skip authentication check when a default username is required |                         |          |         |
+| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                         |          |         |
 
 ## Examples
 

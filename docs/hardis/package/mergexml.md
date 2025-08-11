@@ -32,17 +32,17 @@ The command's technical implementation involves:
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|debug|boolean|debug||||
-|flags-dir|option|undefined||||
-|folder<br/>-f|option|Root folder|manifest|||
-|json|boolean|Format output as json.||||
-|packagexmls<br/>-p|option|Comma separated list of package.xml files to merge. Will be prompted to user if not provided||||
-|pattern<br/>-x|option|Name criteria to list package.xml files|/**/*package*.xml|||
-|result<br/>-r|option|Result package.xml file name||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name               |  Type   | Description                                                                                  |      Default      | Required | Options |
+|:-------------------|:-------:|:---------------------------------------------------------------------------------------------|:-----------------:|:--------:|:-------:|
+| debug              | boolean | debug                                                                                        |                   |          |         |
+| flags-dir          | option  | undefined                                                                                    |                   |          |         |
+| folder<br/>-f      | option  | Root folder                                                                                  |     manifest      |          |         |
+| json               | boolean | Format output as json.                                                                       |                   |          |         |
+| packagexmls<br/>-p | option  | Comma separated list of package.xml files to merge. Will be prompted to user if not provided |                   |          |         |
+| pattern<br/>-x     | option  | Name criteria to list package.xml files                                                      | /**/*package*.xml |          |         |
+| result<br/>-r      | option  | Result package.xml file name                                                                 |                   |          |         |
+| skipauth           | boolean | Skip authentication check when a default username is required                                |                   |          |         |
+| websocket          | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                    |                   |          |         |
 
 ## Examples
 
