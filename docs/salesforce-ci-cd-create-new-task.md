@@ -1,6 +1,6 @@
 ---
-title: Create new task on a Salesforce DX project
-description: Learn how to create a new task using a tracked sandbox or a scratch org
+title: Create new User Story on a Salesforce DX project
+description: Learn how to create a new User Story using a tracked sandbox or a scratch org
 ---
 <!-- markdownlint-disable MD013 -->
 
@@ -8,13 +8,13 @@ description: Learn how to create a new task using a tracked sandbox or a scratch
 - [Sandbox or scratch org ?](#sandbox-or-scratch-org-)
 - [Source-tracked sandbox mode](#source-tracked-sandbox-mode)
   - [Pre-requisites (sandbox)](#pre-requisites-sandbox)
-  - [Start new task on sandbox](#start-new-task-on-sandbox)
+  - [Start new User Story on sandbox](#start-new-user-story-on-sandbox)
     - [Select sandbox](#select-sandbox)
     - [Update your sandbox ?](#update-your-sandbox-)
     - [Work !](#work-)
 - [Scratch Org mode](#scratch-org-mode)
   - [Pre-requisites (scratch org)](#pre-requisites-scratch-org)
-  - [Start new task on scratch org](#start-new-task-on-scratch-org)
+  - [Start new User Story on scratch org](#start-new-user-story-on-scratch-org)
 
 ___
 
@@ -50,13 +50,13 @@ It is recommended to create sandbox from the org that is related to the target g
 
 ![](assets/images/sandbox-create.jpg){ align=center }
 
-### Start new task on sandbox
+### Start new User Story on sandbox
 
 #### Select sandbox
 
 - Open VsCode SFDX Hardis extension by clicking on ![Hardis Group button](assets/images/hardis-button.jpg) in VsCode left bar _(loading can task several seconds)_
 
-- Click on ![Start a new task](assets/images/btn-start-new-task.jpg)
+- Click on ![Start a new User Story](assets/images/btn-start-new-task.jpg)
 
 - Answer the questions then **select Sandbox** when prompted
   - If the sandbox is not proposed in the list, select the option to authenticate to your desired sandbox
@@ -93,11 +93,11 @@ ___
 
 You need the credentials to login on the **Dev Hub Org** (usually the production environment)
 
-### Start new task on scratch org
+### Start new User Story on scratch org
 
 - Open VsCode SFDX Hardis extension by clicking on ![Hardis Group button](assets/images/hardis-button.jpg) in VsCode left bar
 
-- Click on ![Start a new task](assets/images/btn-start-new-task.jpg)
+- Click on ![Start a new User Story](assets/images/btn-start-new-task.jpg)
 
 - Answer the questions then **select Scratch Org** when prompted
   - If the sandbox is not proposed in the list, select the option to authenticate to your desired sandbox

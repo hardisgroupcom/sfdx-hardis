@@ -77,13 +77,13 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 [![Dreamforce demo video: Easy Salesforce CI/CD with sfdx-hardis and open-source only !](https://img.youtube.com/vi/zEYqTd2txU4/0.jpg)](https://www.youtube.com/watch?v=zEYqTd2txU4){target=blank}
 
-- How to start a new task in sandbox - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/)
+- How to start a new User Story in sandbox - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/)
 
-[![Create New Task](https://img.youtube.com/vi/WOqssZwjPhw/0.jpg)](https://www.youtube.com/watch?v=WOqssZwjPhw){target=blank}
+[![Create New User Story](https://img.youtube.com/vi/WOqssZwjPhw/0.jpg)](https://www.youtube.com/watch?v=WOqssZwjPhw){target=blank}
 
 - How to commit updates and create merge requests - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/)
 
-[![Publish Task Tutorial](https://img.youtube.com/vi/Ik6whtflmfY/0.jpg)](https://www.youtube.com/watch?v=Ik6whtflmfY){target=blank}
+[![Publish User Story Tutorial](https://img.youtube.com/vi/Ik6whtflmfY/0.jpg)](https://www.youtube.com/watch?v=Ik6whtflmfY){target=blank}
 
 - How to resolve git merge conflicts in Visual Studio Code - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-validate-merge-request/)
 

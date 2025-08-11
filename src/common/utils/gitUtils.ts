@@ -27,9 +27,10 @@ import { WebSocketClient } from '../websocketClient.js';
 import { countPackageXmlItems } from './xmlUtils.js';
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
+  const gitUrl = (await git().listRemote(['--get-url']))?.trim() || '';
   const message =
     options.message ||
-    'What will be the target branch of your new task ? (the branch where you will make your merge request after the task is completed)';
+    `What will be the target branch of your new User Story ? (the branch where you will make your ${GitProvider.getMergeRequestName(gitUrl)} after the User Story is completed)`;
   const config = await getConfig('user');
   const availableTargetBranches = config.availableTargetBranches || null;
   // There is only once choice so return it

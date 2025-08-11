@@ -29,14 +29,14 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name               |  Type   | Description                                  | Default | Required | Options |
-|:-------------------|:-------:|:---------------------------------------------|:-------:|:--------:|:-------:|
-| debug              | boolean | debug                                        |         |          |         |
-| flags-dir          | option  | undefined                                    |         |          |         |
-| json               | boolean | Format output as json.                       |         |          |         |
-| outputfile<br/>-f  | option  | package.xml output file                      |         |          |         |
-| packagexmls<br/>-p | option  | package.xml files path (separated by commas) |         |          |         |
-| websocket          | option  | websocket                                    |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|package.xml output file||||
+|packagexmls<br/>-p|option|package.xml files path (separated by commas)||||
+|websocket|option|websocket||||
 
 ## Examples
 

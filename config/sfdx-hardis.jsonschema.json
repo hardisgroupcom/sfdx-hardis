@@ -55,7 +55,7 @@
     },
     "autoCleanTypes": {
       "$id": "#/properties/autoCleanTypes",
-      "description": "When saving a sfdx-hardis task, the list of cleanings will be automatically applied to sfdx sources",
+      "description": "When saving a sfdx-hardis User Story, the list of cleanings will be automatically applied to sfdx sources",
       "examples": [
         [
           "dashboards",
@@ -86,7 +86,7 @@
     },
     "autoRemoveUserPermissions": {
       "$id": "#/properties/autoRemoveUserPermissions",
-      "description": "When saving a sfdx-hardis task, these permissions will be removed from profiles",
+      "description": "When saving a sfdx-hardis User Story, these permissions will be removed from profiles",
       "examples": [
         [
           "EnableCommunityAppLauncher",
@@ -612,7 +612,7 @@
     "developmentBranch": {
       "$id": "#/properties/developmentBranch",
       "default": "developpement",
-      "description": "When creating a new sfdx-hardis task, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
+      "description": "When creating a new sfdx-hardis User Story, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
       "examples": [
         "developpement",
         "dev_lot2",
@@ -1166,13 +1166,13 @@
     "newTaskNameRegex": {
       "$id": "#/properties/newTaskNameRegex",
       "default": "",
-      "description": "Regex to validate new task names",
+      "description": "Regex to validate new User Story names",
       "examples": [
         "^[A-Z]+-[0-9]+ .*",
         "^CLOUDITY-[0-9]+ .*",
         "^MYPROJECT-[0-9]+ .*"
       ],
-      "title": "New task name regex",
+      "title": "New User Story name regex",
       "type": "string"
     },
     "newTaskNameRegexExample": {
@@ -1182,7 +1182,7 @@
       "examples": [
         "MYPROJECT-123 Update account status validation rule"
       ],
-      "title": "New task name example",
+      "title": "New User Story name example",
       "type": "string"
     },
     "notificationsDisable": {

@@ -35,14 +35,14 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class SaveTask extends SfCommand<any> {
-  public static title = 'Save work task';
+  public static title = 'Save User Story';
 
   public static description = `
 ## Command Behavior
 
 **Guides the user through the process of saving their work, preparing it for a Merge Request (also named Pull Request), and pushing changes to the remote Git repository.**
 
-This command automates several critical steps involved in finalizing a development task and integrating it into the main codebase. It ensures that your local changes are properly synchronized, cleaned, and committed before being pushed.
+This command automates several critical steps involved in finalizing a development User Story and integrating it into the main codebase. It ensures that your local changes are properly synchronized, cleaned, and committed before being pushed.
 
 Key functionalities include:
 
@@ -77,7 +77,7 @@ autoRemoveUserPermissions:
   - WorkCalibrationUser
 \`\`\`
 
-Advanced instructions are available in the [Publish a task documentation]($\{CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/).
+Advanced instructions are available in the [Publish a User Story documentation]($\{CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/).
 
 ## Technical explanations
 
@@ -213,11 +213,11 @@ The command's technical implementation involves a series of orchestrated steps:
     uxLog(this, c.grey(`Target branch: ${c.green(this.targetBranch)}`));
     uxLog(this, `${c.yellow(`When your ${GitProvider.getMergeRequestName(this.gitUrl)} will have been merged:`)}
 - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
-- Use New task menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`);
+- Use New User Story menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`);
     uxLog(this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`)}`));
 
     // Return an object to be displayed with --json
-    return { outputString: 'Saved the task' };
+    return { outputString: 'Saved the User Story' };
   }
 
   // Clean git status
