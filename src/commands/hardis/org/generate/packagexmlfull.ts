@@ -28,7 +28,7 @@ Key functionalities:
 - **Full Org Metadata Retrieval:** Connects to a specified Salesforce org (or prompts for one if not provided) and retrieves a complete list of all metadata types and their members.
 - **Managed Package Inclusion:** Unlike standard source retrieval, this command explicitly includes metadata from managed packages, providing a truly comprehensive \`package.xml\`.
 - **Customizable Output:** Allows you to specify the output file path for the generated \`package.xml\`.
-- **Interactive Org Selection:** If no target org is specified, it interactively prompts the user to choose an org.
+- **Interactive Org Selection:** If no target org is specified, it interactively prompts the user to choose an org. (or use --no-prompt to skip this step)
 
 ## Technical explanations
 
@@ -56,6 +56,11 @@ The command's technical implementation involves:
       default: false,
       description: messages.getMessage('debugMode'),
     }),
+    "no-prompt": Flags.boolean({
+      char: 'n',
+      description: "Do not prompt for org username, use the default one",
+      default: false,
+    }),
     websocket: Flags.string({
       description: messages.getMessage('websocket'),
     }),
@@ -76,11 +81,15 @@ The command's technical implementation involves:
     const { flags } = await this.parse(GeneratePackageXmlFull);
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
+    const noPrompt = flags['no-prompt'] ?? false;
 
     // Select org that will be used to export records
     let conn: Connection | null = null;
     let orgUsername = flags['target-org'].getUsername();
-    if (!isCI) {
+    if (orgUsername && (isCI || noPrompt)) {
+      conn = flags['target-org'].getConnection();
+    }
+    else {
       const prevOrgUsername = orgUsername;
       orgUsername = await promptOrgUsernameDefault(this, orgUsername || '', { devHub: false, setDefault: false });
       if (prevOrgUsername === orgUsername) {
