@@ -431,8 +431,12 @@ The command's technical implementation involves a series of orchestrated steps:
         );
       }
 
-      uxLog(this, c.cyan('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
-      await CleanXml.run([]);
+      // Xml cleaning
+      if (config.cleanXmlPatterns && config.cleanXmlPatterns.length > 0) {
+        uxLog(this, c.cyan('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
+        await CleanXml.run([]);
+      }
+
       // Manage git after cleaning
       const gitStatusAfterClean = await git().status();
       uxLog(this, JSON.stringify(gitStatusAfterClean, null, 2));
