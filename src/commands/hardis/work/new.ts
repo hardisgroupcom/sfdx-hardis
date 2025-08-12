@@ -98,7 +98,7 @@ The command's logic orchestrates various underlying processes:
     const { flags } = await this.parse(NewTask);
     this.debugMode = flags.debug || false;
 
-    uxLog(this, c.cyan('This tool will assist you to create a new User Story (dev or config) with Hardis CI/CD'));
+    uxLog(this, c.cyan('This tool will assist you to create a new User Story (dev or config) with SFDX Hardis CI/CD'));
     uxLog(this, c.grey("When you don't know what to answer, you can let the default value and push ENTER"));
 
     // Make sure the git status is clean, to not delete uncommitted updates
