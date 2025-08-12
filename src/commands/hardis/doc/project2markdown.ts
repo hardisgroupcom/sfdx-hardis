@@ -151,6 +151,10 @@ ${this.htmlInstructions}
     pdf: Flags.boolean({
       description: 'Also generate the documentation in PDF format',
     }),
+    "hide-apex-code": Flags.boolean({
+      default: false,
+      description: "Hide Apex code in the generated documentation for Apex classes.",
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -178,6 +182,7 @@ ${this.htmlInstructions}
   protected mkDocsNavNodes: any[] = [{ "Home": "index.md" }];
   protected withHistory = false;
   protected withPdf = false;
+  protected hideApexCode = false;
   protected debugMode = false;
   protected footer: string;
   protected apexDescriptions: any[] = [];
@@ -204,6 +209,7 @@ ${this.htmlInstructions}
     this.diffOnly = flags["diff-only"] === true ? true : false;
     this.withHistory = flags["with-history"] === true ? true : false;
     this.withPdf = flags.pdf === true ? true : false;
+    this.hideApexCode = flags["hide-apex-code"] === true ? true : false;
     this.debugMode = flags.debug || false;
     await setConnectionVariables(flags['target-org']?.getConnection(), true);// Required for some notifications providers like Email, or for Agentforce
 
@@ -440,7 +446,10 @@ ${Project2Markdown.htmlInstructions}
           // Do not mess with existing apex doc if generation has crashed
           !apexMdContent.includes(getMetaHideLines())) {
           const mermaidClassDiagram = DocBuilderApex.buildMermaidClassDiagram(apexName, this.apexDescriptions);
-          const insertion = `${mermaidClassDiagram}\n\n<!-- Apex description -->\n\n## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`
+          let insertion = `${mermaidClassDiagram}\n\n<!-- Apex description -->\n\n`;
+          if (!this.hideApexCode) {
+            insertion += `## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`;
+          }
           const firstHeading = apexMdContent.indexOf("## ");
           apexMdContent = apexMdContent.substring(0, firstHeading) + insertion + apexMdContent.substring(firstHeading);
           const apexDocBuilder = new DocBuilderApex(apexName, apexContent, "", {
