@@ -487,7 +487,7 @@ The command's logic orchestrates various underlying processes:
     }
     // Open of if not already open
     if (openOrg === true) {
-      uxLog(this, c.cyan(`Opening sandbox org...`));
+      uxLog(this, c.cyan(`Opening sandbox org so you can work in it...`));
       await execSfdxJson('sf org open', this, {
         fail: true,
         output: false,
@@ -566,6 +566,7 @@ The command's logic orchestrates various underlying processes:
     // Selected sandbox from list
     else {
       await makeSureOrgIsConnected(sandboxResponse.value);
+      uxLog(this, c.cyan(`Setting sandbox org ${c.green(sandboxResponse.value.instanceUrl)} (${sandboxResponse.value.username}) as default org...`));
       await execCommand(`sf config set target-org=${sandboxResponse.value.username}`, this, {
         output: true,
         fail: true,

@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.0.3 (beta)] 2025-08-12
+
+- [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/): Add --no-prompt option to directly use default org.
+- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): Add links to create Merge Request + Display MR documentation
+- Improve UX when opening sandboxes
+
 ## [6.0.2 (beta)] 2025-08-11
 
 - Renaming "task" to "User Story" across the codebase and documentation for clarity.
