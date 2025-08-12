@@ -170,14 +170,14 @@ The command's technical implementation involves a series of orchestrated steps:
     }
     if (this.targetBranch == null) {
       this.targetBranch = await selectTargetBranch({
-        message: `Please select the target branch of your ${GitProvider.getMergeRequestName(this.gitUrl)}`,
+        message: `Please select the target branch of your future ${GitProvider.getMergeRequestName(this.gitUrl)}`,
       });
     }
     // User log info
     uxLog(
       this,
       c.cyan(
-        `This script will prepare the ${GitProvider.getMergeRequestName(this.gitUrl)} from your local branch ${c.green(localBranch)} to remote ${c.green(
+        `This command will help to prepare the ${GitProvider.getMergeRequestName(this.gitUrl)} from your branch ${c.green(localBranch)} to major branch ${c.green(
           this.targetBranch
         )}`
       )
