@@ -210,7 +210,7 @@ ${this.htmlInstructions}
     this.diffOnly = flags["diff-only"] === true ? true : false;
     this.withHistory = flags["with-history"] === true ? true : false;
     this.withPdf = flags.pdf === true ? true : false;
-    this.hideApexCode = flags["hide-apex-code"] === true ? true : false;
+    this.hideApexCode = flags["hide-apex-code"] === true || process?.env?.HIDE_APEX_CODE === 'true' ? true : false;
     this.debugMode = flags.debug || false;
     await setConnectionVariables(flags['target-org']?.getConnection(), true);// Required for some notifications providers like Email, or for Agentforce
 
