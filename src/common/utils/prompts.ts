@@ -61,6 +61,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
       uxLog(this, c.cyan(question.message) + c.white(" Look up in VsCode ⬆️"));
       const [questionAnswer] = await WebSocketClient.sendPrompts([question]);
       answers = Object.assign(answers, questionAnswer);
+      checkStopPrompts(answers);
       if (JSON.stringify(questionAnswer).toLowerCase().includes("token")) {
         uxLog(this, c.grey("Selection done but hidden in log because it contains sensitive information"));
       } else {
@@ -72,6 +73,12 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     answers = await terminalPrompts(questionsReformatted);
   }
   // Stop script if requested
+  checkStopPrompts(answers);
+  return answers;
+}
+
+// Stop script if user requested it
+function checkStopPrompts(answers: any) {
   for (const answer of Object.keys(answers)) {
     if (answers[answer] === "exitNow") {
       uxLog(this, c.red("Script terminated at user request"));
@@ -82,7 +89,6 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
       process.exit(0);
     }
   }
-  return answers;
 }
 
 async function terminalPrompts(questions: PromptsQuestion[]) {
