@@ -7,6 +7,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Immediately stop when a user cancelled a multi-questions prompts
 - Add log used for background process in LWC UI
 - Refactor logging methods
+- Display labels of prompt answers, not technical values
+- Improve naming of report files
 
 ## [6.0.3 (beta)] 2025-08-12
 
