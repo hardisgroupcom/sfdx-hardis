@@ -1103,9 +1103,9 @@ export async function generateReports(
   resultSorted: any[],
   columns: any[],
   commandThis: any,
-  options: any = { logFileName: null, logLabel: 'Generated report files:' }
+  options: any = { logFileName: null, logLabel: 'Report' }
 ): Promise<any[]> {
-  const logLabel = options.logLabel || 'Generated report files:';
+  const logLabel = options.logLabel || 'Report';
   let logFileName = options.logFileName || null;
   if (!logFileName) {
     logFileName = 'sfdx-hardis-' + commandThis.id.substr(commandThis.id.lastIndexOf(':') + 1);
@@ -1126,7 +1126,7 @@ export async function generateReports(
     if (!WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.requestOpenFile(reportFile);
     }
-    WebSocketClient.sendReportFileMessage(reportFile, "CSV Report", "report");
+    WebSocketClient.sendReportFileMessage(reportFile, `${logLabel} (CSV)`, "report");
   } catch (e: any) {
     uxLog("warning", commandThis, c.yellow(`[sfdx-hardis] Error opening file in VsCode: ${e.message}`));
   }
@@ -1136,7 +1136,7 @@ export async function generateReports(
     columns,
   });
   await fs.writeFile(reportFileExcel, excel, 'utf8');
-  WebSocketClient.sendReportFileMessage(reportFileExcel, "Excel Report", "report");
+  WebSocketClient.sendReportFileMessage(reportFileExcel, `${logLabel} (CSV)`, "report");
   uxLog("action", commandThis, c.cyan(logLabel));
   uxLog("log", commandThis, c.grey(c.cyan(`- CSV: ${reportFile}`)));
   uxLog("log", commandThis, c.grey(c.cyan(`- XLS: ${reportFileExcel}`)));
