@@ -78,6 +78,7 @@ The command's technical implementation focuses on robust metadata synchronizatio
     const { flags } = await this.parse(SourcePull);
     const debugMode = flags.debug || false;
     const targetUsername = flags['target-org'].getUsername() || '';
+    uxLog("action", this, c.cyan(`This command will pull all the latest metadata changes from your dev org into your local project files (even those updated by other users).`));
     uxLog("action", this, c.cyan(`Pulling metadata changes from org: ${c.bold(targetUsername)}`));
     await forceSourcePull(targetUsername, debugMode);
 

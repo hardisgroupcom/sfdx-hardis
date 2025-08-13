@@ -62,10 +62,14 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
       const [questionAnswer] = await WebSocketClient.sendPrompts([question]);
       answers = Object.assign(answers, questionAnswer);
       checkStopPrompts(answers);
-      if (JSON.stringify(questionAnswer).toLowerCase().includes("token")) {
-        uxLog("log", this, c.grey("Selection done but hidden in log because it contains sensitive information"));
+      // Find the answer value (the value of the only property of questionAnswer)
+      const answerKey = Object.keys(questionAnswer)[0];
+      const answerValue = questionAnswer[answerKey];
+      const answerLabel = getAnswerLabel(answerValue, question.choices);
+      if (JSON.stringify(answerLabel).toLowerCase().includes("token")) {
+        uxLog("log", this, c.grey("Selection hidden because it contains sensitive information"));
       } else {
-        uxLog("log", this, c.grey(JSON.stringify(questionAnswer)));
+        uxLog("log", this, c.grey(answerLabel));
       }
     }
   } else {
@@ -77,18 +81,58 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
   return answers;
 }
 
-// Stop script if user requested it
-function checkStopPrompts(answers: any) {
-  for (const answer of Object.keys(answers)) {
-    if (answers[answer] === "exitNow") {
-      uxLog("error", this, c.red("Script terminated at user request"));
-      // Send close client message with aborted status if WebSocket is alive
-      if (WebSocketClient.isAlive()) {
-        WebSocketClient.sendCloseClientMessage("aborted");
-      }
-      process.exit(0);
+// Helper to get display label(s) for answer value(s)
+function getAnswerLabel(answerValue: any, choices?: Array<any>): string {
+  if (Array.isArray(answerValue)) {
+    if (choices && Array.isArray(choices) && choices.length > 0) {
+      return answerValue.map(val => findChoiceLabel(val, choices) ?? (typeof val === 'string' ? `- ${val}` : "- " + JSON.stringify(val))).join('\n');
+    } else {
+      return answerValue.map(val => (typeof val === 'string' ? `- ${val}` : "- " + JSON.stringify(val))).join('\n');
     }
   }
+  const label = findChoiceLabel(answerValue, choices);
+  if (label) return label;
+  return typeof answerValue === 'string' ? answerValue : JSON.stringify(answerValue);
+}
+
+// Helper to find the label for a value in choices
+function findChoiceLabel(val: any, choices?: Array<any>): string | undefined {
+  if (!choices || !Array.isArray(choices) || choices.length === 0) return undefined;
+  const found = choices.find(choice => {
+    if (typeof choice.value === "object" && typeof val === "object") {
+      try {
+        return JSON.stringify(choice.value) === JSON.stringify(val);
+      } catch {
+        return false;
+      }
+    }
+    return choice.value === val;
+  });
+  return found && found.title ? found.title : undefined;
+}
+
+// Stop script if user requested it
+function checkStopPrompts(answers: any) {
+  if (typeof answers !== "object" || answers === null) {
+    stopPrompt();
+  }
+  if (Object.keys(answers).length === 0) {
+    stopPrompt();
+  }
+  for (const answer of Object.keys(answers)) {
+    if (answers[answer] === "exitNow") {
+      stopPrompt();
+    }
+  }
+}
+
+function stopPrompt() {
+  uxLog("error", this, c.red("Script terminated at user request"));
+  // Send close client message with aborted status if WebSocket is alive
+  if (WebSocketClient.isAlive()) {
+    WebSocketClient.sendCloseClientMessage("aborted");
+  }
+  process.exit(0);
 }
 
 async function terminalPrompts(questions: PromptsQuestion[]) {

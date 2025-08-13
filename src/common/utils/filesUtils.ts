@@ -809,7 +809,11 @@ export async function generateReportPath(fileNamePrefix: string, outputFile: str
  * @param {string} outputPath - The path where the CSV file will be written.
  * @returns {Promise<void>} - A Promise that resolves when the operation is complete.
  */
-export async function generateCsvFile(data: any[], outputPath: string): Promise<any> {
+export async function generateCsvFile(
+  data: any[],
+  outputPath: string,
+  options?: { csvFileTitle?: string, xlsFileTitle?: string, noExcel?: boolean }
+): Promise<any> {
   const result: any = {};
   try {
     const csvContent = Papa.unparse(data);
@@ -819,8 +823,8 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
     if (!WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.requestOpenFile(outputPath);
     }
-    WebSocketClient.sendReportFileMessage(outputPath, "CSV Report", "report");
-    if (data.length > 0) {
+    WebSocketClient.sendReportFileMessage(outputPath, options?.csvFileTitle ?? "CSV Report", "report");
+    if (data.length > 0 && !options?.noExcel) {
       try {
         // Generate mirror XSLX file
         const xlsDirName = path.join(path.dirname(outputPath), 'xls');
@@ -829,7 +833,7 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
         await fs.ensureDir(xlsDirName);
         await csvToXls(outputPath, xslxFile);
         uxLog("action", this, c.cyan(c.italic(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
-        WebSocketClient.sendReportFileMessage(xslxFile, "Excel Report", "report");
+        WebSocketClient.sendReportFileMessage(xslxFile, options?.xlsFileTitle ?? "Excel Report", "report");
         result.xlsxFile = xslxFile;
         if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
           try {

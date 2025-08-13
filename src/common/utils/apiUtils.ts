@@ -3,6 +3,7 @@ import c from 'chalk';
 import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
 import { WebSocketClient } from '../websocketClient.js';
+import { generateCsvFile, generateReportPath } from './filesUtils.js';
 
 // Constants for record limits
 const MAX_CHUNKS = Number(process.env.SOQL_MAX_BATCHES ?? 50);
@@ -166,13 +167,13 @@ export async function bulkUpdate(
     "log",
     this,
     c.grey(
-      `SOQL BULK on object ${c.bold(objectName)} with action ${c.bold(action)} (${c.bold(records.length)} records)`
+      `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on (${c.bold(records.length)} records of object ${c.bold(objectName)}`
     )
   );
   conn.bulk2.pollInterval = 5000; // 5 sec
   conn.bulk2.pollTimeout = 60000; // 60 sec
   // Initialize Job
-  spinner = ora({ text: `[BulkApiV2] Bulk Load on ${objectName} (${action})`, spinner: 'moon' }).start();
+  spinner = ora({ text: `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on (${c.bold(records.length)} records of object ${c.bold(objectName)}`, spinner: 'moon' }).start();
   const job = conn.bulk2.createJob({
     operation: action as any,
     object: objectName,
@@ -193,7 +194,25 @@ export async function bulkUpdate(
   });
   await job.poll();
   const res = await job.getAllResults();
-  spinner.succeed(`Bulk Load on ${objectName} (${action}) completed.`);
+  spinner.succeed(`[BulkApiV2] Bulk ${action.toUpperCase()} on ${objectName} completed.`);
+  uxLog("log", this, c.grey(`[BulkApiV2] Bulk ${action.toUpperCase()} on ${objectName} completed.
+- Success: ${res.successfulResults.length} records
+- Failed: ${res.failedResults.length} records
+- Unprocessed: ${res.unprocessedRecords.length} records`));
+  const outputFile = await generateReportPath('bulk', `${objectName}-${action}`, { withDate: true });
+  if (res.failedResults.length > 0) {
+    uxLog("warning", this, c.yellow(`[BulkApiV2] Some records failed to ${action}. Check the results for details.`));
+  }
+  await generateCsvFile(res.successfulResults, outputFile.replace('.csv', '-successful.csv'),
+    {
+      csvFileTitle: `CSV: ${objectName} - ${action} - Successful`,
+      noExcel: true
+    });
+  await generateCsvFile(res.failedResults, outputFile.replace('.csv', '-failed.csv'), {
+    csvFileTitle: `CSV: ${objectName} - ${action} - Failed`,
+    noExcel: true
+  });
+  // Return results
   return res;
 }
 

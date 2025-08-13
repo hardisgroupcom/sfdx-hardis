@@ -107,7 +107,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
         }));
       // Sort files by Type then Name
       sortArray(files, { by: ['Type', 'Name'], order: ['asc', 'asc'] });
-      uxLog("success", this, c.green('Successfully pulled sources from scratch org / source-tracked sandbox'));
+      uxLog("action", this, c.green('Successfully pulled sources from scratch org / source-tracked sandbox'));
       // Display as a table
       if (files.length > 0) {
         // Use the uxLogTable utility for consistent table output
