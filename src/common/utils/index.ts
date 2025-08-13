@@ -1141,6 +1141,13 @@ export async function generateReports(
   ];
 }
 
+// Get ANSI color codes by extracting characters before the first space
+const greyAnsi = c.grey(' ').split(' ')[0];
+const cyanAnsi = c.cyan(' ').split(' ')[0];
+const yellowAnsi = c.yellow(' ').split(' ')[0];
+const redAnsi = c.red(' ').split(' ')[0];
+const greenAnsi = c.green(' ').split(' ')[0];
+
 export function uxLog(commandThis: any, textInit: string, sensitive = false) {
   const text = textInit.includes('[sfdx-hardis]') ? textInit : '[sfdx-hardis]' + (textInit.startsWith('[') ? '' : ' ') + textInit;
   if (commandThis?.ux) {
@@ -1161,13 +1168,6 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
       WebSocketClient.sendCommandLogLineMessage('OBFUSCATED LOG LINE');
     }
     else {
-      // Get ANSI color codes by extracting characters before the first space
-      const greyAnsi = c.grey(' ').split(' ')[0];
-      const cyanAnsi = c.cyan(' ').split(' ')[0];
-      const yellowAnsi = c.yellow(' ').split(' ')[0];
-      const redAnsi = c.red(' ').split(' ')[0];
-      const greenAnsi = c.green(' ').split(' ')[0];
-
       let logType: LogType | null = null;
       let isQuestion = false;
       let textToSend = textInit;
