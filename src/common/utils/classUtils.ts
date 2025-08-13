@@ -21,7 +21,7 @@ function findSubstringInFile(filePath: string, substring: string): Promise<boole
 // Detect all test classes under the repository
 export async function getApexTestClasses(classRegexFilter: string = "", excludeSeeAllData = false) {
   const pathToBrowser = process.cwd();
-  uxLog(this, c.grey(`Finding all repository APEX tests in ${c.bold(pathToBrowser)}`));
+  uxLog("log", this, c.grey(`Finding all repository APEX tests in ${c.bold(pathToBrowser)}`));
 
   // Find all APEX classes
   const testClasses: any[] = [];
@@ -38,7 +38,7 @@ export async function getApexTestClasses(classRegexFilter: string = "", excludeS
       const className = entry.fileName.substring(0, entry.fileName.length - 4);
       // Check if need to exclude SeeAllData=true
       if (excludeSeeAllData === true && (await findSubstringInFile(entry.fullPath, "SeeAllData=true"))) {
-        uxLog(this, c.grey(`Filtered class ${className} because is contains SeeAllData=true`));
+        uxLog("log", this, c.grey(`Filtered class ${className} because is contains SeeAllData=true`));
         continue;
       }
       // Check if regex filter
@@ -48,7 +48,7 @@ export async function getApexTestClasses(classRegexFilter: string = "", excludeS
     }
   }
 
-  uxLog(this, c.grey(`Found APEX tests: ${c.bold(testClasses.join())}`));
+  uxLog("log", this, c.grey(`Found APEX tests: ${c.bold(testClasses.join())}`));
   return testClasses;
 }
 
@@ -57,7 +57,7 @@ async function matchRegexFilter(classRegexFilter: string, className: string) {
     if ((await countRegexMatches(new RegExp(classRegexFilter), className)) > 0) {
       return true;
     }
-    uxLog(this, c.grey(`Filtered class ${className} because not matching RegExp ${classRegexFilter}`));
+    uxLog("log", this, c.grey(`Filtered class ${className} because not matching RegExp ${classRegexFilter}`));
     return false;
   }
   return true;

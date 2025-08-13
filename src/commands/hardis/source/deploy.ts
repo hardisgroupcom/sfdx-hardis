@@ -185,9 +185,10 @@ Notes:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Deploy);
-    uxLog(this, c.red('This command will be removed by Salesforce in November 2024.'));
-    uxLog(this, c.red('Please migrate to command sf hardis project deploy start'));
+    uxLog("error", this, c.red('This command will be removed by Salesforce in November 2024.'));
+    uxLog("error", this, c.red('Please migrate to command sf hardis project deploy start'));
     uxLog(
+      "error",
       this,
       c.red(
         'See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm'

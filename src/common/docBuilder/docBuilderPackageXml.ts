@@ -49,7 +49,7 @@ export class DocBuilderPackageXML {
     }
     await fs.ensureDir(path.dirname(outputFile));
 
-    uxLog(this, `Generating markdown doc from ${inputFile} to ${outputFile}...`);
+    uxLog("other", this, `Generating markdown doc from ${inputFile} to ${outputFile}...`);
 
     // Read content
     const packageXmlContent = await parsePackageXmlFile(inputFile);
@@ -111,7 +111,7 @@ export class DocBuilderPackageXML {
 
     // Write output file
     await fs.writeFile(outputFile, mdLines.join("\n") + "\n");
-    uxLog(this, c.green(`Successfully generated ${path.basename(inputFile)} documentation into ${outputFile}`));
+    uxLog("success", this, c.green(`Successfully generated ${path.basename(inputFile)} documentation into ${outputFile}`));
 
     const jsonTree = await this.generateJsonTree(metadataTypes, packageXmlContent);
     if (jsonTree) {
@@ -119,7 +119,7 @@ export class DocBuilderPackageXML {
       const jsonFile = `./docs/json/root-${packageXmlFileName}.json`;
       await fs.ensureDir(path.dirname(jsonFile));
       await fs.writeFile(jsonFile, JSON.stringify(jsonTree, null, 2));
-      uxLog(this, c.green(`Successfully generated ${packageXmlFileName} JSON into ${jsonFile}`));
+      uxLog("success", this, c.green(`Successfully generated ${packageXmlFileName} JSON into ${jsonFile}`));
     }
 
     return outputFile;

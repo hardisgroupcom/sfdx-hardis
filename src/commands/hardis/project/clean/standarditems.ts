@@ -68,7 +68,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Removing unwanted standard dx source files...`));
+    uxLog("action", this, c.cyan(`Removing unwanted standard dx source files...`));
     /* jscpd:ignore-end */
     const sourceRootFolder = path.join(process.cwd() + '/force-app/main/default');
     const objectsFolder = path.join(sourceRootFolder + '/objects');
@@ -82,12 +82,12 @@ The command's technical implementation involves:
         if (matchingCustomFiles.length === 0) {
           // Remove the whole folder
           await fs.remove(objectDir);
-          uxLog(this, c.cyan(`Removed folder ${c.yellow(objectDir)}`));
+          uxLog("action", this, c.cyan(`Removed folder ${c.yellow(objectDir)}`));
           const sharingRuleFile = path.join(sourceRootFolder, 'sharingRules', objectDirName + '.sharingRules-meta.xml');
           if (fs.existsSync(sharingRuleFile)) {
             // Remove sharingRule if existing
             await fs.remove(sharingRuleFile);
-            uxLog(this, c.cyan(`Removed sharing rule ${c.yellow(sharingRuleFile)}`));
+            uxLog("action", this, c.cyan(`Removed sharing rule ${c.yellow(sharingRuleFile)}`));
           }
         } else {
           // Remove only standard fields
@@ -96,11 +96,11 @@ The command's technical implementation involves:
           for (const field of matchingAllFields) {
             if (!field.includes('__')) {
               await fs.remove(field);
-              uxLog(this, c.cyan(`  - removed standard field ${c.yellow(field)}`));
+              uxLog("action", this, c.cyan(`  - removed standard field ${c.yellow(field)}`));
             }
           }
 
-          uxLog(this, c.cyan(`Keep folder ${c.green(objectDir)} because of custom fields found`));
+          uxLog("action", this, c.cyan(`Keep folder ${c.green(objectDir)} because of custom fields found`));
         }
       }
     }

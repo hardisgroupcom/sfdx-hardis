@@ -183,7 +183,7 @@ export async function promptOrg(
 
   // Cancel
   if (org.cancel === true) {
-    uxLog(commandThis, c.red('Cancelled'));
+    uxLog("error", commandThis, c.red('Cancelled'));
     process.exit(0);
   }
 
@@ -206,7 +206,7 @@ export async function promptOrg(
 
   // Token is expired: login again to refresh it
   if (org?.connectedStatus === 'RefreshTokenAuthError' || org?.connectedStatus?.includes('expired')) {
-    uxLog(this, c.yellow(`⚠️ Your authentication is expired. Please login again in the web browser`));
+    uxLog("warning", this, c.yellow(`⚠️ Your authentication is expired. Please login again in the web browser`));
     const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}`;
     const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
     org = loginResult.result;
@@ -251,7 +251,7 @@ export async function promptOrg(
     }
   }
   // uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
-  uxLog(commandThis, c.grey(`Selected Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
+  uxLog("log", commandThis, c.grey(`Selected Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
   return orgResponse.org;
 }
 
@@ -308,13 +308,13 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   }
   // Authentication is necessary
   if (connectedStatus?.includes("expired")) {
-    uxLog(this, c.yellow("Your auth token is expired, you need to authenticate again"));
+    uxLog("warning", this, c.yellow("Your auth token is expired, you need to authenticate again"));
     const loginCommand = 'sf org login web' + ` --instance-url ${instanceUrl}`;
     const loginRes = await execSfdxJson(loginCommand, this, { fail: true, output: false });
     return loginRes.result;
   }
   // We shouldn't be here :)
-  uxLog(this, c.yellow("What are we doing here ? Please declare an issue with the following text: " + instanceUrl + ":" + connectedStatus));
+  uxLog("warning", this, c.yellow("What are we doing here ? Please declare an issue with the following text: " + instanceUrl + ":" + connectedStatus));
 }
 
 export async function promptOrgUsernameDefault(
@@ -392,6 +392,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
         return projectPackage;
       });
       uxLog(
+        "action",
         this,
         c.cyan(
           `Updated package ${c.green(installedPackage.SubscriberPackageName)} with version id ${c.green(
@@ -412,7 +413,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
           "Sales Insights"
         ].includes(installedPackage.SubscriberPackageName)
       ) {
-        uxLog(this, c.cyan(`Skip ${installedPackage.SubscriberPackageName} as it is a Salesforce standard package`))
+        uxLog("action", this, c.cyan(`Skip ${installedPackage.SubscriberPackageName} as it is a Salesforce standard package`))
         continue;
       }
 
@@ -454,7 +455,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
     }
   }
   if (updated) {
-    uxLog(this, c.cyan('Updated package configuration in .sfdx-hardis.yml config file'));
+    uxLog("action", this, c.cyan('Updated package configuration in .sfdx-hardis.yml config file'));
     await setConfig('project', { installedPackages: projectPackages });
   }
 }
@@ -477,7 +478,7 @@ export async function initOrgMetadatas(
   // Push or deploy according to config (default: push)
   if ((isCI && process.env.CI_SCRATCH_MODE === 'deploy') || process.env.DEBUG_DEPLOY === 'true') {
     // if CI, use sf project deploy start to make sure package.xml is consistent
-    uxLog(this, c.cyan(`Deploying project sources to org ${c.green(orgAlias)}...`));
+    uxLog("action", this, c.cyan(`Deploying project sources to org ${c.green(orgAlias)}...`));
     const packageXmlFile =
       process.env.PACKAGE_XML_TO_DEPLOY || configInfo.packageXmlToDeploy || fs.existsSync('./manifest/package.xml')
         ? './manifest/package.xml'
@@ -490,6 +491,7 @@ export async function initOrgMetadatas(
   } else {
     // Use push for local scratch orgs
     uxLog(
+      "action",
       this,
       c.cyan(
         `Pushing project sources to org ${c.green(
@@ -520,12 +522,13 @@ export async function initOrgMetadatas(
         });
       } catch (e) {
         uxLog(
+          "warning",
           this,
           c.yellow(
             "Issue while assigning SfdxHardisDeferSharingRecalc PS and suspending Sharing Calc, but it's probably ok anyway"
           )
         );
-        uxLog(this, c.grey((e as Error).message));
+        uxLog("log", this, c.grey((e as Error).message));
       }
     }
     await forceSourcePush(orgAlias, this, debugMode, options);
@@ -542,9 +545,9 @@ export async function initOrgMetadatas(
 
 // Assign permission sets to user
 export async function initPermissionSetAssignments(permSets: Array<any>, orgUsername: string) {
-  uxLog(this, c.cyan('Assigning Permission Sets...'));
+  uxLog("action", this, c.cyan('Assigning Permission Sets...'));
   for (const permSet of permSets) {
-    uxLog(this, c.cyan(`Assigning ${c.bold(permSet.name || permSet)} to org user ${orgUsername}`));
+    uxLog("action", this, c.cyan(`Assigning ${c.bold(permSet.name || permSet)} to org user ${orgUsername}`));
     const assignCommand = `sf org assign permset --name ${permSet.name || permSet} --target-org ${orgUsername}`;
     const assignResult = await execSfdxJson(assignCommand, this, {
       fail: false,
@@ -555,6 +558,7 @@ export async function initPermissionSetAssignments(permSets: Array<any>, orgUser
       !assignResult?.result?.failures[0].message.includes('Duplicate')
     ) {
       uxLog(
+        "error",
         this,
         c.red(`Error assigning to ${c.bold(permSet.name || permSet)}\n${assignResult?.result?.failures[0].message}`)
       );
@@ -564,7 +568,7 @@ export async function initPermissionSetAssignments(permSets: Array<any>, orgUser
 
 // Run initialization apex scripts
 export async function initApexScripts(orgInitApexScripts: Array<any>, orgAlias: string) {
-  uxLog(this, c.cyan('Running apex initialization scripts...'));
+  uxLog("action", this, c.cyan('Running apex initialization scripts...'));
   // Build list of apex scripts and check their existence
   const initApexScripts = orgInitApexScripts.map((scriptName: string) => {
     if (!fs.existsSync(scriptName)) {
@@ -586,12 +590,13 @@ export async function initApexScripts(orgInitApexScripts: Array<any>, orgAlias: 
 export async function initOrgData(initDataFolder: string, orgUsername: string) {
   // Init folder (accounts, etc...)
   if (fs.existsSync(initDataFolder)) {
-    uxLog(this, c.cyan('Loading sandbox org initialization data...'));
+    uxLog("action", this, c.cyan('Loading sandbox org initialization data...'));
     await importData(initDataFolder, this, {
       targetUsername: orgUsername,
     });
   } else {
     uxLog(
+      "action",
       this,
       c.cyan(
         `No initialization data: Define a sfdmu workspace in ${initDataFolder} if you need data in your new sandbox orgs`
@@ -608,6 +613,7 @@ export async function initOrgData(initDataFolder: string, orgUsername: string) {
       });
     } else {
       uxLog(
+        "log",
         this,
         c.grey(
           `Skipped import of ${dataPackage.dataPath} as importInSandboxOrgs is not defined to true in .sfdx-hardis.yml`
@@ -695,11 +701,11 @@ export async function setConnectionVariables(conn, handleTechnical = false) {
           }
         });
         const identity = await connTechnical.identity();
-        uxLog(this, c.grey(`Connected to technical org ${c.green(identity.username)}`));
+        uxLog("log", this, c.grey(`Connected to technical org ${c.green(identity.username)}`));
         globalThis.jsForceConnTechnical = connTechnical;
       }
     } catch (e) {
-      uxLog(this, c.red(`Unable to connect to technical org: ${e}`));
+      uxLog("error", this, c.red(`Unable to connect to technical org: ${e}`));
       globalThis.jsForceConnTechnical = null;
     }
   }

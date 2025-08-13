@@ -83,7 +83,7 @@ skipMinimizeProfiles:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Removing profile attributes that exist on Permission Sets`));
+    uxLog("action", this, c.cyan(`Removing profile attributes that exist on Permission Sets`));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.profile-meta.xml`;
@@ -94,7 +94,7 @@ skipMinimizeProfiles:
     for (const profileFile of matchingProfileFiles) {
       const profileName = path.basename(profileFile).replace('.profile-meta.xml', '');
       if (skipMinimizeProfiles.includes(profileName)) {
-        uxLog(this, c.grey(`Skipped ${profileName} as found in skipMinimizeProfiles property`));
+        uxLog("log", this, c.grey(`Skipped ${profileName} as found in skipMinimizeProfiles property`));
         continue;
       }
       const res = await minimizeProfile(profileFile);
@@ -105,11 +105,11 @@ skipMinimizeProfiles:
 
     // Summary
     if (counter > 0) {
-      uxLog(this, c.yellow('Please make sure the attributes removed from Profiles are defined on Permission Sets'));
+      uxLog("warning", this, c.yellow('Please make sure the attributes removed from Profiles are defined on Permission Sets'));
       globalThis.displayProfilesWarning = true;
     }
     const msg = `Cleaned ${c.green(c.bold(counter))} profiles from attributes existing on Permission Sets`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };
   }

@@ -68,7 +68,7 @@ The command's technical implementation involves:
     const { flags } = await this.parse(ConvertProfilesToPermSets);
     const except = flags.except || [];
 
-    uxLog(this, c.cyan('This command will convert profiles into permission sets'));
+    uxLog("action", this, c.cyan('This command will convert profiles into permission sets'));
 
     const sourceRootFolder = path.join(process.cwd() + '/force-app/main/default');
     const profilesFolder = path.join(sourceRootFolder, 'profiles');
@@ -80,7 +80,7 @@ The command's technical implementation involves:
           continue;
         }
         const psName = 'PS_' + profileName.split(' ').join('_');
-        uxLog(this, c.cyan(`Generating Permission set ${c.green(psName)} from profile ${c.green(profileName)}`));
+        uxLog("action", this, c.cyan(`Generating Permission set ${c.green(psName)} from profile ${c.green(profileName)}`));
         const convertCommand = 'sf shane:profile:convert' + ` -p "${profileName}"` + ` -n "${psName}"` + ' -e';
         await execCommand(convertCommand, this, { fail: true, output: true });
       }

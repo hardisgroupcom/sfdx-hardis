@@ -104,7 +104,7 @@ export default class ProjectCreate extends SfCommand<any> {
       await fs.rm(path.join(process.cwd(), projectName), { recursive: true });
     }
     // Copy default project files
-    uxLog(this, 'Copying default files...');
+    uxLog("action", this, 'Copying default files...');
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/ci', '.'), process.cwd(), { overwrite: false });
 
     if (setProjectName) {
@@ -134,10 +134,11 @@ export default class ProjectCreate extends SfCommand<any> {
     await setConfig('project', {
       autoCleanTypes: defaultAutoCleanTypes
     });
-    uxLog(this, c.yellow(`autoCleanTypes ${defaultAutoCleanTypes.join(",")} has been activated on the new project.`));
-    uxLog(this, c.bold(c.yellow(`If you install CI/CD on an existing org with many rights in Profiles, you might remove "minimizeProfiles" from .sfdx-hardis.yml autoCleanTypes property `)));
+    uxLog("warning", this, c.yellow(`autoCleanTypes ${defaultAutoCleanTypes.join(",")} has been activated on the new project.`));
+    uxLog("warning", this, c.bold(c.yellow(`If you install CI/CD on an existing org with many rights in Profiles, you might remove "minimizeProfiles" from .sfdx-hardis.yml autoCleanTypes property `)));
     // Message instructions
     uxLog(
+      "action",
       this,
       c.cyan(
         `SFDX Project has been created. You can continue the steps in documentation at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-home/`

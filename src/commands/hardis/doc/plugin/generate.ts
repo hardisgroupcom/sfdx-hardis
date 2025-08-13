@@ -106,7 +106,7 @@ The command's technical implementation involves:
       set(commandsNav, commandsSplit.join('.'), navItem, { preservePaths: true, merge: true });
       commandsLinks[command.id] = commandMdPath;
     }
-    uxLog(this, yaml.dump(commandsNav));
+    uxLog("other", this, yaml.dump(commandsNav));
 
     // Generate index.md
     await this.generateIndexDoc(config, commandsLinks);
@@ -116,8 +116,9 @@ The command's technical implementation involves:
     const mkdocsYmlFileExists = fs.existsSync(mkdocsYmlFile);
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/mkdocs', '.'), process.cwd(), { overwrite: false });
     if (!mkdocsYmlFileExists) {
-      uxLog(this, c.blue('Base mkdocs files copied in your SF Cli plugin folder'));
+      uxLog("log", this, c.grey('Base mkdocs files copied in your SF Cli plugin folder'));
       uxLog(
+        "warning",
         this,
         c.yellow(
           'You should probably manually update mkdocs.yml and build-deploy-docs.yml with your repo & plugin information'
@@ -267,6 +268,6 @@ The command's technical implementation involves:
     await fs.ensureDir(path.dirname(mdFileName));
     const yamlString = lines.join('\n') + '\n';
     await fs.writeFile(mdFileName, yamlString);
-    uxLog(this, c.grey('Generated file ' + c.bold(mdFileName)));
+    uxLog("log", this, c.grey('Generated file ' + c.bold(mdFileName)));
   }
 }

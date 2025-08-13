@@ -22,14 +22,14 @@ export class AgentforceProvider extends AiProviderRoot {
   public async promptAi(promptText: string, template: PromptTemplate): Promise<AiResponse | null> {
     if (!this.checkMaxAiCallsNumber()) {
       const maxCalls = this.getAiMaxCallsNumber();
-      uxLog(this, c.yellow(`[Agentforce] Already performed maximum ${maxCalls} calls. Increase it by defining AI_MAXIMUM_CALL_NUMBER env variable`));
+      uxLog("warning", this, c.yellow(`[Agentforce] Already performed maximum ${maxCalls} calls. Increase it by defining AI_MAXIMUM_CALL_NUMBER env variable`));
       return null;
     }
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog(this, c.grey(`[Agentforce] Requesting the following prompt${template ? (' using template ' + template) : ''}:\n${promptText}`));
+      uxLog("log", this, c.grey(`[Agentforce] Requesting the following prompt${template ? (' using template ' + template) : ''}:\n${promptText}`));
     }
     else {
-      uxLog(this, c.grey(`[Agentforce] Requesting prompt${template ? (' using template ' + template) : ''} (define DEBUG_PROMPTS=true to see details)`));
+      uxLog("log", this, c.grey(`[Agentforce] Requesting prompt${template ? (' using template ' + template) : ''} (define DEBUG_PROMPTS=true to see details)`));
     }
     this.incrementAiCallsNumber();
     const genericPromptTemplate = process.env.GENERIC_AGENTFORCE_PROMPT_TEMPLATE || "SfdxHardisGenericPrompt";
@@ -55,10 +55,10 @@ export class AgentforceProvider extends AiProviderRoot {
     }
     const agentforceResponse: any = await this.conn.requestPost(promptUrl, payload);
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog(this, c.grey("[Agentforce] Received prompt response\n" + JSON.stringify(agentforceResponse, null, 2)));
+      uxLog("log", this, c.grey("[Agentforce] Received prompt response\n" + JSON.stringify(agentforceResponse, null, 2)));
     }
     else {
-      uxLog(this, c.grey("[Agentforce] Received prompt response"));
+      uxLog("log", this, c.grey("[Agentforce] Received prompt response"));
     }
     const aiResponse: AiResponse = {
       success: false,

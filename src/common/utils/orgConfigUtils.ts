@@ -25,6 +25,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       const m = listViewRegex.exec(listViewStr);
       if (!m) {
         uxLog(
+          "error",
           this,
           c.red(
             `Unable to find list view object and name from ${listViewStr}. Use format ${c.bold(
@@ -60,9 +61,9 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       executablePath: chromeExecutablePath
     });
   } catch (e: any) {
-    uxLog(this, c.red("List View with Mine has not been restored: Error while trying to launch puppeteer (Browser simulator)"));
-    uxLog(this, c.red(e.message));
-    uxLog(this, c.red("You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Chrome/Chromium path. example: /usr/bin/chromium-browser"));
+    uxLog("error", this, c.red("List View with Mine has not been restored: Error while trying to launch puppeteer (Browser simulator)"));
+    uxLog("error", this, c.red(e.message));
+    uxLog("error", this, c.red("You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Chrome/Chromium path. example: /usr/bin/chromium-browser"));
     return { error: e };
   }
   const page = await browser.newPage();
@@ -135,6 +136,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       } catch {
         unnecessary.push(`${objectName}:${listViewName}`);
         uxLog(
+          "warning",
           this,
           c.yellow(
             `Unable to hit save button, but it's probably because ${objectName}.${listViewName} was already set to "Mine"`
@@ -146,11 +148,11 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       // Confirmed saved toast
       await page.waitForSelector("xpath///span[contains(text(), 'List view updated.')]");
       success.push(`${objectName}:${listViewName}`);
-      uxLog(this, c.green(`Successfully set ${objectName}.${listViewName} as "Mine"`));
+      uxLog("success", this, c.green(`Successfully set ${objectName}.${listViewName} as "Mine"`));
     } catch (e) {
       // Unexpected puppeteer error
       failed.push(`${objectName}:${listViewName}`);
-      uxLog(this, c.red(`Puppeteer error while processing ${objectName}:${listViewName}: ${(e as Error).message}`));
+      uxLog("error", this, c.red(`Puppeteer error while processing ${objectName}:${listViewName}: ${(e as Error).message}`));
     }
   }
   // Close puppeteer browser
@@ -243,7 +245,7 @@ function guessMatchingMergeTargets(branchName: string, majorOrgs: any[]): string
   else if (isIntegration(branchName)) {
     return majorOrgs.filter(org => isUat(org.branchName)).map(org => org.branchName);
   }
-  uxLog(this, c.yellow(`Unable to guess merge targets for ${branchName}.
+  uxLog("warning", this, c.yellow(`Unable to guess merge targets for ${branchName}.
 Please set them manually in config/branches/.sfdx-hardis.${branchName}.yml
 Example:
 mergeTargets:

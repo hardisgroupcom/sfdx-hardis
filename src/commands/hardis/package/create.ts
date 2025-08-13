@@ -116,6 +116,7 @@ The command's technical implementation involves:
       debug: debugMode,
     });
     uxLog(
+      "action",
       this,
       c.cyan(
         `Created package Id: ${c.green(packageCreateResult.result.Id)} associated to DevHub ${c.green(

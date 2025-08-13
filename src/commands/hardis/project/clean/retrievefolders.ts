@@ -61,7 +61,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Retrieve dashboards, documents and report folders in DX sources`));
+    uxLog("action", this, c.cyan(`Retrieve dashboards, documents and report folders in DX sources`));
 
     const rootSourcesFolder = path.join(process.cwd() + '/force-app/main/default');
     const folderTypes = [

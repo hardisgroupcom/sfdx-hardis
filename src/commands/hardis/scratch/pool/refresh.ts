@@ -76,6 +76,7 @@ The command's technical implementation involves:
     const config = await getConfig('project');
     if (config.poolConfig == null) {
       uxLog(
+        "warning",
         this,
         c.yellow('Configuration file must contain a poolConfig property') +
         '\n' +
@@ -86,7 +87,7 @@ The command's technical implementation involves:
 
     const maxScratchOrgsNumber = config.poolConfig.maxScratchOrgsNumber || 5;
     const maxScratchOrgsNumberToCreateOnce = config.poolConfig.maxScratchOrgsNumberToCreateOnce || 10;
-    uxLog(this, c.grey('Pool config: ' + JSON.stringify(config.poolConfig)));
+    uxLog("log", this, c.grey('Pool config: ' + JSON.stringify(config.poolConfig)));
 
     // Get pool storage
     const poolStorage = await getPoolStorage({
@@ -107,6 +108,7 @@ The command's technical implementation involves:
         scratchOrg.daysBeforeExpiration = daysBeforeExpiration;
         scratchOrgsToDelete.push(scratchOrg);
         uxLog(
+          "log",
           this,
           c.grey(
             `Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be deleted as it has only ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`
@@ -115,6 +117,7 @@ The command's technical implementation involves:
         return false;
       }
       uxLog(
+        "log",
         this,
         c.grey(
           `Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be kept as it still has ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`
@@ -136,6 +139,7 @@ The command's technical implementation involves:
         const deleteCommand = `sf org delete scratch --no-prompt --target-org ${scratchOrgToDelete.scratchOrgUsername}`;
         await execCommand(deleteCommand, this, { fail: false, debug: this.debugMode, output: true });
         uxLog(
+          "action",
           this,
           c.cyan(
             `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${scratchOrgToDelete?.authFileJson?.result?.instanceUrl
@@ -147,7 +151,7 @@ The command's technical implementation involves:
 
     // Create new scratch orgs
     const numberOfOrgsToCreate = Math.min(maxScratchOrgsNumber - scratchOrgs.length, maxScratchOrgsNumberToCreateOnce);
-    uxLog(this, c.cyan('Creating ' + numberOfOrgsToCreate + ' scratch orgs...'));
+    uxLog("action", this, c.cyan('Creating ' + numberOfOrgsToCreate + ' scratch orgs...'));
     let numberCreated = 0;
     let numberfailed = 0;
     const subProcesses: any[] = [];
@@ -158,7 +162,7 @@ The command's technical implementation involves:
         const commandArgs = ['hardis:scratch:create', '--pool', '--json'];
         const sfdxPath = await which('sf');
         const child = spawn(sfdxPath || 'sf', commandArgs, { cwd: process.cwd(), env: process.env });
-        uxLog(this, '[pool] ' + c.grey(`hardis:scratch:create (${i}) started`));
+        uxLog("log", this, '[pool] ' + c.grey(`hardis:scratch:create (${i}) started`));
         // handle errors
         child.on('error', (err) => {
           resolve({ code: 1, result: { error: err } });
@@ -168,15 +172,15 @@ The command's technical implementation involves:
         child.stdout.on('data', (data) => {
           stdout += data.toString();
           if (this.debugMode === true) {
-            uxLog(this, data.toString());
+            uxLog("other", this, data.toString());
           }
         });
         // Handle end of command
         child.on('close', async (code) => {
           const colorFunc = code === 0 ? c.green : c.red;
-          uxLog(this, '[pool] ' + colorFunc(`hardis:scratch:create (${i}) exited with code ${c.bold(code)}`));
+          uxLog("action", this, '[pool] ' + colorFunc(`hardis:scratch:create (${i}) exited with code ${c.bold(code)}`));
           if (code !== 0) {
-            uxLog(this, `Return code is not 0 (${i}): ` + c.grey(stdout));
+            uxLog("warning", this, `Return code is not 0 (${i}): ` + c.grey(stdout));
             numberfailed++;
           } else {
             numberCreated++;
@@ -188,7 +192,7 @@ The command's technical implementation involves:
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (e) {
             result = { result: { status: 1, rawLog: stdout } };
-            uxLog(this, c.yellow(`Error parsing stdout (${i}): ` + stdout));
+            uxLog("warning", this, c.yellow(`Error parsing stdout (${i}): ` + stdout));
           }
           await addScratchOrgToPool(result.result || result);
           resolve({ code, result: result });
@@ -200,11 +204,12 @@ The command's technical implementation involves:
     // Await parallel scratch org creations are completed
     const createResults = await Promise.all(subProcesses);
     if (this.debugMode) {
-      uxLog(this, c.grey('Create results: \n' + JSON.stringify(createResults, null, 2)));
+      uxLog("log", this, c.grey('Create results: \n' + JSON.stringify(createResults, null, 2)));
     }
 
     const colorFunc = numberCreated === numberOfOrgsToCreate ? c.green : numberCreated === 0 ? c.red : c.yellow;
     uxLog(
+      "action",
       this,
       '[pool] ' +
       colorFunc(`Created ${c.bold(numberCreated)} scratch orgs (${c.bold(numberfailed)} creations(s) failed)`)

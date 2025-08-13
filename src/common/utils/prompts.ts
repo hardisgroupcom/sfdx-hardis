@@ -21,7 +21,7 @@ export interface PromptsQuestion {
 // Centralized prompts function
 export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
   if (isCI) {
-    uxLog(this, c.grey(JSON.stringify(options, null, 2)));
+    uxLog("log", this, c.grey(JSON.stringify(options, null, 2)));
     throw new SfError("Nothing should be prompted during CI !");
   }
   const questionsRaw = Array.isArray(options) ? options : [options];
@@ -58,14 +58,14 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
   if (WebSocketClient.isAlive()) {
     // Use UI prompt
     for (const question of questionsReformatted) {
-      uxLog(this, c.cyan(question.message) + c.white(" Look up in VsCode ⬆️"));
+      uxLog("action", this, c.cyan(question.message) + c.white(" Look up in VsCode ⬆️"));
       const [questionAnswer] = await WebSocketClient.sendPrompts([question]);
       answers = Object.assign(answers, questionAnswer);
       checkStopPrompts(answers);
       if (JSON.stringify(questionAnswer).toLowerCase().includes("token")) {
-        uxLog(this, c.grey("Selection done but hidden in log because it contains sensitive information"));
+        uxLog("log", this, c.grey("Selection done but hidden in log because it contains sensitive information"));
       } else {
-        uxLog(this, c.grey(JSON.stringify(questionAnswer)));
+        uxLog("log", this, c.grey(JSON.stringify(questionAnswer)));
       }
     }
   } else {
@@ -81,7 +81,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
 function checkStopPrompts(answers: any) {
   for (const answer of Object.keys(answers)) {
     if (answers[answer] === "exitNow") {
-      uxLog(this, c.red("Script terminated at user request"));
+      uxLog("error", this, c.red("Script terminated at user request"));
       // Send close client message with aborted status if WebSocket is alive
       if (WebSocketClient.isAlive()) {
         WebSocketClient.sendCloseClientMessage("aborted");

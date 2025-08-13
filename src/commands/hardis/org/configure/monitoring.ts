@@ -113,7 +113,7 @@ The command's technical implementation involves a series of Git operations, file
       }
     }
     const preRequisitesUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
-    uxLog(this, c.yellow('Monitoring pre-requisites documentation: ' + c.bold(preRequisitesUrl)));
+    uxLog("warning", this, c.yellow('Monitoring pre-requisites documentation: ' + c.bold(preRequisitesUrl)));
     const confirmPreRequisites = await prompts({
       type: 'select',
       name: 'value',
@@ -129,7 +129,7 @@ The command's technical implementation involves a series of Git operations, file
       const msg =
         'Please follow the instructions to configure the sfdx-hardis monitoring pre-requisites on your Git server\n' +
         preRequisitesUrl;
-      uxLog(this, c.yellow(msg));
+      uxLog("warning", this, c.yellow(msg));
       await open(preRequisitesUrl, { wait: true });
       return { outputString: msg };
     }
@@ -138,6 +138,7 @@ The command's technical implementation involves a series of Git operations, file
     const currentOrgId = flags['target-org']?.getOrgId() || '';
     if (flags.orginstanceurl && flags['target-org']?.getConnection()?.instanceUrl === flags.orginstanceurl) {
       uxLog(
+        "action",
         this,
         c.cyan(
           `Default org ${flags['target-org'].getConnection()?.instanceUrl
@@ -158,7 +159,7 @@ The command's technical implementation involves a series of Git operations, file
       if (currentOrgId !== org.orgId) {
         const infoMsg =
           'Default org changed. Please restart the same command if VsCode does not do that automatically for you :)';
-        uxLog(this, c.yellow(infoMsg));
+        uxLog("warning", this, c.yellow(infoMsg));
         const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ') + ' --orginstanceurl ' + org.instanceUrl;
         WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);
         return { outputString: infoMsg };
@@ -184,17 +185,17 @@ The command's technical implementation involves a series of Git operations, file
     // Create sfdx project if not existing yet
     if (!fs.existsSync('sfdx-project.json')) {
       const createCommand = 'sf project generate' + ` --name "sfdx-hardis-monitoring"`;
-      uxLog(this, c.cyan('Creating sfdx-project...'));
+      uxLog("action", this, c.cyan('Creating sfdx-project...'));
       await execCommand(createCommand, this, {
         output: true,
         fail: true,
       });
-      uxLog(this, c.cyan('Moving sfdx-project to root...'));
+      uxLog("action", this, c.cyan('Moving sfdx-project to root...'));
       await fs.copy('sfdx-hardis-monitoring', process.cwd(), { overwrite: true });
       await fs.remove('sfdx-hardis-monitoring');
 
       // Copying monitoring folder structure
-      uxLog(this, 'Copying default monitoring files...');
+      uxLog("other", this, 'Copying default monitoring files...');
       if (fs.existsSync('README.md') && fs.readFileSync('README.md', 'utf8').toString().split('\n').length < 5) {
         // Remove default README if necessary
         await fs.remove('README.md');
@@ -230,14 +231,15 @@ The command's technical implementation involves a series of Git operations, file
       await gitAddCommitPush({
         message: '[sfdx-hardis] Update monitoring configuration',
       });
-      uxLog(this, c.green('Your configuration for org monitoring is now ready :)'));
+      uxLog("success", this, c.green('Your configuration for org monitoring is now ready :)'));
     } else {
-      uxLog(this, c.yellow('Please manually git add, commit and push to the remote repository :)'));
+      uxLog("warning", this, c.yellow('Please manually git add, commit and push to the remote repository :)'));
     }
     const branch = await getCurrentGitBranch();
     uxLog(
+      "success",
       this,
-      c.greenBright(
+      c.green(
         `Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}:)`
       )
     );
@@ -245,7 +247,7 @@ The command's technical implementation involves a series of Git operations, file
     const msg =
       'Please follow the instructions to schedule sfdx-hardis monitoring on your Git server: ' +
       c.bold(scheduleMonitoringUrl);
-    uxLog(this, c.yellow(msg));
+    uxLog("warning", this, c.yellow(msg));
     await open(scheduleMonitoringUrl, { wait: true });
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };

@@ -77,7 +77,7 @@ autoCleanTypes:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Setting flows as Auto Layout and remove positions...`));
+    uxLog("action", this, c.cyan(`Setting flows as Auto Layout and remove positions...`));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.flow-meta.xml`;
@@ -91,14 +91,14 @@ autoCleanTypes:
         if (updatedFlowXml !== flowXml) {
           await fs.writeFile(flowMetadataFile, updatedFlowXml);
           counter++;
-          uxLog(this, c.grey(`Removed positions from Flow ${flowMetadataFile}`));
+          uxLog("log", this, c.grey(`Removed positions from Flow ${flowMetadataFile}`));
         }
       }
     }
 
     // Summary
     const msg = `Updated ${c.green(c.bold(counter))} flows to remove positions`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };
   }

@@ -230,7 +230,7 @@ The command's technical implementation involves several steps:
         if (this.argv.indexOf('--websocket') > -1) {
           command += ` --websocket ${this.argv[this.argv.indexOf('--websocket') + 1]}`;
         }
-        uxLog(this, c.cyan(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
+        uxLog("action", this, c.cyan(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
         // Command based cleaning
         await execCommand(command, this, {
           fail: true,
@@ -239,7 +239,7 @@ The command's technical implementation involves several steps:
         });
       } else {
         // Template based cleaning
-        uxLog(this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
+        uxLog("action", this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
         const filterConfigFile = await this.getFilterConfigFile(cleaningType);
         const packageDirectories = this.project?.getPackageDirectories() || [];
         for (const packageDirectory of packageDirectories) {
@@ -252,7 +252,7 @@ The command's technical implementation involves several steps:
     }
 
     // Clean package.xml file from deleted items
-    uxLog(this, c.grey(`Cleaning package.xml & files from deleted items...`));
+    uxLog("log", this, c.grey(`Cleaning package.xml & files from deleted items...`));
     const patternPackageXml = '**/manifest/**/package*.xml';
     const packageXmlFiles = await glob(patternPackageXml, {
       cwd: process.cwd(),
@@ -264,19 +264,19 @@ The command's technical implementation involves several steps:
       const newPackageXmlContent = removeObjectPropertyLists(packageXmlContent, this.deleteItems);
       if (packageXmlContentStr !== JSON.stringify(newPackageXmlContent)) {
         await writePackageXmlFile(packageXmlFile, newPackageXmlContent);
-        uxLog(this, c.grey('-- cleaned elements from ' + packageXmlFile));
+        uxLog("log", this, c.grey('-- cleaned elements from ' + packageXmlFile));
       }
     }
 
     // Delete files when necessary (in parallel)
-    uxLog(this, c.grey(`Removing obsolete files...`));
+    uxLog("log", this, c.grey(`Removing obsolete files...`));
     await Promise.all(
       Object.keys(this.deleteItems).map(async (type) => {
         await this.manageDeleteRelatedFiles(type);
       })
     );
 
-    uxLog(this, c.green(`Cleaning complete`));
+    uxLog("success", this, c.green(`Cleaning complete`));
     // Return an object to be displayed with --json
     return { outputString: 'Cleaned references from sfdx project' };
   }
@@ -338,7 +338,7 @@ The command's technical implementation involves several steps:
       const matchFiles = await glob(pattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
       for (const removeFile of matchFiles) {
         await fs.remove(removeFile);
-        uxLog(this, c.grey(`Removed file ${removeFile}`));
+        uxLog("log", this, c.grey(`Removed file ${removeFile}`));
       }
     }
     // Remove field in recordTypes
@@ -356,7 +356,7 @@ The command's technical implementation involves several steps:
         if (updatedPicklistValues.length !== recordType.RecordType.picklistValues.length) {
           recordType.RecordType.picklistValues = updatedPicklistValues;
           await writeXmlFile(recordTypeFile, recordType);
-          uxLog(this, c.grey(`Cleaned file ${recordTypeFile} from ${obj}.${fld}`));
+          uxLog("log", this, c.grey(`Cleaned file ${recordTypeFile} from ${obj}.${fld}`));
         }
       }
     }

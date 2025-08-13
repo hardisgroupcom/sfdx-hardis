@@ -73,6 +73,7 @@ The command's technical implementation involves:
     const config = await getConfig('project');
     if (config.poolConfig == null) {
       uxLog(
+        "warning",
         this,
         c.yellow('Configuration file must contain a poolConfig property') +
         '\n' +
@@ -80,8 +81,8 @@ The command's technical implementation involves:
       );
       return { outputString: 'Configuration file must contain a poolConfig property' };
     }
-    uxLog(this, c.cyan(`Reseting scratch org pool on org ${c.green(flags['target-dev-hub'].getUsername())}...`));
-    uxLog(this, c.grey('Pool config: ' + JSON.stringify(config.poolConfig)));
+    uxLog("action", this, c.cyan(`Reseting scratch org pool on org ${c.green(flags['target-dev-hub'].getUsername())}...`));
+    uxLog("log", this, c.grey('Pool config: ' + JSON.stringify(config.poolConfig)));
 
     // Get pool storage
     const poolStorage = await getPoolStorage({
@@ -106,6 +107,7 @@ The command's technical implementation involves:
       const deleteCommand = `sf org delete scratch --no-prompt --target-org ${scratchOrgToDelete.scratchOrgUsername}`;
       await execCommand(deleteCommand, this, { fail: false, debug: this.debugMode, output: true });
       uxLog(
+        "action",
         this,
         c.cyan(
           `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${scratchOrgToDelete?.authFileJson?.result?.instanceUrl

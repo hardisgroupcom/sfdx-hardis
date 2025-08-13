@@ -51,7 +51,7 @@ export default class CleanListViews extends SfCommand<any> {
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Replacing 'Mine' by 'Everything' in ListViews for deployments to pass`));
+    uxLog("action", this, c.cyan(`Replacing 'Mine' by 'Everything' in ListViews for deployments to pass`));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.listView-meta.xml`;
@@ -63,7 +63,7 @@ export default class CleanListViews extends SfCommand<any> {
       const listViewXml = await parseXmlFile(listViewfile);
       if (listViewXml.ListView?.filterScope[0] === 'Mine') {
         listViewXml.ListView.filterScope[0] = 'Everything';
-        uxLog(this, c.grey(`replaced Mine by Everything in ListView ${listViewXml}`));
+        uxLog("log", this, c.grey(`replaced Mine by Everything in ListView ${listViewXml}`));
         await writeXmlFile(listViewfile, listViewXml);
         listViewsMine.push(path.relative(process.cwd(), listViewfile).replace(/\\/g, '/'));
         counter++;
@@ -74,7 +74,7 @@ export default class CleanListViews extends SfCommand<any> {
 
     // Summary
     const msg = `Replaced ${c.green(c.bold(counter))} Mine by Everything in ListViews`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };
   }

@@ -96,7 +96,7 @@ The command's technical implementation involves:
     ];
     const apexFiles = await glob(pattern, { ignore: GLOB_IGNORE_PATTERNS });
     this.matchResults = [];
-    uxLog(this, `Browsing ${apexFiles.length} files`);
+    uxLog("other", this, `Browsing ${apexFiles.length} files`);
     // Loop in files
     for (const file of apexFiles) {
       const fileText = await fs.readFile(file, 'utf8');
@@ -145,7 +145,7 @@ The command's technical implementation involves:
 
     // Display as table
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
-    uxLog(this, c.cyan(`Found ${c.bold(resultsLight.length)} call-ins and call-outs.`));
+    uxLog("action", this, c.cyan(`Found ${c.bold(resultsLight.length)} call-ins and call-outs.`));
     uxLogTable(this,
       resultsLight.map((item: any) => {
         delete item.detail;

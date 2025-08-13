@@ -86,12 +86,13 @@ The command's technical implementation involves:
     const config = await getConfig('project');
     if (config.get('EXPERIMENTAL', '') !== 'true') {
       const msg = 'This command is not stable enough to be used. Use EXPERIMENTAL=true to use it anyway';
-      uxLog(this, c.yellow(msg));
+      uxLog("warning", this, c.yellow(msg));
       return { outputString: msg };
     }
 
     this.noPull = flags.nopull || false;
     uxLog(
+      "action",
       this,
       c.cyan('This command will refresh your git branch and your org with the content of another git branch')
     );
@@ -144,6 +145,7 @@ The command's technical implementation involves:
       return await this.runRefresh(localBranch, flags);
     } catch (e) {
       uxLog(
+        "warning",
         this,
         c.yellow('There has been a merge conflict or a technical error, please contact a Developer for help !')
       );
@@ -155,6 +157,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     uxLog(
+      "action",
       this,
       c.cyan(
         `sfdx-hardis will refresh your local branch ${c.green(localBranch)} and your local scratch org ${c.green(
@@ -169,14 +172,15 @@ The command's technical implementation involves:
 
     // Pull from scratch org
     if (this.noPull) {
-      uxLog(this, c.cyan(`Skipped pull from scratch org`));
+      uxLog("action", this, c.cyan(`Skipped pull from scratch org`));
     } else {
-      uxLog(this, c.cyan(`Pulling sources from scratch org ${flags['target-org'].getUsername()}...`));
+      uxLog("action", this, c.cyan(`Pulling sources from scratch org ${flags['target-org'].getUsername()}...`));
       await forceSourcePull(flags['target-org'].getUsername(), this.debugMode);
     }
 
     // Stash
     uxLog(
+      "action",
       this,
       c.cyan(
         `Stashing your uncommitted updates in ${c.green(localBranch)} before merging ${c.green(
@@ -187,7 +191,7 @@ The command's technical implementation involves:
     const stashResult = await git({ output: true }).stash(['save', `[sfdx-hardis] Stash of ${localBranch}`]);
     const stashed = stashResult.includes('Saved working directory');
     // Pull most recent version of development branch
-    uxLog(this, c.cyan(`Pulling most recent version of remote branch ${c.green(this.mergeBranch)}...`));
+    uxLog("action", this, c.cyan(`Pulling most recent version of remote branch ${c.green(this.mergeBranch)}...`));
     await git({ output: true }).fetch();
     await git({ output: true }).checkout(this.mergeBranch || '');
     const pullRes = await git({ output: true }).pull();
@@ -204,7 +208,7 @@ The command's technical implementation involves:
     // Merge into current branch if necessary
     if (pullRes.summary.changes > 0 || mergeRef !== localRef) {
       // Create new commit from merge
-      uxLog(this, c.cyan(`Creating a merge commit of ${c.green(this.mergeBranch)} within ${c.green(localBranch)}...`));
+      uxLog("action", this, c.cyan(`Creating a merge commit of ${c.green(this.mergeBranch)} within ${c.green(localBranch)}...`));
       let mergeSummary = await git({ output: true }).merge([this.mergeBranch || '']);
       while (mergeSummary.failed) {
         const mergeResult = await prompts({
@@ -224,20 +228,21 @@ The command's technical implementation involves:
           ],
         });
         if (mergeResult.value === false) {
-          uxLog(this, 'Refresh script stopped by user');
+          uxLog("other", this, 'Refresh script stopped by user');
           process.exit(0);
         }
         mergeSummary = await git({ output: true }).merge(['--continue']);
       }
     } else {
       uxLog(
+        "action",
         this,
         c.cyan(`Local branch ${c.green(localBranch)} is already up to date with ${c.green(this.mergeBranch)}`)
       );
     }
     // Restoring stash
     if (stashed) {
-      uxLog(this, c.cyan(`Restoring stash into your local branch ${c.green(localBranch)}...`));
+      uxLog("action", this, c.cyan(`Restoring stash into your local branch ${c.green(localBranch)}...`));
       await git({ output: true }).stash(['pop']);
     }
 

@@ -140,7 +140,7 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
 
     // Deployment check mode
     if (this.checkOnly) {
-      uxLog(this, c.cyan("Handling Pull Request comments for a deployment check job..."));
+      uxLog("action", this, c.cyan("Handling Pull Request comments for a deployment check job..."));
       // Add deployment info
       await buildCheckDeployCommitSummary();
       const prData: Partial<PullRequestData> = {
@@ -166,9 +166,9 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
     }
     // Fallback
     else {
-      uxLog(this, c.yellow("No notification has been sent"));
-      uxLog(this, c.yellow("- Pull Request comments are sent if --check-only is true"));
-      uxLog(this, c.yellow("- Slack / Teams / Email / JIRA messages are sent only if --check-only is false and --deploy-status is valid"));
+      uxLog("warning", this, c.yellow("No notification has been sent"));
+      uxLog("warning", this, c.yellow("- Pull Request comments are sent if --check-only is true"));
+      uxLog("warning", this, c.yellow("- Slack / Teams / Email / JIRA messages are sent only if --check-only is false and --deploy-status is valid"));
     }
 
     return { message: "Processed notifications" }

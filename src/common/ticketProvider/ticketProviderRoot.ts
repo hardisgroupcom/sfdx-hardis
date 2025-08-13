@@ -13,13 +13,13 @@ export abstract class TicketProviderRoot {
   }
 
   public async collectTicketsInfo(tickets: Ticket[]) {
-    uxLog(this, c.yellow("collectTicketsInfo is not implemented on " + this.getLabel()));
+    uxLog("warning", this, c.yellow("collectTicketsInfo is not implemented on " + this.getLabel()));
     return tickets;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postDeploymentComments(tickets: Ticket[], _org: string, _pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
-    uxLog(this, c.yellow("postDeploymentComments is not implemented on " + this.getLabel()));
+    uxLog("warning", this, c.yellow("postDeploymentComments is not implemented on " + this.getLabel()));
     return tickets;
   }
 

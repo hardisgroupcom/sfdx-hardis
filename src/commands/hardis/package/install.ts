@@ -155,7 +155,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
     // Install packages
     await MetadataUtils.installPackagesOnOrg(packagesToInstallCompleted, null, this, 'install');
     const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
-    uxLog(this, c.italic(c.grey('New package list on org:\n' + JSON.stringify(installedPackages, null, 2))));
+    uxLog("other", this, c.italic(c.grey('New package list on org:\n' + JSON.stringify(installedPackages, null, 2))));
 
     if (!isCI) {
       // Manage package install config storage

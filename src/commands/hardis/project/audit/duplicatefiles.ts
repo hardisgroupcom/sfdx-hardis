@@ -75,6 +75,7 @@ The command's technical implementation involves:
       });
 
     uxLog(
+      "action",
       this,
       c.cyan(`Checking for duplicate file names in ${c.bold(pathToBrowser)}. Files: ${c.bold(allFiles.length)}`)
     );
@@ -98,13 +99,14 @@ The command's technical implementation involves:
         .map(([fileName, paths]) => `${c.bold(fileName)}:\n  - ${paths.join('\n  - ')}`)
         .join('\n');
       uxLog(
+        "action",
         this,
         c.cyan(`Found ${c.bold(duplicateCount)} duplicate file names in ${c.bold(pathToBrowser)}.`)
       );
-      uxLog(this, c.yellow(`Duplicate files:\n${duplicateList}`));
+      uxLog("warning", this, c.yellow(`Duplicate files:\n${duplicateList}`));
     }
     else {
-      uxLog(this, c.cyan(`No duplicate file names found in ${c.bold(pathToBrowser)}.`));
+      uxLog("action", this, c.cyan(`No duplicate file names found in ${c.bold(pathToBrowser)}.`));
     }
     return { duplicates: duplicates };
   }

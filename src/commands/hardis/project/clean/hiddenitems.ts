@@ -74,7 +74,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Removing hidden dx managed source files`));
+    uxLog("action", this, c.cyan(`Removing hidden dx managed source files`));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.{app,cmp,evt,tokens,html,css,js,xml}`;
@@ -91,14 +91,14 @@ The command's technical implementation involves:
         const toRemove =
           folderSplit.includes('lwc') || folderSplit.includes('aura') ? componentFolder : matchingCustomFile;
         await fs.remove(toRemove);
-        uxLog(this, c.cyan(`Removed hidden item ${c.yellow(toRemove)}`));
+        uxLog("action", this, c.cyan(`Removed hidden item ${c.yellow(toRemove)}`));
         counter++;
       }
     }
 
     // Summary
     const msg = `Removed ${c.green(c.bold(counter))} hidden source items`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };
   }

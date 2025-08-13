@@ -65,7 +65,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
     const conn = flags['target-org'].getConnection();
-    uxLog(this, c.cyan(`Extracting Release Updates and checks to perform in ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(`Extracting Release Updates and checks to perform in ${conn.instanceUrl} ...`));
 
     // Fetch ReleaseUpdate records
     const releaseUpdatesQuery =
@@ -125,11 +125,11 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         }
       })
 
-      uxLog(this, c.cyan(notifText));
+      uxLog("action", this, c.cyan(notifText));
       uxLogTable(this, releaseUpdatesLight);
     }
     else {
-      uxLog(this, c.green("No release updates has been found"));
+      uxLog("success", this, c.green("No release updates has been found"));
     }
 
     // Return an object to be displayed with --json

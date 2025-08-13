@@ -92,7 +92,7 @@ The command's technical implementation involves:
 
     // Retrieve the list of users who haven't logged in for a while
     const conn = flags['target-org'].getConnection();
-    uxLog(this, c.cyan(`Extracting Licenses from ${conn.instanceUrl} ...` + this.usedOnly ? '(used only)' : ''));
+    uxLog("action", this, c.cyan(`Extracting Licenses from ${conn.instanceUrl} ...` + this.usedOnly ? '(used only)' : ''));
 
     const licensesByKey = {};
     const usedLicenses: any[] = [];
@@ -143,7 +143,7 @@ The command's technical implementation involves:
     this.licenses.push(...pslLicenses);
 
     sortCrossPlatform(usedLicenses);
-    uxLog(this, c.cyan('Used licenses: ' + usedLicenses.join(', ')));
+    uxLog("action", this, c.cyan('Used licenses: ' + usedLicenses.join(', ')));
     uxLogTable(this, this.licenses);
 
 

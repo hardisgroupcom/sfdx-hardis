@@ -37,13 +37,13 @@ export function git(options: any = { output: false, displayCommand: true }): Sim
     stdout.on('data', (data) => {
       logCommand();
       if (options.output) {
-        uxLog(this, c.italic(c.grey(data)));
+        uxLog("other", this, c.italic(c.grey(data)));
       }
     });
     stderr.on('data', (data) => {
       logCommand();
       if (options.output) {
-        uxLog(this, c.italic(c.yellow(data)));
+        uxLog("other", this, c.italic(c.yellow(data)));
       }
     });
     function logCommand() {
@@ -59,7 +59,7 @@ export function git(options: any = { output: false, displayCommand: true }): Sim
                 options,
               );
             }
-            uxLog(this, `[command] ${c.bold(c.bgWhite(c.blue(command + ' ' + gitArgsStr)))}`);
+            uxLog("other", this, `[command] ${c.bold(c.bgWhite(c.blue(command + ' ' + gitArgsStr)))}`);
             if (WebSocketClient.isAlive()) {
               WebSocketClient.sendCommandSubCommandEndMessage(
                 command + ' ' + gitArgsStr,
@@ -121,7 +121,7 @@ export async function getGitRepoUrl() {
 export async function gitHasLocalUpdates(options = { show: false }) {
   const changes = await git().status();
   if (options.show) {
-    uxLog(this, c.cyan(JSON.stringify(changes)));
+    uxLog("action", this, c.cyan(JSON.stringify(changes)));
   }
   return changes.files.length > 0;
 }
@@ -141,6 +141,7 @@ export async function checkSfdxPlugin(pluginName: string) {
   }
   if (!(pluginsStdout || '').includes(pluginName)) {
     uxLog(
+      "warning",
       this,
       c.yellow(
         `[dependencies] Installing SF CLI plugin ${c.green(
@@ -171,6 +172,7 @@ export async function checkAppDependency(appName) {
     })
     .catch(() => {
       uxLog(
+        "error",
         this,
         c.red(
           `You need ${c.bold(appName)} to be locally installed to run this command.\n${dependenciesInstallLink[appName] || ''
@@ -278,7 +280,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
           resolve(null);
         });
       });
-      uxLog(this, `Git repository cloned. ${c.yellow('Please run again the same command :)')}`);
+      uxLog("other", this, `Git repository cloned. ${c.yellow('Please run again the same command :)')}`);
       process.exit(0);
     } else {
       throw new SfError('You need to be at the root of a git repository to run this command');
@@ -409,8 +411,8 @@ export async function checkGitClean(options: any) {
         await execCommand('git add --all', this, { output: true, fail: true });
         await execCommand('git stash', this, { output: true, fail: true });
       } catch (e) {
-        uxLog(this, c.yellow(c.bold("You might need to run the following command in Powershell launched as Administrator")));
-        uxLog(this, c.yellow(c.bold("git config --system core.longpaths true")));
+        uxLog("warning", this, c.yellow(c.bold("You might need to run the following command in Powershell launched as Administrator")));
+        uxLog("warning", this, c.yellow(c.bold("git config --system core.longpaths true")));
         throw e;
       }
     } else {
@@ -503,6 +505,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
     }
     if (filesFiltered.length > 0) {
       uxLog(
+        "log",
         this,
         c.grey(
           'The following list of files has not been proposed for selection\n' +
@@ -557,11 +560,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
     }
     // exit
     else {
-      uxLog(this, 'Cancelled by user');
+      uxLog("other", this, 'Cancelled by user');
       process.exit(0);
     }
   } else {
-    uxLog(this, c.cyan('There is no new file to commit'));
+    uxLog("action", this, c.cyan('There is no new file to commit'));
   }
   return result;
 }
@@ -661,7 +664,7 @@ export async function execCommand(
   if (output && !(options.spinner === false)) {
     spinner = ora({ text: commandLog, spinner: 'moon' }).start();
   } else {
-    uxLog(this, commandLog);
+    uxLog("other", this, commandLog);
   }
   if (WebSocketClient.isAlive()) {
     WebSocketClient.sendCommandSubCommandStartMessage(
@@ -711,11 +714,12 @@ export async function execCommand(
             ((e as any).stdout + (e as any).stderr).includes(options.retry.retryStringConstraint))
         ) {
           uxLog(
+            "warning",
             commandThis,
             c.yellow(`Retry command: ${options.retry.tryCount} on ${options.retry.retryMaxAttempts || 1}`)
           );
           if (options.retry.retryDelay) {
-            uxLog(this, `Waiting ${options.retry.retryDelay} seconds before retrying command`);
+            uxLog("other", this, `Waiting ${options.retry.retryDelay} seconds before retrying command`);
             await new Promise((resolve) => setTimeout(resolve, options.retry.retryDelay * 1000));
           }
           return await execCommand(command, commandThis, options);
@@ -732,7 +736,7 @@ export async function execCommand(
   }
   // Display output if requested, for better user understanding of the logs
   if (options.output || options.debug) {
-    uxLog(commandThis, c.italic(c.grey(shortenLogLines(commandResult.stdout))));
+    uxLog("other", commandThis, c.italic(c.grey(shortenLogLines(commandResult.stdout))));
   }
   // Return status 0 if not --json
   if (!command.includes('--json')) {
@@ -749,7 +753,7 @@ export async function execCommand(
       throw new SfError(c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`));
     }
     if (commandResult.stderr && commandResult.stderr.length > 2) {
-      uxLog(this, '[sfdx-hardis][WARNING] stderr: ' + c.yellow(commandResult.stderr));
+      uxLog("other", this, '[sfdx-hardis][WARNING] stderr: ' + c.yellow(commandResult.stderr));
     }
     return parsedResult;
   } catch (e) {
@@ -797,7 +801,7 @@ export function elapseEnd(text: string, commandThis: any = this) {
   if (elapseAll[text]) {
     const elapsed = Number(process.hrtime.bigint() - elapseAll[text]);
     const ms = elapsed / 1000000;
-    uxLog(commandThis, c.grey(c.italic(text + ' ' + moment().startOf('day').milliseconds(ms).format('H:mm:ss.SSS'))));
+    uxLog("log", commandThis, c.grey(c.italic(text + ' ' + moment().startOf('day').milliseconds(ms).format('H:mm:ss.SSS'))));
     delete elapseAll[text];
   }
 }
@@ -849,7 +853,7 @@ export async function filterPackageXml(
 
   // Keep only namespaces
   if ((options.keepOnlyNamespaces || []).length > 0) {
-    uxLog(this, c.grey(`Keeping items from namespaces ${options.keepOnlyNamespaces.join(',')} ...`));
+    uxLog("log", this, c.grey(`Keeping items from namespaces ${options.keepOnlyNamespaces.join(',')} ...`));
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       type.members = type.members.filter((member: string) => {
         const containsNamespace = options.keepOnlyNamespaces.filter((ns: string) => member.startsWith(ns) || member.includes(`${ns}__`)).length > 0;
@@ -864,7 +868,7 @@ export async function filterPackageXml(
 
   // Remove namespaces
   if ((options.removeNamespaces || []).length > 0) {
-    uxLog(this, c.grey(`Removing items from namespaces ${options.removeNamespaces.join(',')} ...`));
+    uxLog("log", this, c.grey(`Removing items from namespaces ${options.removeNamespaces.join(',')} ...`));
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       type.members = type.members.filter((member: string) => {
         const startsWithNamespace = options.removeNamespaces.filter((ns: string) => member.startsWith(ns)).length > 0;
@@ -912,7 +916,7 @@ export async function filterPackageXml(
           );
         });
         if (wildcardDestructiveTypes.length > 0) {
-          uxLog(this, c.grey(`Removed ${type.name[0]} type`));
+          uxLog("log", this, c.grey(`Removed ${type.name[0]} type`));
         }
         return wildcardDestructiveTypes.length === 0;
       });
@@ -945,10 +949,10 @@ export async function filterPackageXml(
     // Remove metadata types (named, and empty ones)
     manifest.Package.types = manifest.Package.types.filter((type: any) => {
       if (options.keepMetadataTypes.includes(type.name[0])) {
-        uxLog(this, c.grey('kept ' + type.name[0]));
+        uxLog("log", this, c.grey('kept ' + type.name[0]));
         return true;
       }
-      uxLog(this, c.grey('removed ' + type.name[0]));
+      uxLog("log", this, c.grey('removed ' + type.name[0]));
       return false;
     });
   }
@@ -1023,6 +1027,7 @@ export async function catchMatches(catcher: any, file: string, fileText: string,
       });
       if (commandThis.debug) {
         uxLog(
+          "other",
           commandThis,
           `[${fileName}]: Match [${matches}] occurrences of [${catcher.type}/${catcher.name}] with catcher [${catcherLabel}]`
         );
@@ -1123,7 +1128,7 @@ export async function generateReports(
     }
     WebSocketClient.sendReportFileMessage(reportFile, "CSV Report", "report");
   } catch (e: any) {
-    uxLog(commandThis, c.yellow(`[sfdx-hardis] Error opening file in VsCode: ${e.message}`));
+    uxLog("warning", commandThis, c.yellow(`[sfdx-hardis] Error opening file in VsCode: ${e.message}`));
   }
   const excel = csvStringify(resultSorted, {
     delimiter: '\t',
@@ -1132,29 +1137,24 @@ export async function generateReports(
   });
   await fs.writeFile(reportFileExcel, excel, 'utf8');
   WebSocketClient.sendReportFileMessage(reportFileExcel, "Excel Report", "report");
-  uxLog(commandThis, c.cyan(logLabel));
-  uxLog(commandThis, c.grey(c.cyan(`- CSV: ${reportFile}`)));
-  uxLog(commandThis, c.grey(c.cyan(`- XLS: ${reportFileExcel}`)));
+  uxLog("action", commandThis, c.cyan(logLabel));
+  uxLog("log", commandThis, c.grey(c.cyan(`- CSV: ${reportFile}`)));
+  uxLog("log", commandThis, c.grey(c.cyan(`- XLS: ${reportFileExcel}`)));
   return [
     { type: 'csv', file: reportFile },
     { type: 'xls', file: reportFileExcel },
   ];
 }
 
-// Get ANSI color codes by extracting characters before the first space
-const greyAnsi = c.grey(' ').split(' ')[0];
-const cyanAnsi = c.cyan(' ').split(' ')[0];
-const yellowAnsi = c.yellow(' ').split(' ')[0];
-const redAnsi = c.red(' ').split(' ')[0];
-const greenAnsi = c.green(' ').split(' ')[0];
-
-export function uxLog(commandThis: any, textInit: string, sensitive = false) {
+export function uxLog(logType: LogType, commandThis: any, textInit: string, sensitive = false) {
   const text = textInit.includes('[sfdx-hardis]') ? textInit : '[sfdx-hardis]' + (textInit.startsWith('[') ? '' : ' ') + textInit;
+  // Console log
   if (commandThis?.ux) {
     commandThis.ux.log(text);
   } else if (!(globalThis?.processArgv || process?.argv || "").includes('--json')) {
     console.log(text);
   }
+  // File log
   if (globalThis.hardisLogFileStream) {
     if (sensitive) {
       globalThis.hardisLogFileStream.write('OBFUSCATED LOG LINE\n');
@@ -1163,12 +1163,12 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
       globalThis.hardisLogFileStream.write(stripAnsi(text) + '\n');
     }
   }
+  // VsCode sfdx-hardis log
   if (WebSocketClient.isAlive() && !text.includes('[command]') && !text.includes('[NotifProvider]')) {
     if (sensitive) {
       WebSocketClient.sendCommandLogLineMessage('OBFUSCATED LOG LINE');
     }
     else {
-      let logType: LogType | null = null;
       let isQuestion = false;
       let textToSend = textInit;
       if (textInit.includes("Look up in VsCode")) {
@@ -1176,19 +1176,9 @@ export function uxLog(commandThis: any, textInit: string, sensitive = false) {
         textToSend = textInit.split("Look up in VsCode")[0].trim();
         isQuestion = true;
       }
-      if (textInit.startsWith(greyAnsi)) {
-        logType = 'log';
-      } else if (textInit.startsWith(cyanAnsi)) {
-        logType = 'action';
-      } else if (textInit.startsWith(yellowAnsi)) {
-        logType = 'warning';
-      } else if (textInit.startsWith(redAnsi)) {
-        logType = 'error';
-      } else if (textInit.startsWith(greenAnsi)) {
-        logType = 'success';
-      }
+
       // Send message to WebSocket client
-      if (logType) {
+      if (logType !== "other") {
         WebSocketClient.sendCommandLogLineMessage(textToSend, logType, isQuestion);
       }
     }
@@ -1243,7 +1233,7 @@ export function uxLogTable(commandThis: any, tableData: any[], columnsOrder: str
       .join(' | ')
   );
   const tableString = [header, separator, ...rows].join('\n');
-  uxLog(commandThis, c.italic("\n" + tableString));
+  uxLog("other", commandThis, c.italic("\n" + tableString));
   // Send table to WebSocket client
   if (WebSocketClient.isAliveWithLwcUI()) {
     const maxLen = 20;
@@ -1281,9 +1271,9 @@ export async function copyLocalSfdxInfo() {
       dereference: true,
       overwrite: true,
     });
-    // uxLog(this, `[cache] Copied SF CLI cache in ${TMP_COPY_FOLDER} for later reuse`);
+    // uxLog("other", this, `[cache] Copied SF CLI cache in ${TMP_COPY_FOLDER} for later reuse`);
     // const files = fs.readdirSync(TMP_COPY_FOLDER, {withFileTypes: true}).map(item => item.name);
-    // uxLog(this, '[cache]' + JSON.stringify(files));
+    // uxLog("other", this, '[cache]' + JSON.stringify(files));
   }
 }
 
@@ -1297,9 +1287,9 @@ export async function restoreLocalSfdxInfo() {
       dereference: true,
       overwrite: false,
     });
-    // uxLog(this, '[cache] Restored cache for CI');
+    // uxLog("other", this, '[cache] Restored cache for CI');
     // const files = fs.readdirSync(SFDX_LOCAL_FOLDER, {withFileTypes: true}).map(item => item.name);
-    // uxLog(this, '[cache]' + JSON.stringify(files));
+    // uxLog("other", this, '[cache]' + JSON.stringify(files));
     RESTORED = true;
   }
 }
@@ -1312,7 +1302,7 @@ export async function generateSSLCertificate(
   conn: any,
   options: any
 ) {
-  uxLog(commandThis, c.cyan('Generating SSL certificate...'));
+  uxLog("action", commandThis, c.cyan('Generating SSL certificate...'));
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
   process.chdir(tmpDir);
@@ -1348,8 +1338,9 @@ export async function generateSSLCertificate(
     description: 'Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.',
   });
   if (confirmResponse.value === true) {
-    uxLog(commandThis, c.cyan('Please configure both below variables in your CI/CD platform:'));
+    uxLog("action", commandThis, c.cyan('Please configure both below variables in your CI/CD platform:'));
     uxLog(
+      "log",
       commandThis,
       c.grey(
         c.cyanBright(
@@ -1360,6 +1351,7 @@ export async function generateSSLCertificate(
       true
     );
     uxLog(
+      "log",
       commandThis,
       c.grey(c.cyanBright(
         `${c.green(
@@ -1369,6 +1361,7 @@ export async function generateSSLCertificate(
       true
     );
     uxLog(
+      "log",
       commandThis,
       c.grey(c.yellow(`Help to configure CI variables is here: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`))
     );
@@ -1445,6 +1438,7 @@ export async function generateSSLCertificate(
     // Deploy metadatas
     try {
       uxLog(
+        "action",
         commandThis,
         c.cyan(
           `Deploying Connected App ${c.bold(promptResponses.appName)} into target org ${options.targetUsername || ''
@@ -1452,6 +1446,7 @@ export async function generateSSLCertificate(
         )
       );
       uxLog(
+        "log",
         commandThis,
         c.grey(c.yellow(
           `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file :)`
@@ -1464,18 +1459,20 @@ export async function generateSSLCertificate(
         targetUsername: options.targetUsername ? options.targetUsername : null,
       });
       console.assert(deployRes.status === 0, c.red('[sfdx-hardis] Failed to deploy metadatas'));
-      uxLog(commandThis, c.cyan(`Successfully deployed ${c.green(promptResponses.appName)} Connected App`));
+      uxLog("action", commandThis, c.cyan(`Successfully deployed ${c.green(promptResponses.appName)} Connected App`));
       await fs.remove(tmpDirMd);
       await fs.remove(crtFile);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       uxLog(
+        "error",
         commandThis,
         c.red(
           'Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name'
         )
       );
       uxLog(
+        "warning",
         commandThis,
         c.yellow(`
 ${c.bold('MANUAL INSTRUCTIONS')}
@@ -1497,8 +1494,9 @@ If this is a Test class issue (production env), you may have to create manually 
     }
   } else {
     // Tell infos to install manually
-    uxLog(commandThis, c.cyan('Now you can configure the SF CLI connected app'));
+    uxLog("action", commandThis, c.cyan('Now you can configure the SF CLI connected app'));
     uxLog(
+      "log",
       commandThis,
       c.grey(
         `Follow instructions here: ${c.bold(
@@ -1507,6 +1505,7 @@ If this is a Test class issue (production env), you may have to create manually 
       )
     );
     uxLog(
+      "log",
       commandThis,
       c.grey(
         `Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(
@@ -1515,6 +1514,7 @@ If this is a Test class issue (production env), you may have to create manually 
       )
     );
     uxLog(
+      "log",
       commandThis,
       c.grey(
         `- configure CI variable ${c.green(
@@ -1523,6 +1523,7 @@ If this is a Test class issue (production env), you may have to create manually 
       )
     );
     uxLog(
+      "log",
       commandThis,
       c.grey(
         `- configure CI variable ${c.green(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)} with value ${c.green(
@@ -1559,7 +1560,7 @@ const ansiRegex = new RegExp(ansiPattern, 'g');
 
 export function stripAnsi(str: string) {
   if (typeof str !== 'string') {
-    uxLog(this, c.yellow('Warning: stripAnsi expects a string'));
+    uxLog("warning", this, c.yellow('Warning: stripAnsi expects a string'));
     return '';
   }
   return str.replace(ansiRegex, '');
@@ -1588,11 +1589,11 @@ export function replaceJsonInString(inputString: string, jsonObject: any): strin
       const jsonString = JSON.stringify(jsonObject, null, 2);
       return stripAnsi(inputString).replace(jsonMatch[0], jsonString);
     } catch (err: any) {
-      uxLog(this, c.yellow('Warning: unable to replace JSON in string:' + err.message));
+      uxLog("warning", this, c.yellow('Warning: unable to replace JSON in string:' + err.message));
       return inputString;
     }
   }
-  uxLog(this, c.yellow('Warning: unable to find json to replace in string'));
+  uxLog("warning", this, c.yellow('Warning: unable to find json to replace in string'));
   return inputString;
 }
 

@@ -88,7 +88,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     // List states of flow file using git
     const fileHistory = await git().log({ file: this.flowFile });
     if (fileHistory.all.length === 1) {
-      uxLog(this, c.green(`There is only one state for Flow ${this.flowFile}`));
+      uxLog("success", this, c.green(`There is only one state for Flow ${this.flowFile}`));
       return {};
     }
 
@@ -126,7 +126,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
 
     if (this.commitBefore === "allStates") {
       diffMdFile = await generateHistoryDiffMarkdown(this.flowFile, this.debugMode);
-      uxLog(this, c.yellow(`It is recommended to use mkdocs-material to read it correctly (see https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/#doc-html-pages)`));
+      uxLog("warning", this, c.yellow(`It is recommended to use mkdocs-material to read it correctly (see https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/#doc-html-pages)`));
     }
     else {
       if (this.commitAfter === "" && !isCI) {

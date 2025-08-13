@@ -95,7 +95,7 @@ The command's technical implementation involves:
     const apexLogsNumber = extractFile.split('\n').filter((line) => line.length > 0).length;
 
     if (apexLogsNumber === 0) {
-      uxLog(this, c.cyan(`There are no Apex Logs to delete in org ${c.green(flags['target-org'].getUsername())}`));
+      uxLog("action", this, c.cyan(`There are no Apex Logs to delete in org ${c.green(flags['target-org'].getUsername())}`));
       return {};
     }
 
@@ -123,6 +123,7 @@ The command's technical implementation involves:
     });
 
     uxLog(
+      "success",
       this,
       c.green(
         `Successfully deleted ${c.bold(apexLogsNumber)} Apex Logs in org ${c.bold(flags['target-org'].getUsername())}`

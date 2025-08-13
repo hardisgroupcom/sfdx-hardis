@@ -65,11 +65,12 @@ The command's technical implementation involves:
     // Get pool configuration
     const config = await getConfig('project');
     const poolConfig = config.poolConfig || {};
-    uxLog(this, 'Pool config: ' + c.grey(JSON.stringify(poolConfig, null, 2)));
+    uxLog("log", this, 'Pool config: ' + c.grey(JSON.stringify(poolConfig, null, 2)));
 
     // Missing scratch orgs pool configuration
     if (!poolConfig.storageService) {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `There is not scratch orgs pool configured on this project. Please see with your tech lead about using command hardis:scratch:pool:configure`
@@ -83,13 +84,13 @@ The command's technical implementation involves:
       devHubConn: flags['target-dev-hub']?.getConnection(),
       devHubUsername: flags['target-dev-hub']?.getUsername(),
     });
-    uxLog(this, 'Pool storage: ' + c.grey(JSON.stringify(poolStorage, null, 2)));
+    uxLog("other", this, 'Pool storage: ' + c.grey(JSON.stringify(poolStorage, null, 2)));
 
     const scratchOrgs = poolStorage.scratchOrgs || [];
     const availableNumber = scratchOrgs.length;
 
     // Display logs
-    uxLog(this, c.cyan(`There are ${c.bold(availableNumber)} available scratch orgs`));
+    uxLog("action", this, c.cyan(`There are ${c.bold(availableNumber)} available scratch orgs`));
 
     // Return an object to be displayed with --json
     return {

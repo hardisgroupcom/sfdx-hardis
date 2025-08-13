@@ -122,7 +122,7 @@ The command's technical implementation involves:
       const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name IN (${profilesConstraintIn})`;
       const profilesQueryRes = await soqlQuery(profilesQuery, conn);
       if (this.debugMode) {
-        uxLog(this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
+        uxLog("log", this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
       }
       profileIds = profilesQueryRes.records.map((profile) => profile.Id);
       profileNames = profilesQueryRes.records.map((profile) => {
@@ -134,7 +134,7 @@ The command's technical implementation involves:
       const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name NOT IN (${profilesConstraintIn})`;
       const profilesQueryRes = await soqlQuery(profilesQuery, conn);
       if (this.debugMode) {
-        uxLog(this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
+        uxLog("log", this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
       }
       profileIds = profilesQueryRes.records.map((profile) => profile.Id);
       profileNames = profilesQueryRes.records.map((profile) => {
@@ -146,7 +146,7 @@ The command's technical implementation involves:
     const profileIdsStr = profileIds.map((profileId) => `'${profileId}'`).join(',');
 
     // Query users that we want to unfreeze
-    uxLog(this, c.cyan(`Querying User records matching ${c.bold(profileIds.length)} profiles...`));
+    uxLog("action", this, c.cyan(`Querying User records matching ${c.bold(profileIds.length)} profiles...`));
     const userQuery = `SELECT Id,Name,Username,ProfileId FROM User WHERE ProfileId IN (${profileIdsStr}) and IsActive=true`;
     const userQueryRes = await bulkQuery(userQuery, conn);
     const usersToUnfreeze = userQueryRes.records;
@@ -155,12 +155,12 @@ The command's technical implementation involves:
     // Check empty result
     if (usersToUnfreeze.length === 0) {
       const outputString = `No matching user records found with defined profile constraints`;
-      uxLog(this, c.yellow(outputString));
+      uxLog("warning", this, c.yellow(outputString));
       return { outputString };
     }
 
     // Query related UserLogin records
-    uxLog(this, c.cyan(`Querying UserLogin records matching ${c.bold(usersToUnfreeze.length)} users...`));
+    uxLog("action", this, c.cyan(`Querying UserLogin records matching ${c.bold(usersToUnfreeze.length)} users...`));
     const userLoginQuery = `SELECT Id,UserId,IsFrozen FROM UserLogin WHERE UserId IN (${userIdsStr}) and IsFrozen=true`;
     const userLoginQueryRes = await bulkQuery(userLoginQuery, conn);
     const userLoginsToUnfreeze = userLoginQueryRes.records;
@@ -174,13 +174,13 @@ The command's technical implementation involves:
         Profile: profileNames.filter((profile) => profile[0] === matchingUser.ProfileId)[1],
       };
     });
-    uxLog(this, c.cyan(`List of users to unfreeze (${userLoginsToUnfreeze.length}):`));
+    uxLog("action", this, c.cyan(`List of users to unfreeze (${userLoginsToUnfreeze.length}):`));
     uxLogTable(
       this,
       this.debugMode ? usersToUnfreezeDisplay : usersToUnfreezeDisplay.slice(0, this.maxUsersDisplay)
     );
     if (!this.debugMode && usersToUnfreezeDisplay.length > this.maxUsersDisplay) {
-      uxLog(this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
+      uxLog("warning", this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
     }
 
     // Generate csv + xls of users about to be unfrozen
@@ -204,7 +204,7 @@ The command's technical implementation involves:
       });
       if (confirmunfreeze.value !== true) {
         const outputString = 'Script cancelled by user';
-        uxLog(this, c.yellow(outputString));
+        uxLog("warning", this, c.yellow(outputString));
         return { outputString };
       }
     }
@@ -219,13 +219,14 @@ The command's technical implementation involves:
     const unfreezeErrorsNb = bulkUpdateRes.failedResults.length;
     if (unfreezeErrorsNb > 0) {
       uxLog(
+        "warning",
         this,
         c.yellow(`Warning: ${c.red(c.bold(unfreezeErrorsNb))} users has not been unfrozen (bulk API errors)`)
       );
     }
 
     // Build results summary
-    uxLog(this, c.green(`${c.bold(unfreezeSuccessNb)} users has been be unfrozen.`));
+    uxLog("success", this, c.green(`${c.bold(unfreezeSuccessNb)} users has been be unfrozen.`));
 
     // Return an object to be displayed with --json
     return {

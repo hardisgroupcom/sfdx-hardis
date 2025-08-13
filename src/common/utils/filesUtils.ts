@@ -76,8 +76,8 @@ export class FilesExporter {
     if (this.dtl === null) {
       this.dtl = await getFilesWorkspaceDetail(this.filesPath);
     }
-    uxLog(this.commandThis, c.cyan(`Exporting files from ${c.green(this.dtl.full_label)} ...`));
-    uxLog(this.commandThis, c.italic(c.grey(this.dtl.description)));
+    uxLog("action", this.commandThis, c.cyan(`Exporting files from ${c.green(this.dtl.full_label)} ...`));
+    uxLog("log", this.commandThis, c.italic(c.grey(this.dtl.description)));
     // Make sure export folder for files is existing
     this.exportedFilesFolder = path.join(this.filesPath, 'export');
     await fs.ensureDir(this.exportedFilesFolder);
@@ -127,6 +127,7 @@ export class FilesExporter {
       }
       if (this.startChunkNumber === 0) {
         uxLog(
+          "warning",
           this,
           c.yellow(
             c.italic('Use --startchunknumber command line argument if you do not want to start from first chunk')
@@ -171,7 +172,7 @@ export class FilesExporter {
           resolve(true);
         }
         if (globalThis.sfdxHardisFatalError === true) {
-          uxLog(this, c.red('Fatal error while processing chunks queue'));
+          uxLog("error", this, c.red('Fatal error while processing chunks queue'));
           process.exit(1);
         }
       }, 1000);
@@ -194,6 +195,7 @@ export class FilesExporter {
       );
       if (this.dtl.overwriteParentRecords !== true && fs.existsSync(parentRecordFolderForFiles)) {
         uxLog(
+          "log",
           this,
           c.grey(
             `Skipped record - ${record[this.dtl.outputFolderNameField] || record.Id} - Record files already downloaded`
@@ -221,6 +223,7 @@ export class FilesExporter {
     this.recordChunksNumber++;
     if (this.recordChunksNumber < this.startChunkNumber) {
       uxLog(
+        "action",
         this,
         c.cyan(
           `Skip parent records chunk #${this.recordChunksNumber} because it is lesser than ${this.startChunkNumber}`
@@ -229,6 +232,7 @@ export class FilesExporter {
       return;
     }
     uxLog(
+      "action",
       this,
       c.cyan(
         `Processing parent records chunk #${this.recordChunksNumber} on ${this.chunksNumber} (${records.length} records) ...`
@@ -253,11 +257,11 @@ export class FilesExporter {
               await this.downloadAttachmentFile(attachment, batch);
             } catch (e) {
               this.filesErrors++;
-              uxLog(this, c.red('Download file error: ' + attachment.Name + '\n' + e));
+              uxLog("error", this, c.red('Download file error: ' + attachment.Name + '\n' + e));
             }
           });
       } else {
-        uxLog(this, c.grey('No Attachments found for the parent records in this batch'));
+        uxLog("log", this, c.grey('No Attachments found for the parent records in this batch'));
       }
     }
     for (let i = 0; i < records.length; i += contentVersionBatchSize) {
@@ -275,6 +279,7 @@ export class FilesExporter {
           const contentDocIdBatch = contentDocIdIn.slice(j, j + contentVersionBatchSize).join(',');
           // Log the progression of contentDocIdBatch
           uxLog(
+            "action",
             this,
             c.cyan(
               `Processing ContentDocumentId chunk #${Math.ceil((j + 1) / contentVersionBatchSize)} on ${Math.ceil(
@@ -313,12 +318,12 @@ export class FilesExporter {
                 );
               } catch (e) {
                 this.filesErrors++;
-                uxLog(this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
+                uxLog("error", this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
               }
             });
         }
       } else {
-        uxLog(this, c.grey('No ContentDocumentLinks found for the parent records in this batch'));
+        uxLog("log", this, c.grey('No ContentDocumentLinks found for the parent records in this batch'));
       }
     }
   }
@@ -385,13 +390,13 @@ export class FilesExporter {
     }
     // Check file extension
     if (this.dtl.fileTypes !== 'all' && !this.dtl.fileTypes.includes(contentVersion.FileType)) {
-      uxLog(this, c.grey(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File type ignored`));
+      uxLog("log", this, c.grey(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File type ignored`));
       this.filesIgnoredType++;
       return;
     }
     // Check file overwrite
     if (this.dtl.overwriteFiles !== true && fs.existsSync(outputFile)) {
-      uxLog(this, c.yellow(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File already existing`));
+      uxLog("warning", this, c.yellow(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File already existing`));
       this.filesIgnoredExisting++;
       return;
     }
@@ -407,18 +412,18 @@ export class FilesExporter {
     const apiCallsRemaining = connAny?.limitInfo?.apiUsage?.used
       ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
       : null;
-    uxLog(this, c.cyan(`API limit: ${c.bold(connAny?.limitInfo?.apiUsage?.limit || null)}`));
-    uxLog(this, c.cyan(`API used before process: ${c.bold(this.apiUsedBefore)}`));
-    uxLog(this, c.cyan(`API used after process: ${c.bold(connAny?.limitInfo?.apiUsage?.used || null)}`));
-    uxLog(this, c.cyan(`API calls remaining for today: ${c.bold(apiCallsRemaining)}`));
-    uxLog(this, c.cyan(`Total SOQL requests: ${c.bold(this.totalSoqlRequests)}`));
-    uxLog(this, c.cyan(`Total parent records found: ${c.bold(this.totalParentRecords)}`));
-    uxLog(this, c.cyan(`Total parent records with files: ${c.bold(this.parentRecordsWithFiles)}`));
-    uxLog(this, c.cyan(`Total parent records ignored because already existing: ${c.bold(this.recordsIgnored)}`));
-    uxLog(this, c.cyan(`Total files downloaded: ${c.bold(this.filesDownloaded)}`));
-    uxLog(this, c.cyan(`Total file download errors: ${c.bold(this.filesErrors)}`));
-    uxLog(this, c.cyan(`Total file skipped because of type constraint: ${c.bold(this.filesIgnoredType)}`));
-    uxLog(this, c.cyan(`Total file skipped because previously downloaded: ${c.bold(this.filesIgnoredExisting)}`));
+    uxLog("action", this, c.cyan(`API limit: ${c.bold(connAny?.limitInfo?.apiUsage?.limit || null)}`));
+    uxLog("action", this, c.cyan(`API used before process: ${c.bold(this.apiUsedBefore)}`));
+    uxLog("action", this, c.cyan(`API used after process: ${c.bold(connAny?.limitInfo?.apiUsage?.used || null)}`));
+    uxLog("action", this, c.cyan(`API calls remaining for today: ${c.bold(apiCallsRemaining)}`));
+    uxLog("action", this, c.cyan(`Total SOQL requests: ${c.bold(this.totalSoqlRequests)}`));
+    uxLog("action", this, c.cyan(`Total parent records found: ${c.bold(this.totalParentRecords)}`));
+    uxLog("action", this, c.cyan(`Total parent records with files: ${c.bold(this.parentRecordsWithFiles)}`));
+    uxLog("action", this, c.cyan(`Total parent records ignored because already existing: ${c.bold(this.recordsIgnored)}`));
+    uxLog("action", this, c.cyan(`Total files downloaded: ${c.bold(this.filesDownloaded)}`));
+    uxLog("action", this, c.cyan(`Total file download errors: ${c.bold(this.filesErrors)}`));
+    uxLog("action", this, c.cyan(`Total file skipped because of type constraint: ${c.bold(this.filesIgnoredType)}`));
+    uxLog("action", this, c.cyan(`Total file skipped because previously downloaded: ${c.bold(this.filesIgnoredExisting)}`));
 
     return {
       totalParentRecords: this.totalParentRecords,
@@ -466,8 +471,8 @@ export class FilesImporter {
     if (this.dtl === null) {
       this.dtl = await getFilesWorkspaceDetail(this.filesPath);
     }
-    uxLog(this.commandThis, c.cyan(`Importing files from ${c.green(this.dtl.full_label)} ...`));
-    uxLog(this.commandThis, c.italic(c.grey(this.dtl.description)));
+    uxLog("action", this.commandThis, c.cyan(`Importing files from ${c.green(this.dtl.full_label)} ...`));
+    uxLog("log", this.commandThis, c.italic(c.grey(this.dtl.description)));
 
     // Get folders and files
     const allRecordFolders = fs.readdirSync(this.exportedFilesFolder).filter((file) => {
@@ -487,7 +492,7 @@ export class FilesImporter {
     let errorNb = 0;
 
     for (const recordFolder of allRecordFolders) {
-      uxLog(this, c.grey(`Processing record ${recordFolder} ...`));
+      uxLog("log", this, c.grey(`Processing record ${recordFolder} ...`));
       const recordFolderPath = path.join(this.exportedFilesFolder, recordFolder);
       // List files in folder
       const files = fs.readdirSync(recordFolderPath).filter((file) => {
@@ -498,7 +503,7 @@ export class FilesImporter {
         (parentObj) => parentObj[this.dtl.outputFolderNameField] === recordFolder
       );
       if (parentRecordIds.length === 0) {
-        uxLog(this, c.red(`Unable to find Id for ${this.dtl.outputFolderNameField}=${recordFolder}`));
+        uxLog("error", this, c.red(`Unable to find Id for ${this.dtl.outputFolderNameField}=${recordFolder}`));
         continue;
       }
       const parentRecordId = parentRecordIds[0].Id;
@@ -521,29 +526,29 @@ export class FilesImporter {
         const matchingExistingDocs = existingDocuments.filter((doc) => doc.Title === file);
         if (matchingExistingDocs.length > 0) {
           contentVersionParams.ContentDocumentId = matchingExistingDocs[0].ContentDocumentId;
-          uxLog(this, c.grey(`Overwriting file ${file} ...`));
+          uxLog("log", this, c.grey(`Overwriting file ${file} ...`));
         } else {
           contentVersionParams.FirstPublishLocationId = parentRecordId;
-          uxLog(this, c.grey(`Uploading file ${file} ...`));
+          uxLog("log", this, c.grey(`Uploading file ${file} ...`));
         }
         try {
           const insertResult = await this.conn.sobject('ContentVersion').create(contentVersionParams);
           if (insertResult.length === 0) {
-            uxLog(this, c.red(`Unable to upload file ${file}`));
+            uxLog("error", this, c.red(`Unable to upload file ${file}`));
             errorNb++;
           } else {
             successNb++;
           }
         } catch (e) {
-          uxLog(this, c.red(`Unable to upload file ${file}: ${(e as Error).message}`));
+          uxLog("error", this, c.red(`Unable to upload file ${file}: ${(e as Error).message}`));
           errorNb++;
         }
       }
     }
 
-    uxLog(this, c.green(`Uploaded ${successNb} files`));
+    uxLog("success", this, c.green(`Uploaded ${successNb} files`));
     if (errorNb > 0) {
-      uxLog(this, c.yellow(`Errors during the upload of ${successNb} files`));
+      uxLog("warning", this, c.yellow(`Errors during the upload of ${successNb} files`));
     }
     return { successNb: successNb, errorNb: errorNb };
   }
@@ -612,6 +617,7 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
   const exportFile = path.join(filesWorkspace, 'export.json');
   if (!fs.existsSync(exportFile)) {
     uxLog(
+      "warning",
       this,
       c.yellow(
         `Your File export folder ${c.bold(filesWorkspace)} must contain an ${c.bold('export.json')} configuration file`
@@ -808,7 +814,7 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
   try {
     const csvContent = Papa.unparse(data);
     await fs.writeFile(outputPath, csvContent, 'utf8');
-    uxLog(this, c.cyan(c.italic(`Please see detailed CSV log in ${c.bold(outputPath)}`)));
+    uxLog("action", this, c.cyan(c.italic(`Please see detailed CSV log in ${c.bold(outputPath)}`)));
     result.csvFile = outputPath;
     if (!WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.requestOpenFile(outputPath);
@@ -822,28 +828,29 @@ export async function generateCsvFile(data: any[], outputPath: string): Promise<
         const xslxFile = path.join(xlsDirName, xslFileName);
         await fs.ensureDir(xlsDirName);
         await csvToXls(outputPath, xslxFile);
-        uxLog(this, c.cyan(c.italic(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
+        uxLog("action", this, c.cyan(c.italic(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
         WebSocketClient.sendReportFileMessage(xslxFile, "Excel Report", "report");
         result.xlsxFile = xslxFile;
         if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
           try {
-            uxLog(this, c.italic(c.grey(`Opening XSLX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
+            uxLog("other", this, c.italic(c.grey(`Opening XSLX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
             await open(xslxFile, { wait: false });
           } catch (e) {
-            uxLog(this, c.yellow('Error while opening XSLX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+            uxLog("warning", this, c.yellow('Error while opening XSLX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
           }
         }
       } catch (e2) {
         uxLog(
+          "warning",
           this,
           c.yellow('Error while generating XSLX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
         );
       }
     } else {
-      uxLog(this, c.grey(`No XLS file generated as ${outputPath} is empty`));
+      uxLog("log", this, c.grey(`No XLS file generated as ${outputPath} is empty`));
     }
   } catch (e) {
-    uxLog(this, c.yellow('Error while generating CSV log file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+    uxLog("warning", this, c.yellow('Error while generating CSV log file:\n' + (e as Error).message + '\n' + (e as Error).stack));
   }
   return result;
 }

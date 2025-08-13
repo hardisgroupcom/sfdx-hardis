@@ -88,7 +88,7 @@ The command's technical implementation involves:
    * Extract custom label names from LWC JS files
    */
   private async extractLabelsFromLwc(lwcName: string, debugMode: boolean): Promise<string[]> {
-    uxLog(this, c.grey(`Looking for LWC '${lwcName}' JS files...`));
+    uxLog("log", this, c.grey(`Looking for LWC '${lwcName}' JS files...`));
 
     const lwcFiles = await glob(`**/lwc/${lwcName}/**/*.js`);
 
@@ -96,7 +96,7 @@ The command's technical implementation involves:
       throw new Error(`No JS files found for LWC '${lwcName}'`);
     }
 
-    uxLog(this, c.grey(`Found ${lwcFiles.length} JS files for component '${lwcName}'`));
+    uxLog("log", this, c.grey(`Found ${lwcFiles.length} JS files for component '${lwcName}'`));
 
     const labelNames = new Set<string>();
     const labelImportRegex = /@salesforce\/label\/c\.([a-zA-Z0-9_]+)/g;
@@ -110,7 +110,7 @@ The command's technical implementation involves:
       }
 
       if (debugMode) {
-        uxLog(this, c.grey(`Processed file: ${jsFile}`));
+        uxLog("log", this, c.grey(`Processed file: ${jsFile}`));
       }
     }
 
@@ -120,7 +120,7 @@ The command's technical implementation involves:
       throw new Error(`No custom labels found in LWC '${lwcName}'`);
     }
 
-    uxLog(this, c.grey(`Found ${extractedLabels.length} custom labels in LWC '${lwcName}': ${extractedLabels.join(', ')}`));
+    uxLog("log", this, c.grey(`Found ${extractedLabels.length} custom labels in LWC '${lwcName}': ${extractedLabels.join(', ')}`));
     this.outputDirPrefix = lwcName;
 
     return extractedLabels;
@@ -136,7 +136,7 @@ The command's technical implementation involves:
       try {
         labelNames = await this.extractLabelsFromLwc(flags.lwc, debugMode);
       } catch (error: any) {
-        uxLog(this, c.red(error.message));
+        uxLog("error", this, c.red(error.message));
         return { success: false, message: error.message };
       }
     } else if (flags.label) {
@@ -152,11 +152,11 @@ The command's technical implementation involves:
 
     if (!labelNames || labelNames.length === 0) {
       const errorMsg = 'No custom labels specified. Use --label or --lwc flag.';
-      uxLog(this, c.red(errorMsg));
+      uxLog("error", this, c.red(errorMsg));
       return { success: false, message: errorMsg };
     }
 
-    uxLog(this, c.grey(`Processing custom labels: ${labelNames.join(', ')}`));
+    uxLog("log", this, c.grey(`Processing custom labels: ${labelNames.join(', ')}`));
 
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -166,7 +166,7 @@ The command's technical implementation involves:
       const translationFiles = await glob('**/translations/*.translation-meta.xml');
 
       if (translationFiles.length === 0) {
-        uxLog(this, c.yellow(`No translation files found in **/translations/`));
+        uxLog("warning", this, c.yellow(`No translation files found in **/translations/`));
         return { success: false, message: 'No translation files found' };
       }
 
@@ -174,19 +174,19 @@ The command's technical implementation involves:
 
       for (const translationFile of translationFiles) {
         const languageCode = path.basename(translationFile).replace('.translation-meta.xml', '');
-        uxLog(this, c.grey(`Processing translation file for ${languageCode}...`));
+        uxLog("log", this, c.grey(`Processing translation file for ${languageCode}...`));
 
         const xmlContent = await fs.readFile(translationFile, 'utf8');
 
         const parsedXml = await parseStringPromise(xmlContent, { explicitArray: false });
 
         if (!parsedXml.Translations) {
-          uxLog(this, c.yellow(`Invalid translation file format: ${translationFile}`));
+          uxLog("warning", this, c.yellow(`Invalid translation file format: ${translationFile}`));
           continue;
         }
 
         if (!parsedXml.Translations.customLabels) {
-          uxLog(this, c.yellow(`No custom labels found in ${translationFile}`));
+          uxLog("warning", this, c.yellow(`No custom labels found in ${translationFile}`));
           continue;
         }
 
@@ -199,7 +199,7 @@ The command's technical implementation involves:
         );
 
         if (matchedLabels.length === 0) {
-          uxLog(this, c.yellow(`No matching custom labels found in ${languageCode}`));
+          uxLog("warning", this, c.yellow(`No matching custom labels found in ${languageCode}`));
           continue;
         }
 
@@ -226,9 +226,9 @@ The command's technical implementation involves:
         };
 
         if (debugMode) {
-          uxLog(this, c.grey(`Found ${matchedLabels.length} labels in ${languageCode}:`));
+          uxLog("log", this, c.grey(`Found ${matchedLabels.length} labels in ${languageCode}:`));
           matchedLabels.forEach(label => {
-            uxLog(this, c.grey(`  ${label.name} = "${label.label}"`));
+            uxLog("log", this, c.grey(`  ${label.name} = "${label.label}"`));
           });
         }
       }
@@ -236,12 +236,12 @@ The command's technical implementation involves:
       const totalFiles = Object.keys(results).length;
 
       if (totalFiles === 0) {
-        uxLog(this, c.yellow('No matching labels found in any translation file.'));
+        uxLog("warning", this, c.yellow('No matching labels found in any translation file.'));
         return { success: false, message: 'No matching labels found' };
       }
 
-      uxLog(this, c.green(`Successfully extracted custom labels to ${outputDir}`));
-      uxLog(this, c.grey(`Processed ${totalFiles} translation files`));
+      uxLog("success", this, c.green(`Successfully extracted custom labels to ${outputDir}`));
+      uxLog("log", this, c.grey(`Processed ${totalFiles} translation files`));
 
       WebSocketClient.requestOpenFile(outputDir);
 
@@ -253,7 +253,7 @@ The command's technical implementation involves:
       };
 
     } catch (err: any) {
-      uxLog(this, c.red(`Error processing custom labels: ${err.message}`));
+      uxLog("error", this, c.red(`Error processing custom labels: ${err.message}`));
       throw err;
     }
   }

@@ -121,7 +121,7 @@ The command's technical implementation involves:
 
     // Promote packages
     for (const packageToPromote of packagesToPromote) {
-      uxLog(this, c.cyan(`Promoting version of package ${c.green(packageToPromote)}`));
+      uxLog("action", this, c.cyan(`Promoting version of package ${c.green(packageToPromote)}`));
       const promoteCommand = 'sf package version promote' + ` --package "${packageToPromote}"` + ' --no-prompt';
       const promoteResult = await execSfdxJson(promoteCommand, this, {
         fail: false,
@@ -130,6 +130,7 @@ The command's technical implementation involves:
       });
       if (promoteResult.status === 0) {
         uxLog(
+          "action",
           this,
           c.cyan(
             `Promoted package version ${c.green(packageToPromote)} with id ${c.green(
@@ -140,6 +141,7 @@ The command's technical implementation involves:
         promotedPackageVersions.push({ package: packageToPromote, result: promoteResult });
       } else {
         uxLog(
+          "warning",
           this,
           c.yellow(
             `Error promoting package version ${c.red(packageToPromote)} (probably already promoted so it can be ok)`

@@ -148,7 +148,7 @@ The command's technical implementation involves:
       });
     }
     // Create package version
-    uxLog(this, c.cyan(`Generating new package version for ${c.green(pckgDirectory.package)}...`));
+    uxLog("action", this, c.cyan(`Generating new package version for ${c.green(pckgDirectory.package)}...`));
     const createCommand =
       'sf package version create' +
       ` --package "${pckgDirectory.package}"` +
@@ -166,6 +166,7 @@ The command's technical implementation involves:
     if (this.deleteAfter) {
       // Delete package version
       uxLog(
+        "action",
         this,
         c.cyan(`Delete new package version ${c.green(latestVersion)} of package ${c.green(pckgDirectory.package)}...`)
       );

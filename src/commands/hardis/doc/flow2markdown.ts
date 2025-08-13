@@ -128,7 +128,7 @@ The command leverages several internal utilities and external libraries to achie
       }
       const flowName = path.basename(inputFile, ".flow-meta.xml");
 
-      uxLog(this, c.grey(`Generating markdown for Flow ${inputFile}...`));
+      uxLog("log", this, c.grey(`Generating markdown for Flow ${inputFile}...`));
       const flowXml = (await fs.readFile(inputFile, "utf8")).toString();
       const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: {} });
       if (!genRes) {
@@ -146,7 +146,7 @@ The command leverages several internal utilities and external libraries to achie
         try {
           await generateHistoryDiffMarkdown(inputFile, this.debugMode);
         } catch (e: any) {
-          uxLog(this, c.yellow(`Error generating history diff markdown: ${e.message}`));
+          uxLog("warning", this, c.yellow(`Error generating history diff markdown: ${e.message}`));
         }
       }
 

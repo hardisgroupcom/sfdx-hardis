@@ -125,7 +125,7 @@ The command's technical implementation involves:
     const conn = flags['target-org'].getConnection();
 
     // Collect all Connected Apps
-    uxLog(this, c.cyan(`Extracting the whole list of Connected Apps from ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(`Extracting the whole list of Connected Apps from ${conn.instanceUrl} ...`));
     const allConnectedAppsQuery =
       `SELECT Name,CreatedBy.Name,CreatedDate,LastModifiedBy.Name,LastModifiedDate,OptionsAllowAdminApprovedUsersOnly FROM ConnectedApplication ORDER BY Name`;
     const allConnectedAppsQueryRes = await soqlQuery(allConnectedAppsQuery, conn);
@@ -134,26 +134,26 @@ The command's technical implementation involves:
     // Collect all Connected Apps metadata in a blank project
     const tmpDirForSfdxProject = await createTempDir();
     this.tmpSfdxProjectPath = await createBlankSfdxProject(tmpDirForSfdxProject);
-    uxLog(this, c.cyan(`Retrieve ConnectedApp Metadatas from ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(`Retrieve ConnectedApp Metadatas from ${conn.instanceUrl} ...`));
     await execCommand(
       `sf project retrieve start -m ConnectedApp --target-org ${conn.username}`,
       this,
       { cwd: this.tmpSfdxProjectPath, fail: true, output: true });
 
     // Collect all Connected Apps used in LoginHistory table
-    uxLog(this, c.cyan(`Extracting all applications found in LoginHistory object from ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(`Extracting all applications found in LoginHistory object from ${conn.instanceUrl} ...`));
     const allAppsInLoginHistoryQuery =
       `SELECT Application FROM LoginHistory GROUP BY Application ORDER BY Application`;
     const allAppsInLoginHistoryQueryRes = await soqlQuery(allAppsInLoginHistoryQuery, conn);
     const allAppsInLoginHistoryNames = allAppsInLoginHistoryQueryRes.records.map(loginHistory => loginHistory.Application);
 
     // Perform analysis
-    uxLog(this, c.cyan(`Starting analysis...`));
+    uxLog("action", this, c.cyan(`Starting analysis...`));
     this.connectedAppResults = await Promise.all(allConnectedApps.map(async (connectedApp) => {
       return await this.analyzeConnectedApp(allAppsInLoginHistoryNames, connectedApp, conn);
     }));
 
-    uxLog(this, c.cyan(`Analysis complete. Deleting temporary project files...`));
+    uxLog("action", this, c.cyan(`Analysis complete. Deleting temporary project files...`));
     await fs.rm(tmpDirForSfdxProject, { recursive: true });
 
     this.connectedAppResults = sortArray(this.connectedAppResults,
@@ -207,7 +207,7 @@ The command's technical implementation involves:
           SeverityReason: connectedApp.severityReason,
         }
       })
-      uxLog(this, c.cyan(`Found ${c.bold(numberWarnings)} Connected Apps to check.`));
+      uxLog("action", this, c.cyan(`Found ${c.bold(numberWarnings)} Connected Apps to check.`));
       uxLogTable(this, connectedAppsLight);
 
       // Generate output CSV file
@@ -261,7 +261,7 @@ The command's technical implementation involves:
   }
 
   private async checkOAuthToken(connectedApp: any, conn: any, loginHistoryFound: boolean, severity: NotifSeverity, reason: string) {
-    uxLog(this, c.grey(`Looking in OAuthToken for last usage of ${connectedApp.Name}...`));
+    uxLog("log", this, c.grey(`Looking in OAuthToken for last usage of ${connectedApp.Name}...`));
     const oAuthTokenQuery = `SELECT AppName,User.Name,LastUsedDate FROM OAuthToken WHERE AppName='${connectedApp.Name.replace(/'/g, "'")}' ORDER BY LastUsedDate DESC LIMIT 1`;
     const oAuthTokenQueryRes = await soqlQuery(oAuthTokenQuery, conn);
     const latestOAuthToken = oAuthTokenQueryRes.records.length === 1 ? oAuthTokenQueryRes.records[0] : null;

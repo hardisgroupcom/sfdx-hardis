@@ -143,17 +143,17 @@ The command's technical implementation involves:
   }
 
   private displayResults() {
-    uxLog(this, c.cyan(`Query results from ${this.targetOrgsIds.length} orgs`));
+    uxLog("action", this, c.cyan(`Query results from ${this.targetOrgsIds.length} orgs`));
     if (this.successOrgs.length > 0) {
-      uxLog(this, c.green(`Successfully performed query on ${this.successOrgs.length} orgs`));
+      uxLog("success", this, c.green(`Successfully performed query on ${this.successOrgs.length} orgs`));
       for (const org of this.successOrgs) {
-        uxLog(this, c.grey(`-  ${org.instanceUrl}`));
+        uxLog("log", this, c.grey(`-  ${org.instanceUrl}`));
       }
     }
     if (this.errorOrgs.length > 0) {
-      uxLog(this, c.green(`Error while performing query on ${this.errorOrgs.length} orgs`));
+      uxLog("success", this, c.green(`Error while performing query on ${this.errorOrgs.length} orgs`));
       for (const org of this.successOrgs) {
-        uxLog(this, c.grey(`-  ${org.instanceUrl}: ${org?.error?.message}`));
+        uxLog("log", this, c.grey(`-  ${org.instanceUrl}: ${org?.error?.message}`));
       }
     }
   }
@@ -162,14 +162,14 @@ The command's technical implementation involves:
     for (const orgId of this.targetOrgsIds) {
       const matchOrgs = this.targetOrgs.filter(org => (org.username === orgId || org.alias === orgId) && org.accessToken);
       if (matchOrgs.length === 0) {
-        uxLog(this, c.yellow(`Skipped ${orgId}: Unable to find authentication. Run "sf org login web" to authenticate.`));
+        uxLog("warning", this, c.yellow(`Skipped ${orgId}: Unable to find authentication. Run "sf org login web" to authenticate.`));
         continue;
       }
       const accessToken = matchOrgs[0].accessToken;
       const username = matchOrgs[0].username;
       const instanceUrl = matchOrgs[0].instanceUrl;
       const loginUrl = matchOrgs[0].loginUrl || instanceUrl;
-      uxLog(this, c.cyan(`Performing query on ${c.bold(orgId)}...`));
+      uxLog("action", this, c.cyan(`Performing query on ${c.bold(orgId)}...`));
       try {
         const authInfo = await AuthInfo.create({
           username: username
@@ -191,7 +191,7 @@ The command's technical implementation involves:
         this.allRecords.push(...records);
         this.successOrgs.push({ orgId: orgId, instanceUrl: instanceUrl, username: username })
       } catch (e: any) {
-        uxLog(this, c.red(`Error while querying ${orgId}: ${e.message}`));
+        uxLog("error", this, c.red(`Error while querying ${orgId}: ${e.message}`));
         this.errorOrgs.push({ org: orgId, error: e })
       }
 

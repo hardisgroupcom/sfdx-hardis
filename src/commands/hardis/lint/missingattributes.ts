@@ -102,7 +102,7 @@ The command's technical implementation involves:
         },
       ];
     } else {
-      uxLog(this, 'No missing descriptions on fields have been found');
+      uxLog("other", this, 'No missing descriptions on fields have been found');
     }
     // Post notifications
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email

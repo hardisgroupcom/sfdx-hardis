@@ -91,7 +91,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // List org limits
-    uxLog(this, c.cyan(`Run the org limits list command ...`));
+    uxLog("action", this, c.cyan(`Run the org limits list command ...`));
     const limitsCommandRes = await execSfdxJson(`sf org limits list`, this, {
       fail: true,
       output: true,
@@ -146,7 +146,7 @@ The command's technical implementation involves:
       notifAttachments.push({
         text: errorText,
       });
-      uxLog(this, c.red(notifText + '\n' + errorText));
+      uxLog("error", this, c.red(notifText + '\n' + errorText));
       process.exitCode = 1;
     }
     // Warning limits detected
@@ -161,9 +161,9 @@ The command's technical implementation involves:
       notifAttachments.push({
         text: warningText,
       });
-      uxLog(this, c.yellow(notifText + '\n' + warningText));
+      uxLog("warning", this, c.yellow(notifText + '\n' + warningText));
     } else {
-      uxLog(this, c.green('No limit issue has been found'));
+      uxLog("success", this, c.green('No limit issue has been found'));
     }
 
     const limitEntriesMap = {};

@@ -191,6 +191,7 @@ ${this.getDefaultCommandsMarkdown()}
 
     // Build target org full manifest
     uxLog(
+      "action",
       this,
       c.cyan('Running monitoring scripts for org ' + c.bold(flags['target-org'].getConnection().instanceUrl)) + ' ...'
     );
@@ -204,7 +205,7 @@ ${this.getDefaultCommandsMarkdown()}
     const commandsSummary: any[] = [];
     for (const command of commands) {
       if (monitoringDisable.includes(command.key)) {
-        uxLog(this, c.grey(`Skipped command ${c.bold(command.key)} according to custom configuration`));
+        uxLog("log", this, c.grey(`Skipped command ${c.bold(command.key)} according to custom configuration`));
         continue;
       }
       if (
@@ -213,20 +214,21 @@ ${this.getDefaultCommandsMarkdown()}
         getEnvVar('MONITORING_IGNORE_FREQUENCY') !== 'true'
       ) {
         uxLog(
+          "log",
           this,
           c.grey(`Skipped command ${c.bold(command.key)} as its frequency is defined as weekly and we are not Saturday`)
         );
         continue;
       }
       // Run command
-      uxLog(this, c.cyan(`Running monitoring command ${c.bold(command.title)} (key: ${c.bold(command.key)})`));
+      uxLog("action", this, c.cyan(`Running monitoring command ${c.bold(command.title)} (key: ${c.bold(command.key)})`));
       try {
         const execCommandResult = await execCommand(command.command, this, { fail: false, output: true });
         if (execCommandResult.status === 0) {
-          uxLog(this, c.green(`Command ${c.bold(command.title)} has been run successfully`));
+          uxLog("success", this, c.green(`Command ${c.bold(command.title)} has been run successfully`));
         } else {
           success = false;
-          uxLog(this, c.yellow(`Command ${c.bold(command.title)} has failed`));
+          uxLog("warning", this, c.yellow(`Command ${c.bold(command.title)} has failed`));
         }
         commandsSummary.push({
           title: command.title,
@@ -236,7 +238,7 @@ ${this.getDefaultCommandsMarkdown()}
       } catch (e) {
         // Handle unexpected failure
         success = false;
-        uxLog(this, c.yellow(`Command ${c.bold(command.title)} has failed !\n${(e as Error).message}`));
+        uxLog("warning", this, c.yellow(`Command ${c.bold(command.title)} has failed !\n${(e as Error).message}`));
         commandsSummary.push({
           title: command.title,
           status: 'error',
@@ -245,11 +247,12 @@ ${this.getDefaultCommandsMarkdown()}
       }
     }
 
-    uxLog(this, c.cyan('Summary of monitoring scripts'));
+    uxLog("action", this, c.cyan('Summary of monitoring scripts'));
     uxLogTable(this, commandsSummary);
-    uxLog(this, c.grey('You can check details in reports in Job Artifacts'));
+    uxLog("log", this, c.grey('You can check details in reports in Job Artifacts'));
 
     uxLog(
+      "warning",
       this,
       c.yellow(
         `To know more about sfdx-hardis monitoring, please check ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/`

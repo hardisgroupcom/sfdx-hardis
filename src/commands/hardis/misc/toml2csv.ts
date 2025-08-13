@@ -184,6 +184,7 @@ The command's technical implementation involves:
     }
 
     uxLog(
+      "action",
       this,
       c.cyan(
         `Generating CSV files from ${c.green(tomlFile)} (encoding ${tomlFileEncoding}) into folder ${c.green(
@@ -207,7 +208,7 @@ The command's technical implementation involves:
     for await (const line of rl) {
       this.stats.totalLinesNb++;
       if (debugMode) {
-        uxLog(this, c.grey(line));
+        uxLog("log", this, c.grey(line));
       }
       // Empty line
       if (line.length === 0) {
@@ -304,12 +305,12 @@ The command's technical implementation involves:
               this.lineErrorMessages[(e as Error).message]++;
             } else {
               this.lineErrorMessages[(e as Error).message] = 1;
-              uxLog(this, c.red((e as Error).message));
+              uxLog("error", this, c.red((e as Error).message));
             }
           }
         }
       } else {
-        uxLog(this, c.yellow(`Line without declared section before: skipped (${line})`));
+        uxLog("warning", this, c.yellow(`Line without declared section before: skipped (${line})`));
       }
     }
 
@@ -341,6 +342,7 @@ The command's technical implementation involves:
         if (fs.existsSync(this.tomlSectionsFileWriters[sectionKey].path)) {
           await fs.copy(this.tomlSectionsFileWriters[sectionKey].path, sectionData.outputFile.copyFilePath);
           uxLog(
+            "log",
             this,
             c.grey(
               `- copied ${this.tomlSectionsFileWriters[sectionKey].path} to ${sectionData.outputFile.copyFilePath}`
@@ -351,15 +353,15 @@ The command's technical implementation involves:
     }
 
     // Display full stats
-    uxLog(this, c.grey('Stats: \n' + JSON.stringify(this.stats, null, 2)));
+    uxLog("log", this, c.grey('Stats: \n' + JSON.stringify(this.stats, null, 2)));
 
     // Display errors summary
     if (Object.keys(this.lineErrorMessages).length > 0) {
-      uxLog(this, c.yellow('There have been parsing errors:'));
+      uxLog("warning", this, c.yellow('There have been parsing errors:'));
       for (const errMsg of Object.keys(this.lineErrorMessages)) {
-        uxLog(this, c.yellow('- ' + this.lineErrorMessages[errMsg] + ' lines: ' + errMsg));
+        uxLog("warning", this, c.yellow('- ' + this.lineErrorMessages[errMsg] + ' lines: ' + errMsg));
       }
-      uxLog(this, '');
+      uxLog("other", this, '');
     }
 
     // Display human-readable stats
@@ -367,14 +369,16 @@ The command's technical implementation involves:
       const sectionStats = this.stats.sections[section];
       if (sectionStats.dataLinesNb > 0) {
         uxLog(
+          "log",
           this,
           c.grey(`[${section}] kept ${sectionStats.dataSuccessLinesNb} entries on ${sectionStats.dataLinesNb}`)
         );
       }
     }
-    uxLog(this, c.grey(`[TOTAL] kept ${this.stats.dataSuccessLinesNb} entries on ${this.stats.dataLinesNb}`));
+    uxLog("log", this, c.grey(`[TOTAL] kept ${this.stats.dataSuccessLinesNb} entries on ${this.stats.dataLinesNb}`));
     const message = `TOML file ${tomlFile} has been split into ${this.csvFiles.length} CSV files in directory ${this.outputDir}`;
     uxLog(
+      "action",
       this,
       c.cyan(
         `TOML file ${c.green(tomlFile)} has been split into ${c.green(
@@ -399,7 +403,7 @@ The command's technical implementation involves:
       const outputFile = path.join(this.outputDir, `${section}.csv`);
       // Init writeStream
       const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: 'utf8' });
-      uxLog(this, c.cyan(`- Initialized output CSV file ${c.green(c.bold(outputFile))}`));
+      uxLog("action", this, c.cyan(`- Initialized output CSV file ${c.green(c.bold(outputFile))}`));
       this.csvFiles.push(outputFile);
       return fileWriteStream;
     }
@@ -422,16 +426,16 @@ The command's technical implementation involves:
       }
       // Initialize with header
       fileWriteStream.write(headerLine + '\n');
-      uxLog(this, c.cyan(`- Initialized ${errMode ? 'errors' : 'output'} CSV file ${c.green(c.bold(outputFile))}`));
+      uxLog("action", this, c.cyan(`- Initialized ${errMode ? 'errors' : 'output'} CSV file ${c.green(c.bold(outputFile))}`));
       this.csvFiles.push(outputFile);
       return fileWriteStream;
     } else if (errMode === false) {
       // Section has not been described in config file !!
-      uxLog(this, c.yellow(`Section ${section} as entity is not described with columns in ${this.transfoConfigFile}`));
+      uxLog("warning", this, c.yellow(`Section ${section} as entity is not described with columns in ${this.transfoConfigFile}`));
       const outputFile = path.join(this.outputDir, 'errors', `noconfig__${section}.csv`);
       // Init writeStream
       const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: 'utf8' });
-      uxLog(this, c.cyan(`- Initialized default output CSV file ${c.green(c.bold(outputFile))}`));
+      uxLog("action", this, c.cyan(`- Initialized default output CSV file ${c.green(c.bold(outputFile))}`));
       this.csvFiles.push(outputFile);
       return fileWriteStream;
     }

@@ -138,6 +138,7 @@ The command's technical implementation involves:
     // Retrieve the list of users who haven't logged in for a while
     const conn = flags['target-org'].getConnection();
     uxLog(
+      "action",
       this,
       c.cyan(
         this.returnActiveUsers
@@ -180,9 +181,9 @@ The command's technical implementation involves:
     await this.manageNotifications(this.users);
 
     if (this.users.length > 0 && !this.returnActiveUsers) {
-      uxLog(this, c.yellow(summary));
+      uxLog("warning", this, c.yellow(summary));
     } else {
-      uxLog(this, c.green(summary));
+      uxLog("success", this, c.green(summary));
     }
 
     // Return an object to be displayed with --json

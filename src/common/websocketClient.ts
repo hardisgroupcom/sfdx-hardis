@@ -16,7 +16,7 @@ let userInput = "ui";
 const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
 
 // Define allowed log types and type alias outside the class
-export const LOG_TYPES = ['log', 'action', 'warning', 'error', 'success', 'table'] as const;
+export const LOG_TYPES = ['log', 'action', 'warning', 'error', 'success', 'table', "other"] as const;
 export type LogType = typeof LOG_TYPES[number];
 
 export class WebSocketClient {
@@ -34,6 +34,7 @@ export class WebSocketClient {
       console.log("WS Client started");
     } catch (err) {
       uxLog(
+        "warning",
         this,
         c.yellow('Warning: Unable to start WebSocket client on ' + wsHostPort + '\n' + (err as Error).message)
       );
@@ -207,11 +208,11 @@ export class WebSocketClient {
             message.uiConfig = CommandClass.uiConfig;
           }
         } catch (e) {
-          uxLog(this, c.yellow(`Warning: Unable to import command class for ${this.wsContext.command}: ${e instanceof Error ? e.message : String(e)}`));
+          uxLog("warning", this, c.yellow(`Warning: Unable to import command class for ${this.wsContext.command}: ${e instanceof Error ? e.message : String(e)}`));
         }
       }
       this.ws.send(JSON.stringify(message));
-      // uxLog(this,c.grey('Initialized WebSocket connection with VsCode SFDX Hardis'));
+      // uxLog("other", this,c.grey('Initialized WebSocket connection with VsCode SFDX Hardis'));
     });
 
     this.ws.on('message', (data: any) => {
@@ -243,7 +244,7 @@ export class WebSocketClient {
     }
     else if (data.event === 'cancelCommand') {
       if (this.wsContext?.command === data?.context?.command && this.wsContext.id === data?.context?.id) {
-        uxLog(this, c.red('Command cancelled by user'));
+        uxLog("error", this, c.red('Command cancelled by user'));
         process.exit(1);
       }
     }
@@ -282,6 +283,6 @@ export class WebSocketClient {
     WebSocketClient.sendCloseClientMessage(status, error);
     this.ws.terminate();
     globalWs = null;
-    // uxLog(this,c.grey('Closed WebSocket connection with VsCode SFDX Hardis'));
+    // uxLog("other", this,c.grey('Closed WebSocket connection with VsCode SFDX Hardis'));
   }
 }

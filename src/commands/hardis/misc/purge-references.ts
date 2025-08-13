@@ -84,7 +84,7 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
   protected spinnerCustom: Ora;
 
   public async run(): Promise<AnyJson> {
-    uxLog(this, c.yellow(c.bold(PurgeRef.description)));
+    uxLog("warning", this, c.yellow(c.bold(PurgeRef.description)));
     const { flags } = await this.parse(PurgeRef);
     // Collect input parameters
     this.referenceStrings = (flags?.references || '').split(',');
@@ -149,7 +149,7 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
     }
     this.spinnerCustom.succeed(`Found ${this.allMatchingSourceFiles.length} sources with references`);
     this.allMatchingSourceFiles.sort();
-    uxLog(this, 'Matching files:\n' + c.grey(this.allMatchingSourceFiles.join('\n')));
+    uxLog("other", this, 'Matching files:\n' + c.grey(this.allMatchingSourceFiles.join('\n')));
 
     // Handling Apex classes
     await applyAllReplacementsDefinitions(

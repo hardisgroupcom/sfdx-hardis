@@ -7,7 +7,7 @@ import * as path from 'path';
 export async function sendEmail(emailMessage: EmailMessage) {
   const conn: Connection = globalThis.jsForceConn || null;
   if (!conn) {
-    uxLog(this, c.grey('globalThis.jsForceConn is not set, can not send email'));
+    uxLog("log", this, c.grey('globalThis.jsForceConn is not set, can not send email'));
     return;
   }
   // Init message
@@ -52,7 +52,7 @@ export async function sendEmail(emailMessage: EmailMessage) {
         totalSize += fileSize;
         if (totalSize > 8e7) {
           // 10MB
-          uxLog(this, `[EmailUtils] Skipped attachment ${attachment} to avoid the reach size limit`);
+          uxLog("other", this, `[EmailUtils] Skipped attachment ${attachment} to avoid the reach size limit`);
           continue;
         }
         const fileName = path.basename(attachment);
@@ -62,7 +62,7 @@ export async function sendEmail(emailMessage: EmailMessage) {
         soapBody += `             <urn:body>${fileBody}</urn:body>\n`;
         soapBody += `           </urn:fileAttachments>\n`;
       } else {
-        uxLog(this, `[EmailUtils] Skipped not found attachment ${attachment}`);
+        uxLog("other", this, `[EmailUtils] Skipped not found attachment ${attachment}`);
       }
     }
   }
