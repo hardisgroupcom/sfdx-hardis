@@ -102,7 +102,7 @@ The command's technical implementation involves:
     )}, with ${c.green('export.json')} file.
 You can now call it using ${c.white('sf hardis:org:files:export')}
 `);
-    uxLog(this, message);
+    uxLog("other", this, message);
     return { outputString: message };
   }
 

@@ -75,7 +75,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Removing empty dx managed source files`));
+    uxLog("action", this, c.cyan(`Removing empty dx managed source files`));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const emptyConstraints = [
@@ -95,7 +95,7 @@ The command's technical implementation involves:
         const tag1 = xmlContent[emptyConstraint.tags[0]];
         if (!(tag1 && tag1[emptyConstraint.tags[1]])) {
           await fs.remove(matchingCustomFile);
-          uxLog(this, c.cyan(`Removed empty item ${c.yellow(matchingCustomFile)}`));
+          uxLog("action", this, c.cyan(`Removed empty item ${c.yellow(matchingCustomFile)}`));
           counter++;
         }
       }
@@ -103,7 +103,7 @@ The command's technical implementation involves:
 
     // Summary
     const msg = `Removed ${c.green(c.bold(counter))} hidden source items`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };
   }

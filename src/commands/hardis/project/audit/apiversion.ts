@@ -98,6 +98,7 @@ export default class CallInCallOut extends SfCommand<any> {
     const fixInvalidMetadataTypes = fixTargetedMetadataTypes.filter(value => !fixAllowedMetadataTypes.includes(value));
     if (fixTargetedMetadataTypes.length > 0 && fixInvalidMetadataTypes.length > 0 && shouldFix) {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `[sfdx-hardis] WARNING: --fix Invalid Metadata Type(s) found:  ${c.bold(
@@ -145,7 +146,7 @@ export default class CallInCallOut extends SfCommand<any> {
     ];
     const xmlFiles = await glob(pattern, { ignore: GLOB_IGNORE_PATTERNS });
     this.matchResults = [];
-    uxLog(this, `Browsing ${xmlFiles.length} files`);
+    uxLog("other", this, `Browsing ${xmlFiles.length} files`);
     // Loop in files
     for (const file of xmlFiles) {
       try {
@@ -160,7 +161,7 @@ export default class CallInCallOut extends SfCommand<any> {
               const updatedContent = fileText.replace(/<apiVersion>(.*?)<\/apiVersion>/, `<apiVersion>${fixApiVersion}.0</apiVersion>`);
               await fs.promises.writeFile(file, updatedContent, 'utf-8');
               fixed = true;
-              uxLog(this, `Updated apiVersion in file: ${file} from ${currentApiVersion}.0 to ${fixApiVersion}.0`);
+              uxLog("other", this, `Updated apiVersion in file: ${file} from ${currentApiVersion}.0 to ${fixApiVersion}.0`);
             }
           }
         }
@@ -176,9 +177,9 @@ export default class CallInCallOut extends SfCommand<any> {
         }
       } catch (error) {
         if (error instanceof Error) {
-          uxLog(this, c.yellow(`Error processing file ${file}: ${error.message}`));
+          uxLog("warning", this, c.yellow(`Error processing file ${file}: ${error.message}`));
         } else {
-          uxLog(this, c.yellow(`Error processing file ${file}: ${String(error)}`));
+          uxLog("warning", this, c.yellow(`Error processing file ${file}: ${String(error)}`));
         }
       }
     }
@@ -200,7 +201,7 @@ export default class CallInCallOut extends SfCommand<any> {
     });
 
     // Display as table
-    uxLog(this, c.cyan(`Found ${c.bold(resultSorted.length)} metadata files with API Version.`));
+    uxLog("action", this, c.cyan(`Found ${c.bold(resultSorted.length)} metadata files with API Version.`));
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
     uxLogTable(this,
       resultsLight.map((item: any) => {
@@ -214,6 +215,7 @@ export default class CallInCallOut extends SfCommand<any> {
     const numberOfValid = result.length - numberOfInvalid;
     if (numberOfInvalid > 0) {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `WARNING: Your sources contain ${c.bold(
@@ -228,6 +230,7 @@ export default class CallInCallOut extends SfCommand<any> {
       }
     } else {
       uxLog(
+        "success",
         this,
         c.green(
           `SUCCESS: Your sources contain ${c.bold(

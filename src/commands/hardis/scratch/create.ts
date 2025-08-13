@@ -134,11 +134,12 @@ export default class ScratchCreate extends SfCommand<any> {
       }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
-      uxLog(this, c.grey('Error: ' + (e as Error).message + '\n' + (e as Error).stack));
+      uxLog("log", this, c.grey('Error: ' + (e as Error).message + '\n' + (e as Error).stack));
       if (isCI && this.scratchOrgFromPool) {
         this.scratchOrgFromPool.failures = this.scratchOrgFromPool.failures || [];
         this.scratchOrgFromPool.failures.push(JSON.stringify(e, null, 2));
         uxLog(
+          "log",
           this,
           '[pool] ' +
           c.yellow('Put back scratch org in the scratch orgs pool. ') +
@@ -150,7 +151,7 @@ export default class ScratchCreate extends SfCommand<any> {
           fail: false,
           output: true,
         });
-        uxLog(this, c.red('Deleted scratch org as we are in CI and its creation has failed'));
+        uxLog("error", this, c.red('Deleted scratch org as we are in CI and its creation has failed'));
       }
       throw e;
     }
@@ -158,6 +159,7 @@ export default class ScratchCreate extends SfCommand<any> {
     // Show password to user
     if (this.scratchOrgPassword) {
       uxLog(
+        "action",
         this,
         c.cyan(
           `You can connect to your scratch using username ${c.green(this.scratchOrgUsername)} and password ${c.green(
@@ -244,7 +246,7 @@ export default class ScratchCreate extends SfCommand<any> {
   // Create a new scratch org or reuse existing one
   public async createScratchOrg(flags) {
     // Build project-scratch-def-branch-user.json
-    uxLog(this, c.cyan('Building custom project-scratch-def.json...'));
+    uxLog("action", this, c.cyan('Building custom project-scratch-def.json...'));
     this.projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json', 'utf-8'));
     this.projectScratchDef.orgName = this.scratchOrgAlias;
     this.projectScratchDef.adminEmail = this.userEmail;
@@ -265,7 +267,7 @@ export default class ScratchCreate extends SfCommand<any> {
     if (matchingScratchOrgs?.length > 0 && !this.forceNew && this.pool == false) {
       this.scratchOrgInfo = matchingScratchOrgs[0];
       this.scratchOrgUsername = this.scratchOrgInfo.username;
-      uxLog(this, c.cyan(`Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
+      uxLog("action", this, c.cyan(`Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
       return;
     }
     // Try to fetch a scratch org from the pool
@@ -281,6 +283,7 @@ export default class ScratchCreate extends SfCommand<any> {
         this.scratchOrgPassword = this.scratchOrgFromPool.scratchOrgPassword;
         await setConfig('user', { scratchOrgAlias: this.scratchOrgAlias });
         uxLog(
+          "log",
           this,
           '[pool] ' +
           c.cyan(
@@ -289,6 +292,7 @@ export default class ScratchCreate extends SfCommand<any> {
         );
         if (!isCI) {
           uxLog(
+            "action",
             this,
             c.cyan('Now opening org...') +
             ' ' +
@@ -310,11 +314,11 @@ export default class ScratchCreate extends SfCommand<any> {
     const tmpShapeFolder = path.join(os.tmpdir(), 'shape');
     if (fs.existsSync(tmpShapeFolder) && this.pool === false) {
       await fs.remove(tmpShapeFolder);
-      uxLog(this, c.grey('Deleted ' + tmpShapeFolder));
+      uxLog("log", this, c.grey('Deleted ' + tmpShapeFolder));
     }
 
     // Create new scratch org
-    uxLog(this, c.cyan('Creating new scratch org...'));
+    uxLog("action", this, c.cyan('Creating new scratch org...'));
     const waitTime = process.env.SCRATCH_ORG_WAIT || '15';
     const createCommand =
       'sf org create scratch --set-default ' +
@@ -375,6 +379,7 @@ export default class ScratchCreate extends SfCommand<any> {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
           uxLog(
+            "warning",
             this,
             c.yellow(
               `Unable to fetch sfdxAuthUrl for ${displayResult.result.username}. Only Scratch Orgs created from DevHub using authenticated using sf org login sfdx-url or sf org login web will have access token and enabled for autoLogin\nYou may need to define SFDX_AUTH_URL_DEV_HUB or SFDX_AUTH_URL_devHubAlias in your CI job running sf hardis:scratch:pool:refresh`
@@ -395,7 +400,7 @@ export default class ScratchCreate extends SfCommand<any> {
         output: false,
         debug: this.debugMode,
       });
-      uxLog(this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
+      uxLog("action", this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
     } else {
       // Open scratch org for user if not in CI
       await execSfdxJson('sf org open', this, {
@@ -405,6 +410,7 @@ export default class ScratchCreate extends SfCommand<any> {
       });
     }
     uxLog(
+      "action",
       this,
       c.cyan(`Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`)
     );
@@ -440,7 +446,7 @@ export default class ScratchCreate extends SfCommand<any> {
   public async updateScratchOrgUser() {
     const config = await getConfig('user');
     // Update scratch org main user
-    uxLog(this, c.cyan('Update / fix scratch org user ' + this.scratchOrgUsername));
+    uxLog("action", this, c.cyan('Update / fix scratch org user ' + this.scratchOrgUsername));
     const userQueryCommand = `sf data get record --sobject User --where "Username=${this.scratchOrgUsername}" --target-org ${this.scratchOrgAlias}`;
     const userQueryRes = await execSfdxJson(userQueryCommand, this, {
       fail: true,

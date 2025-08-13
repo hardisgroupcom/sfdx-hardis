@@ -129,7 +129,7 @@ The command's technical implementation involves:
       await fs.rm(path.join(folder, 'unpackaged'), { recursive: true });
 
       message = `[sfdx-hardis] Successfully retrieved metadatas in ${folder}`;
-      uxLog(this, message);
+      uxLog("other", this, message);
     } catch (e) {
       if (!isMonitoring) {
         throw e;
@@ -144,21 +144,22 @@ The command's technical implementation involves:
         return await this.processPostActions(message, flags);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
-        uxLog(this, c.yellow('Post actions have failed !'));
+        uxLog("warning", this, c.yellow('Post actions have failed !'));
       }
       uxLog(
+        "warning",
         this,
         c.yellow(c.bold('This version of sfdx-hardis monitoring is deprecated and will not be maintained anymore'))
       );
-      uxLog(this, c.yellow(c.bold('Switch to new sfdx-hardis monitoring that is enhanced !')));
-      uxLog(this, c.yellow(c.bold(`Info: ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/`)));
+      uxLog("warning", this, c.yellow(c.bold('Switch to new sfdx-hardis monitoring that is enhanced !')));
+      uxLog("warning", this, c.yellow(c.bold(`Info: ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/`)));
     }
 
     return { orgId: flags['target-org'].getOrgId(), outputString: message };
   }
 
   private async processPostActions(message, flags) {
-    uxLog(this, c.cyan('Monitoring repo detected'));
+    uxLog("action", this, c.cyan('Monitoring repo detected'));
 
     // Update default .gitlab-ci.yml within the monitoring repo
     const localGitlabCiFile = path.join(process.cwd(), '.gitlab-ci.yml');
@@ -168,17 +169,17 @@ The command's technical implementation involves:
       const latestGitlabCiContent = await fs.readFile(latestGitlabCiFile, 'utf8');
       if (localGitlabCiContent !== latestGitlabCiContent) {
         await fs.writeFile(localGitlabCiFile, latestGitlabCiContent);
-        uxLog(this, c.cyan('Updated .gitlab-ci.yml file'));
+        uxLog("action", this, c.cyan('Updated .gitlab-ci.yml file'));
       }
     }
 
     // Also trace updates with sfdx sources, for better readability
-    uxLog(this, c.cyan('Convert into sfdx format...'));
+    uxLog("action", this, c.cyan('Convert into sfdx format...'));
     if (fs.existsSync('metadatas')) {
       // Create sfdx project if not existing yet
       if (!fs.existsSync('sfdx-project')) {
         const createCommand = 'sf project generate' + ` --name "sfdx-project"`;
-        uxLog(this, c.cyan('Creating sfdx-project...'));
+        uxLog("action", this, c.cyan('Creating sfdx-project...'));
         await execCommand(createCommand, this, {
           output: true,
           fail: true,
@@ -187,17 +188,17 @@ The command's technical implementation involves:
       }
       // Convert metadatas into sfdx sources
       const mdapiConvertCommand = `sf project convert mdapi --root-dir "../metadatas"`;
-      uxLog(this, c.cyan('Converting metadata to source formation into sfdx-project...'));
-      uxLog(this, `[command] ${c.bold(c.grey(mdapiConvertCommand))}`);
+      uxLog("action", this, c.cyan('Converting metadata to source formation into sfdx-project...'));
+      uxLog("other", this, `[command] ${c.bold(c.grey(mdapiConvertCommand))}`);
       const prevCwd = process.cwd();
       process.chdir(path.join(process.cwd(), './sfdx-project'));
       try {
         const convertRes = await exec(mdapiConvertCommand, {
           maxBuffer: 10000 * 10000,
         });
-        uxLog(this, convertRes.stdout + convertRes.stderr);
+        uxLog("other", this, convertRes.stdout + convertRes.stderr);
       } catch (e) {
-        uxLog(this, c.yellow('Error while converting metadatas to sources:\n' + (e as Error).message));
+        uxLog("warning", this, c.yellow('Error while converting metadatas to sources:\n' + (e as Error).message));
       }
       process.chdir(prevCwd);
     }
@@ -207,15 +208,15 @@ The command's technical implementation involves:
     const prevExitCode = process.exitCode || 0;
     try {
       // Run test classes
-      uxLog(this, c.cyan('Running Apex tests...'));
+      uxLog("action", this, c.cyan('Running Apex tests...'));
       orgTestRes = await new OrgTestApex([], this.config)._run();
 
       // Check usage of Legacy API versions
-      uxLog(this, c.cyan('Running Legacy API Use checks...'));
+      uxLog("action", this, c.cyan('Running Legacy API Use checks...'));
       legacyApiRes = await new LegacyApi([], this.config)._run();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      uxLog(this, c.yellow('Issues found when running Apex tests or Legacy API, please check messages'));
+      uxLog("warning", this, c.yellow('Issues found when running Apex tests or Legacy API, please check messages'));
     }
     process.exitCode = prevExitCode;
 

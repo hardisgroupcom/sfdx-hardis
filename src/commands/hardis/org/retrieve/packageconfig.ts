@@ -68,7 +68,7 @@ The command's technical implementation involves:
     }
 
     // Retrieve list of installed packages
-    uxLog(this, c.cyan('Retrieving installed packages from org ' + targetUsername + '...'));
+    uxLog("action", this, c.cyan('Retrieving installed packages from org ' + targetUsername + '...'));
     const installedPackages = await MetadataUtils.listInstalledPackages(targetUsername || '', this);
 
     const packageNames = installedPackages
@@ -76,7 +76,7 @@ The command's technical implementation involves:
       .sort((a: string, b: string) => a.localeCompare(b))
       .join('\n');
 
-    uxLog(this, c.cyan(`Successfully retrieved ${installedPackages.length} installed packages from org ${targetUsername}.\n${packageNames}`));
+    uxLog("action", this, c.cyan(`Successfully retrieved ${installedPackages.length} installed packages from org ${targetUsername}.\n${packageNames}`));
 
     // Store list in config
     const updateConfigRes = await prompts({
@@ -90,7 +90,7 @@ The command's technical implementation involves:
     }
 
     const message = `Successfully retrieved installed packages configuration`;
-    uxLog(this, c.green(message));
+    uxLog("success", this, c.green(message));
     return { orgId: flags['target-org'].getOrgId(), outputString: message };
   }
 }

@@ -109,12 +109,12 @@ The command's technical implementation involves:
     // Change severity according to number of days
     if (daysBeforeUpgrade <= 15) {
       notifSeverity = 'warning';
-      uxLog(this, c.yellow(notifText));
+      uxLog("warning", this, c.yellow(notifText));
     } else if (daysBeforeUpgrade <= 30) {
       notifSeverity = 'info';
-      uxLog(this, c.green(notifText));
+      uxLog("success", this, c.green(notifText));
     } else {
-      uxLog(this, c.green(notifText));
+      uxLog("success", this, c.green(notifText));
     }
 
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email

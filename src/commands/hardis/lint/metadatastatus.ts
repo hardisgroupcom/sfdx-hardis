@@ -174,7 +174,7 @@ The command's technical implementation involves:
       // Build result file
       await this.buildCsvFile();
     } else {
-      uxLog(this, 'No draft flow or validation rule files detected.');
+      uxLog("other", this, 'No draft flow or validation rule files detected.');
     }
     // Post notifications
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email

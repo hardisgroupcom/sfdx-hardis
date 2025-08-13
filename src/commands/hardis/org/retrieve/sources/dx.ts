@@ -144,34 +144,34 @@ The command's technical implementation involves:
 
     // Create sfdx project
     if (fs.readdirSync(sfdxFolder).length === 0) {
-      uxLog(this, c.cyan('Creating SFDX project...'));
+      uxLog("action", this, c.cyan('Creating SFDX project...'));
       const projectCreateCommand = 'sf project generate --name "sfdx-project"';
-      uxLog(this, `[command] ${c.bold(c.grey(projectCreateCommand))}`);
+      uxLog("other", this, `[command] ${c.bold(c.grey(projectCreateCommand))}`);
       const createProjectRes = await exec(projectCreateCommand, { maxBuffer: 1024 * 2000 });
       if (debug) {
-        uxLog(this, createProjectRes.stdout + createProjectRes.stderr);
+        uxLog("other", this, createProjectRes.stdout + createProjectRes.stderr);
       }
     }
 
     // Converting metadatas to sfdx
-    uxLog(this, c.cyan(`Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`));
+    uxLog("action", this, c.cyan(`Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`));
     process.chdir(sfdxFolder);
     const mdapiConvertCommand = `sf project convert mdapi --root-dir ${path.join(metadataFolder, 'unpackaged')} ${debug ? '--verbose' : ''
       }`;
-    uxLog(this, `[command] ${c.bold(c.grey(mdapiConvertCommand))}`);
+    uxLog("other", this, `[command] ${c.bold(c.grey(mdapiConvertCommand))}`);
     try {
       const convertRes = await exec(mdapiConvertCommand, {
         maxBuffer: 10000 * 10000,
       });
       if (debug) {
-        uxLog(this, convertRes.stdout + convertRes.stderr);
+        uxLog("other", this, convertRes.stdout + convertRes.stderr);
       }
     } catch (e) {
       throw new SfError(JSON.stringify(e, null, 2));
     }
 
     // Move sfdx sources in main folder
-    uxLog(this, `[sfdx-hardis] Moving temp files to main folder ${c.green(path.resolve(folder))}...`);
+    uxLog("other", this, `[sfdx-hardis] Moving temp files to main folder ${c.green(path.resolve(folder))}...`);
     process.chdir(prevCwd);
     // Do not replace files if already defined
     const filesToNotReplace = ['.gitignore', '.forceignore', 'sfdx-project.json', 'README.md'];
@@ -192,7 +192,7 @@ The command's technical implementation involves:
       const packageXmlInConfig = path.resolve(folder) + '/manifest/package.xml'; // '/config/package.xml';
       if (!fs.existsSync(packageXmlInConfig)) {
         await fs.ensureDir(path.dirname(packageXmlInConfig));
-        uxLog(this, `[sfdx-hardis] Copying package.xml manifest ${c.green(packageXmlInConfig)}...`);
+        uxLog("other", this, `[sfdx-hardis] Copying package.xml manifest ${c.green(packageXmlInConfig)}...`);
         await fs.copy(packageXml, packageXmlInConfig);
       }
       // Store list of installed packages
@@ -203,12 +203,12 @@ The command's technical implementation involves:
     }
 
     // Remove temporary files
-    uxLog(this, `Remove temporary folder ${tempFolder} ...`);
+    uxLog("other", this, `Remove temporary folder ${tempFolder} ...`);
     try {
       await fs.rm(tempFolder, { recursive: true });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      uxLog(this, c.yellow(`Unable to remove folder ${tempFolder}, please delete it manually`));
+      uxLog("warning", this, c.yellow(`Unable to remove folder ${tempFolder}, please delete it manually`));
     }
 
     // Trigger commands refresh on VsCode WebSocket Client
@@ -216,7 +216,7 @@ The command's technical implementation involves:
 
     // Set bac initial cwd
     const message = `[sfdx-hardis] Successfully retrieved sfdx project in ${folder}`;
-    uxLog(this, c.green(message));
+    uxLog("success", this, c.green(message));
     return { orgId: flags['target-org'].getOrgId(), outputString: message };
   }
 }

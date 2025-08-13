@@ -176,12 +176,12 @@ The command's technical implementation involves:
       profile.Profile['tabVisibilities'] = sortedTabVisibility;
       // Update Profile XML File
       await writeXmlFile(profileFile, profile);
-      uxLog(this, c.grey('Updated ' + profileFile));
+      uxLog("log", this, c.grey('Updated ' + profileFile));
     }
 
     // Summary
     const msg = `Updated ${c.green(c.bold(promptProfilesToUpdate.profiles.length))} profiles.`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg, updatedNumber: promptProfilesToUpdate.profiles.length };
   }

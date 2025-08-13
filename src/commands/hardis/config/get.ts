@@ -64,7 +64,7 @@ The command's logic is straightforward:
     const { flags } = await this.parse(ConfigGet);
     const level = flags.level || 'project';
     this.configInfo = await getConfig(level);
-    uxLog(this, JSON.stringify(this.configInfo));
+    uxLog("other", this, JSON.stringify(this.configInfo));
     return {
       config: this.configInfo,
     };

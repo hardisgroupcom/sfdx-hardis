@@ -64,7 +64,7 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
     }
 
     const sObjectResults = await soqlQuery(sObjectsQuery, connection);
-    uxLog(this, `Found ${sObjectResults.records.length} sObjects.`);
+    uxLog("other", this, `Found ${sObjectResults.records.length} sObjects.`);
     return sObjectResults;
   }
 
@@ -85,7 +85,7 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
   }
 
   public async queryCustomFields(connection: Connection, sObjectName: string) {
-    uxLog(this, `Extracting fields for sObject: ${sObjectName}`);
+    uxLog("other", this, `Extracting fields for sObject: ${sObjectName}`);
     const queryTooling = `
       SELECT Id, DeveloperName
       FROM CustomField 
@@ -131,11 +131,11 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
 
     const dependencyQueries = Object.entries(sObjectsDict).map(async ([sObjectName, { fields }]) => {
       if (fields.length === 0) {
-        uxLog(this, `sObject ${sObjectName} does not have any custom fields, skipping dependencies.`);
+        uxLog("other", this, `sObject ${sObjectName} does not have any custom fields, skipping dependencies.`);
         return;
       }
 
-      uxLog(this, `Retrieving dependencies for sObject: ${sObjectName}`);
+      uxLog("other", this, `Retrieving dependencies for sObject: ${sObjectName}`);
 
       const fieldIds = fields.map((field) => `'${field.id}'`);
       const dependencyResults = await this.queryMetadataComponentDependency(connection, fieldIds);
@@ -179,7 +179,7 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
       order: ['asc', 'asc', 'asc'],
     });
 
-    uxLog(this, c.cyan(`Found ${resultSorted.length} custom fields usage records.`));
+    uxLog("action", this, c.cyan(`Found ${resultSorted.length} custom fields usage records.`));
     uxLogTable(this, rows);
 
     const reportFiles = await generateReports(resultSorted, columns, this, {

@@ -130,7 +130,7 @@ The command's technical implementation involves:
     // Check empty result
     if (this.flowRecordsRaw.length === 0) {
       const outputString = `[sfdx-hardis] No matching Flow records found`;
-      uxLog(this, c.yellow(outputString));
+      uxLog("warning", this, c.yellow(outputString));
       return { deleted: [], outputString };
     }
 
@@ -147,7 +147,7 @@ The command's technical implementation involves:
       });
 
       if (confirmDelete.value === false) {
-        uxLog(this, c.magenta('Action cancelled by user'));
+        uxLog("error", this, c.red('Action cancelled by user'));
         return { outputString: 'Action cancelled by user' };
       }
     }
@@ -160,7 +160,7 @@ The command's technical implementation involves:
       this.deletedRecords.length > 0
         ? `Deleted the following list of record(s)`
         : 'No record(s) to delete';
-    uxLog(this, c.cyan(summary));
+    uxLog("action", this, c.cyan(summary));
     if (this.deletedRecords.length > 0) {
       uxLogTable(this, this.deletedRecords);
     }
@@ -169,14 +169,14 @@ The command's technical implementation involves:
   }
 
   private async processDeleteFlowVersions(conn: any, tryDeleteInterviews: boolean) {
-    uxLog(this, c.cyan(`Deleting Flow versions...`));
+    uxLog("action", this, c.cyan(`Deleting Flow versions...`));
     const recordsIds = this.flowRecords.map((record) => record.Id);
     const deleteResults = await bulkDeleteTooling('Flow', recordsIds, conn);
     for (const deleteRes of deleteResults.results) {
       if (deleteRes.success) {
         this.deletedRecords.push(deleteRes);
       } else {
-        uxLog(this, c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
+        uxLog("error", this, c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
         this.deletedErrors.push(deleteRes);
       }
     }
@@ -192,7 +192,7 @@ The command's technical implementation involves:
       const errMsg = `[sfdx-hardis] There have been errors while deleting ${this.deletedErrors.length
         } record(s): \n${JSON.stringify(this.deletedErrors)}`;
       if (this.allowPurgeFailure) {
-        uxLog(this, c.yellow(errMsg));
+        uxLog("warning", this, c.yellow(errMsg));
       } else {
         throw new SfError(
           c.yellow(
@@ -228,7 +228,7 @@ The command's technical implementation involves:
         description: 'Permanently delete the selected flow interview records from the Salesforce org',
       });
       if (confirmDelete.value === false) {
-        uxLog(this, c.magenta('Action cancelled by user'));
+        uxLog("error", this, c.red('Action cancelled by user'));
         return { outputString: 'Action cancelled by user' };
       }
     }
@@ -237,7 +237,7 @@ The command's technical implementation involves:
     this.deletedRecords.push(deleteInterviewResults?.successfulResults || []);
     this.deletedErrors = deleteInterviewResults?.failedResults || [];
     // Try to delete flow versions again
-    uxLog(this, c.cyan(`Trying again to delete flow versions after deleting flow interviews...`));
+    uxLog("action", this, c.cyan(`Trying again to delete flow versions after deleting flow interviews...`));
     this.flowRecords = [...new Set(this.flowRecords)]; // Make list unique
     await this.processDeleteFlowVersions(conn, false);
   }
@@ -253,7 +253,7 @@ The command's technical implementation involves:
     }));
 
     if (this.flowRecords.length === 0) {
-      uxLog(this, c.yellow('No Flow versions found to delete.'));
+      uxLog("warning", this, c.yellow('No Flow versions found to delete.'));
       return;
     }
 
@@ -265,6 +265,7 @@ The command's technical implementation involves:
       .join('\n');
 
     uxLog(
+      "action",
       this,
       c.cyan(
         `Found ${this.flowRecords.length} Flow version(s) to delete:\n${flowList}`
@@ -273,7 +274,7 @@ The command's technical implementation involves:
   }
 
   private async listFlowVersionsToDelete(manageableConstraint: string) {
-    uxLog(this, c.cyan('Querying Flow versions to delete...'));
+    uxLog("action", this, c.cyan('Querying Flow versions to delete...'));
     let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description,Definition.DeveloperName FROM Flow WHERE ${manageableConstraint} AND Status IN ('${this.statusFilter.join(
       "','"
     )}')`;
@@ -302,7 +303,7 @@ The command's technical implementation involves:
       this.statusFilter = ['Obsolete'];
     } else {
       // Query all flows definitions
-      uxLog(this, c.cyan('Querying all Flow definitions to select from...'));
+      uxLog("action", this, c.cyan('Querying all Flow definitions to select from...'));
       const allFlowQueryCommand =
         'sf data query ' +
         ` --query "SELECT Id,DeveloperName,MasterLabel,ManageableState FROM FlowDefinition WHERE ${manageableConstraint} ORDER BY DeveloperName"` +
@@ -355,7 +356,7 @@ The command's technical implementation involves:
       ' ORDER BY Name';
     const flowsInterviewsToDelete = (await bulkQuery(query, conn)).records;
     if (flowsInterviewsToDelete.length === 0) {
-      uxLog(this, c.yellow('No Flow Interviews found to delete.'));
+      uxLog("warning", this, c.yellow('No Flow Interviews found to delete.'));
       return;
     }
     // Display Flow Interviews to delete
@@ -365,6 +366,6 @@ The command's technical implementation involves:
           `- ${c.bold(flow.Name)} (${c.green(flow.InterviewLabel)}) - ${c.yellow(flow.InterviewStatus)}`
       )
       .join('\n');
-    uxLog(this, c.cyan(`Found ${flowsInterviewsToDelete.length} Flow Interviews to delete:\n${flowList}`));
+    uxLog("action", this, c.cyan(`Found ${flowsInterviewsToDelete.length} Flow Interviews to delete:\n${flowList}`));
   }
 }

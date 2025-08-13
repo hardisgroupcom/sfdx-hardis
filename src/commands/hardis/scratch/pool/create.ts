@@ -62,6 +62,7 @@ export default class ScratchPoolCreate extends SfCommand<any> {
     // Tell user if he/she's about to overwrite existing configuration
     if (config.poolConfig && Object.keys(poolConfig).length > 0) {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `There is already an existing scratch org pool configuration: ${JSON.stringify(config.poolConfig)}.
@@ -110,11 +111,13 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
     const sfdxAuthUrl = authInfo.getSfdxAuthUrl();
     if (sfdxAuthUrl) {
       uxLog(
+        "action",
         this,
         c.cyan(`You need to define CI masked variable ${c.green('SFDX_AUTH_URL_DEV_HUB')} = ${c.green(sfdxAuthUrl)}`)
       );
     } else {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `You'll probably need to define CI masked variable ${c.green(

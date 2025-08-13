@@ -101,6 +101,7 @@ export class SalesforceProvider implements KeyValueProviderInterface {
       });
     } catch (e) {
       uxLog(
+        "error",
         this,
         c.red(`Unable to deploy CustomObject SfdxHardisKeyValueStore__c
 You mut create manually an Custom Object SfdxHardisKeyValueStore__c:
@@ -108,7 +109,7 @@ You mut create manually an Custom Object SfdxHardisKeyValueStore__c:
 - Field SfdxHardisKeyValueStore__c.ValueText__c of type TextArea (long) (with maximum size 131072 chars)
       `),
       );
-      uxLog(this, c.yellow("You may have to create a Permission Set with all rights on SfdxHardisKeyValueStore__c and assign users to it"));
+      uxLog("warning", this, c.yellow("You may have to create a Permission Set with all rights on SfdxHardisKeyValueStore__c and assign users to it"));
       throw e;
     }
     // Initialize storage
@@ -116,10 +117,10 @@ You mut create manually an Custom Object SfdxHardisKeyValueStore__c:
       await setPoolStorage({}, options);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      uxLog(this, c.yellow("You may have to create a Permission Set with all rights on SfdxHardisKeyValueStore__c and assign users to it"));
+      uxLog("warning", this, c.yellow("You may have to create a Permission Set with all rights on SfdxHardisKeyValueStore__c and assign users to it"));
     }
 
-    uxLog(this, c.green("Created KeyValue storage on Salesforce org"));
+    uxLog("success", this, c.green("Created KeyValue storage on Salesforce org"));
     return true;
   }
 

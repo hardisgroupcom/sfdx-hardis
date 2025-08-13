@@ -133,7 +133,7 @@ The command's technical implementation involves:
     const message = `Successfully exported files from project ${c.green(filesPath)} from org ${c.green(
       flags['target-org'].getUsername()
     )}`;
-    uxLog(this, c.cyan(message));
+    uxLog("action", this, c.cyan(message));
 
     return { outputString: message, exportResult: exportResult };
   }

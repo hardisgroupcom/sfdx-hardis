@@ -75,7 +75,7 @@ The command's technical implementation involves:
       message: 'Please select the target branch of your current or future merge request',
     });
 
-    uxLog(this, c.cyan(`This script will rebuild selection that you will want to merge into ${c.green(targetBranch)}`));
+    uxLog("action", this, c.cyan(`This script will rebuild selection that you will want to merge into ${c.green(targetBranch)}`));
 
     const currentGitBranch = await getCurrentGitBranch();
     if (currentGitBranch === targetBranch) {
@@ -108,8 +108,8 @@ The command's technical implementation involves:
     await git({ output: true }).checkout(['--', 'manifest/package.xml']);
     await git({ output: true }).checkout(['--', 'manifest/destructiveChanges.xml']);
     await git({ output: true }).status();
-    uxLog(this, c.cyan('The following items are now available for selection'));
-    uxLog(this, c.cyan('Selection has been reset'));
+    uxLog("action", this, c.cyan('The following items are now available for selection'));
+    uxLog("action", this, c.cyan('Selection has been reset'));
     // Return an object to be displayed with --json
     return { outputString: 'Reset selection pocessed' };
   }

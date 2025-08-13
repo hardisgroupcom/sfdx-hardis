@@ -100,7 +100,7 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
     const { flags } = await this.parse(FixListViewMine);
     this.debugMode = flags.debug || false;
 
-    uxLog(this, c.cyan('Setting back listviews to Mine instead of Everything...'));
+    uxLog("action", this, c.cyan('Setting back listviews to Mine instead of Everything...'));
 
     // Identify listviews to process
     if (flags.listviews) {

@@ -36,9 +36,9 @@ export async function getPoolStorage(options: any = {}) {
 export async function setPoolStorage(value: any, options: any = {}) {
   const providerInitialized = await initializeProvider(options);
   if (providerInitialized) {
-    uxLog(this, '[pool] ' + c.grey(`Updating poolstorage value...`));
+    uxLog("other", this, '[pool] ' + c.grey(`Updating poolstorage value...`));
     const valueSetRes = await keyValueProvider.setValue(null, value);
-    uxLog(this, '[pool] ' + c.grey(`Updated poolstorage value`));
+    uxLog("other", this, '[pool] ' + c.grey(`Updated poolstorage value`));
     return valueSetRes;
   }
   return null;
@@ -56,7 +56,7 @@ export async function updateActiveScratchOrg(scratchOrg: string, keyValues: any,
 let updatingPool = false;
 export async function addScratchOrgToPool(scratchOrg: any, options: any = { position: 'last' }) {
   if (updatingPool === true) {
-    uxLog(this, c.grey('Already updating scratch org pool: try again in 2000 ms'));
+    uxLog("log", this, c.grey('Already updating scratch org pool: try again in 2000 ms'));
     await new Promise((resolve) => setTimeout(resolve, 2000));
     return await addScratchOrgToPool(scratchOrg, options);
   } else {
@@ -91,7 +91,7 @@ async function executeAddScratchOrgToPool(scratchOrg: any, options: any = { posi
     poolStorage.scratchOrgErrors = scratchOrgErrors;
     await setPoolStorage(poolStorage, options);
     */
-    uxLog(this, '[pool] ' + c.red('Scratch org creation error: \n' + JSON.stringify(scratchOrg)));
+    uxLog("other", this, '[pool] ' + c.red('Scratch org creation error: \n' + JSON.stringify(scratchOrg)));
   }
 }
 
@@ -102,6 +102,7 @@ export async function fetchScratchOrg(options: any) {
     return scratchOrg;
   } catch (e) {
     uxLog(
+      "warning",
       this,
       c.yellow(
         `[pool] Unable to fetch scratch org from pool. That's sad because it's faster !\nError: ${(e as Error).message}`
@@ -115,13 +116,14 @@ export async function tryFetchScratchOrg(options: any) {
   const poolStorage = await getPoolStorage(options);
   if (poolStorage === null) {
     uxLog(
+      "warning",
       this,
       '[pool] ' +
       c.yellow('No valid scratch pool storage has been reachable. Consider fixing the scratch pool config and auth')
     );
     return null;
   }
-  uxLog(this, '[pool] ' + c.cyan('Trying to fetch a scratch org from scratch orgs pool to improve performances'));
+  uxLog("other", this, '[pool] ' + c.cyan('Trying to fetch a scratch org from scratch orgs pool to improve performances'));
   const scratchOrgs: Array<any> = poolStorage.scratchOrgs || [];
   if (scratchOrgs.length > 0) {
     const scratchOrg = scratchOrgs.shift();
@@ -132,13 +134,14 @@ export async function tryFetchScratchOrg(options: any) {
     poolStorage.scratchOrgs = scratchOrgs;
     await setPoolStorage(poolStorage, options);
     // Authenticate to scratch org
-    uxLog(this, '[pool] ' + c.cyan('Authenticating to scratch org from pool...'));
+    uxLog("action", this, '[pool] ' + c.cyan('Authenticating to scratch org from pool...'));
     const authTempDir = await createTempDir();
     const tmpAuthFile = path.join(authTempDir, 'authFile.txt');
     const authFileContent =
       scratchOrg.scratchOrgSfdxAuthUrl || (scratchOrg.authFileJson ? JSON.stringify(scratchOrg.authFileJson) : null);
     if (authFileContent == null) {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername} (missing sfdxAuthUrl)`
@@ -151,6 +154,7 @@ export async function tryFetchScratchOrg(options: any) {
     const authRes = await execSfdxJson(authCommand, this, { fail: false, output: false });
     if (authRes.status !== 0) {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `[pool] Unable to authenticate to org ${scratchOrg.scratchOrgAlias}: ${scratchOrg.scratchOrgUsername
@@ -170,7 +174,7 @@ export async function tryFetchScratchOrg(options: any) {
       fail: false,
       output: false,
     });
-    uxLog(this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
+    uxLog("action", this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
     // Return scratch org
     await updateActiveScratchOrg(scratchOrg, {
       Description: `Authenticated by ${os.userInfo().username} on ${moment().format('YYYYMMDD_hhmm')}`,
@@ -178,6 +182,7 @@ export async function tryFetchScratchOrg(options: any) {
     return scratchOrg;
   }
   uxLog(
+    "warning",
     this,
     '[pool]' +
     c.yellow(
@@ -208,7 +213,7 @@ async function initializeProvider(options: any) {
       if (isCI) {
         throw e;
       }
-      uxLog(this, '[pool] ' + c.grey('Provider initialization error: ' + (e as Error).message));
+      uxLog("other", this, '[pool] ' + c.grey('Provider initialization error: ' + (e as Error).message));
       // If manual, let's ask the user if he/she has credentials to input
       const resp = await prompts({
         type: 'confirm',

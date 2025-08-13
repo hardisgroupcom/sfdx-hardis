@@ -36,21 +36,23 @@ export abstract class NotifProvider {
     const config = await getConfig("user");
     const notificationsDisable =
       config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);
-    uxLog(this, c.gray(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
+    uxLog("error", this, c.grey(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
     const notifProviders = this.getInstances();
     if (notifProviders.length === 0 && isCI) {
       uxLog(
+        "log",
         this,
-        c.gray(
+        c.grey(
           `[NotifProvider] No notif has been configured: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
         ),
       );
     }
     for (const notifProvider of notifProviders) {
-      uxLog(this, c.gray(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
+      uxLog("error", this, c.grey(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
       // Skip if matching NOTIFICATIONS_DISABLE except for Api
       if (notificationsDisable.includes(notifMessage.type) && notifProvider.isUserNotifProvider()) {
         uxLog(
+          "warning",
           this,
           c.yellow(
             `[NotifProvider] Skip notification of type ${notifMessage.type} according to configuration (NOTIFICATIONS_DISABLE env var or notificationsDisable .sfdx-hardis.yml property)`,
@@ -61,7 +63,7 @@ export abstract class NotifProvider {
       else if (notifProvider.isApplicableForNotif(notifMessage)) {
         await notifProvider.postNotification(notifMessage);
       } else {
-        uxLog(this, c.gray(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
+        uxLog("error", this, c.grey(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
       }
     }
   }
@@ -72,7 +74,7 @@ export abstract class NotifProvider {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: string, buttons: any[] = [], attachments: any[] = []): Promise<void> {
-    uxLog(this, c.grey("method postNotification is not implemented on " + this.getLabel()));
+    uxLog("log", this, c.grey("method postNotification is not implemented on " + this.getLabel()));
   }
 }
 

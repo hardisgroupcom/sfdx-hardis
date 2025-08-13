@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.0.4 (beta)] 2025-08-14
+
+- Immediately stop when a user cancelled a multi-questions prompts
+- Add log used for background process in LWC UI
+- Refactor logging methods
+- Display labels of prompt answers, not technical values
+- Improve naming of report files
+
 ## [6.0.3 (beta)] 2025-08-12
 
 - [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/): Add --no-prompt option to directly use default org.
@@ -76,6 +84,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [5.43.0] 2025-06-22
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) enhancements
+
   - Generate Apex Class relationship diagram on each apex doc page
   - Improve display of Object and Class diagrams when there are too many items
 

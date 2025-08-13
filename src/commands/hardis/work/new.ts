@@ -98,8 +98,8 @@ The command's logic orchestrates various underlying processes:
     const { flags } = await this.parse(NewTask);
     this.debugMode = flags.debug || false;
 
-    uxLog(this, c.cyan('This tool will assist you to create a new User Story (dev or config) with SFDX Hardis CI/CD'));
-    uxLog(this, c.grey("When you don't know what to answer, you can let the default value and push ENTER"));
+    uxLog("action", this, c.cyan('This tool will assist you to create a new User Story (dev or config) with SFDX Hardis CI/CD'));
+    uxLog("log", this, c.grey("When you don't know what to answer, you can let the default value and push ENTER"));
 
     // Make sure the git status is clean, to not delete uncommitted updates
     await checkGitClean({ allowStash: true });
@@ -186,6 +186,7 @@ The command's logic orchestrates various underlying processes:
     // Checkout development main branch
     const branchName = `${projectBranchPart}${response.branch || 'features'}/${response.sources || 'dev'}/${taskName}`;
     uxLog(
+      "action",
       this,
       c.cyan(`Checking out the most recent version of branch ${c.bold(this.targetBranch)} from git server...`)
     );
@@ -193,7 +194,7 @@ The command's logic orchestrates various underlying processes:
     // Pull latest version of target branch
     await git().pull();
     // Create new branch
-    uxLog(this, c.cyan(`Creating new git branch ${c.green(branchName)}...`));
+    uxLog("action", this, c.cyan(`Creating new git branch ${c.green(branchName)}...`));
     await ensureGitBranch(branchName);
     // Update config if necessary
     if (config.developmentBranch !== this.targetBranch && (config.availableTargetBranches || null) == null) {
@@ -267,10 +268,10 @@ The command's logic orchestrates various underlying processes:
       // source tracked sandbox
       await this.selectOrCreateSandbox(branchName, config, flags, selectedOrgType);
     } else {
-      uxLog(this, c.yellow(`No org selected... I hope you know what you are doing, don't break anything :)`));
+      uxLog("warning", this, c.yellow(`No org selected... I hope you know what you are doing, don't break anything :)`));
     }
 
-    uxLog(this, c.cyan(`You are now ready to work in branch ${c.green(branchName)} :)`));
+    uxLog("action", this, c.cyan(`You are now ready to work in branch ${c.green(branchName)} :)`));
     // Return an object to be displayed with --json
     return { outputString: 'Created new User Story' };
   }
@@ -291,6 +292,7 @@ The command's logic orchestrates various underlying processes:
     const taskName = taskResponse.taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-');
     if (validationRegex != null && !new RegExp(validationRegex).test(taskName)) {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `The User Story name ${c.bold(taskName)} does not match the expected pattern ${c.bold(validationRegex)}. Please try again`
@@ -362,6 +364,7 @@ The command's logic orchestrates various underlying processes:
         fail: true,
       });
       uxLog(
+        "action",
         this,
         c.cyan(
           `Selected and opening scratch org ${c.green(scratchResponse.value.instanceUrl)} with user ${c.green(
@@ -370,7 +373,7 @@ The command's logic orchestrates various underlying processes:
         )
       );
       // Open selected org
-      uxLog(this, c.cyan('Opening scratch org in browser...'));
+      uxLog("action", this, c.cyan('Opening scratch org in browser...'));
       await execSfdxJson('sf org open', this, {
         fail: true,
         output: false,
@@ -440,7 +443,7 @@ The command's logic orchestrates various underlying processes:
           }
           try {
             // Continue initialization even if push did not work... it could work and be not such a problem :)
-            uxLog(this, c.cyan('Resetting local SF Cli tracking...'));
+            uxLog("action", this, c.cyan('Resetting local SF Cli tracking...'));
             await execCommand(`sf project delete tracking --no-prompt -o ${orgUsername}`, this, {
               fail: false,
               output: true,
@@ -457,10 +460,12 @@ The command's logic orchestrates various underlying processes:
         }
         if (initSandboxErr) {
           uxLog(
+            "log",
             this,
             c.grey('Error(s) while initializing sandbox: ' + initSandboxErr.message + '\n' + initSandboxErr.stack)
           );
           uxLog(
+            "warning",
             this,
             c.yellow(
               'Your sandbox may not be completely initialized from git. You can send the error above to your release manager'
@@ -469,10 +474,12 @@ The command's logic orchestrates various underlying processes:
         }
         if (initSourcesErr) {
           uxLog(
+            "log",
             this,
             c.grey('Error(s) while pushing sources to sandbox: ' + initSourcesErr.message + '\n' + initSourcesErr.stack)
           );
           uxLog(
+            "warning",
             this,
             c.yellow(`If you really want your sandbox to be up to date with branch ${c.bold(this.targetBranch)}, you may:
   - ${c.bold(
@@ -487,7 +494,7 @@ The command's logic orchestrates various underlying processes:
     }
     // Open of if not already open
     if (openOrg === true) {
-      uxLog(this, c.cyan(`Opening sandbox org so you can work in it...`));
+      uxLog("action", this, c.cyan(`Opening sandbox org so you can work in it...`));
       await execSfdxJson('sf org open', this, {
         fail: true,
         output: false,
@@ -566,7 +573,7 @@ The command's logic orchestrates various underlying processes:
     // Selected sandbox from list
     else {
       await makeSureOrgIsConnected(sandboxResponse.value);
-      uxLog(this, c.cyan(`Setting sandbox org ${c.green(sandboxResponse.value.instanceUrl)} (${sandboxResponse.value.username}) as default org...`));
+      uxLog("action", this, c.cyan(`Setting sandbox org ${c.green(sandboxResponse.value.instanceUrl)} (${sandboxResponse.value.username}) as default org...`));
       await execCommand(`sf config set target-org=${sandboxResponse.value.username}`, this, {
         output: true,
         fail: true,

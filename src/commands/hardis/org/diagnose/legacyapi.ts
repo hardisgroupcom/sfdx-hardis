@@ -131,14 +131,15 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const logCountQuery = `SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`;
     const logCountRes = await soqlQuery(logCountQuery, conn);
     if (logCountRes.totalSize === 0) {
-      uxLog(this, c.green(`Found no EventLogFile entry of type ${eventType}.`));
-      uxLog(this, c.green('This indicates that no legacy APIs were called during the log retention window.'));
+      uxLog("success", this, c.green(`Found no EventLogFile entry of type ${eventType}.`));
+      uxLog("success", this, c.green('This indicates that no legacy APIs were called during the log retention window.'));
     } else {
-      uxLog(this, c.grey('Found ' + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
+      uxLog("log", this, c.grey('Found ' + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
     }
 
     if (logCountRes.totalSize > limit) {
       uxLog(
+        "warning",
         this,
         c.yellow(`There are more than ${limit} results, you may consider to increase limit using --limit argument`)
       );
@@ -150,7 +151,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const eventLogRes: any = await soqlQuery(logCollectQuery, conn);
 
     // Collect legacy api calls from logs
-    uxLog(this, c.cyan('Calling org API to get CSV content of each EventLogFile record, then parse and analyze it...'));
+    uxLog("action", this, c.cyan('Calling org API to get CSV content of each EventLogFile record, then parse and analyze it...'));
     for (const eventLogFile of eventLogRes.records) {
       await this.collectDeprecatedApiCalls(eventLogFile.LogFile, conn);
     }
@@ -161,8 +162,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     ];
 
     // Display summary
-    uxLog(this, '');
-    uxLog(this, c.cyan('Results:'));
+    uxLog("other", this, '');
+    uxLog("action", this, c.cyan('Results:'));
     for (const descriptor of this.legacyApiDescriptors) {
       const colorMethod =
         descriptor.severity === 'ERROR' && descriptor.errors.length > 0
@@ -170,9 +171,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           : descriptor.severity === 'WARNING' && descriptor.errors.length > 0
             ? c.yellow
             : c.green;
-      uxLog(this, colorMethod(`- ${descriptor.deprecationRelease} : ${c.bold(descriptor.errors.length)}`));
+      uxLog("other", this, colorMethod(`- ${descriptor.deprecationRelease} : ${c.bold(descriptor.errors.length)}`));
     }
-    uxLog(this, '');
+    uxLog("other", this, '');
 
     // Build command result
     let msg = 'No deprecated API call has been found in ApiTotalUsage logs';
@@ -183,7 +184,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     ) {
       msg = 'Found legacy API versions calls in logs';
       statusCode = 1;
-      uxLog(this, c.red(c.bold(msg)));
+      uxLog("error", this, c.red(c.bold(msg)));
     } else if (
       this.legacyApiDescriptors.filter(
         (descriptor) => descriptor.severity === 'WARNING' && descriptor.errors.length > 0
@@ -191,9 +192,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     ) {
       msg = 'Found deprecated API versions calls in logs that will not be supported anymore in the future';
       statusCode = 0;
-      uxLog(this, c.yellow(c.bold(msg)));
+      uxLog("warning", this, c.yellow(c.bold(msg)));
     } else {
-      uxLog(this, c.green(msg));
+      uxLog("success", this, c.green(msg));
     }
 
     // Generate main CSV file
@@ -215,7 +216,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     // Debug or manage CSV file generation error
     if (this.debugMode || this.outputFile == null) {
       for (const descriptor of this.legacyApiDescriptors) {
-        uxLog(this, c.grey(`- ${descriptor.deprecationRelease} : ${JSON.stringify(descriptor.errors.length)}`));
+        uxLog("log", this, c.grey(`- ${descriptor.deprecationRelease} : ${JSON.stringify(descriptor.errors.length)}`));
       }
     }
 
@@ -281,12 +282,12 @@ See article to solve issue before it's too late:
     const severityIconInfo = getSeverityIcon('info');
 
     // Download file as stream, and process chuck by chuck
-    uxLog(this, c.grey(`- processing ${logFileUrl}...`));
+    uxLog("log", this, c.grey(`- processing ${logFileUrl}...`));
     const fetchUrl = `${conn.instanceUrl}${logFileUrl}`;
     const outputFile = path.join(this.tempDir, Math.random().toString(36).substring(7) + ".csv");
     const downloadResult = await new FileDownloader(fetchUrl, { conn: conn, outputFile: outputFile }).download();
     if (downloadResult.success) {
-      uxLog(this, c.grey(`-- parsing downloaded CSV from ${outputFile} and check for deprecated calls...`));
+      uxLog("log", this, c.grey(`-- parsing downloaded CSV from ${outputFile} and check for deprecated calls...`));
       const outputFileStream = fs.createReadStream(outputFile, { encoding: 'utf8' });
       await new Promise((resolve, reject) => {
         Papa.parse(outputFileStream, {
@@ -332,7 +333,7 @@ See article to solve issue before it's too late:
       });
     }
     else {
-      uxLog(this, c.yellow(`Warning: Unable to process logs of ${logFileUrl}`));
+      uxLog("warning", this, c.yellow(`Warning: Unable to process logs of ${logFileUrl}`));
     }
   }
 
@@ -372,7 +373,7 @@ See article to solve issue before it's too late:
     if (outputFileIpsRes.xlsxFile) {
       this.outputFilesRes.xlsxFile2 = outputFileIpsRes.xlsxFile;
     }
-    uxLog(this, c.italic(c.cyan(`Please see info about ${severity} API callers in ${c.bold(outputFileIps)}`)));
+    uxLog("other", this, c.italic(c.cyan(`Please see info about ${severity} API callers in ${c.bold(outputFileIps)}`)));
     return outputFileIps;
   }
 }

@@ -118,6 +118,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     const azureTicketsNumber = tickets.filter((ticket) => ticket.provider === "AZURE").length;
     if (azureTicketsNumber > 0) {
       uxLog(
+        "action",
         this,
         c.cyan(
           `[AzureBoardsProvider] Now trying to collect ${azureTicketsNumber} tickets infos from Azure Boards Server ` +
@@ -138,9 +139,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
           if (ticketInfo?._links && ticketInfo._links["html"] && ticketInfo._links["html"]["href"]) {
             ticket.url = ticketInfo?._links["html"]["href"];
           }
-          uxLog(this, c.grey("[AzureBoardsProvider] Collected data for Work Item " + ticket.id));
+          uxLog("log", this, c.grey("[AzureBoardsProvider] Collected data for Work Item " + ticket.id));
         } else {
-          uxLog(this, c.yellow("[AzureBoardsProvider] Unable to get Azure Boards WorkItem " + ticket.id + "\n" + c.grey(JSON.stringify(ticketInfo))));
+          uxLog("warning", this, c.yellow("[AzureBoardsProvider] Unable to get Azure Boards WorkItem " + ticket.id + "\n" + c.grey(JSON.stringify(ticketInfo))));
         }
       }
     }
@@ -148,7 +149,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   }
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
-    uxLog(this, c.cyan(`[AzureBoardsProvider] Try to post comments on ${tickets.length} work items...`));
+    uxLog("action", this, c.cyan(`[AzureBoardsProvider] Try to post comments on ${tickets.length} work items...`));
     const orgMarkdown = await getOrgMarkdown(org, "html");
     const branchMarkdown = await getBranchMarkdown("html");
     const tag = await this.getDeploymentTag();
@@ -175,7 +176,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             throw new SfError("commentPostRes: " + commentPostRes);
           }
         } catch (e6) {
-          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${(e6 as any).message}\n${c.grey((e6 as any).stack)}`));
+          uxLog("warning", this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${(e6 as any).message}\n${c.grey((e6 as any).stack)}`));
         }
 
         // Add tag
@@ -194,19 +195,21 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             throw new SfError("tag workItem: " + workItem);
           }
         } catch (e6) {
-          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while adding tag ${tag} on ${ticket.id}\n${(e6 as any).message} \n${c.grey((e6 as any).stack)} `));
+          uxLog("warning", this, c.yellow(`[AzureBoardsProvider] Error while adding tag ${tag} on ${ticket.id}\n${(e6 as any).message} \n${c.grey((e6 as any).stack)} `));
         }
       }
     }
     uxLog(
+      "log",
       this,
-      c.gray(
+      c.grey(
         `[AzureBoardsProvider] Posted comments on ${commentedTickets.length} work item(s): ` + commentedTickets.map((ticket) => ticket.id).join(", "),
       ),
     );
     uxLog(
+      "log",
       this,
-      c.gray(
+      c.grey(
         `[AzureBoardsProvider] Added tag ${tag} on ${taggedTickets.length} work item(s): ` + taggedTickets.map((ticket) => ticket.id).join(", "),
       ),
     );

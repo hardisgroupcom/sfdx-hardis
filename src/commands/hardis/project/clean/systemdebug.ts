@@ -77,7 +77,7 @@ The command's technical implementation involves:
     this.del = flags.delete || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Comment or delete System.debug line in apex classes and triggers`));
+    uxLog("action", this, c.cyan(`Comment or delete System.debug line in apex classes and triggers`));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.{cls,trigger}`;
@@ -111,7 +111,7 @@ The command's technical implementation involves:
 
     // Summary
     const msg = `Cleaned ${c.green(c.bold(countFiles))} class(es) and trigger(s)`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };
   }

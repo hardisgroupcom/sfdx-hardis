@@ -174,7 +174,7 @@ The command's technical implementation involves:
 
     this.customSettingsNames = (await this.listLocalCustomSettings()).map((cs) => cs.name);
 
-    uxLog(this, c.cyan(LintAccess.messages.header));
+    uxLog("action", this, c.cyan(LintAccess.messages.header));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
 
@@ -371,7 +371,7 @@ The command's technical implementation involves:
     }
 
     if (!this.hasRemainingElementsToCheck(remainingElements)) {
-      uxLog(this, c.green(LintAccess.messages.allElementsHaveRights));
+      uxLog("success", this, c.green(LintAccess.messages.allElementsHaveRights));
       return LintAccess.messages.allElementsHaveRights;
     } else {
       //list remaining elements after checking on profiles and permissions sets
@@ -474,7 +474,7 @@ The command's technical implementation involves:
 
     //we create an object to have a custom header in the table
     if (!this.hasToDisplayJsonOnly) {
-      uxLog(this, c.cyan(LintAccess.messages.someElementsDontHaveRights));
+      uxLog("action", this, c.cyan(LintAccess.messages.someElementsDontHaveRights));
       uxLogTable(this, remainingElementsTable);
     }
 
@@ -579,8 +579,8 @@ The command's technical implementation involves:
         }
       }
     } else if (this.missingElements.length > 0) {
-      uxLog(this, c.yellow('Please add missing access on permission set(s)'));
-      uxLog(this, c.yellow('You can do it by running VsCode SFDX Hardis command Audit -> Detect missing permissions'));
+      uxLog("warning", this, c.yellow('Please add missing access on permission set(s)'));
+      uxLog("warning", this, c.yellow('You can do it by running VsCode SFDX Hardis command Audit -> Detect missing permissions'));
     }
   }
 
@@ -662,8 +662,8 @@ The command's technical implementation involves:
       }
       await writeXmlFile(permissionSetFile, psFileXml);
     }
-    uxLog(this, c.cyan('Permission sets updated successfully!'));
-    uxLog(this, c.yellow('Please commit and push your changes to the repository!'));
+    uxLog("action", this, c.cyan('Permission sets updated successfully!'));
+    uxLog("warning", this, c.yellow('Please commit and push your changes to the repository!'));
     throw new SfError(c.red('Your permission sets has been updated: please CHECK THE UPDATES then commit and push !'));
   }
 

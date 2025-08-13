@@ -96,7 +96,7 @@ The command's technical implementation involves:
         conn = flags['target-org'].getConnection();
       }
     }
-    uxLog(this, c.cyan(`Generating full package xml for ${orgUsername}`));
+    uxLog("action", this, c.cyan(`Generating full package xml for ${orgUsername}`));
 
     // Calculate default output file if not provided as input
     if (this.outputFile == null) {
@@ -106,8 +106,8 @@ The command's technical implementation involves:
 
     await buildOrgManifest(orgUsername, this.outputFile, conn);
 
-    uxLog(this, c.cyan(`Generated full package.xml for ${orgUsername}`));
-    uxLog(this, c.grey(`Output file: ${c.green(this.outputFile)}`));
+    uxLog("action", this, c.cyan(`Generated full package.xml for ${orgUsername}`));
+    uxLog("log", this, c.grey(`Output file: ${c.green(this.outputFile)}`));
 
     if (WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.sendReportFileMessage(this.outputFile, 'Full Org package.xml', "report");

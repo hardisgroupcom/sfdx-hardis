@@ -73,7 +73,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Adding identifiers to componentInstance in flexipages`));
+    uxLog("action", this, c.cyan(`Adding identifiers to componentInstance in flexipages`));
     /* jscpd:ignore-end */
 
     const globPattern = this.pathToBrowse + `/**/*.flexipage-meta.xml`;
@@ -81,7 +81,7 @@ The command's technical implementation involves:
     let counter = 0;
     const flexipages: any[] = [];
     const flexipageSourceFiles = await glob(globPattern, { cwd: this.pathToBrowse, ignore: GLOB_IGNORE_PATTERNS });
-    uxLog(this, c.grey(`Found ${flexipageSourceFiles.length} flexipages`));
+    uxLog("log", this, c.grey(`Found ${flexipageSourceFiles.length} flexipages`));
     const regexAndReplacements = [
       {
         regex: /(<componentName>.*<\/componentName>\n.*<\/componentInstance>)/gim,
@@ -126,14 +126,14 @@ The command's technical implementation involves:
         }
         if (found) {
           await fs.writeFile(flexiFile, flexipageRawXml);
-          uxLog(this, c.grey('Updated ' + flexiFile));
+          uxLog("log", this, c.grey('Updated ' + flexiFile));
         }
       }
     }
 
     // Summary
     const msg = `Added ${c.green(c.bold(counter))} identifiers in ${c.green(c.bold(flexipages.length))} flexipages`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg, updatedNumber: counter, updated: flexipages };
   }

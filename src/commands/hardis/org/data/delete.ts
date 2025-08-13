@@ -96,7 +96,7 @@ The command's technical implementation relies heavily on the SFDMU plugin:
     const message = `Successfully deleted data from org ${c.green(orgUsername)} using SFDMU project ${c.green(
       sfdmuPath
     )}`;
-    uxLog(this, c.cyan(message));
+    uxLog("action", this, c.cyan(message));
     return { outputString: message };
   }
 }

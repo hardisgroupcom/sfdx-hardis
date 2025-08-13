@@ -70,7 +70,7 @@ See article below
     const conn = flags['target-org'].getConnection();
 
     // Query users that we want to freeze
-    uxLog(this, c.cyan(`Querying User records with email ending with .invalid...`));
+    uxLog("action", this, c.cyan(`Querying User records with email ending with .invalid...`));
     let userQuery = `SELECT Id,Name,Username,Email,ProfileId FROM User WHERE Email LIKE '%.invalid' and IsActive=true`;
     if (hasProfileConstraint) {
       const profilesQuery = `SELECT Id FROM Profile WHERE Name IN ('${this.profiles.join("','")}')`;
@@ -84,7 +84,7 @@ See article below
     // Check empty result
     if (usersToActivate.length === 0) {
       const outputString = `No matching user records found with email ending with .invalid`;
-      uxLog(this, c.yellow(outputString));
+      uxLog("warning", this, c.yellow(outputString));
       return { outputString };
     }
 
@@ -135,7 +135,7 @@ See article below
         usersToActivateFinal = selectUsers.value;
       } else if (confirmSelect.value !== 'all') {
         const outputString = 'Script cancelled by user';
-        uxLog(this, c.yellow(outputString));
+        uxLog("warning", this, c.yellow(outputString));
         return { outputString };
       }
     }
@@ -147,19 +147,20 @@ See article below
     });
     const bulkUpdateRes = await bulkUpdate('User', 'update', userToActivateUpdated, conn);
 
-    uxLog(this, c.cyan(`Results of the reactivation of ${userToActivateUpdated.length} users by removing the .invalid from their email`));
+    uxLog("action", this, c.cyan(`Results of the reactivation of ${userToActivateUpdated.length} users by removing the .invalid from their email`));
     uxLogTable(
       this,
       this.debugMode ? userToActivateUpdated : userToActivateUpdated.slice(0, this.maxUsersDisplay)
     );
     if (!this.debugMode && userToActivateUpdated.length > this.maxUsersDisplay) {
-      uxLog(this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
+      uxLog("warning", this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
     }
 
     const activateSuccessNb = bulkUpdateRes.successfulResults.length;
     const activateErrorNb = bulkUpdateRes.failedResults.length;
     if (activateErrorNb > 0) {
       uxLog(
+        "warning",
         this,
         c.yellow(`Warning: ${c.red(c.bold(activateErrorNb))} users has not been reactivated (bulk API errors)`)
       );
@@ -167,6 +168,7 @@ See article below
 
     // Build results summary
     uxLog(
+      "success",
       this,
       c.green(`${c.bold(activateSuccessNb)} users has been be reactivated by removing the .invalid of their email`)
     );

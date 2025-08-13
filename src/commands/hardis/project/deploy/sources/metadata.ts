@@ -78,9 +78,10 @@ export default class DxSources extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DxSources);
-    uxLog(this, c.red('This command is deprecated and will be removed in January 2025'));
-    uxLog(this, c.red('Nobody used Metadata format anymore :)'));
+    uxLog("error", this, c.red('This command is deprecated and will be removed in January 2025'));
+    uxLog("error", this, c.red('Nobody used Metadata format anymore :)'));
     uxLog(
+      "error",
       this,
       c.red('If you think it should be kept and maintained, please post an issue on sfdx-hardis GitHub repository')
     );
@@ -144,13 +145,13 @@ export default class DxSources extends SfCommand<any> {
       if (deployRes.status === 0) {
         deployProcessed = true;
         message = '[sfdx-hardis] Successfully deployed sfdx project sources to Salesforce org';
-        uxLog(this, c.green(message));
+        uxLog("success", this, c.green(message));
       } else {
         message = '[sfdx-hardis] Unable to deploy sfdx project sources to Salesforce org';
-        uxLog(this, c.red(deployRes.errorMessage));
+        uxLog("error", this, c.red(deployRes.errorMessage));
       }
     } else {
-      uxLog(this, 'No package.xml found so no deployment has been performed');
+      uxLog("log", this, 'No package.xml found so no deployment has been performed');
     }
 
     // Deploy destructive changes
@@ -168,7 +169,7 @@ export default class DxSources extends SfCommand<any> {
     if (fs.existsSync(packageDeletedXmlFile)) {
       await deployDestructiveChanges(packageDeletedXmlFile, { debug: debugMode, check }, this);
     } else {
-      uxLog(this, 'No destructivePackage.Xml found so no destructive deployment has been performed');
+      uxLog("log", this, 'No destructivePackage.Xml found so no destructive deployment has been performed');
     }
 
     return {

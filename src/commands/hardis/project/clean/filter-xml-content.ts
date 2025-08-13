@@ -84,6 +84,7 @@ The command's technical implementation involves:
       flags.outputfolder ||
       './' + path.dirname(this.inputFolder) + '/' + path.basename(this.inputFolder) + '_xml_content_filtered';
     uxLog(
+      "log",
       this,
       c.grey(
         `Initialize XML content filtering of ${this.inputFolder}, using ${c.bold(this.configFile)} , into ${this.outputFolder
@@ -93,27 +94,27 @@ The command's technical implementation involves:
     // Read json config file
     const filterConfig = fs.readJsonSync(this.configFile);
     if (flags.debug) {
-      uxLog(this, c.grey('Filtering config file content:\n' + JSON.stringify(filterConfig, null, 2)));
+      uxLog("log", this, c.grey('Filtering config file content:\n' + JSON.stringify(filterConfig, null, 2)));
     }
 
     // Create output folder/empty it if existing
     if (fs.existsSync(this.outputFolder) && this.outputFolder !== this.inputFolder) {
-      uxLog(this, c.grey('Empty output folder ' + this.outputFolder));
+      uxLog("log", this, c.grey('Empty output folder ' + this.outputFolder));
       fs.emptyDirSync(this.outputFolder);
     } else if (!fs.existsSync(this.outputFolder)) {
-      uxLog(this, c.grey('Create output folder ' + this.outputFolder));
+      uxLog("log", this, c.grey('Create output folder ' + this.outputFolder));
       fs.mkdirSync(this.outputFolder);
     }
 
     // Copy input folder to output folder
     if (this.outputFolder !== this.inputFolder) {
-      uxLog(this, 'Copy in output folder ' + this.outputFolder);
+      uxLog("other", this, 'Copy in output folder ' + this.outputFolder);
       fs.copySync(this.inputFolder, this.outputFolder);
     }
 
     // Browse filters
     filterConfig.filters.forEach((filter) => {
-      uxLog(this, c.grey(filter.name + ' (' + filter.description + ')...'));
+      uxLog("log", this, c.grey(filter.name + ' (' + filter.description + ')...'));
       // Browse filter folders
       filter.folders.forEach((filterFolder) => {
         // Browse folder files
@@ -129,7 +130,7 @@ The command's technical implementation involves:
             if (browsedFileExtension === filterFileExt) {
               // Found a matching file, process it
               const fullFilePath = this.outputFolder + '/' + filterFolder + '/' + fpath;
-              uxLog(this, c.grey('- ' + fullFilePath));
+              uxLog("log", this, c.grey('- ' + fullFilePath));
               this.filterXmlFromFile(filter, fullFilePath);
             }
           });
@@ -139,7 +140,7 @@ The command's technical implementation involves:
     this.smmryResult.filterResults = this.smmryUpdatedFiles;
 
     // Display results as JSON
-    uxLog(this, c.grey('Filtering results:' + JSON.stringify(this.smmryResult)));
+    uxLog("log", this, c.grey('Filtering results:' + JSON.stringify(this.smmryResult)));
     return {};
   }
 
@@ -148,13 +149,13 @@ The command's technical implementation involves:
     const parser = new xml2js.Parser();
     const data = fs.readFileSync(file);
     parser.parseString(data, (err2, fileXmlContent) => {
-      uxLog(this, 'Parsed XML \n' + util.inspect(fileXmlContent, false, null));
+      uxLog("other", this, 'Parsed XML \n' + util.inspect(fileXmlContent, false, null));
       Object.keys(fileXmlContent).forEach((eltKey) => {
         fileXmlContent[eltKey] = this.filterElement(fileXmlContent[eltKey], filter, file);
       });
       if (this.smmryUpdatedFiles[file] != null && this.smmryUpdatedFiles[file].updated === true) {
         writeXmlFile(file, fileXmlContent);
-        uxLog(this, 'Updated ' + file);
+        uxLog("log", this, 'Updated ' + file);
       }
     });
   }
@@ -171,8 +172,8 @@ The command's technical implementation involves:
           if (excludeDef.type_tag === eltKey) {
             // Found matching type tag
             found = true;
-            uxLog(this, '\nFound type: ' + eltKey);
-            uxLog(this, elementValue[eltKey]);
+            uxLog("other", this, '\nFound type: ' + eltKey);
+            uxLog("other", this, elementValue[eltKey]);
             // Filter type values
             const typeValues = elementValue[eltKey];
             const newTypeValues: any[] = [];
@@ -183,7 +184,7 @@ The command's technical implementation involves:
                 (excludeDef.values.includes(typeItem[excludeDef.identifier_tag]) ||
                   excludeDef.values.includes(typeItem[excludeDef.identifier_tag][0]))
               ) {
-                uxLog(this, '----- filtered ' + typeItem[excludeDef.identifier_tag]);
+                uxLog("other", this, '----- filtered ' + typeItem[excludeDef.identifier_tag]);
                 if (self.smmryUpdatedFiles[file] == null) {
                   self.smmryUpdatedFiles[file] = { updated: true, excluded: {} };
                 }
@@ -192,7 +193,7 @@ The command's technical implementation involves:
                 }
                 self.smmryUpdatedFiles[file].excluded[excludeDef.type_tag].push(typeItem[excludeDef.identifier_tag][0]);
               } else {
-                uxLog(this, '--- kept ' + typeItem[excludeDef.identifier_tag]);
+                uxLog("other", this, '--- kept ' + typeItem[excludeDef.identifier_tag]);
                 newTypeValues.push(typeItem);
               }
             });

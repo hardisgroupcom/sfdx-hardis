@@ -175,6 +175,7 @@ The command's technical implementation involves a series of orchestrated steps:
     }
     // User log info
     uxLog(
+      "action",
       this,
       c.cyan(
         `This command will help to prepare the ${GitProvider.getMergeRequestName(this.gitUrl)} from your branch ${c.green(localBranch)} to major branch ${c.green(
@@ -203,22 +204,26 @@ The command's technical implementation involves a series of orchestrated steps:
     const mergeRequestUrl = GitProvider.getMergeRequestCreateUrl(this.gitUrl, this.targetBranch || '', this.currentBranch);
 
     // Merge request
-    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold(GitProvider.getMergeRequestName(this.gitUrl))}, otherwise you can push new commits on ${c.green(this.currentBranch)} branch.`));
+    uxLog("action", this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold(GitProvider.getMergeRequestName(this.gitUrl))}, otherwise you can push new commits on ${c.green(this.currentBranch)} branch.`));
     let summaryMsg = c.grey("");
     if (mergeRequestUrl) {
-      summaryMsg += c.grey(`- New ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}\n`);
-      WebSocketClient.sendReportFileMessage(mergeRequestUrl, `Create ${GitProvider.getMergeRequestName(this.gitUrl)}`, 'actionUrl');
+      if (WebSocketClient.isAliveWithLwcUI()) {
+        WebSocketClient.sendReportFileMessage(mergeRequestUrl, `Create ${GitProvider.getMergeRequestName(this.gitUrl)}`, 'actionUrl');
+      }
+      else {
+        summaryMsg += c.grey(`- New ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}\n`);
+      }
     }
     const mergeRequestDoc = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`;
     summaryMsg += c.grey(`- Repository: ${c.green(this.gitUrl.replace('.git', ''))}\n`);
     summaryMsg += c.grey(`- Source branch: ${c.green(this.currentBranch)}\n`);
     summaryMsg += c.grey(`- Target branch: ${c.green(this.targetBranch)}`);
-    uxLog(this, summaryMsg);
-    uxLog(this, `${c.yellow(`When your ${GitProvider.getMergeRequestName(this.gitUrl)} will have been merged:`)}
+    uxLog("log", this, summaryMsg);
+    uxLog("warning", this, `${c.yellow(`When your ${GitProvider.getMergeRequestName(this.gitUrl)} will have been merged:`)}
 - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
 - Use New User Story menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`);
     if (!WebSocketClient.isAliveWithLwcUI()) {
-      uxLog(this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(mergeRequestDoc)}`));
+      uxLog("log", this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(mergeRequestDoc)}`));
     }
     WebSocketClient.sendReportFileMessage(mergeRequestDoc, `View ${GitProvider.getMergeRequestName(this.gitUrl)} documentation`, 'docUrl');
     // Return an object to be displayed with --json
@@ -229,7 +234,7 @@ The command's technical implementation involves a series of orchestrated steps:
   private async cleanGitStatus() {
     // Skip git stuff if requested
     if (this.noGit) {
-      uxLog(this, c.cyan(`[Expert mode] Skipped git reset`));
+      uxLog("action", this, c.cyan(`[Expert mode] Skipped git reset`));
       return;
     }
     let gitStatusInit = await git().status();
@@ -248,7 +253,7 @@ The command's technical implementation involves a series of orchestrated steps:
     // Manage project deploy start from scratch org
     if (this.noPull || this.auto) {
       // Skip pull
-      uxLog(this, c.cyan(`Skipped sf project:retrieve:start from scratch org`));
+      uxLog("action", this, c.cyan(`Skipped sf project:retrieve:start from scratch org`));
       return;
     }
     // Request user if commit is ready
@@ -280,9 +285,10 @@ The command's technical implementation involves a series of orchestrated steps:
     });
     if (commitReadyRes.value === 'pleasePull') {
       // Process sf project retrieve start
-      uxLog(this, c.cyan(`Pulling sources from scratch org ${flags['target-org'].getUsername()}...`));
+      uxLog("action", this, c.cyan(`Pulling sources from scratch org ${flags['target-org'].getUsername()}...`));
       await forceSourcePull(flags['target-org'].getUsername(), this.debugMode);
       uxLog(
+        "action",
         this,
         c.cyan(
           `Sources has been pulled from ${flags[
@@ -290,11 +296,13 @@ The command's technical implementation involves a series of orchestrated steps:
           ].getUsername()}, now you can stage and commit your updates !`
         )
       );
+      WebSocketClient.sendReportFileMessage("workbench.view.scm", "Commit your retrieved files", "actionCommand");
+      WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, "Retrieve and Commit documentation", 'docUrl');
       return { outputString: 'Pull performed' };
     } else if (commitReadyRes.value === 'help') {
       // Show pull commit stage help
       const commitHelpUrl = `${CONSTANTS.DOC_URL_ROOT}/hardis/scratch/pull/`;
-      uxLog(this, c.cyan(`Opening help at ${commitHelpUrl} ...`));
+      uxLog("action", this, c.cyan(`Opening help at ${commitHelpUrl} ...`));
       await open(commitHelpUrl, { wait: true });
       return { outputString: 'Help displayed at ' };
     }
@@ -324,7 +332,7 @@ The command's technical implementation involves a series of orchestrated steps:
   }
 
   private async upgradePackageXmlFilesWithDelta() {
-    uxLog(this, c.cyan('Updating manifest/package.xml and manifest/destructiveChanges.xml using sfdx-git-delta...'));
+    uxLog("action", this, c.cyan('Updating manifest/package.xml and manifest/destructiveChanges.xml using sfdx-git-delta...'));
     // Retrieving info about current branch latest commit and master branch latest commit
     const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch || '');
 
@@ -332,6 +340,7 @@ The command's technical implementation involves a series of orchestrated steps:
     const localPackageXml = path.join('manifest', 'package.xml');
     const toCommitMessage = gitDeltaScope.toCommit ? gitDeltaScope.toCommit.message : '';
     uxLog(
+      "log",
       this,
       c.grey(
         `Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(
@@ -360,6 +369,7 @@ The command's technical implementation involves a series of orchestrated steps:
       const diffDestructivePackageXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
       const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
       uxLog(
+        "log",
         this,
         c.grey(c.bold(`Delta destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
         c.red(destructivePackageXmlDiffStr)
@@ -376,6 +386,7 @@ The command's technical implementation involves a series of orchestrated steps:
       const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
       const packageXmlDiffStr = await fs.readFile(diffPackageXml, 'utf8');
       uxLog(
+        "log",
         this,
         c.grey(c.bold(`Delta package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) +
         c.green(packageXmlDiffStr)
@@ -388,8 +399,9 @@ The command's technical implementation involves a series of orchestrated steps:
         await git().add(localPackageXml);
       }
     } else {
-      uxLog(this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
+      uxLog("log", this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
       uxLog(
+        "error",
         this,
         c.red(
           `Unable to build git diff.${c.yellow(
@@ -402,11 +414,12 @@ The command's technical implementation involves a series of orchestrated steps:
     // Commit updates
     let gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0 && !this.noGit) {
-      uxLog(this, c.grey(`Committing updated files in local git branch ${c.green(this.currentBranch)}...`));
+      uxLog("log", this, c.grey(`Committing updated files in local git branch ${c.green(this.currentBranch)}...`));
       try {
         await git({ output: true }).commit('[sfdx-hardis] Update package content');
       } catch (e) {
         uxLog(
+          "warning",
           this,
           c.yellow(
             `There may be an issue while committing files but it can be ok to ignore it\n${c.grey(
@@ -425,11 +438,12 @@ The command's technical implementation involves a series of orchestrated steps:
     const config = await getConfig('branch');
     if (!this.noClean) {
       const gitStatusFilesBeforeClean = (await git().status()).files.map((file) => file.path);
-      uxLog(this, JSON.stringify(gitStatusFilesBeforeClean, null, 2));
+      uxLog("other", this, JSON.stringify(gitStatusFilesBeforeClean, null, 2));
       // References cleaning
       await CleanReferences.run(['--type', 'all']);
       if (globalThis?.displayProfilesWarning === true) {
         uxLog(
+          "warning",
           this,
           c.yellow(c.bold('Please make sure the attributes removed from Profiles are defined on Permission Sets :)'))
         );
@@ -437,24 +451,25 @@ The command's technical implementation involves a series of orchestrated steps:
 
       // Xml cleaning
       if (config.cleanXmlPatterns && config.cleanXmlPatterns.length > 0) {
-        uxLog(this, c.cyan('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
+        uxLog("action", this, c.cyan('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
         await CleanXml.run([]);
       }
 
       // Manage git after cleaning
       const gitStatusAfterClean = await git().status();
-      uxLog(this, JSON.stringify(gitStatusAfterClean, null, 2));
+      uxLog("other", this, JSON.stringify(gitStatusAfterClean, null, 2));
       const cleanedFiles = gitStatusAfterClean.files
         .filter((file) => !gitStatusFilesBeforeClean.includes(file.path))
         .map((file) => normalizeFileStatusPath(file.path, config));
       if (cleanedFiles.length > 0) {
-        uxLog(this, c.grey(`Cleaned the following list of files:\n${cleanedFiles.join('\n')}`));
+        uxLog("log", this, c.grey(`Cleaned the following list of files:\n${cleanedFiles.join('\n')}`));
         if (!this.noGit) {
           try {
             await git().add(cleanedFiles);
             await git({ output: true }).commit('[sfdx-hardis] Clean sfdx project');
           } catch (e) {
             uxLog(
+              "warning",
               this,
               c.yellow(
                 `There may be an issue while adding cleaned files but it can be ok to ignore it\n${c.grey(
@@ -565,6 +580,7 @@ The command's technical implementation involves a series of orchestrated steps:
         await git({ output: true }).commit('[sfdx-hardis] Update deployment plan');
       } catch (e) {
         uxLog(
+          "warning",
           this,
           c.yellow(
             `There may be an issue while committing files but it can be ok to ignore it\n${c.grey(
@@ -600,7 +616,7 @@ The command's technical implementation involves a series of orchestrated steps:
         description: 'Choose whether to push your commits to the remote git repository',
       });
       if (pushResponse.push === true) {
-        uxLog(this, c.cyan(`Pushing new commit(s) in remote git branch ${c.green(`origin/${this.currentBranch}`)}...`));
+        uxLog("action", this, c.cyan(`Pushing new commit(s) in remote git branch ${c.green(`origin/${this.currentBranch}`)}...`));
         const configUSer = await getConfig('user');
         let pushResult: any;
         if (configUSer.canForcePush === true) {
@@ -632,7 +648,7 @@ The command's technical implementation involves a series of orchestrated steps:
 
   private updateMergeRequestInfo(mergeRequestStored, mergeRequestInfo) {
     if (this.debugMode) {
-      uxLog(this, c.grey(JSON.stringify(mergeRequestInfo, null, 2)));
+      uxLog("log", this, c.grey(JSON.stringify(mergeRequestInfo, null, 2)));
     }
     if (mergeRequestInfo?.remoteMessages?.id) {
       mergeRequestStored.id = mergeRequestInfo.remoteMessages.id;

@@ -20,6 +20,7 @@ export abstract class GitProvider {
       const token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || null;
       if (serverUrl == null || token == null) {
         uxLog(
+          "warning",
           this,
           c.yellow(`To benefit from Azure Pipelines advanced integration, you need to define the following variables as ENV vars:
 - SYSTEM_COLLECTIONURI
@@ -34,6 +35,7 @@ export abstract class GitProvider {
       const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || null;
       if (token == null) {
         uxLog(
+          "warning",
           this,
           c.yellow(`To benefit from Gitlab advanced integration, you need to :
 - Go to Settings -> Access tokens -> create a project token named "SFDX HARDIS BOT" with developer access and scope "api", then copy its value
@@ -52,6 +54,7 @@ export abstract class GitProvider {
       const token = process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || null;
       if (token == null) {
         uxLog(
+          "warning",
           this,
           c.yellow(`To benefit from Bitbucket advanced integration, you need to :
 - Go to Repository Settings -> Access Tokens -> Create a repository access token with the scopes pullrequest, pullrequest:write, repository, repository:write and copy its value
@@ -68,6 +71,7 @@ export abstract class GitProvider {
     }
     else if (isCI) {
       uxLog(
+        "log",
         this,
         c.grey(
           "To use sfdx-hardis GitProvider capabilities, SYSTEM_ACCESSTOKEN, CI_JOB_TOKEN, GITHUB_TOKEN or CI_SFDX_HARDIS_BITBUCKET_TOKEN must be accessible for Azure Pipelines, Gitlab, GitHub or Bitbucket",
@@ -93,15 +97,16 @@ export abstract class GitProvider {
       await AzureDevopsProvider.handleLocalIdentification();
     }
     else {
-      uxLog(this, c.yellow(`[GitProvider] Local authentication is not yet implemented for ${promptRes.value}`));
+      uxLog("warning", this, c.yellow(`[GitProvider] Local authentication is not yet implemented for ${promptRes.value}`));
     }
   }
 
   static async managePostPullRequestComment(): Promise<void> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
-      uxLog(this, c.yellow("[Git Provider] WARNING: No git provider found to post pull request comment. Maybe you should configure it ?"));
+      uxLog("warning", this, c.yellow("[Git Provider] WARNING: No git provider found to post pull request comment. Maybe you should configure it ?"));
       uxLog(
+        "warning",
         this,
         c.yellow(`[Git Provider] See documentation: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#git-providers`),
       );
@@ -110,7 +115,7 @@ export abstract class GitProvider {
     const prData = globalThis.pullRequestData;
     const prCommentSent = globalThis.pullRequestCommentSent || false;
     if (prData && gitProvider && prCommentSent === false) {
-      uxLog(this, c.yellow("[Git Provider] Try to post a pull request comment/note..."));
+      uxLog("warning", this, c.yellow("[Git Provider] Try to post a pull request comment/note..."));
       let markdownBody = "";
       if (prData.deployErrorsMarkdownBody) {
         markdownBody += prData.deployErrorsMarkdownBody;
@@ -149,8 +154,8 @@ export abstract class GitProvider {
         await gitProvider.tryPostPullRequestMessage(prMessageRequestAdditional);
       }
     } else {
-      uxLog(this, c.gray(`${JSON.stringify(prData || { noPrData: "" })} && ${gitProvider} && ${prCommentSent}`));
-      uxLog(this, c.yellow("[Git Provider] Skip post pull request comment"));
+      uxLog("error", this, c.grey(`${JSON.stringify(prData || { noPrData: "" })} && ${gitProvider} && ${prCommentSent}`));
+      uxLog("warning", this, c.yellow("[Git Provider] Skip post pull request comment"));
     }
   }
 
@@ -168,7 +173,7 @@ export abstract class GitProvider {
       const currentGitBranch = await getCurrentGitBranch() || "";
       return gitProvider.getBranchDeploymentCheckId(currentGitBranch);
     } catch (e) {
-      uxLog(this, c.yellow(`Error while trying to retrieve deployment check id:\n${(e as Error).message}`));
+      uxLog("warning", this, c.yellow(`Error while trying to retrieve deployment check id:\n${(e as Error).message}`));
       return null;
     }
   }
@@ -225,9 +230,9 @@ export abstract class GitProvider {
       debug("[GitProvider][PR Info] " + JSON.stringify(prInfo, null, 2));
       GitProvider.prInfoCache = prInfo;
     } catch (e) {
-      uxLog(this, c.yellow("[GitProvider] Unable to get Pull Request info: " + (e as Error).message));
-      uxLog(this, c.yellow(`[GitProvider] Maybe you misconfigured your ${gitProvider.getLabel()} ?`));
-      uxLog(this, c.yellow(`[GitProvider] See ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#git-providers`));
+      uxLog("warning", this, c.yellow("[GitProvider] Unable to get Pull Request info: " + (e as Error).message));
+      uxLog("warning", this, c.yellow(`[GitProvider] Maybe you misconfigured your ${gitProvider.getLabel()} ?`));
+      uxLog("warning", this, c.yellow(`[GitProvider] See ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#git-providers`));
       prInfo = null;
     }
     return prInfo;

@@ -100,7 +100,7 @@ The command's technical implementation relies heavily on the SFDMU plugin:
     const message = `Successfully exported data from sfdmu project ${c.green(sfdmuPath)} from org ${c.green(
       orgUsername
     )}`;
-    uxLog(this, c.cyan(message));
+    uxLog("action", this, c.cyan(message));
     return { outputString: message };
   }
 }
