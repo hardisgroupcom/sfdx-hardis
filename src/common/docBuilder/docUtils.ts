@@ -33,7 +33,7 @@ export async function writeMkDocsFile(mkdocsYmlFile: string, mkdocsYml: any) {
     .replace("'!!python/name:material.extensions.emoji.to_svg'", '!!python/name:material.extensions.emoji.to_svg')
     .replace("'!!python/name:pymdownx.superfences.fence_code_format'", '!!python/name:pymdownx.superfences.fence_code_format');
   await fs.writeFile(mkdocsYmlFile, mkdocsYmlStr);
-  uxLog(this, c.cyan(`Updated mkdocs-material config file at ${c.green(mkdocsYmlFile)}`));
+  uxLog("action", this, c.cyan(`Updated mkdocs-material config file at ${c.green(mkdocsYmlFile)}`));
 }
 
 const alreadySaid: string[] = [];
@@ -122,7 +122,7 @@ export class SalesforceSetupUrlBuilder {
 
     if (!pathTemplate) {
       if (!alreadySaid.includes(metadataType)) {
-        uxLog(this, c.grey(`Unsupported metadata type for doc quick link: ${metadataType}`));
+        uxLog("log", this, c.grey(`Unsupported metadata type for doc quick link: ${metadataType}`));
         alreadySaid.push(metadataType);
       }
       return null;
@@ -140,7 +140,7 @@ export class SalesforceSetupUrlBuilder {
       .replace(/\{apiName\}/g, apiNameFinal || '');
 
     if (urlPath.includes('{apiName}') || urlPath.includes('{objectName}')) {
-      uxLog(this, c.grey(`Wrong replacement in ${urlPath} with values apiName:${apiNameFinal} and objectName:${objectName}`));
+      uxLog("log", this, c.grey(`Wrong replacement in ${urlPath} with values apiName:${apiNameFinal} and objectName:${objectName}`));
     }
 
     return urlPath;
@@ -153,7 +153,7 @@ export async function completeAttributesDescriptionWithAi(attributesMarkdown: st
   }
   const aiCache = await UtilsAi.findAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown], objectName);
   if (aiCache.success === true) {
-    uxLog(this, c.grey("Used AI cache for attributes completion (set IGNORE_AI_CACHE=true to force call to AI)"));
+    uxLog("log", this, c.grey("Used AI cache for attributes completion (set IGNORE_AI_CACHE=true to force call to AI)"));
     return aiCache.cacheText ? includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText) : attributesMarkdown;
   }
   if (AiProvider.isAiAvailable()) {
@@ -180,7 +180,7 @@ export async function generateMkDocsHTML() {
   const mkdocsLocalOk = await installMkDocs();
   if (mkdocsLocalOk) {
     // Generate MkDocs HTML pages with local MkDocs
-    uxLog(this, c.cyan("Generating HTML pages with mkdocs..."));
+    uxLog("action", this, c.cyan("Generating HTML pages with mkdocs..."));
     const mkdocsBuildRes = await execCommand("mkdocs build -v || python -m mkdocs build -v || py -m mkdocs build -v", this, { fail: false, output: true, debug: false });
     if (mkdocsBuildRes.status !== 0) {
       throw new SfError('MkDocs build failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
@@ -188,7 +188,7 @@ export async function generateMkDocsHTML() {
   }
   else {
     // Generate MkDocs HTML pages with Docker
-    uxLog(this, c.cyan("Generating HTML pages with Docker..."));
+    uxLog("action", this, c.cyan("Generating HTML pages with Docker..."));
     const mkdocsBuildRes = await execCommand("docker run --rm -v $(pwd):/docs squidfunk/mkdocs-material build -v", this, { fail: false, output: true, debug: false });
     if (mkdocsBuildRes.status !== 0) {
       throw new SfError('MkDocs build with docker failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
@@ -197,7 +197,7 @@ export async function generateMkDocsHTML() {
 }
 
 export async function installMkDocs() {
-  uxLog(this, c.cyan("Managing mkdocs-material local installation..."));
+  uxLog("action", this, c.cyan("Managing mkdocs-material local installation..."));
   let mkdocsLocalOk = false;
   const installMkDocsRes = await execCommand("pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python3 -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py3 -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists", this, { fail: false, output: true, debug: false });
   if (installMkDocsRes.status === 0) {

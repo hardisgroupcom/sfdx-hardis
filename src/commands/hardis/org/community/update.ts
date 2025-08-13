@@ -79,12 +79,12 @@ The command's technical implementation involves:
     const networksQuery = `SELECT Id, Name, Status FROM Network WHERE Name IN (${networksConstraintIn})`;
     const networksQueryRes = await soqlQuery(networksQuery, conn);
     if (debugMode) {
-      uxLog(this, c.grey(`Query result:\n${JSON.stringify(networksQueryRes, null, 2)}`));
+      uxLog("log", this, c.grey(`Query result:\n${JSON.stringify(networksQueryRes, null, 2)}`));
     }
     // Check empty result
     if (networksQueryRes.length === 0) {
       const outputString = `No matching network records found with given names`;
-      uxLog(this, c.yellow(outputString));
+      uxLog("warning", this, c.yellow(outputString));
       return { outputString };
     }
     const idToNameMap = new Map(networksQueryRes.records.map(network => [network.Id, network.Name]));
@@ -104,7 +104,7 @@ The command's technical implementation involves:
       });
       if (confirmUpdate.value !== true) {
         const outputString = 'Script cancelled by user';
-        uxLog(this, c.yellow(outputString));
+        uxLog("warning", this, c.yellow(outputString));
         return { outputString };
       }
     }
@@ -120,10 +120,10 @@ The command's technical implementation involves:
     for (const ret of updateResults) {
       if (ret.success) {
         updateSuccessNb++;
-        uxLog(this, c.green(`'${c.bold(idToNameMap.get(ret.id))}' Network was updated.`));
+        uxLog("success", this, c.green(`'${c.bold(idToNameMap.get(ret.id))}' Network was updated.`));
       } else {
         updateErrorsNb++;
-        uxLog(this, c.red(`Error ${updateErrorsNb}: Network '${idToNameMap.get(ret.id)}' failed to update: [${ret.errors[0].message}]`));
+        uxLog("error", this, c.red(`Error ${updateErrorsNb}: Network '${idToNameMap.get(ret.id)}' failed to update: [${ret.errors[0].message}]`));
       }
     }
     // Return an object to be displayed with --json

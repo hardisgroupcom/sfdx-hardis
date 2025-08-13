@@ -63,13 +63,13 @@ export abstract class DocBuilderRoot {
     if (fs.existsSync(this.outputFile)) {
       const fileContent = await fs.readFile(this.outputFile, "utf8");
       if (fileContent.includes("DO_NOT_OVERWRITE_DOC=TRUE")) {
-        uxLog(this, c.yellow(`The file ${this.outputFile} is marked as DO_NOT_OVERWRITE_DOC=TRUE. Skipping generation.`));
+        uxLog("warning", this, c.yellow(`The file ${this.outputFile} is marked as DO_NOT_OVERWRITE_DOC=TRUE. Skipping generation.`));
         overwriteDoc = false;
       }
     }
     if (overwriteDoc) {
       await fs.writeFile(this.outputFile, getMetaHideLines() + this.markdownDoc);
-      uxLog(this, c.green(`Successfully generated ${this.metadataName} documentation into ${this.outputFile}`));
+      uxLog("success", this, c.green(`Successfully generated ${this.metadataName} documentation into ${this.outputFile}`));
     }
 
     const jsonTree = await this.generateJsonTree();
@@ -77,7 +77,7 @@ export abstract class DocBuilderRoot {
       const jsonFile = `./docs/json/${this.docsSection}-${this.metadataName}.json`;
       await fs.ensureDir(path.dirname(jsonFile));
       await fs.writeFile(jsonFile, JSON.stringify(jsonTree, null, 2));
-      uxLog(this, c.green(`Successfully generated ${this.metadataName} JSON into ${jsonFile}`));
+      uxLog("success", this, c.green(`Successfully generated ${this.metadataName} JSON into ${jsonFile}`));
       // Recovery to save git repos: Kill existing file if it has been created with forbidden characters
       if (this.docsSection === "packages") {
         const jsonFileBad = `./docs/json/${this.docsSection}-${this.metadataName}.json`;
@@ -94,7 +94,7 @@ export abstract class DocBuilderRoot {
     const aiCache = await UtilsAi.findAiCache(this.promptKey, [xmlStripped], this.metadataName);
 
     if (aiCache.success === true) {
-      uxLog(this, c.grey(`Used AI cache for ${this.docType.toLowerCase()} description (set IGNORE_AI_CACHE=true to force call to AI)`));
+      uxLog("log", this, c.grey(`Used AI cache for ${this.docType.toLowerCase()} description (set IGNORE_AI_CACHE=true to force call to AI)`));
       const replaceText = `## AI-Generated Description\n\n${includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText || "")}`;
       this.markdownDoc = this.markdownDoc.replace(this.placeholder, replaceText);
       return this.markdownDoc;

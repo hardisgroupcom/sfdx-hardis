@@ -113,7 +113,7 @@ The command's technical implementation involves:
       const packageXmlTmp = path.join(process.cwd(), 'tmp', 'retrievePackage.xml');
       await fs.ensureDir(path.dirname(packageXmlTmp));
       await fs.copy(packageXml || '', packageXmlTmp);
-      uxLog(this, c.grey(`Copied ${packageXml} to ${packageXmlTmp}`));
+      uxLog("log", this, c.grey(`Copied ${packageXml} to ${packageXmlTmp}`));
       packageXml = path.relative(process.cwd(), packageXmlTmp);
     }
 
@@ -125,7 +125,7 @@ The command's technical implementation involves:
     const message = `[sfdx-hardis] Successfully retrieved sfdx sources from ${c.bold(targetUsername)} using ${c.bold(
       packageXml
     )}`;
-    uxLog(this, c.green(message));
+    uxLog("success", this, c.green(message));
     return { outputString: message };
   }
 }

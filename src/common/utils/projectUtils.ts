@@ -22,7 +22,7 @@ export function isSfdxProject(cwd = process.cwd()) {
 }
 
 export async function createBlankSfdxProject(cwd = process.cwd(), debug = false) {
-  uxLog(this, c.cyan('Creating blank SFDX project...'));
+  uxLog("action", this, c.cyan('Creating blank SFDX project...'));
   const projectCreateCommand = 'sf project generate --name "sfdx-hardis-blank-project"';
   await execCommand(projectCreateCommand, this, {
     cwd: cwd,
@@ -49,9 +49,9 @@ export async function listFlowFiles(packageDirs) {
     }
   }
   if (skippedFlows.length > 0) {
-    uxLog(this, c.yellow(`Skipped ${skippedFlows.length} managed flows:`));
+    uxLog("warning", this, c.yellow(`Skipped ${skippedFlows.length} managed flows:`));
     for (const skippedFlow of sortCrossPlatform(skippedFlows)) {
-      uxLog(this, c.yellow(`  ${skippedFlow}`));
+      uxLog("warning", this, c.yellow(`  ${skippedFlow}`));
     }
   }
   return sortCrossPlatform(flowFiles);
@@ -100,9 +100,9 @@ export async function listApexFiles(packageDirs) {
     }
   }
   if (skippedApex.length > 0) {
-    uxLog(this, c.yellow(`Skipped ${skippedApex.length} managed Apex:`));
+    uxLog("warning", this, c.yellow(`Skipped ${skippedApex.length} managed Apex:`));
     for (const skippedApexItem of sortCrossPlatform(skippedApex)) {
-      uxLog(this, c.yellow(`  ${skippedApexItem}`));
+      uxLog("warning", this, c.yellow(`  ${skippedApexItem}`));
     }
   }
   return apexFiles.sort();
@@ -124,9 +124,9 @@ export async function listPageFiles(packageDirs) {
     }
   }
   if (skippedPages.length > 0) {
-    uxLog(this, c.yellow(`Skipped ${skippedPages.length} managed Lightning Pages:`));
+    uxLog("warning", this, c.yellow(`Skipped ${skippedPages.length} managed Lightning Pages:`));
     for (const skippedPage of sortCrossPlatform(skippedPages)) {
-      uxLog(this, c.yellow(`  ${skippedPage}`));
+      uxLog("warning", this, c.yellow(`  ${skippedPage}`));
     }
   }
   return pageFiles.sort();
@@ -165,7 +165,7 @@ export async function updateSfdxProjectApiVersion() {
       if (currentApiVersion < parseFloat(candidateApiVersion)) {
         sfdxProject.sourceApiVersion = candidateApiVersion;
         await fs.writeJson(sfdxProjectFile, sfdxProject, { spaces: 2 });
-        uxLog(this, c.cyan(`Updated API version in sfdx-project.json from ${currentApiVersionStr} to ${candidateApiVersion}`));
+        uxLog("action", this, c.cyan(`Updated API version in sfdx-project.json from ${currentApiVersionStr} to ${candidateApiVersion}`));
       }
     }
   }
@@ -185,7 +185,7 @@ export async function updateSfdxProjectApiVersion() {
             if (currentApiVersion < parseFloat(candidateApiVersion)) {
               const updatedXmlContent = xmlContent.replace(regex, `<version>${candidateApiVersion}</version>`);
               await fs.writeFile(fullPath, updatedXmlContent, 'utf-8');
-              uxLog(this, c.cyan(`Updated API version in ${manifestFile} from ${match[1]} to ${candidateApiVersion}`));
+              uxLog("action", this, c.cyan(`Updated API version in ${manifestFile} from ${match[1]} to ${candidateApiVersion}`));
             }
           }
         }

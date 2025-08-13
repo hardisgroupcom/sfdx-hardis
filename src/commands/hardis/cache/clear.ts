@@ -3,6 +3,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
+import c from "chalk";
 import { clearCache } from '../../../common/cache/index.js';
 import { uxLog } from '../../../common/utils/index.js';
 
@@ -54,7 +55,7 @@ The command's technical implementation is straightforward:
 
   public async run(): Promise<AnyJson> {
     await clearCache();
-    uxLog(this, 'sfdx-hardis cache cleared');
+    uxLog("action", this, c.cyan('sfdx-hardis cache cleared'));
     return {
       message: 'sfdx-hardis cache cleared',
     };

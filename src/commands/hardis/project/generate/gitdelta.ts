@@ -156,15 +156,15 @@ The command's technical implementation involves:
     }
 
     // Generate package.xml & destructiveChanges.xml using sfdx-git-delta
-    uxLog(this, c.cyan(`Generating delta from commit ${c.bold(fromCommit)} to commit ${c.bold(toCommit)} on branch ${c.bold(gitBranch)}`));
+    uxLog("action", this, c.cyan(`Generating delta from commit ${c.bold(fromCommit)} to commit ${c.bold(toCommit)} on branch ${c.bold(gitBranch)}`));
     const tmpDir = await createTempDir();
     await callSfdxGitDelta(fromCommit || '', toCommit || '', tmpDir, { debug: this.debugMode });
 
     const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
     const diffDestructiveChangesXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
 
-    uxLog(this, c.grey(`Generated diff package.xml at ${c.green(diffPackageXml)}`));
-    uxLog(this, c.grey(`Generated diff destructiveChanges.xml at ${c.green(diffDestructiveChangesXml)}`));
+    uxLog("log", this, c.grey(`Generated diff package.xml at ${c.green(diffPackageXml)}`));
+    uxLog("log", this, c.grey(`Generated diff destructiveChanges.xml at ${c.green(diffDestructiveChangesXml)}`));
 
     if (WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.sendReportFileMessage(diffPackageXml, 'Git Delta package.xml', "report");

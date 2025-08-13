@@ -107,7 +107,7 @@ The command's technical implementation involves interacting with a Git provider'
     }
 
     // Startup
-    uxLog(this, c.cyan(`This command will extract pull request from Git Server`));
+    uxLog("action", this, c.cyan(`This command will extract pull request from Git Server`));
 
     const gitProvider = await GitProvider.getInstance(true);
     if (gitProvider == null) {

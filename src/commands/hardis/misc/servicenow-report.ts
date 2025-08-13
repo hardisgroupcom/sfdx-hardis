@@ -178,18 +178,18 @@ Example:
       const serviceNowApiQuery = `?sysparm_query=numberIN${ticketNumbers.join(',')}&sysparm_display_value=true`;
       const serviceNowApiUrlWithQuery = `${serviceNowUrl}${serviceNowApiResource}${serviceNowApiQuery}`;
       // Make API call to ServiceNow
-      uxLog(this, `Fetching Service now using query: ${serviceNowApiUrlWithQuery}`);
+      uxLog("other", this, `Fetching Service now using query: ${serviceNowApiUrlWithQuery}`);
       let serviceNowApiRes;
       try {
         serviceNowApiRes = await axios.get(serviceNowApiUrlWithQuery, serviceNowApiOptions);
       }
       catch (error: any) {
-        uxLog(this, c.red(`ServiceNow API call failed: ${error.message}\n${JSON.stringify(error?.response?.data || {})}`));
+        uxLog("error", this, c.red(`ServiceNow API call failed: ${error.message}\n${JSON.stringify(error?.response?.data || {})}`));
         continue;
       }
       // Complete user stories with ServiceNow data
       const serviceNowRecords = serviceNowApiRes.data.result;
-      uxLog(this, `ServiceNow API call succeeded: ${serviceNowRecords.length} records found`);
+      uxLog("other", this, `ServiceNow API call succeeded: ${serviceNowRecords.length} records found`);
       for (const userStory of this.userStories) {
         const ticketNumber = userStory?.[this.userStoriesConfig.ticketField];
         const serviceNowRecord = serviceNowRecords.find((record: any) => record.number === ticketNumber);
@@ -222,7 +222,7 @@ Example:
       return result;
     });
 
-    uxLog(this, c.grey(JSON.stringify(this.results, null, 2)));
+    uxLog("log", this, c.grey(JSON.stringify(this.results, null, 2)));
 
     // Generate CSV file
     await this.buildCsvFile();
@@ -254,7 +254,7 @@ Example:
       }
       else {
         // If whereChoice is not provided, prompt user to select one
-        uxLog(this, c.yellow('No WHERE choice provided. Please select one from the available choices.'));
+        uxLog("warning", this, c.yellow('No WHERE choice provided. Please select one from the available choices.'));
         // If whereChoices is defined, prompt user to select one
         const whereChoices = Object.keys(this.userStoriesConfig.whereChoices).map((key) => ({
           title: key,
@@ -285,11 +285,11 @@ Example:
       // If no config file is provided, prompt users to select a JSON file in all files found in folder config/user-stories/
       const configFiles = await glob('config/user-stories/*.json', { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
       if (configFiles.length === 0) {
-        uxLog(this, c.yellow('No configuration files found in config/user-stories/ directory. Using default config...'));
+        uxLog("warning", this, c.yellow('No configuration files found in config/user-stories/ directory. Using default config...'));
       }
       else if (configFiles.length === 1) {
         this.configFile = configFiles[0];
-        uxLog(this, `Single config file found: ${this.configFile}`);
+        uxLog("other", this, `Single config file found: ${this.configFile}`);
       }
       else {
         // If multiple files are found, prompt user to select one
@@ -309,7 +309,7 @@ Example:
         const configData = await fs.readJSON(this.configFile);
         this.userStoriesConfig = configData.userStoriesConfig || this.userStoriesConfig;
         this.serviceNowConfig = configData.serviceNowConfig || this.serviceNowConfig;
-        uxLog(this, `Configuration loaded from ${this.configFile}`);
+        uxLog("other", this, `Configuration loaded from ${this.configFile}`);
       }
       catch (error: any) {
         throw new SfError(`Failed to load configuration file: ${error.message}`);

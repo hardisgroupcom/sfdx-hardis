@@ -12,9 +12,10 @@ export class TeamsProvider extends NotifProviderRoot {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
     uxLog(
+      "warning",
       this,
       c.bold(c.yellow(`[TeamsProvider] MsTeams Web Hooks will be soon deprecated. Instead, please use EmailProvider with Ms Teams Channel e-mail`)),
     );
-    uxLog(this, c.bold(c.yellow(`[TeamsProvider] User Guide: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-email/`)));
+    uxLog("other", this, c.bold(c.yellow(`[TeamsProvider] User Guide: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-email/`)));
   }
 }

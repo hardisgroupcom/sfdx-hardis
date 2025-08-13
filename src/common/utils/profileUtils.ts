@@ -78,7 +78,7 @@ export async function minimizeProfile(profileFile: string) {
     if (partiallyRemovedUnique.length > 0) {
       log += ` and partially removing sections ${c.bold(partiallyRemovedUnique.join(", "))}`;
     }
-    uxLog(this, c.yellow(log));
+    uxLog("warning", this, c.yellow(log));
   }
 
   return { removed: removed, updatedDefaults: updatedDefaults, updated: updated };

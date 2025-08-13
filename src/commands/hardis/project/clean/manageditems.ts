@@ -84,7 +84,7 @@ The command's technical implementation involves:
     }
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Removing unwanted dx managed source files with namespace ${c.bold(this.namespace)}...`));
+    uxLog("action", this, c.cyan(`Removing unwanted dx managed source files with namespace ${c.bold(this.namespace)}...`));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/${this.namespace}__*`;
@@ -108,7 +108,7 @@ The command's technical implementation involves:
         }
       }
       await fs.remove(matchingCustomFile);
-      uxLog(this, c.cyan(`Removed managed item ${c.yellow(matchingCustomFile)}`));
+      uxLog("action", this, c.cyan(`Removed managed item ${c.yellow(matchingCustomFile)}`));
     }
 
     // Return an object to be displayed with --json

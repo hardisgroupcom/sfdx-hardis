@@ -43,7 +43,7 @@ export class LocalTestProvider implements KeyValueProviderInterface {
         key = `pool_${projectName}`;
       }
       this.poolStorageLocalFileName = path.join(os.homedir(), `poolStorage_${key}.json`);
-      uxLog(this, c.grey('Local test storage file: ' + this.poolStorageLocalFileName));
+      uxLog("log", this, c.grey('Local test storage file: ' + this.poolStorageLocalFileName));
     }
   }
 

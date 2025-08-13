@@ -63,7 +63,7 @@ autoCleanTypes:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Looking for certificates...`));
+    uxLog("action", this, c.cyan(`Looking for certificates...`));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.crt`;
@@ -81,13 +81,13 @@ Certificates are not supposed to be stored in Git Repositories, please:
 `
         await fs.writeFile(cert, certText);
         counter++;
-        uxLog(this, c.grey(`Replaced certificate content of ${cert}`));
+        uxLog("log", this, c.grey(`Replaced certificate content of ${cert}`));
       }
     }
 
     // Summary
     const msg = `Updated ${c.green(c.bold(counter))} certificates to hide their content`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };
   }

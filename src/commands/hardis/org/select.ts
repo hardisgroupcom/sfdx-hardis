@@ -82,10 +82,10 @@ The command's technical implementation involves:
     const org = await promptOrg(this, { devHub: devHub, setDefault: true, scratch: scratch });
 
     // If the org is not connected, ask the user to authenticate again
-    uxLog(this, c.cyan(`Checking that user ${org.username} is connected to org ${org.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(`Checking that user ${org.username} is connected to org ${org.instanceUrl} ...`));
     await makeSureOrgIsConnected(org.username);
 
-    uxLog(this, c.cyan(`Your default org is now ${org.instanceUrl} (${org.username})`));
+    uxLog("action", this, c.cyan(`Your default org is now ${org.instanceUrl} (${org.username})`));
 
     // Return an object to be displayed with --json
     return { outputString: `Selected org ${org.username}` };

@@ -82,6 +82,7 @@ The command's technical implementation involves:
       } else {
         // Configure Mega-Linter (yeoman generator)
         uxLog(
+          "action",
           this,
           c.cyan('Mega-Linter needs to be configured. Please select Salesforce flavor in the following wizard')
         );
@@ -98,9 +99,9 @@ The command's technical implementation involves:
     process.exitCode = res.status;
 
     if (res.status === 0) {
-      uxLog(this, c.green(`Mega-Linter has been successful`));
+      uxLog("success", this, c.green(`Mega-Linter has been successful`));
     } else {
-      uxLog(this, c.red(`Mega-Linter found error(s)`));
+      uxLog("error", this, c.red(`Mega-Linter found error(s)`));
     }
 
     // Return an object to be displayed with --json

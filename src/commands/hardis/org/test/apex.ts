@@ -80,28 +80,28 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.orgMarkdown = await getOrgMarkdown(orgInstanceUrl);
     this.notifButtons = await getNotificationButtons();
     /* jscpd:ignore-end */
-    uxLog(this, c.cyan(`Running Apex tests in org ${orgInstanceUrl} with test level: ${testlevel}`));
+    uxLog("action", this, c.cyan(`Running Apex tests in org ${orgInstanceUrl} with test level: ${testlevel}`));
     await this.runApexTests(testlevel, debugMode, flags['target-org']?.getUsername());
     // No Apex
     if (this.testRunOutcome === 'NoApex') {
       this.notifSeverity = 'log';
       this.statusMessage = 'No Apex found in the org';
       this.notifText = `No Apex found in org ${this.orgMarkdown}`;
-      uxLog(this, c.grey(this.statusMessage));
+      uxLog("log", this, c.grey(this.statusMessage));
     }
     // Failed tests
     else if (this.testRunOutcome === 'Failed') {
       await this.processApexTestsFailure();
     }
     else if (this.testRunOutcome === 'Passed') {
-      uxLog(this, c.green(`Apex tests passed (${this.testRunOutcome})`));
+      uxLog("success", this, c.green(`Apex tests passed (${this.testRunOutcome})`));
     }
     // Get test coverage (and fail if not reached)
     await this.checkOrgWideCoverage();
     await this.checkTestRunCoverage();
 
-    // uxLog(this, c.grey(this.statusMessage));
-    uxLog(this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
+    // uxLog("log", this, c.grey(this.statusMessage));
+    uxLog("other", this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
 
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
@@ -126,9 +126,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     // Handle output message & exit code
     if (this.notifSeverity === 'error') {
       process.exitCode = 1;
-      uxLog(this, c.red(this.statusMessage));
+      uxLog("error", this, c.red(this.statusMessage));
     } else {
-      uxLog(this, c.green(this.statusMessage));
+      uxLog("success", this, c.green(this.statusMessage));
     }
 
     return { orgId: flags['target-org'].getOrgId(), outputString: this.statusMessage, statusCode: process.exitCode };
@@ -202,7 +202,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         return `- ${failingTestClass.name}: ${failingTestClass.error}`;
       })
       .join('\n');
-    uxLog(this, c.yellow("Failing Apex tests:\n" + failedTestsString));
+    uxLog("warning", this, c.yellow("Failing Apex tests:\n" + failedTestsString));
   }
 
   private async checkOrgWideCoverage() {

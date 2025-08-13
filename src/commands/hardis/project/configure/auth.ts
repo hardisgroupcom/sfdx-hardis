@@ -90,7 +90,7 @@ prompts
     const { flags } = await this.parse(ConfigureAuth);
     const devHub = flags.devhub || false;
 
-    uxLog(this, c.cyan("This command will configure the authentication between a git branch and a Salesforce org."));
+    uxLog("action", this, c.cyan("This command will configure the authentication between a git branch and a Salesforce org."));
 
     // Ask user to login to org
     const prevUserName = devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername();
@@ -103,7 +103,7 @@ prompts
     await checkConfig(this);
 
     // Check if the user has changed. If yes, ask to run the command again
-    uxLog(this, c.cyan(`Checking if the org username has changed from ${c.bold(prevUserName)}...`));
+    uxLog("action", this, c.cyan(`Checking if the org username has changed from ${c.bold(prevUserName)}...`));
     const configGetRes = await execSfdxJson('sf config get ' + (devHub ? 'target-dev-hub' : 'target-org'), this, {
       output: false,
       fail: false,
@@ -115,7 +115,7 @@ prompts
       // Restart command so the org is selected as default org (will help to select profiles)
       const infoMsg =
         'Default org changed. Please restart the same command if VsCode does not do that automatically for you :)';
-      uxLog(this, c.yellow(infoMsg));
+      uxLog("warning", this, c.yellow(infoMsg));
       const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ');
       WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);
       return { outputString: infoMsg };

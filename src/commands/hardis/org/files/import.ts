@@ -105,7 +105,7 @@ The command's technical implementation involves:
     const message = `Successfully imported files from project ${c.green(filesPath)} from org ${c.green(
       flags['target-org'].getUsername()
     )}`;
-    uxLog(this, c.cyan(message));
+    uxLog("action", this, c.cyan(message));
 
     return { outputString: message, importResult: importResult };
   }

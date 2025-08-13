@@ -3,6 +3,7 @@ import c from 'chalk';
 import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
 import { WebSocketClient } from '../websocketClient.js';
+import { generateCsvFile, generateReportPath } from './filesUtils.js';
 
 // Constants for record limits
 const MAX_CHUNKS = Number(process.env.SOQL_MAX_BATCHES ?? 50);
@@ -12,6 +13,7 @@ const MAX_RECORDS = MAX_CHUNKS * CHUNK_SIZE;
 // Perform simple SOQL query (max results: 10000)
 export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
   uxLog(
+    "log",
     this,
     c.grey(
       '[SOQL Query] ' +
@@ -25,20 +27,20 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
 
   // Get all page results
   while (pageRes.done === false && pageRes.nextRecordsUrl && batchCount < MAX_CHUNKS) {
-    uxLog(this, c.grey(`Fetching batch ${batchCount + 1}/${MAX_CHUNKS}...`));
+    uxLog("log", this, c.grey(`Fetching batch ${batchCount + 1}/${MAX_CHUNKS}...`));
     pageRes = await conn.queryMore(pageRes.nextRecordsUrl);
     res.records.push(...pageRes.records);
     batchCount++;
   }
   if (!pageRes.done) {
-    uxLog(this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
-    uxLog(this, c.yellow(`Consider using bulkQuery for larger datasets.`));
+    uxLog("warning", this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
+    uxLog("warning", this, c.yellow(`Consider using bulkQuery for larger datasets.`));
   }
   if (batchCount > 1) {
-    uxLog(this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
+    uxLog("log", this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
   }
   else {
-    uxLog(this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records`));
+    uxLog("log", this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records`));
   }
   return res;
 }
@@ -46,6 +48,7 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
 // Perform simple SOQL query with Tooling API
 export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<any> {
   uxLog(
+    "log",
     this,
     c.grey(
       '[SOQL Query Tooling] ' +
@@ -63,9 +66,9 @@ export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Pro
     batchCount++;
   }
   if (batchCount > 1) {
-    uxLog(this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
+    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
   } else {
-    uxLog(this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records`));
+    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records`));
   }
   return res;
 }
@@ -85,7 +88,7 @@ const maxRetry = Number(process.env.BULK_QUERY_RETRY || 5);
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3): Promise<any> {
   const queryLabel = soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery;
-  uxLog(this, c.grey('[BulkApiV2] ' + c.italic(queryLabel)));
+  uxLog("log", this, c.grey('[BulkApiV2] ' + c.italic(queryLabel)));
   conn.bulk.pollInterval = 5000; // 5 sec
   conn.bulk.pollTimeout = 60000; // 60 sec
   // Start query
@@ -93,21 +96,21 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
     spinnerQ = ora({ text: `[BulkApiV2] Bulk Query: ${queryLabel}`, spinner: 'moon' }).start();
     const recordStream = await conn.bulk2.query(soqlQuery);
     recordStream.on('error', (err) => {
-      uxLog(this, c.yellow('Bulk Query error: ' + err));
+      uxLog("warning", this, c.yellow('Bulk Query error: ' + err));
       globalThis.sfdxHardisFatalError = true;
     });
     // Wait for all results
     const records = await recordStream.toArray();
     spinnerQ.succeed(`[BulkApiV2] Bulk Query completed with ${records.length} results.`);
     if (WebSocketClient.isAliveWithLwcUI()) {
-      uxLog(this, c.grey(`[BulkApiV2] Bulk Query completed with ${records.length} results.`));
+      uxLog("log", this, c.grey(`[BulkApiV2] Bulk Query completed with ${records.length} results.`));
     }
     return { records: records };
   } catch (e: any) {
     spinnerQ.fail(`[BulkApiV2] Bulk query error: ${e.message}`);
     // Try again if the reason is a timeout and max number of retries is not reached yet
     if ((e + '').includes('ETIMEDOUT') && retries < maxRetry) {
-      uxLog(this, c.yellow('[BulkApiV2] Bulk Query retry attempt #' + retries + 1));
+      uxLog("warning", this, c.yellow('[BulkApiV2] Bulk Query retry attempt #' + retries + 1));
       return await bulkQuery(soqlQuery, conn, retries + 1);
     } else {
       throw e;
@@ -171,15 +174,16 @@ export async function bulkUpdate(
   conn: Connection
 ): Promise<any> {
   uxLog(
+    "log",
     this,
     c.grey(
-      `SOQL BULK on object ${c.bold(objectName)} with action ${c.bold(action)} (${c.bold(records.length)} records)`
+      `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on (${c.bold(records.length)} records of object ${c.bold(objectName)}`
     )
   );
   conn.bulk2.pollInterval = 5000; // 5 sec
   conn.bulk2.pollTimeout = 60000; // 60 sec
   // Initialize Job
-  spinner = ora({ text: `[BulkApiV2] Bulk Load on ${objectName} (${action})`, spinner: 'moon' }).start();
+  spinner = ora({ text: `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on (${c.bold(records.length)} records of object ${c.bold(objectName)}`, spinner: 'moon' }).start();
   const job = conn.bulk2.createJob({
     operation: action as any,
     object: objectName,
@@ -200,7 +204,25 @@ export async function bulkUpdate(
   });
   await job.poll();
   const res = await job.getAllResults();
-  spinner.succeed(`Bulk Load on ${objectName} (${action}) completed.`);
+  spinner.succeed(`[BulkApiV2] Bulk ${action.toUpperCase()} on ${objectName} completed.`);
+  uxLog("log", this, c.grey(`[BulkApiV2] Bulk ${action.toUpperCase()} on ${objectName} completed.
+- Success: ${res.successfulResults.length} records
+- Failed: ${res.failedResults.length} records
+- Unprocessed: ${res.unprocessedRecords.length} records`));
+  const outputFile = await generateReportPath('bulk', `${objectName}-${action}`, { withDate: true });
+  if (res.failedResults.length > 0) {
+    uxLog("warning", this, c.yellow(`[BulkApiV2] Some records failed to ${action}. Check the results for details.`));
+  }
+  await generateCsvFile(res.successfulResults, outputFile.replace('.csv', '-successful.csv'),
+    {
+      csvFileTitle: `CSV: ${objectName} - ${action} - Successful`,
+      noExcel: true
+    });
+  await generateCsvFile(res.failedResults, outputFile.replace('.csv', '-failed.csv'), {
+    csvFileTitle: `CSV: ${objectName} - ${action} - Failed`,
+    noExcel: true
+  });
+  // Return results
   return res;
 }
 
@@ -218,13 +240,13 @@ export async function bulkDeleteTooling(
   recordsIds: string[],
   conn: Connection
 ): Promise<any> {
-  uxLog(this, c.grey(`[ToolingApi] Delete ${recordsIds.length} records on ${objectName}: ${JSON.stringify(recordsIds)}`));
+  uxLog("log", this, c.grey(`[ToolingApi] Delete ${recordsIds.length} records on ${objectName}: ${JSON.stringify(recordsIds)}`));
   try {
     const deleteJobResults = await conn.tooling.destroy(objectName, recordsIds, { allOrNone: false });
     return deleteJobResults
   } catch (e: any) {
-    uxLog(this, c.yellow(`[ToolingApi] jsforce error while calling Tooling API. Fallback to to unitary delete (longer but should work !)`));
-    uxLog(this, c.grey(e.message));
+    uxLog("warning", this, c.yellow(`[ToolingApi] jsforce error while calling Tooling API. Fallback to to unitary delete (longer but should work !)`));
+    uxLog("log", this, c.grey(e.message));
     const deleteJobResults: any = [];
     for (const record of recordsIds) {
       const deleteCommand =

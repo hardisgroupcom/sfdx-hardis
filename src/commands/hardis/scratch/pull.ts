@@ -78,10 +78,11 @@ The command's technical implementation focuses on robust metadata synchronizatio
     const { flags } = await this.parse(SourcePull);
     const debugMode = flags.debug || false;
     const targetUsername = flags['target-org'].getUsername() || '';
-    uxLog(this, c.cyan(`Pulling metadata changes from org: ${c.bold(targetUsername)}`));
+    uxLog("action", this, c.cyan(`This command will pull all the latest metadata changes from your dev org into your local project files (even those updated by other users).`));
+    uxLog("action", this, c.cyan(`Pulling metadata changes from org: ${c.bold(targetUsername)}`));
     await forceSourcePull(targetUsername, debugMode);
 
-    uxLog(this, c.yellow(`If you don't see your updated items in the results, check the following documentation: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas`));
+    uxLog("warning", this, c.yellow(`If you don't see your updated items in the results, check the following documentation: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas`));
 
     WebSocketClient.sendReportFileMessage("workbench.view.scm", "Commit your retrieved files", "actionCommand");
     WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, "Retrieve and Commit documentation", 'docUrl');

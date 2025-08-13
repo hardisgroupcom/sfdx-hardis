@@ -69,6 +69,7 @@ The command's technical implementation involves:
     // Tell user if he/she's about to overwrite existing configuration
     if (!poolConfig.storageService) {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `There is not scratch orgs pool configured on this project. Please see with your tech lead about using command hardis:scratch:pool:configure`

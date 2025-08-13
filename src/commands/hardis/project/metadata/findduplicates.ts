@@ -99,10 +99,10 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Find);
-    uxLog(this, c.cyan(`Start finding duplicate values in XML metadata files.`));
+    uxLog("action", this, c.cyan(`Start finding duplicate values in XML metadata files.`));
     await this.initConfig();
     const filesWithDuplicates = await this.findDuplicates(flags);
-    uxLog(this, c.cyan("Summary"));
+    uxLog("action", this, c.cyan("Summary"));
     if (filesWithDuplicates.length > 0) {
       const duplicatesString = filesWithDuplicates
         .map((file) => {
@@ -110,6 +110,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
         })
         .join('\n');
       uxLog(
+        "error",
         this,
         c.red(
           `Found ${filesWithDuplicates.length} files with duplicate values\n${duplicatesString}`
@@ -118,7 +119,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
       process.exitCode = 1;
     }
     else {
-      uxLog(this, c.green('No duplicate values found.'));
+      uxLog("success", this, c.green('No duplicate values found.'));
     }
     return filesWithDuplicates;
   }
@@ -147,7 +148,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
       // For example PersonAccount.layout-meta.xml returns layout and Admin.profile-meta.xml returns profile
       const filenameRegex = /\w*\.(\w*)-meta.xml/;
       if (!inputFile.match(filenameRegex)) {
-        uxLog(this, c.yellow(`Filename ${inputFile} does not match expected pattern, skipping.`));
+        uxLog("warning", this, c.yellow(`Filename ${inputFile} does not match expected pattern, skipping.`));
         continue;
       }
       const type = inputFile.match(filenameRegex)[1];
@@ -156,7 +157,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
       const uniqueKeys = Find.metadataDuplicateFindKeys[type];
       if (!uniqueKeys) {
         if (this.logLevel === LoggerLevel.DEBUG) {
-          uxLog(this, c.gray(`No unicity rule found for metadata type ${type} (processing ${inputFile})`));
+          uxLog("error", this, c.grey(`No unicity rule found for metadata type ${type} (processing ${inputFile})`));
         }
         continue;
       }
@@ -167,7 +168,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
         // Traverse the file down to the key based on the fragments separated by . (dots), abort if not found
         const allProps = key.split('.');
         if (!file || !allProps[0] || !file[allProps[0]]) {
-          uxLog(this, c.yellow(`Key ${key} not found in file ${inputFile}`));
+          uxLog("warning", this, c.yellow(`Key ${key} not found in file ${inputFile}`));
           return;
         }
         const valuesFound = this.traverseDown(file, allProps[0], allProps, []);

@@ -36,7 +36,7 @@ export async function removeLookupFilters(tempDir: string, commandThis: any, opt
       delete fieldXml.CustomField.lookupFilter;
       await writeXmlFile(fieldFile, fieldXml);
       arrangedFiles.push({ file: fieldFile, backupFile: backupFile });
-      uxLog(commandThis, c.grey(`Removed lookup filter from field ${fieldFile}`));
+      uxLog("log", commandThis, c.grey(`Removed lookup filter from field ${fieldFile}`));
     }
   }
   return arrangedFiles;
@@ -46,6 +46,6 @@ export async function removeLookupFilters(tempDir: string, commandThis: any, opt
 export async function restoreArrangedFiles(arrangedFiles: any[], commandThis: any) {
   for (const arrangedFile of arrangedFiles) {
     await fs.copyFile(arrangedFile.backupFile, arrangedFile.file);
-    uxLog(commandThis, c.grey(`Restored file ${arrangedFile.file}`));
+    uxLog("log", commandThis, c.grey(`Restored file ${arrangedFile.file}`));
   }
 }

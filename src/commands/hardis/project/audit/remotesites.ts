@@ -88,7 +88,7 @@ The command's technical implementation involves:
     ];
     const remoteSiteSettingsFiles = await glob(pattern, { ignore: GLOB_IGNORE_PATTERNS });
     this.matchResults = [];
-    uxLog(this, `Browsing ${remoteSiteSettingsFiles.length} files`);
+    uxLog("other", this, `Browsing ${remoteSiteSettingsFiles.length} files`);
     // Loop in files
     for (const file of remoteSiteSettingsFiles) {
       const fileText = await fs.readFile(file, 'utf8');
@@ -121,7 +121,7 @@ The command's technical implementation involves:
     });
 
     // Display as table
-    uxLog(this, c.cyan(`Found ${c.bold(resultSorted.length)} remote sites.`));
+    uxLog("action", this, c.cyan(`Found ${c.bold(resultSorted.length)} remote sites.`));
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
     uxLogTable(this,
       resultsLight.map((item: any) => {

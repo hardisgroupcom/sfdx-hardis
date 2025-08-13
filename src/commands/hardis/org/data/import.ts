@@ -78,7 +78,7 @@ See article:
     const message = `Successfully import data from sfdmu project ${c.green(sfdmuPath)} into org ${c.green(
       orgUsername
     )}`;
-    uxLog(this, c.cyan(message));
+    uxLog("action", this, c.cyan(message));
     return { outputString: message };
   }
 }

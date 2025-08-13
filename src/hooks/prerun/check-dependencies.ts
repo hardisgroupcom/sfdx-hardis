@@ -31,31 +31,31 @@ const hook: Hook<'prerun'> = async (options) => {
         if (allConfigs['user.name'] == null) {
           const username = os.userInfo().username;
           await git({ output: true }).addConfig('user.name', username);
-          uxLog(this, `Defined ${username} as git user.name`);
+          uxLog("log", this, `Defined ${username} as git user.name`);
         }
         // Email
         if (allConfigs['user.email'] == null) {
           const config = await getConfig('user');
           const email = config.userEmail || 'default@cloudity.com';
           await git({ output: true }).addConfig('user.email', email);
-          uxLog(this, `Defined ${email} as git user.email` + (email === 'default@cloudity.com') ? ' (temporary)' : '');
+          uxLog("log", this, `Defined ${email} as git user.email` + (email === 'default@cloudity.com') ? ' (temporary)' : '');
         }
         // Manage special characters in git file / folder names
         if (allConfigs['core.quotepath'] == null || allConfigs['core.quotepath'] == 'true') {
           await git({ output: true }).addConfig('core.quotepath', 'false');
-          uxLog(this, `Defined "false" as git core.quotepath`);
+          uxLog("log", this, `Defined "false" as git core.quotepath`);
         }
         // Merge tool
         if (allConfigs['merge.tool'] == null) {
           await git({ output: true }).addConfig('merge.tool', 'vscode');
           await git({ output: true }).addConfig('mergetool.vscode.cmd', 'code --wait $MERGED');
-          uxLog(this, 'Defined vscode as git merge tool ');
+          uxLog("log", this, 'Defined vscode as git merge tool ');
         }
         // Diff tool
         if (allConfigs['diff.tool'] == null) {
           await git({ output: true }).addConfig('diff.tool', 'vscode');
           await git({ output: true }).addConfig('difftool.vscode.cmd', 'code --wait --diff $LOCAL $REMOTE');
-          uxLog(this, 'Defined vscode as git diff tool ');
+          uxLog("log", this, 'Defined vscode as git diff tool ');
         }
       });
   }
@@ -132,7 +132,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
         });
         if (confirm.value === 'true' || isCI) {
           await fs.writeFile(gitIgnoreFile, gitIgnoreLinesUnique.join('\n') + '\n', 'utf-8');
-          uxLog(this, c.cyan('[sfdx-hardis] Updated .gitignore'));
+          uxLog("action", this, c.cyan('[sfdx-hardis] Updated .gitignore'));
         }
         if (confirm.value === 'never') {
           await setConfig('project', { skipUpdateGitIgnore: true });
@@ -178,7 +178,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
         /* jscpd:ignore-end */
         if (confirm.value === 'true' || isCI) {
           await fs.writeFile(forceIgnoreFile, forceIgnoreLinesUnique.join('\n') + '\n', 'utf-8');
-          uxLog(this, c.cyan('[sfdx-hardis] Updated .forceignore'));
+          uxLog("action", this, c.cyan('[sfdx-hardis] Updated .forceignore'));
         }
         if (confirm.value === 'never') {
           await setConfig('project', { skipUpdateForceIgnore: true });

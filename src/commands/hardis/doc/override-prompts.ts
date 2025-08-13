@@ -84,14 +84,14 @@ The command's technical implementation involves:
     // Create config/prompt-templates folder
     const configDir = path.join(process.cwd(), 'config');
     const promptTemplatesDir = path.join(configDir, 'prompt-templates');
-    uxLog(this, c.cyan('Creating prompt templates directory...'));
+    uxLog("action", this, c.cyan('Creating prompt templates directory...'));
     fs.ensureDirSync(promptTemplatesDir);
 
     let createdCount = 0;
     let overwrittenCount = 0;
     let skippedCount = 0;
 
-    uxLog(this, c.cyan('Creating prompt templates and variables...'));
+    uxLog("action", this, c.cyan('Creating prompt templates and variables...'));
     // Copy all prompt templates as .txt files
     for (const [templateName, templateDefinition] of Object.entries(PROMPT_TEMPLATES)) {
       const targetFile = path.join(promptTemplatesDir, `${templateName}.txt`);
@@ -103,10 +103,10 @@ The command's technical implementation involves:
 
           // Overwrite the existing file
           fs.writeFileSync(targetFile, promptText);
-          uxLog(this, c.grey(`Overwritten: ${templateName}.txt`));
+          uxLog("log", this, c.grey(`Overwritten: ${templateName}.txt`));
           overwrittenCount++;
         } else {
-          uxLog(this, c.yellow(`Template already exists: ${templateName}.txt`));
+          uxLog("warning", this, c.yellow(`Template already exists: ${templateName}.txt`));
           skippedCount++;
         }
         continue;
@@ -117,7 +117,7 @@ The command's technical implementation involves:
 
       // Write the prompt text to the .txt file
       fs.writeFileSync(targetFile, promptText);
-      uxLog(this, c.green(`Created: ${templateName}.txt`));
+      uxLog("success", this, c.green(`Created: ${templateName}.txt`));
       createdCount++;
     }
 
@@ -132,10 +132,10 @@ The command's technical implementation involves:
 
           // Overwrite the existing file
           fs.writeFileSync(targetFile, variableText);
-          uxLog(this, c.grey(`Overwritten: ${variableName}.txt`));
+          uxLog("log", this, c.grey(`Overwritten: ${variableName}.txt`));
           overwrittenCount++;
         } else {
-          uxLog(this, c.yellow(`Variable already exists: ${variableName}.txt`));
+          uxLog("warning", this, c.yellow(`Variable already exists: ${variableName}.txt`));
           skippedCount++;
         }
         continue;
@@ -146,21 +146,21 @@ The command's technical implementation involves:
 
       // Write the variable text to the .txt file
       fs.writeFileSync(targetFile, variableText);
-      uxLog(this, c.green(`Created: ${variableName}.txt`));
+      uxLog("success", this, c.green(`Created: ${variableName}.txt`));
       createdCount++;
     }    // Summary
-    uxLog(this, '');
+    uxLog("other", this, '');
     const actionMessage = overwrittenCount > 0 ?
       `Created ${createdCount} and overwritten ${overwrittenCount} prompt template and variable files` :
       `Created ${createdCount} prompt template and variable files`;
-    uxLog(this, c.cyan(actionMessage));
+    uxLog("action", this, c.cyan(actionMessage));
 
     if (overwrittenCount > 0) {
-      uxLog(this, c.yellow(`Overwritten ${overwrittenCount} existing files`));
+      uxLog("warning", this, c.yellow(`Overwritten ${overwrittenCount} existing files`));
     }
 
     if (skippedCount > 0) {
-      uxLog(this, c.yellow(`Skipped ${skippedCount} existing files`));
+      uxLog("warning", this, c.yellow(`Skipped ${skippedCount} existing files`));
     }
 
     const usageMessage = [
@@ -175,8 +175,8 @@ The command's technical implementation involves:
       '   - Templates can reference variables with {{VARIABLE_NAME}} syntax',
       '   - Your custom prompts and variables will override the defaults automatically',
     ].join('\n');
-    uxLog(this, c.grey(usageMessage));
-    uxLog(this, c.grey('Documentation: https://sfdx-hardis.cloudity.com/salesforce-ai-prompts/'));
+    uxLog("log", this, c.grey(usageMessage));
+    uxLog("log", this, c.grey('Documentation: https://sfdx-hardis.cloudity.com/salesforce-ai-prompts/'));
 
     return {
       status: 'success',

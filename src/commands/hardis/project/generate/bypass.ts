@@ -172,6 +172,7 @@ The command's technical implementation involves:
           const res = sObjectsFromFlag.includes(key);
           if (!res) {
             uxLog(
+              "warning",
               this,
               c.yellow(
                 `Warning: sObject "${key}" is not available or not customizable. Skipping.`
@@ -191,7 +192,7 @@ The command's technical implementation involves:
     }
 
     // Generate global bypasses
-    uxLog(this, c.cyan(`Generating global bypasses...`));
+    uxLog("action", this, c.cyan(`Generating global bypasses...`));
     this.generateFiles({ All: "All" }, ALLOWED_AUTOMATIONS);
 
     // Handle prompts if needed
@@ -283,16 +284,16 @@ The command's technical implementation involves:
     }
 
     // Generate files and apply bypasses
-    uxLog(this, c.cyan(`Generating bypass files for selected sObjects and automations...`));
+    uxLog("action", this, c.cyan(`Generating bypass files for selected sObjects and automations...`));
     this.generateFiles(targetSObjects, targetAutomations);
 
     if (applyToVrs) {
-      uxLog(this, c.cyan(`Applying bypass to Validation Rules...`));
+      uxLog("action", this, c.cyan(`Applying bypass to Validation Rules...`));
       await this.applyBypassToValidationRules(connection, targetSObjects);
     }
 
     if (applyToTriggers) {
-      uxLog(this, c.cyan(`Applying bypass to Triggers...`));
+      uxLog("action", this, c.cyan(`Applying bypass to Triggers...`));
       await this.applyBypassToTriggers(connection, targetSObjects);
     }
 
@@ -307,7 +308,7 @@ The command's technical implementation involves:
     Select Id, Label, DeveloperName, QualifiedApiName, DurableId, IsTriggerable, IsCustomizable, IsApexTriggerable 
       FROM EntityDefinition WHERE IsTriggerable = true AND IsCustomizable = true and IsCustomSetting = false ORDER BY DeveloperName`;
     const results = await soqlQuery(sObjectsQuery, connection);
-    uxLog(this, c.grey(`Found ${results.records.length} sObjects.`));
+    uxLog("log", this, c.grey(`Found ${results.records.length} sObjects.`));
     return results;
   }
 
@@ -334,7 +335,7 @@ The command's technical implementation involves:
   public async queryTriggers(connection: Connection) {
     const query = `SELECT Id, Name, Status, IsValid, Body, BodyCrc, TableEnumOrId, ManageableState From ApexTrigger WHERE ManageableState != 'installed'`;
     const results = await soqlQueryTooling(query, connection);
-    uxLog(this, c.grey(`Found ${results.records.length} Triggers.`));
+    uxLog("log", this, c.grey(`Found ${results.records.length} Triggers.`));
     return results;
   }
 
@@ -360,7 +361,7 @@ The command's technical implementation involves:
         .map((s) => `'${s}'`)
         .join(", ")})`;
     const results = await soqlQueryTooling(query, connection);
-    uxLog(this, c.grey(`Found ${results.records.length} Validation Rules.`));
+    uxLog("log", this, c.grey(`Found ${results.records.length} Validation Rules.`));
     return results;
   }
 
@@ -415,10 +416,11 @@ The command's technical implementation involves:
     );
 
     uxLog(
+      "log",
       this,
       c.grey(`Created: ${path.basename(customPermissionFile)} for ${sObject}`)
     );
-    uxLog(this, c.grey(`Created: ${path.basename(permissionSetFile)} for ${sObject}`));
+    uxLog("log", this, c.grey(`Created: ${path.basename(permissionSetFile)} for ${sObject}`));
   }
 
   generateFiles(
@@ -465,7 +467,7 @@ The command's technical implementation involves:
         );
         results.push(result);
       } catch (error) {
-        uxLog(this, c.red(`Error retrieving ${metadataType}: ${error}`));
+        uxLog("error", this, c.red(`Error retrieving ${metadataType}: ${error}`));
       }
     }
 
@@ -560,11 +562,12 @@ The command's technical implementation involves:
     );
 
     if (!validationRuleRecords || validationRuleRecords.records.length === 0) {
-      uxLog(this, c.grey("No validation rules found for the specified sObjects."));
+      uxLog("log", this, c.grey("No validation rules found for the specified sObjects."));
       return;
     }
 
     uxLog(
+      "log",
       this,
       c.grey(`Processing ${validationRuleRecords.records.length} Validation Rules.`)
     );
@@ -601,6 +604,7 @@ The command's technical implementation involves:
           }
         } else {
           uxLog(
+            "log",
             this,
             c.grey("No Validation Rule files found in the retrieved metadata chunk.")
           );
@@ -618,6 +622,7 @@ The command's technical implementation involves:
           if (filePath === null) {
             // TODO: add to report instead of log
             uxLog(
+              "log",
               this,
               c.grey(`The validation rule ${name} for sObject ${sObject} does not have a corresponding metadata file locally. Skipping.`)
             );
@@ -637,7 +642,7 @@ The command's technical implementation involves:
         )
       );
     }
-    uxLog(this, c.cyan(`Validation Rules bypass report:`));
+    uxLog("action", this, c.cyan(`Validation Rules bypass report:`));
     uxLogTable(this, validationRulesTableReport);
   }
 
@@ -740,7 +745,7 @@ The command's technical implementation involves:
     );
 
     if (!filteredTriggersResults || filteredTriggersResults?.length === 0) {
-      uxLog(this, c.grey("No triggers found for the specified sObjects."));
+      uxLog("log", this, c.grey("No triggers found for the specified sObjects."));
       return;
     }
 
@@ -775,6 +780,7 @@ The command's technical implementation involves:
           }
         } else {
           uxLog(
+            "log",
             this,
             c.grey("No Trigger files found in the retrieved metadata chunk.")
           );
@@ -791,6 +797,7 @@ The command's technical implementation involves:
           if (filePath === null) {
             // TODO: add to report instead of log
             uxLog(
+              "log",
               this,
               c.grey(`The trigger ${name} does not have a corresponding metadata file locally. Skipping.`)
             );
@@ -809,7 +816,7 @@ The command's technical implementation involves:
         )
       );
     }
-    uxLog(this, c.cyan(`Trigger bypass report:`));
+    uxLog("action", this, c.cyan(`Trigger bypass report:`));
     uxLogTable(this, triggerReport);
   }
 }

@@ -43,7 +43,7 @@ export class DocBuilderRoles {
     }).join("\n");
     const aiCache = await UtilsAi.findAiCache(promptKey, [rolesStrings], metadataName);
     if (aiCache.success) {
-      uxLog(this, c.green(`Using cached AI response for Roles`));
+      uxLog("success", this, c.green(`Using cached AI response for Roles`));
       return aiCache.cacheText || '';
     }
     if (AiProvider.isAiAvailable()) {
@@ -69,7 +69,7 @@ export class DocBuilderRoles {
     const jsonFile = `./docs/json/root-roles.json`;
     await fs.ensureDir(path.dirname(jsonFile));
     await fs.writeFile(jsonFile, JSON.stringify(jsonTree, null, 2));
-    uxLog(this, c.green(`Successfully generated Roles JSON into ${jsonFile}`));
+    uxLog("success", this, c.green(`Successfully generated Roles JSON into ${jsonFile}`));
   }
 
   public static buildHierarchyTree(roleDescriptions: any[]): any[] {

@@ -98,6 +98,7 @@ The command's technical implementation involves:
       const deleteCommand = `sf org delete scratch --no-prompt --target-org ${scratchOrgToDelete.username}`;
       await execCommand(deleteCommand, this, { fail: false, debug: debugMode, output: true });
       uxLog(
+        "action",
         this,
         c.cyan(
           `Scratch org ${c.green(scratchOrgToDelete.username)} at ${scratchOrgToDelete.instanceUrl} has been deleted`

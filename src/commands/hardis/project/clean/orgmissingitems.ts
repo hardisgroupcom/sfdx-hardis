@@ -151,10 +151,10 @@ The command's technical implementation involves several steps:
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
     });
-    uxLog(this, `Processing reportTypes...`);
+    uxLog("log", this, `Processing reportTypes...`);
     for (const reportTypeFile of matchFilesPattern) {
       if (this.debugMode) {
-        uxLog(this, `Processing ${reportTypeFile}...`);
+        uxLog("other", this, `Processing ${reportTypeFile}...`);
       }
       let changed = false;
       const reportType = await parseXmlFile(reportTypeFile);
@@ -181,7 +181,7 @@ The command's technical implementation involves several steps:
             return true;
           } else {
             if (this.debugMode) {
-              uxLog(this, `-- filtered ${objectField}`);
+              uxLog("log", this, `-- filtered ${objectField}`);
             }
             return false;
           }
@@ -194,14 +194,14 @@ The command's technical implementation involves several steps:
       // Update source file if content has been updated
       if (changed) {
         await writeXmlFile(reportTypeFile, reportType);
-        uxLog(this, `Updated ${reportTypeFile}`);
+        uxLog("log", this, `Updated ${reportTypeFile}`);
         counterItems++;
       }
     }
 
     // Summary
     const msg = `Updated ${c.green(c.bold(counterItems))} items`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };
   }

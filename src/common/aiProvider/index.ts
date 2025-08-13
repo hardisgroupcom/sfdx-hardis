@@ -15,7 +15,7 @@ let IS_AI_AVAILABLE: boolean | null = null;
 export abstract class AiProvider {
   static isAiAvailable(): boolean {
     if (process.env?.DISABLE_AI === "true") {
-      uxLog(this, c.yellow("[AI Provider] AI calls have been disabled using env var DISABLE_AI=true"))
+      uxLog("warning", this, c.yellow("[AI Provider] AI calls have been disabled using env var DISABLE_AI=true"))
       return false;
     }
     return this.getInstance() != null;
@@ -70,7 +70,7 @@ export abstract class AiProvider {
       globalThis.currentAiStartTime = globalThis.currentAiStartTime || Date.now();
       const elapsedMinutes = (Date.now() - globalThis.currentAiStartTime) / 60000; // Convert milliseconds to minutes
       if (elapsedMinutes >= aiMaxTimeoutMinutes) {
-        uxLog(this, c.yellow(`AI calls reached maximum time allowed of ${aiMaxTimeoutMinutes} minutes. You can either:
+        uxLog("warning", this, c.yellow(`AI calls reached maximum time allowed of ${aiMaxTimeoutMinutes} minutes. You can either:
 - Run command locally then commit + push
 - Increase using variable \`AI_MAX_TIMEOUT_MINUTES\` in your CI config (ex: AI_MAX_TIMEOUT_MINUTES=120) after making sure than your CI job timeout can handle it :)`));
         return { success: false, model: "none", forcedTimeout: true };
@@ -86,16 +86,16 @@ export abstract class AiProvider {
     } catch (e: any) {
       if (e.message.includes("on tokens per min (TPM)")) {
         try {
-          uxLog(this, c.yellow(`Error while calling AI provider: ${e.message}`));
-          uxLog(this, c.yellow(`Trying again in 60 seconds...`));
+          uxLog("warning", this, c.yellow(`Error while calling AI provider: ${e.message}`));
+          uxLog("warning", this, c.yellow(`Trying again in 60 seconds...`));
           await new Promise((resolve) => setTimeout(resolve, 60000));
           return await aiInstance.promptAi(prompt, template);
         } catch (e2: any) {
-          uxLog(this, c.red(`Error while calling AI provider: ${e2.message}`));
+          uxLog("error", this, c.red(`Error while calling AI provider: ${e2.message}`));
           return null;
         }
       }
-      uxLog(this, c.red(`Error while calling AI provider: ${e.message}`));
+      uxLog("error", this, c.red(`Error while calling AI provider: ${e.message}`));
       return null;
     }
   }
