@@ -4,6 +4,8 @@ FROM ubuntu:latest
 
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
 
+ENV SF_DATA_DIR=/usr/local/lib
+
 # Update package list and install required packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
             git \
