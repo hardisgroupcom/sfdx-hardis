@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.0.5 (beta)] 2025-08-14
+
+- Add ENV SF_DATA_DIR to the ubuntu Dockerfile to install plugins "globally" and make the image work as non-root user
+
 ## [6.0.4 (beta)] 2025-08-14
 
 - Immediately stop when a user cancelled a multi-questions prompts
