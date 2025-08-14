@@ -27,7 +27,8 @@ Key functionalities:
 - **Naming Convention:** New Permission Sets are named with a \`PS_\` prefix followed by the Profile name (e.g., \`PS_Standard_User\`).
 - **Exclusion Filter:** Allows you to exclude specific Profiles from the conversion process using the \`--except\` flag.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -35,6 +36,7 @@ The command's technical implementation involves:
 - **File System Scan:** It reads the contents of the \`force-app/main/default/profiles\` directory to identify all available Profile metadata files.
 - **Command Execution:** For each identified Profile (that is not excluded), it constructs and executes the \`sf shane:profile:convert\` command with the appropriate Profile name and desired Permission Set name.
 - **Error Handling:** Includes basic error handling for the external command execution.
+</details>
 `;
 
   public static examples = ['$ sf hardis:project:convert:profilestopermsets'];

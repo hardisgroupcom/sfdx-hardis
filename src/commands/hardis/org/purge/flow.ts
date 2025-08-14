@@ -25,7 +25,8 @@ Key functionalities:
 - **Confirmation Prompt:** In interactive mode, it prompts for confirmation before proceeding with the deletion of Flow versions and Flow Interviews.
 - **Partial Success Handling:** The \`--allowpurgefailure\` flag (default \`true\`) allows the command to continue even if some deletions fail, reporting the errors.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -35,6 +36,7 @@ The command's technical implementation involves:
 - **Interactive Prompts:** Uses the \`prompts\` library to interact with the user for selecting Flows, statuses, and confirming deletion actions.
 - **Error Reporting:** Logs detailed error messages for failed deletions, including the specific reasons.
 - **Command-Line Execution:** Uses \`execSfdxJson\` to execute Salesforce CLI commands for querying Flow data.
+</details>
 `;
 
   public static examples = [

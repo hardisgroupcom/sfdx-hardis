@@ -23,7 +23,8 @@ Key features:
 
 **Important Note:** The underlying Salesforce CLI command \`sfdx force:source:retrieve\` is being deprecated by Salesforce in November 2024. It is recommended to migrate to \`sf project retrieve start\` for future compatibility. See [Salesforce CLI Migration Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm) for more information.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 This command acts as an intelligent wrapper around the Salesforce CLI's source retrieval functionality:
 
@@ -32,6 +33,7 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
 - **Argument Transformation:** It dynamically constructs the command-line arguments for the underlying Salesforce CLI command based on user selections and provided flags.
 - **Error Handling:** It includes basic error handling, such as prompting the user to re-select an org if an issue occurs during org selection.
 - **Deprecation Warning:** It explicitly logs warnings about the deprecation of \`sfdx force:source:retrieve\` to inform users about upcoming changes.
+</details>
 `;
   public static readonly examples = [];
   public static readonly requiresProject = true;

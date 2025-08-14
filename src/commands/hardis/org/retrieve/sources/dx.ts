@@ -39,7 +39,8 @@ Key functionalities:
 - **Org Shape Generation (Optional):** If the \`--shape\` flag is used, it also captures the org's shape and stores installed package information.
 - **Temporary File Management:** Uses temporary folders for intermediate steps, ensuring a clean working directory.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -51,6 +52,7 @@ The command's technical implementation involves:
 - **Org Shape Handling:** If \`--shape\` is enabled, it copies the generated \`package.xml\` and stores information about installed packages using \`setConfig\`.
 - **Error Handling:** Includes robust error handling for Salesforce CLI commands and file system operations.
 - **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshCommandsMessage\` to notify connected VS Code clients about changes to the project.
+</details>
 `;
 
   public static examples = ['$ sf hardis:org:retrieve:sources:dx'];

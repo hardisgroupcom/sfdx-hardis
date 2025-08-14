@@ -53,7 +53,8 @@ Key features include:
 
 Advanced instructions are available in the [Create New User Story documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-create-new-task/).
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's logic orchestrates various underlying processes:
 
@@ -64,7 +65,8 @@ The command's logic orchestrates various underlying processes:
 - **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., \`sf config set target-org\`, \`sf org open\`, \`sf project delete tracking\`) via \`execCommand\` and \`execSfdxJson\
 - **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling \`ScratchCreate.run\` or \`SandboxCreate.run\` as needed.
 - **WebSocket Communication:** Sends refresh status messages via \`WebSocketClient.sendRefreshStatusMessage()\` to update connected VS Code clients.
-`
+</details>
+`;
 
   public static examples = ['$ sf hardis:work:new'];
 

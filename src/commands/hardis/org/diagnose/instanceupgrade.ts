@@ -32,7 +32,8 @@ Key functionalities:
 - **Severity-Based Logging:** Adjusts the log severity (info, warning) based on the proximity of the upgrade date, providing a visual cue for urgency.
 - **Notifications:** Sends notifications to configured channels (e.g., Slack, MS Teams, Grafana) with the upgrade information, making it suitable for automated monitoring.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -42,6 +43,7 @@ The command's technical implementation involves:
 - **Date Calculation:** Uses the \`moment\` library to calculate the difference in days between the current date and the planned upgrade date.
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including the instance name, upgrade date, and days remaining, along with relevant metrics for monitoring dashboards.
 - **User Feedback:** Provides clear messages to the user about the upgrade status and proximity.
+</details>
 `;
 
   public static examples = ['$ sf hardis:org:diagnose:instanceupgrade'];
