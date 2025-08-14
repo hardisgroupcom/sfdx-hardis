@@ -18,7 +18,8 @@ Key functionalities:
 - **Scratch Org Filtering:** The `--scratch` flag filters the list to show only scratch orgs related to your default Dev Hub.
 - **Connection Verification:** Ensures that the selected org is connected and prompts for re-authentication if necessary.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -26,19 +27,20 @@ The command's technical implementation involves:
 - **Default Org Configuration:** The `promptOrg` utility (internally) handles setting the selected org as the default using Salesforce CLI's configuration mechanisms.
 - **Connection Check:** It calls `makeSureOrgIsConnected` to verify the connection status of the selected org and guides the user to re-authenticate if the org is not connected.
 - **Salesforce CLI Integration:** It leverages Salesforce CLI's underlying commands for org listing and authentication.
+</details>
 
 
 ## Parameters
 
-| Name           |  Type   | Description                                                   | Default | Required | Options |
-|:---------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d   | boolean | Activate debug mode (more logs)                               |         |          |         |
-| devhub<br/>-h  | boolean | Also connect associated DevHub                                |         |          |         |
-| flags-dir      | option  | undefined                                                     |         |          |         |
-| json           | boolean | Format output as json.                                        |         |          |         |
-| scratch<br/>-s | boolean | Select scratch org related to default DevHub                  |         |          |         |
-| skipauth       | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket      | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|devhub<br/>-h|boolean|Also connect associated DevHub||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|scratch<br/>-s|boolean|Select scratch org related to default DevHub||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

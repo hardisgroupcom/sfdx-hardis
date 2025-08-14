@@ -20,7 +20,8 @@ Key functionalities:
 - **Targeted File Scan:** Scans `.cls`, `.trigger`, and `.xml` files within your SFDX project to identify occurrences of the specified reference strings.
 - **Configurable Replacements:** Applies predefined replacement rules based on file type (e.g., Apex classes, XML files) to modify the content where references are found.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -33,19 +34,20 @@ The core utility function for replacements is called `applyAllReplacementsDefini
 
 - **Regular Expressions:** The replacement rules heavily rely on regular expressions (`regex`) to precisely match and modify the content.
 - **User Feedback:** Provides real-time feedback using `ora` for spinners and `uxLog` for logging messages about the progress and results of the operation.
+</details>
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |                Default                 | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| flags-dir         | option  | undefined                                                     |                                        |          |         |
-| json              | boolean | Format output as json.                                        |                                        |          |         |
-| references<br/>-r | option  | Comma-separated list of references to find in metadatas       |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|references<br/>-r|option|Comma-separated list of references to find in metadatas||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

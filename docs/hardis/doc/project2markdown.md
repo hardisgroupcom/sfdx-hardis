@@ -88,17 +88,18 @@ To just generate HTML pages that you can host anywhere, run `mkdocs build -v || 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                         |                Default                 | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                     |                                        |          |         |
-| diff-only         | boolean | Generate documentation only for changed files (used for monitoring) |                                        |          |         |
-| flags-dir         | option  | undefined                                                           |                                        |          |         |
-| json              | boolean | Format output as json.                                              |                                        |          |         |
-| pdf               | boolean | Also generate the documentation in PDF format                       |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required       |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                           | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration           |                                        |          |         |
-| with-history      | boolean | Generate a markdown file with the history diff of the Flow          |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|diff-only|boolean|Generate documentation only for changed files (used for monitoring)||||
+|flags-dir|option|undefined||||
+|hide-apex-code|boolean|Hide Apex code in the generated documentation for Apex classes.||||
+|json|boolean|Format output as json.||||
+|pdf|boolean|Also generate the documentation in PDF format||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+|with-history|boolean|Generate a markdown file with the history diff of the Flow||||
 
 ## Examples
 
@@ -112,6 +113,10 @@ $ sf hardis:doc:project2markdown --with-history
 
 ```shell
 $ sf hardis:doc:project2markdown --with-history --pdf
+```
+
+```shell
+$ sf hardis:doc:project2markdown --hide-apex-code
 ```
 
 

@@ -21,7 +21,8 @@ See this article for a practical example:
 
 [![How to mass download notes and attachments files from a Salesforce org](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-mass-download.jpg)](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -32,22 +33,23 @@ The command's technical implementation involves:
 - **Configuration Loading:** Reads the `export.json` file to get the export configuration. It also allows for interactive overriding of these settings.
 - **Interactive Prompts:** Uses `selectFilesWorkspace` to allow the user to choose a file export project and `promptFilesExportConfiguration` for customizing export options.
 - **Error Handling:** Includes mechanisms to handle potential errors during the export process, such as network issues or API limits.
+</details>
 
 
 ## Parameters
 
-| Name                    |  Type   | Description                                                   |                Default                 | Required | Options |
-|:------------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| chunksize<br/>-c        | option  | Number of records to add in a chunk before it is processed    |                  1000                  |          |         |
-| debug<br/>-d            | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| flags-dir               | option  | undefined                                                     |                                        |          |         |
-| json                    | boolean | Format output as json.                                        |                                        |          |         |
-| path<br/>-p             | option  | Path to the file export project                               |                                        |          |         |
-| polltimeout<br/>-t      | option  | Timeout in MS for Bulk API calls                              |                 300000                 |          |         |
-| skipauth                | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| startchunknumber<br/>-s | option  | Chunk number to start from                                    |                                        |          |         |
-| target-org<br/>-o       | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket               | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|chunksize<br/>-c|option|Number of records to add in a chunk before it is processed|1000|||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|path<br/>-p|option|Path to the file export project||||
+|polltimeout<br/>-t|option|Timeout in MS for Bulk API calls|300000|||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|startchunknumber<br/>-s|option|Chunk number to start from||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

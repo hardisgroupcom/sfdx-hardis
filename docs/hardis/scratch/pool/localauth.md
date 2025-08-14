@@ -16,7 +16,8 @@ Key functionalities:
 - **Enables Pool Access:** Once authenticated, the local user can then use other sfdx-hardis commands to fetch, use, and return scratch orgs from the pool.
 - **Configuration Check:** Verifies if a scratch org pool is already configured for the current project and provides guidance if it's not.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -24,18 +25,19 @@ The command's technical implementation involves:
 - **Provider Instantiation:** It uses the `instantiateProvider` utility function to create an instance of the `KeyValueProviderInterface` corresponding to the configured storage service.
 - **User Authentication:** It then calls the `userAuthenticate()` method on the instantiated provider. This method encapsulates the specific logic for authenticating with the chosen storage service (e.g., prompting for API keys, performing OAuth flows).
 - **Error Handling:** It checks for the absence of a configured scratch org pool and provides a user-friendly message.
+</details>
 
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                   | Default | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir             | option  | undefined                                                     |         |          |         |
-| json                  | boolean | Format output as json.                                        |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                     |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-dev-hub<br/>-v|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

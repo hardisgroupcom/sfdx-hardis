@@ -22,7 +22,8 @@ Key functionalities:
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-org-limits/) and can output Grafana, Slack and MsTeams Notifications.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -32,19 +33,20 @@ The command's technical implementation involves:
 - **Report Generation:** It uses `generateCsvFile` to create the CSV report of org limits.
 - **Notification Integration:** It integrates with the `NotifProvider` to send notifications, including attachments of the generated CSV report and detailed metrics for each limit, which can be consumed by monitoring dashboards like Grafana.
 - **Exit Code Management:** Sets the process exit code to 1 if any limit is in an 'error' state, indicating a critical issue.
+</details>
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                       |                Default                 | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |                                        |          |         |
-| flags-dir         | option  | undefined                                                         |                                        |          |         |
-| json              | boolean | Format output as json.                                            |                                        |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required     |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                         | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

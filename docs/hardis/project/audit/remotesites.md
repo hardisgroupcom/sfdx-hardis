@@ -17,7 +17,8 @@ Key functionalities:
 - **Protocol and Domain Identification:** Determines the protocol (HTTP/HTTPS) and extracts the domain from each URL, providing a clearer picture of the external systems being accessed.
 - **Reporting:** Generates a CSV report summarizing all detected remote sites, including their protocol, domain, name, URL, active status, and description.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -27,17 +28,18 @@ The command's technical implementation involves:
 - **URL Parsing:** Uses Node.js's `url` module to parse the extracted URLs and `psl` (Public Suffix List) to extract the domain name from the hostname.
 - **Data Structuring:** Organizes the extracted information into a structured format, including the remote site's name, file name, namespace, URL, active status, description, protocol, and domain.
 - **Reporting:** Uses `generateReports` to create a CSV report and display a table in the console, summarizing the audit findings.
+</details>
 
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
-| json         | boolean | Format output as json.                                        |         |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

@@ -18,7 +18,8 @@ Key functionalities:
 - **XML Updates:** Modifies the <tabVisibilities> section of the selected profile XML files to reflect the chosen tab settings. If a tab visibility setting already exists for a selected tab, it will be updated; otherwise, a new one will be added.
 - **Sorted Output:** The <tabVisibilities> in the updated profile XML files are sorted alphabetically for consistency and readability.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -28,19 +29,20 @@ The command's technical implementation involves:
 - **XML Parsing and Manipulation:** Uses `parseXmlFile` to read the content of profile XML files and `writeXmlFile` to write the modified content back. It manipulates the `tabVisibilities` array within the parsed XML to add or update tab settings.
 - **Array Sorting:** Employs the `sort-array` library to sort the `tabVisibilities` alphabetically by tab name.
 - **Logging:** Provides feedback to the user about which profiles have been updated and a summary of the changes.
+</details>
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |                Default                 | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| flags-dir         | option  | undefined                                                     |                                        |          |         |
-| json              | boolean | Format output as json.                                        |                                        |          |         |
-| path<br/>-p       | option  | Root folder                                                   |        C:\git\pro\sfdx-hardis2         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|path<br/>-p|option|Root folder|C:\git\pro\sfdx-hardis2|||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

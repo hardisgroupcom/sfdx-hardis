@@ -16,7 +16,8 @@ Key functionalities:
 - **Conditional Folder Deletion:** If a standard object folder contains no custom fields (fields with a `__c` suffix), the entire folder and its associated sharing rules (`.sharingRules-meta.xml`) are removed.
 - **Standard Field Deletion:** If a standard object folder *does* contain custom fields, only the standard fields within that object are removed, preserving your custom metadata.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -27,17 +28,18 @@ The command's technical implementation involves:
   - If no custom fields are found, it removes the entire object directory and any corresponding sharing rules file using `fs.remove`.
   - If custom fields are found, it then uses `glob` again to find all standard fields (`*.field-meta.xml` without `__`) within the object's `fields` directory and removes only those standard field files.
 - **Logging:** Provides clear messages about which folders and files are being removed or kept.
+</details>
 
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
-| json         | boolean | Format output as json.                                        |         |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

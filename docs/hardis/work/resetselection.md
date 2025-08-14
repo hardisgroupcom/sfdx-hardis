@@ -17,7 +17,8 @@ Key functionalities:
 - **Generated File Cleanup:** Resets and checks out `manifest/package.xml` and `manifest/destructiveChanges.xml` to their state before the reset, ensuring a clean slate for new selections.
 - **Force Push Authorization:** Sets a flag in your user configuration (`canForcePush: true`) to allow a force push in the subsequent `hardis:work:save` command, as the history will have been rewritten.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -30,18 +31,19 @@ The command's technical implementation involves:
 - **Interactive Prompts:** Uses the `prompts` library to confirm the reset operation with the user and to select the target branch.
 - **Configuration Management:** Updates the user's configuration (`.sfdx-hardis.yml`) using `setConfig` to set the `canForcePush` flag.
 - **Error Handling:** Includes a check to prevent resetting protected branches.
+</details>
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |                Default                 | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| flags-dir         | option  | undefined                                                     |                                        |          |         |
-| json              | boolean | Format output as json.                                        |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

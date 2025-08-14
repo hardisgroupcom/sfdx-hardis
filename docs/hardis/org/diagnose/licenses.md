@@ -21,7 +21,8 @@ Key functionalities:
 - **CSV Report Generation:** Generates a CSV file containing all the retrieved license information, suitable for detailed analysis.
 - **Notifications:** Sends notifications to configured channels (e.g., Grafana, Slack, MS Teams) with a summary of license usage, including lists of active and used licenses.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -31,20 +32,21 @@ The command's technical implementation involves:
 - **Report Generation:** It uses `generateCsvFile` to create the CSV report of license data.
 - **Notification Integration:** It integrates with the `NotifProvider` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
 - **User Feedback:** Provides clear messages to the user about the license extraction process and the used licenses.
+</details>
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                       |                Default                 | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |                                        |          |         |
-| flags-dir         | option  | undefined                                                         |                                        |          |         |
-| json              | boolean | Format output as json.                                            |                                        |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required     |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                         | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| usedonly<br/>-u   | boolean | Filter to have only used licenses                                 |                                        |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|usedonly<br/>-u|boolean|Filter to have only used licenses||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

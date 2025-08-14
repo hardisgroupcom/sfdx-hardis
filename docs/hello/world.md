@@ -15,22 +15,24 @@ Key functionalities:
 - **Customizable Greeting:** You can specify a name using the `--name` flag to personalize the greeting.
 - **Timestamp:** The greeting includes the current date.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
 - **Flag Parsing:** It parses the `--name` flag to get the recipient of the greeting.
 - **Date Retrieval:** It gets the current date using `new Date().toDateString()`.
 - **Console Output:** It constructs the greeting message using the provided name and the current date, and then logs it to the console using `this.log()`.
+</details>
 
 
 ## Parameters
 
-| Name        |  Type   | Description                             | Default | Required | Options |
-|:------------|:-------:|:----------------------------------------|:-------:|:--------:|:-------:|
-| flags-dir   | option  | undefined                               |         |          |         |
-| json        | boolean | Format output as json.                  |         |          |         |
-| name<br/>-n | option  | This person can be anyone in the world! |  World  |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|name<br/>-n|option|This person can be anyone in the world!|World|||
 
 ## Examples
 

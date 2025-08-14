@@ -16,7 +16,8 @@ Key functionalities:
 - **Configuration Management:** If `.mega-linter.yml` is not found, it guides you through the initial setup of Mega-Linter, prompting for the Salesforce flavor.
 - **CI/CD Integration:** Designed to be used in CI/CD pipelines to enforce code quality gates.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -25,19 +26,20 @@ The command's technical implementation involves:
 - **Linter Execution:** It calls `MegaLinterRunner().run(megaLinterOptions)` with the `salesforce` flavor and the `fix` flag (if provided).
 - **Exit Code Handling:** The `process.exitCode` is set based on the Mega-Linter's exit status, allowing CI/CD pipelines to react to linting failures.
 - **User Feedback:** Provides clear messages about the success or failure of the linting process.
+</details>
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |                Default                 | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| fix<br/>-f        | boolean | Apply linters fixes                                           |                                        |          |         |
-| flags-dir         | option  | undefined                                                     |                                        |          |         |
-| json              | boolean | Format output as json.                                        |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|fix<br/>-f|boolean|Apply linters fixes||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

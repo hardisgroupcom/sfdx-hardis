@@ -16,7 +16,8 @@ Key functionalities:
 - **SFDX Bug Workarounds:** Incorporates internal logic to handle common issues or limitations encountered when retrieving CRM Analytics metadata using standard Salesforce CLI commands.
 - **Target Org Selection:** Allows you to specify the Salesforce org from which to retrieve the Analytics sources. If not provided, it will prompt for selection.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -26,18 +27,19 @@ The command's technical implementation involves:
 - **Salesforce CLI Retrieval:** It executes the `sf project retrieve start` command, using the newly created Analytics-specific `package.xml` to retrieve the sources to your local project.
 - **Temporary File Management:** It uses `createTempDir` to manage temporary files and directories created during the process.
 - **Interactive Org Selection:** Uses `promptOrgUsernameDefault` to guide the user in selecting the target Salesforce org if not provided via flags.
+</details>
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |                Default                 | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| flags-dir         | option  | undefined                                                     |                                        |          |         |
-| json              | boolean | Format output as json.                                        |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

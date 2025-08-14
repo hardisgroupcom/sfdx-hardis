@@ -18,7 +18,8 @@ Key functionalities include:
 - **Salesforce Username Configuration:** Prompts for the Salesforce username to be used by the CI server for deployments.
 - **SSL Certificate Generation:** Automatically generates an SSL certificate for secure authentication.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's implementation involves several key technical aspects:
 
@@ -40,16 +41,16 @@ prompts
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                   |                Default                 | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| devhub<br/>-b         | boolean | Configure project DevHub                                      |                                        |          |         |
-| flags-dir             | option  | undefined                                                     |                                        |          |         |
-| json                  | boolean | Format output as json.                                        |                                        |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                     |                                        |          |         |
-| target-org<br/>-o     | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|devhub<br/>-b|boolean|Configure project DevHub||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-dev-hub<br/>-v|option|undefined||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

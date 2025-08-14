@@ -20,7 +20,8 @@ Key features:
 - **`package.xml` Comparison:** Compares your local project's metadata with the target org's metadata and your local `package.xml` to identify missing items.
 - **Report Type Cleaning:** Specifically targets and cleans `reportType-meta.xml` files by removing references to fields or objects that are not present in the target org or your `package.xml`.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves several steps:
 
@@ -31,16 +32,17 @@ The command's technical implementation involves several steps:
 - **XML Modification:** If changes are detected, it updates the `reportType-meta.xml` file by writing the modified XML content back to the file using `writeXmlFile`.
 - **File System Operations:** It uses `fs-extra` for file system operations and `glob` for pattern matching to find relevant metadata files.
 - **SOQL Queries:** The `buildOrgManifest` utility (used internally) performs SOQL queries to retrieve metadata information from the Salesforce org.
+</details>
 
 
 ## Parameters
 
-| Name          |  Type   | Description                     |  Default  | Required | Options |
-|:--------------|:-------:|:--------------------------------|:---------:|:--------:|:-------:|
-| debug<br/>-d  | boolean | Activate debug mode (more logs) |           |          |         |
-| flags-dir     | option  | undefined                       |           |          |         |
-| folder<br/>-f | option  | Root folder                     | force-app |          |         |
-| json          | boolean | Format output as json.          |           |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|force-app|||
+|json|boolean|Format output as json.||||
 |packagexmlfull<br/>-p|option|Path to packagexml used for cleaning.
 Must contain also standard CustomObject and CustomField elements.
 If not provided, it will be generated from a remote org||||

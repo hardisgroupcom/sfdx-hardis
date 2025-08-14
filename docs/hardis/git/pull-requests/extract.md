@@ -17,7 +17,8 @@ Key functionalities include:
 - **Minimum Date Filtering:** Use the `--min-date` flag to retrieve pull requests created or updated after a specific date.
 - **CSV Output:** The extracted pull request data is generated into a CSV file, which can be used for further analysis in spreadsheet software.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves interacting with a Git provider's API:
 
@@ -27,21 +28,22 @@ The command's technical implementation involves interacting with a Git provider'
 - **Date Handling:** The `moment` library is used to parse and handle date inputs for the `--min-date` flag.
 - **CSV Generation:** The `generateCsvFile` utility is responsible for converting the retrieved pull request data into a CSV format, and `generateReportPath` determines the output file location.
 - **Error Handling:** It includes error handling for cases where a Git provider cannot be identified.
+</details>
 
 
 ## Parameters
 
-| Name                 |  Type   | Description                                                       | Default | Required |            Options            |
-|:---------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-----------------------------:|
-| debug<br/>-d         | boolean | Activate debug mode (more logs)                                   |         |          |                               |
-| flags-dir            | option  | undefined                                                         |         |          |                               |
-| json                 | boolean | Format output as json.                                            |         |          |                               |
-| min-date<br/>-m      | option  | Minimum date for PR                                               |         |          |                               |
-| outputfile<br/>-f    | option  | Force the path and name of output report file. Must end with .csv |         |          |                               |
-| skipauth             | boolean | Skip authentication check when a default username is required     |         |          |                               |
-| status<br/>-x        | option  | Status of the PR                                                  |         |          | open<br/>merged<br/>abandoned |
-| target-branch<br/>-t | option  | Target branch of PRs                                              |         |          |                               |
-| websocket            | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |                               |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|min-date<br/>-m|option|Minimum date for PR||||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|status<br/>-x|option|Status of the PR|||open<br/>merged<br/>abandoned|
+|target-branch<br/>-t|option|Target branch of PRs||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

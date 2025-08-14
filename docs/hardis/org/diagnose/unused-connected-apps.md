@@ -45,7 +45,8 @@ ALLOWED_INACTIVE_CONNECTED_APPS=My App 1,My App 2, My App 3_
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-unused-connected-apps/) and can output Grafana, Slack and MsTeams Notifications.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -58,19 +59,20 @@ The command's technical implementation involves:
 - **Notification Integration:** It integrates with the `NotifProvider` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
 - **File System Operations:** Uses `fs-extra` for creating and removing temporary directories and files.
 - **Environment Variable Reading:** Reads the `ALLOWED_INACTIVE_CONNECTED_APPS` environment variable to customize the list of ignored Connected Apps.
+</details>
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                       |                Default                 | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |                                        |          |         |
-| flags-dir         | option  | undefined                                                         |                                        |          |         |
-| json              | boolean | Format output as json.                                            |                                        |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required     |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                         | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

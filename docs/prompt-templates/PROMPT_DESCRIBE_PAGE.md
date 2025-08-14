@@ -6,10 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_PAGE
 # PROMPT_DESCRIBE_PAGE
 
 ## Variables
-| Name          | Description                                            | Example                      |
-|:--------------|:-------------------------------------------------------|:-----------------------------|
-| **PAGE_NAME** | The name of the Salesforce Lightning Page to describe. | `Account_Record_Page`        |
-| **PAGE_XML**  | The XML metadata for the Lightning Page.               | `<FlexiPage>...</FlexiPage>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **PAGE_NAME** | The name of the Salesforce Lightning Page to describe. | `Account_Record_Page` |
+| **PAGE_XML** | The XML metadata for the Lightning Page. | `<FlexiPage>...</FlexiPage>` |
 
 ## Prompt
 

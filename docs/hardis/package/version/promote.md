@@ -16,7 +16,8 @@ Key functionalities:
 - **Automated Promotion:** When `--auto` is enabled, it queries for all unreleased package versions and promotes them without further user interaction.
 - **Dev Hub Integration:** Interacts with your connected Dev Hub to change the status of the package version.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -26,19 +27,20 @@ The command's technical implementation involves:
 - **Salesforce CLI Integration:** It constructs and executes the `sf package version promote` command, passing the package version ID.
 - **`execSfdxJson`:** This utility is used to execute the Salesforce CLI command and capture its JSON output.
 - **Error Handling:** It handles cases where a package version might already be promoted or if other errors occur during the promotion process.
+</details>
 
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                      | Default | Required | Options |
-|:----------------------|:-------:|:-----------------------------------------------------------------|:-------:|:--------:|:-------:|
-| auto<br/>-f           | boolean | Auto-detect which versions of which packages need to be promoted |         |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                  |         |          |         |
-| flags-dir             | option  | undefined                                                        |         |          |         |
-| json                  | boolean | Format output as json.                                           |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required    |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                        |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration        |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|auto<br/>-f|boolean|Auto-detect which versions of which packages need to be promoted||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-dev-hub<br/>-v|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

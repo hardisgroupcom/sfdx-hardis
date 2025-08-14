@@ -26,7 +26,8 @@ Available variables:
 
 More info on [AI Prompts documentation](https://sfdx-hardis.cloudity.com/salesforce-ai-prompts/)
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -35,18 +36,19 @@ The command's technical implementation involves:
 - **Overwrite Logic:** Checks if a file already exists. If the `--overwrite` flag is provided, it overwrites the existing file; otherwise, it skips the file and logs a message.
 - **User Feedback:** Provides detailed logs about created, overwritten, and skipped files, along with instructions on how to use the customized prompts and variables.
 - **Dynamic Content:** The description itself dynamically lists available templates and variables by iterating over `PROMPT_TEMPLATES` and `PROMPT_VARIABLES` objects.
+</details>
 
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
-| json         | boolean | Format output as json.                                        |         |          |         |
-| overwrite    | boolean | Overwrite existing template files if they already exist       |         |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|overwrite|boolean|Overwrite existing template files if they already exist||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

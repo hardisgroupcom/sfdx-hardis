@@ -19,7 +19,8 @@ Key functionalities:
   - Stripping out specific profile permissions or field-level security settings.
   - Cleaning up metadata that is not relevant to a particular deployment.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -32,19 +33,20 @@ The command's technical implementation involves:
   - After filtering, it uses `writeXmlFile` to write the modified JavaScript object back to the XML file.
 - **Logging:** Provides detailed logs about the filtering process, including which files are being processed and which elements are being filtered.
 - **Summary Reporting:** Tracks and reports on the files that have been updated due to filtering.
+</details>
 
 
 ## Parameters
 
-| Name                |  Type   | Description                                                   | Default | Required | Options |
-|:--------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| configfile<br/>-c   | option  | Config JSON file path                                         |         |          |         |
-| debug               | boolean | debug                                                         |         |          |         |
-| flags-dir           | option  | undefined                                                     |         |          |         |
-| inputfolder<br/>-i  | option  | Input folder (default: "." )                                  |         |          |         |
-| json                | boolean | Format output as json.                                        |         |          |         |
-| outputfolder<br/>-f | option  | Output folder (default: parentFolder + _xml_content_filtered) |         |          |         |
-| websocket           | option  | websocket                                                     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|configfile<br/>-c|option|Config JSON file path||||
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|inputfolder<br/>-i|option|Input folder (default: "." )||||
+|json|boolean|Format output as json.||||
+|outputfolder<br/>-f|option|Output folder (default: parentFolder + _xml_content_filtered)||||
+|websocket|option|websocket||||
 
 ## Examples
 

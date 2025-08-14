@@ -22,7 +22,8 @@ Key functionalities:
 - **Org Shape Generation (Optional):** If the `--shape` flag is used, it also captures the org's shape and stores installed package information.
 - **Temporary File Management:** Uses temporary folders for intermediate steps, ensuring a clean working directory.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -34,24 +35,25 @@ The command's technical implementation involves:
 - **Org Shape Handling:** If `--shape` is enabled, it copies the generated `package.xml` and stores information about installed packages using `setConfig`.
 - **Error Handling:** Includes robust error handling for Salesforce CLI commands and file system operations.
 - **WebSocket Communication:** Uses `WebSocketClient.sendRefreshCommandsMessage` to notify connected VS Code clients about changes to the project.
+</details>
 
 
 ## Parameters
 
-| Name                     |  Type   | Description                                                                        |                Default                 | Required | Options |
-|:-------------------------|:-------:|:-----------------------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d             | boolean | Activate debug mode (more logs)                                                    |                                        |          |         |
-| filteredmetadatas<br/>-m | option  | Comma separated list of Metadatas keys to remove from PackageXml file              |                                        |          |         |
-| flags-dir                | option  | undefined                                                                          |                                        |          |         |
-| folder<br/>-f            | option  | Folder                                                                             |                   .                    |          |         |
-| instanceurl<br/>-r       | option  | URL of org instance                                                                |                                        |          |         |
-| json                     | boolean | Format output as json.                                                             |                                        |          |         |
-| keepmetadatatypes<br/>-k | option  | Comma separated list of metadatas types that will be the only ones to be retrieved |                                        |          |         |
-| shape<br/>-s             | boolean | Updates project-scratch-def.json from org shape                                    |                                        |          |         |
-| skipauth                 | boolean | Skip authentication check when a default username is required                      |                                        |          |         |
-| target-org<br/>-o        | option  | undefined                                                                          | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| tempfolder<br/>-t        | option  | Temporary folder                                                                   |                 ./tmp                  |          |         |
-| websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                          |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|filteredmetadatas<br/>-m|option|Comma separated list of Metadatas keys to remove from PackageXml file||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Folder|.|||
+|instanceurl<br/>-r|option|URL of org instance||||
+|json|boolean|Format output as json.||||
+|keepmetadatatypes<br/>-k|option|Comma separated list of metadatas types that will be the only ones to be retrieved||||
+|shape<br/>-s|boolean|Updates project-scratch-def.json from org shape||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|tempfolder<br/>-t|option|Temporary folder|./tmp|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

@@ -18,7 +18,8 @@ It specifically scans for references to custom labels (e.g., `$Label.MyLabel`) a
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-unused-metadata/) and can output Grafana, Slack and MsTeams Notifications.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -30,19 +31,20 @@ The command's technical implementation involves:
 - **Data Aggregation:** All identified unused labels and custom permissions are collected into a list.
 - **Report Generation:** It generates a CSV report (`lint-unusedmetadatas.csv`) containing details of all unused metadata elements.
 - **Notification Integration:** It integrates with the `NotifProvider` to send notifications (e.g., to Slack, MS Teams, Grafana) about the presence and count of unused metadata, making it suitable for automated monitoring in CI/CD pipelines.
+</details>
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                       |                Default                 | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |                                        |          |         |
-| flags-dir         | option  | undefined                                                         |                                        |          |         |
-| json              | boolean | Format output as json.                                            |                                        |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required     |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                         | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

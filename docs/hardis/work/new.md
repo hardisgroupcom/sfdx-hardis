@@ -18,7 +18,8 @@ Key features include:
 
 Advanced instructions are available in the [Create New User Story documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/).
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's logic orchestrates various underlying processes:
 
@@ -26,19 +27,20 @@ The command's logic orchestrates various underlying processes:
 - **Interactive Prompts:** Leverages the `prompts` library to gather user input for User Story type, source types, and User Story names.
 - **Configuration Management:** Reads and applies project-specific configurations from `.sfdx-hardis.yml` using `getConfig` and `setConfig- **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including `initApexScripts`, `initOrgData`, `initOrgMetadatas`, `initPermissionSetAssignments`, `installPackages`, and `makeSureOrgIsConnected- **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., `sf config set target-org`, `sf org open`, `sf project delete tracking`) via `execCommand` and `execSfdxJson- **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling `ScratchCreate.run` or `SandboxCreate.run` as needed.
 - **WebSocket Communication:** Sends refresh status messages via `WebSocketClient.sendRefreshStatusMessage()` to update connected VS Code clients.
+</details>
 
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                   |                Default                 | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| flags-dir             | option  | undefined                                                     |                                        |          |         |
-| json                  | boolean | Format output as json.                                        |                                        |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                     |                                        |          |         |
-| target-org<br/>-o     | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-dev-hub<br/>-v|option|undefined||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

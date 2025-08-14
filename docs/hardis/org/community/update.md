@@ -20,7 +20,8 @@ Key functionalities:
 - **Status Update:** You can set the new status for the selected communities using the `--status` flag. Supported values are `Live` and `DownForMaintenance`.
 - **Confirmation Prompt:** In non-CI environments, it provides a confirmation prompt before executing the update, ensuring intentional changes.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -29,18 +30,19 @@ The command's technical implementation involves:
 - **Error Handling and Reporting:** It iterates through the update results, logging success or failure for each community. It also provides a summary of successful and erroneous updates.
 - **User Interaction:** Uses `prompts` to confirm the update action with the user when not running in a CI environment.
 - **Salesforce Connection:** Establishes a connection to the target Salesforce org using the `target-org` flag.
+</details>
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                  |                Default                 | Required | Options |
-|:------------------|:-------:|:-----------------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                              |                                        |          |         |
-| flags-dir         | option  | undefined                                                                    |                                        |          |         |
-| json              | boolean | Format output as json.                                                       |                                        |          |         |
-| name<br/>-n       | option  | List of Networks Names that you want to update, separated by comma           |                                        |          |         |
-| status<br/>-s     | option  | New status for the community, available values are: Live, DownForMaintenance |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                                    | nicolas.vuillamy@cloudity.com.playnico |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|name<br/>-n|option|List of Networks Names that you want to update, separated by comma||||
+|status<br/>-s|option|New status for the community, available values are: Live, DownForMaintenance||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
 
 ## Examples
 

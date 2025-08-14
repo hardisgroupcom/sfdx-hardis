@@ -19,7 +19,8 @@ Key aspects:
 
 To obtain the `SFDX_AUTH_URL_TECHNICAL_ORG` value, you can run `sf org display --verbose --json` and copy the `sfdxAuthUrl` field from the output.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical flow involves:
 
@@ -28,20 +29,21 @@ The command's technical flow involves:
 - **Environment Variable Check:** It checks for the presence of `SFDX_AUTH_URL_TECHNICAL_ORG` or `TECHNICAL_ORG_ALIAS` environment variables.
 - **`authOrg` Utility:** If a technical org is configured, it calls the `authOrg` utility function to perform the authentication for that specific org, ensuring it's connected and available for subsequent operations.
 - **Salesforce CLI Integration:** It integrates with the Salesforce CLI's authentication mechanisms to establish and manage org connections.
+</details>
 
 
 ## Parameters
 
-| Name               |  Type   | Description                                                   | Default | Required | Options |
-|:-------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d       | boolean | Activate debug mode (more logs)                               |         |          |         |
-| devhub<br/>-h      | boolean | Also connect associated DevHub                                |         |          |         |
-| flags-dir          | option  | undefined                                                     |         |          |         |
-| instanceurl<br/>-r | option  | URL of org instance                                           |         |          |         |
-| json               | boolean | Format output as json.                                        |         |          |         |
-| scratchorg<br/>-s  | boolean | Scratch org                                                   |         |          |         |
-| skipauth           | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket          | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|devhub<br/>-h|boolean|Also connect associated DevHub||||
+|flags-dir|option|undefined||||
+|instanceurl<br/>-r|option|URL of org instance||||
+|json|boolean|Format output as json.||||
+|scratchorg<br/>-s|boolean|Scratch org||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

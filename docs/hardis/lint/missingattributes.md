@@ -16,7 +16,8 @@ This command helps enforce documentation standards by identifying custom fields 
 
 It specifically targets custom fields (ending with `__c`) and excludes standard fields, managed package fields, and fields on Custom Settings or Data Cloud objects.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -27,19 +28,20 @@ The command's technical implementation involves:
 - **Data Aggregation:** All custom fields found to be missing a description are collected into a list, along with their object and field names.
 - **Report Generation:** It generates a CSV report (`lint-missingattributes.csv`) containing details of all fields with missing descriptions.
 - **Notification Integration:** It integrates with the `NotifProvider` to send notifications (e.g., to Slack, MS Teams, Grafana) about the presence and count of fields with missing descriptions, making it suitable for automated quality checks in CI/CD pipelines.
+</details>
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                       |                Default                 | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |                                        |          |         |
-| flags-dir         | option  | undefined                                                         |                                        |          |         |
-| json              | boolean | Format output as json.                                            |                                        |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required     |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                         | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

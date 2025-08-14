@@ -18,7 +18,8 @@ Key functionalities:
 - **Test Class Exclusion:** Automatically skips test classes (`@isTest`) to focus on production code.
 - **CSV Report Generation:** Generates a CSV report summarizing all detected call-ins and call-outs, including their type, subtype (protocol), file name, namespace, and extracted details.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -29,17 +30,18 @@ The command's technical implementation involves:
 - **Data Structuring:** Organizes the extracted information into a structured format, including the file name, namespace, and detailed matches.
 - **Reporting:** Uses `generateReports` to create a CSV report and display a table in the console, summarizing the audit findings.
 - **Filtering:** Filters out files that start with 'hidden' or contain `@isTest` to focus on relevant code.
+</details>
 
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
-| json         | boolean | Format output as json.                                        |         |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

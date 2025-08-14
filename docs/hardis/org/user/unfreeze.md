@@ -20,7 +20,8 @@ Key functionalities:
 - **Bulk Unfreezing:** Efficiently unfreezes multiple user logins using Salesforce's Bulk API.
 - **Reporting:** Generates CSV and XLSX reports of the users that are about to be unfrozen.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -29,22 +30,23 @@ The command's technical implementation involves:
 - **Bulk Update:** It constructs an array of `UserLogin` records with their `Id` and `IsFrozen` set to `false`, then uses `bulkUpdate` to perform the mass update operation on the Salesforce org.
 - **Reporting:** It uses `generateReports` to create CSV and XLSX files containing details of the users to be unfrozen.
 - **Logging:** Provides clear messages about the number of users found and the success of the unfreezing process.
+</details>
 
 
 ## Parameters
 
-| Name                   |  Type   | Description                                                         |                Default                 | Required | Options |
-|:-----------------------|:-------:|:--------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d           | boolean | Activate debug mode (more logs)                                     |                                        |          |         |
-| excludeprofiles<br/>-e | option  | List of profiles that you want to NOT unfreeze, separated by commas |                                        |          |         |
-| flags-dir              | option  | undefined                                                           |                                        |          |         |
-| includeprofiles<br/>-p | option  | List of profiles that you want to unfreeze, separated by commas     |                                        |          |         |
-| json                   | boolean | Format output as json.                                              |                                        |          |         |
-| maxuserdisplay<br/>-m  | option  | Maximum users to display in logs                                    |                  100                   |          |         |
-| name<br/>-n            | option  | Filter according to Name criteria                                   |                                        |          |         |
-| skipauth               | boolean | Skip authentication check when a default username is required       |                                        |          |         |
-| target-org<br/>-o      | option  | undefined                                                           | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration           |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|excludeprofiles<br/>-e|option|List of profiles that you want to NOT unfreeze, separated by commas||||
+|flags-dir|option|undefined||||
+|includeprofiles<br/>-p|option|List of profiles that you want to unfreeze, separated by commas||||
+|json|boolean|Format output as json.||||
+|maxuserdisplay<br/>-m|option|Maximum users to display in logs|100|||
+|name<br/>-n|option|Filter according to Name criteria||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

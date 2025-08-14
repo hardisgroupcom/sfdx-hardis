@@ -16,7 +16,8 @@ Key functionalities:
 - **Managed Package Filtering:** By default, it filters out metadata from managed packages to reduce the volume of retrieved data. This can be overridden with the `--includemanaged` flag.
 - **Monitoring Integration:** Designed to be used within a monitoring CI/CD job, it performs additional post-retrieval actions like running Apex tests and checking for legacy API usage.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -30,22 +31,23 @@ The command's technical implementation involves:
   - It executes `sf hardis:org:diagnose:legacyapi` to check for legacy API usage.
   - It logs warnings if post-actions fail or if the monitoring version is deprecated.
 - **Error Handling:** Includes robust error handling for retrieval failures and post-action execution.
+</details>
 
 
 ## Parameters
 
-| Name               |  Type   | Description                                                   |                Default                 | Required | Options |
-|:-------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d       | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| flags-dir          | option  | undefined                                                     |                                        |          |         |
-| folder<br/>-f      | option  | Folder                                                        |                   .                    |          |         |
-| includemanaged     | boolean | Include items from managed packages                           |                                        |          |         |
-| instanceurl<br/>-r | option  | URL of org instance                                           |                                        |          |         |
-| json               | boolean | Format output as json.                                        |                                        |          |         |
-| packagexml<br/>-p  | option  | Path to package.xml manifest file                             |                                        |          |         |
-| skipauth           | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| target-org<br/>-o  | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket          | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Folder|.|||
+|includemanaged|boolean|Include items from managed packages||||
+|instanceurl<br/>-r|option|URL of org instance||||
+|json|boolean|Format output as json.||||
+|packagexml<br/>-p|option|Path to package.xml manifest file||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
