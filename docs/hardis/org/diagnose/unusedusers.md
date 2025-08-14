@@ -25,7 +25,8 @@ Key functionalities:
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-inactive-users/) and can output Grafana, Slack and MsTeams Notifications.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -35,7 +36,7 @@ The command's technical implementation involves:
 - **Report Generation:** It uses `generateCsvFile` to create the CSV report of users.
 - **Notification Integration:** It integrates with the `NotifProvider` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
 - **User Feedback:** Provides a summary of the findings in the console, indicating the number of inactive or active users found.
-
+</details>
 
 ## Parameters
 

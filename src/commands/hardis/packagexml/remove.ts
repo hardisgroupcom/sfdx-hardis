@@ -17,7 +17,8 @@ Key functionalities:
 - **Output File:** The path to the new \`package.xml\` file that will contain the filtered content (specified by \`--outputfile\`).
 - **Removed Only Output:** The \`--removedonly\` flag allows you to generate a \`package.xml\` that contains *only* the items that were removed from the source \`package.xml\`.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -26,6 +27,7 @@ The command's technical implementation involves:
 - **XML Building:** After filtering, it rebuilds the XML structure for the new \`package.xml\` file.
 - **File Writing:** The newly constructed XML content is then written to the specified output file.
 - **\`removePackageXmlFilesContent\` Utility:** The core logic for this operation is encapsulated within the \`removePackageXmlFilesContent\` utility function, which handles the parsing, filtering, and writing of the \`package.xml\` files.
+</details>
 `;
   public static readonly examples = ["$ sf hardis packagexml:remove -p package.xml -r destructiveChanges.xml -o my-reduced-package.xml"];
   public static readonly requiresProject = false;

@@ -21,13 +21,15 @@ Key functionalities:
 - **Source Synchronization:** Deploys all local changes (metadata and code) to the target scratch org.
 - **Underlying Command:** Internally, this command executes \`sf project deploy start\` to perform the push operation.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
 - **Salesforce CLI Wrapper:** It acts as a wrapper around the standard Salesforce CLI \`sf project deploy start\` command.
 - **\`forceSourcePush\` Utility:** The core logic resides in the \`forceSourcePush\` utility function, which orchestrates the deployment process.
 - **Connection Handling:** It uses the connection to the target org to perform the push operation.
+</details>
 `;
 
   public static examples = ['$ sf hardis:scratch:push'];

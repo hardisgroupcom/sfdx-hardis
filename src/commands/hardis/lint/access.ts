@@ -49,7 +49,8 @@ Key functionalities:
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-missing-access/) and can output Grafana, Slack and MsTeams Notifications.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -58,6 +59,7 @@ The command's technical implementation involves:
 - **Element Filtering:** Filters out elements that are explicitly ignored (via flags or configuration) or are not subject to access checks (e.g., Master-Detail fields, required fields, Custom Metadata Types, Custom Settings).
 - **Access Verification Logic:** Iterates through each element to check and verifies if it has the necessary access enabled in any of the non-ignored Permission Sets or Profiles.
 - **Data Aggregation:** Collects all elements with missing access into a \`missingElements\` array and \`missingElementsMap\` for reporting and notification purposes.
+</details>
 `;
 
   public static examples = [

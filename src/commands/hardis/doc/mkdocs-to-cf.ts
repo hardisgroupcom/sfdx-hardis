@@ -53,7 +53,8 @@ More information can be found in the [Documentation section](${CONSTANTS.DOC_URL
 | \`CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN\`  | Cloudflare default access email domain                                   | \`@cloudity.com\`                       |\
 | \`CLOUDFLARE_EXTRA_ACCESS_POLICY_ID_LIST\`  | Comma-separated list of additional policy IDs to assign to the application | _Optional_                            |\
 \
-## Technical explanations\
+<details>
+<summary>Technical explanations</summary>\
 \
 The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:\
 \
@@ -67,6 +68,7 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:\
 - **Wrangler CLI:** Uses the \`wrangler\` CLI (Cloudflare's developer tool) to deploy the generated HTML pages to Cloudflare Pages via \`wrangler pages deploy\`.\
 - **Environment Variable Management:** Reads various environment variables to configure Cloudflare settings and project names.\
 - **Error Handling:** Includes checks for missing \`mkdocs.yml\` and Cloudflare environment variables, throwing \`SfError\` when necessary.\
+</details>
 `;
 
   public static examples = [

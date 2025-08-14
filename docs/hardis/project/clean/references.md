@@ -18,7 +18,8 @@ Key functionalities include:
 - **Persistent Configuration:** You can choose to save your cleaning selections in your project's configuration (`.sfdx-hardis.yml`) so they are automatically applied during future Work Save operations.
 - **File Deletion:** Beyond just cleaning XML content, it can also delete related files (e.g., custom field files and their translations when a custom field is marked for deletion).
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves several steps:
 
@@ -27,6 +28,7 @@ The command's technical implementation involves several steps:
 - **XML Filtering:** For template-based cleanings, it constructs a temporary JSON configuration file based on predefined templates or user-provided 
 - **Package.xml Cleanup:** It iterates through 
 - **Object Property Removal:** The 
+</details>
 
 
 ## Parameters

@@ -19,7 +19,8 @@ Key functionalities:
 - **Initialization Scripts:** Runs predefined Apex scripts, assigns permission sets, and imports initial data into the newly created sandbox, based on configurations in your project.
 - **Error Handling:** Provides detailed error messages for common sandbox creation issues, including Salesforce-specific errors.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -32,6 +33,7 @@ The command's technical implementation involves:
 - **Error Assertions:** Uses `assert` to check the success of Salesforce CLI commands and provides custom error messages for better debugging.
 - **WebSocket Communication:** Uses `WebSocketClient.sendRefreshStatusMessage` to notify connected VS Code clients about the new sandbox.
 - **Required Plugin Check:** Explicitly lists `sfdmu` as a required plugin, indicating its role in data initialization.
+</details>
 
 
 ## Parameters

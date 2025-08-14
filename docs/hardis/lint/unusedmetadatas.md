@@ -18,7 +18,8 @@ It specifically scans for references to custom labels (e.g., `$Label.MyLabel`) a
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-unused-metadata/) and can output Grafana, Slack and MsTeams Notifications.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -30,6 +31,7 @@ The command's technical implementation involves:
 - **Data Aggregation:** All identified unused labels and custom permissions are collected into a list.
 - **Report Generation:** It generates a CSV report (`lint-unusedmetadatas.csv`) containing details of all unused metadata elements.
 - **Notification Integration:** It integrates with the `NotifProvider` to send notifications (e.g., to Slack, MS Teams, Grafana) about the presence and count of unused metadata, making it suitable for automated monitoring in CI/CD pipelines.
+</details>
 
 
 ## Parameters

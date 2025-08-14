@@ -16,7 +16,8 @@ Key functionalities:
 - **Confirmation Prompt:** Prompts for confirmation before proceeding with the deletion, ensuring that you don't accidentally delete important orgs.
 - **Dev Hub Integration:** Works with your configured Dev Hub to manage scratch orgs.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -25,6 +26,7 @@ The command's technical implementation involves:
 - **Scratch Org Deletion:** For each selected scratch org, it executes the `sf org delete scratch --no-prompt` command to perform the deletion.
 - **Error Handling:** Includes basic error handling for Salesforce CLI commands.
 - **Data Sorting:** Sorts the list of scratch orgs by username, alias, and instance URL for better readability in the interactive menu.
+</details>
 
 
 ## Parameters

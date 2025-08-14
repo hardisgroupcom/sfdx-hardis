@@ -30,7 +30,8 @@ Key functionalities:
 - **Customizable Output:** Allows you to specify the output file path for the generated \`package.xml\`.
 - **Interactive Org Selection:** If no target org is specified, it interactively prompts the user to choose an org. (or use --no-prompt to skip this step)
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -39,6 +40,7 @@ The command's technical implementation involves:
 - **XML Generation:** It dynamically builds the XML structure of the \`package.xml\` file, including the \`types\` and \`members\` elements for all retrieved metadata.
 - **File System Operations:** It writes the generated \`package.xml\` file to the specified output path.
 - **Interactive Prompts:** Uses \`promptOrgUsernameDefault\` to guide the user in selecting the target Salesforce org.
+</details>
 `;
 
   public static examples = [

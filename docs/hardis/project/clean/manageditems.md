@@ -17,7 +17,8 @@ Key functionalities:
 - **Intelligent Folder Handling:** Prevents the deletion of managed folders if they contain local custom items. This ensures that if you have custom metadata within a managed package's folder structure, only the managed components are removed, preserving your local customizations.
 - **Object Metadata Preservation:** Specifically, it will not remove .object-meta.xml files if there are local custom items defined within that object's folder.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -26,6 +27,7 @@ The command's technical implementation involves:
 - **Folder Content Check:** For identified managed folders, the `folderContainsLocalItems` function is called. This function uses `glob` again to check for the presence of any files within that folder that *do not* start with the managed package namespace, indicating local customizations.
 - **Conditional Deletion:** Based on the `folderContainsLocalItems` check, it conditionally removes files and folders using `fs.remove`. If a managed folder contains local items, it is skipped to prevent accidental deletion of custom work.
 - **Logging:** Provides clear messages about which managed items are being removed.
+</details>
 
 
 ## Parameters

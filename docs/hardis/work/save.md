@@ -45,7 +45,8 @@ autoRemoveUserPermissions:
 
 Advanced instructions are available in the [Publish a User Story documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/).
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves a series of orchestrated steps:
 
@@ -58,6 +59,7 @@ The command's technical implementation involves a series of orchestrated steps:
 - **Deployment Plan Building:** Dynamically constructs a deployment plan by analyzing the `package.xml` content and applying configured deployment splits.
 - **WebSocket Communication:** Uses `WebSocketClient.sendRefreshStatusMessage` to notify connected VS Code clients about status updates.
 - **External Tool Integration:** Requires the `sfdx-git-delta` plugin to be installed for its core functionality.
+</details>
 
 
 ## Parameters

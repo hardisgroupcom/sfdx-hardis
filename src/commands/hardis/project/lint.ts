@@ -26,7 +26,8 @@ Key functionalities:
 - **Configuration Management:** If \`.mega-linter.yml\` is not found, it guides you through the initial setup of Mega-Linter, prompting for the Salesforce flavor.
 - **CI/CD Integration:** Designed to be used in CI/CD pipelines to enforce code quality gates.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -35,6 +36,7 @@ The command's technical implementation involves:
 - **Linter Execution:** It calls \`MegaLinterRunner().run(megaLinterOptions)\` with the \`salesforce\` flavor and the \`fix\` flag (if provided).
 - **Exit Code Handling:** The \`process.exitCode\` is set based on the Mega-Linter's exit status, allowing CI/CD pipelines to react to linting failures.
 - **User Feedback:** Provides clear messages about the success or failure of the linting process.
+</details>
 `;
 
   public static examples = ['$ sf hardis:project:lint', '$ sf hardis:project:lint --fix'];

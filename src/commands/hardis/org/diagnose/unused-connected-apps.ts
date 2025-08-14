@@ -69,7 +69,8 @@ ALLOWED_INACTIVE_CONNECTED_APPS=My App 1,My App 2, My App 3_
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-connected-apps/) and can output Grafana, Slack and MsTeams Notifications.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -82,6 +83,7 @@ The command's technical implementation involves:
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
 - **File System Operations:** Uses \`fs-extra\` for creating and removing temporary directories and files.
 - **Environment Variable Reading:** Reads the \`ALLOWED_INACTIVE_CONNECTED_APPS\` environment variable to customize the list of ignored Connected Apps.
+</details>
 `;
 
   public static examples = [

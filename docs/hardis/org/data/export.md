@@ -25,7 +25,8 @@ See this article for a practical example:
 
 [![How to detect bad words in Salesforce records using SFDX Data Loader and sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-badwords.jpg)](https://nicolas.vuillamy.fr/how-to-detect-bad-words-in-salesforce-records-using-sfdx-data-loader-and-sfdx-hardis-171db40a9bac)
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation relies heavily on the SFDMU plugin:
 
@@ -34,6 +35,7 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 - **Interactive Prompts:** Uses `selectDataWorkspace` to allow the user to choose an SFDMU project and `promptOrgUsernameDefault` for selecting the source Salesforce org when not running in a CI environment.
 - **Environment Awareness:** Checks the `isCI` flag to determine whether to run in an interactive mode (prompting for user input) or a non-interactive mode (relying solely on command-line flags).
 - **Required Plugin:** It explicitly lists `sfdmu` as a required plugin, ensuring that the necessary dependency is in place before execution.
+</details>
 
 
 ## Parameters

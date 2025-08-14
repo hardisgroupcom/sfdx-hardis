@@ -27,7 +27,8 @@ After the initial run, you will need to manually update:
 
 Finally, activate GitHub Pages with `gh_pages` as the target branch. This will enable automatic documentation rebuilding and publishing to GitHub Pages upon each merge into your `master`/`main` branch.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -42,6 +43,7 @@ The command's technical implementation involves:
 - **Index and Commands Page Generation:** It reads the project's `README.md` and extracts relevant sections to create the `index.md` file. It also generates a separate `commands.md` file listing all commands.
 - **File System Operations:** It uses `fs-extra` to create directories, copy default MkDocs files (`defaults/mkdocs`), and write the generated Markdown and YAML files.
 - **YAML Serialization:** It uses `js-yaml` to serialize the navigation object into YAML format for `mkdocs.yml`.
+</details>
 
 
 ## Parameters

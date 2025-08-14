@@ -30,7 +30,8 @@ Key functionalities:
 - **Full Pool Deletion:** Identifies all scratch orgs currently in the pool and initiates their deletion.
 - **Dev Hub Integration:** Works with your configured Dev Hub to manage the scratch orgs within the pool.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -38,6 +39,7 @@ The command's technical implementation involves:
 - **Pool Storage Interaction:** It uses \`getPoolStorage\` to retrieve the current list of scratch orgs in the pool and \`setPoolStorage\` to clear the pool's record.
 - **Scratch Org Deletion:** It iterates through each scratch org in the retrieved list. For each org, it authenticates to it using \`authenticateWithSfdxUrlStore\` and then executes \`sf org delete scratch\` via \`execCommand\`.
 - **Logging:** Provides clear messages about the deletion process and the status of each scratch org.
+</details>
 `;
 
   public static examples = ['$ sf hardis:scratch:pool:refresh'];

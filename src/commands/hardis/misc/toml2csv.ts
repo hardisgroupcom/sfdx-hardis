@@ -39,7 +39,8 @@ Key functionalities:
 - **Error Handling and Reporting:** Catches transformation errors, logs them, and can output problematic lines to separate error CSV files for review.
 - **CSV Output:** Generates one or more CSV files, with configurable separators and headers, ready for Salesforce Data Loader or other import tools.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -57,6 +58,7 @@ The command's technical implementation involves:
 - **Progress Indication:** Uses \`ora\` for a command-line spinner to provide visual feedback on the processing progress.
 - **Statistics Collection:** Tracks various statistics, such as the number of processed lines, successful lines, error lines, and filtered lines, providing a summary at the end.
 - **File Copying:** Optionally copies generated CSV files to other specified locations.
+</details>
 `;
 
   public static examples = [

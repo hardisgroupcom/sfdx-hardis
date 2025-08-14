@@ -17,7 +17,8 @@ Key functionalities:
 - **Interactive Input:** If neither `--packagexml` nor `--template` is provided, the command will interactively prompt you to select a `package.xml` file or a template.
 - **Target Org Selection:** Allows you to specify the Salesforce org from which to retrieve the sources. If not provided, it will prompt for selection.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -26,6 +27,7 @@ The command's technical implementation involves:
 - **File System Operations:** It checks if the specified `package.xml` file exists. If the file is outside the current project directory, it copies it to a temporary location within the project to ensure proper handling by the Salesforce CLI.
 - **Salesforce CLI Retrieval:** It executes the `sf project retrieve start` command, passing the resolved `package.xml` path and the target username to retrieve the sources.
 - **User Feedback:** Provides clear messages to the user about the retrieval process and its success.
+</details>
 
 
 ## Parameters

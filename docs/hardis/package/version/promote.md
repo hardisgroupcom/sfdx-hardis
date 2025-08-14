@@ -16,7 +16,8 @@ Key functionalities:
 - **Automated Promotion:** When `--auto` is enabled, it queries for all unreleased package versions and promotes them without further user interaction.
 - **Dev Hub Integration:** Interacts with your connected Dev Hub to change the status of the package version.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -26,6 +27,7 @@ The command's technical implementation involves:
 - **Salesforce CLI Integration:** It constructs and executes the `sf package version promote` command, passing the package version ID.
 - **`execSfdxJson`:** This utility is used to execute the Salesforce CLI command and capture its JSON output.
 - **Error Handling:** It handles cases where a package version might already be promoted or if other errors occur during the promotion process.
+</details>
 
 
 ## Parameters
