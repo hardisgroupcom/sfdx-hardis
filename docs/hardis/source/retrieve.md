@@ -33,23 +33,23 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|apiversion<br/>-a|option|Override the api version used for api requests made by this command||||
-|debug<br/>-d|boolean|debugMode||||
-|flags-dir|option|undefined||||
-|forceoverwrite<br/>-f|boolean|forceoverwrite||||
-|json|boolean|Format output as json.||||
-|manifest<br/>-x|option|manifest||||
-|metadata<br/>-m|option|metadata||||
-|packagenames<br/>-n|option|packagenames||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|sourcepath<br/>-p|option|sourcePath||||
-|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
-|tracksource<br/>-t|boolean|tracksource||||
-|verbose|boolean|verbose||||
-|wait<br/>-w|option|wait||||
-|websocket|option|websocket||||
+| Name                  |  Type   | Description                                                         |                Default                 | Required | Options |
+|:----------------------|:-------:|:--------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
+| apiversion<br/>-a     | option  | Override the api version used for api requests made by this command |                                        |          |         |
+| debug<br/>-d          | boolean | debugMode                                                           |                                        |          |         |
+| flags-dir             | option  | undefined                                                           |                                        |          |         |
+| forceoverwrite<br/>-f | boolean | forceoverwrite                                                      |                                        |          |         |
+| json                  | boolean | Format output as json.                                              |                                        |          |         |
+| manifest<br/>-x       | option  | manifest                                                            |                                        |          |         |
+| metadata<br/>-m       | option  | metadata                                                            |                                        |          |         |
+| packagenames<br/>-n   | option  | packagenames                                                        |                                        |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required       |                                        |          |         |
+| sourcepath<br/>-p     | option  | sourcePath                                                          |                                        |          |         |
+| target-org<br/>-o     | option  | undefined                                                           | nicolas.vuillamy@cloudity.com.playnico |          |         |
+| tracksource<br/>-t    | boolean | tracksource                                                         |                                        |          |         |
+| verbose               | boolean | verbose                                                             |                                        |          |         |
+| wait<br/>-w           | option  | wait                                                                |                                        |          |         |
+| websocket             | option  | websocket                                                           |                                        |          |         |
 
 ## Examples
 
