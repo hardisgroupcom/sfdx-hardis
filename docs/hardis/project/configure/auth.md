@@ -18,7 +18,8 @@ Key functionalities include:
 - **Salesforce Username Configuration:** Prompts for the Salesforce username to be used by the CI server for deployments.
 - **SSL Certificate Generation:** Automatically generates an SSL certificate for secure authentication.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's implementation involves several key technical aspects:
 

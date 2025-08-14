@@ -33,7 +33,8 @@ Key functionalities:
   - Restores your stashed changes after the merge.
 - **Org Synchronization:** Pushes the updated local branch content to your scratch org or source-tracked sandbox, ensuring your org reflects the latest merged code.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -49,6 +50,7 @@ The command's technical implementation involves:
 - **Salesforce CLI Integration:** It uses \`forceSourcePull\` to pull changes from the scratch org and \`forceSourcePush\` to push changes to the scratch org.
 - **Error Handling:** Includes robust error handling for Git operations (e.g., merge conflicts) and provides guidance to the user for resolution.
 - **Environment Variable Check:** Checks for an \`EXPERIMENTAL\` environment variable to gate access to this command, indicating it might not be fully stable.
+</details>
 `;
 
   public static examples = ['$ sf hardis:work:refresh'];

@@ -19,7 +19,8 @@ Key functionalities:
   - **Delete After Creation (`--deleteafter`):** Deletes the newly created package version immediately after its creation. This is useful for testing the package creation process without accumulating unnecessary versions.
   - **Install After Creation (`--install`):** Installs the newly created package version on your default Salesforce org. This is convenient for immediate testing or validation.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -30,6 +31,7 @@ The command's technical implementation involves:
 - **`execSfdxJson`:** This utility is used to execute the Salesforce CLI command and capture its JSON output, which includes the `SubscriberPackageVersionId` of the newly created version.
 - **Post-Creation Command Execution:** If `--deleteafter` or `--install` flags are set, it executes `sf package version delete` or delegates to `MetadataUtils.installPackagesOnOrg` respectively.
 - **Error Handling:** Includes checks for missing package arguments and handles errors during package version creation or post-creation actions.
+</details>
 
 
 ## Parameters

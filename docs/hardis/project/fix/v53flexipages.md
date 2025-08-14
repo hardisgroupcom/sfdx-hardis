@@ -17,7 +17,8 @@ Key functionalities:
 
 **Important Note:** After running this command, ensure you update your `apiVersion` to `53.0` (or higher) in your `package.xml` and `sfdx-project.json` files.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -27,6 +28,7 @@ The command's technical implementation involves:
 - **Dynamic ID Generation:** For each match, it generates a unique identifier (e.g., `sfdxHardisIdX`) and injects it into the XML structure.
 - **File Writing:** If changes are made, the modified XML content is written back to the FlexiPage file using `fs.writeFile`.
 - **Logging:** Provides messages about which FlexiPages are being processed and a summary of the total number of identifiers added.
+</details>
 
 
 ## Parameters

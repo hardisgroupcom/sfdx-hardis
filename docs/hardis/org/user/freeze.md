@@ -20,7 +20,8 @@ Key functionalities:
 - **Bulk Freezing:** Efficiently freezes multiple user logins using Salesforce's Bulk API.
 - **Reporting:** Generates CSV and XLSX reports of the users that are about to be frozen.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -29,6 +30,7 @@ The command's technical implementation involves:
 - **Bulk Update:** It constructs an array of `UserLogin` records with their `Id` and `IsFrozen` set to `true`, then uses `bulkUpdate` to perform the mass update operation on the Salesforce org.
 - **Reporting:** It uses `generateReports` to create CSV and XLSX files containing details of the users to be frozen.
 - **Logging:** Provides clear messages about the number of users found and the success of the freezing process.
+</details>
 
 
 ## Parameters

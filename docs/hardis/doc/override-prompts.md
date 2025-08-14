@@ -26,7 +26,8 @@ Available variables:
 
 More info on [AI Prompts documentation](https://sfdx-hardis.cloudity.com/salesforce-ai-prompts/)
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -35,6 +36,7 @@ The command's technical implementation involves:
 - **Overwrite Logic:** Checks if a file already exists. If the `--overwrite` flag is provided, it overwrites the existing file; otherwise, it skips the file and logs a message.
 - **User Feedback:** Provides detailed logs about created, overwritten, and skipped files, along with instructions on how to use the customized prompts and variables.
 - **Dynamic Content:** The description itself dynamically lists available templates and variables by iterating over `PROMPT_TEMPLATES` and `PROMPT_VARIABLES` objects.
+</details>
 
 
 ## Parameters

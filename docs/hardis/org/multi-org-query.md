@@ -19,7 +19,8 @@ Key functionalities:
 
 [![Use in VsCode SFDX Hardis !](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/multi-org-query-demo.gif)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -29,6 +30,7 @@ The command's technical implementation involves:
 - **Report Generation:** It uses `generateCsvFile` to create the final CSV report and `generateReportPath` to determine the output file location.
 - **Interactive Prompts:** The `prompts` library is used to guide the user through selecting a query template or entering a custom query, and for selecting target orgs if not provided as command-line arguments.
 - **Error Handling:** It logs errors for any orgs where the query fails, ensuring that the overall process continues and provides a clear summary of successes and failures.
+</details>
 
 
 ## Parameters

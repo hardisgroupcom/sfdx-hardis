@@ -16,7 +16,8 @@ Key functionalities:
 - **Non-Default Connection:** Ensures that the selected org is connected but does not set it as the default username for subsequent Salesforce CLI commands.
 - **Browser Launch (Optional):** Offers to open the connected org directly in your default web browser, providing immediate access to the Salesforce UI.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -24,6 +25,7 @@ The command's technical implementation involves:
 - **Salesforce CLI Integration:** Internally, it leverages Salesforce CLI commands to establish the connection to the chosen org. It does not use `sf config set target-org` to avoid changing the default org.
 - **Browser Launch:** If the user opts to open the org in a browser, it executes the `sf org open` command, passing the selected org's username as the target.
 - **Environment Awareness:** Checks the `isCI` flag to determine whether to offer the browser launch option, as it's typically not applicable in continuous integration environments.
+</details>
 
 
 ## Parameters

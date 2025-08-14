@@ -18,7 +18,8 @@ Key functionalities:
 - **Confirmation Prompt:** Before deletion, it prompts for user confirmation, displaying the number of Apex logs that will be deleted.
 - **Bulk Deletion:** Uses the Salesforce Bulk API to efficiently delete a large number of Apex logs.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -28,6 +29,7 @@ The command's technical implementation involves:
 - **Bulk API Deletion:** It then uses the Salesforce CLI's `sf data delete bulk` command, pointing to the generated CSV file, to perform the mass deletion of Apex logs.
 - **File System Operations:** It uses `fs-extra` to create the temporary directory and manage the CSV file.
 - **Error Handling:** Includes error handling for the query and deletion operations.
+</details>
 
 
 ## Parameters

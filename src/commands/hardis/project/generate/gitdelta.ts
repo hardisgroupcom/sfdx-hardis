@@ -37,7 +37,8 @@ Key functionalities:
 - **\`destructiveChanges.xml\` Generation:** Creates a \`destructiveChanges.xml\` file that lists all metadata components that have been deleted between the specified commits.
 - **Temporary File Output:** The generated \`package.xml\` and \`destructiveChanges.xml\` files are placed in a temporary directory.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -47,6 +48,7 @@ The command's technical implementation involves:
 - **Temporary Directory Management:** Uses \`createTempDir\` to create a temporary directory for storing the generated XML files, ensuring a clean working environment.
 - **File System Operations:** Uses \`fs-extra\` to manage temporary files and directories.
 - **User Feedback:** Provides clear messages to the user about the generated files and their locations.
+</details>
 `;
 
   public static examples = ['$ sf hardis:project:generate:gitdelta'];

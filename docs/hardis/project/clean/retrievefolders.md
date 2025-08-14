@@ -13,7 +13,8 @@ This command is designed to help developers and administrators synchronize their
 - **Selective Retrieval:** Instead of retrieving all dashboards or reports, it allows you to retrieve specific folders, which can be more efficient for targeted development or backup.
 - **Maintaining Folder Structure:** Ensures that the folder structure of these metadata types is preserved in your local project.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -22,6 +23,7 @@ The command's technical implementation involves:
 - **Recursive Retrieval:** It iterates through subfolders within these main folders. For each subfolder, it constructs and executes a `sf project retrieve start` command.
 - **Salesforce CLI Integration:** It uses `sf project retrieve start -m <MetadataType>:<FolderName>` to retrieve the content of individual folders. This ensures that only the specified folder and its contents are retrieved.
 - **Error Handling:** It includes basic error handling for the `execCommand` calls.
+</details>
 
 
 ## Parameters

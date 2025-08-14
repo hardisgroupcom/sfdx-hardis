@@ -21,7 +21,8 @@ If you intend to run this command in a production environment, you must:
 - Set `runnableInProduction` to `true` in your `export.json` file within the SFDMU workspace.
 - Define `sfdmuCanModify: YOUR_INSTANCE_URL` in your branch-specific configuration file (e.g., `config/branches/.sfdx-hardis.YOUR_BRANCH.yml`) to explicitly authorize data modification for that instance.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation relies heavily on the SFDMU plugin:
 
@@ -31,6 +32,7 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 - **`deleteData` Utility:** The core logic for executing the SFDMU deletion process is encapsulated within the `deleteData` utility function, which takes the SFDMU workspace path and the target username as arguments.
 - **Environment Awareness:** It checks the `isCI` flag to determine whether to run in an interactive mode (prompting for user input) or a non-interactive mode (relying solely on command-line flags).
 - **Required Plugin:** It explicitly lists `sfdmu` as a required plugin, ensuring that the necessary dependency is in place before execution.
+</details>
 
 
 ## Parameters

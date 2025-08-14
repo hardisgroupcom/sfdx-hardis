@@ -33,7 +33,8 @@ Key functionalities:
   - If no input is provided, an interactive menu will prompt you to select files from the \`manifest\` folder.
 - **Customizable Output:** You can define the name and path of the resulting merged \`package.xml\` file using the \`--result\` flag.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -43,6 +44,7 @@ The command's technical implementation involves:
 - **XML Manipulation:** Internally, \`appendPackageXmlFilesContent\` parses the XML of each \`package.xml\`, merges the \`<types>\` and \`<members>\` elements, and then rebuilds the XML structure for the output file.
 - **File System Operations:** It uses \`fs-extra\` to ensure the output directory exists and to write the merged \`package.xml\` file.
 - **WebSocket Communication:** It uses \`WebSocketClient.requestOpenFile\` to open the generated merged \`package.xml\` file in VS Code for immediate review.
+</details>
 `;
 
   public static examples = [

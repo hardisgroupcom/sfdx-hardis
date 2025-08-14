@@ -15,7 +15,8 @@ This command helps identify where custom fields are referenced across various me
 
 !['Find custom fields usage'](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/doc-fieldusage.png)
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command operates by querying Salesforce's Tooling API and Metadata Component Dependency API:
 
@@ -24,6 +25,7 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
 - **Dependency Lookup:** The core of the command involves querying `MetadataComponentDependency` using the IDs of the custom fields. This API provides information about which other metadata components depend on the specified fields.
 - **Data Aggregation & Reporting:** The retrieved data is then processed and formatted into a tabular output, showing the sObject name, field name, field type, dependency type, and dependency name. The results are also generated into various report formats (e.g., CSV, JSON) for further analysis.
 - **SOQL Queries:** It uses `soqlQuery` and `soqlQueryTooling` utilities to execute SOQL queries against the Salesforce org.
+</details>
 
 
 ## Parameters

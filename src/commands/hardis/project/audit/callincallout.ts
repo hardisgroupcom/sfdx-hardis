@@ -30,7 +30,8 @@ Key functionalities:
 - **Test Class Exclusion:** Automatically skips test classes (\`@isTest\`) to focus on production code.
 - **CSV Report Generation:** Generates a CSV report summarizing all detected call-ins and call-outs, including their type, subtype (protocol), file name, namespace, and extracted details.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -41,6 +42,7 @@ The command's technical implementation involves:
 - **Data Structuring:** Organizes the extracted information into a structured format, including the file name, namespace, and detailed matches.
 - **Reporting:** Uses \`generateReports\` to create a CSV report and display a table in the console, summarizing the audit findings.
 - **Filtering:** Filters out files that start with 'hidden' or contain \`@isTest\` to focus on relevant code.
+</details>
 `;
 
   public static examples = ['$ sf hardis:project:audit:callouts'];

@@ -18,7 +18,8 @@ Key functionalities:
   - Sharing Rules (`.sharingRules-meta.xml`)
 - **Content-Based Deletion:** It checks the XML content of these files for the presence of specific tags (e.g., `valueTranslation` for Global Value Set Translations) to determine if they are truly empty or lack relevant data.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -27,6 +28,7 @@ The command's technical implementation involves:
 - **Content Validation:** It then checks the parsed XML object for the existence of specific nested properties (e.g., `xmlContent.GlobalValueSetTranslation.valueTranslation`). If these properties are missing or empty, the file is considered empty.
 - **File Deletion:** If a file is determined to be empty, it is removed from the file system using `fs.remove`.
 - **Logging:** Provides clear messages about which files are being removed and a summary of the total number of items cleaned.
+</details>
 
 
 ## Parameters

@@ -22,7 +22,8 @@ Key functionalities include:
 - **Automated Commit and Push:** Offers to automatically commit and push the generated configuration files to the remote Git repository.
 - **Scheduling Guidance:** Provides instructions and links for scheduling the monitoring job on the Git server.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves a series of Git operations, file system manipulations, and Salesforce CLI interactions:
 
@@ -34,6 +35,7 @@ The command's technical implementation involves a series of Git operations, file
 - **SSL Certificate Generation:** Leverages `generateSSLCertificate` to create the necessary SSL certificates for JWT-based authentication to the Salesforce org.
 - **External Tool Integration:** Requires `openssl` to be installed on the system for SSL certificate generation.
 - **WebSocket Communication:** Uses `WebSocketClient.sendRunSfdxHardisCommandMessage` to restart the command in VS Code if the default org changes, and `WebSocketClient.sendRefreshStatusMessage` to update the status.
+</details>
 
 
 ## Parameters

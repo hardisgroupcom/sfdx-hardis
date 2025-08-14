@@ -26,7 +26,8 @@ It specifically checks for the inactive status of:
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-inactive-metadata/) and can output Grafana, Slack and MsTeams Notifications.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -37,6 +38,7 @@ The command's technical implementation involves:
 - **Report Generation:** It generates a CSV report (`lint-metadatastatus.csv`) containing details of all inactive metadata elements, which can be used for further analysis or record-keeping.
 - **Notification Integration:** It integrates with the `NotifProvider` to send notifications (e.g., to Slack, MS Teams, Grafana) about the presence and count of inactive metadata, making it suitable for automated monitoring in CI/CD pipelines.
 - **Error Handling:** It includes basic error handling for file operations and ensures that the process continues even if some files cannot be read.
+</details>
 
 
 ## Parameters

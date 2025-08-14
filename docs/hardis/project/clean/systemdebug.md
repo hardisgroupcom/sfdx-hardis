@@ -18,7 +18,8 @@ Key functionalities:
   - **Delete (`--delete` flag):** If the `--delete` flag is used, it completely removes the lines containing `System.debug()`.
 - **Exclusion:** Lines containing `NOPMD` are ignored, allowing developers to intentionally keep specific debug statements.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -30,6 +31,7 @@ The command's technical implementation involves:
   - If `System.debug` is found and the `--delete` flag is used, it removes the line entirely.
 - **File Writing:** If any changes are made to a file, the modified content is written back to the file using `fs.writeFile`.
 - **Logging:** Provides a summary of how many files were cleaned.
+</details>
 
 
 ## Parameters

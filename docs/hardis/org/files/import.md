@@ -17,7 +17,8 @@ See this article for how to export files, which is often a prerequisite for impo
 
 [![How to mass download notes and attachments files from a Salesforce org](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-mass-download.jpg)](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -27,6 +28,7 @@ The command's technical implementation involves:
 - **Configuration Loading:** Reads the `export.json` file to get the import configuration, including SOQL queries to identify parent records for file association.
 - **Interactive Prompts:** Uses `selectFilesWorkspace` to allow the user to choose a file import project and `prompts` for confirming the overwrite behavior.
 - **Error Handling:** Includes mechanisms to handle potential errors during the import process, such as API limits or file upload failures.
+</details>
 
 
 ## Parameters

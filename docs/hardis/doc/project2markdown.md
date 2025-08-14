@@ -93,6 +93,7 @@ To just generate HTML pages that you can host anywhere, run `mkdocs build -v || 
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                     |                                        |          |         |
 | diff-only         | boolean | Generate documentation only for changed files (used for monitoring) |                                        |          |         |
 | flags-dir         | option  | undefined                                                           |                                        |          |         |
+| hide-apex-code    | boolean | Hide Apex code in the generated documentation for Apex classes.     |                                        |          |         |
 | json              | boolean | Format output as json.                                              |                                        |          |         |
 | pdf               | boolean | Also generate the documentation in PDF format                       |                                        |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required       |                                        |          |         |
@@ -112,6 +113,10 @@ $ sf hardis:doc:project2markdown --with-history
 
 ```shell
 $ sf hardis:doc:project2markdown --with-history --pdf
+```
+
+```shell
+$ sf hardis:doc:project2markdown --hide-apex-code
 ```
 
 

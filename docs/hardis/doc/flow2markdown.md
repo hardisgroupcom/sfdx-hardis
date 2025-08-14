@@ -19,7 +19,8 @@ Key features include:
 - **PDF Export (Optional):** Allows for the generation of the documentation in PDF format for easy sharing and archiving.
 - **Interactive File Selection:** If no input file is specified, the command interactively prompts the user to select Flow files.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command leverages several internal utilities and external libraries to achieve its functionality:
 
@@ -31,6 +32,7 @@ The command leverages several internal utilities and external libraries to achie
 - **File System Operations:** Uses 	exttt{fs-extra} for file system operations like reading input files, creating output directories (e.g., 	exttt{docs/flows/}), and writing Markdown and PDF files.
 - **Salesforce CLI Integration:** Uses 	exttt{@salesforce/sf-plugins-core} for command-line parsing and 	exttt{setConnectionVariables} for Salesforce organization context.
 - **WebSocket Communication:** Interacts with a WebSocket client (	exttt{WebSocketClient.requestOpenFile}) to open the generated Markdown file in a VS Code tab, enhancing user experience.
+</details>
 
 
 ## Parameters

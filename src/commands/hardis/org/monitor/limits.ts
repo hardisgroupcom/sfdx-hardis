@@ -36,7 +36,8 @@ Key functionalities:
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-org-limits/) and can output Grafana, Slack and MsTeams Notifications.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -46,6 +47,7 @@ The command's technical implementation involves:
 - **Report Generation:** It uses \`generateCsvFile\` to create the CSV report of org limits.
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and detailed metrics for each limit, which can be consumed by monitoring dashboards like Grafana.
 - **Exit Code Management:** Sets the process exit code to 1 if any limit is in an 'error' state, indicating a critical issue.
+</details>
 `;
 
   public static examples = ['$ sf hardis:org:monitor:limits'];

@@ -21,7 +21,8 @@ Key functionalities:
 - **CSV Report Generation:** Generates a CSV file containing all the retrieved license information, suitable for detailed analysis.
 - **Notifications:** Sends notifications to configured channels (e.g., Grafana, Slack, MS Teams) with a summary of license usage, including lists of active and used licenses.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -31,6 +32,7 @@ The command's technical implementation involves:
 - **Report Generation:** It uses `generateCsvFile` to create the CSV report of license data.
 - **Notification Integration:** It integrates with the `NotifProvider` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
 - **User Feedback:** Provides clear messages to the user about the license extraction process and the used licenses.
+</details>
 
 
 ## Parameters

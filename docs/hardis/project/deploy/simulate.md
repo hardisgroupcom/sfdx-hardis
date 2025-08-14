@@ -22,7 +22,8 @@ Key functionalities:
 
 This command is primarily used by the VS Code Extension to provide immediate feedback to developers.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -30,6 +31,7 @@ The command's technical implementation involves:
 - **Salesforce CLI Integration:** It constructs and executes the `sf project deploy start` command with the `--dry-run` and `--ignore-conflicts` flags. The `--source-dir` and `--target-org` flags are dynamically populated based on user input.
 - **`wrapSfdxCoreCommand`:** This utility is used to execute the Salesforce CLI command and capture its output.
 - **Connection Variables:** Ensures Salesforce connection variables are set using `setConnectionVariables`.
+</details>
 
 
 ## Parameters

@@ -21,7 +21,8 @@ See this article for a practical example:
 
 [![How to mass download notes and attachments files from a Salesforce org](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-mass-download.jpg)](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -32,6 +33,7 @@ The command's technical implementation involves:
 - **Configuration Loading:** Reads the `export.json` file to get the export configuration. It also allows for interactive overriding of these settings.
 - **Interactive Prompts:** Uses `selectFilesWorkspace` to allow the user to choose a file export project and `promptFilesExportConfiguration` for customizing export options.
 - **Error Handling:** Includes mechanisms to handle potential errors during the export process, such as network issues or API limits.
+</details>
 
 
 ## Parameters

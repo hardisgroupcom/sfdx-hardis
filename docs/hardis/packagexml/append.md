@@ -16,7 +16,8 @@ Key functionalities:
 - **Single Output File:** Merges the content of all input files into a specified output `package.xml` file.
 - **Metadata Consolidation:** Combines the `<types>` and `<members>` elements from all input files, ensuring that all unique metadata components are included in the resulting file.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -25,6 +26,7 @@ The command's technical implementation involves:
 - **XML Building:** After consolidating the metadata, it rebuilds the XML structure for the output `package.xml` file.
 - **File Writing:** The newly constructed XML content is then written to the specified output file.
 - **`appendPackageXmlFilesContent` Utility:** The core logic for this operation is encapsulated within the `appendPackageXmlFilesContent` utility function, which handles the parsing, merging, and writing of the `package.xml` files.
+</details>
 
 
 ## Parameters

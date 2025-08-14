@@ -28,7 +28,8 @@ Key functionalities:
 - **Hidden Content Detection:** Identifies files whose content starts with (hidden). This is a convention used by some Salesforce tools to mark temporary or internal files.
 - **Component Folder Removal:** If a hidden file is part of a Lightning Web Component (LWC) or Aura component folder, the entire component folder is removed to ensure a complete cleanup.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -39,6 +40,7 @@ The command's technical implementation involves:
   - If it's within an lwc or aura component folder, the entire component folder is removed using \`fs.remove\`.
   - Otherwise, only the individual file is removed.
 - **Logging:** Provides clear messages about which items are being removed and a summary of the total number of hidden items cleaned.
+</details>
 `;
 
   public static examples = ['$ sf hardis:project:clean:hiddenitems'];

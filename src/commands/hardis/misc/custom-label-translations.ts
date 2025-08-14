@@ -35,7 +35,8 @@ Key functionalities:
 - **Interactive Prompts:** If neither \`--label\` nor \`--lwc\` is provided, the command will interactively prompt you to choose between selecting specific labels or extracting from an LWC.
 - **Output Generation:** For each language found in your project's \`translations\` folder, it generates a new \`.translation-meta.xml\` file containing only the extracted custom labels and their translations. These files are placed in a timestamped output directory.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -49,6 +50,7 @@ The command's technical implementation involves:
 - **Interactive Prompts:** The \`prompts\` library is used extensively to guide the user through the selection of extraction methods (labels or LWC) and specific labels/components.
 - **File System Operations:** It uses \`fs-extra\` for creating output directories (\`extracted-translations/\`) and writing the generated translation files.
 - **WebSocket Communication:** It uses \`WebSocketClient.requestOpenFile\` to open the output directory in VS Code for easy access to the generated files.
+</details>
 `;
 
   public static examples = [

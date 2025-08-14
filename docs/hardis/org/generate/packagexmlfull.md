@@ -15,9 +15,10 @@ Key functionalities:
 - **Full Org Metadata Retrieval:** Connects to a specified Salesforce org (or prompts for one if not provided) and retrieves a complete list of all metadata types and their members.
 - **Managed Package Inclusion:** Unlike standard source retrieval, this command explicitly includes metadata from managed packages, providing a truly comprehensive `package.xml`.
 - **Customizable Output:** Allows you to specify the output file path for the generated `package.xml`.
-- **Interactive Org Selection:** If no target org is specified, it interactively prompts the user to choose an org.
+- **Interactive Org Selection:** If no target org is specified, it interactively prompts the user to choose an org. (or use --no-prompt to skip this step)
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
@@ -26,6 +27,7 @@ The command's technical implementation involves:
 - **XML Generation:** It dynamically builds the XML structure of the `package.xml` file, including the `types` and `members` elements for all retrieved metadata.
 - **File System Operations:** It writes the generated `package.xml` file to the specified output path.
 - **Interactive Prompts:** Uses `promptOrgUsernameDefault` to guide the user in selecting the target Salesforce org.
+</details>
 
 
 ## Parameters
@@ -35,6 +37,7 @@ The command's technical implementation involves:
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                        |          |         |
 | flags-dir         | option  | undefined                                                     |                                        |          |         |
 | json              | boolean | Format output as json.                                        |                                        |          |         |
+| no-prompt<br/>-n  | boolean | Do not prompt for org username, use the default one           |                                        |          |         |
 | outputfile        | option  | Output package.xml file                                       |                                        |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required |                                        |          |         |
 | target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |

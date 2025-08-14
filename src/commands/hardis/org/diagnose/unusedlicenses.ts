@@ -40,7 +40,8 @@ Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for th
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-licenses/) and can output Grafana, Slack and MsTeams Notifications.
 
-## Technical explanations
+<details>
+<summary>Technical explanations</summary>
 
 The command's technical implementation involves extensive querying of Salesforce objects and data correlation:
 
@@ -51,6 +52,7 @@ The command's technical implementation involves extensive querying of Salesforce
 - **Report Generation:** It uses \`generateCsvFile\` to create the CSV report of unused PSLAs.
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
 - **User Interaction:** Uses \`prompts\` for interactive confirmation before performing deletion operations.
+</details>
 `;
 
   public static examples = ['$ sf hardis:org:diagnose:unusedlicenses', '$ sf hardis:org:diagnose:unusedlicenses --fix'];
