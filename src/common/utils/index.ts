@@ -19,7 +19,7 @@ import { prompts } from './prompts.js';
 import { encryptFile } from '../cryptoUtils.js';
 import { deployMetadatas, shortenLogLines } from './deployUtils.js';
 import { isProductionOrg, promptProfiles, promptUserEmail } from './orgUtils.js';
-import { WebSocketClient } from '../websocketClient.js';
+import { LogType, WebSocketClient } from '../websocketClient.js';
 import moment from 'moment';
 import { writeXmlFile } from './xmlUtils.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
@@ -37,13 +37,13 @@ export function git(options: any = { output: false, displayCommand: true }): Sim
     stdout.on('data', (data) => {
       logCommand();
       if (options.output) {
-        uxLog(this, c.italic(c.grey(data)));
+        uxLog("other", this, c.italic(c.grey(data)));
       }
     });
     stderr.on('data', (data) => {
       logCommand();
       if (options.output) {
-        uxLog(this, c.italic(c.yellow(data)));
+        uxLog("other", this, c.italic(c.yellow(data)));
       }
     });
     function logCommand() {
@@ -52,7 +52,23 @@ export function git(options: any = { output: false, displayCommand: true }): Sim
         const gitArgsStr = (gitArgs || []).join(' ');
         if (!(gitArgsStr.includes('branch -v') || gitArgsStr.includes('config --list --show-origin --null'))) {
           if (options.displayCommand) {
-            uxLog(this, `[command] ${c.bold(c.bgWhite(c.grey(command + ' ' + gitArgsStr)))}`);
+            if (WebSocketClient.isAlive()) {
+              WebSocketClient.sendCommandSubCommandStartMessage(
+                command + ' ' + gitArgsStr,
+                process.cwd(),
+                options,
+              );
+            }
+            uxLog("other", this, `[command] ${c.bold(c.bgWhite(c.blue(command + ' ' + gitArgsStr)))}`);
+            if (WebSocketClient.isAlive()) {
+              WebSocketClient.sendCommandSubCommandEndMessage(
+                command + ' ' + gitArgsStr,
+                process.cwd(),
+                options,
+                true,
+                '',
+              );
+            }
           }
         }
       }
@@ -105,7 +121,7 @@ export async function getGitRepoUrl() {
 export async function gitHasLocalUpdates(options = { show: false }) {
   const changes = await git().status();
   if (options.show) {
-    uxLog(this, c.cyan(JSON.stringify(changes)));
+    uxLog("action", this, c.cyan(JSON.stringify(changes)));
   }
   return changes.files.length > 0;
 }
@@ -125,6 +141,7 @@ export async function checkSfdxPlugin(pluginName: string) {
   }
   if (!(pluginsStdout || '').includes(pluginName)) {
     uxLog(
+      "warning",
       this,
       c.yellow(
         `[dependencies] Installing SF CLI plugin ${c.green(
@@ -155,6 +172,7 @@ export async function checkAppDependency(appName) {
     })
     .catch(() => {
       uxLog(
+        "error",
         this,
         c.red(
           `You need ${c.bold(appName)} to be locally installed to run this command.\n${dependenciesInstallLink[appName] || ''
@@ -201,7 +219,7 @@ export async function promptInstanceUrl(
     return true;
   });
   if (defaultOrgChoice != null) {
-    choices.push({
+    choices.unshift({
       title: `♻️ ${defaultOrgChoice.instanceUrl}`,
       description: 'Your current default org',
       value: defaultOrgChoice.instanceUrl,
@@ -211,6 +229,7 @@ export async function promptInstanceUrl(
     type: 'select',
     name: 'value',
     message: c.cyanBright(`What is the base URL or the org you want to connect to, as ${alias} ?`),
+    description: 'Select the Salesforce environment type or specify a custom URL for authentication',
     choices: choices,
     initial: 1,
   });
@@ -223,7 +242,9 @@ export async function promptInstanceUrl(
   const customUrlResponse = await prompts({
     type: 'text',
     name: 'value',
-    message: c.cyanBright('Please input the base URL of the salesforce org (ex: https://myclient.my.salesforce.com)'),
+    message: c.cyanBright('Please input the base URL of the salesforce org'),
+    description: 'Enter the custom Salesforce org URL for authentication',
+    placeholder: 'Ex: https://myclient.my.salesforce.com',
   });
   const urlCustom = (customUrlResponse?.value || "").replace('.lightning.force.com', '.my.salesforce.com');
   return urlCustom;
@@ -246,8 +267,10 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
           type: 'text',
           name: 'value',
           message: c.cyanBright(
-            'What is the URL of your git repository ? example: https://gitlab.hardis-group.com/busalesforce/monclient/monclient-org-monitoring.git'
+            'What is the URL of your git repository ?'
           ),
+          description: 'Enter the full URL of the git repository to clone',
+          placeholder: 'Ex: https://gitlab.hardis-group.com/busalesforce/monclient/monclient-org-monitoring.git',
         });
         cloneUrl = cloneUrlPrompt.value;
       }
@@ -257,7 +280,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
           resolve(null);
         });
       });
-      uxLog(this, `Git repository cloned. ${c.yellow('Please run again the same command :)')}`);
+      uxLog("other", this, `Git repository cloned. ${c.yellow('Please run again the same command :)')}`);
       process.exit(0);
     } else {
       throw new SfError('You need to be at the root of a git repository to run this command');
@@ -313,6 +336,7 @@ export async function selectGitBranch(
     type: 'select',
     name: 'value',
     message: options.message || 'Please select a Git branch',
+    description: 'Choose a git branch to work with',
     choices: branches.all.map((branchName) => {
       return { title: branchName.replace('origin/', ''), value: branchName.replace('origin/', '') };
     }),
@@ -321,7 +345,7 @@ export async function selectGitBranch(
   // Checkout & pull if requested
   if (options.checkOutPull && branch !== "ALL BRANCHES") {
     await gitCheckOutRemote(branch);
-    WebSocketClient.sendMessage({ event: 'refreshStatus' });
+    WebSocketClient.sendRefreshStatusMessage();
   }
   return branch;
 }
@@ -387,8 +411,8 @@ export async function checkGitClean(options: any) {
         await execCommand('git add --all', this, { output: true, fail: true });
         await execCommand('git stash', this, { output: true, fail: true });
       } catch (e) {
-        uxLog(this, c.yellow(c.bold("You might need to run the following command in Powershell launched as Administrator")));
-        uxLog(this, c.yellow(c.bold("git config --system core.longpaths true")));
+        uxLog("warning", this, c.yellow(c.bold("You might need to run the following command in Powershell launched as Administrator")));
+        uxLog("warning", this, c.yellow(c.bold("git config --system core.longpaths true")));
         throw e;
       }
     } else {
@@ -451,10 +475,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
         type: 'multiselect',
         name: 'files',
         message: c.cyanBright(
-          `Please select ${c.red('carefully')} the ${c.bgWhite(
+          `Please select the ${c.bgWhite(
             c.red(c.bold(group.label.toUpperCase()))
           )} files you want to commit (save)}`
         ),
+        description: 'Choose files to include in the git commit. Be careful with your selection.',
         choices: matchingFiles.map((fileStatus: FileStatusResult) => {
           return {
             title: `(${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`,
@@ -480,6 +505,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
     }
     if (filesFiltered.length > 0) {
       uxLog(
+        "log",
         this,
         c.grey(
           'The following list of files has not been proposed for selection\n' +
@@ -511,6 +537,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
       type: 'select',
       name: 'addFiles',
       message: c.cyanBright(`Do you confirm that you want to add the following list of files ?\n${confirmationText}`),
+      description: 'Confirm your file selection for the git commit',
       choices: [
         { title: 'Yes, my selection is complete !', value: 'yes' },
         { title: 'No, I want to select again', value: 'no' },
@@ -533,11 +560,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
     }
     // exit
     else {
-      uxLog(this, 'Cancelled by user');
+      uxLog("other", this, 'Cancelled by user');
       process.exit(0);
     }
   } else {
-    uxLog(this, c.cyan('There is no new file to commit'));
+    uxLog("action", this, c.cyan('There is no new file to commit'));
   }
   return result;
 }
@@ -608,7 +635,7 @@ export async function execCommand(
     spinner: true,
   }
 ): Promise<any> {
-  let commandLog = `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.grey(command)))}`;
+  let commandLog = `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.blue(command)))}`;
   const execOptions: any = { maxBuffer: 10000 * 10000 };
   if (options.cwd) {
     execOptions.cwd = options.cwd;
@@ -628,23 +655,49 @@ export async function execCommand(
     env.JSFORCE_LOG_LEVEL = "";
   }
   execOptions.env = env;
+  if (command.startsWith('sf hardis')) {
+    execOptions.env.NO_NEW_COMMAND_TAB = 'true';
+  }
   let commandResult: any = {};
   const output = options.output !== null ? options.output : !commandThis?.argv?.includes('--json');
   let spinner: any;
   if (output && !(options.spinner === false)) {
     spinner = ora({ text: commandLog, spinner: 'moon' }).start();
   } else {
-    uxLog(this, commandLog);
+    uxLog("other", this, commandLog);
+  }
+  if (WebSocketClient.isAlive()) {
+    WebSocketClient.sendCommandSubCommandStartMessage(
+      command,
+      execOptions.cwd || process.cwd(),
+      options,
+    );
   }
   try {
     commandResult = await exec(command, execOptions);
     if (spinner) {
       spinner.succeed(commandLog);
     }
+    if (WebSocketClient.isAlive()) {
+      WebSocketClient.sendCommandSubCommandEndMessage(
+        command,
+        execOptions.cwd || process.cwd(),
+        options,
+        true,
+        commandResult,
+      );
+    }
   } catch (e) {
     if (spinner) {
       spinner.fail(commandLog);
     }
+    WebSocketClient.sendCommandSubCommandEndMessage(
+      command,
+      execOptions.cwd || process.cwd(),
+      options,
+      false,
+      e,
+    );
     // Display error in red if not json
     if (!command.includes('--json') || options.fail) {
       const strErr = shortenLogLines(`${(e as any).stdout}\n${(e as any).stderr}`);
@@ -661,11 +714,12 @@ export async function execCommand(
             ((e as any).stdout + (e as any).stderr).includes(options.retry.retryStringConstraint))
         ) {
           uxLog(
+            "warning",
             commandThis,
             c.yellow(`Retry command: ${options.retry.tryCount} on ${options.retry.retryMaxAttempts || 1}`)
           );
           if (options.retry.retryDelay) {
-            uxLog(this, `Waiting ${options.retry.retryDelay} seconds before retrying command`);
+            uxLog("other", this, `Waiting ${options.retry.retryDelay} seconds before retrying command`);
             await new Promise((resolve) => setTimeout(resolve, options.retry.retryDelay * 1000));
           }
           return await execCommand(command, commandThis, options);
@@ -682,7 +736,7 @@ export async function execCommand(
   }
   // Display output if requested, for better user understanding of the logs
   if (options.output || options.debug) {
-    uxLog(commandThis, c.italic(c.grey(shortenLogLines(commandResult.stdout))));
+    uxLog("other", commandThis, c.italic(c.grey(shortenLogLines(commandResult.stdout))));
   }
   // Return status 0 if not --json
   if (!command.includes('--json')) {
@@ -699,7 +753,7 @@ export async function execCommand(
       throw new SfError(c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`));
     }
     if (commandResult.stderr && commandResult.stderr.length > 2) {
-      uxLog(this, '[sfdx-hardis][WARNING] stderr: ' + c.yellow(commandResult.stderr));
+      uxLog("other", this, '[sfdx-hardis][WARNING] stderr: ' + c.yellow(commandResult.stderr));
     }
     return parsedResult;
   } catch (e) {
@@ -747,7 +801,7 @@ export function elapseEnd(text: string, commandThis: any = this) {
   if (elapseAll[text]) {
     const elapsed = Number(process.hrtime.bigint() - elapseAll[text]);
     const ms = elapsed / 1000000;
-    uxLog(commandThis, c.grey(c.italic(text + ' ' + moment().startOf('day').milliseconds(ms).format('H:mm:ss.SSS'))));
+    uxLog("log", commandThis, c.grey(c.italic(text + ' ' + moment().startOf('day').milliseconds(ms).format('H:mm:ss.SSS'))));
     delete elapseAll[text];
   }
 }
@@ -799,7 +853,7 @@ export async function filterPackageXml(
 
   // Keep only namespaces
   if ((options.keepOnlyNamespaces || []).length > 0) {
-    uxLog(this, c.grey(`Keeping items from namespaces ${options.keepOnlyNamespaces.join(',')} ...`));
+    uxLog("log", this, c.grey(`Keeping items from namespaces ${options.keepOnlyNamespaces.join(',')} ...`));
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       type.members = type.members.filter((member: string) => {
         const containsNamespace = options.keepOnlyNamespaces.filter((ns: string) => member.startsWith(ns) || member.includes(`${ns}__`)).length > 0;
@@ -814,7 +868,7 @@ export async function filterPackageXml(
 
   // Remove namespaces
   if ((options.removeNamespaces || []).length > 0) {
-    uxLog(this, c.grey(`Removing items from namespaces ${options.removeNamespaces.join(',')} ...`));
+    uxLog("log", this, c.grey(`Removing items from namespaces ${options.removeNamespaces.join(',')} ...`));
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       type.members = type.members.filter((member: string) => {
         const startsWithNamespace = options.removeNamespaces.filter((ns: string) => member.startsWith(ns)).length > 0;
@@ -862,7 +916,7 @@ export async function filterPackageXml(
           );
         });
         if (wildcardDestructiveTypes.length > 0) {
-          uxLog(this, c.grey(`Removed ${type.name[0]} type`));
+          uxLog("log", this, c.grey(`Removed ${type.name[0]} type`));
         }
         return wildcardDestructiveTypes.length === 0;
       });
@@ -895,10 +949,10 @@ export async function filterPackageXml(
     // Remove metadata types (named, and empty ones)
     manifest.Package.types = manifest.Package.types.filter((type: any) => {
       if (options.keepMetadataTypes.includes(type.name[0])) {
-        uxLog(this, c.grey('kept ' + type.name[0]));
+        uxLog("log", this, c.grey('kept ' + type.name[0]));
         return true;
       }
-      uxLog(this, c.grey('removed ' + type.name[0]));
+      uxLog("log", this, c.grey('removed ' + type.name[0]));
       return false;
     });
   }
@@ -973,6 +1027,7 @@ export async function catchMatches(catcher: any, file: string, fileText: string,
       });
       if (commandThis.debug) {
         uxLog(
+          "other",
           commandThis,
           `[${fileName}]: Match [${matches}] occurrences of [${catcher.type}/${catcher.name}] with catcher [${catcherLabel}]`
         );
@@ -1048,9 +1103,9 @@ export async function generateReports(
   resultSorted: any[],
   columns: any[],
   commandThis: any,
-  options: any = { logFileName: null, logLabel: 'Generated report files:' }
+  options: any = { logFileName: null, logLabel: 'Report' }
 ): Promise<any[]> {
-  const logLabel = options.logLabel || 'Generated report files:';
+  const logLabel = options.logLabel || 'Report';
   let logFileName = options.logFileName || null;
   if (!logFileName) {
     logFileName = 'sfdx-hardis-' + commandThis.id.substr(commandThis.id.lastIndexOf(':') + 1);
@@ -1068,9 +1123,12 @@ export async function generateReports(
   await fs.writeFile(reportFile, csv, 'utf8');
   // Trigger command to open CSV file in VsCode extension
   try {
-    WebSocketClient.requestOpenFile(reportFile);
+    if (!WebSocketClient.isAliveWithLwcUI()) {
+      WebSocketClient.requestOpenFile(reportFile);
+    }
+    WebSocketClient.sendReportFileMessage(reportFile, `${logLabel} (CSV)`, "report");
   } catch (e: any) {
-    uxLog(commandThis, c.yellow(`[sfdx-hardis] Error opening file in VsCode: ${e.message}`));
+    uxLog("warning", commandThis, c.yellow(`[sfdx-hardis] Error opening file in VsCode: ${e.message}`));
   }
   const excel = csvStringify(resultSorted, {
     delimiter: '\t',
@@ -1078,22 +1136,25 @@ export async function generateReports(
     columns,
   });
   await fs.writeFile(reportFileExcel, excel, 'utf8');
-  uxLog(commandThis, c.cyan(logLabel));
-  uxLog(commandThis, c.cyan(`- CSV: ${reportFile}`));
-  uxLog(commandThis, c.cyan(`- XLS: ${reportFileExcel}`));
+  WebSocketClient.sendReportFileMessage(reportFileExcel, `${logLabel} (CSV)`, "report");
+  uxLog("action", commandThis, c.cyan(logLabel));
+  uxLog("log", commandThis, c.grey(c.cyan(`- CSV: ${reportFile}`)));
+  uxLog("log", commandThis, c.grey(c.cyan(`- XLS: ${reportFileExcel}`)));
   return [
     { type: 'csv', file: reportFile },
     { type: 'xls', file: reportFileExcel },
   ];
 }
 
-export function uxLog(commandThis: any, text: string, sensitive = false) {
-  text = text.includes('[sfdx-hardis]') ? text : '[sfdx-hardis]' + (text.startsWith('[') ? '' : ' ') + text;
+export function uxLog(logType: LogType, commandThis: any, textInit: string, sensitive = false) {
+  const text = textInit.includes('[sfdx-hardis]') ? textInit : '[sfdx-hardis]' + (textInit.startsWith('[') ? '' : ' ') + textInit;
+  // Console log
   if (commandThis?.ux) {
     commandThis.ux.log(text);
   } else if (!(globalThis?.processArgv || process?.argv || "").includes('--json')) {
     console.log(text);
   }
+  // File log
   if (globalThis.hardisLogFileStream) {
     if (sensitive) {
       globalThis.hardisLogFileStream.write('OBFUSCATED LOG LINE\n');
@@ -1102,6 +1163,92 @@ export function uxLog(commandThis: any, text: string, sensitive = false) {
       globalThis.hardisLogFileStream.write(stripAnsi(text) + '\n');
     }
   }
+  // VsCode sfdx-hardis log
+  if (WebSocketClient.isAlive() && !text.includes('[command]') && !text.includes('[NotifProvider]')) {
+    if (sensitive) {
+      WebSocketClient.sendCommandLogLineMessage('OBFUSCATED LOG LINE');
+    }
+    else {
+      let isQuestion = false;
+      let textToSend = textInit;
+      if (textInit.includes("Look up in VsCode")) {
+        // Remove "Look up in VsCode" and everything after 
+        textToSend = textInit.split("Look up in VsCode")[0].trim();
+        isQuestion = true;
+      }
+
+      // Send message to WebSocket client
+      if (logType !== "other") {
+        WebSocketClient.sendCommandLogLineMessage(textToSend, logType, isQuestion);
+      }
+    }
+  }
+}
+
+export function uxLogTable(commandThis: any, tableData: any[], columnsOrder: string[] = []) {
+  // Build a table string as tableData is an array of objects compliant with console.table
+  // This string will be used to display the table in the console
+  if (!tableData || tableData.length === 0) {
+    return;
+  }
+  let columns: string[];
+  let displayData = tableData;
+  if (columnsOrder && columnsOrder.length > 0) {
+    columns = columnsOrder;
+    // Rebuild each row to contain only the columns in columnsOrder, in order
+    displayData = tableData.map(row => {
+      const newRow: any = {};
+      for (const col of columnsOrder) {
+        newRow[col] = row[col] ?? '';
+      }
+      return newRow;
+    });
+  } else {
+    columns = Object.keys(tableData[0]);
+    displayData = tableData;
+  }
+  // Compute column widths based on the longest value in each column
+  const colWidths = columns.map(col =>
+    Math.max(
+      col.length,
+      ...displayData.map(row => String(row[col] ?? '').replace(/\n/g, ' ').length)
+    )
+  );
+  // Build header
+  const header = columns
+    .map((col, i) => c.bold(col.padEnd(colWidths[i])))
+    .join(' | ');
+  // Build separator
+  const separator = colWidths.map(w => '-'.repeat(w)).join('-|-');
+  // Build rows
+  const rows = displayData.map(row =>
+    columns
+      .map((col, i) => {
+        let val = row[col] ?? '';
+        if (typeof val === 'boolean') {
+          val = bool2emoji(val);
+        }
+        return String(val).replace(/\n/g, ' ').padEnd(colWidths[i]);
+      })
+      .join(' | ')
+  );
+  const tableString = [header, separator, ...rows].join('\n');
+  uxLog("other", commandThis, c.italic("\n" + tableString));
+  // Send table to WebSocket client
+  if (WebSocketClient.isAliveWithLwcUI()) {
+    const maxLen = 20;
+    let sendRows = displayData;
+    if (displayData.length > maxLen) {
+      sendRows = displayData.slice(0, maxLen);
+      sendRows.push({
+        sfdxHardisTruncatedMessage: `Truncated to the first ${maxLen} lines on ${displayData.length} total lines, see full report for more details.`,
+        returnedNumber: maxLen,
+        totalNumber: displayData.length
+      });
+    }
+    WebSocketClient.sendCommandLogLineMessage(JSON.stringify(sendRows), 'table');
+  }
+
 }
 
 export function bool2emoji(bool: boolean): string {
@@ -1124,9 +1271,9 @@ export async function copyLocalSfdxInfo() {
       dereference: true,
       overwrite: true,
     });
-    // uxLog(this, `[cache] Copied SF CLI cache in ${TMP_COPY_FOLDER} for later reuse`);
+    // uxLog("other", this, `[cache] Copied SF CLI cache in ${TMP_COPY_FOLDER} for later reuse`);
     // const files = fs.readdirSync(TMP_COPY_FOLDER, {withFileTypes: true}).map(item => item.name);
-    // uxLog(this, '[cache]' + JSON.stringify(files));
+    // uxLog("other", this, '[cache]' + JSON.stringify(files));
   }
 }
 
@@ -1140,9 +1287,9 @@ export async function restoreLocalSfdxInfo() {
       dereference: true,
       overwrite: false,
     });
-    // uxLog(this, '[cache] Restored cache for CI');
+    // uxLog("other", this, '[cache] Restored cache for CI');
     // const files = fs.readdirSync(SFDX_LOCAL_FOLDER, {withFileTypes: true}).map(item => item.name);
-    // uxLog(this, '[cache]' + JSON.stringify(files));
+    // uxLog("other", this, '[cache]' + JSON.stringify(files));
     RESTORED = true;
   }
 }
@@ -1155,7 +1302,7 @@ export async function generateSSLCertificate(
   conn: any,
   options: any
 ) {
-  uxLog(commandThis, 'Generating SSL certificate...');
+  uxLog("action", commandThis, c.cyan('Generating SSL certificate...'));
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
   process.chdir(tmpDir);
@@ -1186,43 +1333,57 @@ export async function generateSSLCertificate(
     name: 'value',
     initial: true,
     message: c.cyanBright(
-      "Do you want sfdx-hardis to configure the SFDX connected app on your org ? (say yes if you don't know)"
+      "Do you want sfdx-hardis to configure the SFDX connected app on your org ?"
     ),
+    description: 'Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.',
   });
   if (confirmResponse.value === true) {
+    uxLog("action", commandThis, c.cyan('Please configure both below variables in your CI/CD platform:'));
     uxLog(
+      "log",
       commandThis,
-      c.cyanBright(
-        `You must configure CI variable ${c.green(
-          c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
-        )} with value ${c.bold(c.green(consumerKey))}`
-      ),
+      c.grey(
+        c.cyanBright(
+          `${c.green(
+            c.bold(`- SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
+          )} with value ${c.bold(c.green(consumerKey))}`
+        )),
       true
     );
     uxLog(
+      "log",
       commandThis,
-      c.cyanBright(
-        `You must configure CI variable ${c.green(
-          c.bold(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)
+      c.grey(c.cyanBright(
+        `${c.green(
+          c.bold(`- SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)
         )} with value ${c.bold(c.green(encryptionKey))}`
-      ),
+      )),
       true
     );
     uxLog(
+      "log",
       commandThis,
-      c.yellow(`Help to configure CI variables are here: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
+      c.grey(c.yellow(`Help to configure CI variables is here: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`))
     );
     await prompts({
       type: 'confirm',
-      message: c.cyanBright('Hit ENTER when the CI/CD variables are set (check info in the console below)'),
+      message: c.cyanBright('Please confirm when variables have been set'),
+      description: 'Confirm when you have configured the required CI/CD environment variables in your deployment platform',
     });
+    // Build default app name from branch name by replacing all non-alphanumeric characters with empty string
+    let appNameDflt = branchName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+    if (appNameDflt.length > 20) {
+      appNameDflt = appNameDflt.substring(0, 20);
+    }
     // Request info for deployment
     const promptResponses = await prompts([
       {
         type: 'text',
         name: 'appName',
-        initial: 'sfdxhardis' + Math.floor(Math.random() * 9) + 1,
-        message: c.cyanBright('How would you like to name the Connected App (ex: sfdx_hardis) ?'),
+        initial: 'sfdxhardis' + appNameDflt,
+        message: c.cyanBright('How would you like to name the Connected App ?'),
+        description: 'Name for the Connected App that will be created in your Salesforce org',
+        placeholder: 'Ex: sfdx_hardis',
       },
     ]);
     const contactEmail = await promptUserEmail(
@@ -1238,7 +1399,7 @@ export async function generateSSLCertificate(
     const connectedAppMetadata = `<?xml version="1.0" encoding="UTF-8"?>
 <ConnectedApp xmlns="http://soap.sforce.com/2006/04/metadata">
   <contactEmail>${contactEmail}</contactEmail>
-  <label>${promptResponses.appName.replace(/\s/g, '_') || 'sfdx-hardis'}</label>
+  <label>${promptResponses.appName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() || 'sfdxhardis'}</label>
   <oauthConfig>
       <callbackUrl>http://localhost:1717/OauthRedirect</callbackUrl>
       <certificate>${crtContent}</certificate>
@@ -1277,6 +1438,7 @@ export async function generateSSLCertificate(
     // Deploy metadatas
     try {
       uxLog(
+        "action",
         commandThis,
         c.cyan(
           `Deploying Connected App ${c.bold(promptResponses.appName)} into target org ${options.targetUsername || ''
@@ -1284,10 +1446,11 @@ export async function generateSSLCertificate(
         )
       );
       uxLog(
+        "log",
         commandThis,
-        c.yellow(
+        c.grey(c.yellow(
           `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file :)`
-        )
+        ))
       );
       const isProduction = await isProductionOrg(options.targetUsername || null, { conn: conn });
       const deployRes = await deployMetadatas({
@@ -1296,18 +1459,20 @@ export async function generateSSLCertificate(
         targetUsername: options.targetUsername ? options.targetUsername : null,
       });
       console.assert(deployRes.status === 0, c.red('[sfdx-hardis] Failed to deploy metadatas'));
-      uxLog(commandThis, c.cyan(`Successfully deployed ${c.green(promptResponses.appName)} Connected App`));
+      uxLog("action", commandThis, c.cyan(`Successfully deployed ${c.green(promptResponses.appName)} Connected App`));
       await fs.remove(tmpDirMd);
       await fs.remove(crtFile);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       uxLog(
+        "error",
         commandThis,
         c.red(
           'Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name'
         )
       );
       uxLog(
+        "warning",
         commandThis,
         c.yellow(`
 ${c.bold('MANUAL INSTRUCTIONS')}
@@ -1324,34 +1489,47 @@ If this is a Test class issue (production env), you may have to create manually 
         message: c.cyanBright(
           'You need to manually configure the connected app. Follow the MANUAL INSTRUCTIONS in the console, then continue here'
         ),
+        description: 'Confirm when you have completed the manual Connected App configuration steps',
       });
     }
   } else {
     // Tell infos to install manually
-    uxLog(commandThis, c.yellow('Now you can configure the SF CLI connected app'));
+    uxLog("action", commandThis, c.cyan('Now you can configure the SF CLI connected app'));
     uxLog(
+      "log",
       commandThis,
-      `Follow instructions here: ${c.bold(
-        'https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm'
-      )}`
+      c.grey(
+        `Follow instructions here: ${c.bold(
+          'https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm'
+        )}`
+      )
     );
     uxLog(
+      "log",
       commandThis,
-      `Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(
-        `then delete ${crtFile} for security`
-      )}`
+      c.grey(
+        `Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(
+          `then delete ${crtFile} for security`
+        )}`
+      )
     );
     uxLog(
+      "log",
       commandThis,
-      `- configure CI variable ${c.green(
-        `SFDX_CLIENT_ID_${branchName.toUpperCase()}`
-      )} with value of ConsumerKey on Connected App configuration page`
+      c.grey(
+        `- configure CI variable ${c.green(
+          `SFDX_CLIENT_ID_${branchName.toUpperCase()}`
+        )} with value of ConsumerKey on Connected App configuration page`
+      )
     );
     uxLog(
+      "log",
       commandThis,
-      `- configure CI variable ${c.green(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)} with value ${c.green(
-        encryptionKey
-      )} key`
+      c.grey(
+        `- configure CI variable ${c.green(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)} with value ${c.green(
+          encryptionKey
+        )} key`
+      )
     );
   }
 }
@@ -1382,7 +1560,7 @@ const ansiRegex = new RegExp(ansiPattern, 'g');
 
 export function stripAnsi(str: string) {
   if (typeof str !== 'string') {
-    uxLog(this, c.yellow('Warning: stripAnsi expects a string'));
+    uxLog("warning", this, c.yellow('Warning: stripAnsi expects a string'));
     return '';
   }
   return str.replace(ansiRegex, '');
@@ -1411,11 +1589,11 @@ export function replaceJsonInString(inputString: string, jsonObject: any): strin
       const jsonString = JSON.stringify(jsonObject, null, 2);
       return stripAnsi(inputString).replace(jsonMatch[0], jsonString);
     } catch (err: any) {
-      uxLog(this, c.yellow('Warning: unable to replace JSON in string:' + err.message));
+      uxLog("warning", this, c.yellow('Warning: unable to replace JSON in string:' + err.message));
       return inputString;
     }
   }
-  uxLog(this, c.yellow('Warning: unable to find json to replace in string'));
+  uxLog("warning", this, c.yellow('Warning: unable to find json to replace in string'));
   return inputString;
 }
 

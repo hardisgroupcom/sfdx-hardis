@@ -93,7 +93,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Clean XML elements matching patterns`));
+    uxLog("log", this, c.grey(`Clean XML elements matching patterns`));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const cleanXmlPatterns = await this.buildCleanXmlPatterns();
@@ -113,7 +113,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
           const nodes = xpathSelect(xpathItem, doc as any);
           for (const node of nodes as Node[]) {
             await this.removeXPath(xpathItem, doc, node);
-            uxLog(this, c.grey(`Removed xpath ${xpathItem} from ${xmlFile}`));
+            uxLog("log", this, c.grey(`Removed xpath ${xpathItem} from ${xmlFile}`));
             updated = true;
             counter++;
           }
@@ -127,7 +127,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
 
     // Summary
     const msg = `Updated ${c.green(c.bold(counter))} XML files`;
-    uxLog(this, c.cyan(msg));
+    uxLog("log", this, c.grey(msg));
     // Propose to add in permanent configuration
     if (this.globPattern && this.xpath) {
       await this.manageAddToPermanentConfig(this.globPattern, this.xpath);
@@ -139,7 +139,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   public async buildCleanXmlPatterns() {
     // Input parameters
     if (this.globPattern && this.xpath) {
-      uxLog(this, c.cyan('Using configuration from input arguments...'));
+      uxLog("log", this, c.grey('Using configuration from input arguments...'));
       return [
         {
           globPattern: this.globPattern,
@@ -149,8 +149,9 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
     }
     // Stored config
     uxLog(
+      "log",
       this,
-      c.cyan(`Using configuration from property ${c.bold('cleanXmlPatterns')} in .sfdx-hardis.yml config file...`)
+      c.grey(`Using configuration from property ${c.bold('cleanXmlPatterns')} in .sfdx-hardis.yml config file...`)
     );
     const config = await getConfig('branch');
     return config.cleanXmlPatterns || [];
@@ -199,6 +200,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
         message: c.cyanBright(
           `Do you want to ALWAYS apply removal of xpath ${xpath} from files of pattern ${globPattern} ?`
         ),
+        description: 'Choose whether to save this xpath removal as a permanent cleaning rule',
       });
       if (addConfigRes.value === true) {
         let updated = false;

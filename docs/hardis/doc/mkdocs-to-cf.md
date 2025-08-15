@@ -3,34 +3,8 @@
 
 ## Description
 
-Generates MkDocs HTML pages and upload them to Cloudflare as a static pages
-
-This command performs the following operations:
-
-- Generates MkDocs HTML pages (using locally installed mkdocs-material, or using mkdocs docker image)
-- Creates a Cloudflare pages app
-- Assigns a policy restricting access to the application
-- Opens the new WebSite in the default browser (only if not in CI context)
-
-Note: the documentation must have been previously generated using "sf hardis:doc:project2markdown --with-history"
-
-You can:
-
-- Override default styles by customizing mkdocs.yml
-
-More info on [Documentation section](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/)
-
-
-| Variable                                 | Description                                       |          Default           |
-|:-----------------------------------------|:--------------------------------------------------|:--------------------------:|
-| `CLOUDFLARE_EMAIL`                       | Cloudflare account email                          |     <!--- Required -->     |
-| `CLOUDFLARE_API_TOKEN`                   | Cloudflare API token                              |     <!--- Required -->     |
-| `CLOUDFLARE_ACCOUNT_ID`                  | Cloudflare account                                |     <!--- Required -->     |
-| `CLOUDFLARE_PROJECT_NAME`                | Project name, that will also be used for site URL | Built from git branch name |
-| `CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE`   | Cloudflare default login method type              |        `onetimepin`        |
-| `CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN` | Cloudflare default access email domain            |      `@cloudity.com`       |
-| `CLOUDFLARE_EXTRA_ACCESS_POLICY_ID_LIST` | Policies to assign to every application access    |     <!--- Optional -->     |
-
+## Command Behavior**Generates MkDocs HTML pages and uploads them to Cloudflare as a static site, secured with Cloudflare Access.**This command automates the deployment of your project's documentation (built with MkDocs) to Cloudflare Pages, making it accessible and secure. It handles the entire process from HTML generation to Cloudflare configuration.Key operations performed:- **MkDocs HTML Generation:** Builds the MkDocs project into static HTML pages. It can use a locally installed `mkdocs-material` or a `mkdocs` Docker image.- **Cloudflare Pages Project Creation/Update:** Creates a new Cloudflare Pages project if one doesn't exist for your documentation, or updates an existing one.- **Cloudflare Access Policy Assignment:** Assigns a policy to restrict access to the deployed application, ensuring only authorized users can view your documentation.- **Cloudflare Access Application Setup:** Configures a Cloudflare Access application for the deployed site, integrating it with your Zero Trust policies.- **HTML Page Upload:** Deploys the generated HTML pages to Cloudflare Pages.- **Browser Opening (Non-CI):** Opens the newly deployed website in your default browser if the command is not run in a CI/CD environment.**Prerequisite:** The documentation must have been previously generated using `sf hardis:doc:project2markdown --with-history`.**Customization:** You can override default styles by customizing your `mkdocs.yml` file.More information can be found in the [Documentation section](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/).**Environment Variables for Cloudflare Configuration:**| Variable                                  | Description                                                              | Default                               || :---------------------------------------- | :----------------------------------------------------------------------- | :------------------------------------: || `CLOUDFLARE_EMAIL`                        | Cloudflare account email                                                 | _Required_                            || `CLOUDFLARE_API_TOKEN`                    | Cloudflare API token                                                     | _Required_                            || `CLOUDFLARE_ACCOUNT_ID`                   | Cloudflare account ID                                                    | _Required_                            || `CLOUDFLARE_PROJECT_NAME`                 | Project name, also used for the site URL                                 | Built from Git branch name            || `CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE`    | Cloudflare default login method type                                     | `onetimepin`                          || `CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN`  | Cloudflare default access email domain                                   | `@cloudity.com`                       || `CLOUDFLARE_EXTRA_ACCESS_POLICY_ID_LIST`  | Comma-separated list of additional policy IDs to assign to the application | _Optional_                            |<details>
+<summary>Technical explanations</summary>The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:- **MkDocs Integration:** It calls `generateMkDocsHTML()` to execute the MkDocs build process, which converts Markdown files into static HTML. It checks for the presence of `mkdocs.yml` to ensure it's a valid MkDocs project.- **Cloudflare API Interaction:** It uses the `cloudflare` npm package to interact with the Cloudflare API. This involves:  - **Authentication:** Initializes the Cloudflare client using `CLOUDFLARE_EMAIL`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID` environment variables.  - **Pages Project Management:** Calls `client.pages.projects.get()` to check for an existing project and `client.pages.projects.create()` to create a new one if needed.  - **Access Policy Management:** Lists existing access policies (`client.zeroTrust.access.policies.list()`) and creates a new one (`client.zeroTrust.access.policies.create()`) if the required policy doesn't exist. It configures the policy with email domain restrictions and a default login method.  - **Access Application Management:** Lists existing access applications (`client.zeroTrust.access.applications.list()`) and creates a new one (`client.zeroTrust.access.applications.create()`) for the deployed site. It then updates the application to associate it with the created access policy.- **Git Integration:** Retrieves the current Git branch name using `getCurrentGitBranch()` to construct the Cloudflare project name and branch for deployment.- **Wrangler CLI:** Uses the `wrangler` CLI (Cloudflare's developer tool) to deploy the generated HTML pages to Cloudflare Pages via `wrangler pages deploy`.- **Environment Variable Management:** Reads various environment variables to configure Cloudflare settings and project names.- **Error Handling:** Includes checks for missing `mkdocs.yml` and Cloudflare environment variables, throwing `SfError` when necessary.</details>
 
 
 ## Parameters
@@ -46,7 +20,7 @@ More info on [Documentation section](https://sfdx-hardis.cloudity.com/salesforce
 ## Examples
 
 ```shell
-sf hardis:doc:mkdocs-to-cf
+$ sf hardis:doc:mkdocs-to-cf
 ```
 
 

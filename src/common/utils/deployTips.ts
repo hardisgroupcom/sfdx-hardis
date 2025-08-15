@@ -308,7 +308,7 @@ async function findAiTip(errorLine: any): Promise<AiResponse | null> {
   alreadyProcessedErrors.push(errorLine);
   if (AiProvider.isAiAvailable()) {
     if (alreadyProcessedErrors.length > parseInt(process.env.MAX_DEPLOYMENT_TIPS_AI_CALLS || "20")) {
-      uxLog(this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
+      uxLog("warning", this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
       return null;
     }
     const prompt = AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": errorLine });
@@ -316,7 +316,7 @@ async function findAiTip(errorLine: any): Promise<AiResponse | null> {
       const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_SOLVE_DEPLOYMENT_ERROR");
       return aiResponse;
     } catch (e) {
-      uxLog(this, c.yellow("[AI] Error while calling OpenAI: " + (e as Error).message));
+      uxLog("warning", this, c.yellow("[AI] Error while calling OpenAI: " + (e as Error).message));
     }
   }
   return null;

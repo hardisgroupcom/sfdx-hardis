@@ -52,6 +52,8 @@ export default class ProjectCreate extends SfCommand<any> {
       name: 'orgType',
       type: 'select',
       message: 'To perform implementation, will your project use scratch org or source tracked sandboxes only ?',
+      description: 'Choose the type of development orgs your project will use',
+      placeholder: 'Select org type',
       choices: [
         {
           title: 'Scratch orgs only',
@@ -102,7 +104,7 @@ export default class ProjectCreate extends SfCommand<any> {
       await fs.rm(path.join(process.cwd(), projectName), { recursive: true });
     }
     // Copy default project files
-    uxLog(this, 'Copying default files...');
+    uxLog("action", this, 'Copying default files...');
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/ci', '.'), process.cwd(), { overwrite: false });
 
     if (setProjectName) {
@@ -118,6 +120,8 @@ export default class ProjectCreate extends SfCommand<any> {
         message:
           'What is the name of your default development branch ? (Examples: if you manage RUN and BUILD, it can be integration. If you manage RUN only, it can be preprod)',
         initial: 'integration',
+        description: 'Enter the name of your main development branch',
+        placeholder: 'Ex: integration',
       });
       await setConfig('project', { developmentBranch: devBranchRes.devBranch });
     }
@@ -130,10 +134,11 @@ export default class ProjectCreate extends SfCommand<any> {
     await setConfig('project', {
       autoCleanTypes: defaultAutoCleanTypes
     });
-    uxLog(this, c.yellow(`autoCleanTypes ${defaultAutoCleanTypes.join(",")} has been activated on the new project.`));
-    uxLog(this, c.bold(c.yellow(`If you install CI/CD on an existing org with many rights in Profiles, you might remove "minimizeProfiles" from .sfdx-hardis.yml autoCleanTypes property `)));
+    uxLog("warning", this, c.yellow(`autoCleanTypes ${defaultAutoCleanTypes.join(",")} has been activated on the new project.`));
+    uxLog("warning", this, c.bold(c.yellow(`If you install CI/CD on an existing org with many rights in Profiles, you might remove "minimizeProfiles" from .sfdx-hardis.yml autoCleanTypes property `)));
     // Message instructions
     uxLog(
+      "action",
       this,
       c.cyan(
         `SFDX Project has been created. You can continue the steps in documentation at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-home/`
@@ -141,7 +146,7 @@ export default class ProjectCreate extends SfCommand<any> {
     );
 
     // Trigger commands refresh on VsCode WebSocket Client
-    WebSocketClient.sendMessage({ event: 'refreshCommands' });
+    WebSocketClient.sendRefreshCommandsMessage();
 
     // Return an object to be displayed with --json
     return { outputString: 'Created SFDX Project' };

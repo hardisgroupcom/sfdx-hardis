@@ -23,6 +23,7 @@
     "**/access.ts",
     "**/audittrail.ts",
     "**/auth.ts",
+    "**/deployTips.ts",
     "**/freeze.ts",
     "**/legacyapi.ts",
     "**/unfreeze.ts",

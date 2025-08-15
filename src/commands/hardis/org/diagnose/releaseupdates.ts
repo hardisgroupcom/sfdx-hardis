@@ -3,13 +3,12 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { uxLog } from '../../../../common/utils/index.js';
+import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import moment from 'moment';
-import columnify from 'columnify';
 import { CONSTANTS } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
@@ -66,7 +65,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
     const conn = flags['target-org'].getConnection();
-    uxLog(this, c.cyan(`Extracting Release Updates and checks to perform in ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(`Extracting Release Updates and checks to perform in ${conn.instanceUrl} ...`));
 
     // Fetch ReleaseUpdate records
     const releaseUpdatesQuery =
@@ -125,10 +124,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           DueDate: moment(releaseUpdate.DueDate).format('ll')
         }
       })
-      uxLog(this, c.yellow(notifText + "\n" + columnify(releaseUpdatesLight)));
+
+      uxLog("action", this, c.cyan(notifText));
+      uxLogTable(this, releaseUpdatesLight);
     }
     else {
-      uxLog(this, c.green("No release updates has been found"));
+      uxLog("success", this, c.green("No release updates has been found"));
     }
 
     // Return an object to be displayed with --json

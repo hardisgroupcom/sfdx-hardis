@@ -18,7 +18,33 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class ScratchPoolRefresh extends SfCommand<any> {
   public static title = 'Refresh scratch org pool';
 
-  public static description = 'Create enough scratch orgs to fill the pool';
+  public static description = `## Command Behavior
+
+**Refreshes a scratch org pool by creating new scratch orgs to fill the pool and deleting expired ones.**
+
+This command is designed to maintain a healthy and adequately sized scratch org pool, ensuring that developers and CI/CD pipelines always have access to ready-to-use scratch orgs. It automates the lifecycle management of scratch orgs within the pool.
+
+Key functionalities:
+
+- **Expired Org Cleanup:** Identifies and deletes scratch orgs from the pool that are nearing their expiration date (configurable via \`minScratchOrgRemainingDays\` in \`.sfdx-hardis.yml\`).
+- **Pool Replenishment:** Creates new scratch orgs to replace expired ones and to reach the \`maxScratchOrgsNumber\` defined in the pool configuration.
+- **Parallel Creation:** New scratch orgs are created in parallel using child processes, optimizing the replenishment process.
+- **Authentication Handling:** Authenticates to scratch orgs before deletion or creation, ensuring proper access.
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **Configuration Loading:** It retrieves the \`poolConfig\` from the project's \`.sfdx-hardis.yml\` file to get parameters like \`maxScratchOrgsNumber\`, \`maxScratchOrgsNumberToCreateOnce\`, and \`minScratchOrgRemainingDays\`.
+- **Pool Storage Interaction:** It uses \`getPoolStorage\` and \`setPoolStorage\` to interact with the configured storage service (e.g., Salesforce Custom Object, Redis) to retrieve and update the list of scratch orgs in the pool.
+- **Expiration Check:** It calculates the remaining days for each scratch org in the pool using moment and flags those below the \`minScratchOrgRemainingDays\` threshold for deletion.
+- **Scratch Org Deletion:** For expired orgs, it authenticates to them using \`authenticateWithSfdxUrlStore\` and then executes \`sf org delete scratch\` via \`execCommand\`.
+- **Scratch Org Creation:** To replenish the pool, it spawns new child processes that run the \`sf hardis:scratch:create --pool\` command. This allows for parallel creation of multiple scratch orgs.
+- **Error Handling:** It includes error handling for scratch org creation failures, logging them and updating the pool storage accordingly.
+- **Logging:** Provides detailed logs about the status of scratch orgs (kept, deleted, created, failed creations) and a summary of the refresh operation.
+</details>
+`;
 
   public static examples = ['$ sf hardis:scratch:pool:refresh'];
 
@@ -52,6 +78,7 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
     const config = await getConfig('project');
     if (config.poolConfig == null) {
       uxLog(
+        "warning",
         this,
         c.yellow('Configuration file must contain a poolConfig property') +
         '\n' +
@@ -62,7 +89,7 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
 
     const maxScratchOrgsNumber = config.poolConfig.maxScratchOrgsNumber || 5;
     const maxScratchOrgsNumberToCreateOnce = config.poolConfig.maxScratchOrgsNumberToCreateOnce || 10;
-    uxLog(this, c.grey('Pool config: ' + JSON.stringify(config.poolConfig)));
+    uxLog("log", this, c.grey('Pool config: ' + JSON.stringify(config.poolConfig)));
 
     // Get pool storage
     const poolStorage = await getPoolStorage({
@@ -83,6 +110,7 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
         scratchOrg.daysBeforeExpiration = daysBeforeExpiration;
         scratchOrgsToDelete.push(scratchOrg);
         uxLog(
+          "log",
           this,
           c.grey(
             `Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be deleted as it has only ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`
@@ -91,6 +119,7 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
         return false;
       }
       uxLog(
+        "log",
         this,
         c.grey(
           `Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be kept as it still has ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`
@@ -112,6 +141,7 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
         const deleteCommand = `sf org delete scratch --no-prompt --target-org ${scratchOrgToDelete.scratchOrgUsername}`;
         await execCommand(deleteCommand, this, { fail: false, debug: this.debugMode, output: true });
         uxLog(
+          "action",
           this,
           c.cyan(
             `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${scratchOrgToDelete?.authFileJson?.result?.instanceUrl
@@ -123,7 +153,7 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
 
     // Create new scratch orgs
     const numberOfOrgsToCreate = Math.min(maxScratchOrgsNumber - scratchOrgs.length, maxScratchOrgsNumberToCreateOnce);
-    uxLog(this, c.cyan('Creating ' + numberOfOrgsToCreate + ' scratch orgs...'));
+    uxLog("action", this, c.cyan('Creating ' + numberOfOrgsToCreate + ' scratch orgs...'));
     let numberCreated = 0;
     let numberfailed = 0;
     const subProcesses: any[] = [];
@@ -134,7 +164,7 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
         const commandArgs = ['hardis:scratch:create', '--pool', '--json'];
         const sfdxPath = await which('sf');
         const child = spawn(sfdxPath || 'sf', commandArgs, { cwd: process.cwd(), env: process.env });
-        uxLog(this, '[pool] ' + c.grey(`hardis:scratch:create (${i}) started`));
+        uxLog("log", this, '[pool] ' + c.grey(`hardis:scratch:create (${i}) started`));
         // handle errors
         child.on('error', (err) => {
           resolve({ code: 1, result: { error: err } });
@@ -144,15 +174,15 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
         child.stdout.on('data', (data) => {
           stdout += data.toString();
           if (this.debugMode === true) {
-            uxLog(this, data.toString());
+            uxLog("other", this, data.toString());
           }
         });
         // Handle end of command
         child.on('close', async (code) => {
           const colorFunc = code === 0 ? c.green : c.red;
-          uxLog(this, '[pool] ' + colorFunc(`hardis:scratch:create (${i}) exited with code ${c.bold(code)}`));
+          uxLog("action", this, '[pool] ' + colorFunc(`hardis:scratch:create (${i}) exited with code ${c.bold(code)}`));
           if (code !== 0) {
-            uxLog(this, `Return code is not 0 (${i}): ` + c.grey(stdout));
+            uxLog("warning", this, `Return code is not 0 (${i}): ` + c.grey(stdout));
             numberfailed++;
           } else {
             numberCreated++;
@@ -164,7 +194,7 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (e) {
             result = { result: { status: 1, rawLog: stdout } };
-            uxLog(this, c.yellow(`Error parsing stdout (${i}): ` + stdout));
+            uxLog("warning", this, c.yellow(`Error parsing stdout (${i}): ` + stdout));
           }
           await addScratchOrgToPool(result.result || result);
           resolve({ code, result: result });
@@ -176,11 +206,12 @@ export default class ScratchPoolRefresh extends SfCommand<any> {
     // Await parallel scratch org creations are completed
     const createResults = await Promise.all(subProcesses);
     if (this.debugMode) {
-      uxLog(this, c.grey('Create results: \n' + JSON.stringify(createResults, null, 2)));
+      uxLog("log", this, c.grey('Create results: \n' + JSON.stringify(createResults, null, 2)));
     }
 
     const colorFunc = numberCreated === numberOfOrgsToCreate ? c.green : numberCreated === 0 ? c.red : c.yellow;
     uxLog(
+      "action",
       this,
       '[pool] ' +
       colorFunc(`Created ${c.bold(numberCreated)} scratch orgs (${c.bold(numberfailed)} creations(s) failed)`)

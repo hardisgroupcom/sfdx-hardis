@@ -32,7 +32,7 @@ autoCleanTypes:
 ## Examples
 
 ```shell
-sf hardis:project:clean:sensitive-metadatas
+$ sf hardis:project:clean:sensitive-metadatas
 ```
 
 

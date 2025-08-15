@@ -34,96 +34,38 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class NewTask extends SfCommand<any> {
-  public static title = 'New work task';
+  public static title = 'New User Story';
 
-  public static description = `Assisted menu to start working on a Salesforce task.
+  public static description = `
+## Command Behavior
 
-Advanced instructions in [Create New Task documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-create-new-task/)
+**Assisted menu to start working on a Salesforce User Story, streamlining the setup of your development environment.**
 
-At the end of the command, it will allow you to work on either a scratch org or a sandbox, depending on your choices.
+This command guides you through the process of preparing your local environment and a Salesforce org for a new development or configuration based User Story. It automates several steps, ensuring consistency and adherence to project standards.
 
-Under the hood, it can:
+Key features include:
 
-- Make **git pull** to be up to date with target branch
-- Create **new git branch** with formatted name (you can override the choices using .sfdx-hardis.yml property **branchPrefixChoices**)
-- Create and initialize a scratch org or a source-tracked sandbox (config can be defined using \`config/.sfdx-hardis.yml\`):
-- (and for scratch org only for now):
-  - **Install packages**
-      - Use property \`installedPackages\`
-    - **Push sources**
-    - **Assign permission sets**
-      - Use property \`initPermissionSets\`
-    - **Run apex initialization scripts**
-      - Use property \`scratchOrgInitApexScripts\`
-    - **Load data**
-      - Use property \`dataPackages\`
+- **Git Branch Management:** Ensures your local Git repository is up-to-date with the target branch and creates a new Git branch with a formatted name based on your User Story details. Branch naming conventions can be customized via the \`branchPrefixChoices\` property in \`.sfdx-hardis.yml\`.
+- **Org Provisioning & Initialization:** Facilitates the creation and initialization of either a scratch org or a source-tracked sandbox. The configuration for org initialization (e.g., package installation, source push, permission set assignments, Apex script execution, data loading) can be defined in \`config/.sfdx-hardis.yml\
+- **Project-Specific Configuration:** Supports defining multiple target branches (\`availableTargetBranches\`) and projects (\`availableProjects\`) in \`.sfdx-hardis.yml\`, allowing for tailored User Stories workflows.
+- **User Story Name Validation:** Enforces User Story name formatting using \`newTaskNameRegex\` and provides examples via \`newTaskNameRegexExample\
+- **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
 
-## Override .sfdx-hardis.yml config
+Advanced instructions are available in the [Create New User Story documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-create-new-task/).
 
-### availableTargetBranches
+<details>
+<summary>Technical explanations</summary>
 
-By default, there is only one target branch (value of property **developmentBranch**).
+The command's logic orchestrates various underlying processes:
 
-You can define multiple target branches (for the future Pull Request) by setting the property **availableTargetBranches** in your .sfdx-hardis.yml file.
-
-The selected branch will checked out and be used as base to create the user new feature branch.
-
-Examples:
-
-\`\`\`yaml
-availableTargetBranches:
-  - integration
-  - preprod
-\`\`\`
-
-\`\`\`yaml
-availableTargetBranches:
-  - integration,Select this to work from the integration branch (project stream)
-  - preprod,Select this to work from the preprod branch (run stream)
-\`\`\`
-
-### availableProjects
-
-You can add a first question "What is the project your task is for" if you define a property **availableProjects**
-
-The select will be used as first part of the git branch name. (ex: france/features/dev/JIRA123-webservice-get-account)
-
-Examples:
-
-\`\`\`yaml
-availableProjects:
-  - build
-  - run
-  - some-big-project
-  - france
-  - uk
-\`\`\`
-
-\`\`\`yaml
-availableProjects:
-  - build,Select this to work on the build project
-  - run,Select this to work on the run project
-  - some-big-project,Select this to work on the some big project
-  - france,Select this to work on the France project
-  - uk,Select this to work on the UK project
-\`\`\`
-
-### newTaskNameRegex
-
-If you want to force a specific format for the task name, you can define a property **newTaskNameRegex** in your .sfdx-hardis.yml file.
-
-Please also define a property **newTaskNameRegexExample** to give an example to the user.
-
-Example:
-
-\`\`\`yaml
-newTaskNameRegex: '^[A-Z]+-[0-9]+ .*'
-newTaskNameRegexExample: 'MYPROJECT-123 Update account status validation rule'
-\`\`\`
-
-### sharedDevSandboxes
-
-If contributors can share dev sandboxes, let's not ask them if they want to overwrite their colleagues' changes when creating a new task :)
+- **Git Operations:** Utilizes \`checkGitClean\`, \`ensureGitBranch\`, \`gitCheckOutRemote\`, and \`git().pull()\` to manage Git repository state and branches.
+- **Interactive Prompts:** Leverages the \`prompts\` library to gather user input for User Story type, source types, and User Story names.
+- **Configuration Management:** Reads and applies project-specific configurations from \`.sfdx-hardis.yml\` using \`getConfig\` and \`setConfig\
+- **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including \`initApexScripts\`, \`initOrgData\`, \`initOrgMetadatas\`, \`initPermissionSetAssignments\`, \`installPackages\`, and \`makeSureOrgIsConnected\
+- **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., \`sf config set target-org\`, \`sf org open\`, \`sf project delete tracking\`) via \`execCommand\` and \`execSfdxJson\
+- **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling \`ScratchCreate.run\` or \`SandboxCreate.run\` as needed.
+- **WebSocket Communication:** Sends refresh status messages via \`WebSocketClient.sendRefreshStatusMessage()\` to update connected VS Code clients.
+</details>
 `;
 
   public static examples = ['$ sf hardis:work:new'];
@@ -158,8 +100,8 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
     const { flags } = await this.parse(NewTask);
     this.debugMode = flags.debug || false;
 
-    uxLog(this, c.cyan('This tool will assist you to create a new task (dev or config) with Hardis CI/CD'));
-    uxLog(this, c.cyan("When you don't know what to answer, you can let the default value and push ENTER"));
+    uxLog("action", this, c.cyan('This tool will assist you to create a new User Story (dev or config) with SFDX Hardis CI/CD'));
+    uxLog("log", this, c.grey("When you don't know what to answer, you can let the default value and push ENTER"));
 
     // Make sure the git status is clean, to not delete uncommitted updates
     await checkGitClean({ allowStash: true });
@@ -189,7 +131,9 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
       const projectResponse = await prompts({
         type: 'select',
         name: 'project',
-        message: c.cyanBright('Please select the project your task is for'),
+        message: c.cyanBright('Please select the project your User Story is for'),
+        description: 'Choose which project this new work item belongs to',
+        placeholder: 'Select a project',
         choices: availableProjects.map((project: string) => {
           return {
             title: project.includes(',') ? project.split(',').join(' - ') : project,
@@ -205,14 +149,18 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
       {
         type: 'select',
         name: 'branch',
-        message: c.cyanBright('What is the type of the task you want to do ?'),
+        message: c.cyanBright('What is the type of the User Story you want to do ?'),
+        description: 'Select the category of work that best describes your User Story',
+        placeholder: 'Select User Story type',
         initial: 0,
         choices: branchPrefixChoices,
       },
       {
         type: 'select',
         name: 'sources',
-        message: c.cyanBright('What type(s) of Salesforce updates will you have to perform for this task ?'),
+        message: c.cyanBright('What type(s) of Salesforce updates will you implement to perform this User Story ?'),
+        description: 'Choose the type of changes you will make to help set up the appropriate development environment',
+        placeholder: 'Select update type',
         initial: 0,
         choices: [
           {
@@ -238,9 +186,9 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
     const taskName = await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
 
     // Checkout development main branch
-    const branchName = `${projectBranchPart}${response.branch || 'features'}/${response.sources || 'dev'
-      }/${taskName}`;
+    const branchName = `${projectBranchPart}${response.branch || 'features'}/${response.sources || 'dev'}/${taskName}`;
     uxLog(
+      "action",
       this,
       c.cyan(`Checking out the most recent version of branch ${c.bold(this.targetBranch)} from git server...`)
     );
@@ -248,7 +196,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
     // Pull latest version of target branch
     await git().pull();
     // Create new branch
-    uxLog(this, c.cyan(`Creating new git branch ${c.green(branchName)}...`));
+    uxLog("action", this, c.cyan(`Creating new git branch ${c.green(branchName)}...`));
     await ensureGitBranch(branchName);
     // Update config if necessary
     if (config.developmentBranch !== this.targetBranch && (config.availableTargetBranches || null) == null) {
@@ -258,6 +206,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         message: c.cyanBright(
           `Do you want to update your default target git branch to ${c.green(this.targetBranch)} ?`
         ),
+        description: 'Set this branch as your default target for future work items',
         default: false,
       });
       if (updateDefaultBranchRes.value === true) {
@@ -306,6 +255,8 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
       type: 'select',
       name: 'value',
       message: c.cyanBright(`Do you want to use a scratch org or a tracked sandbox org ?`),
+      description: 'Choose the type of Salesforce org to use for your development work',
+      placeholder: 'Select org type',
       initial: 0,
       choices: orgTypeChoices,
     });
@@ -319,12 +270,12 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
       // source tracked sandbox
       await this.selectOrCreateSandbox(branchName, config, flags, selectedOrgType);
     } else {
-      uxLog(this, c.yellow(`No org selected... I hope you know what you are doing, don't break anything :)`));
+      uxLog("warning", this, c.yellow(`No org selected... I hope you know what you are doing, don't break anything :)`));
     }
 
-    uxLog(this, c.cyan(`You are now ready to work in branch ${c.green(branchName)} :)`));
+    uxLog("action", this, c.cyan(`You are now ready to work in branch ${c.green(branchName)} :)`));
     // Return an object to be displayed with --json
-    return { outputString: 'Created new task' };
+    return { outputString: 'Created new User Story' };
   }
 
   async promptTaskName(validationRegex: string | null, taskNameExample: string | null) {
@@ -335,15 +286,18 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
       type: 'text',
       name: 'taskName',
       message: c.cyanBright(
-        `What is the name of your new task ? (example: ${taskNameExample}). Please avoid accents or special characters`
+        `What is the name of your new User Story ? Please avoid accents or special characters`
       ),
+      description: 'Enter a descriptive name for your User Story that will be used in the git branch name',
+      placeholder: `Ex: ${taskNameExample}`,
     });
     const taskName = taskResponse.taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-');
     if (validationRegex != null && !new RegExp(validationRegex).test(taskName)) {
       uxLog(
+        "warning",
         this,
         c.yellow(
-          `The task name ${c.bold(taskName)} does not match the expected pattern ${c.bold(validationRegex)}. Please try again`
+          `The User Story name ${c.bold(taskName)} does not match the expected pattern ${c.bold(validationRegex)}. Please try again`
         )
       );
       return this.promptTaskName(validationRegex, taskNameExample);
@@ -374,6 +328,8 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
       type: 'select',
       name: 'value',
       message: c.cyanBright(`Please select a scratch org to use for your branch ${c.green(branchName)}`),
+      description: 'Choose whether to create a new scratch org or reuse an existing one',
+      placeholder: 'Select scratch org option',
       initial: 0,
       choices: [
         ...baseChoices,
@@ -410,6 +366,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         fail: true,
       });
       uxLog(
+        "action",
         this,
         c.cyan(
           `Selected and opening scratch org ${c.green(scratchResponse.value.instanceUrl)} with user ${c.green(
@@ -418,13 +375,14 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         )
       );
       // Open selected org
+      uxLog("action", this, c.cyan('Opening scratch org in browser...'));
       await execSfdxJson('sf org open', this, {
         fail: true,
         output: false,
         debug: this.debugMode,
       });
       // Trigger a status refresh on VsCode WebSocket Client
-      WebSocketClient.sendMessage({ event: 'refreshStatus' });
+      WebSocketClient.sendRefreshStatusMessage();
     }
   }
 
@@ -449,8 +407,10 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         type: 'select',
         name: 'value',
         message: c.cyanBright(
-          `Do you want to update the sandbox according to git branch "${this.targetBranch}" current state ? (packages,SOURCES,permission set assignments,apex scripts,initial data)`
+          `Do you want to update the sandbox according to git branch "${this.targetBranch}" current state ?`
         ),
+        description: 'Choose whether to sync your sandbox with the latest changes from the target branch (packages, sources, permission sets, apex scripts, initial data)',
+        placeholder: 'Select sync option',
         choices: [
           {
             title: '🧑‍🤝‍🧑 No, continue working on my current sandbox state',
@@ -460,7 +420,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
           {
             title: '☢️ Yes, please try to update my sandbox !',
             value: 'init',
-            description: `Integrate new updates from the parent branch "${this.targetBranch}" before working on your new task. WARNING: Will overwrite uncommitted changes in your org !`,
+            description: `Integrate new updates from the parent branch "${this.targetBranch}" before working on your new User Story. WARNING: Will overwrite uncommitted changes in your org !`,
           },
         ],
       });
@@ -472,6 +432,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
           message: c.cyanBright(
             `Are you really sure you want to update the dev sandbox with the state of git branch ${this.targetBranch} ? This will overwrite setup updates that you or other users have not committed yet`
           ),
+          description: 'Confirm that you want to reset your sandbox to match the target branch state',
         });
         initSandbox = promptConfirm.value === true;
       }
@@ -484,7 +445,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
           }
           try {
             // Continue initialization even if push did not work... it could work and be not such a problem :)
-            uxLog(this, c.cyan('Resetting local SF Cli tracking...'));
+            uxLog("action", this, c.cyan('Resetting local SF Cli tracking...'));
             await execCommand(`sf project delete tracking --no-prompt -o ${orgUsername}`, this, {
               fail: false,
               output: true,
@@ -501,10 +462,12 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         }
         if (initSandboxErr) {
           uxLog(
+            "log",
             this,
             c.grey('Error(s) while initializing sandbox: ' + initSandboxErr.message + '\n' + initSandboxErr.stack)
           );
           uxLog(
+            "warning",
             this,
             c.yellow(
               'Your sandbox may not be completely initialized from git. You can send the error above to your release manager'
@@ -513,15 +476,17 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         }
         if (initSourcesErr) {
           uxLog(
+            "log",
             this,
             c.grey('Error(s) while pushing sources to sandbox: ' + initSourcesErr.message + '\n' + initSourcesErr.stack)
           );
           uxLog(
+            "warning",
             this,
             c.yellow(`If you really want your sandbox to be up to date with branch ${c.bold(this.targetBranch)}, you may:
   - ${c.bold(
               'Fix the errors'
-            )} (probably by manually updating the target sandbox in setup), then run new task again and select again the same sandbox
+            )} (probably by manually updating the target sandbox in setup), then run "New User Story" again and select again the same sandbox
   - ${c.bold('Refresh your sandbox')} (ask your release manager if you don't know how)
   Else, you can start working now (but beware of conflicts ^^):)
         `)
@@ -531,6 +496,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
     }
     // Open of if not already open
     if (openOrg === true) {
+      uxLog("action", this, c.cyan(`Opening sandbox org so you can work in it...`));
       await execSfdxJson('sf org open', this, {
         fail: true,
         output: false,
@@ -539,12 +505,15 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
     }
 
     // Trigger a status refresh on VsCode WebSocket Client
-    WebSocketClient.sendMessage({ event: 'refreshStatus' });
+    WebSocketClient.sendRefreshStatusMessage();
   }
 
   private async promptSandbox(flags: any, branchName: any) {
     const hubOrgUsername = flags['target-dev-hub']?.getUsername();
     const sandboxOrgList = await MetadataUtils.listLocalOrgs('devSandbox', { devHubUsername: hubOrgUsername });
+    const defaultSandbox = sandboxOrgList.find((org: any) => {
+      return org.username === flags['target-org']?.getUsername();
+    });
     const sandboxResponse = await prompts({
       type: 'select',
       name: 'value',
@@ -553,7 +522,9 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
           branchName
         )} (if you want to avoid conflicts, you should often refresh your sandbox)`
       ),
-      initial: 0,
+      description: 'Choose an existing sandbox or connect to a new one for this branch',
+      placeholder: 'Select sandbox',
+      default: defaultSandbox ? defaultSandbox : undefined,
       choices: [
         ...[
           {
@@ -568,8 +539,8 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
         ],
         ...sandboxOrgList.map((sandboxOrg: any) => {
           return {
-            title: `☁️ Use sandbox org ${c.yellow(sandboxOrg.username || sandboxOrg.alias)}`,
-            description: sandboxOrg.instanceUrl,
+            title: sandboxOrg.instanceUrl,
+            description: `☁️ Use sandbox org ${c.yellow(sandboxOrg.username || sandboxOrg.alias)}`,
             value: sandboxOrg,
           };
         }),
@@ -604,6 +575,7 @@ If contributors can share dev sandboxes, let's not ask them if they want to over
     // Selected sandbox from list
     else {
       await makeSureOrgIsConnected(sandboxResponse.value);
+      uxLog("action", this, c.cyan(`Setting sandbox org ${c.green(sandboxResponse.value.instanceUrl)} (${sandboxResponse.value.username}) as default org...`));
       await execCommand(`sf config set target-org=${sandboxResponse.value.username}`, this, {
         output: true,
         fail: true,

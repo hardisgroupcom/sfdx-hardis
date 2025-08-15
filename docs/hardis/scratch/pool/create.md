@@ -7,9 +7,9 @@ Select a data storage service and configure information to build a scratch org p
 
   Run the command, follow instruction, then you need to schedule a daily CI job for the pool maintenance:
 
-- Define CI ENV variable SCRATCH_ORG_POOL with value "true"
+  - Define CI ENV variable SCRATCH_ORG_POOL with value "true"
 
-- Call the following lines in the CI job:
+  - Call the following lines in the CI job:
 
 ```shell
   sf hardis:auth:login --devhub
@@ -31,7 +31,7 @@ Select a data storage service and configure information to build a scratch org p
 ## Examples
 
 ```shell
-sf hardis:scratch:pool:configure
+$ sf hardis:scratch:pool:configure
 ```
 
 

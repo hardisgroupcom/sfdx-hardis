@@ -14,9 +14,33 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class FixV53Flexipages extends SfCommand<any> {
   public static title = 'Fix flexipages for v53';
 
-  public static description = `Fix flexipages for apiVersion v53 (Winter22).
+  public static description: string = `
+## Command Behavior
 
-Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
+**Fixes Salesforce FlexiPages for compatibility with API Version 53.0 (Winter '22 release) by adding missing identifiers to component instances.**
+
+Salesforce introduced a change in API Version 53.0 that requires \`identifier\` tags within \`componentInstance\` and \`fieldInstance\` elements in FlexiPage metadata. If these identifiers are missing, deployments to orgs with API version 53.0 or higher will fail. This command automates the process of adding these missing identifiers, ensuring your FlexiPages remain deployable.
+
+Key functionalities:
+
+- **Targeted FlexiPage Processing:** Scans all .flexipage-meta.xml files within the specified root folder (defaults to current working directory).
+- **Identifier Injection:** Inserts a unique \`identifier\` tag (e.g., \`SFDX_HARDIS_REPLACEMENT_ID\`) into \`componentInstance\` and \`fieldInstance\` elements that lack one.
+
+**Important Note:** After running this command, ensure you update your \`apiVersion\` to \`53.0\` (or higher) in your \`package.xml\` and \`sfdx-project.json\` files.
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **File Discovery:** Uses \`glob\` to find all .flexipage-meta.xml files.
+- **Content Reading:** Reads the XML content of each FlexiPage file.
+- **Regular Expression Replacement:** Employs a set of regular expressions to identify specific XML patterns (componentName.../componentName.../componentInstance, componentName.../componentName.../visibilityRule, fieldItem.../fieldItem.../fieldInstance) that are missing the \`identifier\` tag.
+- **Dynamic ID Generation:** For each match, it generates a unique identifier (e.g., \`sfdxHardisIdX\`) and injects it into the XML structure.
+- **File Writing:** If changes are made, the modified XML content is written back to the FlexiPage file using \`fs.writeFile\`.
+- **Logging:** Provides messages about which FlexiPages are being processed and a summary of the total number of identifiers added.
+</details>
+`;
 
   public static examples = ['$ sf hardis:project:fix:v53flexipages'];
 
@@ -51,7 +75,7 @@ Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Adding identifiers to componentInstance in flexipages`));
+    uxLog("action", this, c.cyan(`Adding identifiers to componentInstance in flexipages`));
     /* jscpd:ignore-end */
 
     const globPattern = this.pathToBrowse + `/**/*.flexipage-meta.xml`;
@@ -59,7 +83,7 @@ Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
     let counter = 0;
     const flexipages: any[] = [];
     const flexipageSourceFiles = await glob(globPattern, { cwd: this.pathToBrowse, ignore: GLOB_IGNORE_PATTERNS });
-    uxLog(this, c.grey(`Found ${flexipageSourceFiles.length} flexipages`));
+    uxLog("log", this, c.grey(`Found ${flexipageSourceFiles.length} flexipages`));
     const regexAndReplacements = [
       {
         regex: /(<componentName>.*<\/componentName>\n.*<\/componentInstance>)/gim,
@@ -104,14 +128,14 @@ Note: Update api version to 53.0 in package.xml and sfdx-project.json`;
         }
         if (found) {
           await fs.writeFile(flexiFile, flexipageRawXml);
-          uxLog(this, c.grey('Updated ' + flexiFile));
+          uxLog("log", this, c.grey('Updated ' + flexiFile));
         }
       }
     }
 
     // Summary
     const msg = `Added ${c.green(c.bold(counter))} identifiers in ${c.green(c.bold(flexipages.length))} flexipages`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg, updatedNumber: counter, updated: flexipages };
   }

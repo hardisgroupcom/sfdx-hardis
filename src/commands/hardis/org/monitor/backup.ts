@@ -186,6 +186,7 @@ If Flow history doc always display a single state, you probably need to update y
 
     // Build target org full manifest
     uxLog(
+      "action",
       this,
       c.cyan('Building full manifest for org ' + c.bold(flags['target-org'].getConnection().instanceUrl)) + ' ...'
     );
@@ -210,7 +211,7 @@ If Flow history doc always display a single state, you probably need to update y
     }
 
     // Write installed packages
-    uxLog(this, c.cyan(`Write installed packages ...`));
+    uxLog("action", this, c.cyan(`Write installed packages ...`));
     const installedPackagesLog: any[] = [];
     const packageFolder = path.join(process.cwd(), 'installedPackages');
     await fs.ensureDir(packageFolder);
@@ -288,7 +289,7 @@ If Flow history doc always display a single state, you probably need to update y
         },
       ];
     } else {
-      uxLog(this, c.grey("No updated metadata for today's backup :)"));
+      uxLog("log", this, c.grey("No updated metadata for today's backup :)"));
     }
 
     // Post notifications
@@ -317,10 +318,10 @@ If Flow history doc always display a single state, you probably need to update y
         const docLanguages = (getEnvVar('SFDX_DOC_LANGUAGES') || getEnvVar('PROMPTS_LANGUAGE') || 'en').split(",").reverse(); // Can be 'fr,en,de' for example
         const prevPromptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
         for (const langKey of docLanguages) {
-          uxLog(this, c.cyan("Generating doc in language " + c.bold(langKey)));
+          uxLog("action", this, c.cyan("Generating doc in language " + c.bold(langKey)));
           process.env.PROMPTS_LANGUAGE = langKey;
           await Project2Markdown.run(["--diff-only", "--with-history"]);
-          uxLog(this, c.cyan("Documentation generated from retrieved sources. If you want to skip it, use option --skip-doc"));
+          uxLog("action", this, c.cyan("Documentation generated from retrieved sources. If you want to skip it, use option --skip-doc"));
           const config = await getConfig("user");
           if (config.docDeployToOrg || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_ORG === "true") {
             await MkDocsToSalesforce.run(["--type", "Monitoring"]);
@@ -331,8 +332,8 @@ If Flow history doc always display a single state, you probably need to update y
         }
         process.env.PROMPTS_LANGUAGE = prevPromptsLanguage;
       } catch (e: any) {
-        uxLog(this, c.yellow("Error while generating project documentation " + e.message));
-        uxLog(this, c.grey(e.stack));
+        uxLog("warning", this, c.yellow("Error while generating project documentation " + e.message));
+        uxLog("log", this, c.grey(e.stack));
       }
     }
 
@@ -409,26 +410,26 @@ If Flow history doc always display a single state, you probably need to update y
     const packageXmlChunkFiles: string[] = [];
     const chunksFolder = path.join("manifest", "chunks");
     await fs.ensureDir(chunksFolder);
-    uxLog(this, c.cyan(`Building package.xml files for ${this.extractPackageXmlChunks.length} chunks...`));
+    uxLog("action", this, c.cyan(`Building package.xml files for ${this.extractPackageXmlChunks.length} chunks...`));
     for (const packageChunk of this.extractPackageXmlChunks) {
       pos++;
       const packageChunkFileName = path.join(chunksFolder, "chunk-" + pos + ".xml");
       await writePackageXmlFile(packageChunkFileName, packageChunk);
       packageXmlChunkFiles.push(packageChunkFileName);
-      uxLog(this, c.grey(`Chunk ${pos} -> ${packageChunkFileName}:`))
+      uxLog("log", this, c.grey(`Chunk ${pos} -> ${packageChunkFileName}:`))
       for (const mdType of Object.keys(packageChunk)) {
-        uxLog(this, c.grey(`- ${mdType} (${packageChunk?.[mdType]?.length || 0} elements)`));
+        uxLog("log", this, c.grey(`- ${mdType} (${packageChunk?.[mdType]?.length || 0} elements)`));
       }
-      uxLog(this, "");
+      uxLog("other", this, "");
     }
 
     // Retrieve metadatas for each chunk
-    uxLog(this, c.cyan(`Starting the retrieve of ${packageXmlChunkFiles.length} chunks...`));
+    uxLog("action", this, c.cyan(`Starting the retrieve of ${packageXmlChunkFiles.length} chunks...`));
     let posChunk = 0;
     for (const packageXmlChunkFile of packageXmlChunkFiles) {
       posChunk++;
       if (this.startChunk > posChunk) {
-        uxLog(this, c.grey(`Skipping chunk ${posChunk} (${packageXmlChunkFile}) according to --start-chunk option`));
+        uxLog("log", this, c.grey(`Skipping chunk ${posChunk} (${packageXmlChunkFile}) according to --start-chunk option`));
         continue;
       }
       await this.retrievePackageXml(packageXmlChunkFile, flags);
@@ -447,7 +448,7 @@ If Flow history doc always display a single state, you probably need to update y
     const packageXmlBackUpItemsFile = await this.buildFilteredManifestsForRetrieve(packageXmlFullFile);
 
     // Apply filters to package.xml
-    uxLog(this, c.cyan(`Reducing content of ${packageXmlFullFile} to generate ${packageXmlBackUpItemsFile} ...`));
+    uxLog("action", this, c.cyan(`Reducing content of ${packageXmlFullFile} to generate ${packageXmlBackUpItemsFile} ...`));
     await filterPackageXml(packageXmlFullFile, packageXmlBackUpItemsFile, {
       removeNamespaces: this.namespaces,
       removeStandard: true,
@@ -464,6 +465,7 @@ If Flow history doc always display a single state, you probably need to update y
     const packageXmlSkipItemsFile = 'manifest/package-skip-items.xml';
     if (fs.existsSync(packageXmlSkipItemsFile)) {
       uxLog(
+        "log",
         this,
         c.grey(
           `${packageXmlSkipItemsFile} has been found and will be use to reduce the content of ${packageXmlFullFile} ...`
@@ -476,6 +478,7 @@ If Flow history doc always display a single state, you probably need to update y
     const additionalSkipMetadataTypes = process.env?.MONITORING_BACKUP_SKIP_METADATA_TYPES;
     if (additionalSkipMetadataTypes) {
       uxLog(
+        "log",
         this,
         c.grey(
           `En var MONITORING_BACKUP_SKIP_METADATA_TYPES has been found and will also be used to reduce the content of ${packageXmlFullFile} ...`
@@ -497,10 +500,11 @@ If Flow history doc always display a single state, you probably need to update y
   private async retrievePackageXml(packageXmlBackUpItemsFile: string, flags: any) {
     const nbRetrievedItems = await countPackageXmlItems(packageXmlBackUpItemsFile);
     const packageXml = await parsePackageXmlFile(packageXmlBackUpItemsFile);
-    uxLog(this, c.cyan(`Run the retrieve command for ${path.basename(packageXmlBackUpItemsFile)}, containing ${nbRetrievedItems} items:`));
-    for (const mdType of Object.keys(packageXml)) {
-      uxLog(this, c.cyan(`- ${mdType} (${packageXml?.[mdType]?.length || 0})`));
-    }
+    uxLog("action", this, c.cyan(`Run the retrieve command for ${path.basename(packageXmlBackUpItemsFile)}, containing ${nbRetrievedItems} items:`));
+    const mdTypesString = Object.keys(packageXml).map((mdType) => {
+      return `- ${mdType} (${packageXml?.[mdType]?.length || 0})`;
+    }).join('\n');
+    uxLog("log", this, c.grey(mdTypesString));
     try {
       await execCommand(
         `sf project retrieve start -x "${packageXmlBackUpItemsFile}" -o ${flags['target-org'].getUsername()} --ignore-conflicts --wait 120`,
@@ -513,9 +517,10 @@ If Flow history doc always display a single state, you probably need to update y
       );
     } catch (e) {
       const failedPackageXmlContent = await fs.readFile(packageXmlBackUpItemsFile, 'utf8');
-      uxLog(this, c.yellow('BackUp package.xml that failed to be retrieved:\n' + c.grey(failedPackageXmlContent)));
+      uxLog("warning", this, c.yellow('BackUp package.xml that failed to be retrieved:\n' + c.grey(failedPackageXmlContent)));
       if (this.full) {
         uxLog(
+          "error",
           this,
           c.red(
             c.bold(
@@ -526,6 +531,7 @@ If Flow history doc always display a single state, you probably need to update y
       }
       else {
         uxLog(
+          "error",
           this,
           c.red(
             c.bold(
@@ -535,6 +541,7 @@ If Flow history doc always display a single state, you probably need to update y
         );
       }
       uxLog(
+        "warning",
         this,
         c.yellow(
           c.bold(

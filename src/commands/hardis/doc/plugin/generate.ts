@@ -19,17 +19,47 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class DocPluginGenerate extends SfCommand<any> {
   public static title = 'Generate SF Cli Plugin Documentation';
 
-  public static description = `Generate Markdown documentation ready for HTML conversion with mkdocs
+  public static description = `
+## Command Behavior
 
-After the first run, you need to update manually:
+**Generates Markdown documentation for an SF CLI plugin, ready for conversion into HTML with MkDocs.**
 
-- mkdocs.yml
-- .github/workflows/build-deploy-docs.yml
-- docs/javascripts/gtag.js , if you want Google Analytics tracking
+This command automates the creation of comprehensive documentation for your Salesforce CLI plugin. It processes your plugin's commands and their flags to generate structured Markdown files, which can then be used with MkDocs to produce a professional-looking website.
 
-Then, activate Github pages, with "gh_pages" as target branch
+Key functionalities:
 
-At each merge into master/main branch, the GitHub Action build-deploy-docs will rebuild documentation and publish it in GitHub pages
+- **Command Documentation:** Generates a dedicated Markdown file for each command, including its description, parameters (flags), and examples.
+- **Index and Commands Pages:** Creates an \`index.md\` and \`commands.md\` file that list all available commands, providing an overview and easy navigation.
+- **MkDocs Integration:** Sets up the basic MkDocs project structure and updates the \`mkdocs.yml\` navigation to include the generated command documentation.
+- **Default File Copying:** Copies essential MkDocs configuration files and GitHub Actions workflows to your project, streamlining the setup for continuous documentation deployment.
+
+**Post-Generation Steps:**
+
+After the initial run, you will need to manually update:
+
+- \`mkdocs.yml\`: Customize the project title, theme, and other MkDocs settings.
+- \`.github/workflows/build-deploy-docs.yml\`: Configure the GitHub Actions workflow for automatic documentation deployment.
+- \`docs/javascripts/gtag.js\`: If desired, set up Google Analytics tracking.
+
+Finally, activate GitHub Pages with \`gh_pages\` as the target branch. This will enable automatic documentation rebuilding and publishing to GitHub Pages upon each merge into your \`master\`/\`main\` branch.
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **Plugin Configuration Loading:** It loads the SF CLI plugin's configuration using \`@oclif/core\`'s \`Config.load()\`, which provides access to all registered commands and their metadata.
+- **Command Iteration:** It iterates through each command defined in the plugin's configuration.
+- **Markdown File Generation:** For each command, it constructs a Markdown file (\`.md\`) containing:
+  - The command ID as the main heading.
+  - The command's \`description\` property.
+  - A table of parameters (flags), including their name, type, description, default value, required status, and available options. It dynamically extracts this information from the command's \`flags\` property.
+  - Code blocks for each example provided in the command's \`examples\` property.
+- **Navigation Structure:** It builds a nested JavaScript object (\`commandsNav\`) that mirrors the command hierarchy, which is then converted to YAML and inserted into \`mkdocs.yml\` to create the navigation menu.
+- **Index and Commands Page Generation:** It reads the project's \`README.md\` and extracts relevant sections to create the \`index.md\` file. It also generates a separate \`commands.md\` file listing all commands.
+- **File System Operations:** It uses \`fs-extra\` to create directories, copy default MkDocs files (\`defaults/mkdocs\`), and write the generated Markdown and YAML files.
+- **YAML Serialization:** It uses \`js-yaml\` to serialize the navigation object into YAML format for \`mkdocs.yml\`.
+</details>
 `;
 
   public static examples = ['$ sf hardis:doc:plugin:generate'];
@@ -78,7 +108,7 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
       set(commandsNav, commandsSplit.join('.'), navItem, { preservePaths: true, merge: true });
       commandsLinks[command.id] = commandMdPath;
     }
-    uxLog(this, yaml.dump(commandsNav));
+    uxLog("other", this, yaml.dump(commandsNav));
 
     // Generate index.md
     await this.generateIndexDoc(config, commandsLinks);
@@ -88,8 +118,9 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     const mkdocsYmlFileExists = fs.existsSync(mkdocsYmlFile);
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/mkdocs', '.'), process.cwd(), { overwrite: false });
     if (!mkdocsYmlFileExists) {
-      uxLog(this, c.blue('Base mkdocs files copied in your SF Cli plugin folder'));
+      uxLog("log", this, c.grey('Base mkdocs files copied in your SF Cli plugin folder'));
       uxLog(
+        "warning",
         this,
         c.yellow(
           'You should probably manually update mkdocs.yml and build-deploy-docs.yml with your repo & plugin information'
@@ -239,6 +270,6 @@ At each merge into master/main branch, the GitHub Action build-deploy-docs will 
     await fs.ensureDir(path.dirname(mdFileName));
     const yamlString = lines.join('\n') + '\n';
     await fs.writeFile(mdFileName, yamlString);
-    uxLog(this, c.grey('Generated file ' + c.bold(mdFileName)));
+    uxLog("log", this, c.grey('Generated file ' + c.bold(mdFileName)));
   }
 }

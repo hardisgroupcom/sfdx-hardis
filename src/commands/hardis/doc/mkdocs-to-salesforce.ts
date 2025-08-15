@@ -17,23 +17,48 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class MkDocsToSalesforce extends SfCommand<any> {
   public static title = 'MkDocs to Salesforce';
 
-  public static description = `Generates MkDocs HTML pages and upload them to Salesforce as a static resource
+  public static description = `
+## Command Behavior\
 
-This command performs the following operations:
+**Generates MkDocs HTML pages and deploys them to a Salesforce org as a static resource, Visualforce page, and Custom Tab.**
 
-- Generates MkDocs HTML pages (using locally installed mkdocs-material, or using mkdocs docker image)
-- Creates a Static Resource, a VisualForce page and a Custom Tab metadata
-- Upload the metadatas to the default org
-- Opens the Custom Tab in the default browser (only if not in CI context)
+This command provides a convenient way to host your project's documentation directly within Salesforce, making it easily accessible to users. It automates the entire process of converting your MkDocs project into a deployable Salesforce package.
 
-Note: the documentation must have been previously generated using "sf hardis:doc:project2markdown --with-history"
+Key operations performed:
 
-You can:
+- **MkDocs HTML Generation:** Builds the MkDocs project into static HTML pages. It can use a locally installed \`mkdocs-material\` or a \`mkdocs\` Docker image.
+- **Salesforce Metadata Creation:** Creates the necessary Salesforce metadata components:
+  - A **Static Resource** to store the generated HTML, CSS, and JavaScript files.
+  - A **Visualforce Page** that embeds the static resource, allowing it to be displayed within Salesforce.
+  - A **Custom Tab** to provide a user-friendly entry point to the documentation from the Salesforce navigation.
+  - A **Permission Set** to grant access to the Visualforce page and Custom Tab.
+- **Metadata Deployment:** Deploys these newly created metadata components to the specified Salesforce org.
+- **Permission Set Assignment:** Assigns the newly created permission set to the current user, ensuring immediate access to the documentation.
+- **Browser Opening (Non-CI):** Opens the Custom Tab in your default browser if the command is not run in a CI/CD environment.
 
-- Specify the type of documentation to generate (CICD or Monitoring) using the --type flag. Default is CICD.
-- Override default styles by customizing mkdocs.yml
+**Prerequisite:** The documentation must have been previously generated using \`sf hardis:doc:project2markdown --with-history\`.
 
-More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-project-documentation/)
+**Customization:**
+
+- You can specify the type of documentation to generate (e.g., \`CICD\` or \`Monitoring\`) using the \`--type\` flag. The default is \`CICD\`.
+- You can override default styles by customizing your \`mkdocs.yml\` file.
+
+More information can be found in the [Documentation section]($\{CONSTANTS.DOC_URL_ROOT}/salesforce-project-documentation/).\
+
+<details>
+<summary>Technical explanations</summary>
+
+The command orchestrates interactions with MkDocs, Salesforce CLI, and file system operations:
+
+- **MkDocs Integration:** It first modifies the \`mkdocs.yml\` file to ensure compatibility with Salesforce static resources (e.g., setting \`use_directory_urls\` to \`false\`). Then, it calls \`generateMkDocsHTML()\` to build the static HTML content.
+- **Temporary SFDX Project:** It creates a temporary SFDX project using \`createTempDir\` and \`createBlankSfdxProject\` to stage the generated Salesforce metadata before deployment.
+- **Metadata Generation:** It dynamically creates the XML metadata files for the Static Resource, Visualforce Page, Custom Tab, and Permission Set. The HTML content from the MkDocs build is moved into the static resource folder.
+- **Salesforce CLI Deployment:** It constructs and executes a \`sf project deploy start\` command to deploy the generated metadata to the target Salesforce org. It intelligently adds \`--test-level RunLocalTests\` for production orgs and \`--test-level NoTestRun\` for sandboxes.
+- **Permission Set Assignment:** After successful deployment, it calls \`initPermissionSetAssignments\` to assign the newly created permission set to the current user.
+- **Browser Launch:** For non-CI environments, it uses \`execCommand\` to open the deployed Custom Tab in the user's default browser.
+- **Error Handling and Cleanup:** It includes error handling for deployment failures (e.g., static resource size limits) and ensures that the \`mkdocs.yml\` file is restored to its original state after execution.
+- **File System Operations:** It extensively uses \`fs-extra\` for file manipulation, including creating directories, moving files, and writing XML content.
+</details>
 `;
 
   public static examples = [
@@ -110,8 +135,8 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
       }
 
       if (success && !isCI) {
-        uxLog(this, c.cyan(`Opening the Custom Tab ${c.green(resName)} in your default browser...`));
-        uxLog(this, c.yellow(`If you have an access issue, make sure the tab ${resName} is not hidden on your Profile...`));
+        uxLog("action", this, c.cyan(`Opening the Custom Tab ${c.green(resName)} in your default browser...`));
+        uxLog("warning", this, c.yellow(`If you have an access issue, make sure the tab ${resName} is not hidden on your Profile...`));
         const sfPath = `lightning/n/${resName}`;
         await execCommand(`sf org open --path ${sfPath} --target-org ${targetUsername}`, this, { fail: false, output: true, debug: this.debugMode });
       }
@@ -126,14 +151,14 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
   }
 
   private async createDocMetadatas(resName: string, defaultProjectPath: string, type: any) {
-    uxLog(this, c.cyan(`Creating Static Resource ${resName} metadata...`));
+    uxLog("action", this, c.cyan(`Creating Static Resource ${resName} metadata...`));
     const staticResourcePath = path.join(defaultProjectPath, "staticresources");
     const mkDocsResourcePath = path.join(staticResourcePath, resName);
     await ensureDir(mkDocsResourcePath);
     await fs.move(path.join(process.cwd(), "site"), mkDocsResourcePath, { overwrite: true });
 
     // Create Static resource metadata
-    uxLog(this, c.cyan(`Creating Static Resource ${resName} metadata...`));
+    uxLog("action", this, c.cyan(`Creating Static Resource ${resName} metadata...`));
     const mkDocsResourceFileName = path.join(staticResourcePath, `${resName}.resource-meta.xml`);
     const mkDocsResourceMeta = `<?xml version="1.0" encoding="UTF-8"?>
 <StaticResource xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -144,7 +169,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
     await fs.writeFile(mkDocsResourceFileName, mkDocsResourceMeta);
 
     // Create visual force page
-    uxLog(this, c.cyan(`Creating VisualForce page ${resName} metadata...`));
+    uxLog("action", this, c.cyan(`Creating VisualForce page ${resName} metadata...`));
     const vfPagesPath = path.join(defaultProjectPath, "pages");
     await ensureDir(vfPagesPath);
     const vfPageFileName = path.join(vfPagesPath, `${resName}.page`);
@@ -200,7 +225,7 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
   }
 
   private async uploadDocMetadatas(resName: string, targetUsername: any, conn: any, tmpProjectPath: string, mkDocsResourcePath: string, vfPageMetaFile: string, tabMetaFile: string, permissionSetFile: string) {
-    uxLog(this, c.cyan(`Deploying Static Resource ${resName}, VisualForce page ${resName}, Custom Tab ${resName} and Permission Set ${resName} to org ${targetUsername}...`));
+    uxLog("action", this, c.cyan(`Deploying Static Resource ${resName}, VisualForce page ${resName}, Custom Tab ${resName} and Permission Set ${resName} to org ${targetUsername}...`));
     let deployCommand = `sf project deploy start -m StaticResource:${resName} -m ApexPage:${resName} -m CustomTab:${resName} -m PermissionSet:${resName} --ignore-conflicts --ignore-warnings --target-org ${targetUsername}`;
     const isProdOrg = await isProductionOrg(targetUsername, { conn: conn });
     if (isProdOrg) {
@@ -219,14 +244,14 @@ More info on [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-projec
       deployRes.stdout = e.stdout;
     }
     if (deployRes.status !== 0) {
-      uxLog(this, c.red(`Deployment failed:\n${deployRes.stderr + "\n" + deployRes.stdout}`));
+      uxLog("error", this, c.red(`Deployment failed:\n${deployRes.stderr + "\n" + deployRes.stdout}`));
       if ((deployRes.stderr + deployRes.stdout).includes("static resource cannot exceed")) {
-        uxLog(this, c.red(`Documentation is too big to be hosted in a Static Resource.`));
-        uxLog(this, c.yellow(`Cloudity can help you to host it somewhere else :)`));
-        uxLog(this, c.yellow(`If you are interested, contact us on ${c.green(c.bold(CONSTANTS.CONTACT_URL))}`));
+        uxLog("error", this, c.red(`Documentation is too big to be hosted in a Static Resource.`));
+        uxLog("warning", this, c.yellow(`Cloudity can help you to host it somewhere else :)`));
+        uxLog("warning", this, c.yellow(`If you are interested, contact us on ${c.green(c.bold(CONSTANTS.CONTACT_URL))}`));
       }
       else {
-        uxLog(this, c.yellow(`You can manually deploy the Static Resource ${resName},the VisualForce page ${resName} and the custom tab ${resName} to your org
+        uxLog("warning", this, c.yellow(`You can manually deploy the Static Resource ${resName},the VisualForce page ${resName} and the custom tab ${resName} to your org
 - Static Resource: ${mkDocsResourcePath} (If you upload using UI, zip the folder and make sure to have index.html at the zip root)
 - VisualForce page: ${vfPageMetaFile}
 - Custom tab: ${tabMetaFile}
@@ -236,7 +261,7 @@ You can also run the documentation locally using "mkdocs serve -v || python -m m
       }
     }
     else {
-      uxLog(this, c.green(`SFDX Project documentation uploaded to salesforce and available in Custom Tab ${resName}`));
+      uxLog("success", this, c.green(`SFDX Project documentation uploaded to salesforce and available in Custom Tab ${resName}`));
     }
     return deployRes;
   }

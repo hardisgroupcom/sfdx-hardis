@@ -11,7 +11,35 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class HardisOrgCommunityUpdate extends SfCommand<any> {
   public static readonly summary = messages.getMessage('orgCommunityUpdate');
-  public static readonly description = messages.getMessage('orgCommunityUpdateDesc');
+  public static readonly description = `
+## Command Behavior
+
+**Updates the status of one or more Salesforce Experience Cloud (Community) networks.**
+
+This command provides a way to programmatically change the status of your Salesforce Communities, allowing you to manage their availability. This is particularly useful for:
+
+- **Maintenance:** Taking communities offline for planned maintenance (\`DownForMaintenance\`).
+- **Activation/Deactivation:** Bringing communities online or offline (\`Live\`, \`DownForMaintenance\`).
+- **Automation:** Integrating community status changes into CI/CD pipelines or scheduled jobs.
+
+Key functionalities:
+
+- **Network Selection:** You can specify one or more community network names (separated by commas) using the \`--name\` flag.
+- **Status Update:** You can set the new status for the selected communities using the \`--status\` flag. Supported values are \`Live\` and \`DownForMaintenance\`.
+- **Confirmation Prompt:** In non-CI environments, it provides a confirmation prompt before executing the update, ensuring intentional changes.
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **Salesforce SOQL Query:** It first queries the Salesforce \`Network\` object using SOQL to retrieve the \`Id\`, \`Name\`, and \`Status\` of the specified communities. This ensures that only existing communities are targeted.
+- **SObject Update:** It then constructs an array of \`Network\` sObjects with their \`Id\` and the new \`Status\` and performs a DML update operation using \`conn.sobject("Network").update()\`. The \`allOrNone: false\` option is used to allow partial success in case some updates fail.
+- **Error Handling and Reporting:** It iterates through the update results, logging success or failure for each community. It also provides a summary of successful and erroneous updates.
+- **User Interaction:** Uses \`prompts\` to confirm the update action with the user when not running in a CI environment.
+- **Salesforce Connection:** Establishes a connection to the target Salesforce org using the \`target-org\` flag.
+</details>
+`;
 
   public static examples = [
     `$ sf hardis:org:community:update --name 'MyNetworkName' --status DownForMaintenance`,
@@ -53,12 +81,12 @@ export default class HardisOrgCommunityUpdate extends SfCommand<any> {
     const networksQuery = `SELECT Id, Name, Status FROM Network WHERE Name IN (${networksConstraintIn})`;
     const networksQueryRes = await soqlQuery(networksQuery, conn);
     if (debugMode) {
-      uxLog(this, c.grey(`Query result:\n${JSON.stringify(networksQueryRes, null, 2)}`));
+      uxLog("log", this, c.grey(`Query result:\n${JSON.stringify(networksQueryRes, null, 2)}`));
     }
     // Check empty result
     if (networksQueryRes.length === 0) {
       const outputString = `No matching network records found with given names`;
-      uxLog(this, c.yellow(outputString));
+      uxLog("warning", this, c.yellow(outputString));
       return { outputString };
     }
     const idToNameMap = new Map(networksQueryRes.records.map(network => [network.Id, network.Name]));
@@ -74,10 +102,11 @@ export default class HardisOrgCommunityUpdate extends SfCommand<any> {
             flags['target-org'].getUsername()
           )} (y/n)?`
         ),
+        description: 'Confirm that you want to change the status of the selected community networks',
       });
       if (confirmUpdate.value !== true) {
         const outputString = 'Script cancelled by user';
-        uxLog(this, c.yellow(outputString));
+        uxLog("warning", this, c.yellow(outputString));
         return { outputString };
       }
     }
@@ -93,10 +122,10 @@ export default class HardisOrgCommunityUpdate extends SfCommand<any> {
     for (const ret of updateResults) {
       if (ret.success) {
         updateSuccessNb++;
-        uxLog(this, c.green(`'${c.bold(idToNameMap.get(ret.id))}' Network was updated.`));
+        uxLog("success", this, c.green(`'${c.bold(idToNameMap.get(ret.id))}' Network was updated.`));
       } else {
         updateErrorsNb++;
-        uxLog(this, c.red(`Error ${updateErrorsNb}: Network '${idToNameMap.get(ret.id)}' failed to update: [${ret.errors[0].message}]`));
+        uxLog("error", this, c.red(`Error ${updateErrorsNb}: Network '${idToNameMap.get(ret.id)}' failed to update: [${ret.errors[0].message}]`));
       }
     }
     // Return an object to be displayed with --json

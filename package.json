@@ -3,30 +3,29 @@
   "description": "Swiss-army-knife Toolbox for Salesforce.\n Allows you to define a complete CD/CD Pipeline.\n Orchestrate base commands and assist users with interactive wizards",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
-  "version": "5.44.1",
+  "version": "6.0.5",
   "dependencies": {
     "@actions/github": "^6.0.1",
     "@cparra/apexdocs": "^3.14.0",
     "@gitbeaker/node": "^35.8.1",
-    "@langchain/anthropic": "^0.3.21",
+    "@langchain/anthropic": "^0.3.26",
     "@langchain/community": "^0.3.44",
     "@langchain/core": "^0.3.57",
-    "@langchain/google-genai": "^0.2.10",
+    "@langchain/google-genai": "^0.2.16",
     "@langchain/ollama": "^0.2.1",
-    "@oclif/core": "^4.5.0",
-    "@salesforce/core": "^8.17.0",
+    "@oclif/core": "^4.5.2",
+    "@salesforce/core": "^8.19.1",
     "@salesforce/sf-plugins-core": "^11.3.12",
     "@slack/types": "^2.15.0",
     "@slack/web-api": "^7.9.3",
     "@supercharge/promise-pool": "^3.2.0",
     "@xmldom/xmldom": "^0.9.8",
-    "axios": "^1.10.0",
+    "axios": "^1.11.0",
     "azure-devops-node-api": "^14.1.0",
     "bitbucket": "^2.12.0",
     "chalk": "^5.4.1",
     "chrome-launcher": "^1.2.0",
     "cloudflare": "^4.4.1",
-    "columnify": "^1.6.0",
     "cosmiconfig": "^9.0.0",
     "cross-spawn": "^7.0.6",
     "csv-stringify": "^6.6.0",
@@ -38,13 +37,13 @@
     "extract-zip": "^2.0.1",
     "farmhash": "^4.0.2",
     "fast-xml-parser": "^4.5.3",
-    "form-data": "^4.0.3",
+    "form-data": "^4.0.4",
     "fs-extra": "^11.3.0",
     "fs-readdir-recursive": "^1.1.0",
     "glob": "^11.0.3",
     "he": "^1.2.0",
     "inquirer": "^10.2.2",
-    "isomorphic-dompurify": "^2.25.0",
+    "isomorphic-dompurify": "^2.26.0",
     "jira-client": "^8.2.2",
     "js-yaml": "^4.1.0",
     "jsdoc-to-markdown": "^9.1.1",
@@ -75,10 +74,12 @@
     "xpath": "^0.0.34"
   },
   "resolutions": {
-    "@langchain/core": "0.3.57"
+    "@langchain/core": "0.3.57",
+    "form-data": "4.0.4",
+    "tmp": "0.2.5"
   },
   "devDependencies": {
-    "@oclif/plugin-command-snapshot": "^5.3.2",
+    "@oclif/plugin-command-snapshot": "^5.3.5",
     "@salesforce/cli-plugins-testkit": "^5.3.39",
     "@salesforce/dev-config": "^4.3.1",
     "@salesforce/dev-scripts": "^10",
@@ -103,9 +104,10 @@
     "@types/ws": "^8.18.1",
     "@types/xml2js": "^0.4.14",
     "eslint-plugin-sf-plugin": "^1.20.27",
-    "oclif": "^4.19.0",
+    "oclif": "^4.22.1",
+    "tmp": "0.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -166,7 +168,6 @@
       "init": [
         "./lib/hooks/init/log",
         "./lib/hooks/init/check-upgrade",
-        "./lib/hooks/init/check-local-sfdx-hardis-files",
         "./lib/hooks/init/start-ws-client"
       ],
       "prerun": [
@@ -177,8 +178,10 @@
         "./lib/hooks/auth/auth"
       ],
       "postrun": [
-        "./lib/hooks/postrun/notify",
         "./lib/hooks/postrun/store-cache"
+      ],
+      "finally": [
+        "./lib/hooks/finally/notify"
       ]
     }
   },

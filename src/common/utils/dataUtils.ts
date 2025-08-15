@@ -15,9 +15,9 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
   if (dtl?.isDelete === true) {
     throw new SfError('Your export.json contains deletion info, please use appropriate delete command');
   }
-  uxLog(commandThis, c.cyan(`Importing data from ${c.green(dtl?.full_label)} ...`));
+  uxLog("action", commandThis, c.cyan(`Importing data from ${c.green(dtl?.full_label)} ...`));
   /* jscpd:ignore-start */
-  uxLog(commandThis, c.italic(c.grey(dtl?.description)));
+  uxLog("log", commandThis, c.italic(c.grey(dtl?.description)));
   const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const config = await getConfig('branch');
@@ -53,11 +53,11 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
     throw new SfError(`To run this delete SFDMU script in production, you need to define "runnableInProduction": true in its export.json file`);
   }
   if (isProdOrg === true && !config.sfdmuCanModify) {
-    uxLog(this, c.yellow(`If you see a sfdmu error, you probably need to add a property sfdmuCanModify: YOUR_ORG_INSTANCE_URL in the related config/branches/.sfdx-hardis.YOUR_BRANCH.yml config file.`));
+    uxLog("warning", this, c.yellow(`If you see a sfdmu error, you probably need to add a property sfdmuCanModify: YOUR_ORG_INSTANCE_URL in the related config/branches/.sfdx-hardis.YOUR_BRANCH.yml config file.`));
   }
   // Delete using sfdmu
-  uxLog(commandThis, c.cyan(`Deleting data from ${c.green(dtl?.full_label)} ...`));
-  uxLog(commandThis, c.italic(c.grey(dtl?.description)));
+  uxLog("action", commandThis, c.cyan(`Deleting data from ${c.green(dtl?.full_label)} ...`));
+  uxLog("log", commandThis, c.italic(c.grey(dtl?.description)));
   const targetUsername = options.targetUsername || options.conn.username;
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const dataImportCommand =
@@ -82,8 +82,8 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
     throw new SfError('Your export.json contains deletion info, please use appropriate delete command');
   }
   /* jscpd:ignore-end */
-  uxLog(commandThis, c.cyan(`Exporting data from ${c.green(dtl?.full_label)} ...`));
-  uxLog(commandThis, c.italic(c.grey(dtl?.description)));
+  uxLog("action", commandThis, c.cyan(`Exporting data from ${c.green(dtl?.full_label)} ...`));
+  uxLog("log", commandThis, c.italic(c.grey(dtl?.description)));
   const sourceUsername = options.sourceUsername || commandThis.org.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const dataImportCommand = `sf sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath} --noprompt`; // keep target username until sfdmu migrates to SF cli base
@@ -122,6 +122,7 @@ export async function selectDataWorkspace(opts = { selectDataLabel: 'Please sele
     type: 'select',
     name: 'value',
     message: c.cyanBright(opts.selectDataLabel),
+    description: 'Select the SFDMU data configuration to use for this operation',
     choices: choices,
   });
   return sfdmuDirResult.value;
@@ -131,6 +132,7 @@ export async function getDataWorkspaceDetail(dataWorkspace: string) {
   const exportFile = path.join(dataWorkspace, 'export.json');
   if (!fs.existsSync(exportFile)) {
     uxLog(
+      "warning",
       this,
       c.yellow(`Your SFDMU folder ${c.bold(dataWorkspace)} must contain an ${c.bold('export.json')} configuration file`)
     );

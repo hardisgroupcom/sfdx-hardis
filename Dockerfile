@@ -1,6 +1,6 @@
 # Docker image to run sfdx-hardis
 
-FROM python:3.12.10-alpine3.21
+FROM python:3.12.10-alpine3.22
 
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
 
@@ -19,7 +19,9 @@ RUN apk add --update --no-cache \
             freetype \
             harfbuzz \
             ca-certificates \
-            ttf-freefont
+            ttf-freefont && \
+    # Clean up package cache
+    rm -rf /var/cache/apk/*
 
 # Start docker daemon in case mermaid-cli image is used
 RUN rc-update add docker boot && (rc-service docker start || true)
@@ -46,7 +48,10 @@ RUN npm install --no-cache yarn -g && \
     echo 'y' | sf plugins install sfdx-git-delta && \
     echo 'y' | sf plugins install texei-sfdx-plugin && \
     sf version --verbose --json && \
-    rm -rf /root/.npm/_cacache
+    # Clean up npm cache and temporary files
+    rm -rf /root/.npm/_cacache && \
+    rm -rf /tmp/* && \
+    npm cache clean --force
 
 ENV MERMAID_MODES="docker"
 

@@ -3,18 +3,21 @@
 
 ## Description
 
-This commands pulls the updates you performed in your scratch or sandbox org, into your local files
 
-Then, you probably want to stage and commit the files containing the updates you want to keep, as explained in this video.
+## Command Behavior
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+**Pulls metadata changes from your scratch org or source-tracked sandbox into your local project files.**
 
-- Calls `sf project retrieve start` under the hood
-- If there are errors, proposes to automatically add erroneous item in `.forceignore`, then pull again
-- If you don't see your updated items in the results, you can manually retrieve [using SF Extension **Org Browser** or **Salesforce CLI**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas)
-- If you want to always retrieve sources like CustomApplication that are not always detected as updates by project:retrieve:start , you can define property **autoRetrieveWhenPull** in .sfdx-hardis.yml
+This command is essential for synchronizing your local development environment with the changes you've made directly in your Salesforce org. After pulling, you can then stage and commit the relevant files to your version control system.
 
-Example:
+Key features and considerations:
+
+- **Underlying Command:** Internally, this command executes `sf project retrieve start` to fetch the metadata.
+- **Error Handling:** If the pull operation encounters errors, it offers to automatically add the problematic items to your `.forceignore` file and then attempts to pull again, helping you resolve conflicts and ignore unwanted metadata.
+- **Missing Updates:** If you don't see certain updated items in the pull results, you might need to manually retrieve them using the Salesforce Extension's **Org Browser** or the **Salesforce CLI** directly. Refer to the [Retrieve Metadatas documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas) for more details.
+- **Automatic Retrieval:** You can configure the `autoRetrieveWhenPull` property in your `.sfdx-hardis.yml` file to always retrieve specific metadata types (e.g., `CustomApplication`) that might not always be detected as updates by `project:retrieve:start`.
+
+Example `.sfdx-hardis.yml` configuration for `autoRetrieveWhenPull`:
 ```yaml
 autoRetrieveWhenPull:
   - CustomApplication:MyCustomApplication
@@ -22,22 +25,37 @@ autoRetrieveWhenPull:
   - CustomApplication:MyThirdCustomApp
 ```
 
+For a visual explanation of the process, watch this video:
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation focuses on robust metadata synchronization:
+
+- **Salesforce CLI Wrapper:** It acts as a wrapper around the standard Salesforce CLI `sf project retrieve start` command, providing enhanced error handling and configuration options.
+- **Force Source Pull Utility:** The core logic resides in the `forceSourcePull` utility function, which orchestrates the retrieval process, including handling `.forceignore` updates.
+- **Configuration Integration:** It reads the `autoRetrieveWhenPull` setting from the project's `.sfdx-hardis.yml` to determine additional metadata to retrieve automatically.
+- **User Feedback:** Provides clear messages to the user regarding the pull status and guidance for troubleshooting.
+</details>
+
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |                 Default                  | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:----------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                          |          |         |
-| flags-dir         | option  | undefined                                                     |                                          |          |         |
-| json              | boolean | Format output as json.                                        |                                          |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                                          |          |         |
-| target-org<br/>-o | option  | undefined                                                     | <nicolas.vuillamy@cloudity.com.playnico> |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                          |          |         |
+| Name              |  Type   | Description                                                   |                Default                 | Required | Options |
+|:------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                        |          |         |
+| flags-dir         | option  | undefined                                                     |                                        |          |         |
+| json              | boolean | Format output as json.                                        |                                        |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required |                                        |          |         |
+| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
 
 ## Examples
 
 ```shell
-sf hardis:scratch:pull
+$ sf hardis:scratch:pull
 ```
 
 

@@ -62,6 +62,7 @@ export default class ScratchPoolCreate extends SfCommand<any> {
     // Tell user if he/she's about to overwrite existing configuration
     if (config.poolConfig && Object.keys(poolConfig).length > 0) {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `There is already an existing scratch org pool configuration: ${JSON.stringify(config.poolConfig)}.
@@ -77,6 +78,8 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
         type: 'select',
         name: 'storageService',
         message: c.cyanBright('What storage service do you want to use for your scratch orgs pool ?'),
+        description: 'Choose a storage backend for managing and tracking scratch org pools',
+        placeholder: 'Select a storage service',
         initial: 0,
         choices: allProviders.map((provider: KeyValueProviderInterface) => {
           return { title: provider.name, description: provider.description, value: provider.name };
@@ -86,6 +89,8 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
         type: 'number',
         name: 'maxScratchOrgsNumber',
         message: c.cyanBright('What is the maximum number of scratch orgs in the pool ?'),
+        description: 'Set the maximum number of scratch orgs that can exist in the pool at any time',
+        placeholder: 'Ex: 5',
         initial: poolConfig.maxScratchOrgsNumber || 5,
       },
     ]);
@@ -106,11 +111,13 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
     const sfdxAuthUrl = authInfo.getSfdxAuthUrl();
     if (sfdxAuthUrl) {
       uxLog(
+        "action",
         this,
         c.cyan(`You need to define CI masked variable ${c.green('SFDX_AUTH_URL_DEV_HUB')} = ${c.green(sfdxAuthUrl)}`)
       );
     } else {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `You'll probably need to define CI masked variable ${c.green(

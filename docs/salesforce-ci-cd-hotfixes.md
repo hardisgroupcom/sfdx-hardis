@@ -38,7 +38,7 @@ _Note: in this example, we merge directly in **preprod**, but in more advanced o
 
 - IMPLEMENT **HOTFIX** _**(1)**_
 
-  - Create new task with **preprod as target when prompted**, named `my-very-hot-hotfix` for example
+  - Create new User Story with **preprod as target when prompted**, named `my-very-hot-hotfix` for example
 
   - Work on a dev sandbox that has been cloned from production
 

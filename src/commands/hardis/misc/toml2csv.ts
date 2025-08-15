@@ -19,7 +19,47 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class Toml2Csv extends SfCommand<any> {
   public static title = 'TOML to CSV';
 
-  public static description = 'Split TOML file into distinct CSV files';
+  public static description = `
+## Command Behavior
+
+**Splits a TOML (Tom's Obvious, Minimal Language) file into multiple CSV files, applying transformations and filters based on a JSON configuration.**
+
+This command is designed for data processing workflows where data is initially stored in a TOML-like format and needs to be converted into structured CSV files for import into Salesforce or other systems. It offers powerful capabilities for data manipulation and cleansing during the conversion process.
+
+Key functionalities:
+
+- **TOML Parsing:** Reads an input TOML file, identifying sections (e.g., \`[COMPTES]\`) and processing data lines within each section.
+- **Configurable Transformations:** Applies transformations to individual data fields based on a JSON configuration file (\`transfoConfig.json\`). This can include:
+  - **Date Formatting:** Reformatting date strings to a desired output format.
+  - **Enum Transcoding:** Mapping input values to predefined output values using lookup tables (enums).
+  - **Concatenation:** Combining multiple input fields into a single output field.
+  - **Record Type ID Resolution:** Dynamically retrieving Salesforce Record Type IDs.
+- **Data Filtering:** Filters data lines based on specified criteria (e.g., date ranges, parent ID existence, column values), allowing you to exclude irrelevant data from the output.
+- **Duplicate Removal:** Optionally removes duplicate lines from the output CSV files.
+- **Error Handling and Reporting:** Catches transformation errors, logs them, and can output problematic lines to separate error CSV files for review.
+- **CSV Output:** Generates one or more CSV files, with configurable separators and headers, ready for Salesforce Data Loader or other import tools.
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **File I/O:** Uses \`fs-extra\` for file system operations (reading TOML, writing CSVs, creating directories) and \`readline\` for efficient line-by-line processing of large TOML files.
+- **Configuration Loading:** Reads and parses the \`transfoConfig.json\` file, which defines the mapping rules, transformations, and filters. It also loads external enum files if specified in the configuration.
+- **Data Processing Pipeline:** Iterates through each line of the TOML file:
+  - Identifies section headers to determine the current data context.
+  - Parses data lines based on the input separator.
+  - Applies filters defined in \`transfoConfig\` to decide whether to process or skip a line.
+  - Performs data transformations (date formatting, enum lookups, concatenations) as specified in the \`transfoConfig\`.
+  - Resolves Salesforce Record Type IDs by querying the target org using \`getRecordTypeId\`.
+  - Formats the output CSV cells, handling special characters and separators.
+  - Writes the transformed data to the appropriate CSV output stream.
+- **Error Management:** Catches exceptions during transformation and logs detailed error messages, including the problematic line and the reason for the error.
+- **Progress Indication:** Uses \`ora\` for a command-line spinner to provide visual feedback on the processing progress.
+- **Statistics Collection:** Tracks various statistics, such as the number of processed lines, successful lines, error lines, and filtered lines, providing a summary at the end.
+- **File Copying:** Optionally copies generated CSV files to other specified locations.
+</details>
+`;
 
   public static examples = [
     "$ sf hardis:misc:toml2csv --tomlfile 'D:/clients/toto/V1_full.txt' ",
@@ -146,6 +186,7 @@ export default class Toml2Csv extends SfCommand<any> {
     }
 
     uxLog(
+      "action",
       this,
       c.cyan(
         `Generating CSV files from ${c.green(tomlFile)} (encoding ${tomlFileEncoding}) into folder ${c.green(
@@ -169,7 +210,7 @@ export default class Toml2Csv extends SfCommand<any> {
     for await (const line of rl) {
       this.stats.totalLinesNb++;
       if (debugMode) {
-        uxLog(this, c.grey(line));
+        uxLog("log", this, c.grey(line));
       }
       // Empty line
       if (line.length === 0) {
@@ -266,12 +307,12 @@ export default class Toml2Csv extends SfCommand<any> {
               this.lineErrorMessages[(e as Error).message]++;
             } else {
               this.lineErrorMessages[(e as Error).message] = 1;
-              uxLog(this, c.red((e as Error).message));
+              uxLog("error", this, c.red((e as Error).message));
             }
           }
         }
       } else {
-        uxLog(this, c.yellow(`Line without declared section before: skipped (${line})`));
+        uxLog("warning", this, c.yellow(`Line without declared section before: skipped (${line})`));
       }
     }
 
@@ -303,6 +344,7 @@ export default class Toml2Csv extends SfCommand<any> {
         if (fs.existsSync(this.tomlSectionsFileWriters[sectionKey].path)) {
           await fs.copy(this.tomlSectionsFileWriters[sectionKey].path, sectionData.outputFile.copyFilePath);
           uxLog(
+            "log",
             this,
             c.grey(
               `- copied ${this.tomlSectionsFileWriters[sectionKey].path} to ${sectionData.outputFile.copyFilePath}`
@@ -313,15 +355,15 @@ export default class Toml2Csv extends SfCommand<any> {
     }
 
     // Display full stats
-    uxLog(this, c.grey('Stats: \n' + JSON.stringify(this.stats, null, 2)));
+    uxLog("log", this, c.grey('Stats: \n' + JSON.stringify(this.stats, null, 2)));
 
     // Display errors summary
     if (Object.keys(this.lineErrorMessages).length > 0) {
-      uxLog(this, c.yellow('There have been parsing errors:'));
+      uxLog("warning", this, c.yellow('There have been parsing errors:'));
       for (const errMsg of Object.keys(this.lineErrorMessages)) {
-        uxLog(this, c.yellow('- ' + this.lineErrorMessages[errMsg] + ' lines: ' + errMsg));
+        uxLog("warning", this, c.yellow('- ' + this.lineErrorMessages[errMsg] + ' lines: ' + errMsg));
       }
-      uxLog(this, '');
+      uxLog("other", this, '');
     }
 
     // Display human-readable stats
@@ -329,14 +371,16 @@ export default class Toml2Csv extends SfCommand<any> {
       const sectionStats = this.stats.sections[section];
       if (sectionStats.dataLinesNb > 0) {
         uxLog(
+          "log",
           this,
           c.grey(`[${section}] kept ${sectionStats.dataSuccessLinesNb} entries on ${sectionStats.dataLinesNb}`)
         );
       }
     }
-    uxLog(this, c.grey(`[TOTAL] kept ${this.stats.dataSuccessLinesNb} entries on ${this.stats.dataLinesNb}`));
+    uxLog("log", this, c.grey(`[TOTAL] kept ${this.stats.dataSuccessLinesNb} entries on ${this.stats.dataLinesNb}`));
     const message = `TOML file ${tomlFile} has been split into ${this.csvFiles.length} CSV files in directory ${this.outputDir}`;
     uxLog(
+      "action",
       this,
       c.cyan(
         `TOML file ${c.green(tomlFile)} has been split into ${c.green(
@@ -361,7 +405,7 @@ export default class Toml2Csv extends SfCommand<any> {
       const outputFile = path.join(this.outputDir, `${section}.csv`);
       // Init writeStream
       const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: 'utf8' });
-      uxLog(this, c.cyan(`- Initialized output CSV file ${c.green(c.bold(outputFile))}`));
+      uxLog("action", this, c.cyan(`- Initialized output CSV file ${c.green(c.bold(outputFile))}`));
       this.csvFiles.push(outputFile);
       return fileWriteStream;
     }
@@ -384,16 +428,16 @@ export default class Toml2Csv extends SfCommand<any> {
       }
       // Initialize with header
       fileWriteStream.write(headerLine + '\n');
-      uxLog(this, c.cyan(`- Initialized ${errMode ? 'errors' : 'output'} CSV file ${c.green(c.bold(outputFile))}`));
+      uxLog("action", this, c.cyan(`- Initialized ${errMode ? 'errors' : 'output'} CSV file ${c.green(c.bold(outputFile))}`));
       this.csvFiles.push(outputFile);
       return fileWriteStream;
     } else if (errMode === false) {
       // Section has not been described in config file !!
-      uxLog(this, c.yellow(`Section ${section} as entity is not described with columns in ${this.transfoConfigFile}`));
+      uxLog("warning", this, c.yellow(`Section ${section} as entity is not described with columns in ${this.transfoConfigFile}`));
       const outputFile = path.join(this.outputDir, 'errors', `noconfig__${section}.csv`);
       // Init writeStream
       const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: 'utf8' });
-      uxLog(this, c.cyan(`- Initialized default output CSV file ${c.green(c.bold(outputFile))}`));
+      uxLog("action", this, c.cyan(`- Initialized default output CSV file ${c.green(c.bold(outputFile))}`));
       this.csvFiles.push(outputFile);
       return fileWriteStream;
     }

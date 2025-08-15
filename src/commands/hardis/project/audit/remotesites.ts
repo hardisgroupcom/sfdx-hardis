@@ -3,11 +3,12 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import fs from 'fs-extra';
+import c from 'chalk';
 import { glob } from 'glob';
 import * as psl from 'psl';
 import sortArray from 'sort-array';
 import * as url from 'url';
-import { catchMatches, generateReports, uxLog } from '../../../../common/utils/index.js';
+import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -16,7 +17,33 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class RemoteSites extends SfCommand<any> {
   public static title = 'Audit Remote Sites';
 
-  public static description = messages.getMessage('auditRemoteSites');
+  public static description: string = `
+## Command Behavior
+
+**Audits Salesforce Remote Site Settings in your project, providing a comprehensive overview of external endpoints accessed by your Salesforce org.**
+
+This command is crucial for security reviews, compliance checks, and understanding the external integrations of your Salesforce environment. It helps identify all configured remote sites, their URLs, activity status, and associated protocols.
+
+Key functionalities:
+
+- **Remote Site Discovery:** Scans your project for RemoteSiteSetting metadata files (.remoteSite-meta.xml or .remoteSite).
+- **URL Extraction:** Extracts the URL, active status, and description for each remote site.
+- **Protocol and Domain Identification:** Determines the protocol (HTTP/HTTPS) and extracts the domain from each URL, providing a clearer picture of the external systems being accessed.
+- **Reporting:** Generates a CSV report summarizing all detected remote sites, including their protocol, domain, name, URL, active status, and description.
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **File Discovery:** Uses \`glob\` to find all RemoteSiteSetting metadata files within the project.
+- **Content Analysis:** Reads the content of each XML file and uses regular expressions (/<url>(.*?)<\\/url>/gim, /<isActive>(.*?)<\\/isActive>/gim, /<description>(.*?)<\\/description>/gim) to extract relevant details.
+- **\`catchMatches\` Utility:** This utility function is used to apply the defined regular expressions to each file and extract all matching occurrences.
+- **URL Parsing:** Uses Node.js's \`url\` module to parse the extracted URLs and \`psl\` (Public Suffix List) to extract the domain name from the hostname.
+- **Data Structuring:** Organizes the extracted information into a structured format, including the remote site's name, file name, namespace, URL, active status, description, protocol, and domain.
+- **Reporting:** Uses \`generateReports\` to create a CSV report and display a table in the console, summarizing the audit findings.
+</details>
+`;
 
   public static examples = ['$ sf hardis:project:audit:remotesites'];
 
@@ -63,7 +90,7 @@ export default class RemoteSites extends SfCommand<any> {
     ];
     const remoteSiteSettingsFiles = await glob(pattern, { ignore: GLOB_IGNORE_PATTERNS });
     this.matchResults = [];
-    uxLog(this, `Browsing ${remoteSiteSettingsFiles.length} files`);
+    uxLog("other", this, `Browsing ${remoteSiteSettingsFiles.length} files`);
     // Loop in files
     for (const file of remoteSiteSettingsFiles) {
       const fileText = await fs.readFile(file, 'utf8');
@@ -96,8 +123,9 @@ export default class RemoteSites extends SfCommand<any> {
     });
 
     // Display as table
+    uxLog("action", this, c.cyan(`Found ${c.bold(resultSorted.length)} remote sites.`));
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
-    console.table(
+    uxLogTable(this,
       resultsLight.map((item: any) => {
         delete item.fileName;
         delete item.detail;

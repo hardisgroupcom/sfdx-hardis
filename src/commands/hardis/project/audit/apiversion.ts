@@ -6,7 +6,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
 import sortArray from 'sort-array';
-import { catchMatches, generateReports, uxLog } from '../../../../common/utils/index.js';
+import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -98,6 +98,7 @@ export default class CallInCallOut extends SfCommand<any> {
     const fixInvalidMetadataTypes = fixTargetedMetadataTypes.filter(value => !fixAllowedMetadataTypes.includes(value));
     if (fixTargetedMetadataTypes.length > 0 && fixInvalidMetadataTypes.length > 0 && shouldFix) {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `[sfdx-hardis] WARNING: --fix Invalid Metadata Type(s) found:  ${c.bold(
@@ -145,33 +146,41 @@ export default class CallInCallOut extends SfCommand<any> {
     ];
     const xmlFiles = await glob(pattern, { ignore: GLOB_IGNORE_PATTERNS });
     this.matchResults = [];
-    uxLog(this, `Browsing ${xmlFiles.length} files`);
+    uxLog("other", this, `Browsing ${xmlFiles.length} files`);
     // Loop in files
     for (const file of xmlFiles) {
-      const fileText = await fs.readFile(file, 'utf8');
-      // Update ApiVersion on file
-      let fixed = false;
-      if (shouldFix && fixTargetedMetadataTypes.length > 0 && fixTargetedMetadataTypesPattern.test(file)) {
-        const apiVersionMatch = fileText.match(/<apiVersion>(.*?)<\/apiVersion>/);
-        if (apiVersionMatch && apiVersionMatch[1]) {
-          const currentApiVersion = parseFloat(apiVersionMatch[1]);
-          if (currentApiVersion < minimumApiVersion) {
-            const updatedContent = fileText.replace(/<apiVersion>(.*?)<\/apiVersion>/, `<apiVersion>${fixApiVersion}.0</apiVersion>`);
-            await fs.promises.writeFile(file, updatedContent, 'utf-8');
-            fixed = true;
-            uxLog(this, `Updated apiVersion in file: ${file} from ${currentApiVersion}.0 to ${fixApiVersion}.0`);
+      try {
+        const fileText = await fs.readFile(file, 'utf8');
+        // Update ApiVersion on file
+        let fixed = false;
+        if (shouldFix && fixTargetedMetadataTypes.length > 0 && fixTargetedMetadataTypesPattern.test(file)) {
+          const apiVersionMatch = fileText.match(/<apiVersion>(.*?)<\/apiVersion>/);
+          if (apiVersionMatch && apiVersionMatch[1]) {
+            const currentApiVersion = parseFloat(apiVersionMatch[1]);
+            if (currentApiVersion < minimumApiVersion) {
+              const updatedContent = fileText.replace(/<apiVersion>(.*?)<\/apiVersion>/, `<apiVersion>${fixApiVersion}.0</apiVersion>`);
+              await fs.promises.writeFile(file, updatedContent, 'utf-8');
+              fixed = true;
+              uxLog("other", this, `Updated apiVersion in file: ${file} from ${currentApiVersion}.0 to ${fixApiVersion}.0`);
+            }
           }
         }
-      }
-      // Loop on criteria to find matches in this file
-      for (const catcher of catchers) {
-        const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
-        // Add the "fixed" flag
-        const enrichedResults = catcherMatchResults.map(result => ({
-          ...result,
-          fixed,
-        }));
-        this.matchResults.push(...enrichedResults);
+        // Loop on criteria to find matches in this file
+        for (const catcher of catchers) {
+          const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
+          // Add the "fixed" flag
+          const enrichedResults = catcherMatchResults.map(result => ({
+            ...result,
+            fixed,
+          }));
+          this.matchResults.push(...enrichedResults);
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          uxLog("warning", this, c.yellow(`Error processing file ${file}: ${error.message}`));
+        } else {
+          uxLog("warning", this, c.yellow(`Error processing file ${file}: ${String(error)}`));
+        }
       }
     }
     // Format result
@@ -192,35 +201,39 @@ export default class CallInCallOut extends SfCommand<any> {
     });
 
     // Display as table
+    uxLog("action", this, c.cyan(`Found ${c.bold(resultSorted.length)} metadata files with API Version.`));
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
-    console.table(
+    uxLogTable(this,
       resultsLight.map((item: any) => {
         delete item.detail;
         return item;
       })
     );
 
+
     const numberOfInvalid = result.filter((res: any) => res.valid === 'no').length;
     const numberOfValid = result.length - numberOfInvalid;
     if (numberOfInvalid > 0) {
       uxLog(
+        "warning",
         this,
         c.yellow(
-          `[sfdx-hardis] WARNING: Your sources contain ${c.bold(
+          `WARNING: Your sources contain ${c.bold(
             numberOfInvalid
           )} metadata files with API Version lesser than ${c.bold(minimumApiVersion)}`
         )
       );
       if (failIfError) {
         throw new SfError(
-          c.red(`[sfdx-hardis][ERROR] ${c.bold(numberOfInvalid)} metadata files with wrong API version detected`)
+          c.red(`${c.bold(numberOfInvalid)} metadata files with wrong API version detected`)
         );
       }
     } else {
       uxLog(
+        "success",
         this,
         c.green(
-          `[sfdx-hardis] SUCCESS: Your sources contain ${c.bold(
+          `SUCCESS: Your sources contain ${c.bold(
             numberOfValid
           )} metadata files with API Version superior to ${c.bold(minimumApiVersion)}`
         )

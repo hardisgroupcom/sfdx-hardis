@@ -8,6 +8,55 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - New command [hardis:org:refresh:restore:connectedapp](https://sfdx-hardis.cloudity.com/hardis/org/refresh/restore/connectedapp/) : Restore Connected Apps after refreshing a sandbox.
 
+## [6.0.5 (beta)] 2025-08-14
+
+- Add ENV SF_DATA_DIR to the ubuntu Dockerfile to install plugins "globally" and make the image work as non-root user
+
+## [6.0.4 (beta)] 2025-08-14
+
+- Immediately stop when a user cancelled a multi-questions prompts
+- Add log used for background process in LWC UI
+- Refactor logging methods
+- Display labels of prompt answers, not technical values
+- Improve naming of report files
+
+## [6.0.3 (beta)] 2025-08-12
+
+- [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/): Add --no-prompt option to directly use default org.
+- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/):
+  - Add links to create Merge Request + Display MR documentation
+  - Conditionally execute CleanXML command
+- Improve UX when opening sandboxes
+
+## [6.0.2 (beta)] 2025-08-11
+
+- Renaming "task" to "User Story" across the codebase and documentation for clarity.
+- Enhancing SFDMU integration by improving UX and linking external docs.
+- Improving CLI command outputs and workflows.
+
+## [6.0.1 (beta)] 2025-08-11
+
+- Send messages to VsCode to enhance buttons and links
+- Send messages to VsCode to display tables
+- Unify the way to handle table display in all commands formerly using console.table or columnify
+
+## [6.0.0 (beta)] 2025-08-09
+
+- Implement advanced websocket messaging for vscode sfdx-hardis LWC UI
+- Refactor logging within commands for better display on vscode sfdx-hardis LWC UI
+- Generate commands documentation with AI
+- Refactor [hardis:org:configure:auth](https://sfdx-hardis.cloudity.com/hardis/org/configure/auth/) for better UX
+- Enhance org selection prompt
+
+## [5.45.0] 2025-07-22
+
+- Generate ubuntu-based Docker images
+  - docker.io/hardisgroupcom/sfdx-hardis-ubuntu
+  - ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu
+- Display commands in blue for better readability on BitBucket
+- Fix bug that did not replace existing comments on BitBucket
+- Decrease docker images size
+
 ## [5.44.1] 2025-07-16
 
 - [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/):Add new ignored items in audit trail
@@ -43,6 +92,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [5.43.0] 2025-06-22
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) enhancements
+
   - Generate Apex Class relationship diagram on each apex doc page
   - Improve display of Object and Class diagrams when there are too many items
 

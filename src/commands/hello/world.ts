@@ -11,7 +11,28 @@ export type HelloWorldResult = {
 
 export default class World extends SfCommand<HelloWorldResult> {
   public static readonly summary = messages.getMessage('summary');
-  public static readonly description = messages.getMessage('description');
+  public static readonly description = `
+## Command Behavior
+
+**Says hello to the world or a specified person.**
+
+This is a simple command used for demonstration purposes. It outputs a greeting message to the console.
+
+Key functionalities:
+
+- **Customizable Greeting:** You can specify a name using the \`--name\` flag to personalize the greeting.
+- **Timestamp:** The greeting includes the current date.
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **Flag Parsing:** It parses the \`--name\` flag to get the recipient of the greeting.
+- **Date Retrieval:** It gets the current date using \`new Date().toDateString()\`.
+- **Console Output:** It constructs the greeting message using the provided name and the current date, and then logs it to the console using \`this.log()\`.
+</details>
+`;
   public static readonly examples = messages.getMessages('examples');
 
   public static readonly flags: any = {

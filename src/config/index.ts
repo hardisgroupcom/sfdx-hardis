@@ -98,7 +98,7 @@ export const getConfig = async (layer: "project" | "branch" | "user" = 'user'): 
 export const setConfig = async (layer: string, propValues: any): Promise<void> => {
   if (layer === 'user' && (fs.readdirSync(process.cwd()).length === 0 || !isGitRepo())) {
     if (process?.argv?.includes('--debug')) {
-      uxLog(this, c.grey('Skip update user config file because current directory is not a salesforce project'));
+      uxLog("log", this, c.grey('Skip update user config file because current directory is not a salesforce project'));
     }
     return;
   }
@@ -161,6 +161,7 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
   }
   if (!isCI) {
     uxLog(
+      "other",
       this,
       c.magentaBright(`Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues, null, 2)}`)
     );
@@ -231,14 +232,18 @@ export async function promptForProjectName() {
   const projectRes = await prompts({
     type: 'text',
     name: 'projectName',
-    message: 'What is the name of your project ? (example: MyClient)',
+    message: 'What is the name of your project ?',
+    description: 'Used to generate environment variables and configuration files for your Salesforce project',
+    placeholder: 'Ex: MyClient',
   });
   const userProjectName = projectRes.projectName + '';
   let projectName = projectRes.projectName.toLowerCase().replace(' ', '_');
   // Make sure that projectName is compliant with the format of an environment variable
   projectName = projectName.replace(/[^a-zA-Z0-9_]/g, '_').replace(/^[^a-zA-Z_]+/, '');
   if (projectName !== userProjectName) {
-    uxLog(this,
+    uxLog(
+      "warning",
+      this,
       c.yellow(
         `Project name has been changed to ${projectName} because it must be compliant with the format of an environment variable.`
       )
@@ -246,6 +251,7 @@ export async function promptForProjectName() {
     const promptResp = await prompts({
       type: 'confirm',
       message: `Are you ok with updated project name "${projectName}" ?`,
+      description: 'Confirms the use of the sanitized project name which must be compliant with environment variable format',
     });
     if (promptResp.value === true) {
       return projectName;

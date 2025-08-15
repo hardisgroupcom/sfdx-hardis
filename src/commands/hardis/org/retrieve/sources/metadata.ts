@@ -21,7 +21,36 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class DxSources extends SfCommand<any> {
   public static title = 'Retrieve sfdx sources from org';
 
-  public static description = messages.getMessage('retrieveDx');
+  public static description = `
+## Command Behavior
+
+**Retrieves Salesforce metadata from an org into a local directory, primarily for backup and monitoring purposes.**
+
+This command is designed to pull metadata from any Salesforce org, providing a snapshot of its configuration. It's particularly useful in monitoring contexts where you need to track changes in an org's metadata over time.
+
+Key functionalities:
+
+- **Metadata Retrieval:** Connects to a target Salesforce org and retrieves metadata based on a specified \`package.xml\`.
+- **Managed Package Filtering:** By default, it filters out metadata from managed packages to reduce the volume of retrieved data. This can be overridden with the \`--includemanaged\` flag.
+- **Monitoring Integration:** Designed to be used within a monitoring CI/CD job, it performs additional post-retrieval actions like running Apex tests and checking for legacy API usage.
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **Git Repository Check:** Ensures the current directory is a Git repository and initializes it if necessary.
+- **\`MetadataUtils.retrieveMetadatas\`:** This utility is the core of the retrieval process. It connects to the Salesforce org, retrieves metadata based on the provided \`package.xml\` and filtering options (e.g., \`filterManagedItems\`), and places the retrieved files in a specified folder.
+- **File System Operations:** Uses \`fs-extra\` to manage directories and copy retrieved files to the target folder.
+- **Post-Retrieval Actions (for Monitoring Jobs):** If the command detects it's running within a monitoring CI/CD job (\`isMonitoringJob()\`):
+  - It updates the \`.gitlab-ci.yml\` file if \`AUTO_UPDATE_GITLAB_CI_YML\` is set.
+  - It converts the retrieved metadata into SFDX format using \`sf project convert mdapi\`.
+  - It executes \`sf hardis:org:test:apex\` to run Apex tests.
+  - It executes \`sf hardis:org:diagnose:legacyapi\` to check for legacy API usage.
+  - It logs warnings if post-actions fail or if the monitoring version is deprecated.
+- **Error Handling:** Includes robust error handling for retrieval failures and post-action execution.
+</details>
+`;
 
   public static examples = [
     '$ sf hardis:org:retrieve:sources:metadata',
@@ -102,7 +131,7 @@ export default class DxSources extends SfCommand<any> {
       await fs.rm(path.join(folder, 'unpackaged'), { recursive: true });
 
       message = `[sfdx-hardis] Successfully retrieved metadatas in ${folder}`;
-      uxLog(this, message);
+      uxLog("other", this, message);
     } catch (e) {
       if (!isMonitoring) {
         throw e;
@@ -117,21 +146,22 @@ export default class DxSources extends SfCommand<any> {
         return await this.processPostActions(message, flags);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
-        uxLog(this, c.yellow('Post actions have failed !'));
+        uxLog("warning", this, c.yellow('Post actions have failed !'));
       }
       uxLog(
+        "warning",
         this,
         c.yellow(c.bold('This version of sfdx-hardis monitoring is deprecated and will not be maintained anymore'))
       );
-      uxLog(this, c.yellow(c.bold('Switch to new sfdx-hardis monitoring that is enhanced !')));
-      uxLog(this, c.yellow(c.bold(`Info: ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/`)));
+      uxLog("warning", this, c.yellow(c.bold('Switch to new sfdx-hardis monitoring that is enhanced !')));
+      uxLog("warning", this, c.yellow(c.bold(`Info: ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/`)));
     }
 
     return { orgId: flags['target-org'].getOrgId(), outputString: message };
   }
 
   private async processPostActions(message, flags) {
-    uxLog(this, c.cyan('Monitoring repo detected'));
+    uxLog("action", this, c.cyan('Monitoring repo detected'));
 
     // Update default .gitlab-ci.yml within the monitoring repo
     const localGitlabCiFile = path.join(process.cwd(), '.gitlab-ci.yml');
@@ -141,17 +171,17 @@ export default class DxSources extends SfCommand<any> {
       const latestGitlabCiContent = await fs.readFile(latestGitlabCiFile, 'utf8');
       if (localGitlabCiContent !== latestGitlabCiContent) {
         await fs.writeFile(localGitlabCiFile, latestGitlabCiContent);
-        uxLog(this, c.cyan('Updated .gitlab-ci.yml file'));
+        uxLog("action", this, c.cyan('Updated .gitlab-ci.yml file'));
       }
     }
 
     // Also trace updates with sfdx sources, for better readability
-    uxLog(this, c.cyan('Convert into sfdx format...'));
+    uxLog("action", this, c.cyan('Convert into sfdx format...'));
     if (fs.existsSync('metadatas')) {
       // Create sfdx project if not existing yet
       if (!fs.existsSync('sfdx-project')) {
         const createCommand = 'sf project generate' + ` --name "sfdx-project"`;
-        uxLog(this, c.cyan('Creating sfdx-project...'));
+        uxLog("action", this, c.cyan('Creating sfdx-project...'));
         await execCommand(createCommand, this, {
           output: true,
           fail: true,
@@ -160,17 +190,17 @@ export default class DxSources extends SfCommand<any> {
       }
       // Convert metadatas into sfdx sources
       const mdapiConvertCommand = `sf project convert mdapi --root-dir "../metadatas"`;
-      uxLog(this, c.cyan('Converting metadata to source formation into sfdx-project...'));
-      uxLog(this, `[command] ${c.bold(c.grey(mdapiConvertCommand))}`);
+      uxLog("action", this, c.cyan('Converting metadata to source formation into sfdx-project...'));
+      uxLog("other", this, `[command] ${c.bold(c.grey(mdapiConvertCommand))}`);
       const prevCwd = process.cwd();
       process.chdir(path.join(process.cwd(), './sfdx-project'));
       try {
         const convertRes = await exec(mdapiConvertCommand, {
           maxBuffer: 10000 * 10000,
         });
-        uxLog(this, convertRes.stdout + convertRes.stderr);
+        uxLog("other", this, convertRes.stdout + convertRes.stderr);
       } catch (e) {
-        uxLog(this, c.yellow('Error while converting metadatas to sources:\n' + (e as Error).message));
+        uxLog("warning", this, c.yellow('Error while converting metadatas to sources:\n' + (e as Error).message));
       }
       process.chdir(prevCwd);
     }
@@ -180,15 +210,15 @@ export default class DxSources extends SfCommand<any> {
     const prevExitCode = process.exitCode || 0;
     try {
       // Run test classes
-      uxLog(this, c.cyan('Running Apex tests...'));
+      uxLog("action", this, c.cyan('Running Apex tests...'));
       orgTestRes = await new OrgTestApex([], this.config)._run();
 
       // Check usage of Legacy API versions
-      uxLog(this, c.cyan('Running Legacy API Use checks...'));
+      uxLog("action", this, c.cyan('Running Legacy API Use checks...'));
       legacyApiRes = await new LegacyApi([], this.config)._run();
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      uxLog(this, c.yellow('Issues found when running Apex tests or Legacy API, please check messages'));
+      uxLog("warning", this, c.yellow('Issues found when running Apex tests or Legacy API, please check messages'));
     }
     process.exitCode = prevExitCode;
 

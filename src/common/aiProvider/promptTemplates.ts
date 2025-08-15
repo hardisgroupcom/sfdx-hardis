@@ -46,10 +46,10 @@ function getPromptTemplate(template: PromptTemplate): PromptTemplateDefinition {
       templateData.text = {
         "en": localTemplate,
       };
-      uxLog(this, `Loaded local prompt template for ${template} from ${localPath}`);
+      uxLog("log", this, `Loaded local prompt template for ${template} from ${localPath}`);
     } catch (e: any) {
       // fallback to default if error
-      uxLog(this, `Error loading local template for ${template}: ${e.message}`);
+      uxLog("warning", this, `Error loading local template for ${template}: ${e.message}`);
     }
   }
 
@@ -75,12 +75,12 @@ function getPromptVariable(variable: PromptVariable): string {
   if (fs.existsSync(localPath)) {
     try {
       const localVariable = fs.readFileSync(localPath, "utf-8");
-      uxLog(this, `Loaded local prompt variable for ${variable} from ${localPath}`);
+      uxLog("log", this, `Loaded local prompt variable for ${variable} from ${localPath}`);
       promptVariableCache[variable] = localVariable;
       return localVariable;
     } catch (e: any) {
       // fallback to default if error
-      uxLog(this, `Error loading local variable for ${variable}: ${e.message}`);
+      uxLog("warning", this, `Error loading local variable for ${variable}: ${e.message}`);
     }
   }
 

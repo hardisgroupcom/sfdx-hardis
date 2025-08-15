@@ -151,6 +151,7 @@ export class ApiProvider extends NotifProviderRoot {
         newPayloadData._logElementsTruncated = true;
         payloadDataJson = JSON.stringify(newPayloadData);
         uxLog(
+          "log",
           this,
           c.grey(
             `[ApiProvider] Truncated _logElements from ${logElements.length} to ${truncatedLogElements.length} to avoid Loki entry max size reached (initial size: ${bodyBytesLen} bytes)`,
@@ -159,7 +160,7 @@ export class ApiProvider extends NotifProviderRoot {
       } else {
         newPayloadData._logBodyText = (newPayloadData._logBodyText || "").slice(0, 100) + "\n ... (truncated)";
         payloadDataJson = JSON.stringify(newPayloadData);
-        uxLog(this, c.grey(`[ApiProvider] Truncated _logBodyText to 100 to avoid Loki entry max size reached (initial size: ${bodyBytesLen} bytes)`));
+        uxLog("log", this, c.grey(`[ApiProvider] Truncated _logBodyText to 100 to avoid Loki entry max size reached (initial size: ${bodyBytesLen} bytes)`));
       }
     }
     this.payloadFormatted = {
@@ -193,15 +194,15 @@ export class ApiProvider extends NotifProviderRoot {
       const axiosResponse = await axios.post(this.apiUrl || "", this.payloadFormatted, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
-        uxLog(this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
+        uxLog("action", this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
         if (getEnvVar("NOTIF_API_DEBUG") === "true") {
-          uxLog(this, c.cyan(JSON.stringify(this.payloadFormatted, null, 2)));
+          uxLog("action", this, c.cyan(JSON.stringify(this.payloadFormatted, null, 2)));
         }
       }
     } catch (e) {
-      uxLog(this, c.yellow(`[ApiProvider] Error while sending message to API ${this.apiUrl}: ${(e as Error).message}`));
-      uxLog(this, c.grey("Request body: \n" + JSON.stringify(this.payloadFormatted)));
-      uxLog(this, c.grey("Response body: \n" + JSON.stringify((e as any)?.response?.data || {})));
+      uxLog("warning", this, c.yellow(`[ApiProvider] Error while sending message to API ${this.apiUrl}: ${(e as Error).message}`));
+      uxLog("log", this, c.grey("Request body: \n" + JSON.stringify(this.payloadFormatted)));
+      uxLog("log", this, c.grey("Response body: \n" + JSON.stringify((e as any)?.response?.data || {})));
     }
   }
 
@@ -263,15 +264,15 @@ export class ApiProvider extends NotifProviderRoot {
       const axiosResponse = await axios.post(this.metricsApiUrl || "", this.metricsPayload, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
-        uxLog(this, c.cyan(`[ApiMetricProvider] Posted message to API ${this.metricsApiUrl} (${httpStatus})`));
+        uxLog("action", this, c.cyan(`[ApiMetricProvider] Posted message to API ${this.metricsApiUrl} (${httpStatus})`));
         if (getEnvVar("NOTIF_API_DEBUG") === "true") {
-          uxLog(this, c.cyan(JSON.stringify(this.metricsPayload, null, 2)));
+          uxLog("action", this, c.cyan(JSON.stringify(this.metricsPayload, null, 2)));
         }
       }
     } catch (e) {
-      uxLog(this, c.yellow(`[ApiMetricProvider] Error while sending message to API ${this.metricsApiUrl}: ${(e as Error).message}`));
-      uxLog(this, c.grey("Request body: \n" + JSON.stringify(this.metricsPayload)));
-      uxLog(this, c.grey("Response body: \n" + JSON.stringify((e as any)?.response?.data || {})));
+      uxLog("warning", this, c.yellow(`[ApiMetricProvider] Error while sending message to API ${this.metricsApiUrl}: ${(e as Error).message}`));
+      uxLog("log", this, c.grey("Request body: \n" + JSON.stringify(this.metricsPayload)));
+      uxLog("log", this, c.grey("Response body: \n" + JSON.stringify((e as any)?.response?.data || {})));
     }
   }
 }

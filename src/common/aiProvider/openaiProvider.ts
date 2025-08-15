@@ -20,15 +20,15 @@ export class OpenAiProvider extends AiProviderRoot {
   public async promptAi(promptText: string, template: PromptTemplate | null = null): Promise<AiResponse | null> {
     if (!this.checkMaxAiCallsNumber()) {
       const maxCalls = this.getAiMaxCallsNumber();
-      uxLog(this, c.yellow(`[OpenAi] Already performed maximum ${maxCalls} calls. Increase it by defining AI_MAXIMUM_CALL_NUMBER env variable`));
+      uxLog("warning", this, c.yellow(`[OpenAi] Already performed maximum ${maxCalls} calls. Increase it by defining AI_MAXIMUM_CALL_NUMBER env variable`));
       return null;
     }
     const gptModel = process.env.OPENAI_MODEL || "gpt-4o-mini";
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog(this, c.grey(`[OpenAi] Requesting the following prompt to ${gptModel}${template ? ' using template ' + template : ''}:\n${promptText}`));
+      uxLog("log", this, c.grey(`[OpenAi] Requesting the following prompt to ${gptModel}${template ? ' using template ' + template : ''}:\n${promptText}`));
     }
     else {
-      uxLog(this, c.grey(`[OpenAi] Requesting prompt to ${gptModel}${template ? ' using template ' + template : ''} (define DEBUG_PROMPTS=true to see details)`));
+      uxLog("log", this, c.grey(`[OpenAi] Requesting prompt to ${gptModel}${template ? ' using template ' + template : ''} (define DEBUG_PROMPTS=true to see details)`));
     }
     this.incrementAiCallsNumber();
     const completion = await this.openai.chat.completions.create({
@@ -36,10 +36,10 @@ export class OpenAiProvider extends AiProviderRoot {
       model: gptModel,
     });
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog(this, c.grey("[OpenAi] Received prompt response from " + gptModel + "\n" + JSON.stringify(completion, null, 2)));
+      uxLog("log", this, c.grey("[OpenAi] Received prompt response from " + gptModel + "\n" + JSON.stringify(completion, null, 2)));
     }
     else {
-      uxLog(this, c.grey("[OpenAi] Received prompt response from " + gptModel));
+      uxLog("log", this, c.grey("[OpenAi] Received prompt response from " + gptModel));
     }
     const aiResponse: AiResponse = {
       success: false,

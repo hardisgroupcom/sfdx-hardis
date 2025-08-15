@@ -1,6 +1,6 @@
 ---
-title: Work on a task on a Salesforce DX project
-description: Learn how to work on a task with a tracked sandbox or a scratch org
+title: Work on a User Story on a Salesforce DX project
+description: Learn how to work on a User Story with a tracked sandbox or a scratch org
 ---
 <!-- markdownlint-disable MD013 -->
 

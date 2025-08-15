@@ -3,9 +3,8 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import columnify from 'columnify';
 import sortArray from 'sort-array';
-import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkQuery, bulkUpdate, soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { promptProfiles } from '../../../../common/utils/orgUtils.js';
@@ -71,7 +70,7 @@ See article below
     const conn = flags['target-org'].getConnection();
 
     // Query users that we want to freeze
-    uxLog(this, c.cyan(`Querying User records with email ending with .invalid...`));
+    uxLog("action", this, c.cyan(`Querying User records with email ending with .invalid...`));
     let userQuery = `SELECT Id,Name,Username,Email,ProfileId FROM User WHERE Email LIKE '%.invalid' and IsActive=true`;
     if (hasProfileConstraint) {
       const profilesQuery = `SELECT Id FROM Profile WHERE Name IN ('${this.profiles.join("','")}')`;
@@ -85,7 +84,7 @@ See article below
     // Check empty result
     if (usersToActivate.length === 0) {
       const outputString = `No matching user records found with email ending with .invalid`;
-      uxLog(this, c.yellow(outputString));
+      uxLog("warning", this, c.yellow(outputString));
       return { outputString };
     }
 
@@ -101,6 +100,8 @@ See article below
             usersToActivate.length
           )} found users in org ${c.green(flags['target-org'].getUsername())} ?`
         ),
+        description: 'Choose whether to update email addresses for all found users or select specific ones',
+        placeholder: 'Select an option',
         choices: [
           { title: `Yes, all ${c.bold(usersToActivate.length)} users`, value: 'all' },
           { title: 'No, i want to manually select by profile(s)', value: 'selectProfiles' },
@@ -126,6 +127,7 @@ See article below
           type: 'multiselect',
           name: 'value',
           message: 'Please select users that you want to remove the .invalid from emails',
+          description: 'Choose specific users to reactivate by removing .invalid suffix from their email addresses',
           choices: usersSorted.map((user: any) => {
             return { title: `${user.Name} - ${user.Email}`, value: user };
           }),
@@ -133,7 +135,7 @@ See article below
         usersToActivateFinal = selectUsers.value;
       } else if (confirmSelect.value !== 'all') {
         const outputString = 'Script cancelled by user';
-        uxLog(this, c.yellow(outputString));
+        uxLog("warning", this, c.yellow(outputString));
         return { outputString };
       }
     }
@@ -145,18 +147,20 @@ See article below
     });
     const bulkUpdateRes = await bulkUpdate('User', 'update', userToActivateUpdated, conn);
 
-    uxLog(
+    uxLog("action", this, c.cyan(`Results of the reactivation of ${userToActivateUpdated.length} users by removing the .invalid from their email`));
+    uxLogTable(
       this,
-      '\n' +
-      c.white(
-        columnify(this.debugMode ? userToActivateUpdated : userToActivateUpdated.slice(0, this.maxUsersDisplay))
-      )
+      this.debugMode ? userToActivateUpdated : userToActivateUpdated.slice(0, this.maxUsersDisplay)
     );
+    if (!this.debugMode && userToActivateUpdated.length > this.maxUsersDisplay) {
+      uxLog("warning", this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
+    }
 
     const activateSuccessNb = bulkUpdateRes.successfulResults.length;
     const activateErrorNb = bulkUpdateRes.failedResults.length;
     if (activateErrorNb > 0) {
       uxLog(
+        "warning",
         this,
         c.yellow(`Warning: ${c.red(c.bold(activateErrorNb))} users has not been reactivated (bulk API errors)`)
       );
@@ -164,6 +168,7 @@ See article below
 
     // Build results summary
     uxLog(
+      "success",
       this,
       c.green(`${c.bold(activateSuccessNb)} users has been be reactivated by removing the .invalid of their email`)
     );

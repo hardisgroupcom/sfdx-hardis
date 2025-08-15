@@ -79,7 +79,7 @@ export class GitlabProvider extends GitProviderRoot {
         return this.completePullRequestInfo(candidateMergeRequests[0]);
       }
     }
-    uxLog(this, c.grey(`[Gitlab Integration] Unable to find related Merge Request Info`));
+    uxLog("log", this, c.grey(`[Gitlab Integration] Unable to find related Merge Request Info`));
     return null;
   }
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
@@ -115,7 +115,7 @@ export class GitlabProvider extends GitProviderRoot {
         const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingNote.body);
         if (matches) {
           deploymentCheckId = matches[1];
-          uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on MR #${latestMergeRequestId} ${latestMergeRequest.title}`));
+          uxLog("error", this, c.grey(`Found deployment id ${deploymentCheckId} on MR #${latestMergeRequestId} ${latestMergeRequest.title}`));
           break;
         }
       }
@@ -129,7 +129,7 @@ export class GitlabProvider extends GitProviderRoot {
     const projectId = process.env.CI_PROJECT_ID || null;
     const mergeRequestId = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || null;
     if (projectId == null || mergeRequestId == null) {
-      uxLog(this, c.grey("[Gitlab integration] No project and merge request, so no note posted..."));
+      uxLog("log", this, c.grey("[Gitlab integration] No project and merge request, so no note posted..."));
       return { posted: false, providerResult: { info: "No related merge request" } };
     }
     const gitlabCiJobName = process.env.CI_JOB_NAME;
@@ -148,7 +148,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
     // Check for existing note from a previous run
-    uxLog(this, c.grey("[Gitlab integration] Listing Notes of Merge Request..."));
+    uxLog("log", this, c.grey("[Gitlab integration] Listing Notes of Merge Request..."));
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
     let existingNoteId: number | null = null;
     for (const existingNote of existingNotes) {
@@ -160,7 +160,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
     // Create or update MR note
     if (existingNoteId) {
       // Update existing note
-      uxLog(this, c.grey("[Gitlab integration] Updating Merge Request Note on Gitlab..."));
+      uxLog("log", this, c.grey("[Gitlab integration] Updating Merge Request Note on Gitlab..."));
       const gitlabEditNoteResult = await this.gitlabApi.MergeRequestNotes.edit(projectId, mergeRequestId, existingNoteId, messageBody);
       const prResult: PullRequestMessageResult = {
         posted: gitlabEditNoteResult.id > 0,
@@ -169,7 +169,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       return prResult;
     } else {
       // Create new note if no existing not was found
-      uxLog(this, c.grey("[Gitlab integration] Adding Merge Request Note on Gitlab..."));
+      uxLog("log", this, c.grey("[Gitlab integration] Adding Merge Request Note on Gitlab..."));
       const gitlabPostNoteResult = await this.gitlabApi.MergeRequestNotes.create(projectId, mergeRequestId, messageBody);
       const prResult: PullRequestMessageResult = {
         posted: gitlabPostNoteResult.id > 0,

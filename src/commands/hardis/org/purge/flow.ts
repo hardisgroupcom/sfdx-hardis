@@ -3,8 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import columnify from 'columnify';
-import { execSfdxJson, extractRegexMatches, isCI, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, extractRegexMatches, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkDelete, bulkDeleteTooling, bulkQuery } from '../../../../common/utils/apiUtils.js';
 
@@ -14,7 +13,31 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class OrgPurgeFlow extends SfCommand<any> {
   public static title = 'Purge Flow versions';
 
-  public static description = messages.getMessage('orgPurgeFlow');
+  public static description = `
+**Purges old or unwanted Flow versions from a Salesforce org, with an option to delete related Flow Interviews.**
+
+This command helps maintain a clean and performant Salesforce org by removing obsolete Flow versions. Over time, multiple versions of Flows can accumulate, consuming storage and potentially impacting performance. This tool provides a controlled way to clean up these versions.
+
+Key functionalities:
+
+- **Targeted Flow Selection:** Allows you to filter Flow versions to delete by name (\`--name\`) and status (\`--status\`, e.g., \`Obsolete\`, \`Draft\`, \`Inactive\`).
+- **Flow Interview Deletion:** If a Flow version cannot be deleted due to active Flow Interviews, the \`--delete-flow-interviews\` flag (or interactive prompt) allows you to delete these interviews first, then retry the Flow version deletion.
+- **Confirmation Prompt:** In interactive mode, it prompts for confirmation before proceeding with the deletion of Flow versions and Flow Interviews.
+- **Partial Success Handling:** The \`--allowpurgefailure\` flag (default \`true\`) allows the command to continue even if some deletions fail, reporting the errors.
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **SOQL Queries (Tooling API):** It queries the \`Flow\` object (using the Tooling API) to list Flow versions based on the provided filters (name, status, manageable state).
+- **Bulk Deletion (Tooling API):** It uses \`bulkDeleteTooling\` to perform mass deletions of Flow versions. If deletion fails due to active interviews, it extracts the interview IDs.
+- **Flow Interview Management:** If \`delete-flow-interviews\` is enabled, it queries \`FlowInterview\` objects, performs bulk deletion of the identified interviews using \`bulkDelete\`, and then retries the Flow version deletion.
+- **Interactive Prompts:** Uses the \`prompts\` library to interact with the user for selecting Flows, statuses, and confirming deletion actions.
+- **Error Reporting:** Logs detailed error messages for failed deletions, including the specific reasons.
+- **Command-Line Execution:** Uses \`execSfdxJson\` to execute Salesforce CLI commands for querying Flow data.
+</details>
+`;
 
   public static examples = [
     `$ sf hardis:org:purge:flow`,
@@ -109,7 +132,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     // Check empty result
     if (this.flowRecordsRaw.length === 0) {
       const outputString = `[sfdx-hardis] No matching Flow records found`;
-      uxLog(this, c.yellow(outputString));
+      uxLog("warning", this, c.yellow(outputString));
       return { deleted: [], outputString };
     }
 
@@ -122,10 +145,11 @@ export default class OrgPurgeFlow extends SfCommand<any> {
         type: 'confirm',
         name: 'value',
         message: c.cyanBright(`Do you confirm you want to delete these ${this.flowRecords.length} flow versions ?`),
+        description: 'Permanently delete the selected flow versions from the Salesforce org',
       });
 
       if (confirmDelete.value === false) {
-        uxLog(this, c.magenta('Action cancelled by user'));
+        uxLog("error", this, c.red('Action cancelled by user'));
         return { outputString: 'Action cancelled by user' };
       }
     }
@@ -136,21 +160,25 @@ export default class OrgPurgeFlow extends SfCommand<any> {
 
     const summary =
       this.deletedRecords.length > 0
-        ? `[sfdx-hardis] Deleted the following list of record(s):\n${columnify(this.deletedRecords)}`
-        : '[sfdx-hardis] No record(s) to delete';
-    uxLog(this, c.green(summary));
+        ? `Deleted the following list of record(s)`
+        : 'No record(s) to delete';
+    uxLog("action", this, c.cyan(summary));
+    if (this.deletedRecords.length > 0) {
+      uxLogTable(this, this.deletedRecords);
+    }
     // Return an object to be displayed with --json
     return { orgId: flags['target-org'].getOrgId(), outputString: summary };
   }
 
   private async processDeleteFlowVersions(conn: any, tryDeleteInterviews: boolean) {
+    uxLog("action", this, c.cyan(`Deleting Flow versions...`));
     const recordsIds = this.flowRecords.map((record) => record.Id);
     const deleteResults = await bulkDeleteTooling('Flow', recordsIds, conn);
     for (const deleteRes of deleteResults.results) {
       if (deleteRes.success) {
         this.deletedRecords.push(deleteRes);
       } else {
-        uxLog(this, c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
+        uxLog("error", this, c.red(`[sfdx-hardis] Unable to perform deletion request: ${JSON.stringify(deleteRes)}`));
         this.deletedErrors.push(deleteRes);
       }
     }
@@ -163,11 +191,10 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     }
 
     if (this.deletedErrors.length > 0) {
-      const errMsg = `[sfdx-hardis] There have been errors while deleting ${
-        this.deletedErrors.length
-      } record(s): \n${JSON.stringify(this.deletedErrors)}`;
+      const errMsg = `[sfdx-hardis] There have been errors while deleting ${this.deletedErrors.length
+        } record(s): \n${JSON.stringify(this.deletedErrors)}`;
       if (this.allowPurgeFailure) {
-        uxLog(this, c.yellow(errMsg));
+        uxLog("warning", this, c.yellow(errMsg));
       } else {
         throw new SfError(
           c.yellow(
@@ -200,9 +227,10 @@ export default class OrgPurgeFlow extends SfCommand<any> {
         type: 'confirm',
         name: 'value',
         message: c.cyanBright(`Do you confirm you want to delete ${flowInterviewsIds.length} Flow Interviews ?`),
+        description: 'Permanently delete the selected flow interview records from the Salesforce org',
       });
       if (confirmDelete.value === false) {
-        uxLog(this, c.magenta('Action cancelled by user'));
+        uxLog("error", this, c.red('Action cancelled by user'));
         return { outputString: 'Action cancelled by user' };
       }
     }
@@ -211,29 +239,44 @@ export default class OrgPurgeFlow extends SfCommand<any> {
     this.deletedRecords.push(deleteInterviewResults?.successfulResults || []);
     this.deletedErrors = deleteInterviewResults?.failedResults || [];
     // Try to delete flow versions again
-    uxLog(this, c.cyan(`Trying again to delete flow versions after deleting flow interviews...`));
+    uxLog("action", this, c.cyan(`Trying again to delete flow versions after deleting flow interviews...`));
     this.flowRecords = [...new Set(this.flowRecords)]; // Make list unique
     await this.processDeleteFlowVersions(conn, false);
   }
 
   private formatFlowRecords() {
-    this.flowRecords = this.flowRecordsRaw.map((record: any) => {
-      return {
-        Id: record.Id,
-        MasterLabel: record.MasterLabel,
-        VersionNumber: record.VersionNumber,
-        DefinitionDevName: record.Definition.DeveloperName,
-        Status: record.Status,
-        Description: record.Description,
-      };
-    });
+    this.flowRecords = this.flowRecordsRaw.map((record: any) => ({
+      Id: record.Id,
+      MasterLabel: record.MasterLabel,
+      VersionNumber: record.VersionNumber,
+      DefinitionDevName: record.Definition.DeveloperName,
+      Status: record.Status,
+      Description: record.Description,
+    }));
+
+    if (this.flowRecords.length === 0) {
+      uxLog("warning", this, c.yellow('No Flow versions found to delete.'));
+      return;
+    }
+
+    const flowList = this.flowRecords
+      .map(
+        (flow) =>
+          `- ${c.bold(flow.DefinitionDevName)} v${c.green(flow.VersionNumber)} (${c.yellow(flow.Status)})${flow.Description ? ` - ${c.gray(flow.Description)}` : ''}`
+      )
+      .join('\n');
+
     uxLog(
+      "action",
       this,
-      `[sfdx-hardis] Found ${c.bold(this.flowRecords.length)} records:\n${c.yellow(columnify(this.flowRecords))}`
+      c.cyan(
+        `Found ${this.flowRecords.length} Flow version(s) to delete:\n${flowList}`
+      )
     );
   }
 
   private async listFlowVersionsToDelete(manageableConstraint: string) {
+    uxLog("action", this, c.cyan('Querying Flow versions to delete...'));
     let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description,Definition.DeveloperName FROM Flow WHERE ${manageableConstraint} AND Status IN ('${this.statusFilter.join(
       "','"
     )}')`;
@@ -262,6 +305,7 @@ export default class OrgPurgeFlow extends SfCommand<any> {
       this.statusFilter = ['Obsolete'];
     } else {
       // Query all flows definitions
+      uxLog("action", this, c.cyan('Querying all Flow definitions to select from...'));
       const allFlowQueryCommand =
         'sf data query ' +
         ` --query "SELECT Id,DeveloperName,MasterLabel,ManageableState FROM FlowDefinition WHERE ${manageableConstraint} ORDER BY DeveloperName"` +
@@ -285,12 +329,15 @@ export default class OrgPurgeFlow extends SfCommand<any> {
           type: 'select',
           name: 'name',
           message: 'Please select the flow you want to clean',
+          description: 'Choose a specific flow to clean or select all flows',
+          placeholder: 'Select a flow',
           choices: flowNamesChoice,
         },
         {
           type: 'multiselect',
           name: 'status',
           message: 'Please select the status(es) you want to delete',
+          description: 'Choose which flow version statuses should be deleted',
           choices: [
             { title: `Draft`, value: 'Draft' },
             { title: `Inactive`, value: 'Inactive' },
@@ -310,9 +357,17 @@ export default class OrgPurgeFlow extends SfCommand<any> {
       `FROM FlowInterview WHERE Id IN ('${flowVInterviewIds.join("','")}')` +
       ' ORDER BY Name';
     const flowsInterviewsToDelete = (await bulkQuery(query, conn)).records;
-    uxLog(
-      this,
-      c.yellow(`Flow interviews to be deleted would be the following:\n${columnify(flowsInterviewsToDelete)}`)
-    );
+    if (flowsInterviewsToDelete.length === 0) {
+      uxLog("warning", this, c.yellow('No Flow Interviews found to delete.'));
+      return;
+    }
+    // Display Flow Interviews to delete
+    const flowList = flowsInterviewsToDelete
+      .map(
+        (flow) =>
+          `- ${c.bold(flow.Name)} (${c.green(flow.InterviewLabel)}) - ${c.yellow(flow.InterviewStatus)}`
+      )
+      .join('\n');
+    uxLog("action", this, c.cyan(`Found ${flowsInterviewsToDelete.length} Flow Interviews to delete:\n${flowList}`));
   }
 }

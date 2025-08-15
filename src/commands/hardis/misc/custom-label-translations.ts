@@ -17,7 +17,41 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class CustomLabelTranslations extends SfCommand<any> {
   public static title = 'Custom Label Translations';
 
-  public static description = `Extract selected custom labels, or of a given Lightning Web Component (LWC), from all language translation files. This command generates translation files ('*.translation - meta.xml') for each language already retrieved in the current project, containing only the specified custom labels.`;
+  public static description = `
+## Command Behavior
+
+**Extracts selected custom labels, or all custom labels used within a given Lightning Web Component (LWC), from all available language translation files in the project.**
+
+This command streamlines the process of managing and isolating specific custom label translations. It's particularly useful for:
+
+- **Localization Management:** Focusing on translations for a subset of labels or for labels relevant to a specific UI component.
+- **Collaboration:** Sharing only the necessary translation files with translators, reducing complexity.
+- **Debugging:** Isolating translation issues for specific labels or components.
+
+Key functionalities:
+
+- **Label Selection:** You can specify custom label names directly using the \`--label\` flag (comma-separated).
+- **LWC-based Extraction:** Alternatively, you can provide an LWC developer name using the \`--lwc\` flag, and the command will automatically identify and extract all custom labels referenced within that LWC's JavaScript files.
+- **Interactive Prompts:** If neither \`--label\` nor \`--lwc\` is provided, the command will interactively prompt you to choose between selecting specific labels or extracting from an LWC.
+- **Output Generation:** For each language found in your project's \`translations\` folder, it generates a new \`.translation-meta.xml\` file containing only the extracted custom labels and their translations. These files are placed in a timestamped output directory.
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **File Discovery:** It uses \`glob\` to find all \`*.translation-meta.xml\` files in the \`**/translations/\` directory and, if an LWC is specified, it searches for the LWC's JavaScript files (\`**/lwc/**/*.js\`).
+- **LWC Label Extraction:** The \`extractLabelsFromLwc\` function uses regular expressions (\`@salesforce/label/c.([a-zA-Z0-9_]+)\`) to parse LWC JavaScript files and identify referenced custom labels.
+- **XML Parsing and Building:** It uses \`xml2js\` (\`parseStringPromise\` and \`Builder\`) to:
+  - Read and parse existing \`.translation-meta.xml\` files.
+  - Filter the \`customLabels\` array to include only the requested labels.
+  - Construct a new XML structure containing only the filtered labels.
+  - Build a new XML string with proper formatting and write it to a new file.
+- **Interactive Prompts:** The \`prompts\` library is used extensively to guide the user through the selection of extraction methods (labels or LWC) and specific labels/components.
+- **File System Operations:** It uses \`fs-extra\` for creating output directories (\`extracted-translations/\`) and writing the generated translation files.
+- **WebSocket Communication:** It uses \`WebSocketClient.requestOpenFile\` to open the output directory in VS Code for easy access to the generated files.
+</details>
+`;
 
   public static examples = [
     '$ sf hardis:misc:custom-label-translations --label CustomLabelName',
@@ -56,7 +90,7 @@ export default class CustomLabelTranslations extends SfCommand<any> {
    * Extract custom label names from LWC JS files
    */
   private async extractLabelsFromLwc(lwcName: string, debugMode: boolean): Promise<string[]> {
-    uxLog(this, c.grey(`Looking for LWC '${lwcName}' JS files...`));
+    uxLog("log", this, c.grey(`Looking for LWC '${lwcName}' JS files...`));
 
     const lwcFiles = await glob(`**/lwc/${lwcName}/**/*.js`);
 
@@ -64,7 +98,7 @@ export default class CustomLabelTranslations extends SfCommand<any> {
       throw new Error(`No JS files found for LWC '${lwcName}'`);
     }
 
-    uxLog(this, c.grey(`Found ${lwcFiles.length} JS files for component '${lwcName}'`));
+    uxLog("log", this, c.grey(`Found ${lwcFiles.length} JS files for component '${lwcName}'`));
 
     const labelNames = new Set<string>();
     const labelImportRegex = /@salesforce\/label\/c\.([a-zA-Z0-9_]+)/g;
@@ -78,7 +112,7 @@ export default class CustomLabelTranslations extends SfCommand<any> {
       }
 
       if (debugMode) {
-        uxLog(this, c.grey(`Processed file: ${jsFile}`));
+        uxLog("log", this, c.grey(`Processed file: ${jsFile}`));
       }
     }
 
@@ -88,7 +122,7 @@ export default class CustomLabelTranslations extends SfCommand<any> {
       throw new Error(`No custom labels found in LWC '${lwcName}'`);
     }
 
-    uxLog(this, c.grey(`Found ${extractedLabels.length} custom labels in LWC '${lwcName}': ${extractedLabels.join(', ')}`));
+    uxLog("log", this, c.grey(`Found ${extractedLabels.length} custom labels in LWC '${lwcName}': ${extractedLabels.join(', ')}`));
     this.outputDirPrefix = lwcName;
 
     return extractedLabels;
@@ -104,7 +138,7 @@ export default class CustomLabelTranslations extends SfCommand<any> {
       try {
         labelNames = await this.extractLabelsFromLwc(flags.lwc, debugMode);
       } catch (error: any) {
-        uxLog(this, c.red(error.message));
+        uxLog("error", this, c.red(error.message));
         return { success: false, message: error.message };
       }
     } else if (flags.label) {
@@ -120,11 +154,11 @@ export default class CustomLabelTranslations extends SfCommand<any> {
 
     if (!labelNames || labelNames.length === 0) {
       const errorMsg = 'No custom labels specified. Use --label or --lwc flag.';
-      uxLog(this, c.red(errorMsg));
+      uxLog("error", this, c.red(errorMsg));
       return { success: false, message: errorMsg };
     }
 
-    uxLog(this, c.grey(`Processing custom labels: ${labelNames.join(', ')}`));
+    uxLog("log", this, c.grey(`Processing custom labels: ${labelNames.join(', ')}`));
 
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -134,7 +168,7 @@ export default class CustomLabelTranslations extends SfCommand<any> {
       const translationFiles = await glob('**/translations/*.translation-meta.xml');
 
       if (translationFiles.length === 0) {
-        uxLog(this, c.yellow(`No translation files found in **/translations/`));
+        uxLog("warning", this, c.yellow(`No translation files found in **/translations/`));
         return { success: false, message: 'No translation files found' };
       }
 
@@ -142,19 +176,19 @@ export default class CustomLabelTranslations extends SfCommand<any> {
 
       for (const translationFile of translationFiles) {
         const languageCode = path.basename(translationFile).replace('.translation-meta.xml', '');
-        uxLog(this, c.grey(`Processing translation file for ${languageCode}...`));
+        uxLog("log", this, c.grey(`Processing translation file for ${languageCode}...`));
 
         const xmlContent = await fs.readFile(translationFile, 'utf8');
 
         const parsedXml = await parseStringPromise(xmlContent, { explicitArray: false });
 
         if (!parsedXml.Translations) {
-          uxLog(this, c.yellow(`Invalid translation file format: ${translationFile}`));
+          uxLog("warning", this, c.yellow(`Invalid translation file format: ${translationFile}`));
           continue;
         }
 
         if (!parsedXml.Translations.customLabels) {
-          uxLog(this, c.yellow(`No custom labels found in ${translationFile}`));
+          uxLog("warning", this, c.yellow(`No custom labels found in ${translationFile}`));
           continue;
         }
 
@@ -167,7 +201,7 @@ export default class CustomLabelTranslations extends SfCommand<any> {
         );
 
         if (matchedLabels.length === 0) {
-          uxLog(this, c.yellow(`No matching custom labels found in ${languageCode}`));
+          uxLog("warning", this, c.yellow(`No matching custom labels found in ${languageCode}`));
           continue;
         }
 
@@ -194,9 +228,9 @@ export default class CustomLabelTranslations extends SfCommand<any> {
         };
 
         if (debugMode) {
-          uxLog(this, c.grey(`Found ${matchedLabels.length} labels in ${languageCode}:`));
+          uxLog("log", this, c.grey(`Found ${matchedLabels.length} labels in ${languageCode}:`));
           matchedLabels.forEach(label => {
-            uxLog(this, c.grey(`  ${label.name} = "${label.label}"`));
+            uxLog("log", this, c.grey(`  ${label.name} = "${label.label}"`));
           });
         }
       }
@@ -204,12 +238,12 @@ export default class CustomLabelTranslations extends SfCommand<any> {
       const totalFiles = Object.keys(results).length;
 
       if (totalFiles === 0) {
-        uxLog(this, c.yellow('No matching labels found in any translation file.'));
+        uxLog("warning", this, c.yellow('No matching labels found in any translation file.'));
         return { success: false, message: 'No matching labels found' };
       }
 
-      uxLog(this, c.green(`Successfully extracted custom labels to ${outputDir}`));
-      uxLog(this, c.grey(`Processed ${totalFiles} translation files`));
+      uxLog("success", this, c.green(`Successfully extracted custom labels to ${outputDir}`));
+      uxLog("log", this, c.grey(`Processed ${totalFiles} translation files`));
 
       WebSocketClient.requestOpenFile(outputDir);
 
@@ -221,7 +255,7 @@ export default class CustomLabelTranslations extends SfCommand<any> {
       };
 
     } catch (err: any) {
-      uxLog(this, c.red(`Error processing custom labels: ${err.message}`));
+      uxLog("error", this, c.red(`Error processing custom labels: ${err.message}`));
       throw err;
     }
   }
@@ -269,6 +303,7 @@ export default class CustomLabelTranslations extends SfCommand<any> {
       const labelSelectRes = await prompts({
         type: 'multiselect',
         message: 'Please select the Custom Labels you want to extract from translations',
+        description: 'Choose which custom labels to include in the translation extraction',
         choices: choices
       });
 
@@ -327,6 +362,8 @@ export default class CustomLabelTranslations extends SfCommand<any> {
         type: 'select',
         name: 'value',
         message: 'Select a Lightning Web Component to extract custom labels from',
+        description: 'Choose which LWC component to analyze for custom label usage',
+        placeholder: 'Select a component',
         choices: choices
       });
 
@@ -343,6 +380,8 @@ export default class CustomLabelTranslations extends SfCommand<any> {
         type: 'select',
         name: 'method',
         message: 'How would you like to extract custom label translations?',
+        description: 'Choose your preferred method for extracting custom label translations',
+        placeholder: 'Select extraction method',
         choices: [
           {
             value: 'labels',

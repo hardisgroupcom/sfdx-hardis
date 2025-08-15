@@ -64,17 +64,17 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\{CHROMIUM_PATH}" // remove \ before {
 |listviews<br/>-l|option|Comma-separated list of listviews following format Object:ListViewName
 Example: Contact:MyContacts,Contact:MyActiveContacts,Opportunity:MYClosedOpportunities||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined|<nicolas.vuillamy@cloudity.com.playnico>|||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:org:fix:listviewmine
+$ sf hardis:org:fix:listviewmine
 ```
 
 ```shell
-sf hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners
+$ sf hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners
 ```
 
 

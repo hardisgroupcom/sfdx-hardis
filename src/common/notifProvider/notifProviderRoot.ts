@@ -21,7 +21,7 @@ export abstract class NotifProviderRoot {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
-    uxLog(this, `Method postNotification is not implemented yet on ${this.getLabel()}`);
+    uxLog("other", this, `Method postNotification is not implemented yet on ${this.getLabel()}`);
     return;
   }
 }

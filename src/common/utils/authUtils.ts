@@ -73,6 +73,7 @@ export async function authOrg(orgAlias: string, options: any) {
       }
       // Set as default username or devhubusername
       uxLog(
+        "other",
         this,
         `[sfdx-hardis] You are already ${c.green('connected')} as ${c.green(
           orgInfoResult.result.username
@@ -80,10 +81,11 @@ export async function authOrg(orgAlias: string, options: any) {
       );
 
       if (orgInfoResult.result.expirationDate) {
-        uxLog(this, c.cyan(`[sfdx-hardis] Org expiration date: ${c.yellow(orgInfoResult.result.expirationDate)}`));
+        uxLog("action", this, c.cyan(`[sfdx-hardis] Org expiration date: ${c.yellow(orgInfoResult.result.expirationDate)}`));
       }
       if (!isCI) {
         uxLog(
+          "warning",
           this,
           c.yellow(
             c.italic(
@@ -128,7 +130,7 @@ export async function authOrg(orgAlias: string, options: any) {
         (isDevHub ? ` --set-default-dev-hub` : (setDefaultOrg ? ` --set-default` : '')) +
         (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
       await execCommand(authCommand, this, { fail: true, output: false });
-      uxLog(this, c.cyan('Successfully logged using sfdxAuthUrl'));
+      uxLog("action", this, c.cyan('Successfully logged using sfdxAuthUrl'));
       await fs.remove(authFile);
       return;
     }
@@ -220,7 +222,8 @@ export async function authOrg(orgAlias: string, options: any) {
       const loginTypeRes = await prompts({
         name: 'loginType',
         type: 'select',
-        message: "Select a login type (if you don't know, use Web)",
+        message: "Select a login type",
+        description: 'Choose the authentication method that works best for your environment. Use Web if unsure.',
         choices: [
           {
             title: '🌐 Web Login (If VsCode is locally installed on your computer)',
@@ -250,7 +253,7 @@ export async function authOrg(orgAlias: string, options: any) {
           loginCommandArgs.push('--set-default');
         }
         const commandStr = 'sf ' + loginCommandArgs.join(' ');
-        uxLog(this, `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.grey(commandStr)))}`);
+        uxLog("other", this, `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.blue(commandStr)))}`);
         loginResult = crossSpawn.sync('sf', loginCommandArgs, { stdio: 'inherit' });
       }
       // Web Login if device login not used
@@ -266,6 +269,7 @@ export async function authOrg(orgAlias: string, options: any) {
           // Give instructions if server is unavailable
           if (((e as Error).message || '').includes('Cannot start the OAuth redirect server on port')) {
             uxLog(
+              "warning",
               this,
               c.yellow(
                 c.bold(
@@ -278,7 +282,7 @@ export async function authOrg(orgAlias: string, options: any) {
         }
       }
       await clearCache('sf org list');
-      uxLog(this, c.grey(JSON.stringify(loginResult, null, 2)));
+      uxLog("log", this, c.grey(JSON.stringify(loginResult, null, 2)));
       logged = loginResult.status === 0;
       username = loginResult?.username || 'err';
       instanceUrl = loginResult?.instanceUrl || instanceUrl;
@@ -305,8 +309,8 @@ export async function authOrg(orgAlias: string, options: any) {
           username = configGetRes?.result[0]?.value || '';
         }
       }
-      uxLog(this, `Successfully logged to ${c.green(instanceUrl)} with ${c.green(username)}`);
-      WebSocketClient.sendMessage({ event: 'refreshStatus' });
+      uxLog("other", this, `Successfully logged to ${c.green(instanceUrl)} with ${c.green(username)}`);
+      WebSocketClient.sendRefreshStatusMessage();
       // Assign org to SfCommands
       // if (isDevHub) {
       // options.Command.flags["target-org"] = username;
@@ -317,7 +321,7 @@ export async function authOrg(orgAlias: string, options: any) {
       // }
       // Display warning message in case of local usage (not CI), and not login command
       if (!(options?.Command?.id || "").startsWith("hardis:auth:login") && updateSfCliCommandOrg === true) {
-        uxLog(this, c.yellow("*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***"));
+        uxLog("warning", this, c.yellow("*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***"));
       }
     } else {
       console.error(c.red('[sfdx-hardis][ERROR] You must be logged to an org to perform this action'));

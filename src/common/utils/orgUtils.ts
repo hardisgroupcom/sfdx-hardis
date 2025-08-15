@@ -70,6 +70,7 @@ export async function promptProfiles(
     const profilesSelection = await prompts({
       type: options.multiselect ? 'multiselect' : 'select',
       message: options.message || 'Please select profile(s)',
+      description: 'Select one or more Salesforce profiles for the operation',
       name: 'value',
       choices: profiles.map((profile: any) => {
         return {
@@ -106,6 +107,8 @@ export async function promptProfiles(
     const profilesSelection = await prompts({
       type: 'text',
       message: options.message || 'Please input profile name',
+      description: 'Enter the Salesforce profile name manually',
+      placeholder: 'Ex: System Administrator',
       name: 'value',
       initial: options?.initialSelection[0] || null,
     });
@@ -115,24 +118,26 @@ export async function promptProfiles(
 
 export async function promptOrg(
   commandThis: SfCommand<any>,
-  options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false, promptMessage: null, quickOrgList: false }
+  options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false, promptMessage: null, quickOrgList: false, defaultOrgUsername: null }
 ) {
   // List all local orgs and request to user
+  // Access flags via commandThis, fallback to options if not present
+  const defaultOrgUsername = options.defaultOrgUsername || ''
   const orgListResult = await MetadataUtils.listLocalOrgs(options.devSandbox === true ? 'sandbox' : 'any', { quickOrgList: options.quickOrgList });
   let orgList = [
-    ...sortArray(orgListResult?.scratchOrgs || [], {
-      by: ['devHubUsername', 'username', 'alias', 'instanceUrl'],
-      order: ['asc', 'asc', 'asc'],
-    }),
-    ...sortArray(orgListResult?.nonScratchOrgs || [], {
-      by: ['username', 'alias', 'instanceUrl'],
-      order: ['asc', 'asc', 'asc'],
-    }),
     {
-      username: '🌍 Connect to another org',
+      username: '🌍 Login to another org',
       otherOrg: true,
       descriptionForUi: 'Connect in Web Browser to a Sandbox, a Production Org, a Dev Org or a Scratch Org',
     },
+    ...sortArray(orgListResult?.scratchOrgs || [], {
+      by: ['instanceUrl', 'devHubUsername', 'username', 'alias'],
+      order: ['asc', 'asc', 'asc'],
+    }),
+    ...sortArray(orgListResult?.nonScratchOrgs || [], {
+      by: ['instanceUrl', 'username', 'alias',],
+      order: ['asc', 'asc', 'asc'],
+    }),
     {
       username: "😱 I already authenticated my org but I don't see it !",
       clearCache: true,
@@ -151,19 +156,22 @@ export async function promptOrg(
     orgList = orgList.filter((org: any) => org.status === 'Active' && org.devHubUsername === hubOrgUsername);
   }
 
+  const defaultOrg = orgList.find((org: any) => org.username === defaultOrgUsername) || null;
+
   // Prompt user
   /* jscpd:ignore-start */
   const orgResponse = await prompts({
     type: 'select',
     name: 'org',
     message: c.cyanBright(options.promptMessage || 'Please select an org'),
+    description: 'Choose a Salesforce org from the list of authenticated orgs',
+    default: defaultOrg || '',
     choices: orgList.map((org: any) => {
-      const title = org.username || org.alias || org.instanceUrl;
-      const description =
-        (title !== org.instanceUrl ? org.instanceUrl : '') +
-        (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '-');
+      const title = org.instanceUrl || org.username || org.alias || "ERROR";
+      const description = `Connected with ${org.username || org.alias || 'unknown user'} ` +
+        (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '');
       return {
-        title: c.cyan(title),
+        title: title.replace("https://", ""),
         description: org.descriptionForUi ? org.descriptionForUi : description || '-',
         value: org,
       };
@@ -175,7 +183,7 @@ export async function promptOrg(
 
   // Cancel
   if (org.cancel === true) {
-    uxLog(commandThis, c.cyan('Cancelled'));
+    uxLog("error", commandThis, c.red('Cancelled'));
     process.exit(0);
   }
 
@@ -198,7 +206,7 @@ export async function promptOrg(
 
   // Token is expired: login again to refresh it
   if (org?.connectedStatus === 'RefreshTokenAuthError' || org?.connectedStatus?.includes('expired')) {
-    uxLog(this, c.yellow(`⚠️ Your authentication is expired. Please login again in the web browser`));
+    uxLog("warning", this, c.yellow(`⚠️ Your authentication is expired. Please login again in the web browser`));
     const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}`;
     const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
     org = loginResult.result;
@@ -225,7 +233,7 @@ export async function promptOrg(
       });
     }
 
-    WebSocketClient.sendMessage({ event: 'refreshStatus' });
+    WebSocketClient.sendRefreshStatusMessage();
     // Update local user .sfdx-hardis.yml file with response if scratch has been selected
     if (org.username.includes('scratch')) {
       await setConfig('user', {
@@ -243,14 +251,14 @@ export async function promptOrg(
     }
   }
   // uxLog(commandThis, c.gray(JSON.stringify(org, null, 2)));
-  uxLog(commandThis, c.cyan(`Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
+  uxLog("log", commandThis, c.grey(`Selected Org ${c.green(org.username)} - ${c.green(org.instanceUrl)}`));
   return orgResponse.org;
 }
 
 export async function promptOrgList(options: { promptMessage?: string } = {}) {
   const orgListResult = await MetadataUtils.listLocalOrgs('any');
   const orgListSorted = sortArray(orgListResult?.nonScratchOrgs || [], {
-    by: ['username', 'alias', 'instanceUrl'],
+    by: ['instanceUrl', 'username', 'alias',],
     order: ['asc', 'asc', 'asc'],
   });
   // Prompt user
@@ -258,13 +266,13 @@ export async function promptOrgList(options: { promptMessage?: string } = {}) {
     type: 'multiselect',
     name: 'orgs',
     message: c.cyanBright(options.promptMessage || 'Please select orgs'),
+    description: 'Choose multiple Salesforce orgs from the list of authenticated orgs',
     choices: orgListSorted.map((org: any) => {
-      const title = org.username || org.alias || org.instanceUrl;
-      const description =
-        (title !== org.instanceUrl ? org.instanceUrl : '') +
-        (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '-');
+      const title = org.instanceUrl || org.username || org.alias || "ERROR";
+      const description = `Connected with ${org.username || org.alias || 'unknown user'} ` +
+        (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '');
       return {
-        title: c.cyan(title),
+        title: title,
         description: org.descriptionForUi ? org.descriptionForUi : description || '-',
         value: org,
       };
@@ -300,13 +308,13 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   }
   // Authentication is necessary
   if (connectedStatus?.includes("expired")) {
-    uxLog(this, c.yellow("Your auth token is expired, you need to authenticate again"));
+    uxLog("warning", this, c.yellow("Your auth token is expired, you need to authenticate again"));
     const loginCommand = 'sf org login web' + ` --instance-url ${instanceUrl}`;
     const loginRes = await execSfdxJson(loginCommand, this, { fail: true, output: false });
     return loginRes.result;
   }
   // We shouldn't be here :)
-  uxLog(this, c.yellow("What are we doing here ? Please declare an issue with the following text: " + instanceUrl + ":" + connectedStatus));
+  uxLog("warning", this, c.yellow("What are we doing here ? Please declare an issue with the following text: " + instanceUrl + ":" + connectedStatus));
 }
 
 export async function promptOrgUsernameDefault(
@@ -317,6 +325,7 @@ export async function promptOrgUsernameDefault(
   const defaultOrgRes = await prompts({
     type: 'confirm',
     message: options.message || `Do you want to use org ${defaultOrg} ?`,
+    description: 'Confirms whether to use the currently configured default org or select a different one',
   });
   if (defaultOrgRes.value === true) {
     return defaultOrg;
@@ -332,7 +341,9 @@ export async function promptUserEmail(promptMessage: string | null = null) {
     type: 'text',
     name: 'value',
     initial: userConfig.userEmail || '',
-    message: c.cyanBright(promptMessage || 'Please input your email address (it will be stored locally for later use)'),
+    message: c.cyanBright(promptMessage || 'Please input your email address'),
+    description: 'Your email address will be stored locally and used for CI/CD operations',
+    placeholder: 'Ex: john.doe@company.com',
     validate: (value: string) => EmailValidator.validate(value),
   });
   const userEmail = promptResponse.value;
@@ -381,6 +392,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
         return projectPackage;
       });
       uxLog(
+        "action",
         this,
         c.cyan(
           `Updated package ${c.green(installedPackage.SubscriberPackageName)} with version id ${c.green(
@@ -401,7 +413,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
           "Sales Insights"
         ].includes(installedPackage.SubscriberPackageName)
       ) {
-        uxLog(this, c.grey(`Skip ${installedPackage.SubscriberPackageName} as it is a Salesforce standard package`))
+        uxLog("action", this, c.cyan(`Skip ${installedPackage.SubscriberPackageName} as it is a Salesforce standard package`))
         continue;
       }
 
@@ -412,6 +424,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
         message: c.cyanBright(
           `Please select the install configuration for ${c.bold(installedPackage.SubscriberPackageName)}`
         ),
+        description: 'Configure how this package should be automatically installed during CI/CD operations',
         choices: [
           {
             title: `Install automatically ${c.bold(installedPackage.SubscriberPackageName)} on scratch orgs only`,
@@ -442,7 +455,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
     }
   }
   if (updated) {
-    uxLog(this, 'Updated package configuration in sfdx-hardis config');
+    uxLog("action", this, c.cyan('Updated package configuration in .sfdx-hardis.yml config file'));
     await setConfig('project', { installedPackages: projectPackages });
   }
 }
@@ -465,7 +478,7 @@ export async function initOrgMetadatas(
   // Push or deploy according to config (default: push)
   if ((isCI && process.env.CI_SCRATCH_MODE === 'deploy') || process.env.DEBUG_DEPLOY === 'true') {
     // if CI, use sf project deploy start to make sure package.xml is consistent
-    uxLog(this, c.cyan(`Deploying project sources to org ${c.green(orgAlias)}...`));
+    uxLog("action", this, c.cyan(`Deploying project sources to org ${c.green(orgAlias)}...`));
     const packageXmlFile =
       process.env.PACKAGE_XML_TO_DEPLOY || configInfo.packageXmlToDeploy || fs.existsSync('./manifest/package.xml')
         ? './manifest/package.xml'
@@ -478,6 +491,7 @@ export async function initOrgMetadatas(
   } else {
     // Use push for local scratch orgs
     uxLog(
+      "action",
       this,
       c.cyan(
         `Pushing project sources to org ${c.green(
@@ -508,12 +522,13 @@ export async function initOrgMetadatas(
         });
       } catch (e) {
         uxLog(
+          "warning",
           this,
           c.yellow(
             "Issue while assigning SfdxHardisDeferSharingRecalc PS and suspending Sharing Calc, but it's probably ok anyway"
           )
         );
-        uxLog(this, c.grey((e as Error).message));
+        uxLog("log", this, c.grey((e as Error).message));
       }
     }
     await forceSourcePush(orgAlias, this, debugMode, options);
@@ -530,9 +545,9 @@ export async function initOrgMetadatas(
 
 // Assign permission sets to user
 export async function initPermissionSetAssignments(permSets: Array<any>, orgUsername: string) {
-  uxLog(this, c.cyan('Assigning Permission Sets...'));
+  uxLog("action", this, c.cyan('Assigning Permission Sets...'));
   for (const permSet of permSets) {
-    uxLog(this, c.cyan(`Assigning ${c.bold(permSet.name || permSet)} to org user ${orgUsername}`));
+    uxLog("action", this, c.cyan(`Assigning ${c.bold(permSet.name || permSet)} to org user ${orgUsername}`));
     const assignCommand = `sf org assign permset --name ${permSet.name || permSet} --target-org ${orgUsername}`;
     const assignResult = await execSfdxJson(assignCommand, this, {
       fail: false,
@@ -543,6 +558,7 @@ export async function initPermissionSetAssignments(permSets: Array<any>, orgUser
       !assignResult?.result?.failures[0].message.includes('Duplicate')
     ) {
       uxLog(
+        "error",
         this,
         c.red(`Error assigning to ${c.bold(permSet.name || permSet)}\n${assignResult?.result?.failures[0].message}`)
       );
@@ -552,7 +568,7 @@ export async function initPermissionSetAssignments(permSets: Array<any>, orgUser
 
 // Run initialization apex scripts
 export async function initApexScripts(orgInitApexScripts: Array<any>, orgAlias: string) {
-  uxLog(this, c.cyan('Running apex initialization scripts...'));
+  uxLog("action", this, c.cyan('Running apex initialization scripts...'));
   // Build list of apex scripts and check their existence
   const initApexScripts = orgInitApexScripts.map((scriptName: string) => {
     if (!fs.existsSync(scriptName)) {
@@ -574,12 +590,13 @@ export async function initApexScripts(orgInitApexScripts: Array<any>, orgAlias: 
 export async function initOrgData(initDataFolder: string, orgUsername: string) {
   // Init folder (accounts, etc...)
   if (fs.existsSync(initDataFolder)) {
-    uxLog(this, c.cyan('Loading sandbox org initialization data...'));
+    uxLog("action", this, c.cyan('Loading sandbox org initialization data...'));
     await importData(initDataFolder, this, {
       targetUsername: orgUsername,
     });
   } else {
     uxLog(
+      "action",
       this,
       c.cyan(
         `No initialization data: Define a sfdmu workspace in ${initDataFolder} if you need data in your new sandbox orgs`
@@ -596,6 +613,7 @@ export async function initOrgData(initDataFolder: string, orgUsername: string) {
       });
     } else {
       uxLog(
+        "log",
         this,
         c.grey(
           `Skipped import of ${dataPackage.dataPath} as importInSandboxOrgs is not defined to true in .sfdx-hardis.yml`
@@ -683,11 +701,11 @@ export async function setConnectionVariables(conn, handleTechnical = false) {
           }
         });
         const identity = await connTechnical.identity();
-        uxLog(this, c.grey(`Connected to technical org ${c.green(identity.username)}`));
+        uxLog("log", this, c.grey(`Connected to technical org ${c.green(identity.username)}`));
         globalThis.jsForceConnTechnical = connTechnical;
       }
     } catch (e) {
-      uxLog(this, c.red(`Unable to connect to technical org: ${e}`));
+      uxLog("error", this, c.red(`Unable to connect to technical org: ${e}`));
       globalThis.jsForceConnTechnical = null;
     }
   }

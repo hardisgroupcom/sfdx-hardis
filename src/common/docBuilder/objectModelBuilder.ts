@@ -113,7 +113,7 @@ classDef mainObject fill:#FFB3B3,stroke:#A94442,stroke-width:4px,rx:14px,ry:14px
           this.allLinks.push(link);
         }
         else {
-          uxLog(this, c.yellow(`Warning: ${objectName}.${fieldName} has no referenceTo value so has been ignored.`));
+          uxLog("warning", this, c.yellow(`Warning: ${objectName}.${fieldName} has no referenceTo value so has been ignored.`));
         }
       }
     }

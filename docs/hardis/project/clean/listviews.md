@@ -19,7 +19,7 @@ Replace Mine by Everything in ListView, and log the replacements in sfdx-hardis.
 ## Examples
 
 ```shell
-sf hardis:project:clean:listviews
+$ sf hardis:project:clean:listviews
 ```
 
 

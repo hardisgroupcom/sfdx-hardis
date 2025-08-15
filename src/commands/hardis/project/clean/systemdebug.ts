@@ -15,7 +15,36 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class CleanSystemDebug extends SfCommand<any> {
   public static title = 'Clean System debug';
 
-  public static description = 'Clean System.debug() lines in APEX Code (classes and triggers)';
+  public static description: string = `
+## Command Behavior
+
+**Removes or comments out \`System.debug()\` statements from Apex classes and triggers in your Salesforce DX project.**
+
+This command helps maintain clean and optimized Apex code by eliminating debug statements that are often left in production code. While \`System.debug()\` is invaluable during development, it can impact performance and expose sensitive information if left in deployed code.
+
+Key functionalities:
+
+- **Targeted File Scan:** Scans all Apex class (.cls) and trigger (.trigger) files within the specified root folder (defaults to \`force-app\`).
+- **Conditional Action:**
+  - **Comment Out (default):** By default, it comments out \`System.debug()\` lines by prepending // to them.
+  - **Delete (\`--delete\` flag):** If the \`--delete\` flag is used, it completely removes the lines containing \`System.debug()\`.
+- **Exclusion:** Lines containing \`NOPMD\` are ignored, allowing developers to intentionally keep specific debug statements.
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **File Discovery:** Uses \`glob\` to find all Apex class and trigger files.
+- **Content Reading:** Reads the content of each Apex file line by line.
+- **Pattern Matching:** Checks each line for the presence of \`System.debug\` (case-insensitive).
+- **Line Modification:**
+  - If \`System.debug\` is found and the \`--delete\` flag is not used, it modifies the line to comment out the debug statement.
+  - If \`System.debug\` is found and the \`--delete\` flag is used, it removes the line entirely.
+- **File Writing:** If any changes are made to a file, the modified content is written back to the file using \`fs.writeFile\`.
+- **Logging:** Provides a summary of how many files were cleaned.
+</details>
+`;
 
   public static examples = ['$ sf hardis:project:clean:systemdebug'];
 
@@ -50,7 +79,7 @@ export default class CleanSystemDebug extends SfCommand<any> {
     this.del = flags.delete || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Comment or delete System.debug line in apex classes and triggers`));
+    uxLog("action", this, c.cyan(`Comment or delete System.debug line in apex classes and triggers`));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.{cls,trigger}`;
@@ -84,7 +113,7 @@ export default class CleanSystemDebug extends SfCommand<any> {
 
     // Summary
     const msg = `Cleaned ${c.green(c.bold(countFiles))} class(es) and trigger(s)`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };
   }

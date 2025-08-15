@@ -28,7 +28,40 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class OrgConfigureMonitoring extends SfCommand<any> {
   public static title = 'Configure org monitoring';
 
-  public static description = 'Configure monitoring of an org';
+  public static description = `
+## Command Behavior
+
+**Configures the monitoring of a Salesforce org within a dedicated Git repository.**
+
+This command streamlines the setup of continuous monitoring for a Salesforce organization, ensuring that changes and health metrics are tracked and reported. It is designed to be run within a Git repository specifically dedicated to monitoring configurations.
+
+Key functionalities include:
+
+- **Git Repository Validation:** Ensures the current Git repository's name contains "monitoring" to enforce best practices for separating monitoring configurations from deployment sources.
+- **Prerequisite Check:** Guides the user to confirm that necessary monitoring prerequisites (CI/CD variables, permissions) are configured on their Git server.
+- **Org Selection:** Prompts the user to select or connect to the Salesforce org they wish to monitor.
+- **Monitoring Branch Creation:** Creates or checks out a dedicated Git branch (e.g., \`monitoring_yourinstanceurl\`) for the monitoring configuration.
+- **SFDX Project Setup:** Initializes an SFDX project structure within the repository if it doesn't already exist, and copies default monitoring files.
+- **Configuration File Update:** Updates the local \`.sfdx-hardis.yml\` file with the target org's username and instance URL.
+- **SSL Certificate Generation:** Generates an SSL certificate for secure authentication to the monitored org.
+- **Automated Commit and Push:** Offers to automatically commit and push the generated configuration files to the remote Git repository.
+- **Scheduling Guidance:** Provides instructions and links for scheduling the monitoring job on the Git server.
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves a series of Git operations, file system manipulations, and Salesforce CLI interactions:
+
+- **Git Operations:** Utilizes \`ensureGitRepository\`, \`getGitRepoName\`, \`execCommand\` (for \`git add\`, \`git stash\`), \`ensureGitBranch\`, and \`gitAddCommitPush\` to manage the Git repository, branches, and commits.
+- **Interactive Prompts:** Employs the \`prompts\` library to interact with the user for confirmations and selections.
+- **File System Management:** Uses \`fs-extra\` for copying default monitoring files (\`defaults/monitoring\`) and managing the SFDX project structure.
+- **Salesforce CLI Integration:** Calls \`sf project generate\` to create a new SFDX project and uses \`promptOrg\` for Salesforce org authentication and selection.
+- **Configuration Management:** Updates the \`.sfdx-hardis.yml\` file using \`setInConfigFile\` to store org-specific monitoring configurations.
+- **SSL Certificate Generation:** Leverages \`generateSSLCertificate\` to create the necessary SSL certificates for JWT-based authentication to the Salesforce org.
+- **External Tool Integration:** Requires \`openssl\` to be installed on the system for SSL certificate generation.
+- **WebSocket Communication:** Uses \`WebSocketClient.sendRunSfdxHardisCommandMessage\` to restart the command in VS Code if the default org changes, and \`WebSocketClient.sendRefreshStatusMessage\` to update the status.
+</details>
+`;
 
   public static examples = ['$ sf hardis:org:configure:monitoring'];
 
@@ -72,15 +105,17 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
           { title: 'Mmmmm no, let me create another repo with the word "monitoring" in its name !', value: 'no' },
         ],
         message: c.cyanBright(
-          "It's safer to have monitoring in a separate repo. Are you sure you want to mix monitoring and deployment sources ?"
+          "Are you sure you want to mix monitoring and deployment sources ?"
         ),
+        description: 'It is recommended to separate monitoring configuration from deployment sources in different repositories',
+        placeholder: 'Select an option',
       });
       if (confirmMix.value === 'no') {
         throw new SfError('Your git repository name must contain the expression "monitoring"');
       }
     }
     const preRequisitesUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
-    uxLog(this, c.yellow('Monitoring pre-requisites documentation: ' + c.bold(preRequisitesUrl)));
+    uxLog("warning", this, c.yellow('Monitoring pre-requisites documentation: ' + c.bold(preRequisitesUrl)));
     const confirmPreRequisites = await prompts({
       type: 'select',
       name: 'value',
@@ -89,12 +124,14 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
         { title: 'No, help me !', value: 'no' },
       ],
       message: c.cyanBright('Did you configure the sfdx-hardis monitoring pre-requisites on your Git server ?'),
+      description: 'Confirm that you have set up the required CI/CD variables and permissions for monitoring',
+      placeholder: 'Select an option',
     });
     if (confirmPreRequisites.value === 'no') {
       const msg =
         'Please follow the instructions to configure the sfdx-hardis monitoring pre-requisites on your Git server\n' +
         preRequisitesUrl;
-      uxLog(this, c.yellow(msg));
+      uxLog("warning", this, c.yellow(msg));
       await open(preRequisitesUrl, { wait: true });
       return { outputString: msg };
     }
@@ -103,6 +140,7 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
     const currentOrgId = flags['target-org']?.getOrgId() || '';
     if (flags.orginstanceurl && flags['target-org']?.getConnection()?.instanceUrl === flags.orginstanceurl) {
       uxLog(
+        "action",
         this,
         c.cyan(
           `Default org ${flags['target-org'].getConnection()?.instanceUrl
@@ -116,18 +154,16 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
         setDefault: true,
         scratch: false,
         promptMessage: 'Please select or connect to the org that you want to monitor',
+        defaultOrgUsername: flags['target-org']?.getUsername(),
       });
 
       // Restart command so the org is selected as default org (will help to select profiles)
       if (currentOrgId !== org.orgId) {
         const infoMsg =
           'Default org changed. Please restart the same command if VsCode does not do that automatically for you :)';
-        uxLog(this, c.yellow(infoMsg));
+        uxLog("warning", this, c.yellow(infoMsg));
         const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ') + ' --orginstanceurl ' + org.instanceUrl;
-        WebSocketClient.sendMessage({
-          event: 'runSfdxHardisCommand',
-          sfdxHardisCommand: currentCommand,
-        });
+        WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);
         return { outputString: infoMsg };
       }
     }
@@ -151,17 +187,17 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
     // Create sfdx project if not existing yet
     if (!fs.existsSync('sfdx-project.json')) {
       const createCommand = 'sf project generate' + ` --name "sfdx-hardis-monitoring"`;
-      uxLog(this, c.cyan('Creating sfdx-project...'));
+      uxLog("action", this, c.cyan('Creating sfdx-project...'));
       await execCommand(createCommand, this, {
         output: true,
         fail: true,
       });
-      uxLog(this, c.cyan('Moving sfdx-project to root...'));
+      uxLog("action", this, c.cyan('Moving sfdx-project to root...'));
       await fs.copy('sfdx-hardis-monitoring', process.cwd(), { overwrite: true });
       await fs.remove('sfdx-hardis-monitoring');
 
       // Copying monitoring folder structure
-      uxLog(this, 'Copying default monitoring files...');
+      uxLog("other", this, 'Copying default monitoring files...');
       if (fs.existsSync('README.md') && fs.readFileSync('README.md', 'utf8').toString().split('\n').length < 5) {
         // Remove default README if necessary
         await fs.remove('README.md');
@@ -188,22 +224,24 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
       name: 'value',
       initial: true,
       message: c.cyanBright(
-        '(RECOMMENDED) Do you want sfdx-hardis to save your configuration on server ? (git stage, commit & push)'
+        'Do you want sfdx-hardis to save your configuration on server ?'
       ),
+      description: 'Automatically commit and push the monitoring configuration files to your git repository (recommended)',
     });
 
     if (confirmPush.value === true) {
       await gitAddCommitPush({
         message: '[sfdx-hardis] Update monitoring configuration',
       });
-      uxLog(this, c.green('Your configuration for org monitoring is now ready :)'));
+      uxLog("success", this, c.green('Your configuration for org monitoring is now ready :)'));
     } else {
-      uxLog(this, c.yellow('Please manually git add, commit and push to the remote repository :)'));
+      uxLog("warning", this, c.yellow('Please manually git add, commit and push to the remote repository :)'));
     }
     const branch = await getCurrentGitBranch();
     uxLog(
+      "success",
       this,
-      c.greenBright(
+      c.green(
         `Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}:)`
       )
     );
@@ -211,7 +249,7 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
     const msg =
       'Please follow the instructions to schedule sfdx-hardis monitoring on your Git server: ' +
       c.bold(scheduleMonitoringUrl);
-    uxLog(this, c.yellow(msg));
+    uxLog("warning", this, c.yellow(msg));
     await open(scheduleMonitoringUrl, { wait: true });
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };

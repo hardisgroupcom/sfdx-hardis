@@ -3,112 +3,49 @@
 
 ## Description
 
-Assisted menu to start working on a Salesforce task.
 
-Advanced instructions in [Create New Task documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/)
+## Command Behavior
 
-At the end of the command, it will allow you to work on either a scratch org or a sandbox, depending on your choices.
+**Assisted menu to start working on a Salesforce User Story, streamlining the setup of your development environment.**
 
-Under the hood, it can:
+This command guides you through the process of preparing your local environment and a Salesforce org for a new development or configuration based User Story. It automates several steps, ensuring consistency and adherence to project standards.
 
-- Make **git pull** to be up to date with target branch
-- Create **new git branch** with formatted name (you can override the choices using .sfdx-hardis.yml property **branchPrefixChoices**)
-- Create and initialize a scratch org or a source-tracked sandbox (config can be defined using `config/.sfdx-hardis.yml`):
-- (and for scratch org only for now):
-  - **Install packages**
-    - Use property `installedPackages`
-    - **Push sources**
-    - **Assign permission sets**
-      - Use property `initPermissionSets`
-    - **Run apex initialization scripts**
-      - Use property `scratchOrgInitApexScripts`
-    - **Load data**
-      - Use property `dataPackages`
+Key features include:
 
-## Override .sfdx-hardis.yml config
+- **Git Branch Management:** Ensures your local Git repository is up-to-date with the target branch and creates a new Git branch with a formatted name based on your User Story details. Branch naming conventions can be customized via the `branchPrefixChoices` property in `.sfdx-hardis.yml`.
+- **Org Provisioning & Initialization:** Facilitates the creation and initialization of either a scratch org or a source-tracked sandbox. The configuration for org initialization (e.g., package installation, source push, permission set assignments, Apex script execution, data loading) can be defined in `config/.sfdx-hardis.yml- **Project-Specific Configuration:** Supports defining multiple target branches (`availableTargetBranches`) and projects (`availableProjects`) in `.sfdx-hardis.yml`, allowing for tailored User Stories workflows.
+- **User Story Name Validation:** Enforces User Story name formatting using `newTaskNameRegex` and provides examples via `newTaskNameRegexExample- **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
 
-### availableTargetBranches
+Advanced instructions are available in the [Create New User Story documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/).
 
-By default, there is only one target branch (value of property **developmentBranch**).
+<details>
+<summary>Technical explanations</summary>
 
-You can define multiple target branches (for the future Pull Request) by setting the property **availableTargetBranches** in your .sfdx-hardis.yml file.
+The command's logic orchestrates various underlying processes:
 
-The selected branch will checked out and be used as base to create the user new feature branch.
-
-Examples:
-
-```yaml
-availableTargetBranches:
-  - integration
-  - preprod
-```
-
-```yaml
-availableTargetBranches:
-  - integration,Select this to work from the integration branch (project stream)
-  - preprod,Select this to work from the preprod branch (run stream)
-```
-
-### availableProjects
-
-You can add a first question "What is the project your task is for" if you define a property **availableProjects**
-
-The select will be used as first part of the git branch name. (ex: france/features/dev/JIRA123-webservice-get-account)
-
-Examples:
-
-```yaml
-availableProjects:
-  - build
-  - run
-  - some-big-project
-  - france
-  - uk
-```
-
-```yaml
-availableProjects:
-  - build,Select this to work on the build project
-  - run,Select this to work on the run project
-  - some-big-project,Select this to work on the some big project
-  - france,Select this to work on the France project
-  - uk,Select this to work on the UK project
-```
-
-### newTaskNameRegex
-
-If you want to force a specific format for the task name, you can define a property **newTaskNameRegex** in your .sfdx-hardis.yml file.
-
-Please also define a property **newTaskNameRegexExample** to give an example to the user.
-
-Example:
-
-```yaml
-newTaskNameRegex: '^[A-Z]+-[0-9]+ .*'
-newTaskNameRegexExample: 'MYPROJECT-123 Update account status validation rule'
-```
-
-### sharedDevSandboxes
-
-If contributors can share dev sandboxes, let's not ask them if they want to overwrite their colleagues' changes when creating a new task :)
+- **Git Operations:** Utilizes `checkGitClean`, `ensureGitBranch`, `gitCheckOutRemote`, and `git().pull()` to manage Git repository state and branches.
+- **Interactive Prompts:** Leverages the `prompts` library to gather user input for User Story type, source types, and User Story names.
+- **Configuration Management:** Reads and applies project-specific configurations from `.sfdx-hardis.yml` using `getConfig` and `setConfig- **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including `initApexScripts`, `initOrgData`, `initOrgMetadatas`, `initPermissionSetAssignments`, `installPackages`, and `makeSureOrgIsConnected- **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., `sf config set target-org`, `sf org open`, `sf project delete tracking`) via `execCommand` and `execSfdxJson- **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling `ScratchCreate.run` or `SandboxCreate.run` as needed.
+- **WebSocket Communication:** Sends refresh status messages via `WebSocketClient.sendRefreshStatusMessage()` to update connected VS Code clients.
+</details>
 
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                   |                 Default                  | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------|:----------------------------------------:|:--------:|:-------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |                                          |          |         |
-| flags-dir             | option  | undefined                                                     |                                          |          |         |
-| json                  | boolean | Format output as json.                                        |                                          |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required |                                          |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                     |                                          |          |         |
-| target-org<br/>-o     | option  | undefined                                                     | <nicolas.vuillamy@cloudity.com.playnico> |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                          |          |         |
+| Name                  |  Type   | Description                                                   |                Default                 | Required | Options |
+|:----------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |                                        |          |         |
+| flags-dir             | option  | undefined                                                     |                                        |          |         |
+| json                  | boolean | Format output as json.                                        |                                        |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required |                                        |          |         |
+| target-dev-hub<br/>-v | option  | undefined                                                     |                                        |          |         |
+| target-org<br/>-o     | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
 
 ## Examples
 
 ```shell
-sf hardis:work:new
+$ sf hardis:work:new
 ```
 
 

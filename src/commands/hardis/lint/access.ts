@@ -12,7 +12,7 @@ import fs from 'fs-extra';
 import { AnyJson } from '@salesforce/ts-types';
 
 // Common Utilities
-import { isCI, uxLog } from '../../../common/utils/index.js';
+import { isCI, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { parseXmlFile, writeXmlFile } from '../../../common/utils/xmlUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
@@ -31,9 +31,35 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class LintAccess extends SfCommand<any> {
   public static title = 'check permission access';
 
-  public static description = `Check if elements(apex class and field) are at least in one permission set
-  
+  public static description = `
+## Command Behavior
+
+**Checks if specified Salesforce metadata elements (Apex classes and custom fields) have at least one permission defined in any Permission Set or Profile.**
+
+This command is crucial for maintaining proper access control and identifying potential security vulnerabilities or misconfigurations in your Salesforce project. It helps ensure that all custom elements are accessible to the intended users through appropriate permission assignments.
+
+Key functionalities:
+
+- **Element Validation:** Verifies that Apex classes and custom fields have \`enabled\` (for Apex classes) or \`readable\`/\`editable\` (for custom fields) access in at least one Permission Set or Profile.
+- **Configurable Ignores:** Allows you to ignore specific elements or entire types of elements (e.g., all Apex classes, a particular custom field) using the \`--elementsignored\` flag or project configuration.
+- **Permission Set/Profile Filtering:** You can specify Permission Sets or Profiles to ignore during the access check using the \`--ignorerights\` flag.
+- **Reporting:** Generates a CSV report of all missing access elements, which can be used for auditing or further analysis.
+- **Notifications:** Integrates with notification providers (Grafana, Slack, MS Teams) to alert about missing access issues, making it suitable for CI/CD monitoring.
+- **Interactive Fix:** In non-CI environments, it offers an interactive prompt to automatically add missing accesses to selected Permission Sets.
+
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-missing-access/) and can output Grafana, Slack and MsTeams Notifications.
+
+<details>
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **File System Traversal:** Uses \`glob\` to find all Apex class (\`.cls\`) and custom field (\`.field-meta.xml\`) files within the specified root folder.
+- **XML Parsing:** Parses the XML content of Permission Set (\`.permissionset-meta.xml\`) and Profile (\`.profile-meta.xml\`) files to extract access configurations.
+- **Element Filtering:** Filters out elements that are explicitly ignored (via flags or configuration) or are not subject to access checks (e.g., Master-Detail fields, required fields, Custom Metadata Types, Custom Settings).
+- **Access Verification Logic:** Iterates through each element to check and verifies if it has the necessary access enabled in any of the non-ignored Permission Sets or Profiles.
+- **Data Aggregation:** Collects all elements with missing access into a \`missingElements\` array and \`missingElementsMap\` for reporting and notification purposes.
+</details>
 `;
 
   public static examples = [
@@ -150,7 +176,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     this.customSettingsNames = (await this.listLocalCustomSettings()).map((cs) => cs.name);
 
-    uxLog(this, c.green(LintAccess.messages.header));
+    uxLog("action", this, c.cyan(LintAccess.messages.header));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
 
@@ -347,7 +373,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     }
 
     if (!this.hasRemainingElementsToCheck(remainingElements)) {
-      uxLog(this, c.green(LintAccess.messages.allElementsHaveRights));
+      uxLog("success", this, c.green(LintAccess.messages.allElementsHaveRights));
       return LintAccess.messages.allElementsHaveRights;
     } else {
       //list remaining elements after checking on profiles and permissions sets
@@ -409,11 +435,11 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           //only readable(for fields) or enabled(apex class) rights are relevant
           if (
             permission &&
-            permission[currentType.xmlAccessField][0] == 'true' &&
-            elementsToCheckByType[currentType.xmlField].includes(permission[currentType.xmlField][0])
+            permission[currentType.xmlAccessField]?.[0] == 'true' &&
+            elementsToCheckByType[currentType.xmlField].includes(permission[currentType.xmlField]?.[0])
           ) {
             remainingElements[currentType.xmlField] = remainingElements[currentType.xmlField].filter(
-              (e) => e !== permission[currentType.xmlField][0]
+              (e) => e !== permission[currentType.xmlField]?.[0]
             );
           }
         }
@@ -450,8 +476,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     //we create an object to have a custom header in the table
     if (!this.hasToDisplayJsonOnly) {
-      uxLog(this, c.red(LintAccess.messages.someElementsDontHaveRights));
-      console.table(remainingElementsTable);
+      uxLog("action", this, c.cyan(LintAccess.messages.someElementsDontHaveRights));
+      uxLogTable(this, remainingElementsTable);
     }
 
     return remainingElements;
@@ -508,6 +534,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       const promptUpdate = await prompts({
         type: 'confirm',
         message: c.cyanBright('Do you want to add the missing accesses in permission sets ?'),
+        description: 'Confirm if you want to automatically fix missing access issues',
       });
       if (promptUpdate.value === true) {
         const availablePermissionSets = await this.listLocalPermissionSets();
@@ -516,6 +543,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
             type: 'multiselect',
             name: 'elements',
             message: 'Please select the elements you want to add in Permission Set(s)',
+            description: 'Choose which missing access elements to add to permission sets',
             choices: this.missingElements.map((elt) => {
               return { title: `${elt.type}: ${elt.element}`, value: elt };
             }),
@@ -524,6 +552,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
             type: 'multiselect',
             name: 'permissionSets',
             message: 'Please select the permission sets you want to update with selected elements',
+            description: 'Choose which permission sets should receive the selected access elements',
             choices: availablePermissionSets.map((elt) => {
               return { title: elt.name, value: elt.filePath };
             }),
@@ -532,6 +561,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
             type: 'select',
             name: 'access',
             message: 'Please select the accesses to set for the custom fields',
+            description: 'Choose the level of access to grant for custom fields',
+            placeholder: 'Select access level',
             choices: [
               { title: 'Readable', value: 'readable' },
               { title: 'Readable & Editable', value: 'editable' },
@@ -550,8 +581,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         }
       }
     } else if (this.missingElements.length > 0) {
-      uxLog(this, c.yellow('Please add missing access on permission set(s)'));
-      uxLog(this, c.yellow('You can do it by running VsCode SFDX Hardis command Audit -> Detect missing permissions'));
+      uxLog("warning", this, c.yellow('Please add missing access on permission set(s)'));
+      uxLog("warning", this, c.yellow('You can do it by running VsCode SFDX Hardis command Audit -> Detect missing permissions'));
     }
   }
 
@@ -633,6 +664,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       }
       await writeXmlFile(permissionSetFile, psFileXml);
     }
+    uxLog("action", this, c.cyan('Permission sets updated successfully!'));
+    uxLog("warning", this, c.yellow('Please commit and push your changes to the repository!'));
     throw new SfError(c.red('Your permission sets has been updated: please CHECK THE UPDATES then commit and push !'));
   }
 
