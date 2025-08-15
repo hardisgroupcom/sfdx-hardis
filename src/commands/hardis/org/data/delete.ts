@@ -31,7 +31,7 @@ If you intend to run this command in a production environment, you must:
 - Set \`runnableInProduction\` to \`true\` in your \`export.json\` file within the SFDMU workspace.
 - Define \`sfdmuCanModify: YOUR_INSTANCE_URL\` in your branch-specific configuration file (e.g., \`config/branches/.sfdx-hardis.YOUR_BRANCH.yml\`) to explicitly authorize data modification for that instance.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation relies heavily on the SFDMU plugin:

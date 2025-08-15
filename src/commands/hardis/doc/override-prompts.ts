@@ -37,7 +37,7 @@ ${Object.keys(PROMPT_VARIABLES).map(name => `- ${name}`).join('\\n')}
 
 More info on [AI Prompts documentation](https://sfdx-hardis.cloudity.com/salesforce-ai-prompts/)
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

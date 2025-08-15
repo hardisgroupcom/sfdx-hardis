@@ -30,7 +30,7 @@ Key functionalities:
   - **Delete After Creation (\`--deleteafter\`):** Deletes the newly created package version immediately after its creation. This is useful for testing the package creation process without accumulating unnecessary versions.
   - **Install After Creation (\`--install\`):** Installs the newly created package version on your default Salesforce org. This is convenient for immediate testing or validation.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

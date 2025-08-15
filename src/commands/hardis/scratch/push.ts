@@ -21,7 +21,7 @@ Key functionalities:
 - **Source Synchronization:** Deploys all local changes (metadata and code) to the target scratch org.
 - **Underlying Command:** Internally, this command executes \`sf project deploy start\` to perform the push operation.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

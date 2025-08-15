@@ -15,7 +15,7 @@ Key functionalities:
 - **Customizable Greeting:** You can specify a name using the `--name` flag to personalize the greeting.
 - **Timestamp:** The greeting includes the current date.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

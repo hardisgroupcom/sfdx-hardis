@@ -20,7 +20,7 @@ Key functionalities:
 - **Targeted File Scan:** Scans `.cls`, `.trigger`, and `.xml` files within your SFDX project to identify occurrences of the specified reference strings.
 - **Configurable Replacements:** Applies predefined replacement rules based on file type (e.g., Apex classes, XML files) to modify the content where references are found.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

@@ -16,7 +16,7 @@ Key functionalities:
 - **Managed Package Filtering:** By default, it filters out metadata from managed packages to reduce the volume of retrieved data. This can be overridden with the `--includemanaged` flag.
 - **Monitoring Integration:** Designed to be used within a monitoring CI/CD job, it performs additional post-retrieval actions like running Apex tests and checking for legacy API usage.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

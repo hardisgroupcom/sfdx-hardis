@@ -18,7 +18,7 @@ Key functionalities:
   - **Delete (`--delete` flag):** If the `--delete` flag is used, it completely removes the lines containing `System.debug()`.
 - **Exclusion:** Lines containing `NOPMD` are ignored, allowing developers to intentionally keep specific debug statements.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

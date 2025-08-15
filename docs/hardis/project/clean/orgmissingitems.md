@@ -20,7 +20,7 @@ Key features:
 - **`package.xml` Comparison:** Compares your local project's metadata with the target org's metadata and your local `package.xml` to identify missing items.
 - **Report Type Cleaning:** Specifically targets and cleans `reportType-meta.xml` files by removing references to fields or objects that are not present in the target org or your `package.xml`.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves several steps:

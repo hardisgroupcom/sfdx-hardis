@@ -37,7 +37,7 @@ This command helps enforce documentation standards by identifying custom fields 
 
 It specifically targets custom fields (ending with \`__c\`) and excludes standard fields, managed package fields, and fields on Custom Settings or Data Cloud objects.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

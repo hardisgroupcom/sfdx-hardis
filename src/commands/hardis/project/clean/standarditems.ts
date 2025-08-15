@@ -28,7 +28,7 @@ Key functionalities:
 - **Conditional Folder Deletion:** If a standard object folder contains no custom fields (fields with a \`__c\` suffix), the entire folder and its associated sharing rules (\`.sharingRules-meta.xml\`) are removed.
 - **Standard Field Deletion:** If a standard object folder *does* contain custom fields, only the standard fields within that object are removed, preserving your custom metadata.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

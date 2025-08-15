@@ -31,7 +31,7 @@ Key functionalities:
 - **Parallel Creation:** New scratch orgs are created in parallel using child processes, optimizing the replenishment process.
 - **Authentication Handling:** Authenticates to scratch orgs before deletion or creation, ensuring proper access.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

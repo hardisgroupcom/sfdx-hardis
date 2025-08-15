@@ -16,7 +16,7 @@ Key functionalities:
 - **Confirmation Prompt:** Prompts for confirmation before proceeding with the deletion, ensuring that you don't accidentally delete important orgs.
 - **Dev Hub Integration:** Works with your configured Dev Hub to manage scratch orgs.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

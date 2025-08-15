@@ -22,7 +22,7 @@ For visual assistance with solving deployment errors, refer to this article:
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 This command acts as an intelligent wrapper around the Salesforce CLI's metadata deployment functionality:

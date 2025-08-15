@@ -28,7 +28,7 @@ Key features:
 - **Customizable Output:** You can force the path and name of the output Markdown file using the \`--outputfile\` flag.
 - **VS Code Integration:** Automatically opens the generated Markdown file in a new VS Code tab for immediate review.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

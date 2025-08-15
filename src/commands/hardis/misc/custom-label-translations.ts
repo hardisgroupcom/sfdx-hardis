@@ -35,7 +35,7 @@ Key functionalities:
 - **Interactive Prompts:** If neither \`--label\` nor \`--lwc\` is provided, the command will interactively prompt you to choose between selecting specific labels or extracting from an LWC.
 - **Output Generation:** For each language found in your project's \`translations\` folder, it generates a new \`.translation-meta.xml\` file containing only the extracted custom labels and their translations. These files are placed in a timestamped output directory.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

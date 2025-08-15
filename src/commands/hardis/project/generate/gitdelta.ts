@@ -37,7 +37,7 @@ Key functionalities:
 - **\`destructiveChanges.xml\` Generation:** Creates a \`destructiveChanges.xml\` file that lists all metadata components that have been deleted between the specified commits.
 - **Temporary File Output:** The generated \`package.xml\` and \`destructiveChanges.xml\` files are placed in a temporary directory.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

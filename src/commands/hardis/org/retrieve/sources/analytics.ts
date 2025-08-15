@@ -30,7 +30,7 @@ Key functionalities:
 - **SFDX Bug Workarounds:** Incorporates internal logic to handle common issues or limitations encountered when retrieving CRM Analytics metadata using standard Salesforce CLI commands.
 - **Target Org Selection:** Allows you to specify the Salesforce org from which to retrieve the Analytics sources. If not provided, it will prompt for selection.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

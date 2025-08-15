@@ -13,7 +13,7 @@ This command is designed to help developers and administrators synchronize their
 - **Selective Retrieval:** Instead of retrieving all dashboards or reports, it allows you to retrieve specific folders, which can be more efficient for targeted development or backup.
 - **Maintaining Folder Structure:** Ensures that the folder structure of these metadata types is preserved in your local project.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

@@ -40,7 +40,7 @@ Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for th
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-licenses/) and can output Grafana, Slack and MsTeams Notifications.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves extensive querying of Salesforce objects and data correlation:
