@@ -4,18 +4,18 @@ import { AnyJson } from '@salesforce/ts-types';
 import * as path from 'path';
 import c from 'chalk';
 import { glob } from 'glob';
-import { uxLog } from '../../../../../common/utils/index.js';
-import { parseXmlFile } from '../../../../../common/utils/xmlUtils.js';
-import { GLOB_IGNORE_PATTERNS } from '../../../../../common/utils/projectUtils.js';
-import { 
-  deleteConnectedApps, 
-  deployConnectedApps, 
+import { uxLog } from '../../../../common/utils/index.js';
+import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import {
+  deleteConnectedApps,
+  deployConnectedApps,
   toConnectedAppFormat,
   validateConnectedApps,
   selectConnectedAppsForProcessing,
   createConnectedAppSuccessResponse,
   handleConnectedAppError
-} from '../../../../../common/utils/refresh/connectedAppUtils.js';
+} from '../../../../common/utils/refresh/connectedAppUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -73,28 +73,28 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
     try {
       // Step 1: Find Connected Apps in the project
       const connectedApps = await this.findConnectedAppsInProject(nameFilter, processAll);
-      
+
       if (connectedApps.length === 0) {
-        uxLog(this, c.yellow('No Connected Apps found in the project'));
+        uxLog("warning", this, c.yellow('No Connected Apps found in the project'));
         return { success: false, message: 'No Connected Apps found in the project' };
       }
-      
+
       // Step 2: Select which Connected Apps to process
       const selectedApps = await this.selectConnectedApps(connectedApps, processAll, nameFilter);
-      
+
       if (selectedApps.length === 0) {
-        uxLog(this, c.yellow('No Connected Apps selected'));
+        uxLog("warning", this, c.yellow('No Connected Apps selected'));
         return { success: false, message: 'No Connected Apps selected' };
       }
-      
+
       // Step 3: Delete existing Connected Apps from the org for clean deployment
       await this.deleteExistingConnectedApps(orgUsername, selectedApps);
-      
+
       // Step 4: Deploy the Connected Apps to the org
       await this.deployConnectedApps(orgUsername, selectedApps);
-      
+
       // Return the result
-      uxLog(this, c.green(`Successfully restored ${selectedApps.length} Connected App(s) to the org`));
+      uxLog("success", this, c.green(`Successfully restored ${selectedApps.length} Connected App(s) to the org`));
       return createConnectedAppSuccessResponse(
         `Successfully restored ${selectedApps.length} Connected App(s) to the org`,
         selectedApps.map(app => app.fullName)
@@ -103,37 +103,37 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
       return handleConnectedAppError(error, this);
     }
   }
-  
+
   private async findConnectedAppsInProject(
-    nameFilter?: string, 
+    nameFilter?: string,
     processAll?: boolean
   ): Promise<ProjectConnectedApp[]> {
     if (processAll) {
-      uxLog(this, c.cyan('Processing all Connected Apps from local repository (selection prompt bypassed)'));
+      uxLog("action", this, c.cyan('Processing all Connected Apps from local repository (selection prompt bypassed)'));
     } else if (nameFilter) {
-      uxLog(this, c.cyan(`Processing specified Connected App(s): ${nameFilter} (selection prompt bypassed)`));
+      uxLog("action", this, c.cyan(`Processing specified Connected App(s): ${nameFilter} (selection prompt bypassed)`));
     } else {
-      uxLog(this, c.cyan('Scanning project for Connected Apps...'));
+      uxLog("action", this, c.cyan('Scanning project for Connected Apps...'));
     }
-    
+
     try {
       // Get all Connected App files in the project once
-      const connectedAppFiles = await glob('**/*.connectedApp-meta.xml', { 
+      const connectedAppFiles = await glob('**/*.connectedApp-meta.xml', {
         ignore: GLOB_IGNORE_PATTERNS,
         cwd: process.cwd()
       });
-      
+
       if (connectedAppFiles.length === 0) {
-        uxLog(this, c.yellow('No Connected App files found in the project'));
+        uxLog("warning", this, c.yellow('No Connected App files found in the project'));
         return [];
       }
-      
-      uxLog(this, c.grey(`Found ${connectedAppFiles.length} Connected App files in the project`));
-      
+
+      uxLog("log", this, c.grey(`Found ${connectedAppFiles.length} Connected App files in the project`));
+
       // Create ConnectedApp objects from the files
       const connectedApps: ProjectConnectedApp[] = [];
       const allFoundApps: { fullName: string; filePath: string }[] = [];
-      
+
       // First, collect all available Connected Apps in the project in one pass
       for (const filePath of connectedAppFiles) {
         try {
@@ -143,30 +143,30 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
             allFoundApps.push({ fullName, filePath });
           }
         } catch (error) {
-          uxLog(this, c.yellow(`Error parsing ${filePath}: ${error}`));
+          uxLog("warning", this, c.yellow(`Error parsing ${filePath}: ${error}`));
           // Continue with the next file
         }
       }
-      
+
       if (allFoundApps.length === 0) {
-        uxLog(this, c.yellow('No valid Connected Apps found in the project'));
+        uxLog("warning", this, c.yellow('No valid Connected Apps found in the project'));
         return [];
       }
-      
+
       // If name filter is specified, validate that all requested apps exist
       if (nameFilter) {
         const appNames = nameFilter.split(',').map(name => name.trim());
         const availableAppNames = allFoundApps.map(app => app.fullName);
-        
+
         // Case-insensitive matching for app names
         validateConnectedApps(appNames, availableAppNames, this, 'project');
-        
+
         // Filter apps based on name filter
         for (const app of allFoundApps) {
-          const matchesFilter = appNames.some(name => 
+          const matchesFilter = appNames.some(name =>
             name.toLowerCase() === app.fullName.toLowerCase()
           );
-          
+
           if (matchesFilter) {
             connectedApps.push({
               fullName: app.fullName,
@@ -185,20 +185,20 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
           });
         }
       }
-      
+
       // Display results
       if (connectedApps.length > 0) {
-        uxLog(this, c.cyan(`Found ${connectedApps.length} Connected App(s) in project`));
+        uxLog("action", this, c.cyan(`Found ${connectedApps.length} Connected App(s) in project`));
         connectedApps.forEach(app => {
-          uxLog(this, `${c.green(app.fullName)} (${app.filePath})`);
+          uxLog("success", this, `${c.green(app.fullName)} (${app.filePath})`);
         });
       } else if (nameFilter) {
-        uxLog(this, c.yellow(`No Connected Apps matching the filter "${nameFilter}" found in the project`));
+        uxLog("warning", this, c.yellow(`No Connected Apps matching the filter "${nameFilter}" found in the project`));
       }
-      
+
       return connectedApps;
     } catch (error) {
-      uxLog(this, c.red(`Error searching for Connected App files: ${error}`));
+      uxLog("error", this, c.red(`Error searching for Connected App files: ${error}`));
       return [];
     }
   }
@@ -216,35 +216,35 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
       this
     );
   }
-  
+
   private async deleteExistingConnectedApps(
-    orgUsername: string, 
+    orgUsername: string,
     connectedApps: ProjectConnectedApp[]
   ): Promise<void> {
     if (connectedApps.length === 0) return;
-    
-    uxLog(this, c.cyan(`For a clean deployment, the ${connectedApps.length} Connected App(s) will be deleted from the org before deployment...`));
-    
+
+    uxLog("action", this, c.cyan(`For a clean deployment, the ${connectedApps.length} Connected App(s) will be deleted from the org before deployment...`));
+
     // Convert ProjectConnectedApp to the format required by deleteConnectedApps
     const appsToDelete = toConnectedAppFormat(connectedApps);
-    
+
     // Delete the apps without prompting
     await deleteConnectedApps(orgUsername, appsToDelete, this);
-    uxLog(this, c.green('Connected Apps were successfully deleted from the org.'));
+    uxLog("success", this, c.green('Connected Apps were successfully deleted from the org.'));
   }
 
   private async deployConnectedApps(
-    orgUsername: string, 
+    orgUsername: string,
     connectedApps: ProjectConnectedApp[]
   ): Promise<void> {
     if (connectedApps.length === 0) return;
-    
-    uxLog(this, c.cyan(`Deploying ${connectedApps.length} Connected App(s) to org...`));
-    
+
+    uxLog("action", this, c.cyan(`Deploying ${connectedApps.length} Connected App(s) to org...`));
+
     // Convert ProjectConnectedApp to the format needed by deployConnectedApps
     const connectedAppsList = toConnectedAppFormat(connectedApps);
     await deployConnectedApps(orgUsername, connectedAppsList, this);
-    
-    uxLog(this, c.green(`Deployment of ${connectedApps.length} Connected App(s) completed successfully`));
+
+    uxLog("success", this, c.green(`Deployment of ${connectedApps.length} Connected App(s) completed successfully`));
   }
 }
