@@ -27,15 +27,15 @@ interface ProjectConnectedApp {
   type: string;
 }
 
-export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
+export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
   public static title = 'Restore Connected Apps after org refresh';
 
   public static examples = [
-    `$ sf hardis:org:refresh:restore:connectedapp`,
-    `$ sf hardis:org:refresh:restore:connectedapp --name "MyConnectedApp" // Process specific app, no selection prompt`,
-    `$ sf hardis:org:refresh:restore:connectedapp --name "App1,App2,App3" // Process multiple apps, no selection prompt`,
-    `$ sf hardis:org:refresh:restore:connectedapp --all // Process all apps, no selection prompt`,
-    `$ sf hardis:org:refresh:restore:connectedapp --target-org myDevOrg`,
+    `$ sf hardis:org:refresh:after-refresh`,
+    `$ sf hardis:org:refresh:after-refresh --name "MyConnectedApp" // Process specific app, no selection prompt`,
+    `$ sf hardis:org:refresh:after-refresh --name "App1,App2,App3" // Process multiple apps, no selection prompt`,
+    `$ sf hardis:org:refresh:after-refresh --all // Process all apps, no selection prompt`,
+    `$ sf hardis:org:refresh:after-refresh --target-org myDevOrg`,
   ];
 
   public static flags = {
@@ -65,7 +65,7 @@ export default class OrgRefreshRestoreConnectedApp extends SfCommand<AnyJson> {
   public static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
-    const { flags } = await this.parse(OrgRefreshRestoreConnectedApp);
+    const { flags } = await this.parse(OrgRefreshAfterRefresh);
     const orgUsername = flags["target-org"].getUsername() as string;
     const processAll = flags.all || false;
     const nameFilter = processAll ? undefined : flags.name; // If --all is set, ignore --name

@@ -6,7 +6,7 @@ import c from 'chalk';
 import open from 'open';
 import { execSync } from 'child_process';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
-import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getChromeExecutablePath } from '../../../../common/utils/orgConfigUtils.js';
@@ -39,15 +39,15 @@ interface BrowserContext {
   accessToken: string;
 }
 
-export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
+export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
   public static title = 'Save Connected Apps before org refresh';
 
   public static examples = [
-    `$ sf hardis:org:refresh:save:connectedapp`,
-    `$ sf hardis:org:refresh:save:connectedapp --name "MyConnectedApp"`,
-    `$ sf hardis:org:refresh:save:connectedapp --name "App1,App2,App3"`,
-    `$ sf hardis:org:refresh:save:connectedapp --all`,
-    `$ sf hardis:org:refresh:save:connectedapp --nodelete`,
+    `$ sf hardis:org:refresh:after-refresh`,
+    `$ sf hardis:org:refresh:after-refresh --name "MyConnectedApp"`,
+    `$ sf hardis:org:refresh:after-refresh --name "App1,App2,App3"`,
+    `$ sf hardis:org:refresh:after-refresh --all`,
+    `$ sf hardis:org:refresh:after-refresh --nodelete`,
   ];
 
   public static flags = {
@@ -62,10 +62,11 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       summary: 'Process all Connected Apps without selection prompt',
       description: 'If set, all Connected Apps from the org will be processed. Takes precedence over --name if both are specified.'
     }),
-    nodelete: Flags.boolean({
+    delete: Flags.boolean({
       char: 'd',
-      summary: 'Do not delete Connected Apps from org after saving',
-      description: 'By default, Connected Apps are deleted from the org after saving. Set this flag to keep them in the org.'
+      summary: 'Delete Connected Apps from org after saving',
+      description: 'By default, Connected Apps are not deleted from the org after saving. Set this flag to force their deletion so they will be able to be reuploaded again after refreshing the org.',
+      default: false
     }),
     websocket: Flags.string({
       description: messages.getMessage('websocket'),
@@ -78,7 +79,7 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
   public static requiresProject = true;
 
   public async run(): Promise<AnyJson> {
-    const { flags } = await this.parse(OrgRefreshSaveConnectedApp);
+    const { flags } = await this.parse(OrgRefreshBeforeRefresh);
     const conn = flags["target-org"].getConnection();
     const orgUsername = flags["target-org"].getUsername() as string; // Cast to string to avoid TypeScript error
     const instanceUrl = conn.instanceUrl;
@@ -107,8 +108,19 @@ export default class OrgRefreshSaveConnectedApp extends SfCommand<AnyJson> {
       const updatedApps = await this.processConnectedApps(orgUsername, selectedApps, instanceUrl, accessToken);
 
       // Step 4: Delete Connected Apps from org if required (default behavior)
-      const noDelete = flags.nodelete || false;
-      if (noDelete) {
+      let deleteApps = flags.delete || false;
+      if (!isCI && !deleteApps) {
+        const deletePrompt = await prompts({
+          type: 'confirm',
+          name: 'delete',
+          message: 'Do you want to delete the Connected Apps from the org after saving?',
+          description: 'If you do not delete them, they will remain in the org and can be re-uploaded after refreshing the org.',
+          initial: false
+        });
+        deleteApps = deletePrompt.delete;
+      }
+
+      if (!deleteApps) {
         uxLog("action", this, c.cyan('Connected Apps will remain in the org (--nodelete flag specified).'));
       } else {
         uxLog("action", this, c.cyan('Deleting Connected Apps from the org (default behavior)...'));
