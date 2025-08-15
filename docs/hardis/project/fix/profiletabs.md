@@ -18,7 +18,7 @@ Key functionalities:
 - **XML Updates:** Modifies the <tabVisibilities> section of the selected profile XML files to reflect the chosen tab settings. If a tab visibility setting already exists for a selected tab, it will be updated; otherwise, a new one will be added.
 - **Sorted Output:** The <tabVisibilities> in the updated profile XML files are sorted alphabetically for consistency and readability.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

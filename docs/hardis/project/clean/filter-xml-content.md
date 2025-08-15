@@ -19,7 +19,7 @@ Key functionalities:
   - Stripping out specific profile permissions or field-level security settings.
   - Cleaning up metadata that is not relevant to a particular deployment.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

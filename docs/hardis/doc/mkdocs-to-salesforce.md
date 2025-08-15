@@ -29,7 +29,7 @@ Key operations performed:
 - You can override default styles by customizing your `mkdocs.yml` file.
 
 More information can be found in the [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-project-documentation/).
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command orchestrates interactions with MkDocs, Salesforce CLI, and file system operations:

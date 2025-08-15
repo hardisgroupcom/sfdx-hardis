@@ -27,7 +27,7 @@ Key functionalities:
 - **Scratch Org Filtering:** The \`--scratch\` flag filters the list to show only scratch orgs related to your default Dev Hub.
 - **Connection Verification:** Ensures that the selected org is connected and prompts for re-authentication if necessary.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

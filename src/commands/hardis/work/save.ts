@@ -79,7 +79,7 @@ autoRemoveUserPermissions:
 
 Advanced instructions are available in the [Publish a User Story documentation]($\{CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/).
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves a series of orchestrated steps:

@@ -22,7 +22,7 @@ Key functionalities:
 - **Comprehensive Listing:** Displays all package versions, regardless of their status (e.g., released, beta).
 - **Dev Hub Integration:** Retrieves package version information directly from your connected Dev Hub.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation is straightforward:

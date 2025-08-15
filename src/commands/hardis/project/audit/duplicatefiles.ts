@@ -27,7 +27,7 @@ Key functionalities:
 - **Intelligent Filtering:** Accounts for known patterns where duplicate file names are legitimate (e.g., \`field-meta.xml\`, \`listView-meta.xml\`, \`recordType-meta.xml\`, \`webLink-meta.xml\` files within object subdirectories).
 - **Reporting:** Outputs a JSON object detailing the detected duplicates, including the file name and the full paths of its occurrences.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

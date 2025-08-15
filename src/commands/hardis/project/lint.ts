@@ -26,7 +26,7 @@ Key functionalities:
 - **Configuration Management:** If \`.mega-linter.yml\` is not found, it guides you through the initial setup of Mega-Linter, prompting for the Salesforce flavor.
 - **CI/CD Integration:** Designed to be used in CI/CD pipelines to enforce code quality gates.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

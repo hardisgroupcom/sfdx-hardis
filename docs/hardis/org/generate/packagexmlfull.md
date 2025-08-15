@@ -17,7 +17,7 @@ Key functionalities:
 - **Customizable Output:** Allows you to specify the output file path for the generated `package.xml`.
 - **Interactive Org Selection:** If no target org is specified, it interactively prompts the user to choose an org. (or use --no-prompt to skip this step)
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

@@ -69,7 +69,7 @@ ALLOWED_INACTIVE_CONNECTED_APPS=My App 1,My App 2, My App 3_
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-connected-apps/) and can output Grafana, Slack and MsTeams Notifications.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

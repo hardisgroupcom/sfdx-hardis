@@ -27,7 +27,7 @@ Key functionalities:
   - **Unlocked Packages:** Suitable for client projects or shared tooling, where code is readable and modifiable in subscriber orgs.
 - **Package Creation:** Executes the Salesforce CLI command to create the package in your connected Dev Hub.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

@@ -18,7 +18,7 @@ Key functionalities:
 - **Confirmation Prompt:** Before deletion, it prompts for user confirmation, displaying the number of Apex logs that will be deleted.
 - **Bulk Deletion:** Uses the Salesforce Bulk API to efficiently delete a large number of Apex logs.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

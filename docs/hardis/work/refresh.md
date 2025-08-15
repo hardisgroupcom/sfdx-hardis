@@ -22,7 +22,7 @@ Key functionalities:
   - Restores your stashed changes after the merge.
 - **Org Synchronization:** Pushes the updated local branch content to your scratch org or source-tracked sandbox, ensuring your org reflects the latest merged code.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

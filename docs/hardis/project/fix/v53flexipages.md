@@ -17,7 +17,7 @@ Key functionalities:
 
 **Important Note:** After running this command, ensure you update your `apiVersion` to `53.0` (or higher) in your `package.xml` and `sfdx-project.json` files.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

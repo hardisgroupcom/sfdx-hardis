@@ -19,7 +19,7 @@ Key functionalities:
 - **Initialization Scripts:** Runs predefined Apex scripts, assigns permission sets, and imports initial data into the newly created sandbox, based on configurations in your project.
 - **Error Handling:** Provides detailed error messages for common sandbox creation issues, including Salesforce-specific errors.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

@@ -27,7 +27,7 @@ After the initial run, you will need to manually update:
 
 Finally, activate GitHub Pages with `gh_pages` as the target branch. This will enable automatic documentation rebuilding and publishing to GitHub Pages upon each merge into your `master`/`main` branch.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

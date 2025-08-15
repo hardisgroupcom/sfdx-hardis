@@ -33,7 +33,7 @@ Key functionalities:
 - **CSV Report Generation:** Generates a CSV file containing all the retrieved license information, suitable for detailed analysis.
 - **Notifications:** Sends notifications to configured channels (e.g., Grafana, Slack, MS Teams) with a summary of license usage, including lists of active and used licenses.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

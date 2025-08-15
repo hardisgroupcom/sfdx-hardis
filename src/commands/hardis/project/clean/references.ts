@@ -40,7 +40,7 @@ Key functionalities include:
 - **Persistent Configuration:** You can choose to save your cleaning selections in your project's configuration (\`.sfdx-hardis.yml\`) so they are automatically applied during future Work Save operations.
 - **File Deletion:** Beyond just cleaning XML content, it can also delete related files (e.g., custom field files and their translations when a custom field is marked for deletion).
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves several steps:

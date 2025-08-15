@@ -17,7 +17,7 @@ Key functionalities:
 - **Interactive Input:** If neither `--packagexml` nor `--template` is provided, the command will interactively prompt you to select a `package.xml` file or a template.
 - **Target Org Selection:** Allows you to specify the Salesforce org from which to retrieve the sources. If not provided, it will prompt for selection.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

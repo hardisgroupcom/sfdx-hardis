@@ -41,7 +41,7 @@ It specifically scans for references to custom labels (e.g., \`$Label.MyLabel\`)
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-metadata/) and can output Grafana, Slack and MsTeams Notifications.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

@@ -31,7 +31,7 @@ Key functionalities:
 
 [![Use in VsCode SFDX Hardis !](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/multi-org-query-demo.gif)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
