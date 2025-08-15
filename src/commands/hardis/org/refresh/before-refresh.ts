@@ -1,10 +1,10 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import fs from 'fs-extra';
 import c from 'chalk';
 import open from 'open';
-import { execSync } from 'child_process';
+import axios from 'axios';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
 import { execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
@@ -19,6 +19,7 @@ import {
   createConnectedAppSuccessResponse,
   handleConnectedAppError
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
+import { getConfig, setConfig } from '../../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -43,15 +44,21 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
   public static title = 'Save Connected Apps before org refresh';
 
   public static examples = [
-    `$ sf hardis:org:refresh:after-refresh`,
-    `$ sf hardis:org:refresh:after-refresh --name "MyConnectedApp"`,
-    `$ sf hardis:org:refresh:after-refresh --name "App1,App2,App3"`,
-    `$ sf hardis:org:refresh:after-refresh --all`,
-    `$ sf hardis:org:refresh:after-refresh --nodelete`,
+    `$ sf hardis:org:refresh:before-refresh`,
+    `$ sf hardis:org:refresh:before-refresh --name "MyConnectedApp"`,
+    `$ sf hardis:org:refresh:before-refresh --name "App1,App2,App3"`,
+    `$ sf hardis:org:refresh:before-refresh --all`,
+    `$ sf hardis:org:refresh:before-refresh --delete`,
   ];
 
   public static flags = {
     "target-org": Flags.requiredOrg(),
+    delete: Flags.boolean({
+      char: 'd',
+      summary: 'Delete Connected Apps from org after saving',
+      description: 'By default, Connected Apps are not deleted from the org after saving. Set this flag to force their deletion so they will be able to be reuploaded again after refreshing the org.',
+      default: false
+    }),
     name: Flags.string({
       char: 'n',
       summary: messages.getMessage('nameFilter'),
@@ -62,12 +69,7 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
       summary: 'Process all Connected Apps without selection prompt',
       description: 'If set, all Connected Apps from the org will be processed. Takes precedence over --name if both are specified.'
     }),
-    delete: Flags.boolean({
-      char: 'd',
-      summary: 'Delete Connected Apps from org after saving',
-      description: 'By default, Connected Apps are not deleted from the org after saving. Set this flag to force their deletion so they will be able to be reuploaded again after refreshing the org.',
-      default: false
-    }),
+
     websocket: Flags.string({
       description: messages.getMessage('websocket'),
     }),
@@ -78,14 +80,25 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
 
   public static requiresProject = true;
 
+  protected refreshSandboxConfig: any = {};
+
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgRefreshBeforeRefresh);
     const conn = flags["target-org"].getConnection();
     const orgUsername = flags["target-org"].getUsername() as string; // Cast to string to avoid TypeScript error
     const instanceUrl = conn.instanceUrl;
-    const accessToken = conn.accessToken || ''; // Ensure accessToken is a string
+    const accessToken = conn.accessToken; // Ensure accessToken is a string
     const processAll = flags.all || false;
     const nameFilter = processAll ? undefined : flags.name; // If --all is set, ignore --name
+    const config = await getConfig("user");
+    this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
+
+    uxLog("action", this, c.cyan(`This command with save information that will need to be restored after org refresh`));
+
+    // Check org is connected
+    if (!accessToken) {
+      throw new SfError(c.red('Access token is required to retrieve Connected Apps from the org. Please authenticate to a default org.'));
+    }
 
     try {
       // Step 1: Get Connected Apps from org or based on provided name filter
@@ -103,6 +116,8 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
         uxLog("warning", this, c.yellow('No Connected Apps selected'));
         return { success: false, message: 'No Connected Apps selected' };
       }
+      this.refreshSandboxConfig.connectedApps = selectedApps.map(app => app.fullName);
+      await this.saveConfig();
 
       // Step 3: Process the selected Connected Apps
       const updatedApps = await this.processConnectedApps(orgUsername, selectedApps, instanceUrl, accessToken);
@@ -121,7 +136,9 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
       }
 
       if (!deleteApps) {
-        uxLog("action", this, c.cyan('Connected Apps will remain in the org (--nodelete flag specified).'));
+        uxLog("action", this, c.cyan(`Connected Apps will remain in the org
+IMPORTANT: Before refreshing your org, run again this command and choose to delete connected apps, so they will be able to be re-uploaded after refreshing the org.          
+`));
       } else {
         uxLog("action", this, c.cyan('Deleting Connected Apps from the org (default behavior)...'));
         await deleteConnectedApps(orgUsername, updatedApps, this);
@@ -169,6 +186,7 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
       uxLog("warning", this, c.yellow('No Connected Apps were found in the org.'));
       return [];
     }
+    availableApps.sort((a, b) => a.fullName.localeCompare(b.fullName));
 
     const availableAppNames = availableApps.map(app => app.fullName);
     uxLog("log", this, c.grey(`Found ${availableApps.length} Connected App(s) in the org`));
@@ -198,11 +216,16 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
     processAll: boolean,
     nameFilter: string | undefined
   ): Promise<ConnectedApp[]> {
+    const initialSelection: string[] = [];
+    if (this.refreshSandboxConfig.connectedApps && this.refreshSandboxConfig.connectedApps.length > 0) {
+      initialSelection.push(...this.refreshSandboxConfig.connectedApps);
+    }
     return selectConnectedAppsForProcessing(
       connectedApps,
+      initialSelection,
       processAll,
       nameFilter,
-      'Select Connected Apps to save:',
+      'Select Connected Apps that you will want to restore after org refresh',
       this
     );
   }
@@ -228,15 +251,13 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
       const connectedAppIdMap = await this.queryConnectedAppIds(orgUsername, connectedApps);
 
       // Step 3: Initialize browser for automation if access token is available
-      if (accessToken) {
-        try {
-          browserContext = await this.initializeBrowser(instanceUrl, accessToken);
-        } catch (e: any) {
-          uxLog("error", this, c.red("Error initializing browser for automated Consumer Secret extraction:"));
-          uxLog("error", this, c.red(e.message));
-          uxLog("error", this, c.red("You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Chrome/Chromium path. example: /usr/bin/chromium-browser"));
-          // Continue without browser automation - will fall back to manual entry
-        }
+      uxLog("action", this, c.cyan('Initializing browser for automated Consumer Secret extraction...'));
+      try {
+        browserContext = await this.initializeBrowser(instanceUrl, accessToken);
+      } catch (e: any) {
+        uxLog("error", this, c.red(`Error initializing browser for automated Consumer Secret extraction: ${e.message}.
+You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Chrome/Chromium path. example: /usr/bin/chromium-browser`));
+        // Continue without browser automation - will fall back to manual entry
       }
 
       // Step 4: Process each Connected App
@@ -261,7 +282,7 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
     } finally {
       // Close browser if it was opened
       if (browserContext?.browser) {
-        uxLog("action", this, c.cyan('Closing browser...'));
+        uxLog("log", this, c.cyan('Closing browser...'));
         await browserContext.browser.close();
       }
     }
@@ -271,7 +292,7 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
     orgUsername: string,
     connectedApps: ConnectedApp[]
   ): Promise<void> {
-    uxLog("action", this, c.cyan(`Retrieving ${connectedApps.length} Connected App(s)...`));
+    uxLog("action", this, c.cyan(`Retrieving ${connectedApps.length} Connected App(s) from ${orgUsername}`));
     await retrieveConnectedApps(orgUsername, connectedApps, this);
     this.verifyConnectedAppsRetrieval(connectedApps);
   }
@@ -352,17 +373,18 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
   ): Promise<BrowserContext> {
     // Get chrome/chromium executable path using shared utility
     const chromeExecutablePath = getChromeExecutablePath();
-    uxLog("action", this, c.cyan(`chromeExecutablePath: ${chromeExecutablePath}`));
+    uxLog("log", this, c.cyan(`chromeExecutablePath: ${chromeExecutablePath}`));
 
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
       headless: false, // Always show the browser window
-      executablePath: chromeExecutablePath
+      executablePath: chromeExecutablePath,
+      timeout: 60000 // Increase timeout for browser launch
     });
 
     // Log in once for the session
     const loginUrl = `${instanceUrl}/secur/frontdoor.jsp?sid=${accessToken}`;
-    uxLog("action", this, c.cyan(`Logging in to Salesforce via frontdoor.jsp...`));
+    uxLog("log", this, c.cyan(`Log in via browser using frontdoor.jsp...`));
     const page = await browser.newPage();
     await page.goto(loginUrl, { waitUntil: ['domcontentloaded', 'networkidle0'] });
     await page.close();
@@ -390,14 +412,13 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
     // Try to extract application ID and view link
     if (connectedAppId) {
       try {
-        const applicationId = await this.extractApplicationId(instanceUrl, connectedAppId, browserContext?.accessToken);
+        const applicationId = await this.extractApplicationId(instanceUrl, connectedAppId, app.fullName, browserContext?.accessToken ?? '');
         viewLink = `${instanceUrl}/app/mgmt/forceconnectedapps/forceAppDetail.apexp?applicationId=${applicationId}`;
-        uxLog("success", this, c.green(`Successfully extracted application ID: ${applicationId}`));
-        uxLog("success", this, c.green(`viewLink: ${viewLink}`));
+        uxLog("success", this, c.green(`Successfully extracted application ID: ${applicationId} (viewLink: ${viewLink})`));
 
         // Try automated extraction if browser is available
         if (browserContext?.browser) {
-          uxLog("action", this, c.cyan(`Attempting to automatically extract Consumer Secret for ${app.fullName}...`));
+          uxLog("log", this, c.cyan(`Attempting to automatically extract Consumer Secret for ${app.fullName}...`));
           try {
             consumerSecretValue = await this.extractConsumerSecret(
               browserContext.browser,
@@ -435,11 +456,13 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
         }
       } else {
         // Manual entry flow - open browser and prompt for secret
-        uxLog("action", this, c.cyan(`Opening Connected App detail page in your browser for: ${app.fullName}`));
-        uxLog("action", this, c.cyan('Please follow these steps:'));
-        uxLog("action", this, c.cyan('1. Click "Manage Consumer Details" button'));
-        uxLog("action", this, c.cyan('2. Copy the ' + c.green('Consumer Secret') + ' value'));
-
+        const msg = [
+          `Unable to automatically extract Consumer Secret for Connected App ${app.fullName}.`,
+          `- Open Connected App detail page in your browser for app ${app.fullName} (Contextual menu -> View)`,
+          '- Click "Manage Consumer Details" button',
+          `- Copy the ${c.green('Consumer Secret')} value`
+        ].join('\n');
+        uxLog("action", this, c.cyan(msg));
         await open(viewLink);
 
         // Prompt for the Consumer Secret (manual entry)
@@ -483,15 +506,18 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
   private async extractApplicationId(
     instanceUrl: string,
     connectedAppId: string,
-    accessToken?: string
+    connectedAppName: string,
+    accessToken: string
   ): Promise<string> {
-    uxLog("action", this, c.cyan(`Extracting application ID for Connected App with ID: ${connectedAppId}`));
+    uxLog("action", this, c.cyan(`Extracting application ID for Connected App with ID: ${connectedAppName}`));
 
-    const curlCommand = accessToken
-      ? `curl --silent --location --request GET "${instanceUrl}/${connectedAppId}" --header "Cookie: sid=${accessToken}"`
-      : `curl --silent --location --request GET "${instanceUrl}/${connectedAppId}"`;
-
-    const html = execSync(curlCommand).toString();
+    const url = `${instanceUrl}/${connectedAppId}`;
+    const response = await axios.get(url, {
+      headers: {
+        Cookie: `sid=${accessToken}`
+      }
+    });
+    const html = response.data;
     const appIdMatch = html.match(/applicationId=([a-zA-Z0-9]+)/i);
 
     if (!appIdMatch || !appIdMatch[1]) {
@@ -509,9 +535,9 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
     try {
       page = await browser.newPage();
 
-      uxLog("action", this, c.cyan(`Navigating to Connected App detail page...`));
+      uxLog("log", this, c.grey(`Navigating to Connected App detail page...`));
       await page.goto(appUrl, { waitUntil: ['domcontentloaded', 'networkidle0'] });
-      uxLog("action", this, c.cyan(`Attempting to extract Consumer Secret...`));
+      uxLog("log", this, c.grey(`Attempting to extract Consumer Secret...`));
 
       // Click Manage Consumer Details button
       const manageBtnId = 'input[id="appsetup:setupForm:details:oauthSettingsSection:manageConsumerKeySecretSection:manageConsumer"]';
@@ -553,7 +579,7 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
       // Insert consumerSecret right after consumerKey
       const updatedXmlString = xmlString.replace(
         /<consumerKey>.*?<\/consumerKey>/,
-        `$&\n    <consumerSecret>${consumerSecret}</consumerSecret>`
+        `$&\n        <consumerSecret>${consumerSecret}</consumerSecret>`
       );
       await fs.writeFile(connectedAppFile, updatedXmlString);
     }
@@ -567,5 +593,16 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
       consumerKey: consumerKey,
       consumerSecret: consumerSecret
     };
+  }
+
+  private async saveConfig(): Promise<void> {
+    const config = await getConfig("project");
+    if (!config.refreshSandboxConfig) {
+      config.refreshSandboxConfig = {};
+    }
+    if (JSON.stringify(this.refreshSandboxConfig) !== JSON.stringify(config.refreshSandboxConfig)) {
+      await setConfig("project", { refreshSandboxConfig: this.refreshSandboxConfig });
+      uxLog("log", this, c.cyan('Refresh sandbox configuration has been saved successfully.'));
+    }
   }
 }

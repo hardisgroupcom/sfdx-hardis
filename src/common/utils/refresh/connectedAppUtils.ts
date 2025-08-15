@@ -9,6 +9,9 @@ import { SfCommand } from '@salesforce/sf-plugins-core';
 import { prompts } from '../prompts.js';
 import { GLOB_IGNORE_PATTERNS } from '../projectUtils.js';
 
+export interface RefreshSandboxConfig {
+  connectedApps?: string[];
+}
 // Define interface for Connected App metadata
 export interface ConnectedApp {
   fullName: string;
@@ -60,10 +63,7 @@ export async function createConnectedAppManifest(
 
   // Display the XML content for the manifest
   const manifestContent = await fs.readFile(manifestPath, 'utf8');
-  uxLog("action", command, c.cyan(`Package.xml manifest for ${connectedApps.length} Connected App(s):`));
-  uxLog("warning", command, c.yellow('----------------------------------------'));
-  uxLog("other", command, manifestContent);
-  uxLog("warning", command, c.yellow('----------------------------------------'));
+  uxLog("log", command, c.cyan(`Package.xml manifest for ${connectedApps.length} Connected App(s):\n${manifestContent}`));
 
   return { manifestPath, tmpDir };
 }
@@ -193,7 +193,7 @@ export async function disableConnectedAppIgnore(command: SfCommand<any>): Promis
 
   // Write modified .forceignore
   await fs.writeFile(forceignorePath, filteredLines.join('\n'));
-  uxLog("action", command, c.cyan('Temporarily modified .forceignore to allow Connected App retrieval'));
+  uxLog("warning", command, c.cyan('Temporarily modified .forceignore to allow Connected App retrieval'));
 
   return { forceignorePath, originalContent, tempBackupPath };
 }
@@ -349,6 +349,7 @@ export function validateConnectedAppParams(
 
 export async function promptForConnectedAppSelection<T extends { fullName: string }>(
   connectedApps: T[],
+  initialSelection: string[] = [],
   promptMessage: string,
   command: SfCommand<any>
 ): Promise<T[]> {
@@ -363,7 +364,8 @@ export async function promptForConnectedAppSelection<T extends { fullName: strin
     name: 'selectedApps',
     message: promptMessage,
     description: 'Select Connected Apps to process',
-    choices: choices
+    choices: choices,
+    initial: initialSelection,
   });
 
   if (!promptResponse.selectedApps || promptResponse.selectedApps.length === 0) {
@@ -375,7 +377,7 @@ export async function promptForConnectedAppSelection<T extends { fullName: strin
     promptResponse.selectedApps.includes(app.fullName)
   );
 
-  uxLog("action", command, c.cyan(`Processing ${selectedApps.length} Connected App(s)`));
+  uxLog("log", command, c.cyan(`Selected ${selectedApps.length} Connected App(s)`));
   return selectedApps;
 }
 
@@ -383,8 +385,7 @@ export async function findConnectedAppFile(
   appName: string,
   command: SfCommand<any>
 ): Promise<string | null> {
-  uxLog("action", command, c.cyan(`Searching for Connected App: ${appName}`));
-
+  uxLog("other", command, c.cyan(`Searching for Connected App: ${appName}`));
   try {
     // First, try an exact case-sensitive match
     const exactPattern = `**/${appName}.connectedApp-meta.xml`;
@@ -448,6 +449,7 @@ export async function findConnectedAppFile(
 
 export async function selectConnectedAppsForProcessing<T extends { fullName: string }>(
   connectedApps: T[],
+  initialSelection: string[] = [],
   processAll: boolean,
   nameFilter: string | undefined,
   promptMessage: string,
@@ -469,6 +471,7 @@ export async function selectConnectedAppsForProcessing<T extends { fullName: str
   // Otherwise, prompt for selection
   return await promptForConnectedAppSelection(
     connectedApps,
+    initialSelection,
     promptMessage,
     command
   );
@@ -504,7 +507,7 @@ export async function performConnectedAppOperationWithManifest(
     const { manifestPath, tmpDir } = await createConnectedAppManifest(connectedApps, command);
 
     // Execute the operation using the manifest
-    uxLog("action", command, c.cyan(`${operationName === 'retrieve' ? 'Retrieving' : 'Deploying'} ${connectedApps.length} Connected App(s) ${operationName === 'retrieve' ? 'from' : 'to'} org...`));
+    uxLog("log", command, c.cyan(`${operationName === 'retrieve' ? 'Retrieving' : 'Deploying'} ${connectedApps.length} Connected App(s) ${operationName === 'retrieve' ? 'from' : 'to'} org...`));
 
     try {
       await commandFn(manifestPath, orgUsername, command);

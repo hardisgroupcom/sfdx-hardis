@@ -16,6 +16,7 @@ import {
   createConnectedAppSuccessResponse,
   handleConnectedAppError
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
+import { getConfig } from '../../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -63,12 +64,15 @@ export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
+  protected refreshSandboxConfig: any = {};
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgRefreshAfterRefresh);
     const orgUsername = flags["target-org"].getUsername() as string;
     const processAll = flags.all || false;
     const nameFilter = processAll ? undefined : flags.name; // If --all is set, ignore --name
+    const config = await getConfig("user");
+    this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
 
     try {
       // Step 1: Find Connected Apps in the project
@@ -208,11 +212,16 @@ export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
     processAll: boolean,
     nameFilter?: string
   ): Promise<ProjectConnectedApp[]> {
+    const initialSelection: string[] = [];
+    if (this.refreshSandboxConfig.connectedApps && this.refreshSandboxConfig.connectedApps.length > 0) {
+      initialSelection.push(...this.refreshSandboxConfig.connectedApps);
+    }
     return selectConnectedAppsForProcessing(
       connectedApps,
+      initialSelection,
       processAll,
       nameFilter,
-      'Select Connected Apps to restore:',
+      'Select Connected Apps to restore',
       this
     );
   }
