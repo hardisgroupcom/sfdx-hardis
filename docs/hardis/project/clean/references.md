@@ -18,7 +18,7 @@ Key functionalities include:
 - **Persistent Configuration:** You can choose to save your cleaning selections in your project's configuration (`.sfdx-hardis.yml`) so they are automatically applied during future Work Save operations.
 - **File Deletion:** Beyond just cleaning XML content, it can also delete related files (e.g., custom field files and their translations when a custom field is marked for deletion).
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves several steps:
@@ -33,15 +33,15 @@ The command's technical implementation involves several steps:
 
 ## Parameters
 
-| Name          |  Type   | Description                                                   | Default | Required |                                                                                            Options                                                                                            |
-|:--------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-| config<br/>-c | option  | Path to a JSON config file or a destructiveChanges.xml file   |         |          |                                                                                                                                                                                               |
-| debug<br/>-d  | boolean | Activate debug mode (more logs)                               |         |          |                                                                                                                                                                                               |
-| flags-dir     | option  | undefined                                                     |         |          |                                                                                                                                                                                               |
-| json          | boolean | Format output as json.                                        |         |          |                                                                                                                                                                                               |
-| skipauth      | boolean | Skip authentication check when a default username is required |         |          |                                                                                                                                                                                               |
-| type<br/>-t   | option  | Cleaning type                                                 |         |          | all<br/>caseentitlement<br/>dashboards<br/>datadotcom<br/>destructivechanges<br/>localfields<br/>productrequest<br/>entitlement<br/>flowPositions<br/>sensitiveMetadatas<br/>minimizeProfiles |
-| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |                                                                                                                                                                                               |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|config<br/>-c|option|Path to a JSON config file or a destructiveChanges.xml file||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|type<br/>-t|option|Cleaning type|||all<br/>caseentitlement<br/>dashboards<br/>datadotcom<br/>destructivechanges<br/>localfields<br/>productrequest<br/>entitlement<br/>flowPositions<br/>sensitiveMetadatas<br/>minimizeProfiles|
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

@@ -53,7 +53,7 @@ Key features include:
 
 Advanced instructions are available in the [Create New User Story documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-create-new-task/).
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's logic orchestrates various underlying processes:

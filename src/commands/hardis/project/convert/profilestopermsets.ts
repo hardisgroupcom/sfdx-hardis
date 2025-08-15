@@ -27,7 +27,7 @@ Key functionalities:
 - **Naming Convention:** New Permission Sets are named with a \`PS_\` prefix followed by the Profile name (e.g., \`PS_Standard_User\`).
 - **Exclusion Filter:** Allows you to exclude specific Profiles from the conversion process using the \`--except\` flag.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

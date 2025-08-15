@@ -19,7 +19,7 @@ Key functionalities:
   - Stripping out specific profile permissions or field-level security settings.
   - Cleaning up metadata that is not relevant to a particular deployment.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -38,15 +38,15 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name                |  Type   | Description                                                   | Default | Required | Options |
-|:--------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| configfile<br/>-c   | option  | Config JSON file path                                         |         |          |         |
-| debug               | boolean | debug                                                         |         |          |         |
-| flags-dir           | option  | undefined                                                     |         |          |         |
-| inputfolder<br/>-i  | option  | Input folder (default: "." )                                  |         |          |         |
-| json                | boolean | Format output as json.                                        |         |          |         |
-| outputfolder<br/>-f | option  | Output folder (default: parentFolder + _xml_content_filtered) |         |          |         |
-| websocket           | option  | websocket                                                     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|configfile<br/>-c|option|Config JSON file path||||
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|inputfolder<br/>-i|option|Input folder (default: "." )||||
+|json|boolean|Format output as json.||||
+|outputfolder<br/>-f|option|Output folder (default: parentFolder + _xml_content_filtered)||||
+|websocket|option|websocket||||
 
 ## Examples
 

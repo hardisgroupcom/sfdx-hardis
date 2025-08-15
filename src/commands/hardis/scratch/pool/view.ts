@@ -26,7 +26,7 @@ Key functionalities:
 - **Pool Storage Content:** Displays the raw content of the pool storage, which includes details about each scratch org in the pool (e.g., alias, username, expiration date).
 - **Available Scratch Org Count:** Provides a summary of how many scratch orgs are currently available in the pool.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

@@ -27,7 +27,7 @@ Key aspects:
 
 To obtain the \`SFDX_AUTH_URL_TECHNICAL_ORG\` value, you can run \`sf org display --verbose --json\` and copy the \`sfdxAuthUrl\` field from the output.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical flow involves:

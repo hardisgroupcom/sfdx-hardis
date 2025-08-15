@@ -18,7 +18,7 @@ Key functionalities:
   - Sharing Rules (`.sharingRules-meta.xml`)
 - **Content-Based Deletion:** It checks the XML content of these files for the presence of specific tags (e.g., `valueTranslation` for Global Value Set Translations) to determine if they are truly empty or lack relevant data.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -33,14 +33,14 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name          |  Type   | Description                                                   |  Default  | Required | Options |
-|:--------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
-| debug<br/>-d  | boolean | Activate debug mode (more logs)                               |           |          |         |
-| flags-dir     | option  | undefined                                                     |           |          |         |
-| folder<br/>-f | option  | Root folder                                                   | force-app |          |         |
-| json          | boolean | Format output as json.                                        |           |          |         |
-| skipauth      | boolean | Skip authentication check when a default username is required |           |          |         |
-| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |           |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|force-app|||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

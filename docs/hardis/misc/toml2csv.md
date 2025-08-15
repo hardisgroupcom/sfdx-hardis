@@ -23,7 +23,7 @@ Key functionalities:
 - **Error Handling and Reporting:** Catches transformation errors, logs them, and can output problematic lines to separate error CSV files for review.
 - **CSV Output:** Generates one or more CSV files, with configurable separators and headers, ready for Salesforce Data Loader or other import tools.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -47,19 +47,19 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                              |                Default                 | Required | Options |
-|:----------------------|:-------:|:-------------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                          |                                        |          |         |
-| filtersections<br/>-l | option  | List of sections to process (if not set, all sections will be processed) |                                        |          |         |
-| flags-dir             | option  | undefined                                                                |                                        |          |         |
-| json                  | boolean | Format output as json.                                                   |                                        |          |         |
-| outputdir<br/>-z      | option  | Output directory                                                         |                                        |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required            |                                        |          |         |
-| skiptransfo<br/>-s    | boolean | Do not apply transformation to input data                                |                                        |          |         |
-| target-org<br/>-o     | option  | undefined                                                                | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| tomlfile<br/>-f       | option  | Input TOML file path                                                     |                                        |          |         |
-| transfoconfig<br/>-t  | option  | Path to JSON config file for mapping and transformation                  |                                        |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|filtersections<br/>-l|option|List of sections to process (if not set, all sections will be processed)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputdir<br/>-z|option|Output directory||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|skiptransfo<br/>-s|boolean|Do not apply transformation to input data||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|tomlfile<br/>-f|option|Input TOML file path||||
+|transfoconfig<br/>-t|option|Path to JSON config file for mapping and transformation||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

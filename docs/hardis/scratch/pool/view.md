@@ -16,7 +16,7 @@ Key functionalities:
 - **Pool Storage Content:** Displays the raw content of the pool storage, which includes details about each scratch org in the pool (e.g., alias, username, expiration date).
 - **Available Scratch Org Count:** Provides a summary of how many scratch orgs are currently available in the pool.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -30,14 +30,14 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                   | Default | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir             | option  | undefined                                                     |         |          |         |
-| json                  | boolean | Format output as json.                                        |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                     |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-dev-hub<br/>-v|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

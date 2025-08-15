@@ -17,7 +17,7 @@ Key functionalities:
 - **Interactive Input:** If neither `--packagexml` nor `--template` is provided, the command will interactively prompt you to select a `package.xml` file or a template.
 - **Target Org Selection:** Allows you to specify the Salesforce org from which to retrieve the sources. If not provided, it will prompt for selection.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -32,16 +32,16 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |                Default                 | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| flags-dir         | option  | undefined                                                     |                                        |          |         |
-| json              | boolean | Format output as json.                                        |                                        |          |         |
-| packagexml<br/>-x | option  | Path to package.xml file                                      |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| template<br/>-t   | option  | sfdx-hardis package.xml Template name. ex: wave               |                                        |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|packagexml<br/>-x|option|Path to package.xml file||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|template<br/>-t|option|sfdx-hardis package.xml Template name. ex: wave||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

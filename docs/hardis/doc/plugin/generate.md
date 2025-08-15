@@ -27,7 +27,7 @@ After the initial run, you will need to manually update:
 
 Finally, activate GitHub Pages with `gh_pages` as the target branch. This will enable automatic documentation rebuilding and publishing to GitHub Pages upon each merge into your `master`/`main` branch.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -48,13 +48,13 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
-| json         | boolean | Format output as json.                                        |         |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

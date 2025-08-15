@@ -13,7 +13,7 @@ This command is designed to help developers and administrators synchronize their
 - **Selective Retrieval:** Instead of retrieving all dashboards or reports, it allows you to retrieve specific folders, which can be more efficient for targeted development or backup.
 - **Maintaining Folder Structure:** Ensures that the folder structure of these metadata types is preserved in your local project.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -28,14 +28,14 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |                Default                 | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| flags-dir         | option  | undefined                                                     |                                        |          |         |
-| json              | boolean | Format output as json.                                        |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

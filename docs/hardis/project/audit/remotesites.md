@@ -17,7 +17,7 @@ Key functionalities:
 - **Protocol and Domain Identification:** Determines the protocol (HTTP/HTTPS) and extracts the domain from each URL, providing a clearer picture of the external systems being accessed.
 - **Reporting:** Generates a CSV report summarizing all detected remote sites, including their protocol, domain, name, URL, active status, and description.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -33,13 +33,13 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
-| json         | boolean | Format output as json.                                        |         |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

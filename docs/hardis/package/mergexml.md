@@ -18,7 +18,7 @@ Key functionalities:
   - If no input is provided, an interactive menu will prompt you to select files from the `manifest` folder.
 - **Customizable Output:** You can define the name and path of the resulting merged `package.xml` file using the `--result` flag.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -34,17 +34,17 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name               |  Type   | Description                                                                                  |      Default      | Required | Options |
-|:-------------------|:-------:|:---------------------------------------------------------------------------------------------|:-----------------:|:--------:|:-------:|
-| debug              | boolean | debug                                                                                        |                   |          |         |
-| flags-dir          | option  | undefined                                                                                    |                   |          |         |
-| folder<br/>-f      | option  | Root folder                                                                                  |     manifest      |          |         |
-| json               | boolean | Format output as json.                                                                       |                   |          |         |
-| packagexmls<br/>-p | option  | Comma separated list of package.xml files to merge. Will be prompted to user if not provided |                   |          |         |
-| pattern<br/>-x     | option  | Name criteria to list package.xml files                                                      | /**/*package*.xml |          |         |
-| result<br/>-r      | option  | Result package.xml file name                                                                 |                   |          |         |
-| skipauth           | boolean | Skip authentication check when a default username is required                                |                   |          |         |
-| websocket          | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                    |                   |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|manifest|||
+|json|boolean|Format output as json.||||
+|packagexmls<br/>-p|option|Comma separated list of package.xml files to merge. Will be prompted to user if not provided||||
+|pattern<br/>-x|option|Name criteria to list package.xml files|/**/*package*.xml|||
+|result<br/>-r|option|Result package.xml file name||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

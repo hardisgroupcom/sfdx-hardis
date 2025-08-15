@@ -17,7 +17,7 @@ Key functionalities:
 - **Output File:** The path to the new `package.xml` file that will contain the filtered content (specified by `--outputfile`).
 - **Removed Only Output:** The `--removedonly` flag allows you to generate a `package.xml` that contains *only* the items that were removed from the source `package.xml`.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -32,16 +32,16 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name                    |  Type   | Description                                                     | Default | Required | Options |
-|:------------------------|:-------:|:----------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug                   | boolean | debug                                                           |         |          |         |
-| flags-dir               | option  | undefined                                                       |         |          |         |
-| json                    | boolean | Format output as json.                                          |         |          |         |
-| outputfile<br/>-f       | option  | package.xml output file                                         |         |          |         |
-| packagexml<br/>-p       | option  | package.xml file to reduce                                      |         |          |         |
-| removedonly<br/>-z      | boolean | Use this flag to generate a package.xml with only removed items |         |          |         |
-| removepackagexml<br/>-r | option  | package.xml file to use to filter input package.xml             |         |          |         |
-| websocket               | option  | websocket                                                       |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|package.xml output file||||
+|packagexml<br/>-p|option|package.xml file to reduce||||
+|removedonly<br/>-z|boolean|Use this flag to generate a package.xml with only removed items||||
+|removepackagexml<br/>-r|option|package.xml file to use to filter input package.xml||||
+|websocket|option|websocket||||
 
 ## Examples
 

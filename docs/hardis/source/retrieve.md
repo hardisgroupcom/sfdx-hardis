@@ -18,7 +18,7 @@ Key features:
 
 **Important Note:** The underlying Salesforce CLI command `sfdx force:source:retrieve` is being deprecated by Salesforce in November 2024. It is recommended to migrate to `sf project retrieve start` for future compatibility. See [Salesforce CLI Migration Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm) for more information.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 This command acts as an intelligent wrapper around the Salesforce CLI's source retrieval functionality:
@@ -33,23 +33,23 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                         |                Default                 | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| apiversion<br/>-a     | option  | Override the api version used for api requests made by this command |                                        |          |         |
-| debug<br/>-d          | boolean | debugMode                                                           |                                        |          |         |
-| flags-dir             | option  | undefined                                                           |                                        |          |         |
-| forceoverwrite<br/>-f | boolean | forceoverwrite                                                      |                                        |          |         |
-| json                  | boolean | Format output as json.                                              |                                        |          |         |
-| manifest<br/>-x       | option  | manifest                                                            |                                        |          |         |
-| metadata<br/>-m       | option  | metadata                                                            |                                        |          |         |
-| packagenames<br/>-n   | option  | packagenames                                                        |                                        |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required       |                                        |          |         |
-| sourcepath<br/>-p     | option  | sourcePath                                                          |                                        |          |         |
-| target-org<br/>-o     | option  | undefined                                                           | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| tracksource<br/>-t    | boolean | tracksource                                                         |                                        |          |         |
-| verbose               | boolean | verbose                                                             |                                        |          |         |
-| wait<br/>-w           | option  | wait                                                                |                                        |          |         |
-| websocket             | option  | websocket                                                           |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|apiversion<br/>-a|option|Override the api version used for api requests made by this command||||
+|debug<br/>-d|boolean|debugMode||||
+|flags-dir|option|undefined||||
+|forceoverwrite<br/>-f|boolean|forceoverwrite||||
+|json|boolean|Format output as json.||||
+|manifest<br/>-x|option|manifest||||
+|metadata<br/>-m|option|metadata||||
+|packagenames<br/>-n|option|packagenames||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|sourcepath<br/>-p|option|sourcePath||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|tracksource<br/>-t|boolean|tracksource||||
+|verbose|boolean|verbose||||
+|wait<br/>-w|option|wait||||
+|websocket|option|websocket||||
 
 ## Examples
 

@@ -16,7 +16,7 @@ Key functionalities:
 - **SFDX Bug Workarounds:** Incorporates internal logic to handle common issues or limitations encountered when retrieving CRM Analytics metadata using standard Salesforce CLI commands.
 - **Target Org Selection:** Allows you to specify the Salesforce org from which to retrieve the Analytics sources. If not provided, it will prompt for selection.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -32,14 +32,14 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |                Default                 | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| flags-dir         | option  | undefined                                                     |                                        |          |         |
-| json              | boolean | Format output as json.                                        |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

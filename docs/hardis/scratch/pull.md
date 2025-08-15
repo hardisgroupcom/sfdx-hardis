@@ -29,7 +29,7 @@ For a visual explanation of the process, watch this video:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation focuses on robust metadata synchronization:
@@ -43,14 +43,14 @@ The command's technical implementation focuses on robust metadata synchronizatio
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |                Default                 | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| flags-dir         | option  | undefined                                                     |                                        |          |         |
-| json              | boolean | Format output as json.                                        |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

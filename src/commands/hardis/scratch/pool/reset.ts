@@ -30,7 +30,7 @@ Key functionalities:
 - **Full Pool Deletion:** Identifies all scratch orgs currently in the pool and initiates their deletion.
 - **Dev Hub Integration:** Works with your configured Dev Hub to manage the scratch orgs within the pool.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

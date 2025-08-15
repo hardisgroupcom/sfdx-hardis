@@ -31,7 +31,7 @@ Key functionalities:
 
 This command is primarily used by the VS Code Extension to provide immediate feedback to developers.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

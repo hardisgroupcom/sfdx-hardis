@@ -19,7 +19,7 @@ Key functionalities:
   - **Delete After Creation (`--deleteafter`):** Deletes the newly created package version immediately after its creation. This is useful for testing the package creation process without accumulating unnecessary versions.
   - **Install After Creation (`--install`):** Installs the newly created package version on your default Salesforce org. This is convenient for immediate testing or validation.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -36,18 +36,18 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                               | Default | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                           |         |          |         |
-| deleteafter           | boolean | Delete package version after creating it                                  |         |          |         |
-| flags-dir             | option  | undefined                                                                 |         |          |         |
-| install<br/>-i        | boolean | Install package version on default org after generation                   |         |          |         |
-| installkey<br/>-k     | option  | Package installation key                                                  |         |          |         |
-| json                  | boolean | Format output as json.                                                    |         |          |         |
-| package<br/>-p        | option  | Package identifier that you want to use to generate a new package version |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required             |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                                 |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                 |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|deleteafter|boolean|Delete package version after creating it||||
+|flags-dir|option|undefined||||
+|install<br/>-i|boolean|Install package version on default org after generation||||
+|installkey<br/>-k|option|Package installation key||||
+|json|boolean|Format output as json.||||
+|package<br/>-p|option|Package identifier that you want to use to generate a new package version||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-dev-hub<br/>-v|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

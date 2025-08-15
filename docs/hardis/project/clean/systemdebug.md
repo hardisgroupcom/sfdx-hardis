@@ -18,7 +18,7 @@ Key functionalities:
   - **Delete (`--delete` flag):** If the `--delete` flag is used, it completely removes the lines containing `System.debug()`.
 - **Exclusion:** Lines containing `NOPMD` are ignored, allowing developers to intentionally keep specific debug statements.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -36,14 +36,14 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name          |  Type   | Description                                                   |  Default  | Required | Options |
-|:--------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
-| delete<br/>-d | boolean | Delete lines with System.debug                                |           |          |         |
-| flags-dir     | option  | undefined                                                     |           |          |         |
-| folder<br/>-f | option  | Root folder                                                   | force-app |          |         |
-| json          | boolean | Format output as json.                                        |           |          |         |
-| skipauth      | boolean | Skip authentication check when a default username is required |           |          |         |
-| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |           |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|delete<br/>-d|boolean|Delete lines with System.debug||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|force-app|||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

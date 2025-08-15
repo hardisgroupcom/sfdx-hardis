@@ -15,7 +15,7 @@ Key functionalities:
 - **Customizable Greeting:** You can specify a name using the `--name` flag to personalize the greeting.
 - **Timestamp:** The greeting includes the current date.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -28,11 +28,11 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name        |  Type   | Description                             | Default | Required | Options |
-|:------------|:-------:|:----------------------------------------|:-------:|:--------:|:-------:|
-| flags-dir   | option  | undefined                               |         |          |         |
-| json        | boolean | Format output as json.                  |         |          |         |
-| name<br/>-n | option  | This person can be anyone in the world! |  World  |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|name<br/>-n|option|This person can be anyone in the world!|World|||
 
 ## Examples
 

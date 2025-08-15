@@ -21,7 +21,7 @@ Key functionalities:
 - **Interactive Prompts:** If neither `--label` nor `--lwc` is provided, the command will interactively prompt you to choose between selecting specific labels or extracting from an LWC.
 - **Output Generation:** For each language found in your project's `translations` folder, it generates a new `.translation-meta.xml` file containing only the extracted custom labels and their translations. These files are placed in a timestamped output directory.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -41,15 +41,15 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
-| json         | boolean | Format output as json.                                        |         |          |         |
-| label<br/>-l | option  | Developer name(s) of the custom label(s), comma-separated     |         |          |         |
-| lwc<br/>-c   | option  | Developer name of the Lightning Web Component                 |         |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|label<br/>-l|option|Developer name(s) of the custom label(s), comma-separated||||
+|lwc<br/>-c|option|Developer name of the Lightning Web Component||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

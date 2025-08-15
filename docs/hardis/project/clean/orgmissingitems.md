@@ -20,7 +20,7 @@ Key features:
 - **`package.xml` Comparison:** Compares your local project's metadata with the target org's metadata and your local `package.xml` to identify missing items.
 - **Report Type Cleaning:** Specifically targets and cleans `reportType-meta.xml` files by removing references to fields or objects that are not present in the target org or your `package.xml`.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves several steps:
@@ -37,12 +37,12 @@ The command's technical implementation involves several steps:
 
 ## Parameters
 
-| Name          |  Type   | Description                     |  Default  | Required | Options |
-|:--------------|:-------:|:--------------------------------|:---------:|:--------:|:-------:|
-| debug<br/>-d  | boolean | Activate debug mode (more logs) |           |          |         |
-| flags-dir     | option  | undefined                       |           |          |         |
-| folder<br/>-f | option  | Root folder                     | force-app |          |         |
-| json          | boolean | Format output as json.          |           |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|force-app|||
+|json|boolean|Format output as json.||||
 |packagexmlfull<br/>-p|option|Path to packagexml used for cleaning.
 Must contain also standard CustomObject and CustomField elements.
 If not provided, it will be generated from a remote org||||

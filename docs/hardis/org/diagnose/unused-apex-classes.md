@@ -20,16 +20,16 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                             |                Default                 | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| days<br/>-t       | option  | Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days |                                        |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                         |                                        |          |         |
-| flags-dir         | option  | undefined                                                                                               |                                        |          |         |
-| json              | boolean | Format output as json.                                                                                  |                                        |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                       |                                        |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                           |                                        |          |         |
-| target-org<br/>-o | option  | undefined                                                                                               | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                               |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|days<br/>-t|option|Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

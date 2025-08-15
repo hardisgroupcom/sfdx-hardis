@@ -29,7 +29,7 @@ Key functionalities include:
 - **Minimum Date Filtering:** Use the \`--min-date\` flag to retrieve pull requests created or updated after a specific date.
 - **CSV Output:** The extracted pull request data is generated into a CSV file, which can be used for further analysis in spreadsheet software.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves interacting with a Git provider's API:

@@ -15,7 +15,7 @@ Key functionalities:
 - **Refresh Status (`--event refreshStatus`):** Sends a message to the VS Code Extension to refresh its displayed status, ensuring that the UI reflects the latest state of Salesforce orgs or project activities.
 - **Refresh Plugins (`--event refreshPlugins`):** Sends a message to the VS Code Extension to refresh its loaded plugins, useful after installing or updating sfdx-hardis or other related extensions.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -28,14 +28,14 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| event<br/>-e | option  | WebSocket event                                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
-| json         | boolean | Format output as json.                                        |         |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|event<br/>-e|option|WebSocket event||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

@@ -24,7 +24,7 @@ Key functionalities:
 - **Package Listing:** Connects to a specified Salesforce org (or prompts for one if not provided) and retrieves a list of all installed packages.
 - **Configuration Update:** Offers the option to update your local project's configuration with the retrieved list of installed packages. This can be beneficial for automating package installations during environment setup or CI/CD processes.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

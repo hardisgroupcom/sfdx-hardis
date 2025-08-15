@@ -19,7 +19,7 @@ Key functionalities:
 - **Full Pool Deletion:** Identifies all scratch orgs currently in the pool and initiates their deletion.
 - **Dev Hub Integration:** Works with your configured Dev Hub to manage the scratch orgs within the pool.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -33,14 +33,14 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                   | Default | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir             | option  | undefined                                                     |         |          |         |
-| json                  | boolean | Format output as json.                                        |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                     |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-dev-hub<br/>-v|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

@@ -32,7 +32,7 @@ Key functionalities:
 - **Severity-Based Logging:** Adjusts the log severity (info, warning) based on the proximity of the upgrade date, providing a visual cue for urgency.
 - **Notifications:** Sends notifications to configured channels (e.g., Slack, MS Teams, Grafana) with the upgrade information, making it suitable for automated monitoring.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

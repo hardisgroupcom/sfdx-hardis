@@ -17,7 +17,7 @@ Key functionalities:
 - **Intelligent Folder Handling:** Prevents the deletion of managed folders if they contain local custom items. This ensures that if you have custom metadata within a managed package's folder structure, only the managed components are removed, preserving your local customizations.
 - **Object Metadata Preservation:** Specifically, it will not remove .object-meta.xml files if there are local custom items defined within that object's folder.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -32,15 +32,15 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name             |  Type   | Description                                                   |  Default  | Required | Options |
-|:-----------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
-| debug<br/>-d     | boolean | Activate debug mode (more logs)                               |           |          |         |
-| flags-dir        | option  | undefined                                                     |           |          |         |
-| folder<br/>-f    | option  | Root folder                                                   | force-app |          |         |
-| json             | boolean | Format output as json.                                        |           |          |         |
-| namespace<br/>-n | option  | Namespace to remove                                           |           |          |         |
-| skipauth         | boolean | Skip authentication check when a default username is required |           |          |         |
-| websocket        | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |           |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|force-app|||
+|json|boolean|Format output as json.||||
+|namespace<br/>-n|option|Namespace to remove||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

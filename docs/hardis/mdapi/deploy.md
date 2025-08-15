@@ -22,7 +22,7 @@ For visual assistance with solving deployment errors, refer to this article:
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 This command acts as an intelligent wrapper around the Salesforce CLI's metadata deployment functionality:
@@ -36,27 +36,27 @@ This command acts as an intelligent wrapper around the Salesforce CLI's metadata
 
 ## Parameters
 
-| Name                            |  Type   | Description              |                Default                 | Required |                                Options                                 |
-|:--------------------------------|:-------:|:-------------------------|:--------------------------------------:|:--------:|:----------------------------------------------------------------------:|
-| checkonly<br/>-c                | boolean | checkOnly                |                                        |          |                                                                        |
-| concise                         | boolean | concise                  |                                        |          |                                                                        |
-| debug                           | boolean | debug                    |                                        |          |                                                                        |
-| deploydir<br/>-d                | option  | deployDir                |                                        |          |                                                                        |
-| flags-dir                       | option  | undefined                |                                        |          |                                                                        |
-| ignoreerrors                    | boolean | ignoreErrors             |                                        |          |                                                                        |
-| ignorewarnings<br/>-g           | boolean | ignoreWarnings           |                                        |          |                                                                        |
-| json                            | boolean | Format output as json.   |                                        |          |                                                                        |
-| purgeondelete                   | boolean | purgeOnDelete            |                                        |          |                                                                        |
-| runtests<br/>-r                 | option  | runTests                 |                                        |          |                                                                        |
-| singlepackage<br/>-s            | boolean | singlePackage            |                                        |          |                                                                        |
-| soapdeploy                      | boolean | soapDeploy               |                                        |          |                                                                        |
-| target-org<br/>-o               | option  | undefined                | nicolas.vuillamy@cloudity.com.playnico |          |                                                                        |
-| testlevel<br/>-l                | option  | testLevel                |               NoTestRun                |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
-| validateddeployrequestid<br/>-q | option  | validatedDeployRequestId |                                        |          |                                                                        |
-| verbose                         | boolean | verbose                  |                                        |          |                                                                        |
-| wait<br/>-w                     | option  | wait                     |                  120                   |          |                                                                        |
-| websocket                       | option  | websocket                |                                        |          |                                                                        |
-| zipfile<br/>-f                  | option  | zipFile                  |                                        |          |                                                                        |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|checkonly<br/>-c|boolean|checkOnly||||
+|concise|boolean|concise||||
+|debug|boolean|debug||||
+|deploydir<br/>-d|option|deployDir||||
+|flags-dir|option|undefined||||
+|ignoreerrors|boolean|ignoreErrors||||
+|ignorewarnings<br/>-g|boolean|ignoreWarnings||||
+|json|boolean|Format output as json.||||
+|purgeondelete|boolean|purgeOnDelete||||
+|runtests<br/>-r|option|runTests||||
+|singlepackage<br/>-s|boolean|singlePackage||||
+|soapdeploy|boolean|soapDeploy||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|testlevel<br/>-l|option|testLevel|NoTestRun||NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg|
+|validateddeployrequestid<br/>-q|option|validatedDeployRequestId||||
+|verbose|boolean|verbose||||
+|wait<br/>-w|option|wait|120|||
+|websocket|option|websocket||||
+|zipfile<br/>-f|option|zipFile||||
 
 ## Examples
 

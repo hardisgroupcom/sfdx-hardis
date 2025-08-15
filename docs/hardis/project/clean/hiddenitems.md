@@ -16,7 +16,7 @@ Key functionalities:
 - **Hidden Content Detection:** Identifies files whose content starts with (hidden). This is a convention used by some Salesforce tools to mark temporary or internal files.
 - **Component Folder Removal:** If a hidden file is part of a Lightning Web Component (LWC) or Aura component folder, the entire component folder is removed to ensure a complete cleanup.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
@@ -33,14 +33,14 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name          |  Type   | Description                                                   |  Default  | Required | Options |
-|:--------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
-| debug<br/>-d  | boolean | Activate debug mode (more logs)                               |           |          |         |
-| flags-dir     | option  | undefined                                                     |           |          |         |
-| folder<br/>-f | option  | Root folder                                                   | force-app |          |         |
-| json          | boolean | Format output as json.                                        |           |          |         |
-| skipauth      | boolean | Skip authentication check when a default username is required |           |          |         |
-| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |           |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|force-app|||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
