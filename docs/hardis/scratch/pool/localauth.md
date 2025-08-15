@@ -16,7 +16,7 @@ Key functionalities:
 - **Enables Pool Access:** Once authenticated, the local user can then use other sfdx-hardis commands to fetch, use, and return scratch orgs from the pool.
 - **Configuration Check:** Verifies if a scratch org pool is already configured for the current project and provides guidance if it's not.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

@@ -102,6 +102,7 @@
 | [**hardis:org:multi-org-query**](hardis/org/multi-org-query.md)                               |       |
 | [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                                   |       |
 | [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                         |       |
+| [**hardis:org:refresh:restore:connectedapp**](hardis/org/refresh/restore/connectedapp.md)     |       |
 | [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)                 |       |
 | [**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md)         |       |
 | [**hardis:org:retrieve:sources:dx**](hardis/org/retrieve/sources/dx.md)                       |       |

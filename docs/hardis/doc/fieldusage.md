@@ -15,7 +15,7 @@ This command helps identify where custom fields are referenced across various me
 
 !['Find custom fields usage'](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/doc-fieldusage.png)
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command operates by querying Salesforce's Tooling API and Metadata Component Dependency API:

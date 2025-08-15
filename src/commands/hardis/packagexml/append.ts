@@ -16,7 +16,7 @@ Key functionalities:
 - **Single Output File:** Merges the content of all input files into a specified output \`package.xml\` file.
 - **Metadata Consolidation:** Combines the \`<types>\` and \`<members>\` elements from all input files, ensuring that all unique metadata components are included in the resulting file.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

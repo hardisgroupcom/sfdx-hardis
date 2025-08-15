@@ -20,7 +20,7 @@ Key functionalities:
 - **Status Update:** You can set the new status for the selected communities using the `--status` flag. Supported values are `Live` and `DownForMaintenance`.
 - **Confirmation Prompt:** In non-CI environments, it provides a confirmation prompt before executing the update, ensuring intentional changes.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

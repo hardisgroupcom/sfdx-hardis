@@ -17,7 +17,7 @@ Key functionalities:
 - **Output File:** The path to the new \`package.xml\` file that will contain the filtered content (specified by \`--outputfile\`).
 - **Removed Only Output:** The \`--removedonly\` flag allows you to generate a \`package.xml\` that contains *only* the items that were removed from the source \`package.xml\`.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

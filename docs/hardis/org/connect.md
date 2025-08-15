@@ -16,7 +16,7 @@ Key functionalities:
 - **Non-Default Connection:** Ensures that the selected org is connected but does not set it as the default username for subsequent Salesforce CLI commands.
 - **Browser Launch (Optional):** Offers to open the connected org directly in your default web browser, providing immediate access to the Salesforce UI.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

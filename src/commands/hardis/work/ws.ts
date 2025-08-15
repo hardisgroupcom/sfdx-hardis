@@ -22,7 +22,7 @@ Key functionalities:
 - **Refresh Status (\`--event refreshStatus\`):** Sends a message to the VS Code Extension to refresh its displayed status, ensuring that the UI reflects the latest state of Salesforce orgs or project activities.
 - **Refresh Plugins (\`--event refreshPlugins\`):** Sends a message to the VS Code Extension to refresh its loaded plugins, useful after installing or updating sfdx-hardis or other related extensions.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

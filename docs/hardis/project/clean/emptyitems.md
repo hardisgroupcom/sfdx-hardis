@@ -18,7 +18,7 @@ Key functionalities:
   - Sharing Rules (`.sharingRules-meta.xml`)
 - **Content-Based Deletion:** It checks the XML content of these files for the presence of specific tags (e.g., `valueTranslation` for Global Value Set Translations) to determine if they are truly empty or lack relevant data.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

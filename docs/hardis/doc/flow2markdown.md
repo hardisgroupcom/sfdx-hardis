@@ -19,7 +19,7 @@ Key features include:
 - **PDF Export (Optional):** Allows for the generation of the documentation in PDF format for easy sharing and archiving.
 - **Interactive File Selection:** If no input file is specified, the command interactively prompts the user to select Flow files.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command leverages several internal utilities and external libraries to achieve its functionality:

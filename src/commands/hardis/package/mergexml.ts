@@ -33,7 +33,7 @@ Key functionalities:
   - If no input is provided, an interactive menu will prompt you to select files from the \`manifest\` folder.
 - **Customizable Output:** You can define the name and path of the resulting merged \`package.xml\` file using the \`--result\` flag.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

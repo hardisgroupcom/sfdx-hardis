@@ -39,7 +39,7 @@ Key functionalities:
 - **Error Handling and Reporting:** Catches transformation errors, logs them, and can output problematic lines to separate error CSV files for review.
 - **CSV Output:** Generates one or more CSV files, with configurable separators and headers, ready for Salesforce Data Loader or other import tools.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

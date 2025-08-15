@@ -22,7 +22,7 @@ Key functionalities:
 - **Org Shape Generation (Optional):** If the `--shape` flag is used, it also captures the org's shape and stores installed package information.
 - **Temporary File Management:** Uses temporary folders for intermediate steps, ensuring a clean working directory.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

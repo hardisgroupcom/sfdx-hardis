@@ -18,7 +18,7 @@ Key features:
 
 **Important Note:** The underlying Salesforce CLI command `sfdx force:source:retrieve` is being deprecated by Salesforce in November 2024. It is recommended to migrate to `sf project retrieve start` for future compatibility. See [Salesforce CLI Migration Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm) for more information.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 This command acts as an intelligent wrapper around the Salesforce CLI's source retrieval functionality:

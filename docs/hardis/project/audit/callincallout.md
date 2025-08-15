@@ -18,7 +18,7 @@ Key functionalities:
 - **Test Class Exclusion:** Automatically skips test classes (`@isTest`) to focus on production code.
 - **CSV Report Generation:** Generates a CSV report summarizing all detected call-ins and call-outs, including their type, subtype (protocol), file name, namespace, and extracted details.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

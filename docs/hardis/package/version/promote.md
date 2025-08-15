@@ -16,7 +16,7 @@ Key functionalities:
 - **Automated Promotion:** When `--auto` is enabled, it queries for all unreleased package versions and promotes them without further user interaction.
 - **Dev Hub Integration:** Interacts with your connected Dev Hub to change the status of the package version.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:

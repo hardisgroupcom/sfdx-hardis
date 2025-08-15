@@ -53,7 +53,7 @@ More information can be found in the [Documentation section](${CONSTANTS.DOC_URL
 | \`CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN\`  | Cloudflare default access email domain                                   | \`@cloudity.com\`                       |\
 | \`CLOUDFLARE_EXTRA_ACCESS_POLICY_ID_LIST\`  | Comma-separated list of additional policy IDs to assign to the application | _Optional_                            |\
 \
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>\
 \
 The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:\

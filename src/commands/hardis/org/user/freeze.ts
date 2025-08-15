@@ -32,7 +32,7 @@ Key functionalities:
 - **Bulk Freezing:** Efficiently freezes multiple user logins using Salesforce's Bulk API.
 - **Reporting:** Generates CSV and XLSX reports of the users that are about to be frozen.
 
-<details>
+<details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
