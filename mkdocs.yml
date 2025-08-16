@@ -265,6 +265,9 @@ nav:
           purge:
             apexlog: hardis/org/purge/apexlog.md
             flow: hardis/org/purge/flow.md
+          refresh:
+            after-refresh: hardis/org/refresh/after-refresh.md
+            before-refresh: hardis/org/refresh/before-refresh.md
           retrieve:
             packageconfig: hardis/org/retrieve/packageconfig.md
             sources:
