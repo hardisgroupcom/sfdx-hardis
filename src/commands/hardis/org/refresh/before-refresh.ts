@@ -1,5 +1,5 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { Connection, Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import fs from 'fs-extra';
 import c from 'chalk';
@@ -20,6 +20,7 @@ import {
   handleConnectedAppError
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
 import { getConfig, setConfig } from '../../../../config/index.js';
+import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -80,14 +81,15 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
 
   public static requiresProject = true;
 
+  protected conn: Connection;
   protected refreshSandboxConfig: any = {};
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgRefreshBeforeRefresh);
-    const conn = flags["target-org"].getConnection();
+    this.conn = flags["target-org"].getConnection();
     const orgUsername = flags["target-org"].getUsername() as string; // Cast to string to avoid TypeScript error
-    const instanceUrl = conn.instanceUrl;
-    const accessToken = conn.accessToken; // Ensure accessToken is a string
+    const instanceUrl = this.conn.instanceUrl;
+    const accessToken = this.conn.accessToken; // Ensure accessToken is a string
     const processAll = flags.all || false;
     const nameFilter = processAll ? undefined : flags.name; // If --all is set, ignore --name
     const config = await getConfig("user");
@@ -125,29 +127,30 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
       // Step 4: Delete Connected Apps from org if required (default behavior)
       let deleteApps = flags.delete || false;
       if (!isCI && !deleteApps) {
+        const connectedAppNames = updatedApps.map(app => app.fullName).join(', ');
         const deletePrompt = await prompts({
           type: 'confirm',
           name: 'delete',
-          message: 'Do you want to delete the Connected Apps from the org after saving?',
+          message: `Do you want to delete the Connected Apps from the org after saving? ${connectedAppNames}`,
           description: 'If you do not delete them, they will remain in the org and can be re-uploaded after refreshing the org.',
           initial: false
         });
         deleteApps = deletePrompt.delete;
       }
 
-      if (!deleteApps) {
-        uxLog("action", this, c.cyan(`Connected Apps will remain in the org
-IMPORTANT: Before refreshing your org, run again this command and choose to delete connected apps, so they will be able to be re-uploaded after refreshing the org.          
-`));
-      } else {
-        uxLog("action", this, c.cyan('Deleting Connected Apps from the org (default behavior)...'));
+      if (deleteApps) {
+        uxLog("action", this, c.cyan(`Deleting ${updatedApps.length} Connected Apps from ${this.conn.instanceUrl}...`));
         await deleteConnectedApps(orgUsername, updatedApps, this);
         uxLog("success", this, c.green('Connected Apps were successfully deleted from the org.'));
       }
 
+      const summaryMessage = deleteApps
+        ? `You are now ready to refresh your sandbox org, as you will be able to re-upload the Connected Apps after the refresh.`
+        : `Dry-run successful, run again the command with Connected Apps deletion to be able to refresh your org and re-upload the Connected Apps after the refresh.`;
+      uxLog("action", this, c.cyan(summaryMessage));
       // Add a summary message at the end
       if (updatedApps.length > 0) {
-        uxLog("success", this, c.green(`Summary: Successfully updated ${updatedApps.length} Connected App(s) with their Consumer Secrets`));
+        uxLog("success", this, c.green(`Successfully saved locally ${updatedApps.length} Connected App(s) with their Consumer Secrets`));
       }
 
       return createConnectedAppSuccessResponse(
@@ -251,7 +254,7 @@ IMPORTANT: Before refreshing your org, run again this command and choose to dele
       const connectedAppIdMap = await this.queryConnectedAppIds(orgUsername, connectedApps);
 
       // Step 3: Initialize browser for automation if access token is available
-      uxLog("action", this, c.cyan('Initializing browser for automated Consumer Secret extraction...'));
+      uxLog("action", this, c.cyan('Initializing browser for automated Connected App Secrets extraction...'));
       try {
         browserContext = await this.initializeBrowser(instanceUrl, accessToken);
       } catch (e: any) {
@@ -325,11 +328,12 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     if (missingApps.length > 0) {
       const errorMsg = `Failed to retrieve the following Connected App(s): ${missingApps.join(', ')}`;
       uxLog("error", this, c.red(errorMsg));
-      uxLog("warning", this, c.yellow('This could be due to:'));
-      uxLog("log", this, c.grey('  - Temporary Salesforce API issues'));
-      uxLog("log", this, c.grey('  - Permissions or profile issues in the org'));
-      uxLog("log", this, c.grey('  - Connected Apps that exist but are not accessible'));
-      uxLog("warning", this, c.yellow('Please try again or check your permissions in the org.'));
+      const dtlErrorMsg = "This could be due to:\n" +
+        "  - Temporary Salesforce API issues\n" +
+        "  - Permissions or profile issues in the org\n" +
+        "  - Connected Apps that exist but are not accessible\n" +
+        "Please exclude the app or check your permissions in the org then try again.";
+      uxLog("warning", this, c.yellow(dtlErrorMsg));
       throw new Error(errorMsg);
     }
   }
@@ -346,22 +350,24 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     }
 
     uxLog("action", this, c.cyan('Retrieving applicationIds for all Connected Apps...'));
-    const queryCommand = `sf data query --query "SELECT Id, Name FROM ConnectedApplication WHERE Name IN (${appNamesForQuery})" --target-org ${orgUsername} --json`;
+    const queryCommand = `SELECT Id, Name FROM ConnectedApplication WHERE Name IN (${appNamesForQuery})`;
 
     try {
-      const queryResult = await execSfdxJson(queryCommand, this, { output: false });
+      const appQueryRes = await soqlQuery(queryCommand, this.conn);
 
-      if (queryResult?.result?.records?.length > 0) {
+      if (appQueryRes?.records?.length > 0) {
         // Populate the map with applicationIds
-        queryResult.result.records.forEach((record: any) => {
+        let logMsg = `Found ${appQueryRes.records.length} applicationId(s) for Connected Apps:`;
+        for (const record of appQueryRes.records) {
           connectedAppIdMap[record.Name] = record.Id;
-          uxLog("log", this, c.grey(`Found applicationId for ${record.Name}: ${record.Id}`));
-        });
+          logMsg += `\n  - ${record.Name}: ${record.Id}`;
+        }
+        uxLog("log", this, c.grey(logMsg));
       } else {
         uxLog("warning", this, c.yellow('No applicationIds found in the org. Will use the fallback URL.'));
       }
     } catch (queryError) {
-      uxLog("warning", this, c.yellow(`Error retrieving applicationIds: ${queryError}`));
+      uxLog("error", this, c.yellow(`Error retrieving applicationIds: ${queryError}`));
     }
 
     return connectedAppIdMap;
@@ -412,6 +418,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     // Try to extract application ID and view link
     if (connectedAppId) {
       try {
+        uxLog("action", this, c.cyan(`Extracting info for Connected App ${app.fullName}...`));
         const applicationId = await this.extractApplicationId(instanceUrl, connectedAppId, app.fullName, browserContext?.accessToken ?? '');
         viewLink = `${instanceUrl}/app/mgmt/forceconnectedapps/forceAppDetail.apexp?applicationId=${applicationId}`;
         uxLog("success", this, c.green(`Successfully extracted application ID: ${applicationId} (viewLink: ${viewLink})`));
@@ -458,7 +465,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
         // Manual entry flow - open browser and prompt for secret
         const msg = [
           `Unable to automatically extract Consumer Secret for Connected App ${app.fullName}.`,
-          `- Open Connected App detail page in your browser for app ${app.fullName} (Contextual menu -> View)`,
+          `- Open Connected App detail page of ${app.fullName} (Contextual menu -> View)`,
           '- Click "Manage Consumer Details" button',
           `- Copy the ${c.green('Consumer Secret')} value`
         ].join('\n');
@@ -509,7 +516,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     connectedAppName: string,
     accessToken: string
   ): Promise<string> {
-    uxLog("action", this, c.cyan(`Extracting application ID for Connected App with ID: ${connectedAppName}`));
+    uxLog("log", this, c.cyan(`Extracting application ID for Connected App with ID: ${connectedAppName}`));
 
     const url = `${instanceUrl}/${connectedAppId}`;
     const response = await axios.get(url, {

@@ -108,17 +108,7 @@ export async function createDestructiveChangesManifest(
 
   // Display the XML content for destructive changes
   const destructiveXmlContent = await fs.readFile(destructiveChangesPath, 'utf8');
-  uxLog("action", command, c.cyan(`Destructive Changes XML for deleting ${connectedApps.length} Connected App(s):`));
-  uxLog("warning", command, c.yellow('----------------------------------------'));
-  uxLog("other", command, destructiveXmlContent);
-  uxLog("warning", command, c.yellow('----------------------------------------'));
-
-  // Display the XML content for the empty package.xml
-  const packageXmlContent = await fs.readFile(packageXmlPath, 'utf8');
-  uxLog("action", command, c.cyan('Empty Package.xml for deployment:'));
-  uxLog("warning", command, c.yellow('----------------------------------------'));
-  uxLog("other", command, packageXmlContent);
-  uxLog("warning", command, c.yellow('----------------------------------------'));
+  uxLog("log", command, c.cyan(`Destructive Changes XML for deleting ${connectedApps.length} Connected App(s):\n${destructiveXmlContent}`));
 
   return { destructiveChangesPath, packageXmlPath, tmpDir };
 }
@@ -138,7 +128,7 @@ export async function deleteConnectedApps(
         await createDestructiveChangesManifest(connectedApps, command);
 
       // Deploy the destructive changes
-      uxLog("action", command, c.cyan(`Deleting ${connectedApps.length} Connected App(s) from org...`));
+      uxLog("log", command, c.grey(`Deploying destructive changes to delete ${connectedApps.length} Connected App(s) from org...`));
       try {
         await execCommand(
           `sf project deploy start --manifest ${packageXmlPath} --post-destructive-changes ${destructiveChangesPath} --target-org ${orgUsername} --ignore-warnings --ignore-conflicts --json`,
@@ -193,7 +183,7 @@ export async function disableConnectedAppIgnore(command: SfCommand<any>): Promis
 
   // Write modified .forceignore
   await fs.writeFile(forceignorePath, filteredLines.join('\n'));
-  uxLog("warning", command, c.cyan('Temporarily modified .forceignore to allow Connected App retrieval'));
+  uxLog("warning", command, c.cyan('Temporarily modified .forceignore to allow Connected App metadata operations'));
 
   return { forceignorePath, originalContent, tempBackupPath };
 }
@@ -377,7 +367,6 @@ export async function promptForConnectedAppSelection<T extends { fullName: strin
     promptResponse.selectedApps.includes(app.fullName)
   );
 
-  uxLog("log", command, c.cyan(`Selected ${selectedApps.length} Connected App(s)`));
   return selectedApps;
 }
 
