@@ -3,6 +3,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as path from 'path';
 import c from 'chalk';
+import * as fs from 'fs';
 import { glob } from 'glob';
 import { uxLog } from '../../../../common/utils/index.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
@@ -17,6 +18,7 @@ import {
   handleConnectedAppError
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
 import { getConfig } from '../../../../config/index.js';
+import { prompts } from '../../../../common/utils/prompts.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -65,14 +67,38 @@ export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
   protected refreshSandboxConfig: any = {};
+  protected saveProjectPath: string;
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgRefreshAfterRefresh);
     const orgUsername = flags["target-org"].getUsername() as string;
+    const conn = flags["target-org"].getConnection();
+    const instanceUrl = conn.instanceUrl;
     const processAll = flags.all || false;
     const nameFilter = processAll ? undefined : flags.name; // If --all is set, ignore --name
     const config = await getConfig("user");
     this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
+
+    uxLog("action", this, c.cyan(`This command with restore information after the refresh of org ${instanceUrl}`));
+
+    // Prompt user to select a save project path
+    const saveProjectPathRoot = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
+    // Only get immediate subfolders of saveProjectPathRoot (not recursive)
+    const subFolders = fs.readdirSync(saveProjectPathRoot, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory())
+      .map(dirent => dirent.name);
+
+    const saveProjectPath = await prompts({
+      type: 'select',
+      name: 'path',
+      message: 'Select the project path where the sandbox info has been saved',
+      description: 'This is the path where the metadatas were saved before the org refresh',
+      choices: subFolders.map(folder => ({
+        title: folder,
+        value: path.join(saveProjectPathRoot, folder)
+      })),
+    });
+    this.saveProjectPath = saveProjectPath.path;
 
     try {
       // Step 1: Find Connected Apps in the project
@@ -98,7 +124,9 @@ export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
       await this.deployConnectedApps(orgUsername, selectedApps);
 
       // Return the result
-      uxLog("success", this, c.green(`Successfully restored ${selectedApps.length} Connected App(s) to the org`));
+      uxLog("action", this, c.cyan(`Summary`));
+      const appNames = selectedApps.map(app => `- ${app.fullName}`).join('\n');
+      uxLog("success", this, c.green(`Successfully restored ${selectedApps.length} Connected App(s) to ${conn.instanceUrl}\n${appNames}`));
       return createConnectedAppSuccessResponse(
         `Successfully restored ${selectedApps.length} Connected App(s) to the org`,
         selectedApps.map(app => app.fullName)
@@ -122,17 +150,17 @@ export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
 
     try {
       // Get all Connected App files in the project once
-      const connectedAppFiles = await glob('**/*.connectedApp-meta.xml', {
+      const connectedAppFilesRaw = await glob('**/*.connectedApp-meta.xml', {
         ignore: GLOB_IGNORE_PATTERNS,
-        cwd: process.cwd()
-      });
+        cwd: this.saveProjectPath
+      })
+
+      const connectedAppFiles = connectedAppFilesRaw.map(file => path.join(this.saveProjectPath, file));
 
       if (connectedAppFiles.length === 0) {
         uxLog("warning", this, c.yellow('No Connected App files found in the project'));
         return [];
       }
-
-      uxLog("log", this, c.grey(`Found ${connectedAppFiles.length} Connected App files in the project`));
 
       // Create ConnectedApp objects from the files
       const connectedApps: ProjectConnectedApp[] = [];
@@ -192,10 +220,8 @@ export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
 
       // Display results
       if (connectedApps.length > 0) {
-        uxLog("action", this, c.cyan(`Found ${connectedApps.length} Connected App(s) in project`));
-        connectedApps.forEach(app => {
-          uxLog("success", this, `${c.green(app.fullName)} (${app.filePath})`);
-        });
+        const appNamesAndPaths = connectedApps.map(app => `- ${app.fullName} (${app.filePath})`).join('\n');
+        uxLog("log", this, c.cyan(`Found ${connectedApps.length} Connected App(s) in project\n${appNamesAndPaths}`));
       } else if (nameFilter) {
         uxLog("warning", this, c.yellow(`No Connected Apps matching the filter "${nameFilter}" found in the project`));
       }
@@ -232,13 +258,22 @@ export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
   ): Promise<void> {
     if (connectedApps.length === 0) return;
 
-    uxLog("action", this, c.cyan(`For a clean deployment, the ${connectedApps.length} Connected App(s) will be deleted from the org before deployment...`));
+    const promptResponse = await prompts({
+      type: 'confirm',
+      name: 'confirmDelete',
+      message: `Now we need to delete ${connectedApps.length} Connected App(s) from the refreshed sandbox, to be able to reupload them with saved credentials. Proceed ?`,
+      description: 'This step is necessary to ensure that the Connected Apps can be re-deployed with their saved credentials.',
+      initial: true
+    });
+    if (!promptResponse.confirmDelete) {
+      throw new Error('Connected Apps deletion cancelled by user');
+    }
 
     // Convert ProjectConnectedApp to the format required by deleteConnectedApps
     const appsToDelete = toConnectedAppFormat(connectedApps);
 
     // Delete the apps without prompting
-    await deleteConnectedApps(orgUsername, appsToDelete, this);
+    await deleteConnectedApps(orgUsername, appsToDelete, this, this.saveProjectPath);
     uxLog("success", this, c.green('Connected Apps were successfully deleted from the org.'));
   }
 
@@ -248,11 +283,21 @@ export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
   ): Promise<void> {
     if (connectedApps.length === 0) return;
 
-    uxLog("action", this, c.cyan(`Deploying ${connectedApps.length} Connected App(s) to org...`));
+    const promptResponse = await prompts({
+      type: 'confirm',
+      name: 'confirmDeploy',
+      message: `Now we will deploy ${connectedApps.length} Connected App(s) to the org to restore the original credentials. Proceed ?`,
+      description: 'This step will deploy the Connected Apps with their saved credentials.',
+      initial: true
+    });
+
+    if (!promptResponse.confirmDeploy) {
+      throw new Error('Connected Apps deployment cancelled by user');
+    }
 
     // Convert ProjectConnectedApp to the format needed by deployConnectedApps
     const connectedAppsList = toConnectedAppFormat(connectedApps);
-    await deployConnectedApps(orgUsername, connectedAppsList, this);
+    await deployConnectedApps(orgUsername, connectedAppsList, this, this.saveProjectPath);
 
     uxLog("success", this, c.green(`Deployment of ${connectedApps.length} Connected App(s) completed successfully`));
   }

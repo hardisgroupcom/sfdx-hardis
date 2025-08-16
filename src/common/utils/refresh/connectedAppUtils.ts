@@ -116,7 +116,8 @@ export async function createDestructiveChangesManifest(
 export async function deleteConnectedApps(
   orgUsername: string | undefined,
   connectedApps: ConnectedApp[],
-  command: SfCommand<any>
+  command: SfCommand<any>,
+  saveProjectPath: string
 ): Promise<void> {
   await withConnectedAppValidation(orgUsername, connectedApps, command, 'delete', async () => {
     if (!orgUsername) return; // This should never happen due to validation, but TypeScript needs it
@@ -133,7 +134,7 @@ export async function deleteConnectedApps(
         await execCommand(
           `sf project deploy start --manifest ${packageXmlPath} --post-destructive-changes ${destructiveChangesPath} --target-org ${orgUsername} --ignore-warnings --ignore-conflicts --json`,
           command,
-          { output: true, fail: true }
+          { output: true, fail: true, cwd: saveProjectPath }
         );
       } catch (deleteError: any) {
         throw new Error(`Failed to delete Connected Apps: ${deleteError.message || String(deleteError)}`);
@@ -213,7 +214,8 @@ export async function restoreConnectedAppIgnore(
 export async function retrieveConnectedApps(
   orgUsername: string | undefined,
   connectedApps: ConnectedApp[],
-  command: SfCommand<any>
+  command: SfCommand<any>,
+  saveProjectPath: string
 ): Promise<void> {
   await withConnectedAppValidation(orgUsername, connectedApps, command, 'retrieve', async () => {
     if (!orgUsername) return; // This should never happen due to validation, but TypeScript needs it
@@ -227,7 +229,7 @@ export async function retrieveConnectedApps(
         await execCommand(
           `sf project retrieve start --manifest ${manifestPath} --target-org ${orgUsername} --ignore-conflicts --json`,
           command,
-          { output: true, fail: true }
+          { output: true, fail: true, cwd: saveProjectPath }
         );
       }
     );
@@ -237,7 +239,8 @@ export async function retrieveConnectedApps(
 export async function deployConnectedApps(
   orgUsername: string | undefined,
   connectedApps: ConnectedApp[],
-  command: SfCommand<any>
+  command: SfCommand<any>,
+  saveProjectPath: string
 ): Promise<void> {
   await withConnectedAppValidation(orgUsername, connectedApps, command, 'deploy', async () => {
     if (!orgUsername) return; // This should never happen due to validation, but TypeScript needs it
@@ -251,7 +254,7 @@ export async function deployConnectedApps(
         await execCommand(
           `sf project deploy start --manifest ${manifestPath} --target-org ${orgUsername} --ignore-warnings --json`,
           command,
-          { output: true, fail: true }
+          { output: true, fail: true, cwd: saveProjectPath }
         );
       }
     );
@@ -371,24 +374,25 @@ export async function promptForConnectedAppSelection<T extends { fullName: strin
 
 export async function findConnectedAppFile(
   appName: string,
-  command: SfCommand<any>
+  command: SfCommand<any>,
+  saveProjectPath: string
 ): Promise<string | null> {
   uxLog("other", command, c.cyan(`Searching for Connected App: ${appName}`));
   try {
     // First, try an exact case-sensitive match
     const exactPattern = `**/${appName}.connectedApp-meta.xml`;
-    const exactMatches = await glob(exactPattern, { ignore: GLOB_IGNORE_PATTERNS });
+    const exactMatches = await glob(exactPattern, { ignore: GLOB_IGNORE_PATTERNS, cwd: saveProjectPath });
 
     if (exactMatches.length > 0) {
       uxLog("success", command, c.green(`✓ Found Connected App: ${exactMatches[0]}`));
-      return exactMatches[0];
+      return path.join(saveProjectPath, exactMatches[0]);
     }
 
     // Try standard locations with possible name variations
     const possiblePaths = [
-      `force-app/main/default/connectedApps/${appName}.connectedApp-meta.xml`,
-      `force-app/main/default/connectedApps/${appName.replace(/\s/g, '_')}.connectedApp-meta.xml`,
-      `force-app/main/default/connectedApps/${appName.replace(/\s/g, '')}.connectedApp-meta.xml`
+      path.join(saveProjectPath, `force-app/main/default/connectedApps/${appName}.connectedApp-meta.xml`),
+      path.join(saveProjectPath, `force-app/main/default/connectedApps/${appName.replace(/\s/g, '_')}.connectedApp-meta.xml`),
+      path.join(saveProjectPath, `force-app/main/default/connectedApps/${appName.replace(/\s/g, '')}.connectedApp-meta.xml`)
     ];
 
     for (const potentialPath of possiblePaths) {
@@ -400,7 +404,7 @@ export async function findConnectedAppFile(
 
     // If no exact match, try case-insensitive search by getting all ConnectedApp files
     uxLog("warning", command, c.yellow(`No exact match found, trying case-insensitive search...`));
-    const allConnectedAppFiles = await glob('**/*.connectedApp-meta.xml', { ignore: GLOB_IGNORE_PATTERNS });
+    const allConnectedAppFiles = await glob('**/*.connectedApp-meta.xml', { ignore: GLOB_IGNORE_PATTERNS, cwd: saveProjectPath });
 
     if (allConnectedAppFiles.length === 0) {
       uxLog("error", command, c.red(`No Connected App files found in the project.`));
@@ -417,16 +421,13 @@ export async function findConnectedAppFile(
 
     if (caseInsensitiveMatch) {
       uxLog("success", command, c.green(`✓ Found case-insensitive match: ${caseInsensitiveMatch}`));
-      return caseInsensitiveMatch;
+      return path.join(saveProjectPath, caseInsensitiveMatch);
     }
 
     // If still not found, list available Connected Apps
     uxLog("error", command, c.red(`✗ Could not find Connected App "${appName}"`));
-    uxLog("warning", command, c.yellow('Available Connected Apps:'));
-    allConnectedAppFiles.forEach(file => {
-      const baseName = path.basename(file, '.connectedApp-meta.xml');
-      uxLog("log", command, c.grey(`  - ${baseName}`));
-    });
+    const allConnectedAppNames = allConnectedAppFiles.map(file => "- " + path.basename(file, '.connectedApp-meta.xml')).join('\n');
+    uxLog("warning", command, c.yellow(`Available Connected Apps:\n${allConnectedAppNames}`));
 
     return null;
   } catch (error) {
@@ -443,11 +444,6 @@ export async function selectConnectedAppsForProcessing<T extends { fullName: str
   promptMessage: string,
   command: SfCommand<any>
 ): Promise<T[]> {
-  // Display found Connected Apps
-  uxLog("log", command, c.cyan(`Found ${connectedApps.length} Connected App(s)`));
-  connectedApps.forEach(app => {
-    uxLog("log", command, `${c.green(app.fullName)} (${(app as any).fileName || (app as any).filePath || ''})`);
-  });
 
   // If all flag or name is provided, use all connected apps from the list without prompting
   if (processAll || nameFilter) {

@@ -5,8 +5,9 @@ import fs from 'fs-extra';
 import c from 'chalk';
 import open from 'open';
 import axios from 'axios';
+import path from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
-import { execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
+import { execCommand, execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getChromeExecutablePath } from '../../../../common/utils/orgConfigUtils.js';
@@ -21,6 +22,7 @@ import {
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
 import { getConfig, setConfig } from '../../../../config/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -42,7 +44,7 @@ interface BrowserContext {
 }
 
 export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
-  public static title = 'Save Connected Apps before org refresh';
+  public static title = 'Save info to restore before org refresh';
 
   public static examples = [
     `$ sf hardis:org:refresh:before-refresh`,
@@ -82,6 +84,7 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
   public static requiresProject = true;
 
   protected conn: Connection;
+  protected saveProjectPath: string = '';
   protected refreshSandboxConfig: any = {};
 
   public async run(): Promise<AnyJson> {
@@ -102,6 +105,8 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
       throw new SfError(c.red('Access token is required to retrieve Connected Apps from the org. Please authenticate to a default org.'));
     }
 
+    this.saveProjectPath = await this.createSaveProject();
+
     try {
       // Step 1: Get Connected Apps from org or based on provided name filter
       const connectedApps = await this.getConnectedApps(orgUsername, nameFilter, processAll);
@@ -118,7 +123,7 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
         uxLog("warning", this, c.yellow('No Connected Apps selected'));
         return { success: false, message: 'No Connected Apps selected' };
       }
-      this.refreshSandboxConfig.connectedApps = selectedApps.map(app => app.fullName);
+      this.refreshSandboxConfig.connectedApps = selectedApps.map(app => app.fullName).sort();
       await this.saveConfig();
 
       // Step 3: Process the selected Connected Apps
@@ -140,7 +145,7 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
 
       if (deleteApps) {
         uxLog("action", this, c.cyan(`Deleting ${updatedApps.length} Connected Apps from ${this.conn.instanceUrl} ...`));
-        await deleteConnectedApps(orgUsername, updatedApps, this);
+        await deleteConnectedApps(orgUsername, updatedApps, this, this.saveProjectPath);
         uxLog("success", this, c.green('Connected Apps were successfully deleted from the org.'));
       }
 
@@ -153,6 +158,9 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
         uxLog("success", this, c.green(`Successfully saved locally ${updatedApps.length} Connected App(s) with their Consumer Secrets`));
       }
 
+      uxLog("success", this, c.cyan('Saved refresh sandbox configuration in config/.sfdx-hardis.yml'));
+      WebSocketClient.sendReportFileMessage(path.join(process.cwd(), 'config', '.sfdx-hardis.yml#refreshSandboxConfig'), "Sandbox refresh configuration", 'report');
+
       return createConnectedAppSuccessResponse(
         `Successfully processed ${updatedApps.length} Connected App(s)`,
         updatedApps.map(app => app.fullName),
@@ -164,6 +172,23 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
     } catch (error: any) {
       return handleConnectedAppError(error, this);
     }
+  }
+
+  private async createSaveProject(): Promise<string> {
+    const folderName = this.conn.instanceUrl.replace(/https?:\/\//, '').replace("my.salesforce.com", "").replace(/\//g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+    const sandboxRefreshRootFolder = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
+    const projectPath = path.join(sandboxRefreshRootFolder, folderName);
+    await fs.ensureDir(projectPath);
+    uxLog("action", this, c.cyan(`Creating sfdx-project for sandbox info storage in ${projectPath}`));
+    const createCommand = `sf project generate --name "${folderName}"`;
+    await execCommand(createCommand, this, {
+      output: true,
+      fail: true,
+    });
+    uxLog("log", this, c.grey('Moving sfdx-project to root...'));
+    await fs.copy(folderName, projectPath, { overwrite: true });
+    await fs.remove(folderName);
+    return projectPath;
   }
 
   private async getConnectedApps(
@@ -248,7 +273,7 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
 
     try {
       // Step 1: Retrieve the Connected Apps from org
-      await this.retrieveConnectedAppsFromOrg(orgUsername, connectedApps);
+      await this.retrieveConnectedAppsFromOrg(orgUsername, connectedApps, this.saveProjectPath);
 
       // Step 2: Query for applicationIds for all Connected Apps
       const connectedAppIdMap = await this.queryConnectedAppIds(orgUsername, connectedApps);
@@ -270,7 +295,8 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
             app,
             connectedAppIdMap,
             browserContext,
-            instanceUrl
+            instanceUrl,
+            this.saveProjectPath
           );
 
           if (updatedApp) {
@@ -293,10 +319,11 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
 
   private async retrieveConnectedAppsFromOrg(
     orgUsername: string,
-    connectedApps: ConnectedApp[]
+    connectedApps: ConnectedApp[],
+    saveProjectPath: string
   ): Promise<void> {
     uxLog("action", this, c.cyan(`Retrieving ${connectedApps.length} Connected App(s) from ${orgUsername}`));
-    await retrieveConnectedApps(orgUsername, connectedApps, this);
+    await retrieveConnectedApps(orgUsername, connectedApps, this, saveProjectPath);
     this.verifyConnectedAppsRetrieval(connectedApps);
   }
 
@@ -308,13 +335,13 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
 
     for (const app of connectedApps) {
       // Try to find the app in the standard location
-      const appPath = `force-app/main/default/connectedApps/${app.fullName}.connectedApp-meta.xml`;
+      const appPath = path.join(this.saveProjectPath, `force-app/main/default/connectedApps/${app.fullName}.connectedApp-meta.xml`);
 
       if (!fs.existsSync(appPath)) {
         // Also check in alternative locations where it might have been retrieved
         const altPaths = [
-          `force-app/main/default/connectedApps/${app.fileName}.connectedApp-meta.xml`,
-          `force-app/main/default/connectedApps/${app.fullName.replace(/\s/g, '_')}.connectedApp-meta.xml`
+          path.join(this.saveProjectPath, `force-app/main/default/connectedApps/${app.fileName}.connectedApp-meta.xml`),
+          path.join(this.saveProjectPath, `force-app/main/default/connectedApps/${app.fullName.replace(/\s/g, '_')}.connectedApp-meta.xml`)
         ];
 
         const found = altPaths.some(path => fs.existsSync(path));
@@ -402,9 +429,10 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     app: ConnectedApp,
     connectedAppIdMap: Record<string, string>,
     browserContext: BrowserContext | null,
-    instanceUrl: string
+    instanceUrl: string,
+    saveProjectPath: string
   ): Promise<ConnectedApp | undefined> {
-    const connectedAppFile = await findConnectedAppFile(app.fullName, this);
+    const connectedAppFile = await findConnectedAppFile(app.fullName, this, saveProjectPath);
 
     if (!connectedAppFile) {
       uxLog("warning", this, c.yellow(`Connected App file not found for ${app.fullName}`));
