@@ -139,7 +139,7 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
       }
 
       if (deleteApps) {
-        uxLog("action", this, c.cyan(`Deleting ${updatedApps.length} Connected Apps from ${this.conn.instanceUrl}...`));
+        uxLog("action", this, c.cyan(`Deleting ${updatedApps.length} Connected Apps from ${this.conn.instanceUrl} ...`));
         await deleteConnectedApps(orgUsername, updatedApps, this);
         uxLog("success", this, c.green('Connected Apps were successfully deleted from the org.'));
       }
@@ -177,7 +177,7 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
     } else if (nameFilter) {
       uxLog("action", this, c.cyan(`Processing specified Connected App(s): ${nameFilter} (selection prompt bypassed)`));
     } else {
-      uxLog("action", this, c.cyan('Retrieving list of Connected Apps from org...'));
+      uxLog("action", this, c.cyan(`Retrieving list of Connected Apps from org ${this.conn.instanceUrl} ...`));
     }
 
     const command = `sf org list metadata --metadata-type ConnectedApp --target-org ${orgUsername}`;

@@ -340,8 +340,7 @@ export function validateConnectedAppParams(
 export async function promptForConnectedAppSelection<T extends { fullName: string }>(
   connectedApps: T[],
   initialSelection: string[] = [],
-  promptMessage: string,
-  command: SfCommand<any>
+  promptMessage: string
 ): Promise<T[]> {
   // Create choices for the prompt
   const choices = connectedApps.map(app => {
@@ -461,8 +460,7 @@ export async function selectConnectedAppsForProcessing<T extends { fullName: str
   return await promptForConnectedAppSelection(
     connectedApps,
     initialSelection,
-    promptMessage,
-    command
+    promptMessage
   );
 }
 
