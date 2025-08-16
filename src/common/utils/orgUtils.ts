@@ -308,7 +308,7 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   }
   // Authentication is necessary
   if (connectedStatus?.includes("expired")) {
-    uxLog("warning", this, c.yellow("Your auth token is expired, you need to authenticate again"));
+    uxLog("action", this, c.yellow("Your auth token is expired, you need to authenticate again"));
     const loginCommand = 'sf org login web' + ` --instance-url ${instanceUrl}`;
     const loginRes = await execSfdxJson(loginCommand, this, { fail: true, output: false });
     return loginRes.result;

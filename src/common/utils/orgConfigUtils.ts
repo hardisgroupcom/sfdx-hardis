@@ -43,14 +43,8 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   const instanceUrl = conn.instanceUrl;
   const loginUrl = `${instanceUrl}/secur/frontdoor.jsp?sid=${conn.accessToken}`;
 
-  // Get chrome/chromium executable path
-  let chromeExecutablePath = process.env?.PUPPETEER_EXECUTABLE_PATH || "";
-  if (chromeExecutablePath === "" || !fs.existsSync(chromeExecutablePath)) {
-    const chromePaths = chromeLauncher.Launcher.getInstallations();
-    if (chromePaths && chromePaths.length > 0) {
-      chromeExecutablePath = chromePaths[0];
-    }
-  }
+  // Get chrome/chromium executable path using the utility function
+  const chromeExecutablePath = getChromeExecutablePath();
 
   // Start puppeteer
   let browser: Browser;
@@ -288,4 +282,20 @@ export async function checkSfdxHardisTraceAvailable(conn: Connection) {
   if (traceObjectFields.filter(field => field.name === "Key__c").length === 0) {
     throw new SfError("You need a field Key__c (string, length 80) on SfdxHardisTrace__c in target org");
   }
+}
+
+/**
+ * Get the Chrome/Chromium executable path for Puppeteer
+ * This is used by various commands that need browser automation
+ * @returns string - Path to Chrome executable, or empty string if not found
+ */
+export function getChromeExecutablePath(): string {
+  let chromeExecutablePath = process.env?.PUPPETEER_EXECUTABLE_PATH || "";
+  if (chromeExecutablePath === "" || !fs.existsSync(chromeExecutablePath)) {
+    const chromePaths = chromeLauncher.Launcher.getInstallations();
+    if (chromePaths && chromePaths.length > 0) {
+      chromeExecutablePath = chromePaths[0];
+    }
+  }
+  return chromeExecutablePath;
 }
