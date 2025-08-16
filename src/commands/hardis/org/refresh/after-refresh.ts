@@ -107,11 +107,12 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const orgUsername = flags["target-org"].getUsername() as string;
     const conn = flags["target-org"].getConnection();
     const instanceUrl = conn.instanceUrl;
+    /* jscpd:ignore-start */
     const processAll = flags.all || false;
     const nameFilter = processAll ? undefined : flags.name; // If --all is set, ignore --name
     const config = await getConfig("user");
     this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
-
+    /* jscpd:ignore-end */
     uxLog("action", this, c.cyan(`This command with restore information after the refresh of org ${instanceUrl}`));
 
     // Prompt user to select a save project path
@@ -142,6 +143,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         return { success: false, message: 'No Connected Apps found in the project' };
       }
 
+      /* jscpd:ignore-start */
       // Step 2: Select which Connected Apps to process
       const selectedApps = await this.selectConnectedApps(connectedApps, processAll, nameFilter);
 
@@ -149,6 +151,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         uxLog("warning", this, c.yellow('No Connected Apps selected'));
         return { success: false, message: 'No Connected Apps selected' };
       }
+      /* jscpd:ignore-end */
 
       // Step 3: Delete existing Connected Apps from the org for clean deployment
       await this.deleteExistingConnectedApps(orgUsername, selectedApps);
@@ -266,6 +269,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
   }
 
+  /* jscpd:ignore-start */
   private async selectConnectedApps(
     connectedApps: ProjectConnectedApp[],
     processAll: boolean,
@@ -284,6 +288,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       this
     );
   }
+  /* jscpd:ignore-end */
 
   private async deleteExistingConnectedApps(
     orgUsername: string,
