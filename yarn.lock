@@ -1627,10 +1627,10 @@
     "@anthropic-ai/sdk" "^0.56.0"
     fast-xml-parser "^4.4.1"
 
-"@langchain/community@^0.3.44":
-  version "0.3.49"
-  resolved "https://registry.yarnpkg.com/@langchain/community/-/community-0.3.49.tgz#9e67791c686cfbd378439afb7044cec571dca0f4"
-  integrity sha512-1AAo9mvr1FmqYHUpXhYI8P4NBPC4t9TfUAuvefEImrtb3gZ60fPelVu17ljWlKJcHC1hPSHYpPJWm0Yx7yRvrw==
+"@langchain/community@^0.3.51":
+  version "0.3.51"
+  resolved "https://registry.yarnpkg.com/@langchain/community/-/community-0.3.51.tgz#873807ad0f9e10d07a9d5259b14ca12490ca7534"
+  integrity sha512-xzBBWLK+HhpS7yi1TzcHfgaNwR3o0v3aN1Z79HUdCOQ2TZdmxxQaVcxB9PUwNrq+LtrOwvhRid3+AOPyob6uYg==
   dependencies:
     "@langchain/openai" ">=0.2.0 <0.7.0"
     "@langchain/weaviate" "^0.2.0"
@@ -1639,7 +1639,7 @@
     flat "^5.0.2"
     js-yaml "^4.1.0"
     langchain ">=0.2.3 <0.3.0 || >=0.3.4 <0.4.0"
-    langsmith "^0.3.33"
+    langsmith "^0.3.46"
     uuid "^10.0.0"
     zod "^3.25.32"
 
