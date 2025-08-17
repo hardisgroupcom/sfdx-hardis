@@ -17,6 +17,19 @@
         "UNUSED_LICENSES",
         "RELEASE_UPDATES"
       ],
+      "enumNames": [
+        "Audit Trail",
+        "Apex Tests",
+        "Backup",
+        "Deployment",
+        "Legacy API",
+        "Lint Access",
+        "Unused Metadatas",
+        "Metadata Status",
+        "Missing Attributes",
+        "Unused Licenses",
+        "Release Updates"
+      ],
       "type": "string"
     },
     "enum_monitoring_commands": {
@@ -30,6 +43,16 @@
         "UNUSED_LICENSES",
         "RELEASE_UPDATES"
       ],
+      "enumNames": [
+        "Audit Trail",
+        "Legacy API",
+        "Lint Access",
+        "Unused Metadatas",
+        "Metadata Status",
+        "Missing Attributes",
+        "Unused Licenses",
+        "Release Updates"
+      ],
       "type": "string"
     }
   },
@@ -37,7 +60,7 @@
   "properties": {
     "allowedOrgTypes": {
       "$id": "#/properties/allowedOrgTypes",
-      "description": "Types of orgs allowed for config & development. If not set, sandbox and scratch are allowed by default",
+      "description": "Types of Salesforce Orgs allowed for config & development. If not set, Sandbox Orgs and Scratch Orgs are allowed by default",
       "examples": [
         [
           "sandbox"
@@ -48,6 +71,10 @@
         "enum": [
           "sandbox",
           "scratch"
+        ],
+        "enumNames": [
+          "Sandbox Orgs",
+          "Scratch Orgs"
         ]
       },
       "title": "Allowed org types",
@@ -55,7 +82,8 @@
     },
     "autoCleanTypes": {
       "$id": "#/properties/autoCleanTypes",
-      "description": "When saving a sfdx-hardis User Story, the list of cleanings will be automatically applied to sfdx sources",
+      "description": "When saving/publishing a User Story, sfdx-hardis can automatically clean the sources before submitting a Pull Request.\nSelect the cleanings that will be automatically applied on your project.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-cleaning/",
       "examples": [
         [
           "dashboards",
@@ -79,6 +107,21 @@
           "sensitiveMetadatas",
           "systemDebug",
           "v60"
+        ],
+        "enumNames": [
+          "Case Entitlement",
+          "Check Permissions",
+          "Dashboards",
+          "Data.com",
+          "Destructive Changes",
+          "Flow Positions",
+          "Local Fields",
+          "List Views Mine",
+          "Minimize Profiles",
+          "Product Request",
+          "Sensitive Metadatas",
+          "System Debug",
+          "v60"
         ]
       },
       "title": "Auto-Cleaning types",
@@ -86,7 +129,8 @@
     },
     "autoRemoveUserPermissions": {
       "$id": "#/properties/autoRemoveUserPermissions",
-      "description": "When saving a sfdx-hardis User Story, these permissions will be removed from profiles",
+      "description": "When your dev sandbox is using the next SF Platform version, sometimes some permissions on Profiles exist on the next version but not the current one.\nTo avoid issues, you can force the removal of such permissions when Saving/Publishing a User Story\nExample:\n- EnableCommunityAppLauncher\n- OmnichannelInventorySync",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/work/save/#command-behavior",
       "examples": [
         [
           "EnableCommunityAppLauncher",
@@ -102,7 +146,8 @@
     },
     "autoRetrieveWhenPull": {
       "$id": "#/properties/autoRetrieveWhenPull",
-      "description": "When calling hardis:scratch:pull, if you define metadatas (named or not), they will also be retrieved using force:source:retrieve",
+      "description": "Sometimes, SF Cli forgets to pull some metadata updates, like Custom Application for example.\nsfdx-hardis can automatically retrieve named metadatas to avoid issues.\nExample:\n- CustomApplication:MyApp1\n- CustomApplication:MyApp2\nWorks also with full metadata types (ex: CustomApplication)",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/scratch/pull/#command-behavior",
       "examples": [
         [
           "CustomApplication"
@@ -131,7 +176,7 @@
     },
     "availableProjects": {
       "$id": "#/properties/availableProjects",
-      "description": "List of business projects that are managed in the same repository. Will be used to build git branch name when using hardis:work:new",
+      "description": "List of business projects that are managed in the same repository.\nIf defined, when creating a new User Story, it will be prompted to the contributor then used to create the git branch name.\nIf a value contains a comma, the left part will be used for key and the right part as label for the users.",
       "examples": [
         [
           "sales_cloud",
@@ -147,17 +192,17 @@
     },
     "availableTargetBranches": {
       "$id": "#/properties/availableTargetBranches",
-      "description": "List of git branches that can be used as target for merge requests",
+      "description": "List of git branches that can be used as target for Pull Requests.\nContributors will be prompt to select one of these target branch when creating a new User Story\nA classic example on a project with BUILD & RUN in parallel is to have preprod and integration as availabla target branches.\nIf defined, makes obsolete the parameter Default Pull Request target branch.",
       "examples": [
         [
-          "develop",
-          "develop_next"
+          "preprod",
+          "integration"
         ]
       ],
       "items": {
         "type": "string"
       },
-      "title": "Available target branches",
+      "title": "Available PR/MR target branches",
       "type": "array"
     },
     "branchPrefixChoices": {
@@ -353,6 +398,11 @@
               "check-deployment-only",
               "process-deployment-only"
             ],
+            "enumNames": [
+              "All",
+              "Check Deployment Only",
+              "Process Deployment Only"
+            ],
             "examples": [
               "all",
               "check-deployment-only",
@@ -507,6 +557,10 @@
         "first",
         "last"
       ],
+      "enumNames": [
+        "First",
+        "Last"
+      ],
       "examples": [
         "first",
         "last"
@@ -613,12 +667,13 @@
       "$id": "#/properties/developmentBranch",
       "default": "developpement",
       "description": "When creating a new sfdx-hardis User Story, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/work/new/",
       "examples": [
         "developpement",
         "dev_lot2",
         "hotfixes"
       ],
-      "title": "Default pull/merge request target org",
+      "title": "Default Pull Request/Merge Request target branch when you create a new User Story.",
       "type": "string"
     },
     "deploymentPlan": {
@@ -955,11 +1010,12 @@
     "installPackagesDuringCheckDeploy": {
       "$id": "#/properties/installPackagesDuringCheckDeploy",
       "default": false,
-      "description": "When calling deployment check command, installs any package referred within installedPackages property",
+      "description": "If you configuration contains an installedPackages property, activating this option allows you to make sfdx-hardis automatically install packages during the Deployments Check workflow, and not to wait after the merge of the Pull Request.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-install-packages/",
       "examples": [
         true
       ],
-      "title": "Install packages during deployment checks",
+      "title": "Install packages during deployment checks workflow",
       "type": "boolean"
     },
     "instanceUrl": {
@@ -1385,7 +1441,7 @@
     "sharedDevSandboxes": {
       "$id": "#/properties/sharedDevSandboxes",
       "default": false,
-      "description": "Define to true if contributors can share dev sandboxes",
+      "description": "Set to true if contributors can share dev sandboxes\nIf active, contributors will never be asked to refresh their sandbox metadata, to avoid to overwrite by accident their colleagues work :)",
       "title": "Shared Dev Sandboxes",
       "type": "boolean"
     },
@@ -1420,6 +1476,14 @@
         "RunLocalTests",
         "RunAllTestsInOrg"
       ],
+      "enumNames": [
+        "No Test Run",
+        "Run Specified Tests",
+        "Run Repository Tests",
+        "Run Repository Tests Except SeeAllData",
+        "Run Local Tests",
+        "Run All Tests In Org"
+      ],
       "examples": [
         "RunRepositoryTests",
         "RunSpecifiedTests"
@@ -1430,14 +1494,16 @@
     "useDeltaDeployment": {
       "$id": "#/properties/useDeltaDeployment",
       "default": false,
-      "description": "Defines if sfdx-hardis will deploy in delta from minor to major branches",
+      "description": "Defines if sfdx-hardis will deploy in delta from minor to major branches.\nWhen active, Delta Deployments allow to deploy only the metadatas in the branch / User Story, and not the full sources of the SFDX project.\nNote: Even if activated, Delta Deployments will be applied only for Pull Requests from minor (features,hotfixes) to major branches (integration,preprod).",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-mode",
       "title": "Use Delta Deployment",
       "type": "boolean"
     },
     "useSmartDeploymentTests": {
       "$id": "#/properties/useSmartDeploymentTests",
       "default": false,
-      "description": "Define if smart deployment tests will be activated and run test classes only if necessary (see more in hardis:project:deploy:smart documentation",
+      "description": "Define if Smart Deployment Tests will be activated and run Apex test classes only if metadata that can impact them are present in the branch / User Story.\nNote: Smart Deployment Tests will be applied only for Pull Requests from minor (features,hotfixes) to major branches (integration,preprod).",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests",
       "title": "Use Smart Deployment Tests",
       "type": "boolean"
     },
