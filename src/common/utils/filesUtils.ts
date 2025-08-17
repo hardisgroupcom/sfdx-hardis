@@ -812,7 +812,7 @@ export async function generateReportPath(fileNamePrefix: string, outputFile: str
 export async function generateCsvFile(
   data: any[],
   outputPath: string,
-  options?: { csvFileTitle?: string, xlsFileTitle?: string, noExcel?: boolean }
+  options?: { fileTitle?: string, csvFileTitle?: string, xlsFileTitle?: string, noExcel?: boolean }
 ): Promise<any> {
   const result: any = {};
   try {
@@ -823,7 +823,8 @@ export async function generateCsvFile(
     if (!WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.requestOpenFile(outputPath);
     }
-    WebSocketClient.sendReportFileMessage(outputPath, options?.csvFileTitle ?? "CSV Report", "report");
+    const csvFileTitle = options?.fileTitle ? `${options.fileTitle} (CSV)` : options?.csvFileTitle ?? "Report (CSV)";
+    WebSocketClient.sendReportFileMessage(outputPath, csvFileTitle, "report");
     if (data.length > 0 && !options?.noExcel) {
       try {
         // Generate mirror XSLX file
@@ -833,7 +834,8 @@ export async function generateCsvFile(
         await fs.ensureDir(xlsDirName);
         await csvToXls(outputPath, xslxFile);
         uxLog("action", this, c.cyan(c.italic(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
-        WebSocketClient.sendReportFileMessage(xslxFile, options?.xlsFileTitle ?? "Excel Report", "report");
+        const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XSLX)` : options?.xlsFileTitle ?? "Report (XSLX)";
+        WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
         result.xlsxFile = xslxFile;
         if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
           try {
@@ -851,7 +853,7 @@ export async function generateCsvFile(
         );
       }
     } else {
-      uxLog("log", this, c.grey(`No XLS file generated as ${outputPath} is empty`));
+      uxLog("other", this, c.grey(`No XLS file generated as ${outputPath} is empty`));
     }
   } catch (e) {
     uxLog("warning", this, c.yellow('Error while generating CSV log file:\n' + (e as Error).message + '\n' + (e as Error).stack));
