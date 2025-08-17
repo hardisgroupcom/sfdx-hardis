@@ -1442,7 +1442,7 @@
       "$id": "#/properties/sharedDevSandboxes",
       "default": false,
       "description": "Set to true if contributors can share dev sandboxes\nIf active, contributors will never be asked to refresh their sandbox metadata, to avoid to overwrite by accident their colleagues work :)",
-      "title": "Shared Dev Sandboxes",
+      "title": "Contributors can share Dev Sandboxes",
       "type": "boolean"
     },
     "targetUsername": {

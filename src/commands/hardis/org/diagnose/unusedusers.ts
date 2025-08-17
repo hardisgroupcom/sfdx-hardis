@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { bulkQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
@@ -156,7 +156,7 @@ The command's technical implementation involves:
         this.returnActiveUsers ? 'active-users' : 'unused-users',
         this.outputFile
       );
-      this.outputFilesRes = await generateCsvFile(this.users, this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.users, this.outputFile, { fileTitle: "Inactive users found" });
     }
 
     let summary;
@@ -184,6 +184,7 @@ The command's technical implementation involves:
 
     if (this.users.length > 0 && !this.returnActiveUsers) {
       uxLog("warning", this, c.yellow(summary));
+      uxLogTable(this, this.users);
     } else {
       uxLog("success", this, c.green(summary));
     }

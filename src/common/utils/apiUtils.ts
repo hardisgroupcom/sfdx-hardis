@@ -167,13 +167,13 @@ export async function bulkUpdate(
     "log",
     this,
     c.grey(
-      `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on (${c.bold(records.length)} records of object ${c.bold(objectName)}`
+      `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on ${c.bold(records.length)} records of object ${c.bold(objectName)}`
     )
   );
   conn.bulk2.pollInterval = 5000; // 5 sec
   conn.bulk2.pollTimeout = 60000; // 60 sec
   // Initialize Job
-  spinner = ora({ text: `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on (${c.bold(records.length)} records of object ${c.bold(objectName)}`, spinner: 'moon' }).start();
+  spinner = ora({ text: `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on ${c.bold(records.length)} records of object ${c.bold(objectName)}`, spinner: 'moon' }).start();
   const job = conn.bulk2.createJob({
     operation: action as any,
     object: objectName,
@@ -205,11 +205,11 @@ export async function bulkUpdate(
   }
   await generateCsvFile(res.successfulResults, outputFile.replace('.csv', '-successful.csv'),
     {
-      csvFileTitle: `CSV: ${objectName} - ${action} - Successful`,
+      fileTitle: `${objectName} - ${action} - Successful`,
       noExcel: true
     });
   await generateCsvFile(res.failedResults, outputFile.replace('.csv', '-failed.csv'), {
-    csvFileTitle: `CSV: ${objectName} - ${action} - Failed`,
+    fileTitle: `${objectName} - ${action} - Failed`,
     noExcel: true
   });
   // Return results
