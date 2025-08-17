@@ -309,6 +309,18 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   // Authentication is necessary
   if (connectedStatus?.includes("expired")) {
     uxLog("action", this, c.yellow("Your auth token is expired, you need to authenticate again"));
+    // Delete rotten authentication json file in case there has been a sandbox refresh
+    const homeSfdxDir = path.join(process.env.HOME || process.env.USERPROFILE || "~", '.sfdx');
+    const authFile = path.join(homeSfdxDir, `${targetOrg}.json`);
+    if (fs.existsSync(authFile)) {
+      try {
+        await fs.unlink(authFile);
+        uxLog("log", this, c.cyan(`Deleted potentially rotten auth file ${c.green(authFile)}`));
+      } catch (e: any) {
+        uxLog("warning", this, c.red(`Error while deleting potentially rotten auth file ${c.green(authFile)}: ${e.message}\nYou might need to delete it manually.`));
+      }
+    }
+    // Authenticate again
     const loginCommand = 'sf org login web' + ` --instance-url ${instanceUrl}`;
     const loginRes = await execSfdxJson(loginCommand, this, { fail: true, output: false });
     return loginRes.result;

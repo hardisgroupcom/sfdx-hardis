@@ -1010,7 +1010,7 @@
     "installPackagesDuringCheckDeploy": {
       "$id": "#/properties/installPackagesDuringCheckDeploy",
       "default": false,
-      "description": "If you configuration contains an installedPackages property, activating this option allows you to make sfdx-hardis automatically install packages during the Deployments Check workflow, and not to wait after the merge of the Pull Request.",
+      "description": "If your configuration contains an installedPackages property, activating this option allows you to make sfdx-hardis automatically install packages during the Deployments Check workflow, and not to wait after the merge of the Pull Request.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-install-packages/",
       "examples": [
         true
