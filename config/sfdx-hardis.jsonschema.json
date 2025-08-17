@@ -192,7 +192,7 @@
     },
     "availableTargetBranches": {
       "$id": "#/properties/availableTargetBranches",
-      "description": "List of git branches that can be used as target for Pull Requests.\nContributors will be prompt to select one of these target branch when creating a new User Story\nA classic example on a project with BUILD & RUN in parallel is to have preprod and integration as availabla target branches.\nIf defined, makes obsolete the parameter Default Pull Request target branch.",
+      "description": "List of git branches that can be used as target for Pull Requests.\nContributors will be prompt to select one of these target branch when creating a new User Story\nA classic example on a project with BUILD & RUN in parallel is to have preprod and integration as available target branches.\nIf defined, makes obsolete the parameter Default Pull Request target branch.",
       "examples": [
         [
           "preprod",
