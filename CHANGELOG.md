@@ -4,10 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.0.6 (beta)] 2025-08-17
+
 - New command [hardis:org:refresh:save:connectedapp](https://sfdx-hardis.cloudity.com/hardis/org/refresh/save/connectedapp/) : Save Connected Apps before refreshing a sandbox.
 - New command [hardis:org:refresh:restore:connectedapp](https://sfdx-hardis.cloudity.com/hardis/org/refresh/restore/connectedapp/) : Restore Connected Apps after refreshing a sandbox.
 - Update JSON Schema documentation
 - When authenticating to an expired org token, delete the SF Cli file that can mess with us when we refreshed a sandbox.
+- Improve logs display
 
 ## [6.0.5 (beta)] 2025-08-14
 
