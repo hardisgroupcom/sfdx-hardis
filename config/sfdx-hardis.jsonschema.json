@@ -1259,12 +1259,12 @@
     "packageNoOverwritePath": {
       "$id": "#/properties/packageNoOverwritePath",
       "default": "",
-      "description": "Path to a custom package-no-overwrite XML file (used in smartDeploy command)",
+      "description": "By default, manifest/package-no-overwrite.xml is used, but you could decide to use a different file for specific major branches.\nIn that case, set the path to a custom package-no-overwrite XML file in a branch-scoped sfdx-hardis configuration file.",
       "examples": [
         "manifest/package-no-overwrite-main.xml",
         "manifest/package-no-overwrite-custom.xml"
       ],
-      "title": "Package-No-Overwrite path",
+      "title": "Branch-scoped custom Package-No-Overwrite path",
       "type": "string"
     },
     "poolConfig": {
