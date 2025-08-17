@@ -95,7 +95,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
       debug: debug,
     });
     // Parse json in stdout and if json.result.status and json.result.files, create a list of files with "type" + "file name", then order it, then display it in logs
-    if (pullCommandResult && pullCommandResult.result && pullCommandResult.result.status === 'Succeeded' && pullCommandResult.result.files) {
+    if ((pullCommandResult?.result?.status === 'Succeeded' || pullCommandResult?.status === 0) && pullCommandResult?.result?.files) {
       // Build an array of objects for table display
       const files = pullCommandResult.result.files
         .filter((file: any) => file?.state !== "Failed")
@@ -116,7 +116,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
         uxLog("log", this, c.grey('No files pulled.'));
       }
     } else {
-      uxLog("error", this, c.red('Pull command did not return expected results'));
+      uxLog("error", this, c.red(`Pull command did not return expected results\n${JSON.stringify(pullCommandResult, null, 2)}`));
     }
   } catch (e) {
     // Manage beta/legacy boza

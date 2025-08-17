@@ -166,12 +166,12 @@
     "apexTestsMinCoverageOrgWide": {
       "$id": "#/properties/apexTestsMinCoverageOrgWide",
       "default": 75.0,
-      "description": "Minimum percentage of apex code coverage accepted",
+      "description": "Minimum percentage of apex code coverage accepted.\n75.0% by default, but if you are on a clean project, it's better to define 80.0, 95.0 or 90.0 😎",
       "examples": [
         80.0,
         95.0
       ],
-      "title": "Minimum apex test coverage %",
+      "title": "Minimum Apex Tests coverage % accepted for a deployment",
       "type": "number"
     },
     "availableProjects": {
@@ -1222,23 +1222,23 @@
     "newTaskNameRegex": {
       "$id": "#/properties/newTaskNameRegex",
       "default": "",
-      "description": "Regex to validate new User Story names",
+      "description": "If you define a regular expression, it will be used to validate the name of new User Stories.\nFor example, you can enforce a Jira number in the name with regex '^MYPROJECT-[0-9]+ .*'",
       "examples": [
         "^[A-Z]+-[0-9]+ .*",
         "^CLOUDITY-[0-9]+ .*",
         "^MYPROJECT-[0-9]+ .*"
       ],
-      "title": "New User Story name regex",
+      "title": "User Story name validation regex",
       "type": "string"
     },
     "newTaskNameRegexExample": {
       "$id": "#/properties/newTaskNameRegexExample",
       "default": "",
-      "description": "Example of value that will match newTaskNameRegex",
+      "description": "If you activated User Story name validation via RegEx, define an example value that will be displayed to users.\nExample: 'MYPROJECT-168 Update account status validation rule'",
       "examples": [
         "MYPROJECT-123 Update account status validation rule"
       ],
-      "title": "New User Story name example",
+      "title": "Example string for User Story name validation regex",
       "type": "string"
     },
     "notificationsDisable": {
@@ -1442,7 +1442,7 @@
       "$id": "#/properties/sharedDevSandboxes",
       "default": false,
       "description": "Set to true if contributors can share dev sandboxes\nIf active, contributors will never be asked to refresh their sandbox metadata, to avoid to overwrite by accident their colleagues work :)",
-      "title": "Shared Dev Sandboxes",
+      "title": "Contributors can share Dev Sandboxes",
       "type": "boolean"
     },
     "targetUsername": {

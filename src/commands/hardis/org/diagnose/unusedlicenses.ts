@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { bulkQuery, bulkQueryChunksIn, bulkUpdate } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
@@ -204,8 +204,9 @@ The command's technical implementation involves extensive querying of Salesforce
 
     // Generate output CSV file
     if (this.unusedPermissionSetLicenseAssignments.length > 0) {
+      uxLogTable(this, this.unusedPermissionSetLicenseAssignments);
       this.outputFile = await generateReportPath('unused-ps-license-assignments', this.outputFile);
-      this.outputFilesRes = await generateCsvFile(this.unusedPermissionSetLicenseAssignments, this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.unusedPermissionSetLicenseAssignments, this.outputFile, { fileTitle: "Unused PSL assignments" });
     }
 
     // Manage notifications
@@ -407,18 +408,27 @@ The command's technical implementation involves extensive querying of Salesforce
         const deleteRes = await bulkUpdate('PermissionSetLicenseAssign', 'delete', pslaToDelete, conn);
         const deleteSuccessNb = deleteRes.successfulResults.length;
         const deleteErrorNb = deleteRes.failedResults.length;
+        uxLog("action", this, "Deletions Summary");
         if (deleteErrorNb > 0) {
           uxLog(
             "warning",
             this,
             c.yellow(`Warning: ${c.red(c.bold(deleteErrorNb))} assignments has not been deleted (bulk API errors)`)
           );
+          uxLogTable(this, deleteRes.failedResults);
+          this.outputFile = await generateReportPath('failed-delete-ps-license-assignments', this.outputFile);
+          this.outputFilesRes = await generateCsvFile(deleteRes.failedResults, this.outputFile, { fileTitle: "Failed PSL assignments deletions" });
           this.statusCode = 1;
         } else {
           this.statusCode = 0;
         }
         // Build results summary
         uxLog("success", this, c.green(`${c.bold(deleteSuccessNb)} assignments has been deleted.`));
+        if (deleteSuccessNb) {
+          uxLogTable(this, deleteRes.successfulResults);
+          this.outputFile = await generateReportPath('deleted-ps-license-assignments', this.outputFile);
+          this.outputFilesRes = await generateCsvFile(this.unusedPermissionSetLicenseAssignments, this.outputFile, { fileTitle: "Deleted PSL assignments" });
+        }
       }
     }
     return this.statusCode;

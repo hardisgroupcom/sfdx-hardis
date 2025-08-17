@@ -10,6 +10,7 @@ import {
   ensureGitBranch,
   execCommand,
   execSfdxJson,
+  getGitRepoUrl,
   git,
   gitCheckOutRemote,
   uxLog,
@@ -191,16 +192,17 @@ The command's logic orchestrates various underlying processes:
 
     // Checkout development main branch
     const branchName = `${projectBranchPart}${response.branch || 'features'}/${response.sources || 'dev'}/${taskName}`;
+    const repoUrl = await getGitRepoUrl()
     uxLog(
       "action",
       this,
-      c.cyan(`Checking out the most recent version of branch ${c.bold(this.targetBranch)} from git server...`)
+      c.cyan(`Checking out the most recent version of git branch ${c.bold(this.targetBranch)} from ${repoUrl} ...`)
     );
     await gitCheckOutRemote(this.targetBranch);
     // Pull latest version of target branch
     await git().pull();
     // Create new branch
-    uxLog("action", this, c.cyan(`Creating new git branch ${c.green(branchName)}...`));
+    uxLog("action", this, c.cyan(`Creating new local git branch ${c.green(branchName)}...`));
     await ensureGitBranch(branchName);
     // Update config if necessary
     if (config.developmentBranch !== this.targetBranch && (config.availableTargetBranches || null) == null) {
@@ -258,7 +260,7 @@ The command's logic orchestrates various underlying processes:
     const orgTypeResponse = await prompts({
       type: 'select',
       name: 'value',
-      message: c.cyanBright(`Do you want to use a scratch org or a tracked sandbox org ?`),
+      message: c.cyanBright(`In which Salesforce org do you want to work in ?`),
       description: 'Choose the type of Salesforce org to use for your development work',
       placeholder: 'Select org type',
       initial: 0,
@@ -500,12 +502,21 @@ The command's logic orchestrates various underlying processes:
     }
     // Open of if not already open
     if (openOrg === true) {
-      uxLog("action", this, c.cyan(`Opening sandbox org so you can work in it...`));
-      await execSfdxJson('sf org open', this, {
-        fail: true,
-        output: false,
-        debug: this.debugMode,
+      const openOrgRes = await prompts({
+        type: 'confirm',
+        name: 'value',
+        message: c.cyanBright(`Do you want to open org ${c.green(orgUsername)} in your browser ?`),
+        description: 'Open the sandbox org in your web browser to start working on it',
+        initial: true
       });
+      if (openOrgRes.value === true) {
+        uxLog("action", this, c.cyan(`Opening org ${c.green(orgUsername)} so you can work in it...`));
+        await execSfdxJson('sf org open', this, {
+          fail: true,
+          output: false,
+          debug: this.debugMode,
+        });
+      }
     }
 
     // Trigger a status refresh on VsCode WebSocket Client
