@@ -5,8 +5,8 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - New command [hardis:org:refresh:save:connectedapp](https://sfdx-hardis.cloudity.com/hardis/org/refresh/save/connectedapp/) : Save Connected Apps before refreshing a sandbox.
-
 - New command [hardis:org:refresh:restore:connectedapp](https://sfdx-hardis.cloudity.com/hardis/org/refresh/restore/connectedapp/) : Restore Connected Apps after refreshing a sandbox.
+- Update JSON Schema documentation
 
 ## [6.0.5 (beta)] 2025-08-14
 
