@@ -927,6 +927,41 @@ export async function removePackageXmlContent(
   });
 }
 
+export async function extendPackageFileWithDependencies(
+  deltaXmlFile: string,
+) {
+  const addTypeIfmissing = (types, typeToAdd) => {
+    const existingNodeByName = types.find(type => type.name[0] === typeToAdd.name[0]);
+    if (!existingNodeByName) {
+      types.push(typeToAdd);
+    } else {
+      existingNodeByName.members = [...new Set([...existingNodeByName.members, ...typeToAdd.members])];
+    }
+  };
+
+  const xml = await parseXmlFile(deltaXmlFile);
+  const metadataProcessors = {
+    "Layout" : (member: string) => {
+      const sobject = member.split('-')[0];
+      return {members: [ `${sobject}-de`, `${sobject}-jp`], name : ["CustomObjectTranslation"] }
+    }
+  };
+
+  for (const typeNode of xml.Package.types) {
+    const metadataType = typeNode.name[0];
+    if (Object.prototype.hasOwnProperty.call(metadataProcessors, metadataType)) {
+      for (const member of typeNode.members) {
+        addTypeIfmissing(
+          xml.Package.types,
+          metadataProcessors[metadataType](member)
+        );
+      }
+    }
+  }
+
+  await writeXmlFile(deltaXmlFile, xml);
+}
+
 // Deploy destructive changes
 export async function deployDestructiveChanges(
   packageDeletedXmlFile: string,
