@@ -7,6 +7,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/)
   - Retrieve Certificates and other metadatas that could need to be restored
   - Retrieve Custom Settings values
+- [hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/)
+  - Restore Certificates and other metadatas that could need to be restored
+  - Restore Custom Settings values
 
 ## [6.0.6 (beta)] 2025-08-17
 
