@@ -484,6 +484,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
 
       // TODO: enable by feature flag
+      uxLog("action", this, c.cyan('[DeltaDeployment] extending package.xml with dependencies ...'));
       await extendPackageFileWithDependencies(diffPackageXml);
 
       await removePackageXmlContent(this.packageXmlFile, diffPackageXml, true, {
