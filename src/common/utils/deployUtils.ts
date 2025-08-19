@@ -39,6 +39,26 @@ import { checkSfdxHardisTraceAvailable } from './orgConfigUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 
+export const allLanguageSuffixes = [
+  "zh_CN",  // Chinese (Simplified)
+  "zh_TW",  // Chinese (Traditional)
+  "da",     // Danish
+  "nl",     // Dutch
+  "fi",     // Finnish
+  "fr",     // French
+  "de",     // German
+  "it",     // Italian
+  "ja",     // Japanese
+  "ko",     // Korean
+  "no",     // Norwegian
+  "pt_BR",  // Portuguese (Brazil)
+  "ru",     // Russian
+  "es",     // Spanish
+  "es_MX",  // Spanish (Mexico)
+  "sv",     // Swedish
+  "th"      // Thai
+];
+
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
 export async function forceSourcePush(scratchOrgAlias: string, commandThis: any, debug = false, options: any = {}) {
@@ -930,12 +950,15 @@ export async function removePackageXmlContent(
 export async function extendPackageFileWithDependencies(
   deltaXmlFile: string,
 ) {
-  const addTypeIfmissing = (types, typeToAdd) => {
+  const addTypeIfmissing = (types, typeToAdd): boolean => {
     const existingNodeByName = types.find(type => type.name[0] === typeToAdd.name[0]);
     if (!existingNodeByName) {
       types.push(typeToAdd);
+      return true;
     } else {
+      const countBefore = existingNodeByName.members.length;
       existingNodeByName.members = [...new Set([...existingNodeByName.members, ...typeToAdd.members])];
+      return countBefore !== existingNodeByName.members.length;
     }
   };
 
@@ -943,21 +966,23 @@ export async function extendPackageFileWithDependencies(
   const metadataProcessors = {
     "Layout" : (member: string) => {
       const sobject = member.split('-')[0];
-      return {members: [ `${sobject}-de`, `${sobject}-jp`], name : ["CustomObjectTranslation"] }
+      return { members : allLanguageSuffixes.map(suffix => sobject + "-" + suffix), name : ["CustomObjectTranslation"] }
     }
   };
 
-  for (const typeNode of xml.Package.types) {
-    const metadataType = typeNode.name[0];
-    if (Object.prototype.hasOwnProperty.call(metadataProcessors, metadataType)) {
-      for (const member of typeNode.members) {
-        addTypeIfmissing(
-          xml.Package.types,
-          metadataProcessors[metadataType](member)
-        );
+  let somethingChanged: boolean;
+  do {
+    somethingChanged = false;
+    for (const typeNode of xml.Package.types) {
+      const metadataType = typeNode.name[0];
+      if (Object.hasOwn(metadataProcessors, metadataType)) {
+        for (const member of typeNode.members) {
+          const typeAdded = addTypeIfmissing(xml.Package.types, metadataProcessors[metadataType](member));
+          somethingChanged ||= typeAdded;
+        }
       }
     }
-  }
+  } while (somethingChanged);
 
   await writeXmlFile(deltaXmlFile, xml);
 }

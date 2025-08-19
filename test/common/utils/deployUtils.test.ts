@@ -83,7 +83,22 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
         <types>
           <members>Account-de</members>
           <members>Opportunity-de</members>
-          <members>Opportunity-jp</members>
+          <members>Opportunity-zh_CN</members>
+          <members>Opportunity-zh_TW</members>
+          <members>Opportunity-da</members>
+          <members>Opportunity-nl</members>
+          <members>Opportunity-fi</members>
+          <members>Opportunity-fr</members>
+          <members>Opportunity-it</members>
+          <members>Opportunity-ja</members>
+          <members>Opportunity-ko</members>
+          <members>Opportunity-no</members>
+          <members>Opportunity-pt_BR</members>
+          <members>Opportunity-ru</members>
+          <members>Opportunity-es</members>
+          <members>Opportunity-es_MX</members>
+          <members>Opportunity-sv</members>
+          <members>Opportunity-th</members>
           <name>CustomObjectTranslation</name>
         </types>
         <version>63.0</version>
