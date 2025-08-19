@@ -1,5 +1,5 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Connection, Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as path from 'path';
 import c from 'chalk';
@@ -101,20 +101,29 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   public static requiresProject = true;
   protected refreshSandboxConfig: any = {};
   protected saveProjectPath: string;
+  protected result: any;
+  protected orgUsername: string;
+  protected nameFilter: string | undefined;
+  protected processAll: boolean;
+  protected conn: Connection;
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgRefreshAfterRefresh);
-    const orgUsername = flags["target-org"].getUsername() as string;
-    const conn = flags["target-org"].getConnection();
-    const instanceUrl = conn.instanceUrl;
+    this.orgUsername = flags["target-org"].getUsername() as string;
+    this.conn = flags["target-org"].getConnection();
+    const instanceUrl = this.conn.instanceUrl;
     /* jscpd:ignore-start */
-    const processAll = flags.all || false;
-    const nameFilter = processAll ? undefined : flags.name; // If --all is set, ignore --name
+    this.processAll = flags.all || false;
+    this.nameFilter = this.processAll ? undefined : flags.name; // If --all is set, ignore --name
     const config = await getConfig("user");
     this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
+    this.result = {}
     /* jscpd:ignore-end */
-    uxLog("action", this, c.cyan(`This command with restore information after the refresh of org ${instanceUrl}`));
-
+    uxLog("action", this, c.cyan(`This command with restore information after the refresh of org ${instanceUrl}
+- Certificates
+- Custom Settings
+- Connected Apps
+- Other Metadata`));
     // Prompt user to select a save project path
     const saveProjectPathRoot = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
     // Only get immediate subfolders of saveProjectPathRoot (not recursive)
@@ -134,41 +143,66 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     this.saveProjectPath = saveProjectPath.path;
 
-    try {
-      // Step 1: Find Connected Apps in the project
-      const connectedApps = await this.findConnectedAppsInProject(nameFilter, processAll);
+    await this.restoreConnectedApps();
 
-      if (connectedApps.length === 0) {
-        uxLog("warning", this, c.yellow('No Connected Apps found in the project'));
-        return { success: false, message: 'No Connected Apps found in the project' };
+    return this.result;
+  }
+
+  private async restoreConnectedApps(): Promise<void> {
+    let restoreConnectedApps = false;
+    const promptRestoreConnectedApps = await prompts({
+      type: 'confirm',
+      name: 'confirmRestore',
+      message: `Do you want to restore Connected Apps from the backup in ${c.bold(this.saveProjectPath)}?`,
+      initial: true,
+      description: 'This will restore all Connected Apps (including Consumer Secrets) from the backup created before the org refresh.'
+    });
+    if (promptRestoreConnectedApps.confirmRestore) {
+      restoreConnectedApps = true;
+    }
+
+    if (restoreConnectedApps) {
+
+      try {
+        // Step 1: Find Connected Apps in the project
+        const connectedApps = await this.findConnectedAppsInProject(this.nameFilter, this.processAll);
+
+        if (connectedApps.length === 0) {
+          uxLog("warning", this, c.yellow('No Connected Apps found in the project'));
+          this.result = Object.assign(this.result, { success: false, message: 'No Connected Apps found in the project' });
+          return;
+        }
+
+        /* jscpd:ignore-start */
+        // Step 2: Select which Connected Apps to process
+        const selectedApps = await this.selectConnectedApps(connectedApps, this.processAll, this.nameFilter);
+
+        if (selectedApps.length === 0) {
+          uxLog("warning", this, c.yellow('No Connected Apps selected'));
+          this.result = Object.assign(this.result, { success: false, message: 'No Connected Apps selected' });
+          return;
+        }
+        /* jscpd:ignore-end */
+
+        // Step 3: Delete existing Connected Apps from the org for clean deployment
+        await this.deleteExistingConnectedApps(this.orgUsername, selectedApps);
+
+        // Step 4: Deploy the Connected Apps to the org
+        await this.deployConnectedApps(this.orgUsername, selectedApps);
+
+        // Return the result
+        uxLog("action", this, c.cyan(`Summary`));
+        const appNames = selectedApps.map(app => `- ${app.fullName}`).join('\n');
+        uxLog("success", this, c.green(`Successfully restored ${selectedApps.length} Connected App(s) to ${this.conn.instanceUrl}\n${appNames}`));
+        const restoreResult = createConnectedAppSuccessResponse(
+          `Successfully restored ${selectedApps.length} Connected App(s) to the org`,
+          selectedApps.map(app => app.fullName)
+        );
+        this.result = Object.assign(this.result, restoreResult);
+      } catch (error: any) {
+        const restoreResult = handleConnectedAppError(error, this);
+        this.result = Object.assign(this.result, restoreResult);
       }
-
-      /* jscpd:ignore-start */
-      // Step 2: Select which Connected Apps to process
-      const selectedApps = await this.selectConnectedApps(connectedApps, processAll, nameFilter);
-
-      if (selectedApps.length === 0) {
-        uxLog("warning", this, c.yellow('No Connected Apps selected'));
-        return { success: false, message: 'No Connected Apps selected' };
-      }
-      /* jscpd:ignore-end */
-
-      // Step 3: Delete existing Connected Apps from the org for clean deployment
-      await this.deleteExistingConnectedApps(orgUsername, selectedApps);
-
-      // Step 4: Deploy the Connected Apps to the org
-      await this.deployConnectedApps(orgUsername, selectedApps);
-
-      // Return the result
-      uxLog("action", this, c.cyan(`Summary`));
-      const appNames = selectedApps.map(app => `- ${app.fullName}`).join('\n');
-      uxLog("success", this, c.green(`Successfully restored ${selectedApps.length} Connected App(s) to ${conn.instanceUrl}\n${appNames}`));
-      return createConnectedAppSuccessResponse(
-        `Successfully restored ${selectedApps.length} Connected App(s) to the org`,
-        selectedApps.map(app => app.fullName)
-      );
-    } catch (error: any) {
-      return handleConnectedAppError(error, this);
     }
   }
 
