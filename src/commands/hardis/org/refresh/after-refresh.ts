@@ -3,10 +3,10 @@ import { Connection, Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import * as path from 'path';
 import c from 'chalk';
-import * as fs from 'fs';
+import fs from 'fs-extra';
 import { glob } from 'glob';
-import { uxLog } from '../../../../common/utils/index.js';
-import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
+import { parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import {
   deleteConnectedApps,
@@ -19,6 +19,7 @@ import {
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -106,12 +107,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected nameFilter: string | undefined;
   protected processAll: boolean;
   protected conn: Connection;
+  protected instanceUrl: any;
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgRefreshAfterRefresh);
     this.orgUsername = flags["target-org"].getUsername() as string;
     this.conn = flags["target-org"].getConnection();
-    const instanceUrl = this.conn.instanceUrl;
+    this.instanceUrl = this.conn.instanceUrl;
     /* jscpd:ignore-start */
     this.processAll = flags.all || false;
     this.nameFilter = this.processAll ? undefined : flags.name; // If --all is set, ignore --name
@@ -119,7 +121,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
     this.result = {}
     /* jscpd:ignore-end */
-    uxLog("action", this, c.cyan(`This command with restore information after the refresh of org ${instanceUrl}
+    uxLog("action", this, c.cyan(`This command with restore information after the refresh of org ${this.instanceUrl}
 - Certificates
 - Custom Settings
 - Connected Apps
@@ -143,9 +145,222 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     this.saveProjectPath = saveProjectPath.path;
 
+
+    // 1. Restore Certificates
+    await this.restoreCertificates();
+
+    // 2. Restore Other Metadata
+    await this.restoreOtherMetadata();
+
+    // 3. Restore Custom Settings
+    await this.restoreCustomSettings();
+
+    // 4. Restore Connected Apps
     await this.restoreConnectedApps();
 
     return this.result;
+  }
+
+  private async restoreCertificates(): Promise<void> {
+    const certsDir = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'certs');
+    const manifestDir = path.join(this.saveProjectPath, 'manifest');
+    const certsPackageXml = path.join(manifestDir, 'package-certificates-to-save.xml');
+    if (!fs.existsSync(certsDir) || !fs.existsSync(certsPackageXml)) {
+      uxLog("log", this, c.yellow('No certificates backup found, skipping certificate restore.'));
+      return;
+    }
+    // Copy certs to a temporary folder for deployment
+    const mdApiCertsRestoreFolder = path.join(this.saveProjectPath, 'mdapi_certs_restore');
+    await fs.ensureDir(mdApiCertsRestoreFolder);
+    await fs.emptyDir(mdApiCertsRestoreFolder);
+    await fs.copy(certsDir, path.join(mdApiCertsRestoreFolder, "certs"), { overwrite: true });
+    // List certificates in the restore folder
+    const certsFiles = fs.readdirSync(certsDir);
+    if (certsFiles.length === 0) {
+      uxLog("log", this, c.yellow('No certificates found in the backup folder, skipping certificate restore.'));
+      return;
+    }
+    // List .crt files and get their name, then check that each cert must have a .crt and a .crt-meta.xml file
+    const certsToRestoreNames = certsFiles.filter(file => file.endsWith('.crt')).map(file => path.basename(file, '.crt'));
+    const validCertsToRestoreNames = certsToRestoreNames.filter(name => {
+      return fs.existsSync(path.join(certsDir, `${name}.crt-meta.xml`));
+    });
+    if (validCertsToRestoreNames.length === 0) {
+      uxLog("log", this, c.yellow('No valid certificates found in the backup folder (with .crt + .crt-meta.xml), skipping certificate restore.'));
+      return;
+    }
+
+    // Prompt certificates to restore (all by default)
+    const promptCerts = await prompts({
+      type: 'multiselect',
+      name: 'certs',
+      message: `Select certificates to restore`,
+      description: 'Select the certificates you want to restore from the backup. You can select multiple certificates.',
+      choices: validCertsToRestoreNames.map(name => ({
+        title: name,
+        value: name
+      })),
+      initial: validCertsToRestoreNames, // Select all by default
+    });
+    const selectedCerts = promptCerts.certs;
+    if (selectedCerts.length === 0) {
+      uxLog("log", this, c.yellow('No certificates selected for restore, skipping certificate restore.'));
+      return;
+    }
+
+    // Ask user confirmation before restoring certificates
+    const prompt = await prompts({
+      type: 'confirm',
+      name: 'restore',
+      message: `Do you confirm you want to restore ${selectedCerts.length} certificate(s) ?`,
+      description: 'This will deploy all certificate files and definitions saved before the refresh.',
+      initial: true
+    });
+    if (!prompt.restore) {
+      return;
+    }
+
+    // Create manifest/package.xml within mdApiCertsRestoreFolder
+    const packageXmlCerts = {
+      "Certificate": selectedCerts
+    }
+    await writePackageXmlFile(path.join(mdApiCertsRestoreFolder, 'manifest', 'package.xml'), packageXmlCerts);
+
+    // Deploy using metadata API
+    uxLog("log", this, c.grey(`Deploying certificates in org ${this.instanceUrl} using Metadata API (Source Api does not support it)...`));
+    await execSfdxJson(
+      `sf project deploy start --metadata-dir ${mdApiCertsRestoreFolder} --target-org ${this.orgUsername}`,
+      this,
+      { output: true, fail: true, cwd: this.saveProjectPath }
+    );
+    uxLog("success", this, c.green(`Certificates restored successfully in org ${this.instanceUrl}`));
+  }
+
+  private async restoreOtherMetadata(): Promise<void> {
+    const manifestDir = path.join(this.saveProjectPath, 'manifest');
+    const restorePackageXml = path.join(manifestDir, 'package-metadata-to-restore.xml');
+    // Check if the restore package.xml exists
+    if (!fs.existsSync(restorePackageXml)) {
+      uxLog("log", this, c.yellow('No package-metadata-to-restore.xml found, skipping metadata restore.'));
+      return;
+    }
+    // Warn user about the restore package.xml that needs to be manually checked
+    WebSocketClient.sendReportFileMessage(restorePackageXml, "Restore Metadatas package.xml", "report");
+    uxLog("warning", this, c.yellow(`Look at the package-metadata-to-restore.xml file in ${c.bold(this.saveProjectPath)} to see what will be restored.`));
+    uxLog("warning", this, c.yellow(`Confirm it's content, or remove/comment part of it if you don't want some metadata to be restored`));
+    const prompt = await prompts({
+      type: 'confirm',
+      name: 'restore',
+      message: `Please double check package-metadata-to-restore.xml. Do you confirm you want to restore all these metadatas ?`,
+      description: `WARNING: Check and validate/update file ${restorePackageXml} BEFORE it is deployed !`,
+      initial: true
+    });
+    if (!prompt.restore) {
+      uxLog("warning", this, c.yellow('Metadata restore cancelled by user.'));
+      this.result = Object.assign(this.result, { success: false, message: 'Metadata restore cancelled by user' });
+      return;
+    }
+    // Deploy the metadata using the package.xml
+    uxLog("action", this, c.cyan('Deploying other metadata to org...'));
+    const deployCmd = `sf project deploy start --manifest ${restorePackageXml} --target-org ${this.orgUsername} --json`;
+    const deployResult = await execSfdxJson(deployCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
+    if (deployResult.status === 0) {
+      uxLog("success", this, c.green(`Other metadata restored successfully in org ${this.instanceUrl}`));
+    }
+    else {
+      uxLog("error", this, c.red(`Failed to restore other metadata in org ${this.instanceUrl}: ${deployResult.error}`));
+      this.result = Object.assign(this.result, { success: false, message: `Failed to restore other metadata: ${deployResult.error}` });
+      throw new Error(`Failed to restore other metadata:\n${JSON.stringify(deployResult, null, 2)}`);
+    }
+  }
+
+  private async restoreCustomSettings(): Promise<void> {
+    // Check there are custom settings to restore
+    const csDir = path.join(this.saveProjectPath, 'savedCustomSettings');
+    if (!fs.existsSync(csDir)) {
+      uxLog("log", this, c.yellow('No savedCustomSettings folder found, skipping custom settings restore.'));
+      return;
+    }
+    const csFolders = fs.readdirSync(csDir).filter(f => fs.statSync(path.join(csDir, f)).isDirectory());
+    if (csFolders.length === 0) {
+      uxLog("log", this, c.yellow('No custom settings data found, skipping custom settings restore.'));
+      return;
+    }
+    // List custom settings to restore so users can select them. Keep only folders that have a .json file
+    const csToRestore = csFolders.filter(folder => {
+      const jsonFile = path.join(csDir, folder, `${folder}.json`);
+      return fs.existsSync(jsonFile);
+    });
+    if (csToRestore.length === 0) {
+      uxLog("log", this, c.yellow('No custom settings data found to restore, skipping custom settings restore.'));
+      return;
+    }
+    // Prompt custom settings to restore: All by default
+    const promptRestore = await prompts({
+      type: 'multiselect',
+      name: 'settings',
+      message: `Select custom settings to restore`,
+      description: 'Select the custom settings you want to restore from the backup. You can select multiple settings.',
+      choices: csToRestore.map(folder => ({
+        title: folder,
+        value: folder
+      })),
+      initial: csToRestore // Select all by default
+    });
+    const selectedSettings = promptRestore.settings;
+    if (selectedSettings.length === 0) {
+      uxLog("log", this, c.yellow('No custom settings selected for restore, skipping custom settings restore.'));
+      return;
+    }
+
+    // Ask last confirmation to user
+    const prompt = await prompts({
+      type: 'confirm',
+      name: 'restore',
+      message: `Do you confirm you want to restore ${selectedSettings.length} Custom Settings values from backup?`,
+      description: 'This will import all custom settings data saved before the refresh.',
+      initial: true
+    });
+    if (!prompt.restore) {
+      uxLog("warning", this, c.yellow('Custom settings restore cancelled by user.'));
+      return;
+    }
+    uxLog("action", this, c.cyan(`Restoring ${selectedSettings.length} Custom Settings...`));
+    const successSettings: string[] = []
+    const failedSettings: string[] = []
+    for (const folder of csFolders) {
+      const jsonFile = path.join(csDir, folder, `${folder}.json`);
+      if (!fs.existsSync(jsonFile)) {
+        uxLog("warning", this, c.yellow(`No data file for custom setting ${folder}`));
+        failedSettings.push(folder);
+        continue;
+      }
+      const importCmd = `sf data tree import --plan ${jsonFile} --target-org ${this.orgUsername} --json`;
+      try {
+        const importRes = await execSfdxJson(importCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
+        if (importRes.status === 0) {
+          uxLog("success", this, c.green(`Custom setting ${folder} restored.`));
+          successSettings.push(folder);
+        }
+        else {
+          uxLog("error", this, c.red(`Failed to restore custom setting ${folder}:\n${JSON.stringify(importRes, null, 2)}`));
+          failedSettings.push(folder);
+        }
+      } catch (e) {
+        uxLog("error", this, c.red(`Custom setting ${folder} restore failed:\n${JSON.stringify(e)}`));
+        failedSettings.push(folder);
+        continue;
+      }
+    }
+    uxLog("action", this, c.cyan(`Custom settings restore complete (${successSettings.length} successful, ${failedSettings.length} failed)`));
+    if (successSettings.length > 0) {
+      const successSettingsNames = successSettings.map(name => "- " + name).join('\n');
+      uxLog("success", this, c.green(`Successfully restored ${successSettings.length} Custom Setting(s): ${successSettingsNames}`));
+    }
+    if (failedSettings.length > 0) {
+      const failedSettingsNames = failedSettings.map(name => "- " + name).join('\n');
+      uxLog("error", this, c.red(`Failed to restore ${failedSettings.length} Custom Setting(s): ${failedSettingsNames}`));
+    }
   }
 
   private async restoreConnectedApps(): Promise<void> {
