@@ -809,6 +809,11 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       await writePackageXmlFile(restorePackageXmlFile, restorePackage);
       uxLog("log", this, c.grey(`Removed ConnectedApps from ${restorePackageXmlFileName} as they will be handled separately`));
     }
+    if (restorePackage?.["Certificate"]) {
+      delete restorePackage["Certificate"];
+      await writePackageXmlFile(restorePackageXmlFile, restorePackage);
+      uxLog("log", this, c.grey(`Removed Certificates from ${restorePackageXmlFileName} as they will be handled separately`));
+    }
   }
 
   private async retrieveCertificates() {
