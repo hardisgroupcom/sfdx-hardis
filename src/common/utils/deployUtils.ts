@@ -950,7 +950,7 @@ export async function removePackageXmlContent(
 export async function extendPackageFileWithDependencies(
   deltaXmlFile: string,
 ) {
-  const addTypeIfmissing = (types, typeToAdd): boolean => {
+  const addTypeIfMissing = (types, typeToAdd): boolean => {
     const existingNodeByName = types.find(type => type.name[0] === typeToAdd.name[0]);
     if (!existingNodeByName) {
       types.push(typeToAdd);
@@ -977,7 +977,7 @@ export async function extendPackageFileWithDependencies(
       const metadataType = typeNode.name[0];
       if (Object.hasOwn(metadataProcessors, metadataType)) {
         for (const member of typeNode.members) {
-          const typeAdded = addTypeIfmissing(xml.Package.types, metadataProcessors[metadataType](member));
+          const typeAdded = addTypeIfMissing(xml.Package.types, metadataProcessors[metadataType](member));
           somethingChanged ||= typeAdded;
         }
       }
