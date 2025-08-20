@@ -23,11 +23,10 @@ const hook: Hook<'init'> = async (options) => {
   const pkg = await readPackageUp({ cwd: __dirname });
   const notifier = updateNotifier({
     pkg: pkg?.packageJson,
-    updateCheckInterval: 900, // check every 15 mn
+    updateCheckInterval: 1000 * 60 * 60 * 6, // check every 6 hours
   });
   if (
-    notifier &&
-    notifier.update &&
+    notifier?.update &&
     notifier.update.current !== notifier.update.latest &&
     semver.compare(notifier.update.latest, notifier.update.current) === 1
   ) {

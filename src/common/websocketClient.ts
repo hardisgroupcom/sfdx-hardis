@@ -211,6 +211,11 @@ export class WebSocketClient {
           uxLog("warning", this, c.yellow(`Warning: Unable to import command class for ${this.wsContext.command}: ${e instanceof Error ? e.message : String(e)}`));
         }
       }
+      // Add link to command log file
+      if (globalThis?.hardisLogFileStream?.path) {
+        const logFilePath = String(globalThis.hardisLogFileStream.path).replace(/\\/g, '/');
+        message.commandLogFile = logFilePath;
+      }
       this.ws.send(JSON.stringify(message));
       // uxLog("other", this,c.grey('Initialized WebSocket connection with VsCode SFDX Hardis'));
     });
