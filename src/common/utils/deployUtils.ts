@@ -39,7 +39,7 @@ import { checkSfdxHardisTraceAvailable } from './orgConfigUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 
-export const allLanguageSuffixes = [
+export const allLanguages = [
   "zh_CN",  // Chinese (Simplified)
   "zh_TW",  // Chinese (Traditional)
   "da",     // Danish
@@ -951,6 +951,10 @@ export async function extendPackageFileWithDependencies(
   deltaXmlFile: string,
 ) {
   const addTypeIfMissing = (types, typeToAdd): boolean => {
+    if (typeToAdd === null) {
+      return false;
+    }
+
     const existingNodeByName = types.find(type => type.name[0] === typeToAdd.name[0]);
     if (!existingNodeByName) {
       types.push(typeToAdd);
@@ -963,39 +967,56 @@ export async function extendPackageFileWithDependencies(
   };
  
   const dotSeparatedObjectToObjectTranslation = (member: string) => {
-    const sobject = member.split('.')[0];
-    return { members: allLanguageSuffixes.map(suffix => sobject + "-" + suffix), name: ["CustomObjectTranslation"] };
+    const parts = member.split('.');
+    if (parts.length !== 2) {
+      return null;
+    }
+    const sobject = parts[0];
+    return { members: allLanguages.map(languageSuffix => sobject + "-" + languageSuffix), name: ["CustomObjectTranslation"] };
   };
+
+  const convertToType = (typeName: string, splitBy: string, suffix?: string) => {
+    return (member: string) => {
+      const parts = member.split(splitBy);
+      const baseName = parts[0];
+      
+      return { members: [ baseName + (suffix ?? '')], name: [typeName] };
+    };
+  }
+
+  const globalTranslations = () => {
+    return { members: allLanguages, name: ["Translations"] };
+  }
 
   const metadataProcessors = {
     "Layout" : (member: string) => {
       const sobject = member.split('-')[0];
-      return { members : allLanguageSuffixes.map(suffix => sobject + "-" + suffix), name : ["CustomObjectTranslation"] }
+      return { members : allLanguages.map(suffix => sobject + "-" + suffix), name : ["CustomObjectTranslation"] }
     },
     "CustomObject" : (member: string) => {
-      return { members : allLanguageSuffixes.map(suffix => member + "-" + suffix), name : ["CustomObjectTranslation"] }
+      return { members : allLanguages.map(suffix => member + "-" + suffix), name : ["CustomObjectTranslation"] }
     },
     "ValidationRule" : dotSeparatedObjectToObjectTranslation,
     "CustomField" : dotSeparatedObjectToObjectTranslation,
     "QuickAction" : dotSeparatedObjectToObjectTranslation,
-    "RecordType" : dotSeparatedObjectToObjectTranslation
+    "RecordType" : dotSeparatedObjectToObjectTranslation,
+    "CustomMetadata" : convertToType("CustomObject", '.', '_mdt'),
+    "CustomLabel" : globalTranslations,
+    "CustomPageWebLink" : globalTranslations,
+    "CustomTab" : globalTranslations,
+    "ReportType" : globalTranslations,
   };
   
   const xml = await parseXmlFile(deltaXmlFile);
 
-  let somethingChanged: boolean;
-  do {
-    somethingChanged = false;
-    for (const typeNode of xml.Package.types) {
-      const metadataType = typeNode.name[0];
-      if (Object.hasOwn(metadataProcessors, metadataType)) {
-        for (const member of typeNode.members) {
-          const typeAdded = addTypeIfMissing(xml.Package.types, metadataProcessors[metadataType](member));
-          somethingChanged ||= typeAdded;
-        }
+  for (const typeNode of xml.Package.types) {
+    const metadataType = typeNode.name[0];
+    if (Object.hasOwn(metadataProcessors, metadataType)) {
+      for (const member of typeNode.members) {
+        addTypeIfMissing(xml.Package.types, metadataProcessors[metadataType](member));
       }
     }
-  } while (somethingChanged);
+  }
 
   await writeXmlFile(deltaXmlFile, xml);
 }

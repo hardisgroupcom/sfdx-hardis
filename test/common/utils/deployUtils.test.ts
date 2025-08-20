@@ -72,6 +72,18 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
           <members>WorkPlan</members>
           <name>CustomObject</name>
         </types>
+        <types>
+          <members>SomeDataType.one_record</members>
+          <name>CustomMetadata</name>
+        </types>
+        <types>
+          <members>SomeLabel</members>
+          <name>CustomLabel</name>
+        </types>
+        <types>
+          <members>Global_quick_action</members>
+          <name>QuickAction</name>
+        </types>
         <version>63.0</version>
       </Package>`,
       'utf8'
@@ -94,7 +106,12 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
         </types>
         <types>
           <members>WorkPlan</members>
+          <members>SomeDataType_mdt</members>
           <name>CustomObject</name>
+        </types>
+        <types>
+          <members>SomeLabel</members>
+          <name>CustomLabel</name>
         </types>
         <types>
           <members>Account-de</members>
@@ -150,6 +167,34 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
           <members>WorkPlan-sv</members>
           <members>WorkPlan-th</members>
           <name>CustomObjectTranslation</name>
+        </types>
+        <types>
+          <members>SomeDataType.one_record</members>
+          <name>CustomMetadata</name>
+        </types>
+        <types>
+          <members>zh_CN</members>
+          <members>zh_TW</members>
+          <members>da</members>
+          <members>nl</members>
+          <members>fi</members>
+          <members>fr</members>
+          <members>de</members>
+          <members>it</members>
+          <members>ja</members>
+          <members>ko</members>
+          <members>no</members>
+          <members>pt_BR</members>
+          <members>ru</members>
+          <members>es</members>
+          <members>es_MX</members>
+          <members>sv</members>
+          <members>th</members>
+          <name>Translations</name>
+        </types>
+        <types>
+          <members>Global_quick_action</members>
+          <name>QuickAction</name>
         </types>
         <version>63.0</version>
       </Package>`; 
