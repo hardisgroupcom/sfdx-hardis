@@ -961,14 +961,27 @@ export async function extendPackageFileWithDependencies(
       return countBefore !== existingNodeByName.members.length;
     }
   };
+ 
+  const dotSeparatedObjectToObjectTranslation = (member: string) => {
+    const sobject = member.split('.')[0];
+    return { members: allLanguageSuffixes.map(suffix => sobject + "-" + suffix), name: ["CustomObjectTranslation"] };
+  };
 
-  const xml = await parseXmlFile(deltaXmlFile);
   const metadataProcessors = {
     "Layout" : (member: string) => {
       const sobject = member.split('-')[0];
       return { members : allLanguageSuffixes.map(suffix => sobject + "-" + suffix), name : ["CustomObjectTranslation"] }
-    }
+    },
+    "CustomObject" : (member: string) => {
+      return { members : allLanguageSuffixes.map(suffix => member + "-" + suffix), name : ["CustomObjectTranslation"] }
+    },
+    "ValidationRule" : dotSeparatedObjectToObjectTranslation,
+    "CustomField" : dotSeparatedObjectToObjectTranslation,
+    "QuickAction" : dotSeparatedObjectToObjectTranslation,
+    "RecordType" : dotSeparatedObjectToObjectTranslation
   };
+  
+  const xml = await parseXmlFile(deltaXmlFile);
 
   let somethingChanged: boolean;
   do {
