@@ -6,7 +6,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
 import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
-import { parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import {
   deleteConnectedApps,
@@ -20,7 +20,7 @@ import {
 import { getConfig } from '../../../../config/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
-import { soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { soqlQuery, soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -124,11 +124,12 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
     this.result = {}
     /* jscpd:ignore-end */
-    uxLog("action", this, c.cyan(`This command with restore information after the refresh of org ${this.instanceUrl}
+    uxLog("action", this, c.cyan(`This command will restore information after the refresh of org ${this.instanceUrl}
 - Certificates
+- Other Metadatas
+- SAML SSO Config
 - Custom Settings
-- Connected Apps
-- Other Metadata`));
+- Connected Apps`));
     // Prompt user to select a save project path
     const saveProjectPathRoot = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
     // Only get immediate subfolders of saveProjectPathRoot (not recursive)
@@ -155,10 +156,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // 2. Restore Other Metadata
     await this.restoreOtherMetadata();
 
-    // 3. Restore Custom Settings
+    // 3. Restore SamlSsoConfig
+    await this.restoreSamlSsoConfig();
+
+    // 4. Restore Custom Settings
     await this.restoreCustomSettings();
 
-    // 4. Restore Connected Apps
+    // 5. Restore Connected Apps
     await this.restoreConnectedApps();
 
     return this.result;
@@ -250,12 +254,17 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // Warn user about the restore package.xml that needs to be manually checked
     WebSocketClient.sendReportFileMessage(restorePackageXml, "Restore Metadatas package.xml", "report");
     uxLog("action", this, c.cyan(`Now handling the restore of other metadata from ${restorePackageXml}...`));
+    const metadataRestore = await parsePackageXmlFile(restorePackageXml);
+    const metadataSummary = Object.keys(metadataRestore).map(key => {
+      return `${key}(${Array.isArray(metadataRestore[key]) ? metadataRestore[key].length : 0})`;
+    }).join(', ');
     uxLog("warning", this, c.yellow(`Look at the package-metadata-to-restore.xml file in ${c.bold(this.saveProjectPath)} to see what will be restored.`));
-    uxLog("warning", this, c.yellow(`Confirm it's content, or remove/comment part of it if you don't want some metadata to be restored`));
+    uxLog("warning", this, c.yellow(`Confirm it's content, or remove/comment part of it if you don't want some metadata to be restored\n${metadataSummary}`));
+
     const prompt = await prompts({
       type: 'confirm',
       name: 'restore',
-      message: `Please double check package-metadata-to-restore.xml. Do you confirm you want to restore all these metadatas ?`,
+      message: `Please double check package-metadata-to-restore.xml. Do you confirm you want to restore all these metadatas ?\n${metadataSummary}`,
       description: `WARNING: Check and validate/update file ${restorePackageXml} BEFORE it is deployed !`,
       initial: true
     });
@@ -275,6 +284,121 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       uxLog("error", this, c.red(`Failed to restore other metadata in org ${this.instanceUrl}: ${deployResult.error}`));
       this.result = Object.assign(this.result, { success: false, message: `Failed to restore other metadata: ${deployResult.error}` });
       throw new Error(`Failed to restore other metadata:\n${JSON.stringify(deployResult, null, 2)}`);
+    }
+  }
+
+  private async restoreSamlSsoConfig(): Promise<void> {
+    // 0. List all samlssoconfigs in the project, prompt user to select which to restore
+    const samlDir = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'samlssoconfigs');
+    if (!fs.existsSync(samlDir)) {
+      uxLog("action", this, c.cyan('No SAML SSO Configs found, skipping SAML SSO config restore.'));
+      return;
+    }
+    const allSamlFiles = fs.readdirSync(samlDir).filter(f => f.endsWith('.samlssoconfig-meta.xml'));
+    if (allSamlFiles.length === 0) {
+      uxLog("action", this, c.yellow('No SAML SSO Config XML files found., skipping SAML SSO config restore.'));
+      return;
+    }
+    // Prompt user to select which SAML SSO configs to restore
+    const promptSaml = await prompts({
+      type: 'multiselect',
+      name: 'samlFiles',
+      message: 'Select SAML SSO Configs to restore',
+      description: 'Select the SAML SSO Configs you want to restore from the backup. You can select multiple configs.',
+      choices: allSamlFiles.map(f => ({ title: f.replace('.samlssoconfig-meta.xml', ''), value: f })),
+      initial: allSamlFiles // select all by default
+    });
+    const selectedSamlFiles: string[] = promptSaml.samlFiles;
+    if (!selectedSamlFiles || selectedSamlFiles.length === 0) {
+      uxLog("log", this, c.yellow('No SAML SSO Configs selected for restore, skipping.'));
+      return;
+    }
+
+    // 1. Clean up XML and prompt for cert
+    // Query active certificates
+    const soql = "SELECT Id, MasterLabel FROM Certificate WHERE ExpirationDate > TODAY  LIMIT 200";
+    let certs: { Id: string, MasterLabel: string }[] = [];
+    try {
+      const res = await soqlQueryTooling(soql, this.conn);
+      certs = res.records as any;
+    } catch (e) {
+      uxLog("error", this, c.red(`Failed to query active certificates: ${e}`));
+      return;
+    }
+    if (!certs.length) {
+      uxLog("error", this, c.yellow('No active certificates found in org. You\'ll need to update manually field requestSigningCertId with the id of a valid certificate.'));
+      return;
+    }
+    const updated: string[] = [];
+    const errors: string[] = [];
+    for (const samlFile of selectedSamlFiles) {
+      const samlName = samlFile.replace('.samlssoconfig-meta.xml', '');
+      // Prompt user to select a certificate
+      const certPrompt = await prompts({
+        type: 'select',
+        name: 'certId',
+        message: `Select the certificate to use for SAML SSO config ${samlName}`,
+        description: `This will update <requestSigningCertId> in ${samlFile}.`,
+        choices: certs.map(cert => ({
+          title: cert.MasterLabel,
+          value: cert.Id.substring(0, 15)
+        })),
+      });
+      const selectedCertId = certPrompt.certId;
+      if (!selectedCertId) {
+        uxLog("warning", this, c.yellow('No certificate selected. Skipping SAML SSO config update.'));
+        errors.push(`No certificate selected for ${samlName}`);
+        continue;
+      }
+      const filePath = path.join(samlDir, samlFile);
+      let xml = await fs.readFile(filePath, 'utf8');
+      // Remove <oauthTokenEndpoint>...</oauthTokenEndpoint>
+      xml = xml.replace(/<oauthTokenEndpoint>.*?<\/oauthTokenEndpoint>\s*/gs, '');
+      // Remove <salesforceLoginUrl>...</salesforceLoginUrl>
+      xml = xml.replace(/<salesforceLoginUrl>.*?<\/salesforceLoginUrl>\s*/gs, '');
+      // Replace <requestSigningCertId>...</requestSigningCertId>
+      if (/<requestSigningCertId>.*?<\/requestSigningCertId>/s.test(xml)) {
+        xml = xml.replace(/<requestSigningCertId>.*?<\/requestSigningCertId>/s, `<requestSigningCertId>${selectedCertId}</requestSigningCertId>`);
+      }
+      await fs.writeFile(filePath, xml, 'utf8');
+      uxLog("log", this, c.grey(`Updated SAML SSO config ${samlFile} with certificate ${selectedCertId} and removed readonly tags oauthTokenEndpoint & salesforceLoginUrl`));
+      // 2. Prompt user to confirm deployment
+      const promptDeploy = await prompts({
+        type: 'confirm',
+        name: 'deploy',
+        message: `Do you confirm you want to deploy ${samlFile} SAML SSO Config to the org?`,
+        description: 'This will deploy the selected SAML SSO Configs to the org using SFDX',
+        initial: true
+      });
+      if (!promptDeploy.deploy) {
+        uxLog("warning", this, c.yellow(`SAML SSO Config ${samlFile} deployment cancelled by user.`));
+        errors.push(`Deployment cancelled for ${samlFile}`);
+        continue;
+      }
+      const deployCommand = `sf project deploy start -m SamlSsoConfig:${samlName} --target-org ${this.orgUsername}`;
+      try {
+        uxLog("action", this, c.cyan(`Deploying SAML SSO Config ${samlName} to org ${this.instanceUrl}...`));
+        const deployResult = await execSfdxJson(deployCommand, this, { output: true, fail: true, cwd: this.saveProjectPath });
+        if (deployResult.status === 0) {
+          uxLog("success", this, c.green(`SAML SSO Config ${samlName} deployed successfully in org ${this.instanceUrl}`));
+          updated.push(samlName);
+        } else {
+          uxLog("error", this, c.red(`Failed to deploy SAML SSO Config ${samlName}: ${deployResult.error}`));
+          errors.push(`Failed to deploy ${samlName}: ${deployResult.error}`);
+        }
+      } catch (e: any) {
+        uxLog("error", this, c.red(`Error deploying SAML SSO Config ${samlName}: ${e.message}`));
+        errors.push(`Error deploying ${samlName}: ${e.message}`);
+      }
+    }
+    // 3. Summary of results
+    uxLog("action", this, c.cyan(`SAML SSO Config processing completed.`));
+    if (updated.length > 0) {
+      uxLog("success", this, c.green(`Successfully updated and deployed SAML SSO Configs: ${updated.join(', ')}`));
+    }
+    if (errors.length > 0) {
+      uxLog("error", this, c.red(`Errors occurred during SAML SSO Config processing:\n${errors.join('\n')}`));
+      this.result = Object.assign(this.result, { success: false, message: `SAML SSO Config processing errors:\n${errors.join('\n')}` });
     }
   }
 

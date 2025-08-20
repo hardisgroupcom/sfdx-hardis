@@ -142,11 +142,12 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
     this.result = { success: true, message: 'before-refresh command performed successfully' };
 
-    uxLog("action", this, c.cyan(`This command with save information that will need to be restored after org refresh
-- Certificates
-- Custom Settings
+    uxLog("action", this, c.cyan(`This command will save information that must be restored after org refresh, in the following order:
 - Connected Apps
-- Other Metadata`));
+- Certificates
+- Other Metadatas
+- Custom Settings
+  `));
 
     // Check org is connected
     if (!accessToken) {
@@ -813,6 +814,11 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       delete restorePackage["Certificate"];
       await writePackageXmlFile(restorePackageXmlFile, restorePackage);
       uxLog("log", this, c.grey(`Removed Certificates from ${restorePackageXmlFileName} as they will be handled separately`));
+    }
+    if (restorePackage?.["SamlSsoConfig"]) {
+      delete restorePackage["SamlSsoConfig"];
+      await writePackageXmlFile(restorePackageXmlFile, restorePackage);
+      uxLog("log", this, c.grey(`Removed SamlSsoConfig from ${restorePackageXmlFileName} as they will be handled separately`));
     }
   }
 
