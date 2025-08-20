@@ -18,3 +18,4 @@ You can also see specific use cases documentation
 
 - [sfdx-hardis for ISV](salesforce-ci-cd-packaging.md)
 - [sfdx-hardis for Conga](salesforce-ci-cd-conga.md)
+- [sfdx-hardis for CPQ](salesforce-ci-cd-cpq.md)
