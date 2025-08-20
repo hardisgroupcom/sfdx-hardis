@@ -124,24 +124,30 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected instanceUrl: string = '';
   protected refreshSandboxConfig: any = {};
   protected result: any;
+  protected processAll: boolean;
+  protected nameFilter: string | undefined;
+  protected deleteApps: boolean;
+
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgRefreshBeforeRefresh);
     this.conn = flags["target-org"].getConnection();
     this.orgUsername = flags["target-org"].getUsername() as string; // Cast to string to avoid TypeScript error
     this.instanceUrl = this.conn.instanceUrl;
+    this.deleteApps = flags.delete || false;
     const accessToken = this.conn.accessToken; // Ensure accessToken is a string
-    const processAll = flags.all || false;
-    const nameFilter = processAll ? undefined : flags.name; // If --all is set, ignore --name
+    this.processAll = flags.all || false;
+    this.nameFilter = this.processAll ? undefined : flags.name; // If --all is set, ignore --name
     const config = await getConfig("user");
     this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
     this.result = { success: true, message: 'before-refresh command performed successfully' };
 
-
-    uxLog("action", this, c.cyan(`This command with save information that will need to be restored after org refresh
+    uxLog("action", this, c.cyan(`This command will save information that must be restored after org refresh, in the following order:
+- Connected Apps
 - Certificates
+- Other Metadatas
 - Custom Settings
-- Connected Apps`));
+  `));
 
     // Check org is connected
     if (!accessToken) {
@@ -154,6 +160,34 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     await this.saveCustomSettings();
 
+    await this.retrieveDeleteConnectedApps(accessToken);
+
+    return this.result;
+  }
+
+  private async createSaveProject(): Promise<string> {
+    const folderName = this.conn.instanceUrl.replace(/https?:\/\//, '').replace("my.salesforce.com", "").replace(/\//g, '-').replace(/[^a-zA-Z0-9-]/g, '');
+    const sandboxRefreshRootFolder = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
+    const projectPath = path.join(sandboxRefreshRootFolder, folderName);
+    if (fs.existsSync(projectPath)) {
+      uxLog("log", this, c.cyan(`Project folder ${projectPath} already exists. Reusing it.\n(Delete it and run again this command if you want to start fresh)`));
+      return projectPath;
+    }
+    await fs.ensureDir(projectPath);
+    uxLog("action", this, c.cyan(`Creating sfdx-project for sandbox info storage`));
+    const createCommand = `sf project generate --name "${folderName}"`;
+    await execCommand(createCommand, this, {
+      output: true,
+      fail: true,
+    });
+    uxLog("log", this, c.grey('Moving sfdx-project to root...'));
+    await fs.copy(folderName, projectPath, { overwrite: true });
+    await fs.remove(folderName);
+    uxLog("log", this, c.grey(`Save Project created in folder ${projectPath}`));
+    return projectPath;
+  }
+
+  private async retrieveDeleteConnectedApps(accessToken: string): Promise<void> {
     // If metadatas folder is not empty, ask if we want to retrieve them again
     let retrieveConnectedApps = true;
     const connectedAppsFolder = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'connectedApps');
@@ -174,19 +208,21 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     if (retrieveConnectedApps) {
       try {
         // Step 1: Get Connected Apps from org or based on provided name filter
-        const connectedApps = await this.getConnectedApps(this.orgUsername, nameFilter, processAll);
+        const connectedApps = await this.getConnectedApps(this.orgUsername, this.nameFilter, this.processAll);
 
         if (connectedApps.length === 0) {
           uxLog("warning", this, c.yellow('No Connected Apps found'));
-          return { success: false, message: 'No Connected Apps found' };
+          this.result = Object.assign(this.result, { success: false, message: 'No Connected Apps found' })
+          return;
         }
 
         // Step 2: Determine which apps to process (all, filtered, or user-selected)
-        const selectedApps = await this.selectConnectedApps(connectedApps, processAll, nameFilter);
+        const selectedApps = await this.selectConnectedApps(connectedApps, this.processAll, this.nameFilter);
 
         if (selectedApps.length === 0) {
           uxLog("warning", this, c.yellow('No Connected Apps selected'));
-          return { success: false, message: 'No Connected Apps selected' };
+          this.result = Object.assign(this.result, { success: false, message: 'No Connected Apps selected' });
+          return;
         }
         this.refreshSandboxConfig.connectedApps = selectedApps.map(app => app.fullName).sort();
         await this.saveConfig();
@@ -195,8 +231,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         const updatedApps = await this.processConnectedApps(this.orgUsername, selectedApps, this.instanceUrl, accessToken);
 
         // Step 4: Delete Connected Apps from org if required (default behavior)
-        let deleteApps = flags.delete || false;
-        if (!isCI && !deleteApps) {
+
+        if (!isCI && !this.deleteApps) {
           const connectedAppNames = updatedApps.map(app => app.fullName).join(', ');
           const deletePrompt = await prompts({
             type: 'confirm',
@@ -205,16 +241,16 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
             description: 'If you do not delete them, they will remain in the org and can be re-uploaded after refreshing the org.',
             initial: false
           });
-          deleteApps = deletePrompt.delete;
+          this.deleteApps = deletePrompt.delete;
         }
 
-        if (deleteApps) {
+        if (this.deleteApps) {
           uxLog("action", this, c.cyan(`Deleting ${updatedApps.length} Connected Apps from ${this.conn.instanceUrl} ...`));
           await deleteConnectedApps(this.orgUsername, updatedApps, this, this.saveProjectPath);
           uxLog("success", this, c.green('Connected Apps were successfully deleted from the org.'));
         }
 
-        const summaryMessage = deleteApps
+        const summaryMessage = this.deleteApps
           ? `You are now ready to refresh your sandbox org, as you will be able to re-upload the Connected Apps after the refresh.`
           : `Dry-run successful, run again the command with Connected Apps deletion to be able to refresh your org and re-upload the Connected Apps after the refresh.`;
         uxLog("action", this, c.cyan(summaryMessage));
@@ -239,29 +275,6 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         this.result = Object.assign(this.result || {}, handleConnectedAppError(error, this));
       }
     }
-    return this.result;
-  }
-
-  private async createSaveProject(): Promise<string> {
-    const folderName = this.conn.instanceUrl.replace(/https?:\/\//, '').replace("my.salesforce.com", "").replace(/\//g, '-').replace(/[^a-zA-Z0-9-]/g, '');
-    const sandboxRefreshRootFolder = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
-    const projectPath = path.join(sandboxRefreshRootFolder, folderName);
-    if (fs.existsSync(projectPath)) {
-      uxLog("log", this, c.cyan(`Project folder ${projectPath} already exists. Reusing it.\n(Delete it and run again this command if you want to start fresh)`));
-      return projectPath;
-    }
-    await fs.ensureDir(projectPath);
-    uxLog("action", this, c.cyan(`Creating sfdx-project for sandbox info storage`));
-    const createCommand = `sf project generate --name "${folderName}"`;
-    await execCommand(createCommand, this, {
-      output: true,
-      fail: true,
-    });
-    uxLog("log", this, c.grey('Moving sfdx-project to root...'));
-    await fs.copy(folderName, projectPath, { overwrite: true });
-    await fs.remove(folderName);
-    uxLog("log", this, c.grey(`Save Project created in folder ${projectPath}`));
-    return projectPath;
   }
 
   private async getConnectedApps(
@@ -796,6 +809,16 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       delete restorePackage["ConnectedApp"];
       await writePackageXmlFile(restorePackageXmlFile, restorePackage);
       uxLog("log", this, c.grey(`Removed ConnectedApps from ${restorePackageXmlFileName} as they will be handled separately`));
+    }
+    if (restorePackage?.["Certificate"]) {
+      delete restorePackage["Certificate"];
+      await writePackageXmlFile(restorePackageXmlFile, restorePackage);
+      uxLog("log", this, c.grey(`Removed Certificates from ${restorePackageXmlFileName} as they will be handled separately`));
+    }
+    if (restorePackage?.["SamlSsoConfig"]) {
+      delete restorePackage["SamlSsoConfig"];
+      await writePackageXmlFile(restorePackageXmlFile, restorePackage);
+      uxLog("log", this, c.grey(`Removed SamlSsoConfig from ${restorePackageXmlFileName} as they will be handled separately`));
     }
   }
 

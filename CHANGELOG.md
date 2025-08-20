@@ -7,6 +7,12 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/)
   - Retrieve Certificates and other metadatas that could need to be restored
   - Retrieve Custom Settings values
+- [hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/)
+  - Restore Certificates and other metadatas that could need to be restored
+  - Restore Custom Settings values
+  - Smart restore of SAML SSO Config by prompting the user to select a valid certificate
+- Send path to command log file to WebSocketServer
+- Improve startup performances by checking for sfdx-hardis upgrades every 6h and not every 15 mn!
 
 ## [6.0.6 (beta)] 2025-08-17
 

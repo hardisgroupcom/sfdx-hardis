@@ -308,7 +308,7 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   }
   // Authentication is necessary
   if (connectedStatus?.includes("expired")) {
-    uxLog("action", this, c.yellow("Your auth token is expired, you need to authenticate again"));
+    uxLog("action", this, c.yellow("Your auth token is expired, you need to authenticate again\n(Be patient after login, it can take a while 😑)"));
     // Delete rotten authentication json file in case there has been a sandbox refresh
     const homeSfdxDir = path.join(process.env.HOME || process.env.USERPROFILE || "~", '.sfdx');
     const authFile = path.join(homeSfdxDir, `${targetOrg}.json`);

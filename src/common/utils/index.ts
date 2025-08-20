@@ -663,6 +663,9 @@ export async function execCommand(
   let spinner: any;
   if (output && !(options.spinner === false)) {
     spinner = ora({ text: commandLog, spinner: 'moon' }).start();
+    if (globalThis.hardisLogFileStream) {
+      globalThis.hardisLogFileStream.write(stripAnsi(commandLog) + '\n');
+    }
   } else {
     uxLog("other", this, commandLog);
   }
