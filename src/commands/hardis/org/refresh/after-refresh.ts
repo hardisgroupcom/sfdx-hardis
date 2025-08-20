@@ -20,6 +20,7 @@ import {
 import { getConfig } from '../../../../config/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -108,11 +109,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected processAll: boolean;
   protected conn: Connection;
   protected instanceUrl: any;
+  protected orgId: string;
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgRefreshAfterRefresh);
     this.orgUsername = flags["target-org"].getUsername() as string;
     this.conn = flags["target-org"].getConnection();
+    this.orgId = flags["target-org"].getOrgId() as string;
     this.instanceUrl = this.conn.instanceUrl;
     /* jscpd:ignore-start */
     this.processAll = flags.all || false;
@@ -224,7 +227,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const packageXmlCerts = {
       "Certificate": selectedCerts
     }
-    await writePackageXmlFile(path.join(mdApiCertsRestoreFolder, 'manifest', 'package.xml'), packageXmlCerts);
+    await writePackageXmlFile(path.join(mdApiCertsRestoreFolder, 'package.xml'), packageXmlCerts);
 
     // Deploy using metadata API
     uxLog("log", this, c.grey(`Deploying certificates in org ${this.instanceUrl} using Metadata API (Source Api does not support it)...`));
@@ -246,6 +249,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
     // Warn user about the restore package.xml that needs to be manually checked
     WebSocketClient.sendReportFileMessage(restorePackageXml, "Restore Metadatas package.xml", "report");
+    uxLog("action", this, c.cyan(`Now handling the restore of other metadata from ${restorePackageXml}...`));
     uxLog("warning", this, c.yellow(`Look at the package-metadata-to-restore.xml file in ${c.bold(this.saveProjectPath)} to see what will be restored.`));
     uxLog("warning", this, c.yellow(`Confirm it's content, or remove/comment part of it if you don't want some metadata to be restored`));
     const prompt = await prompts({
@@ -261,7 +265,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       return;
     }
     // Deploy the metadata using the package.xml
-    uxLog("action", this, c.cyan('Deploying other metadata to org...'));
+    uxLog("action", this, c.cyan('Deploying other metadatas to org...'));
     const deployCmd = `sf project deploy start --manifest ${restorePackageXml} --target-org ${this.orgUsername} --json`;
     const deployResult = await execSfdxJson(deployCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
     if (deployResult.status === 0) {
@@ -328,14 +332,59 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     uxLog("action", this, c.cyan(`Restoring ${selectedSettings.length} Custom Settings...`));
     const successSettings: string[] = []
     const failedSettings: string[] = []
-    for (const folder of csFolders) {
+    for (const folder of selectedSettings) {
       const jsonFile = path.join(csDir, folder, `${folder}.json`);
       if (!fs.existsSync(jsonFile)) {
         uxLog("warning", this, c.yellow(`No data file for custom setting ${folder}`));
         failedSettings.push(folder);
         continue;
       }
-      const importCmd = `sf data tree import --plan ${jsonFile} --target-org ${this.orgUsername} --json`;
+      // Remove standard fields from the JSON file and create a new file without them, and replace Org Id with the current org one
+      const jsonFileForImport = path.join(csDir, folder, `${folder}-without-standard-fields.json`);
+      const jsonData = await fs.readJson(jsonFile);
+      const standardFields = ['LastModifiedDate', 'IsDeleted', 'CreatedById', 'CreatedDate', 'LastModifiedById', 'SystemModstamp'];
+      let deleteExistingCsBefore = false;
+      jsonData.records = (jsonData?.records || []).map((record: any) => {
+        const newRecord: any = {};
+        for (const key in record) {
+          // Remove standard fields
+          if (!standardFields.includes(key)) {
+            newRecord[key] = record[key];
+          }
+          // Replace Org Id with the current org one
+          if (key === 'SetupOwnerId') {
+            newRecord[key] = this.orgId; // Replace with current org Id
+            deleteExistingCsBefore = true; // Use upsert if SetupOwnerId is present
+          }
+        }
+        return newRecord;
+      });
+      // Write the new JSON file without standard fields
+      await fs.writeJson(jsonFileForImport, jsonData, { spaces: 2 });
+
+      // Delete existing custom settings before import if needed
+      if (deleteExistingCsBefore) {
+        uxLog("log", this, c.grey(`Deleting existing custom settings for ${folder} in org ${this.orgUsername} before import...`));
+        // Query existing custom settings to delete
+        const query = `SELECT Id FROM ${folder} WHERE SetupOwnerId = '${this.orgId}'`;
+        const queryRes = await soqlQuery(query, this.conn);
+        if (queryRes.records.length > 0) {
+          const idsToDelete = (queryRes?.records.map(record => record.Id) || []).filter((id): id is string => typeof id === 'string');
+          uxLog("log", this, c.grey(`Found ${idsToDelete.length} existing custom settings to delete for ${folder} in org ${this.orgUsername}`));
+          const deleteResults = await this.conn.sobject(folder).destroy(idsToDelete, { allOrNone: true });
+          const deletedSuccessFullyIds = deleteResults.filter(result => result.success).map(result => "- " + result.id).join('\n');
+          uxLog("log", this, c.grey(`Deleted ${deletedSuccessFullyIds.length} existing custom settings for ${folder} in org ${this.orgUsername}\n${deletedSuccessFullyIds}`));
+          const deletedErrorIds = deleteResults.filter(result => !result.success).map(result => "- " + result.id).join('\n');
+          if (deletedErrorIds.length > 0) {
+            uxLog("warning", this, c.yellow(`Failed to delete existing custom settings for ${folder} in org ${this.orgUsername}\n${deletedErrorIds}`));
+            continue; // Skip to next setting if deletion failed
+          }
+        } else {
+          uxLog("log", this, c.grey(`No existing custom settings found for ${folder} in org ${this.orgUsername}.`));
+        }
+      }
+      // Import the custom setting using sf data tree import
+      const importCmd = `sf data tree import --files ${jsonFileForImport} --target-org ${this.orgUsername} --json`;
       try {
         const importRes = await execSfdxJson(importCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
         if (importRes.status === 0) {
@@ -355,7 +404,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     uxLog("action", this, c.cyan(`Custom settings restore complete (${successSettings.length} successful, ${failedSettings.length} failed)`));
     if (successSettings.length > 0) {
       const successSettingsNames = successSettings.map(name => "- " + name).join('\n');
-      uxLog("success", this, c.green(`Successfully restored ${successSettings.length} Custom Setting(s): ${successSettingsNames}`));
+      uxLog("success", this, c.green(`Successfully restored ${successSettings.length} Custom Setting(s):\n ${successSettingsNames}`));
     }
     if (failedSettings.length > 0) {
       const failedSettingsNames = failedSettings.map(name => "- " + name).join('\n');
