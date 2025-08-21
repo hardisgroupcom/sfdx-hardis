@@ -39,26 +39,6 @@ import { checkSfdxHardisTraceAvailable } from './orgConfigUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 
-export const allLanguages = [
-  "zh_CN",  // Chinese (Simplified)
-  "zh_TW",  // Chinese (Traditional)
-  "da",     // Danish
-  "nl",     // Dutch
-  "fi",     // Finnish
-  "fr",     // French
-  "de",     // German
-  "it",     // Italian
-  "ja",     // Japanese
-  "ko",     // Korean
-  "no",     // Norwegian
-  "pt_BR",  // Portuguese (Brazil)
-  "ru",     // Russian
-  "es",     // Spanish
-  "es_MX",  // Spanish (Mexico)
-  "sv",     // Swedish
-  "th"      // Thai
-];
-
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
 export async function forceSourcePush(scratchOrgAlias: string, commandThis: any, debug = false, options: any = {}) {
@@ -945,80 +925,6 @@ export async function removePackageXmlContent(
     removedOnly: removedOnly,
     keepEmptyTypes: options.keepEmptyTypes || false,
   });
-}
-
-export async function extendPackageFileWithDependencies(
-  deltaXmlFile: string,
-) {
-  const addTypeIfMissing = (types, typeToAdd): boolean => {
-    if (typeToAdd === null) {
-      return false;
-    }
-
-    const existingNodeByName = types.find(type => type.name[0] === typeToAdd.name[0]);
-    if (!existingNodeByName) {
-      types.push(typeToAdd);
-      return true;
-    } else {
-      const countBefore = existingNodeByName.members.length;
-      existingNodeByName.members = [...new Set([...existingNodeByName.members, ...typeToAdd.members])];
-      return countBefore !== existingNodeByName.members.length;
-    }
-  };
- 
-  const dotSeparatedObjectToObjectTranslation = (member: string) => {
-    const parts = member.split('.');
-    if (parts.length !== 2) {
-      return null;
-    }
-    const sobject = parts[0];
-    return { members: allLanguages.map(languageSuffix => sobject + "-" + languageSuffix), name: ["CustomObjectTranslation"] };
-  };
-
-  const convertToType = (typeName: string, splitBy: string, suffix?: string) => {
-    return (member: string) => {
-      const parts = member.split(splitBy);
-      const baseName = parts[0];
-      
-      return { members: [ baseName + (suffix ?? '')], name: [typeName] };
-    };
-  }
-
-  const globalTranslations = () => {
-    return { members: allLanguages, name: ["Translations"] };
-  }
-
-  const metadataProcessors = {
-    "Layout" : (member: string) => {
-      const sobject = member.split('-')[0];
-      return { members : allLanguages.map(suffix => sobject + "-" + suffix), name : ["CustomObjectTranslation"] }
-    },
-    "CustomObject" : (member: string) => {
-      return { members : allLanguages.map(suffix => member + "-" + suffix), name : ["CustomObjectTranslation"] }
-    },
-    "ValidationRule" : dotSeparatedObjectToObjectTranslation,
-    "CustomField" : dotSeparatedObjectToObjectTranslation,
-    "QuickAction" : dotSeparatedObjectToObjectTranslation,
-    "RecordType" : dotSeparatedObjectToObjectTranslation,
-    "CustomMetadata" : convertToType("CustomObject", '.', '_mdt'),
-    "CustomLabel" : globalTranslations,
-    "CustomPageWebLink" : globalTranslations,
-    "CustomTab" : globalTranslations,
-    "ReportType" : globalTranslations,
-  };
-  
-  const xml = await parseXmlFile(deltaXmlFile);
-
-  for (const typeNode of xml.Package.types) {
-    const metadataType = typeNode.name[0];
-    if (Object.hasOwn(metadataProcessors, metadataType)) {
-      for (const member of typeNode.members) {
-        addTypeIfMissing(xml.Package.types, metadataProcessors[metadataType](member));
-      }
-    }
-  }
-
-  await writeXmlFile(deltaXmlFile, xml);
 }
 
 // Deploy destructive changes
