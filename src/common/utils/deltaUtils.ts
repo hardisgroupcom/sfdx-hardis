@@ -2,7 +2,7 @@
 import { parseXmlFile, writeXmlFile } from './xmlUtils.js';
 
 let allLanguagesParsed: Array<string> | null = null;
-let fullPackageTypes : Array<PackageType> | null = null;
+let fullPackageTypes: Array<PackageType> | null = null;
 
 type PackageType = {
   members: string[];
@@ -54,18 +54,27 @@ export async function extendPackageFileWithDependencies(
       return null;
     }
     const sobject = parts[0];
+    if (sobject.includes("__mdt")) {
+      return null;
+    }
     const languages = await allLanguages(fullPackageFile);
     return { members: languages.map(languageSuffix => sobject + "-" + languageSuffix), name: ["CustomObjectTranslation"] };
   };
 
-  const convertToType = (typeName: string, splitBy: string, suffix?: string) => {
-    return (member: string): PackageType => {
-      const parts = member.split(splitBy);
-      const baseName = parts[0];
+  const dashSeparatedObjectToObjectTranslation = async (member: string): Promise<PackageType | null> => {
+    const parts = member.split('-');
+    if (parts.length !== 2) {
+      return null;
+    }
+    const sobject = parts[0];
+    const languages = await allLanguages(fullPackageFile);
+    return { members: languages.map(languageSuffix => sobject + "-" + languageSuffix), name: ["CustomObjectTranslation"] };
+  };
 
-      return { members: [baseName + (suffix ?? '')], name: [typeName] };
-    };
-  }
+  const objectTranslations = async (member: string): Promise<PackageType> => {
+    const languages = await allLanguages(fullPackageFile);
+    return { members: languages.map(suffix => member + "-" + suffix), name: ["CustomObjectTranslation"] };
+  };
 
   const globalTranslations = async () => {
     const languages = await allLanguages(fullPackageFile);
@@ -93,25 +102,63 @@ export async function extendPackageFileWithDependencies(
     return { members: metadataRecords, name: ["CustomMetadata"] };
   }
 
+  const allCustomFields = async (member: string): Promise<PackageType | null> => {
+    const baseName = member.split('.')[0];
+    const types = await allTypes(fullPackageFile);
+    if (types === null) {
+      return null;
+    }
+
+    const metadataFields =
+      types
+        .find(type => type.name[0] === "CustomField")
+        ?.members
+        .filter(field => field.startsWith(baseName));
+
+    if (!metadataFields || metadataFields.length === 0) {
+      return null;
+    }
+    return { members: metadataFields, name: ["CustomField"] };
+  }
+
+  const allObjectRecordTypes = async (member: string): Promise<PackageType | null> => {
+    
+    if (member.includes("__mdt")) {
+      return null;
+    }
+    const parts = member.split('.');
+    if (parts.length !== 2) {
+      return null;
+    }
+    const types = await allTypes(fullPackageFile);
+    if (types === null) {
+      return null;
+    }
+    const sobject = parts[0];
+
+    const recordTypes = types.
+      find(type => type.name[0] === "RecordType")
+      ?.members
+      .filter(member => member.startsWith(sobject + '.'));
+
+    if (!recordTypes || recordTypes.length === 0) {
+      return null;
+    }
+    return { members: recordTypes, name: ["RecordType"] };
+  };
+
   const metadataProcessors = {
-    "Layout" : async (member: string): Promise<PackageType> => {
-      const sobject = member.split('-')[0];
-      const languages = await allLanguages(fullPackageFile);
-      return { members : languages.map(suffix => sobject + "-" + suffix), name : ["CustomObjectTranslation"] }
-    },
-    "CustomObject" : async (member: string): Promise<PackageType> => {
-      const languages = await allLanguages(fullPackageFile);
-      return { members : languages.map(suffix => member + "-" + suffix), name : ["CustomObjectTranslation"] }
-    },
+    "Layout" : dashSeparatedObjectToObjectTranslation,
+    "CustomObject" : objectTranslations,
     "ValidationRule" : dotSeparatedObjectToObjectTranslation,
     "QuickAction" : dotSeparatedObjectToObjectTranslation,
     "RecordType" : dotSeparatedObjectToObjectTranslation,
-    "CustomMetadata" : convertToType("CustomObject", '.', '_mdt'),
+    "CustomMetadata" : [allCustomFields],
     "CustomLabel" : globalTranslations,
     "CustomPageWebLink" : globalTranslations,
     "CustomTab" : globalTranslations,
     "ReportType" : globalTranslations,
-    "CustomField" : allCustomMetadataRecords, //dotSeparatedObjectToObjectTranslation],
+    "CustomField" : [allObjectRecordTypes, allCustomMetadataRecords, dotSeparatedObjectToObjectTranslation],
   };
   
   const xml = await parseXmlFile(deltaXmlFile);
@@ -121,7 +168,10 @@ export async function extendPackageFileWithDependencies(
     const metadataType = typeNode.name[0];
     if (Object.hasOwn(metadataProcessors, metadataType)) {
       for (const member of typeNode.members) {
-        addTypeIfMissing(xml.Package.types, await metadataProcessors[metadataType](member));
+        const processors = Array.isArray(metadataProcessors[metadataType]) ? metadataProcessors[metadataType] : [metadataProcessors[metadataType]];
+        for (const processor of processors) {
+          addTypeIfMissing(xml.Package.types, await processor(member));
+        }
       }
     }
   }

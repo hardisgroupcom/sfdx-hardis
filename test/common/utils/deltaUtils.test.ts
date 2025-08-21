@@ -20,11 +20,8 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
       <Package xmlns="http://soap.sforce.com/2006/04/metadata">
         <types>
           <members>Opportunity</members>
+          <members>SomeDataType__mdt</members>
           <name>CustomObject</name>
-        </types>
-        <types>
-          <members>Opportunity.SomeRecordType</members>
-          <name>RecordType</name>
         </types>
         <types>
           <members>Opportunity-Some layout 1</members>
@@ -43,6 +40,16 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
           <members>SomeAnotherDataType.record_one</members>
           <members>SomeAnotherDataType.record_two</members>
           <name>CustomMetadata</name>
+        </types>
+        <types>
+          <members>SomeDataType__mdt.SomeField1__c</members>
+          <members>SomeDataType__mdt.SomeField2__c</members>
+          <name>CustomField</name>
+        </types>
+        <types>
+          <members>Opportunity.Type1</members>
+          <members>Opportunity.Type2</members>
+          <name>RecordType</name>
         </types>
         <types>
           <members>de</members>
@@ -65,7 +72,7 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
     expect(fileXml.Package.types).to.have.deep.members(expectedXml.Package.types);
   }
 
-  it('should add all custom metadata records if some fields were changed', async () => {
+  it('should add all custom metadata records if CustomField was changed', async () => {
     fs.writeFileSync(
       deltaXmlFile,
       `<?xml version="1.0" encoding="UTF-8"?>
@@ -97,6 +104,42 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
     await expectXmlEquals(expectedXmlString, deltaXmlFile);
   });
 
+  it('should add object translation, record types if CustomField was changed', async () => {
+    fs.writeFileSync(
+      deltaXmlFile,
+      `<?xml version="1.0" encoding="UTF-8"?>
+      <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+        <types>
+          <members>Opportunity.SomeField__c</members>
+          <name>CustomField</name>
+        </types>
+        <version>63.0</version>
+      </Package>`,
+      'utf8'
+    );
+
+    const expectedXmlString = `<?xml version="1.0" encoding="UTF-8"?>
+      <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+        <types>
+          <members>Opportunity.SomeField__c</members>
+          <name>CustomField</name>
+        </types>
+        <types>
+          <members>Opportunity-de</members>
+          <members>Opportunity-fr</members>
+          <name>CustomObjectTranslation</name>
+        </types>
+        <types>
+          <members>Opportunity.Type1</members>
+          <members>Opportunity.Type2</members>
+          <name>RecordType</name>
+        </types>
+        <version>63.0</version>
+      </Package>`; 
+
+    await extendPackageFileWithDependencies(deltaXmlFile, fullXmlFile);
+    await expectXmlEquals(expectedXmlString, deltaXmlFile);
+  });
   
   it('should add object translations to any layout', async () => {
     fs.writeFileSync(
@@ -196,14 +239,13 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
     await expectXmlEquals(expectedXmlString, deltaXmlFile);
   });
 
-  // TODO !!
-  it.skip('should ??? when custom metadata record changes', async () => {
+  it('should add all fields when custom metadata record changes', async () => {
     fs.writeFileSync(
       deltaXmlFile,
       `<?xml version="1.0" encoding="UTF-8"?>
       <Package xmlns="http://soap.sforce.com/2006/04/metadata">
         <types>
-          <members>SomeDataType.one_record</members>
+          <members>SomeDataType.record_one</members>
           <name>CustomMetadata</name>
         </types>
         <version>63.0</version>
@@ -214,8 +256,13 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
     const expectedXmlString = `<?xml version="1.0" encoding="UTF-8"?>
       <Package xmlns="http://soap.sforce.com/2006/04/metadata">
         <types>
-          <members>SomeDataType.one_record</members>
+          <members>SomeDataType.record_one</members>
           <name>CustomMetadata</name>
+        </types>
+        <types>
+          <members>SomeDataType__mdt.SomeField1__c</members>
+          <members>SomeDataType__mdt.SomeField2__c</members>
+          <name>CustomField</name>
         </types>
         <version>63.0</version>
       </Package>`; 
