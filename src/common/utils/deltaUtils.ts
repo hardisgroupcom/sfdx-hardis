@@ -9,13 +9,13 @@ type PackageType = {
   name: string[];
 };
 
-const allTypes = async (fullPackageFile: string): Promise<Array<PackageType> | null> => {
+const allTypes = async (fullPackageFile: string): Promise<Array<PackageType>> => {
   if (fullPackageTypes !== null) {
     return fullPackageTypes;
   }
 
   fullPackageTypes = (await parseXmlFile(fullPackageFile)).Package.types;
-  return fullPackageTypes;
+  return fullPackageTypes ?? [];
 };
 
 const allLanguages = async (fullPackageFile: string): Promise<Array<string>> => {
@@ -23,7 +23,7 @@ const allLanguages = async (fullPackageFile: string): Promise<Array<string>> => 
     return allLanguagesParsed;
   }
 
-  allLanguagesParsed = (await allTypes(fullPackageFile))?.find(type => type.name[0] === "Translations")?.members ?? [];
+  allLanguagesParsed = (await allTypes(fullPackageFile)).find(type => type.name[0] === "Translations")?.members ?? [];
   return allLanguagesParsed;
 };
 
@@ -87,9 +87,6 @@ export async function extendPackageFileWithDependencies(
     }
     const baseName = member.split('__mdt')[0];
     const types = await allTypes(fullPackageFile);
-    if (types === null) {
-      return null;
-    }
     const metadataRecords = 
       types
       .find(type => type.name[0] === "CustomMetadata")
@@ -105,10 +102,6 @@ export async function extendPackageFileWithDependencies(
   const allCustomFields = async (member: string): Promise<PackageType | null> => {
     const baseName = member.split('.')[0];
     const types = await allTypes(fullPackageFile);
-    if (types === null) {
-      return null;
-    }
-
     const metadataFields =
       types
         .find(type => type.name[0] === "CustomField")
@@ -131,9 +124,6 @@ export async function extendPackageFileWithDependencies(
       return null;
     }
     const types = await allTypes(fullPackageFile);
-    if (types === null) {
-      return null;
-    }
     const sobject = parts[0];
 
     const recordTypes = types.
