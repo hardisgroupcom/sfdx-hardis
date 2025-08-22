@@ -27,26 +27,26 @@ const allLanguages = async (fullPackageFile: string): Promise<Array<string>> => 
   return allLanguagesParsed;
 };
 
+const addTypeIfMissing = (types: Array<PackageType>, typeToAdd: PackageType): boolean => {
+  if (typeToAdd === null) {
+    return false;
+  }
+
+  const existingNodeByName = types.find(type => type.name[0] === typeToAdd.name[0]);
+  if (!existingNodeByName) {
+    types.push(typeToAdd);
+    return true;
+  } else {
+    const countBefore = existingNodeByName.members.length;
+    existingNodeByName.members = [...new Set([...existingNodeByName.members, ...typeToAdd.members])];
+    return countBefore !== existingNodeByName.members.length;
+  }
+};
+
 export async function extendPackageFileWithDependencies(
   deltaXmlFile: string,
   fullPackageFile: string,
 ) {
-
-  const addTypeIfMissing = (types: Array<PackageType>, typeToAdd: PackageType): boolean => {
-    if (typeToAdd === null) {
-      return false;
-    }
-
-    const existingNodeByName = types.find(type => type.name[0] === typeToAdd.name[0]);
-    if (!existingNodeByName) {
-      types.push(typeToAdd);
-      return true;
-    } else {
-      const countBefore = existingNodeByName.members.length;
-      existingNodeByName.members = [...new Set([...existingNodeByName.members, ...typeToAdd.members])];
-      return countBefore !== existingNodeByName.members.length;
-    }
-  };
  
   const dotSeparatedObjectToObjectTranslation = async (member: string): Promise<PackageType | null> => {
     const parts = member.split('.');
