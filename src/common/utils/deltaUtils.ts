@@ -1,30 +1,43 @@
 
 import { parseXmlFile, writeXmlFile } from './xmlUtils.js';
 
-let allLanguagesParsed: Array<string> | null = null;
-let fullPackageTypes: Array<PackageType> | null = null;
-
 type PackageType = {
   members: string[];
   name: string[];
 };
 
+type Cache = {
+  recordTypes: PackageType | null | undefined;
+  customFields: PackageType | null | undefined;
+  customMetadata: PackageType | null | undefined;
+  allLanguagesParsed: Array<string> | null;
+  fullPackageTypes: Array<PackageType> | null;
+};
+
+const cache: Cache = {
+  allLanguagesParsed: null,
+  fullPackageTypes: null,
+  recordTypes: null,
+  customFields: null,
+  customMetadata: null,
+};
+
 const allTypes = async (fullPackageFile: string): Promise<Array<PackageType>> => {
-  if (fullPackageTypes !== null) {
-    return fullPackageTypes;
+  if (cache.fullPackageTypes) {
+    return cache.fullPackageTypes;
   }
 
-  fullPackageTypes = (await parseXmlFile(fullPackageFile)).Package.types;
-  return fullPackageTypes ?? [];
+  cache.fullPackageTypes = (await parseXmlFile(fullPackageFile)).Package.types;
+  return cache.fullPackageTypes ?? [];
 };
 
 const allLanguages = async (fullPackageFile: string): Promise<Array<string>> => {
-  if (allLanguagesParsed !== null) {
-    return allLanguagesParsed;
+  if (cache.allLanguagesParsed) {
+    return cache.allLanguagesParsed;
   }
 
-  allLanguagesParsed = (await allTypes(fullPackageFile)).find(type => type.name[0] === "Translations")?.members ?? [];
-  return allLanguagesParsed;
+  cache.allLanguagesParsed = (await allTypes(fullPackageFile)).find(type => type.name[0] === "Translations")?.members ?? [];
+  return cache.allLanguagesParsed;
 };
 
 const addTypeIfMissing = (types: Array<PackageType>, typeToAdd: PackageType): boolean => {
@@ -88,30 +101,22 @@ export async function extendPackageFileWithDependencies(
     const baseName = member.split('__mdt')[0];
     const types = await allTypes(fullPackageFile);
     const metadataRecords = 
-      types
-      .find(type => type.name[0] === "CustomMetadata")
+      (cache.customMetadata ?? (cache.customMetadata = types.find(type => type.name[0] === "CustomMetadata")))
       ?.members
       .filter(member => member.startsWith(baseName));
 
-    if (!metadataRecords || metadataRecords.length === 0) {
-      return null;
-    }
-    return { members: metadataRecords, name: ["CustomMetadata"] };
+    return metadataRecords?.length ? { members: metadataRecords, name: ["CustomMetadata"] } : null;
   }
 
   const allCustomFields = async (member: string): Promise<PackageType | null> => {
     const baseName = member.split('.')[0];
     const types = await allTypes(fullPackageFile);
-    const metadataFields =
-      types
-        .find(type => type.name[0] === "CustomField")
-        ?.members
-        .filter(field => field.startsWith(baseName));
+    const metadataFields = 
+      (cache.customFields ?? (cache.customFields = types.find(type => type.name[0] === "CustomField")))
+      ?.members
+      .filter(field => field.startsWith(baseName));
 
-    if (!metadataFields || metadataFields.length === 0) {
-      return null;
-    }
-    return { members: metadataFields, name: ["CustomField"] };
+    return metadataFields?.length ? { members: metadataFields, name: ["CustomField"] } : null;
   }
 
   const allObjectRecordTypes = async (member: string): Promise<PackageType | null> => {
@@ -126,15 +131,12 @@ export async function extendPackageFileWithDependencies(
     const types = await allTypes(fullPackageFile);
     const sobject = parts[0];
 
-    const recordTypes = types.
-      find(type => type.name[0] === "RecordType")
+    const recordTypesMembers =
+      (cache.recordTypes ?? (cache.recordTypes = types.find(type => type.name[0] === "RecordType")))
       ?.members
       .filter(member => member.startsWith(sobject + '.'));
 
-    if (!recordTypes || recordTypes.length === 0) {
-      return null;
-    }
-    return { members: recordTypes, name: ["RecordType"] };
+    return recordTypesMembers?.length ? { members: recordTypesMembers, name: ["RecordType"] } : null;
   };
 
   const metadataProcessors = {
