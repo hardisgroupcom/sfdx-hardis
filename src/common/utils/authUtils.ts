@@ -496,7 +496,6 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
       return tmpSshKeyFile;
     }
   }
-  console.log(c.grey(`[sfdx-hardis] No certificate key found`));
   if (isCI) {
     console.error(
       c.red(
