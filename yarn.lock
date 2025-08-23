@@ -982,10 +982,10 @@
   resolved "https://registry.yarnpkg.com/@cparra/apex-reflection/-/apex-reflection-2.19.0.tgz#adb6d181ac5027823df8cbb05228a89fa1c56ff0"
   integrity sha512-BtZnykjiHxox5XYkGYKZ+lZ+2J168F9cUV40O4TiNHjR0d16bJ+gauzaprNtl8+C31J0lW7ZOPQS7M66QGek7Q==
 
-"@cparra/apexdocs@^3.14.0":
-  version "3.14.0"
-  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.14.0.tgz#29a0ce896075eb135a6943eebbbbc9e9518532f3"
-  integrity sha512-MvBmQ6dQdWiIcAHG8FZT4BzAB/drcveBXPk6oQpv0m7ClhLcDOXPYQUrupjnc0ZqbV8Sxe1Ge+tyy6efxWZw1Q==
+"@cparra/apexdocs@^3.14.1":
+  version "3.14.1"
+  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.14.1.tgz#8ae939621663616c24d1785462b5635f8743bb93"
+  integrity sha512-rin57h+bP4voMcIXZo+3SzPiVpJ5DRwFHpi7Geb4jY5YodgBz96jO3VmKN/MT2tEdieg3lW7vOUC4yY6Z5Dzcg==
   dependencies:
     "@cparra/apex-reflection" "2.19.0"
     "@salesforce/source-deploy-retrieve" "^12.20.1"
@@ -1677,10 +1677,10 @@
     zod "^3.22.4"
     zod-to-json-schema "^3.22.3"
 
-"@langchain/core@^0.3.71":
-  version "0.3.71"
-  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-0.3.71.tgz#6aa33501d21a05873e0c6b29bc91a915f194bdcd"
-  integrity sha512-ejArFmm/lZ9je2rbMLpkFZnva8jkvDhFCn370WAAVP8akbPOLgDA+S2e5jvj+G/oHraOwmviY8EnxbPXXcDvfw==
+"@langchain/core@^0.3.72":
+  version "0.3.72"
+  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-0.3.72.tgz#725e2fc863c45672862c8486083e5703557ab422"
+  integrity sha512-WsGWVZYnlKffj2eEfDocPNiaTRoxyYiLSQdQ7oxZvxGZBqo/90vpjbC33UGK1uPNBM4kT+pkdaol/MnvKUh8TQ==
   dependencies:
     "@cfworker/json-schema" "^4.0.2"
     ansi-styles "^5.0.0"
@@ -4859,10 +4859,10 @@ chalk@^4.0.0, chalk@^4.0.2, chalk@^4.1.0, chalk@^4.1.2:
     ansi-styles "^4.1.0"
     supports-color "^7.1.0"
 
-chalk@^5.0.0, chalk@^5.2.0, chalk@^5.3.0, chalk@^5.4.1:
-  version "5.4.1"
-  resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.4.1.tgz#1b48bf0963ec158dce2aacf69c093ae2dd2092d8"
-  integrity sha512-zgVZuo2WcZgfUEmsn6eO3kINexW8RAE4maiQ8QNs8CtpPCSyMiYsULR3HQYkm3w8FIA3SberyMJMSldGsW+U3w==
+chalk@^5.0.0, chalk@^5.2.0, chalk@^5.3.0, chalk@^5.6.0:
+  version "5.6.0"
+  resolved "https://registry.yarnpkg.com/chalk/-/chalk-5.6.0.tgz#a1a8d294ea3526dbb77660f12649a08490e33ab8"
+  integrity sha512-46QrSQFyVSEyYAgQ22hQ+zDa60YHA4fBstHmtSApj1Y5vKtG27fWowW03jCk5KcbXEWPZUIR894aARCA/G1kfQ==
 
 change-case@^4, change-case@^4.1.2:
   version "4.1.2"
@@ -6195,12 +6195,12 @@ eslint-plugin-jsdoc@^46.10.1:
     semver "^7.5.4"
     spdx-expression-parse "^4.0.0"
 
-eslint-plugin-sf-plugin@^1.20.27:
-  version "1.20.29"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-sf-plugin/-/eslint-plugin-sf-plugin-1.20.29.tgz#2ac1705753e755ff411be8246a2f79adaea07755"
-  integrity sha512-yMcmHWL/uMPj0JHNKditfyo9URfJ1s6BVEWfPACM1jzQ+Q6ed0CJDeUNiw3/VrYMV5mzjaqIzJtUU+rxwwXOZA==
+eslint-plugin-sf-plugin@^1.20.31:
+  version "1.20.31"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-sf-plugin/-/eslint-plugin-sf-plugin-1.20.31.tgz#d655ea3bf2f41376021d93612ee1e99c28415b3d"
+  integrity sha512-vFVhmiUVbiqvbD6wa/+O0xNHNhP+zlNMlDEHDNelKwNzEKnI8lrL5CzJKsKOw1r9aa0iEEUuaaHplRUeanflGQ==
   dependencies:
-    "@salesforce/core" "^8.18.1"
+    "@salesforce/core" "^8.19.1"
     "@typescript-eslint/utils" "^7.18.0"
 
 eslint-plugin-unicorn@^50.0.1:
