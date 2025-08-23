@@ -14,6 +14,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Send path to command log file to WebSocketServer
 - Improve startup performances by checking for sfdx-hardis upgrades every 6h and not every 15 mn!
 - [hardis:org:diagnose:unused-connected-app](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/): Fix bug when not escaping App name in SOQL query
+- Update banner
 
 ## [6.0.6 (beta)] 2025-08-17
 
