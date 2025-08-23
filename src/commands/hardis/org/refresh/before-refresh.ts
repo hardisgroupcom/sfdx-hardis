@@ -782,6 +782,17 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     }
     uxLog("log", this, c.grey(`Save package XML is located at ${targetFile}`));
     WebSocketClient.sendReportFileMessage(targetFile, "Save package XML", 'report');
+    // Prompt user to check packageXml content and update it if necessary
+    const promptRes = await prompts({
+      type: 'confirm',
+      name: 'checkPackageXml',
+      message: `Please check package XML file ${targetFile} before retrieving, update it to add metadata if necessary then continue`,
+      description: 'You can add or remove metadata types to save before proceeding.',
+      initial: true
+    });
+    if (!promptRes.checkPackageXml) {
+      uxLog("log", this, c.grey(`Skipping package XML check`));
+    }
     return targetFile;
   }
 
