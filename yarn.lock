@@ -1677,10 +1677,10 @@
     zod "^3.22.4"
     zod-to-json-schema "^3.22.3"
 
-"@langchain/core@^0.3.71":
-  version "0.3.71"
-  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-0.3.71.tgz#6aa33501d21a05873e0c6b29bc91a915f194bdcd"
-  integrity sha512-ejArFmm/lZ9je2rbMLpkFZnva8jkvDhFCn370WAAVP8akbPOLgDA+S2e5jvj+G/oHraOwmviY8EnxbPXXcDvfw==
+"@langchain/core@^0.3.72":
+  version "0.3.72"
+  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-0.3.72.tgz#725e2fc863c45672862c8486083e5703557ab422"
+  integrity sha512-WsGWVZYnlKffj2eEfDocPNiaTRoxyYiLSQdQ7oxZvxGZBqo/90vpjbC33UGK1uPNBM4kT+pkdaol/MnvKUh8TQ==
   dependencies:
     "@cfworker/json-schema" "^4.0.2"
     ansi-styles "^5.0.0"
