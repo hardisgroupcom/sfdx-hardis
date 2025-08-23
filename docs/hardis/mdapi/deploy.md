@@ -36,27 +36,27 @@ This command acts as an intelligent wrapper around the Salesforce CLI's metadata
 
 ## Parameters
 
-| Name                            |  Type   | Description              |                Default                 | Required |                                Options                                 |
-|:--------------------------------|:-------:|:-------------------------|:--------------------------------------:|:--------:|:----------------------------------------------------------------------:|
-| checkonly<br/>-c                | boolean | checkOnly                |                                        |          |                                                                        |
-| concise                         | boolean | concise                  |                                        |          |                                                                        |
-| debug                           | boolean | debug                    |                                        |          |                                                                        |
-| deploydir<br/>-d                | option  | deployDir                |                                        |          |                                                                        |
-| flags-dir                       | option  | undefined                |                                        |          |                                                                        |
-| ignoreerrors                    | boolean | ignoreErrors             |                                        |          |                                                                        |
-| ignorewarnings<br/>-g           | boolean | ignoreWarnings           |                                        |          |                                                                        |
-| json                            | boolean | Format output as json.   |                                        |          |                                                                        |
-| purgeondelete                   | boolean | purgeOnDelete            |                                        |          |                                                                        |
-| runtests<br/>-r                 | option  | runTests                 |                                        |          |                                                                        |
-| singlepackage<br/>-s            | boolean | singlePackage            |                                        |          |                                                                        |
-| soapdeploy                      | boolean | soapDeploy               |                                        |          |                                                                        |
-| target-org<br/>-o               | option  | undefined                | nicolas.vuillamy@cloudity.com.playnico |          |                                                                        |
-| testlevel<br/>-l                | option  | testLevel                |               NoTestRun                |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
-| validateddeployrequestid<br/>-q | option  | validatedDeployRequestId |                                        |          |                                                                        |
-| verbose                         | boolean | verbose                  |                                        |          |                                                                        |
-| wait<br/>-w                     | option  | wait                     |                  120                   |          |                                                                        |
-| websocket                       | option  | websocket                |                                        |          |                                                                        |
-| zipfile<br/>-f                  | option  | zipFile                  |                                        |          |                                                                        |
+| Name                            |  Type   | Description              |  Default  | Required |                                Options                                 |
+|:--------------------------------|:-------:|:-------------------------|:---------:|:--------:|:----------------------------------------------------------------------:|
+| checkonly<br/>-c                | boolean | checkOnly                |           |          |                                                                        |
+| concise                         | boolean | concise                  |           |          |                                                                        |
+| debug                           | boolean | debug                    |           |          |                                                                        |
+| deploydir<br/>-d                | option  | deployDir                |           |          |                                                                        |
+| flags-dir                       | option  | undefined                |           |          |                                                                        |
+| ignoreerrors                    | boolean | ignoreErrors             |           |          |                                                                        |
+| ignorewarnings<br/>-g           | boolean | ignoreWarnings           |           |          |                                                                        |
+| json                            | boolean | Format output as json.   |           |          |                                                                        |
+| purgeondelete                   | boolean | purgeOnDelete            |           |          |                                                                        |
+| runtests<br/>-r                 | option  | runTests                 |           |          |                                                                        |
+| singlepackage<br/>-s            | boolean | singlePackage            |           |          |                                                                        |
+| soapdeploy                      | boolean | soapDeploy               |           |          |                                                                        |
+| target-org<br/>-o               | option  | undefined                |           |          |                                                                        |
+| testlevel<br/>-l                | option  | testLevel                | NoTestRun |          | NoTestRun<br/>RunSpecifiedTests<br/>RunLocalTests<br/>RunAllTestsInOrg |
+| validateddeployrequestid<br/>-q | option  | validatedDeployRequestId |           |          |                                                                        |
+| verbose                         | boolean | verbose                  |           |          |                                                                        |
+| wait<br/>-w                     | option  | wait                     |    120    |          |                                                                        |
+| websocket                       | option  | websocket                |           |          |                                                                        |
+| zipfile<br/>-f                  | option  | zipFile                  |           |          |                                                                        |
 
 ## Examples
 

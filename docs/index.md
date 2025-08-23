@@ -3,8 +3,6 @@
 
 [![sfdx-hardis by Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner.png)](https://sfdx-hardis.cloudity.com)
 
-# sfdx-hardis
-
 _Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl) _and [_Dreamforce 24!_](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH)_
 
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
@@ -18,7 +16,7 @@ _Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessi
 [![License](https://img.shields.io/npm/l/sfdx-hardis.svg)](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/package.json)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-Toolbox for Salesforce DX, by [**Cloudity**](https://cloudity.com/) & friends, natively compliant with most platforms and tools.
+Sfdx-hardis is a Salesforce CLI Plugin, by [**Cloudity**](https://cloudity.com/) & friends, natively compliant with most Git platforms, messaging tools, ticketing systems and AI providers.
 
 ![Native Integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
 
@@ -33,11 +31,7 @@ It will allow you to:
 
 ___
 
-Watch sfdx-hardis 2025 new features :)
-
-[![sfdx-hardis 2025 new features](https://img.youtube.com/vi/JRKH5COUVQ0/0.jpg)](https://youtu.be/JRKH5COUVQ0)
-
-**sfdx-hardis** commands are also available with UI in [**SFDX Hardis Visual Studio Code Extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+**sfdx-hardis** commands and configuration are best used with an UI in [**SFDX Hardis Visual Studio Code Extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
 [![VsCode SFDX Hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/extension-demo.gif)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 

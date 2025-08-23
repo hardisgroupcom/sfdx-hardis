@@ -36,18 +36,18 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name               |  Type   | Description                                                   |                Default                 | Required | Options |
-|:-------------------|:-------:|:--------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d       | boolean | Activate debug mode (more logs)                               |                                        |          |         |
-| flags-dir          | option  | undefined                                                     |                                        |          |         |
-| folder<br/>-f      | option  | Folder                                                        |                   .                    |          |         |
-| includemanaged     | boolean | Include items from managed packages                           |                                        |          |         |
-| instanceurl<br/>-r | option  | URL of org instance                                           |                                        |          |         |
-| json               | boolean | Format output as json.                                        |                                        |          |         |
-| packagexml<br/>-p  | option  | Path to package.xml manifest file                             |                                        |          |         |
-| skipauth           | boolean | Skip authentication check when a default username is required |                                        |          |         |
-| target-org<br/>-o  | option  | undefined                                                     | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket          | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                        |          |         |
+| Name               |  Type   | Description                                                   | Default | Required | Options |
+|:-------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| debug<br/>-d       | boolean | Activate debug mode (more logs)                               |         |          |         |
+| flags-dir          | option  | undefined                                                     |         |          |         |
+| folder<br/>-f      | option  | Folder                                                        |    .    |          |         |
+| includemanaged     | boolean | Include items from managed packages                           |         |          |         |
+| instanceurl<br/>-r | option  | URL of org instance                                           |         |          |         |
+| json               | boolean | Format output as json.                                        |         |          |         |
+| packagexml<br/>-p  | option  | Path to package.xml manifest file                             |         |          |         |
+| skipauth           | boolean | Skip authentication check when a default username is required |         |          |         |
+| target-org<br/>-o  | option  | undefined                                                     |         |          |         |
+| websocket          | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
 
 ## Examples
 
