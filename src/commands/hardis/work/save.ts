@@ -221,9 +221,20 @@ The command's technical implementation involves a series of orchestrated steps:
     summaryMsg += c.grey(`- Source branch: ${c.green(this.currentBranch)}\n`);
     summaryMsg += c.grey(`- Target branch: ${c.green(this.targetBranch)}`);
     uxLog("log", this, summaryMsg);
-    uxLog("warning", this, `${c.yellow(`When your ${GitProvider.getMergeRequestName(this.gitUrl)} will have been merged:`)}
+    uxLog("log", this, `${c.yellow(`When your ${GitProvider.getMergeRequestName(this.gitUrl)} will have been merged:`)}
 - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
 - Use New User Story menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`);
+    // Manual actions file
+    const config = await getConfig('project');
+    if (config.manualActionsFileUrl && config.manualActionsFileUrl !== '') {
+      uxLog("warning", this, c.yellow(`If you have pre-deployment or post-deployment manual actions, make sure to write them in the file ${c.green(config.manualActionsFileUrl)}`));
+      if (WebSocketClient.isAliveWithLwcUI()) {
+        WebSocketClient.sendReportFileMessage(config.manualActionsFileUrl, `Manual Actions file`, 'docUrl');
+      }
+    }
+    else {
+      uxLog("warning", this, c.yellow(`You should have a manual actions file defined. Ask your release manager to create one for the project and set its link in your .sfdx-hardis.yml file under manualActionsFileUrl property.`));
+    }
     if (!WebSocketClient.isAliveWithLwcUI()) {
       uxLog("log", this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(mergeRequestDoc)}`));
     }
