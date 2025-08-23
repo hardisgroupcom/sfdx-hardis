@@ -155,7 +155,7 @@ The command's technical implementation involves:
       return await this.analyzeConnectedApp(allAppsInLoginHistoryNames, connectedApp, conn);
     }));
 
-    uxLog("action", this, c.cyan(`Analysis complete. Deleting temporary project files...`));
+    uxLog("log", this, c.grey(`Analysis complete. Deleting temporary project files...`));
     await fs.rm(tmpDirForSfdxProject, { recursive: true });
 
     this.connectedAppResults = sortArray(this.connectedAppResults,
@@ -264,7 +264,7 @@ The command's technical implementation involves:
 
   private async checkOAuthToken(connectedApp: any, conn: any, loginHistoryFound: boolean, severity: NotifSeverity, reason: string) {
     uxLog("log", this, c.grey(`Looking in OAuthToken for last usage of ${connectedApp.Name}...`));
-    const oAuthTokenQuery = `SELECT AppName,User.Name,LastUsedDate FROM OAuthToken WHERE AppName='${connectedApp.Name.replace(/'/g, "'")}' ORDER BY LastUsedDate DESC LIMIT 1`;
+    const oAuthTokenQuery = `SELECT AppName,User.Name,LastUsedDate FROM OAuthToken WHERE AppName='${connectedApp.Name.replace(/'/g, "\\'")}' ORDER BY LastUsedDate DESC LIMIT 1`;
     const oAuthTokenQueryRes = await soqlQuery(oAuthTokenQuery, conn);
     const latestOAuthToken = oAuthTokenQueryRes.records.length === 1 ? oAuthTokenQueryRes.records[0] : null;
     if (latestOAuthToken && latestOAuthToken.LastUsedDate) {
