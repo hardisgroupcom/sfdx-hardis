@@ -1062,7 +1062,7 @@
       "default": "",
       "description": "URL of the XLS file that contains manual actions to perform before or after a deployment",
       "examples": [
-        "https://some.sharepoint.com/file.xlsx",
+        "https://some.sharepoint.com/file.xlsx"
       ],
       "title": "Manual Actions File URL",
       "type": "string"
