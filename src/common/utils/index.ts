@@ -1643,3 +1643,21 @@ export function sortCrossPlatform(arr: any[]) {
     return 0;
   });
 }
+
+export function getExecutionContext(): "web" | "local" {
+  const env = process.env;
+  // GitHub Codespaces / github.dev
+  if (env.CODESPACES || env.GITHUB_CODESPACE_TOKEN) {
+    return "web";
+  }
+  // Salesforce Code Builder (commonly sets Salesforce-specific vars)
+  if (env.CODE_BUILDER_URI) {
+    return "web";
+  }
+  // Check for containerized/cloud workspaces
+  if (env.CLOUD_SHELL || env.CLOUD_ENV) {
+    return "web";
+  }
+  // Default: assume local
+  return "local";
+}

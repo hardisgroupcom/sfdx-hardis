@@ -1,22 +1,23 @@
 import c from 'chalk';
-import * as crossSpawn from 'cross-spawn';
 import fs from 'fs-extra';
 import * as path from 'path';
 import {
   createTempDir,
   execCommand,
   execSfdxJson,
+  findJsonInString,
   getCurrentGitBranch,
+  getExecutionContext,
   isCI,
   promptInstanceUrl,
   uxLog,
 } from './index.js';
 import { CONSTANTS, getConfig } from '../../config/index.js';
 import { SfError } from '@salesforce/core';
-import { prompts } from './prompts.js';
 import { clearCache } from '../cache/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { decryptFile } from '../cryptoUtils.js';
+import spawn from 'cross-spawn';
 
 // Authorize an org with sfdxAuthUrl, manually or with JWT
 export async function authOrg(orgAlias: string, options: any) {
@@ -218,46 +219,37 @@ export async function authOrg(orgAlias: string, options: any) {
 
       const configInfoUsr = await getConfig('user');
 
-      // Prompt user for Web or Device login
-      const loginTypeRes = await prompts({
-        name: 'loginType',
-        type: 'select',
-        message: "Select a login type",
-        description: 'Choose the authentication method that works best for your environment. Use Web if unsure.',
-        choices: [
-          {
-            title: '🌐 Web Login (If VsCode is locally installed on your computer)',
-            value: 'web',
-          },
-          {
-            title: '📟 Device Login (Useful for CodeBuilder / CodeSpaces)',
-            value: 'device',
-            description: 'Look at the instructions in the console terminal if you select this option',
-          },
-        ],
-        default: 'web',
-        initial: 'web',
-      });
+      const executionContext = getExecutionContext();
+
+      // // Prompt user for Web or Device login
+      // const loginTypeRes = await prompts({
+      //   name: 'loginType',
+      //   type: 'select',
+      //   message: "Select a login type",
+      //   description: 'Choose the authentication method that works best for your environment. Use Web if unsure.',
+      //   choices: [
+      //     {
+      //       title: '🌐 Web Login (If VsCode is locally installed on your computer)',
+      //       value: 'web',
+      //     },
+      //     {
+      //       title: '📟 Device Login (Useful for CodeBuilder / CodeSpaces)',
+      //       value: 'device',
+      //       description: 'Look at the instructions in the console terminal if you select this option',
+      //     },
+      //   ],
+      //   default: 'web',
+      //   initial: 'web',
+      // });
 
       let loginResult: any = null;
       // Manage device login
-      if (loginTypeRes.loginType === 'device') {
-        const loginCommandArgs = ['org login device', '--instance-url', instanceUrl];
-        if (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias) {
-          loginCommandArgs.push(...['--alias', orgAlias]);
-        }
-        if (options.setDefault === true && isDevHub) {
-          loginCommandArgs.push('--set-default-dev-hub');
-        }
-        if (options.setDefault === true && !isDevHub) {
-          loginCommandArgs.push('--set-default');
-        }
-        const commandStr = 'sf ' + loginCommandArgs.join(' ');
-        uxLog("other", this, `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.blue(commandStr)))}`);
-        loginResult = crossSpawn.sync('sf', loginCommandArgs, { stdio: 'inherit' });
+      if (executionContext === "web") {
+        loginResult = await authenticateUsingDeviceLogin(instanceUrl, orgAlias, configInfoUsr, options, isDevHub, loginResult);
       }
       // Web Login if device login not used
       if (loginResult == null) {
+        uxLog("action", this, c.cyan("Authenticating using web login..."));
         const loginCommand =
           'sf org login web' +
           (alias ? ` --alias ${alias}` : options.setDefault === false ? '' : isDevHub ? ' --set-default-dev-hub' : ' --set-default') +
@@ -282,7 +274,6 @@ export async function authOrg(orgAlias: string, options: any) {
         }
       }
       await clearCache('sf org list');
-      uxLog("log", this, c.grey(JSON.stringify(loginResult, null, 2)));
       logged = loginResult.status === 0;
       username = loginResult?.username || 'err';
       instanceUrl = loginResult?.instanceUrl || instanceUrl;
@@ -328,6 +319,58 @@ export async function authOrg(orgAlias: string, options: any) {
       process.exit(1); // Exit because we should succeed to connect
     }
   }
+}
+
+export async function authenticateUsingDeviceLogin(instanceUrl: any, orgAlias: string, configInfoUsr: any, options: any, isDevHub: boolean, loginResult: any) {
+  uxLog("action", this, c.cyan("Authenticating using device login..."));
+  const loginCommandArgs = ['org login device', '--instance-url', instanceUrl];
+  if (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias) {
+    loginCommandArgs.push(...['--alias', orgAlias]);
+  }
+  if (options.setDefault === true && isDevHub) {
+    loginCommandArgs.push('--set-default-dev-hub');
+  }
+  if (options.setDefault === true && !isDevHub) {
+    loginCommandArgs.push('--set-default');
+  }
+  const loginCommand = 'sf ' + loginCommandArgs.join(' ') + " --json";
+  try {
+    // Spawn and get output in real time to send it to the console
+    const authProcess = spawn(loginCommand, { shell: true });
+    if (!authProcess.stdout || !authProcess.stderr) {
+      throw new SfError('Error during device login (no output)');
+    }
+    let allOutput = "";
+    authProcess.stdout.on('data', (data) => {
+      allOutput += data.toString();
+      const jsonOutput = findJsonInString(allOutput);
+      if (jsonOutput) {
+        if (jsonOutput.verification_uri && jsonOutput.user_code) {
+          uxLog("action", this, `To authenticate, visit ${c.cyan(jsonOutput.verification_uri)} and enter code ${c.green(jsonOutput.user_code)}`);
+          allOutput = "";
+        }
+        else if (jsonOutput?.status === 0 && jsonOutput?.result?.username) {
+          loginResult = jsonOutput.result;
+          loginResult.status = loginResult.status ?? jsonOutput.status;
+        }
+      }
+    });
+    authProcess.stderr.on('data', (data) => {
+      uxLog("warning", this, "Warning: " + c.yellow(data.toString()));
+    });
+    await new Promise((resolve, reject) => {
+      authProcess.on('close', (data) => {
+        resolve(data);
+      });
+      authProcess.on('error', (data) => {
+        reject(data);
+      });
+    });
+  } catch (e) {
+    uxLog("error", this, c.red(`Device login error: \n${(e as Error).message || e}. Falling back to web login...`));
+    loginResult = null;
+  }
+  return loginResult;
 }
 
 // Get clientId for SFDX connected app
