@@ -310,5 +310,16 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
     await extendPackageFileWithDependencies(deltaXmlFile, fullXmlFile);
     await expectXmlEquals(expectedXmlString, deltaXmlFile);
   });
+
+  it('should not fail when package is empty', async () => {
+    fs.writeFileSync(
+      deltaXmlFile,
+      `<?xml version="1.0" encoding="UTF-8"?>
+      <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+      </Package>`,
+      'utf8'
+    );
+    await extendPackageFileWithDependencies(deltaXmlFile, fullXmlFile);
+  });
 });
 

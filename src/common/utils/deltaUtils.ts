@@ -154,6 +154,11 @@ export async function extendPackageFileWithDependencies(
   };
   
   const xml = await parseXmlFile(deltaXmlFile);
+
+  if (!xml?.Package?.types?.length) {
+    return;
+  }
+
   const clonedTypes = [...xml.Package.types];
 
   for (const typeNode of clonedTypes) {
