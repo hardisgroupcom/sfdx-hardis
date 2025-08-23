@@ -1057,6 +1057,16 @@
       "title": "Metadata to retrofit",
       "type": "array"
     },
+    "manualActionsFileUrl": {
+      "$id": "#/properties/manualActionsFileUrl",
+      "default": "",
+      "description": "URL of the XLS file that contains manual actions to perform before or after a deployment",
+      "examples": [
+        "https://some.sharepoint.com/file.xlsx",
+      ],
+      "title": "Manual Actions File URL",
+      "type": "string"
+    },
     "mergeTargets": {
       "$id": "#/properties/mergeTargets",
       "description": "In branch-scoped config file, declares the list of branches that the current one can have as merge target. For example, integration will have mergeTargets [uat]",
