@@ -68,21 +68,21 @@ If Flow history doc always display a single state, you probably need to update y
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|exclude-namespaces<br/>-e|boolean|If mode --full is activated, exclude namespaced metadatas||||
-|flags-dir|option|undefined||||
-|full|boolean|Dot not take in account filtering using package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES. Efficient but much much slower !||||
-|full-apply-filters<br/>-z|boolean|If mode --full is activated, apply filters of manifest/package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES anyway||||
-|json|boolean|Format output as json.||||
-|max-by-chunk<br/>-m|option|If mode --full is activated, maximum number of metadatas in a package.xml chunk|3000|||
-|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
-|skip-doc|boolean|Skip the generation of project documentation at the end of the command||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|start-chunk|option|Use this parameter to troubleshoot a specific chunk. It will be used as the first chunk to retrieve|1|||
-|target-org<br/>-o|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                      |  Type   | Description                                                                                                                                | Default | Required | Options |
+|:--------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| debug<br/>-d              | boolean | Activate debug mode (more logs)                                                                                                            |         |          |         |
+| exclude-namespaces<br/>-e | boolean | If mode --full is activated, exclude namespaced metadatas                                                                                  |         |          |         |
+| flags-dir                 | option  | undefined                                                                                                                                  |         |          |         |
+| full                      | boolean | Dot not take in account filtering using package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES. Efficient but much much slower ! |         |          |         |
+| full-apply-filters<br/>-z | boolean | If mode --full is activated, apply filters of manifest/package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES anyway             |         |          |         |
+| json                      | boolean | Format output as json.                                                                                                                     |         |          |         |
+| max-by-chunk<br/>-m       | option  | If mode --full is activated, maximum number of metadatas in a package.xml chunk                                                            |  3000   |          |         |
+| outputfile<br/>-f         | option  | Force the path and name of output report file. Must end with .csv                                                                          |         |          |         |
+| skip-doc                  | boolean | Skip the generation of project documentation at the end of the command                                                                     |         |          |         |
+| skipauth                  | boolean | Skip authentication check when a default username is required                                                                              |         |          |         |
+| start-chunk               | option  | Use this parameter to troubleshoot a specific chunk. It will be used as the first chunk to retrieve                                        |    1    |          |         |
+| target-org<br/>-o         | option  | undefined                                                                                                                                  |         |          |         |
+| websocket                 | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                  |         |          |         |
 
 ## Examples
 

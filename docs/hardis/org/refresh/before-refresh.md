@@ -41,16 +41,16 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|all<br/>-a|boolean|If set, all Connected Apps from the org will be processed. Takes precedence over --name if both are specified.||||
-|delete<br/>-d|boolean|By default, Connected Apps are not deleted from the org after saving. Set this flag to force their deletion so they will be able to be reuploaded again after refreshing the org.||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|name<br/>-n|option|Connected App name(s) to process. For multiple apps, separate with commas (e.g., "App1,App2")||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name              |  Type   | Description                                                                                                                                                                       | Default | Required | Options |
+|:------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| all<br/>-a        | boolean | If set, all Connected Apps from the org will be processed. Takes precedence over --name if both are specified.                                                                    |         |          |         |
+| delete<br/>-d     | boolean | By default, Connected Apps are not deleted from the org after saving. Set this flag to force their deletion so they will be able to be reuploaded again after refreshing the org. |         |          |         |
+| flags-dir         | option  | undefined                                                                                                                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                                                                                            |         |          |         |
+| name<br/>-n       | option  | Connected App name(s) to process. For multiple apps, separate with commas (e.g., "App1,App2")                                                                                     |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                                                                                     |         |          |         |
+| target-org<br/>-o | option  | undefined                                                                                                                                                                         |         |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                         |         |          |         |
 
 ## Examples
 
