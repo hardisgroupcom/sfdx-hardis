@@ -6,10 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_PERMISSION_SET_GROUP
 # PROMPT_DESCRIBE_PERMISSION_SET_GROUP
 
 ## Variables
-| Name                        | Description                                                  | Example                                        |
-|:----------------------------|:-------------------------------------------------------------|:-----------------------------------------------|
-| **PERMISSIONSETGROUP_NAME** | The name of the Salesforce Permission Set Group to describe. | `PS_CloudityAdmin`                             |
-| **PERMISSIONSETGROUP_XML**  | The XML metadata for the Salesforce Permission Set Group.    | `<PermissionSetGroup>...</PermissionSetGroup>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **PERMISSIONSETGROUP_NAME** | The name of the Salesforce Permission Set Group to describe. | `PS_CloudityAdmin` |
+| **PERMISSIONSETGROUP_XML** | The XML metadata for the Salesforce Permission Set Group. | `<PermissionSetGroup>...</PermissionSetGroup>` |
 
 ## Prompt
 

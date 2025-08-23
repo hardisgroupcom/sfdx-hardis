@@ -35,18 +35,18 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name                   |  Type   | Description                                                       |                Default                 | Required | Options |
-|:-----------------------|:-------:|:------------------------------------------------------------------|:--------------------------------------:|:--------:|:-------:|
-| debug<br/>-d           | boolean | Activate debug mode (more logs)                                   |                                        |          |         |
-| excludeprofiles<br/>-e | option  | List of profiles that you want to NOT freeze, separated by commas |                                        |          |         |
-| flags-dir              | option  | undefined                                                         |                                        |          |         |
-| includeprofiles<br/>-p | option  | List of profiles that you want to freeze, separated by commas     |                                        |          |         |
-| json                   | boolean | Format output as json.                                            |                                        |          |         |
-| maxuserdisplay<br/>-m  | option  | Maximum users to display in logs                                  |                  100                   |          |         |
-| name<br/>-n            | option  | Filter according to Name criteria                                 |                                        |          |         |
-| skipauth               | boolean | Skip authentication check when a default username is required     |                                        |          |         |
-| target-org<br/>-o      | option  | undefined                                                         | nicolas.vuillamy@cloudity.com.playnico |          |         |
-| websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |                                        |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|excludeprofiles<br/>-e|option|List of profiles that you want to NOT freeze, separated by commas||||
+|flags-dir|option|undefined||||
+|includeprofiles<br/>-p|option|List of profiles that you want to freeze, separated by commas||||
+|json|boolean|Format output as json.||||
+|maxuserdisplay<br/>-m|option|Maximum users to display in logs|100|||
+|name<br/>-n|option|Filter according to Name criteria||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

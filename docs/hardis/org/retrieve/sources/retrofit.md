@@ -56,13 +56,13 @@ Retrieve changes from org link to a ref branch not present in sources
 
 ## Parameters
 
-| Name         |  Type   | Description                                                                    | Default | Required |     Options     |
-|:-------------|:-------:|:-------------------------------------------------------------------------------|:-------:|:--------:|:---------------:|
-| commit       | boolean | If true, a commit will be performed after the retrofit                         |         |          |                 |
-| commitmode   | option  | Defines if we commit all retrieved updates, or all updates including creations | updated |          | updated<br/>all |
-| debug<br/>-d | boolean | Activate debug mode (more logs)                                                |         |          |                 |
-| flags-dir    | option  | undefined                                                                      |         |          |                 |
-| json         | boolean | Format output as json.                                                         |         |          |                 |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|commit|boolean|If true, a commit will be performed after the retrofit||||
+|commitmode|option|Defines if we commit all retrieved updates, or all updates including creations|updated||updated<br/>all|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
 |productionbranch|option|Name of the git branch corresponding to the org we want to perform the retrofit on.
 Can be defined in productionBranch property in .sfdx-hardis.yml||||
 |push|boolean|If true, a push will be performed after the retrofit||||
@@ -70,7 +70,7 @@ Can be defined in productionBranch property in .sfdx-hardis.yml||||
 |retrofittargetbranch|option|Name of branch the merge request will have as target
 Can be defined in retrofitBranch property in .sfdx-hardis.yml||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.playnico|||
+|target-org<br/>-o|option|undefined||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples

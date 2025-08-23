@@ -28,11 +28,11 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name        |  Type   | Description                             | Default | Required | Options |
-|:------------|:-------:|:----------------------------------------|:-------:|:--------:|:-------:|
-| flags-dir   | option  | undefined                               |         |          |         |
-| json        | boolean | Format output as json.                  |         |          |         |
-| name<br/>-n | option  | This person can be anyone in the world! |  World  |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|name<br/>-n|option|This person can be anyone in the world!|World|||
 
 ## Examples
 

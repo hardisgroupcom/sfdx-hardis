@@ -74,17 +74,17 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](https:
 
 ## Parameters
 
-| Name                 |  Type   | Description                                                                                                            |                Default                 | Required |            Options            |
-|:---------------------|:-------:|:-----------------------------------------------------------------------------------------------------------------------|:--------------------------------------:|:--------:|:-----------------------------:|
-| check-only<br/>-c    | boolean | Use this option to send notifications from a Deployment simulation job                                                 |                                        |          |                               |
-| debug<br/>-d         | boolean | Activate debug mode (more logs)                                                                                        |                                        |          |                               |
-| deploy-status<br/>-s | option  | Send success, failure or unknown (default) to indicate if the deployment or deployment simulation is in success or not |                unknown                 |          | valid<br/>invalid<br/>unknown |
-| flags-dir            | option  | undefined                                                                                                              |                                        |          |                               |
-| json                 | boolean | Format output as json.                                                                                                 |                                        |          |                               |
-| message<br/>-m       | option  | Custom message that you want to be added in notifications (string or markdown format)                                  |                                        |          |                               |
-| skipauth             | boolean | Skip authentication check when a default username is required                                                          |                                        |          |                               |
-| target-org<br/>-o    | option  | undefined                                                                                                              | nicolas.vuillamy@cloudity.com.playnico |          |                               |
-| websocket            | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                              |                                        |          |                               |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|check-only<br/>-c|boolean|Use this option to send notifications from a Deployment simulation job||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|deploy-status<br/>-s|option|Send success, failure or unknown (default) to indicate if the deployment or deployment simulation is in success or not|unknown||valid<br/>invalid<br/>unknown|
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|message<br/>-m|option|Custom message that you want to be added in notifications (string or markdown format)||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
