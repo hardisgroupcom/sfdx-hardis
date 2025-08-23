@@ -46,9 +46,9 @@ export class WebSocketClient {
 
   static async isInitialized(): Promise<boolean> {
     if (globalWs) {
-      let retries = 25; // Wait up to 10 seconds
+      let retries = 40; // Wait up to 10 seconds
       while (!globalWs.isInitialized && retries > 0 && !globalWs.isDead) {
-        await new Promise((resolve) => setTimeout(resolve, 400));
+        await new Promise((resolve) => setTimeout(resolve, 250));
         retries--;
       }
       return globalWs.isInitialized;
