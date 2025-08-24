@@ -4,6 +4,17 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.1.2] 2025-08-24
+
+- Simplify package retrieve command
+- Handle when an org is disconnected in CodeBuilder context
+
+## [6.1.1] 2025-08-24
+
+- Auto-detect which login type to use depending if we are in local or web context (Code Builder, CodeSpaces)
+- Add documentation for Ubuntu images
+- Wait for WebSocket Server to be initialized before continuing command.
+
 ## [6.1.0] 2025-08-23
 
 - [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/)

@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
@@ -78,6 +78,10 @@ The command's technical implementation involves:
       .sort((a: string, b: string) => a.localeCompare(b))
       .join('\n');
 
+    if (installedPackages.length === 0) {
+      uxLog("warning", this, c.yellow(`No installed packages found in org ${targetUsername}.`));
+      throw new SfError('No installed packages found in the target org. Maybe an auth issue ?');
+    }
     uxLog("action", this, c.cyan(`Successfully retrieved ${installedPackages.length} installed packages from org ${targetUsername}.\n${packageNames}`));
 
     // Store list in config

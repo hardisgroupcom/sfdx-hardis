@@ -95,7 +95,7 @@ export const getConfig = async (layer: "project" | "branch" | "user" = 'user'): 
 };
 
 // Set data in configuration file
-export const setConfig = async (layer: string, propValues: any): Promise<void> => {
+export const setConfig = async (layer: string, propValues: any): Promise<string | void> => {
   if (layer === 'user' && (fs.readdirSync(process.cwd()).length === 0 || !isGitRepo())) {
     if (process?.argv?.includes('--debug')) {
       uxLog("log", this, c.grey('Skip update user config file because current directory is not a salesforce project'));
@@ -110,7 +110,7 @@ export const setConfig = async (layer: string, propValues: any): Promise<void> =
         : layer === 'branch'
           ? await getBranchConfigFiles()
           : [];
-  await setInConfigFile(configSearchPlaces, propValues);
+  return await setInConfigFile(configSearchPlaces, propValues);
 };
 
 // Load configuration from file
@@ -166,6 +166,7 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
       c.magentaBright(`Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues, null, 2)}`)
     );
   }
+  return configFile;
 }
 
 // Check configuration of project so it works with sfdx-hardis
