@@ -194,19 +194,22 @@ prompts
       placeholder: 'Ex: admin.sfdx@myclient.com',
     });
     if (devHub) {
-      await setConfig('project', {
+      const configFile = await setConfig('project', {
         devHubUsername: usernameResponse.value,
       });
+      WebSocketClient.sendReportFileMessage(configFile!, 'Updated project config file', 'report');
     } else {
       // Update config file
+      const branchConfigFile = `./config/branches/.sfdx-hardis.${branchName}.yml`;
       await setInConfigFile(
         [],
         {
           targetUsername: usernameResponse.value,
           instanceUrl,
         },
-        `./config/branches/.sfdx-hardis.${branchName}.yml`
+        branchConfigFile
       );
+      WebSocketClient.sendReportFileMessage(branchConfigFile, `Updated ${branchName} config file`, 'report');
     }
 
     WebSocketClient.sendRefreshPipelineMessage();
