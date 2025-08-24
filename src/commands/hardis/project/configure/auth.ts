@@ -223,6 +223,10 @@ prompts
     };
     await generateSSLCertificate(certName, certFolder, this, orgConn, sslGenOptions);
 
+    uxLog("action", this, c.green(`Branch ${devHub ? '(DevHub)' : branchName} successfully configured for authentication!`));
+    uxLog("warning", this, c.yellow('Make sure you have set the environment variables in your CI/CD platform'));
+    uxLog("warning", this, c.yellow('Don\'t forget to commit the sfdx-hardis config file and the encrypted certificated key in git!'));
+
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };
   }

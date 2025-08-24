@@ -1332,7 +1332,7 @@ export async function generateSSLCertificate(
   const targetKeyFile = path.join(folder, `${branchName}.key`);
   await fs.copy(path.join(tmpDir, 'server.key'), targetKeyFile);
   const encryptionKey = await encryptFile(targetKeyFile);
-  WebSocketClient.sendReportFileMessage(targetKeyFile, `Encrypted SSL certificate for branch ${branchName}`, 'report');
+  WebSocketClient.sendReportFileMessage(targetKeyFile, `Encrypted SSL certificate key for branch ${branchName}`, 'report');
   // Copy certificate file in user home project
   const crtFile = path.join(os.homedir(), `${branchName}.crt`);
   await fs.copy(path.join(tmpDir, 'server.crt'), crtFile);
