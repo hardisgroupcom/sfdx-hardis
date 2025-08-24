@@ -461,9 +461,9 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
       };
     }),
   });
-  const selectedPakages: any[] = promptPackagesRes.value || [];
+  const selectedPackages: any[] = promptPackagesRes.value || [];
 
-  for (const installedPackage of selectedPakages) {
+  for (const installedPackage of selectedPackages) {
     // Request user about automatic installation during scratch orgs and deployments
     const installResponse = await prompts({
       type: 'select',
