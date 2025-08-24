@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.1.1] 2025-08-24
+
 - Auto-detect which login type to use depending if we are in local or web context (Code Builder, CodeSpaces)
 - Add documentation for Ubuntu images
 - Wait for WebSocket Server to be initialized before continuing command.
