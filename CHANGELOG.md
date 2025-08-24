@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:configure:auth](https://sfdx-hardis.cloudity.com/hardis/org/configure/auth/)
+  - Fix issues related to VsCode background mode
+  - When updating existing branch authentication, pre-select merge targets.
+  - Send more information to the user about files that are created/updated
+
 ## [6.1.2] 2025-08-24
 
 - Simplify package retrieve command

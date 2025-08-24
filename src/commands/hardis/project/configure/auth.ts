@@ -5,9 +5,10 @@ import {
   optionalOrgFlagWithDeprecations,
   optionalHubFlagWithDeprecations,
 } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { fs, Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
+import * as yaml from 'js-yaml';
 import { execSfdxJson, generateSSLCertificate, git, promptInstanceUrl, uxLog } from '../../../../common/utils/index.js';
 import { getOrgAliasUsername, promptOrg } from '../../../../common/utils/orgUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
@@ -155,6 +156,14 @@ prompts
     }
     // Request merge targets
     if (!devHub) {
+      let initialMergeTargets: string[] = [];
+      const branchConfigFile = `./config/branches/.sfdx-hardis.${branchName}.yml`;
+      if (fs.existsSync(branchConfigFile)) {
+        const branchConfig: any = yaml.load(fs.readFileSync(branchConfigFile, 'utf8'));
+        if (branchConfig && branchConfig.mergeTargets) {
+          initialMergeTargets = branchConfig.mergeTargets;
+        }
+      }
       const mergeTargetsResponse = await prompts({
         type: 'multiselect',
         name: 'value',
@@ -167,6 +176,7 @@ prompts
             value: branch.replace('origin/', ''),
           };
         }),
+        initial: initialMergeTargets,
         description: 'Select the git branches that this branch will be able to merge in',
         placeholder: 'Select the target git branches',
       });
@@ -177,7 +187,7 @@ prompts
         {
           mergeTargets: mergeTargets,
         },
-        `./config/branches/.sfdx-hardis.${branchName}.yml`
+        branchConfigFile
       );
     }
 
@@ -194,19 +204,22 @@ prompts
       placeholder: 'Ex: admin.sfdx@myclient.com',
     });
     if (devHub) {
-      await setConfig('project', {
+      const configFile = await setConfig('project', {
         devHubUsername: usernameResponse.value,
       });
+      WebSocketClient.sendReportFileMessage(configFile!, 'Updated project config file', 'report');
     } else {
       // Update config file
+      const branchConfigFile = `./config/branches/.sfdx-hardis.${branchName}.yml`;
       await setInConfigFile(
         [],
         {
           targetUsername: usernameResponse.value,
           instanceUrl,
         },
-        `./config/branches/.sfdx-hardis.${branchName}.yml`
+        branchConfigFile
       );
+      WebSocketClient.sendReportFileMessage(branchConfigFile, `Updated ${branchName} config file`, 'report');
     }
 
     WebSocketClient.sendRefreshPipelineMessage();
@@ -219,6 +232,10 @@ prompts
       targetUsername: devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername(),
     };
     await generateSSLCertificate(certName, certFolder, this, orgConn, sslGenOptions);
+
+    uxLog("action", this, c.green(`Branch ${devHub ? '(DevHub)' : branchName} successfully configured for authentication!`));
+    uxLog("warning", this, c.yellow('Make sure you have set the environment variables in your CI/CD platform'));
+    uxLog("warning", this, c.yellow('Don\'t forget to commit the sfdx-hardis config file and the encrypted certificated key in git!'));
 
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };
