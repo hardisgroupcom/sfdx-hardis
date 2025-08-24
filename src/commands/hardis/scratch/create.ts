@@ -82,7 +82,7 @@ export default class ScratchCreate extends SfCommand<any> {
   public static requiresProject = true;
 
   // List required plugins, their presence will be tested before running the command
-  protected static requiresSfdxPlugins = ['sfdmu', 'texei-sfdx-plugin'];
+  protected static requiresSfdxPlugins = ['sfdmu'];
 
   protected forceNew = false;
 

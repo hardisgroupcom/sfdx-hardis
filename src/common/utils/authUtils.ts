@@ -74,7 +74,7 @@ export async function authOrg(orgAlias: string, options: any) {
       }
       // Set as default username or devhubusername
       uxLog(
-        "other",
+        "log",
         this,
         `[sfdx-hardis] You are already ${c.green('connected')} as ${c.green(
           orgInfoResult.result.username
@@ -90,7 +90,7 @@ export async function authOrg(orgAlias: string, options: any) {
           this,
           c.yellow(
             c.italic(
-              `[sfdx-hardis] If this is NOT the org you want to play with, ${c.whiteBright(
+              `If this is NOT the org you want to play with, ${c.whiteBright(
                 c.bold('hit CTRL+C')
               )}, then input ${c.whiteBright(c.bold('sf hardis:org:select'))}`
             )
