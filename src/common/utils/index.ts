@@ -1168,7 +1168,7 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, sens
   }
   // VsCode sfdx-hardis log
   if (WebSocketClient.isAlive() && !text.includes('[command]') && !text.includes('[NotifProvider]')) {
-    if (sensitive) {
+    if (sensitive && !text.includes('SFDX_CLIENT_ID_') && !text.includes('SFDX_CLIENT_KEY_')) {
       WebSocketClient.sendCommandLogLineMessage('OBFUSCATED LOG LINE');
     }
     else {
@@ -1309,19 +1309,30 @@ export async function generateSSLCertificate(
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
   process.chdir(tmpDir);
-  const sslCommand =
-    'openssl req -nodes -newkey rsa:2048 -keyout server.key -out server.csr -subj "/C=GB/ST=Paris/L=Paris/O=Hardis Group/OU=sfdx-hardis/CN=hardis-group.com"';
-  await execCommand(sslCommand, this, { output: true, fail: true });
-  await execCommand('openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt', this, {
-    output: true,
-    fail: true,
-  });
+  try {
+    const sslCommand =
+      'openssl req -nodes -newkey rsa:2048 -keyout server.key -out server.csr -subj "/C=GB/ST=Paris/L=Paris/O=Hardis Group/OU=sfdx-hardis/CN=hardis-group.com"';
+    await execCommand(sslCommand, this, { output: true, fail: true });
+    await execCommand('openssl x509 -req -sha256 -days 3650 -in server.csr -signkey server.key -out server.crt', this, {
+      output: true,
+      fail: true,
+    });
+  } catch (e) {
+    uxLog("error", commandThis, c.red(`Error generating SSL certificate, please ensure you have openssl installed
+- It is included in Git Bash for Windows
+- You can also install it using "choco install openssl" if you have chocolatey installed
+- If it is installed, make sure that paths to bash and openssl are available in PATH
+- If you still have issues, run sfdx-hardis command in Git Bash terminal
+`));
+    throw e;
+  }
   process.chdir(prevDir);
   // Copy certificate key in local project
   await fs.ensureDir(folder);
   const targetKeyFile = path.join(folder, `${branchName}.key`);
   await fs.copy(path.join(tmpDir, 'server.key'), targetKeyFile);
   const encryptionKey = await encryptFile(targetKeyFile);
+  WebSocketClient.sendReportFileMessage(targetKeyFile, `Encrypted SSL certificate key for branch ${branchName}`, 'report');
   // Copy certificate file in user home project
   const crtFile = path.join(os.homedir(), `${branchName}.crt`);
   await fs.copy(path.join(tmpDir, 'server.crt'), crtFile);
@@ -1341,7 +1352,7 @@ export async function generateSSLCertificate(
     description: 'Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.',
   });
   if (confirmResponse.value === true) {
-    uxLog("action", commandThis, c.cyan('Please configure both below variables in your CI/CD platform:'));
+    uxLog("action", commandThis, c.cyan('Please configure both below variables in your CI/CD platform.\n(expand section below to see values)'));
     uxLog(
       "log",
       commandThis,
@@ -1368,6 +1379,7 @@ export async function generateSSLCertificate(
       commandThis,
       c.grey(c.yellow(`Help to configure CI variables is here: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`))
     );
+    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, "Help to configure CI variables", "docUrl");
     await prompts({
       type: 'confirm',
       message: c.cyanBright('Please confirm when variables have been set'),
@@ -1490,7 +1502,7 @@ If this is a Test class issue (production env), you may have to create manually 
       await prompts({
         type: 'confirm',
         message: c.cyanBright(
-          'You need to manually configure the connected app. Follow the MANUAL INSTRUCTIONS in the console, then continue here'
+          'You need to manually configure the connected app. Follow the MANUAL INSTRUCTIONS above, then continue here'
         ),
         description: 'Confirm when you have completed the manual Connected App configuration steps',
       });
