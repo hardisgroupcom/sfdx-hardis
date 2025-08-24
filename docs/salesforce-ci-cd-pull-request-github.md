@@ -6,6 +6,24 @@ description: Learn how to create a pull request using GitHub on a Salesforce CI/
 
 ## Create a Pull Request using GitHub
 
-Not documented yet, see [Create a pull request using Azure](salesforce-ci-cd-pull-request-azure.md), it's almost the same !
+- Go in your online repository in your web browser (example: `https://github.com/mycompany/trailheadapps/dreamhouse-lwc`)
 
-You can also create a pull request [here](https://github.com/hardisgroupcom/sfdx-hardis) to update this documentation :)
+- Go to the **Pull Requests** tab
+
+- Click on **New pull request**
+
+![](assets/images/github-pull-request-1.png){ align=center }
+
+- Select the **base** as the target environment/branch and **compare** as the branch you've made the changes. Click **Create Pull Request** 
+
+![](assets/images/github-pull-request-2.png){ align=center }
+
+- Add a meaningful title and description. Click on **Create Pull Request**
+
+![](assets/images/github-pull-request-create.png){ align=center }
+
+- Controlling jobs are automatically launched, you can now ask your release manager to [**validate the merge request**](salesforce-ci-cd-validate-merge-request.md)
+  - _If you are a developer, (or even a business consultant depending on the project organization), you may have the responsibility to make sure than controlling jobs are valid (**check-deploy job** and **code-quality job** in **success**) and eventually fix the errors (See [Handle merge requests errors](salesforce-ci-cd-handle-merge-request-results.md))_
+
+- If you need to add additional updates to an existing merge requests, you just this to follow again [this guide](salesforce-ci-cd-publish-task.md) from the beginning, except the part "Create a merge request". Any new commit pushed on a branch where there is already a merge request will trigger again the [control jobs](salesforce-ci-cd-validate-merge-request.md#control-jobs).
+
