@@ -1,4 +1,5 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+
 # hardis:project:deploy:smart
 
 ## Description
@@ -24,6 +25,8 @@ To activate delta deployments, define property `useDeltaDeployment: true` in `co
 This will activate delta deployments only between minor and major branches (major to major remains full deployment mode)
 
 If you want to force the delta deployment into major orgs (ex: preprod to prod), this is not recommended but you can use env variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true
+
+Delta deployment can optinally include some depenrelated metadata types even if they were not changed, but deploying them can improve the deployment itself or make validation more robust. For example, it would add CustomObjectTranslation to the delta package if you have changed a Layout. Set `extendDeltaDeployment: true` or use the environment variable `EXTEND_DELTA_DEPLOYMENT=true` to activate this feature.
 
 ### Smart Deployments Tests
 
@@ -66,7 +69,7 @@ Note: if you want to disable Smart test classes for a PR, add **nosmart** in the
 
 ### Dynamic deployment items / Overwrite management
 
-If necessary,you can define the following files (that supports wildcards <members>*</members>):
+If necessary,you can define the following files (that supports wildcards <members>\*</members>):
 
 - `manifest/package-no-overwrite.xml`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org).
   - Can be overridden for a branch using .sfdx-hardis.yml property **packageNoOverwritePath** or environment variable PACKAGE_NO_OVERWRITE_PATH (for example, define: `packageNoOverwritePath: manifest/package-no-overwrite-main.xml` in config file `config/.sfdx-hardis.main.yml`)
@@ -114,7 +117,7 @@ You can define command lines to run before or after a deployment, with parameter
 - **label**: Human readable label for the command
 - **skipIfError**: If defined to "true", the post-command won't be run if there is a deployment failure
 - **context**: Defines the context where the command will be run. Can be **all** (default), **check-deployment-only** or **process-deployment-only**
-- **runOnlyOnceByOrg**: If set to true, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
+- **runOnlyOnceByOrg**: If set to true, the command will be run only one time per org. A record of SfdxHardisTrace\_\_c is stored to make that possible (it needs to be existing in target org)
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
 
@@ -149,7 +152,7 @@ commandsPostDeploy:
 If some words are found **in the Pull Request description**, special behaviors will be applied
 
 | Word                                 | Behavior                                                                                                                                                                              |
-|:-------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | NO_DELTA                             | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request                                                                        |
 | PURGE_FLOW_VERSIONS                  | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
 | DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package                                                  |
@@ -219,23 +222,22 @@ If you need notifications to be sent using the current Pull Request and not the 
 
 If you want to disable the calculation and display of Flow Visual Git Diff in Pull Request comments, define variable **SFDX_DISABLE_FLOW_DIFF=true**
 
-
 ## Parameters
 
-| Name              |  Type   | Description                                                             | Default | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| check<br/>-c      | boolean | Only checks the deployment, there is no impact on target org            |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                         |         |          |         |
-| delta             | boolean | Applies sfdx-git-delta to package.xml before other deployment processes |         |          |         |
-| flags-dir         | option  | undefined                                                               |         |          |         |
-| json              | boolean | Format output as json.                                                  |         |          |         |
-| packagexml<br/>-p | option  | Path to package.xml containing what you want to deploy in target org    |         |          |         |
-|runtests<br/>-r|option|If testlevel=RunSpecifiedTests, please provide a list of classes.
-If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
-|testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunAllTestsInOrg|
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                                                                                                                                                             |  Type   | Description                                                                                               | Default | Required |                                                               Options                                                                |
+| :--------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-----: | :-------------------------------------------------------------------------------------------------------- | :-----: | :------: | :----------------------------------------------------------------------------------------------------------------------------------: |
+| check<br/>-c                                                                                                                                                     | boolean | Only checks the deployment, there is no impact on target org                                              |         |          |                                                                                                                                      |
+| debug<br/>-d                                                                                                                                                     | boolean | Activate debug mode (more logs)                                                                           |         |          |                                                                                                                                      |
+| delta                                                                                                                                                            | boolean | Applies sfdx-git-delta to package.xml before other deployment processes                                   |         |          |                                                                                                                                      |
+| flags-dir                                                                                                                                                        | option  | undefined                                                                                                 |         |          |                                                                                                                                      |
+| json                                                                                                                                                             | boolean | Format output as json.                                                                                    |         |          |                                                                                                                                      |
+| packagexml<br/>-p                                                                                                                                                | option  | Path to package.xml containing what you want to deploy in target org                                      |         |          |                                                                                                                                      |
+| runtests<br/>-r                                                                                                                                                  | option  | If testlevel=RunSpecifiedTests, please provide a list of classes.                                         |
+| If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo. |         |                                                                                                           |         |
+| skipauth                                                                                                                                                         | boolean | Skip authentication check when a default username is required                                             |         |          |                                                                                                                                      |
+| target-org<br/>-o                                                                                                                                                | option  | undefined                                                                                                 |         |          |                                                                                                                                      |
+| testlevel<br/>-l                                                                                                                                                 | option  | Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes |         |          | NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunAllTestsInOrg |
+| websocket                                                                                                                                                        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                 |         |          |                                                                                                                                      |
 
 ## Examples
 
@@ -278,5 +280,3 @@ $ CI_SFDX_HARDIS_BITBUCKET_TOKEN=xxxxxx BITBUCKET_WORKSPACE=sfdxhardis-demo BITB
 ```shell
 $ GITHUB_TOKEN=xxxx GITHUB_REPOSITORY=my-user/my-repo FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com
 ```
-
-
