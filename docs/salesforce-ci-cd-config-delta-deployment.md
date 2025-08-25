@@ -2,6 +2,7 @@
 title: Configure delta deployments on a Salesforce CI/CD Project
 description: Learn how to configure Delta Deployments using sfdx-git-delta on a sfdx-hardis CI/CD Project
 ---
+
 <!-- markdownlint-disable MD013 -->
 
 - [Delta deployments](#delta-deployments)
@@ -11,7 +12,7 @@ description: Learn how to configure Delta Deployments using sfdx-git-delta on a 
   - [Base](#base)
   - [Advanced](#advanced)
 
-___
+---
 
 ## Delta deployments
 
@@ -26,7 +27,7 @@ This is the safest way to deploy at each level
 - major to major
 - minor to major
 
-___
+---
 
 ### Delta mode
 
@@ -47,7 +48,7 @@ Examples:
 
 > 💡 If you want to **force the use of full deployment for a PR/MR** on a delta project, add "**NO_DELTA**" in your latest commit title or text, or in your Pull Request description.
 
-___
+---
 
 ## Configuration
 
@@ -69,7 +70,12 @@ It is recommended to use opinionated default sfdx-hardis delta deployment config
 ### Advanced
 
 - USE_DELTA_DEPLOYMENT_AFTER_MERGE
+
   - By default, after a merge sfdx-hardis will try to use [QuickDeploy](salesforce-ci-cd-setup-integrations-home.md#git-providers). If not available, it will perform a full deployment. If you want to use a delta deployment anyway, define `USE_DELTA_DEPLOYMENT_AFTER_MERGE=true`
 
 - ALWAYS_ENABLE_DELTA_DEPLOYMENT
   - By default, delta deployment is allowed only from minor to major branches. You can force it for PR/MRs between major branches by defining variable `ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`
+
+### Additionally
+
+- EXTEND_DELTA_DEPLOYMENT or extendDeltaDeployment will enable deployment of related metadata even it it was not changed. E.g. it would deploy CustomObjectTranslation if one of Layout was changed.
