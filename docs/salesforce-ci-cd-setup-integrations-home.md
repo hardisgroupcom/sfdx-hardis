@@ -59,3 +59,13 @@ Depending of your git provider, configure one of the following integrations.
 - [Generic ticketing](salesforce-ci-cd-setup-integration-generic-ticketing.md)
   - Enrich MR/PR comments by adding tickets references and links
   - Enrich notifications comments by adding tickets references and links
+
+## Large Language Models (AI)
+
+- [Agentforce](salesforce-ai-setup.md/#with-agentforce)
+  - AI deployment assistant
+  - Project Documentation
+
+- [OpenAi, Anthropic, Gemini, Ollama](salesforce-ai-setup.md/#with-langchain)
+  - AI deployment assistant
+  - Project Documentation

@@ -7,6 +7,7 @@ import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { uxLog } from '../../../../common/utils/index.js';
 import { managePackageConfig, promptOrg } from '../../../../common/utils/orgUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -95,6 +96,7 @@ The command's technical implementation involves:
       await managePackageConfig(installedPackages, installedPackages, true);
     }
 
+    WebSocketClient.sendRefreshPipelineMessage();
     const message = `Successfully retrieved installed packages configuration`;
     uxLog("success", this, c.green(message));
     return { orgId: flags['target-org'].getOrgId(), outputString: message };
