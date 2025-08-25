@@ -19,6 +19,7 @@ const hook: Hook<'init'> = async (options) => {
       context.websocketHostPort = options.argv[websocketArgIndex + 1];
     }
     globalThis.webSocketClient = new WebSocketClient(context);
+    await WebSocketClient.isInitialized();
   }
 };
 

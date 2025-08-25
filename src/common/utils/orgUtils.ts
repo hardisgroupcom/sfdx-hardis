@@ -3,7 +3,7 @@ import { prompts } from './prompts.js';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isCI, uxLog } from './index.js';
+import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getExecutionContext, isCI, uxLog } from './index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getConfig, setConfig } from '../../config/index.js';
 import * as EmailValidator from 'email-validator';
@@ -16,6 +16,7 @@ import { deployMetadatas, smartDeploy, forceSourcePush } from './deployUtils.js'
 import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { clearCache } from '../cache/index.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
+import { authenticateUsingDeviceLogin } from './authUtils.js';
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -206,10 +207,15 @@ export async function promptOrg(
 
   // Token is expired: login again to refresh it
   if (org?.connectedStatus === 'RefreshTokenAuthError' || org?.connectedStatus?.includes('expired')) {
-    uxLog("warning", this, c.yellow(`⚠️ Your authentication is expired. Please login again in the web browser`));
-    const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}`;
-    const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
-    org = loginResult.result;
+    uxLog("action", this, c.yellow(`⚠️ Your authentication is expired. Please login again in the web browser`));
+    if (getExecutionContext() === "web") {
+      org = await authenticateUsingDeviceLogin(org.instanceUrl, org.username, null, {}, false, null);
+    }
+    else {
+      const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}`;
+      const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
+      org = loginResult.result;
+    }
   }
 
   if (options.setDefault === true) {
@@ -308,7 +314,7 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   }
   // Authentication is necessary
   if (connectedStatus?.includes("expired")) {
-    uxLog("action", this, c.yellow("Your auth token is expired, you need to authenticate again"));
+    uxLog("action", this, c.yellow("Your auth token is expired, you need to authenticate again\n(Be patient after login, it can take a while 😑)"));
     // Delete rotten authentication json file in case there has been a sandbox refresh
     const homeSfdxDir = path.join(process.env.HOME || process.env.USERPROFILE || "~", '.sfdx');
     const authFile = path.join(homeSfdxDir, `${targetOrg}.json`);
@@ -319,6 +325,10 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
       } catch (e: any) {
         uxLog("warning", this, c.red(`Error while deleting potentially rotten auth file ${c.green(authFile)}: ${e.message}\nYou might need to delete it manually.`));
       }
+    }
+    if (getExecutionContext() === "web") {
+      orgResult = await authenticateUsingDeviceLogin(instanceUrl, targetOrg, null, {}, false, null);
+      return orgResult;
     }
     // Authenticate again
     const loginCommand = 'sf org login web' + ` --instance-url ${instanceUrl}`;
@@ -383,6 +393,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
   const config = await getConfig('project');
   let projectPackages = config.installedPackages || [];
   let updated = false;
+  const promptPackagesToInstall: any[] = [];
   for (const installedPackage of installedPackages) {
     // Filter standard packages
     const matchInstalled = packagesToInstallCompleted.filter(
@@ -415,60 +426,85 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
       updated = true;
     } else if (matchInstalled.length > 0 && matchLocal.length === 0) {
       // Check if not filtered package
-      if (filterStandard &&
-        ["Salesforce Connected Apps",
+      if (
+        filterStandard &&
+        [
+          "License Management App",
+          "Sales Cloud",
+          "Sales Insights",
+          "Salesforce Chatter Dashboards 1.0",
+          "Salesforce Chatter Dashboards",
+          "Salesforce Connected Apps",
           "Salesforce Mobile Apps",
-          "Trail Tracker",
-          "SalesforceA Connected Apps",
-          "Salesforce Adoption Dashboards",
           "Salesforce.com CRM Dashboards",
-          "Sales Insights"
+          "SalesforceA Connected Apps",
+          "Trail Tracker"
         ].includes(installedPackage.SubscriberPackageName)
       ) {
-        uxLog("action", this, c.cyan(`Skip ${installedPackage.SubscriberPackageName} as it is a Salesforce standard package`))
+        uxLog("action", this, c.cyan(`Skipped ${installedPackage.SubscriberPackageName} as it is a Salesforce standard package`))
         continue;
       }
 
-      // Request user about automatic installation during scratch orgs and deployments
-      const installResponse = await prompts({
-        type: 'select',
-        name: 'value',
-        message: c.cyanBright(
-          `Please select the install configuration for ${c.bold(installedPackage.SubscriberPackageName)}`
-        ),
-        description: 'Configure how this package should be automatically installed during CI/CD operations',
-        choices: [
-          {
-            title: `Install automatically ${c.bold(installedPackage.SubscriberPackageName)} on scratch orgs only`,
-            value: 'scratch',
-          },
-          {
-            title: `Deploy automatically ${c.bold(
-              installedPackage.SubscriberPackageName
-            )} on integration/production orgs only`,
-            value: 'deploy',
-          },
-          {
-            title: `Both: Install & deploy automatically ${c.bold(installedPackage.SubscriberPackageName)}`,
-            value: 'scratch-deploy',
-          },
-          {
-            title: `Do not configure ${c.bold(installedPackage.SubscriberPackageName)} installation / deployment`,
-            value: 'none',
-          },
-        ],
-      });
-      installedPackage.installOnScratchOrgs = installResponse.value.includes('scratch');
-      installedPackage.installDuringDeployments = installResponse.value.includes('deploy');
-      if (installResponse.value !== 'none' && installResponse.value != null) {
-        projectPackages.push(installedPackage);
-        updated = true;
-      }
+      promptPackagesToInstall.push(installedPackage);
     }
   }
+
+  const promptPackagesRes = await prompts({
+    type: "multiselect",
+    name: 'value',
+    message: c.cyanBright('Please select packages to add to your project configuration'),
+    description: 'Select packages to add to your project configuration for automatic installation during scratch org creation and/or deployments',
+    choices: promptPackagesToInstall.map((pckg) => {
+      return {
+        title: `${pckg.SubscriberPackageName} (${pckg.SubscriberPackageVersionNumber})`,
+        value: pckg,
+      };
+    }),
+  });
+  const selectedPackages: any[] = promptPackagesRes.value || [];
+
+  for (const installedPackage of selectedPackages) {
+    // Request user about automatic installation during scratch orgs and deployments
+    const installResponse = await prompts({
+      type: 'select',
+      name: 'value',
+      message: c.cyanBright(
+        `Please select the install configuration for ${c.bold(installedPackage.SubscriberPackageName)}`
+      ),
+      description: 'Configure how this package should be automatically installed during CI/CD operations',
+      choices: [
+        {
+          title: `Deploy automatically ${c.bold(
+            installedPackage.SubscriberPackageName
+          )} on integration/production orgs only`,
+          value: 'deploy',
+        },
+        {
+          title: `Install automatically ${c.bold(installedPackage.SubscriberPackageName)} on scratch orgs only`,
+          value: 'scratch',
+        },
+        {
+          title: `Both: Install & deploy automatically ${c.bold(installedPackage.SubscriberPackageName)}`,
+          value: 'scratch-deploy',
+        },
+        {
+          title: `Do not configure ${c.bold(installedPackage.SubscriberPackageName)} installation / deployment`,
+          value: 'none',
+        },
+      ],
+    });
+    installedPackage.installOnScratchOrgs = installResponse.value.includes('scratch');
+    installedPackage.installDuringDeployments = installResponse.value.includes('deploy');
+    if (installResponse.value !== 'none' && installResponse.value != null) {
+      projectPackages.push(installedPackage);
+      updated = true;
+    }
+  }
+
   if (updated) {
     uxLog("action", this, c.cyan('Updated package configuration in .sfdx-hardis.yml config file'));
-    await setConfig('project', { installedPackages: projectPackages });
+    const configFile = await setConfig('project', { installedPackages: projectPackages });
+    WebSocketClient.sendReportFileMessage(`${configFile!}#installedPackages`, "Package config in .sfdx-hardis.yml", "report");
   }
 }
 

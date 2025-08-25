@@ -4,10 +4,43 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.1.3] 2025-08-24
+
+- [hardis:org:configure:auth](https://sfdx-hardis.cloudity.com/hardis/org/configure/auth/)
+  - Fix issues related to VsCode background mode
+  - When updating existing branch authentication, pre-select merge targets.
+  - Send more information to the user about files that are created/updated
+
+## [6.1.2] 2025-08-24
+
+- Simplify package retrieve command
+- Handle when an org is disconnected in CodeBuilder context
+
+## [6.1.1] 2025-08-24
+
+- Auto-detect which login type to use depending if we are in local or web context (Code Builder, CodeSpaces)
+- Add documentation for Ubuntu images
+- Wait for WebSocket Server to be initialized before continuing command.
+
+## [6.1.0] 2025-08-23
+
+- [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/)
+  - Retrieve Certificates and other metadatas that could need to be restored
+  - Retrieve Custom Settings values
+- [hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/)
+  - Restore Certificates and other metadatas that could need to be restored
+  - Restore Custom Settings values
+  - Smart restore of SAML SSO Config by prompting the user to select a valid certificate
+- Send path to command log file to WebSocketServer
+- Improve startup performances by checking for sfdx-hardis upgrades every 6h and not every 15 mn!
+- [hardis:org:diagnose:unused-connected-app](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/): Fix bug when not escaping App name in SOQL query
+- Update banner
+- New config property **manualActionsFileUrl** to indicate users where the deployment manual actions is located.
+
 ## [6.0.6 (beta)] 2025-08-17
 
-- New command [hardis:org:refresh:save:connectedapp](https://sfdx-hardis.cloudity.com/hardis/org/refresh/save/connectedapp/) : Save Connected Apps before refreshing a sandbox.
-- New command [hardis:org:refresh:restore:connectedapp](https://sfdx-hardis.cloudity.com/hardis/org/refresh/restore/connectedapp/) : Restore Connected Apps after refreshing a sandbox.
+- New command [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/) : Save Connected Apps before refreshing a sandbox.
+- New command [hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/) : Restore Connected Apps after refreshing a sandbox.
 - Update JSON Schema documentation
 - When authenticating to an expired org token, delete the SF Cli file that can mess with us when we refreshed a sandbox.
 - Improve logs display

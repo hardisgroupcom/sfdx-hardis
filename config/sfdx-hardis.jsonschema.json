@@ -660,7 +660,7 @@
         "myPassword",
         "dFGGF43656YfdFDG{{{dhgfh:::;FSEDSFd78"
       ],
-      "title": "Defaut package installation key",
+      "title": "Default package installation key",
       "type": "string"
     },
     "developmentBranch": {
@@ -1056,6 +1056,16 @@
       },
       "title": "Metadata to retrofit",
       "type": "array"
+    },
+    "manualActionsFileUrl": {
+      "$id": "#/properties/manualActionsFileUrl",
+      "default": "",
+      "description": "URL of the XLS file that contains manual actions to perform before or after a deployment",
+      "examples": [
+        "https://some.sharepoint.com/file.xlsx"
+      ],
+      "title": "Manual Actions File URL",
+      "type": "string"
     },
     "mergeTargets": {
       "$id": "#/properties/mergeTargets",

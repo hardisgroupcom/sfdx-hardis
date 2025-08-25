@@ -15,7 +15,34 @@ theme:
   logo: assets/images/cloudity-text-logo.svg
   favicon: assets/images/cloudity-logo.svg
   palette:
-    primary: indigo
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+      background: '#F5F7FA'
+      foreground: '#1B1464'
+      colors:
+        primary: '#0057B8'
+        accent: '#FFB81C'
+        link: '#0057B8'
+        header: '#1B1464'
+        nav: '#F5F7FA'
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+      background: '#181B2A'
+      foreground: '#FFB81C'
+      colors:
+        primary: '#0057B8'
+        accent: '#FFB81C'
+        link: '#FFB81C'
+        header: '#181B2A'
+        nav: '#23263A'
 plugins:
   - glightbox
   - search

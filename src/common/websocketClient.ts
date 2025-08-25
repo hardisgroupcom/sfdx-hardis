@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let globalWs: WebSocketClient | null;
 let isWsOpen = false;
-let userInput = "ui";
+let userInput = null;
 
 const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
 
@@ -23,6 +23,8 @@ export class WebSocketClient {
   private ws: any;
   private wsContext: any;
   private promptResponse: any;
+  private isDead = false;
+  private isInitialized = false;
 
   constructor(context: any) {
     this.wsContext = context;
@@ -33,12 +35,25 @@ export class WebSocketClient {
       this.start();
       console.log("WS Client started");
     } catch (err) {
+      this.isDead = true;
       uxLog(
         "warning",
         this,
         c.yellow('Warning: Unable to start WebSocket client on ' + wsHostPort + '\n' + (err as Error).message)
       );
     }
+  }
+
+  static async isInitialized(): Promise<boolean> {
+    if (globalWs) {
+      let retries = 40; // Wait up to 10 seconds
+      while (!globalWs.isInitialized && retries > 0 && !globalWs.isDead) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        retries--;
+      }
+      return globalWs.isInitialized;
+    }
+    return false;
   }
 
   static isAlive(): boolean {
@@ -211,6 +226,11 @@ export class WebSocketClient {
           uxLog("warning", this, c.yellow(`Warning: Unable to import command class for ${this.wsContext.command}: ${e instanceof Error ? e.message : String(e)}`));
         }
       }
+      // Add link to command log file
+      if (globalThis?.hardisLogFileStream?.path) {
+        const logFilePath = String(globalThis.hardisLogFileStream.path).replace(/\\/g, '/');
+        message.commandLogFile = logFilePath;
+      }
       this.ws.send(JSON.stringify(message));
       // uxLog("other", this,c.grey('Initialized WebSocket connection with VsCode SFDX Hardis'));
     });
@@ -222,6 +242,8 @@ export class WebSocketClient {
     this.ws.on('error', (err) => {
       this.ws.terminate();
       globalWs = null;
+      isWsOpen = false;
+      this.isDead = true;
       if (process.env.DEBUG) {
         console.error(err);
       }
@@ -241,6 +263,7 @@ export class WebSocketClient {
     }
     else if (data.event === 'userInput') {
       userInput = data.userInput;
+      this.isInitialized = true;
     }
     else if (data.event === 'cancelCommand') {
       if (this.wsContext?.command === data?.context?.command && this.wsContext.id === data?.context?.id) {
@@ -282,6 +305,8 @@ export class WebSocketClient {
   dispose(status?: string, error: any = null) {
     WebSocketClient.sendCloseClientMessage(status, error);
     this.ws.terminate();
+    this.isDead = true;
+    isWsOpen = false;
     globalWs = null;
     // uxLog("other", this,c.grey('Closed WebSocket connection with VsCode SFDX Hardis'));
   }

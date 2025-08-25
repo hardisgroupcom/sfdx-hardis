@@ -9,7 +9,7 @@ import path from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
 import { execCommand, execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
-import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getChromeExecutablePath } from '../../../../common/utils/orgConfigUtils.js';
 import {
   deleteConnectedApps,
@@ -23,6 +23,7 @@ import {
 import { getConfig, setConfig } from '../../../../config/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -44,46 +45,49 @@ interface BrowserContext {
 }
 
 export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
-  public static title = 'Save info to restore before org refresh';
-
-  public static description = `
+  public static description: string = `
 ## Command Behavior
 
-**Backs up all Connected Apps and their secrets from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
+**Backs up all Connected Apps, their secrets, certificates, and custom settings from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
 
-This command is essential for Salesforce sandbox refresh operations where Connected Apps (and their Consumer Secrets) would otherwise be lost. It automates the extraction, secure storage, and (optionally) deletion of Connected Apps, ensuring that all credentials and configuration can be restored post-refresh.
+This command is essential for Salesforce sandbox refresh operations where Connected Apps (and their Consumer Secrets), certificates, and custom settings would otherwise be lost. It automates the extraction, secure storage, and (optionally) deletion of Connected Apps, ensuring that all credentials and configuration can be restored post-refresh.
 
 Key functionalities:
 
-- **Connected App Discovery:** Lists all Connected Apps in the org, with options to filter by name or process all.
+- **Connected App Discovery:** Lists all Connected Apps in the org, with options to filter by name, process all, or interactively select.
 - **User Selection:** Allows interactive or flag-based selection of which Connected Apps to back up.
 - **Metadata Retrieval:** Retrieves Connected App metadata and saves it in a dedicated project folder for the sandbox instance.
 - **Consumer Secret Extraction:** Attempts to extract Consumer Secrets automatically using browser automation (Puppeteer), or prompts for manual entry if automation fails.
 - **Config Persistence:** Stores the list of selected apps in the project config for use during restoration.
 - **Optional Deletion:** Can delete the Connected Apps from the org after backup, as required for re-upload after refresh.
-- **Summary and Reporting:** Provides a summary of actions, including which apps were saved and whether secrets were captured.
+- **Certificate Backup:** Retrieves all org certificates and their definitions, saving them for later restoration.
+- **Custom Settings Backup:** Lists all custom settings in the org, allows user selection, and exports their data to JSON files for backup.
+- **Summary and Reporting:** Provides a summary of actions, including which apps, certificates, and custom settings were saved and whether secrets were captured.
 
-This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is designed to be run before a sandbox refresh. It ensures that all Connected Apps and their secrets are safely stored for later restoration.
+This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is designed to be run before a sandbox refresh. It ensures that all Connected Apps, secrets, certificates, and custom settings are safely stored for later restoration.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- **Salesforce CLI Integration:** Uses \`sf org list metadata\` and other CLI commands to discover and retrieve Connected Apps.
-- **Metadata Handling:** Saves Connected App XML files in a dedicated folder under \`scripts / sandbox - refresh / <sandbox-folder > \`.
+- **Salesforce CLI Integration:** Uses \`sf org list metadata\`, \`sf project retrieve start\`, and other CLI commands to discover and retrieve Connected Apps, certificates, and custom settings.
+- **Metadata Handling:** Saves Connected App XML files and certificate files in a dedicated folder under \`scripts/sandbox-refresh/<sandbox-folder>\`.
 - **Consumer Secret Handling:** Uses Puppeteer to automate browser login and extraction of Consumer Secrets, falling back to manual prompts if needed.
-- **Config Management:** Updates \`config /.sfdx - hardis.yml\` with the list of selected apps for later use.
-- **Deletion Logic:** Optionally deletes Connected Apps from the org (required for re-upload after refresh), with user confirmation unless running in CI or with \`--delete \` flag.
+- **Custom Settings Handling:** Lists all custom settings, allows user selection, and exports their data using \`sf data tree export\` to JSON files.
+- **Config Management:** Updates \`config/.sfdx-hardis.yml\` with the list of selected apps for later use.
+- **Deletion Logic:** Optionally deletes Connected Apps from the org (required for re-upload after refresh), with user confirmation unless running in CI or with \`--delete\` flag.
 - **Error Handling:** Provides detailed error messages and guidance if retrieval or extraction fails.
+- **Reporting:** Sends summary and configuration files to the WebSocket client for reporting and traceability.
 
 </details>
 `;
 
-  public static examples = [
-    `$ sf hardis:org:refresh:before-refresh`,
-    `$ sf hardis:org:refresh:before-refresh --name "MyConnectedApp"`,
-    `$ sf hardis:org:refresh:before-refresh --name "App1,App2,App3"`,
-    `$ sf hardis:org:refresh:before-refresh --all`,
-    `$ sf hardis:org:refresh:before-refresh --delete`,
+
+  public static examples: string[] = [
+    "$ sf hardis:org:refresh:before-refresh",
+    "$ sf hardis:org:refresh:before-refresh --name \"MyConnectedApp\"",
+    "$ sf hardis:org:refresh:before-refresh --name \"App1,App2,App3\"",
+    "$ sf hardis:org:refresh:before-refresh --all",
+    "$ sf hardis:org:refresh:before-refresh --delete",
   ];
 
   public static flags = {
@@ -104,7 +108,6 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       summary: 'Process all Connected Apps without selection prompt',
       description: 'If set, all Connected Apps from the org will be processed. Takes precedence over --name if both are specified.'
     }),
-
     websocket: Flags.string({
       description: messages.getMessage('websocket'),
     }),
@@ -117,20 +120,34 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
   protected conn: Connection;
   protected saveProjectPath: string = '';
+  protected orgUsername: string = '';
+  protected instanceUrl: string = '';
   protected refreshSandboxConfig: any = {};
+  protected result: any;
+  protected processAll: boolean;
+  protected nameFilter: string | undefined;
+  protected deleteApps: boolean;
+
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgRefreshBeforeRefresh);
     this.conn = flags["target-org"].getConnection();
-    const orgUsername = flags["target-org"].getUsername() as string; // Cast to string to avoid TypeScript error
-    const instanceUrl = this.conn.instanceUrl;
+    this.orgUsername = flags["target-org"].getUsername() as string; // Cast to string to avoid TypeScript error
+    this.instanceUrl = this.conn.instanceUrl;
+    this.deleteApps = flags.delete || false;
     const accessToken = this.conn.accessToken; // Ensure accessToken is a string
-    const processAll = flags.all || false;
-    const nameFilter = processAll ? undefined : flags.name; // If --all is set, ignore --name
+    this.processAll = flags.all || false;
+    this.nameFilter = this.processAll ? undefined : flags.name; // If --all is set, ignore --name
     const config = await getConfig("user");
     this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
+    this.result = { success: true, message: 'before-refresh command performed successfully' };
 
-    uxLog("action", this, c.cyan(`This command with save information that will need to be restored after org refresh`));
+    uxLog("action", this, c.cyan(`This command will save information that must be restored after org refresh, in the following order:
+- Connected Apps
+- Certificates
+- Other Metadatas
+- Custom Settings
+  `));
 
     // Check org is connected
     if (!accessToken) {
@@ -139,79 +156,25 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     this.saveProjectPath = await this.createSaveProject();
 
-    try {
-      // Step 1: Get Connected Apps from org or based on provided name filter
-      const connectedApps = await this.getConnectedApps(orgUsername, nameFilter, processAll);
+    await this.saveMetadatas();
 
-      if (connectedApps.length === 0) {
-        uxLog("warning", this, c.yellow('No Connected Apps found'));
-        return { success: false, message: 'No Connected Apps found' };
-      }
+    await this.saveCustomSettings();
 
-      // Step 2: Determine which apps to process (all, filtered, or user-selected)
-      const selectedApps = await this.selectConnectedApps(connectedApps, processAll, nameFilter);
+    await this.retrieveDeleteConnectedApps(accessToken);
 
-      if (selectedApps.length === 0) {
-        uxLog("warning", this, c.yellow('No Connected Apps selected'));
-        return { success: false, message: 'No Connected Apps selected' };
-      }
-      this.refreshSandboxConfig.connectedApps = selectedApps.map(app => app.fullName).sort();
-      await this.saveConfig();
-
-      // Step 3: Process the selected Connected Apps
-      const updatedApps = await this.processConnectedApps(orgUsername, selectedApps, instanceUrl, accessToken);
-
-      // Step 4: Delete Connected Apps from org if required (default behavior)
-      let deleteApps = flags.delete || false;
-      if (!isCI && !deleteApps) {
-        const connectedAppNames = updatedApps.map(app => app.fullName).join(', ');
-        const deletePrompt = await prompts({
-          type: 'confirm',
-          name: 'delete',
-          message: `Do you want to delete the Connected Apps from the org after saving? ${connectedAppNames}`,
-          description: 'If you do not delete them, they will remain in the org and can be re-uploaded after refreshing the org.',
-          initial: false
-        });
-        deleteApps = deletePrompt.delete;
-      }
-
-      if (deleteApps) {
-        uxLog("action", this, c.cyan(`Deleting ${updatedApps.length} Connected Apps from ${this.conn.instanceUrl} ...`));
-        await deleteConnectedApps(orgUsername, updatedApps, this, this.saveProjectPath);
-        uxLog("success", this, c.green('Connected Apps were successfully deleted from the org.'));
-      }
-
-      const summaryMessage = deleteApps
-        ? `You are now ready to refresh your sandbox org, as you will be able to re-upload the Connected Apps after the refresh.`
-        : `Dry-run successful, run again the command with Connected Apps deletion to be able to refresh your org and re-upload the Connected Apps after the refresh.`;
-      uxLog("action", this, c.cyan(summaryMessage));
-      // Add a summary message at the end
-      if (updatedApps.length > 0) {
-        uxLog("success", this, c.green(`Successfully saved locally ${updatedApps.length} Connected App(s) with their Consumer Secrets`));
-      }
-
-      uxLog("success", this, c.cyan('Saved refresh sandbox configuration in config/.sfdx-hardis.yml'));
-      WebSocketClient.sendReportFileMessage(path.join(process.cwd(), 'config', '.sfdx-hardis.yml#refreshSandboxConfig'), "Sandbox refresh configuration", 'report');
-
-      return createConnectedAppSuccessResponse(
-        `Successfully processed ${updatedApps.length} Connected App(s)`,
-        updatedApps.map(app => app.fullName),
-        {
-          consumerSecretsAdded: updatedApps.map(app => app.consumerSecret ? app.fullName : null).filter(Boolean)
-        }
-      );
-
-    } catch (error: any) {
-      return handleConnectedAppError(error, this);
-    }
+    return this.result;
   }
 
   private async createSaveProject(): Promise<string> {
     const folderName = this.conn.instanceUrl.replace(/https?:\/\//, '').replace("my.salesforce.com", "").replace(/\//g, '-').replace(/[^a-zA-Z0-9-]/g, '');
     const sandboxRefreshRootFolder = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
     const projectPath = path.join(sandboxRefreshRootFolder, folderName);
+    if (fs.existsSync(projectPath)) {
+      uxLog("log", this, c.cyan(`Project folder ${projectPath} already exists. Reusing it.\n(Delete it and run again this command if you want to start fresh)`));
+      return projectPath;
+    }
     await fs.ensureDir(projectPath);
-    uxLog("action", this, c.cyan(`Creating sfdx-project for sandbox info storage in ${projectPath}`));
+    uxLog("action", this, c.cyan(`Creating sfdx-project for sandbox info storage`));
     const createCommand = `sf project generate --name "${folderName}"`;
     await execCommand(createCommand, this, {
       output: true,
@@ -220,7 +183,98 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     uxLog("log", this, c.grey('Moving sfdx-project to root...'));
     await fs.copy(folderName, projectPath, { overwrite: true });
     await fs.remove(folderName);
+    uxLog("log", this, c.grey(`Save Project created in folder ${projectPath}`));
     return projectPath;
+  }
+
+  private async retrieveDeleteConnectedApps(accessToken: string): Promise<void> {
+    // If metadatas folder is not empty, ask if we want to retrieve them again
+    let retrieveConnectedApps = true;
+    const connectedAppsFolder = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'connectedApps');
+    if (fs.existsSync(connectedAppsFolder) && fs.readdirSync(connectedAppsFolder).length > 0) {
+      const confirmRetrieval = await prompts({
+        type: 'confirm',
+        name: 'retrieveAgain',
+        message: `Connected Apps folder is not empty. Do you want to retrieve Connected Apps again?`,
+        description: `If you do not retrieve them again, the Connected Apps will not be updated with the latest changes from the org.`,
+        initial: false
+      });
+
+      if (!confirmRetrieval.retrieveAgain) {
+        retrieveConnectedApps = false;
+      }
+    }
+
+    if (retrieveConnectedApps) {
+      try {
+        // Step 1: Get Connected Apps from org or based on provided name filter
+        const connectedApps = await this.getConnectedApps(this.orgUsername, this.nameFilter, this.processAll);
+
+        if (connectedApps.length === 0) {
+          uxLog("warning", this, c.yellow('No Connected Apps found'));
+          this.result = Object.assign(this.result, { success: false, message: 'No Connected Apps found' })
+          return;
+        }
+
+        // Step 2: Determine which apps to process (all, filtered, or user-selected)
+        const selectedApps = await this.selectConnectedApps(connectedApps, this.processAll, this.nameFilter);
+
+        if (selectedApps.length === 0) {
+          uxLog("warning", this, c.yellow('No Connected Apps selected'));
+          this.result = Object.assign(this.result, { success: false, message: 'No Connected Apps selected' });
+          return;
+        }
+        this.refreshSandboxConfig.connectedApps = selectedApps.map(app => app.fullName).sort();
+        await this.saveConfig();
+
+        // Step 3: Process the selected Connected Apps
+        const updatedApps = await this.processConnectedApps(this.orgUsername, selectedApps, this.instanceUrl, accessToken);
+
+        // Step 4: Delete Connected Apps from org if required (default behavior)
+
+        if (!isCI && !this.deleteApps) {
+          const connectedAppNames = updatedApps.map(app => app.fullName).join(', ');
+          const deletePrompt = await prompts({
+            type: 'confirm',
+            name: 'delete',
+            message: `Do you want to delete the Connected Apps from the org after saving? ${connectedAppNames}`,
+            description: 'If you do not delete them, they will remain in the org and can be re-uploaded after refreshing the org.',
+            initial: false
+          });
+          this.deleteApps = deletePrompt.delete;
+        }
+
+        if (this.deleteApps) {
+          uxLog("action", this, c.cyan(`Deleting ${updatedApps.length} Connected Apps from ${this.conn.instanceUrl} ...`));
+          await deleteConnectedApps(this.orgUsername, updatedApps, this, this.saveProjectPath);
+          uxLog("success", this, c.green('Connected Apps were successfully deleted from the org.'));
+        }
+
+        const summaryMessage = this.deleteApps
+          ? `You are now ready to refresh your sandbox org, as you will be able to re-upload the Connected Apps after the refresh.`
+          : `Dry-run successful, run again the command with Connected Apps deletion to be able to refresh your org and re-upload the Connected Apps after the refresh.`;
+        uxLog("action", this, c.cyan(summaryMessage));
+        // Add a summary message at the end
+        if (updatedApps.length > 0) {
+          uxLog("success", this, c.green(`Successfully saved locally ${updatedApps.length} Connected App(s) with their Consumer Secrets`));
+        }
+
+        uxLog("success", this, c.cyan('Saved refresh sandbox configuration in config/.sfdx-hardis.yml'));
+        WebSocketClient.sendReportFileMessage(path.join(process.cwd(), 'config', '.sfdx-hardis.yml#refreshSandboxConfig'), "Sandbox refresh configuration", 'report');
+
+        const connectedAppRes = createConnectedAppSuccessResponse(
+          `Successfully processed ${updatedApps.length} Connected App(s)`,
+          updatedApps.map(app => app.fullName),
+          {
+            consumerSecretsAdded: updatedApps.map(app => app.consumerSecret ? app.fullName : null).filter(Boolean)
+          }
+        );
+        this.result = Object.assign(this.result || {}, connectedAppRes);
+
+      } catch (error: any) {
+        this.result = Object.assign(this.result || {}, handleConnectedAppError(error, this));
+      }
+    }
   }
 
   private async getConnectedApps(
@@ -670,6 +724,241 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     if (JSON.stringify(this.refreshSandboxConfig) !== JSON.stringify(config.refreshSandboxConfig)) {
       await setConfig("project", { refreshSandboxConfig: this.refreshSandboxConfig });
       uxLog("log", this, c.cyan('Refresh sandbox configuration has been saved successfully.'));
+    }
+  }
+
+  private async saveMetadatas(): Promise<void> {
+    const metadataToSave = path.join(this.saveProjectPath, "manifest", 'package-metadatas-to-save.xml');
+    if (fs.existsSync(metadataToSave)) {
+      const promptResponse = await prompts({
+        type: 'confirm',
+        name: 'retrieveAgain',
+        message: `It seems you already have metadatas saved from a previous run.\nDo you want to retrieve certificates and metadata again ?`,
+        description: 'This will overwrite the existing package-metadatas-to-save.xml file and related certificates and metadatas.',
+        initial: false
+      });
+      if (!promptResponse.retrieveAgain) {
+        uxLog("log", this, c.grey(`Skipping metadata retrieval as it already exists at ${this.saveProjectPath}`));
+        return;
+      }
+    }
+
+    // Retrieve certificates
+    await this.retrieveCertificates();
+
+    // Metadata package.Xml for backup
+    uxLog("action", this, c.cyan('Saving metadata files before sandbox refresh...'));
+    const savePackageXml = await this.createSavePackageXml();
+
+    // Retrieve metadata from org using the package XML
+    await this.retrieveMetadatasToSave(savePackageXml);
+
+    // Generate new package.xml from saveProjectPath, and remove ConnectedApps from it
+    await this.generatePackageXmlToRestore();
+  }
+
+  private async createSavePackageXml(): Promise<string> {
+    uxLog("log", this, c.cyan(`Managing "package-metadatas-to-save.xml" file, that will be used to retrieve the metadatas before refreshing the org.`));
+    // Copy default package xml to the save project path
+    const sourceFile = path.join(PACKAGE_ROOT_DIR, 'defaults/refresh-sandbox', 'package-metadatas-to-save.xml');
+    const targetFile = path.join(this.saveProjectPath, "manifest", 'package-metadatas-to-save.xml');
+    await fs.ensureDir(path.dirname(targetFile));
+    if (fs.existsSync(targetFile)) {
+      const promptResponse = await prompts({
+        type: 'confirm',
+        name: 'overwrite',
+        message: `The file ${targetFile} already exists. Do you want to overwrite it?`,
+        description: 'This file is used to save the metadata that will be restored after org refresh.',
+        initial: false
+      });
+      if (promptResponse.overwrite) {
+        uxLog("log", this, c.grey(`Overwriting default save package xml to ${targetFile}`));
+        await fs.copy(sourceFile, targetFile, { overwrite: true });
+      }
+    }
+    else {
+      uxLog("log", this, c.grey(`Copying default package xml to ${targetFile}`));
+      await fs.copy(sourceFile, targetFile, { overwrite: true });
+    }
+    uxLog("log", this, c.grey(`Save package XML is located at ${targetFile}`));
+    WebSocketClient.sendReportFileMessage(targetFile, "Save package XML", 'report');
+    // Prompt user to check packageXml content and update it if necessary
+    const promptRes = await prompts({
+      type: 'confirm',
+      name: 'checkPackageXml',
+      message: `Please check package XML file ${targetFile} before retrieving, update it to add metadata if necessary then continue`,
+      description: 'You can add or remove metadata types to save before proceeding.',
+      initial: true
+    });
+    if (!promptRes.checkPackageXml) {
+      uxLog("log", this, c.grey(`Skipping package XML check`));
+    }
+    return targetFile;
+  }
+
+  private async retrieveMetadatasToSave(savePackageXml: string) {
+    uxLog("action", this, c.cyan(`Retrieving metadatas to save...`));
+    await execCommand(
+      `sf project retrieve start --manifest ${savePackageXml} --target-org ${this.orgUsername} --ignore-conflicts --json`,
+      this,
+      { output: true, fail: true, cwd: this.saveProjectPath }
+    );
+  }
+
+  private async generatePackageXmlToRestore() {
+    uxLog("action", this, c.cyan(`Generating new package.xml from saved project path ${this.saveProjectPath}...`));
+    const restorePackageXmlFileName = 'package-metadata-to-restore.xml';
+    const restorePackageXmlFile = path.join(this.saveProjectPath, 'manifest', restorePackageXmlFileName);
+    await execCommand(
+      `sf project generate manifest --source-dir force-app --output-dir manifest --name ${restorePackageXmlFileName} --json`,
+      this,
+      { output: true, fail: true, cwd: this.saveProjectPath }
+    );
+    uxLog("success", this, c.grey(`Generated package.xml for restore at ${restorePackageXmlFile}`));
+    const restorePackage = await parsePackageXmlFile(restorePackageXmlFile);
+    if (restorePackage?.["ConnectedApp"]) {
+      delete restorePackage["ConnectedApp"];
+      await writePackageXmlFile(restorePackageXmlFile, restorePackage);
+      uxLog("log", this, c.grey(`Removed ConnectedApps from ${restorePackageXmlFileName} as they will be handled separately`));
+    }
+    if (restorePackage?.["Certificate"]) {
+      delete restorePackage["Certificate"];
+      await writePackageXmlFile(restorePackageXmlFile, restorePackage);
+      uxLog("log", this, c.grey(`Removed Certificates from ${restorePackageXmlFileName} as they will be handled separately`));
+    }
+    if (restorePackage?.["SamlSsoConfig"]) {
+      delete restorePackage["SamlSsoConfig"];
+      await writePackageXmlFile(restorePackageXmlFile, restorePackage);
+      uxLog("log", this, c.grey(`Removed SamlSsoConfig from ${restorePackageXmlFileName} as they will be handled separately`));
+    }
+  }
+
+  private async retrieveCertificates() {
+    uxLog("action", this, c.cyan('Retrieving certificates (.crt) from org...'));
+    // Retrieve certificates using metadata api coz with source api it does not work
+    const certificatesPackageXml = path.join(PACKAGE_ROOT_DIR, 'defaults/refresh-sandbox', 'package-certificates-to-save.xml');
+    const packageCertsXml = path.join(this.saveProjectPath, 'manifest', 'package-certificates-to-save.xml');
+    uxLog("log", this, c.grey(`Copying default package XML for certificates to ${packageCertsXml}`));
+    await fs.copy(certificatesPackageXml, packageCertsXml, { overwrite: true });
+    uxLog("log", this, c.grey(`Retrieving certificates from org ${this.instanceUrl} using Metadata API (Source APi does not support it)...`));
+    await execSfdxJson(
+      `sf project retrieve start --manifest ${packageCertsXml} --target-org ${this.orgUsername} --target-metadata-dir ./mdapi_certs --unzip`,
+      this,
+      { output: true, fail: true, cwd: this.saveProjectPath }
+    );
+    // Copy the extracted certificates to the main directory
+    const mdapiCertsDir = path.join(this.saveProjectPath, 'mdapi_certs', 'unpackaged', 'unpackaged', 'certs');
+    const certsDir = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'certs');
+    uxLog("log", this, c.grey(`Copying certificates from ${mdapiCertsDir} to ${certsDir}`));
+    await fs.ensureDir(certsDir);
+    await fs.copy(mdapiCertsDir, certsDir, { overwrite: true });
+    await fs.remove(path.join(this.saveProjectPath, 'mdapi_certs'));
+    uxLog("success", this, c.green(`Successfully retrieved certificates from org and saved them to ${certsDir}`));
+    uxLog("action", this, c.cyan('Retrieving certificates definitions (.crt-meta.xml) from org...'));
+    // Retrieve certificates definitions using source api
+    await execCommand(
+      `sf project retrieve start -m Certificate --target-org ${this.orgUsername} --ignore-conflicts --json`,
+      this,
+      { output: true, fail: true, cwd: this.saveProjectPath }
+    );
+  }
+
+  private async saveCustomSettings(): Promise<void> {
+    const customSettingsFolder = path.join(this.saveProjectPath, 'savedCustomSettings');
+    // If savedCustomSettings is not empty, ask if we want to retrieve them again
+    if (fs.existsSync(customSettingsFolder) && fs.readdirSync(customSettingsFolder).length > 0) {
+      const confirmRetrieval = await prompts({
+        type: 'confirm',
+        name: 'retrieveAgain',
+        message: `Custom Settings folder is not empty. Do you want to retrieve Custom Settings again?`,
+        description: `If you do not retrieve them again, the Custom Settings will not be updated with the latest changes from the org.`,
+        initial: false
+      });
+
+      if (!confirmRetrieval.retrieveAgain) {
+        uxLog("log", this, c.grey(`Skipping Custom Settings retrieval as it already exists at ${customSettingsFolder}`));
+        return;
+      }
+    }
+    // List custom settings in the org
+    uxLog("action", this, c.cyan(`Listing Custom Settings in the org...`));
+    const globalDesc = await this.conn.describeGlobal();
+    const customSettings = globalDesc.sobjects.filter(sobject => sobject.customSetting);
+    if (customSettings.length === 0) {
+      uxLog("warning", this, c.yellow('No Custom Settings found in the org.'));
+      return;
+    }
+    const customSettingsNames = customSettings.map(cs => `- ${cs.name}`).sort().join('\n');
+    uxLog("log", this, c.grey(`Found ${customSettings.length} Custom Setting(s) in the org:\n${customSettingsNames}`));
+    // Ask user to select which Custom Settings to retrieve
+    const selectedSettings = await prompts({
+      type: 'multiselect',
+      name: 'settings',
+      message: 'Select Custom Settings to retrieve',
+      description: 'You can select multiple Custom Settings to retrieve.',
+      choices: customSettings.map(cs => ({ title: cs.name, value: cs.name })),
+      initial: customSettings.map(cs => cs.name),
+    });
+    if (selectedSettings.settings.length === 0) {
+      uxLog("warning", this, c.yellow('No Custom Settings selected for retrieval'));
+      return;
+    }
+    uxLog("action", this, c.cyan(`Retrieving ${selectedSettings.settings.length} selected Custom Settings`));
+    const successCs: any = [];
+    const errorCs: any = [];
+    // Retrieve each selected Custom Setting
+    for (const settingName of selectedSettings.settings) {
+      try {
+        uxLog("action", this, c.cyan(`Retrieving Custom Setting: ${settingName}`));
+
+        // List all fields of the Custom Setting using globalDesc
+        const customSettingDesc = globalDesc.sobjects.find(sobject => sobject.name === settingName);
+        if (!customSettingDesc) {
+          uxLog("error", this, c.red(`Custom Setting ${settingName} not found in the org.`));
+          errorCs.push(settingName);
+          continue;
+        }
+        const csDescribe = await this.conn.sobject(settingName).describe();
+        const fieldList = csDescribe.fields.map(field => field.name).join(', ');
+        uxLog("log", this, c.grey(`Fields in Custom Setting ${settingName}: ${fieldList}`));
+
+        // Use data tree export to retrieve the Custom Setting
+        uxLog("log", this, c.cyan(`Running tree export for Custom Setting ${settingName}...`));
+        const retrieveCommand = `sf data tree export --query "SELECT ${fieldList} FROM ${settingName}" --target-org ${this.orgUsername} --json`;
+        const csFolder = path.join(customSettingsFolder, settingName);
+        await fs.ensureDir(csFolder);
+        const result = await execSfdxJson(retrieveCommand, this, {
+          output: true,
+          fail: true,
+          cwd: csFolder
+        });
+        if (!(result?.status === 0)) {
+          uxLog("error", this, c.red(`Failed to retrieve Custom Setting ${settingName}: ${JSON.stringify(result)}`));
+          continue;
+        }
+        const resultFile = path.join(csFolder, `${settingName}.json`);
+        if (fs.existsSync(resultFile)) {
+          uxLog("log", this, c.grey(`Custom Setting ${settingName} has been downloaded to ${resultFile}`));
+          successCs.push(settingName);
+        }
+        else {
+          uxLog("warning", this, c.red(`Custom Setting ${settingName} was not retrieved correctly, or has no values. No file found at ${resultFile}`));
+          errorCs.push(settingName);
+          continue;
+        }
+      } catch (error: any) {
+        errorCs.push(settingName);
+        uxLog("error", this, c.red(`Error retrieving Custom Setting ${settingName}: ${error.message || error}`));
+      }
+    }
+    uxLog("action", this, c.cyan(`Custom Settings retrieval completed (${successCs.length} successful, ${errorCs.length} failed)`));
+    if (successCs.length > 0) {
+      const successCsNames = successCs.map(cs => "- " + cs).join('\n');
+      uxLog("success", this, c.green(`Successfully retrieved Custom Settings:\n${successCsNames}`));
+    }
+    if (errorCs.length > 0) {
+      const errorCsNames = errorCs.map(cs => "- " + cs).join('\n');
+      uxLog("error", this, c.red(`Failed to retrieve Custom Settings:\n${errorCsNames}`));
     }
   }
 }
