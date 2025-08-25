@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.1.4] 2025-08-25
+
 - Update Integrations & DevOps Documentation
 - Send message to refresh pipeline after updating package configuration
 
