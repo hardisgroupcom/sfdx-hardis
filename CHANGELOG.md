@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update Integrations & DevOps Documentation
+
 ## [6.1.3] 2025-08-24
 
 - [hardis:org:configure:auth](https://sfdx-hardis.cloudity.com/hardis/org/configure/auth/)
