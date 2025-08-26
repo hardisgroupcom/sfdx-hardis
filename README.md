@@ -71,9 +71,8 @@ For advanced use, please also install dependencies
 
 ```sh-session
 sf plugins install @salesforce/plugin-packaging
-sf plugins install sfdmu
 sf plugins install sfdx-git-delta
-sf plugins install texei-sfdx-plugin
+sf plugins install sfdmu
 ```
 
 If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.
@@ -334,9 +333,8 @@ Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you
 
 **sfdx-hardis** partially relies on the following SFDX Open-Source packages
 
-- [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
 - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
-- [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
+- [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
 
 ## Contributors
 

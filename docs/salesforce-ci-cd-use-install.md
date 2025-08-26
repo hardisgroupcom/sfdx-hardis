@@ -36,9 +36,8 @@ _See tutorial_
 > - [Salesforce CLI](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_develop.htm)
 > - Salesforce DX plugins
 >   - [sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis)
->   - [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
 >   - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
->   - [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
+>   - [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
 
 Now your computer is all set, you can [clone your project git repository](salesforce-ci-cd-clone-repository.md) :)
 
