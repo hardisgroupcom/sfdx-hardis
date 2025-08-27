@@ -25,9 +25,8 @@ For advanced use, please also install dependencies
 
 ```sh-session
 sf plugins install @salesforce/plugin-packaging
-sf plugins install sfdmu
 sf plugins install sfdx-git-delta
-sf plugins install texei-sfdx-plugin
+sf plugins install sfdmu
 ```
 
 If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.

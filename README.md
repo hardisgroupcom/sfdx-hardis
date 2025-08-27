@@ -15,18 +15,31 @@ _Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessi
 [![License](https://img.shields.io/npm/l/sfdx-hardis.svg)](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/package.json)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-Sfdx-hardis is a Salesforce CLI Plugin, by [**Cloudity**](https://cloudity.com/) & friends, natively compliant with most Git platforms, messaging tools, ticketing systems and AI providers.
+Sfdx-hardis is a **CLI and visual productivity tools suite for Salesforce**, by [**Cloudity**](https://cloudity.com/) & friends, natively compliant with most Git platforms, messaging tools, ticketing systems and AI providers (including Agentforce).
 
 ![Native Integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
 
-It will allow you to:
+It is free and Open-Source, and will allow you to simply:
 
-- Do with simple commands what could be done manually in minutes/hours
-- [Define a **ready to use CI/CD Pipeline** for your Salesforce project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
-- [**Backup Metadatas** and **monitor any Salesforce org**](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/)
-- [Generate your **project documentation**](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/), including AI-generated description and Flow Visual History
+- [Deliver your projects with **State of the art Salesforce DevOps**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 
-[_Please see the full list of commands in Online documentation_](https://sfdx-hardis.cloudity.com)
+![DevOps Pipeline UI](https://sfdx-hardis.cloudity.com/assets/images/DevOpsPipelineUI.png)
+
+- [**Backup Metadatas** and **Monitor your Salesforce orgs**](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/)
+
+![Monitoring with Grafana](https://sfdx-hardis.cloudity.com/assets/images/grafana-screenshot.jpg)
+
+- [Generate your **Project Documentation** with AI](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/)
+
+![Salesforce AI Generated Documentation](https://sfdx-hardis.cloudity.com/assets/images/screenshot-object-diagram.jpg)
+
+- Enjoy many commands that will **save your minutes, hours or even days** in your daily **Admin or Developer** work.
+
+![Productivity commands](https://sfdx-hardis.cloudity.com/assets/images/ProductivityCommands.png)
+
+If you need guidance about how to leverage sfdx-hardis to bring more value to your business, Cloudity's international multi-cloud teams of business experts and technical experts can help: [contact us](https://cloudity.com/#form) !
+
+[_See online documentation for a better navigation_](https://sfdx-hardis.cloudity.com)
 
 ___
 
@@ -71,9 +84,8 @@ For advanced use, please also install dependencies
 
 ```sh-session
 sf plugins install @salesforce/plugin-packaging
-sf plugins install sfdmu
 sf plugins install sfdx-git-delta
-sf plugins install texei-sfdx-plugin
+sf plugins install sfdmu
 ```
 
 If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.
@@ -334,9 +346,8 @@ Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you
 
 **sfdx-hardis** partially relies on the following SFDX Open-Source packages
 
-- [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
 - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
-- [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
+- [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
 
 ## Contributors
 
