@@ -1340,6 +1340,30 @@
       "title": "Project Name",
       "type": "string"
     },
+    "refreshSandboxConfig": {
+      "$id": "#/properties/refreshSandboxConfig",
+      "description": "Configuration for sandbox refresh. Will be used by command hardis:org:refresh:before-refresh and hardis:org:refresh:after-refresh",
+      "properties": {
+        "connectedApps": {
+          "$id": "#/properties/refreshSandboxConfig/connectedApps",
+          "description": "List of connected apps to download before refresh and to upload after refresh",
+          "examples": [
+            [
+              "My_Connected_App_1",
+              "My_Connected_App_2"
+            ]
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Connected Apps",
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "title": "Refresh Sandbox Configuration",
+      "type": "object"
+    },
     "retrofitBranch": {
       "$id": "#/properties/retrofitBranch",
       "default": "",

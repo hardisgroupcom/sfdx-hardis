@@ -7,7 +7,7 @@ import fs from 'fs-extra';
 import pascalcase from 'pascalcase';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
-import { dataFolderRoot } from '../../../../common/utils/dataUtils.js';
+import { DATA_FOLDERS_ROOT } from '../../../../common/utils/dataUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { getConfig, setConfig } from '../../../../config/index.js';
@@ -121,7 +121,7 @@ The command's technical implementation involves:
   }
 
   private async generateConfigurationFiles() {
-    const sfdmuProjectFolder = path.join(dataFolderRoot, this.dataPath);
+    const sfdmuProjectFolder = path.join(DATA_FOLDERS_ROOT, this.dataPath);
     if (fs.existsSync(sfdmuProjectFolder)) {
       throw new SfError(`[sfdx-hardis]${c.red(`Folder ${c.bold(sfdmuProjectFolder)} already exists`)}`);
     }

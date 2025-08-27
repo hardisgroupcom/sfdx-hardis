@@ -7,7 +7,7 @@ import { getConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import { isProductionOrg } from './orgUtils.js';
 
-export const dataFolderRoot = path.join('.', 'scripts', 'data');
+export const DATA_FOLDERS_ROOT = path.join(process.cwd(), 'scripts', 'data');
 
 // Import data from sfdmu folder
 export async function importData(sfdmuPath: string, commandThis: any, options: any = {}) {
@@ -93,15 +93,23 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   });
 }
 
+export async function findDataWorkspaceByName(projectName: string) {
+  const folderPath = path.join(DATA_FOLDERS_ROOT, projectName);
+  if (fs.existsSync(folderPath)) {
+    return folderPath;
+  }
+  throw new SfError(`There is no sfdmu folder named ${projectName} in your workspace (${DATA_FOLDERS_ROOT})`);
+}
+
 export async function selectDataWorkspace(opts = { selectDataLabel: 'Please select a data workspace to export' }) {
-  if (!fs.existsSync(dataFolderRoot)) {
+  if (!fs.existsSync(DATA_FOLDERS_ROOT)) {
     throw new SfError(
       "There is no sfdmu root folder 'scripts/data' in your workspace. Create it and define sfdmu exports using sfdmu: https://help.sfdmu.com/"
     );
   }
 
   const sfdmuFolders = fs
-    .readdirSync(dataFolderRoot, { withFileTypes: true })
+    .readdirSync(DATA_FOLDERS_ROOT, { withFileTypes: true })
     .filter((dirent) => dirent.isDirectory())
     .map((dirent) => path.join('.', 'scripts', 'data', dirent.name));
   if (sfdmuFolders.length === 0) {
