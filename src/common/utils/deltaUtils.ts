@@ -104,18 +104,27 @@ export async function extendPackageFileWithDependencies(
     return recordTypesMembers?.length ? { members: recordTypesMembers, name: "RecordType" } : null;
   };
 
+  const leadConvertSettings = async (member: string): Promise<PackageType | null> => {
+    if (!member.startsWith('Opportunity') && !member.includes('Account') && !member.includes('Contact')) {
+      return null;
+    }
+    const types = await allTypes(fullPackageFile);
+
+    return types["LeadConvertSettings"] ? { members: types["LeadConvertSettings"], name: "LeadConvertSettings" } : null;
+  };
+
   const metadataProcessors = {
     "Layout" : dashSeparatedObjectToObjectTranslation,
     "CustomObject" : objectTranslations,
     "ValidationRule" : dotSeparatedObjectToObjectTranslation,
     "QuickAction" : dotSeparatedObjectToObjectTranslation,
     "RecordType" : dotSeparatedObjectToObjectTranslation,
-    "CustomMetadata" : [allCustomFields],
+    "CustomMetadata" : allCustomFields,
     "CustomLabel" : globalTranslations,
     "CustomPageWebLink" : globalTranslations,
     "CustomTab" : globalTranslations,
     "ReportType" : globalTranslations,
-    "CustomField" : [allObjectRecordTypes, allCustomMetadataRecords, dotSeparatedObjectToObjectTranslation],
+    "CustomField" : [allObjectRecordTypes, allCustomMetadataRecords, dotSeparatedObjectToObjectTranslation, leadConvertSettings],
   };
   
   const parsedTypes = await parsePackageXmlFile(deltaXmlFile);

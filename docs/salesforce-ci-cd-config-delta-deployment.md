@@ -78,4 +78,5 @@ It is recommended to use opinionated default sfdx-hardis delta deployment config
 
 ### Additionally
 
-- EXTEND_DELTA_DEPLOYMENT or extendDeltaDeployment will enable deployment of related metadata even it it was not changed. E.g. it would deploy CustomObjectTranslation if one of Layout was changed.
+- EXTEND_DELTA_DEPLOYMENT or extendDeltaDeployment
+  - will enable deployment of related metadata even it it was not changed. E.g. it would deploy CustomObjectTranslation if one of Layout was changed.

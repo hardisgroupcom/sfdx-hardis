@@ -52,6 +52,10 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
           <name>RecordType</name>
         </types>
         <types>
+          <members>LeadConvertSettings</members>
+          <name>LeadConvertSettings</name>
+        </types>
+        <types>
           <members>de</members>
           <members>fr</members>
           <name>Translations</name>
@@ -104,7 +108,7 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
     await expectXmlEquals(expectedXmlString, deltaXmlFile);
   });
 
-  it('should add object translation, record types if CustomField was changed', async () => {
+  it('should add object translation, record types, LeadConvertSettings if Opportunity.CustomField was changed', async () => {
     fs.writeFileSync(
       deltaXmlFile,
       `<?xml version="1.0" encoding="UTF-8"?>
@@ -133,6 +137,10 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
           <members>Opportunity.Type1</members>
           <members>Opportunity.Type2</members>
           <name>RecordType</name>
+        </types>
+        <types>
+            <members>LeadConvertSettings</members>
+            <name>LeadConvertSettings</name>
         </types>
         <version>63.0</version>
       </Package>`; 

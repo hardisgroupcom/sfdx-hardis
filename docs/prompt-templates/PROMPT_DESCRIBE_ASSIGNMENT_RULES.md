@@ -6,10 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_ASSIGNMENT_RULES
 # PROMPT_DESCRIBE_ASSIGNMENT_RULES
 
 ## Variables
-| Name                     | Description                                              | Example                                  |
-|:-------------------------|:---------------------------------------------------------|:-----------------------------------------|
-| **ASSIGNMENTRULES_NAME** | The name of the Salesforce Assignment Rules to describe. | `Case_Assignment_Rules`                  |
-| **ASSIGNMENTRULES_XML**  | The XML metadata for the Salesforce Assignment Rules.    | `<AssignmentRules>...</AssignmentRules>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **ASSIGNMENTRULES_NAME** | The name of the Salesforce Assignment Rules to describe. | `Case_Assignment_Rules` |
+| **ASSIGNMENTRULES_XML** | The XML metadata for the Salesforce Assignment Rules. | `<AssignmentRules>...</AssignmentRules>` |
 
 ## Prompt
 
