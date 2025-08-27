@@ -18,7 +18,7 @@ const allTypes = async (fullPackageFile: string): Promise<Map<string, string[]>>
 };
 
 const allLanguages = async (fullPackageFile: string): Promise<Array<string>> => {
- 
+
   return (await allTypes(fullPackageFile))["Translations"] ?? [];
 };
 
@@ -34,7 +34,7 @@ export async function extendPackageFileWithDependencies(
   deltaXmlFile: string,
   fullPackageFile: string,
 ) {
- 
+
   const dotSeparatedObjectToObjectTranslation = async (member: string): Promise<PackageType | null> => {
     const parts = member.split('.');
     if (parts.length !== 2) {
@@ -88,7 +88,7 @@ export async function extendPackageFileWithDependencies(
   }
 
   const allObjectRecordTypes = async (member: string): Promise<PackageType | null> => {
-    
+
     if (member.includes("__mdt")) {
       return null;
     }
@@ -105,7 +105,7 @@ export async function extendPackageFileWithDependencies(
   };
 
   const leadConvertSettings = async (member: string): Promise<PackageType | null> => {
-    if (!member.startsWith('Opportunity') && !member.includes('Account') && !member.includes('Contact')) {
+    if (!member.startsWith('Opportunity') && !member.includes('Account') && !member.includes('Contact') && !member.includes('Lead')) {
       return null;
     }
     const types = await allTypes(fullPackageFile);
@@ -114,19 +114,19 @@ export async function extendPackageFileWithDependencies(
   };
 
   const metadataProcessors = {
-    "Layout" : dashSeparatedObjectToObjectTranslation,
-    "CustomObject" : objectTranslations,
-    "ValidationRule" : dotSeparatedObjectToObjectTranslation,
-    "QuickAction" : dotSeparatedObjectToObjectTranslation,
-    "RecordType" : dotSeparatedObjectToObjectTranslation,
-    "CustomMetadata" : allCustomFields,
-    "CustomLabel" : globalTranslations,
-    "CustomPageWebLink" : globalTranslations,
-    "CustomTab" : globalTranslations,
-    "ReportType" : globalTranslations,
-    "CustomField" : [allObjectRecordTypes, allCustomMetadataRecords, dotSeparatedObjectToObjectTranslation, leadConvertSettings],
+    "Layout": dashSeparatedObjectToObjectTranslation,
+    "CustomObject": objectTranslations,
+    "ValidationRule": dotSeparatedObjectToObjectTranslation,
+    "QuickAction": dotSeparatedObjectToObjectTranslation,
+    "RecordType": dotSeparatedObjectToObjectTranslation,
+    "CustomMetadata": allCustomFields,
+    "CustomLabel": globalTranslations,
+    "CustomPageWebLink": globalTranslations,
+    "CustomTab": globalTranslations,
+    "ReportType": globalTranslations,
+    "CustomField": [allObjectRecordTypes, allCustomMetadataRecords, dotSeparatedObjectToObjectTranslation, leadConvertSettings],
   };
-  
+
   const parsedTypes = await parsePackageXmlFile(deltaXmlFile);
   const clonedTypes = structuredClone(parsedTypes);
 
