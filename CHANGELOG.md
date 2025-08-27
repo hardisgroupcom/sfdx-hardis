@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:data:export](https://sfdx-hardis.cloudity.com/hardis/org/data/export/) & [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/export/):
+  - Add --project-name and --no-prompts arguments
+  - Add more examples of commands calls
+
 ## [6.1.4] 2025-08-25
 
 - Update Integrations & DevOps Documentation
