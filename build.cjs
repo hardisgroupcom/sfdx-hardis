@@ -10,6 +10,8 @@ class SfdxHardisBuilder {
     await this.buildDeployTipsDoc();
     await this.buildPromptTemplatesDocs();
     this.truncateReadme();
+    // this.fixOnlineIndex();
+    console.log("All done.");
   }
 
   async buildDeployTipsDoc() {
@@ -218,6 +220,14 @@ class SfdxHardisBuilder {
     const chunks = readmeContent.split("<!-- commands -->")
     fs.writeFileSync(readmeFile, chunks[0] + "<!-- commands -->");
     console.log("Removed README.md commands");
+  }
+
+  fixOnlineIndex() {
+    const indexFile = "./docs/index.md";
+    let indexContent = fs.readFileSync(indexFile, "utf-8");
+    indexContent = indexContent.replace("[_See online documentation for a better navigation_](https://sfdx-hardis.cloudity.com)", "");
+    fs.writeFileSync(indexFile, fixedLines.join("\n"));
+    console.log("Fixed online index.md links");
   }
 }
 
