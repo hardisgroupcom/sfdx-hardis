@@ -896,18 +896,21 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     const customSettingsNames = customSettings.map(cs => `- ${cs.name}`).sort().join('\n');
     uxLog("log", this, c.grey(`Found ${customSettings.length} Custom Setting(s) in the org:\n${customSettingsNames}`));
     // Ask user to select which Custom Settings to retrieve
+    const initialCs = this.refreshSandboxConfig.customSettings || customSettings.map(cs => cs.name);
     const selectedSettings = await prompts({
       type: 'multiselect',
       name: 'settings',
       message: 'Select Custom Settings to retrieve',
       description: 'You can select multiple Custom Settings to retrieve.',
       choices: customSettings.map(cs => ({ title: cs.name, value: cs.name })),
-      initial: customSettings.map(cs => cs.name),
+      initial: initialCs,
     });
     if (selectedSettings.settings.length === 0) {
       uxLog("warning", this, c.yellow('No Custom Settings selected for retrieval'));
       return;
     }
+    this.refreshSandboxConfig.customSettings = selectedSettings.settings.sort();
+    await this.saveConfig();
     uxLog("action", this, c.cyan(`Retrieving ${selectedSettings.settings.length} selected Custom Settings`));
     const successCs: any = [];
     const errorCs: any = [];
