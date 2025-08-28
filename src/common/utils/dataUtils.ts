@@ -12,7 +12,7 @@ export const DATA_FOLDERS_ROOT = path.join(process.cwd(), 'scripts', 'data');
 // Import data from sfdmu folder
 export async function importData(sfdmuPath: string, commandThis: any, options: any = { cwd: process.cwd() }) {
   const cwd = options?.cwd || process.cwd();
-  const dtl = await getDataWorkspaceDetail(sfdmuPath, cwd);
+  const dtl = await getDataWorkspaceDetail(sfdmuPath);
   if (dtl?.isDelete === true) {
     throw new SfError('Your export.json contains deletion info, please use appropriate delete command');
   }
@@ -48,7 +48,7 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
 export async function deleteData(sfdmuPath: string, commandThis: any, options: any = { cwd: process.cwd() }) {
   const config = await getConfig('branch');
   const cwd = options?.cwd || process.cwd();
-  const dtl = await getDataWorkspaceDetail(sfdmuPath, cwd);
+  const dtl = await getDataWorkspaceDetail(sfdmuPath);
   if (dtl?.isDelete === false) {
     throw new SfError(
       'Your export.json does not contain deletion information. Please check http://help.sfdmu.com/full-documentation/advanced-features/delete-from-source'
@@ -89,7 +89,7 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
 export async function exportData(sfdmuPath: string, commandThis: any, options: any = { cwd: process.cwd() }) {
   /* jscpd:ignore-start */
   const cwd = options?.cwd || process.cwd();
-  const dtl = await getDataWorkspaceDetail(sfdmuPath, cwd);
+  const dtl = await getDataWorkspaceDetail(sfdmuPath);
   if (dtl?.isDelete === true) {
     throw new SfError('Your export.json contains deletion info, please use appropriate delete command');
   }
@@ -154,7 +154,7 @@ export async function selectDataWorkspace(opts: { selectDataLabel: string, multi
   }
   const choices: any = [];
   for (const sfdmuFolder of sfdmuFolders) {
-    const dtl = await getDataWorkspaceDetail(path.join(dataFolderToSearch, sfdmuFolder));
+    const dtl = await getDataWorkspaceDetail(sfdmuFolder);
     if (dtl !== null) {
       choices.push({
         title: `📁 ${dtl.full_label}`,
@@ -174,8 +174,8 @@ export async function selectDataWorkspace(opts: { selectDataLabel: string, multi
   return sfdmuDirResult.value;
 }
 
-export async function getDataWorkspaceDetail(dataWorkspace: string, cwd: string = process.cwd()) {
-  const exportFile = path.join(cwd, dataWorkspace, 'export.json');
+export async function getDataWorkspaceDetail(dataWorkspace: string) {
+  const exportFile = path.join(dataWorkspace, 'export.json');
   if (!fs.existsSync(exportFile)) {
     uxLog(
       "warning",
