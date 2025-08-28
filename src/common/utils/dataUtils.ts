@@ -16,7 +16,7 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
   if (dtl?.isDelete === true) {
     throw new SfError('Your export.json contains deletion info, please use appropriate delete command');
   }
-  const targetUsername = options.targetUsername || commandThis.org.getConnection().username;
+  const targetUsername = options.targetUsername || commandThis?.org?.getConnection().username;
   uxLog("action", commandThis, c.cyan(`Importing data from ${c.green(dtl?.full_label)} into ${targetUsername}...`));
   /* jscpd:ignore-start */
   if (dtl?.description) {
@@ -98,7 +98,7 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   if (dtl?.description) {
     uxLog("log", commandThis, c.italic(c.grey("Data Workspace Description:" + dtl?.description)));
   }
-  const sourceUsername = options.sourceUsername || commandThis.org.getConnection().username;
+  const sourceUsername = options.sourceUsername || commandThis?.org?.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const dataImportCommand = `sf sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath} --noprompt`;
   elapseStart(`export ${dtl?.full_label}`);

@@ -566,7 +566,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     for (const sfdmuPath of sfdmuWorkspaces) {
       await importData(sfdmuPath || '', this, {
-        sourceUsername: this.orgUsername,
+        targetUsername: this.orgUsername,
         cwd: this.saveProjectPath,
       });
     }
