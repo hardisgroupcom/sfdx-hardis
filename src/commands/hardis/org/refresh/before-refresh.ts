@@ -49,36 +49,33 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
   public static description = `
 ## Command Behavior
 
-**Backs up all Connected Apps, their secrets, certificates, custom settings, and other metadata from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
+**Backs up all Connected Apps (including Consumer Secrets), certificates, custom settings, records and other metadata from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
 
-This command is essential for Salesforce sandbox refresh operations where Connected Apps (and their Consumer Secrets), certificates, and custom settings would otherwise be lost. It automates the extraction, secure storage, and (optionally) deletion of Connected Apps, ensuring that all credentials and configuration can be restored post-refresh.
+This command prepares a complete backup prior to a sandbox refresh. It creates a dedicated project under \`scripts/sandbox-refresh/<sandbox-folder>\`, retrieves metadata and data, attempts to capture Connected App consumer secrets, and can optionally delete the apps so they can be reuploaded after the refresh.
 
 Key functionalities:
 
-- **Connected App Discovery:** Lists all Connected Apps in the org, with options to filter by name, process all, or interactively select.
-- **User Selection:** Allows interactive or flag-based selection of which Connected Apps to back up.
-- **Metadata Retrieval:** Retrieves Connected App metadata and saves it in a dedicated project folder for the sandbox instance.
-- **Consumer Secret Extraction:** Attempts to extract Consumer Secrets automatically using browser automation (Puppeteer), or prompts for manual entry if automation fails.
-- **Config Persistence:** Stores the list of selected apps in the project config for use during restoration.
-- **Optional Deletion:** Can delete the Connected Apps from the org after backup, as required for re-upload after refresh.
-- **Certificate Backup:** Retrieves all org certificates and their definitions, saving them for later restoration.
-- **Custom Settings Backup:** Lists all custom settings in the org, allows user selection, and exports their data to JSON files for backup.
-- **Other Metadata Backup:** Retrieves additional metadata as defined in the configuration.
-- **Summary and Reporting:** Provides a summary of actions, including which apps, certificates, and custom settings were saved and whether secrets were captured.
+- **Create a save project:** Generates a dedicated project folder to store all artifacts for the sandbox backup.
+- **Find and select Connected Apps:** Lists Connected Apps in the org and lets you pick specific apps, use a name filter, or process all apps.
+- **Save metadata for restore:** Builds a manifest and retrieves the metadata types you choose so they can be restored after the refresh.
+- **Capture Consumer Secrets:** Attempts to capture Connected App consumer secrets automatically (opens a browser session when possible) and falls back to a short manual prompt when needed.
+- **Collect certificates:** Saves certificate files and their definitions so they can be redeployed later.
+- **Export custom settings & records:** Lets you pick custom settings to export as JSON and optionally export records using configured data workspaces.
+- **Persist choices & report:** Stores your backup choices in project config and sends report files for traceability.
+- **Optional cleanup:** Can delete backed-up Connected Apps from the org so they can be re-uploaded cleanly after the refresh.
+- **Interactive safety checks:** Prompts you to confirm package contents and other potentially destructive actions; sensible defaults are chosen where appropriate.
 
-This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is designed to be run before a sandbox refresh. It ensures that all Connected Apps, secrets, certificates, and custom settings are safely stored for later restoration.
+This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is intended to be run before a sandbox refresh so that all credentials, certificates, metadata and data can be restored afterwards.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- **Salesforce CLI Integration:** Uses \`sf org list metadata\`, \`sf project retrieve start\`, and other CLI commands to discover and retrieve Connected Apps, certificates, and custom settings.
-- **Metadata Handling:** Saves Connected App XML files and certificate files in a dedicated folder under \`scripts/sandbox-refresh/<sandbox-folder>\`.
-- **Consumer Secret Handling:** Uses Puppeteer to automate browser login and extraction of Consumer Secrets, falling back to manual prompts if needed.
-- **Custom Settings Handling:** Lists all custom settings, allows user selection, and exports their data using \`sf data tree export\` to JSON files.
-- **Config Management:** Updates \`config/.sfdx-hardis.yml\` with the list of selected apps for later use.
-- **Deletion Logic:** Optionally deletes Connected Apps from the org (required for re-upload after refresh), with user confirmation unless running in CI or with \`--delete\` flag.
-- **Error Handling:** Provides detailed error messages and guidance if retrieval or extraction fails.
-- **Reporting:** Sends summary and configuration files to the WebSocket client for reporting and traceability.
+- **Salesforce CLI Integration:** Uses \`sf org list metadata\`, \`sf project retrieve start\`, \`sf project generate\`, \`sf project deploy start\`, and \`sf data tree export\`/\`import\` where applicable.
+- **Metadata Handling:** Writes and reads package XML files under the generated project (\`manifest/\`), copies MDAPI certificate artifacts into \`force-app/main/default/certs\`, and produces \`package-metadata-to-restore.xml\` for post-refresh deployment.
+- **Consumer Secret Handling:** Uses \`puppeteer-core\` with an executable path from \`getChromeExecutablePath()\` (env var \`PUPPETEER_EXECUTABLE_PATH\` may be required). Falls back to manual prompt when browser automation cannot be used.
+- **Data & Records:** Exports custom settings to JSON and supports exporting records through SFDMU workspaces chosen interactively.
+- **Config & Reporting:** Updates project/user config under \`config/.sfdx-hardis.yml#refreshSandboxConfig\` and reports artifacts to the WebSocket client.
+- **Error Handling:** Provides clear error messages and a summary response object indicating success/failure and which secrets were captured.
 
 </details>
 `;
