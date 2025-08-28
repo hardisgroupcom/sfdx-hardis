@@ -21,6 +21,7 @@ import { getConfig } from '../../../../config/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { soqlQuery, soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
+import { importData, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -165,7 +166,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // 4. Restore Custom Settings
     await this.restoreCustomSettings();
 
-    // 5. Restore Connected Apps
+    // 5. Restore saved records
+    await this.restoreRecords();
+
+    // 6. Restore Connected Apps
     await this.restoreConnectedApps();
 
     return this.result;
@@ -536,6 +540,36 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     if (failedSettings.length > 0) {
       const failedSettingsNames = failedSettings.map(name => "- " + name).join('\n');
       uxLog("error", this, c.red(`Failed to restore ${failedSettings.length} Custom Setting(s): ${failedSettingsNames}`));
+    }
+  }
+
+  private async restoreRecords(): Promise<void> {
+    const sfdmuWorkspaces = await selectDataWorkspace({
+      selectDataLabel: 'Select data workspaces to use to restore records after sandbox refresh',
+      multiple: true,
+      initial: this?.refreshSandboxConfig?.dataWorkspaces || [],
+    });
+    if (!(Array.isArray(sfdmuWorkspaces) && sfdmuWorkspaces.length > 0)) {
+      uxLog("warning", this, c.yellow('No data workspace selected, skipping record restore'));
+      return;
+    }
+
+    const confirmRestore = await prompts({
+      type: 'confirm',
+      name: 'confirm',
+      message: `Before launching the data loading, please make sure your user ${this.orgUsername} has the appropriate ByPasses / Activation Settings / Custom Permissions / Whatever you need to do before starting the data load.`,
+      initial: true,
+      description: 'Once confirmed, the data loading will start'
+    });
+    if (!confirmRestore.confirm) {
+      uxLog("warning", this, c.yellow('Record restore cancelled by user'));
+      return;
+    }
+
+    for (const sfdmuPath of sfdmuWorkspaces) {
+      await importData(sfdmuPath || '', this, {
+        sourceUsername: this.orgUsername,
+      });
     }
   }
 

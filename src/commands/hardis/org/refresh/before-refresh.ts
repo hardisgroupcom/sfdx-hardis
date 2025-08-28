@@ -24,6 +24,7 @@ import { getConfig, setConfig } from '../../../../config/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
+import { exportData, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -144,10 +145,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.result = { success: true, message: 'before-refresh command performed successfully' };
 
     uxLog("action", this, c.cyan(`This command will save information that must be restored after org refresh, in the following order:
-- Connected Apps
 - Certificates
 - Other Metadatas
 - Custom Settings
+- Records (using SFDMU projects)
+- Connected Apps
   `));
 
     // Check org is connected
@@ -160,6 +162,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     await this.saveMetadatas();
 
     await this.saveCustomSettings();
+
+    await this.saveRecords();
 
     await this.retrieveDeleteConnectedApps(accessToken);
 
@@ -960,6 +964,26 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     if (errorCs.length > 0) {
       const errorCsNames = errorCs.map(cs => "- " + cs).join('\n');
       uxLog("error", this, c.red(`Failed to retrieve Custom Settings:\n${errorCsNames}`));
+    }
+  }
+
+  private async saveRecords(): Promise<void> {
+    const sfdmuWorkspaces = await selectDataWorkspace({
+      selectDataLabel: 'Select data workspaces to use to export records before refreshing sandbox',
+      multiple: true,
+      initial: this?.refreshSandboxConfig?.dataWorkspaces || [],
+    });
+    if (!(Array.isArray(sfdmuWorkspaces) && sfdmuWorkspaces.length > 0)) {
+      uxLog("warning", this, c.yellow('No data workspace selected, skipping record saving'));
+      return;
+    }
+    this.refreshSandboxConfig.dataWorkspaces = sfdmuWorkspaces.sort();
+    await this.saveConfig();
+
+    for (const sfdmuPath of sfdmuWorkspaces) {
+      await exportData(sfdmuPath || '', this, {
+        sourceUsername: this.orgUsername,
+      });
     }
   }
 }

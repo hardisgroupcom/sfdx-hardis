@@ -1358,6 +1358,22 @@
           },
           "title": "Connected Apps",
           "type": "array"
+        },
+        "dataWorkspaces": {
+          "$id": "#/properties/refreshSandboxConfig/dataWorkspaces",
+          "description": "List of data workspaces to download before refresh and to upload after refresh",
+          "examples": [
+            [
+              "scripts/data/AnonymizeAccounts",
+              "scripts/data/AnonymizeContats",
+              "scripts/data/AnonymizeLeads"
+            ]
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Data Workspaces",
+          "type": "array"
         }
       },
       "additionalProperties": false,
