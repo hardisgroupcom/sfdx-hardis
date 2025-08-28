@@ -1380,7 +1380,7 @@
           "examples": [
             [
               "scripts/data/AnonymizeAccounts",
-              "scripts/data/AnonymizeContats",
+              "scripts/data/AnonymizeContacts",
               "scripts/data/AnonymizeLeads"
             ]
           ],

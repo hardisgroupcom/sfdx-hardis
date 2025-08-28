@@ -125,11 +125,16 @@ export async function hasDataWorkspaces(cwd: string = process.cwd()) {
   if (!fs.existsSync(dataFolderToSearch)) {
     return false;
   }
+  const sfdmuFolders = listDataFolders(dataFolderToSearch);
+  return sfdmuFolders.length > 0;
+}
+
+function listDataFolders(dataFolderToSearch: string) {
   const sfdmuFolders = fs
     .readdirSync(dataFolderToSearch, { withFileTypes: true })
     .filter((dirent) => dirent.isDirectory())
     .map((dirent) => path.join('scripts', 'data', dirent.name));
-  return sfdmuFolders.length > 0;
+  return sfdmuFolders
 }
 
 export async function selectDataWorkspace(opts: { selectDataLabel: string, multiple?: boolean, initial?: string | string[], cwd?: string } = { selectDataLabel: 'Please select a data workspace to export', multiple: false }): Promise<string | string[] | null> {
@@ -145,10 +150,7 @@ export async function selectDataWorkspace(opts: { selectDataLabel: string, multi
     return null;
   }
 
-  const sfdmuFolders = fs
-    .readdirSync(dataFolderToSearch, { withFileTypes: true })
-    .filter((dirent) => dirent.isDirectory())
-    .map((dirent) => path.join('scripts', 'data', dirent.name));
+  const sfdmuFolders = listDataFolders(dataFolderToSearch);
   if (sfdmuFolders.length === 0) {
     throw new SfError('There is no sfdmu folder in your workspace. Create them using sfdmu: https://help.sfdmu.com/');
   }
