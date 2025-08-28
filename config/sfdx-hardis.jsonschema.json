@@ -1359,6 +1359,21 @@
           "title": "Connected Apps",
           "type": "array"
         },
+        "customSettings": {
+          "$id": "#/properties/refreshSandboxConfig/customSettings",
+          "description": "List of Custom Settings to download before refresh and to upload after refresh",
+          "examples": [
+            [
+              "MyCustomSetting1__c",
+              "MyCustomSetting2__c"
+            ]
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Custom Settings",
+          "type": "array"
+        },
         "dataWorkspaces": {
           "$id": "#/properties/refreshSandboxConfig/dataWorkspaces",
           "description": "List of data workspaces to download before refresh and to upload after refresh",
