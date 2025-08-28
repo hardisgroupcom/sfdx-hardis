@@ -544,10 +544,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const sfdmuWorkspaces = await selectDataWorkspace({
       selectDataLabel: 'Select data workspaces to use to restore records after sandbox refresh',
       multiple: true,
-      initial: this?.refreshSandboxConfig?.dataWorkspaces || [],
+      initial: "all",
+      cwd: this.saveProjectPath
     });
     if (!(Array.isArray(sfdmuWorkspaces) && sfdmuWorkspaces.length > 0)) {
-      uxLog("warning", this, c.yellow('No data workspace selected, skipping record restore'));
+      uxLog("warning", this, c.yellow('No data workspace found, skipping record restore'));
       return;
     }
 
@@ -566,6 +567,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     for (const sfdmuPath of sfdmuWorkspaces) {
       await importData(sfdmuPath || '', this, {
         sourceUsername: this.orgUsername,
+        cwd: this.saveProjectPath,
       });
     }
   }

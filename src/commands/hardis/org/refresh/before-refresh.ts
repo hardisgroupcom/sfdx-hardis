@@ -20,11 +20,11 @@ import {
   createConnectedAppSuccessResponse,
   handleConnectedAppError
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
-import { getConfig, setConfig } from '../../../../config/index.js';
+import { CONSTANTS, getConfig, setConfig } from '../../../../config/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
-import { exportData, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
+import { exportData, hasDataWorkspaces, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -155,6 +155,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
 
     this.saveProjectPath = await this.createSaveProject();
+
+    await this.retrieveCertificates();
 
     await this.saveMetadatas();
 
@@ -290,7 +292,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     } else if (nameFilter) {
       uxLog("action", this, c.cyan(`Processing specified Connected App(s): ${nameFilter} (selection prompt bypassed)`));
     } else {
-      uxLog("action", this, c.cyan(`Retrieving list of Connected Apps from org ${this.conn.instanceUrl} ...`));
+      uxLog("action", this, c.cyan(`Listing Connected Apps in org ${this.conn.instanceUrl} ...`));
     }
 
     const command = `sf org list metadata --metadata-type ConnectedApp --target-org ${orgUsername}`;
@@ -745,21 +747,24 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       }
     }
 
-    // Retrieve certificates
-    await this.retrieveCertificates();
-
     // Metadata package.Xml for backup
     uxLog("action", this, c.cyan('Saving metadata files before sandbox refresh...'));
     const savePackageXml = await this.createSavePackageXml();
 
     // Retrieve metadata from org using the package XML
+    if (!savePackageXml) {
+      uxLog("log", this, c.grey(`Skipping metadata retrieval as per user choice`));
+      return;
+    }
+
+    // Retrieve metadatas to save
     await this.retrieveMetadatasToSave(savePackageXml);
 
     // Generate new package.xml from saveProjectPath, and remove ConnectedApps from it
     await this.generatePackageXmlToRestore();
   }
 
-  private async createSavePackageXml(): Promise<string> {
+  private async createSavePackageXml(): Promise<string | null> {
     uxLog("log", this, c.cyan(`Managing "package-metadatas-to-save.xml" file, that will be used to retrieve the metadatas before refreshing the org.`));
     // Copy default package xml to the save project path
     const sourceFile = path.join(PACKAGE_ROOT_DIR, 'defaults/refresh-sandbox', 'package-metadatas-to-save.xml');
@@ -793,7 +798,8 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       initial: true
     });
     if (!promptRes.checkPackageXml) {
-      uxLog("log", this, c.grey(`Skipping package XML check`));
+      uxLog("log", this, c.grey(`Skipping package XML retrieve`));
+      return null;
     }
     return targetFile;
   }
@@ -836,6 +842,18 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
   }
 
   private async retrieveCertificates() {
+    const promptCerts = await prompts({
+      type: 'confirm',
+      name: 'retrieveCerts',
+      message: `Do you want to retrieve Certificates from ${this.instanceUrl} before refreshing it ?`,
+      description: 'Certificates cannot be retrieved using Source API, so we will use Metadata API for that.',
+      initial: true
+    });
+    if (!promptCerts.retrieveCerts) {
+      uxLog("log", this, c.grey(`Skipping Certificates retrieval as per user choice`));
+      return;
+    }
+
     uxLog("action", this, c.cyan('Retrieving certificates (.crt) from org...'));
     // Retrieve certificates using metadata api coz with source api it does not work
     const certificatesPackageXml = path.join(PACKAGE_ROOT_DIR, 'defaults/refresh-sandbox', 'package-certificates-to-save.xml');
@@ -908,13 +926,13 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     }
     this.refreshSandboxConfig.customSettings = selectedSettings.settings.sort();
     await this.saveConfig();
-    uxLog("action", this, c.cyan(`Retrieving ${selectedSettings.settings.length} selected Custom Settings`));
+    uxLog("log", this, c.cyan(`Retrieving ${selectedSettings.settings.length} selected Custom Settings`));
     const successCs: any = [];
     const errorCs: any = [];
     // Retrieve each selected Custom Setting
     for (const settingName of selectedSettings.settings) {
       try {
-        uxLog("action", this, c.cyan(`Retrieving Custom Setting: ${settingName}`));
+        uxLog("action", this, c.cyan(`Retrieving values of Custom Setting: ${settingName}`));
 
         // List all fields of the Custom Setting using globalDesc
         const customSettingDesc = globalDesc.sobjects.find(sobject => sobject.name === settingName);
@@ -968,6 +986,13 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
   }
 
   private async saveRecords(): Promise<void> {
+    const hasDataWs = await hasDataWorkspaces();
+    if (!hasDataWs) {
+      uxLog("action", this, c.yellow('No data workspaces found in the project, skipping record saving'));
+      uxLog("log", this, c.grey(`You can create data workspaces using ${CONSTANTS.DOC_URL_ROOT}/hardis/org/configure/data/`));
+      return;
+    }
+
     const sfdmuWorkspaces = await selectDataWorkspace({
       selectDataLabel: 'Select data workspaces to use to export records before refreshing sandbox',
       multiple: true,
@@ -980,9 +1005,24 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     this.refreshSandboxConfig.dataWorkspaces = sfdmuWorkspaces.sort();
     await this.saveConfig();
 
+    // Copy data templates in saveProjectPath
+    for (const sfdmuPath of sfdmuWorkspaces) {
+      const sourcePath = path.join(process.cwd(), sfdmuPath);
+      const targetPath = path.join(this.saveProjectPath, sfdmuPath);
+      await fs.ensureDir(path.dirname(targetPath));
+      if (fs.existsSync(targetPath)) {
+        uxLog("log", this, c.grey(`Overwriting data workspace from ${sourcePath} to ${targetPath}`));
+        await fs.copy(sourcePath, targetPath, { overwrite: true });
+      } else {
+        uxLog("log", this, c.grey(`Copying data workspace from ${sourcePath} to ${targetPath}`));
+        await fs.copy(sourcePath, targetPath, { overwrite: true });
+      }
+    }
+
     for (const sfdmuPath of sfdmuWorkspaces) {
       await exportData(sfdmuPath || '', this, {
         sourceUsername: this.orgUsername,
+        cwd: this.saveProjectPath
       });
     }
   }
