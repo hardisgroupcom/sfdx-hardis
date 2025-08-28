@@ -129,6 +129,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 - Other Metadatas
 - SAML SSO Config
 - Custom Settings
+- Records (using SFDMU projects)
 - Connected Apps`));
     // Prompt user to select a save project path
     const saveProjectPathRoot = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
