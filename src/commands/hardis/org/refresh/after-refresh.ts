@@ -38,9 +38,9 @@ export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
   public static description = `
 ## Command Behavior
 
-**Restores all previously backed-up Connected Apps (including Consumer Secrets) to a Salesforce org after a sandbox refresh.**
+**Restores all previously backed-up Connected Apps, certificates, custom settings, and other metadata to a Salesforce org after a sandbox refresh.**
 
-This command is the second step in the sandbox refresh process. It scans the backup folder created before the refresh, allows selection of which Connected Apps to restore, and automates their deletion and redeployment to the refreshed org, ensuring all credentials and configuration are preserved.
+This command is the second step in the sandbox refresh process. It scans the backup folder created before the refresh, allows selection of which items to restore, and automates their deletion and redeployment to the refreshed org, ensuring all credentials and configuration are preserved.
 
 Key functionalities:
 
@@ -50,7 +50,10 @@ Key functionalities:
 - **Validation:** Ensures all selected apps exist in the backup and validates user input.
 - **Org Cleanup:** Deletes existing Connected Apps from the refreshed org to allow clean redeployment.
 - **Deployment:** Deploys the selected Connected Apps (with secrets) to the org.
-- **Summary and Reporting:** Provides a summary of restored apps and their status.
+- **Certificate Restoration:** Restores certificates from the backup.
+- **Custom Settings Restoration:** Restores custom settings, ensuring data integrity.
+- **Other Metadata Restoration:** Deploys other metadata as defined in the backup.
+- **Summary and Reporting:** Provides a summary of restored items and their status.
 
 This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is designed to be run after a sandbox refresh, using the backup created by the before-refresh command.
 
@@ -58,11 +61,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 <summary>Technical explanations</summary>
 
 - **Backup Folder Handling:** Prompts for and validates the backup folder under \`scripts/sandbox-refresh/\`.
-- **Metadata Scanning:** Uses glob patterns to find all \`*.connectedApp - meta.xml\` files in the backup.
-- **Selection Logic:** Supports \`--all\`, \`--name\`, and interactive selection of apps to restore.
-- **Validation:** Checks that all requested apps exist in the backup and provides clear errors if not.
-- **Org Operations:** Deletes existing Connected Apps from the org before redeployment to avoid conflicts.
-- **Deployment:** Uses utility functions to deploy Connected Apps and their secrets to the org.
+- **Metadata Scanning:** Uses glob patterns to find all relevant metadata files in the backup.
+- **Selection Logic:** Supports \`--all\`, \`--name\`, and interactive selection of items to restore.
+- **Validation:** Checks that all requested items exist in the backup and provides clear errors if not.
+- **Org Operations:** Deletes existing items from the org before redeployment to avoid conflicts.
+- **Deployment:** Uses utility functions to deploy metadata and their secrets to the org.
 - **Error Handling:** Handles and reports errors at each step, including parsing and deployment issues.
 
 </details>

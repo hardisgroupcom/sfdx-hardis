@@ -45,10 +45,10 @@ interface BrowserContext {
 }
 
 export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
-  public static description: string = `
+  public static description = `
 ## Command Behavior
 
-**Backs up all Connected Apps, their secrets, certificates, and custom settings from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
+**Backs up all Connected Apps, their secrets, certificates, custom settings, and other metadata from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
 
 This command is essential for Salesforce sandbox refresh operations where Connected Apps (and their Consumer Secrets), certificates, and custom settings would otherwise be lost. It automates the extraction, secure storage, and (optionally) deletion of Connected Apps, ensuring that all credentials and configuration can be restored post-refresh.
 
@@ -62,6 +62,7 @@ Key functionalities:
 - **Optional Deletion:** Can delete the Connected Apps from the org after backup, as required for re-upload after refresh.
 - **Certificate Backup:** Retrieves all org certificates and their definitions, saving them for later restoration.
 - **Custom Settings Backup:** Lists all custom settings in the org, allows user selection, and exports their data to JSON files for backup.
+- **Other Metadata Backup:** Retrieves additional metadata as defined in the configuration.
 - **Summary and Reporting:** Provides a summary of actions, including which apps, certificates, and custom settings were saved and whether secrets were captured.
 
 This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is designed to be run before a sandbox refresh. It ensures that all Connected Apps, secrets, certificates, and custom settings are safely stored for later restoration.
