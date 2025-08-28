@@ -1,0 +1,19 @@
+{
+  "sfdxHardisLabel": "Anonymize Contacts Emails",
+  "sfdxHardisDescription": "Can be used to export Contacts then reimport them in the same org to anonymize email addresses",
+  "objects": [
+    {
+      "query": "SELECT Id, Name, Email FROM Contact",
+      "operation": "Update",
+      "externalId": "Id",
+      "mockFields": [
+        {
+          "name": "Email",
+          "pattern": "email"
+        }
+      ],
+      "updateWithMockData": true
+    }
+  ],
+  "allOrNone": true
+}
