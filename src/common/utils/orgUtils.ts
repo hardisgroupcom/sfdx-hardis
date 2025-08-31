@@ -119,12 +119,12 @@ export async function promptProfiles(
 
 export async function promptOrg(
   commandThis: SfCommand<any>,
-  options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false, promptMessage: null, quickOrgList: false, defaultOrgUsername: null }
+  options: any = { devHub: false, setDefault: true, scratch: false, devSandbox: false, promptMessage: null, quickOrgList: false, defaultOrgUsername: null, useCache: true }
 ) {
   // List all local orgs and request to user
   // Access flags via commandThis, fallback to options if not present
   const defaultOrgUsername = options.defaultOrgUsername || ''
-  const orgListResult = await MetadataUtils.listLocalOrgs(options.devSandbox === true ? 'sandbox' : 'any', { quickOrgList: options.quickOrgList });
+  const orgListResult = await MetadataUtils.listLocalOrgs(options.devSandbox === true ? 'sandbox' : 'any', { quickOrgList: options.quickOrgList, useCache: options.useCache });
   let orgList = [
     {
       username: '🌍 Login to another org',

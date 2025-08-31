@@ -119,7 +119,7 @@ The command's technical implementation involves:
     }
     else {
       // Prompt user to select an org
-      org = await promptOrg(this, { devHub: devHub, setDefault: setDefault, scratch: scratch });
+      org = await promptOrg(this, { devHub: devHub, setDefault: setDefault, scratch: scratch, useCache: false });
     }
     // If the org is not connected, ask the user to authenticate again
     uxLog("action", this, c.cyan(`Checking that user ${org.username} is connected to org ${org.instanceUrl} ...`));
