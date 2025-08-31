@@ -4,7 +4,9 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from "chalk";
 import { makeSureOrgIsConnected, promptOrg } from '../../../common/utils/orgUtils.js';
-import { uxLog } from '../../../common/utils/index.js';
+import { execSfdxJson, uxLog } from '../../../common/utils/index.js';
+import { prompts } from '../../../common/utils/prompts.js';
+import { WebSocketClient } from '../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -54,6 +56,15 @@ The command's technical implementation involves:
       default: false,
       description: 'Select scratch org related to default DevHub',
     }),
+    username: Flags.string({
+      char: 't',
+      description: "Username of the org you want to authenticate (overrides the interactive prompt)",
+    },),
+    "prompt-default": Flags.boolean({
+      char: 'e',
+      default: false,
+      description: 'Prompt to set the selected org as default',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -78,18 +89,52 @@ The command's technical implementation involves:
     const { flags } = await this.parse(OrgSelect);
     const devHub = flags.devhub || false;
     const scratch = flags.scratch;
+    const promptDefault = flags["prompt-default"] || false;
+    const username = flags.username;
     this.debugMode = flags.debug || false;
 
-    // Prompt user to select an org
-    const org = await promptOrg(this, { devHub: devHub, setDefault: true, scratch: scratch });
+    let setDefault = true;
+    if (promptDefault) {
+      const promptDefaultRes = await prompts({
+        type: 'confirm',
+        name: 'setDefault',
+        message: 'Do you want to set the selected org as your default org?',
+        description: "If you choose 'No', the org will be connected but not set as default.",
+        default: true,
+      });
+      if (!promptDefaultRes) {
+        setDefault = false;
+      }
+    }
 
+    let org: any = {};
+    if (username) {
+      uxLog("action", this, c.cyan(`Getting info about ${username} ...`));
+      const displayOrgCommand = `sf org display --target-org ${username}`;
+      const displayResult = await execSfdxJson(displayOrgCommand, this, {
+        fail: false,
+        output: false,
+      });
+      org = displayResult?.result;
+    }
+    else {
+      // Prompt user to select an org
+      org = await promptOrg(this, { devHub: devHub, setDefault: setDefault, scratch: scratch, useCache: false });
+    }
     // If the org is not connected, ask the user to authenticate again
     uxLog("action", this, c.cyan(`Checking that user ${org.username} is connected to org ${org.instanceUrl} ...`));
     await makeSureOrgIsConnected(org.username);
-
-    uxLog("action", this, c.cyan(`Your default org is now ${org.instanceUrl} (${org.username})`));
-
-    // Return an object to be displayed with --json
-    return { outputString: `Selected org ${org.username}` };
+    if (setDefault) {
+      const setDefaultCommand = `sf config set target-org ${org.username}`;
+      await execSfdxJson(setDefaultCommand, this, { output: false });
+      uxLog("action", this, c.cyan(`Your default org is now ${org.instanceUrl} (${org.username})`));
+      WebSocketClient.sendRefreshStatusMessage();
+      return { outputString: `Selected org ${org.username}` };
+    }
+    else {
+      uxLog("action", this, c.cyan(`Org ${org.instanceUrl} (${org.username}) connected`));
+      WebSocketClient.sendRefreshStatusMessage();
+      return { outputString: `Connected org ${org.username}` };
+    }
   }
 }
