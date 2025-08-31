@@ -753,7 +753,7 @@ export async function setConnectionVariables(conn, handleTechnical = false) {
         globalThis.jsForceConnTechnical = connTechnical;
       }
     } catch (e) {
-      uxLog("error", this, c.red(`Unable to connect to technical org: ${e}`));
+      uxLog("warning", this, c.yellow(`Unable to connect to technical org: ${e}\nThat's ok, we'll use default org :)`));
       globalThis.jsForceConnTechnical = null;
     }
   }
