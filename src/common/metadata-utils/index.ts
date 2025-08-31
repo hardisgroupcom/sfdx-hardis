@@ -65,7 +65,7 @@ class MetadataUtils {
   public static async listLocalOrgs(type = 'any', options: any = {}) {
     const quickListParams = options?.quickOrgList === true ? ' --skip-connection-status' : '';
     const orgListCommand = `sf org list${quickListParams}`;
-    let orgListResult = await getCache(orgListCommand, null);
+    let orgListResult = options.useCache === false ? null : await getCache(orgListCommand, null);
     if (orgListResult == null) {
       orgListResult = await execSfdxJson(orgListCommand, this);
       await setCache(orgListCommand, orgListResult);

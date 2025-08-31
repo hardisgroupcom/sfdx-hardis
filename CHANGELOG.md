@@ -12,6 +12,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - [hardis:org:data:export](https://sfdx-hardis.cloudity.com/hardis/org/data/export/) & [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/export/):
   - Add --project-name and --no-prompts arguments
   - Add more examples of commands calls
+- [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/data/export/): Improve options to be called from VsCode-sfdx-hardis Orgs Manager LWC
 
 ## [6.1.4] 2025-08-25
 
