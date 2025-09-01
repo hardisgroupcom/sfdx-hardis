@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.2.0] 2025-09-01
+
 - [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/)
   - Allow to download data to save before refreshing the sandbox, using SFDMU projects
   - Save Custom Settings selection in configuration
