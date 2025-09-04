@@ -203,18 +203,17 @@ The command's technical implementation involves a series of orchestrated steps:
     await this.manageCommitPush(gitStatusWithConfig, gitStatusAfterDeployPlan);
 
 
-    const mergeRequestUrl = GitProvider.getMergeRequestCreateUrl(this.gitUrl, this.targetBranch || '', this.currentBranch);
+    let mergeRequestUrl = GitProvider.getMergeRequestCreateUrl(this.gitUrl, this.targetBranch || '', this.currentBranch);
+    mergeRequestUrl = mergeRequestUrl || this.gitUrl.replace('.git', '');
 
     // Merge request
     uxLog("action", this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold(GitProvider.getMergeRequestName(this.gitUrl))}, otherwise you can push new commits on ${c.green(this.currentBranch)} branch.`));
     let summaryMsg = c.grey("");
-    if (mergeRequestUrl) {
-      if (WebSocketClient.isAliveWithLwcUI()) {
-        WebSocketClient.sendReportFileMessage(mergeRequestUrl, `Create ${GitProvider.getMergeRequestName(this.gitUrl)}`, 'actionUrl');
-      }
-      else {
-        summaryMsg += c.grey(`- New ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}\n`);
-      }
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      WebSocketClient.sendReportFileMessage(mergeRequestUrl, `Create ${GitProvider.getMergeRequestName(this.gitUrl)}`, 'actionUrl');
+    }
+    else {
+      summaryMsg += c.grey(`- New ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}\n`);
     }
     const mergeRequestDoc = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`;
     summaryMsg += c.grey(`- Repository: ${c.green(this.gitUrl.replace('.git', ''))}\n`);

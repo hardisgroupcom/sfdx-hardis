@@ -259,7 +259,7 @@ export abstract class GitProvider {
       return `${gitUrlHttp}/-/merge_requests/new?merge_request[source_branch]=${encodeURIComponent(sourceBranch)}&merge_request[target_branch]=${encodeURIComponent(targetBranch)}`;
     }
     // GitHub
-    if (gitUrlHttp.includes("github")) {
+    if (gitUrlHttp.includes("github") || gitUrlHttp.includes("ghe.com")) {
       // https://github.com/org/repo/compare/main...feature?expand=1
       return `${gitUrlHttp}/compare/${encodeURIComponent(targetBranch)}...${encodeURIComponent(sourceBranch)}?expand=1`;
     }
