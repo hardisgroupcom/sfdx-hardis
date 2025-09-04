@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.2.1] 2025-09-04
+
 - [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): Always display a button to create Merge Request
 - Update GitProvider to make it compliant with GitHub Enterprise hosted on ghe.com
 
