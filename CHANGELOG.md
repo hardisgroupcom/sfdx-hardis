@@ -4,6 +4,23 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.2.1] 2025-09-04
+
+- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): Always display a button to create Merge Request
+- Update GitProvider to make it compliant with GitHub Enterprise hosted on ghe.com
+
+## [6.2.0] 2025-09-01
+
+- [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/)
+  - Allow to download data to save before refreshing the sandbox, using SFDMU projects
+  - Save Custom Settings selection in configuration
+- [hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/)
+  - Restore data after refresh using saved SFDMU project data
+- [hardis:org:data:export](https://sfdx-hardis.cloudity.com/hardis/org/data/export/) & [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/export/):
+  - Add --project-name and --no-prompts arguments
+  - Add more examples of commands calls
+- [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/data/export/): Improve options to be called from VsCode-sfdx-hardis Orgs Manager LWC
+
 ## [6.1.4] 2025-08-25
 
 - Update Integrations & DevOps Documentation

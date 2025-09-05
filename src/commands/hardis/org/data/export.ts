@@ -4,7 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
-import { exportData, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
+import { exportData, findDataWorkspaceByName, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
 import { promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -48,12 +48,25 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 </details>
 `;
 
-  public static examples = ['$ sf hardis:org:data:export'];
+  public static examples = [
+    '$ sf hardis:org:data:export',
+    '$ sf hardis:org:data:export --project-name MyDataProject --target-org my-org@example.com',
+    '$ sf hardis:org:data:export --path ./scripts/data/MyDataProject --no-prompt --target-org my-org@example.com',
+  ];
 
   public static flags: any = {
+    "project-name": Flags.string({
+      char: 'n',
+      description: 'Name of the sfdmu project to use (if not defined, you will be prompted to select one)',
+    }),
     path: Flags.string({
       char: 'p',
       description: 'Path to the sfdmu workspace folder',
+    }),
+    "no-prompt": Flags.boolean({
+      char: 'r',
+      description: 'Do not prompt for Org, use default org',
+      default: false,
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -80,17 +93,29 @@ The command's technical implementation relies heavily on the SFDMU plugin:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DataExport);
     let sfdmuPath = flags.path || null;
+    const projectName = flags["project-name"] || null;
+    const noPrompts = flags["no-prompt"] || false;
     //const debugMode = flags.debug || false;
 
-    // Identify sfdmu workspace if not defined
-    if (sfdmuPath == null) {
-      sfdmuPath = await selectDataWorkspace({ selectDataLabel: 'Please select a data workspace to EXPORT' });
-    }
+
+    uxLog("action", this, c.cyan('This command will launch data EXPORT (download from org) using SFDX Data Loader (sfdmu)'));
 
     // Select org that will be used to export records
     let orgUsername = flags['target-org'].getUsername();
-    if (!isCI) {
+    if (!isCI && noPrompts === false) {
       orgUsername = await promptOrgUsernameDefault(this, orgUsername || '', { devHub: false, setDefault: false });
+    }
+
+    // Find by project name if provided
+    if (projectName != null && sfdmuPath == null) {
+      sfdmuPath = await findDataWorkspaceByName(projectName);
+    }
+
+    // Identify sfdmu workspace if not defined
+    if (sfdmuPath == null) {
+      sfdmuPath = await selectDataWorkspace({
+        selectDataLabel: `Please select a data workspace to EXPORT from ${c.green(orgUsername)}`,
+      });
     }
 
     // Export data from org

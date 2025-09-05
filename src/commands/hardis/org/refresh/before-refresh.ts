@@ -20,10 +20,11 @@ import {
   createConnectedAppSuccessResponse,
   handleConnectedAppError
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
-import { getConfig, setConfig } from '../../../../config/index.js';
+import { CONSTANTS, getConfig, setConfig } from '../../../../config/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
+import { exportData, hasDataWorkspaces, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -45,38 +46,36 @@ interface BrowserContext {
 }
 
 export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
-  public static description: string = `
+  public static description = `
 ## Command Behavior
 
-**Backs up all Connected Apps, their secrets, certificates, and custom settings from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
+**Backs up all Connected Apps (including Consumer Secrets), certificates, custom settings, records and other metadata from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
 
-This command is essential for Salesforce sandbox refresh operations where Connected Apps (and their Consumer Secrets), certificates, and custom settings would otherwise be lost. It automates the extraction, secure storage, and (optionally) deletion of Connected Apps, ensuring that all credentials and configuration can be restored post-refresh.
+This command prepares a complete backup prior to a sandbox refresh. It creates a dedicated project under \`scripts/sandbox-refresh/<sandbox-folder>\`, retrieves metadata and data, attempts to capture Connected App consumer secrets, and can optionally delete the apps so they can be reuploaded after the refresh.
 
 Key functionalities:
 
-- **Connected App Discovery:** Lists all Connected Apps in the org, with options to filter by name, process all, or interactively select.
-- **User Selection:** Allows interactive or flag-based selection of which Connected Apps to back up.
-- **Metadata Retrieval:** Retrieves Connected App metadata and saves it in a dedicated project folder for the sandbox instance.
-- **Consumer Secret Extraction:** Attempts to extract Consumer Secrets automatically using browser automation (Puppeteer), or prompts for manual entry if automation fails.
-- **Config Persistence:** Stores the list of selected apps in the project config for use during restoration.
-- **Optional Deletion:** Can delete the Connected Apps from the org after backup, as required for re-upload after refresh.
-- **Certificate Backup:** Retrieves all org certificates and their definitions, saving them for later restoration.
-- **Custom Settings Backup:** Lists all custom settings in the org, allows user selection, and exports their data to JSON files for backup.
-- **Summary and Reporting:** Provides a summary of actions, including which apps, certificates, and custom settings were saved and whether secrets were captured.
+- **Create a save project:** Generates a dedicated project folder to store all artifacts for the sandbox backup.
+- **Find and select Connected Apps:** Lists Connected Apps in the org and lets you pick specific apps, use a name filter, or process all apps.
+- **Save metadata for restore:** Builds a manifest and retrieves the metadata types you choose so they can be restored after the refresh.
+- **Capture Consumer Secrets:** Attempts to capture Connected App consumer secrets automatically (opens a browser session when possible) and falls back to a short manual prompt when needed.
+- **Collect certificates:** Saves certificate files and their definitions so they can be redeployed later.
+- **Export custom settings & records:** Lets you pick custom settings to export as JSON and optionally export records using configured data workspaces.
+- **Persist choices & report:** Stores your backup choices in project config and sends report files for traceability.
+- **Optional cleanup:** Can delete backed-up Connected Apps from the org so they can be re-uploaded cleanly after the refresh.
+- **Interactive safety checks:** Prompts you to confirm package contents and other potentially destructive actions; sensible defaults are chosen where appropriate.
 
-This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is designed to be run before a sandbox refresh. It ensures that all Connected Apps, secrets, certificates, and custom settings are safely stored for later restoration.
+This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is intended to be run before a sandbox refresh so that all credentials, certificates, metadata and data can be restored afterwards.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- **Salesforce CLI Integration:** Uses \`sf org list metadata\`, \`sf project retrieve start\`, and other CLI commands to discover and retrieve Connected Apps, certificates, and custom settings.
-- **Metadata Handling:** Saves Connected App XML files and certificate files in a dedicated folder under \`scripts/sandbox-refresh/<sandbox-folder>\`.
-- **Consumer Secret Handling:** Uses Puppeteer to automate browser login and extraction of Consumer Secrets, falling back to manual prompts if needed.
-- **Custom Settings Handling:** Lists all custom settings, allows user selection, and exports their data using \`sf data tree export\` to JSON files.
-- **Config Management:** Updates \`config/.sfdx-hardis.yml\` with the list of selected apps for later use.
-- **Deletion Logic:** Optionally deletes Connected Apps from the org (required for re-upload after refresh), with user confirmation unless running in CI or with \`--delete\` flag.
-- **Error Handling:** Provides detailed error messages and guidance if retrieval or extraction fails.
-- **Reporting:** Sends summary and configuration files to the WebSocket client for reporting and traceability.
+- **Salesforce CLI Integration:** Uses \`sf org list metadata\`, \`sf project retrieve start\`, \`sf project generate\`, \`sf project deploy start\`, and \`sf data tree export\`/\`import\` where applicable.
+- **Metadata Handling:** Writes and reads package XML files under the generated project (\`manifest/\`), copies MDAPI certificate artifacts into \`force-app/main/default/certs\`, and produces \`package-metadata-to-restore.xml\` for post-refresh deployment.
+- **Consumer Secret Handling:** Uses \`puppeteer-core\` with an executable path from \`getChromeExecutablePath()\` (env var \`PUPPETEER_EXECUTABLE_PATH\` may be required). Falls back to manual prompt when browser automation cannot be used.
+- **Data & Records:** Exports custom settings to JSON and supports exporting records through SFDMU workspaces chosen interactively.
+- **Config & Reporting:** Updates project/user config under \`config/.sfdx-hardis.yml#refreshSandboxConfig\` and reports artifacts to the WebSocket client.
+- **Error Handling:** Provides clear error messages and a summary response object indicating success/failure and which secrets were captured.
 
 </details>
 `;
@@ -143,10 +142,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.result = { success: true, message: 'before-refresh command performed successfully' };
 
     uxLog("action", this, c.cyan(`This command will save information that must be restored after org refresh, in the following order:
-- Connected Apps
 - Certificates
 - Other Metadatas
 - Custom Settings
+- Records (using SFDMU projects)
+- Connected Apps
   `));
 
     // Check org is connected
@@ -156,9 +156,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     this.saveProjectPath = await this.createSaveProject();
 
+    await this.retrieveCertificates();
+
     await this.saveMetadatas();
 
     await this.saveCustomSettings();
+
+    await this.saveRecords();
 
     await this.retrieveDeleteConnectedApps(accessToken);
 
@@ -288,7 +292,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     } else if (nameFilter) {
       uxLog("action", this, c.cyan(`Processing specified Connected App(s): ${nameFilter} (selection prompt bypassed)`));
     } else {
-      uxLog("action", this, c.cyan(`Retrieving list of Connected Apps from org ${this.conn.instanceUrl} ...`));
+      uxLog("action", this, c.cyan(`Listing Connected Apps in org ${this.conn.instanceUrl} ...`));
     }
 
     const command = `sf org list metadata --metadata-type ConnectedApp --target-org ${orgUsername}`;
@@ -743,21 +747,24 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       }
     }
 
-    // Retrieve certificates
-    await this.retrieveCertificates();
-
     // Metadata package.Xml for backup
     uxLog("action", this, c.cyan('Saving metadata files before sandbox refresh...'));
     const savePackageXml = await this.createSavePackageXml();
 
     // Retrieve metadata from org using the package XML
+    if (!savePackageXml) {
+      uxLog("log", this, c.grey(`Skipping metadata retrieval as per user choice`));
+      return;
+    }
+
+    // Retrieve metadatas to save
     await this.retrieveMetadatasToSave(savePackageXml);
 
     // Generate new package.xml from saveProjectPath, and remove ConnectedApps from it
     await this.generatePackageXmlToRestore();
   }
 
-  private async createSavePackageXml(): Promise<string> {
+  private async createSavePackageXml(): Promise<string | null> {
     uxLog("log", this, c.cyan(`Managing "package-metadatas-to-save.xml" file, that will be used to retrieve the metadatas before refreshing the org.`));
     // Copy default package xml to the save project path
     const sourceFile = path.join(PACKAGE_ROOT_DIR, 'defaults/refresh-sandbox', 'package-metadatas-to-save.xml');
@@ -791,7 +798,8 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       initial: true
     });
     if (!promptRes.checkPackageXml) {
-      uxLog("log", this, c.grey(`Skipping package XML check`));
+      uxLog("log", this, c.grey(`Skipping package XML retrieve`));
+      return null;
     }
     return targetFile;
   }
@@ -834,6 +842,18 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
   }
 
   private async retrieveCertificates() {
+    const promptCerts = await prompts({
+      type: 'confirm',
+      name: 'retrieveCerts',
+      message: `Do you want to retrieve Certificates from ${this.instanceUrl} before refreshing it ?`,
+      description: 'Certificates cannot be retrieved using Source API, so we will use Metadata API for that.',
+      initial: true
+    });
+    if (!promptCerts.retrieveCerts) {
+      uxLog("log", this, c.grey(`Skipping Certificates retrieval as per user choice`));
+      return;
+    }
+
     uxLog("action", this, c.cyan('Retrieving certificates (.crt) from org...'));
     // Retrieve certificates using metadata api coz with source api it does not work
     const certificatesPackageXml = path.join(PACKAGE_ROOT_DIR, 'defaults/refresh-sandbox', 'package-certificates-to-save.xml');
@@ -891,25 +911,28 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     const customSettingsNames = customSettings.map(cs => `- ${cs.name}`).sort().join('\n');
     uxLog("log", this, c.grey(`Found ${customSettings.length} Custom Setting(s) in the org:\n${customSettingsNames}`));
     // Ask user to select which Custom Settings to retrieve
+    const initialCs = this.refreshSandboxConfig.customSettings || customSettings.map(cs => cs.name);
     const selectedSettings = await prompts({
       type: 'multiselect',
       name: 'settings',
       message: 'Select Custom Settings to retrieve',
       description: 'You can select multiple Custom Settings to retrieve.',
       choices: customSettings.map(cs => ({ title: cs.name, value: cs.name })),
-      initial: customSettings.map(cs => cs.name),
+      initial: initialCs,
     });
     if (selectedSettings.settings.length === 0) {
       uxLog("warning", this, c.yellow('No Custom Settings selected for retrieval'));
       return;
     }
-    uxLog("action", this, c.cyan(`Retrieving ${selectedSettings.settings.length} selected Custom Settings`));
+    this.refreshSandboxConfig.customSettings = selectedSettings.settings.sort();
+    await this.saveConfig();
+    uxLog("log", this, c.cyan(`Retrieving ${selectedSettings.settings.length} selected Custom Settings`));
     const successCs: any = [];
     const errorCs: any = [];
     // Retrieve each selected Custom Setting
     for (const settingName of selectedSettings.settings) {
       try {
-        uxLog("action", this, c.cyan(`Retrieving Custom Setting: ${settingName}`));
+        uxLog("action", this, c.cyan(`Retrieving values of Custom Setting: ${settingName}`));
 
         // List all fields of the Custom Setting using globalDesc
         const customSettingDesc = globalDesc.sobjects.find(sobject => sobject.name === settingName);
@@ -959,6 +982,48 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     if (errorCs.length > 0) {
       const errorCsNames = errorCs.map(cs => "- " + cs).join('\n');
       uxLog("error", this, c.red(`Failed to retrieve Custom Settings:\n${errorCsNames}`));
+    }
+  }
+
+  private async saveRecords(): Promise<void> {
+    const hasDataWs = await hasDataWorkspaces();
+    if (!hasDataWs) {
+      uxLog("action", this, c.yellow('No data workspaces found in the project, skipping record saving'));
+      uxLog("log", this, c.grey(`You can create data workspaces using ${CONSTANTS.DOC_URL_ROOT}/hardis/org/configure/data/`));
+      return;
+    }
+
+    const sfdmuWorkspaces = await selectDataWorkspace({
+      selectDataLabel: 'Select data workspaces to use to export records before refreshing sandbox',
+      multiple: true,
+      initial: this?.refreshSandboxConfig?.dataWorkspaces || [],
+    });
+    if (!(Array.isArray(sfdmuWorkspaces) && sfdmuWorkspaces.length > 0)) {
+      uxLog("warning", this, c.yellow('No data workspace selected, skipping record saving'));
+      return;
+    }
+    this.refreshSandboxConfig.dataWorkspaces = sfdmuWorkspaces.sort();
+    await this.saveConfig();
+
+    // Copy data templates in saveProjectPath
+    for (const sfdmuPath of sfdmuWorkspaces) {
+      const sourcePath = path.join(process.cwd(), sfdmuPath);
+      const targetPath = path.join(this.saveProjectPath, sfdmuPath);
+      await fs.ensureDir(path.dirname(targetPath));
+      if (fs.existsSync(targetPath)) {
+        uxLog("log", this, c.grey(`Overwriting data workspace from ${sourcePath} to ${targetPath}`));
+        await fs.copy(sourcePath, targetPath, { overwrite: true });
+      } else {
+        uxLog("log", this, c.grey(`Copying data workspace from ${sourcePath} to ${targetPath}`));
+        await fs.copy(sourcePath, targetPath, { overwrite: true });
+      }
+    }
+
+    for (const sfdmuPath of sfdmuWorkspaces) {
+      await exportData(sfdmuPath || '', this, {
+        sourceUsername: this.orgUsername,
+        cwd: this.saveProjectPath
+      });
     }
   }
 }

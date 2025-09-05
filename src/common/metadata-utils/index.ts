@@ -65,7 +65,7 @@ class MetadataUtils {
   public static async listLocalOrgs(type = 'any', options: any = {}) {
     const quickListParams = options?.quickOrgList === true ? ' --skip-connection-status' : '';
     const orgListCommand = `sf org list${quickListParams}`;
-    let orgListResult = await getCache(orgListCommand, null);
+    let orgListResult = options.useCache === false ? null : await getCache(orgListCommand, null);
     if (orgListResult == null) {
       orgListResult = await execSfdxJson(orgListCommand, this);
       await setCache(orgListCommand, orgListResult);
@@ -256,7 +256,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
             this,
             c.yellow(
               `${c.bold('This is not a real error')}: A newer version of ${package1.SubscriberPackageName
-              } has been found. You may update installedPackages property in .sfdx-hardis.yml`
+              } has been found. You may upgrade stored package version using VsCode SFDX-Hardis "Installed Packages" feature in menu "DevOps Pipeline" (it will update installedPackages property in .sfdx-hardis.yml)`
             )
           );
           uxLog(
