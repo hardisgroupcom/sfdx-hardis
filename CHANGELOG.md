@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add documentation about Packages installation
+- Update Azure Pipelines integration documentation
+
 ## [6.2.1] 2025-09-04
 
 - [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): Always display a button to create Merge Request
