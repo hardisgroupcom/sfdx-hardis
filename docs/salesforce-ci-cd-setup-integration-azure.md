@@ -2,11 +2,14 @@
 title: Configure Integrations between sfdx-hardis and Azure Pipelines
 description: Post Notes on Azure Repos Pull Request from CI jobs
 ---
+
 <!-- markdownlint-disable MD013 -->
 
 ## Azure Pull Request notes
 
 In order to avoid to have to open job logs to see deployment errors, sfdx-hardis can post them as a thread on the Pull Request UI
+
+### Global configuration
 
 To use this capability:
 
@@ -18,9 +21,19 @@ To use this capability:
 
 ![Screenshot](assets/images/AzureReporterConfigContribute.jpg)
 
-- If you want to use Flow Diff, create an Azure boards ticket exactly named **sfdx-hardis tech attachments**. IT will be used to link uploaded images.
+### Tech Work Item
+
+If you want to use **Flow Diff** (visual diff of flow differences):
+
+- Create an Azure boards ticket exactly named **sfdx-hardis tech attachments**. IT will be used to link uploaded images.
+
+  - If you prefer to name it differently, define variable `AZURE_ATTACHMENTS_WORK_ITEM_ID` with the number of your ticket as value.
+
+- An Azure Work item can have only 100 attached images, so frequently delete old image attachments, or delete the ticket then recreate it with the same name.
 
 ![Screenshot](assets/images/az-tech-work-item.png)
+
+### Examples
 
 Everytime you will make a pull request, the CI job will post its result as comment !
 
@@ -50,3 +63,4 @@ Notes:
   - SYSTEM_TEAMPROJECT: $(System.TeamProject)
   - BUILD_BUILD_ID: $(Build.BuildId)
   - BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+  - AZURE_ATTACHMENTS_WORK_ITEM_ID (optional: identifier of the Work Items used to attach images)
