@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Add documentation about Packages installation
 - Update Azure Pipelines integration documentation
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): New beta feature **useDeltaDeploymentWithDependencies** to add dependencies to the delta deployment package.
 
 ## [6.2.1] 2025-09-04
 
