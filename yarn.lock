@@ -8606,10 +8606,10 @@ ky@^1.2.0:
   resolved "https://registry.yarnpkg.com/ky/-/ky-1.8.2.tgz#161cba76e4a86b43829565b9a9c8d21d03e602db"
   integrity sha512-XybQJ3d4Ea1kI27DoelE5ZCT3bSJlibYTtQuMsyzKox3TMyayw1asgQdl54WroAm+fIA3ZCr8zXW2RpR7qWVpA==
 
-"langchain@>=0.2.3 <0.3.0 || >=0.3.4 <0.4.0", langchain@^0.3.31:
-  version "0.3.31"
-  resolved "https://registry.yarnpkg.com/langchain/-/langchain-0.3.31.tgz#7ce858c98ff4921ebf4f3a59d549bcddee9c4713"
-  integrity sha512-C7n7WGa44RytsuxEtGcArVcXidRqzjl6UWQxaG3NdIw4gIqErWoOlNC1qADAa04H5JAOARxuE6S99+WNXB/rzA==
+"langchain@>=0.2.3 <0.3.0 || >=0.3.4 <0.4.0", langchain@^0.3.33:
+  version "0.3.33"
+  resolved "https://registry.yarnpkg.com/langchain/-/langchain-0.3.33.tgz#5ab9905e584eb19116c971b205edd7d4e1cb943e"
+  integrity sha512-MgMfy/68/xUi02dSg4AZhXjo4jQ+WuVYrU/ryzn59nUb+LXaMRoP/C9eaqblin0OLqGp93jfT8FXDg5mcqSg5A==
   dependencies:
     "@langchain/openai" ">=0.1.0 <0.7.0"
     "@langchain/textsplitters" ">=0.0.0 <0.2.0"
