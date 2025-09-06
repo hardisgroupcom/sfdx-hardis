@@ -154,8 +154,13 @@ The command's technical implementation involves:
       uxLog("action", this, c.cyan(`${uniqueUnsecuredAppNames.length} unsecured Connected Apps found.`));
       uxLogTable(this, uniqueUnsecureConnectedAppsWithTokens);
       uxLog("warning", this, `You need to either block or secure these Connected Apps.
-- To block a connected app, click on "Block"
-- To secure a connected app, install it, set it as "Admin Users are pre-approved" then select profiles/permission sets allowed to access it`);
+To block a connected app, click on "Block"
+To secure a connected app:
+  - Install it if not installed
+  - Click on "Manage Policies"
+  - Set "Admin Users are pre-approved" then save
+  - Select profiles/permission sets allowed to access the connected app
+  - Users will then need to authenticate again`);
     }
 
     // Build notification
@@ -189,6 +194,10 @@ The command's technical implementation involves:
     if (numberWarnings > 0) {
       const OAuthUsageSetupUrl = `${conn.instanceUrl}/lightning/setup/ConnectedAppsUsage/home`;
       WebSocketClient.sendReportFileMessage(OAuthUsageSetupUrl, 'Review OAuth Connected Apps', "actionUrl");
+    }
+
+    if ((this.argv || []).includes('unsecure-connected-apps')) {
+      process.exitCode = numberWarnings > 0 ? 1 : 0;
     }
 
     return {
