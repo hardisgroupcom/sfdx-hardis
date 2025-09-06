@@ -10,12 +10,13 @@ import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class UnsecuredConnectedApps extends SfCommand<any> {
-  public static title = 'Unusecured Connected Apps in an org';
+  public static title = 'Detect Unsecured Connected Apps';
 
   public static description = `
 ## Command Behavior
@@ -55,7 +56,7 @@ The command's technical implementation involves:
 `;
 
   public static examples = [
-    '$ sf hardis:org:diagnose:unusecured-connected-apps',
+    '$ sf hardis:org:diagnose:unsecured-connected-apps',
   ];
 
   public static flags: any = {
@@ -96,7 +97,7 @@ The command's technical implementation involves:
     const conn = flags['target-org'].getConnection();
 
     // Collect all Connected Apps
-    uxLog("action", this, c.cyan(`Detecting the unsecured list of Connected Apps from ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(`Listing all OAuth Tokens from ${conn.instanceUrl} ...`));
     const allOAuthTokenQuery =
       `SELECT AppName , AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name ,UseCount FROM OauthToken ORDER BY AppName ASC`;
     const allOAuthTokenQueryRes = await soqlQuery(allOAuthTokenQuery, conn);
@@ -147,8 +148,8 @@ The command's technical implementation involves:
         NumberOfUnsecuredOAuthTokens: uniqueUnsecuredAppNamesAndTokenNumber[appName]
       }
     });
-    this.outputFileConnectedApps = await generateReportPath('unusecured-connected-apps', this.outputFile);
-    this.outputFilesResConnectedApps = await generateCsvFile(uniqueUnsecureConnectedAppsWithTokens, this.outputFile, { fileTitle: "Unsecured Connected Apps" });
+    this.outputFileConnectedApps = await generateReportPath('unusecured-connected-apps', this.outputFileConnectedApps);
+    this.outputFilesResConnectedApps = await generateCsvFile(uniqueUnsecureConnectedAppsWithTokens, this.outputFileConnectedApps, { fileTitle: "Unsecured Connected Apps" });
     if (uniqueUnsecuredAppNames.length > 0) {
       uxLog("action", this, c.cyan(`${uniqueUnsecuredAppNames.length} unsecured Connected Apps found.`));
       uxLogTable(this, uniqueUnsecureConnectedAppsWithTokens);
@@ -182,6 +183,12 @@ To secure a connected app, install it, set it as "Admin Users are pre-approved" 
         UnsecuredConnectedApps: numberWarnings,
       },
     });
+
+    // Display link to Setup UI if there are issues
+    if (numberWarnings > 0) {
+      const OAuthUsageSetupUrl = `${conn.instanceUrl}/lightning/setup/ConnectedAppsUsage/home`;
+      WebSocketClient.sendReportFileMessage(OAuthUsageSetupUrl, 'Review OAuth Connected Apps', "actionUrl");
+    }
 
     return {
       status: numberWarnings === 0 ? 'success' : 'warning',
