@@ -123,7 +123,7 @@ The command's technical implementation involves:
     });
 
     // Generate output CSV file
-    this.outputFile = await generateReportPath('unusecured-oauth-tokens', this.outputFile);
+    this.outputFile = await generateReportPath('unsecured-oauth-tokens', this.outputFile);
     this.outputFilesRes = await generateCsvFile(allOAuthTokensWithStatus, this.outputFile, { fileTitle: "Unsecured OAuth Tokens" });
 
     const unsecuredOAuthTokens = allOAuthTokensWithStatus.filter(app => app.status === 'Unsecured');
@@ -148,7 +148,7 @@ The command's technical implementation involves:
         NumberOfUnsecuredOAuthTokens: uniqueUnsecuredAppNamesAndTokenNumber[appName]
       }
     });
-    this.outputFileConnectedApps = await generateReportPath('unusecured-connected-apps', this.outputFileConnectedApps);
+    this.outputFileConnectedApps = await generateReportPath('unsecured-connected-apps', this.outputFileConnectedApps);
     this.outputFilesResConnectedApps = await generateCsvFile(uniqueUnsecureConnectedAppsWithTokens, this.outputFileConnectedApps, { fileTitle: "Unsecured Connected Apps" });
     if (uniqueUnsecuredAppNames.length > 0) {
       uxLog("action", this, c.cyan(`${uniqueUnsecuredAppNames.length} unsecured Connected Apps found.`));
