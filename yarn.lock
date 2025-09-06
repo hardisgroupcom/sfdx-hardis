@@ -1703,12 +1703,12 @@
     "@google/generative-ai" "^0.24.0"
     uuid "^11.1.0"
 
-"@langchain/ollama@^0.2.1":
-  version "0.2.3"
-  resolved "https://registry.yarnpkg.com/@langchain/ollama/-/ollama-0.2.3.tgz#4868e66db4fc480f08c42fc652274abbab0416f0"
-  integrity sha512-1Obe45jgQspqLMBVlayQbGdywFmri8DgmGRdzNu0li56cG5RReYlRCFVDZBRMMvF9JhsP5eXRyfyivtKfITHWQ==
+"@langchain/ollama@^0.2.4":
+  version "0.2.4"
+  resolved "https://registry.yarnpkg.com/@langchain/ollama/-/ollama-0.2.4.tgz#91c2108015e018f1dcae1207c8bc44da0cf047fa"
+  integrity sha512-XThDrZurNPcUO6sasN13rkes1aGgu5gWAtDkkyIGT3ZeMOvrYgPKGft+bbhvsigTIH9C01TfPzrSp8LAmvHIjA==
   dependencies:
-    ollama "^0.5.12"
+    ollama "^0.5.17"
     uuid "^10.0.0"
 
 "@langchain/openai@>=0.1.0 <0.7.0", "@langchain/openai@>=0.2.0 <0.7.0":
@@ -10038,10 +10038,10 @@ oclif@^4.22.9:
     tiny-jsonc "^1.0.2"
     validate-npm-package-name "^5.0.1"
 
-ollama@^0.5.12:
-  version "0.5.16"
-  resolved "https://registry.yarnpkg.com/ollama/-/ollama-0.5.16.tgz#cb695b4aab6f6c07236a04b3aee40160f4f9e892"
-  integrity sha512-OEbxxOIUZtdZgOaTPAULo051F5y+Z1vosxEYOoABPnQKeW7i4O8tJNlxCB+xioyoorVqgjkdj+TA1f1Hy2ug/w==
+ollama@^0.5.17:
+  version "0.5.17"
+  resolved "https://registry.yarnpkg.com/ollama/-/ollama-0.5.17.tgz#3217b93c6b72a0e7ca98776ea8a5695de9e61d44"
+  integrity sha512-q5LmPtk6GLFouS+3aURIVl+qcAOPC4+Msmx7uBb3pd+fxI55WnGjmLZ0yijI/CYy79x0QPGx3BwC3u5zv9fBvQ==
   dependencies:
     whatwg-fetch "^3.6.20"
 
