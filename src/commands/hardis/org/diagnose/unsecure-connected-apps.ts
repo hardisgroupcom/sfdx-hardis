@@ -153,8 +153,9 @@ The command's technical implementation involves:
     if (uniqueUnsecuredAppNames.length > 0) {
       uxLog("action", this, c.cyan(`${uniqueUnsecuredAppNames.length} unsecured Connected Apps found.`));
       uxLogTable(this, uniqueUnsecureConnectedAppsWithTokens);
-      uxLog("warning", this, `You need to either delete or secure these Connected Apps.
-To secure a connected app, install it, set it as "Admin Users are pre-approved" then select profiles/permission sets allowed to access it`);
+      uxLog("warning", this, `You need to either block or secure these Connected Apps.
+- To block a connected app, click on "Block"
+- To secure a connected app, install it, set it as "Admin Users are pre-approved" then select profiles/permission sets allowed to access it`);
     }
 
     // Build notification
