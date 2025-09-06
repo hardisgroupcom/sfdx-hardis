@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.3.0] 2025-09-06
+
+- New command [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/) to detect Unsecured Connected Apps
 - Add documentation about Packages installation
 - Update Azure Pipelines integration documentation
 
