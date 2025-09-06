@@ -56,7 +56,7 @@ The command's technical implementation involves:
 `;
 
   public static examples = [
-    '$ sf hardis:org:diagnose:unsecured-connected-apps',
+    '$ sf hardis:org:diagnose:unsecure-connected-apps',
   ];
 
   public static flags: any = {
