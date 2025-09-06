@@ -484,7 +484,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       // Update package.xml
       const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
 
-      if (process.env.EXTEND_DELTA_DEPLOYMENT === 'true' || this.configInfo.extendDeltaDeployment === true) {
+      // Extend delta with dependencies if required
+      if (process.env.USE_DELTA_DEPLOYMENT_WITH_DEPENDENCIES === 'true' || this.configInfo.useDeltaDeploymentWithDependencies === true) {
         uxLog("action", this, c.cyan('[DeltaDeployment] Extending package.xml with dependencies ...'));
         await extendPackageFileWithDependencies(diffPackageXml, this.packageXmlFile);
       }

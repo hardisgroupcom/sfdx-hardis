@@ -7,9 +7,11 @@ description: Learn how to configure Delta Deployments using sfdx-git-delta on a 
 - [Delta deployments](#delta-deployments)
   - [Full mode](#full-mode)
   - [Delta mode](#delta-mode)
+  - [Delta with dependencies (beta)](#delta-with-dependencies-beta)
 - [Configuration](#configuration)
   - [Base](#base)
-  - [Advanced](#advanced)
+  - [With Dependencies (beta)](#with-dependencies-beta)
+  - [Miscellaneous](#miscellaneous)
 
 ___
 
@@ -49,6 +51,33 @@ Examples:
 
 ___
 
+### Delta with Dependencies (beta)
+
+Sometimes, using pure delta deployment is not enough: for example, if you delete a picklist value, simple delta deployment will pass, but later full deployment will fail because some references to the deleted value are remaining, like in Record Types, translations...
+
+[Stepan Stepanov](https://www.linkedin.com/in/stepan-stepanov-79a48734/) implemented a smart way to handle that with sfdx-hardis: Delta with dependencies.
+
+Delta with dependencies mode leverages a set of processors defined in `src/common/utils/deltaUtils.ts` to automatically detect and include related metadata dependencies in your deployment package. These processors analyze changes and ensure that dependent components are also deployed, reducing the risk of deployment failures due to missing references.
+
+**List of supported dependency processors:**
+
+- **CustomFieldPicklistProcessor**: Handles picklist value changes, ensuring related Record Types and translations are included.
+- **CustomFieldProcessor**: Detects changes to custom fields and adds dependent layouts, validation rules, and field sets.
+- **ObjectProcessor**: Manages object-level changes, including triggers, sharing rules, and compact layouts.
+- **ProfilePermissionProcessor**: Ensures profile and permission set updates are deployed when related metadata changes.
+- **RecordTypeProcessor**: Includes Record Type dependencies when fields or picklist values are modified.
+- **TranslationProcessor**: Adds translation files for changed metadata, such as labels and picklist values.
+- **WorkflowProcessor**: Handles workflow rule dependencies, including field updates and alerts.
+- **LayoutProcessor**: Ensures layout changes are deployed when fields or objects are updated.
+
+> ℹ️ The list of processors may evolve as new metadata types and dependency scenarios are supported. For the latest details, refer to the [deltaUtils.ts source](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/deltaUtils.ts).
+
+**How it works:**
+
+When delta with dependencies is enabled, sfdx-hardis analyzes the changed files and applies each processor to detect and add required dependencies. This ensures that your deployment package contains all necessary components for a successful deployment, even in complex scenarios involving cross-referenced metadata.
+
+___
+
 ## Configuration
 
 ### Base
@@ -66,7 +95,18 @@ In case of temporary deactivation of delta deployments, you can set variable `DI
 
 It is recommended to use opinionated default sfdx-hardis delta deployment configuration, but if you want to tweak the config you can use the following variables:
 
-### Advanced
+### With dependencies (beta)
+
+Delta mode must be activated and applicable to allow delta with dependencies to be activated.
+
+You can either:
+
+- Define `useDeltaDeploymentWithDependencies: true` in **config/.sfdx-hardis.yml**
+- Define env var `USE_DELTA_DEPLOYMENT_WITH_DEPENDENCIES=true`
+
+### Miscellaneous
+
+> Standard sfdx-hardis pipeline does not recommend to use these modes, but if you really know what you're doing, like the artists of [BeyondTheCloud.dev](https://blog.beyondthecloud.dev/for-developers), you can use them :)
 
 - USE_DELTA_DEPLOYMENT_AFTER_MERGE
   - By default, after a merge sfdx-hardis will try to use [QuickDeploy](salesforce-ci-cd-setup-integrations-home.md#git-providers). If not available, it will perform a full deployment. If you want to use a delta deployment anyway, define `USE_DELTA_DEPLOYMENT_AFTER_MERGE=true`
@@ -74,7 +114,3 @@ It is recommended to use opinionated default sfdx-hardis delta deployment config
 - ALWAYS_ENABLE_DELTA_DEPLOYMENT
   - By default, delta deployment is allowed only from minor to major branches. You can force it for PR/MRs between major branches by defining variable `ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`
 
-### Additionally
-
-- EXTEND_DELTA_DEPLOYMENT (or `extendDeltaDeployment` in config)
-  - will enable deployment of related metadata even it it was not changed. E.g. it would deploy CustomObjectTranslation if one of Layout was changed.

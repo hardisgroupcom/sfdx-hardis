@@ -25,7 +25,7 @@ This will activate delta deployments only between minor and major branches (majo
 
 If you want to force the delta deployment into major orgs (ex: preprod to prod), this is not recommended but you can use env variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true
 
-Delta deployment can optionally include some related metadata types even if they were not changed, but deploying them can improve the deployment itself or make validation more robust. For example, it would add CustomObjectTranslation to the delta package if you have changed a Layout. Set `extendDeltaDeployment: true` or use the environment variable `EXTEND_DELTA_DEPLOYMENT=true` to activate this feature.
+Delta deployment can optionally include some related metadata types even if they were not changed, but deploying them can improve the deployment itself or make validation more robust. For example, it would add CustomObjectTranslation to the delta package if you have changed a Layout. Set `useDeltaDeploymentWithDependencies: true` or use the environment variable `USE_DELTA_DEPLOYMENT_WITH_DEPENDENCIES=true` to activate this feature.
 
 ### Smart Deployments Tests
 
