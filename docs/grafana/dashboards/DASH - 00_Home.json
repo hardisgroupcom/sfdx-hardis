@@ -21,13 +21,13 @@
       "type": "grafana",
       "id": "grafana",
       "name": "Grafana",
-      "version": "11.4.0-78571"
+      "version": "12.2.0-17245430286.patch2"
     },
     {
       "type": "datasource",
       "id": "loki",
       "name": "Loki",
-      "version": "1.0.0"
+      "version": "12.2.0-17245430286.patch2"
     },
     {
       "type": "panel",
@@ -61,7 +61,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
   "links": [],
   "panels": [
     {
@@ -100,7 +99,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -135,7 +134,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -191,7 +190,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#EAB839",
@@ -230,7 +229,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -320,7 +319,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#EAB839",
@@ -359,7 +358,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -449,7 +448,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#EAB839",
@@ -488,7 +487,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -578,7 +577,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#EAB839",
@@ -617,7 +616,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -707,7 +706,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#EAB839",
@@ -746,7 +745,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -849,7 +848,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               }
             ]
           }
@@ -880,7 +879,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -935,7 +934,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#EAB839",
@@ -974,7 +973,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -1027,7 +1026,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "dark-orange",
@@ -1062,7 +1061,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -1115,7 +1114,7 @@
             "steps": [
               {
                 "color": "orange",
-                "value": null
+                "value": 0
               },
               {
                 "color": "yellow",
@@ -1154,7 +1153,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -1207,7 +1206,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "dark-orange",
@@ -1242,7 +1241,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -1251,6 +1250,95 @@
           },
           "editorMode": "builder",
           "expr": "{type=\"LEGACY_API\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Unsecured Connected Apps",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=UNSECURED_CONNECTED_APPS&﻿﻿${__url_time_range}&var-indicatorLabel=Unsecured Connected Apps"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 6
+      },
+      "id": 37,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.2.0-17245430286.patch2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "direction": "backward",
+          "editorMode": "builder",
+          "expr": "{type=\"UNSECURED_CONNECTED_APPS\", orgIdentifier=\"$org\"} |= ``",
           "maxLines": 1,
           "queryType": "range",
           "refId": "A"
@@ -1309,7 +1397,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -1344,7 +1432,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -1402,7 +1490,7 @@
             "steps": [
               {
                 "color": "dark-red",
-                "value": null
+                "value": 0
               },
               {
                 "color": "orange",
@@ -1450,7 +1538,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -1519,7 +1607,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "#EAB839",
@@ -1558,7 +1646,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -1605,7 +1693,7 @@
             "steps": [
               {
                 "color": "blue",
-                "value": null
+                "value": 0
               }
             ]
           },
@@ -1637,7 +1725,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -1708,7 +1796,7 @@
             "steps": [
               {
                 "color": "blue",
-                "value": null
+                "value": 0
               }
             ]
           },
@@ -1740,7 +1828,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -1811,7 +1899,7 @@
             "steps": [
               {
                 "color": "blue",
-                "value": null
+                "value": 0
               }
             ]
           },
@@ -1843,7 +1931,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -1930,7 +2018,7 @@
             "steps": [
               {
                 "color": "blue",
-                "value": null
+                "value": 0
               }
             ]
           },
@@ -1962,7 +2050,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -2068,11 +2156,11 @@
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "Unused Apex Classes",
+          "displayName": "Deactivated Flows & VR",
           "links": [
             {
               "title": "Show details",
-              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=UNUSED_APEX_CLASSES&﻿﻿${__url_time_range}&var-indicatorLabel=Unused Apex Classes"
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=METADATA_STATUS&﻿﻿${__url_time_range}&var-indicatorLabel=Deactivated Flow & VR"
             }
           ],
           "mappings": [],
@@ -2080,11 +2168,16 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "#EAB839",
                 "value": 1
+              },
+              {
+                "color": "red",
+                "value": 80
               }
             ]
           }
@@ -2093,11 +2186,11 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 5,
+        "w": 4,
         "x": 0,
         "y": 20
       },
-      "id": 35,
+      "id": 6,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -2115,7 +2208,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -2123,7 +2216,7 @@
             "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
           },
           "editorMode": "builder",
-          "expr": "{type=\"UNUSED_APEX_CLASSES\", orgIdentifier=\"$org\"} |= ``",
+          "expr": "{type=\"METADATA_STATUS\", orgIdentifier=\"$org\"} |= ``",
           "maxLines": 1,
           "queryType": "range",
           "refId": "A"
@@ -2155,11 +2248,11 @@
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "Deactivated Flows & VR",
+          "displayName": "Unused Connected Apps",
           "links": [
             {
               "title": "Show details",
-              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=METADATA_STATUS&﻿﻿${__url_time_range}&var-indicatorLabel=Deactivated Flow & VR"
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=CONNECTED_APPS&﻿﻿${__url_time_range}&var-indicatorLabel=Unused Connected Apps"
             }
           ],
           "mappings": [],
@@ -2167,15 +2260,12 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "#EAB839",
                 "value": 1
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -2184,11 +2274,11 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 5,
-        "x": 5,
+        "w": 4,
+        "x": 4,
         "y": 20
       },
-      "id": 6,
+      "id": 36,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -2206,7 +2296,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -2214,7 +2304,95 @@
             "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
           },
           "editorMode": "builder",
-          "expr": "{type=\"METADATA_STATUS\", orgIdentifier=\"$org\"} |= ``",
+          "expr": "{type=\"CONNECTED_APPS\", orgIdentifier=\"$org\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Unused Apex Classes",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}﻿﻿&var-type=UNUSED_APEX_CLASSES&﻿﻿${__url_time_range}&var-indicatorLabel=Unused Apex Classes"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "#EAB839",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 20
+      },
+      "id": 35,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.2.0-17245430286.patch2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"UNUSED_APEX_CLASSES\", orgIdentifier=\"$org\"} |= ``",
           "maxLines": 1,
           "queryType": "range",
           "refId": "A"
@@ -2258,7 +2436,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "#EAB839",
@@ -2275,8 +2454,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 5,
-        "x": 10,
+        "w": 4,
+        "x": 12,
         "y": 20
       },
       "id": 4,
@@ -2297,7 +2476,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -2349,7 +2528,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "#EAB839",
@@ -2366,8 +2546,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 15,
+        "w": 3,
+        "x": 16,
         "y": 20
       },
       "id": 3,
@@ -2388,7 +2568,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -2440,7 +2620,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": 0
               },
               {
                 "color": "#EAB839",
@@ -2475,7 +2656,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -2533,14 +2714,19 @@
             "cellOptions": {
               "type": "auto"
             },
-            "inspect": false
+            "inspect": false,
+            "tooltip": {
+              "placement": "auto"
+            },
+            "wrapHeaderText": false
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue"
+                "color": "blue",
+                "value": 0
               }
             ]
           }
@@ -2633,7 +2819,7 @@
           }
         ]
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -2751,14 +2937,19 @@
             "cellOptions": {
               "type": "auto"
             },
-            "inspect": false
+            "inspect": false,
+            "tooltip": {
+              "placement": "auto"
+            },
+            "wrapHeaderText": false
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue"
+                "color": "blue",
+                "value": 0
               }
             ]
           }
@@ -2851,7 +3042,7 @@
           }
         ]
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -2969,14 +3160,19 @@
             "cellOptions": {
               "type": "auto"
             },
-            "inspect": false
+            "inspect": false,
+            "tooltip": {
+              "placement": "auto"
+            },
+            "wrapHeaderText": false
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue"
+                "color": "blue",
+                "value": 0
               }
             ]
           }
@@ -3093,7 +3289,7 @@
           }
         ]
       },
-      "pluginVersion": "11.4.0-78571",
+      "pluginVersion": "12.2.0-17245430286.patch2",
       "targets": [
         {
           "datasource": {
@@ -3187,7 +3383,7 @@
     }
   ],
   "refresh": "",
-  "schemaVersion": 40,
+  "schemaVersion": 41,
   "tags": [
     "sfdx-hardis",
     "salesforce",
@@ -3227,6 +3423,7 @@
   "timezone": "browser",
   "title": "DASH - 00_Home",
   "uid": "sfdx-hardis-today-summary",
-  "version": 109,
-  "weekStart": ""
+  "version": 117,
+  "weekStart": "",
+  "id": null
 }
