@@ -2653,18 +2653,18 @@
   resolved "https://registry.yarnpkg.com/@slack/types/-/types-2.16.0.tgz#92ba59f9e970440b524423ad694eba4fa4995a86"
   integrity sha512-bICnyukvdklXhwxprR3uF1+ZFkTvWTZge4evlCS4G1H1HU6QLY68AcjqzQRymf7/5gNt6Y4OBb4NdviheyZcAg==
 
-"@slack/web-api@^7.9.3":
-  version "7.9.3"
-  resolved "https://registry.yarnpkg.com/@slack/web-api/-/web-api-7.9.3.tgz#50d914900314771288961a8f626bf7d6485d58e6"
-  integrity sha512-xjnoldVJyoUe61Ltqjr2UVYBolcsTpp5ottqzSI3l41UCaJgHSHIOpGuYps+nhLFvDfGGpDGUeQ7BWiq3+ypqA==
+"@slack/web-api@^7.10.0":
+  version "7.10.0"
+  resolved "https://registry.yarnpkg.com/@slack/web-api/-/web-api-7.10.0.tgz#e64eaa01eb0e2e7d60fc19d8789698c79afa2a90"
+  integrity sha512-kT+07JvOqpYH3b/ttVo3iqKIFiHV2NKmD6QUc/F7HrjCgSdSA10zxqi0euXEF2prB49OU7SfjadzQ0WhNc7tiw==
   dependencies:
     "@slack/logger" "^4.0.0"
     "@slack/types" "^2.9.0"
     "@types/node" ">=18.0.0"
     "@types/retry" "0.12.0"
-    axios "^1.8.3"
+    axios "^1.11.0"
     eventemitter3 "^5.0.1"
-    form-data "^4.0.0"
+    form-data "^4.0.4"
     is-electron "2.2.2"
     is-stream "^2"
     p-queue "^6"
@@ -4314,7 +4314,7 @@ aws4@^1.12.0:
   resolved "https://registry.yarnpkg.com/aws4/-/aws4-1.13.2.tgz#0aa167216965ac9474ccfa83892cfb6b3e1e52ef"
   integrity sha512-lHe62zvbTB5eEABUVi/AwVh0ZKY9rMMDhmm+eeyuuUQbQ3+J+fONVQOZyj+DdrvD4BY33uYniyRJ4UJIaSKAfw==
 
-axios@^1.11.0, axios@^1.8.3:
+axios@^1.11.0:
   version "1.11.0"
   resolved "https://registry.yarnpkg.com/axios/-/axios-1.11.0.tgz#c2ec219e35e414c025b2095e8b8280278478fdb6"
   integrity sha512-1Lx3WLFQWm3ooKDYZD1eXmoGO9fxYQjrycfHFC8P0sCfQVXyROp0p9PFWBehewBOdCwHc+f/b8I0fMto5eSfwA==
