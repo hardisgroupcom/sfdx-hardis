@@ -48,7 +48,7 @@ Key functionalities:
 
 - **Intelligent Org Management:** Automatically generates unique scratch org aliases based on username, git branch, and timestamp, with options to reuse existing orgs or force creation of new ones.
 - **Scratch Org Pool Integration:** Supports fetching pre-configured scratch orgs from pools for faster development cycles and CI/CD optimization.
-- **Custom Scratch Definition:** Dynamically builds project-scratch-def.json files with user-specific configurations including email, username patterns, and org shape settings.
+- **Custom Scratch Definition:** Dynamically builds project-scratch-def.json files with user-specific configurations including email, username patterns, and org shape settings (set variable **SCRATCH_ORG_SHAPE** to use org shapes).
 - **Package Installation:** Automatically installs all configured packages defined in \`installedPackages\` configuration property.
 - **Metadata Deployment:** Pushes source code and deploys metadata using optimized deployment strategies for scratch org environments.
 - **Permission Set Assignment:** Assigns specified permission sets defined in \`initPermissionSets\` configuration to the scratch org user.
@@ -59,7 +59,10 @@ Key functionalities:
 - **CI/CD Integration:** Provides specialized handling for continuous integration environments including automated cleanup and pool management.
 - **Error Handling:** Comprehensive error recovery including scratch org cleanup on failure and detailed troubleshooting messages.
 
-The command configuration can be customized using \`config/.sfdx-hardis.yml\` file with properties like \`installedPackages\`, \`initPermissionSets\`, \`scratchOrgInitApexScripts\`, and \`dataPackages\`.
+The command configuration can be customized using:
+
+- \`config/.sfdx-hardis.yml\` file with properties like \`installedPackages\`, \`initPermissionSets\`, \`scratchOrgInitApexScripts\`, and \`dataPackages\`.
+- Environment variable **SCRATCH_ORG_SHAPE** with shape org id, if you want to use org shapes
 
 <details markdown="1">
 <summary>Technical explanations</summary>
