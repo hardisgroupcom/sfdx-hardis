@@ -253,9 +253,15 @@ export default class ScratchCreate extends SfCommand<any> {
     // Keep only first 15 and last 15 chars if scratch org alias is too long
     const aliasForUsername = this.scratchOrgAlias.length > 30 ? this.scratchOrgAlias.slice(0, 15) + this.scratchOrgAlias.slice(-15) : this.scratchOrgAlias;
     this.projectScratchDef.username = `${this.userEmail.split('@')[0].slice(0, 20)}@hardis-scratch-${aliasForUsername}.com`;
+    if (process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape) {
+      this.projectScratchDef.sourceOrg = process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape;
+    }
+    uxLog("log", this, c.grey("Project scratch def: \n" + JSON.stringify(this.projectScratchDef, null, 2)));
     const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
     await fs.ensureDir(path.dirname(projectScratchDefLocal));
     await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
+    WebSocketClient.sendReportFileMessage(projectScratchDefLocal, "Scratch Org definition", "report");
+
     // Check current scratch org
     const orgListResult = await execSfdxJson('sf org list', this);
     const hubOrgUsername = flags['target-dev-hub'].getUsername();
@@ -333,6 +339,10 @@ export default class ScratchCreate extends SfCommand<any> {
       debug: this.debugMode,
     });
     await clearCache('sf org list');
+    if (!createResult || createResult.status !== 0 || !createResult.result) {
+      uxLog("error", this, this.buildScratchCreateErrorMessage(createResult));
+      throw new SfError('Scratch org creation failed');
+    }
     assert(createResult.status === 0 && createResult.result, this.buildScratchCreateErrorMessage(createResult));
     this.scratchOrgInfo = createResult.result;
     this.scratchOrgUsername = this.scratchOrgInfo.username;
