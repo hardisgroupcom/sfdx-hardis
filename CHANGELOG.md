@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Update Grafana Home Dashboard to add Unsecure Connected Apps
+- Fix Auth configuration command for Dev Hub
 
 ## [6.3.0] 2025-09-06
 
