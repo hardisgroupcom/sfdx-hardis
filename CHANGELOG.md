@@ -4,6 +4,16 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.3.1] 2025-09-07
+
+- Update Grafana Home Dashboard to add Unsecure Connected Apps
+- Fix Auth configuration command for Dev Hub
+- Allow to use org shapes for scratch org creation with env variable **SCRATCH_ORG_SHAPE**
+- Replace `my.salesforce-setup.com` by `my.salesforce.com` when prompting instance URL 
+
+## [6.3.0] 2025-09-06
+
+- New command [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/) to detect Unsecured Connected Apps
 - Add documentation about Packages installation
 - Update Azure Pipelines integration documentation
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): New beta feature **useDeltaDeploymentWithDependencies** to add dependencies to the delta deployment package.
