@@ -37,18 +37,51 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class ScratchCreate extends SfCommand<any> {
   public static title = 'Create and initialize scratch org';
 
-  public static description = `Create and initialize a scratch org or a source-tracked sandbox (config can be defined using \`config/.sfdx-hardis.yml\`):
+  public static description = `
+## Command Behavior
 
-- **Install packages**
-  - Use property \`installedPackages\`
-- **Push sources**
-- **Assign permission sets**
-  - Use property \`initPermissionSets\`
-- **Run apex initialization scripts**
-  - Use property \`scratchOrgInitApexScripts\`
-- **Load data**
-  - Use property \`dataPackages\`
-  `;
+**Creates and fully initializes a Salesforce scratch org with complete development environment setup.**
+
+This command is a comprehensive scratch org provisioning tool that automates the entire process of creating, configuring, and initializing a Salesforce scratch org for development work. It handles everything from basic org creation to advanced configuration including package installation, metadata deployment, and data initialization.
+
+Key functionalities:
+
+- **Intelligent Org Management:** Automatically generates unique scratch org aliases based on username, git branch, and timestamp, with options to reuse existing orgs or force creation of new ones.
+- **Scratch Org Pool Integration:** Supports fetching pre-configured scratch orgs from pools for faster development cycles and CI/CD optimization.
+- **Custom Scratch Definition:** Dynamically builds project-scratch-def.json files with user-specific configurations including email, username patterns, and org shape settings.
+- **Package Installation:** Automatically installs all configured packages defined in \`installedPackages\` configuration property.
+- **Metadata Deployment:** Pushes source code and deploys metadata using optimized deployment strategies for scratch org environments.
+- **Permission Set Assignment:** Assigns specified permission sets defined in \`initPermissionSets\` configuration to the scratch org user.
+- **Apex Script Execution:** Runs custom Apex initialization scripts defined in \`scratchOrgInitApexScripts\` for org-specific setup.
+- **Data Loading:** Loads initial data using SFDMU data packages from \`dataPackages\` configuration for realistic development environments.
+- **User Configuration:** Automatically configures the scratch org admin user with proper names, email, country settings, and marketing user permissions.
+- **Password Generation:** Creates and stores secure passwords for easy scratch org access during development.
+- **CI/CD Integration:** Provides specialized handling for continuous integration environments including automated cleanup and pool management.
+- **Error Handling:** Comprehensive error recovery including scratch org cleanup on failure and detailed troubleshooting messages.
+
+The command configuration can be customized using \`config/.sfdx-hardis.yml\` file with properties like \`installedPackages\`, \`initPermissionSets\`, \`scratchOrgInitApexScripts\`, and \`dataPackages\`.
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **Configuration Management:** Loads hierarchical configuration from \`.sfdx-hardis.yml\`, branch-specific, and user-specific configuration files using \`getConfig('user')\`.
+- **Alias Generation Logic:** Creates intelligent scratch org aliases using username, git branch, timestamp patterns with CI and pool prefixes for different environments.
+- **Scratch Org Definition Building:** Dynamically constructs \`project-scratch-def.json\` with user email, custom usernames, org shapes, and feature flags like StateAndCountryPicklist and MarketingUser.
+- **Pool Integration:** Implements scratch org pool fetching using \`fetchScratchOrg\` for rapid org provisioning in development and CI environments.
+- **Salesforce CLI Integration:** Executes \`sf org create scratch\` commands with proper parameter handling including wait times, duration, and dev hub targeting.
+- **Package Installation Pipeline:** Uses \`installPackages\` utility to install managed and unmanaged packages with dependency resolution and error handling.
+- **Metadata Deployment:** Leverages \`initOrgMetadatas\` for optimized source pushing and metadata deployment specific to scratch org environments.
+- **Permission Set Assignment:** Implements \`initPermissionSetAssignments\` for automated permission set assignment to scratch org users.
+- **Apex Script Execution:** Runs custom Apex initialization scripts using \`initApexScripts\` for org-specific configuration and setup.
+- **Data Loading Integration:** Uses SFDMU integration through \`initOrgData\` for comprehensive data loading from configured data packages.
+- **User Management:** Performs SOQL queries and DML operations to configure scratch org users with proper names, emails, country codes, and permission flags.
+- **Authentication Management:** Handles SFDX auth URL generation and storage for CI/CD environments and scratch org pool management.
+- **Error Recovery:** Implements comprehensive error handling with scratch org cleanup, pool management, and detailed error messaging for troubleshooting.
+- **WebSocket Integration:** Provides real-time status updates and file reporting through WebSocket connections for VS Code extension integration.
+</details>
+`;
 
   public static examples = ['$ sf hardis:scratch:create'];
 
