@@ -799,7 +799,7 @@
       "default": "https://login.salesforce.com",
       "description": "Dev Hub instance URL used for authenticating to DevHub from CI jobs",
       "examples": [
-        "DevHub_MyClientMyProject",
+        "DevHub_MyClientMyProject"
       ],
       "title": "Dev Hub Instance URL",
       "type": "string"
