@@ -92,15 +92,15 @@ prompts
     const { flags } = await this.parse(ConfigureAuth);
     const devHub = flags.devhub || false;
 
-    uxLog("action", this, c.cyan("This command will configure the authentication between a git branch and a Salesforce org."));
+    uxLog("action", this, c.cyan(`This command will configure the authentication between a git branch and ${devHub ? "Dev Hub" : "a Salesforce org"}.`));
 
     // Ask user to login to org
     const prevUserName = devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername();
     await promptOrg(this, {
       setDefault: true,
       devHub: devHub,
-      promptMessage: 'Please select or login into the org you want to configure the SF CLI Authentication',
-      defaultOrgUsername: flags['target-org']?.getUsername(),
+      promptMessage: `Please select or login into ${devHub ? "your Dev Hub org" : "the org you want to configure the SF CLI Authentication"}`,
+      defaultOrgUsername: devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername(),
     });
     await checkConfig(this);
 
@@ -148,12 +148,16 @@ prompts
       /* if (["main", "master"].includes(branchName)) {
         throw new SfError("You can not use main or master as deployment branch name. Maybe you want to use production ?");
       } */
-      instanceUrl = await promptInstanceUrl(['login', 'test'], `${branchName} related org`, {
-        instanceUrl: devHub
-          ? flags['target-dev-hub']?.getConnection()?.instanceUrl || ""
-          : flags['target-org']?.getConnection()?.instanceUrl || "",
-      });
     }
+
+    instanceUrl = await promptInstanceUrl(
+      devHub ? ["login"] : ['login', "test"],
+      devHub ? "Dev Hub  org" : `${branchName} related org`, {
+      instanceUrl: devHub
+        ? flags['target-dev-hub']?.getConnection()?.instanceUrl || ""
+        : flags['target-org']?.getConnection()?.instanceUrl || "",
+    });
+
     // Request merge targets
     if (!devHub) {
       let initialMergeTargets: string[] = [];
@@ -204,7 +208,22 @@ prompts
       placeholder: 'Ex: admin.sfdx@myclient.com',
     });
     if (devHub) {
+      if (!config.devHubAlias || config.devHubAlias === '') {
+        const devHubAliasResponse = await prompts({
+          type: 'text',
+          name: 'value',
+          message: c.cyanBright('What is the alias you want to set for your Dev Hub ?'),
+          description: 'Enter the alias for your Dev Hub',
+          initial: config.projectName ? 'DevHub_' + config.projectName : 'DevHub',
+          placeholder: 'Ex: MyCompany_DevHub',
+        });
+        config.devHubAlias = devHubAliasResponse.value;
+        await setConfig('project', {
+          devHubAlias: config.devHubAlias,
+        });
+      }
       const configFile = await setConfig('project', {
+        devHubInstanceUrl: instanceUrl,
         devHubUsername: usernameResponse.value,
       });
       WebSocketClient.sendReportFileMessage(configFile!, 'Updated project config file', 'report');

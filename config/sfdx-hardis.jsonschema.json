@@ -794,6 +794,16 @@
       "title": "Dev Hub org alias",
       "type": "string"
     },
+    "devHubInstanceUrl": {
+      "$id": "#/properties/devHubInstanceUrl",
+      "default": "https://login.salesforce.com",
+      "description": "Dev Hub instance URL used for authenticating to DevHub from CI jobs",
+      "examples": [
+        "DevHub_MyClientMyProject",
+      ],
+      "title": "Dev Hub Instance URL",
+      "type": "string"
+    },
     "devHubUsername": {
       "$id": "#/properties/devHubUsername",
       "default": "",
