@@ -246,7 +246,9 @@ export async function promptInstanceUrl(
     description: 'Enter the custom Salesforce org URL for authentication',
     placeholder: 'Ex: https://myclient.my.salesforce.com',
   });
-  const urlCustom = (customUrlResponse?.value || "").replace('.lightning.force.com', '.my.salesforce.com');
+  const urlCustom = (customUrlResponse?.value || "")
+    .replace('.lightning.force.com', '.my.salesforce.com')
+    .replace('.my.salesforce-setup.com', '.my.salesforce.com');
   return urlCustom;
 }
 

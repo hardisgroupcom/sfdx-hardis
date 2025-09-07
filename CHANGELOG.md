@@ -8,6 +8,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Update Grafana Home Dashboard to add Unsecure Connected Apps
 - Fix Auth configuration command for Dev Hub
+- Allow to use org shapes for scratch org creation with env variable **SCRATCH_ORG_SHAPE**
+- Replace `my.salesforce-setup.com` by `my.salesforce.com` when prompting instance URL 
 
 ## [6.3.0] 2025-09-06
 
