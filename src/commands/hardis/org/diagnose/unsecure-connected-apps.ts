@@ -107,9 +107,9 @@ The command's technical implementation involves:
       const toAdd: any = {
         AppName: app.AppName,
         User: app.User ? app.User.Name : 'N/A',
-        IsUsingAdminAuthorization: app.AppMenuItem ? app.AppMenuItem.IsUsingAdminAuthorization : "N/A"
+        IsUsingAdminAuthorization: app.AppMenuItem ? app.AppMenuItem.IsUsingAdminAuthorization : false
       };
-      if (app.AppMenuItem && app.AppMenuItem.IsUsingAdminAuthorization === false) {
+      if (toAdd.IsUsingAdminAuthorization === false) {
         toAdd.statusIcon = '❌';
         toAdd.status = 'Unsecured';
       } else {

@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.3.2] 2025-09-07
+
 - Set initPermissionSets config prop to array of strings
+- [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/): Handle case where OAuth Token App menu item is not found
 
 ## [6.3.1] 2025-09-07
 
