@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.3.3] 2025-09-08
+
+- [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/)
+  - Add an additional columns on OAuth Usage to:
+    - Show when the connected app has been last used
+    - Show which profiles are the users using the OAuth Tokens
+  - Run the command in the daily monitoring
+
 ## [6.3.2] 2025-09-07
 
 - Set initPermissionSets config prop to array of strings
