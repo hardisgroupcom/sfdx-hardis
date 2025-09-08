@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): New beta feature **useDeltaDeploymentWithDependencies** to add dependencies to the delta deployment package.
+
 ## [6.3.3] 2025-09-08
 
 - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/)
@@ -16,6 +18,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Set initPermissionSets config prop to array of strings
 - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/): Handle case where OAuth Token App menu item is not found
+
 
 ## [6.3.1] 2025-09-07
 
