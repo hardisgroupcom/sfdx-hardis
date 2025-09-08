@@ -132,6 +132,7 @@ The command's technical implementation involves:
 
     const uniqueUnsecuredAppNamesAndTokenNumber: { [key: string]: number } = {};
     const uniqueUnsecuredAppNamesAndProfiles: { [key: string]: Set<string> } = {};
+    const uniqueUnsecuredAppNamesAndLastUsageDate: { [key: string]: string } = {};
     for (const app of unsecuredOAuthTokens) {
       if (uniqueUnsecuredAppNamesAndTokenNumber[app.AppName]) {
         uniqueUnsecuredAppNamesAndTokenNumber[app.AppName]++;
@@ -145,12 +146,19 @@ The command's technical implementation involves:
       if (app["User Profile"] && app["User Profile"] !== 'N/A') {
         uniqueUnsecuredAppNamesAndProfiles[app.AppName].add(app["User Profile"]);
       }
+      if (app["Last Used Date"] && app["Last Used Date"] !== 'N/A') {
+        const latestUsageDate = uniqueUnsecuredAppNamesAndLastUsageDate[app.AppName];
+        if (!latestUsageDate || new Date(app["Last Used Date"]) > new Date(latestUsageDate)) {
+          uniqueUnsecuredAppNamesAndLastUsageDate[app.AppName] = app["Last Used Date"];
+        }
+      }
     }
     const uniqueUnsecuredAppNames = Object.keys(uniqueUnsecuredAppNamesAndTokenNumber);
     const uniqueUnsecureConnectedAppsWithTokens = uniqueUnsecuredAppNames.map(appName => {
       return {
         AppName: appName,
         NumberOfUnsecuredOAuthTokens: uniqueUnsecuredAppNamesAndTokenNumber[appName],
+        LatestUsageDate: uniqueUnsecuredAppNamesAndLastUsageDate[appName] || "N/A",
         ProfilesOfUsersUsingIt: Array.from(uniqueUnsecuredAppNamesAndProfiles[appName] || []).sort().join(', '),
       }
     });
