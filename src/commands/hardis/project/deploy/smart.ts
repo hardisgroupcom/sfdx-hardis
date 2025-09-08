@@ -27,6 +27,7 @@ import {
 } from '../../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { smartDeploy, removePackageXmlContent, createEmptyPackageXml } from '../../../../common/utils/deployUtils.js';
+import { extendPackageFileWithDependencies } from '../../../../common/utils/deltaUtils.js';
 import { isProductionOrg, promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { getApexTestClasses } from '../../../../common/utils/classUtils.js';
 import { listMajorOrgs, restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
@@ -482,6 +483,13 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
       // Update package.xml
       const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
+
+      // Extend delta with dependencies if required
+      if (process.env.USE_DELTA_DEPLOYMENT_WITH_DEPENDENCIES === 'true' || this.configInfo.useDeltaDeploymentWithDependencies === true) {
+        uxLog("action", this, c.cyan('[DeltaDeployment] Extending package.xml with dependencies ...'));
+        await extendPackageFileWithDependencies(diffPackageXml, this.packageXmlFile);
+      }
+
       await removePackageXmlContent(this.packageXmlFile, diffPackageXml, true, {
         debugMode: this.debugMode,
         keepEmptyTypes: false,
