@@ -847,7 +847,7 @@
     },
     "initPermissionSets": {
       "$id": "#/properties/initPermissionSets",
-      "description": "When creating a scratch org, Admin user will be automatically assigned to those permission sets",
+      "description": "When creating a scratch org, Admin user will be automatically assigned to those permission sets. Example: PS_Admin",
       "examples": [
         [
           "MyPermissionSet",
@@ -855,28 +855,7 @@
         ]
       ],
       "items": {
-        "$id": "#/properties/initPermissionSets/items",
-        "type": [
-          "object",
-          "string"
-        ],
-        "additionalProperties": false,
-        "description": "Permission Set or Permission Set Group",
-        "properties": {
-          "name": {
-            "$Id": "#/properties/initPermissionSets/items/properties/name",
-            "description": "Permission Set or Permission Set Group name",
-            "examples": [
-              [
-                "MyPermissionSet",
-                "MyPermissionSetGroup",
-                "MyPermissionSetGroup2"
-              ]
-            ],
-            "title": "Name",
-            "type": "string"
-          }
-        }
+        "type": "string"
       },
       "title": "Initial Permission Sets",
       "type": "array"
@@ -1445,7 +1424,7 @@
     },
     "scratchOrgInitApexScripts": {
       "$id": "#/properties/scratchOrgInitApexScripts",
-      "description": "Apex scripts to call after scratch org initialization",
+      "description": "Apex scripts to call after scratch org initialization. Example: scripts/apex/init-scratch.apex",
       "examples": [
         [
           "scripts/apex/init-scratch.apex",
