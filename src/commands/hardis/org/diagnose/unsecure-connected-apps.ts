@@ -4,7 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
-import { soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { bulkQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
@@ -38,6 +38,8 @@ Key functionalities:
 - **Notifications:** Sends alerts to configured channels (Grafana, Slack, MS Teams) with security findings and attached reports.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-org-security/) and can output Grafana, Slack and MsTeams Notifications.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/jHv8yrSK8Dg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -99,40 +101,37 @@ The command's technical implementation involves:
     // Collect all Connected Apps
     uxLog("action", this, c.cyan(`Listing all OAuth Tokens from ${conn.instanceUrl} ...`));
     const allOAuthTokenQuery =
-      `SELECT AppName , AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name ,UseCount FROM OauthToken ORDER BY AppName ASC`;
-    const allOAuthTokenQueryRes = await soqlQuery(allOAuthTokenQuery, conn);
+      `SELECT AppName , AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name , User.Profile.Name, UseCount FROM OauthToken ORDER BY AppName ASC`;
+    const allOAuthTokenQueryRes = await bulkQuery(allOAuthTokenQuery, conn);
     const allOAuthTokens = allOAuthTokenQueryRes.records;
 
     const allOAuthTokensWithStatus = allOAuthTokens.map(app => {
-      const toAdd: any = {
+      const adminPreApproved = app["AppMenuItem.IsUsingAdminAuthorization"] ?? false;
+      const appResult = {
         AppName: app.AppName,
-        User: app.User ? app.User.Name : 'N/A',
-        IsUsingAdminAuthorization: app.AppMenuItem ? app.AppMenuItem.IsUsingAdminAuthorization : false
-      };
-      if (toAdd.IsUsingAdminAuthorization === false) {
-        toAdd.statusIcon = '❌';
-        toAdd.status = 'Unsecured';
-      } else {
-        toAdd.statusIcon = '✅';
-        toAdd.status = 'Secured'
+        "Status": adminPreApproved ? '✅ Secured' : '❌ Unsecured',
+        "Admin Pre-Approved": adminPreApproved ? 'Yes' : 'No',
+        "User": app["User.Name"] ? app["User.Name"] : 'N/A',
+        "User Profile": app["User.Profile.Name"] ? app["User.Profile.Name"] : 'N/A',
+        "Last Used Date": app.LastUsedDate ? new Date(app.LastUsedDate).toISOString().split('T')[0] : 'N/A',
+        "Created Date": app.CreatedDate ? new Date(app.CreatedDate).toISOString().split('T')[0] : 'N/A',
+        "Use Count": app.UseCount ? app.UseCount : 0,
       }
-      delete app.attributes;
-      delete app.AppMenuItem;
-      delete app.User;
-      return Object.assign(toAdd, app);
+      return appResult;
     });
 
     // Generate output CSV file
     this.outputFile = await generateReportPath('unsecured-oauth-tokens', this.outputFile);
     this.outputFilesRes = await generateCsvFile(allOAuthTokensWithStatus, this.outputFile, { fileTitle: "Unsecured OAuth Tokens" });
 
-    const unsecuredOAuthTokens = allOAuthTokensWithStatus.filter(app => app.status === 'Unsecured');
+    const unsecuredOAuthTokens = allOAuthTokensWithStatus.filter(app => app.Status === '❌ Unsecured');
 
     // Display results
     uxLog("action", this, `${unsecuredOAuthTokens.length} unsecured OAuth Tokens found.`);
     uxLogTable(this, unsecuredOAuthTokens);
 
     const uniqueUnsecuredAppNamesAndTokenNumber: { [key: string]: number } = {};
+    const uniqueUnsecuredAppNamesAndProfiles: { [key: string]: Set<string> } = {};
     for (const app of unsecuredOAuthTokens) {
       if (uniqueUnsecuredAppNamesAndTokenNumber[app.AppName]) {
         uniqueUnsecuredAppNamesAndTokenNumber[app.AppName]++;
@@ -140,12 +139,19 @@ The command's technical implementation involves:
       else {
         uniqueUnsecuredAppNamesAndTokenNumber[app.AppName] = 1;
       }
+      if (!uniqueUnsecuredAppNamesAndProfiles[app.AppName]) {
+        uniqueUnsecuredAppNamesAndProfiles[app.AppName] = new Set<string>();
+      }
+      if (app["User Profile"] && app["User Profile"] !== 'N/A') {
+        uniqueUnsecuredAppNamesAndProfiles[app.AppName].add(app["User Profile"]);
+      }
     }
     const uniqueUnsecuredAppNames = Object.keys(uniqueUnsecuredAppNamesAndTokenNumber);
     const uniqueUnsecureConnectedAppsWithTokens = uniqueUnsecuredAppNames.map(appName => {
       return {
         AppName: appName,
-        NumberOfUnsecuredOAuthTokens: uniqueUnsecuredAppNamesAndTokenNumber[appName]
+        NumberOfUnsecuredOAuthTokens: uniqueUnsecuredAppNamesAndTokenNumber[appName],
+        ProfilesOfUsersUsingIt: Array.from(uniqueUnsecuredAppNamesAndProfiles[appName] || []).sort().join(', '),
       }
     });
     this.outputFileConnectedApps = await generateReportPath('unsecured-connected-apps', this.outputFileConnectedApps);
