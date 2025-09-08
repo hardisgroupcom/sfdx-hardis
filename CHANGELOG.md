@@ -4,8 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.4.0] 2025-09-08
+
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): New beta feature **useDeltaDeploymentWithDependencies** to add dependencies to the delta deployment package.
-- Fix npm dependencies
+- Fix npm dependencies (just in case, but the global npm packages hack has not impacted sfdx-hardis as it does not run in a browser)
 
 ## [6.3.3] 2025-09-08
 
