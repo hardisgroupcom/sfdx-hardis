@@ -306,6 +306,7 @@ export class FilesExporter {
               }
             });
           });
+          uxLog("log", this, c.grey(`Downloading ${versionsAndLinks.length} found files...`))
           // Download files
           await PromisePool.withConcurrency(5)
             .for(versionsAndLinks)
