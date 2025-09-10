@@ -78,15 +78,25 @@ export class FilesExporter {
     }
     uxLog("action", this.commandThis, c.cyan(`Exporting files from ${c.green(this.dtl.full_label)} ...`));
     uxLog("log", this.commandThis, c.italic(c.grey(this.dtl.description)));
+
     // Make sure export folder for files is existing
     this.exportedFilesFolder = path.join(this.filesPath, 'export');
     await fs.ensureDir(this.exportedFilesFolder);
 
     await this.calculateApiConsumption();
+
+    // Start progress tracking with total chunks
+    WebSocketClient.sendProgressStartMessage('Exporting files', this.chunksNumber);
+
     this.startQueue();
     await this.processParentRecords();
     await this.queueCompleted();
-    return await this.buildResult();
+
+    // End progress tracking
+    WebSocketClient.sendProgressEndMessage(this.chunksNumber);
+
+    const result = await this.buildResult();
+    return result;
   }
 
   // Calculate API consumption
@@ -231,6 +241,10 @@ export class FilesExporter {
       );
       return;
     }
+
+    // Send progress update for current chunk
+    WebSocketClient.sendProgressStepMessage(this.recordChunksNumber, this.chunksNumber);
+
     uxLog(
       "action",
       this,

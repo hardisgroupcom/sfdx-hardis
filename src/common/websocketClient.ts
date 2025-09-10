@@ -85,6 +85,32 @@ export class WebSocketClient {
     WebSocketClient.sendMessage({ event: 'refreshCommands' });
   }
 
+  // Send progress start message
+  static sendProgressStartMessage(title: string, totalSteps?: number) {
+    WebSocketClient.sendMessage({
+      event: 'progressStart',
+      title: title || 'Progress',
+      totalSteps: totalSteps || 0
+    });
+  }
+
+  // Send progress step message
+  static sendProgressStepMessage(step: number, totalSteps?: number) {
+    WebSocketClient.sendMessage({
+      event: 'progressStep',
+      step: step,
+      totalSteps: totalSteps
+    });
+  }
+
+  // Send progress end message
+  static sendProgressEndMessage(totalSteps?: number) {
+    WebSocketClient.sendMessage({
+      event: 'progressEnd',
+      totalSteps: totalSteps
+    });
+  }
+
   // Send refresh plugins message
   static sendRefreshPluginsMessage() {
     WebSocketClient.sendMessage({ event: 'refreshPlugins' });
