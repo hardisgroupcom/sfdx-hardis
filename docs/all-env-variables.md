@@ -92,10 +92,10 @@ These variables control specific behaviors and configurations within sfdx-hardis
 
 ### Bulk API Settings
 
-| Variable Name                  | Description                               | Default Value                       | Possible Values                                                                         | Usage Location                                                                                                           |
-|--------------------------------|-------------------------------------------|-------------------------------------|-----------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| **BULKAPIV2_POLL_INTERVAL**    | Override BulkApiV2 Poll interval          | `5000`                              | Any number                                                                              | [`src/common/utils/apiUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/apiUtils.ts)   |
-| **BULKAPIV2_POLL_TIMEOUT**     | Override BulkApiV2 Poll Timeout           | `60000`                             | Any number                                                                              | [`src/common/utils/apiUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/apiUtils.ts)   |
+| Variable Name               | Description                      | Default Value | Possible Values | Usage Location                                                                                                         |
+|-----------------------------|----------------------------------|---------------|-----------------|------------------------------------------------------------------------------------------------------------------------|
+| **BULKAPIV2_POLL_INTERVAL** | Override BulkApiV2 Poll interval | `5000`        | Any number      | [`src/common/utils/apiUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/apiUtils.ts) |
+| **BULKAPIV2_POLL_TIMEOUT**  | Override BulkApiV2 Poll Timeout  | `60000`       | Any number      | [`src/common/utils/apiUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/apiUtils.ts) |
 
 ---
 
