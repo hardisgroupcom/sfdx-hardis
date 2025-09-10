@@ -17,6 +17,8 @@ This list has been generated with GitHub Copilot so if you see any incoherence p
    - [Deployment Control](#deployment-control)
    - [Monitoring & Debugging](#monitoring--debugging)
    - [System Configuration](#system-configuration)
+   - [Bulk API Settings](#bulk-api-settings)
+   
 2. [Tool-Specific Variables](#tool-specific-variables)
    - [Azure DevOps](#azure-devops)
    - [GitLab](#gitlab)
@@ -87,6 +89,13 @@ These variables control specific behaviors and configurations within sfdx-hardis
 | **NODE_OPTIONS**               | Node.js runtime options                   | Cleared if contains `--inspect-brk` | Valid Node.js options (e.g., `'--max-old-space-size=4096'`, `'--experimental-modules'`) | [`src/common/utils/index.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/index.ts)         |
 | **PROJECT_NAME**               | Name of the sfdx-hardis project           | `undefined`                         | Any project name string (e.g., `'My Salesforce Project'`, `'CRM-Development'`)          | [`src/config/index.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/config/index.ts)                     |
 | **SFDX_HARDIS_WEBSOCKET_PORT** | Port for sfdx-hardis WebSocket server     | `2702`                              | Valid port numbers (e.g., `2702`)                                                       | [`src/common/websocketClient.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/websocketClient.ts) |
+
+### Bulk API Settings
+
+| Variable Name               | Description                      | Default Value | Possible Values | Usage Location                                                                                                         |
+|-----------------------------|----------------------------------|---------------|-----------------|------------------------------------------------------------------------------------------------------------------------|
+| **BULKAPIV2_POLL_INTERVAL** | Override BulkApiV2 Poll interval | `5000`        | Any number      | [`src/common/utils/apiUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/apiUtils.ts) |
+| **BULKAPIV2_POLL_TIMEOUT**  | Override BulkApiV2 Poll Timeout  | `60000`       | Any number      | [`src/common/utils/apiUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/apiUtils.ts) |
 
 ---
 
