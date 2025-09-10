@@ -32,6 +32,12 @@ export default class MonitorAll extends SfCommand<any> {
       frequency: 'daily',
     },
     {
+      key: 'UNSECURED_CONNECTED_APPS',
+      title: 'Detect unsecured Connected Apps in an org',
+      command: 'sf hardis:org:diagnose:unsecure-connected-apps',
+      frequency: 'daily',
+    },
+    {
       key: 'LICENSES',
       title: 'Extract licenses information',
       command: 'sf hardis:org:diagnose:licenses',
@@ -89,12 +95,6 @@ export default class MonitorAll extends SfCommand<any> {
       key: 'CONNECTED_APPS',
       title: 'Detect unused Connected Apps in an org',
       command: 'sf hardis:org:diagnose:unused-connected-apps',
-      frequency: 'weekly',
-    },
-    {
-      key: 'UNSECURED_CONNECTED_APPS',
-      title: 'Detect unsecured Connected Apps in an org',
-      command: 'sf hardis:org:diagnose:unsecure-connected-apps',
       frequency: 'weekly',
     },
     {
