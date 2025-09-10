@@ -89,8 +89,8 @@ const maxRetry = Number(process.env.BULK_QUERY_RETRY || 5);
 export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3): Promise<any> {
   const queryLabel = soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery;
   uxLog("log", this, c.grey('[BulkApiV2] ' + c.italic(queryLabel)));
-  conn.bulk.pollInterval = 5000; // 5 sec
-  conn.bulk.pollTimeout = 60000; // 60 sec
+  conn.bulk2.pollInterval = process.env.BULKAPIV2_POLL_INTERVAL ? Number(process.env.BULKAPIV2_POLL_INTERVAL) : 5000; // 5 sec
+  conn.bulk2.pollTimeout = process.env.BULKAPIV2_POLL_TIMEOUT ? Number(process.env.BULKAPIV2_POLL_TIMEOUT) : 60000; // 60 sec
   // Start query
   try {
     spinnerQ = ora({ text: `[BulkApiV2] Bulk Query: ${queryLabel}`, spinner: 'moon' }).start();
@@ -109,8 +109,13 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
   } catch (e: any) {
     spinnerQ.fail(`[BulkApiV2] Bulk query error: ${e.message}`);
     // Try again if the reason is a timeout and max number of retries is not reached yet
-    if ((e + '').includes('ETIMEDOUT') && retries < maxRetry) {
+    const eStr = e + '';
+    if ((eStr.includes('ETIMEDOUT') || eStr.includes('Polling timed out')) && retries < maxRetry) {
       uxLog("warning", this, c.yellow('[BulkApiV2] Bulk Query retry attempt #' + retries + 1));
+      uxLog("log", this, c.grey(`You can change Bulk API v2 Settings with env variables:
+- BULKAPIV2_POLL_TIMEOUT (current: ${conn.bulk2.pollTimeout} ms)
+- BULKAPIV2_POLL_INTERVAL (current: ${conn.bulk2.pollInterval} ms)
+- BULK_QUERY_RETRY (current: ${maxRetry} max retries)`));
       return await bulkQuery(soqlQuery, conn, retries + 1);
     } else {
       throw e;

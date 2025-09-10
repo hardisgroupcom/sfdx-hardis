@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Allow to override Bulk API v2 settings with env variables **BULKAPIV2_POLL_INTERVAL** and **BULKAPIV2_POLL_TIMEOUT**
+
 ## [6.4.0] 2025-09-08
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): New beta feature **useDeltaDeploymentWithDependencies** to add dependencies to the delta deployment package.
