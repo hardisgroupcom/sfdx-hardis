@@ -99,8 +99,13 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
   } catch (e: any) {
     spinnerQ.fail(`[BulkApiV2] Bulk query error: ${e.message}`);
     // Try again if the reason is a timeout and max number of retries is not reached yet
-    if ((e + '').includes('ETIMEDOUT') && retries < maxRetry) {
+    const eStr = e + '';
+    if ((eStr.includes('ETIMEDOUT') || eStr.includes('Polling timed out')) && retries < maxRetry) {
       uxLog("warning", this, c.yellow('[BulkApiV2] Bulk Query retry attempt #' + retries + 1));
+      uxLog("log", this, c.grey(`You can change Bulk API v2 Settings with env variables:
+- BULKAPIV2_POLL_TIMEOUT (current: ${conn.bulk2.pollTimeout} ms)
+- BULKAPIV2_POLL_INTERVAL (current: ${conn.bulk2.pollInterval} ms)
+- BULK_QUERY_RETRY (current: ${maxRetry} max retries)`));
       return await bulkQuery(soqlQuery, conn, retries + 1);
     } else {
       throw e;
