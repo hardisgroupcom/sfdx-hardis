@@ -41,6 +41,7 @@ export class FilesExporter {
   private bulkApiRecordsEnded = false;
 
   private recordChunksNumber = 0;
+  private logFile: string;
 
   private totalSoqlRequests = 0;
   private totalParentRecords = 0;
@@ -84,6 +85,15 @@ export class FilesExporter {
     await fs.ensureDir(this.exportedFilesFolder);
 
     await this.calculateApiConsumption();
+
+    const reportDir = await getReportDirectory();
+    const reportExportDir = path.join(reportDir, 'files-export-log');
+    const now = new Date();
+    const dateStr = now.toISOString().replace(/T/, '_').replace(/:/g, '-').replace(/\..+/, '');
+    this.logFile = path.join(reportExportDir, `files-export-log-${this.dtl.name}-${dateStr}.csv`);
+
+    // Initialize CSV log file with headers
+    await this.initializeCsvLog();
 
     // Phase 1: Calculate total files count for accurate progress tracking
     uxLog("action", this.commandThis, c.cyan("Estimating total files to download..."));
@@ -461,23 +471,96 @@ export class FilesExporter {
     }
   }
 
-  private async downloadFile(fetchUrl: string, outputFile: string) {
-    const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
-    // Use file folder and file name for log display
-    const fileFolderName = path
-      .dirname(outputFile)
+  // Initialize CSV log file with headers
+  private async initializeCsvLog() {
+    await fs.ensureDir(path.dirname(this.logFile));
+    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail\n';
+    await fs.writeFile(this.logFile, headers, 'utf8');
+    uxLog("log", this, c.grey(`CSV log file initialized: ${this.logFile}`));
+    WebSocketClient.sendReportFileMessage(this.logFile, "Exported files report (CSV)", 'report');
+  }
+
+  // Helper method to extract file information from output path
+  private extractFileInfo(outputFile: string) {
+    const fileName = path.basename(outputFile);
+    const extension = path.extname(fileName);
+    const folderPath = path.dirname(outputFile)
       .replace(process.cwd(), '')
       .replace(this.exportedFilesFolder, '')
       .replace(/\\/g, '/')
       .replace(/^\/+/, '');
-    const fileName = path.basename(outputFile);
-    const fileDisplay = path.join(fileFolderName, fileName).replace(/\\/g, '/');
+
+    return { fileName, extension, folderPath };
+  }
+
+  // Helper method to log skipped files
+  private async logSkippedFile(outputFile: string, errorDetail: string) {
+    const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
+    await this.writeCsvLogEntry('skipped', folderPath, fileName, extension, 0, errorDetail);
+  }
+
+  // Write a CSV entry for each file processed (fileSize in KB)
+  private async writeCsvLogEntry(status: 'success' | 'failed' | 'skipped', folder: string, fileName: string, extension: string, fileSizeKB: number, errorDetail: string = '') {
+    try {
+      // Escape CSV values to handle commas, quotes, and newlines
+      const escapeCsvValue = (value: string | number): string => {
+        const strValue = String(value);
+        if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) {
+          return `"${strValue.replace(/"/g, '""')}"`;
+        }
+        return strValue;
+      };
+
+      const csvLine = [
+        escapeCsvValue(status),
+        escapeCsvValue(folder),
+        escapeCsvValue(fileName),
+        escapeCsvValue(extension),
+        escapeCsvValue(fileSizeKB),
+        escapeCsvValue(errorDetail)
+      ].join(',') + '\n';
+
+      await fs.appendFile(this.logFile, csvLine, 'utf8');
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`Error writing to CSV log: ${(e as Error).message}`));
+    }
+  }
+
+  private async downloadFile(fetchUrl: string, outputFile: string) {
+    const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
+
+    // Extract file information for CSV logging
+    const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
+    let fileSizeKB = 0;
+    let errorDetail = '';
+
+    // Get file size if download was successful
+    if (downloadResult.success && fs.existsSync(outputFile)) {
+      try {
+        const stats = await fs.stat(outputFile);
+        fileSizeKB = Math.round(stats.size / 1024); // Convert bytes to KB
+      } catch (e) {
+        uxLog("warning", this, c.yellow(`Could not get file size for ${fileName}: ${(e as Error).message}`));
+      }
+    } else if (!downloadResult.success) {
+      errorDetail = downloadResult.error || 'Unknown download error';
+    }
+
+    // Use file folder and file name for log display
+    const fileDisplay = path.join(folderPath, fileName).replace(/\\/g, '/');
+
     if (downloadResult.success) {
       uxLog("success", this, c.grey(`Downloaded ${fileDisplay}`));
       this.filesDownloaded++;
+
+      // Write success entry to CSV log
+      await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB);
     } else {
       uxLog("warning", this, c.red(`Error ${fileDisplay}`));
       this.filesErrors++;
+
+      // Write failed entry to CSV log
+      await this.writeCsvLogEntry('failed', folderPath, fileName, extension, fileSizeKB, errorDetail);
     }
   }
 
@@ -536,12 +619,18 @@ export class FilesExporter {
     if (this.dtl.fileTypes !== 'all' && !this.dtl.fileTypes.includes(contentVersion.FileType)) {
       uxLog("log", this, c.grey(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File type ignored`));
       this.filesIgnoredType++;
+
+      // Log skipped file to CSV
+      await this.logSkippedFile(outputFile, 'File type ignored');
       return;
     }
     // Check file overwrite
     if (this.dtl.overwriteFiles !== true && fs.existsSync(outputFile)) {
       uxLog("warning", this, c.yellow(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File already existing`));
       this.filesIgnoredExisting++;
+
+      // Log skipped file to CSV
+      await this.logSkippedFile(outputFile, 'File already exists');
       return;
     }
     // Create directory if not existing
@@ -574,10 +663,14 @@ export class FilesExporter {
           `- Total files downloaded: ${c.bold(this.filesDownloaded)}`,
           `- Total file download errors: ${c.bold(this.filesErrors)}`,
           `- Total file skipped because of type constraint: ${c.bold(this.filesIgnoredType)}`,
-          `- Total file skipped because previously downloaded: ${c.bold(this.filesIgnoredExisting)}`
+          `- Total file skipped because previously downloaded: ${c.bold(this.filesIgnoredExisting)}`,
+          `- Detailed CSV log: ${c.bold(this.logFile)}`
         ].join('\n')
       )
     );
+
+    // Report CSV log file location
+    uxLog("action", this, c.cyan(c.italic(`Detailed file processing log saved to: ${c.bold(this.logFile)}`)));
 
     return {
       totalParentRecords: this.totalParentRecords,
