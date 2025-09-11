@@ -464,12 +464,19 @@ export class FilesExporter {
   private async downloadFile(fetchUrl: string, outputFile: string) {
     const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
     // Use file folder and file name for log display
-    const fileDisplayName = outputFile.replace(process.cwd(), '').replace(this.exportedFilesFolder, '');
+    const fileFolderName = path
+      .dirname(outputFile)
+      .replace(process.cwd(), '')
+      .replace(this.exportedFilesFolder, '')
+      .replace(/\\/g, '/')
+      .replace(/^\/+/, '');
+    const fileName = path.basename(outputFile);
+    const fileDisplay = path.join(fileFolderName, fileName).replace(/\\/g, '/');
     if (downloadResult.success) {
-      uxLog("success", this, c.grey(`Downloaded - ${fileDisplayName}`));
+      uxLog("success", this, c.grey(`Downloaded ${fileDisplay}`));
       this.filesDownloaded++;
     } else {
-      uxLog("warning", this, c.red(`Download failed - ${fileDisplayName}`));
+      uxLog("warning", this, c.red(`Error ${fileDisplay}`));
       this.filesErrors++;
     }
   }
