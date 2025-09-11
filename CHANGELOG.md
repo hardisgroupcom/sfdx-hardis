@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Add additional dependencies in Unbuntu Dockerfile to allow mermaid-cli and chrome to run natively from the image.
+- Add additional dependencies in Ubuntu Dockerfile to allow mermaid-cli and chrome to run natively from the image.
 
 ## [6.4.1] 2025-09-10
 
