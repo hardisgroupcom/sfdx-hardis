@@ -8,16 +8,38 @@ ENV SF_DATA_DIR=/usr/local/lib
 
 # Update package list and install required packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-            git \
-            curl \
-            gnupg \
-            # Required for Python
-            python3 \
-            python3-pip \
-            python3-venv \
-            # Required for docker
-            docker.io \
-            fonts-liberation && \
+    git \
+    curl \
+    gnupg \
+    # Required for Python
+    python3 \
+    python3-pip \
+    python3-venv \
+    # Required for docker
+    docker.io \
+    fonts-liberation \
+    # Required for mermaid cli
+    libglib2.0-0 \
+    libnss3 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxcomposite1 \
+    libxcursor1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxtst6 \
+    libdrm2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libatspi2.0-0 \
+    libgtk-3-0 \
+    libasound2t64 \
+    && \
     # Create python symlink for compatibility
     ln -sf /usr/bin/python3 /usr/bin/python && \
     ln -sf /usr/bin/pip3 /usr/bin/pip && \
@@ -37,6 +59,7 @@ ARG SFDX_HARDIS_VERSION=latest
 # Install npm packages +install sfdx plugins & display versions
 RUN npm install --no-cache yarn -g && \
     npm install --no-cache @salesforce/cli@${SFDX_CLI_VERSION} -g && \
+    npm install --no-cache @mermaid-js/mermaid-cli -g && \
     sf plugins install @salesforce/plugin-packaging && \
     sf plugins install @salesforce/plugin-deploy-retrieve && \
     echo 'y' | sf plugins install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
@@ -48,7 +71,7 @@ RUN npm install --no-cache yarn -g && \
     rm -rf /tmp/* && \
     npm cache clean --force
 
-ENV MERMAID_MODES="docker"
+ENV MERMAID_MODES="cli"
 
 # Workaround for https://github.com/forcedotcom/salesforcedx-apex/issues/213
 COPY ref/workarounds/dateUtil.js /usr/local/lib/node_modules/@salesforce/cli/node_modules/@salesforce/apex-node/lib/src/utils/dateUtil.js
