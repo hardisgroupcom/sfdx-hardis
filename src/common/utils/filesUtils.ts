@@ -427,18 +427,28 @@ export class FilesExporter {
     const apiCallsRemaining = connAny?.limitInfo?.apiUsage?.used
       ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
       : null;
-    uxLog("action", this, c.cyan(`API limit: ${c.bold(connAny?.limitInfo?.apiUsage?.limit || null)}`));
-    uxLog("action", this, c.cyan(`API used before process: ${c.bold(this.apiUsedBefore)}`));
-    uxLog("action", this, c.cyan(`API used after process: ${c.bold(connAny?.limitInfo?.apiUsage?.used || null)}`));
-    uxLog("action", this, c.cyan(`API calls remaining for today: ${c.bold(apiCallsRemaining)}`));
-    uxLog("action", this, c.cyan(`Total SOQL requests: ${c.bold(this.totalSoqlRequests)}`));
-    uxLog("action", this, c.cyan(`Total parent records found: ${c.bold(this.totalParentRecords)}`));
-    uxLog("action", this, c.cyan(`Total parent records with files: ${c.bold(this.parentRecordsWithFiles)}`));
-    uxLog("action", this, c.cyan(`Total parent records ignored because already existing: ${c.bold(this.recordsIgnored)}`));
-    uxLog("action", this, c.cyan(`Total files downloaded: ${c.bold(this.filesDownloaded)}`));
-    uxLog("action", this, c.cyan(`Total file download errors: ${c.bold(this.filesErrors)}`));
-    uxLog("action", this, c.cyan(`Total file skipped because of type constraint: ${c.bold(this.filesIgnoredType)}`));
-    uxLog("action", this, c.cyan(`Total file skipped because previously downloaded: ${c.bold(this.filesIgnoredExisting)}`));
+
+    uxLog(
+      "action",
+      this,
+      c.cyan(
+        [
+          "Files export completed with following statistics:",
+          `- API limit: ${c.bold(connAny?.limitInfo?.apiUsage?.limit || null)}`,
+          `- API used before process: ${c.bold(this.apiUsedBefore)}`,
+          `- API used after process: ${c.bold(connAny?.limitInfo?.apiUsage?.used || null)}`,
+          `- API calls remaining for today: ${c.bold(apiCallsRemaining)}`,
+          `- Total SOQL requests: ${c.bold(this.totalSoqlRequests)}`,
+          `- Total parent records found: ${c.bold(this.totalParentRecords)}`,
+          `- Total parent records with files: ${c.bold(this.parentRecordsWithFiles)}`,
+          `- Total parent records ignored because already existing: ${c.bold(this.recordsIgnored)}`,
+          `- Total files downloaded: ${c.bold(this.filesDownloaded)}`,
+          `- Total file download errors: ${c.bold(this.filesErrors)}`,
+          `- Total file skipped because of type constraint: ${c.bold(this.filesIgnoredType)}`,
+          `- Total file skipped because previously downloaded: ${c.bold(this.filesIgnoredExisting)}`
+        ].join('\n')
+      )
+    );
 
     return {
       totalParentRecords: this.totalParentRecords,
