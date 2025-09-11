@@ -85,18 +85,117 @@ export class FilesExporter {
 
     await this.calculateApiConsumption();
 
-    // Start progress tracking with total chunks
-    WebSocketClient.sendProgressStartMessage('Exporting files', this.chunksNumber);
+    // Phase 1: Calculate total files count for accurate progress tracking
+    uxLog("action", this.commandThis, c.cyan("Estimating total files to download..."));
+    const totalFilesCount = await this.calculateTotalFilesCount();
+    uxLog("log", this.commandThis, c.grey(`Estimated ${totalFilesCount} files to download`));
 
-    this.startQueue();
-    await this.processParentRecords();
-    await this.queueCompleted();
-
-    // End progress tracking
-    WebSocketClient.sendProgressEndMessage(this.chunksNumber);
+    // Phase 2: Process downloads with accurate progress tracking
+    await this.processDownloadsWithProgress(totalFilesCount);
 
     const result = await this.buildResult();
     return result;
+  }
+
+  // Phase 1: Calculate total files count using efficient COUNT() queries
+  private async calculateTotalFilesCount(): Promise<number> {
+    let totalFiles = 0;
+
+    // Get parent records count to estimate batching
+    const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT COUNT() FROM');
+    this.totalSoqlRequests++;
+    const countSoqlQueryRes = await soqlQuery(countSoqlQuery, this.conn);
+    const totalParentRecords = countSoqlQueryRes.totalSize;
+
+    // Count Attachments - use COUNT() query with IN clause batching for memory efficiency
+    const attachmentBatchSize = 200;
+
+    // Estimate Attachments count by sampling
+    const sampleSize = Math.min(attachmentBatchSize, totalParentRecords);
+    if (sampleSize > 0) {
+      // Get sample of parent IDs
+      const sampleQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT Id FROM') + ` LIMIT ${sampleSize}`;
+      this.totalSoqlRequests++;
+      const sampleParents = await soqlQuery(sampleQuery, this.conn);
+
+      if (sampleParents.records.length > 0) {
+        const sampleParentIds = sampleParents.records.map((record: any) => `'${record.Id}'`).join(',');
+        const attachmentCountQuery = `SELECT COUNT() FROM Attachment WHERE ParentId IN (${sampleParentIds})`;
+        this.totalSoqlRequests++;
+        const attachmentCountRes = await soqlQuery(attachmentCountQuery, this.conn);
+
+        // Extrapolate from sample
+        const avgAttachmentsPerRecord = attachmentCountRes.totalSize / sampleParents.records.length;
+        totalFiles += Math.round(avgAttachmentsPerRecord * totalParentRecords);
+      }
+    }
+
+    // Count ContentVersions - use COUNT() query with sampling for memory efficiency
+    if (sampleSize > 0) {
+      const sampleQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT Id FROM') + ` LIMIT ${sampleSize}`;
+      const sampleParents = await soqlQuery(sampleQuery, this.conn);
+
+      if (sampleParents.records.length > 0) {
+        const sampleParentIds = sampleParents.records.map((record: any) => `'${record.Id}'`).join(',');
+
+        // Count ContentDocumentLinks for sample
+        const linkCountQuery = `SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId IN (${sampleParentIds})`;
+        this.totalSoqlRequests++;
+        const linkCountRes = await soqlQuery(linkCountQuery, this.conn);
+
+        // Extrapolate from sample (ContentVersions ≈ ContentDocumentLinks for latest versions)
+        const avgContentVersionsPerRecord = linkCountRes.totalSize / sampleParents.records.length;
+        totalFiles += Math.round(avgContentVersionsPerRecord * totalParentRecords);
+      }
+    }
+
+    return Math.max(totalFiles, 1); // Ensure at least 1 for progress tracking
+  }
+
+  // Phase 2: Process downloads with accurate file-based progress tracking
+  private async processDownloadsWithProgress(estimatedFilesCount: number) {
+    let filesProcessed = 0;
+    let totalFilesDiscovered = 0; // Track actual files discovered
+    let actualTotalFiles = estimatedFilesCount; // Start with estimation, will be adjusted as we discover actual files
+
+    // Start progress tracking with estimated total files count
+    WebSocketClient.sendProgressStartMessage('Exporting files', actualTotalFiles);
+
+    // Progress callback function with total adjustment capability
+    const progressCallback = (filesCompleted: number, filesDiscoveredInChunk?: number) => {
+      filesProcessed += filesCompleted;
+
+      // If we discovered files in this chunk, update our tracking
+      if (filesDiscoveredInChunk !== undefined) {
+        totalFilesDiscovered += filesDiscoveredInChunk;
+        // Update total to use actual discovered count + remaining estimation
+        const processedChunks = this.recordChunksNumber;
+        const totalChunks = this.chunksNumber;
+        const remainingChunks = totalChunks - processedChunks;
+
+        if (remainingChunks > 0) {
+          // Estimate remaining files based on actual discovery rate
+          const avgFilesPerChunk = totalFilesDiscovered / processedChunks;
+          const estimatedRemainingFiles = Math.round(avgFilesPerChunk * remainingChunks);
+          actualTotalFiles = totalFilesDiscovered + estimatedRemainingFiles;
+        } else {
+          // All chunks processed, use actual total
+          actualTotalFiles = totalFilesDiscovered;
+        }
+
+        uxLog("log", this, c.grey(`Discovered ${filesDiscoveredInChunk} files in chunk, updated total estimate to ${actualTotalFiles}`));
+      }
+
+      WebSocketClient.sendProgressStepMessage(filesProcessed, actualTotalFiles);
+    };
+
+    // Use modified queue system with progress tracking
+    this.startQueue(progressCallback);
+    await this.processParentRecords(progressCallback);
+    await this.queueCompleted();
+
+    // End progress tracking with final total
+    WebSocketClient.sendProgressEndMessage(actualTotalFiles);
   }
 
   // Calculate API consumption
@@ -148,12 +247,15 @@ export class FilesExporter {
   }
 
   // Run chunks one by one, and don't wait to have all the records fetched to start it
-  private startQueue() {
+  private startQueue(progressCallback?: (filesCompleted: number, filesDiscoveredInChunk?: number) => void) {
     this.queueInterval = setInterval(async () => {
       if (this.recordsChunkQueueRunning === false && this.recordsChunkQueue.length > 0) {
         this.recordsChunkQueueRunning = true;
-        const recordChunk = this.recordsChunkQueue.shift();
-        await this.processRecordsChunk(recordChunk);
+        const queueItem = this.recordsChunkQueue.shift();
+        // Handle both old format (array) and new format (object with records and progressCallback)
+        const recordChunk = Array.isArray(queueItem) ? queueItem : queueItem.records;
+        const chunkProgressCallback = Array.isArray(queueItem) ? progressCallback : queueItem.progressCallback;
+        await this.processRecordsChunk(recordChunk, chunkProgressCallback);
         this.recordsChunkQueueRunning = false;
         // Manage last chunk
       } else if (
@@ -163,7 +265,7 @@ export class FilesExporter {
       ) {
         const recordsToProcess = [...this.recordsChunk];
         this.recordsChunk = [];
-        this.recordsChunkQueue.push(recordsToProcess);
+        this.recordsChunkQueue.push({ records: recordsToProcess, progressCallback });
       }
     }, 1000);
   }
@@ -191,7 +293,7 @@ export class FilesExporter {
     this.queueInterval = null;
   }
 
-  private async processParentRecords() {
+  private async processParentRecords(progressCallback?: (filesCompleted: number, filesDiscoveredInChunk?: number) => void) {
     // Query parent records using SOQL defined in export.json file
     this.totalSoqlRequests++;
     this.conn.bulk.pollTimeout = this.pollTimeout || 600000; // Increase timeout in case we are on a bad internet connection or if the bulk api batch is queued
@@ -214,22 +316,22 @@ export class FilesExporter {
         this.recordsIgnored++;
         continue;
       }
-      await this.addToRecordsChunk(record);
+      await this.addToRecordsChunk(record, progressCallback);
     }
     this.bulkApiRecordsEnded = true;
   }
 
-  private async addToRecordsChunk(record: any) {
+  private async addToRecordsChunk(record: any, progressCallback?: (filesCompleted: number, filesDiscoveredInChunk?: number) => void) {
     this.recordsChunk.push(record);
     // If chunk size is reached , process the chunk of records
     if (this.recordsChunk.length === this.recordsChunkSize) {
       const recordsToProcess = [...this.recordsChunk];
       this.recordsChunk = [];
-      this.recordsChunkQueue.push(recordsToProcess);
+      this.recordsChunkQueue.push({ records: recordsToProcess, progressCallback });
     }
   }
 
-  private async processRecordsChunk(records: any[]) {
+  private async processRecordsChunk(records: any[], progressCallback?: (filesCompleted: number, filesDiscoveredInChunk?: number) => void) {
     this.recordChunksNumber++;
     if (this.recordChunksNumber < this.startChunkNumber) {
       uxLog(
@@ -242,8 +344,7 @@ export class FilesExporter {
       return;
     }
 
-    // Send progress update for current chunk
-    WebSocketClient.sendProgressStepMessage(this.recordChunksNumber, this.chunksNumber);
+    let actualFilesInChunk = 0;
 
     uxLog(
       "action",
@@ -262,6 +363,8 @@ export class FilesExporter {
       const attachmentQuery = `SELECT Id, Name, ContentType, ParentId FROM Attachment WHERE ParentId IN (${parentIdIn})`;
       this.totalSoqlRequests++;
       const attachments = await this.conn.query(attachmentQuery);
+      actualFilesInChunk += attachments.records.length; // Count actual files discovered
+
       if (attachments.records.length > 0) {
         // Download attachments using REST API
         await PromisePool.withConcurrency(5)
@@ -269,9 +372,13 @@ export class FilesExporter {
           .process(async (attachment: any) => {
             try {
               await this.downloadAttachmentFile(attachment, batch);
+              // Call progress callback if available
+              if (progressCallback) {
+                progressCallback(1);
+              }
             } catch (e) {
               this.filesErrors++;
-              uxLog("error", this, c.red('Download file error: ' + attachment.Name + '\n' + e));
+              uxLog("warning", this, c.red('Download file error: ' + attachment.Name + '\n' + e));
             }
           });
       } else {
@@ -320,6 +427,7 @@ export class FilesExporter {
               }
             });
           });
+          actualFilesInChunk += versionsAndLinks.length; // Count actual ContentVersion files discovered
           uxLog("log", this, c.grey(`Downloading ${versionsAndLinks.length} found files...`))
           // Download files
           await PromisePool.withConcurrency(5)
@@ -331,9 +439,13 @@ export class FilesExporter {
                   batch,
                   versionAndLink.contentDocumentLink
                 );
+                // Call progress callback if available
+                if (progressCallback) {
+                  progressCallback(1);
+                }
               } catch (e) {
                 this.filesErrors++;
-                uxLog("error", this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
+                uxLog("warning", this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
               }
             });
         }
@@ -341,13 +453,23 @@ export class FilesExporter {
         uxLog("log", this, c.grey('No ContentDocumentLinks found for the parent records in this batch'));
       }
     }
+
+    // At the end of chunk processing, report the actual files discovered in this chunk
+    if (progressCallback && actualFilesInChunk > 0) {
+      // This will help adjust the total progress based on actual discovered files
+      progressCallback(0, actualFilesInChunk); // Report actual files found in this chunk
+    }
   }
 
   private async downloadFile(fetchUrl: string, outputFile: string) {
     const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
+    // Use file folder and file name for log display
+    const fileDisplayName = outputFile.replace(process.cwd(), '').replace(this.exportedFilesFolder, '');
     if (downloadResult.success) {
+      uxLog("success", this, c.grey(`Downloaded - ${fileDisplayName}`));
       this.filesDownloaded++;
     } else {
+      uxLog("warning", this, c.red(`Download failed - ${fileDisplayName}`));
       this.filesErrors++;
     }
   }
