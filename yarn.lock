@@ -1564,15 +1564,15 @@
   dependencies:
     lodash "^4.17.21"
 
-"@jsforce/jsforce-node@^3.10.1":
-  version "3.10.1"
-  resolved "https://registry.yarnpkg.com/@jsforce/jsforce-node/-/jsforce-node-3.10.1.tgz#790a0ecc89ce3b2c91aca16d9f84534d7d4bdd55"
-  integrity sha512-HZcekfFFGOIIqdkCVI5wmP+Nxpmbhwj8CJH5fAii6dcdMhFgTp0sMGwWZe2Br74Nmp7GEESFVuTcIjk+NX5ajA==
+"@jsforce/jsforce-node@^3.10.4":
+  version "3.10.7"
+  resolved "https://registry.yarnpkg.com/@jsforce/jsforce-node/-/jsforce-node-3.10.7.tgz#9a377e8da925d1eec713ca43ea0bc1ba6aafd7f6"
+  integrity sha512-+2E7c/rRqB2QRtjFiBOkJwyZWw1vViQ2eeHIfLnF8WT6t8J5h16KyJ4dMyiw4JJx/WUT7xtNFiZ0kz85LS//cw==
   dependencies:
     "@sindresorhus/is" "^4"
     base64url "^3.0.1"
     csv-parse "^5.5.2"
-    csv-stringify "^6.4.4"
+    csv-stringify "^6.6.0"
     faye "^1.4.0"
     form-data "^4.0.4"
     https-proxy-agent "^5.0.0"
@@ -1635,10 +1635,10 @@
   resolved "https://registry.yarnpkg.com/@kwsites/promise-deferred/-/promise-deferred-1.1.1.tgz#8ace5259254426ccef57f3175bc64ed7095ed919"
   integrity sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==
 
-"@langchain/anthropic@^0.3.26":
-  version "0.3.26"
-  resolved "https://registry.yarnpkg.com/@langchain/anthropic/-/anthropic-0.3.26.tgz#c865dd60865f686dfaf2e79df9a4c6d315c6b7d5"
-  integrity sha512-IRCjkxsMx6MZUZmv/aYX5A9RdIduzdR0eeOc4rX8waBcYP7qmtA/CUTNmTtMSoXfOfJY4s3414bkVNBkmS0+5g==
+"@langchain/anthropic@^0.3.27":
+  version "0.3.27"
+  resolved "https://registry.yarnpkg.com/@langchain/anthropic/-/anthropic-0.3.27.tgz#12e51d1a7a84b1c8a84f024050dd93648b2dff27"
+  integrity sha512-d4YUwZRjUGAMHTrv7U1jKqsvDrmns9/Ua2I/8BUPbCEBTswowGZUb0Om1KcjXG7MqehrJ03Gd78plckQ8Q7qfw==
   dependencies:
     "@anthropic-ai/sdk" "^0.56.0"
     fast-xml-parser "^4.4.1"
@@ -1931,10 +1931,10 @@
     proc-log "^4.0.0"
     which "^4.0.0"
 
-"@oclif/core@^4", "@oclif/core@^4.0.27", "@oclif/core@^4.5.2":
-  version "4.5.2"
-  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.5.2.tgz#4db8a365fa7e9e33af272294f710a7f3f25538e2"
-  integrity sha512-eQcKyrEcDYeZJKu4vUWiu0ii/1Gfev6GF4FsLSgNez5/+aQyAUCjg3ZWlurf491WiYZTXCWyKAxyPWk8DKv2MA==
+"@oclif/core@^4", "@oclif/core@^4.0.27", "@oclif/core@^4.5.2", "@oclif/core@^4.5.3":
+  version "4.5.3"
+  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.5.3.tgz#2b913879e1673d95e63254573b67326b62f5f309"
+  integrity sha512-ISoFlfmsuxJvNKXhabCO4/KqNXDQdLHchZdTPfZbtqAsQbqTw5IKitLVZq9Sz1LWizN37HILp4u0350B8scBjg==
   dependencies:
     ansi-escapes "^4.3.2"
     ansis "^3.17.0"
@@ -2322,10 +2322,10 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@salesforce/cli-plugins-testkit@^5.3.39":
-  version "5.3.39"
-  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-5.3.39.tgz#97218016503fc19194509cc603752de4f2baceae"
-  integrity sha512-6cBN7PP3/BN11qv/RGilJdWOkSEGGh6eIzyE+tZI27s2KLf/aOysbZk90v9yhSnuxvPiREHzYCuNSufJlsciQQ==
+"@salesforce/cli-plugins-testkit@^5.3.41":
+  version "5.3.41"
+  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-5.3.41.tgz#16acca933dcd64f0fd2c917c7b22529107f373e6"
+  integrity sha512-K6fZfvzJAb0WFJFlgyIHgLyWLXR7i2SKDZ069kvCmDN0QVfftp/OwYrtosIzxiXdpHOtcoAkt65M1UR1aw0XzA==
   dependencies:
     "@salesforce/core" "^8.8.0"
     "@salesforce/kit" "^3.2.3"
@@ -2338,19 +2338,19 @@
     strip-ansi "6.0.1"
     ts-retry-promise "^0.8.1"
 
-"@salesforce/core@^8.18.1", "@salesforce/core@^8.19.1", "@salesforce/core@^8.5.1", "@salesforce/core@^8.8.0":
-  version "8.19.1"
-  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-8.19.1.tgz#300b37db32e29a7b1055091cc13d04a6ccc4d8c1"
-  integrity sha512-HPJxus0W4S1aoT4Qn6mG2s9Ik/mZ59rXNUFc2c+BgEAs28khbZOLR2uiZYexNpXIIZnCrSbb+v1t8IW/idIyCA==
+"@salesforce/core@^8.18.1", "@salesforce/core@^8.19.1", "@salesforce/core@^8.23.1", "@salesforce/core@^8.5.1", "@salesforce/core@^8.8.0":
+  version "8.23.1"
+  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-8.23.1.tgz#89e04518d6d4033ef6a248380eb952328068797c"
+  integrity sha512-/mQMu6g0gmkKQsl+G93VkkU+yrLEjnBzdUu0sPlS0WY5jM4M9sxg97LmRXa6dchECU3c/ugamsXaP6j6QmEfsQ==
   dependencies:
-    "@jsforce/jsforce-node" "^3.10.1"
-    "@salesforce/kit" "^3.2.2"
-    "@salesforce/schemas" "^1.9.1"
+    "@jsforce/jsforce-node" "^3.10.4"
+    "@salesforce/kit" "^3.2.4"
+    "@salesforce/schemas" "^1.10.0"
     "@salesforce/ts-types" "^2.0.11"
     ajv "^8.17.1"
     change-case "^4.1.2"
     fast-levenshtein "^3.0.0"
-    faye "^1.4.0"
+    faye "^1.4.1"
     form-data "^4.0.4"
     js2xmlparser "^4.0.1"
     jsonwebtoken "9.0.2"
@@ -2400,10 +2400,10 @@
     typescript "^5.5.4"
     wireit "^0.14.5"
 
-"@salesforce/kit@^3.2.2", "@salesforce/kit@^3.2.3":
-  version "3.2.3"
-  resolved "https://registry.yarnpkg.com/@salesforce/kit/-/kit-3.2.3.tgz#a7293c384ef6133191fe3590e604e3896fdecf4a"
-  integrity sha512-X8rZouLt06dxRkn+uYTwywWDS/NqZ783AyomGqgtWdUxF61EOJvu0ehtcYeutx9Ng08uuZ+s6wNvWiDsdhUcPg==
+"@salesforce/kit@^3.2.3", "@salesforce/kit@^3.2.4":
+  version "3.2.4"
+  resolved "https://registry.yarnpkg.com/@salesforce/kit/-/kit-3.2.4.tgz#69fb56974685e41d26ae5db30a7261acdc731bb6"
+  integrity sha512-9buqZ2puIGWqjUFWYNroSeNih4d1s9kdQAzZfutr/Re/JMl6xBct0ATO5LVb1ty5UhdBruJrVaiTg03PqVKU+Q==
   dependencies:
     "@salesforce/ts-types" "^2.0.12"
 
@@ -2412,10 +2412,10 @@
   resolved "https://registry.yarnpkg.com/@salesforce/prettier-config/-/prettier-config-0.0.3.tgz#ba648d4886bb38adabe073dbea0b3a91b3753bb0"
   integrity sha512-hYOhoPTCSYMDYn+U1rlEk16PoBeAJPkrdg4/UtAzupM1mRRJOwEPMG1d7U8DxJFKuXW3DMEYWr2MwAIBDaHmFg==
 
-"@salesforce/schemas@^1.9.1":
-  version "1.9.1"
-  resolved "https://registry.yarnpkg.com/@salesforce/schemas/-/schemas-1.9.1.tgz#ea843c732068c4ac2dadbe1d22b44e714cfe661d"
-  integrity sha512-9I8kZBYT7HFXsbz2ukkSyZDRPjSsfRyx3pKGCsjWe2av8wuNm6tYUnmuXzMH5JoVSu3MvtOeIlwp5fFURdsNjg==
+"@salesforce/schemas@^1.10.0":
+  version "1.10.3"
+  resolved "https://registry.yarnpkg.com/@salesforce/schemas/-/schemas-1.10.3.tgz#52c867fdd60679cf216110aa49542b7ad391f5d1"
+  integrity sha512-FKfvtrYTcvTXE9advzS25/DEY9yJhEyLvStm++eQFtnAaX1pe4G3oGHgiQ0q55BM5+0AlCh0+0CVtQv1t4oJRA==
 
 "@salesforce/sf-plugins-core@^11.3.12":
   version "11.3.12"
@@ -4314,10 +4314,10 @@ aws4@^1.12.0:
   resolved "https://registry.yarnpkg.com/aws4/-/aws4-1.13.2.tgz#0aa167216965ac9474ccfa83892cfb6b3e1e52ef"
   integrity sha512-lHe62zvbTB5eEABUVi/AwVh0ZKY9rMMDhmm+eeyuuUQbQ3+J+fONVQOZyj+DdrvD4BY33uYniyRJ4UJIaSKAfw==
 
-axios@^1.11.0:
-  version "1.11.0"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.11.0.tgz#c2ec219e35e414c025b2095e8b8280278478fdb6"
-  integrity sha512-1Lx3WLFQWm3ooKDYZD1eXmoGO9fxYQjrycfHFC8P0sCfQVXyROp0p9PFWBehewBOdCwHc+f/b8I0fMto5eSfwA==
+axios@^1.11.0, axios@^1.12.1:
+  version "1.12.1"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.12.1.tgz#0747b39c5b615f81f93f2c138e6d82a71426937f"
+  integrity "sha1-B0eznFthX4H5PywTjm2CpxQmk38= sha512-Kn4kbSXpkFHCGE6rBFNwIv0GQs4AvDT80jlveJDKFxjbTYMUeB4QtsdPCv6H8Cm19Je7IU6VFtRl2zWZI0rudQ=="
   dependencies:
     follow-redirects "^1.15.6"
     form-data "^4.0.4"
@@ -5426,7 +5426,7 @@ csv-parse@^5.5.2:
   resolved "https://registry.yarnpkg.com/csv-parse/-/csv-parse-5.6.0.tgz#219beace2a3e9f28929999d2aa417d3fb3071c7f"
   integrity sha512-l3nz3euub2QMg5ouu5U09Ew9Wf6/wQ8I++ch1loQ0ljmzhmfZYrH9fflS22i/PQEvsPvxCwxgz5q7UB8K1JO4Q==
 
-csv-stringify@^6.4.4, csv-stringify@^6.6.0:
+csv-stringify@^6.6.0:
   version "6.6.0"
   resolved "https://registry.yarnpkg.com/csv-stringify/-/csv-stringify-6.6.0.tgz#d384859cfb71d0a4a73c5bcc36a4daf5440cb033"
   integrity sha512-YW32lKOmIBgbxtu3g5SaiqWNwa/9ISQt2EcgOq0+RAIFufFp9is6tqNnKahqE5kuKvrnYAzs28r+s6pXJR8Vcw==
@@ -6584,7 +6584,7 @@ faye-websocket@>=0.9.1:
   dependencies:
     websocket-driver ">=0.5.1"
 
-faye@^1.4.0:
+faye@^1.4.0, faye@^1.4.1:
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/faye/-/faye-1.4.1.tgz#fd2f84e21d62b1cced1bd34968925b466d44a381"
   integrity sha512-Cg/khikhqlvumHO3efwx2tps2ZgQRjUMrO24G0quz7MMzRYYaEjU224YFXOeuPIvanRegIchVxj6pmHK1W0ikA==

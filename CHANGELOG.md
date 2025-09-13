@@ -4,6 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add additional dependencies in Ubuntu Dockerfile to allow mermaid-cli and chrome to run natively from the image.
 - [hardis:org:file:export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/):
   - Send progress notifications to WebSocketServer
   - Improve console logs
@@ -12,6 +13,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [6.4.1] 2025-09-10
 
 - Allow to override Bulk API v2 settings with env variables **BULKAPIV2_POLL_INTERVAL**, **BULKAPIV2_POLL_TIMEOUT** and **BULK_QUERY_RETRY**
+
 
 ## [6.4.0] 2025-09-08
 
