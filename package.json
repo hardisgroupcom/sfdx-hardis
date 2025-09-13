@@ -8,7 +8,7 @@
     "@actions/github": "^6.0.1",
     "@cparra/apexdocs": "^3.14.1",
     "@gitbeaker/node": "^35.8.1",
-    "@langchain/anthropic": "^0.3.26",
+    "@langchain/anthropic": "^0.3.27",
     "@langchain/community": "^0.3.53",
     "@langchain/core": "^0.3.72",
     "@langchain/google-genai": "^0.2.17",
