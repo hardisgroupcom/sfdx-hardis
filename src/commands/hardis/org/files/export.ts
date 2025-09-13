@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { uxLog } from '../../../../common/utils/index.js';
+import { humanizeObjectKeys, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import {
   FilesExporter,
   getFilesWorkspaceDetail,
@@ -122,8 +122,17 @@ The command's technical implementation involves:
       }
     }
 
-    // Export files from org
+    // Display final export configuration
+    let exportConfigFinal: any = (await getFilesWorkspaceDetail(filesPath || '')) || {};
+    if (exportOptions.exportConfig) {
+      // Merge with existing config
+      exportConfigFinal = Object.assign(exportConfigFinal, exportOptions.exportConfig);
+    }
+    const exportConfigHuman = humanizeObjectKeys(exportConfigFinal || {});
+    uxLog("action", this, c.cyan(`Export configuration has been defined (see details below)`));
+    uxLogTable(this, exportConfigHuman);
 
+    // Export files from org
     const exportResult = await new FilesExporter(
       filesPath || '',
       flags['target-org'].getConnection(),
@@ -136,6 +145,9 @@ The command's technical implementation involves:
       flags['target-org'].getUsername()
     )}`;
     uxLog("action", this, c.cyan(message));
+
+    const statsTable = humanizeObjectKeys(exportResult.stats);
+    uxLogTable(this, statsTable);
 
     return { outputString: message, exportResult: exportResult };
   }

@@ -77,7 +77,7 @@ export class FilesExporter {
     if (this.dtl === null) {
       this.dtl = await getFilesWorkspaceDetail(this.filesPath);
     }
-    uxLog("action", this.commandThis, c.cyan(`Exporting files from ${c.green(this.dtl.full_label)} ...`));
+    uxLog("action", this.commandThis, c.cyan(`Initializing files export using workspace ${c.green(this.dtl.full_label)} ...`));
     uxLog("log", this.commandThis, c.italic(c.grey(this.dtl.description)));
 
     // Make sure export folder for files is existing
@@ -646,44 +646,22 @@ export class FilesExporter {
       ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
       : null;
 
-    uxLog(
-      "action",
-      this,
-      c.cyan(
-        [
-          "Files export completed with following statistics:",
-          `- API limit: ${c.bold(connAny?.limitInfo?.apiUsage?.limit || null)}`,
-          `- API used before process: ${c.bold(this.apiUsedBefore)}`,
-          `- API used after process: ${c.bold(connAny?.limitInfo?.apiUsage?.used || null)}`,
-          `- API calls remaining for today: ${c.bold(apiCallsRemaining)}`,
-          `- Total SOQL requests: ${c.bold(this.totalSoqlRequests)}`,
-          `- Total parent records found: ${c.bold(this.totalParentRecords)}`,
-          `- Total parent records with files: ${c.bold(this.parentRecordsWithFiles)}`,
-          `- Total parent records ignored because already existing: ${c.bold(this.recordsIgnored)}`,
-          `- Total files downloaded: ${c.bold(this.filesDownloaded)}`,
-          `- Total file download errors: ${c.bold(this.filesErrors)}`,
-          `- Total file skipped because of type constraint: ${c.bold(this.filesIgnoredType)}`,
-          `- Total file skipped because previously downloaded: ${c.bold(this.filesIgnoredExisting)}`,
-          `- Detailed CSV log: ${c.bold(this.logFile)}`
-        ].join('\n')
-      )
-    );
-
-    // Report CSV log file location
-    uxLog("action", this, c.cyan(c.italic(`Detailed file processing log saved to: ${c.bold(this.logFile)}`)));
-
     return {
-      totalParentRecords: this.totalParentRecords,
-      parentRecordsWithFiles: this.parentRecordsWithFiles,
-      filesDownloaded: this.filesDownloaded,
-      filesErrors: this.filesErrors,
-      recordsIgnored: this.recordsIgnored,
-      filesIgnoredType: this.filesIgnoredType,
-      filesIgnoredExisting: this.filesIgnoredExisting,
-      apiLimit: connAny?.limitInfo?.apiUsage?.limit || null,
-      apiUsedBefore: this.apiUsedBefore,
-      apiUsedAfter: connAny?.limitInfo?.apiUsage?.used || null,
-      apiCallsRemaining,
+      stats: {
+        filesDownloaded: this.filesDownloaded,
+        filesErrors: this.filesErrors,
+        filesIgnoredType: this.filesIgnoredType,
+        filesIgnoredExisting: this.filesIgnoredExisting,
+        totalSoqlRequests: this.totalSoqlRequests,
+        totalParentRecords: this.totalParentRecords,
+        parentRecordsWithFiles: this.parentRecordsWithFiles,
+        recordsIgnored: this.recordsIgnored,
+        apiLimit: connAny?.limitInfo?.apiUsage?.limit || null,
+        apiUsedBefore: this.apiUsedBefore,
+        apiUsedAfter: connAny?.limitInfo?.apiUsage?.used || null,
+        apiCallsRemaining,
+      },
+      logFile: this.logFile
     };
   }
 }
@@ -923,41 +901,19 @@ export class FilesImporter {
       ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
       : null;
 
-    uxLog(
-      "action",
-      this.commandThis,
-      c.cyan(
-        [
-          "Files import completed with following statistics:",
-          `- API limit: ${c.bold(this.apiLimit || 'Unknown')}`,
-          `- API used before process: ${c.bold(this.apiUsedBefore)}`,
-          `- API used after process: ${c.bold(connAny?.limitInfo?.apiUsage?.used || null)}`,
-          `- API calls remaining for today: ${c.bold(apiCallsRemaining)}`,
-          `- Total folders processed: ${c.bold(this.totalFolders)}`,
-          `- Total files found: ${c.bold(this.totalFiles)}`,
-          `- Total files uploaded: ${c.bold(this.filesUploaded)}`,
-          `- Total files overwritten: ${c.bold(this.filesOverwritten)}`,
-          `- Total file upload errors: ${c.bold(this.filesErrors)}`,
-          `- Total files skipped: ${c.bold(this.filesSkipped)}`,
-          `- Detailed CSV log: ${c.bold(this.logFile)}`
-        ].join('\n')
-      )
-    );
-
-    // Report CSV log file location
-    uxLog("action", this.commandThis, c.cyan(c.italic(`Detailed file processing log saved to: ${c.bold(this.logFile)}`)));
-
     return {
-      totalFolders: this.totalFolders,
-      totalFiles: this.totalFiles,
-      filesUploaded: this.filesUploaded,
-      filesOverwritten: this.filesOverwritten,
-      filesErrors: this.filesErrors,
-      filesSkipped: this.filesSkipped,
-      apiLimit: this.apiLimit,
-      apiUsedBefore: this.apiUsedBefore,
-      apiUsedAfter: connAny?.limitInfo?.apiUsage?.used || null,
-      apiCallsRemaining,
+      stats: {
+        filesUploaded: this.filesUploaded,
+        filesOverwritten: this.filesOverwritten,
+        filesErrors: this.filesErrors,
+        filesSkipped: this.filesSkipped,
+        totalFolders: this.totalFolders,
+        totalFiles: this.totalFiles,
+        apiLimit: this.apiLimit,
+        apiUsedBefore: this.apiUsedBefore,
+        apiUsedAfter: connAny?.limitInfo?.apiUsage?.used || null,
+        apiCallsRemaining,
+      },
       logFile: this.logFile
     };
   }
