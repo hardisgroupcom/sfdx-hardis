@@ -193,7 +193,7 @@ export class FilesExporter {
           actualTotalFiles = totalFilesDiscovered;
         }
 
-        uxLog("log", this, c.grey(`Discovered ${filesDiscoveredInChunk} files in chunk, updated total estimate to ${actualTotalFiles}`));
+        uxLog("other", this, c.grey(`Discovered ${filesDiscoveredInChunk} files in chunk, updated total estimate to ${actualTotalFiles}`));
       }
 
       WebSocketClient.sendProgressStepMessage(filesProcessed, actualTotalFiles);
