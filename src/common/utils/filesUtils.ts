@@ -777,7 +777,7 @@ export class FilesImporter {
     await this.initializeCsvLog();
 
     // Start progress tracking
-    WebSocketClient.sendProgressStartMessage(this.commandThis, this.totalFiles);
+    WebSocketClient.sendProgressStartMessage("Importing files", this.totalFiles);
 
     // Query parent objects to find Ids corresponding to field value used as folder name
     const parentObjectsRes = await bulkQuery(this.dtl.soqlQuery, this.conn);
@@ -813,7 +813,7 @@ export class FilesImporter {
           processedFiles++;
 
           // Update progress
-          WebSocketClient.sendProgressStepMessage(this.commandThis, processedFiles);
+          WebSocketClient.sendProgressStepMessage(processedFiles, this.totalFiles);
         }
         continue;
       }
@@ -883,12 +883,12 @@ export class FilesImporter {
 
         processedFiles++;
         // Update progress
-        WebSocketClient.sendProgressStepMessage(this.commandThis, processedFiles);
+        WebSocketClient.sendProgressStepMessage(processedFiles, this.totalFiles);
       }
     }
 
     // End progress tracking
-    WebSocketClient.sendProgressEndMessage(this.commandThis);
+    WebSocketClient.sendProgressEndMessage(this.totalFiles);
 
     // Build and return result
     return await this.buildResult();
