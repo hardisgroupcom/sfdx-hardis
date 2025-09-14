@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.4.2] 2025-09-10
+
 - Add additional dependencies in Ubuntu Dockerfile to allow mermaid-cli and chrome to run natively from the image.
 - [hardis:org:file:export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) & [hardis:org:file:import](https://sfdx-hardis.cloudity.com/hardis/org/files/import/):
   - Send progress notifications to WebSocketServer
