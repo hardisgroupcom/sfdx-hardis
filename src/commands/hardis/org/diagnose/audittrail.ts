@@ -269,7 +269,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     // Generate output CSV file
     this.outputFile = await generateReportPath('audit-trail', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(this.auditTrailRecords, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.auditTrailRecords, this.outputFile, { fileTitle: 'Suspect Actions' });
 
     // Manage notifications
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);

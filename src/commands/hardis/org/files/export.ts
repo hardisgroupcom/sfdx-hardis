@@ -27,7 +27,8 @@ This command enables the mass download of files associated with Salesforce recor
 
 Key functionalities:
 
-- **Configuration-Driven Export:** Relies on an \`export.json\` file within a designated file export project to define the export criteria, including the SOQL query for parent records, file types to export, and output naming conventions.
+- **Configuration-Driven Export:** Relies on an \`export.json\` file within a designated file export project to define the export criteria, including the SOQL query for parent records, file types to export, output naming conventions, and file size filtering.
+- **File Size Filtering:** Supports minimum file size filtering via the \`fileSizeMin\` configuration parameter (in KB). Files smaller than the specified size will be skipped during export.
 - **Interactive Project Selection:** If the file export project path is not provided via the \`--path\` flag, it interactively prompts the user to select one.
 - **Configurable Export Options:** Allows overriding default export settings such as \`chunksize\` (number of records processed in a batch), \`polltimeout\` (timeout for Bulk API calls), and \`startchunknumber\` (to resume a failed export).
 - **Support for ContentVersion and Attachment:** Handles both modern Salesforce Files (ContentVersion) and older Attachments.

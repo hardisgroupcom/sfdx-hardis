@@ -151,7 +151,7 @@ The command's technical implementation involves:
 
     // Generate output CSV file
     this.outputFile = await generateReportPath('licenses', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(this.licenses, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.licenses, this.outputFile, { fileTitle: 'Unused Licenses' });
 
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({

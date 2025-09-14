@@ -133,7 +133,7 @@ The command's technical implementation involves:
 
     // Generate output CSV & XLS
     this.outputFile = await generateReportPath('multi-org-query', this.outputFile);
-    const outputFilesRes = await generateCsvFile(this.allRecords, this.outputFile);
+    const outputFilesRes = await generateCsvFile(this.allRecords, this.outputFile, { fileTitle: 'Multi Orgs Query Results' });
 
     return {
       allRecords: this.allRecords,

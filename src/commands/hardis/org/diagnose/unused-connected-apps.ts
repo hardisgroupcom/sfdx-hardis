@@ -214,7 +214,7 @@ The command's technical implementation involves:
 
       // Generate output CSV file
       this.outputFile = await generateReportPath('connected-apps', this.outputFile);
-      this.outputFilesRes = await generateCsvFile(this.connectedAppResults, this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.connectedAppResults, this.outputFile, { fileTitle: 'Connected Apps Analysis' });
     }
 
     // Return an object to be displayed with --json

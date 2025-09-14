@@ -51,6 +51,7 @@ export class FilesExporter {
   private filesErrors = 0;
   private filesIgnoredType = 0;
   private filesIgnoredExisting = 0;
+  private filesIgnoredSize = 0;
   private apiUsedBefore: number = 0;
   private apiLimit: number = 0;
 
@@ -370,7 +371,7 @@ export class FilesExporter {
       const batch = records.slice(i, i + attachmentBatchSize);
       // Request all Attachment related to all records of the batch using REST API
       const parentIdIn = batch.map((record: any) => `'${record.Id}'`).join(',');
-      const attachmentQuery = `SELECT Id, Name, ContentType, ParentId FROM Attachment WHERE ParentId IN (${parentIdIn})`;
+      const attachmentQuery = `SELECT Id, Name, ContentType, ParentId, BodyLength FROM Attachment WHERE ParentId IN (${parentIdIn})`;
       this.totalSoqlRequests++;
       const attachments = await this.conn.query(attachmentQuery);
       actualFilesInChunk += attachments.records.length; // Count actual files discovered
@@ -419,7 +420,7 @@ export class FilesExporter {
             )
           );
           // Request all ContentVersion related to all records of the batch
-          const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
+          const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title,ContentSize FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
           this.totalSoqlRequests++;
           const contentVersions = await bulkQueryByChunks(contentVersionSoql, this.conn, this.parentRecordsChunkSize);
           // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
@@ -474,7 +475,7 @@ export class FilesExporter {
   // Initialize CSV log file with headers
   private async initializeCsvLog() {
     await fs.ensureDir(path.dirname(this.logFile));
-    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail\n';
+    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentDocument Id,ContentVersion Id,Attachment Id\n';
     await fs.writeFile(this.logFile, headers, 'utf8');
     uxLog("log", this, c.grey(`CSV log file initialized: ${this.logFile}`));
     WebSocketClient.sendReportFileMessage(this.logFile, "Exported files report (CSV)", 'report');
@@ -494,13 +495,29 @@ export class FilesExporter {
   }
 
   // Helper method to log skipped files
-  private async logSkippedFile(outputFile: string, errorDetail: string) {
+  private async logSkippedFile(
+    outputFile: string,
+    errorDetail: string,
+    contentDocumentId: string = '',
+    contentVersionId: string = '',
+    attachmentId: string = ''
+  ) {
     const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
-    await this.writeCsvLogEntry('skipped', folderPath, fileName, extension, 0, errorDetail);
+    await this.writeCsvLogEntry('skipped', folderPath, fileName, extension, 0, errorDetail, contentDocumentId, contentVersionId, attachmentId);
   }
 
   // Write a CSV entry for each file processed (fileSize in KB)
-  private async writeCsvLogEntry(status: 'success' | 'failed' | 'skipped', folder: string, fileName: string, extension: string, fileSizeKB: number, errorDetail: string = '') {
+  private async writeCsvLogEntry(
+    status: 'success' | 'failed' | 'skipped',
+    folder: string,
+    fileName: string,
+    extension: string,
+    fileSizeKB: number,
+    errorDetail: string = '',
+    contentDocumentId: string = '',
+    contentVersionId: string = '',
+    attachmentId: string = ''
+  ) {
     try {
       // Escape CSV values to handle commas, quotes, and newlines
       const escapeCsvValue = (value: string | number): string => {
@@ -517,7 +534,10 @@ export class FilesExporter {
         escapeCsvValue(fileName),
         escapeCsvValue(extension),
         escapeCsvValue(fileSizeKB),
-        escapeCsvValue(errorDetail)
+        escapeCsvValue(errorDetail),
+        escapeCsvValue(contentDocumentId),
+        escapeCsvValue(contentVersionId),
+        escapeCsvValue(attachmentId)
       ].join(',') + '\n';
 
       await fs.appendFile(this.logFile, csvLine, 'utf8');
@@ -526,7 +546,13 @@ export class FilesExporter {
     }
   }
 
-  private async downloadFile(fetchUrl: string, outputFile: string) {
+  private async downloadFile(
+    fetchUrl: string,
+    outputFile: string,
+    contentDocumentId: string = '',
+    contentVersionId: string = '',
+    attachmentId: string = ''
+  ) {
     const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
 
     // Extract file information for CSV logging
@@ -553,18 +579,36 @@ export class FilesExporter {
       uxLog("success", this, c.grey(`Downloaded ${fileDisplay}`));
       this.filesDownloaded++;
 
-      // Write success entry to CSV log
-      await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB);
+      // Write success entry to CSV log with Salesforce IDs
+      await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, '', contentDocumentId, contentVersionId, attachmentId);
     } else {
       uxLog("warning", this, c.red(`Error ${fileDisplay}`));
       this.filesErrors++;
 
-      // Write failed entry to CSV log
-      await this.writeCsvLogEntry('failed', folderPath, fileName, extension, fileSizeKB, errorDetail);
+      // Write failed entry to CSV log with Salesforce IDs
+      await this.writeCsvLogEntry('failed', folderPath, fileName, extension, fileSizeKB, errorDetail, contentDocumentId, contentVersionId, attachmentId);
     }
   }
 
   private async downloadAttachmentFile(attachment: any, records: any[]) {
+    // Check file size filter (BodyLength is in bytes)
+    const fileSizeKB = attachment.BodyLength ? Math.round(attachment.BodyLength / 1024) : 0;
+    if (this.dtl.fileSizeMin && this.dtl.fileSizeMin > 0 && fileSizeKB < this.dtl.fileSizeMin) {
+      uxLog("log", this, c.grey(`Skipped - ${attachment.Name} - File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`));
+      this.filesIgnoredSize++;
+
+      // Log skipped file to CSV
+      const parentAttachment = records.filter((record) => record.Id === attachment.ParentId)[0];
+      const attachmentParentFolderName = (parentAttachment[this.dtl.outputFolderNameField] || parentAttachment.Id).replace(
+        /[/\\?%*:|"<>]/g,
+        '-'
+      );
+      const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, attachmentParentFolderName));
+      const outputFile = path.join(parentRecordFolderForFiles, attachment.Name.replace(/[/\\?%*:|"<>]/g, '-'));
+      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, '', '', attachment.Id);
+      return;
+    }
+
     // Retrieve initial record to build output files folder name
     const parentAttachment = records.filter((record) => record.Id === attachment.ParentId)[0];
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
@@ -579,10 +623,28 @@ export class FilesExporter {
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/Attachment/${attachment.Id}/Body`;
-    await this.downloadFile(fetchUrl, outputFile);
+    await this.downloadFile(fetchUrl, outputFile, '', '', attachment.Id);
   }
 
   private async downloadContentVersionFile(contentVersion: any, records: any[], contentDocumentLink: any) {
+    // Check file size filter (ContentSize is in bytes)
+    const fileSizeKB = contentVersion.ContentSize ? Math.round(contentVersion.ContentSize / 1024) : 0;
+    if (this.dtl.fileSizeMin && this.dtl.fileSizeMin > 0 && fileSizeKB < this.dtl.fileSizeMin) {
+      uxLog("log", this, c.grey(`Skipped - ${contentVersion.Title} - File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`));
+      this.filesIgnoredSize++;
+
+      // Log skipped file to CSV
+      const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
+      const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id).replace(
+        /[/\\?%*:|"<>]/g,
+        '-'
+      );
+      const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
+      const outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-'));
+      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, contentVersion.ContentDocumentId, contentVersion.Id);
+      return;
+    }
+
     // Retrieve initial record to build output files folder name
     const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
@@ -621,7 +683,7 @@ export class FilesExporter {
       this.filesIgnoredType++;
 
       // Log skipped file to CSV
-      await this.logSkippedFile(outputFile, 'File type ignored');
+      await this.logSkippedFile(outputFile, 'File type ignored', contentVersion.ContentDocumentId, contentVersion.Id);
       return;
     }
     // Check file overwrite
@@ -630,14 +692,14 @@ export class FilesExporter {
       this.filesIgnoredExisting++;
 
       // Log skipped file to CSV
-      await this.logSkippedFile(outputFile, 'File already exists');
+      await this.logSkippedFile(outputFile, 'File already exists', contentVersion.ContentDocumentId, contentVersion.Id);
       return;
     }
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
-    await this.downloadFile(fetchUrl, outputFile);
+    await this.downloadFile(fetchUrl, outputFile, contentVersion.ContentDocumentId, contentVersion.Id);
   }
   // Build stats & result
   private async buildResult() {
@@ -646,12 +708,13 @@ export class FilesExporter {
       ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
       : null;
 
-    return {
+    const result = {
       stats: {
         filesDownloaded: this.filesDownloaded,
         filesErrors: this.filesErrors,
         filesIgnoredType: this.filesIgnoredType,
         filesIgnoredExisting: this.filesIgnoredExisting,
+        filesIgnoredSize: this.filesIgnoredSize,
         totalSoqlRequests: this.totalSoqlRequests,
         totalParentRecords: this.totalParentRecords,
         parentRecordsWithFiles: this.parentRecordsWithFiles,
@@ -663,6 +726,8 @@ export class FilesExporter {
       },
       logFile: this.logFile
     };
+    await createXlsxFromCsv(this.logFile, { fileTitle: "Exported files report" }, result);
+    return result;
   }
 }
 
@@ -709,7 +774,7 @@ export class FilesImporter {
   // Initialize CSV log file with headers
   private async initializeCsvLog() {
     await fs.ensureDir(path.dirname(this.logFile));
-    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail\n';
+    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentVersion Id\n';
     await fs.writeFile(this.logFile, headers, 'utf8');
     uxLog("log", this.commandThis, c.grey(`CSV log file initialized: ${this.logFile}`));
     WebSocketClient.sendReportFileMessage(this.logFile, "Imported files report (CSV)", 'report');
@@ -724,7 +789,7 @@ export class FilesImporter {
   }
 
   // Write a CSV entry for each file processed (fileSize in KB)
-  private async writeCsvLogEntry(status: 'success' | 'failed' | 'skipped' | 'overwritten', folder: string, fileName: string, extension: string, fileSizeKB: number, errorDetail: string = '') {
+  private async writeCsvLogEntry(status: 'success' | 'failed' | 'skipped' | 'overwritten', folder: string, fileName: string, extension: string, fileSizeKB: number, errorDetail: string = '', contentVersionId: string = '') {
     try {
       // Escape CSV values to handle commas, quotes, and newlines
       const escapeCsvValue = (value: string | number): string => {
@@ -741,7 +806,8 @@ export class FilesImporter {
         escapeCsvValue(fileName),
         escapeCsvValue(extension),
         escapeCsvValue(fileSizeKB),
-        escapeCsvValue(errorDetail)
+        escapeCsvValue(errorDetail),
+        escapeCsvValue(contentVersionId)
       ].join(',') + '\n';
 
       await fs.appendFile(this.logFile, csvLine, 'utf8');
@@ -808,7 +874,7 @@ export class FilesImporter {
           const filePath = path.join(recordFolderPath, file);
           const fileSizeKB = fs.existsSync(filePath) ? Math.round(fs.statSync(filePath).size / 1024) : 0;
 
-          await this.writeCsvLogEntry('skipped', recordFolder, fileName, extension, fileSizeKB, 'Parent record not found');
+          await this.writeCsvLogEntry('skipped', recordFolder, fileName, extension, fileSizeKB, 'Parent record not found', '');
           this.filesSkipped++;
           processedFiles++;
 
@@ -857,27 +923,32 @@ export class FilesImporter {
 
           if (Array.isArray(insertResult) && insertResult.length === 0) {
             uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}`));
-            await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, 'Upload failed');
+            await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, 'Upload failed', '');
             this.filesErrors++;
           } else if (Array.isArray(insertResult) && !insertResult[0].success) {
             uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}`));
-            await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, insertResult[0].errors?.join(', ') || 'Upload failed');
+            await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, insertResult[0].errors?.join(', ') || 'Upload failed', '');
             this.filesErrors++;
           } else {
+            // Extract ContentVersion ID from successful insert result
+            const contentVersionId = Array.isArray(insertResult) && insertResult.length > 0
+              ? insertResult[0].id
+              : (insertResult as any).id || '';
+
             if (isOverwrite) {
               uxLog("success", this.commandThis, c.grey(`Overwritten ${file}`));
-              await this.writeCsvLogEntry('overwritten', recordFolder, fileName, extension, fileSizeKB);
+              await this.writeCsvLogEntry('overwritten', recordFolder, fileName, extension, fileSizeKB, '', contentVersionId);
               this.filesOverwritten++;
             } else {
               uxLog("success", this.commandThis, c.grey(`Uploaded ${file}`));
-              await this.writeCsvLogEntry('success', recordFolder, fileName, extension, fileSizeKB);
+              await this.writeCsvLogEntry('success', recordFolder, fileName, extension, fileSizeKB, '', contentVersionId);
               this.filesUploaded++;
             }
           }
         } catch (e) {
           const errorDetail = (e as Error).message;
           uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}: ${errorDetail}`));
-          await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, errorDetail);
+          await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, errorDetail, '');
           this.filesErrors++;
         }
 
@@ -901,7 +972,7 @@ export class FilesImporter {
       ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
       : null;
 
-    return {
+    const result = {
       stats: {
         filesUploaded: this.filesUploaded,
         filesOverwritten: this.filesOverwritten,
@@ -916,6 +987,8 @@ export class FilesImporter {
       },
       logFile: this.logFile
     };
+    await createXlsxFromCsv(this.logFile, { fileTitle: "Imported files report" }, result);
+    return result;
   }
 
   // Calculate API consumption
@@ -1006,6 +1079,7 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
   const overwriteParentRecords =
     exportFileJson.overwriteParentRecords === false ? false : exportFileJson.overwriteParentRecords || true;
   const overwriteFiles = exportFileJson.overwriteFiles || false;
+  const fileSizeMin = exportFileJson.fileSizeMin || 0;
   return {
     full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ''}`,
     label: hardisLabel,
@@ -1016,6 +1090,7 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
     outputFileNameFormat: outputFileNameFormat,
     overwriteParentRecords: overwriteParentRecords,
     overwriteFiles: overwriteFiles,
+    fileSizeMin: fileSizeMin,
   };
 }
 
@@ -1097,6 +1172,15 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         description: 'Replace existing local files with newly downloaded versions',
         initial: filesExportConfig.overwriteFiles,
       },
+      {
+        type: 'number',
+        name: 'fileSizeMin',
+        message: 'Please input the minimum file size in KB (0 = no minimum)',
+        description: 'Only files with size greater than or equal to this value will be downloaded (in kilobytes)',
+        placeholder: 'Ex: 10',
+        initial: filesExportConfig.fileSizeMin || 0,
+        min: 0,
+      },
     ]
   );
 
@@ -1110,6 +1194,7 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
     outputFileNameFormat: resp.outputFileNameFormat,
     overwriteParentRecords: resp.overwriteParentRecords,
     overwriteFiles: resp.overwriteFiles,
+    fileSizeMin: resp.fileSizeMin,
   });
   return filesConfig;
 }
@@ -1182,7 +1267,7 @@ export async function generateReportPath(fileNamePrefix: string, outputFile: str
 export async function generateCsvFile(
   data: any[],
   outputPath: string,
-  options?: { fileTitle?: string, csvFileTitle?: string, xlsFileTitle?: string, noExcel?: boolean }
+  options: { fileTitle?: string, csvFileTitle?: string, xlsFileTitle?: string, noExcel?: boolean }
 ): Promise<any> {
   const result: any = {};
   try {
@@ -1196,32 +1281,7 @@ export async function generateCsvFile(
     const csvFileTitle = options?.fileTitle ? `${options.fileTitle} (CSV)` : options?.csvFileTitle ?? "Report (CSV)";
     WebSocketClient.sendReportFileMessage(outputPath, csvFileTitle, "report");
     if (data.length > 0 && !options?.noExcel) {
-      try {
-        // Generate mirror XLSX file
-        const xlsDirName = path.join(path.dirname(outputPath), 'xls');
-        const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
-        const xslxFile = path.join(xlsDirName, xslFileName);
-        await fs.ensureDir(xlsDirName);
-        await csvToXls(outputPath, xslxFile);
-        uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
-        const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
-        WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
-        result.xlsxFile = xslxFile;
-        if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
-          try {
-            uxLog("other", this, c.italic(c.grey(`Opening XLSX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
-            await open(xslxFile, { wait: false });
-          } catch (e) {
-            uxLog("warning", this, c.yellow('Error while opening XLSX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
-          }
-        }
-      } catch (e2) {
-        uxLog(
-          "warning",
-          this,
-          c.yellow('Error while generating XLSX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
-        );
-      }
+      await createXlsxFromCsv(outputPath, options, result);
     } else {
       uxLog("other", this, c.grey(`No XLS file generated as ${outputPath} is empty`));
     }
@@ -1229,6 +1289,34 @@ export async function generateCsvFile(
     uxLog("warning", this, c.yellow('Error while generating CSV log file:\n' + (e as Error).message + '\n' + (e as Error).stack));
   }
   return result;
+}
+
+async function createXlsxFromCsv(outputPath: string, options: { fileTitle?: string; csvFileTitle?: string; xlsFileTitle?: string; noExcel?: boolean; }, result: any) {
+  try {
+    const xlsDirName = path.join(path.dirname(outputPath), 'xls');
+    const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
+    const xslxFile = path.join(xlsDirName, xslFileName);
+    await fs.ensureDir(xlsDirName);
+    await csvToXls(outputPath, xslxFile);
+    uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
+    const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
+    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
+    result.xlsxFile = xslxFile;
+    if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+      try {
+        uxLog("other", this, c.italic(c.grey(`Opening XLSX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
+        await open(xslxFile, { wait: false });
+      } catch (e) {
+        uxLog("warning", this, c.yellow('Error while opening XLSX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+      }
+    }
+  } catch (e2) {
+    uxLog(
+      "warning",
+      this,
+      c.yellow('Error while generating XLSX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
+    );
+  }
 }
 
 async function csvToXls(csvFile: string, xslxFile: string) {

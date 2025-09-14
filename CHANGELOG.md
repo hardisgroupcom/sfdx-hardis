@@ -4,7 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-## [6.4.2] 2025-09-10
+## [6.4.3] 2025-09-14
+
+- [hardis:org:file:export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) and [hardis:org:file:import](https://sfdx-hardis.cloudity.com/hardis/org/files/import/):
+  - Provide record Ids in the logs
+- Update labels of all report files for UI buttons
+- Allow to export only files of a minimum size
+
+## [6.4.2] 2025-09-14
 
 - Add additional dependencies in Ubuntu Dockerfile to allow mermaid-cli and chrome to run natively from the image.
 - [hardis:org:file:export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) & [hardis:org:file:import](https://sfdx-hardis.cloudity.com/hardis/org/files/import/):

@@ -261,7 +261,7 @@ If Flow history doc always display a single state, you probably need to update y
           severityIcon: severityIconLog,
         };
       });
-      this.outputFilesRes = await generateCsvFile(this.diffFilesSimplified, this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.diffFilesSimplified, this.outputFile, { fileTitle: 'Updated Metadatas' });
     }
 
     // Build notifications

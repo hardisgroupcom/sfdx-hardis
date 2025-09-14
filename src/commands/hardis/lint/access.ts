@@ -488,7 +488,7 @@ The command's technical implementation involves:
       return;
     }
     this.outputFile = await generateReportPath('lint-access', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(this.missingElements, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.missingElements, this.outputFile, { fileTitle: 'Missing Access Elements' });
   }
 
   private async manageNotification(flags) {

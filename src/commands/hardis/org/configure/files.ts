@@ -33,6 +33,7 @@ Key functionalities:
 - **\`export.json\` Generation:** Creates an \`export.json\` file within the designated project folder. This file contains the configuration for the file export operation, including:
   - **SOQL Query:** A SOQL query to select the parent records from which files will be exported.
   - **File Types:** Specifies which types of files (e.g., \`ContentVersion\`, \`Attachment\`) to include.
+  - **File Size Filtering:** Minimum file size in KB to filter files during export (files smaller than this will be skipped).
   - **Output Folder/File Naming:** Defines how the exported files and their containing folders will be named based on record fields.
   - **Overwrite Options:** Controls whether existing files or parent records should be overwritten during the export.
 
@@ -161,6 +162,7 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
       outputFileNameFormat: 'title',
       overwriteParentRecords: true,
       overwriteFiles: false,
+      fileSizeMin: 0,
     };
 
     this.exportConfig = await promptFilesExportConfiguration(defaultConfig, false);

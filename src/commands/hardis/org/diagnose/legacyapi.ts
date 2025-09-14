@@ -199,7 +199,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     // Generate main CSV file
     this.outputFile = await generateReportPath('legacy-api-calls', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(this.allErrors, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.allErrors, this.outputFile, { fileTitle: 'Legacy API Calls' });
 
     // Generate one summary file by severity
     const outputFileIps: any[] = [];
@@ -369,7 +369,7 @@ See article to solve issue before it's too late:
     const outputFileIps = this.outputFile.endsWith('.csv')
       ? this.outputFile.replace('.csv', '.api-clients-' + severity + '.csv')
       : this.outputFile + 'api-clients-' + severity + '.csv';
-    const outputFileIpsRes = await generateCsvFile(this.ipResultsSorted, outputFileIps);
+    const outputFileIpsRes = await generateCsvFile(this.ipResultsSorted, outputFileIps, { fileTitle: `Legacy API Clients - ${severity}` });
     if (outputFileIpsRes.xlsxFile) {
       this.outputFilesRes.xlsxFile2 = outputFileIpsRes.xlsxFile;
     }
