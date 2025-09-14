@@ -1197,29 +1197,29 @@ export async function generateCsvFile(
     WebSocketClient.sendReportFileMessage(outputPath, csvFileTitle, "report");
     if (data.length > 0 && !options?.noExcel) {
       try {
-        // Generate mirror XSLX file
+        // Generate mirror XLSX file
         const xlsDirName = path.join(path.dirname(outputPath), 'xls');
         const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
         const xslxFile = path.join(xlsDirName, xslFileName);
         await fs.ensureDir(xlsDirName);
         await csvToXls(outputPath, xslxFile);
-        uxLog("action", this, c.cyan(c.italic(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
-        const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XSLX)` : options?.xlsFileTitle ?? "Report (XSLX)";
+        uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
+        const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
         WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
         result.xlsxFile = xslxFile;
         if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
           try {
-            uxLog("other", this, c.italic(c.grey(`Opening XSLX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
+            uxLog("other", this, c.italic(c.grey(`Opening XLSX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
             await open(xslxFile, { wait: false });
           } catch (e) {
-            uxLog("warning", this, c.yellow('Error while opening XSLX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+            uxLog("warning", this, c.yellow('Error while opening XLSX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
           }
         }
       } catch (e2) {
         uxLog(
           "warning",
           this,
-          c.yellow('Error while generating XSLX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
+          c.yellow('Error while generating XLSX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
         );
       }
     } else {

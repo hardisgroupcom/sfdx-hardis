@@ -1552,7 +1552,7 @@ commandsPostDeploy:
 
 - **Delta deployments** is no more beta but **Generally available**
 - **Org Monitoring** is no more beta but **Generally available**
-- Generate CSV reports also in XSLX format for easier opening
+- Generate CSV reports also in XLSX format for easier opening
 
 ## [4.17.1] 2023-11-28
 
