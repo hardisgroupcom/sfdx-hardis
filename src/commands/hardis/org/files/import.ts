@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { humanizeObjectKeys, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { FilesImporter, selectFilesWorkspace } from '../../../../common/utils/filesUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 
@@ -104,10 +104,13 @@ The command's technical implementation involves:
     ).processImport();
 
     // Output message
-    const message = `Successfully imported files from project ${c.green(filesPath)} from org ${c.green(
+    const message = `Successfully imported files from project ${c.green(filesPath)} to org ${c.green(
       flags['target-org'].getUsername()
     )}`;
     uxLog("action", this, c.cyan(message));
+
+    const statsTable = humanizeObjectKeys(importResult.stats);
+    uxLogTable(this, statsTable);
 
     return { outputString: message, importResult: importResult };
   }

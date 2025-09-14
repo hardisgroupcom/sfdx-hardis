@@ -228,7 +228,7 @@ The command's technical implementation involves a series of orchestrated steps:
     if (config.manualActionsFileUrl && config.manualActionsFileUrl !== '') {
       uxLog("warning", this, c.yellow(`If you have pre-deployment or post-deployment manual actions, make sure to write them in the file ${c.green(config.manualActionsFileUrl)}`));
       if (WebSocketClient.isAliveWithLwcUI()) {
-        WebSocketClient.sendReportFileMessage(config.manualActionsFileUrl, `Manual Actions file`, 'docUrl');
+        WebSocketClient.sendReportFileMessage(config.manualActionsFileUrl, `Update Manual Actions file`, 'actionUrl');
       }
     }
     else {

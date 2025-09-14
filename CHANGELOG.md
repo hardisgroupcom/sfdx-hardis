@@ -4,7 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.4.2] 2025-09-10
+
 - Add additional dependencies in Ubuntu Dockerfile to allow mermaid-cli and chrome to run natively from the image.
+- [hardis:org:file:export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) & [hardis:org:file:import](https://sfdx-hardis.cloudity.com/hardis/org/files/import/):
+  - Send progress notifications to WebSocketServer
+  - Improve console logs
+  - Generate a CSV log file with all files
+- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): Display manual actions file as an action link
 
 ## [6.4.1] 2025-09-10
 
@@ -1547,7 +1554,7 @@ commandsPostDeploy:
 
 - **Delta deployments** is no more beta but **Generally available**
 - **Org Monitoring** is no more beta but **Generally available**
-- Generate CSV reports also in XSLX format for easier opening
+- Generate CSV reports also in XLSX format for easier opening
 
 ## [4.17.1] 2023-11-28
 

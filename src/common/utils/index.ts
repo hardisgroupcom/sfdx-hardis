@@ -1256,6 +1256,16 @@ export function uxLogTable(commandThis: any, tableData: any[], columnsOrder: str
 
 }
 
+export function humanizeObjectKeys(obj: object) {
+  const objWithHumanizedKeys = Object.keys(obj || {}).map(key => {
+    const keyTitle = key
+      .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+      .replace(/^./, str => str.toUpperCase()); // Capitalize the first letter
+    return { Key: keyTitle, Value: obj[key] };
+  });
+  return objWithHumanizedKeys;
+}
+
 export function bool2emoji(bool: boolean): string {
   return bool ? "✅" : "⬜"
 }
