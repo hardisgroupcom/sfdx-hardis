@@ -143,7 +143,10 @@ The command's technical implementation involves:
       { key: 'active', header: 'Active' },
       { key: 'description', header: 'Description' },
     ];
-    const reportFiles = await generateReports(resultSorted, columns, this);
+    const reportFiles = await generateReports(resultSorted, columns, this, {
+      logFileName: 'remote-sites-audit',
+      logLabel: 'Remote Sites Audit',
+    });
 
     // Return an object to be displayed with --json
     return {

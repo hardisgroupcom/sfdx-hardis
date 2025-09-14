@@ -164,7 +164,10 @@ The command's technical implementation involves:
       { key: 'matches', header: 'Number' },
       { key: 'detail', header: 'Detail' },
     ];
-    const reportFiles = await generateReports(resultSorted, columns, this);
+    const reportFiles = await generateReports(resultSorted, columns, this, {
+      logFileName: 'callins-callouts-audit',
+      logLabel: 'CallIns and CallOuts Audit',
+    });
 
     // Return an object to be displayed with --json
     return {

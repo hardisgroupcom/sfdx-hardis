@@ -427,6 +427,6 @@ The command's technical implementation involves:
    */
   private async buildCsvFile(): Promise<void> {
     this.outputFile = await generateReportPath('lint-metadatastatus', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(this.inactiveItems, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.inactiveItems, this.outputFile, { fileTitle: 'Inactive Metadata Elements' });
   }
 }

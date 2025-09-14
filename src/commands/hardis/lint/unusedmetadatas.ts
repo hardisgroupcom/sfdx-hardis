@@ -279,6 +279,6 @@ The command's technical implementation involves:
       ...unusedCustomPermissions.map((permission: any) => ({ type: 'Custom Permission', name: permission.name || permission })),
     ];
 
-    this.outputFilesRes = await generateCsvFile(this.unusedData, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.unusedData, this.outputFile, { fileTitle: 'Unused Metadatas' });
   }
 }
