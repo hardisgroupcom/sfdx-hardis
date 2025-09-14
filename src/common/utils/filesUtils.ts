@@ -41,6 +41,7 @@ export class FilesExporter {
   private bulkApiRecordsEnded = false;
 
   private recordChunksNumber = 0;
+  private logFile: string;
 
   private totalSoqlRequests = 0;
   private totalParentRecords = 0;
@@ -76,17 +77,135 @@ export class FilesExporter {
     if (this.dtl === null) {
       this.dtl = await getFilesWorkspaceDetail(this.filesPath);
     }
-    uxLog("action", this.commandThis, c.cyan(`Exporting files from ${c.green(this.dtl.full_label)} ...`));
+    uxLog("action", this.commandThis, c.cyan(`Initializing files export using workspace ${c.green(this.dtl.full_label)} ...`));
     uxLog("log", this.commandThis, c.italic(c.grey(this.dtl.description)));
+
     // Make sure export folder for files is existing
     this.exportedFilesFolder = path.join(this.filesPath, 'export');
     await fs.ensureDir(this.exportedFilesFolder);
 
     await this.calculateApiConsumption();
-    this.startQueue();
-    await this.processParentRecords();
+
+    const reportDir = await getReportDirectory();
+    const reportExportDir = path.join(reportDir, 'files-export-log');
+    const now = new Date();
+    const dateStr = now.toISOString().replace(/T/, '_').replace(/:/g, '-').replace(/\..+/, '');
+    this.logFile = path.join(reportExportDir, `files-export-log-${this.dtl.name}-${dateStr}.csv`);
+
+    // Initialize CSV log file with headers
+    await this.initializeCsvLog();
+
+    // Phase 1: Calculate total files count for accurate progress tracking
+    uxLog("action", this.commandThis, c.cyan("Estimating total files to download..."));
+    const totalFilesCount = await this.calculateTotalFilesCount();
+    uxLog("log", this.commandThis, c.grey(`Estimated ${totalFilesCount} files to download`));
+
+    // Phase 2: Process downloads with accurate progress tracking
+    await this.processDownloadsWithProgress(totalFilesCount);
+
+    const result = await this.buildResult();
+    return result;
+  }
+
+  // Phase 1: Calculate total files count using efficient COUNT() queries
+  private async calculateTotalFilesCount(): Promise<number> {
+    let totalFiles = 0;
+
+    // Get parent records count to estimate batching
+    const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT COUNT() FROM');
+    this.totalSoqlRequests++;
+    const countSoqlQueryRes = await soqlQuery(countSoqlQuery, this.conn);
+    const totalParentRecords = countSoqlQueryRes.totalSize;
+
+    // Count Attachments - use COUNT() query with IN clause batching for memory efficiency
+    const attachmentBatchSize = 200;
+
+    // Estimate Attachments count by sampling
+    const sampleSize = Math.min(attachmentBatchSize, totalParentRecords);
+    if (sampleSize > 0) {
+      // Get sample of parent IDs
+      const sampleQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT Id FROM') + ` LIMIT ${sampleSize}`;
+      this.totalSoqlRequests++;
+      const sampleParents = await soqlQuery(sampleQuery, this.conn);
+
+      if (sampleParents.records.length > 0) {
+        const sampleParentIds = sampleParents.records.map((record: any) => `'${record.Id}'`).join(',');
+        const attachmentCountQuery = `SELECT COUNT() FROM Attachment WHERE ParentId IN (${sampleParentIds})`;
+        this.totalSoqlRequests++;
+        const attachmentCountRes = await soqlQuery(attachmentCountQuery, this.conn);
+
+        // Extrapolate from sample
+        const avgAttachmentsPerRecord = attachmentCountRes.totalSize / sampleParents.records.length;
+        totalFiles += Math.round(avgAttachmentsPerRecord * totalParentRecords);
+      }
+    }
+
+    // Count ContentVersions - use COUNT() query with sampling for memory efficiency
+    if (sampleSize > 0) {
+      const sampleQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT Id FROM') + ` LIMIT ${sampleSize}`;
+      const sampleParents = await soqlQuery(sampleQuery, this.conn);
+
+      if (sampleParents.records.length > 0) {
+        const sampleParentIds = sampleParents.records.map((record: any) => `'${record.Id}'`).join(',');
+
+        // Count ContentDocumentLinks for sample
+        const linkCountQuery = `SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId IN (${sampleParentIds})`;
+        this.totalSoqlRequests++;
+        const linkCountRes = await soqlQuery(linkCountQuery, this.conn);
+
+        // Extrapolate from sample (ContentVersions ≈ ContentDocumentLinks for latest versions)
+        const avgContentVersionsPerRecord = linkCountRes.totalSize / sampleParents.records.length;
+        totalFiles += Math.round(avgContentVersionsPerRecord * totalParentRecords);
+      }
+    }
+
+    return Math.max(totalFiles, 1); // Ensure at least 1 for progress tracking
+  }
+
+  // Phase 2: Process downloads with accurate file-based progress tracking
+  private async processDownloadsWithProgress(estimatedFilesCount: number) {
+    let filesProcessed = 0;
+    let totalFilesDiscovered = 0; // Track actual files discovered
+    let actualTotalFiles = estimatedFilesCount; // Start with estimation, will be adjusted as we discover actual files
+
+    // Start progress tracking with estimated total files count
+    WebSocketClient.sendProgressStartMessage('Exporting files', actualTotalFiles);
+
+    // Progress callback function with total adjustment capability
+    const progressCallback = (filesCompleted: number, filesDiscoveredInChunk?: number) => {
+      filesProcessed += filesCompleted;
+
+      // If we discovered files in this chunk, update our tracking
+      if (filesDiscoveredInChunk !== undefined) {
+        totalFilesDiscovered += filesDiscoveredInChunk;
+        // Update total to use actual discovered count + remaining estimation
+        const processedChunks = this.recordChunksNumber;
+        const totalChunks = this.chunksNumber;
+        const remainingChunks = totalChunks - processedChunks;
+
+        if (remainingChunks > 0) {
+          // Estimate remaining files based on actual discovery rate
+          const avgFilesPerChunk = totalFilesDiscovered / processedChunks;
+          const estimatedRemainingFiles = Math.round(avgFilesPerChunk * remainingChunks);
+          actualTotalFiles = totalFilesDiscovered + estimatedRemainingFiles;
+        } else {
+          // All chunks processed, use actual total
+          actualTotalFiles = totalFilesDiscovered;
+        }
+
+        uxLog("other", this, c.grey(`Discovered ${filesDiscoveredInChunk} files in chunk, updated total estimate to ${actualTotalFiles}`));
+      }
+
+      WebSocketClient.sendProgressStepMessage(filesProcessed, actualTotalFiles);
+    };
+
+    // Use modified queue system with progress tracking
+    this.startQueue(progressCallback);
+    await this.processParentRecords(progressCallback);
     await this.queueCompleted();
-    return await this.buildResult();
+
+    // End progress tracking with final total
+    WebSocketClient.sendProgressEndMessage(actualTotalFiles);
   }
 
   // Calculate API consumption
@@ -138,12 +257,15 @@ export class FilesExporter {
   }
 
   // Run chunks one by one, and don't wait to have all the records fetched to start it
-  private startQueue() {
+  private startQueue(progressCallback?: (filesCompleted: number, filesDiscoveredInChunk?: number) => void) {
     this.queueInterval = setInterval(async () => {
       if (this.recordsChunkQueueRunning === false && this.recordsChunkQueue.length > 0) {
         this.recordsChunkQueueRunning = true;
-        const recordChunk = this.recordsChunkQueue.shift();
-        await this.processRecordsChunk(recordChunk);
+        const queueItem = this.recordsChunkQueue.shift();
+        // Handle both old format (array) and new format (object with records and progressCallback)
+        const recordChunk = Array.isArray(queueItem) ? queueItem : queueItem.records;
+        const chunkProgressCallback = Array.isArray(queueItem) ? progressCallback : queueItem.progressCallback;
+        await this.processRecordsChunk(recordChunk, chunkProgressCallback);
         this.recordsChunkQueueRunning = false;
         // Manage last chunk
       } else if (
@@ -153,7 +275,7 @@ export class FilesExporter {
       ) {
         const recordsToProcess = [...this.recordsChunk];
         this.recordsChunk = [];
-        this.recordsChunkQueue.push(recordsToProcess);
+        this.recordsChunkQueue.push({ records: recordsToProcess, progressCallback });
       }
     }, 1000);
   }
@@ -181,7 +303,7 @@ export class FilesExporter {
     this.queueInterval = null;
   }
 
-  private async processParentRecords() {
+  private async processParentRecords(progressCallback?: (filesCompleted: number, filesDiscoveredInChunk?: number) => void) {
     // Query parent records using SOQL defined in export.json file
     this.totalSoqlRequests++;
     this.conn.bulk.pollTimeout = this.pollTimeout || 600000; // Increase timeout in case we are on a bad internet connection or if the bulk api batch is queued
@@ -204,22 +326,22 @@ export class FilesExporter {
         this.recordsIgnored++;
         continue;
       }
-      await this.addToRecordsChunk(record);
+      await this.addToRecordsChunk(record, progressCallback);
     }
     this.bulkApiRecordsEnded = true;
   }
 
-  private async addToRecordsChunk(record: any) {
+  private async addToRecordsChunk(record: any, progressCallback?: (filesCompleted: number, filesDiscoveredInChunk?: number) => void) {
     this.recordsChunk.push(record);
     // If chunk size is reached , process the chunk of records
     if (this.recordsChunk.length === this.recordsChunkSize) {
       const recordsToProcess = [...this.recordsChunk];
       this.recordsChunk = [];
-      this.recordsChunkQueue.push(recordsToProcess);
+      this.recordsChunkQueue.push({ records: recordsToProcess, progressCallback });
     }
   }
 
-  private async processRecordsChunk(records: any[]) {
+  private async processRecordsChunk(records: any[], progressCallback?: (filesCompleted: number, filesDiscoveredInChunk?: number) => void) {
     this.recordChunksNumber++;
     if (this.recordChunksNumber < this.startChunkNumber) {
       uxLog(
@@ -231,6 +353,9 @@ export class FilesExporter {
       );
       return;
     }
+
+    let actualFilesInChunk = 0;
+
     uxLog(
       "action",
       this,
@@ -248,6 +373,8 @@ export class FilesExporter {
       const attachmentQuery = `SELECT Id, Name, ContentType, ParentId FROM Attachment WHERE ParentId IN (${parentIdIn})`;
       this.totalSoqlRequests++;
       const attachments = await this.conn.query(attachmentQuery);
+      actualFilesInChunk += attachments.records.length; // Count actual files discovered
+
       if (attachments.records.length > 0) {
         // Download attachments using REST API
         await PromisePool.withConcurrency(5)
@@ -255,9 +382,13 @@ export class FilesExporter {
           .process(async (attachment: any) => {
             try {
               await this.downloadAttachmentFile(attachment, batch);
+              // Call progress callback if available
+              if (progressCallback) {
+                progressCallback(1);
+              }
             } catch (e) {
               this.filesErrors++;
-              uxLog("error", this, c.red('Download file error: ' + attachment.Name + '\n' + e));
+              uxLog("warning", this, c.red('Download file error: ' + attachment.Name + '\n' + e));
             }
           });
       } else {
@@ -306,6 +437,7 @@ export class FilesExporter {
               }
             });
           });
+          actualFilesInChunk += versionsAndLinks.length; // Count actual ContentVersion files discovered
           uxLog("log", this, c.grey(`Downloading ${versionsAndLinks.length} found files...`))
           // Download files
           await PromisePool.withConcurrency(5)
@@ -317,9 +449,13 @@ export class FilesExporter {
                   batch,
                   versionAndLink.contentDocumentLink
                 );
+                // Call progress callback if available
+                if (progressCallback) {
+                  progressCallback(1);
+                }
               } catch (e) {
                 this.filesErrors++;
-                uxLog("error", this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
+                uxLog("warning", this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
               }
             });
         }
@@ -327,14 +463,104 @@ export class FilesExporter {
         uxLog("log", this, c.grey('No ContentDocumentLinks found for the parent records in this batch'));
       }
     }
+
+    // At the end of chunk processing, report the actual files discovered in this chunk
+    if (progressCallback && actualFilesInChunk > 0) {
+      // This will help adjust the total progress based on actual discovered files
+      progressCallback(0, actualFilesInChunk); // Report actual files found in this chunk
+    }
+  }
+
+  // Initialize CSV log file with headers
+  private async initializeCsvLog() {
+    await fs.ensureDir(path.dirname(this.logFile));
+    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail\n';
+    await fs.writeFile(this.logFile, headers, 'utf8');
+    uxLog("log", this, c.grey(`CSV log file initialized: ${this.logFile}`));
+    WebSocketClient.sendReportFileMessage(this.logFile, "Exported files report (CSV)", 'report');
+  }
+
+  // Helper method to extract file information from output path
+  private extractFileInfo(outputFile: string) {
+    const fileName = path.basename(outputFile);
+    const extension = path.extname(fileName);
+    const folderPath = path.dirname(outputFile)
+      .replace(process.cwd(), '')
+      .replace(this.exportedFilesFolder, '')
+      .replace(/\\/g, '/')
+      .replace(/^\/+/, '');
+
+    return { fileName, extension, folderPath };
+  }
+
+  // Helper method to log skipped files
+  private async logSkippedFile(outputFile: string, errorDetail: string) {
+    const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
+    await this.writeCsvLogEntry('skipped', folderPath, fileName, extension, 0, errorDetail);
+  }
+
+  // Write a CSV entry for each file processed (fileSize in KB)
+  private async writeCsvLogEntry(status: 'success' | 'failed' | 'skipped', folder: string, fileName: string, extension: string, fileSizeKB: number, errorDetail: string = '') {
+    try {
+      // Escape CSV values to handle commas, quotes, and newlines
+      const escapeCsvValue = (value: string | number): string => {
+        const strValue = String(value);
+        if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) {
+          return `"${strValue.replace(/"/g, '""')}"`;
+        }
+        return strValue;
+      };
+
+      const csvLine = [
+        escapeCsvValue(status),
+        escapeCsvValue(folder),
+        escapeCsvValue(fileName),
+        escapeCsvValue(extension),
+        escapeCsvValue(fileSizeKB),
+        escapeCsvValue(errorDetail)
+      ].join(',') + '\n';
+
+      await fs.appendFile(this.logFile, csvLine, 'utf8');
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`Error writing to CSV log: ${(e as Error).message}`));
+    }
   }
 
   private async downloadFile(fetchUrl: string, outputFile: string) {
     const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
+
+    // Extract file information for CSV logging
+    const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
+    let fileSizeKB = 0;
+    let errorDetail = '';
+
+    // Get file size if download was successful
+    if (downloadResult.success && fs.existsSync(outputFile)) {
+      try {
+        const stats = await fs.stat(outputFile);
+        fileSizeKB = Math.round(stats.size / 1024); // Convert bytes to KB
+      } catch (e) {
+        uxLog("warning", this, c.yellow(`Could not get file size for ${fileName}: ${(e as Error).message}`));
+      }
+    } else if (!downloadResult.success) {
+      errorDetail = downloadResult.error || 'Unknown download error';
+    }
+
+    // Use file folder and file name for log display
+    const fileDisplay = path.join(folderPath, fileName).replace(/\\/g, '/');
+
     if (downloadResult.success) {
+      uxLog("success", this, c.grey(`Downloaded ${fileDisplay}`));
       this.filesDownloaded++;
+
+      // Write success entry to CSV log
+      await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB);
     } else {
+      uxLog("warning", this, c.red(`Error ${fileDisplay}`));
       this.filesErrors++;
+
+      // Write failed entry to CSV log
+      await this.writeCsvLogEntry('failed', folderPath, fileName, extension, fileSizeKB, errorDetail);
     }
   }
 
@@ -393,12 +619,18 @@ export class FilesExporter {
     if (this.dtl.fileTypes !== 'all' && !this.dtl.fileTypes.includes(contentVersion.FileType)) {
       uxLog("log", this, c.grey(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File type ignored`));
       this.filesIgnoredType++;
+
+      // Log skipped file to CSV
+      await this.logSkippedFile(outputFile, 'File type ignored');
       return;
     }
     // Check file overwrite
     if (this.dtl.overwriteFiles !== true && fs.existsSync(outputFile)) {
       uxLog("warning", this, c.yellow(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File already existing`));
       this.filesIgnoredExisting++;
+
+      // Log skipped file to CSV
+      await this.logSkippedFile(outputFile, 'File already exists');
       return;
     }
     // Create directory if not existing
@@ -413,31 +645,23 @@ export class FilesExporter {
     const apiCallsRemaining = connAny?.limitInfo?.apiUsage?.used
       ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
       : null;
-    uxLog("action", this, c.cyan(`API limit: ${c.bold(connAny?.limitInfo?.apiUsage?.limit || null)}`));
-    uxLog("action", this, c.cyan(`API used before process: ${c.bold(this.apiUsedBefore)}`));
-    uxLog("action", this, c.cyan(`API used after process: ${c.bold(connAny?.limitInfo?.apiUsage?.used || null)}`));
-    uxLog("action", this, c.cyan(`API calls remaining for today: ${c.bold(apiCallsRemaining)}`));
-    uxLog("action", this, c.cyan(`Total SOQL requests: ${c.bold(this.totalSoqlRequests)}`));
-    uxLog("action", this, c.cyan(`Total parent records found: ${c.bold(this.totalParentRecords)}`));
-    uxLog("action", this, c.cyan(`Total parent records with files: ${c.bold(this.parentRecordsWithFiles)}`));
-    uxLog("action", this, c.cyan(`Total parent records ignored because already existing: ${c.bold(this.recordsIgnored)}`));
-    uxLog("action", this, c.cyan(`Total files downloaded: ${c.bold(this.filesDownloaded)}`));
-    uxLog("action", this, c.cyan(`Total file download errors: ${c.bold(this.filesErrors)}`));
-    uxLog("action", this, c.cyan(`Total file skipped because of type constraint: ${c.bold(this.filesIgnoredType)}`));
-    uxLog("action", this, c.cyan(`Total file skipped because previously downloaded: ${c.bold(this.filesIgnoredExisting)}`));
 
     return {
-      totalParentRecords: this.totalParentRecords,
-      parentRecordsWithFiles: this.parentRecordsWithFiles,
-      filesDownloaded: this.filesDownloaded,
-      filesErrors: this.filesErrors,
-      recordsIgnored: this.recordsIgnored,
-      filesIgnoredType: this.filesIgnoredType,
-      filesIgnoredExisting: this.filesIgnoredExisting,
-      apiLimit: connAny?.limitInfo?.apiUsage?.limit || null,
-      apiUsedBefore: this.apiUsedBefore,
-      apiUsedAfter: connAny?.limitInfo?.apiUsage?.used || null,
-      apiCallsRemaining,
+      stats: {
+        filesDownloaded: this.filesDownloaded,
+        filesErrors: this.filesErrors,
+        filesIgnoredType: this.filesIgnoredType,
+        filesIgnoredExisting: this.filesIgnoredExisting,
+        totalSoqlRequests: this.totalSoqlRequests,
+        totalParentRecords: this.totalParentRecords,
+        parentRecordsWithFiles: this.parentRecordsWithFiles,
+        recordsIgnored: this.recordsIgnored,
+        apiLimit: connAny?.limitInfo?.apiUsage?.limit || null,
+        apiUsedBefore: this.apiUsedBefore,
+        apiUsedAfter: connAny?.limitInfo?.apiUsage?.used || null,
+        apiCallsRemaining,
+      },
+      logFile: this.logFile
     };
   }
 }
@@ -450,6 +674,17 @@ export class FilesImporter {
   private dtl: any = null; // export config
   private exportedFilesFolder: string = '';
   private handleOverwrite = false;
+  private logFile: string;
+
+  // Statistics tracking
+  private totalFolders = 0;
+  private totalFiles = 0;
+  private filesUploaded = 0;
+  private filesOverwritten = 0;
+  private filesErrors = 0;
+  private filesSkipped = 0;
+  private apiUsedBefore: number = 0;
+  private apiLimit: number = 0;
 
   constructor(
     filesPath: string,
@@ -465,6 +700,54 @@ export class FilesImporter {
     if (options.exportConfig) {
       this.dtl = options.exportConfig;
     }
+
+    // Initialize log file path
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    this.logFile = path.join(this.filesPath, `import-log-${timestamp}.csv`);
+  }
+
+  // Initialize CSV log file with headers
+  private async initializeCsvLog() {
+    await fs.ensureDir(path.dirname(this.logFile));
+    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail\n';
+    await fs.writeFile(this.logFile, headers, 'utf8');
+    uxLog("log", this.commandThis, c.grey(`CSV log file initialized: ${this.logFile}`));
+    WebSocketClient.sendReportFileMessage(this.logFile, "Imported files report (CSV)", 'report');
+  }
+
+  // Helper method to extract file information from file path
+  private extractFileInfo(filePath: string, folderName: string) {
+    const fileName = path.basename(filePath);
+    const extension = path.extname(fileName);
+
+    return { fileName, extension, folderPath: folderName };
+  }
+
+  // Write a CSV entry for each file processed (fileSize in KB)
+  private async writeCsvLogEntry(status: 'success' | 'failed' | 'skipped' | 'overwritten', folder: string, fileName: string, extension: string, fileSizeKB: number, errorDetail: string = '') {
+    try {
+      // Escape CSV values to handle commas, quotes, and newlines
+      const escapeCsvValue = (value: string | number): string => {
+        const strValue = String(value);
+        if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) {
+          return `"${strValue.replace(/"/g, '""')}"`;
+        }
+        return strValue;
+      };
+
+      const csvLine = [
+        escapeCsvValue(status),
+        escapeCsvValue(folder),
+        escapeCsvValue(fileName),
+        escapeCsvValue(extension),
+        escapeCsvValue(fileSizeKB),
+        escapeCsvValue(errorDetail)
+      ].join(',') + '\n';
+
+      await fs.appendFile(this.logFile, csvLine, 'utf8');
+    } catch (e) {
+      uxLog("warning", this.commandThis, c.yellow(`Error writing to CSV log: ${(e as Error).message}`));
+    }
   }
 
   async processImport() {
@@ -479,34 +762,62 @@ export class FilesImporter {
     const allRecordFolders = fs.readdirSync(this.exportedFilesFolder).filter((file) => {
       return fs.statSync(path.join(this.exportedFilesFolder, file)).isDirectory();
     });
-    let totalFilesNumber = 0;
+
+    this.totalFolders = allRecordFolders.length;
+
+    // Count total files
     for (const folder of allRecordFolders) {
-      totalFilesNumber += fs.readdirSync(path.join(this.exportedFilesFolder, folder)).length;
+      this.totalFiles += fs.readdirSync(path.join(this.exportedFilesFolder, folder)).length;
     }
 
-    await this.calculateApiConsumption(totalFilesNumber);
+    // Initialize API usage tracking with total file count
+    await this.calculateApiConsumption(this.totalFiles);
+
+    // Initialize CSV logging
+    await this.initializeCsvLog();
+
+    // Start progress tracking
+    WebSocketClient.sendProgressStartMessage("Importing files", this.totalFiles);
 
     // Query parent objects to find Ids corresponding to field value used as folder name
     const parentObjectsRes = await bulkQuery(this.dtl.soqlQuery, this.conn);
     const parentObjects = parentObjectsRes.records;
-    let successNb = 0;
-    let errorNb = 0;
+
+    let processedFiles = 0;
 
     for (const recordFolder of allRecordFolders) {
-      uxLog("log", this, c.grey(`Processing record ${recordFolder} ...`));
+      uxLog("log", this.commandThis, c.grey(`Processing record ${recordFolder} ...`));
       const recordFolderPath = path.join(this.exportedFilesFolder, recordFolder);
+
       // List files in folder
       const files = fs.readdirSync(recordFolderPath).filter((file) => {
         return fs.statSync(path.join(this.exportedFilesFolder, recordFolder, file)).isFile();
       });
+
       // Find Id of parent object using folder name
       const parentRecordIds = parentObjects.filter(
         (parentObj) => parentObj[this.dtl.outputFolderNameField] === recordFolder
       );
+
       if (parentRecordIds.length === 0) {
-        uxLog("error", this, c.red(`Unable to find Id for ${this.dtl.outputFolderNameField}=${recordFolder}`));
+        uxLog("error", this.commandThis, c.red(`Unable to find Id for ${this.dtl.outputFolderNameField}=${recordFolder}`));
+
+        // Log all files in this folder as skipped
+        for (const file of files) {
+          const { fileName, extension } = this.extractFileInfo(file, recordFolder);
+          const filePath = path.join(recordFolderPath, file);
+          const fileSizeKB = fs.existsSync(filePath) ? Math.round(fs.statSync(filePath).size / 1024) : 0;
+
+          await this.writeCsvLogEntry('skipped', recordFolder, fileName, extension, fileSizeKB, 'Parent record not found');
+          this.filesSkipped++;
+          processedFiles++;
+
+          // Update progress
+          WebSocketClient.sendProgressStepMessage(processedFiles, this.totalFiles);
+        }
         continue;
       }
+
       const parentRecordId = parentRecordIds[0].Id;
 
       let existingDocuments: any[] = [];
@@ -518,44 +829,102 @@ export class FilesImporter {
       }
 
       for (const file of files) {
-        const fileData = fs.readFileSync(path.join(recordFolderPath, file));
-        const contentVersionParams: any = {
-          Title: file,
-          PathOnClient: file,
-          VersionData: fileData.toString('base64'),
-        };
-        const matchingExistingDocs = existingDocuments.filter((doc) => doc.Title === file);
-        if (matchingExistingDocs.length > 0) {
-          contentVersionParams.ContentDocumentId = matchingExistingDocs[0].ContentDocumentId;
-          uxLog("log", this, c.grey(`Overwriting file ${file} ...`));
-        } else {
-          contentVersionParams.FirstPublishLocationId = parentRecordId;
-          uxLog("log", this, c.grey(`Uploading file ${file} ...`));
-        }
+        const filePath = path.join(recordFolderPath, file);
+        const { fileName, extension } = this.extractFileInfo(file, recordFolder);
+        const fileSizeKB = fs.existsSync(filePath) ? Math.round(fs.statSync(filePath).size / 1024) : 0;
+
         try {
-          const insertResult = await this.conn.sobject('ContentVersion').create(contentVersionParams);
-          if (insertResult.length === 0) {
-            uxLog("error", this, c.red(`Unable to upload file ${file}`));
-            errorNb++;
+          const fileData = fs.readFileSync(filePath);
+          const contentVersionParams: any = {
+            Title: file,
+            PathOnClient: file,
+            VersionData: fileData.toString('base64'),
+          };
+
+          const matchingExistingDocs = existingDocuments.filter((doc) => doc.Title === file);
+          let isOverwrite = false;
+
+          if (matchingExistingDocs.length > 0) {
+            contentVersionParams.ContentDocumentId = matchingExistingDocs[0].ContentDocumentId;
+            uxLog("log", this.commandThis, c.grey(`Overwriting file ${file} ...`));
+            isOverwrite = true;
           } else {
-            successNb++;
+            contentVersionParams.FirstPublishLocationId = parentRecordId;
+            uxLog("log", this.commandThis, c.grey(`Uploading file ${file} ...`));
+          }
+
+          const insertResult = await this.conn.sobject('ContentVersion').create(contentVersionParams);
+
+          if (Array.isArray(insertResult) && insertResult.length === 0) {
+            uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}`));
+            await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, 'Upload failed');
+            this.filesErrors++;
+          } else if (Array.isArray(insertResult) && !insertResult[0].success) {
+            uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}`));
+            await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, insertResult[0].errors?.join(', ') || 'Upload failed');
+            this.filesErrors++;
+          } else {
+            if (isOverwrite) {
+              uxLog("success", this.commandThis, c.grey(`Overwritten ${file}`));
+              await this.writeCsvLogEntry('overwritten', recordFolder, fileName, extension, fileSizeKB);
+              this.filesOverwritten++;
+            } else {
+              uxLog("success", this.commandThis, c.grey(`Uploaded ${file}`));
+              await this.writeCsvLogEntry('success', recordFolder, fileName, extension, fileSizeKB);
+              this.filesUploaded++;
+            }
           }
         } catch (e) {
-          uxLog("error", this, c.red(`Unable to upload file ${file}: ${(e as Error).message}`));
-          errorNb++;
+          const errorDetail = (e as Error).message;
+          uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}: ${errorDetail}`));
+          await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, errorDetail);
+          this.filesErrors++;
         }
+
+        processedFiles++;
+        // Update progress
+        WebSocketClient.sendProgressStepMessage(processedFiles, this.totalFiles);
       }
     }
 
-    uxLog("success", this, c.green(`Uploaded ${successNb} files`));
-    if (errorNb > 0) {
-      uxLog("warning", this, c.yellow(`Errors during the upload of ${successNb} files`));
-    }
-    return { successNb: successNb, errorNb: errorNb };
+    // End progress tracking
+    WebSocketClient.sendProgressEndMessage(this.totalFiles);
+
+    // Build and return result
+    return await this.buildResult();
+  }
+
+  // Build stats & result
+  private async buildResult() {
+    const connAny = this.conn as any;
+    const apiCallsRemaining = connAny?.limitInfo?.apiUsage?.used
+      ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
+      : null;
+
+    return {
+      stats: {
+        filesUploaded: this.filesUploaded,
+        filesOverwritten: this.filesOverwritten,
+        filesErrors: this.filesErrors,
+        filesSkipped: this.filesSkipped,
+        totalFolders: this.totalFolders,
+        totalFiles: this.totalFiles,
+        apiLimit: this.apiLimit,
+        apiUsedBefore: this.apiUsedBefore,
+        apiUsedAfter: connAny?.limitInfo?.apiUsage?.used || null,
+        apiCallsRemaining,
+      },
+      logFile: this.logFile
+    };
   }
 
   // Calculate API consumption
   private async calculateApiConsumption(totalFilesNumber) {
+    // Track API usage before process
+    const connAny = this.conn as any;
+    this.apiUsedBefore = connAny?.limitInfo?.apiUsage?.used || 0;
+    this.apiLimit = connAny?.limitInfo?.apiUsage?.limit || 0;
+
     const bulkCallsNb = 1;
     if (this.handleOverwrite) {
       totalFilesNumber = totalFilesNumber * 2;
@@ -828,29 +1197,29 @@ export async function generateCsvFile(
     WebSocketClient.sendReportFileMessage(outputPath, csvFileTitle, "report");
     if (data.length > 0 && !options?.noExcel) {
       try {
-        // Generate mirror XSLX file
+        // Generate mirror XLSX file
         const xlsDirName = path.join(path.dirname(outputPath), 'xls');
         const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
         const xslxFile = path.join(xlsDirName, xslFileName);
         await fs.ensureDir(xlsDirName);
         await csvToXls(outputPath, xslxFile);
-        uxLog("action", this, c.cyan(c.italic(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
-        const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XSLX)` : options?.xlsFileTitle ?? "Report (XSLX)";
+        uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
+        const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
         WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
         result.xlsxFile = xslxFile;
         if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
           try {
-            uxLog("other", this, c.italic(c.grey(`Opening XSLX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
+            uxLog("other", this, c.italic(c.grey(`Opening XLSX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
             await open(xslxFile, { wait: false });
           } catch (e) {
-            uxLog("warning", this, c.yellow('Error while opening XSLX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+            uxLog("warning", this, c.yellow('Error while opening XLSX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
           }
         }
       } catch (e2) {
         uxLog(
           "warning",
           this,
-          c.yellow('Error while generating XSLX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
+          c.yellow('Error while generating XLSX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
         );
       }
     } else {
