@@ -726,7 +726,7 @@ export class FilesExporter {
       },
       logFile: this.logFile
     };
-    await createXlsxFromCsv(this.logFile, { fileTitle: "Exported files report (XLSX)" }, result);
+    await createXlsxFromCsv(this.logFile, { fileTitle: "Exported files report" }, result);
     return result;
   }
 }
@@ -987,7 +987,7 @@ export class FilesImporter {
       },
       logFile: this.logFile
     };
-    await createXlsxFromCsv(this.logFile, { fileTitle: "Imported files report (XLSX)" }, result);
+    await createXlsxFromCsv(this.logFile, { fileTitle: "Imported files report" }, result);
     return result;
   }
 
