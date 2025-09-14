@@ -135,7 +135,7 @@ The command's technical implementation involves interacting with a Git provider'
     this.pullRequests = await gitProvider.listPullRequests(prConstraint, { formatted: true });
 
     this.outputFile = await generateReportPath('pull-requests', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(this.pullRequests, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.pullRequests, this.outputFile, { fileTitle: 'Pull Requests' });
 
     return {
       outputString: `Extracted ${this.pullRequests.length} Pull Requests`,

@@ -122,7 +122,7 @@ The command's technical implementation involves:
     uxLogTable(this, this.limitEntries);
 
     this.outputFile = await generateReportPath('org-limits', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(this.limitEntries, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.limitEntries, this.outputFile, { fileTitle: 'Org Limits' });
 
     const limitsError = this.limitEntries.filter((limit) => limit.severity === 'error');
     const numberLimitsError = limitsError.length;

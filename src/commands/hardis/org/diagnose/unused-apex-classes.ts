@@ -103,7 +103,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     // Generate output CSV file
     this.outputFile = await generateReportPath('unused-apex-classes', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(this.asyncClassList, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.asyncClassList, this.outputFile, { fileTitle: 'Unused Apex Classes' });
 
     // Exit code
     if ((this.argv || []).includes('unused-apex-classes')) {

@@ -332,6 +332,6 @@ Example:
 
   private async buildCsvFile(): Promise<void> {
     this.outputFile = await generateReportPath('user-story-report' + (this.whereChoice ? `-${this.whereChoice}` : ''), this.outputFile, { withDate: true });
-    this.outputFilesRes = await generateCsvFile(this.results, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.results, this.outputFile, { fileTitle: 'User Stories Report' });
   }
 }

@@ -86,7 +86,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     if (this.releaseUpdatesRecords.length > 0) {
       // Generate output CSV file
       this.outputFile = await generateReportPath('release-updates', this.outputFile);
-      this.outputFilesRes = await generateCsvFile(this.releaseUpdatesRecords, this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.releaseUpdatesRecords, this.outputFile, { fileTitle: 'Release Updates to Check' });
 
       // Build notification
       const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);

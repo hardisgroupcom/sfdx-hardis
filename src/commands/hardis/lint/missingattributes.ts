@@ -215,6 +215,6 @@ The command's technical implementation involves:
   private async buildCsvFile(fieldsWithoutDescription: any[]): Promise<void> {
     this.outputFile = await generateReportPath('lint-missingattributes', this.outputFile);
     const csvData = fieldsWithoutDescription.map((field) => ({ type: 'Field', name: field.name }));
-    this.outputFilesRes = await generateCsvFile(csvData, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(csvData, this.outputFile, { fileTitle: 'Missing Attributes' });
   }
 }

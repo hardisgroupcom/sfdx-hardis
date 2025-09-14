@@ -1182,7 +1182,7 @@ export async function generateReportPath(fileNamePrefix: string, outputFile: str
 export async function generateCsvFile(
   data: any[],
   outputPath: string,
-  options?: { fileTitle?: string, csvFileTitle?: string, xlsFileTitle?: string, noExcel?: boolean }
+  options: { fileTitle?: string, csvFileTitle?: string, xlsFileTitle?: string, noExcel?: boolean }
 ): Promise<any> {
   const result: any = {};
   try {
