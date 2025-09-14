@@ -1,0 +1,11 @@
+{
+  "sfdxHardisLabel": "Oppys: Large files export (min 10 MB)",
+  "sfdxHardisDescription": "Export only files larger than 10 MB attached to Opportunity records",
+  "soqlQuery": "SELECT Id,Name FROM Opportunity",
+  "fileTypes": "all",
+  "outputFolderNameField": "Name",
+  "outputFileNameFormat": "title",
+  "overwriteParentRecords": true,
+  "overwriteFiles": false,
+  "fileSizeMin": 10000
+}

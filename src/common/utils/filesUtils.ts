@@ -51,6 +51,7 @@ export class FilesExporter {
   private filesErrors = 0;
   private filesIgnoredType = 0;
   private filesIgnoredExisting = 0;
+  private filesIgnoredSize = 0;
   private apiUsedBefore: number = 0;
   private apiLimit: number = 0;
 
@@ -370,7 +371,7 @@ export class FilesExporter {
       const batch = records.slice(i, i + attachmentBatchSize);
       // Request all Attachment related to all records of the batch using REST API
       const parentIdIn = batch.map((record: any) => `'${record.Id}'`).join(',');
-      const attachmentQuery = `SELECT Id, Name, ContentType, ParentId FROM Attachment WHERE ParentId IN (${parentIdIn})`;
+      const attachmentQuery = `SELECT Id, Name, ContentType, ParentId, BodyLength FROM Attachment WHERE ParentId IN (${parentIdIn})`;
       this.totalSoqlRequests++;
       const attachments = await this.conn.query(attachmentQuery);
       actualFilesInChunk += attachments.records.length; // Count actual files discovered
@@ -419,7 +420,7 @@ export class FilesExporter {
             )
           );
           // Request all ContentVersion related to all records of the batch
-          const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
+          const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title,ContentSize FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
           this.totalSoqlRequests++;
           const contentVersions = await bulkQueryByChunks(contentVersionSoql, this.conn, this.parentRecordsChunkSize);
           // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
@@ -590,6 +591,24 @@ export class FilesExporter {
   }
 
   private async downloadAttachmentFile(attachment: any, records: any[]) {
+    // Check file size filter (BodyLength is in bytes)
+    const fileSizeKB = attachment.BodyLength ? Math.round(attachment.BodyLength / 1024) : 0;
+    if (this.dtl.fileSizeMin && this.dtl.fileSizeMin > 0 && fileSizeKB < this.dtl.fileSizeMin) {
+      uxLog("log", this, c.grey(`Skipped - ${attachment.Name} - File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`));
+      this.filesIgnoredSize++;
+
+      // Log skipped file to CSV
+      const parentAttachment = records.filter((record) => record.Id === attachment.ParentId)[0];
+      const attachmentParentFolderName = (parentAttachment[this.dtl.outputFolderNameField] || parentAttachment.Id).replace(
+        /[/\\?%*:|"<>]/g,
+        '-'
+      );
+      const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, attachmentParentFolderName));
+      const outputFile = path.join(parentRecordFolderForFiles, attachment.Name.replace(/[/\\?%*:|"<>]/g, '-'));
+      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, '', '', attachment.Id);
+      return;
+    }
+
     // Retrieve initial record to build output files folder name
     const parentAttachment = records.filter((record) => record.Id === attachment.ParentId)[0];
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
@@ -608,6 +627,24 @@ export class FilesExporter {
   }
 
   private async downloadContentVersionFile(contentVersion: any, records: any[], contentDocumentLink: any) {
+    // Check file size filter (ContentSize is in bytes)
+    const fileSizeKB = contentVersion.ContentSize ? Math.round(contentVersion.ContentSize / 1024) : 0;
+    if (this.dtl.fileSizeMin && this.dtl.fileSizeMin > 0 && fileSizeKB < this.dtl.fileSizeMin) {
+      uxLog("log", this, c.grey(`Skipped - ${contentVersion.Title} - File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`));
+      this.filesIgnoredSize++;
+
+      // Log skipped file to CSV
+      const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
+      const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id).replace(
+        /[/\\?%*:|"<>]/g,
+        '-'
+      );
+      const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
+      const outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-'));
+      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, contentVersion.ContentDocumentId, contentVersion.Id);
+      return;
+    }
+
     // Retrieve initial record to build output files folder name
     const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
@@ -677,6 +714,7 @@ export class FilesExporter {
         filesErrors: this.filesErrors,
         filesIgnoredType: this.filesIgnoredType,
         filesIgnoredExisting: this.filesIgnoredExisting,
+        filesIgnoredSize: this.filesIgnoredSize,
         totalSoqlRequests: this.totalSoqlRequests,
         totalParentRecords: this.totalParentRecords,
         parentRecordsWithFiles: this.parentRecordsWithFiles,
@@ -1041,6 +1079,7 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
   const overwriteParentRecords =
     exportFileJson.overwriteParentRecords === false ? false : exportFileJson.overwriteParentRecords || true;
   const overwriteFiles = exportFileJson.overwriteFiles || false;
+  const fileSizeMin = exportFileJson.fileSizeMin || 0;
   return {
     full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ''}`,
     label: hardisLabel,
@@ -1051,6 +1090,7 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
     outputFileNameFormat: outputFileNameFormat,
     overwriteParentRecords: overwriteParentRecords,
     overwriteFiles: overwriteFiles,
+    fileSizeMin: fileSizeMin,
   };
 }
 
@@ -1132,6 +1172,15 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         description: 'Replace existing local files with newly downloaded versions',
         initial: filesExportConfig.overwriteFiles,
       },
+      {
+        type: 'number',
+        name: 'fileSizeMin',
+        message: 'Please input the minimum file size in KB (0 = no minimum)',
+        description: 'Only files with size greater than or equal to this value will be downloaded (in kilobytes)',
+        placeholder: 'Ex: 10',
+        initial: filesExportConfig.fileSizeMin || 0,
+        min: 0,
+      },
     ]
   );
 
@@ -1145,6 +1194,7 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
     outputFileNameFormat: resp.outputFileNameFormat,
     overwriteParentRecords: resp.overwriteParentRecords,
     overwriteFiles: resp.overwriteFiles,
+    fileSizeMin: resp.fileSizeMin,
   });
   return filesConfig;
 }
