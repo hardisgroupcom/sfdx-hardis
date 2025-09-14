@@ -4,7 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- [hardis:org:file:export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/): Provide record Ids in the logs
+- [hardis:org:file:export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) and [hardis:org:file:import](https://sfdx-hardis.cloudity.com/hardis/org/files/import/):
+  - Provide record Ids in the logs
 - Update labels of all report files for UI buttons 
 
 ## [6.4.2] 2025-09-10

@@ -474,7 +474,7 @@ export class FilesExporter {
   // Initialize CSV log file with headers
   private async initializeCsvLog() {
     await fs.ensureDir(path.dirname(this.logFile));
-    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail\n';
+    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentDocument Id,ContentVersion Id,Attachment Id\n';
     await fs.writeFile(this.logFile, headers, 'utf8');
     uxLog("log", this, c.grey(`CSV log file initialized: ${this.logFile}`));
     WebSocketClient.sendReportFileMessage(this.logFile, "Exported files report (CSV)", 'report');
@@ -494,13 +494,29 @@ export class FilesExporter {
   }
 
   // Helper method to log skipped files
-  private async logSkippedFile(outputFile: string, errorDetail: string) {
+  private async logSkippedFile(
+    outputFile: string,
+    errorDetail: string,
+    contentDocumentId: string = '',
+    contentVersionId: string = '',
+    attachmentId: string = ''
+  ) {
     const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
-    await this.writeCsvLogEntry('skipped', folderPath, fileName, extension, 0, errorDetail);
+    await this.writeCsvLogEntry('skipped', folderPath, fileName, extension, 0, errorDetail, contentDocumentId, contentVersionId, attachmentId);
   }
 
   // Write a CSV entry for each file processed (fileSize in KB)
-  private async writeCsvLogEntry(status: 'success' | 'failed' | 'skipped', folder: string, fileName: string, extension: string, fileSizeKB: number, errorDetail: string = '') {
+  private async writeCsvLogEntry(
+    status: 'success' | 'failed' | 'skipped',
+    folder: string,
+    fileName: string,
+    extension: string,
+    fileSizeKB: number,
+    errorDetail: string = '',
+    contentDocumentId: string = '',
+    contentVersionId: string = '',
+    attachmentId: string = ''
+  ) {
     try {
       // Escape CSV values to handle commas, quotes, and newlines
       const escapeCsvValue = (value: string | number): string => {
@@ -517,7 +533,10 @@ export class FilesExporter {
         escapeCsvValue(fileName),
         escapeCsvValue(extension),
         escapeCsvValue(fileSizeKB),
-        escapeCsvValue(errorDetail)
+        escapeCsvValue(errorDetail),
+        escapeCsvValue(contentDocumentId),
+        escapeCsvValue(contentVersionId),
+        escapeCsvValue(attachmentId)
       ].join(',') + '\n';
 
       await fs.appendFile(this.logFile, csvLine, 'utf8');
@@ -526,7 +545,13 @@ export class FilesExporter {
     }
   }
 
-  private async downloadFile(fetchUrl: string, outputFile: string) {
+  private async downloadFile(
+    fetchUrl: string,
+    outputFile: string,
+    contentDocumentId: string = '',
+    contentVersionId: string = '',
+    attachmentId: string = ''
+  ) {
     const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
 
     // Extract file information for CSV logging
@@ -553,14 +578,14 @@ export class FilesExporter {
       uxLog("success", this, c.grey(`Downloaded ${fileDisplay}`));
       this.filesDownloaded++;
 
-      // Write success entry to CSV log
-      await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB);
+      // Write success entry to CSV log with Salesforce IDs
+      await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, '', contentDocumentId, contentVersionId, attachmentId);
     } else {
       uxLog("warning", this, c.red(`Error ${fileDisplay}`));
       this.filesErrors++;
 
-      // Write failed entry to CSV log
-      await this.writeCsvLogEntry('failed', folderPath, fileName, extension, fileSizeKB, errorDetail);
+      // Write failed entry to CSV log with Salesforce IDs
+      await this.writeCsvLogEntry('failed', folderPath, fileName, extension, fileSizeKB, errorDetail, contentDocumentId, contentVersionId, attachmentId);
     }
   }
 
@@ -579,7 +604,7 @@ export class FilesExporter {
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/Attachment/${attachment.Id}/Body`;
-    await this.downloadFile(fetchUrl, outputFile);
+    await this.downloadFile(fetchUrl, outputFile, '', '', attachment.Id);
   }
 
   private async downloadContentVersionFile(contentVersion: any, records: any[], contentDocumentLink: any) {
@@ -621,7 +646,7 @@ export class FilesExporter {
       this.filesIgnoredType++;
 
       // Log skipped file to CSV
-      await this.logSkippedFile(outputFile, 'File type ignored');
+      await this.logSkippedFile(outputFile, 'File type ignored', contentVersion.ContentDocumentId, contentVersion.Id);
       return;
     }
     // Check file overwrite
@@ -630,14 +655,14 @@ export class FilesExporter {
       this.filesIgnoredExisting++;
 
       // Log skipped file to CSV
-      await this.logSkippedFile(outputFile, 'File already exists');
+      await this.logSkippedFile(outputFile, 'File already exists', contentVersion.ContentDocumentId, contentVersion.Id);
       return;
     }
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
     // Download file locally
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
-    await this.downloadFile(fetchUrl, outputFile);
+    await this.downloadFile(fetchUrl, outputFile, contentVersion.ContentDocumentId, contentVersion.Id);
   }
   // Build stats & result
   private async buildResult() {
@@ -646,7 +671,7 @@ export class FilesExporter {
       ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
       : null;
 
-    return {
+    const result = {
       stats: {
         filesDownloaded: this.filesDownloaded,
         filesErrors: this.filesErrors,
@@ -663,6 +688,8 @@ export class FilesExporter {
       },
       logFile: this.logFile
     };
+    await createXlsxFromCsv(this.logFile, { fileTitle: "Exported files report (XLSX)" }, result);
+    return result;
   }
 }
 
@@ -709,7 +736,7 @@ export class FilesImporter {
   // Initialize CSV log file with headers
   private async initializeCsvLog() {
     await fs.ensureDir(path.dirname(this.logFile));
-    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail\n';
+    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentVersion Id\n';
     await fs.writeFile(this.logFile, headers, 'utf8');
     uxLog("log", this.commandThis, c.grey(`CSV log file initialized: ${this.logFile}`));
     WebSocketClient.sendReportFileMessage(this.logFile, "Imported files report (CSV)", 'report');
@@ -724,7 +751,7 @@ export class FilesImporter {
   }
 
   // Write a CSV entry for each file processed (fileSize in KB)
-  private async writeCsvLogEntry(status: 'success' | 'failed' | 'skipped' | 'overwritten', folder: string, fileName: string, extension: string, fileSizeKB: number, errorDetail: string = '') {
+  private async writeCsvLogEntry(status: 'success' | 'failed' | 'skipped' | 'overwritten', folder: string, fileName: string, extension: string, fileSizeKB: number, errorDetail: string = '', contentVersionId: string = '') {
     try {
       // Escape CSV values to handle commas, quotes, and newlines
       const escapeCsvValue = (value: string | number): string => {
@@ -741,7 +768,8 @@ export class FilesImporter {
         escapeCsvValue(fileName),
         escapeCsvValue(extension),
         escapeCsvValue(fileSizeKB),
-        escapeCsvValue(errorDetail)
+        escapeCsvValue(errorDetail),
+        escapeCsvValue(contentVersionId)
       ].join(',') + '\n';
 
       await fs.appendFile(this.logFile, csvLine, 'utf8');
@@ -808,7 +836,7 @@ export class FilesImporter {
           const filePath = path.join(recordFolderPath, file);
           const fileSizeKB = fs.existsSync(filePath) ? Math.round(fs.statSync(filePath).size / 1024) : 0;
 
-          await this.writeCsvLogEntry('skipped', recordFolder, fileName, extension, fileSizeKB, 'Parent record not found');
+          await this.writeCsvLogEntry('skipped', recordFolder, fileName, extension, fileSizeKB, 'Parent record not found', '');
           this.filesSkipped++;
           processedFiles++;
 
@@ -857,27 +885,32 @@ export class FilesImporter {
 
           if (Array.isArray(insertResult) && insertResult.length === 0) {
             uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}`));
-            await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, 'Upload failed');
+            await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, 'Upload failed', '');
             this.filesErrors++;
           } else if (Array.isArray(insertResult) && !insertResult[0].success) {
             uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}`));
-            await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, insertResult[0].errors?.join(', ') || 'Upload failed');
+            await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, insertResult[0].errors?.join(', ') || 'Upload failed', '');
             this.filesErrors++;
           } else {
+            // Extract ContentVersion ID from successful insert result
+            const contentVersionId = Array.isArray(insertResult) && insertResult.length > 0
+              ? insertResult[0].id
+              : (insertResult as any).id || '';
+
             if (isOverwrite) {
               uxLog("success", this.commandThis, c.grey(`Overwritten ${file}`));
-              await this.writeCsvLogEntry('overwritten', recordFolder, fileName, extension, fileSizeKB);
+              await this.writeCsvLogEntry('overwritten', recordFolder, fileName, extension, fileSizeKB, '', contentVersionId);
               this.filesOverwritten++;
             } else {
               uxLog("success", this.commandThis, c.grey(`Uploaded ${file}`));
-              await this.writeCsvLogEntry('success', recordFolder, fileName, extension, fileSizeKB);
+              await this.writeCsvLogEntry('success', recordFolder, fileName, extension, fileSizeKB, '', contentVersionId);
               this.filesUploaded++;
             }
           }
         } catch (e) {
           const errorDetail = (e as Error).message;
           uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}: ${errorDetail}`));
-          await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, errorDetail);
+          await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, errorDetail, '');
           this.filesErrors++;
         }
 
@@ -901,7 +934,7 @@ export class FilesImporter {
       ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
       : null;
 
-    return {
+    const result = {
       stats: {
         filesUploaded: this.filesUploaded,
         filesOverwritten: this.filesOverwritten,
@@ -916,6 +949,8 @@ export class FilesImporter {
       },
       logFile: this.logFile
     };
+    await createXlsxFromCsv(this.logFile, { fileTitle: "Imported files report (XLSX)" }, result);
+    return result;
   }
 
   // Calculate API consumption
@@ -1196,32 +1231,7 @@ export async function generateCsvFile(
     const csvFileTitle = options?.fileTitle ? `${options.fileTitle} (CSV)` : options?.csvFileTitle ?? "Report (CSV)";
     WebSocketClient.sendReportFileMessage(outputPath, csvFileTitle, "report");
     if (data.length > 0 && !options?.noExcel) {
-      try {
-        // Generate mirror XLSX file
-        const xlsDirName = path.join(path.dirname(outputPath), 'xls');
-        const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
-        const xslxFile = path.join(xlsDirName, xslFileName);
-        await fs.ensureDir(xlsDirName);
-        await csvToXls(outputPath, xslxFile);
-        uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
-        const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
-        WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
-        result.xlsxFile = xslxFile;
-        if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
-          try {
-            uxLog("other", this, c.italic(c.grey(`Opening XLSX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
-            await open(xslxFile, { wait: false });
-          } catch (e) {
-            uxLog("warning", this, c.yellow('Error while opening XLSX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
-          }
-        }
-      } catch (e2) {
-        uxLog(
-          "warning",
-          this,
-          c.yellow('Error while generating XLSX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
-        );
-      }
+      await createXlsxFromCsv(outputPath, options, result);
     } else {
       uxLog("other", this, c.grey(`No XLS file generated as ${outputPath} is empty`));
     }
@@ -1229,6 +1239,34 @@ export async function generateCsvFile(
     uxLog("warning", this, c.yellow('Error while generating CSV log file:\n' + (e as Error).message + '\n' + (e as Error).stack));
   }
   return result;
+}
+
+async function createXlsxFromCsv(outputPath: string, options: { fileTitle?: string; csvFileTitle?: string; xlsFileTitle?: string; noExcel?: boolean; }, result: any) {
+  try {
+    const xlsDirName = path.join(path.dirname(outputPath), 'xls');
+    const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
+    const xslxFile = path.join(xlsDirName, xslFileName);
+    await fs.ensureDir(xlsDirName);
+    await csvToXls(outputPath, xslxFile);
+    uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
+    const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
+    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
+    result.xlsxFile = xslxFile;
+    if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+      try {
+        uxLog("other", this, c.italic(c.grey(`Opening XLSX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
+        await open(xslxFile, { wait: false });
+      } catch (e) {
+        uxLog("warning", this, c.yellow('Error while opening XLSX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+      }
+    }
+  } catch (e2) {
+    uxLog(
+      "warning",
+      this,
+      c.yellow('Error while generating XLSX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
+    );
+  }
 }
 
 async function csvToXls(csvFile: string, xslxFile: string) {
