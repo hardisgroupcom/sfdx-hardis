@@ -10,7 +10,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - [hardis:org:file:export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) & [hardis:org:file:import](https://sfdx-hardis.cloudity.com/hardis/org/files/import/):
   - Send progress notifications to WebSocketServer
   - Improve console logs
-  - Generate a CSV log file with all files 
+  - Generate a CSV log file with all files
+- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): Display manual actions file as an action link
 
 ## [6.4.1] 2025-09-10
 
