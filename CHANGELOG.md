@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- When prompting for org instance URL, allow to copy-paste the full URL to gain time
+
 ## [6.4.3] 2025-09-14
 
 - [hardis:org:file:export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) and [hardis:org:file:import](https://sfdx-hardis.cloudity.com/hardis/org/files/import/):
