@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.4.5] 2025-09-17
+
+- Files export: resume + validate downloaded file
+
 ## [6.4.4] 2025-09-16
 
 - When prompting for org instance URL, allow to copy-paste the full URL to gain time

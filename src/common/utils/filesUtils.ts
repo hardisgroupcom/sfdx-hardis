@@ -5,6 +5,7 @@ import c from 'chalk';
 import open from 'open';
 import * as split from 'split';
 import { PromisePool } from '@supercharge/promise-pool';
+import crypto from 'crypto';
 
 // Salesforce Specific and Other Specific Libraries
 import { Connection, SfError } from '@salesforce/core';
@@ -42,6 +43,7 @@ export class FilesExporter {
 
   private recordChunksNumber = 0;
   private logFile: string;
+  private resumeExport: boolean;
 
   private totalSoqlRequests = 0;
   private totalParentRecords = 0;
@@ -52,13 +54,14 @@ export class FilesExporter {
   private filesIgnoredType = 0;
   private filesIgnoredExisting = 0;
   private filesIgnoredSize = 0;
+  private filesValidationErrors = 0;
   private apiUsedBefore: number = 0;
   private apiLimit: number = 0;
 
   constructor(
     filesPath: string,
     conn: Connection,
-    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number },
+    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number; resumeExport?: boolean },
     commandThis: any
   ) {
     this.filesPath = filesPath;
@@ -67,6 +70,7 @@ export class FilesExporter {
     this.recordsChunkSize = options?.recordsChunkSize || 1000;
     this.parentRecordsChunkSize = 100000;
     this.startChunkNumber = options?.startChunkNumber || 0;
+    this.resumeExport = options?.resumeExport || false;
     this.commandThis = commandThis;
     if (options.exportConfig) {
       this.dtl = options.exportConfig;
@@ -84,6 +88,15 @@ export class FilesExporter {
     // Make sure export folder for files is existing
     this.exportedFilesFolder = path.join(this.filesPath, 'export');
     await fs.ensureDir(this.exportedFilesFolder);
+
+    // Handle resume/restart mode
+    if (!this.resumeExport) {
+      // Restart mode: clear the output folder
+      uxLog("action", this.commandThis, c.yellow(`Restart mode: clearing output folder ${this.exportedFilesFolder}`));
+      await fs.emptyDir(this.exportedFilesFolder);
+    } else {
+      uxLog("action", this.commandThis, c.cyan(`Resume mode: existing files will be validated and skipped if valid`));
+    }
 
     await this.calculateApiConsumption();
 
@@ -420,7 +433,7 @@ export class FilesExporter {
             )
           );
           // Request all ContentVersion related to all records of the batch
-          const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title,ContentSize FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
+          const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title,ContentSize,Checksum FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
           this.totalSoqlRequests++;
           const contentVersions = await bulkQueryByChunks(contentVersionSoql, this.conn, this.parentRecordsChunkSize);
           // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
@@ -475,7 +488,7 @@ export class FilesExporter {
   // Initialize CSV log file with headers
   private async initializeCsvLog() {
     await fs.ensureDir(path.dirname(this.logFile));
-    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentDocument Id,ContentVersion Id,Attachment Id\n';
+    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentDocument Id,ContentVersion Id,Attachment Id,Validation Status\n';
     await fs.writeFile(this.logFile, headers, 'utf8');
     uxLog("log", this, c.grey(`CSV log file initialized: ${this.logFile}`));
     WebSocketClient.sendReportFileMessage(this.logFile, "Exported files report (CSV)", 'report');
@@ -503,12 +516,73 @@ export class FilesExporter {
     attachmentId: string = ''
   ) {
     const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
-    await this.writeCsvLogEntry('skipped', folderPath, fileName, extension, 0, errorDetail, contentDocumentId, contentVersionId, attachmentId);
+    await this.writeCsvLogEntry('skipped', folderPath, fileName, extension, 0, errorDetail, contentDocumentId, contentVersionId, attachmentId, 'Skipped');
+  }
+
+  // Helper method to calculate MD5 checksum of a file
+  private async calculateMD5(filePath: string): Promise<string> {
+    const hash = crypto.createHash('md5');
+    const stream = fs.createReadStream(filePath);
+
+    return new Promise((resolve, reject) => {
+      stream.on('error', reject);
+      stream.on('data', chunk => hash.update(chunk));
+      stream.on('end', () => resolve(hash.digest('hex')));
+    });
+  }
+
+  // Helper method to validate downloaded file
+  private async validateDownloadedFile(
+    outputFile: string,
+    expectedSize: number,
+    expectedChecksum?: string,
+  ): Promise<{ valid: boolean; actualSize: number; actualChecksum?: string; error?: string }> {
+    try {
+      // Check if file exists
+      if (!fs.existsSync(outputFile)) {
+        return { valid: false, actualSize: 0, error: 'File does not exist' };
+      }
+
+      // Get actual file size
+      const stats = await fs.stat(outputFile);
+      const actualSize = stats.size;
+
+      // Validate file size if expected size is provided
+      if (actualSize !== expectedSize) {
+        return {
+          valid: false,
+          actualSize,
+          error: `Size mismatch: expected ${expectedSize} bytes, got ${actualSize} bytes`
+        };
+      }
+
+      // Validate checksum if expected checksum is provided
+      if (expectedChecksum) {
+        const actualChecksum = await this.calculateMD5(outputFile);
+        if (actualChecksum.toLowerCase() !== expectedChecksum.toLowerCase()) {
+          return {
+            valid: false,
+            actualSize,
+            actualChecksum,
+            error: `Checksum mismatch: expected ${expectedChecksum}, got ${actualChecksum}`
+          };
+        }
+        return { valid: true, actualSize, actualChecksum };
+      }
+
+      return { valid: true, actualSize };
+    } catch (error) {
+      return {
+        valid: false,
+        actualSize: 0,
+        error: `Validation error: ${(error as Error).message}`
+      };
+    }
   }
 
   // Write a CSV entry for each file processed (fileSize in KB)
   private async writeCsvLogEntry(
-    status: 'success' | 'failed' | 'skipped',
+    status: 'success' | 'failed' | 'skipped' | 'invalid',
     folder: string,
     fileName: string,
     extension: string,
@@ -516,7 +590,8 @@ export class FilesExporter {
     errorDetail: string = '',
     contentDocumentId: string = '',
     contentVersionId: string = '',
-    attachmentId: string = ''
+    attachmentId: string = '',
+    validationStatus: string = ''
   ) {
     try {
       // Escape CSV values to handle commas, quotes, and newlines
@@ -537,7 +612,8 @@ export class FilesExporter {
         escapeCsvValue(errorDetail),
         escapeCsvValue(contentDocumentId),
         escapeCsvValue(contentVersionId),
-        escapeCsvValue(attachmentId)
+        escapeCsvValue(attachmentId),
+        escapeCsvValue(validationStatus)
       ].join(',') + '\n';
 
       await fs.appendFile(this.logFile, csvLine, 'utf8');
@@ -551,42 +627,105 @@ export class FilesExporter {
     outputFile: string,
     contentDocumentId: string = '',
     contentVersionId: string = '',
-    attachmentId: string = ''
+    attachmentId: string = '',
+    expectedSize: number,
+    expectedChecksum?: string,
   ) {
+    // In resume mode, check if file already exists and is valid
+    if (this.resumeExport && fs.existsSync(outputFile)) {
+      const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
+      let fileSizeKB = 0;
+
+      try {
+        const stats = await fs.stat(outputFile);
+        fileSizeKB = Math.round(stats.size / 1024); // Convert bytes to KB
+
+        // Validate existing file (always have validation data: checksum for ContentVersion, size for Attachment)
+        const validation = await this.validateDownloadedFile(outputFile, expectedSize, expectedChecksum);
+
+        if (validation.valid) {
+          // File exists and is valid - skip download
+          const fileDisplay = path.join(folderPath, fileName).replace(/\\/g, '/');
+          uxLog("success", this, c.grey(`Skipped (valid existing file) ${fileDisplay}`));
+          this.filesIgnoredExisting++;
+
+          // Write success entry to CSV log
+          await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, 'Existing valid file', contentDocumentId, contentVersionId, attachmentId, 'Valid (existing)');
+          return;
+        } else {
+          // File exists but is invalid - will re-download
+          uxLog("log", this, c.yellow(`Existing file ${fileName} is invalid (${validation.error}) - re-downloading`));
+        }
+      } catch (e) {
+        uxLog("warning", this, c.yellow(`Could not validate existing file ${fileName}: ${(e as Error).message}`));
+        // Continue with download if we can't validate existing file
+      }
+    }
+
+    // Proceed with normal download process
     const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
 
     // Extract file information for CSV logging
     const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
     let fileSizeKB = 0;
     let errorDetail = '';
+    let validationStatus = '';
+    let isValidFile = false; // Track if file is both downloaded and valid
 
     // Get file size if download was successful
     if (downloadResult.success && fs.existsSync(outputFile)) {
       try {
         const stats = await fs.stat(outputFile);
         fileSizeKB = Math.round(stats.size / 1024); // Convert bytes to KB
+
+        // Perform file validation (always have validation data: checksum for ContentVersion, size for Attachment)
+        const validation = await this.validateDownloadedFile(outputFile, expectedSize, expectedChecksum);
+
+        if (validation.valid) {
+          validationStatus = 'Valid';
+          isValidFile = true;
+          uxLog("success", this, c.green(`✓ Validation passed for ${fileName}`));
+        } else {
+          validationStatus = `Invalid: ${validation.error}`;
+          isValidFile = false;
+          this.filesValidationErrors++;
+          uxLog("warning", this, c.yellow(`⚠ Validation failed for ${fileName}: ${validation.error}`));
+        }
       } catch (e) {
         uxLog("warning", this, c.yellow(`Could not get file size for ${fileName}: ${(e as Error).message}`));
+        validationStatus = `Validation error: ${(e as Error).message}`;
+        isValidFile = false;
       }
     } else if (!downloadResult.success) {
       errorDetail = downloadResult.error || 'Unknown download error';
+      validationStatus = 'Download failed';
+      isValidFile = false;
     }
 
     // Use file folder and file name for log display
     const fileDisplay = path.join(folderPath, fileName).replace(/\\/g, '/');
 
-    if (downloadResult.success) {
+    // Log based on download success AND validation success
+    if (downloadResult.success && isValidFile) {
       uxLog("success", this, c.grey(`Downloaded ${fileDisplay}`));
       this.filesDownloaded++;
 
-      // Write success entry to CSV log with Salesforce IDs
-      await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, '', contentDocumentId, contentVersionId, attachmentId);
+      // Write success entry to CSV log with Salesforce IDs and validation status
+      await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, '', contentDocumentId, contentVersionId, attachmentId, validationStatus);
+    } else if (downloadResult.success && !isValidFile) {
+      // File was downloaded but validation failed
+      uxLog("warning", this, c.red(`Invalid ${fileDisplay} - validation failed`));
+      this.filesErrors++;
+
+      // Write invalid entry to CSV log with validation error details
+      await this.writeCsvLogEntry('invalid', folderPath, fileName, extension, fileSizeKB, validationStatus, contentDocumentId, contentVersionId, attachmentId, validationStatus);
     } else {
+      // Download failed
       uxLog("warning", this, c.red(`Error ${fileDisplay}`));
       this.filesErrors++;
 
-      // Write failed entry to CSV log with Salesforce IDs
-      await this.writeCsvLogEntry('failed', folderPath, fileName, extension, fileSizeKB, errorDetail, contentDocumentId, contentVersionId, attachmentId);
+      // Write failed entry to CSV log with Salesforce IDs and validation status
+      await this.writeCsvLogEntry('failed', folderPath, fileName, extension, fileSizeKB, errorDetail, contentDocumentId, contentVersionId, attachmentId, validationStatus);
     }
   }
 
@@ -621,9 +760,9 @@ export class FilesExporter {
     const outputFile = path.join(parentRecordFolderForFiles, attachment.Name.replace(/[/\\?%*:|"<>]/g, '-'));
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
-    // Download file locally
+    // Download file locally with validation (Attachments have BodyLength but no checksum)
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/Attachment/${attachment.Id}/Body`;
-    await this.downloadFile(fetchUrl, outputFile, '', '', attachment.Id);
+    await this.downloadFile(fetchUrl, outputFile, '', '', attachment.Id, Number(attachment.BodyLength), undefined);
   }
 
   private async downloadContentVersionFile(contentVersion: any, records: any[], contentDocumentLink: any) {
@@ -686,8 +825,8 @@ export class FilesExporter {
       await this.logSkippedFile(outputFile, 'File type ignored', contentVersion.ContentDocumentId, contentVersion.Id);
       return;
     }
-    // Check file overwrite
-    if (this.dtl.overwriteFiles !== true && fs.existsSync(outputFile)) {
+    // Check file overwrite (unless in resume mode where downloadFile handles existing files)
+    if (this.dtl.overwriteFiles !== true && !this.resumeExport && fs.existsSync(outputFile)) {
       uxLog("warning", this, c.yellow(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File already existing`));
       this.filesIgnoredExisting++;
 
@@ -697,9 +836,9 @@ export class FilesExporter {
     }
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
-    // Download file locally
+    // Download file locally with validation (ContentVersion has both Checksum and ContentSize)
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
-    await this.downloadFile(fetchUrl, outputFile, contentVersion.ContentDocumentId, contentVersion.Id);
+    await this.downloadFile(fetchUrl, outputFile, contentVersion.ContentDocumentId, contentVersion.Id, '', Number(contentVersion.ContentSize), contentVersion.Checksum);
   }
   // Build stats & result
   private async buildResult() {
@@ -715,6 +854,7 @@ export class FilesExporter {
         filesIgnoredType: this.filesIgnoredType,
         filesIgnoredExisting: this.filesIgnoredExisting,
         filesIgnoredSize: this.filesIgnoredSize,
+        filesValidationErrors: this.filesValidationErrors,
         totalSoqlRequests: this.totalSoqlRequests,
         totalParentRecords: this.totalParentRecords,
         parentRecordsWithFiles: this.parentRecordsWithFiles,
@@ -1082,6 +1222,7 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
   const fileSizeMin = exportFileJson.fileSizeMin || 0;
   return {
     full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ''}`,
+    name: folderName,
     label: hardisLabel,
     description: hardisDescription,
     soqlQuery: soqlQuery,
