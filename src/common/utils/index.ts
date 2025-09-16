@@ -243,12 +243,16 @@ export async function promptInstanceUrl(
     type: 'text',
     name: 'value',
     message: c.cyanBright('Please input the base URL of the salesforce org'),
-    description: 'Enter the custom Salesforce org URL for authentication',
+    description: 'Copy paste the full URL of your currently open Salesforce org :)',
     placeholder: 'Ex: https://myclient.my.salesforce.com',
   });
-  const urlCustom = (customUrlResponse?.value || "")
+  let urlCustom = (customUrlResponse?.value || "")
     .replace('.lightning.force.com', '.my.salesforce.com')
     .replace('.my.salesforce-setup.com', '.my.salesforce.com');
+  // Remove everything after '.my.salesforce.com' if existing
+  if (urlCustom.includes('.my.salesforce.com')) {
+    urlCustom = urlCustom.substring(0, urlCustom.indexOf('.my.salesforce.com') + '.my.salesforce.com'.length);
+  }
   return urlCustom;
 }
 
