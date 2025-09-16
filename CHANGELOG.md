@@ -6,7 +6,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [6.4.5] 2025-09-17
 
-- Files export: resume + validate downloaded file
+- Files export enhancements:
+  - Resume + validate downloaded files
+  - Improves API limit handling for file export/import
 
 ## [6.4.4] 2025-09-16
 
