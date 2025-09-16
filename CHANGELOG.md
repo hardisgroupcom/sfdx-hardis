@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.4.4] 2025-09-16
+
 - When prompting for org instance URL, allow to copy-paste the full URL to gain time
+- [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/): Salesforce limits OAuthToken queries to 2500 results. Be sneaky to get all results :)
 
 ## [6.4.3] 2025-09-14
 
