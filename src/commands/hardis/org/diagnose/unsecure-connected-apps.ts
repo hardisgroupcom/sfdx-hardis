@@ -4,13 +4,14 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
-import { bulkQuery } from '../../../../common/utils/apiUtils.js';
+import { bulkQuery, soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import sortArray from 'sort-array';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -99,11 +100,40 @@ The command's technical implementation involves:
     const conn = flags['target-org'].getConnection();
 
     // Collect all Connected Apps
-    uxLog("action", this, c.cyan(`Listing all OAuth Tokens from ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(`Extracting all OAuth Tokens from ${conn.instanceUrl} ...`));
+    const tokensCountQuery = `SELECT count() FROM OauthToken`;
+    const tokensCountQueryRes = await soqlQuery(tokensCountQuery, conn);
+    const totalTokens = tokensCountQueryRes.totalSize;
+    uxLog("log", this, `${totalTokens} OAuth Tokens found.`);
+
     const allOAuthTokenQuery =
-      `SELECT AppName , AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name , User.Profile.Name, UseCount FROM OauthToken ORDER BY AppName ASC`;
+      `SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name , User.Profile.Name, UseCount FROM OAuthToken ORDER BY CreatedDate ASC`;
     const allOAuthTokenQueryRes = await bulkQuery(allOAuthTokenQuery, conn);
     const allOAuthTokens = allOAuthTokenQueryRes.records;
+
+    // If not all OAuth token has been found, it means SF hard limit of 2500 OAuth Tokens has been reached
+    // Recursively get remaining tokens using latest found Id as constraint
+    if (allOAuthTokens.length < totalTokens) {
+      uxLog("warning", this, c.yellow(`Salesforce API limit of 2500 OAuth Tokens reached. We will need to re-query to get all tokens...`));
+      let lastCreatedDate = allOAuthTokens.length > 0 ? allOAuthTokens[allOAuthTokens.length - 1].CreatedDate : null;
+      while (lastCreatedDate != null) {
+        const remainingTokensQuery = `SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name , User.Profile.Name, UseCount FROM OAuthToken WHERE CreatedDate > ${lastCreatedDate} ORDER BY CreatedDate ASC`;
+        const remainingTokensQueryRes = await bulkQuery(remainingTokensQuery, conn);
+        const remainingTokens = remainingTokensQueryRes.records;
+        if (remainingTokens.length > 0) {
+          allOAuthTokens.push(...remainingTokens);
+          lastCreatedDate = remainingTokens[remainingTokens.length - 1].CreatedDate;
+          uxLog("log", this, `${allOAuthTokens.length} / ${totalTokens} OAuth Tokens retrieved...`);
+          if (allOAuthTokens.length >= totalTokens) {
+            lastCreatedDate = null;
+          }
+        } else {
+          lastCreatedDate = null;
+        }
+      }
+    }
+    uxLog("log", this, `${allOAuthTokens.length} OAuth Tokens retrieved.`);
+    sortArray(allOAuthTokens, { by: 'AppName' });
 
     const allOAuthTokensWithStatus = allOAuthTokens.map(app => {
       const adminPreApproved = app["AppMenuItem.IsUsingAdminAuthorization"] ?? false;
