@@ -117,7 +117,7 @@ The command's technical implementation involves:
     const recordsChunkSize = flags.chunksize;
     const pollTimeout = flags.polltimeout;
     const startChunkNumber = flags.startchunknumber || 0;
-    const resumeExport = flags.resume || isCI; // Default to resume in CI environments
+    const resumeExport = flags.resume;
     //const debugMode = flags.debug || false;
 
     const exportOptions: any = {
