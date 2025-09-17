@@ -457,7 +457,7 @@ export class FilesExporter {
             }
           });
       } else {
-        uxLog("log", this, c.grey('No Attachments found for the parent records in this batch'));
+        uxLog("log", this, c.grey(`No Attachments found for the ${batch.length} parent records in this batch`));
       }
     }
     for (let i = 0; i < records.length; i += contentVersionBatchSize) {
@@ -467,6 +467,7 @@ export class FilesExporter {
       const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
       await this.waitIfApiLimitApproached('BULK');
       this.totalBulkApiCalls++;
+      uxLog("log", this, c.grey(`Querying ContentDocumentLinks for ${linkedEntityInQuery.length} parent records in this batch...`));
       const contentDocumentLinks = await bulkQueryByChunks(linkedEntityInQuery, this.conn, this.parentRecordsChunkSize);
       if (contentDocumentLinks.records.length > 0) {
         // Retrieve all ContentVersion related to ContentDocumentLink
