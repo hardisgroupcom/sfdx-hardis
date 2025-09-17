@@ -541,7 +541,7 @@ export class FilesExporter {
   // Initialize CSV log file with headers
   private async initializeCsvLog() {
     await fs.ensureDir(path.dirname(this.logFile));
-    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentDocument Id,ContentVersion Id,Attachment Id,Validation Status\n';
+    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentDocument Id,ContentVersion Id,Attachment Id,Validation Status,Download URL\n';
     await fs.writeFile(this.logFile, headers, 'utf8');
     uxLog("log", this, c.grey(`CSV log file initialized: ${this.logFile}`));
     WebSocketClient.sendReportFileMessage(this.logFile, "Exported files report (CSV)", 'report');
@@ -566,10 +566,11 @@ export class FilesExporter {
     errorDetail: string,
     contentDocumentId: string = '',
     contentVersionId: string = '',
-    attachmentId: string = ''
+    attachmentId: string = '',
+    downloadUrl: string = ''
   ) {
     const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
-    await this.writeCsvLogEntry('skipped', folderPath, fileName, extension, 0, errorDetail, contentDocumentId, contentVersionId, attachmentId, 'Skipped');
+    await this.writeCsvLogEntry('skipped', folderPath, fileName, extension, 0, errorDetail, contentDocumentId, contentVersionId, attachmentId, 'Skipped', downloadUrl);
   }
 
   // Helper method to calculate MD5 checksum of a file
@@ -644,7 +645,8 @@ export class FilesExporter {
     contentDocumentId: string = '',
     contentVersionId: string = '',
     attachmentId: string = '',
-    validationStatus: string = ''
+    validationStatus: string = '',
+    downloadUrl: string = ''
   ) {
     try {
       // Escape CSV values to handle commas, quotes, and newlines
@@ -666,7 +668,8 @@ export class FilesExporter {
         escapeCsvValue(contentDocumentId),
         escapeCsvValue(contentVersionId),
         escapeCsvValue(attachmentId),
-        escapeCsvValue(validationStatus)
+        escapeCsvValue(validationStatus),
+        escapeCsvValue(downloadUrl)
       ].join(',') + '\n';
 
       await fs.appendFile(this.logFile, csvLine, 'utf8');
@@ -704,7 +707,7 @@ export class FilesExporter {
           this.filesIgnoredExisting++;
 
           // Write success entry to CSV log
-          await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, 'Existing valid file', contentDocumentId, contentVersionId, attachmentId, 'Valid (existing)');
+          await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, 'Existing valid file', contentDocumentId, contentVersionId, attachmentId, 'Valid (existing)', fetchUrl);
           return;
         } else {
           // File exists but is invalid - will re-download
@@ -723,6 +726,7 @@ export class FilesExporter {
     const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
     let fileSizeKB = 0;
     let errorDetail = '';
+    let validationError = ''; // Store validation error separately
     let validationStatus = '';
     let isValidFile = false; // Track if file is both downloaded and valid
 
@@ -741,14 +745,16 @@ export class FilesExporter {
           isValidFile = true;
           uxLog("success", this, c.green(`✓ Validation passed for ${fileName}`));
         } else {
-          validationStatus = `Invalid: ${validation.error}`;
+          validationStatus = 'Invalid';
+          validationError = validation.error || 'Unknown validation error';
           isValidFile = false;
           this.filesValidationErrors++;
           uxLog("warning", this, c.yellow(`⚠ Validation failed for ${fileName}: ${validation.error}`));
         }
       } catch (e) {
         uxLog("warning", this, c.yellow(`Could not get file size for ${fileName}: ${(e as Error).message}`));
-        validationStatus = `Validation error: ${(e as Error).message}`;
+        validationStatus = 'Invalid';
+        validationError = (e as Error).message;
         isValidFile = false;
       }
     } else if (!downloadResult.success) {
@@ -766,21 +772,21 @@ export class FilesExporter {
       this.filesDownloaded++;
 
       // Write success entry to CSV log with Salesforce IDs and validation status
-      await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, '', contentDocumentId, contentVersionId, attachmentId, validationStatus);
+      await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, '', contentDocumentId, contentVersionId, attachmentId, validationStatus, fetchUrl);
     } else if (downloadResult.success && !isValidFile) {
       // File was downloaded but validation failed
       uxLog("warning", this, c.red(`Invalid ${fileDisplay} - validation failed`));
       this.filesErrors++;
 
       // Write invalid entry to CSV log with validation error details
-      await this.writeCsvLogEntry('invalid', folderPath, fileName, extension, fileSizeKB, validationStatus, contentDocumentId, contentVersionId, attachmentId, validationStatus);
+      await this.writeCsvLogEntry('invalid', folderPath, fileName, extension, fileSizeKB, validationError, contentDocumentId, contentVersionId, attachmentId, validationStatus, fetchUrl);
     } else {
       // Download failed
       uxLog("warning", this, c.red(`Error ${fileDisplay}`));
       this.filesErrors++;
 
       // Write failed entry to CSV log with Salesforce IDs and validation status
-      await this.writeCsvLogEntry('failed', folderPath, fileName, extension, fileSizeKB, errorDetail, contentDocumentId, contentVersionId, attachmentId, validationStatus);
+      await this.writeCsvLogEntry('failed', folderPath, fileName, extension, fileSizeKB, errorDetail, contentDocumentId, contentVersionId, attachmentId, validationStatus, fetchUrl);
     }
   }
 
@@ -799,7 +805,8 @@ export class FilesExporter {
       );
       const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, attachmentParentFolderName));
       const outputFile = path.join(parentRecordFolderForFiles, attachment.Name.replace(/[/\\?%*:|"<>]/g, '-'));
-      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, '', '', attachment.Id);
+      const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/Attachment/${attachment.Id}/Body`;
+      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, '', '', attachment.Id, fetchUrl);
       return;
     }
 
@@ -835,7 +842,8 @@ export class FilesExporter {
       );
       const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
       const outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-'));
-      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, contentVersion.ContentDocumentId, contentVersion.Id);
+      const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
+      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, contentVersion.ContentDocumentId, contentVersion.Id, '', fetchUrl);
       return;
     }
 
@@ -877,7 +885,8 @@ export class FilesExporter {
       this.filesIgnoredType++;
 
       // Log skipped file to CSV
-      await this.logSkippedFile(outputFile, 'File type ignored', contentVersion.ContentDocumentId, contentVersion.Id);
+      const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
+      await this.logSkippedFile(outputFile, 'File type ignored', contentVersion.ContentDocumentId, contentVersion.Id, '', fetchUrl);
       return;
     }
     // Check file overwrite (unless in resume mode where downloadFile handles existing files)
@@ -886,7 +895,8 @@ export class FilesExporter {
       this.filesIgnoredExisting++;
 
       // Log skipped file to CSV
-      await this.logSkippedFile(outputFile, 'File already exists', contentVersion.ContentDocumentId, contentVersion.Id);
+      const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
+      await this.logSkippedFile(outputFile, 'File already exists', contentVersion.ContentDocumentId, contentVersion.Id, '', fetchUrl);
       return;
     }
     // Create directory if not existing
