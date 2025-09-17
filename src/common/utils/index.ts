@@ -228,7 +228,7 @@ export async function promptInstanceUrl(
   const orgTypeResponse = await prompts({
     type: 'select',
     name: 'value',
-    message: c.cyanBright(`What is the base URL or the org you want to connect to, as ${alias} ?`),
+    message: c.cyanBright(`What is the base URL or domain or the org you want to connect to, as ${alias} ?`),
     description: 'Select the Salesforce environment type or specify a custom URL for authentication',
     choices: choices,
     initial: 1,
@@ -244,7 +244,7 @@ export async function promptInstanceUrl(
     name: 'value',
     message: c.cyanBright('Please input the base URL of the salesforce org'),
     description: 'Copy paste the full URL of your currently open Salesforce org :)',
-    placeholder: 'Ex: https://myclient.my.salesforce.com',
+    placeholder: 'Ex: https://myclient.my.salesforce.com , or myclient',
   });
   let urlCustom = (customUrlResponse?.value || "")
     .replace('.lightning.force.com', '.my.salesforce.com')
@@ -252,6 +252,12 @@ export async function promptInstanceUrl(
   // Remove everything after '.my.salesforce.com' if existing
   if (urlCustom.includes('.my.salesforce.com')) {
     urlCustom = urlCustom.substring(0, urlCustom.indexOf('.my.salesforce.com') + '.my.salesforce.com'.length);
+  }
+  if (!urlCustom.startsWith('https://')) {
+    urlCustom = 'https://' + urlCustom;
+  }
+  if (!urlCustom.endsWith('.my.salesforce.com')) {
+    urlCustom = urlCustom + '.my.salesforce.com';
   }
   return urlCustom;
 }
