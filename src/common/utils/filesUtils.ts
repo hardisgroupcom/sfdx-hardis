@@ -44,6 +44,7 @@ export class FilesExporter {
 
   private recordChunksNumber = 0;
   private logFile: string;
+  private hasExistingFiles: boolean;
   private resumeExport: boolean;
 
   private totalRestApiCalls = 0;
@@ -75,6 +76,7 @@ export class FilesExporter {
     this.parentRecordsChunkSize = 100000;
     this.startChunkNumber = options?.startChunkNumber || 0;
     this.resumeExport = options?.resumeExport || false;
+    this.hasExistingFiles = fs.existsSync(path.join(this.filesPath, 'export'));
     this.commandThis = commandThis;
     if (options.exportConfig) {
       this.dtl = options.exportConfig;
@@ -98,9 +100,11 @@ export class FilesExporter {
 
     // Handle resume/restart mode
     if (!this.resumeExport) {
-      // Restart mode: clear the output folder
-      uxLog("action", this.commandThis, c.yellow(`Restart mode: clearing output folder ${this.exportedFilesFolder}`));
-      await fs.emptyDir(this.exportedFilesFolder);
+      if (this.hasExistingFiles) {
+        // Restart mode: clear the output folder
+        uxLog("action", this.commandThis, c.yellow(`Restart mode: clearing output folder ${this.exportedFilesFolder}`));
+        await fs.emptyDir(this.exportedFilesFolder);
+      }
     } else {
       uxLog("action", this.commandThis, c.cyan(`Resume mode: existing files will be validated and skipped if valid`));
     }
