@@ -57,6 +57,7 @@ export class FilesExporter {
   private filesIgnoredExisting = 0;
   private filesIgnoredSize = 0;
   private filesValidationErrors = 0;
+  private filesValidated = 0; // Count of files that went through validation (downloaded or existing)
 
   // Optimized API Limits Management System
   private apiLimitsManager: ApiLimitsManager;
@@ -692,6 +693,7 @@ export class FilesExporter {
         const validation = await this.validateDownloadedFile(outputFile, expectedSize, expectedChecksum);
 
         if (validation.valid) {
+          this.filesValidated++; // Count only valid files
           // File exists and is valid - skip download
           const fileDisplay = path.join(folderPath, fileName).replace(/\\/g, '/');
           uxLog("success", this, c.grey(`Skipped (valid existing file) ${fileDisplay}`));
@@ -730,6 +732,7 @@ export class FilesExporter {
         const validation = await this.validateDownloadedFile(outputFile, expectedSize, expectedChecksum);
 
         if (validation.valid) {
+          this.filesValidated++; // Count only valid files
           validationStatus = 'Valid';
           isValidFile = true;
           uxLog("success", this, c.green(`✓ Validation passed for ${fileName}`));
@@ -903,6 +906,7 @@ export class FilesExporter {
 
     const result = {
       stats: {
+        filesValidated: this.filesValidated,
         filesDownloaded: this.filesDownloaded,
         filesErrors: this.filesErrors,
         filesIgnoredType: this.filesIgnoredType,
