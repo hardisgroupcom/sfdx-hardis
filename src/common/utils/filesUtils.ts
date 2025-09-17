@@ -916,7 +916,7 @@ export class FilesExporter {
       const finalApiUsage = await this.getApiUsageStatus();
       uxLog("success", this, c.green(`Export completed! Final API usage: ${finalApiUsage.message}`));
     } catch (error) {
-      // Ignore API usage display errors
+      uxLog("warning", this, c.yellow(`Could not retrieve final API usage: ${(error as Error).message}`));
     }
 
     const result = {
