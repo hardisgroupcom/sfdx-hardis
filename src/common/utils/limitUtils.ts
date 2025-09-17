@@ -38,19 +38,12 @@ export class ApiLimitsManager {
 
   // Initialize the limits manager with initial API limits data
   async initialize(): Promise<void> {
-    await this.refreshLimits(true); // Force initial refresh
+    await this.refreshLimits(); // Initial refresh
   }
 
-  // Intelligent refresh logic - only refresh when needed
-  private async refreshLimits(forceRefresh: boolean = false): Promise<void> {
+  // Refresh limits from Salesforce
+  private async refreshLimits(): Promise<void> {
     const now = Date.now();
-    const cacheAge = now - this.lastRefreshTime;
-
-    // Use cache if it's fresh and not forced refresh
-    if (!forceRefresh && this.cachedLimits && cacheAge < this.cacheDuration) {
-      uxLog("log", this.commandThis, c.grey(`Using cached API limits (${Math.round(cacheAge / 1000)}s old)`));
-      return;
-    }
 
     try {
       uxLog("log", this.commandThis, c.grey(`Refreshing API limits from Salesforce...`));
@@ -102,40 +95,30 @@ export class ApiLimitsManager {
       this.localBulkApiCalls++;
     }
 
-    // Calculate current usage
+    // Check if cache has expired (5 minutes)
+    const now = Date.now();
+    const cacheAge = now - this.lastRefreshTime;
+    const cacheExpired = cacheAge >= this.cacheDuration;
+
+    if (cacheExpired) {
+      await this.refreshLimits(); // Use smart caching (no force)
+    }
+
+    // Calculate current usage after potential refresh
     const currentRestUsage = this.baseRestApiUsed + this.localRestApiCalls;
     const currentBulkUsage = this.baseBulkApiUsed + this.localBulkApiCalls;
-
     const restPercent = (currentRestUsage / this.baseRestApiLimit) * 100;
     const bulkPercent = (currentBulkUsage / this.baseBulkApiLimit) * 100;
 
-    // Check if we need to refresh limits due to approaching thresholds
-    const needsRefresh = (
-      (apiType === 'REST' && restPercent >= this.WARNING_THRESHOLD) ||
-      (apiType === 'BULK' && bulkPercent >= this.WARNING_THRESHOLD)
-    );
-
-    if (needsRefresh) {
-      await this.refreshLimits(true); // Force refresh for accurate counts
-
-      // Recalculate with fresh data
-      const freshRestUsage = this.baseRestApiUsed + this.localRestApiCalls;
-      const freshBulkUsage = this.baseBulkApiUsed + this.localBulkApiCalls;
-      const freshRestPercent = (freshRestUsage / this.baseRestApiLimit) * 100;
-      const freshBulkPercent = (freshBulkUsage / this.baseBulkApiLimit) * 100;
-
-      // Check if we need to wait
-      if (apiType === 'REST' && freshRestPercent >= this.DANGER_THRESHOLD) {
-        await this.waitForLimitReset('REST', freshRestPercent);
-      }
-
-      if (apiType === 'BULK' && freshBulkPercent >= this.DANGER_THRESHOLD) {
-        await this.waitForLimitReset('BULK', freshBulkPercent);
-      }
+    // Check if we need to wait due to danger threshold
+    if (apiType === 'REST' && restPercent >= this.DANGER_THRESHOLD) {
+      await this.waitForLimitReset('REST', restPercent);
     }
-  }
 
-  // Wait for API limits to reset
+    if (apiType === 'BULK' && bulkPercent >= this.DANGER_THRESHOLD) {
+      await this.waitForLimitReset('BULK', bulkPercent);
+    }
+  }  // Wait for API limits to reset
   private async waitForLimitReset(apiType: 'REST' | 'BULK', currentPercent: number): Promise<void> {
     const WAIT_INTERVAL = 300; // 5 minutes
     const MAX_CYCLES = 12; // 1 hour max
@@ -155,7 +138,7 @@ export class ApiLimitsManager {
       }
 
       // Check if limits have reset
-      await this.refreshLimits(true);
+      await this.refreshLimits();
 
       const currentUsage = apiType === 'REST'
         ? this.baseRestApiUsed + this.localRestApiCalls
@@ -220,32 +203,19 @@ export class ApiLimitsManager {
     bulkLimit: number;
     bulkRemaining: number;
   }> {
-    try {
-      const currentLimits = await this.conn.limits();
-      if (currentLimits && currentLimits.DailyApiRequests && currentLimits.DailyBulkV2QueryJobs) {
-        const restUsed = currentLimits.DailyApiRequests.Max - currentLimits.DailyApiRequests.Remaining;
-        const bulkUsed = currentLimits.DailyBulkV2QueryJobs.Max - currentLimits.DailyBulkV2QueryJobs.Remaining;
-
-        return {
-          restUsed: restUsed,
-          restLimit: currentLimits.DailyApiRequests.Max,
-          restRemaining: currentLimits.DailyApiRequests.Remaining,
-          bulkUsed: bulkUsed,
-          bulkLimit: currentLimits.DailyBulkV2QueryJobs.Max,
-          bulkRemaining: currentLimits.DailyBulkV2QueryJobs.Remaining
-        };
-      }
-    } catch (error) {
-      // Fallback to cached values if fresh fetch fails
-    }
+    await this.refreshLimits(); // Get fresh data
+    // Try to get fresh limits from Salesforce
+    const currentLimits = this.cachedLimits;
+    const restUsed = currentLimits.DailyApiRequests.Max - currentLimits.DailyApiRequests.Remaining;
+    const bulkUsed = currentLimits.DailyBulkV2QueryJobs.Max - currentLimits.DailyBulkV2QueryJobs.Remaining;
 
     return {
-      restUsed: this.baseRestApiUsed + this.localRestApiCalls,
-      restLimit: this.baseRestApiLimit,
-      restRemaining: this.baseRestApiLimit - (this.baseRestApiUsed + this.localRestApiCalls),
-      bulkUsed: this.baseBulkApiUsed + this.localBulkApiCalls,
-      bulkLimit: this.baseBulkApiLimit,
-      bulkRemaining: this.baseBulkApiLimit - (this.baseBulkApiUsed + this.localBulkApiCalls)
+      restUsed: restUsed,
+      restLimit: currentLimits.DailyApiRequests.Max,
+      restRemaining: currentLimits.DailyApiRequests.Remaining,
+      bulkUsed: bulkUsed,
+      bulkLimit: currentLimits.DailyBulkV2QueryJobs.Max,
+      bulkRemaining: currentLimits.DailyBulkV2QueryJobs.Remaining
     };
   }
 }
