@@ -5,6 +5,7 @@ import c from 'chalk';
 import open from 'open';
 import * as split from 'split';
 import { PromisePool } from '@supercharge/promise-pool';
+import crypto from 'crypto';
 
 // Salesforce Specific and Other Specific Libraries
 import { Connection, SfError } from '@salesforce/core';
@@ -18,6 +19,7 @@ import { prompts } from './prompts.js';
 import { getApiVersion, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { FileDownloader } from './fileDownloader.js';
+import { ApiLimitsManager } from './limitUtils.js';
 
 export const filesFolderRoot = path.join('.', 'scripts', 'files');
 
@@ -42,8 +44,11 @@ export class FilesExporter {
 
   private recordChunksNumber = 0;
   private logFile: string;
+  private hasExistingFiles: boolean;
+  private resumeExport: boolean;
 
-  private totalSoqlRequests = 0;
+  private totalRestApiCalls = 0;
+  private totalBulkApiCalls = 0;
   private totalParentRecords = 0;
   private parentRecordsWithFiles = 0;
   private recordsIgnored = 0;
@@ -52,13 +57,16 @@ export class FilesExporter {
   private filesIgnoredType = 0;
   private filesIgnoredExisting = 0;
   private filesIgnoredSize = 0;
-  private apiUsedBefore: number = 0;
-  private apiLimit: number = 0;
+  private filesValidationErrors = 0;
+  private filesValidated = 0; // Count of files that went through validation (downloaded or existing)
+
+  // Optimized API Limits Management System
+  private apiLimitsManager: ApiLimitsManager;
 
   constructor(
     filesPath: string,
     conn: Connection,
-    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number },
+    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number; resumeExport?: boolean },
     commandThis: any
   ) {
     this.filesPath = filesPath;
@@ -67,10 +75,15 @@ export class FilesExporter {
     this.recordsChunkSize = options?.recordsChunkSize || 1000;
     this.parentRecordsChunkSize = 100000;
     this.startChunkNumber = options?.startChunkNumber || 0;
+    this.resumeExport = options?.resumeExport || false;
+    this.hasExistingFiles = fs.existsSync(path.join(this.filesPath, 'export'));
     this.commandThis = commandThis;
     if (options.exportConfig) {
       this.dtl = options.exportConfig;
     }
+
+    // Initialize the optimized API limits manager
+    this.apiLimitsManager = new ApiLimitsManager(conn, commandThis);
   }
 
   async processExport() {
@@ -84,6 +97,17 @@ export class FilesExporter {
     // Make sure export folder for files is existing
     this.exportedFilesFolder = path.join(this.filesPath, 'export');
     await fs.ensureDir(this.exportedFilesFolder);
+
+    // Handle resume/restart mode
+    if (!this.resumeExport) {
+      if (this.hasExistingFiles) {
+        // Restart mode: clear the output folder
+        uxLog("action", this.commandThis, c.yellow(`Restart mode: clearing output folder ${this.exportedFilesFolder}`));
+        await fs.emptyDir(this.exportedFilesFolder);
+      }
+    } else {
+      uxLog("action", this.commandThis, c.cyan(`Resume mode: existing files will be validated and skipped if valid`));
+    }
 
     await this.calculateApiConsumption();
 
@@ -114,7 +138,8 @@ export class FilesExporter {
 
     // Get parent records count to estimate batching
     const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT COUNT() FROM');
-    this.totalSoqlRequests++;
+    await this.waitIfApiLimitApproached('REST');
+    this.totalRestApiCalls++;
     const countSoqlQueryRes = await soqlQuery(countSoqlQuery, this.conn);
     const totalParentRecords = countSoqlQueryRes.totalSize;
 
@@ -126,13 +151,15 @@ export class FilesExporter {
     if (sampleSize > 0) {
       // Get sample of parent IDs
       const sampleQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT Id FROM') + ` LIMIT ${sampleSize}`;
-      this.totalSoqlRequests++;
+      await this.waitIfApiLimitApproached('REST');
+      this.totalRestApiCalls++;
       const sampleParents = await soqlQuery(sampleQuery, this.conn);
 
       if (sampleParents.records.length > 0) {
         const sampleParentIds = sampleParents.records.map((record: any) => `'${record.Id}'`).join(',');
         const attachmentCountQuery = `SELECT COUNT() FROM Attachment WHERE ParentId IN (${sampleParentIds})`;
-        this.totalSoqlRequests++;
+        await this.waitIfApiLimitApproached('REST');
+        this.totalRestApiCalls++;
         const attachmentCountRes = await soqlQuery(attachmentCountQuery, this.conn);
 
         // Extrapolate from sample
@@ -151,7 +178,7 @@ export class FilesExporter {
 
         // Count ContentDocumentLinks for sample
         const linkCountQuery = `SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId IN (${sampleParentIds})`;
-        this.totalSoqlRequests++;
+        this.totalRestApiCalls++;
         const linkCountRes = await soqlQuery(linkCountQuery, this.conn);
 
         // Extrapolate from sample (ContentVersions ≈ ContentDocumentLinks for latest versions)
@@ -194,7 +221,12 @@ export class FilesExporter {
           actualTotalFiles = totalFilesDiscovered;
         }
 
-        uxLog("other", this, c.grey(`Discovered ${filesDiscoveredInChunk} files in chunk, updated total estimate to ${actualTotalFiles}`));
+        // Get API usage for display (non-blocking)
+        this.getApiUsageStatus().then(apiUsage => {
+          uxLog("other", this, c.grey(`Discovered ${filesDiscoveredInChunk} files in chunk, updated total estimate to ${actualTotalFiles} ${apiUsage.message}`));
+        }).catch(() => {
+          uxLog("other", this, c.grey(`Discovered ${filesDiscoveredInChunk} files in chunk, updated total estimate to ${actualTotalFiles}`));
+        });
       }
 
       WebSocketClient.sendProgressStepMessage(filesProcessed, actualTotalFiles);
@@ -209,33 +241,53 @@ export class FilesExporter {
     WebSocketClient.sendProgressEndMessage(actualTotalFiles);
   }
 
-  // Calculate API consumption
+  // Calculate API consumption and validate limits - optimized with new ApiLimitsManager
   private async calculateApiConsumption() {
+    // Initialize the API limits manager
+    await this.apiLimitsManager.initialize();
+
     const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT COUNT() FROM');
-    this.totalSoqlRequests++;
+    await this.apiLimitsManager.trackApiCall('REST');
+    this.totalRestApiCalls++;
     const countSoqlQueryRes = await soqlQuery(countSoqlQuery, this.conn);
     this.chunksNumber = Math.round(countSoqlQueryRes.totalSize / this.recordsChunkSize);
-    const estimatedApiCalls = Math.round(this.chunksNumber * 2) + 1;
-    this.apiUsedBefore = (this.conn as any)?.limitInfo?.apiUsage?.used
-      ? (this.conn as any).limitInfo.apiUsage.used - 1
-      : this.apiUsedBefore;
-    this.apiLimit = (this.conn as any)?.limitInfo?.apiUsage?.limit;
-    // Check if there are enough API calls available
-    if (this.apiLimit - this.apiUsedBefore < estimatedApiCalls + 1000) {
+
+    // Get current usage for API consumption estimation
+    const currentUsage = this.apiLimitsManager.getCurrentUsage();
+
+    // More accurate API consumption estimation:
+    // - 1 Bulk API v2 call for main parent records query
+    // - Multiple REST API calls for Attachment queries (batches of 200)
+    // - Multiple Bulk API v2 calls for ContentDocumentLink and ContentVersion queries
+    const estimatedRestApiCalls = Math.round(this.chunksNumber * (countSoqlQueryRes.totalSize / 200)) + 5; // Attachment batches + counting queries
+    const estimatedBulkApiCalls = Math.round(this.chunksNumber * 3) + 1; // Parent records + ContentDocumentLink + ContentVersion per chunk
+
+    // Check REST API limit with safety buffer
+    const restApiSafetyBuffer = 500;
+    if (currentUsage.restRemaining < estimatedRestApiCalls + restApiSafetyBuffer) {
       throw new SfError(
-        `You don't have enough API calls available (${c.bold(
-          this.apiLimit - this.apiUsedBefore
-        )}) to perform this export that could consume ${c.bold(estimatedApiCalls)} API calls`
+        `You don't have enough REST API calls available (${c.bold(
+          currentUsage.restRemaining
+        )}) to perform this export that could consume ${c.bold(estimatedRestApiCalls)} REST API calls`
       );
     }
+
+    // Check Bulk API v2 limit with safety buffer
+    const bulkApiSafetyBuffer = 100;
+    if (currentUsage.bulkRemaining < estimatedBulkApiCalls + bulkApiSafetyBuffer) {
+      throw new SfError(
+        `You don't have enough Bulk API v2 calls available (${c.bold(
+          currentUsage.bulkRemaining
+        )}) to perform this export that could consume ${c.bold(estimatedBulkApiCalls)} Bulk API v2 calls`
+      );
+    }
+
     // Request user confirmation
     if (!isCI) {
       const warningMessage = c.cyanBright(
         `This export of files could run on ${c.bold(c.yellow(countSoqlQueryRes.totalSize))} records, in ${c.bold(
           c.yellow(this.chunksNumber)
-        )} chunks, and consume up to ${c.bold(c.yellow(estimatedApiCalls))} API calls on the ${c.bold(
-          c.yellow(this.apiLimit - this.apiUsedBefore)
-        )} remaining API calls. Do you want to proceed ?`
+        )} chunks, and consume up to ${c.bold(c.yellow(estimatedRestApiCalls))} REST API calls (${c.bold(c.yellow(currentUsage.restRemaining))} remaining) and ${c.bold(c.yellow(estimatedBulkApiCalls))} Bulk API v2 calls (${c.bold(c.yellow(currentUsage.bulkRemaining))} remaining). Do you want to proceed ?`
       );
       const promptRes = await prompts({
         type: 'confirm',
@@ -255,6 +307,16 @@ export class FilesExporter {
         );
       }
     }
+  }
+
+  // Monitor API usage during operations using the optimized ApiLimitsManager
+  private async waitIfApiLimitApproached(operationType: 'REST' | 'BULK') {
+    await this.apiLimitsManager.trackApiCall(operationType);
+  }
+
+  // Get current API usage percentages for display
+  private async getApiUsageStatus(): Promise<{ rest: number; bulk: number; message: string }> {
+    return this.apiLimitsManager.getUsageStatus();
   }
 
   // Run chunks one by one, and don't wait to have all the records fetched to start it
@@ -306,7 +368,8 @@ export class FilesExporter {
 
   private async processParentRecords(progressCallback?: (filesCompleted: number, filesDiscoveredInChunk?: number) => void) {
     // Query parent records using SOQL defined in export.json file
-    this.totalSoqlRequests++;
+    await this.waitIfApiLimitApproached('BULK');
+    this.totalBulkApiCalls++;
     this.conn.bulk.pollTimeout = this.pollTimeout || 600000; // Increase timeout in case we are on a bad internet connection or if the bulk api batch is queued
 
     // Use bulkQueryByChunks to handle large queries
@@ -372,7 +435,8 @@ export class FilesExporter {
       // Request all Attachment related to all records of the batch using REST API
       const parentIdIn = batch.map((record: any) => `'${record.Id}'`).join(',');
       const attachmentQuery = `SELECT Id, Name, ContentType, ParentId, BodyLength FROM Attachment WHERE ParentId IN (${parentIdIn})`;
-      this.totalSoqlRequests++;
+      await this.waitIfApiLimitApproached('REST');
+      this.totalRestApiCalls++;
       const attachments = await this.conn.query(attachmentQuery);
       actualFilesInChunk += attachments.records.length; // Count actual files discovered
 
@@ -393,7 +457,7 @@ export class FilesExporter {
             }
           });
       } else {
-        uxLog("log", this, c.grey('No Attachments found for the parent records in this batch'));
+        uxLog("log", this, c.grey(`No Attachments found for the ${batch.length} parent records in this batch`));
       }
     }
     for (let i = 0; i < records.length; i += contentVersionBatchSize) {
@@ -401,7 +465,9 @@ export class FilesExporter {
       // Request all ContentDocumentLink related to all records of the batch
       const linkedEntityIdIn = batch.map((record: any) => `'${record.Id}'`).join(',');
       const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
-      this.totalSoqlRequests++;
+      await this.waitIfApiLimitApproached('BULK');
+      this.totalBulkApiCalls++;
+      uxLog("log", this, c.grey(`Querying ContentDocumentLinks for ${linkedEntityInQuery.length} parent records in this batch...`));
       const contentDocumentLinks = await bulkQueryByChunks(linkedEntityInQuery, this.conn, this.parentRecordsChunkSize);
       if (contentDocumentLinks.records.length > 0) {
         // Retrieve all ContentVersion related to ContentDocumentLink
@@ -420,8 +486,9 @@ export class FilesExporter {
             )
           );
           // Request all ContentVersion related to all records of the batch
-          const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title,ContentSize FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
-          this.totalSoqlRequests++;
+          const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title,ContentSize,Checksum FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
+          await this.waitIfApiLimitApproached('BULK');
+          this.totalBulkApiCalls++;
           const contentVersions = await bulkQueryByChunks(contentVersionSoql, this.conn, this.parentRecordsChunkSize);
           // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
           // Because of this when we fetch ContentVersion for ContentDocument it can return less results than there is ContentDocumentLink objects to link.
@@ -475,7 +542,7 @@ export class FilesExporter {
   // Initialize CSV log file with headers
   private async initializeCsvLog() {
     await fs.ensureDir(path.dirname(this.logFile));
-    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentDocument Id,ContentVersion Id,Attachment Id\n';
+    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentDocument Id,ContentVersion Id,Attachment Id,Validation Status,Download URL\n';
     await fs.writeFile(this.logFile, headers, 'utf8');
     uxLog("log", this, c.grey(`CSV log file initialized: ${this.logFile}`));
     WebSocketClient.sendReportFileMessage(this.logFile, "Exported files report (CSV)", 'report');
@@ -500,15 +567,77 @@ export class FilesExporter {
     errorDetail: string,
     contentDocumentId: string = '',
     contentVersionId: string = '',
-    attachmentId: string = ''
+    attachmentId: string = '',
+    downloadUrl: string = ''
   ) {
     const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
-    await this.writeCsvLogEntry('skipped', folderPath, fileName, extension, 0, errorDetail, contentDocumentId, contentVersionId, attachmentId);
+    await this.writeCsvLogEntry('skipped', folderPath, fileName, extension, 0, errorDetail, contentDocumentId, contentVersionId, attachmentId, 'Skipped', downloadUrl);
+  }
+
+  // Helper method to calculate MD5 checksum of a file
+  private async calculateMD5(filePath: string): Promise<string> {
+    const hash = crypto.createHash('md5');
+    const stream = fs.createReadStream(filePath);
+
+    return new Promise((resolve, reject) => {
+      stream.on('error', reject);
+      stream.on('data', chunk => hash.update(chunk));
+      stream.on('end', () => resolve(hash.digest('hex')));
+    });
+  }
+
+  // Helper method to validate downloaded file
+  private async validateDownloadedFile(
+    outputFile: string,
+    expectedSize: number,
+    expectedChecksum?: string,
+  ): Promise<{ valid: boolean; actualSize: number; actualChecksum?: string; error?: string }> {
+    try {
+      // Check if file exists
+      if (!fs.existsSync(outputFile)) {
+        return { valid: false, actualSize: 0, error: 'File does not exist' };
+      }
+
+      // Get actual file size
+      const stats = await fs.stat(outputFile);
+      const actualSize = stats.size;
+
+      // Validate file size if expected size is provided
+      if (actualSize !== expectedSize) {
+        return {
+          valid: false,
+          actualSize,
+          error: `Size mismatch: expected ${expectedSize} bytes, got ${actualSize} bytes`
+        };
+      }
+
+      // Validate checksum if expected checksum is provided
+      if (expectedChecksum) {
+        const actualChecksum = await this.calculateMD5(outputFile);
+        if (actualChecksum.toLowerCase() !== expectedChecksum.toLowerCase()) {
+          return {
+            valid: false,
+            actualSize,
+            actualChecksum,
+            error: `Checksum mismatch: expected ${expectedChecksum}, got ${actualChecksum}`
+          };
+        }
+        return { valid: true, actualSize, actualChecksum };
+      }
+
+      return { valid: true, actualSize };
+    } catch (error) {
+      return {
+        valid: false,
+        actualSize: 0,
+        error: `Validation error: ${(error as Error).message}`
+      };
+    }
   }
 
   // Write a CSV entry for each file processed (fileSize in KB)
   private async writeCsvLogEntry(
-    status: 'success' | 'failed' | 'skipped',
+    status: 'success' | 'failed' | 'skipped' | 'invalid',
     folder: string,
     fileName: string,
     extension: string,
@@ -516,7 +645,9 @@ export class FilesExporter {
     errorDetail: string = '',
     contentDocumentId: string = '',
     contentVersionId: string = '',
-    attachmentId: string = ''
+    attachmentId: string = '',
+    validationStatus: string = '',
+    downloadUrl: string = ''
   ) {
     try {
       // Escape CSV values to handle commas, quotes, and newlines
@@ -537,7 +668,9 @@ export class FilesExporter {
         escapeCsvValue(errorDetail),
         escapeCsvValue(contentDocumentId),
         escapeCsvValue(contentVersionId),
-        escapeCsvValue(attachmentId)
+        escapeCsvValue(attachmentId),
+        escapeCsvValue(validationStatus),
+        escapeCsvValue(downloadUrl)
       ].join(',') + '\n';
 
       await fs.appendFile(this.logFile, csvLine, 'utf8');
@@ -551,42 +684,110 @@ export class FilesExporter {
     outputFile: string,
     contentDocumentId: string = '',
     contentVersionId: string = '',
-    attachmentId: string = ''
+    attachmentId: string = '',
+    expectedSize: number,
+    expectedChecksum?: string,
   ) {
+    // In resume mode, check if file already exists and is valid
+    if (this.resumeExport && fs.existsSync(outputFile)) {
+      const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
+      let fileSizeKB = 0;
+
+      try {
+        const stats = await fs.stat(outputFile);
+        fileSizeKB = Math.round(stats.size / 1024); // Convert bytes to KB
+
+        // Validate existing file (always have validation data: checksum for ContentVersion, size for Attachment)
+        const validation = await this.validateDownloadedFile(outputFile, expectedSize, expectedChecksum);
+
+        if (validation.valid) {
+          this.filesValidated++; // Count only valid files
+          // File exists and is valid - skip download
+          const fileDisplay = path.join(folderPath, fileName).replace(/\\/g, '/');
+          uxLog("success", this, c.grey(`Skipped (valid existing file) ${fileDisplay}`));
+          this.filesIgnoredExisting++;
+
+          // Write success entry to CSV log
+          await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, 'Existing valid file', contentDocumentId, contentVersionId, attachmentId, 'Valid (existing)', fetchUrl);
+          return;
+        } else {
+          // File exists but is invalid - will re-download
+          uxLog("log", this, c.yellow(`Existing file ${fileName} is invalid (${validation.error}) - re-downloading`));
+        }
+      } catch (e) {
+        uxLog("warning", this, c.yellow(`Could not validate existing file ${fileName}: ${(e as Error).message}`));
+        // Continue with download if we can't validate existing file
+      }
+    }
+
+    // Proceed with normal download process
     const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
 
     // Extract file information for CSV logging
     const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
     let fileSizeKB = 0;
     let errorDetail = '';
+    let validationError = ''; // Store validation error separately
+    let validationStatus = '';
+    let isValidFile = false; // Track if file is both downloaded and valid
 
     // Get file size if download was successful
     if (downloadResult.success && fs.existsSync(outputFile)) {
       try {
         const stats = await fs.stat(outputFile);
         fileSizeKB = Math.round(stats.size / 1024); // Convert bytes to KB
+
+        // Perform file validation (always have validation data: checksum for ContentVersion, size for Attachment)
+        const validation = await this.validateDownloadedFile(outputFile, expectedSize, expectedChecksum);
+
+        if (validation.valid) {
+          this.filesValidated++; // Count only valid files
+          validationStatus = 'Valid';
+          isValidFile = true;
+          uxLog("success", this, c.green(`✓ Validation passed for ${fileName}`));
+        } else {
+          validationStatus = 'Invalid';
+          validationError = validation.error || 'Unknown validation error';
+          isValidFile = false;
+          this.filesValidationErrors++;
+          uxLog("warning", this, c.yellow(`⚠ Validation failed for ${fileName}: ${validation.error}`));
+        }
       } catch (e) {
         uxLog("warning", this, c.yellow(`Could not get file size for ${fileName}: ${(e as Error).message}`));
+        validationStatus = 'Invalid';
+        validationError = (e as Error).message;
+        isValidFile = false;
       }
     } else if (!downloadResult.success) {
       errorDetail = downloadResult.error || 'Unknown download error';
+      validationStatus = 'Download failed';
+      isValidFile = false;
     }
 
     // Use file folder and file name for log display
     const fileDisplay = path.join(folderPath, fileName).replace(/\\/g, '/');
 
-    if (downloadResult.success) {
+    // Log based on download success AND validation success
+    if (downloadResult.success && isValidFile) {
       uxLog("success", this, c.grey(`Downloaded ${fileDisplay}`));
       this.filesDownloaded++;
 
-      // Write success entry to CSV log with Salesforce IDs
-      await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, '', contentDocumentId, contentVersionId, attachmentId);
+      // Write success entry to CSV log with Salesforce IDs and validation status
+      await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, '', contentDocumentId, contentVersionId, attachmentId, validationStatus, fetchUrl);
+    } else if (downloadResult.success && !isValidFile) {
+      // File was downloaded but validation failed
+      uxLog("warning", this, c.red(`Invalid ${fileDisplay} - validation failed`));
+      this.filesErrors++;
+
+      // Write invalid entry to CSV log with validation error details
+      await this.writeCsvLogEntry('invalid', folderPath, fileName, extension, fileSizeKB, validationError, contentDocumentId, contentVersionId, attachmentId, validationStatus, fetchUrl);
     } else {
+      // Download failed
       uxLog("warning", this, c.red(`Error ${fileDisplay}`));
       this.filesErrors++;
 
-      // Write failed entry to CSV log with Salesforce IDs
-      await this.writeCsvLogEntry('failed', folderPath, fileName, extension, fileSizeKB, errorDetail, contentDocumentId, contentVersionId, attachmentId);
+      // Write failed entry to CSV log with Salesforce IDs and validation status
+      await this.writeCsvLogEntry('failed', folderPath, fileName, extension, fileSizeKB, errorDetail, contentDocumentId, contentVersionId, attachmentId, validationStatus, fetchUrl);
     }
   }
 
@@ -605,7 +806,8 @@ export class FilesExporter {
       );
       const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, attachmentParentFolderName));
       const outputFile = path.join(parentRecordFolderForFiles, attachment.Name.replace(/[/\\?%*:|"<>]/g, '-'));
-      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, '', '', attachment.Id);
+      const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/Attachment/${attachment.Id}/Body`;
+      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, '', '', attachment.Id, fetchUrl);
       return;
     }
 
@@ -621,9 +823,9 @@ export class FilesExporter {
     const outputFile = path.join(parentRecordFolderForFiles, attachment.Name.replace(/[/\\?%*:|"<>]/g, '-'));
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
-    // Download file locally
+    // Download file locally with validation (Attachments have BodyLength but no checksum)
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/Attachment/${attachment.Id}/Body`;
-    await this.downloadFile(fetchUrl, outputFile, '', '', attachment.Id);
+    await this.downloadFile(fetchUrl, outputFile, '', '', attachment.Id, Number(attachment.BodyLength), undefined);
   }
 
   private async downloadContentVersionFile(contentVersion: any, records: any[], contentDocumentLink: any) {
@@ -641,7 +843,8 @@ export class FilesExporter {
       );
       const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
       const outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-'));
-      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, contentVersion.ContentDocumentId, contentVersion.Id);
+      const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
+      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, contentVersion.ContentDocumentId, contentVersion.Id, '', fetchUrl);
       return;
     }
 
@@ -683,46 +886,61 @@ export class FilesExporter {
       this.filesIgnoredType++;
 
       // Log skipped file to CSV
-      await this.logSkippedFile(outputFile, 'File type ignored', contentVersion.ContentDocumentId, contentVersion.Id);
+      const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
+      await this.logSkippedFile(outputFile, 'File type ignored', contentVersion.ContentDocumentId, contentVersion.Id, '', fetchUrl);
       return;
     }
-    // Check file overwrite
-    if (this.dtl.overwriteFiles !== true && fs.existsSync(outputFile)) {
+    // Check file overwrite (unless in resume mode where downloadFile handles existing files)
+    if (this.dtl.overwriteFiles !== true && !this.resumeExport && fs.existsSync(outputFile)) {
       uxLog("warning", this, c.yellow(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File already existing`));
       this.filesIgnoredExisting++;
 
       // Log skipped file to CSV
-      await this.logSkippedFile(outputFile, 'File already exists', contentVersion.ContentDocumentId, contentVersion.Id);
+      const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
+      await this.logSkippedFile(outputFile, 'File already exists', contentVersion.ContentDocumentId, contentVersion.Id, '', fetchUrl);
       return;
     }
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
-    // Download file locally
+    // Download file locally with validation (ContentVersion has both Checksum and ContentSize)
     const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
-    await this.downloadFile(fetchUrl, outputFile, contentVersion.ContentDocumentId, contentVersion.Id);
+    await this.downloadFile(fetchUrl, outputFile, contentVersion.ContentDocumentId, contentVersion.Id, '', Number(contentVersion.ContentSize), contentVersion.Checksum);
   }
   // Build stats & result
   private async buildResult() {
-    const connAny = this.conn as any;
-    const apiCallsRemaining = connAny?.limitInfo?.apiUsage?.used
-      ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
-      : null;
+    // Get final API usage from the limits manager
+    const finalUsage = await this.apiLimitsManager.getFinalUsage();
+
+    // Display final API usage summary
+    try {
+      const finalApiUsage = await this.getApiUsageStatus();
+      uxLog("success", this, c.green(`Export completed! Final API usage: ${finalApiUsage.message}`));
+    } catch (error) {
+      uxLog("warning", this, c.yellow(`Could not retrieve final API usage: ${(error as Error).message}`));
+    }
 
     const result = {
       stats: {
+        filesValidated: this.filesValidated,
         filesDownloaded: this.filesDownloaded,
         filesErrors: this.filesErrors,
         filesIgnoredType: this.filesIgnoredType,
         filesIgnoredExisting: this.filesIgnoredExisting,
         filesIgnoredSize: this.filesIgnoredSize,
-        totalSoqlRequests: this.totalSoqlRequests,
+        filesValidationErrors: this.filesValidationErrors,
+        totalRestApiCalls: this.totalRestApiCalls,
+        totalBulkApiCalls: this.totalBulkApiCalls,
         totalParentRecords: this.totalParentRecords,
         parentRecordsWithFiles: this.parentRecordsWithFiles,
         recordsIgnored: this.recordsIgnored,
-        apiLimit: connAny?.limitInfo?.apiUsage?.limit || null,
-        apiUsedBefore: this.apiUsedBefore,
-        apiUsedAfter: connAny?.limitInfo?.apiUsage?.used || null,
-        apiCallsRemaining,
+        restApiUsedBefore: finalUsage.restUsed,
+        restApiUsedAfter: finalUsage.restUsed,
+        restApiLimit: finalUsage.restLimit,
+        restApiCallsRemaining: finalUsage.restRemaining,
+        bulkApiUsedBefore: finalUsage.bulkUsed,
+        bulkApiUsedAfter: finalUsage.bulkUsed,
+        bulkApiLimit: finalUsage.bulkLimit,
+        bulkApiCallsRemaining: finalUsage.bulkRemaining,
       },
       logFile: this.logFile
     };
@@ -748,8 +966,9 @@ export class FilesImporter {
   private filesOverwritten = 0;
   private filesErrors = 0;
   private filesSkipped = 0;
-  private apiUsedBefore: number = 0;
-  private apiLimit: number = 0;
+
+  // Optimized API Limits Management System
+  private apiLimitsManager: ApiLimitsManager;
 
   constructor(
     filesPath: string,
@@ -765,6 +984,9 @@ export class FilesImporter {
     if (options.exportConfig) {
       this.dtl = options.exportConfig;
     }
+
+    // Initialize the optimized API limits manager
+    this.apiLimitsManager = new ApiLimitsManager(conn, commandThis);
 
     // Initialize log file path
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
@@ -967,10 +1189,8 @@ export class FilesImporter {
 
   // Build stats & result
   private async buildResult() {
-    const connAny = this.conn as any;
-    const apiCallsRemaining = connAny?.limitInfo?.apiUsage?.used
-      ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
-      : null;
+    // Get final API usage from the limits manager
+    const finalUsage = await this.apiLimitsManager.getFinalUsage();
 
     const result = {
       stats: {
@@ -980,10 +1200,14 @@ export class FilesImporter {
         filesSkipped: this.filesSkipped,
         totalFolders: this.totalFolders,
         totalFiles: this.totalFiles,
-        apiLimit: this.apiLimit,
-        apiUsedBefore: this.apiUsedBefore,
-        apiUsedAfter: connAny?.limitInfo?.apiUsage?.used || null,
-        apiCallsRemaining,
+        restApiUsedBefore: finalUsage.restUsed,
+        restApiUsedAfter: finalUsage.restUsed,
+        restApiLimit: finalUsage.restLimit,
+        restApiCallsRemaining: finalUsage.restRemaining,
+        bulkApiUsedBefore: finalUsage.bulkUsed,
+        bulkApiUsedAfter: finalUsage.bulkUsed,
+        bulkApiLimit: finalUsage.bulkLimit,
+        bulkApiCallsRemaining: finalUsage.bulkRemaining,
       },
       logFile: this.logFile
     };
@@ -991,17 +1215,16 @@ export class FilesImporter {
     return result;
   }
 
-  // Calculate API consumption
+  // Calculate API consumption using the optimized ApiLimitsManager
   private async calculateApiConsumption(totalFilesNumber) {
-    // Track API usage before process
-    const connAny = this.conn as any;
-    this.apiUsedBefore = connAny?.limitInfo?.apiUsage?.used || 0;
-    this.apiLimit = connAny?.limitInfo?.apiUsage?.limit || 0;
+    // Initialize the API limits manager
+    await this.apiLimitsManager.initialize();
 
     const bulkCallsNb = 1;
     if (this.handleOverwrite) {
       totalFilesNumber = totalFilesNumber * 2;
     }
+
     // Check if there are enough API calls available
     // Request user confirmation
     if (!isCI) {
@@ -1082,6 +1305,7 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
   const fileSizeMin = exportFileJson.fileSizeMin || 0;
   return {
     full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ''}`,
+    name: folderName,
     label: hardisLabel,
     description: hardisDescription,
     soqlQuery: soqlQuery,

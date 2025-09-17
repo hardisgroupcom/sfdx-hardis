@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.5.0] 2025-09-17
+
+- Files export enhancements:
+  - Resume + validate downloaded files
+  - Improves API limit handling for file export/import
+- When prompting for org url, allow to input just the domain (ex: `hardis-group`) and sfdx-hardis will build the rest of the url
+
 ## [6.4.4] 2025-09-16
 
 - When prompting for org instance URL, allow to copy-paste the full URL to gain time
@@ -29,7 +36,6 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Allow to override Bulk API v2 settings with env variables **BULKAPIV2_POLL_INTERVAL**, **BULKAPIV2_POLL_TIMEOUT** and **BULK_QUERY_RETRY**
 
-
 ## [6.4.0] 2025-09-08
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): New beta feature **useDeltaDeploymentWithDependencies** to add dependencies to the delta deployment package.
@@ -48,13 +54,12 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Set initPermissionSets config prop to array of strings
 - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/): Handle case where OAuth Token App menu item is not found
 
-
 ## [6.3.1] 2025-09-07
 
 - Update Grafana Home Dashboard to add Unsecure Connected Apps
 - Fix Auth configuration command for Dev Hub
 - Allow to use org shapes for scratch org creation with env variable **SCRATCH_ORG_SHAPE**
-- Replace `my.salesforce-setup.com` by `my.salesforce.com` when prompting instance URL 
+- Replace `my.salesforce-setup.com` by `my.salesforce.com` when prompting instance URL
 
 ## [6.3.0] 2025-09-06
 
