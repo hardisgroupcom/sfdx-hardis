@@ -10,6 +10,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Display the connected App XML in logs (while hiding sensitive info)
   - When production org, run the first found test class (or allow to force its selection using ENV variable `SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS` )
   - Add instructions to use ghcr.io Docker image in case of rate limits reached on Docker Hub
+- Handle progress component in UI when generating documentation
 
 ## [6.5.0] 2025-09-17
 

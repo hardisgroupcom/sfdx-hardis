@@ -432,6 +432,8 @@ ${Project2Markdown.htmlInstructions}
 
     // Complete generated documentation
     const apexForMenu: any = { "All Apex Classes": "apex/index.md" }
+    WebSocketClient.sendProgressStartMessage("Generating Apex documentation...", apexFiles.length);
+    let counter = 0;
     for (const apexFile of apexFiles) {
       const apexName = path.basename(apexFile, ".cls").replace(".trigger", "");
       const apexContent = await fs.readFile(apexFile, "utf8");
@@ -466,7 +468,10 @@ ${Project2Markdown.htmlInstructions}
           await generatePdfFileFromMarkdown(mdFile);
         }
       }
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter, apexFiles.length);
     }
+    WebSocketClient.sendProgressEndMessage();
     this.addNavNode("Apex", apexForMenu);
 
     // Write index file for apex folder
@@ -476,7 +481,6 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePackagesDocumentation() {
-    uxLog("action", this, c.cyan("Generating Installed Packages documentation..."));
     const packagesForMenu: any = { "All Packages": "packages/index.md" }
     // List packages
     const packages = this.sfdxHardisConfig.installedPackages || [];     // CI/CD context
@@ -493,6 +497,8 @@ ${Project2Markdown.htmlInstructions}
         packages.push(pckg);
       }
     }
+    WebSocketClient.sendProgressStartMessage("Generating Installed Packages documentation...", packages.length);
+    let counter = 0;
     // Process packages
     for (const pckg of packages) {
       const packageName = pckg.SubscriberPackageName;
@@ -528,18 +534,23 @@ ${Project2Markdown.htmlInstructions}
       if (mdFileBad !== mdFile && fs.existsSync(mdFileBad)) {
         await fs.remove(mdFileBad);
       }
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter, packages.length);
     }
     this.addNavNode("Packages", packagesForMenu);
     // Write index file for packages folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "packages"));
     const packagesIndexFile = path.join(this.outputMarkdownRoot, "packages", "index.md");
     await fs.writeFile(packagesIndexFile, getMetaHideLines() + DocBuilderPackage.buildIndexTable('', this.packageDescriptions).join("\n") + `\n\n${this.footer}\n`);
+    WebSocketClient.sendProgressEndMessage();
   }
 
   private async generatePagesDocumentation() {
     const packageDirs = this.project?.getPackageDirectories() || [];
     const pageFiles = await listPageFiles(packageDirs);
     const pagesForMenu: any = { "All Lightning pages": "pages/index.md" }
+    WebSocketClient.sendProgressStartMessage("Generating Lightning Pages documentation...", pageFiles.length);
+    let counter = 0;
     for (const pagefile of pageFiles) {
       const pageName = path.basename(pagefile, ".flexipage-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "pages", pageName + ".md");
@@ -556,7 +567,10 @@ ${Project2Markdown.htmlInstructions}
       if (this.withPdf) {
         await generatePdfFileFromMarkdown(mdFile);
       }
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter, pageFiles.length);
     }
+    WebSocketClient.sendProgressEndMessage();
     this.addNavNode("Lightning Pages", pagesForMenu);
 
     // Write index file for pages folder
@@ -570,6 +584,8 @@ ${Project2Markdown.htmlInstructions}
     const profilesForMenu: any = { "All Profiles": "profiles/index.md" };
     const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(profilesFiles);
+    WebSocketClient.sendProgressStartMessage("Generating Profiles documentation...", profilesFiles.length);
+    let counter = 0;
     for (const profileFile of profilesFiles) {
       const profileName = path.basename(profileFile, ".profile-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "profiles", profileName + ".md");
@@ -586,7 +602,10 @@ ${Project2Markdown.htmlInstructions}
       if (this.withPdf) {
         await generatePdfFileFromMarkdown(mdFile);
       }
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter, profilesFiles.length);
     }
+    WebSocketClient.sendProgressEndMessage();
     this.addNavNode("Profiles", profilesForMenu);
     // Write index file for profiles folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "profiles"));
@@ -599,6 +618,8 @@ ${Project2Markdown.htmlInstructions}
     const psForMenu: any = { "All Permission Sets": "permissionsets/index.md" };
     const psFiles = (await glob("**/permissionsets/**.permissionset-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(psFiles);
+    WebSocketClient.sendProgressStartMessage("Generating Permission Sets documentation...", psFiles.length);
+    let counter = 0;
     for (const psFile of psFiles) {
       const psName = path.basename(psFile, ".permissionset-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "permissionsets", psName + ".md");
@@ -618,7 +639,10 @@ ${Project2Markdown.htmlInstructions}
       if (this.withPdf) {
         await generatePdfFileFromMarkdown(mdFile);
       }
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter, psFiles.length);
     }
+    WebSocketClient.sendProgressEndMessage();
     this.addNavNode("Permission Sets", psForMenu);
     // Write index file for permission sets folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "permissionsets"));
@@ -631,6 +655,8 @@ ${Project2Markdown.htmlInstructions}
     const psgForMenu: any = { "All Permission Set Groups": "permissionsetgroups/index.md" };
     const psgFiles = (await glob("**/permissionsetgroups/**.permissionsetgroup-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }))
     sortCrossPlatform(psgFiles);
+    WebSocketClient.sendProgressStartMessage("Generating Permission Set Groups documentation...", psgFiles.length);
+    let counter = 0;
     for (const psgFile of psgFiles) {
       const psgName = path.basename(psgFile, ".permissionsetgroup-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "permissionsetgroups", psgName + ".md");
@@ -650,7 +676,10 @@ ${Project2Markdown.htmlInstructions}
       if (this.withPdf) {
         await generatePdfFileFromMarkdown(mdFile);
       }
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter, psgFiles.length);
     }
+    WebSocketClient.sendProgressEndMessage();
     this.addNavNode("Permission Set Groups", psgForMenu);
 
     // Write index file for permission set groups folder
@@ -699,6 +728,20 @@ ${Project2Markdown.htmlInstructions}
     sortCrossPlatform(assignmentRulesFiles);
     const builder = new XMLBuilder();
 
+    // Count total rules for progress tracking
+    let totalRules = 0;
+    for (const assignmentRulesFile of assignmentRulesFiles) {
+      const assignmentRulesXml = await fs.readFile(assignmentRulesFile, "utf8");
+      const assignmentRulesXmlParsed = new XMLParser().parse(assignmentRulesXml);
+      let rulesList = assignmentRulesXmlParsed?.AssignmentRules?.assignmentRule || [];
+      if (!Array.isArray(rulesList)) {
+        rulesList = [rulesList];
+      }
+      totalRules += rulesList.length;
+    }
+
+    WebSocketClient.sendProgressStartMessage("Generating Assignment Rules documentation...", totalRules);
+    let counter = 0;
     for (const assignmentRulesFile of assignmentRulesFiles) {
 
       const assignmentRulesXml = await fs.readFile(assignmentRulesFile, "utf8");
@@ -727,8 +770,11 @@ ${Project2Markdown.htmlInstructions}
         if (this.withPdf) {
           await generatePdfFileFromMarkdown(mdFile);
         }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, totalRules);
       }
     }
+    WebSocketClient.sendProgressEndMessage();
 
     this.addNavNode("Assignment Rules", assignmentRulesForMenu);
 
@@ -748,6 +794,8 @@ ${Project2Markdown.htmlInstructions}
     }));
     sortCrossPlatform(approvalProcessFiles);
 
+    WebSocketClient.sendProgressStartMessage("Generating Approval Processes documentation...", approvalProcessFiles.length);
+    let counter = 0;
     for (const approvalProcessFile of approvalProcessFiles) {
       const approvalProcessName = path.basename(approvalProcessFile, ".approvalProcess-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "approvalProcesses", approvalProcessName + ".md");
@@ -766,7 +814,10 @@ ${Project2Markdown.htmlInstructions}
       if (this.withPdf) {
         await generatePdfFileFromMarkdown(mdFile);
       }
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter, approvalProcessFiles.length);
     }
+    WebSocketClient.sendProgressEndMessage();
 
     this.addNavNode("Approval Processes", approvalProcessesForMenu);
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "approvalProcesses"));
@@ -786,6 +837,20 @@ ${Project2Markdown.htmlInstructions}
     sortCrossPlatform(autoResponseRulesFiles);
     const builder = new XMLBuilder();
 
+    // Count total rules for progress tracking
+    let totalRules = 0;
+    for (const autoResponseRulesFile of autoResponseRulesFiles) {
+      const autoResponseRulesXml = await fs.readFile(autoResponseRulesFile, "utf8");
+      const autoResponseRulesXmlParsed = new XMLParser().parse(autoResponseRulesXml);
+      let rulesList = autoResponseRulesXmlParsed?.AutoResponseRules?.autoResponseRule || [];
+      if (!Array.isArray(rulesList)) {
+        rulesList = [rulesList];
+      }
+      totalRules += rulesList.length;
+    }
+
+    WebSocketClient.sendProgressStartMessage("Generating AutoResponse Rules documentation...", totalRules);
+    let counter = 0;
     for (const autoResponseRulesFile of autoResponseRulesFiles) {
 
       const autoResponseRulesXml = await fs.readFile(autoResponseRulesFile, "utf8");
@@ -815,8 +880,11 @@ ${Project2Markdown.htmlInstructions}
         if (this.withPdf) {
           await generatePdfFileFromMarkdown(mdFile);
         }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, totalRules);
       }
     }
+    WebSocketClient.sendProgressEndMessage();
     this.addNavNode("AutoResponse Rules", autoResponseRulesForMenu);
 
     // Write index file for permission set groups folder
@@ -837,6 +905,21 @@ ${Project2Markdown.htmlInstructions}
     sortCrossPlatform(escalationRulesFiles);
     const builder = new XMLBuilder();
 
+    // Count total rules for progress tracking
+    let totalRules = 0;
+    for (const escalationRulesFile of escalationRulesFiles) {
+      const escalationRulesXml = await fs.readFile(escalationRulesFile, "utf8");
+      const escalationRulesXmlParsed = new XMLParser().parse(escalationRulesXml);
+      let rulesList = escalationRulesXmlParsed?.EscalationRules?.escalationRule || [];
+      if (!Array.isArray(rulesList)) {
+        rulesList = [rulesList];
+      }
+      totalRules += rulesList.length;
+    }
+
+    WebSocketClient.sendProgressStartMessage("Generating Escalation Rules documentation...", totalRules);
+
+    let counter = 0;
     for (const escalationRulesFile of escalationRulesFiles) {
 
       const escalationRulesXml = await fs.readFile(escalationRulesFile, "utf8");
@@ -851,6 +934,9 @@ ${Project2Markdown.htmlInstructions}
       }
 
       for (const rule of rulesList) {
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter);
+
         const currentRuleName = escalationRulesName + "." + rule?.fullName;
         escalationRulesForMenu[currentRuleName] = "escalationRules/" + currentRuleName + ".md";
         const mdFile = path.join(this.outputMarkdownRoot, "escalationRules", currentRuleName + ".md");
@@ -868,6 +954,8 @@ ${Project2Markdown.htmlInstructions}
         }
       }
     }
+
+    WebSocketClient.sendProgressEndMessage();
 
     this.addNavNode("Escalation Rules", escalationRulesForMenu);
 
@@ -1033,10 +1121,14 @@ ${Project2Markdown.htmlInstructions}
     const objectLinksInfo = await this.generateLinksInfo();
     const objectsForMenu: any = { "All objects": "objects/index.md" }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
+    WebSocketClient.sendProgressStartMessage("Generating Objects documentation...", this.objectFiles.length);
+    let counter = 0;
     for (const objectFile of this.objectFiles) {
       const objectName = path.basename(objectFile, ".object");
       if ((objectName.endsWith("__dlm") || objectName.endsWith("__dll")) && !(process.env?.INCLUDE_DATA_CLOUD_DOC === "true")) {
         uxLog("log", this, c.grey(`Skip Data Cloud Object ${objectName}... (use INCLUDE_DATA_CLOUD_DOC=true to enforce it)`));
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, this.objectFiles.length);
         continue;
       }
       uxLog("log", this, c.grey(`Generating markdown for Object ${objectName}...`));
@@ -1098,7 +1190,10 @@ ${Project2Markdown.htmlInstructions}
       if (this.withPdf) {
         await generatePdfFileFromMarkdown(objectMdFile);
       }
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter, this.objectFiles.length);
     }
+    WebSocketClient.sendProgressEndMessage();
     this.addNavNode("Objects", objectsForMenu);
 
     // Write index file for objects folder
@@ -1117,7 +1212,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateLinksInfo(): Promise<string> {
-    uxLog("action", this, c.cyan("Generate MasterDetail and Lookup infos to provide context to AI prompt"));
+    uxLog("log", this, c.cyan("Generate MasterDetail and Lookup infos to provide context to AI prompt"));
     const findFieldsPattern = `**/objects/**/fields/**.field-meta.xml`;
     const matchingFieldFiles = (await glob(findFieldsPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).map(file => file.replace(/\\/g, '/'));
     const customFieldsLinks: string[] = [];
@@ -1158,6 +1253,8 @@ ${Project2Markdown.htmlInstructions}
       flowDeps[flowName] = extractedNames;
     }
     // Generate Flows documentation
+    WebSocketClient.sendProgressStartMessage("Generating Flows documentation...", flowFiles.length);
+    let counter = 0;
     for (const flowFile of flowFiles) {
       const flowName = path.basename(flowFile, ".flow-meta.xml");
       const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
@@ -1173,12 +1270,16 @@ ${Project2Markdown.htmlInstructions}
       const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", flowName + ".md");
       if (this.diffOnly && !updatedFlowNames.includes(flowName) && fs.existsSync(outputFlowMdFile)) {
         flowSkips.push(flowFile);
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, flowFiles.length);
         continue;
       }
       uxLog("log", this, c.grey(`Generating markdown for Flow ${flowFile}...`));
       const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFlowMdFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: flowDeps });
       if (!genRes) {
         flowErrors.push(flowFile);
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, flowFiles.length);
         continue;
       }
       if (this.debugMode) {
@@ -1187,9 +1288,14 @@ ${Project2Markdown.htmlInstructions}
       const gen2res = await generateMarkdownFileWithMermaid(outputFlowMdFile, outputFlowMdFile, null, this.withPdf);
       if (!gen2res) {
         flowWarnings.push(flowFile);
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, flowFiles.length);
         continue;
       }
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter, flowFiles.length);
     }
+    WebSocketClient.sendProgressEndMessage();
     this.flowDescriptions = sortArray(this.flowDescriptions, { by: ['object', 'name'], order: ['asc', 'asc'] }) as any[]
 
     // History
@@ -1352,6 +1458,19 @@ ${Project2Markdown.htmlInstructions}
 
     const packageDirs = this.project?.getPackageDirectories() || [];
 
+    // Count total LWC components for progress tracking
+    let totalLwcComponents = 0;
+    for (const packageDir of packageDirs) {
+      const lwcMetaFiles = await glob(`${packageDir.path}/**/lwc/**/*.js-meta.xml`, {
+        cwd: process.cwd(),
+        ignore: GLOB_IGNORE_PATTERNS
+      });
+      totalLwcComponents += lwcMetaFiles.length;
+    }
+
+    WebSocketClient.sendProgressStartMessage("Generating Lightning Web Components documentation...", totalLwcComponents);
+
+    let counter = 0;
     // Find all LWC components in all package directories
     for (const packageDir of packageDirs) {
       // Find LWC components (directories with .js-meta.xml files)
@@ -1361,6 +1480,9 @@ ${Project2Markdown.htmlInstructions}
       });
 
       for (const lwcMetaFile of lwcMetaFiles) {
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter);
+
         const lwcDirPath = path.dirname(lwcMetaFile);
         const lwcName = path.basename(lwcDirPath);
         const mdFile = path.join(this.outputMarkdownRoot, "lwc", lwcName + ".md");
@@ -1414,6 +1536,8 @@ ${Project2Markdown.htmlInstructions}
         }
       }
     }
+
+    WebSocketClient.sendProgressEndMessage();
 
     this.addNavNode("Lightning Web Components", lwcForMenu);
 
