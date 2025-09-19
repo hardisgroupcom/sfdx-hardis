@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/) enhancements:
+  - Creates the 'force-app/main/default' directory if it doesn't exist before retrieving metadatas
+- [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/):
+  - Display the connected App XML in logs (while hiding sensitive info)
+  - When production org, run the first found test class (or allow to force its selection using ENV variable `SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS` )
+  - Add instructions to use ghcr.io Docker image in case of rate limits reached on Docker Hub
+
 ## [6.5.0] 2025-09-17
 
 - Files export enhancements:
