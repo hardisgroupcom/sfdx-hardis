@@ -54,7 +54,8 @@ pipeline {
             stage('Validation') {
                 agent {
                     docker {
-                        image 'hardisgroupcom/sfdx-hardis:latest'
+                        // If rate limits reached, use ghcr.io/hardisgroupcom/sfdx-hardis:latest
+                        image 'hardisgroupcom/sfdx-hardis:latest' 
                     }
                 }
                 when { changeRequest() }
@@ -74,6 +75,7 @@ pipeline {
             stage('Deployment') {
                 agent {
                     docker {
+                        // If rate limits reached, use ghcr.io/hardisgroupcom/sfdx-hardis:latest
                         image 'hardisgroupcom/sfdx-hardis:latest'
                     }
                 }

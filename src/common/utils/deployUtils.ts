@@ -999,10 +999,11 @@ export async function deployMetadatas(
     debug: false,
     targetUsername: null,
     tryOnce: false,
+    runTests: null,
   }
 ) {
   // Perform deployment
-  const deployCommand =
+  let deployCommand =
     `sf project deploy ${options.check ? 'validate' : 'start'}` +
     ` --metadata-dir ${options.deployDir || '.'}` +
     ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
@@ -1011,6 +1012,9 @@ export async function deployMetadatas(
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : '') +
     (options.debug ? ' --verbose' : '') +
     ' --json';
+  if (options.runTests && options.testlevel == 'RunSpecifiedTests') {
+    deployCommand += ` --tests ${options.runTests.join(',')}`;
+  }
   let deployRes;
   try {
     deployRes = await execCommand(deployCommand, this, {
