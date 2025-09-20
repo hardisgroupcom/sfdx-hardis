@@ -202,6 +202,9 @@ If Flow history doc always display a single state, you probably need to update y
       }
     }
 
+    // Create force-app/main/default if not exists
+    await fs.ensureDir(path.join(process.cwd(), 'force-app', 'main', 'default'));
+
     // Check if we have package-skip_items.xml
     if (this.full) {
       await this.extractMetadatasFull(packageXmlFullFile, flags);
