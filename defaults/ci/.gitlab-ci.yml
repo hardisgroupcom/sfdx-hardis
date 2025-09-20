@@ -20,7 +20,7 @@ stages:
 
 # Jobs are run on sfdx-hardis image, that includes all required dependencies.
 # You can use latest, beta or latest-recommended
-image: hardisgroupcom/sfdx-hardis:latest
+image: hardisgroupcom/sfdx-hardis:latest # If rate limits reached, use ghcr.io/hardisgroupcom/sfdx-hardis:latest
 
 # Force color for output logs for better readability
 variables:

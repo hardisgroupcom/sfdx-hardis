@@ -1482,6 +1482,12 @@ export async function generateSSLCertificate(
           } ...`
         )
       );
+      // Replace sensitive info in connectedAppMetadata for logging
+      const connectedAppMetadataForLog = connectedAppMetadata
+        .replace(new RegExp(consumerKey, 'g'), '***CONSUMERKEY***')
+        .replace(new RegExp(crtContent, 'g'), '***CERTIFICATE***');
+
+      uxLog("log", commandThis, c.grey(`Connected App metadatas XML:\n${connectedAppMetadataForLog}`));
       uxLog(
         "log",
         commandThis,
@@ -1490,11 +1496,30 @@ export async function generateSSLCertificate(
         ))
       );
       const isProduction = await isProductionOrg(options.targetUsername || null, { conn: conn });
-      const deployRes = await deployMetadatas({
+      const deployParams: any = {
         deployDir: tmpDirMd,
         testlevel: isProduction ? 'RunLocalTests' : 'NoTestRun',
         targetUsername: options.targetUsername ? options.targetUsername : null,
-      });
+      };
+      // If is Production org, find the first Apex test class to run
+      if (isProduction) {
+        let uniqueTestClass = process.env.SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS || null;
+        if (!uniqueTestClass) {
+          const testClasses = await conn.tooling.query(
+            "SELECT Id, Name FROM ApexClass WHERE Name LIKE '%Test%' OR Name LIKE '%test%' OR Name LIKE '%TEST%' ORDER BY Name LIMIT 1"
+          );
+          if (testClasses.totalSize > 0) {
+            uniqueTestClass = testClasses.records[0].Name;
+          }
+        }
+        if (uniqueTestClass) {
+          deployParams.testlevel = 'RunSpecifiedTests';
+          deployParams.runTests = [uniqueTestClass];
+          uxLog("log", commandThis, c.grey(`Production org detected, will run test class found ${uniqueTestClass} on deployment.
+If you want to specify a specific test class, set SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS variable`));
+        }
+      }
+      const deployRes = await deployMetadatas(deployParams);
       console.assert(deployRes.status === 0, c.red('[sfdx-hardis] Failed to deploy metadatas'));
       uxLog("action", commandThis, c.cyan(`Successfully deployed ${c.green(promptResponses.appName)} Connected App`));
       await fs.remove(tmpDirMd);
