@@ -278,7 +278,7 @@ ${this.htmlInstructions}
 
     this.tempDir = await createTempDir()
     // Convert source to metadata API format to build prompts
-    uxLog("action", this, c.cyan("Converting source to metadata API format..."));
+    uxLog("action", this, c.cyan("Converting source to metadata API format to ease the build of LLM prompts..."));
     await execCommand(`sf project convert source --metadata CustomObject --output-dir ${this.tempDir}`, this, { fail: true, output: true, debug: this.debugMode });
     this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(this.objectFiles);
@@ -384,7 +384,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateApexDocumentation() {
-    uxLog("action", this, c.cyan("Generating Apex documentation... (if you don't want it, define GENERATE_APEX_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Calling ApexDocGen to initialize Apex documentation... (if you don't want it, define GENERATE_APEX_DOC=false in your environment variables)"));
     const tempDir = await createTempDir();
     uxLog("log", this, c.grey(`Using temp directory ${tempDir}`));
     const packageDirs = this.project?.getPackageDirectories() || [];
@@ -431,6 +431,10 @@ ${Project2Markdown.htmlInstructions}
     }
 
     // Complete generated documentation
+    if (apexFiles.length === 0) {
+      uxLog("log", this, c.yellow("No Apex class found in the project"));
+      return;
+    }
     const apexForMenu: any = { "All Apex Classes": "apex/index.md" }
     WebSocketClient.sendProgressStartMessage("Generating Apex documentation...", apexFiles.length);
     let counter = 0;
@@ -580,10 +584,14 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateProfilesDocumentation() {
-    uxLog("action", this, c.cyan("Generating Profiles documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of Profiles documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
     const profilesForMenu: any = { "All Profiles": "profiles/index.md" };
     const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(profilesFiles);
+    if (profilesFiles.length === 0) {
+      uxLog("log", this, c.yellow("No profile found in the project"));
+      return;
+    }
     WebSocketClient.sendProgressStartMessage("Generating Profiles documentation...", profilesFiles.length);
     let counter = 0;
     for (const profileFile of profilesFiles) {
@@ -614,10 +622,14 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePermissionSetsDocumentation() {
-    uxLog("action", this, c.cyan("Generating Permission Sets documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of Permission Sets documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
     const psForMenu: any = { "All Permission Sets": "permissionsets/index.md" };
     const psFiles = (await glob("**/permissionsets/**.permissionset-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(psFiles);
+    if (psFiles.length === 0) {
+      uxLog("log", this, c.yellow("No permission set found in the project"));
+      return;
+    }
     WebSocketClient.sendProgressStartMessage("Generating Permission Sets documentation...", psFiles.length);
     let counter = 0;
     for (const psFile of psFiles) {
@@ -651,10 +663,14 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePermissionSetGroupsDocumentation() {
-    uxLog("action", this, c.cyan("Generating Permission Set Groups documentation..."));
+    uxLog("action", this, c.cyan("Preparing generation of Permission Set Groups documentation..."));
     const psgForMenu: any = { "All Permission Set Groups": "permissionsetgroups/index.md" };
     const psgFiles = (await glob("**/permissionsetgroups/**.permissionsetgroup-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }))
     sortCrossPlatform(psgFiles);
+    if (psgFiles.length === 0) {
+      uxLog("log", this, c.yellow("No permission set group found in the project"));
+      return;
+    }
     WebSocketClient.sendProgressStartMessage("Generating Permission Set Groups documentation...", psgFiles.length);
     let counter = 0;
     for (const psgFile of psgFiles) {
@@ -692,7 +708,10 @@ ${Project2Markdown.htmlInstructions}
     uxLog("action", this, c.cyan("Generating Roles documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
     const roleFiles = (await glob("**/roles/**.role-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(roleFiles);
-
+    if (roleFiles.length === 0) {
+      uxLog("log", this, c.yellow("No role found in the project"));
+      return;
+    }
     for (const roleFile of roleFiles) {
       const roleApiName = path.basename(roleFile, ".role-meta.xml");
       const roleXml = await fs.readFile(roleFile, "utf8");
@@ -717,7 +736,7 @@ ${Project2Markdown.htmlInstructions}
 
 
   private async generateAssignmentRulesDocumentation() {
-    uxLog("action", this, c.cyan("Generating Assignment Rules documentation... " +
+    uxLog("action", this, c.cyan("Preparing generation of Assignment Rules documentation... " +
       "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
 
     const assignmentRulesForMenu: any = { "All Assignment Rules": "assignmentRules/index.md" };
@@ -738,6 +757,11 @@ ${Project2Markdown.htmlInstructions}
         rulesList = [rulesList];
       }
       totalRules += rulesList.length;
+    }
+
+    if (totalRules === 0) {
+      uxLog("log", this, c.yellow("No assignment rule found in the project"));
+      return;
     }
 
     WebSocketClient.sendProgressStartMessage("Generating Assignment Rules documentation...", totalRules);
@@ -784,7 +808,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateApprovalProcessDocumentation() {
-    uxLog("action", this, c.cyan("Generating Approval Processes documentation... " +
+    uxLog("action", this, c.cyan("Preparing generation of Approval Processes documentation... " +
       "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
 
     const approvalProcessesForMenu: any = { "All Approval Processes": "approvalProcesses/index.md" }
@@ -794,6 +818,10 @@ ${Project2Markdown.htmlInstructions}
     }));
     sortCrossPlatform(approvalProcessFiles);
 
+    if (approvalProcessFiles.length === 0) {
+      uxLog("log", this, c.yellow("No approval process found in the project"));
+      return;
+    }
     WebSocketClient.sendProgressStartMessage("Generating Approval Processes documentation...", approvalProcessFiles.length);
     let counter = 0;
     for (const approvalProcessFile of approvalProcessFiles) {
@@ -826,7 +854,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateAutoResponseRulesDocumentation() {
-    uxLog("action", this, c.cyan("Generating AutoResponse Rules documentation... " +
+    uxLog("action", this, c.cyan("Preparing generation of AutoResponse Rules documentation... " +
       "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
 
     const autoResponseRulesForMenu: any = { "All AutoResponse Rules": "autoResponseRules/index.md" };
@@ -836,7 +864,6 @@ ${Project2Markdown.htmlInstructions}
     }));
     sortCrossPlatform(autoResponseRulesFiles);
     const builder = new XMLBuilder();
-
     // Count total rules for progress tracking
     let totalRules = 0;
     for (const autoResponseRulesFile of autoResponseRulesFiles) {
@@ -847,6 +874,11 @@ ${Project2Markdown.htmlInstructions}
         rulesList = [rulesList];
       }
       totalRules += rulesList.length;
+    }
+
+    if (totalRules === 0) {
+      uxLog("log", this, c.yellow("No auto-response rules found in the project"));
+      return;
     }
 
     WebSocketClient.sendProgressStartMessage("Generating AutoResponse Rules documentation...", totalRules);
@@ -894,7 +926,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateEscalationRulesDocumentation() {
-    uxLog("action", this, c.cyan("Generating Escalation Rules documentation... " +
+    uxLog("action", this, c.cyan("Preparing generation of Escalation Rules documentation... " +
       "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
 
     const escalationRulesForMenu: any = { "All Escalation Rules": "escalationRules/index.md" };
@@ -915,6 +947,11 @@ ${Project2Markdown.htmlInstructions}
         rulesList = [rulesList];
       }
       totalRules += rulesList.length;
+    }
+
+    if (totalRules === 0) {
+      uxLog("log", this, c.yellow("No escalation rules found in the project"));
+      return;
     }
 
     WebSocketClient.sendProgressStartMessage("Generating Escalation Rules documentation...", totalRules);
@@ -1116,7 +1153,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateObjectsDocumentation() {
-    uxLog("action", this, c.cyan("Generating Objects AI documentation... (if you don't want it, define GENERATE_OBJECTS_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of Objects AI documentation... (if you don't want it, define GENERATE_OBJECTS_DOC=false in your environment variables)"));
 
     const objectLinksInfo = await this.generateLinksInfo();
     const objectsForMenu: any = { "All objects": "objects/index.md" }
@@ -1230,7 +1267,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateFlowsDocumentation() {
-    uxLog("action", this, c.cyan("Generating Flows Visual documentation... (if you don't want it, define GENERATE_FLOW_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of Flows Visual documentation... (if you don't want it, define GENERATE_FLOW_DOC=false in your environment variables)"));
     const flowsForMenu: any = { "All flows": "flows/index.md" }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const packageDirs = this.project?.getPackageDirectories();
@@ -1251,6 +1288,10 @@ ${Project2Markdown.htmlInstructions}
       const regex = /<flowName>(.*?)<\/flowName>/g;
       const extractedNames = [...flowXml.matchAll(regex)].map(match => match[1]);
       flowDeps[flowName] = extractedNames;
+    }
+    if (flowFiles.length === 0) {
+      uxLog("log", this, c.yellow("No flow found in the project"));
+      return;
     }
     // Generate Flows documentation
     WebSocketClient.sendProgressStartMessage("Generating Flows documentation...", flowFiles.length);
@@ -1300,11 +1341,14 @@ ${Project2Markdown.htmlInstructions}
 
     // History
     if (this.withHistory) {
-      uxLog("action", this, c.cyan("Generating Flows Visual Git Diff History documentation..."));
+      WebSocketClient.sendProgressStartMessage("Generating Flows History documentation...", flowFiles.length);
+      let counter1 = 0;
       for (const flowFile of flowFiles) {
         const flowName = path.basename(flowFile, ".flow-meta.xml");
         const diffMdFile = path.join("docs", "flows", path.basename(flowFile).replace(".flow-meta.xml", "-history.md"));
         if (this.diffOnly && !updatedFlowNames.includes(flowName) && fs.existsSync(diffMdFile)) {
+          counter1++;
+          WebSocketClient.sendProgressStepMessage(counter1, flowFiles.length);
           continue;
         }
         try {
@@ -1312,7 +1356,10 @@ ${Project2Markdown.htmlInstructions}
         } catch (e: any) {
           uxLog("warning", this, c.yellow(`Error generating history diff markdown: ${e.message}`));
         }
+        counter1++;
+        WebSocketClient.sendProgressStepMessage(counter1, flowFiles.length);
       }
+      WebSocketClient.sendProgressEndMessage();
     }
 
     // Summary
@@ -1450,7 +1497,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateLwcDocumentation() {
-    uxLog("action", this, c.cyan("Generating Lightning Web Components documentation... " +
+    uxLog("action", this, c.cyan("Preparing generation of Lightning Web Components documentation... " +
       "(if you don't want it, define GENERATE_LWC_DOC=false in your environment variables)"));
 
     const lwcForMenu: any = { "All Lightning Web Components": "lwc/index.md" };
@@ -1466,6 +1513,10 @@ ${Project2Markdown.htmlInstructions}
         ignore: GLOB_IGNORE_PATTERNS
       });
       totalLwcComponents += lwcMetaFiles.length;
+    }
+    if (totalLwcComponents === 0) {
+      uxLog("log", this, c.yellow("No Lightning Web Component found in the project"));
+      return;
     }
 
     WebSocketClient.sendProgressStartMessage("Generating Lightning Web Components documentation...", totalLwcComponents);
