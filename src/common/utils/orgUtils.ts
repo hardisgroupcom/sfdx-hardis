@@ -168,7 +168,10 @@ export async function promptOrg(
     description: 'Choose a Salesforce org from the list of authenticated orgs',
     default: defaultOrg || '',
     choices: orgList.map((org: any) => {
-      const title = org.instanceUrl || org.username || org.alias || "ERROR";
+      let title = org.instanceUrl || org.username || org.alias || "ERROR";
+      if (org.alias && title !== org.alias) {
+        title += ` (${org.alias})`;
+      }
       const description = `Connected with ${org.username || org.alias || 'unknown user'} ` +
         (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '');
       return {
