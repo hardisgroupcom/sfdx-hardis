@@ -82,7 +82,7 @@ export async function extendPackageFileWithDependencies(
 
 async function processMetadata(
   typesToAnalyse: any,
-  typesToExctend: any,
+  typesToExtend: any,
   metadataProcessors: any,
   fullPackageFile: string
 ) {
@@ -92,7 +92,7 @@ async function processMetadata(
       for (const member of members) {
         const processors = Array.isArray(metadataProcessors[metadataType]) ? metadataProcessors[metadataType] : [metadataProcessors[metadataType]];
         for (const processor of processors) {
-          addTypeIfMissing(typesToExctend, await processor(member, fullPackageFile));
+          addTypeIfMissing(typesToExtend, await processor(member, fullPackageFile));
         }
       }
     }
