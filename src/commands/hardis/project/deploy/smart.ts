@@ -481,13 +481,15 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       await fs.copy(this.packageXmlFile, packageXmlFileDeltaDeploy);
       this.packageXmlFile = packageXmlFileDeltaDeploy;
 
-      // Update package.xml
+      // Files provided by sfdx-git-delta
       const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
+      const diffDestructiveChangesXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
 
       // Extend delta with dependencies if required
       if (process.env.USE_DELTA_DEPLOYMENT_WITH_DEPENDENCIES === 'true' || this.configInfo.useDeltaDeploymentWithDependencies === true) {
         uxLog("action", this, c.cyan('[DeltaDeployment] Extending package.xml with dependencies ...'));
-        await extendPackageFileWithDependencies(diffPackageXml, this.packageXmlFile);
+        await extendPackageFileWithDependencies(diffPackageXml, this.packageXmlFile, 'modified');
+        await extendPackageFileWithDependencies(diffDestructiveChangesXml, this.packageXmlFile, 'deleted');
       }
 
       await removePackageXmlContent(this.packageXmlFile, diffPackageXml, true, {
@@ -528,7 +530,6 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       if (this.smartDeployOptions.postDestructiveChanges) {
         const destructiveXmlFileDeploy = path.join(tmpDir, 'destructiveChanges', 'destructiveChangesDelta.xml');
         await fs.copy(this.smartDeployOptions.postDestructiveChanges, destructiveXmlFileDeploy);
-        const diffDestructiveChangesXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
         await removePackageXmlContent(destructiveXmlFileDeploy, diffDestructiveChangesXml, true, {
           debugMode: this.debugMode,
           keepEmptyTypes: false,

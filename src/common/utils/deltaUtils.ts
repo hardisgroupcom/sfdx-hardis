@@ -63,31 +63,44 @@ function createProcessor(config: {
 export async function extendPackageFileWithDependencies(
   deltaXmlFile: string,
   fullPackageFile: string,
+  deltaDestructiveXmlFile?: string
 ) {
   const languages = await getAllLanguages(fullPackageFile);
 
-  // Generic processors using the factory
-  const metadataProcessors = listMetadataProcessors(languages);
+  const modificationProcessors = listMetadataProcessors(languages, 'modified');
+  const deletionProcessors = listMetadataProcessors(languages, 'deleted');
 
-  const parsedTypes = await parsePackageXmlFile(deltaXmlFile);
-  const clonedTypes = structuredClone(parsedTypes);
+  const deltaToExtend = await parsePackageXmlFile(deltaXmlFile);
+  const destructiveTypes = deltaDestructiveXmlFile ? await parsePackageXmlFile(deltaDestructiveXmlFile) : {};
+  const clonedDeltaTypes = structuredClone(deltaToExtend);
 
-  for (const metadataType in clonedTypes) {
-    const members = clonedTypes[metadataType];
+  await processMetadata(clonedDeltaTypes, deltaToExtend, modificationProcessors, fullPackageFile);
+  await processMetadata(destructiveTypes, deltaToExtend, deletionProcessors, fullPackageFile);
+
+  await writePackageXmlFile(deltaXmlFile, deltaToExtend);
+}
+
+async function processMetadata(
+  typesToAnalyse: any,
+  typesToExctend: any,
+  metadataProcessors: any,
+  fullPackageFile: string
+) {
+  for (const metadataType in typesToAnalyse) {
+    const members = typesToAnalyse[metadataType];
     if (Object.hasOwn(metadataProcessors, metadataType)) {
       for (const member of members) {
         const processors = Array.isArray(metadataProcessors[metadataType]) ? metadataProcessors[metadataType] : [metadataProcessors[metadataType]];
         for (const processor of processors) {
-          addTypeIfMissing(parsedTypes, await processor(member, fullPackageFile));
+          addTypeIfMissing(typesToExctend, await processor(member, fullPackageFile));
         }
       }
     }
   }
-
-  await writePackageXmlFile(deltaXmlFile, parsedTypes);
 }
 
-function listMetadataProcessors(languages: string[]) {
+function listMetadataProcessors(languages: string[], deltaAction: "modified" | "deleted") {
+
   const allCustomFields = createProcessor({
     targetType: "CustomField",
     memberGenerator: async (member, _, allTypesMap) => {
@@ -155,18 +168,26 @@ function listMetadataProcessors(languages: string[]) {
   });
 
   // Map of metadata types to their processors
-  const metadataProcessors = {
-    "CustomField": [allObjectRecordTypes, allCustomMetadataRecords, dotSeparatedObjectToObjectTranslation, leadConvertSettings],
-    "CustomLabel": globalTranslations,
-    "CustomMetadata": allCustomFields,
-    "CustomObject": objectTranslations,
-    "CustomPageWebLink": globalTranslations,
-    "CustomTab": globalTranslations,
-    "Layout": dashSeparatedObjectToObjectTranslation,
-    "QuickAction": dotSeparatedObjectToObjectTranslation,
-    "RecordType": dotSeparatedObjectToObjectTranslation,
-    "ReportType": globalTranslations,
-    "ValidationRule": dotSeparatedObjectToObjectTranslation,
-  };
-  return metadataProcessors;
+  if (deltaAction === "modified") {
+    return {
+      "CustomField": [allObjectRecordTypes, allCustomMetadataRecords, dotSeparatedObjectToObjectTranslation, leadConvertSettings],
+      "CustomLabel": globalTranslations,
+      "CustomMetadata": allCustomFields,
+      "CustomObject": objectTranslations,
+      "CustomPageWebLink": globalTranslations,
+      "CustomTab": globalTranslations,
+      "Layout": dashSeparatedObjectToObjectTranslation,
+      "QuickAction": dotSeparatedObjectToObjectTranslation,
+      "RecordType": dotSeparatedObjectToObjectTranslation,
+      "ReportType": globalTranslations,
+      "ValidationRule": dotSeparatedObjectToObjectTranslation,
+    };
+  } else if (deltaAction === "deleted") {
+    return {
+      "Flow": globalTranslations,
+      "CustomApplication": globalTranslations,
+      "CustomLabel": globalTranslations,
+      "CustomTab": globalTranslations,
+    };
+  }
 }
