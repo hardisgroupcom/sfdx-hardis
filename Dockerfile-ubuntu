@@ -39,6 +39,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libatspi2.0-0 \
     libgtk-3-0 \
     libasound2t64 \
+    wget \
+    xdg-utils \
+    libvulkan1 \
     && \
     # Create python symlink for compatibility
     ln -sf /usr/bin/python3 /usr/bin/python && \
@@ -46,12 +49,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Install Node.js
     curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
     apt-get install -y nodejs && \
+    # Chrome installation 
+    wget -q -O google-chrome-stable_current_amd64.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    apt-get install -y ./google-chrome-stable_current_amd64.deb && \
+    rm google-chrome-stable_current_amd64.deb && \
     # Clean up
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Add node packages to path
 ENV PATH="/node_modules/.bin:${PATH}"
+
+# Chromium path for puppeteer
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
+ENV CHROMIUM_PATH="/usr/bin/google-chrome"
+ENV PUPPETEER_EXECUTABLE_PATH="${CHROMIUM_PATH}"
 
 ARG SFDX_CLI_VERSION=latest
 ARG SFDX_HARDIS_VERSION=latest
