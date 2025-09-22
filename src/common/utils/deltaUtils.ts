@@ -81,13 +81,13 @@ export async function extendPackageFileWithDependencies(
 }
 
 async function processMetadata(
-  typesToAnalyse: any,
+  typesToAnalyze: any,
   typesToExtend: any,
   metadataProcessors: any,
   fullPackageFile: string
 ) {
-  for (const metadataType in typesToAnalyse) {
-    const members = typesToAnalyse[metadataType];
+  for (const metadataType in typesToAnalyze) {
+    const members = typesToAnalyze[metadataType];
     if (Object.hasOwn(metadataProcessors, metadataType)) {
       for (const member of members) {
         const processors = Array.isArray(metadataProcessors[metadataType]) ? metadataProcessors[metadataType] : [metadataProcessors[metadataType]];
