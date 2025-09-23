@@ -4,7 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Display alias is org selection
+## [6.5.3] 2025-09-23
+
+- Install Chrome in Ubuntu docker image
+
+## [6.5.2] 2025-09-21
+
+- Display alias in org selection
 
 ## [6.5.1] 2025-09-20
 
