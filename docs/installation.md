@@ -10,7 +10,7 @@ Once installed, click on ![Hardis Group button](https://github.com/hardisgroupco
 
 When you are all green, you are all good 😊
 
-_You can also watch the video tuturial below_
+_You can also watch the video tutorial below_
 
 [![Installation tutorial](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/play-install-tuto.png)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
 
