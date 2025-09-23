@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update installation instructions
+
 ## [6.5.3] 2025-09-23
 
 - Install Chrome in Ubuntu docker image
