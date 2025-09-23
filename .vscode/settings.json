@@ -20,5 +20,9 @@
     "**/dist",
     "**/build"
   ],
+  "pasteImage.path": "${currentFileDir}/assets/images",
+  "pasteImage.basePath": "${currentFileDir}",
+  "pasteImage.showFilePathConfirmInputBox": true,
+  "pasteImage.filePathConfirmInputBoxMode": "onlyName",
   "workbench.colorCustomizations": {}
 }
