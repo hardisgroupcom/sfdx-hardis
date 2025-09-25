@@ -119,6 +119,7 @@ nav:
               - Delta deployments: salesforce-ci-cd-config-delta-deployment.md
               - Automated cleaning: salesforce-ci-cd-config-cleaning.md
               - Source retrieve issues: salesforce-ci-cd-retrieve.md
+              - Auxiliary repository clean up tasks: salesforce-ci-cd-manual-repo-clean.md
           - sfdx-hardis for packaging: salesforce-ci-cd-packaging.md
           - sfdx-hardis for conga: salesforce-ci-cd-conga.md
       - Setup Guide:
