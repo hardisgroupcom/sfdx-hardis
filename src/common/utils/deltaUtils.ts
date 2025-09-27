@@ -1,5 +1,10 @@
 
-import { parsePackageXmlFile, writePackageXmlFile } from './xmlUtils.js';
+import { parsePackageXmlFile, writePackageXmlFile, removePackageXmlFilesContent, appendPackageXmlFilesContent } from './xmlUtils.js';
+import { getFileAtCommit } from './gitUtils.js';
+import fs from 'fs-extra';
+import * as path from 'path';
+import { createTempDir, uxLog } from './index.js';
+import c from 'chalk';
 
 type PackageType = {
   members: string[];
@@ -190,4 +195,41 @@ function listMetadataProcessors(languages: string[], deltaAction: "modified" | "
       "CustomTab": globalTranslations,
     };
   }
+}
+
+
+export async function addModifiedPackageLines(
+  fromCommit: string,
+  toCommit: string,
+  fullPackageFile: string,
+  deploymentXmlFile: string
+) {
+  const packageFrom = (await getFileAtCommit(fromCommit, fullPackageFile)).toString();
+  const packageTo = (await getFileAtCommit(toCommit, fullPackageFile)).toString();
+
+  if (packageFrom == packageTo) {
+    uxLog("log", this, c.grey(c.italic(`Found no changes in ${fullPackageFile}`)));
+    return;
+  }
+  uxLog("action", this, c.cyan('[DeltaDeployment] Extending package.xml with manifest changes ...'));
+
+  const tmpDir = await createTempDir();
+
+  const tempFromFile = path.join(tmpDir, 'packageFrom.xml');
+  const tempToFile = path.join(tmpDir, 'packageTo.xml');
+  const tempDiffFile = path.join(tmpDir, 'packageDiff.xml');
+
+  await fs.writeFile(tempFromFile, packageFrom);
+  await fs.writeFile(tempToFile, packageTo);
+
+  const diffTypes = await removePackageXmlFilesContent(tempToFile, tempFromFile, { removedOnly: false, outputXmlFile: tempDiffFile });
+
+  if (diffTypes.length > 0) {
+    uxLog("log", this, c.grey(c.italic(`Found some added types in ${fullPackageFile}, adding them to final delta manifest.`)));
+    await appendPackageXmlFilesContent([tempDiffFile, deploymentXmlFile], deploymentXmlFile);
+  } else {
+    uxLog("log", this, c.grey(c.italic(`Found no added types in ${fullPackageFile}`)));
+  }
+
+  fs.removeSync(tmpDir);
 }
