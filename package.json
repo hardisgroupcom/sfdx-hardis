@@ -29,7 +29,7 @@
     "cosmiconfig": "^9.0.0",
     "cross-spawn": "^7.0.6",
     "csv-stringify": "^6.6.0",
-    "debug": "^4.4.1",
+    "debug": "^4.4.3",
     "diff": "^7.0.0",
     "dotenv": "^16.6.1",
     "email-validator": "^2.0.4",
