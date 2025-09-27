@@ -10,13 +10,14 @@ import { extendPackageFileWithDependencies } from '../../../src/common/utils/del
 describe('deployUtils.extendPackageFileWithDependencies', async () => {
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'extendPackageFileWithDependencies'));
   const deltaXmlFile = path.join(tmpDir, 'deltaPackage.xml');
+  const deltaDestructiveXmlFile = path.join(tmpDir, 'deltaDestructiveChanges.xml');
   const fullXmlFile = path.join(tmpDir, 'package.xml');
 
   before(async () => {
     await fs.ensureDir(tmpDir);
     fs.writeFileSync(
       fullXmlFile,
-    `<?xml version="1.0" encoding="UTF-8"?>
+      `<?xml version="1.0" encoding="UTF-8"?>
       <Package xmlns="http://soap.sforce.com/2006/04/metadata">
         <types>
           <members>Opportunity</members>
@@ -102,7 +103,7 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
           <name>CustomField</name>
         </types>
         <version>63.0</version>
-      </Package>`; 
+      </Package>`;
 
     await extendPackageFileWithDependencies(deltaXmlFile, fullXmlFile);
     await expectXmlEquals(expectedXmlString, deltaXmlFile);
@@ -143,12 +144,12 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
             <name>LeadConvertSettings</name>
         </types>
         <version>63.0</version>
-      </Package>`; 
+      </Package>`;
 
     await extendPackageFileWithDependencies(deltaXmlFile, fullXmlFile);
     await expectXmlEquals(expectedXmlString, deltaXmlFile);
   });
-  
+
   it('should add object translations to any layout', async () => {
     fs.writeFileSync(
       deltaXmlFile,
@@ -177,7 +178,7 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
           <name>CustomObjectTranslation</name>
         </types>
         <version>63.0</version>
-      </Package>`; 
+      </Package>`;
 
     await extendPackageFileWithDependencies(deltaXmlFile, fullXmlFile);
     await expectXmlEquals(expectedXmlString, deltaXmlFile);
@@ -209,12 +210,12 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
           <name>CustomObjectTranslation</name>
         </types>
         <version>63.0</version>
-      </Package>`; 
+      </Package>`;
 
     await extendPackageFileWithDependencies(deltaXmlFile, fullXmlFile);
     await expectXmlEquals(expectedXmlString, deltaXmlFile);
   });
-  
+
   it('should add object translations to any object', async () => {
     fs.writeFileSync(
       deltaXmlFile,
@@ -241,7 +242,7 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
           <name>CustomObjectTranslation</name>
         </types>
         <version>63.0</version>
-      </Package>`; 
+      </Package>`;
 
     await extendPackageFileWithDependencies(deltaXmlFile, fullXmlFile);
     await expectXmlEquals(expectedXmlString, deltaXmlFile);
@@ -273,12 +274,12 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
           <name>CustomField</name>
         </types>
         <version>63.0</version>
-      </Package>`; 
+      </Package>`;
 
     await extendPackageFileWithDependencies(deltaXmlFile, fullXmlFile);
     await expectXmlEquals(expectedXmlString, deltaXmlFile);
   });
-  
+
   it('should add global translations to custom labels', async () => {
     fs.writeFileSync(
       deltaXmlFile,
@@ -313,9 +314,46 @@ describe('deployUtils.extendPackageFileWithDependencies', async () => {
           <name>Translations</name>
         </types>
         <version>63.0</version>
-      </Package>`; 
+      </Package>`;
 
     await extendPackageFileWithDependencies(deltaXmlFile, fullXmlFile);
+    await expectXmlEquals(expectedXmlString, deltaXmlFile);
+  });
+
+  it('should add global translations when flow deleted', async () => {
+
+    fs.writeFileSync(
+      deltaXmlFile,
+      `<?xml version="1.0" encoding="UTF-8"?>
+      <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+      </Package>`,
+      'utf8'
+    );
+
+    fs.writeFileSync(
+      deltaDestructiveXmlFile,
+      `<?xml version="1.0" encoding="UTF-8"?>
+      <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+        <types>
+            <members>Flow_to_delete</members>
+            <name>Flow</name>
+        </types>
+        <version>63.0</version>
+      </Package>`,
+      'utf8'
+    );
+
+    const expectedXmlString = `<?xml version="1.0" encoding="UTF-8"?>
+      <Package xmlns="http://soap.sforce.com/2006/04/metadata">
+        <types>
+          <members>de</members>
+          <members>fr</members>
+          <name>Translations</name>
+        </types>
+        <version>63.0</version>
+      </Package>`;
+
+    await extendPackageFileWithDependencies(deltaXmlFile, fullXmlFile, deltaDestructiveXmlFile);
     await expectXmlEquals(expectedXmlString, deltaXmlFile);
   });
 
