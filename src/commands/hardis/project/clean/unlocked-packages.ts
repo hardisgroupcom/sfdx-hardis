@@ -37,10 +37,98 @@ declare type PackageMetadata = {
   SobjectType?: string;
 };
 
+type SobjectRaw = {
+  Id: string;
+  attributes?: { type?: string };
+  Name?: string;
+  FullName?: string;
+  DeveloperName?: string;
+  Metadata?: LightningComponentBundle;
+  ApiVersion?: string;
+  ManageableState?: string;
+  SobjectType?: string;
+};
+
 export default class CleanUnlockedPackages extends SfCommand<any> {
   public static title = "Clean installed unlocked packages";
 
-  public static description: string = `Clean installed unlocked packages, such as those installed from unofficialSF`;
+  public static description: string = `
+  ## Command Behavior
+
+**Finds metadata files in your local SFDX project that came from an installed unlocked package, then lets you interactively select and remove them.**
+
+This command helps you clean up source-format files that were introduced by installed unlocked packages (e.g. from unofficialSF, NebulaLogger, Testing libraries), without uninstalling anything from the org. It queries your target org to discover which metadata items belong to the selected package, maps those items to their source-format locations in your repo, and then deletes the files you choose.
+
+Key functionalities:
+
+- **Package Discovery (Org → Local):** Queries InstalledSubscriberPackage in the target org and lists packages without a namespace (typical for unlocked packages).
+- **Interactive Selection:** Prompts you to pick which unlocked package to process, then presents a checklist of local files found matching the package metadata items.
+- **Safe Clean-up** Deletes only the **local files** you select. It **does not** uninstall packages or remove components from the org.
+- **Clear Output & JSON-friendly:** Logs what was found and removed, and returns a concise summary suitable for --json consumers.
+
+Limitations:
+This command is an early iteration and does not yet cover all scenarios. Known gaps include:
+-   **Edge cases & type mappings:**\
+    Not every metadata edge case has been handled or tested. The code manually remaps:
+    -   RemoteProxy → remotesite
+    -   QuickActionDefinition → quickAction\
+        because @salesforce/source-deploy-retrieve does not return a directory for these. There are likely other types that need similar handling.
+
+-   **Unknown items (unresolvable key prefixes):**\
+    Some prefixes cannot be resolved via describeGlobal in either Rest or Tooling APIs. These items are skipped with a warning such as:\
+    'Could not find reference to the component prefix: 0A7. No items of this type fetched.'
+
+-   **API limits & batching:**\
+    There is **no in-code batching** beyond using:
+    -   Tooling Composite: '/services/data/vXX.X/tooling/composite'
+    -   SObject Collections: '/services/data/vXX.X/composite/sobjects'\
+        Composite requests are limited to **25 subrequests** While it's technically possible to nest SObject Collections inside '/services/data/vXX.X/composite' to batch multiple collection calls (up to 5), this is **not implemented** yet.
+
+-   **Large member sets (>25) get skipped if not supported by SObject Collections:**\
+    For any given type with more than 25 members, the tool attempts SObject Collections if supported; if not, the type is **skipped** and a message like\
+    'Too many members to fetch: TypeName(pfx)'\
+    is logged. This notably affects **CustomField** (not available via SObject Collections). This will ultimately be handled with a proper batching solution.
+
+-   **Fields on standard (or dependent) objects can be missed:**\
+    Custom fields on **custom objects** from the unlocked package are effectively cleaned when the object folder is removed. However, custom fields on **standard objects** (or objects from dependent packages) may be **missed** due to the batching limitation above. Also pending proper batching solution.
+
+There will be additional edge cases and unsupported types not listed here. Treat the output as advisory and review selections before deletion, as well as any skipped messages for final manual cleanup.
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+-   **Org Queries:**
+    -   InstalledSubscriberPackage to list installed packages (filtered to NamespacePrefix == null).
+    -   Package2Member to enumerate the package's members and obtain their SubjectId and SubjectKeyPrefix.
+    -   describeGlobal() (Rest API) and tooling.describeGlobal() to map **key prefixes** to sObject API names.
+
+        -   **Retrieval Strategy:**
+    -   Groups member IDs by SubjectKeyPrefix.
+    -   Chooses API per prefix:
+        -   **Tooling composite** calls to /services/data/vXX.X/tooling/sobjects/{type}/{id} (special-casing RemoteProxy and QuickActionDefinition).
+        -   **Composite sObjects** calls to /services/data/vXX.X/composite/sobjects/{sObjectName} with FIELDS(STANDARD) where supported.
+
+            -   **Type Registry:**
+    -   Uses @salesforce/source-deploy-retrieve method RegistryAccess to resolve each metadata **type** into directoryName (and strictDirectoryName when applicable).
+    -   For Custom Object sub-types, captures SobjectType to ensure removal alongside their **CustomObject** folders.
+
+        -   **File Discovery:**
+    -   Builds glob patterns like **/{directoryName}/{Name}* under the chosen root folder (default force-app).
+    -   Applies GLOB_IGNORE_PATTERNS to avoid unintended matches (e.g. node_modules, build folders).
+
+        -   **Deletion:**
+    -   Uses fs-extra.remove to delete the selected paths.
+    -   Logs each removal and prints a final summary (count and package name).
+
+        -   **Flags:**
+    -   --folder, -f (default: force-app) --- project root to scan.
+    -   --target-org (required) --- org to interrogate for packages and members.
+    -   --debug --- verbose diagnostics (e.g. registry misses or type lookups).
+    -   --skipauth, --websocket --- standard sfdx-hardis passthrough flags.
+</details>
+  `;
 
   public static examples = ["$ sfdx hardis:project:clean:unlockedpackages"];
 
@@ -194,41 +282,26 @@ export default class CleanUnlockedPackages extends SfCommand<any> {
     return packagesInProject;
   }
 
-  private preparePackageMetadata(response): Array<PackageMetadata> {
+  private preparePackageMetadata(
+    response: Array<{ body?: SobjectRaw } | SobjectRaw>
+  ): Array<PackageMetadata> {
     return response.map((entry) => {
-      const {
-        Id,
-        attributes,
-        Name,
-        FullName,
-        DeveloperName,
-        Metadata,
-        ApiVersion,
-        ManageableState,
-        SobjectType,
-      } = entry.body ?? entry;
-      const type = attributes?.type;
-      const isListView = type == "ListView";
-      let mdType = type;
-
-      try {
-        const registryType = this.registry.getTypeByName(type);
-        mdType = registryType;
-      } catch (error) {
-        console.log(error);
-      }
+      const b = (entry as any).body ?? entry;
+      const typeName = b.attributes?.type;
+      const isListView = typeName === "ListView";
+      const regType = this.registry.getTypeByName(typeName);
 
       return {
-        Id,
-        retrievedType: type,
-        type: mdType,
-        SobjectType: isListView ? SobjectType : null,
-        directoryName: mdType?.directoryName,
-        strictDirectoryName: mdType?.strictDirectoryName,
-        Name: FullName ?? Name ?? DeveloperName,
-        Metadata,
-        ApiVersion,
-        ManageableState,
+        Id: b.Id,
+        retrievedType: typeName,
+        type: regType,
+        SobjectType: isListView ? b.SobjectType : null,
+        directoryName: regType?.directoryName,
+        strictDirectoryName: regType?.strictDirectoryName,
+        Name: b.FullName ?? b.Name ?? b.DeveloperName,
+        Metadata: b.Metadata,
+        ApiVersion: b.ApiVersion,
+        ManageableState: b.ManageableState,
       };
     });
   }
@@ -315,7 +388,7 @@ export default class CleanUnlockedPackages extends SfCommand<any> {
           continue;
         }
         const url = `/composite/sobjects/${objName}`;
-        const response = await connection.requestPost(url, {
+        const response: Array<any> = await connection.requestPost(url, {
           ids: members,
           fields: ["FIELDS(STANDARD)"],
         });
