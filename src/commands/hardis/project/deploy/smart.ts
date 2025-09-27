@@ -27,7 +27,7 @@ import {
 } from '../../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { smartDeploy, removePackageXmlContent, createEmptyPackageXml } from '../../../../common/utils/deployUtils.js';
-import { extendPackageFileWithDependencies, addModifiedPackageLines } from '../../../../common/utils/deltaUtils.js';
+import { extendPackageFileWithDependencies, appendPackageModifications } from '../../../../common/utils/deltaUtils.js';
 import { isProductionOrg, promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { getApexTestClasses } from '../../../../common/utils/classUtils.js';
 import { listMajorOrgs, restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
@@ -490,7 +490,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       if (process.env.USE_DELTA_DEPLOYMENT_WITH_DEPENDENCIES === 'true' || this.configInfo.useDeltaDeploymentWithDependencies === true) {
         uxLog("action", this, c.cyan('[DeltaDeployment] Extending package.xml with dependencies ...'));
         await extendPackageFileWithDependencies(diffPackageXml, this.packageXmlFile, diffDestructiveChangesXml);
-        await addModifiedPackageLines(fromCommit, toCommit, originalPackageXml, diffPackageXml);
+        await appendPackageModifications(fromCommit, toCommit, originalPackageXml, diffPackageXml);
       }
 
       await removePackageXmlContent(this.packageXmlFile, diffPackageXml, true, {

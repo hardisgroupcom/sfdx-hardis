@@ -198,17 +198,17 @@ function listMetadataProcessors(languages: string[], deltaAction: "modified" | "
 }
 
 
-export async function addModifiedPackageLines(
+export async function appendPackageModifications(
   fromCommit: string,
   toCommit: string,
-  fullPackageFile: string,
-  deploymentXmlFile: string
+  sourcePackageFilename: string,
+  targetPackageFilename: string
 ) {
-  const packageFrom = (await getFileAtCommit(fromCommit, fullPackageFile)).toString();
-  const packageTo = (await getFileAtCommit(toCommit, fullPackageFile)).toString();
+  const packageFrom = (await getFileAtCommit(fromCommit, sourcePackageFilename)).toString();
+  const packageTo = (await getFileAtCommit(toCommit, sourcePackageFilename)).toString();
 
   if (packageFrom == packageTo) {
-    uxLog("log", this, c.grey(c.italic(`Found no changes in ${fullPackageFile}`)));
+    uxLog("log", this, c.grey(c.italic(`Found no changes in ${sourcePackageFilename}`)));
     return;
   }
   uxLog("action", this, c.cyan('[DeltaDeployment] Extending package.xml with manifest changes ...'));
@@ -225,10 +225,10 @@ export async function addModifiedPackageLines(
   const diffTypes = await removePackageXmlFilesContent(tempToFile, tempFromFile, { removedOnly: false, outputXmlFile: tempDiffFile });
 
   if (diffTypes.length > 0) {
-    uxLog("log", this, c.grey(c.italic(`Found some added types in ${fullPackageFile}, adding them to final delta manifest.`)));
-    await appendPackageXmlFilesContent([tempDiffFile, deploymentXmlFile], deploymentXmlFile);
+    uxLog("log", this, c.grey(c.italic(`Found some added types in ${sourcePackageFilename}, adding them to final delta manifest.`)));
+    await appendPackageXmlFilesContent([tempDiffFile, targetPackageFilename], targetPackageFilename);
   } else {
-    uxLog("log", this, c.grey(c.italic(`Found no added types in ${fullPackageFile}`)));
+    uxLog("log", this, c.grey(c.italic(`Found no added types in ${sourcePackageFilename}`)));
   }
 
   fs.removeSync(tmpDir);
