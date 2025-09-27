@@ -1484,8 +1484,8 @@ export async function generateSSLCertificate(
       );
       // Replace sensitive info in connectedAppMetadata for logging
       const connectedAppMetadataForLog = connectedAppMetadata
-        .replace(new RegExp(consumerKey, 'g'), '***CONSUMERKEY***')
-        .replace(new RegExp(crtContent, 'g'), '***CERTIFICATE***');
+        .replace(consumerKey, '***CONSUMERKEY_HIDDEN_FROM_LOGS***')
+        .replace(crtContent, '***CERTIFICATE_HIDDEN_FROM_LOGS***');
 
       uxLog("log", commandThis, c.grey(`Connected App metadatas XML:\n${connectedAppMetadataForLog}`));
       uxLog(
