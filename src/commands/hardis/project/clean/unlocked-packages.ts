@@ -50,7 +50,7 @@ type SobjectRaw = {
 };
 
 export default class CleanUnlockedPackages extends SfCommand<any> {
-  public static title = "Clean installed unlocked packages";
+  public static title = "Clean installed unlocked packages (beta)";
 
   public static description: string = `
   ## Command Behavior
