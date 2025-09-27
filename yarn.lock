@@ -4953,10 +4953,10 @@ chownr@^3.0.0:
   resolved "https://registry.yarnpkg.com/chownr/-/chownr-3.0.0.tgz#9855e64ecd240a9cc4267ce8a4aa5d24a1da15e4"
   integrity sha512-+IxzY9BZOQd/XuYPRmrvEVjF/nqj5kgT4kEq7VofrDoM1MxoRjEWkrCC3EtLi59TVawxTAn+orJwFQcrqEN1+g==
 
-chrome-launcher@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/chrome-launcher/-/chrome-launcher-1.2.0.tgz#bba61f558f450aef70bbda1f011c83c31c129302"
-  integrity sha512-JbuGuBNss258bvGil7FT4HKdC3SC2K7UAEUqiPy3ACS3Yxo3hAW6bvFpCu2HsIJLgTqxgEX6BkujvzZfLpUD0Q==
+chrome-launcher@^1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/chrome-launcher/-/chrome-launcher-1.2.1.tgz#a84877c123192bdadb40dc274b74caf164e98032"
+  integrity sha512-qmFR5PLMzHyuNJHwOloHPAHhbaNglkfeV/xDtt5b7xiFFyU1I+AZZX0PYseMuhenJSSirgxELYIbswcoc+5H4A==
   dependencies:
     "@types/node" "*"
     escape-string-regexp "^4.0.0"
