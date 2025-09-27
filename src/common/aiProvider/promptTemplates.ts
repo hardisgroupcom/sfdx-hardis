@@ -8,6 +8,7 @@ import { uxLog } from "../utils/index.js";
 
 export type PromptTemplate =
   "PROMPT_SOLVE_DEPLOYMENT_ERROR" |
+  "PROMPT_SOLVE_DEPLOYMENT_ERROR_WITH_MD" |
   "PROMPT_DESCRIBE_FLOW" |
   "PROMPT_DESCRIBE_FLOW_DIFF" |
   "PROMPT_DESCRIBE_OBJECT" |

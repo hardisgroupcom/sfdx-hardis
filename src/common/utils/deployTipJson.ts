@@ -4,6 +4,8 @@ import format from "string-template";
 import { getAllTips } from "./deployTipsList.js";
 import { stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
+import fs from "fs-extra";
+import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { updatePullRequestResult } from "./deployTips.js";
 import { shortenLogLines } from "./deployUtils.js";
 
@@ -234,24 +236,86 @@ async function findAiTip(error: any, alreadyProcessedErrors: string[]): Promise<
       uxLog("warning", this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
       return null;
     }
-    const prompt = buildPrompt(error);
+    // Build base variables
+    let promptKey: PromptTemplate = "PROMPT_SOLVE_DEPLOYMENT_ERROR";
+    let promptVars: any = { "ERROR": JSON.stringify(error, null, 2) };
+
+    // If enabled, try to include metadata file referenced in the component failure
     try {
-      const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_SOLVE_DEPLOYMENT_ERROR");
+      if (process.env.LLM_ADVISOR_WITH_METADATAS === "true") {
+        // Check common fields that may contain a file path
+        const possiblePaths: string[] = [];
+        if (error?.filePath) possiblePaths.push(error.filePath);
+        if (error?.fullName) possiblePaths.push(error.fullName);
+        if (error?.problem) possiblePaths.push(error.problem);
+
+        // If the error provides an explicit filePath, prefer it and skip regex detection
+        let foundPath: string | null = null;
+        if (error?.filePath) {
+          foundPath = error.filePath;
+        } else {
+          // Regex to detect metadata-like file paths (accept any extension, e.g. .cls, .js, .html, .xml, .page, etc.)
+          // We keep it permissive to match most Salesforce metadata file references in error messages.
+          const mdRegex = /([\w\-./\\]+?\.[a-zA-Z0-9_.-]{1,20})/gi;
+          for (const candidate of possiblePaths) {
+            if (!candidate) continue;
+            const match = mdRegex.exec(candidate.toString());
+            if (match && match[1]) {
+              foundPath = match[1];
+              break;
+            }
+          }
+        }
+
+        if (foundPath) {
+          // Try common resolution strategies.
+          // If filePath was provided explicitly, just try that path and a couple of straightforward variants.
+          let tryPathsBase: string[] = [];
+          if (error?.filePath) {
+            tryPathsBase = [foundPath, `./${foundPath}`, `${process.cwd()}/${foundPath}`];
+          } else {
+            tryPathsBase = [foundPath, `./${foundPath}`, `.${foundPath}`, `${process.cwd()}/${foundPath}`];
+          }
+          // Also try common Salesforce metadata companion file names, e.g. MyClass.cls -> MyClass.cls-meta.xml
+          const tryPathsMetaVariants: string[] = [];
+          for (const p of tryPathsBase) {
+            tryPathsMetaVariants.push(p);
+            tryPathsMetaVariants.push(`${p}-meta.xml`);
+            // also try with .meta.xml if someone references without the -
+            tryPathsMetaVariants.push(`${p}.meta.xml`);
+          }
+          // Deduplicate candidates while keeping order
+          const tryPaths = Array.from(new Set(tryPathsMetaVariants));
+          let absPath: string | null = null;
+          for (const p of tryPaths) {
+            if (fs.existsSync(p)) {
+              absPath = p;
+              break;
+            }
+          }
+          if (absPath) {
+            try {
+              const content = await fs.readFile(absPath, "utf8");
+              promptKey = "PROMPT_SOLVE_DEPLOYMENT_ERROR_WITH_MD" as PromptTemplate;
+              promptVars = { "ERROR": JSON.stringify(error, null, 2), "METADATA_PATH": foundPath, "METADATA_CONTENT": content };
+              uxLog("log", this, c.yellow(`[AI] Including metadata file content from ${absPath} in prompt`));
+            } catch (e) {
+              uxLog("warning", this, c.yellow(`[AI] Unable to read metadata file ${foundPath}: ${(e as Error).message}`));
+            }
+          }
+        }
+      }
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[AI] Error while preparing metadata for AI prompt: ${(e as Error).message}`));
+    }
+
+    const prompt = AiProvider.buildPrompt(promptKey as PromptTemplate, promptVars);
+    try {
+      const aiResponse = await AiProvider.promptAi(prompt, promptKey as PromptTemplate);
       return aiResponse;
     } catch (e) {
       uxLog("warning", this, c.yellow("[AI] Error while calling AI Provider: " + (e as Error).message));
     }
   }
   return null;
-}
-
-function buildPrompt(error: any) {
-  const prompt =
-    `You are a Salesforce release manager using Salesforce CLI commands to perform deployments \n` +
-    `How to solve the following Salesforce deployment error ?\n` +
-    "- Please answer using sfdx source format, not metadata format. \n" +
-    "- Please provide XML example if applicable. \n" +
-    "- Please skip the part of the response about how to retrieve or deploy the changes with Salesforce CLI.\n" +
-    `The error is: \n${JSON.stringify(error, null, 2)}`;
-  return prompt;
 }
