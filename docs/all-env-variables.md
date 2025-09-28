@@ -12,25 +12,35 @@ This list has been generated with GitHub Copilot so if you see any incoherence p
 
 ## Table of Contents
 
-1. [Custom sfdx-hardis Variables](#custom-sfdx-hardis-variables)
+- [All Environment Variables](#all-environment-variables)
+- [Table of Contents](#table-of-contents)
+
+- [Custom sfdx-hardis Variables](#custom-sfdx-hardis-variables)
+
    - [Salesforce Configuration](#salesforce-configuration)
    - [Deployment Control](#deployment-control)
-   - [Monitoring & Debugging](#monitoring--debugging)
+   - [Monitoring & Debugging](#monitoring-debugging)
    - [System Configuration](#system-configuration)
    - [Bulk API Settings](#bulk-api-settings)
-   
-2. [Tool-Specific Variables](#tool-specific-variables)
+
+- [Tool-Specific Variables](#tool-specific-variables)
    - [Azure DevOps](#azure-devops)
    - [GitLab](#gitlab)
    - [GitHub](#github)
    - [Bitbucket](#bitbucket)
    - [JIRA Integration](#jira-integration)
    - [Slack Integration](#slack-integration)
-   - [AI Provider (OpenAI)](#ai-provider-openai)
+   - [AI Common variables](#ai-common-variables)
+   - [MegaLinter LLM Advisor](#megalinter-llm-advisor)
+   - [Agentforce (Salesforce) integration](#agentforce-salesforce-integration)
+   - [LangChain integration (OpenAI, Anthropic, Gemini...)](#langchain-integration-openai-anthropic-gemini)
+   - [OpenAI (direct) variables](#openai-direct-variables)
    - [Email Notifications](#email-notifications)
    - [Browser Automation](#browser-automation)
    - [Generic Ticketing](#generic-ticketing)
    - [Generic CI/CD](#generic-cicd)
+   
+- [Summary](#summary)
 
 ---
 
@@ -160,12 +170,59 @@ These variables integrate sfdx-hardis with external tools and platforms.
 | **SLACK_CHANNEL_ID_{BRANCH}**        | Branch-specific Slack channel ID                     | `undefined`   | Valid Slack channel IDs (e.g., `'C1234567890'` for main branch)  | [`src/common/notifProvider/slackProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/slackProvider.ts)                                                                                                                                   |
 | **SLACK_TOKEN**                      | Slack API token for notifications                    | `undefined`   | Valid Slack bot tokens (e.g., `'xoxb-XXXXXXXXXXXXXXXXXXXXXXXX'`) | [`src/common/notifProvider/slackProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/slackProvider.ts), [`src/common/notifProvider/utils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/utils.ts) |
 
-### AI Provider (OpenAI)
+### AI Common variables
 
-| Variable Name              | Description                                  | Default Value             | Possible Values                                                                       | Usage Location                                                                                                             |
-|----------------------------|----------------------------------------------|---------------------------|---------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
-| **AI_MAX_TIMEOUT_MINUTES** | Maximum timeout in minutes for AI operations | `30` (in CI), `0` (local) | Positive integers (e.g., `30`, `60`)                                                  | [`src/common/aiProvider/index.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/index.ts) |
-| **OPENAI_API_KEY**         | OpenAI API key for AI operations             | `undefined`               | Valid OpenAI API keys (e.g., `'sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'`) | [`src/common/aiProvider/index.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/index.ts) |
+| Variable Name               | Description                                                                 | Default Value | Possible Values                                                                 | Usage Location                                                                                                               |
+|-----------------------------|-----------------------------------------------------------------------------|---------------|---------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| **AI_MAXIMUM_CALL_NUMBER**  | Maximum allowed number of calls to AI Providers during a single command     | `10000`       | Any positive integer (e.g., `1000`, `10000`)                                   | [`src/common/aiProvider/aiProviderRoot.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/aiProviderRoot.ts) |
+| **PROMPTS_LANGUAGE**        | Language to use for prompts results (`en`,`fr`, ISO codes)                 | `en`          | Any ISO language code (e.g., `en`, `fr`, `de`)                                 | Prompt templates & generation code                                                                                            |
+| **DEBUG_PROMPTS**           | Show prompt requests/responses in logs (useful for debugging)              | `false`       | `'true'`, `'false'`                                                             | AI prompt/debug flows                                                                                                         |
+| **MAX_DEPLOYMENT_TIPS_AI_CALLS** | Max number of deployment errors analyzed by AI for a single Pull Request | `20`          | Positive integers (e.g., `5`, `20`)                                             | [`src/common/utils/deployTips.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/deployTips.ts)         |
+| **DISABLE_AI**              | Disable external AI API calls while keeping configuration                   | `false`       | `'true'`, `'false'`                                                             | All AI provider selection logic                                                                                               |
+| **IGNORE_AI_CACHE**         | Disable use of AI prompt cache files to force fresh API calls              | `false`       | `'true'`, `'false'`                                                             | Features that cache AI results                                                                                                |
+| **AI_MAX_TIMEOUT_MINUTES**  | Maximum timeout in minutes for AI operations                               | `30` (in CI), `0` (local) | Positive integers (e.g., `30`, `60`)                                      | [`src/common/aiProvider/index.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/index.ts) |
+
+### MegaLinter LLM Advisor
+
+| Variable Name                 | Description                                                                 | Default     | Possible Values                                           | Usage Location                                                                                                   |
+|-------------------------------|-----------------------------------------------------------------------------|-------------|-----------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| **LLM_ADVISOR_ENABLED**       | Toggle enabling the external LLM advisor used by linters/workflows         | `undefined` | `'true'`, `'false'`                                       | `.github/workflows/mega-linter.yml`, linters                                                                 |
+| **LLM_ADVISOR_LEVEL**         | Advisor severity level for linter suggestions                              | `undefined` | `info`, `warning`, `error`                                | `.mega-linter.yml`                                                                                             |
+| **LLM_PROVIDER**              | Name of the LLM provider used by linters/CI                                | `undefined` | `openai`, `anthropic`, `google-genai`, `ollama`, etc.     | `.mega-linter.yml`, CI configs                                                                                  |
+| **LLM_MODEL_NAME**            | Model identifier used by the LLM advisor                                   | `undefined` | Provider-specific model names (e.g., `gpt-4o`, `claude-2`) | `.mega-linter.yml`, CI configs                                                                                  |
+| **LLM_MAX_TOKENS**            | Maximum tokens to use for LLM advisor requests                             | `undefined` | Positive integer                                          | `.mega-linter.yml`, CI configs                                                                                  |
+| **LLM_TEMPERATURE**           | Sampling temperature for LLM advisor requests                              | `undefined` | 0..1                                                     | `.mega-linter.yml`, CI configs                                                                                  |
+| **LLM_ADVISOR_WITH_METADATAS**| Opt-in: include Salesforce metadata file contents when calling the LLM advisor | `false`     | `'true'`, `'false'`                                       | `src/common/utils/deployTipJson.ts` (opt-in behavior; requires enabling in CI or env)                           |
+| **LLM_METADATA_SEARCH_PATHS** | Optional: comma-separated additional paths to search for metadata files    | `undefined` | Comma-separated paths (e.g., `config/,src/`)              | Used by metadata-aware AI flows to extend search roots (suggested usage)
+
+### Agentforce (Salesforce) integration
+
+| Variable Name                          | Description                                                                                       | Default | Possible Values                                                                 | Usage Location                                                                                                               |
+|----------------------------------------|---------------------------------------------------------------------------------------------------|---------|---------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| **USE_AGENTFORCE**                     | Enable use of Agentforce prompts (Salesforce-hosted prompts)                                     | `false` | `'true'`, `'false'`                                                             | [`src/common/aiProvider/agentforceProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/agentforceProvider.ts) |
+| **GENERIC_AGENTFORCE_PROMPT_TEMPLATE** | Name of Agentforce prompt template (Flex) to use                                                  | `SfdxHardisGenericPrompt` | Any Agentforce prompt template name                                           | Agentforce integration                                                                                                         |
+| **GENERIC_AGENTFORCE_PROMPT_URL**      | Override URL for the Agentforce prompt generation endpoint                                        | `/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{GENERIC_AGENTFORCE_PROMPT_TEMPLATE}}/generations` | URL string | Agentforce integration                                                                                                         |
+| **SFDX_AUTH_URL_TECHNICAL_ORG**        | (Optional) Auth URL for a technical org to use when calling Agentforce                            | `undefined` | Salesforce auth URL                                                             | Agentforce / auth flows                                                                                                       |
+
+### LangChain integration (OpenAI, Anthropic, Gemini...)
+
+| Variable Name                    | Description                                                      | Default | Possible Values                                                                 | Usage Location                                                                                                               |
+|----------------------------------|------------------------------------------------------------------|---------|---------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| **USE_LANGCHAIN_LLM**            | Enable LangChain-based LLM provider integration                   | `false` | `'true'`, `'false'`                                                             | [`src/common/aiProvider/langchainProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/langchainProvider.ts) |
+| **LANGCHAIN_LLM_PROVIDER**       | LangChain provider to use (e.g., `ollama`, `openai`, `anthropic`, `google-genai`) |         | `ollama`, `openai`, `anthropic`, `google-genai`                                | LangChain configuration                                                                                                       |
+| **LANGCHAIN_LLM_MODEL**          | Model identifier to use with the selected provider               |         | Provider-specific model names (e.g., `gpt-4o`, `qwen2.5-coder:14b`)            | LangChain configuration                                                                                                       |
+| **LANGCHAIN_LLM_MODEL_API_KEY**  | API key / credentials for the chosen LangChain provider          |         | API key string                                                                   | LangChain configuration                                                                                                       |
+| **LANGCHAIN_LLM_TEMPERATURE**    | Sampling temperature for LangChain requests                      |         | 0..1                                                                             | LangChain configuration                                                                                                       |
+| **LANGCHAIN_LLM_MAX_TOKENS**     | Maximum tokens to generate for LangChain responses               |         | Positive integer                                                                 | LangChain configuration                                                                                                       |
+| **LANGCHAIN_LLM_MAX_RETRIES**    | Number of retries for failed LangChain requests                  |         | Positive integer                                                                 | LangChain configuration                                                                                                       |
+| **LANGCHAIN_LLM_BASE_URL**       | Base URL for LangChain HTTP-based providers (e.g., Ollama)       | `http://localhost:11434` | URL string                                                              | LangChain / Ollama examples                                                                                                   |
+
+### OpenAI (direct) variables
+
+| Variable Name       | Description                                           | Default       | Possible Values                                                       | Usage Location                                                                                                               |
+|---------------------|-------------------------------------------------------|---------------|-----------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| **OPENAI_API_KEY**  | OpenAI API key for AI operations                      | `undefined`   | Valid OpenAI API keys                                                  | [`src/common/aiProvider/index.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/index.ts) |
+| **OPENAI_MODEL**    | OpenAI model to use for prompts                       | `gpt-4o-mini` | OpenAI model names (e.g., `gpt-4o-mini`, `gpt-4o`, `gpt-4o-mini-3b`)   | OpenAI-specific configuration                                                                                                 |
 
 ### Email Notifications
 
@@ -200,9 +257,9 @@ These variables integrate sfdx-hardis with external tools and platforms.
 
 ## Summary
 
-This documentation covers **64 environment variables** used throughout sfdx-hardis:
+This documentation covers **182 environment variables** used throughout sfdx-hardis:
 
 - **Custom sfdx-hardis Variables**: 26 variables controlling native behavior
-- **Tool-Specific Variables**: 38 variables for external integrations
+- **Tool-Specific Variables**: 156 variables for external integrations
 
 The variables are organized by functionality to help developers and administrators understand their purpose and configure them appropriately for their environments.
