@@ -146,11 +146,11 @@ sf hardis:<COMMAND> <OPTIONS>
 
 ### Trailblazer User Group '25, Casablanca
 
-Salesforce Org Documentation with Open-Source and Agentforce, by [Taha Basri (Salesforce)](https://www.linkedin.com/in/tahabasri/)
+Salesforce Org Documentation with Open-Source and Agentforce, by [Taha Basri](https://www.linkedin.com/in/tahabasri/)
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/casa-user-group-docgen.png)
 
-### Trailblazer User Group '25, Berlin (online)
+### Trailblazer Developer Group '25, Berlin (online)
 
 Summer of Docs – Auto-Document Your Salesforce Org Like a Pro, by [Mariaa Pyvovarchuk](https://www.linkedin.com/in/mpyvo/) (Aspect) and [Roman Hentschke](https://www.linkedin.com/in/derroman/)
 
