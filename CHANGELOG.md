@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update global variables documentation to add AI related ones
+- Add more events about sfdx-hardis in the documentation
+
 ## [6.5.4] 2025-09-27
 
 - Update installation instructions
