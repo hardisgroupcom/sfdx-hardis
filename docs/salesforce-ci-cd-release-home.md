@@ -13,6 +13,7 @@ The release manager(s) responsibilities are:
 - [Validate users merge requests](salesforce-ci-cd-validate-merge-request.md)
 - [Proceed deployments to major branches/org (UAT,Preprod,Production...)](salesforce-ci-cd-deploy-major-branches.md)
 - [Configure CI/CD project](salesforce-ci-cd-config-home.md)
+- [Auxiliary repository clean up tasks](salesforce-ci-cd-manual-repo-clean.md)
 
 You can also see specific use cases documentation
 

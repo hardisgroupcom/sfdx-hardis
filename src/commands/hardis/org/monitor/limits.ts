@@ -78,7 +78,7 @@ The command's technical implementation involves:
   protected static triggerNotification = true;
 
   protected limitThresholdWarning = Number(getEnvVar('LIMIT_THRESHOLD_WARNING') || 50.0);
-  protected limitThresholdError = Number(getEnvVar('LIMIT_THRESHOLD_WARNING') || 75.0);
+  protected limitThresholdError = Number(getEnvVar('LIMIT_THRESHOLD_ERROR') || 75.0);
 
   protected limitEntries: any[] = [];
   protected outputFile;
