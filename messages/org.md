@@ -220,3 +220,23 @@ Also connect associated DevHub
 # runtests
 
 Apex test classes to run if --testlevel is RunSpecifiedTests
+
+# decomposedMetadata
+
+Decompose complex metadata types into smaller components
+
+# decomposedMetadataBehavior
+
+Decomposition behavior to use (decomposePermissionSetBeta2 or decomposeCustomLabelsBeta2)
+
+# sourceDir
+
+Source directory containing metadata to decompose
+
+# targetDir
+
+Target directory for decomposed metadata
+
+# autoConfirm
+
+Automatically confirm decomposition without prompting
