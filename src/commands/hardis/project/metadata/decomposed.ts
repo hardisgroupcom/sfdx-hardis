@@ -88,10 +88,12 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
     const results: {
       success: boolean;
       behavior: string;
+      cancelled: boolean;
       errors: string[];
     } = {
       success: true,
       behavior: flags.behavior,
+      cancelled: false,
       errors: []
     };
 
@@ -104,10 +106,18 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
       });
 
       // Determine which decomposition function to call based on behavior flag
+      let operationResult;
       if (flags.behavior === 'decomposeCustomLabelsBeta2') {
-        await this.decomposeCustomLabels(flags);
+        operationResult = await this.decomposeCustomLabels(flags);
       } else if (flags.behavior === 'decomposePermissionSetBeta2') {
-        await this.decomposePermissionSets(flags);
+        operationResult = await this.decomposePermissionSets(flags);
+      }
+
+      // Check if operation was cancelled
+      if (operationResult && operationResult.cancelled) {
+        results.cancelled = true;
+        // No need to show success message if cancelled
+        return results;
       }
 
       // Send success status to UI
@@ -145,7 +155,7 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
     return results;
   }
 
-  private async decomposeCustomLabels(flags: any): Promise<void> {
+  private async decomposeCustomLabels(flags: any): Promise<{ cancelled: boolean }> {
     uxLog("action", this, c.cyan('Preparing to decompose Custom Labels...'));
 
     // Update UI status
@@ -164,7 +174,7 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
         icon: 'warning'
       });
       uxLog("warning", this, c.yellow(`Custom Labels file not found at ${customLabelsPath}`));
-      return;
+      return { cancelled: true };
     }
 
     // Always confirm with user
@@ -185,7 +195,7 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
         icon: 'x-circle'
       });
       uxLog("warning", this, c.yellow('Operation cancelled by user'));
-      return;
+      return { cancelled: true };
     }
 
     // Update UI status
@@ -216,6 +226,7 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
       });
 
       uxLog("success", this, c.green(`Successfully decomposed Custom Labels`));
+      return { cancelled: false };
     } catch (error: any) {
       this.sendWebSocketStatus({
         status: 'error',
@@ -228,7 +239,7 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
     }
   }
 
-  private async decomposePermissionSets(flags: any): Promise<void> {
+  private async decomposePermissionSets(flags: any): Promise<{ cancelled: boolean }> {
     uxLog("action", this, c.cyan('Preparing to decompose Permission Sets...'));
 
     // Update UI status
@@ -248,7 +259,7 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
       });
 
       uxLog("warning", this, c.yellow(`Permission Sets directory not found at ${permissionSetsDir}`));
-      return;
+      return { cancelled: true };
     }
 
     // Always confirm with user
@@ -270,7 +281,7 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
       });
 
       uxLog("warning", this, c.yellow('Operation cancelled by user'));
-      return;
+      return { cancelled: true };
     }
 
     // Update UI status
@@ -301,6 +312,7 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
       });
 
       uxLog("success", this, c.green(`Successfully decomposed Permission Sets`));
+      return { cancelled: false };
     } catch (error: any) {
       this.sendWebSocketStatus({
         status: 'error',
