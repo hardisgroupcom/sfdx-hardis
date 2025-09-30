@@ -5,18 +5,25 @@
 
 **Manage decomposed metadata types in Salesforce DX projects.**
 
-This command helps manage decomposed metadata types such as CustomLabels and PermissionSet that can be split into multiple files in source format.
+This command helps manage decomposed metadata types that can be split into multiple files in source format. It automatically decomposes all supported metadata types that exist in your project.
+
+Supported metadata types (Beta):
+- CustomLabels
+- PermissionSet
+- ExternalServiceRegistration
+- SharingRules
+- Workflow
 
 Key features:
-- Decompose CustomLabels into individual files using decomposeCustomLabelsBeta2 behavior
-- Decompose PermissionSets using the decomposePermissionSetBeta2 behavior
+- Automatically detects and decomposes all applicable metadata types
+- Decomposes only metadata types that exist in your project
 - Interactive confirmation for decomposition operations
+- Handles all confirmation prompts automatically
 
 ## Parameters
 
 | Name                  |  Type   | Description                                                   | Default                | Required | Options                                              |
 |:----------------------|:-------:|:--------------------------------------------------------------|:----------------------:|:--------:|:----------------------------------------------------:|
-| behavior<br/>-b       | option  | Decomposition behavior to use                                 |                        | true     | decomposePermissionSetBeta2, decomposeCustomLabelsBeta2 |
 | debug<br/>-d          | boolean | Run command in debug mode                                     | false                  |          |                                                      |
 | json                  | boolean | Format output as json.                                        |                        |          |                                                      |
 | skipauth              | boolean | Skip authentication check when a default username is required |                        |          |                                                      |
@@ -25,9 +32,9 @@ Key features:
 ## Examples
 
 ```shell
-$ sf hardis:project:metadata:decomposed --behavior decomposePermissionSetBeta2
+$ sf hardis:project:metadata:decomposed
 ```
 
 ```shell
-$ sf hardis:project:metadata:decomposed --behavior decomposeCustomLabelsBeta2
+$ sf hardis:project:metadata:decomposed --debug
 ```

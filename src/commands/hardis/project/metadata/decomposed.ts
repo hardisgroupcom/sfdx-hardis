@@ -12,6 +12,43 @@ import { WebSocketClient } from '../../../../common/websocketClient.js';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
+// Define metadata types and their corresponding behaviors
+interface MetadataTypeConfig {
+  name: string;
+  behavior: string;
+  directory: string;
+  filePattern?: string;
+}
+
+const METADATA_TYPES: MetadataTypeConfig[] = [
+  {
+    name: 'CustomLabels',
+    behavior: 'decomposeCustomLabelsBeta2',
+    directory: 'labels',
+    filePattern: 'CustomLabels.labels-meta.xml'
+  },
+  {
+    name: 'PermissionSet',
+    behavior: 'decomposePermissionSetBeta2',
+    directory: 'permissionsets'
+  },
+  {
+    name: 'ExternalServiceRegistration',
+    behavior: 'decomposeExternalServiceRegistrationBeta',
+    directory: 'externalServiceRegistrations'
+  },
+  {
+    name: 'SharingRules',
+    behavior: 'decomposeSharingRulesBeta',
+    directory: 'sharingRules'
+  },
+  {
+    name: 'Workflow',
+    behavior: 'decomposeWorkflowBeta',
+    directory: 'workflows'
+  }
+];
+
 export default class DecomposedMetadata extends SfCommand<any> {
   public static title = 'Decomposed Metadata (Beta)';
   public static description = `
@@ -19,12 +56,20 @@ export default class DecomposedMetadata extends SfCommand<any> {
 
 **Manage decomposed metadata types in Salesforce DX projects.**
 
-This command helps manage decomposed metadata types such as CustomLabels and PermissionSet that can be split into multiple files in source format.
+This command helps manage decomposed metadata types that can be split into multiple files in source format. It automatically decomposes all supported metadata types that exist in your project.
+
+Supported metadata types (Beta):
+- CustomLabels
+- PermissionSet
+- ExternalServiceRegistration
+- SharingRules
+- Workflow
 
 Key features:
-- Decompose CustomLabels into individual files using decomposeCustomLabelsBeta2 behavior
-- Decompose PermissionSets using the decomposePermissionSetBeta2 behavior
+- Automatically detects and decomposes all applicable metadata types
+- Decomposes only metadata types that exist in your project
 - Interactive confirmation for decomposition operations
+- Handles all confirmation prompts automatically
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -33,23 +78,22 @@ This command utilizes Salesforce CLI's decomposed metadata feature to split comp
 
 - **CustomLabels**: Each custom label becomes a separate file, making it easier to track changes and manage translations.
 - **PermissionSets**: Permission sets are decomposed into multiple files based on the permissions they contain (field permissions, object permissions, etc.).
+- **ExternalServiceRegistration**: Decomposes external service registrations.
+- **SharingRules**: Decomposes sharing rules into individual components.
+- **Workflow**: Decomposes workflow rules into individual components.
 
 The command wraps the underlying Salesforce CLI functionality and provides a more user-friendly interface with additional validation and error handling.
+
+Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 </details>
 `;
 
   public static examples = [
-    '$ sf hardis:project:metadata:decomposed --behavior decomposePermissionSetBeta2',
-    '$ sf hardis:project:metadata:decomposed --behavior decomposeCustomLabelsBeta2'
+    '$ sf hardis:project:metadata:decomposed',
+    '$ sf hardis:project:metadata:decomposed --debug'
   ];
 
   public static flags: any = {
-    behavior: Flags.string({
-      char: 'b',
-      description: 'Decomposition behavior to use',
-      options: ['decomposePermissionSetBeta2', 'decomposeCustomLabelsBeta2'],
-      required: true
-    }),
     debug: Flags.boolean({
       char: 'd',
       description: 'Run command in debug mode',
@@ -83,17 +127,17 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
       });
     }
 
-    uxLog("action", this, c.cyan(`Starting metadata decomposition with behavior: ${c.green(flags.behavior)}`));
+    uxLog("action", this, c.cyan(`Starting metadata decomposition for all applicable metadata types`));
 
     const results: {
       success: boolean;
-      behavior: string;
       cancelled: boolean;
+      decomposedTypes: string[];
       errors: string[];
     } = {
       success: true,
-      behavior: flags.behavior,
       cancelled: false,
+      decomposedTypes: [],
       errors: []
     };
 
@@ -101,33 +145,81 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
       // Send initial status to UI
       this.sendWebSocketStatus({
         status: 'running',
-        message: `Preparing to decompose metadata using ${flags.behavior}`,
+        message: `Preparing to decompose metadata`,
         icon: 'sync'
       });
 
-      // Determine which decomposition function to call based on behavior flag
-      let operationResult;
-      if (flags.behavior === 'decomposeCustomLabelsBeta2') {
-        operationResult = await this.decomposeCustomLabels(flags);
-      } else if (flags.behavior === 'decomposePermissionSetBeta2') {
-        operationResult = await this.decomposePermissionSets(flags);
+      // Detect which metadata types exist in the project
+      const applicableTypes = await this.detectApplicableMetadataTypes();
+
+      if (applicableTypes.length === 0) {
+        uxLog("warning", this, c.yellow(`No supported metadata types found in this project`));
+        this.sendWebSocketStatus({
+          status: 'warning',
+          message: `No supported metadata types found in this project`,
+          icon: 'warning'
+        });
+        return { success: false, message: 'No supported metadata types found' };
       }
 
-      // Check if operation was cancelled
-      if (operationResult && operationResult.cancelled) {
+      // Build confirmation message with list of applicable types
+      const metadataTypesList = applicableTypes.map(type => `- ${type.name}`).join('\n');
+      const confirmMessage = `Are you sure you want to decompose these metadata types (this feature is still in beta)?\n\n${metadataTypesList}`;
+
+      // Ask for confirmation
+      const confirmed = await this.promptConfirmation({
+        title: 'Confirm Metadata Decomposition',
+        message: confirmMessage,
+        confirmLabel: 'Yes, decompose',
+        cancelLabel: 'Cancel',
+        icon: 'help-circle'
+      });
+
+      if (!confirmed) {
+        uxLog("warning", this, c.yellow('Operation cancelled by user'));
+        this.sendWebSocketStatus({
+          status: 'warning',
+          message: 'Metadata decomposition cancelled by user',
+          icon: 'x-circle'
+        });
         results.cancelled = true;
-        // No need to show success message if cancelled
         return results;
       }
 
-      // Send success status to UI
-      this.sendWebSocketStatus({
-        status: 'success',
-        message: `Successfully decomposed metadata using ${flags.behavior}`,
-        icon: 'check-circle'
-      });
+      // Process each applicable metadata type
+      for (const metadataType of applicableTypes) {
+        const operationResult = await this.decomposeMetadataType(metadataType, flags);
 
-      uxLog("success", this, c.green(`Successfully decomposed metadata using ${flags.behavior}`));
+        if (operationResult.success) {
+          results.decomposedTypes.push(metadataType.name);
+        } else if (operationResult.error) {
+          results.errors.push(`${metadataType.name}: ${operationResult.error}`);
+        }
+      }
+
+      // Send success status to UI if any types were decomposed
+      if (results.decomposedTypes.length > 0) {
+        this.sendWebSocketStatus({
+          status: 'success',
+          message: `Successfully decomposed: ${results.decomposedTypes.join(', ')}`,
+          icon: 'check-circle'
+        });
+
+        uxLog("success", this, c.green(`Successfully decomposed: ${results.decomposedTypes.join(', ')}`));
+      } else {
+        this.sendWebSocketStatus({
+          status: 'warning',
+          message: `No metadata types were decomposed`,
+          icon: 'warning'
+        });
+
+        uxLog("warning", this, c.yellow(`No metadata types were decomposed`));
+      }
+
+      // Log errors if any
+      if (results.errors.length > 0) {
+        uxLog("error", this, c.red(`Errors occurred during decomposition:\n${results.errors.join('\n')}`));
+      }
     } catch (error: any) {
       results.success = false;
       if (Array.isArray(results.errors)) {
@@ -155,145 +247,53 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
     return results;
   }
 
-  private async decomposeCustomLabels(flags: any): Promise<{ cancelled: boolean }> {
-    uxLog("action", this, c.cyan('Preparing to decompose Custom Labels...'));
+  /**
+   * Detect which metadata types exist in the project
+   */
+  private async detectApplicableMetadataTypes(): Promise<MetadataTypeConfig[]> {
+    const applicableTypes: MetadataTypeConfig[] = [];
 
-    // Update UI status
-    this.sendWebSocketStatus({
-      status: 'running',
-      message: 'Checking for Custom Labels files...',
-      icon: 'search'
-    });
+    for (const metadataType of METADATA_TYPES) {
+      const directory = path.join('force-app', 'main', 'default', metadataType.directory);
 
-    // Check if CustomLabels.labels-meta.xml exists
-    const customLabelsPath = path.join('force-app', 'main', 'default', 'labels', 'CustomLabels.labels-meta.xml');
-    if (!fs.existsSync(customLabelsPath)) {
-      this.sendWebSocketStatus({
-        status: 'warning',
-        message: `Custom Labels file not found at ${customLabelsPath}`,
-        icon: 'warning'
-      });
-      uxLog("warning", this, c.yellow(`Custom Labels file not found at ${customLabelsPath}`));
-      return { cancelled: true };
+      if (fs.existsSync(directory)) {
+        // If a specific file pattern is defined, check if it exists
+        if (metadataType.filePattern) {
+          const filePath = path.join(directory, metadataType.filePattern);
+          if (fs.existsSync(filePath)) {
+            applicableTypes.push(metadataType);
+          }
+        } else {
+          // Otherwise, check if directory has any files
+          const files = fs.readdirSync(directory);
+          if (files.length > 0) {
+            applicableTypes.push(metadataType);
+          }
+        }
+      }
     }
 
-    // Always confirm with user
-    const confirmOptions = {
-      title: 'Confirm Custom Labels Decomposition',
-      message: `Are you sure you want to decompose Custom Labels?`,
-      confirmLabel: 'Yes, decompose',
-      cancelLabel: 'Cancel',
-      icon: 'help-circle'
-    };
-
-    const confirmed = await this.promptConfirmation(confirmOptions);
-
-    if (!confirmed) {
-      this.sendWebSocketStatus({
-        status: 'warning',
-        message: 'Custom Labels decomposition cancelled by user',
-        icon: 'x-circle'
-      });
-      uxLog("warning", this, c.yellow('Operation cancelled by user'));
-      return { cancelled: true };
-    }
-
-    // Update UI status
-    this.sendWebSocketStatus({
-      status: 'running',
-      message: 'Decomposing Custom Labels...',
-      icon: 'refresh'
-    });
-
-    // Run sf project convert source-behavior command
-    const command = `sf project convert source-behavior` +
-      ` --behavior ${flags.behavior}`;
-
-    try {
-      // Use echo y to automatically answer "y" to the confirmation prompt
-      const commandWithAutoConfirm = `echo y | ${command}`;
-      uxLog("action", this, c.cyan(`Executing: ${command} (with auto-confirmation)`));
-      await execCommand(commandWithAutoConfirm, this, {
-        fail: true,
-        output: true,
-        debug: flags.debug
-      });
-
-      this.sendWebSocketStatus({
-        status: 'success',
-        message: `Successfully decomposed Custom Labels`,
-        icon: 'check-circle'
-      });
-
-      uxLog("success", this, c.green(`Successfully decomposed Custom Labels`));
-      return { cancelled: false };
-    } catch (error: any) {
-      this.sendWebSocketStatus({
-        status: 'error',
-        message: `Error decomposing Custom Labels: ${error?.message || 'Unknown error'}`,
-        icon: 'error'
-      });
-
-      uxLog("error", this, c.red(`Error decomposing Custom Labels: ${error?.message || 'Unknown error'}`));
-      throw error;
-    }
+    return applicableTypes;
   }
 
-  private async decomposePermissionSets(flags: any): Promise<{ cancelled: boolean }> {
-    uxLog("action", this, c.cyan('Preparing to decompose Permission Sets...'));
+  /**
+   * Decompose a specific metadata type
+   */
+  private async decomposeMetadataType(
+    metadataType: MetadataTypeConfig,
+    flags: any
+  ): Promise<{ success: boolean; error?: string }> {
+    uxLog("action", this, c.cyan(`Preparing to decompose ${metadataType.name}...`));
 
     // Update UI status
     this.sendWebSocketStatus({
       status: 'running',
-      message: 'Checking for Permission Sets files...',
-      icon: 'search'
-    });
-
-    // Check if permissionsets directory exists
-    const permissionSetsDir = path.join('force-app', 'main', 'default', 'permissionsets');
-    if (!fs.existsSync(permissionSetsDir)) {
-      this.sendWebSocketStatus({
-        status: 'warning',
-        message: `Permission Sets directory not found at ${permissionSetsDir}`,
-        icon: 'warning'
-      });
-
-      uxLog("warning", this, c.yellow(`Permission Sets directory not found at ${permissionSetsDir}`));
-      return { cancelled: true };
-    }
-
-    // Always confirm with user
-    const confirmOptions = {
-      title: 'Confirm Permission Sets Decomposition',
-      message: `Are you sure you want to decompose Permission Sets?`,
-      confirmLabel: 'Yes, decompose',
-      cancelLabel: 'Cancel',
-      icon: 'help-circle'
-    };
-
-    const confirmed = await this.promptConfirmation(confirmOptions);
-
-    if (!confirmed) {
-      this.sendWebSocketStatus({
-        status: 'warning',
-        message: 'Permission Sets decomposition cancelled by user',
-        icon: 'x-circle'
-      });
-
-      uxLog("warning", this, c.yellow('Operation cancelled by user'));
-      return { cancelled: true };
-    }
-
-    // Update UI status
-    this.sendWebSocketStatus({
-      status: 'running',
-      message: 'Decomposing Permission Sets...',
+      message: `Decomposing ${metadataType.name}...`,
       icon: 'refresh'
     });
 
     // Run sf project convert source-behavior command
-    const command = `sf project convert source-behavior` +
-      ` --behavior ${flags.behavior}`;
+    const command = `sf project convert source-behavior --behavior ${metadataType.behavior}`;
 
     try {
       // Use echo y to automatically answer "y" to the confirmation prompt
@@ -307,21 +307,21 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
 
       this.sendWebSocketStatus({
         status: 'success',
-        message: `Successfully decomposed Permission Sets`,
+        message: `Successfully decomposed ${metadataType.name}`,
         icon: 'check-circle'
       });
 
-      uxLog("success", this, c.green(`Successfully decomposed Permission Sets`));
-      return { cancelled: false };
+      uxLog("success", this, c.green(`Successfully decomposed ${metadataType.name}`));
+      return { success: true };
     } catch (error: any) {
       this.sendWebSocketStatus({
         status: 'error',
-        message: `Error decomposing Permission Sets: ${error?.message || 'Unknown error'}`,
+        message: `Error decomposing ${metadataType.name}: ${error?.message || 'Unknown error'}`,
         icon: 'error'
       });
 
-      uxLog("error", this, c.red(`Error decomposing Permission Sets: ${error?.message || 'Unknown error'}`));
-      throw error;
+      uxLog("error", this, c.red(`Error decomposing ${metadataType.name}: ${error?.message || 'Unknown error'}`));
+      return { success: false, error: error?.message || 'Unknown error' };
     }
   }
 
