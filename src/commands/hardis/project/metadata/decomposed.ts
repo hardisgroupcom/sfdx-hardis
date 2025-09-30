@@ -174,9 +174,9 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         }
       }
 
-      // Build confirmation message with list of applicable types (each on a new line)
-      const metadataTypesList = applicableTypes.map(type => `- ${type.name}`).join('\n');
-      const confirmMessage = `Are you sure you want to decompose these metadata types?\n\n${metadataTypesList}`;
+      // Build confirmation message with comma-separated list of metadata types
+      const metadataTypesList = applicableTypes.map(type => type.name).join(', ');
+      const confirmMessage = `Are you sure you want to decompose these metadata types: ${metadataTypesList}?`;
 
       // Ask for confirmation
       const confirmed = await this.promptConfirmation({
