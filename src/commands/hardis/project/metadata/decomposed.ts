@@ -80,16 +80,13 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
     this.configInfo = await getConfig('user');
 
     // Initialize WebSocket client for UI integration
-    if (flags.websocket) {
+    if (flags.websocket && typeof flags.websocket === 'string') {
       this.webSocketClient = new WebSocketClient({
         websocketHostPort: flags.websocket,
         command: 'hardis:project:metadata:decomposed',
         id: Date.now().toString()
       });
     }
-
-    // Ensure target directory exists
-    await fs.ensureDir(flags['target-dir']);
 
     uxLog("action", this, c.cyan(`Starting metadata decomposition with behavior: ${c.green(flags.behavior)}`));
 
