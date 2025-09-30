@@ -228,8 +228,3 @@ Decompose complex metadata types into smaller components
 # decomposedMetadataBehavior
 
 Decomposition behavior to use (decomposePermissionSetBeta2 or decomposeCustomLabelsBeta2)
-
-
-# autoConfirm
-
-Automatically confirm decomposition without prompting

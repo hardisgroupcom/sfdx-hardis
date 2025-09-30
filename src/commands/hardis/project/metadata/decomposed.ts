@@ -50,11 +50,6 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
       options: ['decomposePermissionSetBeta2', 'decomposeCustomLabelsBeta2'],
       required: true
     }),
-    'auto-confirm': Flags.boolean({
-      char: 'y',
-      description: 'Automatically confirm decomposition without prompting',
-      default: false
-    }),
     debug: Flags.boolean({
       char: 'd',
       description: 'Run command in debug mode',
@@ -172,28 +167,25 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
       return;
     }
 
-    // Confirm with user unless auto-confirm is set
-    if (!flags['auto-confirm']) {
-      // Send confirmation request to UI
-      const confirmOptions = {
-        title: 'Confirm Custom Labels Decomposition',
-        message: `Are you sure you want to decompose Custom Labels?`,
-        confirmLabel: 'Yes, decompose',
-        cancelLabel: 'Cancel',
-        icon: 'help-circle'
-      };
+    // Always confirm with user
+    const confirmOptions = {
+      title: 'Confirm Custom Labels Decomposition',
+      message: `Are you sure you want to decompose Custom Labels?`,
+      confirmLabel: 'Yes, decompose',
+      cancelLabel: 'Cancel',
+      icon: 'help-circle'
+    };
 
-      const confirmed = await this.promptConfirmation(confirmOptions);
+    const confirmed = await this.promptConfirmation(confirmOptions);
 
-      if (!confirmed) {
-        this.sendWebSocketStatus({
-          status: 'warning',
-          message: 'Custom Labels decomposition cancelled by user',
-          icon: 'x-circle'
-        });
-        uxLog("warning", this, c.yellow('Operation cancelled by user'));
-        return;
-      }
+    if (!confirmed) {
+      this.sendWebSocketStatus({
+        status: 'warning',
+        message: 'Custom Labels decomposition cancelled by user',
+        icon: 'x-circle'
+      });
+      uxLog("warning", this, c.yellow('Operation cancelled by user'));
+      return;
     }
 
     // Update UI status
@@ -205,12 +197,13 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
 
     // Run sf project convert source-behavior command
     const command = `sf project convert source-behavior` +
-      ` --behavior ${flags.behavior}` +
-      (flags['auto-confirm'] ? ' --no-prompt' : '');
+      ` --behavior ${flags.behavior}`;
 
     try {
-      uxLog("action", this, c.cyan(`Executing: ${command}`));
-      await execCommand(command, this, {
+      // Use echo y to automatically answer "y" to the confirmation prompt
+      const commandWithAutoConfirm = `echo y | ${command}`;
+      uxLog("action", this, c.cyan(`Executing: ${command} (with auto-confirmation)`));
+      await execCommand(commandWithAutoConfirm, this, {
         fail: true,
         output: true,
         debug: flags.debug
@@ -258,29 +251,26 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
       return;
     }
 
-    // Confirm with user unless auto-confirm is set
-    if (!flags['auto-confirm']) {
-      // Send confirmation request to UI
-      const confirmOptions = {
-        title: 'Confirm Permission Sets Decomposition',
-        message: `Are you sure you want to decompose Permission Sets?`,
-        confirmLabel: 'Yes, decompose',
-        cancelLabel: 'Cancel',
-        icon: 'help-circle'
-      };
+    // Always confirm with user
+    const confirmOptions = {
+      title: 'Confirm Permission Sets Decomposition',
+      message: `Are you sure you want to decompose Permission Sets?`,
+      confirmLabel: 'Yes, decompose',
+      cancelLabel: 'Cancel',
+      icon: 'help-circle'
+    };
 
-      const confirmed = await this.promptConfirmation(confirmOptions);
+    const confirmed = await this.promptConfirmation(confirmOptions);
 
-      if (!confirmed) {
-        this.sendWebSocketStatus({
-          status: 'warning',
-          message: 'Permission Sets decomposition cancelled by user',
-          icon: 'x-circle'
-        });
+    if (!confirmed) {
+      this.sendWebSocketStatus({
+        status: 'warning',
+        message: 'Permission Sets decomposition cancelled by user',
+        icon: 'x-circle'
+      });
 
-        uxLog("warning", this, c.yellow('Operation cancelled by user'));
-        return;
-      }
+      uxLog("warning", this, c.yellow('Operation cancelled by user'));
+      return;
     }
 
     // Update UI status
@@ -292,12 +282,13 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
 
     // Run sf project convert source-behavior command
     const command = `sf project convert source-behavior` +
-      ` --behavior ${flags.behavior}` +
-      (flags['auto-confirm'] ? ' --no-prompt' : '');
+      ` --behavior ${flags.behavior}`;
 
     try {
-      uxLog("action", this, c.cyan(`Executing: ${command}`));
-      await execCommand(command, this, {
+      // Use echo y to automatically answer "y" to the confirmation prompt
+      const commandWithAutoConfirm = `echo y | ${command}`;
+      uxLog("action", this, c.cyan(`Executing: ${command} (with auto-confirmation)`));
+      await execCommand(commandWithAutoConfirm, this, {
         fail: true,
         output: true,
         debug: flags.debug

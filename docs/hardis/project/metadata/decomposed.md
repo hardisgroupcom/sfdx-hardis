@@ -17,7 +17,6 @@ Key features:
 | Name                  |  Type   | Description                                                   | Default                | Required | Options                                              |
 |:----------------------|:-------:|:--------------------------------------------------------------|:----------------------:|:--------:|:----------------------------------------------------:|
 | behavior<br/>-b       | option  | Decomposition behavior to use                                 |                        | true     | decomposePermissionSetBeta2, decomposeCustomLabelsBeta2 |
-| auto-confirm<br/>-y   | boolean | Automatically confirm decomposition without prompting         | false                  |          |                                                      |
 | debug<br/>-d          | boolean | Run command in debug mode                                     | false                  |          |                                                      |
 | json                  | boolean | Format output as json.                                        |                        |          |                                                      |
 | skipauth              | boolean | Skip authentication check when a default username is required |                        |          |                                                      |
@@ -30,5 +29,5 @@ $ sf hardis:project:metadata:decomposed --behavior decomposePermissionSetBeta2
 ```
 
 ```shell
-$ sf hardis:project:metadata:decomposed --behavior decomposeCustomLabelsBeta2 --auto-confirm
+$ sf hardis:project:metadata:decomposed --behavior decomposeCustomLabelsBeta2
 ```
