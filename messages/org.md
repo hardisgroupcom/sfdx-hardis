@@ -229,13 +229,6 @@ Decompose complex metadata types into smaller components
 
 Decomposition behavior to use (decomposePermissionSetBeta2 or decomposeCustomLabelsBeta2)
 
-# sourceDir
-
-Source directory containing metadata to decompose
-
-# targetDir
-
-Target directory for decomposed metadata
 
 # autoConfirm
 

@@ -17,8 +17,6 @@ Key features:
 | Name                  |  Type   | Description                                                   | Default                | Required | Options                                              |
 |:----------------------|:-------:|:--------------------------------------------------------------|:----------------------:|:--------:|:----------------------------------------------------:|
 | behavior<br/>-b       | option  | Decomposition behavior to use                                 |                        | true     | decomposePermissionSetBeta2, decomposeCustomLabelsBeta2 |
-| source-dir<br/>-s     | option  | Source directory containing metadata to decompose             | force-app/main/default |          |                                                      |
-| target-dir<br/>-t     | option  | Target directory for decomposed metadata                      | force-app/decomposed   |          |                                                      |
 | auto-confirm<br/>-y   | boolean | Automatically confirm decomposition without prompting         | false                  |          |                                                      |
 | debug<br/>-d          | boolean | Run command in debug mode                                     | false                  |          |                                                      |
 | json                  | boolean | Format output as json.                                        |                        |          |                                                      |
@@ -32,5 +30,5 @@ $ sf hardis:project:metadata:decomposed --behavior decomposePermissionSetBeta2
 ```
 
 ```shell
-$ sf hardis:project:metadata:decomposed --behavior decomposeCustomLabelsBeta2 --source-dir force-app/main/default --target-dir force-app/decomposed
+$ sf hardis:project:metadata:decomposed --behavior decomposeCustomLabelsBeta2 --auto-confirm
 ```

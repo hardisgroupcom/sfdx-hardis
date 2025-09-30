@@ -40,7 +40,7 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
 
   public static examples = [
     '$ sf hardis:project:metadata:decomposed --behavior decomposePermissionSetBeta2',
-    '$ sf hardis:project:metadata:decomposed --behavior decomposeCustomLabelsBeta2 --source-dir force-app/main/default --target-dir force-app/decomposed'
+    '$ sf hardis:project:metadata:decomposed --behavior decomposeCustomLabelsBeta2'
   ];
 
   public static flags: any = {
@@ -49,16 +49,6 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
       description: 'Decomposition behavior to use',
       options: ['decomposePermissionSetBeta2', 'decomposeCustomLabelsBeta2'],
       required: true
-    }),
-    'source-dir': Flags.string({
-      char: 's',
-      description: 'Source directory containing metadata to decompose',
-      default: 'force-app/main/default'
-    }),
-    'target-dir': Flags.string({
-      char: 't',
-      description: 'Target directory for decomposed metadata',
-      default: 'force-app/decomposed'
     }),
     'auto-confirm': Flags.boolean({
       char: 'y',
@@ -166,9 +156,6 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
   private async decomposeCustomLabels(flags: any): Promise<void> {
     uxLog("action", this, c.cyan('Preparing to decompose Custom Labels...'));
 
-    const sourceDir = flags['source-dir'];
-    const targetDir = flags['target-dir'];
-
     // Update UI status
     this.sendWebSocketStatus({
       status: 'running',
@@ -177,7 +164,7 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
     });
 
     // Check if CustomLabels.labels-meta.xml exists
-    const customLabelsPath = path.join(sourceDir, 'labels', 'CustomLabels.labels-meta.xml');
+    const customLabelsPath = path.join('force-app', 'main', 'default', 'labels', 'CustomLabels.labels-meta.xml');
     if (!fs.existsSync(customLabelsPath)) {
       this.sendWebSocketStatus({
         status: 'warning',
@@ -193,7 +180,7 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
       // Send confirmation request to UI
       const confirmOptions = {
         title: 'Confirm Custom Labels Decomposition',
-        message: `Are you sure you want to decompose Custom Labels from ${sourceDir} to ${targetDir}?`,
+        message: `Are you sure you want to decompose Custom Labels?`,
         confirmLabel: 'Yes, decompose',
         cancelLabel: 'Cancel',
         icon: 'help-circle'
@@ -222,8 +209,6 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
     // Run sf project convert source-behavior command
     const command = `sf project convert source-behavior` +
       ` --behavior ${flags.behavior}` +
-      ` --source-dir ${sourceDir}` +
-      ` --target-dir ${targetDir}` +
       (flags['auto-confirm'] ? ' --no-prompt' : '');
 
     try {
@@ -236,11 +221,11 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
 
       this.sendWebSocketStatus({
         status: 'success',
-        message: `Successfully decomposed Custom Labels to ${targetDir}`,
+        message: `Successfully decomposed Custom Labels`,
         icon: 'check-circle'
       });
 
-      uxLog("success", this, c.green(`Successfully decomposed Custom Labels to ${targetDir}`));
+      uxLog("success", this, c.green(`Successfully decomposed Custom Labels`));
     } catch (error: any) {
       this.sendWebSocketStatus({
         status: 'error',
@@ -256,9 +241,6 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
   private async decomposePermissionSets(flags: any): Promise<void> {
     uxLog("action", this, c.cyan('Preparing to decompose Permission Sets...'));
 
-    const sourceDir = flags['source-dir'];
-    const targetDir = flags['target-dir'];
-
     // Update UI status
     this.sendWebSocketStatus({
       status: 'running',
@@ -267,7 +249,7 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
     });
 
     // Check if permissionsets directory exists
-    const permissionSetsDir = path.join(sourceDir, 'permissionsets');
+    const permissionSetsDir = path.join('force-app', 'main', 'default', 'permissionsets');
     if (!fs.existsSync(permissionSetsDir)) {
       this.sendWebSocketStatus({
         status: 'warning',
@@ -284,7 +266,7 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
       // Send confirmation request to UI
       const confirmOptions = {
         title: 'Confirm Permission Sets Decomposition',
-        message: `Are you sure you want to decompose Permission Sets from ${sourceDir} to ${targetDir}?`,
+        message: `Are you sure you want to decompose Permission Sets?`,
         confirmLabel: 'Yes, decompose',
         cancelLabel: 'Cancel',
         icon: 'help-circle'
@@ -314,8 +296,6 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
     // Run sf project convert source-behavior command
     const command = `sf project convert source-behavior` +
       ` --behavior ${flags.behavior}` +
-      ` --source-dir ${sourceDir}` +
-      ` --target-dir ${targetDir}` +
       (flags['auto-confirm'] ? ' --no-prompt' : '');
 
     try {
@@ -328,11 +308,11 @@ The command wraps the underlying Salesforce CLI functionality and provides a mor
 
       this.sendWebSocketStatus({
         status: 'success',
-        message: `Successfully decomposed Permission Sets to ${targetDir}`,
+        message: `Successfully decomposed Permission Sets`,
         icon: 'check-circle'
       });
 
-      uxLog("success", this, c.green(`Successfully decomposed Permission Sets to ${targetDir}`));
+      uxLog("success", this, c.green(`Successfully decomposed Permission Sets`));
     } catch (error: any) {
       this.sendWebSocketStatus({
         status: 'error',
