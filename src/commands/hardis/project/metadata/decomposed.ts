@@ -8,6 +8,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { isSfdxProject } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -127,7 +128,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       });
     }
 
-    uxLog("action", this, c.cyan(`Starting metadata decomposition for all applicable metadata types`));
+    uxLog("action", this, c.cyan(`Checking for metadata types eligible for decomposition (Beta feature)`));
 
     const results: {
       success: boolean;
@@ -149,22 +150,33 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         icon: 'sync'
       });
 
-      // Detect which metadata types exist in the project
+      // Detect which metadata types exist in the project and need decomposition
       const applicableTypes = await this.detectApplicableMetadataTypes();
 
       if (applicableTypes.length === 0) {
-        uxLog("warning", this, c.yellow(`No supported metadata types found in this project`));
-        this.sendWebSocketStatus({
-          status: 'warning',
-          message: `No supported metadata types found in this project`,
-          icon: 'warning'
-        });
-        return { success: false, message: 'No supported metadata types found' };
+        const existingOptions = this.getExistingSourceBehaviorOptions();
+        if (existingOptions.length > 0) {
+          uxLog("warning", this, c.yellow(`All supported metadata types are already decomposed in this project`));
+          this.sendWebSocketStatus({
+            status: 'warning',
+            message: `All supported metadata types are already decomposed in this project`,
+            icon: 'warning'
+          });
+          return { success: true, message: 'All metadata types already decomposed', alreadyDecomposed: true };
+        } else {
+          uxLog("warning", this, c.yellow(`No supported metadata types found in this project`));
+          this.sendWebSocketStatus({
+            status: 'warning',
+            message: `No supported metadata types found in this project`,
+            icon: 'warning'
+          });
+          return { success: false, message: 'No supported metadata types found' };
+        }
       }
 
-      // Build confirmation message with list of applicable types
+      // Build confirmation message with list of applicable types (each on a new line)
       const metadataTypesList = applicableTypes.map(type => `- ${type.name}`).join('\n');
-      const confirmMessage = `Are you sure you want to decompose these metadata types (this feature is still in beta)?\n\n${metadataTypesList}`;
+      const confirmMessage = `Are you sure you want to decompose these metadata types?\n\n${metadataTypesList}`;
 
       // Ask for confirmation
       const confirmed = await this.promptConfirmation({
@@ -248,12 +260,42 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
   }
 
   /**
+   * Read the sfdx-project.json file and get existing sourceBehaviorOptions
+   */
+  private getExistingSourceBehaviorOptions(): string[] {
+    if (!isSfdxProject()) {
+      return [];
+    }
+
+    try {
+      const projectJsonPath = path.join(process.cwd(), 'sfdx-project.json');
+      if (!fs.existsSync(projectJsonPath)) {
+        return [];
+      }
+
+      const projectConfig = JSON.parse(fs.readFileSync(projectJsonPath, 'utf8'));
+      return Array.isArray(projectConfig.sourceBehaviorOptions) ?
+        projectConfig.sourceBehaviorOptions : [];
+    } catch (error) {
+      // If there's an error reading the file, assume no options exist
+      return [];
+    }
+  }
+
+  /**
    * Detect which metadata types exist in the project
    */
   private async detectApplicableMetadataTypes(): Promise<MetadataTypeConfig[]> {
     const applicableTypes: MetadataTypeConfig[] = [];
+    const existingOptions = this.getExistingSourceBehaviorOptions();
 
     for (const metadataType of METADATA_TYPES) {
+      // Skip if this behavior is already in sfdx-project.json
+      if (existingOptions.includes(metadataType.behavior)) {
+        uxLog("log", this, c.grey(`Skipping ${metadataType.name}: already decomposed (${metadataType.behavior} found in sfdx-project.json)`));
+        continue;
+      }
+
       const directory = path.join('force-app', 'main', 'default', metadataType.directory);
 
       if (fs.existsSync(directory)) {
@@ -285,6 +327,13 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
   ): Promise<{ success: boolean; error?: string }> {
     uxLog("action", this, c.cyan(`Preparing to decompose ${metadataType.name}...`));
 
+    // Double-check if behavior is already in sfdx-project.json
+    const existingOptions = this.getExistingSourceBehaviorOptions();
+    if (existingOptions.includes(metadataType.behavior)) {
+      uxLog("log", this, c.grey(`Skipping ${metadataType.name}: already decomposed (${metadataType.behavior} found in sfdx-project.json)`));
+      return { success: true, error: 'Already decomposed' };
+    }
+
     // Update UI status
     this.sendWebSocketStatus({
       status: 'running',
@@ -314,6 +363,12 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       uxLog("success", this, c.green(`Successfully decomposed ${metadataType.name}`));
       return { success: true };
     } catch (error: any) {
+      // Check if error is due to behavior already existing
+      if (error?.message && error.message.includes('sourceBehaviorOptionAlreadyExists')) {
+        uxLog("log", this, c.grey(`${metadataType.name} is already decomposed (${metadataType.behavior} found in sfdx-project.json)`));
+        return { success: true, error: 'Already decomposed' };
+      }
+
       this.sendWebSocketStatus({
         status: 'error',
         message: `Error decomposing ${metadataType.name}: ${error?.message || 'Unknown error'}`,
