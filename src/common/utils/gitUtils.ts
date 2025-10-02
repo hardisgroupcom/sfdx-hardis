@@ -387,3 +387,7 @@ export function makeFileNameGitCompliant(fileName: string) {
   const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9_. -]/g, '_');
   return sanitizedFileName;
 }
+
+export function getFileAtCommit(commit: string, filePath: string) {
+  return git().show([`${commit}:${filePath}`]);
+}
