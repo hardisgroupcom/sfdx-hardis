@@ -2,7 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import c from 'chalk';
-import { execCommand, uxLog } from '../../../../common/utils/index.js';
+import { uxLog } from '../../../../common/utils/index.js';
 import { getConfig } from '../../../../config/index.js';
 import fs from 'fs-extra';
 import path from 'path';
@@ -319,6 +319,84 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
   }
 
   /**
+   * Execute a Salesforce CLI command with automatic confirmation (cross-platform)
+   * This method handles the 'y' confirmation prompt in a way that works across all operating systems
+   */
+  private async execSfCommandWithConfirmation(
+    command: string,
+    flags: any
+  ): Promise<{ stdout: string; stderr: string }> {
+    return new Promise((resolve, reject) => {
+      const { spawn } = require('child_process');
+
+      // Parse the command - split on first space to separate executable from args
+      const firstSpaceIndex = command.indexOf(' ');
+      const executable = command.substring(0, firstSpaceIndex);
+      const argsString = command.substring(firstSpaceIndex + 1);
+
+      uxLog("action", this, c.cyan(`Executing: ${command} (with auto-confirmation)`));
+
+      // Spawn the process with shell enabled for cross-platform compatibility
+      const childProcess = spawn(executable, [argsString], {
+        shell: true,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: process.env,
+        cwd: process.cwd()
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      // Collect stdout
+      childProcess.stdout.on('data', (data: Buffer) => {
+        const output = data.toString();
+        stdout += output;
+        if (flags.output || flags.debug) {
+          process.stdout.write(output);
+        }
+      });
+
+      // Collect stderr
+      childProcess.stderr.on('data', (data: Buffer) => {
+        const output = data.toString();
+        stderr += output;
+        if (flags.output || flags.debug) {
+          process.stderr.write(output);
+        }
+      });
+
+      // Automatically send 'y' followed by newline to stdin when process starts
+      // This works on all platforms (Windows CMD/PowerShell, Git Bash, Linux, macOS)
+      setTimeout(() => {
+        try {
+          childProcess.stdin.write('y\n');
+          childProcess.stdin.end();
+        } catch (e) {
+          // Ignore errors if stdin is already closed
+        }
+      }, 100); // Small delay to ensure the process is ready for input
+
+      // Handle process completion
+      childProcess.on('close', (code: number) => {
+        if (code === 0) {
+          resolve({ stdout, stderr });
+        } else {
+          const error: any = new Error(`Command failed with exit code ${code}`);
+          error.stdout = stdout;
+          error.stderr = stderr;
+          error.code = code;
+          reject(error);
+        }
+      });
+
+      // Handle process errors
+      childProcess.on('error', (error: Error) => {
+        reject(error);
+      });
+    });
+  }
+
+  /**
    * Decompose a specific metadata type
    */
   private async decomposeMetadataType(
@@ -345,14 +423,8 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     const command = `sf project convert source-behavior --behavior ${metadataType.behavior}`;
 
     try {
-      // Use echo y to automatically answer "y" to the confirmation prompt
-      const commandWithAutoConfirm = `echo y | ${command}`;
-      uxLog("action", this, c.cyan(`Executing: ${command} (with auto-confirmation)`));
-      await execCommand(commandWithAutoConfirm, this, {
-        fail: true,
-        output: true,
-        debug: flags.debug
-      });
+      // Use cross-platform method to handle confirmation
+      await this.execSfCommandWithConfirmation(command, flags);
 
       this.sendWebSocketStatus({
         status: 'success',
