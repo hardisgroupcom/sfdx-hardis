@@ -2,6 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import c from 'chalk';
+import { spawn } from 'child_process';
 import { uxLog } from '../../../../common/utils/index.js';
 import { getConfig } from '../../../../config/index.js';
 import fs from 'fs-extra';
@@ -327,8 +328,6 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     flags: any
   ): Promise<{ stdout: string; stderr: string }> {
     return new Promise((resolve, reject) => {
-      const { spawn } = require('child_process');
-
       // Parse the command - split on first space to separate executable from args
       const firstSpaceIndex = command.indexOf(' ');
       const executable = command.substring(0, firstSpaceIndex);
