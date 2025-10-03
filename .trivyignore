@@ -61,7 +61,7 @@ CVE-2025-9288
 CVE-2025-59343
 
 # fast-redact https://avd.aquasec.com/nvd/cve-2025-57319 
-# fast-redact prototype pollution: Low scurity, harmless for sfdx-hardis use
+# fast-redact prototype pollution: Low security, harmless for sfdx-hardis use
 CVE-2025-57319
 
 # Dockerfile https://avd.aquasec.com/misconfig/ds002
