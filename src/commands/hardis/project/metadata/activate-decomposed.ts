@@ -325,6 +325,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
   /**
    * Get package directories from sfdx-project.json (with caching)
    * Supports custom package directory structures (Optimization #3)
+   * Returns base package paths (e.g., 'force-app'), not including 'main/default'
    */
   private getPackageDirectories(): string[] {
     // Return cached value if available
@@ -335,18 +336,18 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     try {
       const projectJsonPath = path.join(process.cwd(), 'sfdx-project.json');
       if (!fs.existsSync(projectJsonPath)) {
-        this.packageDirectoriesCache = ['force-app/main/default'];
+        this.packageDirectoriesCache = ['force-app'];
         return this.packageDirectoriesCache;
       }
 
       const projectConfig = JSON.parse(fs.readFileSync(projectJsonPath, 'utf8'));
       const packageDirs: string[] = projectConfig.packageDirectories?.map((pd: any) => pd.path) || [];
 
-      // If no package directories, default to force-app/main/default
-      this.packageDirectoriesCache = packageDirs.length > 0 ? packageDirs : ['force-app/main/default'];
+      // If no package directories, default to force-app
+      this.packageDirectoriesCache = packageDirs.length > 0 ? packageDirs : ['force-app'];
       return this.packageDirectoriesCache;
     } catch (error) {
-      this.packageDirectoriesCache = ['force-app/main/default'];
+      this.packageDirectoriesCache = ['force-app'];
       return this.packageDirectoriesCache;
     }
   }
@@ -390,7 +391,8 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     const checkPromises = typesToCheck.map(async (metadataType) => {
       // Check all package directories for this metadata type
       for (const pkgDir of packageDirs) {
-        const directory = path.join(pkgDir, metadataType.directory);
+        // Construct full path: packageDir/main/default/metadataDirectory
+        const directory = path.join(pkgDir, 'main', 'default', metadataType.directory);
 
         const dirExists = await fs.pathExists(directory);
         if (!dirExists) {
