@@ -112,7 +112,8 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
   public static requiresProject = true;
 
   protected configInfo: any;
-  protected webSocketClient: any;
+  protected webSocketClient: WebSocketClient | undefined;
+  private sourceBehaviorOptionsCache?: string[] | null;
 
   public async run(): Promise<any> {
     const { flags } = await this.parse(ActivateDecomposedMetadata);
@@ -135,11 +136,13 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       success: boolean;
       cancelled: boolean;
       decomposedTypes: string[];
+      alreadyDecomposedTypes: string[];
       errors: string[];
     } = {
       success: true,
       cancelled: false,
       decomposedTypes: [],
+      alreadyDecomposedTypes: [],
       errors: []
     };
 
@@ -151,19 +154,40 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         icon: 'sync'
       });
 
+      // Preliminary check: identify already decomposed and remaining metadata types
+      const decompositionStatus = this.checkDecompositionStatus();
+
+      // Log the preliminary check results
+      if (decompositionStatus.alreadyDecomposed.length > 0) {
+        const alreadyDecomposedNames = decompositionStatus.alreadyDecomposed.map(t => t.name).join(', ');
+        uxLog("log", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
+        results.alreadyDecomposedTypes = decompositionStatus.alreadyDecomposed.map(t => t.name);
+      }
+
+      if (decompositionStatus.remaining.length > 0) {
+        const remainingNames = decompositionStatus.remaining.map(t => t.name).join(', ');
+        uxLog("log", this, c.cyan(`Eligible for decomposition: ${remainingNames}`));
+      }
+
       // Detect which metadata types exist in the project and need decomposition
       const applicableTypes = await this.detectApplicableMetadataTypes();
 
       if (applicableTypes.length === 0) {
-        const existingOptions = this.getExistingSourceBehaviorOptions();
-        if (existingOptions.length > 0) {
+        if (decompositionStatus.alreadyDecomposed.length > 0) {
+          const alreadyDecomposedNames = decompositionStatus.alreadyDecomposed.map(t => t.name).join(', ');
           uxLog("warning", this, c.yellow(`All supported metadata types are already decomposed in this project`));
+          uxLog("log", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
           this.sendWebSocketStatus({
             status: 'warning',
-            message: `All supported metadata types are already decomposed in this project`,
+            message: `All supported metadata types are already decomposed: ${alreadyDecomposedNames}`,
             icon: 'warning'
           });
-          return { success: true, message: 'All metadata types already decomposed', alreadyDecomposed: true };
+          return {
+            success: true,
+            message: 'All metadata types already decomposed',
+            alreadyDecomposed: true,
+            alreadyDecomposedTypes: results.alreadyDecomposedTypes
+          };
         } else {
           uxLog("warning", this, c.yellow(`No supported metadata types found in this project`));
           this.sendWebSocketStatus({
@@ -235,9 +259,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       }
     } catch (error: any) {
       results.success = false;
-      if (Array.isArray(results.errors)) {
-        results.errors.push(error.message || 'Unknown error');
-      }
+      results.errors.push(error.message || 'Unknown error');
 
       // Send error status to UI
       this.sendWebSocketStatus({
@@ -261,26 +283,59 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
   }
 
   /**
-   * Read the sfdx-project.json file and get existing sourceBehaviorOptions
+   * Read the sfdx-project.json file and get existing sourceBehaviorOptions (with caching)
    */
   private getExistingSourceBehaviorOptions(): string[] {
+    // Return cached value if available
+    if (this.sourceBehaviorOptionsCache !== undefined) {
+      return this.sourceBehaviorOptionsCache ?? [];
+    }
+
     if (!isSfdxProject()) {
+      this.sourceBehaviorOptionsCache = null;
       return [];
     }
 
     try {
       const projectJsonPath = path.join(process.cwd(), 'sfdx-project.json');
       if (!fs.existsSync(projectJsonPath)) {
+        this.sourceBehaviorOptionsCache = null;
         return [];
       }
 
       const projectConfig = JSON.parse(fs.readFileSync(projectJsonPath, 'utf8'));
-      return Array.isArray(projectConfig.sourceBehaviorOptions) ?
+      const options = Array.isArray(projectConfig.sourceBehaviorOptions) ?
         projectConfig.sourceBehaviorOptions : [];
+
+      this.sourceBehaviorOptionsCache = options;
+      return options;
     } catch (error) {
       // If there's an error reading the file, assume no options exist
+      this.sourceBehaviorOptionsCache = null;
       return [];
     }
+  }
+
+  /**
+   * Check decomposition status: identify which metadata types are already decomposed and which remain
+   */
+  private checkDecompositionStatus(): {
+    alreadyDecomposed: MetadataTypeConfig[];
+    remaining: MetadataTypeConfig[];
+  } {
+    const existingOptions = this.getExistingSourceBehaviorOptions();
+    const alreadyDecomposed: MetadataTypeConfig[] = [];
+    const remaining: MetadataTypeConfig[] = [];
+
+    for (const metadataType of METADATA_TYPES) {
+      if (existingOptions.includes(metadataType.behavior)) {
+        alreadyDecomposed.push(metadataType);
+      } else {
+        remaining.push(metadataType);
+      }
+    }
+
+    return { alreadyDecomposed, remaining };
   }
 
   /**
@@ -299,16 +354,18 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       const directory = path.join('force-app', 'main', 'default', metadataType.directory);
 
-      if (fs.existsSync(directory)) {
+      const dirExists = await fs.pathExists(directory);
+      if (dirExists) {
         // If a specific file pattern is defined, check if it exists
         if (metadataType.filePattern) {
           const filePath = path.join(directory, metadataType.filePattern);
-          if (fs.existsSync(filePath)) {
+          const fileExists = await fs.pathExists(filePath);
+          if (fileExists) {
             applicableTypes.push(metadataType);
           }
         } else {
           // Otherwise, check if directory has any files
-          const files = fs.readdirSync(directory);
+          const files = await fs.readdir(directory);
           if (files.length > 0) {
             applicableTypes.push(metadataType);
           }
@@ -366,7 +423,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       // Automatically send 'y' followed by newline to stdin when process starts
       // This works on all platforms (Windows CMD/PowerShell, Git Bash, Linux, macOS)
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         try {
           childProcess.stdin.write('y\n');
           childProcess.stdin.end();
@@ -377,6 +434,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       // Handle process completion
       childProcess.on('close', (code: number) => {
+        clearTimeout(timeoutId); // Clean up timeout to prevent memory leak
         if (code === 0) {
           resolve({ stdout, stderr });
         } else {
@@ -403,13 +461,6 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     flags: any
   ): Promise<{ success: boolean; error?: string }> {
     uxLog("action", this, c.cyan(`Preparing to decompose ${metadataType.name}...`));
-
-    // Double-check if behavior is already in sfdx-project.json
-    const existingOptions = this.getExistingSourceBehaviorOptions();
-    if (existingOptions.includes(metadataType.behavior)) {
-      uxLog("log", this, c.grey(`Skipping ${metadataType.name}: already decomposed (${metadataType.behavior} found in sfdx-project.json)`));
-      return { success: true, error: 'Already decomposed' };
-    }
 
     // Update UI status
     this.sendWebSocketStatus({
@@ -476,8 +527,9 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
         return response?.confirmed === true;
       } catch (e) {
+        const error = e as Error;
         // Fall back to terminal prompt if WebSocket prompts fail
-        uxLog("warning", this, c.yellow('WebSocket prompt failed, falling back to terminal prompt'));
+        uxLog("warning", this, c.yellow(`WebSocket prompt failed: ${error.message}, falling back to terminal prompt`));
         return this.terminalPrompt(options);
       }
     } else {
