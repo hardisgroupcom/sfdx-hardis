@@ -114,6 +114,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
   protected configInfo: any;
   protected webSocketClient: WebSocketClient | undefined;
   private sourceBehaviorOptionsCache?: string[] | null;
+  private packageDirectoriesCache?: string[];
 
   public async run(): Promise<any> {
     const { flags } = await this.parse(ActivateDecomposedMetadata);
@@ -157,15 +158,21 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       // Preliminary check: identify already decomposed and remaining metadata types
       const decompositionStatus = this.checkDecompositionStatus();
 
+      // Build names once to avoid duplicate mapping (Optimization #1)
+      const alreadyDecomposedNames = decompositionStatus.alreadyDecomposed.length > 0
+        ? decompositionStatus.alreadyDecomposed.map(t => t.name).join(', ')
+        : '';
+      const remainingNames = decompositionStatus.remaining.length > 0
+        ? decompositionStatus.remaining.map(t => t.name).join(', ')
+        : '';
+
       // Log the preliminary check results
-      if (decompositionStatus.alreadyDecomposed.length > 0) {
-        const alreadyDecomposedNames = decompositionStatus.alreadyDecomposed.map(t => t.name).join(', ');
+      if (alreadyDecomposedNames) {
         uxLog("log", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
         results.alreadyDecomposedTypes = decompositionStatus.alreadyDecomposed.map(t => t.name);
       }
 
-      if (decompositionStatus.remaining.length > 0) {
-        const remainingNames = decompositionStatus.remaining.map(t => t.name).join(', ');
+      if (remainingNames) {
         uxLog("log", this, c.cyan(`Eligible for decomposition: ${remainingNames}`));
       }
 
@@ -173,8 +180,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       const applicableTypes = await this.detectApplicableMetadataTypes();
 
       if (applicableTypes.length === 0) {
-        if (decompositionStatus.alreadyDecomposed.length > 0) {
-          const alreadyDecomposedNames = decompositionStatus.alreadyDecomposed.map(t => t.name).join(', ');
+        if (alreadyDecomposedNames) {
           uxLog("warning", this, c.yellow(`All supported metadata types are already decomposed in this project`));
           uxLog("log", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
           this.sendWebSocketStatus({
@@ -317,6 +323,35 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
   }
 
   /**
+   * Get package directories from sfdx-project.json (with caching)
+   * Supports custom package directory structures (Optimization #3)
+   */
+  private getPackageDirectories(): string[] {
+    // Return cached value if available
+    if (this.packageDirectoriesCache) {
+      return this.packageDirectoriesCache;
+    }
+
+    try {
+      const projectJsonPath = path.join(process.cwd(), 'sfdx-project.json');
+      if (!fs.existsSync(projectJsonPath)) {
+        this.packageDirectoriesCache = ['force-app/main/default'];
+        return this.packageDirectoriesCache;
+      }
+
+      const projectConfig = JSON.parse(fs.readFileSync(projectJsonPath, 'utf8'));
+      const packageDirs: string[] = projectConfig.packageDirectories?.map((pd: any) => pd.path) || [];
+
+      // If no package directories, default to force-app/main/default
+      this.packageDirectoriesCache = packageDirs.length > 0 ? packageDirs : ['force-app/main/default'];
+      return this.packageDirectoriesCache;
+    } catch (error) {
+      this.packageDirectoriesCache = ['force-app/main/default'];
+      return this.packageDirectoriesCache;
+    }
+  }
+
+  /**
    * Check decomposition status: identify which metadata types are already decomposed and which remain
    */
   private checkDecompositionStatus(): {
@@ -340,38 +375,54 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
   /**
    * Detect which metadata types exist in the project
+   * Uses parallel file checks for better performance (Optimization #2)
    */
   private async detectApplicableMetadataTypes(): Promise<MetadataTypeConfig[]> {
-    const applicableTypes: MetadataTypeConfig[] = [];
     const existingOptions = this.getExistingSourceBehaviorOptions();
+    const packageDirs = this.getPackageDirectories();
 
-    for (const metadataType of METADATA_TYPES) {
-      // Skip if this behavior is already in sfdx-project.json
-      if (existingOptions.includes(metadataType.behavior)) {
-        uxLog("log", this, c.grey(`Skipping ${metadataType.name}: already decomposed (${metadataType.behavior} found in sfdx-project.json)`));
-        continue;
-      }
+    // Filter out already decomposed types first
+    const typesToCheck = METADATA_TYPES.filter(
+      metadataType => !existingOptions.includes(metadataType.behavior)
+    );
 
-      const directory = path.join('force-app', 'main', 'default', metadataType.directory);
+    // Check all metadata types in all package directories in parallel
+    const checkPromises = typesToCheck.map(async (metadataType) => {
+      // Check all package directories for this metadata type
+      for (const pkgDir of packageDirs) {
+        const directory = path.join(pkgDir, metadataType.directory);
 
-      const dirExists = await fs.pathExists(directory);
-      if (dirExists) {
-        // If a specific file pattern is defined, check if it exists
+        const dirExists = await fs.pathExists(directory);
+        if (!dirExists) {
+          continue;
+        }
+
         if (metadataType.filePattern) {
           const filePath = path.join(directory, metadataType.filePattern);
           const fileExists = await fs.pathExists(filePath);
           if (fileExists) {
-            applicableTypes.push(metadataType);
+            return metadataType;
           }
         } else {
-          // Otherwise, check if directory has any files
           const files = await fs.readdir(directory);
           if (files.length > 0) {
-            applicableTypes.push(metadataType);
+            return metadataType;
           }
         }
       }
-    }
+      return null;
+    });
+
+    const results = await Promise.all(checkPromises);
+
+    // Filter out nulls
+    const applicableTypes = results.filter((type): type is MetadataTypeConfig => type !== null);
+
+    // Log skipped types (already decomposed)
+    const skippedTypes = METADATA_TYPES.filter(t => existingOptions.includes(t.behavior));
+    skippedTypes.forEach(metadataType => {
+      uxLog("log", this, c.grey(`Skipping ${metadataType.name}: already decomposed (${metadataType.behavior} found in sfdx-project.json)`));
+    });
 
     return applicableTypes;
   }
@@ -446,8 +497,9 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         }
       });
 
-      // Handle process errors
+      // Handle process errors (Optimization #6: cleanup timeout on error)
       childProcess.on('error', (error: Error) => {
+        clearTimeout(timeoutId); // Clean up timeout to prevent memory leak
         reject(error);
       });
     });
