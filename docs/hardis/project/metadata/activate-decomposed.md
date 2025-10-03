@@ -1,9 +1,9 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-# hardis:project:metadata:decomposed
+# hardis:project:metadata:activate-decomposed
 
 ## Description
 
-**Manage decomposed metadata types in Salesforce DX projects.**
+**Activate decomposed metadata types in Salesforce DX projects.**
 
 This command helps manage decomposed metadata types that can be split into multiple files in source format. It automatically decomposes all supported metadata types that exist in your project.
 
@@ -32,9 +32,9 @@ Key features:
 ## Examples
 
 ```shell
-$ sf hardis:project:metadata:decomposed
+$ sf hardis:project:metadata:activate-decomposed
 ```
 
 ```shell
-$ sf hardis:project:metadata:decomposed --debug
+$ sf hardis:project:metadata:activate-decomposed --debug
 ```

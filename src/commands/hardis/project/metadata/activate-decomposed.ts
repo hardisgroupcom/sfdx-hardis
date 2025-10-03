@@ -50,12 +50,12 @@ const METADATA_TYPES: MetadataTypeConfig[] = [
   }
 ];
 
-export default class DecomposedMetadata extends SfCommand<any> {
-  public static title = 'Decomposed Metadata (Beta)';
+export default class ActivateDecomposedMetadata extends SfCommand<any> {
+  public static title = 'Activate Decomposed Metadata (Beta)';
   public static description = `
 ## Command Behavior
 
-**Manage decomposed metadata types in Salesforce DX projects.**
+**Activate decomposed metadata types in Salesforce DX projects.**
 
 This command helps manage decomposed metadata types that can be split into multiple files in source format. It automatically decomposes all supported metadata types that exist in your project.
 
@@ -90,8 +90,8 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 `;
 
   public static examples = [
-    '$ sf hardis:project:metadata:decomposed',
-    '$ sf hardis:project:metadata:decomposed --debug'
+    '$ sf hardis:project:metadata:activate-decomposed',
+    '$ sf hardis:project:metadata:activate-decomposed --debug'
   ];
 
   public static flags: any = {
@@ -114,7 +114,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
   protected webSocketClient: any;
 
   public async run(): Promise<any> {
-    const { flags } = await this.parse(DecomposedMetadata);
+    const { flags } = await this.parse(ActivateDecomposedMetadata);
 
     // Initialize configuration
     this.configInfo = await getConfig('user');
@@ -123,7 +123,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     if (flags.websocket && typeof flags.websocket === 'string') {
       this.webSocketClient = new WebSocketClient({
         websocketHostPort: flags.websocket,
-        command: 'hardis:project:metadata:decomposed',
+        command: 'hardis:project:metadata:activate-decomposed',
         id: Date.now().toString()
       });
     }
