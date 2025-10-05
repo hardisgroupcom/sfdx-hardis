@@ -23,7 +23,7 @@ It is free and Open-Source, and will allow you to simply:
 
 - [Deliver your projects with **State of the art Salesforce DevOps**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
 
-![DevOps Pipeline UI](https://sfdx-hardis.cloudity.com/assets/images/DevOpsPipelineUI.png)
+![DevOps Pipeline UI](https://sfdx-hardis.cloudity.com/assets/images/sfdx-hardis-pipeline-view.gif)
 
 - [**Backup Metadatas** and **Monitor your Salesforce orgs**](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/)
 

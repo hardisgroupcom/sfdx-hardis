@@ -118,12 +118,12 @@ The command's logic orchestrates various underlying processes:
     const defaultBranchPrefixChoices = [
       {
         title: '🏗️ Feature',
-        value: 'features',
+        value: 'feature',
         description: "New feature, evolution of an existing feature... If you don't know, just select Feature",
       },
       {
-        title: '🛠️ Debug',
-        value: 'fixes',
+        title: '🛠️ Fix',
+        value: 'fix',
         description: 'A bug has been identified and you are the right person to solve it !',
       },
     ];
@@ -160,39 +160,14 @@ The command's logic orchestrates various underlying processes:
         initial: 0,
         choices: branchPrefixChoices,
       },
-      {
-        type: 'select',
-        name: 'sources',
-        message: c.cyanBright('What type(s) of Salesforce updates will you implement to perform this User Story ?'),
-        description: 'Choose the type of changes you will make to help set up the appropriate development environment',
-        placeholder: 'Select update type',
-        initial: 0,
-        choices: [
-          {
-            title: '🥸 Configuration',
-            value: 'config',
-            description: 'You will update anything in the setup except apex code :)',
-          },
-          {
-            title: '🤓 Development',
-            value: 'dev',
-            description: 'You are a developer who will do magic with Apex or Javascript !',
-          },
-          {
-            title: '🥸🤓 Configuration + Development',
-            value: 'dev',
-            description: 'Like the unicorn you are, you will update configuration but also write code :)',
-          },
-        ],
-      }
     ]);
 
     // Request task name
     const taskName = await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
 
     // Checkout development main branch
-    const branchName = `${projectBranchPart}${response.branch || 'features'}/${response.sources || 'dev'}/${taskName}`;
-    const repoUrl = await getGitRepoUrl()
+    const branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
+    const repoUrl = await getGitRepoUrl();
     uxLog(
       "action",
       this,
