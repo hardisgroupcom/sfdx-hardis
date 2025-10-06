@@ -220,11 +220,3 @@ Also connect associated DevHub
 # runtests
 
 Apex test classes to run if --testlevel is RunSpecifiedTests
-
-# decomposedMetadata
-
-Decompose complex metadata types into smaller components
-
-# decomposedMetadataBehavior
-
-Decomposition behavior to use (decomposePermissionSetBeta2 or decomposeCustomLabelsBeta2)
