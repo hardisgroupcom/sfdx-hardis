@@ -31,7 +31,7 @@ Every persona can be autonomous in their tasks: Admins, Developers, Release Mana
 | Role | How they use sfdx-hardis |
 |---|---|
 | **Admins** | [Build their pull requests](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/) using the **VS Code extension** with clicks. No command line required. |
-| **Developers** | Same than Admins, + understand what's happening under the hood with the **Salesforce CLI**, thanks to the **Advanced mode** in the UI. |
+| **Developers** | Same as Admins, + understand what's happening under the hood with the **Salesforce CLI**, thanks to the **Advanced mode** in the UI. |
 | **Release Managers** | Configure the CI/CD process using the **Visual DevOps Pipeline Builder**<br/>Follow the Pull Requests and Deployments thanks to the **DevOps Pipeline View** |
 | **Project Managers** | Follow application lifecycle management using sfdx-hardis **native integrations** with ticketing systems like **Jira** and **Azure Boards**. |
 
@@ -54,8 +54,8 @@ We provide **ready-to-use CI/CD pipeline workflows** for the following Git platf
 | Platform | CI/CD template |
 |---|---|
 | GitLab | [GitLab CI configuration](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml) |
-| Azure DevOps | [Azure Pipelines checks](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-checks.yml) |
-| GitHub & Gitea | [GitHub Actions / Gitea workflow](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/deploy.yml) |
+| Azure DevOps | [Azure Pipelines checks](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-checks.yml), [Azure Pipelines deployment](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-deployment.yml) |
+| GitHub & Gitea | [GitHub Actions / Gitea workflow checks](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/check-deploy.yml), [GitHub Actions / Gitea workflow deployment](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/process-deploy.yml) |
 | Bitbucket | [Bitbucket Pipelines](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/bitbucket-pipelines.yml) |
 | Jenkins | [Jenkinsfile](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/Jenkinsfile) |
 
