@@ -4,8 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.6.0] 2025-10-05
+
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Enhance beta feature **useDeltaDeploymentWithDependencies** to add more dependencies to the delta deployment package (see [related documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-with-dependencies-beta))
+- Remove `dev` or `config` parts of the new git branches, as it is not relevant
 - Update global variables documentation to add AI related ones
 - Add more events about sfdx-hardis in the documentation
+- Update CI/CD Home Page documentation
 
 ## [6.5.4] 2025-09-27
 
