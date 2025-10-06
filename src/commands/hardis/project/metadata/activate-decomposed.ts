@@ -166,14 +166,14 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         ? decompositionStatus.remaining.map(t => t.name).join(', ')
         : '';
 
-      // Log the preliminary check results
+      // Display the preliminary check results as action in UI (also logged)
       if (alreadyDecomposedNames) {
-        uxLog("log", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
+        uxLog("action", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
         results.alreadyDecomposedTypes = decompositionStatus.alreadyDecomposed.map(t => t.name);
       }
 
       if (remainingNames) {
-        uxLog("log", this, c.cyan(`Eligible for decomposition: ${remainingNames}`));
+        uxLog("action", this, c.cyan(`Eligible for decomposition: ${remainingNames}`));
       }
 
       // Detect which metadata types exist in the project and need decomposition
