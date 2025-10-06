@@ -127,7 +127,8 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       this.webSocketClient = new WebSocketClient({
         websocketHostPort: flags.websocket,
         command: 'hardis:project:metadata:activate-decomposed',
-        id: Date.now().toString()
+        id: Date.now().toString(),
+        cwd: process.cwd() // Pass current working directory to ensure UI opens in correct workspace
       });
     }
 
