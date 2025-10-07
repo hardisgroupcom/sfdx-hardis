@@ -152,22 +152,21 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       const alreadyDecomposedNames = decompositionStatus.alreadyDecomposed.length > 0
         ? decompositionStatus.alreadyDecomposed.map(t => t.name).join(', ')
         : '';
-      const remainingNames = decompositionStatus.remaining.length > 0
-        ? decompositionStatus.remaining.map(t => t.name).join(', ')
-        : '';
 
-      // Display the preliminary check results (log entries will be embedded in the section above)
+      // Display already decomposed types (log entry embedded in the action section above)
       if (alreadyDecomposedNames) {
-        uxLog("log", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
+        uxLog("success", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
         results.alreadyDecomposedTypes = decompositionStatus.alreadyDecomposed.map(t => t.name);
-      }
-
-      if (remainingNames) {
-        uxLog("log", this, c.cyan(`Eligible for decomposition: ${remainingNames}`));
       }
 
       // Detect which metadata types exist in the project and need decomposition
       const applicableTypes = await this.detectApplicableMetadataTypes();
+
+      // Display eligible types after detection (log entry embedded in the action section)
+      if (applicableTypes.length > 0) {
+        const remainingNames = applicableTypes.map(t => t.name).join(', ');
+        uxLog("log", this, c.cyan(`Eligible for decomposition: ${remainingNames}`));
+      }
 
       if (applicableTypes.length === 0) {
         if (alreadyDecomposedNames) {
@@ -405,14 +404,8 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
     const results = await Promise.all(checkPromises);
 
-    // Filter out nulls
+    // Filter out nulls and return applicable types
     const applicableTypes = results.filter((type): type is MetadataTypeConfig => type !== null);
-
-    // Log skipped types (already decomposed)
-    const skippedTypes = METADATA_TYPES.filter(t => existingOptions.includes(t.behavior));
-    skippedTypes.forEach(metadataType => {
-      uxLog("log", this, c.grey(`Skipping ${metadataType.name}: already decomposed (${metadataType.behavior} found in sfdx-project.json)`));
-    });
 
     return applicableTypes;
   }
