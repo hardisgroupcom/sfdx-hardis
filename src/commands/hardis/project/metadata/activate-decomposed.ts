@@ -112,7 +112,6 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
   public static requiresProject = true;
 
   protected configInfo: any;
-  protected webSocketClient: WebSocketClient | undefined;
   private sourceBehaviorOptionsCache?: string[] | null;
   private packageDirectoriesCache?: string[];
 
@@ -121,16 +120,6 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
     // Initialize configuration
     this.configInfo = await getConfig('user');
-
-    // Initialize WebSocket client for UI integration
-    if (flags.websocket && typeof flags.websocket === 'string') {
-      this.webSocketClient = new WebSocketClient({
-        websocketHostPort: flags.websocket,
-        command: 'hardis:project:metadata:activate-decomposed',
-        id: Date.now().toString(),
-        cwd: process.cwd() // Pass current working directory to ensure UI opens in correct workspace
-      });
-    }
 
     uxLog("action", this, c.cyan(`Checking for metadata types eligible for decomposition (Beta feature)`));
 
@@ -281,9 +270,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       }
     } finally {
       // Close WebSocket connection if it was opened
-      if (this.webSocketClient) {
-        WebSocketClient.closeClient('completed');
-      }
+      WebSocketClient.closeClient('completed');
     }
 
     return results;
@@ -559,17 +546,15 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
   // Helper method to send status updates to the WebSocket UI
   private sendWebSocketStatus(status: any): void {
-    if (this.webSocketClient) {
-      WebSocketClient.sendMessage({
-        event: 'status',
-        data: status
-      });
-    }
+    WebSocketClient.sendMessage({
+      event: 'status',
+      data: status
+    });
   }
 
   // Helper method to prompt for confirmation via UI or terminal
   private async promptConfirmation(options: any): Promise<boolean> {
-    if (this.webSocketClient && WebSocketClient.isAlive()) {
+    if (WebSocketClient.isAlive()) {
       try {
         // Send confirmation request via WebSocket
         const response = await WebSocketClient.sendPrompts({
