@@ -70,32 +70,32 @@ export default class ProfilesExtract extends SfCommand<void> {
     let sobjectsList: { label: string; name: string; masterObject: string; objectType: string }[] = [];
     try {
       //ToDo
-      // const sobjects = await conn.describeGlobal();
-      // sobjectsList = sobjects.sobjects.filter(sobj => sobj.queryable).map((sobject) => ({
-      //   label: sobject.label,
-      //   name: sobject.name,
-      //   masterObject: '',
-      //   objectType: sobject.name.endsWith('__c') ? 'Custom' : 'Standard',
-      // }));
+      const sobjects = await conn.describeGlobal();
+      sobjectsList = sobjects.sobjects.filter(sobj => sobj.queryable).map((sobject) => ({
+        label: sobject.label,
+        name: sobject.name,
+        masterObject: '',
+        objectType: sobject.name.endsWith('__c') ? 'Custom' : 'Standard',
+      }));
 
       // Debug: use a fixed list to avoid long waits on orgs with many objects
-      sobjectsList = [{
-        label: 'Compte', name: 'Account', masterObject: '', objectType: 'Standard'
-      }, {
-        label: 'Contact', name: 'Contact', masterObject: '', objectType: 'Standard'
-      }, { 
-        label: 'Opportunité', name: 'Opportunity', masterObject: '', objectType: 'Standard'
-      }, {
-        label: 'Produit', name: 'Product2', masterObject: '', objectType: 'Standard'
-      }, {
-        label: 'Abonnement', name: 'sofactoapp__Abonnement__c', masterObject: '', objectType: 'Custom'
-      }, {
-        label: 'Accès produit', name: 'AccesProduit__c', masterObject: '', objectType: 'Custom' 
-      }, {
-        label: 'Bénéficiaire', name: 'Beneficiaire__c', masterObject: '', objectType: 'Custom'
-      }, { 
-        label: 'Grille tarification', name: 'GrilleTarification__c ', masterObject: '', objectType: 'Custom'
-      }]
+      // sobjectsList = [{
+      //   label: 'Compte', name: 'Account', masterObject: '', objectType: 'Standard'
+      // }, {
+      //   label: 'Contact', name: 'Contact', masterObject: '', objectType: 'Standard'
+      // }, { 
+      //   label: 'Opportunité', name: 'Opportunity', masterObject: '', objectType: 'Standard'
+      // }, {
+      //   label: 'Produit', name: 'Product2', masterObject: '', objectType: 'Standard'
+      // }, {
+      //   label: 'Abonnement', name: 'sofactoapp__Abonnement__c', masterObject: '', objectType: 'Custom'
+      // }, {
+      //   label: 'Accès produit', name: 'AccesProduit__c', masterObject: '', objectType: 'Custom' 
+      // }, {
+      //   label: 'Bénéficiaire', name: 'Beneficiaire__c', masterObject: '', objectType: 'Custom'
+      // }, { 
+      //   label: 'Grille tarification', name: 'GrilleTarification__c ', masterObject: '', objectType: 'Custom'
+      // }]
 
       uxLog('log', this, c.green('Fetching SObjects completed.'));
       uxLog('log', this, c.green(`Fetched ${sobjectsList.length} SObjects.`));
