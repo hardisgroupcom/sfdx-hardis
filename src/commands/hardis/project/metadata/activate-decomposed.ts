@@ -121,8 +121,6 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     // Initialize configuration
     this.configInfo = await getConfig('user');
 
-    uxLog("action", this, c.cyan(`Checking for metadata types eligible for decomposition (Beta feature)`));
-
     const results: {
       success: boolean;
       cancelled: boolean;
@@ -145,6 +143,9 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         icon: 'sync'
       });
 
+      // Start main action section
+      uxLog("action", this, c.cyan(`Checking for metadata types eligible for decomposition (Beta feature)`));
+
       // Preliminary check: identify already decomposed and remaining metadata types
       const decompositionStatus = this.checkDecompositionStatus();
 
@@ -153,16 +154,16 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         ? decompositionStatus.alreadyDecomposed.map(t => t.name).join(', ')
         : '';
 
-      // Display already decomposed types (log entry embedded in the action section above)
-      if (alreadyDecomposedNames) {
-        uxLog("success", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
-        results.alreadyDecomposedTypes = decompositionStatus.alreadyDecomposed.map(t => t.name);
-      }
-
       // Detect which metadata types exist in the project and need decomposition
       const applicableTypes = await this.detectApplicableMetadataTypes();
 
-      // Display eligible types after detection (log entry embedded in the action section)
+      // Display already decomposed types as a separate section (always visible)
+      if (alreadyDecomposedNames) {
+        uxLog("action", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
+        results.alreadyDecomposedTypes = decompositionStatus.alreadyDecomposed.map(t => t.name);
+      }
+
+      // Display eligible types as a log entry under the last action
       if (applicableTypes.length > 0) {
         const remainingNames = applicableTypes.map(t => t.name).join(', ');
         uxLog("log", this, c.cyan(`Eligible for decomposition: ${remainingNames}`));
