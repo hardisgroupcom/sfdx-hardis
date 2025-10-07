@@ -56,6 +56,14 @@ CVE-2025-6965
 # Missing type checks leading to hash rewind, located in @salesforce/cli so they'll fix that soon
 CVE-2025-9288
 
+# tar-fs https://avd.aquasec.com/nvd/cve-2025-59343
+# tar-fs symlink validation bypass, located in @salesforce/cli so they'll fix that soon
+CVE-2025-59343
+
+# fast-redact https://avd.aquasec.com/nvd/cve-2025-57319 
+# fast-redact prototype pollution: Low security, harmless for sfdx-hardis use
+CVE-2025-57319
+
 # Dockerfile https://avd.aquasec.com/misconfig/ds002
 # Image using root user, that's ok as we are using it in CI/CD jobs containers, so not risky for sfdx-hardis
 DS002
