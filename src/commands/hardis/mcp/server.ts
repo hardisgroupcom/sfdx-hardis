@@ -137,9 +137,11 @@ export default class SfdxHardisMcpServer extends SfCommand<any> {
             zodSchema = z.number().int();
             break;
           case 'option':
-            if (flagDef.options && flagDef.options.length > 0) {
-              zodSchema = z.enum(flagDef.options);
+            // Ensure options array is valid for z.enum()
+            if (Array.isArray(flagDef.options) && flagDef.options.length > 0) {
+              zodSchema = z.enum(flagDef.options as [string, ...string[]]);
             } else {
+              // Fallback to string if options are invalid
               zodSchema = z.string();
             }
             break;
@@ -165,24 +167,37 @@ export default class SfdxHardisMcpServer extends SfCommand<any> {
       }
     }
 
+    // Create input and output schemas - undefined if empty, otherwise the Zod shape object
+    const inputSchema = Object.keys(inputSchemaProperties).length > 0
+      ? inputSchemaProperties
+      : undefined;
+
+    const outputSchema = {
+      success: z.boolean(),
+      result: z.any().optional(),
+      error: z.string().optional()
+    };
+
     // Register the tool with MCP server
     this.server.registerTool(
       commandIdFormatted,
       {
         title: title,
         description: description,
-        inputSchema: inputSchemaProperties as any,
-        outputSchema: {
-          success: z.boolean(),
-          result: z.any().optional(),
-          error: z.string().optional()
-        } as any
+        inputSchema: inputSchema as any,
+        outputSchema: outputSchema as any
       },
       async (extra: any) => {
         try {
           // Extract command arguments from the extra parameter
-          const commandArguments = extra.params?.arguments || {};
-          this.log(`Executing command ${commandId} with arguments: ${JSON.stringify(commandArguments)}`);
+          // MCP SDK passes arguments directly, not nested under params
+          const commandArguments = extra.arguments || extra.params?.arguments || extra || {};
+
+          // Log for debugging (will appear in MCP server logs, not client)
+          process.stderr.write(`[MCP] Executing ${commandId}\n`);
+          process.stderr.write(`[MCP] Extra structure: ${JSON.stringify(Object.keys(extra))}\n`);
+          process.stderr.write(`[MCP] Arguments: ${JSON.stringify(commandArguments)}\n`);
+
           // Build the command string with flags
           let commandString = `sf ${commandId}`;
 
