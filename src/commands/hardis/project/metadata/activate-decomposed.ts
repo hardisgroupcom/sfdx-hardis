@@ -156,14 +156,14 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         ? decompositionStatus.remaining.map(t => t.name).join(', ')
         : '';
 
-      // Display the preliminary check results as action in UI (also logged)
+      // Display the preliminary check results (log entries will be embedded in the section above)
       if (alreadyDecomposedNames) {
-        uxLog("action", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
+        uxLog("log", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
         results.alreadyDecomposedTypes = decompositionStatus.alreadyDecomposed.map(t => t.name);
       }
 
       if (remainingNames) {
-        uxLog("action", this, c.cyan(`Eligible for decomposition: ${remainingNames}`));
+        uxLog("log", this, c.cyan(`Eligible for decomposition: ${remainingNames}`));
       }
 
       // Detect which metadata types exist in the project and need decomposition
@@ -200,13 +200,13 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       const confirmMessage = `Are you sure you want to decompose these metadata types: ${metadataTypesList}?`;
 
       // Ask for confirmation
-      const confirmed = await this.promptConfirmation({
-        title: 'Confirm Metadata Decomposition',
-        message: confirmMessage,
-        confirmLabel: 'Yes, decompose',
-        cancelLabel: 'Cancel',
-        icon: 'help-circle'
+      const confirmResult = await prompts({
+        type: 'confirm',
+        name: 'confirmed',
+        message: c.cyan(confirmMessage),
+        description: 'Confirm Metadata Decomposition'
       });
+      const confirmed = confirmResult.confirmed === true;
 
       if (!confirmed) {
         uxLog("warning", this, c.yellow('Operation cancelled by user'));
@@ -550,45 +550,6 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       event: 'status',
       data: status
     });
-  }
-
-  // Helper method to prompt for confirmation via UI or terminal
-  private async promptConfirmation(options: any): Promise<boolean> {
-    if (WebSocketClient.isAlive()) {
-      try {
-        // Send confirmation request via WebSocket
-        const response = await WebSocketClient.sendPrompts({
-          type: 'confirm',
-          name: 'confirmed',
-          message: options.message,
-          description: options.title || 'Confirm operation',
-          initial: false
-        });
-
-        return response?.confirmed === true;
-      } catch (e) {
-        const error = e as Error;
-        // Fall back to terminal prompt if WebSocket prompts fail
-        uxLog("warning", this, c.yellow(`WebSocket prompt failed: ${error.message}, falling back to terminal prompt`));
-        return this.terminalPrompt(options);
-      }
-    } else {
-      // Fall back to terminal prompt
-      return this.terminalPrompt(options);
-    }
-  }
-
-  // Terminal prompt fallback
-  private async terminalPrompt(options: any): Promise<boolean> {
-    const confirmResult = await prompts({
-      type: 'confirm',
-      name: 'value',
-      message: c.cyan(options.message),
-      description: options.title || 'Confirm operation',
-      initial: false
-    });
-
-    return confirmResult.value === true;
   }
 }
 /* jscpd:ignore-end */
