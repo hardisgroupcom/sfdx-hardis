@@ -73,6 +73,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   };
 
   public static requiresProject = false;
+  public static availableInMcp = true;
 
   protected debugMode = false;
   protected apexSCannerCodeUrl =

@@ -76,6 +76,7 @@ The command's technical implementation involves extensive querying of Salesforce
     'target-org': requiredOrgFlagWithDeprecations,
   };
   public static requiresProject = false;
+  public static availableInMcp = true;
 
   protected static additionalPermissionSetsToAlwaysGet = ['Sales_User'];
 

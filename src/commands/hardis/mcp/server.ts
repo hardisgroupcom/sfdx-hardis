@@ -20,7 +20,7 @@ export default class SfdxHardisMcpServer extends SfCommand<any> {
   public static description = ``
 
   public static examples = [
-    '$ sf hardis:mcp:server',
+    '$ sf hardis:mcp:server --start',
   ];
 
   public static flags: any = {
@@ -51,7 +51,12 @@ export default class SfdxHardisMcpServer extends SfCommand<any> {
     const version = JSON.parse(readFileSync(pkgPath, 'utf8')).version as string;
     this.server = new McpServer({
       name: 'sfdx-hardis-mcp-server',
-      version: version
+      version: version,
+      title: 'Sfdx-Hardis MCP Server to interact with Salesforce orgs and Metadatas',
+      description: `This MCP server exposes sfdx-hardis commands as tools.
+      Each command can be invoked with its flags as parameters.
+      For example, the command 'hardis:org:diagnose:licenses' can be called with:
+      {"hardis--org--diagnose--licenses": {"usedonly": true, "outputfile": "licenses.csv"}}`,
     });
     this.log('MCP server started successfully.');
   }
@@ -88,14 +93,27 @@ export default class SfdxHardisMcpServer extends SfCommand<any> {
 
   private async parseAndAddCommand(command, commandCount: number) {
     const commandInstance = await command.load();
-    if (this.commandIds.includes(commandInstance.id)) {
-      this.log(`Command already registered, skipping: ${commandInstance.id}`);
+    const availableInMcp = (commandInstance as any).availableInMcp ?? false;
+    if (!availableInMcp) {
+      // this.log(`Skipping command not exposed to MCP: ${commandInstance.id}`);
+      return commandCount;
+    }
+    const commandId = commandInstance.id;
+    const commandIdFormatted = commandId.replace(/:/g, '_').replace(/-/g, '_');
+    if (this.commandIds.includes(commandId)) {
+      this.log(`Command already registered, skipping: ${commandId}`);
       return commandCount;
     }
 
     // Extract command metadata
-    const title = commandInstance.title || commandInstance.description?.split('\n')[0] || commandInstance.id;
-    const description = commandInstance.description || '';
+    const title = commandInstance.title || commandInstance.description?.split('\n')[0] || commandId;
+    let description = commandInstance.description || '';
+
+    // Remove everything after <details markdown="1"> in description
+    const detailsIndex = description.indexOf('<details markdown="1">');
+    if (detailsIndex !== -1) {
+      description = description.substring(0, detailsIndex).trim();
+    }
 
     // Build input schema from command flags
     const inputSchemaProperties: Record<string, z.ZodTypeAny> = {};
@@ -149,7 +167,7 @@ export default class SfdxHardisMcpServer extends SfCommand<any> {
 
     // Register the tool with MCP server
     this.server.registerTool(
-      commandInstance.id,
+      commandIdFormatted,
       {
         title: title,
         description: description,
@@ -164,9 +182,9 @@ export default class SfdxHardisMcpServer extends SfCommand<any> {
         try {
           // Extract command arguments from the extra parameter
           const commandArguments = extra.params?.arguments || {};
-
+          this.log(`Executing command ${commandId} with arguments: ${JSON.stringify(commandArguments)}`);
           // Build the command string with flags
-          let commandString = `sf ${commandInstance.id}`;
+          let commandString = `sf ${commandId}`;
 
           // Add flags to the command string
           for (const [flagKey, flagValue] of Object.entries(commandArguments)) {
@@ -228,8 +246,8 @@ export default class SfdxHardisMcpServer extends SfCommand<any> {
         }
       }
     );
-    this.log(`Registered command as MCP tool: ${commandInstance.id} - ${title}`);
-    this.commandIds.push(commandInstance.id);
+    this.log(`Registered command as MCP tool: ${commandIdFormatted} - ${title}`);
+    this.commandIds.push(commandId);
     commandCount++;
     return commandCount;
   }

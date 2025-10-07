@@ -76,6 +76,7 @@ The command's technical implementation involves:
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = false;
+  public static availableInMcp = true;
 
   protected usedOnly = false;
   protected debugMode = false;

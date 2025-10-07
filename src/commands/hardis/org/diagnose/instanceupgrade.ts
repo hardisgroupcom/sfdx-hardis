@@ -64,6 +64,7 @@ The command's technical implementation involves:
   };
 
   public static requiresProject = false;
+  public static availableInMcp = true;
 
   protected debugMode = false;
 
