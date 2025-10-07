@@ -6,6 +6,10 @@ import { generateCsvFile, generateReportPath, createXlsxFromCsvFiles } from '../
 import { bulkQuery } from '../../../../common/utils/apiUtils.js';
 import * as path from 'path';
 import { getReportDirectory } from '../../../../config/index.js';
+import { Messages } from '@salesforce/core';
+
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class ProfilesExtract extends SfCommand<void> {
   public static readonly description = '';
@@ -20,8 +24,19 @@ export default class ProfilesExtract extends SfCommand<void> {
       char: 'o',
       description: 'The target Salesforce org to fetch SObjects from.',
     }),
+    debug: Flags.boolean({
+      char: 'd',
+      default: false,
+      description: messages.getMessage('debugMode'),
+    }),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
+    }),
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
+    }),
   };
-  
+
   protected csvFiles: string[] = [];
   protected outputFile: string;
 
@@ -34,8 +49,8 @@ export default class ProfilesExtract extends SfCommand<void> {
 
     try {
 
-      
-      
+
+
       selectedObjects = await this.generateObjectsList(conn);
 
       await this.generateUsersExtract(conn);
@@ -99,7 +114,7 @@ export default class ProfilesExtract extends SfCommand<void> {
 
       uxLog('log', this, c.green('Fetching SObjects completed.'));
       uxLog('log', this, c.green(`Fetched ${sobjectsList.length} SObjects.`));
-    
+
 
       const sobjectsWithRecords: { Object_Label: string; API_Name: string; Object_Type: string }[] = [];
 
@@ -108,7 +123,7 @@ export default class ProfilesExtract extends SfCommand<void> {
         try {
           const result = await conn.query(`SELECT COUNT() FROM ${sobject.name}`);
           if (result.totalSize > 0) {
-            sobjectsWithRecords.push({ Object_Label: sobject.label, API_Name: sobject.name, Object_Type: sobject.objectType});
+            sobjectsWithRecords.push({ Object_Label: sobject.label, API_Name: sobject.name, Object_Type: sobject.objectType });
           }
         } catch (error) {
           uxLog('warning', this, c.yellow(`Failed to query ${sobject.name}: ${(error as Error).message}`));
@@ -148,7 +163,7 @@ export default class ProfilesExtract extends SfCommand<void> {
       await generateCsvFile(sobjectsWithRecords.filter((sobj) => selectedObjects.includes(sobj.API_Name)), this.outputFile, { fileTitle: 'profiles extract', noExcel: true });
       // With xlsx
       // this.outputFilesRes = await generateCsvFile(sobjectsWithRecords.filter((sobj) => selectedObjects.includes(sobj.API_Name)), this.outputFile, { fileTitle: 'profiles extract' });
-      
+
       this.csvFiles.push(this.outputFile);
 
     } catch (error) {
@@ -180,33 +195,33 @@ export default class ProfilesExtract extends SfCommand<void> {
   }
 
   private async generatePersonaExtract() {
-      let numberOfPersonas = 1;
-      const statusRes = await prompts({
-        message: "Please enter the number of personas to create",
-        type: "number",
-        description: "Select objects to extract",
-        placeholder: "Select objects",
-      });
-      if (statusRes && statusRes.value !== 0) {
-        numberOfPersonas = statusRes.value;
-        uxLog('log', this, `Creation of ${numberOfPersonas} personas.`);
-      }
+    let numberOfPersonas = 1;
+    const statusRes = await prompts({
+      message: "Please enter the number of personas to create",
+      type: "number",
+      description: "Select objects to extract",
+      placeholder: "Select objects",
+    });
+    if (statusRes && statusRes.value !== 0) {
+      numberOfPersonas = statusRes.value;
+      uxLog('log', this, `Creation of ${numberOfPersonas} personas.`);
+    }
 
-      const persona: { Persona: string }[] = [];
-      for (let i = 1; i <= numberOfPersonas; i++) {
-        persona.push({ Persona: `Persona${i}` });
-      }
+    const persona: { Persona: string }[] = [];
+    for (let i = 1; i <= numberOfPersonas; i++) {
+      persona.push({ Persona: `Persona${i}` });
+    }
 
-      const reportDir = await getReportDirectory();
-      this.outputFile = path.join(reportDir, 'persona.csv');
-      await generateCsvFile(persona, this.outputFile, { fileTitle: 'persona extract', noExcel: true });
-      this.csvFiles.push(this.outputFile);
-      return numberOfPersonas;
+    const reportDir = await getReportDirectory();
+    this.outputFile = path.join(reportDir, 'persona.csv');
+    await generateCsvFile(persona, this.outputFile, { fileTitle: 'persona extract', noExcel: true });
+    this.csvFiles.push(this.outputFile);
+    return numberOfPersonas;
   }
 
   async generateRelationExtract(selectedObjects: string[], numberOfPersonas: number) {
     const relationRecords: any[] = [];
-    selectedObjects.forEach((objName) => { 
+    selectedObjects.forEach((objName) => {
       relationRecords.push({
         Object: objName,
         // Dynamically add persona fields based on numberOfPersonas
@@ -245,13 +260,13 @@ export default class ProfilesExtract extends SfCommand<void> {
         });
       } catch (error) {
         uxLog('warning', this, c.yellow(`Failed to query RecordTypes for ${objName}: ${(error as Error).message}`));
-        }
       }
-      const reportDir = await getReportDirectory();
-      this.outputFile = path.join(reportDir, 'RecordTypes.csv');
-      await generateCsvFile(recordTypesRecords, this.outputFile, { fileTitle: 'Record Types extract', noExcel: true });
-      this.csvFiles.push(this.outputFile);
-      return;
+    }
+    const reportDir = await getReportDirectory();
+    this.outputFile = path.join(reportDir, 'RecordTypes.csv');
+    await generateCsvFile(recordTypesRecords, this.outputFile, { fileTitle: 'Record Types extract', noExcel: true });
+    this.csvFiles.push(this.outputFile);
+    return;
   }
 
   async generateAppsExtract(conn: any, numberOfPersonas: number) {
