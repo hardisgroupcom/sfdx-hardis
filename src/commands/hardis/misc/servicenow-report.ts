@@ -6,7 +6,7 @@ import { generateCsvFile, generateReportPath } from '../../../common/utils/files
 import { soqlQuery } from '../../../common/utils/apiUtils.js';
 import axios from 'axios';
 import c from 'chalk';
-import { uxLog } from '../../../common/utils/index.js';
+import { uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { glob } from 'glob';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
@@ -67,7 +67,7 @@ Example:
     },
     "serviceNowConfig": {
         "tables": [
-            { "tableName": "demand" },
+            { "tableName": "dmn_demand" },
             { "tableName": "incident" }
         ]
     }
@@ -170,82 +170,16 @@ Example:
     const ticketNumbers = await this.fetchUserStories(conn);
 
     // Get matching demands and incidents from ServiceNow API with axios using ticket numbers
-    const { serviceNowUrl, serviceNowApiOptions } = this.getServiceNowConfig();
-
-    // Check each service now table to get the tickets infos
-    for (const table of this.serviceNowConfig.tables) {
-      const serviceNowApiResource = `/api/now/table/${table.tableName}`;
-      const serviceNowApiQuery = `?sysparm_query=numberIN${ticketNumbers.join(',')}&sysparm_display_value=true`;
-      const serviceNowApiUrlWithQuery = `${serviceNowUrl}${serviceNowApiResource}${serviceNowApiQuery}`;
-      // Make API call to ServiceNow
-      uxLog("other", this, `Fetching Service now using query: ${serviceNowApiUrlWithQuery}`);
-      let serviceNowApiRes;
-      try {
-        serviceNowApiRes = await axios.get(serviceNowApiUrlWithQuery, serviceNowApiOptions);
-      }
-      catch (error: any) {
-        uxLog("error", this, c.red(`ServiceNow API call failed: ${error.message}\n${JSON.stringify(error?.response?.data || {})}`));
-        continue;
-      }
-      // Complete user stories with ServiceNow data
-      const serviceNowRecords = serviceNowApiRes.data.result;
-      uxLog("other", this, `ServiceNow API call succeeded: ${serviceNowRecords.length} records found`);
-      for (const userStory of this.userStories) {
-        const ticketNumber = userStory?.[this.userStoriesConfig.ticketField];
-        const serviceNowRecord = serviceNowRecords.find((record: any) => record.number === ticketNumber);
-        if (serviceNowRecord) {
-          userStory.serviceNowInfo = serviceNowRecord;
-          userStory.serviceNowTableName = table.tableName;
-        }
-      }
-    }
+    await this.completeUserStoriesWithServiceNowInfo(ticketNumbers);
 
     // Build final result
-    this.results = this.userStories.map((userStory: any) => {
-      const serviceNowInfo = userStory.serviceNowInfo || {};
-      // Build result object dynamically based on config
-      const result: any = {};
-      for (const field of this.userStoriesConfig.reportFields) {
-        if (field.special === "serviceNowTicketUrl") {
-          if (!serviceNowInfo.sys_id) {
-            result[field.key] = 'NOT FOUND';
-          }
-          else {
-            result[field.key] = `${process.env.SERVICENOW_URL}/nav_to.do?uri=/${userStory.serviceNowTableName}.do?sys_id=${serviceNowInfo.sys_id}`;
-          }
-        } else if (field.path) {
-          // Support nested paths like "CreatedBy.Name" or "serviceNowInfo.number"
-          const value = field.path.split('.').reduce((obj, prop) => obj && obj[prop], { ...userStory, serviceNowInfo });
-          result[field.key] = value !== undefined && value !== null ? value : (field.default ?? 'NOT FOUND');
-        }
-      }
-      return result;
-    });
-
-    uxLog("log", this, c.grey(JSON.stringify(this.results, null, 2)));
-
-    // Generate CSV file
-    await this.buildCsvFile();
+    await this.buildResult();
 
     return { results: this.results, outputFilesRes: this.outputFilesRes };
   }
 
-  private getServiceNowConfig() {
-    const serviceNowUrl = process.env.SERVICENOW_URL;
-    if (!serviceNowUrl) {
-      throw new SfError('ServiceNow API URL is not set. Please set SERVICENOW_URL environment variable.');
-    }
-    const serviceNowApiUser = process.env.SERVICENOW_USERNAME || '';
-    const serviceNowApiPassword = process.env.SERVICENOW_PASSWORD || '';
-    const serviceNowApiHeaders = {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    };
-    const serviceNowApiOptions = this.buildServiceNowAuthHeaders(serviceNowApiHeaders, serviceNowApiUser, serviceNowApiPassword);
-    return { serviceNowUrl, serviceNowApiOptions };
-  }
 
-  private async fetchUserStories(conn: any) {
+  private async fetchUserStories(conn: any): Promise<string[]> {
     if (this.userStoriesConfig.whereChoices) {
       // If whereChoices is defined, use the provided whereChoice flag or prompt user to select one
       if (this.whereChoice) {
@@ -272,13 +206,116 @@ Example:
         this.userStoriesConfig.where = this.userStoriesConfig.whereChoices[this.whereChoice || ''];
       }
     }
+    uxLog("action", this, c.cyan(`Fetching user stories from Salesforce...`));
     const userStoriesQuery = `SELECT ${this.userStoriesConfig.fields.join(', ')} FROM ${this.userStoriesConfig.table} WHERE ${this.userStoriesConfig.where} ORDER BY ${this.userStoriesConfig.orderBy}`;
     const userStoriesRes = await soqlQuery(userStoriesQuery, conn);
     this.userStories = userStoriesRes.records;
+    const initialUserStoriesCount = this.userStories.length;
+    // Duplicate user stories entries if there are multiple ticket numbers separated by ; or , in the ticket field
+    this.userStories = this.userStories.flatMap((us) => {
+      const ticketFieldValue = us?.[this.userStoriesConfig.ticketField];
+      if (ticketFieldValue && (ticketFieldValue.includes(';') || ticketFieldValue.includes(','))) {
+        const ticketNumbers = ticketFieldValue.split(/[,;]\s*/).filter((tn: string) => tn);
+        return ticketNumbers.map((tn: string) => ({ ...us, [this.userStoriesConfig.ticketField]: tn }));
+      }
+      return us;
+    });
+    const finalUserStoriesCount = this.userStories.length;
     // Get list of tickets from user stories
-    const ticketNumbers = userStoriesRes.records.map((record: any) => record?.[this.userStoriesConfig.ticketField]);
-    return ticketNumbers;
+    const ticketNumbers = userStoriesRes.records.map((record: any) => record?.[this.userStoriesConfig.ticketField] as string);
+    // Remove null/undefined and duplicates
+    const ticketNumbersUnique = [...new Set(ticketNumbers.filter((tn: string | undefined) => tn))] as string[];
+    let message = `${initialUserStoriesCount} user stories fetched from Salesforce, with ${ticketNumbersUnique.length} unique ticket numbers.`;
+    if (finalUserStoriesCount > initialUserStoriesCount) {
+      message += ` After splitting multiple ticket numbers, there are ${finalUserStoriesCount} user story entries to process.`;
+    }
+    uxLog("action", this, c.cyan(message));
+    uxLog("log", this, c.grey(`Ticket Numbers:\n${ticketNumbersUnique.map((tn) => `- ${tn}`).join('\n')}`));
+    return ticketNumbersUnique;
   }
+
+  private async completeUserStoriesWithServiceNowInfo(ticketNumbers: string[]): Promise<void> {
+    const { serviceNowUrl, serviceNowApiOptions } = this.getServiceNowConfig();
+
+    // Check each service now table to get the tickets infos
+    uxLog("action", this, c.cyan(`Fetching matching tickets from ServiceNow...`));
+    for (const table of this.serviceNowConfig.tables) {
+      const serviceNowApiResource = `/api/now/table/${table.tableName}`;
+      const serviceNowApiQuery = `?sysparm_query=numberIN${ticketNumbers.join(',')}&sysparm_display_value=true`;
+      const serviceNowApiUrlWithQuery = `${serviceNowUrl}${serviceNowApiResource}${serviceNowApiQuery}`;
+      // Make API call to ServiceNow
+      uxLog("log", this, `Fetching Service now using query: ${serviceNowApiUrlWithQuery}`);
+      let serviceNowApiRes;
+      try {
+        serviceNowApiRes = await axios.get(serviceNowApiUrlWithQuery, serviceNowApiOptions);
+      }
+      catch (error: any) {
+        uxLog("error", this, c.red(`ServiceNow API call failed: ${error.message}\n${JSON.stringify(error?.response?.data || {})}`));
+        continue;
+      }
+      // Complete user stories with ServiceNow data
+      const serviceNowRecords = serviceNowApiRes?.data?.result;
+      if (!serviceNowRecords || serviceNowRecords.length === 0) {
+        uxLog("warning", this, c.yellow(`No records found in ServiceNow response.`));
+        continue;
+      }
+      uxLog("success", this, `ServiceNow API call succeeded: ${serviceNowRecords.length} records found`);
+      for (const userStory of this.userStories) {
+        const ticketNumber = userStory?.[this.userStoriesConfig.ticketField];
+        const serviceNowRecord = serviceNowRecords.find((record: any) => record.number === ticketNumber);
+        if (serviceNowRecord) {
+          userStory.serviceNowInfo = serviceNowRecord;
+          userStory.serviceNowTableName = table.tableName;
+        }
+      }
+    }
+  }
+
+  private async buildResult() {
+    uxLog("action", this, c.cyan(`Building final results...`));
+    this.results = this.userStories.map((userStory: any) => {
+      const serviceNowInfo = userStory.serviceNowInfo || {};
+      // Build result object dynamically based on config
+      const result: any = {};
+      for (const field of this.userStoriesConfig.reportFields) {
+        if (field.special === "serviceNowTicketUrl") {
+          if (!serviceNowInfo.sys_id) {
+            result[field.key] = 'NOT FOUND';
+          }
+          else {
+            result[field.key] = `${process.env.SERVICENOW_URL}/nav_to.do?uri=/${userStory.serviceNowTableName}.do?sys_id=${serviceNowInfo.sys_id}`;
+          }
+        } else if (field.path) {
+          // Support nested paths like "CreatedBy.Name" or "serviceNowInfo.number"
+          const value = field.path.split('.').reduce((obj, prop) => obj && obj[prop], { ...userStory, serviceNowInfo });
+          result[field.key] = value !== undefined && value !== null ? value : (field.default ?? 'NOT FOUND');
+        }
+      }
+      return result;
+    });
+
+    uxLog("action", this, c.cyan(`Final results built with ${this.results.length} records.`));
+    uxLogTable(this, this.results);
+
+    // Generate CSV file
+    await this.buildCsvFile();
+  }
+
+  private getServiceNowConfig() {
+    const serviceNowUrl = process.env.SERVICENOW_URL;
+    if (!serviceNowUrl) {
+      throw new SfError('ServiceNow API URL is not set. Please set SERVICENOW_URL environment variable.');
+    }
+    const serviceNowApiUser = process.env.SERVICENOW_USERNAME || '';
+    const serviceNowApiPassword = process.env.SERVICENOW_PASSWORD || '';
+    const serviceNowApiHeaders = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+    const serviceNowApiOptions = this.buildServiceNowAuthHeaders(serviceNowApiHeaders, serviceNowApiUser, serviceNowApiPassword);
+    return { serviceNowUrl, serviceNowApiOptions };
+  }
+
 
   private async initializeConfiguration() {
     if (!this.configFile) {
