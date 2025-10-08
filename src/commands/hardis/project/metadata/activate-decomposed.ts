@@ -194,20 +194,21 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         }
       }
 
-      // Build confirmation message with comma-separated list of metadata types
-      const metadataTypesList = applicableTypes.map(type => type.name).join(', ');
-      const confirmMessage = `Are you sure you want to decompose these metadata types: ${metadataTypesList}?`;
-
-      // Ask for confirmation
-      const confirmResult = await prompts({
-        type: 'confirm',
-        name: 'confirmed',
-        message: c.cyan(confirmMessage),
-        description: 'Confirm Metadata Decomposition'
+      // Let user select which metadata types to decompose
+      const selectionResult = await prompts({
+        type: 'multiselect',
+        name: 'selectedTypes',
+        message: c.cyan('Select metadata types to decompose:'),
+        description: 'Use space to select/deselect, Enter to confirm',
+        choices: applicableTypes.map(type => ({
+          title: type.name,
+          value: type.name,
+          selected: true // All selected by default
+        }))
       });
-      const confirmed = confirmResult.confirmed === true;
 
-      if (!confirmed) {
+      // Check if user cancelled the selection
+      if (!selectionResult.selectedTypes || selectionResult.selectedTypes.length === 0) {
         uxLog("warning", this, c.yellow('Operation cancelled by user'));
         this.sendWebSocketStatus({
           status: 'warning',
@@ -218,8 +219,15 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         return results;
       }
 
-      // Process each applicable metadata type
-      for (const metadataType of applicableTypes) {
+      // Filter to only selected types
+      const selectedMetadataTypes = applicableTypes.filter(type =>
+        selectionResult.selectedTypes.includes(type.name)
+      );
+
+      uxLog("log", this, c.cyan(`Selected for decomposition: ${selectedMetadataTypes.map(t => t.name).join(', ')}`));
+
+      // Process each selected metadata type
+      for (const metadataType of selectedMetadataTypes) {
         const operationResult = await this.decomposeMetadataType(metadataType, flags);
 
         if (operationResult.success) {
