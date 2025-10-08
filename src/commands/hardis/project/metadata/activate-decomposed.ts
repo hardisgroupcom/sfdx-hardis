@@ -108,11 +108,8 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     }),
   };
 
-  public static requiresProject = true;
-
   protected configInfo: any;
   private sourceBehaviorOptionsCache?: string[] | null;
-  private packageDirectoriesCache?: string[];
 
   public async run(): Promise<any> {
     const { flags } = await this.parse(ActivateDecomposedMetadata);
@@ -258,23 +255,67 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       // Log errors if any
       if (results.errors.length > 0) {
-        uxLog("error", this, c.red(`Errors occurred during decomposition:\n${results.errors.join('\n')}`));
+        uxLog("action", this, c.red(`\n${'='.repeat(80)}`));
+        uxLog("action", this, c.red(`ERRORS SUMMARY`));
+        uxLog("action", this, c.red('='.repeat(80)));
+        results.errors.forEach((error, index) => {
+          uxLog("error", this, c.red(`\nError ${index + 1}:\n${error}`));
+        });
+        uxLog("error", this, c.red('='.repeat(80)));
       }
     } catch (error: any) {
       results.success = false;
-      results.errors.push(error.message || 'Unknown error');
 
-      // Send error status to UI
+      // Build comprehensive error information
+      const errorMessage = error?.message || 'Unknown error';
+      const errorStack = error?.stack || '';
+      const errorStdout = error?.stdout || '';
+      const errorStderr = error?.stderr || '';
+
+      // Build detailed error report
+      const errorDetails: string[] = [];
+      errorDetails.push(`Error Type: Unexpected error during metadata decomposition`);
+
+      if (errorMessage && errorMessage !== 'Unknown error') {
+        errorDetails.push(`Error Message: ${errorMessage}`);
+      }
+
+      if (errorStdout && errorStdout.trim()) {
+        errorDetails.push(`Standard Output:\n${errorStdout.trim()}`);
+      }
+
+      if (errorStderr && errorStderr.trim()) {
+        errorDetails.push(`Standard Error:\n${errorStderr.trim()}`);
+      }
+
+      if (errorStack) {
+        errorDetails.push(`Stack Trace:\n${errorStack}`);
+      }
+
+      const detailedErrorReport = errorDetails.join('\n');
+      results.errors.push(detailedErrorReport);
+
+      // Send error status to UI with detailed message
+      let uiErrorMessage = 'Error during metadata decomposition';
+      if (errorStderr && errorStderr.trim()) {
+        const firstErrorLine = errorStderr.trim().split('\n')[0];
+        uiErrorMessage += `: ${firstErrorLine}`;
+      } else if (errorMessage && errorMessage !== 'Unknown error') {
+        uiErrorMessage += `: ${errorMessage}`;
+      }
+
       this.sendWebSocketStatus({
         status: 'error',
-        message: `Error during metadata decomposition: ${error.message || 'Unknown error'}`,
+        message: uiErrorMessage,
         icon: 'error'
       });
 
-      uxLog("error", this, c.red(`Error during metadata decomposition: ${error.message || 'Unknown error'}`));
-      if (flags.debug && error.stack) {
-        uxLog("error", this, c.red(error.stack));
-      }
+      // Log detailed error report
+      uxLog("error", this, c.red(`\n${'='.repeat(80)}`));
+      uxLog("error", this, c.red(`UNEXPECTED ERROR DURING METADATA DECOMPOSITION`));
+      uxLog("error", this, c.red('='.repeat(80)));
+      uxLog("error", this, c.red(detailedErrorReport));
+      uxLog("error", this, c.red('='.repeat(80)));
     } finally {
       // Close WebSocket connection if it was opened
       WebSocketClient.closeClient('completed');
@@ -318,32 +359,25 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
   }
 
   /**
-   * Get package directories from sfdx-project.json (with caching)
+   * Get package directories from project
    * Supports custom package directory structures (Optimization #3)
    * Returns base package paths (e.g., 'force-app'), not including 'main/default'
    */
   private getPackageDirectories(): string[] {
-    // Return cached value if available
-    if (this.packageDirectoriesCache) {
-      return this.packageDirectoriesCache;
-    }
-
     try {
-      const projectJsonPath = path.join(process.cwd(), 'sfdx-project.json');
-      if (!fs.existsSync(projectJsonPath)) {
-        this.packageDirectoriesCache = ['force-app'];
-        return this.packageDirectoriesCache;
+      // Use the project's getPackageDirectories method if available
+      const packageDirs = this.project?.getPackageDirectories();
+
+      if (packageDirs && packageDirs.length > 0) {
+        // Map to get just the path property from each package directory object
+        return packageDirs.map((pd: any) => pd.path);
       }
 
-      const projectConfig = JSON.parse(fs.readFileSync(projectJsonPath, 'utf8'));
-      const packageDirs: string[] = projectConfig.packageDirectories?.map((pd: any) => pd.path) || [];
-
-      // If no package directories, default to force-app
-      this.packageDirectoriesCache = packageDirs.length > 0 ? packageDirs : ['force-app'];
-      return this.packageDirectoriesCache;
+      // Fallback to default if no project or no package directories
+      return ['force-app'];
     } catch (error) {
-      this.packageDirectoriesCache = ['force-app'];
-      return this.packageDirectoriesCache;
+      // Fallback to default on error
+      return ['force-app'];
     }
   }
 
@@ -431,14 +465,24 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
     uxLog("action", this, c.cyan(`Executing: ${command} (with auto-confirmation)`));
 
-    // Use the framework's execCommand utility which handles cross-platform execution
-    const result = await execCommand(commandWithAutoConfirm, this, {
-      fail: true,
-      output: flags.output || flags.debug,
-      debug: flags.debug
-    });
+    try {
+      // Use the framework's execCommand utility which handles cross-platform execution
+      const result = await execCommand(commandWithAutoConfirm, this, {
+        fail: true,
+        output: flags.output || flags.debug,
+        debug: flags.debug
+      });
 
-    return result;
+      return result;
+    } catch (error: any) {
+      // Enhance error with more context
+      const enhancedError = new Error(error.message || 'Unknown error');
+      (enhancedError as any).stdout = error.stdout || '';
+      (enhancedError as any).stderr = error.stderr || '';
+      (enhancedError as any).exitCode = error.exitCode || error.code || 1;
+      (enhancedError as any).command = command;
+      throw enhancedError;
+    }
   }
 
   /**
@@ -473,11 +517,14 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       uxLog("success", this, c.green(`Successfully decomposed ${metadataType.name}`));
       return { success: true };
     } catch (error: any) {
-      // Check if error is due to behavior already existing
-      const errorMessage = error?.message || '';
+      // Extract all error information
+      const errorMessage = error?.message || 'Unknown error';
       const errorStdout = error?.stdout || '';
       const errorStderr = error?.stderr || '';
+      const exitCode = error?.exitCode || '';
+      const commandExecuted = error?.command || command;
 
+      // Check if error is due to behavior already existing
       if (errorMessage.includes('sourceBehaviorOptionAlreadyExists') ||
         errorStdout.includes('sourceBehaviorOptionAlreadyExists') ||
         errorStderr.includes('sourceBehaviorOptionAlreadyExists')) {
@@ -485,23 +532,63 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         return { success: true, error: 'Already decomposed' };
       }
 
-      // Build detailed error message
-      let detailedError = errorMessage;
-      if (errorStdout) {
-        detailedError += `\nOutput: ${errorStdout}`;
-      }
-      if (errorStderr) {
-        detailedError += `\nError: ${errorStderr}`;
+      // Build comprehensive error report
+      const errorDetails: string[] = [];
+      errorDetails.push(`Metadata Type: ${metadataType.name}`);
+      errorDetails.push(`Behavior: ${metadataType.behavior}`);
+      errorDetails.push(`Command: ${commandExecuted}`);
+
+      if (exitCode) {
+        errorDetails.push(`Exit Code: ${exitCode}`);
       }
 
+      if (errorMessage && errorMessage !== 'Unknown error') {
+        errorDetails.push(`Error Message: ${errorMessage}`);
+      }
+
+      if (errorStdout && errorStdout.trim()) {
+        errorDetails.push(`Standard Output:\n${errorStdout.trim()}`);
+      }
+
+      if (errorStderr && errorStderr.trim()) {
+        errorDetails.push(`Standard Error:\n${errorStderr.trim()}`);
+      }
+
+      const detailedErrorReport = errorDetails.join('\n');
+
+      // Create user-friendly error message for UI
+      let uiErrorMessage = `Error decomposing ${metadataType.name}`;
+      if (exitCode) {
+        uiErrorMessage += ` (exit code ${exitCode})`;
+      }
+      if (errorStderr && errorStderr.trim()) {
+        // Include first line of stderr in UI message
+        const firstErrorLine = errorStderr.trim().split('\n')[0];
+        uiErrorMessage += `: ${firstErrorLine}`;
+      } else if (errorMessage && errorMessage !== 'Unknown error') {
+        uiErrorMessage += `: ${errorMessage}`;
+      }
+
+      // Send detailed error to UI
       this.sendWebSocketStatus({
         status: 'error',
-        message: `Error decomposing ${metadataType.name}: ${errorMessage || 'Unknown error'}`,
+        message: uiErrorMessage,
         icon: 'error'
       });
 
-      uxLog("error", this, c.red(`Error decomposing ${metadataType.name}: ${detailedError || 'Unknown error'}`));
-      return { success: false, error: detailedError || 'Unknown error' };
+      // Log detailed error report
+      uxLog("error", this, c.red(`\n${'='.repeat(80)}`));
+      uxLog("error", this, c.red(`ERROR DECOMPOSING ${metadataType.name.toUpperCase()}`));
+      uxLog("error", this, c.red('='.repeat(80)));
+      uxLog("error", this, c.red(detailedErrorReport));
+      uxLog("error", this, c.red('='.repeat(80)));
+
+      // Also log to help with debugging
+      if (flags.debug) {
+        uxLog("error", this, c.grey(`Full error object: ${JSON.stringify(error, null, 2)}`));
+      }
+
+      return { success: false, error: detailedErrorReport };
     }
   }
 
