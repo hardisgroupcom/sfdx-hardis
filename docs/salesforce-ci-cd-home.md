@@ -26,30 +26,38 @@ There are many ways to do DevOps with Salesforce. Each has its advantages and li
 
 ![DevOps Pipeline](assets/images/sfdx-hardis-pipeline-view.gif)
 
-- **Admins** can [build their pull requests](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/) using the **VS Code extension** with clicks, no command line required.
-- **Developers** understand what's happening under the hood with the **Salesforce CLI**, thanks to the **Advanced mode** in the UI.
-- **Release Managers** can configure the CI/CD process using the **Visual DevOps Pipeline Builder**.
-- **Project Managers** can follow application lifecycle management using sfdx-hardis **native integrations** with ticketing systems like **Jira** and **Azure Boards**.
+Every persona can be autonomous in their tasks: Admins, Developers, Release Managers and even Project Leaders.
+
+| Role                 | How they use sfdx-hardis                                                                                                                                            |
+|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Admins**           | [Build their pull requests](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/) using the **VS Code extension** with clicks. No command line required. |
+| **Developers**       | Same as Admins, + understand what's happening under the hood with the **Salesforce CLI**, thanks to the **Advanced mode** in the UI.                                |
+| **Release Managers** | Configure the CI/CD process using the **Visual DevOps Pipeline Builder**<br/>Follow the Pull Requests and Deployments thanks to the **DevOps Pipeline View**        |
+| **Project Managers** | Follow application lifecycle management using sfdx-hardis **native integrations** with ticketing systems like **Jira** and **Azure Boards**.                        |
 
 ### Because it is powerful
 
-Advanced features make sfdx-hardis a credible alternative to expensive Salesforce DevOps tools:
+Advanced features make sfdx-hardis a credible alternative to expensive Salesforce DevOps tools.
 
-- [**Delta Deployments**](salesforce-ci-cd-config-delta-deployment.md): Improve performance by deploying only updated metadata.
-- [**Overwrite Management**](salesforce-ci-cd-config-overwrite.md): Define which metadata will never be overwritten if it already exists in the target org.
-- [**Smart Apex Test Runs**](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests): If your pull request to a sandbox cannot break Apex tests, skip them to improve performance.
-- [**Automated source cleaning**](salesforce-ci-cd-config-cleaning.md): Clean profiles of attributes that exist in permission sets, tidy flow element positions, and more.
-- [**Integration with messaging platforms**](salesforce-ci-cd-setup-integrations-home.md): Receive detailed deployment notifications on **Slack**, **Microsoft Teams**, and email.
-- Integration with **ticketing systems**: [**Jira**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jira/), [**Azure Boards**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure-boards/), or [any other tool](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-generic-ticketing/).
-- [**AI integration**](salesforce-deployment-assistant-home.md) to help resolve deployment issues (use Agentforce or direct calls to OpenAI, Anthropic, Gemini).
+| Feature                                  | Description                                                                                                                                                                                                                                                                                                       |
+|------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Delta Deployments**                    | [Improve performance by deploying only updated metadata.](salesforce-ci-cd-config-delta-deployment.md)                                                                                                                                                                                                            |
+| **Overwrite Management**                 | [Define which metadata will never be overwritten if it already exists in the target org.](salesforce-ci-cd-config-overwrite.md)                                                                                                                                                                                   |
+| **Smart Apex Test Runs**                 | [Skip tests when a pull request to a sandbox cannot break Apex tests to improve performance.](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests)                                                                                                                              |
+| **Automated source cleaning**            | [Clean profiles of attributes that exist in permission sets, tidy flow element positions, and more.](salesforce-ci-cd-config-cleaning.md)                                                                                                                                                                         |
+| **Integration with messaging platforms** | [Receive detailed deployment notifications on Slack, Microsoft Teams, and email.](salesforce-ci-cd-setup-integrations-home.md)                                                                                                                                                                                    |
+| **Integration with ticketing systems**   | Integrate with [Jira](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jira/), [Azure Boards](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure-boards/), or [any other tool](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-generic-ticketing/). |
+| **AI integration**                       | [Help resolve deployment issues (Agentforce or direct calls to OpenAI, Anthropic, Gemini).](salesforce-deployment-assistant-home.md)                                                                                                                                                                              |
 
 We provide **ready-to-use CI/CD pipeline workflows** for the following Git platforms, with the results of deployment simulation jobs posted as comments on pull requests:
 
-- [GitLab](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml)
-- [Azure](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-checks.yml)
-- [GitHub & Gitea](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/deploy.yml)
-- [Bitbucket](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/bitbucket-pipelines.yml)
-- [Jenkins](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/Jenkinsfile)
+| Platform       | CI/CD template                                                                                                                                                                                                                                                                                           |
+|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| GitLab         | [GitLab CI configuration](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml)                                                                                                                                                                                            |
+| Azure DevOps   | [Azure Pipelines checks](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-checks.yml), [Azure Pipelines deployment](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-deployment.yml)                                               |
+| GitHub & Gitea | [GitHub Actions / Gitea workflow checks](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/check-deploy.yml), [GitHub Actions / Gitea workflow deployment](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/process-deploy.yml) |
+| Bitbucket      | [Bitbucket Pipelines](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/bitbucket-pipelines.yml)                                                                                                                                                                                       |
+| Jenkins        | [Jenkinsfile](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/Jenkinsfile)                                                                                                                                                                                                           |
 
 Pipelines can easily be adapted to other platforms like [TeamCity](https://www.jetbrains.com/teamcity/).
 
@@ -57,6 +65,8 @@ _Here is an advanced example of a Salesforce CI/CD pipeline that you can define 
 _You can define much simpler branch/org models to manage only RUN operations._
 
 ![](assets/images/ci-cd-schema-main.jpg){ align=center }
+
+See advanced Q&A in the following article.
 
 [![Questions/Answers](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-questions-answers.jpg)](https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476)
 
