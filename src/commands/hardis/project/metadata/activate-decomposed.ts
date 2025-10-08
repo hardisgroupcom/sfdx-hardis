@@ -2,8 +2,7 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import c from 'chalk';
-import { spawn } from 'child_process';
-import { uxLog } from '../../../../common/utils/index.js';
+import { execCommand, uxLog } from '../../../../common/utils/index.js';
 import { getConfig } from '../../../../config/index.js';
 import fs from 'fs-extra';
 import path from 'path';
@@ -413,80 +412,25 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
   /**
    * Execute a Salesforce CLI command with automatic confirmation (cross-platform)
-   * This method handles the 'y' confirmation prompt in a way that works across all operating systems
+   * Uses the framework's execCommand utility with auto-confirmation via echo
    */
   private async execSfCommandWithConfirmation(
     command: string,
     flags: any
-  ): Promise<{ stdout: string; stderr: string }> {
-    return new Promise((resolve, reject) => {
-      // Parse the command - split on first space to separate executable from args
-      const firstSpaceIndex = command.indexOf(' ');
-      const executable = command.substring(0, firstSpaceIndex);
-      const argsString = command.substring(firstSpaceIndex + 1);
+  ): Promise<any> {
+    // Use echo y | command for cross-platform auto-confirmation
+    const commandWithAutoConfirm = `echo y | ${command}`;
 
-      uxLog("action", this, c.cyan(`Executing: ${command} (with auto-confirmation)`));
+    uxLog("action", this, c.cyan(`Executing: ${command} (with auto-confirmation)`));
 
-      // Spawn the process with shell enabled for cross-platform compatibility
-      const childProcess = spawn(executable, [argsString], {
-        shell: true,
-        stdio: ['pipe', 'pipe', 'pipe'],
-        env: process.env,
-        cwd: process.cwd()
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      // Collect stdout
-      childProcess.stdout.on('data', (data: Buffer) => {
-        const output = data.toString();
-        stdout += output;
-        if (flags.output || flags.debug) {
-          process.stdout.write(output);
-        }
-      });
-
-      // Collect stderr
-      childProcess.stderr.on('data', (data: Buffer) => {
-        const output = data.toString();
-        stderr += output;
-        if (flags.output || flags.debug) {
-          process.stderr.write(output);
-        }
-      });
-
-      // Automatically send 'y' followed by newline to stdin when process starts
-      // This works on all platforms (Windows CMD/PowerShell, Git Bash, Linux, macOS)
-      const timeoutId = setTimeout(() => {
-        try {
-          childProcess.stdin.write('y\n');
-          childProcess.stdin.end();
-        } catch (e) {
-          // Ignore errors if stdin is already closed
-        }
-      }, 100); // Small delay to ensure the process is ready for input
-
-      // Handle process completion
-      childProcess.on('close', (code: number) => {
-        clearTimeout(timeoutId); // Clean up timeout to prevent memory leak
-        if (code === 0) {
-          resolve({ stdout, stderr });
-        } else {
-          const error: any = new Error(`Command failed with exit code ${code}`);
-          error.stdout = stdout;
-          error.stderr = stderr;
-          error.code = code;
-          reject(error);
-        }
-      });
-
-      // Handle process errors (Optimization #6: cleanup timeout on error)
-      childProcess.on('error', (error: Error) => {
-        clearTimeout(timeoutId); // Clean up timeout to prevent memory leak
-        reject(error);
-      });
+    // Use the framework's execCommand utility which handles cross-platform execution
+    const result = await execCommand(commandWithAutoConfirm, this, {
+      fail: true,
+      output: flags.output || flags.debug,
+      debug: flags.debug
     });
+
+    return result;
   }
 
   /**
@@ -522,19 +466,34 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       return { success: true };
     } catch (error: any) {
       // Check if error is due to behavior already existing
-      if (error?.message && error.message.includes('sourceBehaviorOptionAlreadyExists')) {
+      const errorMessage = error?.message || '';
+      const errorStdout = error?.stdout || '';
+      const errorStderr = error?.stderr || '';
+
+      if (errorMessage.includes('sourceBehaviorOptionAlreadyExists') ||
+        errorStdout.includes('sourceBehaviorOptionAlreadyExists') ||
+        errorStderr.includes('sourceBehaviorOptionAlreadyExists')) {
         uxLog("log", this, c.grey(`${metadataType.name} is already decomposed (${metadataType.behavior} found in sfdx-project.json)`));
         return { success: true, error: 'Already decomposed' };
       }
 
+      // Build detailed error message
+      let detailedError = errorMessage;
+      if (errorStdout) {
+        detailedError += `\nOutput: ${errorStdout}`;
+      }
+      if (errorStderr) {
+        detailedError += `\nError: ${errorStderr}`;
+      }
+
       this.sendWebSocketStatus({
         status: 'error',
-        message: `Error decomposing ${metadataType.name}: ${error?.message || 'Unknown error'}`,
+        message: `Error decomposing ${metadataType.name}: ${errorMessage || 'Unknown error'}`,
         icon: 'error'
       });
 
-      uxLog("error", this, c.red(`Error decomposing ${metadataType.name}: ${error?.message || 'Unknown error'}`));
-      return { success: false, error: error?.message || 'Unknown error' };
+      uxLog("error", this, c.red(`Error decomposing ${metadataType.name}: ${detailedError || 'Unknown error'}`));
+      return { success: false, error: detailedError || 'Unknown error' };
     }
   }
 
