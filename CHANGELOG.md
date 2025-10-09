@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
- - Update CI/CD documentation
+- Cast descriptions to string before formatting
+- Add a message in case Pull Requests app requires to be installed on BitBucket
+- Update CI/CD documentation
+- Update JSON Schema
 
 ## [6.6.0] 2025-10-05
 
