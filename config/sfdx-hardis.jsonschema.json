@@ -665,11 +665,11 @@
     },
     "developmentBranch": {
       "$id": "#/properties/developmentBranch",
-      "default": "developpement",
+      "default": "integration",
       "description": "When creating a new sfdx-hardis User Story, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
       "docUrl": "https://sfdx-hardis.cloudity.com/hardis/work/new/",
       "examples": [
-        "developpement",
+        "integration",
         "dev_lot2",
         "hotfixes"
       ],
