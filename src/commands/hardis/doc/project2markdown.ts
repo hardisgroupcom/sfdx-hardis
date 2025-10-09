@@ -1221,7 +1221,7 @@ ${Project2Markdown.htmlInstructions}
       this.objectDescriptions.push({
         name: objectName,
         label: objectXmlParsed?.CustomObject?.label || "",
-        description: objectXmlParsed?.CustomObject?.description || "",
+        description: String(objectXmlParsed?.CustomObject?.description || ""),
       });
       objectsForMenu[objectName] = "objects/" + objectName + ".md";
       if (this.withPdf) {
