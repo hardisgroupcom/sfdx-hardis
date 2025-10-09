@@ -7,7 +7,6 @@ import { getConfig } from '../../../../config/index.js';
 import fs from 'fs-extra';
 import path from 'path';
 import { prompts } from '../../../../common/utils/prompts.js';
-import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { isSfdxProject } from '../../../../common/utils/projectUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -65,6 +64,8 @@ Supported metadata types (Beta):
 - ExternalServiceRegistration
 - SharingRules
 - Workflow
+
+See [Salesforce documentation on decomposed metadata](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_decomposed_md_types.htm)
 
 Key features:
 - Automatically detects and decomposes all applicable metadata types
@@ -132,13 +133,6 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     };
 
     try {
-      // Send initial status to UI
-      this.sendWebSocketStatus({
-        status: 'running',
-        message: `Preparing to decompose metadata`,
-        icon: 'sync'
-      });
-
       // Start main action section
       uxLog("action", this, c.cyan(`Checking for metadata types eligible for decomposition (Beta feature)`));
 
@@ -169,11 +163,6 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         if (alreadyDecomposedNames) {
           uxLog("warning", this, c.yellow(`All supported metadata types are already decomposed in this project`));
           uxLog("log", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
-          this.sendWebSocketStatus({
-            status: 'warning',
-            message: `All supported metadata types are already decomposed: ${alreadyDecomposedNames}`,
-            icon: 'warning'
-          });
           return {
             success: true,
             message: 'All metadata types already decomposed',
@@ -182,11 +171,6 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
           };
         } else {
           uxLog("warning", this, c.yellow(`No supported metadata types found in this project`));
-          this.sendWebSocketStatus({
-            status: 'warning',
-            message: `No supported metadata types found in this project`,
-            icon: 'warning'
-          });
           return { success: false, message: 'No supported metadata types found' };
         }
       }
@@ -207,11 +191,6 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       // Check if user cancelled the selection
       if (!selectionResult.selectedTypes || selectionResult.selectedTypes.length === 0) {
         uxLog("warning", this, c.yellow('Operation cancelled by user'));
-        this.sendWebSocketStatus({
-          status: 'warning',
-          message: 'Metadata decomposition cancelled by user',
-          icon: 'x-circle'
-        });
         results.cancelled = true;
         return results;
       }
@@ -236,32 +215,17 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       // Send success status to UI if any types were decomposed
       if (results.decomposedTypes.length > 0) {
-        this.sendWebSocketStatus({
-          status: 'success',
-          message: `Successfully decomposed: ${results.decomposedTypes.join(', ')}`,
-          icon: 'check-circle'
-        });
-
-        uxLog("success", this, c.green(`Successfully decomposed: ${results.decomposedTypes.join(', ')}`));
+        uxLog("action", this, c.green(`Successfully decomposed: ${results.decomposedTypes.join(', ')}`));
       } else {
-        this.sendWebSocketStatus({
-          status: 'warning',
-          message: `No metadata types were decomposed`,
-          icon: 'warning'
-        });
-
-        uxLog("warning", this, c.yellow(`No metadata types were decomposed`));
+        uxLog("action", this, c.yellow(`No metadata types were decomposed`));
       }
 
       // Log errors if any
       if (results.errors.length > 0) {
-        uxLog("action", this, c.red(`\n${'='.repeat(80)}`));
-        uxLog("action", this, c.red(`ERRORS SUMMARY`));
-        uxLog("action", this, c.red('='.repeat(80)));
+        uxLog("action", this, c.red(`Errors summary:`));
         results.errors.forEach((error, index) => {
           uxLog("error", this, c.red(`\nError ${index + 1}:\n${error}`));
         });
-        uxLog("error", this, c.red('='.repeat(80)));
       }
     } catch (error: any) {
       results.success = false;
@@ -304,21 +268,8 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         uiErrorMessage += `: ${errorMessage}`;
       }
 
-      this.sendWebSocketStatus({
-        status: 'error',
-        message: uiErrorMessage,
-        icon: 'error'
-      });
-
       // Log detailed error report
-      uxLog("error", this, c.red(`\n${'='.repeat(80)}`));
-      uxLog("error", this, c.red(`UNEXPECTED ERROR DURING METADATA DECOMPOSITION`));
-      uxLog("error", this, c.red('='.repeat(80)));
-      uxLog("error", this, c.red(detailedErrorReport));
-      uxLog("error", this, c.red('='.repeat(80)));
-    } finally {
-      // Close WebSocket connection if it was opened
-      WebSocketClient.closeClient('completed');
+      uxLog("error", this, c.red(uiErrorMessage));
     }
 
     return results;
@@ -351,9 +302,10 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       this.sourceBehaviorOptionsCache = options;
       return options;
-    } catch (error) {
+    } catch (error: any) {
       // If there's an error reading the file, assume no options exist
       this.sourceBehaviorOptionsCache = null;
+      uxLog("warning", this, c.yellow(`Warning: Unable to read sfdx-project.json for sourceBehaviorOptions (error: ${error instanceof Error ? error.message : 'unknown error'})`));
       return [];
     }
   }
@@ -376,6 +328,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       // Fallback to default if no project or no package directories
       return ['force-app'];
     } catch (error) {
+      uxLog("warning", this, c.yellow(`Warning: Unable to read package directories from sfdx-project.json (error: ${error instanceof Error ? error.message : 'unknown error'})`));
       // Fallback to default on error
       return ['force-app'];
     }
@@ -463,8 +416,6 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     // Use echo y | command for cross-platform auto-confirmation
     const commandWithAutoConfirm = `echo y | ${command}`;
 
-    uxLog("action", this, c.cyan(`Executing: ${command} (with auto-confirmation)`));
-
     try {
       // Use the framework's execCommand utility which handles cross-platform execution
       const result = await execCommand(commandWithAutoConfirm, this, {
@@ -492,14 +443,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     metadataType: MetadataTypeConfig,
     flags: any
   ): Promise<{ success: boolean; error?: string }> {
-    uxLog("action", this, c.cyan(`Preparing to decompose ${metadataType.name}...`));
-
-    // Update UI status
-    this.sendWebSocketStatus({
-      status: 'running',
-      message: `Decomposing ${metadataType.name}...`,
-      icon: 'refresh'
-    });
+    uxLog("action", this, c.cyan(`Attempting to decompose metadata ${metadataType.name}...`));
 
     // Run sf project convert source-behavior command
     const command = `sf project convert source-behavior --behavior ${metadataType.behavior}`;
@@ -507,13 +451,6 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     try {
       // Use cross-platform method to handle confirmation
       await this.execSfCommandWithConfirmation(command, flags);
-
-      this.sendWebSocketStatus({
-        status: 'success',
-        message: `Successfully decomposed ${metadataType.name}`,
-        icon: 'check-circle'
-      });
-
       uxLog("success", this, c.green(`Successfully decomposed ${metadataType.name}`));
       return { success: true };
     } catch (error: any) {
@@ -530,6 +467,23 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         errorStderr.includes('sourceBehaviorOptionAlreadyExists')) {
         uxLog("log", this, c.grey(`${metadataType.name} is already decomposed (${metadataType.behavior} found in sfdx-project.json)`));
         return { success: true, error: 'Already decomposed' };
+      }
+
+      if (errorMessage.includes('TrackingNotSupportedError')) {
+        const retryRes = await prompts({
+          type: 'confirm',
+          name: 'retry',
+          message: c.yellow(`You can not decompose metadata when default org has source tracking enabled. Do you want to unselect the default org and retry?`),
+          description: 'This will unset the default org for this project and try the command again',
+          initial: true
+        });
+        if (retryRes.retry) {
+          // Unset default org
+          await execCommand('sf config unset target-org', this, { fail: true, debug: flags.debug });
+          uxLog("log", this, c.green(`Default org unset successfully. Retrying decomposition of ${metadataType.name}...`));
+          // Retry decomposition
+          return await this.decomposeMetadataType(metadataType, flags);
+        }
       }
 
       // Build comprehensive error report
@@ -569,19 +523,8 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         uiErrorMessage += `: ${errorMessage}`;
       }
 
-      // Send detailed error to UI
-      this.sendWebSocketStatus({
-        status: 'error',
-        message: uiErrorMessage,
-        icon: 'error'
-      });
-
       // Log detailed error report
-      uxLog("error", this, c.red(`\n${'='.repeat(80)}`));
-      uxLog("error", this, c.red(`ERROR DECOMPOSING ${metadataType.name.toUpperCase()}`));
-      uxLog("error", this, c.red('='.repeat(80)));
-      uxLog("error", this, c.red(detailedErrorReport));
-      uxLog("error", this, c.red('='.repeat(80)));
+      uxLog("error", this, c.red(uiErrorMessage));
 
       // Also log to help with debugging
       if (flags.debug) {
@@ -592,12 +535,5 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     }
   }
 
-  // Helper method to send status updates to the WebSocket UI
-  private sendWebSocketStatus(status: any): void {
-    WebSocketClient.sendMessage({
-      event: 'status',
-      data: status
-    });
-  }
 }
 /* jscpd:ignore-end */

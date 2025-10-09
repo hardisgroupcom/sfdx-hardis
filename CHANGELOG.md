@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Add a message in case Pull Requests app requires to be installed on BitBucket
 - Update CI/CD documentation
 - Update JSON Schema
+- New command [hardis:project:metadata:activate-decomposed](https://sfdx-hardis.cloudity.com/hardis/project/metadata/activate-decomposed/) to activate decomposed metadata types in sfdx-project.json and convert existing sources
 
 ## [6.6.0] 2025-10-05
 
