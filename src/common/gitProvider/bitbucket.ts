@@ -93,19 +93,25 @@ export class BitbucketProvider extends GitProviderRoot {
 
     // Case when we find PR from a commit
     const sha = await git().revparse(['HEAD']);
-    const latestPullRequestsOnBranch = await this.bitbucket.repositories.listPullrequestsForCommit({
-      // cspell:disable-line
-      commit: sha,
-      repo_slug: repoSlug || '',
-      workspace: workspace || '',
-    });
-    const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch?.data?.values?.filter(
-      (pr) => pr.state === 'MERGED' && pr.merge_commit?.hash === sha
-    );
-    if (latestMergedPullRequestOnBranch?.length && latestMergedPullRequestOnBranch?.length > 0) {
-      const pullRequest = latestMergedPullRequestOnBranch[0];
-      // Add cross git provider properties used by sfdx-hardis
-      return this.completePullRequestInfo(pullRequest);
+    try {
+      // Note: listPullrequestsForCommit API can be unreliable - it requires the "Pull Request Commit Links" app to be installed
+      // See: https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-commit-commit-pullrequests-get
+      const latestPullRequestsOnBranch = await this.bitbucket.repositories.listPullrequestsForCommit({
+        workspace: workspace || '',
+        repo_slug: repoSlug || '',
+        commit: sha,
+      });
+      const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch?.data?.values?.filter(
+        (pr) => pr.state === 'MERGED' && pr.merge_commit?.hash === sha
+      );
+      if (latestMergedPullRequestOnBranch?.length && latestMergedPullRequestOnBranch?.length > 0) {
+        const pullRequest = latestMergedPullRequestOnBranch[0];
+        // Add cross git provider properties used by sfdx-hardis
+        return this.completePullRequestInfo(pullRequest);
+      }
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[Bitbucket Integration] Unable to retrieve pull requests for commit ${sha}: ${(e as Error).message}`));
+      uxLog("log", this, c.grey(`[Bitbucket Integration] Note: This API requires the "Pull Request Commit Links" Bitbucket app to be installed on the repository.`));
     }
 
     uxLog("log", this, c.grey(`[Bitbucket Integration] Unable to find related Pull Request Info`));
