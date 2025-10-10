@@ -146,7 +146,6 @@ export class ApiProvider extends NotifProviderRoot {
       return;
     }
 
-    console.log("this.payload", this.payload);
     this.payloadFormatted = this.payload;
   }
 
@@ -332,7 +331,7 @@ export class ApiProvider extends NotifProviderRoot {
     this.metricsPayload = metricsPayloadLines.join("\n");
   }
 
-  // Build Prometheus exposition format
+  // Build Prometheus format
   private buildMetricsPayloadPrometheus() {
     // Build labels
     const labels =
@@ -342,7 +341,6 @@ export class ApiProvider extends NotifProviderRoot {
       `gitIdentifier="${this.payload.gitIdentifier}"`;
 
     const metricsPayloadLines: any[] = [];
-
     for (const metricId of Object.keys(this.payload.data._metrics)) {
       const metricData = this.payload.data._metrics[metricId];
       const sanitizedMetricName = metricId.replace(/[^a-zA-Z0-9_]/g, '_');
