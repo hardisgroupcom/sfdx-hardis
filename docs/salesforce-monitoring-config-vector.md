@@ -27,6 +27,7 @@ This guide is part of the [sfdx-hardis monitoring suite](salesforce-monitoring-h
 ## Quick Start
 
 1. **Enable file logging** in sfdx-hardis:
+
    ```bash
    export NOTIF_API_LOGS_JSON_FILE=/path/to/logs/sfdx-hardis-logs.json
    ```
@@ -34,6 +35,7 @@ This guide is part of the [sfdx-hardis monitoring suite](salesforce-monitoring-h
 2. **Configure Vector** (see [Sample Vector Configuration](#sample-vector-configuration) below)
 
 3. **Run monitoring commands**:
+
    ```bash
    sf hardis:org:monitor:all
    ```
@@ -115,6 +117,7 @@ sf hardis:org:monitor:all
 ## Integration with Monitoring Stack
 
 ### Vector + Loki + Grafana
+
 This setup is configured to work with the dashboards provided by sfdx-hardis.
 
 If you're using a monitoring stack (Vector + Loki + Grafana), configure Vector to watch the log file: 
@@ -135,6 +138,7 @@ The default Vector configuration is already compatible! It:
 No changes needed if you're using the standard Vector config!
 
 **4. Query in Grafana:**
+
 ```logql
 # All sfdx-hardis notifications
 {source="sfdx-hardis"}
@@ -154,12 +158,14 @@ No changes needed if you're using the standard Vector config!
 The file is append-only. Consider rotating logs periodically:
 
 **Option 1: Include date in filename**
+
 ```bash
 # Set filename with date - creates a new file each day
 export NOTIF_API_LOGS_JSON_FILE="./logs/sfdx-hardis-logs-$(date +%Y-%m-%d).json"
 ```
 
 **Option 2: Rotation script**
+
 ```bash
 # Rotate if file exists and is older than 1 day
 LOG_FILE="./logs/sfdx-hardis-logs.json"
@@ -173,6 +179,7 @@ fi
 ```
 
 ## Related Environment Variables
+
 - **NOTIF_API_LOGS_JSON_FILE** : Path to write notification logs
 - **NOTIF_API_METRICS_URL** : Metrics endpoint (Prometheus Pushgateway or Grafana Cloud)
 - **DD_API_KEY** : Datadog API key (if using Datadog sink)
@@ -192,12 +199,14 @@ After setting up Vector, you can:
 ## Additional Resources
 
 ### Official Documentation
+
 - [Vector Configuration Guide](https://vector.dev/docs/reference/configuration/)
 - [Loki LogQL Documentation](https://grafana.com/docs/loki/latest/logql/)
 - [Datadog Logs](https://docs.datadoghq.com/logs/)
 - [Grafana Explore](https://grafana.com/docs/grafana/latest/explore/)
 
 ### sfdx-hardis Monitoring Guides
+
 - [Monitoring Home](salesforce-monitoring-home.md) - Overview of all monitoring features
 - [Monitoring Configuration](salesforce-monitoring-config-home.md) - Configuration guides
 - [API Integration](salesforce-ci-cd-setup-integration-api.md) - Direct API integration (without Vector)
@@ -343,18 +352,22 @@ data_dir = "/var/lib/vector"
 ### Using the Configuration
 
 **1. For Loki only:**
+
 - Keep the `[sinks.loki]` section
 - Remove or comment out the `[sinks.datadog]` section
 
 **2. For Datadog only:**
+
 - Remove or comment out the `[sinks.loki]` section  
 - Keep the `[sinks.datadog]` section and set `DD_API_KEY` and `DD_URL` environment variables
 
 **3. For both Loki and Datadog:**
+
 - Keep both sink sections
 - Set Datadog environment variables
 
 **4. Set environment variables:**
+
 ```bash
 # Required for Vector
 export LOG_FILES_PATH=/path/to/logs
