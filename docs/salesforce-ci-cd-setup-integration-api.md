@@ -90,9 +90,11 @@ ApexTestsCodeCoverage,source=sfdx-hardis,type=APEX_TESTS,orgIdentifier=hardis-gr
 
 If you want to see the content of the API notifications in execution logs, you can define `NOTIF_API_DEBUG=true`
 
-## Grafana Setup
+## Grafana Setup 
 
 If you don't have a Grafana server, you can use Grafana Cloud Free Tier (14 days of logs & metrics retention + 3 users, no credit card required, free forever)
+
+If you do have a Grafana server and want to use a log aggregation tool like vector to injest logs, there is a setup doc [Salesforce Monitoring Setup with Vector/Datadog and PushGateways](salesforce-monitoring-config-vector.md)
 
 ### Create Grafana Account
 
