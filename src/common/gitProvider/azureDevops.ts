@@ -598,9 +598,60 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     const workItemIds = (queryResult.workItems || []).map(item => item.id);
     if (workItemIds.length > 0) {
       this.attachmentsWorkItemId = Number(workItemIds[0]);
+      // Check the number of attached images: if too many, rename the work item with (full) then create a new one by cloning its parameters
+      const workItem = await witApi.getWorkItem(this.attachmentsWorkItemId, undefined, undefined, 1); // WorkItemExpand.Relations = 1
+      const attachedImages = (workItem.relations || []).filter(rel => rel.rel === "AttachedFile");
+      if (attachedImages.length >= 90) {
+        // Rename the work item
+        const newTitle = this.attachmentsWorkItemTitle + " (full)";
+        await witApi.updateWorkItem(
+          [],
+          [
+            {
+              op: "replace",
+              path: "/fields/System.Title",
+              value: newTitle
+            }
+          ],
+          this.attachmentsWorkItemId,
+          process.env.SYSTEM_TEAMPROJECT
+        );
+        uxLog("log", this, c.grey(`[Azure Integration] Renamed work item ${this.attachmentsWorkItemId} to '${newTitle}'`));
+
+        // Create a new work item by cloning the old one's parameters
+        const newWorkItem = await witApi.createWorkItem(
+          [],
+          [
+            {
+              op: "add",
+              path: "/fields/System.Title",
+              value: this.attachmentsWorkItemTitle
+            },
+            {
+              op: "add",
+              path: "/fields/System.WorkItemType",
+              value: workItem.fields?.["System.WorkItemType"] || "Task"
+            },
+            {
+              op: "add",
+              path: "/fields/System.Description",
+              value: "Technical work item used by sfdx-hardis to attach images for PR comments"
+            }
+          ],
+          process.env.SYSTEM_TEAMPROJECT!,
+          workItem.fields?.["System.WorkItemType"] || "Task"
+        );
+
+        if (newWorkItem && newWorkItem.id) {
+          this.attachmentsWorkItemId = newWorkItem.id;
+          uxLog("log", this, c.grey(`[Azure Integration] Created new work item ${this.attachmentsWorkItemId} with title '${this.attachmentsWorkItemTitle}'`));
+        }
+      } else {
+        uxLog("log", this, c.grey(`[Azure Integration] Found existing work item ${this.attachmentsWorkItemId} with title '${this.attachmentsWorkItemTitle}'`));
+      }
       return this.attachmentsWorkItemId;
     }
-    uxLog("error", this, c.red(`[Azure Integration] You need to create a technical work item exactly named '${this.attachmentsWorkItemTitle}', then set its identifier in variable AZURE_ATTACHMENTS_WORK_ITEM_ID`));
+    uxLog("error", this, c.red(`[Azure Integration] You need to create a technical work item exactly named '${this.attachmentsWorkItemTitle}', that will be used to attach images for comments.`));
     return null;
   }
 }

@@ -10,6 +10,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Update JSON Schema
 - New command [hardis:project:metadata:activate-decomposed](https://sfdx-hardis.cloudity.com/hardis/project/metadata/activate-decomposed/) to activate decomposed metadata types in sfdx-project.json and convert existing sources
 - Monitoring: include support of Vetor, to be compliant with DataDog
+- Azure Comment Reporter: Create a new Work Item to attach images in case the found one is close to the limit of number of attachments
 
 ## [6.6.0] 2025-10-05
 
