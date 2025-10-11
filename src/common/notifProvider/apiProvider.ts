@@ -208,9 +208,9 @@ export class ApiProvider extends NotifProviderRoot {
       const axiosResponse = await axios.post(this.apiUrl || "", this.payloadFormatted, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
-        uxLog("action", this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
+        uxLog("log", this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
         if (getEnvVar("NOTIF_API_DEBUG") === "true") {
-          uxLog("action", this, c.cyan(JSON.stringify(this.payloadFormatted, null, 2)));
+          uxLog("log", this, c.cyan(JSON.stringify(this.payloadFormatted, null, 2)));
         }
       }
     } catch (e) {
@@ -245,12 +245,12 @@ export class ApiProvider extends NotifProviderRoot {
       };
 
       await fs.appendFile(filePath, JSON.stringify(logEntry) + '\n');
-      uxLog("action", this, c.cyan(`[ApiProvider] Appended log entry to file ${filePath}`));
+      uxLog("log", this, c.cyan(`[ApiProvider] Appended log entry to file ${filePath}`));
 
       const elementCount = this.payload.data._logElements?.length || 0;
       const metricValue = this.payload.data.metric || 0;
       uxLog(
-        "action",
+        "log",
         this,
         c.cyan(`[ApiProvider] Appended aggregate log entry (metric: ${metricValue}, elements: ${elementCount})`)
       );
@@ -403,9 +403,9 @@ export class ApiProvider extends NotifProviderRoot {
       const axiosResponse = await axios.post(this.metricsApiUrl || "", this.metricsPayload, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus >= 200 && httpStatus < 300) {
-        uxLog("action", this, c.cyan(`[ApiMetricProvider] Posted metrics to API ${this.metricsApiUrl} (${httpStatus}) [format: ${this.metricsFormat}]`));
+        uxLog("log", this, c.cyan(`[ApiMetricProvider] Posted metrics to API ${this.metricsApiUrl} (${httpStatus}) [format: ${this.metricsFormat}]`));
         if (getEnvVar("NOTIF_API_DEBUG") === "true") {
-          uxLog("action", this, c.cyan("Metrics payload:\n" + this.metricsPayload));
+          uxLog("log", this, c.cyan("Metrics payload:\n" + this.metricsPayload));
         }
       }
     } catch (e) {
