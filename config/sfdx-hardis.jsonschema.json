@@ -334,6 +334,28 @@
             "description": "Command line to run",
             "title": "Command",
             "type": "string"
+          },
+          "context": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/context",
+            "description": "Context when the command must be run",
+            "title": "Context",
+            "default": "all",
+            "type": "string",
+            "enum": [
+              "all",
+              "check-deployment-only",
+              "process-deployment-only"
+            ],
+            "enumNames": [
+              "All",
+              "Check Deployment Only",
+              "Process Deployment Only"
+            ],
+            "examples": [
+              "all",
+              "check-deployment-only",
+              "process-deployment-only"
+            ]
           }
         },
         "title": "Command"
@@ -412,7 +434,7 @@
           "skipIfError": {
             "$id": "#/properties/commandsPostDeploy/items/properties/skipIfError",
             "description": "Do not run the command if there is a deployment error",
-            "title": "Skip if error",
+            "title": "Skip if deploy error",
             "default": "false",
             "type": "boolean"
           }
