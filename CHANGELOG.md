@@ -12,6 +12,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Monitoring: include support of [Vector](https://vector.dev/), to be compliant with DataDog & other observability tools
 - Azure Comment Reporter: Create a new Work Item to attach images in case the found one is close to the limit of number of attachments
 - Avoids unnecessary file writes during builds
+- Update contributing documentation to add infos for vscode-sfdx-hardis
 
 ## [6.6.0] 2025-10-05
 
