@@ -109,7 +109,7 @@
     "oclif": "^4.22.9",
     "tmp": "0.2.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=20.0.0"
