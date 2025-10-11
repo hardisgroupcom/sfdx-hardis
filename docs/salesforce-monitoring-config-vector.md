@@ -65,20 +65,20 @@ Logs are written in **newline-delimited JSON (NDJSON)** format, with one complet
 
 Each log entry contains:
 
-| Field | Description |
-|-------|-------------|
-| `timestamp` | ISO 8601 timestamp of when the notification was generated |
-| `source` | Always "sfdx-hardis" |
-| `type` | Notification type (e.g., ORG_LIMITS, AUDIT_TRAIL, LEGACY_API) |
-| `severity` | Notification severity (critical, error, warning, info, success, log) |
-| `orgIdentifier` | Salesforce org identifier |
-| `gitIdentifier` | Git repository and branch (format: `repo/branch`) |
-| `metric` | Primary metric value (if applicable) |
-| `_metrics` | Object containing all metrics with details (value, min, max, percent) |
-| `_logElements` | Array of individual log elements (e.g., suspect audit logs) |
-| `_title` | Human-readable notification title |
-| `_jobUrl` | CI/CD job URL (if available) |
-| `limits` | For ORG_LIMITS notifications: detailed limit information |
+| Field           | Description                                                           |
+|-----------------|-----------------------------------------------------------------------|
+| `timestamp`     | ISO 8601 timestamp of when the notification was generated             |
+| `source`        | Always "sfdx-hardis"                                                  |
+| `type`          | Notification type (e.g., ORG_LIMITS, AUDIT_TRAIL, LEGACY_API)         |
+| `severity`      | Notification severity (critical, error, warning, info, success, log)  |
+| `orgIdentifier` | Salesforce org identifier                                             |
+| `gitIdentifier` | Git repository and branch (format: `repo/branch`)                     |
+| `metric`        | Primary metric value (if applicable)                                  |
+| `_metrics`      | Object containing all metrics with details (value, min, max, percent) |
+| `_logElements`  | Array of individual log elements (e.g., suspect audit logs)           |
+| `_title`        | Human-readable notification title                                     |
+| `_jobUrl`       | CI/CD job URL (if available)                                          |
+| `limits`        | For ORG_LIMITS notifications: detailed limit information              |
 
 ## Usage Examples
 

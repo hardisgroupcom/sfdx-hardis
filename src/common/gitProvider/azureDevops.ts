@@ -644,14 +644,52 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
 
         if (newWorkItem && newWorkItem.id) {
           this.attachmentsWorkItemId = newWorkItem.id;
-          uxLog("log", this, c.grey(`[Azure Integration] Created new work item ${this.attachmentsWorkItemId} with title '${this.attachmentsWorkItemTitle}'`));
+          uxLog("log", this, c.grey(`[Azure Integration] Created new technical work item ${this.attachmentsWorkItemId} (${this.attachmentsWorkItemTitle}) to store image attachments, previous one was full`));
         }
       } else {
-        uxLog("log", this, c.grey(`[Azure Integration] Found existing work item ${this.attachmentsWorkItemId} with title '${this.attachmentsWorkItemTitle}'`));
+        uxLog("log", this, c.grey(`[Azure Integration] Found existing technical work item ${this.attachmentsWorkItemId} (${this.attachmentsWorkItemTitle}) for storing image attachments`));
       }
       return this.attachmentsWorkItemId;
     }
-    uxLog("error", this, c.red(`[Azure Integration] You need to create a technical work item exactly named '${this.attachmentsWorkItemTitle}', that will be used to attach images for comments.`));
+
+    // No work item found, create a new one
+    uxLog("log", this, c.grey(`[Azure Integration] No technical work item found with title '${this.attachmentsWorkItemTitle}' to store image attachments, attempting to create one automatically...`));
+    try {
+      const newWorkItem = await witApi.createWorkItem(
+        [],
+        [
+          {
+            op: "add",
+            path: "/fields/System.Title",
+            value: this.attachmentsWorkItemTitle
+          },
+          {
+            op: "add",
+            path: "/fields/System.WorkItemType",
+            value: "Task"
+          },
+          {
+            op: "add",
+            path: "/fields/System.Description",
+            value: "Technical work item used by sfdx-hardis to store image attachments for PR comments. This work item serves as a container for uploaded images and should not be deleted."
+          }
+        ],
+        process.env.SYSTEM_TEAMPROJECT!,
+        "Task"
+      );
+
+      if (newWorkItem && newWorkItem.id) {
+        this.attachmentsWorkItemId = newWorkItem.id;
+        uxLog("log", this, c.grey(`[Azure Integration] Successfully created technical work item ${this.attachmentsWorkItemId} (${this.attachmentsWorkItemTitle}) to store image attachments for PR comments`));
+        return this.attachmentsWorkItemId;
+      }
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[Azure Integration] Failed to automatically create technical work item for storing image attachments: ${(e as Error).message}`));
+      uxLog("warning", this, c.yellow(`[Azure Integration] Please manually create a work item (type: Task) with the exact title '${this.attachmentsWorkItemTitle}' in project '${process.env.SYSTEM_TEAMPROJECT}', or set the AZURE_ATTACHMENTS_WORK_ITEM_ID environment variable with an existing work item ID.`));
+      uxLog("warning", this, c.yellow(`[Azure Integration] This work item is required as a container to store image attachments for Pull Request comments.`));
+    }
+
+    uxLog("error", this, c.yellow(`[Azure Integration] Unable to find or create technical work item for image attachments. Image uploads to PR comments will not work until this is resolved.`));
     return null;
   }
 }
