@@ -1010,6 +1010,65 @@ If defined, makes obsolete the parameter Default Pull Request target branch.</p>
         </div>
     </div>
 </div>
+<div class="accordion" id="accordioncommandsPreDeploy_items_context">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPreDeploy_items_context">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPreDeploy_items_context"
+                        aria-expanded="" aria-controls="commandsPreDeploy_items_context" onclick="setAnchor('#commandsPreDeploy_items_context')"><span class="property-name">context</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPreDeploy_items_context"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPreDeploy_items_context"
+             data-parent="#accordioncommandsPreDeploy_items_context">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy" onclick="anchorLink('commandsPreDeploy')">commandsPreDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items" onclick="anchorLink('commandsPreDeploy_items')">Command</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_context" onclick="anchorLink('commandsPreDeploy_items_context')">context</a></div><h4>Context</h4><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "all"</span><br/>
+<span class="description"><p>Context when the command must be run</p>
+</span><div class="enum-value" id="commandsPreDeploy_items_context_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"all"</li><li class="list-group-item enum-item">"check-deployment-only"</li><li class="list-group-item enum-item">"process-deployment-only"</li></ul>
+            </div>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="commandsPreDeploy_items_context_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;all&quot;</span>
+</pre></div>
+</div><div id="commandsPreDeploy_items_context_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;check-deployment-only&quot;</span>
+</pre></div>
+</div><div id="commandsPreDeploy_items_context_ex3" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;process-deployment-only&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
         </div>
     </div><br/>
 <div class="badge badge-secondary">Example:</div>
@@ -1326,7 +1385,7 @@ If defined, makes obsolete the parameter Default Pull Request target branch.</p>
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#commandsPostDeploy_items_skipIfError" onclick="anchorLink('commandsPostDeploy_items_skipIfError')">skipIfError</a></div><h4>Skip if error</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: "false"</span><br/>
+    <a href="#commandsPostDeploy_items_skipIfError" onclick="anchorLink('commandsPostDeploy_items_skipIfError')">skipIfError</a></div><h4>Skip if deploy error</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: "false"</span><br/>
 <span class="description"><p>Do not run the command if there is a deployment error</p>
 </span>
         
@@ -6469,6 +6528,6 @@ Note: Smart Deployment Tests will be applied only for Pull Requests from minor (
 </div>
 
     <footer>
-        <p class="generated-by-footer">Generated using <a href="https://github.com/coveooss/json-schema-for-humans">json-schema-for-humans</a> on 2025-10-11 at 17:31:45 +0200</p>
+        <p class="generated-by-footer">Generated using <a href="https://github.com/coveooss/json-schema-for-humans">json-schema-for-humans</a> on 2025-10-12 at 00:30:02 +0200</p>
     </footer></body>
 </html>
