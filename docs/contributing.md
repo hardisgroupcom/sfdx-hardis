@@ -1,6 +1,6 @@
 Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you !)
 
-## Salesforce CLI Plugin: sfdx-hardis
+### Salesforce CLI Plugin: sfdx-hardis
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
 - Install typescript by running `npm install typescript --global`
@@ -13,7 +13,7 @@ Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you
   - Run `tsc --watch` to transpile typescript into js everytime you update a TS file
 - Debug commands using `NODE_OPTIONS=--inspect-brk sf hardis:somecommand --someparameter somevalue` (you can also debug commands using VsCode Sfdx-Hardis setting)
 
-## VsCode Extension: vscode-sfdx-hardis
+### VsCode Extension: vscode-sfdx-hardis
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))
 - Install typescript by running `npm install typescript --global`
