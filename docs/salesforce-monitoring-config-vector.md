@@ -11,6 +11,7 @@ This guide is part of the [sfdx-hardis monitoring suite](salesforce-monitoring-h
 - Querying logs in Grafana using LogQL
 
 **Benefits:**
+
 - **Local monitoring** without external API infrastructure
 - **Loki ingestion** via Vector for Grafana dashboards  
 - **Audit trails** of all notifications in NDJSON format
