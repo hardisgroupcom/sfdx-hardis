@@ -59,6 +59,7 @@ export default class ActivateDecomposedMetadata extends SfCommand<any> {
 This command helps manage decomposed metadata types that can be split into multiple files in source format. It automatically decomposes all supported metadata types that exist in your project.
 
 Supported metadata types (Beta):
+
 - CustomLabels
 - PermissionSet
 - ExternalServiceRegistration
@@ -68,6 +69,7 @@ Supported metadata types (Beta):
 See [Salesforce documentation on decomposed metadata](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_decomposed_md_types.htm)
 
 Key features:
+
 - Automatically detects and decomposes all applicable metadata types
 - Decomposes only metadata types that exist in your project
 - Interactive confirmation for decomposition operations

@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.7.1] 2025-10-12
+
+- [hardis:org:diagnose:releaseupdates](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/releaseupdates/): Add Pending in list of statuses checked by the command
+- Update JSON schema to indicate useDeltaDeploymentWithDependencies is in beta
+- Fix activate-decomposed documentation formatting
+
 ## [6.7.0] 2025-10-12
 
 - New command: [hardis:project:metadata:activate-decomposed](https://sfdx-hardis.cloudity.com/hardis/project/metadata/activate-decomposed/): Activate decomposed metadata types in `sfdx-project.json` and convert existing sources.
