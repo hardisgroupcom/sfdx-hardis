@@ -7,6 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Add 2 events to come where sfdx-hardis will be demonstrated
   - DevOps Dreamin: Why you don't need Salesforce DevOps vendors
   - French Touch Dreamin: Refresh your full sandboxes without needing to reconfigure everything
+- CodeBuilder: Prompt user when Git remote is not authenticated, then update Git remote URL to use token authentication
 
 ## [6.7.1] 2025-10-12
 
