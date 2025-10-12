@@ -125,7 +125,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         }
       })
 
-      uxLog("action", this, c.cyan(notifText));
+      const summaryText = `${this.releaseUpdatesRecords.length} Release Updates to check have been found in ${conn.instanceUrl}`
+      uxLog("action", this, c.cyan(summaryText));
       uxLogTable(this, releaseUpdatesLight);
     }
     else {
