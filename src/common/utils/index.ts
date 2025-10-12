@@ -364,7 +364,207 @@ export async function selectGitBranch(
 
 export async function gitCheckOutRemote(branchName: string) {
   await git().checkout(branchName);
-  await git().pull();
+  await gitPull();
+}
+
+// Helper function to detect git authentication errors
+function isGitAuthError(error: any): boolean {
+  const errorStr = error?.message || error?.toString() || '';
+  const authErrorPatterns = [
+    'Authentication failed',
+    'authentication failed',
+    'fatal: Authentication error',
+    'fatal: could not read Username',
+    'fatal: could not read Password',
+    'remote: Invalid username or password',
+    'remote: HTTP Basic: Access denied',
+    'Permission denied (publickey)',
+    'fatal: Could not read from remote repository',
+    'Please make sure you have the correct access rights',
+    '403',
+    '401',
+    'Unauthorized',
+  ];
+  return authErrorPatterns.some((pattern) => errorStr.includes(pattern));
+}
+
+// Helper function to prompt for git credentials and update remote URL
+async function handleGitAuthError(operation: string): Promise<boolean> {
+  if (isCI) {
+    uxLog("error", this, c.red(`Git ${operation} failed due to authentication error in CI environment`));
+    return false;
+  }
+
+  uxLog("warning", this, c.yellow(`Git ${operation} failed due to authentication error`));
+  uxLog("action", this, c.cyan('Please provide your Git credentials to continue'));
+
+  const usernamePrompt = await prompts({
+    type: 'text',
+    name: 'username',
+    message: c.cyanBright('Enter your Git username'),
+    description: 'Your Git service username',
+    validate: (value: string) => (value && value.trim().length > 0) || 'Username is required',
+  });
+
+  if (!usernamePrompt.username) {
+    uxLog("error", this, c.red('Git username is required to continue'));
+    return false;
+  }
+
+  const passwordPrompt = await prompts({
+    type: 'text',
+    name: 'password',
+    message: c.cyanBright('Enter your Git password or Personal Access Token (PAT)'),
+    description: 'Your Git service password or PAT (input will be visible)',
+    validate: (value: string) => (value && value.trim().length > 0) || 'Password/PAT is required',
+  });
+
+  if (!passwordPrompt.password) {
+    uxLog("error", this, c.red('Git password/PAT is required to continue'));
+    return false;
+  }
+
+  const username = usernamePrompt.username;
+  const password = passwordPrompt.password;
+
+  try {
+    // Get current remote URL
+    const origin = await git().getConfig('remote.origin.url');
+    if (!origin || !origin.value) {
+      uxLog("error", this, c.red('Could not retrieve remote origin URL'));
+      return false;
+    }
+
+    let remoteUrl = origin.value;
+    const encodedUsername = encodeURIComponent(username);
+    const encodedPassword = encodeURIComponent(password);
+
+    // Update remote URL to include credentials
+    if (remoteUrl.startsWith('https://')) {
+      // Remove existing credentials if present
+      remoteUrl = remoteUrl.replace(/\/\/(.*:.*@)/gm, '//');
+      // Add new credentials
+      remoteUrl = remoteUrl.replace('https://', `https://${encodedUsername}:${encodedPassword}@`);
+    } else if (remoteUrl.startsWith('http://')) {
+      // Remove existing credentials if present
+      remoteUrl = remoteUrl.replace(/\/\/(.*:.*@)/gm, '//');
+      // Add new credentials
+      remoteUrl = remoteUrl.replace('http://', `http://${encodedUsername}:${encodedPassword}@`);
+    } else {
+      uxLog("error", this, c.red('Only HTTP(S) remote URLs are supported for credential injection'));
+      return false;
+    }
+
+    // Update the remote URL
+    await git().remote(['set-url', 'origin', remoteUrl]);
+    uxLog("action", this, c.green('Remote URL updated with credentials successfully'));
+    return true;
+  } catch (e: any) {
+    uxLog("error", this, c.red(`Failed to update remote URL: ${e?.message || e}`));
+    return false;
+  }
+}
+
+// Wrapper for git fetch with authentication error handling
+export async function gitFetch(argsOrOptions?: string[] | any, argsIfOptionsFirst?: string[]): Promise<any> {
+  // Handle both signatures: gitFetch(args) and gitFetch(options, args)
+  let args: string[] = [];
+  let options: any = {};
+  
+  if (Array.isArray(argsOrOptions)) {
+    args = argsOrOptions;
+  } else if (argsOrOptions && typeof argsOrOptions === 'object' && !Array.isArray(argsOrOptions)) {
+    options = argsOrOptions;
+    args = argsIfOptionsFirst || [];
+  }
+  
+  try {
+    if (options.output !== undefined || options.displayCommand !== undefined) {
+      return await git(options).fetch(args);
+    }
+    return await git().fetch(args);
+  } catch (error) {
+    if (isGitAuthError(error)) {
+      const credentialsUpdated = await handleGitAuthError('fetch');
+      if (credentialsUpdated) {
+        // Retry the operation
+        uxLog("action", this, c.cyan('Retrying git fetch with updated credentials...'));
+        if (options.output !== undefined || options.displayCommand !== undefined) {
+          return await git(options).fetch(args);
+        }
+        return await git().fetch(args);
+      }
+    }
+    throw error;
+  }
+}
+
+// Wrapper for git pull with authentication error handling
+export async function gitPull(argsOrOptions?: string[] | any, argsIfOptionsFirst?: string[]): Promise<any> {
+  // Handle both signatures: gitPull(args) and gitPull(options, args)
+  let args: string[] = [];
+  let options: any = {};
+  
+  if (Array.isArray(argsOrOptions)) {
+    args = argsOrOptions;
+  } else if (argsOrOptions && typeof argsOrOptions === 'object' && !Array.isArray(argsOrOptions)) {
+    options = argsOrOptions;
+    args = argsIfOptionsFirst || [];
+  }
+  
+  try {
+    if (options.output !== undefined || options.displayCommand !== undefined) {
+      return await git(options).pull(args);
+    }
+    return await git().pull(args);
+  } catch (error) {
+    if (isGitAuthError(error)) {
+      const credentialsUpdated = await handleGitAuthError('pull');
+      if (credentialsUpdated) {
+        // Retry the operation
+        uxLog("action", this, c.cyan('Retrying git pull with updated credentials...'));
+        if (options.output !== undefined || options.displayCommand !== undefined) {
+          return await git(options).pull(args);
+        }
+        return await git().pull(args);
+      }
+    }
+    throw error;
+  }
+}
+
+// Wrapper for git push with authentication error handling
+export async function gitPush(argsOrOptions?: string[] | any, argsIfOptionsFirst?: string[]): Promise<any> {
+  // Handle both signatures: gitPush(args) and gitPush(options, args)
+  let args: string[] = [];
+  let options: any = {};
+  
+  if (Array.isArray(argsOrOptions)) {
+    args = argsOrOptions;
+  } else if (argsOrOptions && typeof argsOrOptions === 'object' && !Array.isArray(argsOrOptions)) {
+    options = argsOrOptions;
+    args = argsIfOptionsFirst || [];
+  }
+  
+  try {
+    if (options.output !== undefined || options.displayCommand !== undefined) {
+      return await git(options).push(args);
+    }
+    return await git().push(args);
+  } catch (error) {
+    if (isGitAuthError(error)) {
+      const credentialsUpdated = await handleGitAuthError('push');
+      if (credentialsUpdated) {
+        // Retry the operation
+        uxLog("action", this, c.cyan('Retrying git push with updated credentials...'));
+        if (options.output !== undefined || options.displayCommand !== undefined) {
+          return await git(options).push(args);
+        }
+        return await git().push(args);
+      }
+    }
+    throw error;
+  }
 }
 
 // Get local git branch name
@@ -377,7 +577,7 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
       return false;
     }
   }
-  await git().fetch();
+  await gitFetch();
   const branches = await git().branch();
   const localBranches = await git().branchLocal();
   if (localBranches.current !== branchName) {
@@ -602,8 +802,8 @@ export async function gitAddCommitPush(
   const currentgitBranch = (await git().branchLocal()).current;
   await git()
     .add(options.pattern || './*')
-    .commit(options.commitMessage || 'Updated by sfdx-hardis')
-    .push(['-u', 'origin', currentgitBranch]);
+    .commit(options.commitMessage || 'Updated by sfdx-hardis');
+  await gitPush(['-u', 'origin', currentgitBranch]);
 }
 
 // Normalize git FileStatus path
