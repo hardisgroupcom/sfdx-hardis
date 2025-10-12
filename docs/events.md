@@ -1,3 +1,15 @@
+### Coming soon: DevOps Dreamin '25, London
+
+Why you don't need DevOps vendors tools
+
+<img width="1320" height="370" alt="image" src="https://github.com/user-attachments/assets/bc1e3831-9e89-4098-bedd-40cafbba3cfd" />
+
+### Coming soon: French Touch Dreamin '25, Paris
+
+Refresh your full sandboxes without needing to reconfigure everything, with [Mehdi Abdennasser](https://www.linkedin.com/in/mehdi-abdennasser/)
+
+<img width="1901" height="661" alt="image" src="https://github.com/user-attachments/assets/7b01704b-5dd5-463e-914b-71c867632ea5" />
+
 ### Trailblazer User Group '25, Casablanca
 
 Salesforce Org Documentation with Open-Source and Agentforce, by [Taha Basri](https://www.linkedin.com/in/tahabasri/)
