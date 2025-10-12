@@ -1580,7 +1580,7 @@
       "default": false,
       "description": "Also deploy dependencies of the metadatas identified by delta deployment, to avoid broken deployments due to missing dependencies.\n Example: removed picklist value in a field, that is still used in a record type.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-with-dependencies-beta",
-      "title": "Use Delta Deployment with dependencies",
+      "title": "Use Delta Deployment with dependencies (beta)",
       "type": "boolean"
     },
     "useSmartDeploymentTests": {

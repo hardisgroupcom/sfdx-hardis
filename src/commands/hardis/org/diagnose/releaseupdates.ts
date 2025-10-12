@@ -71,7 +71,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const releaseUpdatesQuery =
       `SELECT StepStage,Status,Category,Title,DueDate,Description,Release,ReleaseLabel,ReleaseDate,ApiVersion,DurableId,HasNewSteps,IsReleased,SupportsRevoke,DeveloperName ` +
       `FROM ReleaseUpdate ` +
-      `WHERE StepStage IN ('Upcoming','OverDue') AND Status IN ('Invocable','Revocable','Nascent','Invoked','Info') AND DueDate >= LAST_N_DAYS:60 ` +
+      `WHERE StepStage IN ('Upcoming','OverDue') AND Status IN ('Pending','Invocable','Revocable','Nascent','Invoked','Info') AND DueDate >= LAST_N_DAYS:60 ` +
       `ORDER BY DueDate ASC`;
     const queryRes = await soqlQueryTooling(releaseUpdatesQuery, conn);
     const severityIconWarning = getSeverityIcon('warning');
