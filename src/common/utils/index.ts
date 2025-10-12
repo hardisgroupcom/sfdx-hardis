@@ -369,21 +369,21 @@ export async function gitCheckOutRemote(branchName: string) {
 
 // Helper function to detect git authentication errors
 function isGitAuthError(error: any): boolean {
-  const errorStr = error?.message || error?.toString() || '';
+  const errorStr = (error?.message || error?.toString() || '').toLowerCase();
   const authErrorPatterns = [
-    'Authentication failed',
     'authentication failed',
-    'fatal: Authentication error',
-    'fatal: could not read Username',
-    'fatal: could not read Password',
-    'remote: Invalid username or password',
-    'remote: HTTP Basic: Access denied',
-    'Permission denied (publickey)',
-    'fatal: Could not read from remote repository',
-    'Please make sure you have the correct access rights',
+    'authentication error',
+    'could not read username',
+    'could not read password',
+    'invalid username or password',
+    'access denied',
+    'permission denied',
+    'publickey',
+    'could not read from remote repository',
+    'correct access rights',
     '403',
     '401',
-    'Unauthorized',
+    'unauthorized',
   ];
   return authErrorPatterns.some((pattern) => errorStr.includes(pattern));
 }
@@ -470,14 +470,14 @@ export async function gitFetch(argsOrOptions?: string[] | any, argsIfOptionsFirs
   // Handle both signatures: gitFetch(args) and gitFetch(options, args)
   let args: string[] = [];
   let options: any = {};
-  
+
   if (Array.isArray(argsOrOptions)) {
     args = argsOrOptions;
   } else if (argsOrOptions && typeof argsOrOptions === 'object' && !Array.isArray(argsOrOptions)) {
     options = argsOrOptions;
     args = argsIfOptionsFirst || [];
   }
-  
+
   try {
     if (options.output !== undefined || options.displayCommand !== undefined) {
       return await git(options).fetch(args);
@@ -504,14 +504,14 @@ export async function gitPull(argsOrOptions?: string[] | any, argsIfOptionsFirst
   // Handle both signatures: gitPull(args) and gitPull(options, args)
   let args: string[] = [];
   let options: any = {};
-  
+
   if (Array.isArray(argsOrOptions)) {
     args = argsOrOptions;
   } else if (argsOrOptions && typeof argsOrOptions === 'object' && !Array.isArray(argsOrOptions)) {
     options = argsOrOptions;
     args = argsIfOptionsFirst || [];
   }
-  
+
   try {
     if (options.output !== undefined || options.displayCommand !== undefined) {
       return await git(options).pull(args);
@@ -538,14 +538,14 @@ export async function gitPush(argsOrOptions?: string[] | any, argsIfOptionsFirst
   // Handle both signatures: gitPush(args) and gitPush(options, args)
   let args: string[] = [];
   let options: any = {};
-  
+
   if (Array.isArray(argsOrOptions)) {
     args = argsOrOptions;
   } else if (argsOrOptions && typeof argsOrOptions === 'object' && !Array.isArray(argsOrOptions)) {
     options = argsOrOptions;
     args = argsIfOptionsFirst || [];
   }
-  
+
   try {
     if (options.output !== undefined || options.displayCommand !== undefined) {
       return await git(options).push(args);
