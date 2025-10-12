@@ -802,8 +802,8 @@ export async function gitAddCommitPush(
   const currentgitBranch = (await git().branchLocal()).current;
   await git()
     .add(options.pattern || './*')
-    .commit(options.commitMessage || 'Updated by sfdx-hardis')
-    .push(['-u', 'origin', currentgitBranch]);
+    .commit(options.commitMessage || 'Updated by sfdx-hardis');
+  await gitPush(['-u', 'origin', currentgitBranch]);
 }
 
 // Normalize git FileStatus path
