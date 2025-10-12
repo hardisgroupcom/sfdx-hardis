@@ -11,8 +11,8 @@ import {
   execCommand,
   execSfdxJson,
   getGitRepoUrl,
-  git,
   gitCheckOutRemote,
+  gitPull,
   uxLog,
 } from '../../../common/utils/index.js';
 import { selectTargetBranch } from '../../../common/utils/gitUtils.js';
@@ -175,7 +175,7 @@ The command's logic orchestrates various underlying processes:
     );
     await gitCheckOutRemote(this.targetBranch);
     // Pull latest version of target branch
-    await git().pull();
+    await gitPull();
     // Create new branch
     uxLog("action", this, c.cyan(`Creating new local git branch ${c.green(branchName)}...`));
     await ensureGitBranch(branchName);

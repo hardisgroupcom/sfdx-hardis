@@ -13,6 +13,7 @@ import {
   getCurrentGitBranch,
   getGitRepoRoot,
   git,
+  gitFetch,
   uxLog,
 } from './index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
@@ -64,7 +65,7 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
 
 export async function getGitDeltaScope(currentBranch: string, targetBranch: string) {
   try {
-    await git().fetch(['origin', `${targetBranch}:${targetBranch}`]);
+    await gitFetch(['origin', `${targetBranch}:${targetBranch}`]);
   } catch (e) {
     uxLog(
       "other",
@@ -74,7 +75,7 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
     );
   }
   try {
-    await git().fetch(['origin', `${currentBranch}:${currentBranch}`]);
+    await gitFetch(['origin', `${currentBranch}:${currentBranch}`]);
   } catch (e) {
     uxLog(
       "other",
