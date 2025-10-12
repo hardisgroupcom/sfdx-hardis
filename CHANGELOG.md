@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.7.2] 2025-10-13
+
 - Add 2 events to come where sfdx-hardis will be demonstrated
   - DevOps Dreamin: Why you don't need Salesforce DevOps vendors
   - French Touch Dreamin: Refresh your full sandboxes without needing to reconfigure everything
