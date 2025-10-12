@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add 2 events to come where sfdx-hardis will be demonstrated
+  - DevOps Dreamin: Why you don't need Salesforce DevOps vendors
+  - French Touch Dreamin: Refresh your full sandboxes without needing to reconfigure everything
+
 ## [6.7.1] 2025-10-12
 
 - [hardis:org:diagnose:releaseupdates](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/releaseupdates/): Add Pending in list of statuses checked by the command
