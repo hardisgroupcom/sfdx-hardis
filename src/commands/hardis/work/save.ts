@@ -12,6 +12,7 @@ import {
   getCurrentGitBranch,
   git,
   gitHasLocalUpdates,
+  gitPush,
   normalizeFileStatusPath,
   uxLog,
 } from '../../../common/utils/index.js';
@@ -633,10 +634,10 @@ The command's technical implementation involves a series of orchestrated steps:
         let pushResult: any;
         if (configUSer.canForcePush === true) {
           // Force push if hardis:work:resetselection has been called before
-          pushResult = await git({ output: true }).push(['-u', 'origin', this.currentBranch, '--force']);
+          pushResult = await gitPush({ output: true }, ['-u', 'origin', this.currentBranch, '--force']);
           await setConfig('user', { canForcePush: false });
         } else {
-          pushResult = await git({ output: true }).push(['-u', 'origin', this.currentBranch]);
+          pushResult = await gitPush({ output: true }, ['-u', 'origin', this.currentBranch]);
         }
         // Update merge request info
         if (pushResult && pushResult.remoteMessages) {

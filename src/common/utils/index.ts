@@ -466,15 +466,16 @@ async function handleGitAuthError(operation: string): Promise<boolean> {
 }
 
 // Wrapper for git fetch with authentication error handling
-export async function gitFetch(argsOrOptions?: string[] | any): Promise<any> {
-  // Handle both old signature (array) and new signature (options object)
+export async function gitFetch(argsOrOptions?: string[] | any, argsIfOptionsFirst?: string[]): Promise<any> {
+  // Handle both signatures: gitFetch(args) and gitFetch(options, args)
   let args: string[] = [];
   let options: any = {};
   
   if (Array.isArray(argsOrOptions)) {
     args = argsOrOptions;
-  } else if (argsOrOptions && typeof argsOrOptions === 'object') {
+  } else if (argsOrOptions && typeof argsOrOptions === 'object' && !Array.isArray(argsOrOptions)) {
     options = argsOrOptions;
+    args = argsIfOptionsFirst || [];
   }
   
   try {
@@ -499,15 +500,16 @@ export async function gitFetch(argsOrOptions?: string[] | any): Promise<any> {
 }
 
 // Wrapper for git pull with authentication error handling
-export async function gitPull(argsOrOptions?: string[] | any): Promise<any> {
-  // Handle both old signature (array) and new signature (options object)
+export async function gitPull(argsOrOptions?: string[] | any, argsIfOptionsFirst?: string[]): Promise<any> {
+  // Handle both signatures: gitPull(args) and gitPull(options, args)
   let args: string[] = [];
   let options: any = {};
   
   if (Array.isArray(argsOrOptions)) {
     args = argsOrOptions;
-  } else if (argsOrOptions && typeof argsOrOptions === 'object') {
+  } else if (argsOrOptions && typeof argsOrOptions === 'object' && !Array.isArray(argsOrOptions)) {
     options = argsOrOptions;
+    args = argsIfOptionsFirst || [];
   }
   
   try {
@@ -532,15 +534,16 @@ export async function gitPull(argsOrOptions?: string[] | any): Promise<any> {
 }
 
 // Wrapper for git push with authentication error handling
-export async function gitPush(argsOrOptions?: string[] | any): Promise<any> {
-  // Handle both old signature (array) and new signature (options object)
+export async function gitPush(argsOrOptions?: string[] | any, argsIfOptionsFirst?: string[]): Promise<any> {
+  // Handle both signatures: gitPush(args) and gitPush(options, args)
   let args: string[] = [];
   let options: any = {};
   
   if (Array.isArray(argsOrOptions)) {
     args = argsOrOptions;
-  } else if (argsOrOptions && typeof argsOrOptions === 'object') {
+  } else if (argsOrOptions && typeof argsOrOptions === 'object' && !Array.isArray(argsOrOptions)) {
     options = argsOrOptions;
+    args = argsIfOptionsFirst || [];
   }
   
   try {
