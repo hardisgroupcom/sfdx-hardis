@@ -17,6 +17,10 @@ import PROMPT_DESCRIBE_AUTORESPONSE_RULES from "./PROMPT_DESCRIBE_AUTORESPONSE_R
 import PROMPT_DESCRIBE_ESCALATION_RULES from "./PROMPT_DESCRIBE_ESCALATION_RULES.js";
 import PROMPT_DESCRIBE_PACKAGE from "./PROMPT_DESCRIBE_PACKAGE.js";
 import PROMPT_DESCRIBE_ROLES from "./PROMPT_DESCRIBE_ROLES.js";
+<<<<<<< HEAD
+=======
+import PROMPT_DESCRIBE_VISUALFORCE_PAGE from "./PROMPT_DESCRIBE_VISUALFORCE_PAGE.js";
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 
 export const PROMPT_TEMPLATES: Record<string, PromptTemplateDefinition> = {
   PROMPT_SOLVE_DEPLOYMENT_ERROR,
@@ -36,4 +40,8 @@ export const PROMPT_TEMPLATES: Record<string, PromptTemplateDefinition> = {
   PROMPT_DESCRIBE_AUTORESPONSE_RULES,
   PROMPT_DESCRIBE_ESCALATION_RULES,
   PROMPT_DESCRIBE_ROLES,
+<<<<<<< HEAD
+=======
+  PROMPT_DESCRIBE_VISUALFORCE_PAGE
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 };

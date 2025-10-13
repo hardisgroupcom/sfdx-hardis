@@ -14,7 +14,10 @@
     "words": [
         "AAAS",
         "AAAU",
+<<<<<<< HEAD
         "Abdennasser",
+=======
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
         "ACCESSTOKEN",
         "ACCESSTOKEN) -- (process.env.SYSTEM_ACCESSTOKEN",
         "AFFERO",
@@ -79,6 +82,7 @@
         "DYSA",
         "Dandb",
         "Dataspace",
+<<<<<<< HEAD
         "Pushgateway",
         "logql",
         "Havrilla",
@@ -86,6 +90,8 @@
         "Shamina",
         "myorg",
         "pushgateway",
+=======
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
         "Defaut",
         "Demarrage",
         "Devhub",

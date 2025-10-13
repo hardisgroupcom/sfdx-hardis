@@ -4,6 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+<<<<<<< HEAD
 ## [6.7.2] 2025-10-13
 
 - Add 2 events to come where sfdx-hardis will be demonstrated
@@ -35,6 +36,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Update CI/CD documentation with the latest integration and workflow changes.
   - Update contributing documentation to include guidance for the vscode-sfdx-hardis extension.
   - Ensure docs reference the new JSON Schema and decomposed metadata command where relevant.
+=======
+ - Update CI/CD documentation
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 
 ## [6.6.0] 2025-10-05
 

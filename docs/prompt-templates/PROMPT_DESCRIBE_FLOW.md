@@ -6,8 +6,13 @@ description: Prompt template for PROMPT_DESCRIBE_FLOW
 # PROMPT_DESCRIBE_FLOW
 
 ## Variables
+<<<<<<< HEAD
 | Name         | Description                                            | Example            |
 |:-------------|:-------------------------------------------------------|:-------------------|
+=======
+| Name | Description | Example |
+| :------|:-------------|:---------|
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 | **FLOW_XML** | The XML definition of the Salesforce Flow to describe. | `<Flow>...</Flow>` |
 
 ## Prompt

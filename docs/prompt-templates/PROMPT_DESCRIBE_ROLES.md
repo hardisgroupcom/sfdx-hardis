@@ -6,8 +6,13 @@ description: Prompt template for PROMPT_DESCRIBE_ROLES
 # PROMPT_DESCRIBE_ROLES
 
 ## Variables
+<<<<<<< HEAD
 | Name                  | Description                         | Example                                                                                                                                                                                                                                                                             |
 |:----------------------|:------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+=======
+| Name | Description | Example |
+| :------|:-------------|:---------|
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 | **ROLES_DESCRIPTION** | Description of all roles of the org | `- **Role Name (id:role_api_name)**: Role description (parentId: parent_role_id)<br>- **Another Role (id:another_role_api_name)**: Another role description (parentId: another_parent_role_id)<br> - **Root Role (id:root_role_api_name)**: Root role description (parentId: ROOT)` |
 
 ## Prompt

@@ -9,7 +9,11 @@ import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
+<<<<<<< HEAD
 import { completeAttributesDescriptionWithAi, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+=======
+import { completeAttributesDescriptionWithAi, getMetaHideLines, includeFromFile, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 import { parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
@@ -40,6 +44,11 @@ import { DocBuilderRoles } from '../../../common/docBuilder/docBuilderRoles.js';
 import { DocBuilderPackage } from '../../../common/docBuilder/docBuilderPackage.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../common/utils/gitUtils.js';
+<<<<<<< HEAD
+=======
+import { UtilsAi } from '../../../common/aiProvider/utils.js';
+import { AiProvider } from '../../../common/aiProvider/index.js';
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -140,6 +149,12 @@ ${this.htmlInstructions}
     '$ sf hardis:doc:project2markdown --hide-apex-code'
   ];
 
+<<<<<<< HEAD
+=======
+  protected vfPageDescriptions: any[] = [];
+  protected apexClassDescriptions: any[] = [];
+
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
   public static flags: any = {
     "diff-only": Flags.boolean({
       default: false,
@@ -238,6 +253,10 @@ ${this.htmlInstructions}
       "  - [Apex](apex/index.md)",
       "  - [Lightning Web Components](lwc/index.md)",
       "- [Lightning Pages](pages/index.md)",
+<<<<<<< HEAD
+=======
+      "- [Visualforce Pages](vfpages/index.md)",
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
       "- [Packages](packages/index.md)",
       "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
       "- [Branches & Orgs](sfdx-hardis-branches-and-orgs.md)",
@@ -333,6 +352,14 @@ ${this.htmlInstructions}
       await this.generateLwcDocumentation();
     }
 
+<<<<<<< HEAD
+=======
+    // List Visualforce pages & generate doc
+    if (!(process.env.GENERATE_VF_DOC === 'false')) {
+      await this.generateVfPageDocumentation();
+    }
+
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
     // Write output index file
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
     if (process.env.DO_NOT_OVERWRITE_INDEX_MD !== 'true' || !fs.existsSync(this.outputMarkdownIndexFile)) {
@@ -1221,7 +1248,11 @@ ${Project2Markdown.htmlInstructions}
       this.objectDescriptions.push({
         name: objectName,
         label: objectXmlParsed?.CustomObject?.label || "",
+<<<<<<< HEAD
         description: String(objectXmlParsed?.CustomObject?.description || ""),
+=======
+        description: objectXmlParsed?.CustomObject?.description || "",
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
       });
       objectsForMenu[objectName] = "objects/" + objectName + ".md";
       if (this.withPdf) {
@@ -1604,4 +1635,111 @@ ${Project2Markdown.htmlInstructions}
 
     uxLog("success", this, c.green(`Successfully generated documentation for Lightning Web Components at ${lwcIndexFile}`));
   }
+<<<<<<< HEAD
 }
+=======
+
+  private async generateVfPageDocumentation() {
+    uxLog(
+      "action",
+      this,
+      c.cyan(
+        "Preparing generation of Visualforce Pages documentation... " +
+        "(if you don't want it, define GENERATE_VF_DOC=false in your environment variables)"
+      )
+    );
+
+    const vfForMenu: Record<string, string> = { "All Visualforce Pages": "vfpages/index.md" };
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "vfpages"));
+
+    const vfFiles = await glob("**/*.page", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
+
+    if (vfFiles.length === 0) {
+      uxLog("log", this, c.yellow("No Visualforce pages found in the project"));
+      return;
+    }
+
+    WebSocketClient.sendProgressStartMessage("Generating Visualforce Pages documentation...", vfFiles.length);
+
+    let counter = 0;
+    for (const vfFile of vfFiles) {
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter);
+
+      const vfName = path.basename(vfFile, ".page");
+      const mdFile = path.join(this.outputMarkdownRoot, "vfpages", vfName + ".md");
+      vfForMenu[vfName] = "vfpages/" + vfName + ".md";
+
+      // Read VF page XML metadata if exists
+      const vfMetaFile = vfFile.replace(/\.page$/, ".page-meta.xml");
+      let vfMetaXml = "";
+      let label = "";
+      let apiVersion = "";
+      let description = "";
+
+      if (fs.existsSync(vfMetaFile)) {
+        vfMetaXml = await fs.readFile(vfMetaFile, "utf8");
+        const parsedMeta = new XMLParser().parse(vfMetaXml)?.ApexPage || {};
+        label = parsedMeta?.label || "";
+        apiVersion = parsedMeta?.apiVersion || "";
+        description = parsedMeta?.description || "";
+      }
+
+      // Find controller Apex class if declared
+      const controllerMatch = vfMetaXml.match(/<controller>(.*?)<\/controller>/);
+      const controllerName = controllerMatch ? path.basename(controllerMatch[1], ".cls") : "None";
+
+      // Read VF page content
+      const vfContent = await fs.readFile(vfFile, "utf8");
+
+      // Build markdown
+      const mdLines: string[] = [
+        `## ${vfName}`,
+        "",
+        `**Label:** ${label}`,
+        `**API Version:** ${apiVersion}`,
+        `**Description:** ${description || "_No description available_"}`,
+        `**Controller:** ${controllerName}`,
+        "",
+        "## Visualforce Page Code",
+        "```html",
+        vfContent,
+        "```",
+        ""
+      ];
+
+      // Insert AI-generated description if available
+      const xmlStripped = vfContent + vfMetaXml;
+      const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_VISUALFORCE_PAGE", [xmlStripped], vfName);
+      let aiDescription = "_AI description not available_";
+
+      if (aiCache.success) {
+        aiDescription = includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText || aiDescription);
+      } else if (AiProvider.isAiAvailable()) {
+        const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_VISUALFORCE_PAGE", { VF_NAME: vfName, VF_XML: xmlStripped });
+        const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_VISUALFORCE_PAGE");
+        if (aiResponse?.success) {
+          aiDescription = aiResponse.promptResponse || aiDescription;
+          await UtilsAi.writeAiCache("PROMPT_DESCRIBE_VISUALFORCE_PAGE", [xmlStripped], vfName, aiDescription);
+        }
+      }
+
+      mdLines.splice(5, 0, `## AI-Generated Description\n\n${aiDescription}\n`);
+
+      await fs.writeFile(mdFile, getMetaHideLines() + mdLines.join("\n") + `\n${this.footer}\n`);
+    }
+
+    WebSocketClient.sendProgressEndMessage();
+    this.addNavNode("Visualforce Pages", vfForMenu);
+
+    // Write index file
+    const vfIndexFile = path.join(this.outputMarkdownRoot, "vfpages", "index.md");
+    await fs.writeFile(vfIndexFile, getMetaHideLines() + Object.keys(vfForMenu).map(name => `- [${name}](${vfForMenu[name]})`).join("\n") + `\n\n${this.footer}\n`);
+
+    uxLog("success", this, c.green(`Successfully generated documentation for Visualforce Pages at ${vfIndexFile}`));
+  }
+
+
+
+}
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)

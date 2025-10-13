@@ -21,6 +21,7 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
+<<<<<<< HEAD
       background: '#F5F7FA'
       foreground: '#1B1464'
       colors:
@@ -29,12 +30,23 @@ theme:
         link: '#0057B8'
         header: '#1B1464'
         nav: '#F5F7FA'
+=======
+      background: "#F5F7FA"
+      foreground: "#1B1464"
+      colors:
+        primary: "#0057B8"
+        accent: "#FFB81C"
+        link: "#0057B8"
+        header: "#1B1464"
+        nav: "#F5F7FA"
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
     - scheme: slate
       primary: custom
       accent: custom
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+<<<<<<< HEAD
       background: '#181B2A'
       foreground: '#FFB81C'
       colors:
@@ -43,6 +55,16 @@ theme:
         link: '#FFB81C'
         header: '#181B2A'
         nav: '#23263A'
+=======
+      background: "#181B2A"
+      foreground: "#FFB81C"
+      colors:
+        primary: "#0057B8"
+        accent: "#FFB81C"
+        link: "#FFB81C"
+        header: "#181B2A"
+        nav: "#23263A"
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 plugins:
   - glightbox
   - search

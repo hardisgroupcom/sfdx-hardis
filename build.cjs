@@ -41,7 +41,11 @@ class SfdxHardisBuilder {
       this.buildIndividualMarkdownPageForTip(tip, tipFile);
       this.buildMainDeployFixesMarkdown(tip, deployTipsMd, linkName);
     }
+<<<<<<< HEAD
     this.writeFileIfChanged(deployTipsDocFile, deployTipsMd.join("\n") + "\n");
+=======
+    fs.writeFileSync(deployTipsDocFile, deployTipsMd.join("\n") + "\n");
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
     console.log("Written doc file " + deployTipsDocFile);
   }
 
@@ -102,7 +106,11 @@ class SfdxHardisBuilder {
     tipFileMd.push("```shell");
     tipFileMd.push(...tip.tip.split("\n"));
     tipFileMd.push("```");
+<<<<<<< HEAD
     this.writeFileIfChanged(tipFile, tipFileMd.join("\n") + "\n");
+=======
+    fs.writeFileSync(tipFile, tipFileMd.join("\n") + "\n");
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
   }
 
   async buildPromptTemplatesDocs() {
@@ -153,7 +161,11 @@ class SfdxHardisBuilder {
         ``,
         `If you do so, please don't forget to use the replacement variables :)`
       ];
+<<<<<<< HEAD
       this.writeFileIfChanged(templateDocFile, md.join("\n") + "\n");
+=======
+      fs.writeFileSync(templateDocFile, md.join("\n") + "\n");
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
       promptNav.push({ [templateName]: `prompt-templates/${templateName}.md` });
     }
 
@@ -188,7 +200,11 @@ class SfdxHardisBuilder {
         `You can also use the command \`sf hardis:doc:override-prompts\` to automatically create all override variable files at once.`,
         ``
       ];
+<<<<<<< HEAD
       this.writeFileIfChanged(variableDocFile, md.join("\n") + "\n");
+=======
+      fs.writeFileSync(variableDocFile, md.join("\n") + "\n");
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
       promptNav.push({ [variableName]: `prompt-templates/${variableName}.md` });
     }
 
@@ -229,6 +245,7 @@ class SfdxHardisBuilder {
     fs.writeFileSync(indexFile, fixedLines.join("\n"));
     console.log("Fixed online index.md links");
   }
+<<<<<<< HEAD
 
   writeFileIfChanged(filePath, content) {
     let existingContent = "";
@@ -249,6 +266,8 @@ class SfdxHardisBuilder {
     const normalize = (str) => str.replace(/[\s\-]/g, '');
     return normalize(contentA) !== normalize(contentB);
   }
+=======
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 }
 
 (async () => {

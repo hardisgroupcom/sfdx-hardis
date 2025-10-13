@@ -364,6 +364,7 @@ export async function selectGitBranch(
 
 export async function gitCheckOutRemote(branchName: string) {
   await git().checkout(branchName);
+<<<<<<< HEAD
   await gitPull();
 }
 
@@ -565,6 +566,9 @@ export async function gitPush(argsOrOptions?: string[] | any, argsIfOptionsFirst
     }
     throw error;
   }
+=======
+  await git().pull();
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 }
 
 // Get local git branch name
@@ -577,7 +581,11 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
       return false;
     }
   }
+<<<<<<< HEAD
   await gitFetch();
+=======
+  await git().fetch();
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
   const branches = await git().branch();
   const localBranches = await git().branchLocal();
   if (localBranches.current !== branchName) {
@@ -802,8 +810,13 @@ export async function gitAddCommitPush(
   const currentgitBranch = (await git().branchLocal()).current;
   await git()
     .add(options.pattern || './*')
+<<<<<<< HEAD
     .commit(options.commitMessage || 'Updated by sfdx-hardis');
   await gitPush(['-u', 'origin', currentgitBranch]);
+=======
+    .commit(options.commitMessage || 'Updated by sfdx-hardis')
+    .push(['-u', 'origin', currentgitBranch]);
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 }
 
 // Normalize git FileStatus path

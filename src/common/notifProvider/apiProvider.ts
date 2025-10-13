@@ -8,8 +8,11 @@ import { CONSTANTS, getEnvVar } from "../../config/index.js";
 import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils.js";
 import { GitProvider } from "../gitProvider/index.js";
 import axios, { AxiosRequestConfig } from "axios";
+<<<<<<< HEAD
 import fs from "fs-extra";
 import * as path from "path";
+=======
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 
 const MAX_LOKI_LOG_LENGTH = Number(process.env.MAX_LOKI_LOG_LENGTH || 200000);
 const TRUNCATE_LOKI_ELEMENTS_LENGTH = Number(process.env.TRUNCATE_LOKI_ELEMENTS_LENGTH || 500);
@@ -20,9 +23,13 @@ export class ApiProvider extends NotifProviderRoot {
   public payloadFormatted: any;
 
   protected metricsApiUrl: string | null;
+<<<<<<< HEAD
   protected jsonLogsFile: string | null;
   public metricsPayload: string;
   protected metricsFormat: 'influx' | 'prometheus' = 'influx';
+=======
+  public metricsPayload: string;
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 
   public getLabel(): string {
     return "sfdx-hardis Api connector";
@@ -42,15 +49,21 @@ export class ApiProvider extends NotifProviderRoot {
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
     const apiPromises: Promise<void>[] = []; // Use Promises to optimize performances with api calls
     this.apiUrl = getEnvVar("NOTIF_API_URL");
+<<<<<<< HEAD
     this.jsonLogsFile = getEnvVar("NOTIF_API_LOGS_JSON_FILE");
     if (this.apiUrl == null && this.jsonLogsFile == null) {
       throw new SfError("[ApiProvider] You need to define a variable NOTIF_API_URL or NOTIF_API_LOGS_JSON_FILE to use sfdx-hardis Api notifications");
+=======
+    if (this.apiUrl == null) {
+      throw new SfError("[ApiProvider] You need to define a variable NOTIF_API_URL to use sfdx-hardis Api notifications");
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
     }
     // Build initial payload data from notifMessage
     await this.buildPayload(notifMessage);
     // Format payload according to API endpoint: for example, Grafana loki
     await this.formatPayload();
     // Send notif
+<<<<<<< HEAD
     if (this.apiUrl !== null) {
       apiPromises.push(this.sendToApi());
     }
@@ -63,6 +76,12 @@ export class ApiProvider extends NotifProviderRoot {
     if (this.metricsApiUrl !== null) {
       // Detect metrics format based on URL
       this.detectMetricsFormat();
+=======
+    apiPromises.push(this.sendToApi());
+    // Handle Metrics API if provided
+    this.metricsApiUrl = getEnvVar("NOTIF_API_METRICS_URL");
+    if (this.metricsApiUrl !== null) {
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
       this.buildMetricsPayload();
       if (this.metricsPayload.length > 0) {
         apiPromises.push(this.sendToMetricsApi());
@@ -145,7 +164,10 @@ export class ApiProvider extends NotifProviderRoot {
       await this.formatPayloadLoki();
       return;
     }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
     this.payloadFormatted = this.payload;
   }
 
@@ -208,9 +230,15 @@ export class ApiProvider extends NotifProviderRoot {
       const axiosResponse = await axios.post(this.apiUrl || "", this.payloadFormatted, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
+<<<<<<< HEAD
         uxLog("log", this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
         if (getEnvVar("NOTIF_API_DEBUG") === "true") {
           uxLog("log", this, c.cyan(JSON.stringify(this.payloadFormatted, null, 2)));
+=======
+        uxLog("action", this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
+        if (getEnvVar("NOTIF_API_DEBUG") === "true") {
+          uxLog("action", this, c.cyan(JSON.stringify(this.payloadFormatted, null, 2)));
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
         }
       }
     } catch (e) {
@@ -220,6 +248,7 @@ export class ApiProvider extends NotifProviderRoot {
     }
   }
 
+<<<<<<< HEAD
   // Write logs to JSON file in Loki-compatible newline-delimited JSON (NDJSON) format
   // Writes one line per log element in full Loki push format for easy ingestion
   private async writeLogsToJsonFile(filePath: string) {
@@ -296,6 +325,10 @@ export class ApiProvider extends NotifProviderRoot {
 
   // Build InfluxDB line protocol: MetricName,source=sfdx-hardis,orgIdentifier=hardis-group metric=12.7,min=0,max=70,percent=0.63
   private buildMetricsPayloadInflux() {
+=======
+  // Build something like MetricName,source=sfdx-hardis,orgIdentifier=hardis-group metric=12.7,min=0,max=70,percent=0.63
+  private buildMetricsPayload() {
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
     // Build tag field
     const metricTags =
       `source=${this.payload.source},` +
@@ -331,6 +364,7 @@ export class ApiProvider extends NotifProviderRoot {
     this.metricsPayload = metricsPayloadLines.join("\n");
   }
 
+<<<<<<< HEAD
   // Build Prometheus format
   private buildMetricsPayloadPrometheus() {
     // Build labels
@@ -373,17 +407,22 @@ export class ApiProvider extends NotifProviderRoot {
     this.metricsPayload = metricsPayloadLines.join("\n") + "\n";
   }
 
+=======
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
   // Call remote API
   private async sendToMetricsApi() {
     const axiosConfig: AxiosRequestConfig = {
       responseType: "json",
     };
+<<<<<<< HEAD
 
     // Set content type based on format
     if (this.metricsFormat === "prometheus") {
       axiosConfig.headers = { 'Content-Type': 'text/plain; version=0.0.4' };
     }
 
+=======
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
     // Basic Auth
     if (getEnvVar("NOTIF_API_METRICS_BASIC_AUTH_USERNAME") != null) {
       axiosConfig.auth = {
@@ -393,15 +432,20 @@ export class ApiProvider extends NotifProviderRoot {
     }
     // Bearer token
     else if (getEnvVar("NOTIF_API_METRICS_BEARER_TOKEN") != null) {
+<<<<<<< HEAD
       if (!axiosConfig.headers) {
         axiosConfig.headers = {};
       }
       axiosConfig.headers.Authorization = `Bearer ${getEnvVar("NOTIF_API_METRICS_BEARER_TOKEN")}`;
+=======
+      axiosConfig.headers = { Authorization: `Bearer ${getEnvVar("NOTIF_API_METRICS_BEARER_TOKEN")}` };
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
     }
     // POST message
     try {
       const axiosResponse = await axios.post(this.metricsApiUrl || "", this.metricsPayload, axiosConfig);
       const httpStatus = axiosResponse.status;
+<<<<<<< HEAD
       if (httpStatus >= 200 && httpStatus < 300) {
         uxLog("log", this, c.cyan(`[ApiMetricProvider] Posted metrics to API ${this.metricsApiUrl} (${httpStatus}) [format: ${this.metricsFormat}]`));
         if (getEnvVar("NOTIF_API_DEBUG") === "true") {
@@ -412,6 +456,18 @@ export class ApiProvider extends NotifProviderRoot {
       uxLog("warning", this, c.yellow(`[ApiMetricProvider] Error while sending metrics to API ${this.metricsApiUrl}: ${(e as Error).message}`));
       uxLog("log", this, c.grey("Request body:\n" + this.metricsPayload));
       uxLog("log", this, c.grey("Response body: " + JSON.stringify((e as any)?.response?.data || {})));
+=======
+      if (httpStatus > 200 && httpStatus < 300) {
+        uxLog("action", this, c.cyan(`[ApiMetricProvider] Posted message to API ${this.metricsApiUrl} (${httpStatus})`));
+        if (getEnvVar("NOTIF_API_DEBUG") === "true") {
+          uxLog("action", this, c.cyan(JSON.stringify(this.metricsPayload, null, 2)));
+        }
+      }
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[ApiMetricProvider] Error while sending message to API ${this.metricsApiUrl}: ${(e as Error).message}`));
+      uxLog("log", this, c.grey("Request body: \n" + JSON.stringify(this.metricsPayload)));
+      uxLog("log", this, c.grey("Response body: \n" + JSON.stringify((e as any)?.response?.data || {})));
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
     }
   }
 }

@@ -334,6 +334,7 @@
             "description": "Command line to run",
             "title": "Command",
             "type": "string"
+<<<<<<< HEAD
           },
           "context": {
             "$id": "#/properties/commandsPreDeploy/items/properties/context",
@@ -356,6 +357,8 @@
               "check-deployment-only",
               "process-deployment-only"
             ]
+=======
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
           }
         },
         "title": "Command"
@@ -434,7 +437,11 @@
           "skipIfError": {
             "$id": "#/properties/commandsPostDeploy/items/properties/skipIfError",
             "description": "Do not run the command if there is a deployment error",
+<<<<<<< HEAD
             "title": "Skip if deploy error",
+=======
+            "title": "Skip if error",
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
             "default": "false",
             "type": "boolean"
           }
@@ -687,11 +694,19 @@
     },
     "developmentBranch": {
       "$id": "#/properties/developmentBranch",
+<<<<<<< HEAD
       "default": "integration",
       "description": "When creating a new sfdx-hardis User Story, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
       "docUrl": "https://sfdx-hardis.cloudity.com/hardis/work/new/",
       "examples": [
         "integration",
+=======
+      "default": "developpement",
+      "description": "When creating a new sfdx-hardis User Story, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/work/new/",
+      "examples": [
+        "developpement",
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
         "dev_lot2",
         "hotfixes"
       ],
@@ -1580,7 +1595,11 @@
       "default": false,
       "description": "Also deploy dependencies of the metadatas identified by delta deployment, to avoid broken deployments due to missing dependencies.\n Example: removed picklist value in a field, that is still used in a record type.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-with-dependencies-beta",
+<<<<<<< HEAD
       "title": "Use Delta Deployment with dependencies (beta)",
+=======
+      "title": "Use Delta Deployment with dependencies",
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
       "type": "boolean"
     },
     "useSmartDeploymentTests": {

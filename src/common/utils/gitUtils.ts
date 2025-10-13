@@ -13,7 +13,10 @@ import {
   getCurrentGitBranch,
   getGitRepoRoot,
   git,
+<<<<<<< HEAD
   gitFetch,
+=======
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
   uxLog,
 } from './index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
@@ -65,7 +68,11 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
 
 export async function getGitDeltaScope(currentBranch: string, targetBranch: string) {
   try {
+<<<<<<< HEAD
     await gitFetch(['origin', `${targetBranch}:${targetBranch}`]);
+=======
+    await git().fetch(['origin', `${targetBranch}:${targetBranch}`]);
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
   } catch (e) {
     uxLog(
       "other",
@@ -75,7 +82,11 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
     );
   }
   try {
+<<<<<<< HEAD
     await gitFetch(['origin', `${currentBranch}:${currentBranch}`]);
+=======
+    await git().fetch(['origin', `${currentBranch}:${currentBranch}`]);
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
   } catch (e) {
     uxLog(
       "other",

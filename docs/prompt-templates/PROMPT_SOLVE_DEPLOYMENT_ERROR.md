@@ -6,8 +6,13 @@ description: Prompt template for PROMPT_SOLVE_DEPLOYMENT_ERROR
 # PROMPT_SOLVE_DEPLOYMENT_ERROR
 
 ## Variables
+<<<<<<< HEAD
 | Name      | Description                                                   | Example                                                    |
 |:----------|:--------------------------------------------------------------|:-----------------------------------------------------------|
+=======
+| Name | Description | Example |
+| :------|:-------------|:---------|
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 | **ERROR** | The Salesforce deployment error message to analyze and solve. | `Cannot deploy component: missing field 'X' on object 'Y'` |
 
 ## Prompt

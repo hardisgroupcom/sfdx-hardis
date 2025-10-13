@@ -11,8 +11,13 @@ import {
   execCommand,
   execSfdxJson,
   getGitRepoUrl,
+<<<<<<< HEAD
   gitCheckOutRemote,
   gitPull,
+=======
+  git,
+  gitCheckOutRemote,
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
   uxLog,
 } from '../../../common/utils/index.js';
 import { selectTargetBranch } from '../../../common/utils/gitUtils.js';
@@ -175,7 +180,11 @@ The command's logic orchestrates various underlying processes:
     );
     await gitCheckOutRemote(this.targetBranch);
     // Pull latest version of target branch
+<<<<<<< HEAD
     await gitPull();
+=======
+    await git().pull();
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
     // Create new branch
     uxLog("action", this, c.cyan(`Creating new local git branch ${c.green(branchName)}...`));
     await ensureGitBranch(branchName);

@@ -12,7 +12,10 @@ import {
   getCurrentGitBranch,
   git,
   gitHasLocalUpdates,
+<<<<<<< HEAD
   gitPush,
+=======
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
   normalizeFileStatusPath,
   uxLog,
 } from '../../../common/utils/index.js';
@@ -634,10 +637,17 @@ The command's technical implementation involves a series of orchestrated steps:
         let pushResult: any;
         if (configUSer.canForcePush === true) {
           // Force push if hardis:work:resetselection has been called before
+<<<<<<< HEAD
           pushResult = await gitPush({ output: true }, ['-u', 'origin', this.currentBranch, '--force']);
           await setConfig('user', { canForcePush: false });
         } else {
           pushResult = await gitPush({ output: true }, ['-u', 'origin', this.currentBranch]);
+=======
+          pushResult = await git({ output: true }).push(['-u', 'origin', this.currentBranch, '--force']);
+          await setConfig('user', { canForcePush: false });
+        } else {
+          pushResult = await git({ output: true }).push(['-u', 'origin', this.currentBranch]);
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
         }
         // Update merge request info
         if (pushResult && pushResult.remoteMessages) {

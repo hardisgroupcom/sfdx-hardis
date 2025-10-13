@@ -598,6 +598,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     const workItemIds = (queryResult.workItems || []).map(item => item.id);
     if (workItemIds.length > 0) {
       this.attachmentsWorkItemId = Number(workItemIds[0]);
+<<<<<<< HEAD
       // Check the number of attached images: if too many, rename the work item with (full) then create a new one by cloning its parameters
       const workItem = await witApi.getWorkItem(this.attachmentsWorkItemId, undefined, undefined, 1); // WorkItemExpand.Relations = 1
       const attachedImages = (workItem.relations || []).filter(rel => rel.rel === "AttachedFile");
@@ -690,6 +691,11 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     }
 
     uxLog("error", this, c.yellow(`[Azure Integration] Unable to find or create technical work item for image attachments. Image uploads to PR comments will not work until this is resolved.`));
+=======
+      return this.attachmentsWorkItemId;
+    }
+    uxLog("error", this, c.red(`[Azure Integration] You need to create a technical work item exactly named '${this.attachmentsWorkItemTitle}', then set its identifier in variable AZURE_ATTACHMENTS_WORK_ITEM_ID`));
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
     return null;
   }
 }

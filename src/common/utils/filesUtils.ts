@@ -1558,3 +1558,24 @@ async function csvToXls(csvFile: string, xslxFile: string) {
   }
   await workbook.xlsx.writeFile(xslxFile);
 }
+<<<<<<< HEAD
+=======
+
+/**
+ * Write a Markdown file to the given directory.
+ * @param outputDir Directory where the file should be written
+ * @param fileName Name of the file (without extension)
+ * @param content Markdown content to write
+ */
+export async function writeMarkdown(outputDir: string, fileName: string, content: string) {
+  try {
+    await fs.ensureDir(outputDir);
+    const filePath = path.join(outputDir, `${fileName}.md`);
+    await fs.writeFile(filePath, content, "utf-8");
+    console.log(`✅ Markdown file written: ${filePath}`);
+  } catch (error) {
+    console.error(`❌ Failed to write Markdown file: ${fileName}`, (error as any).message);
+  }
+}
+
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)

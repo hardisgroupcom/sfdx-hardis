@@ -3,7 +3,11 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
+<<<<<<< HEAD
 import { execCommand, getCurrentGitBranch, git, gitFetch, gitPull, uxLog } from '../../../common/utils/index.js';
+=======
+import { execCommand, getCurrentGitBranch, git, uxLog } from '../../../common/utils/index.js';
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 import { forceSourcePull, forceSourcePush } from '../../../common/utils/deployUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { getConfig } from '../../../config/index.js';
@@ -194,9 +198,15 @@ The command's technical implementation involves:
     const stashed = stashResult.includes('Saved working directory');
     // Pull most recent version of development branch
     uxLog("action", this, c.cyan(`Pulling most recent version of remote branch ${c.green(this.mergeBranch)}...`));
+<<<<<<< HEAD
     await gitFetch({ output: true });
     await git({ output: true }).checkout(this.mergeBranch || '');
     const pullRes = await gitPull({ output: true });
+=======
+    await git({ output: true }).fetch();
+    await git({ output: true }).checkout(this.mergeBranch || '');
+    const pullRes = await git({ output: true }).pull();
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
     // Go back to current work branch
     await git({ output: true }).checkout(localBranch);
     // Check if merge is necessary ( https://stackoverflow.com/a/30177226/7113625 )

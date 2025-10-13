@@ -44,7 +44,11 @@ export class DocBuilderObject extends DocBuilderRoot {
     ]);
     for (const field of fields) {
       lines.push(...[
+<<<<<<< HEAD
         `| ${field.fullName} | ${field.label || ""} | ${field.type || ""} | ${mdTableCell(String(field.description))} |`
+=======
+        `| ${field.fullName} | ${field.label || ""} | ${field.type || ""} | ${mdTableCell(field.description)} |`
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
       ]);
     }
     lines.push("");

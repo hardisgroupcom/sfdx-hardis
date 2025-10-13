@@ -71,7 +71,11 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const releaseUpdatesQuery =
       `SELECT StepStage,Status,Category,Title,DueDate,Description,Release,ReleaseLabel,ReleaseDate,ApiVersion,DurableId,HasNewSteps,IsReleased,SupportsRevoke,DeveloperName ` +
       `FROM ReleaseUpdate ` +
+<<<<<<< HEAD
       `WHERE StepStage IN ('Upcoming','OverDue') AND Status IN ('Pending','Invocable','Revocable','Nascent','Invoked','Info') AND DueDate >= LAST_N_DAYS:60 ` +
+=======
+      `WHERE StepStage IN ('Upcoming','OverDue') AND Status IN ('Invocable','Revocable','Nascent','Invoked','Info') AND DueDate >= LAST_N_DAYS:60 ` +
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
       `ORDER BY DueDate ASC`;
     const queryRes = await soqlQueryTooling(releaseUpdatesQuery, conn);
     const severityIconWarning = getSeverityIcon('warning');
@@ -125,8 +129,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         }
       })
 
+<<<<<<< HEAD
       const summaryText = `${this.releaseUpdatesRecords.length} Release Updates to check have been found in ${conn.instanceUrl}`
       uxLog("action", this, c.cyan(summaryText));
+=======
+      uxLog("action", this, c.cyan(notifText));
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
       uxLogTable(this, releaseUpdatesLight);
     }
     else {

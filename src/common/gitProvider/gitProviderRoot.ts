@@ -90,12 +90,16 @@ export abstract class GitProviderRoot {
     const replacements: any = {};
     const markdownImages = extractImagesFromMarkdown(markdownBody, sourceFile);
     for (const image of markdownImages) {
+<<<<<<< HEAD
       let imageUrl: string | null = null;
       try {
         imageUrl = await this.uploadImage(image.path);
       } catch (e) {
         uxLog("warning", this, c.yellow(`[GitProvider] Error while trying to upload image ${image.path}.\n${(e as Error).message}\n${(e as Error).stack}`));
       }
+=======
+      const imageUrl = await this.uploadImage(image.path);
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
       if (imageUrl) {
         replacements[image.name] = imageUrl;
       }

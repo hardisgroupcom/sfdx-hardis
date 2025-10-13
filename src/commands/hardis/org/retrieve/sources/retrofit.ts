@@ -10,7 +10,10 @@ import {
   gitHasLocalUpdates,
   execCommand,
   git,
+<<<<<<< HEAD
   gitFetch,
+=======
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
   uxLog,
   isCI,
 } from '../../../../../common/utils/index.js';
@@ -166,7 +169,11 @@ export default class Retrofit extends SfCommand<any> {
     this.retrofitTargetBranch =
       this.retrofitTargetBranch || config.retrofitBranch || 'retrofitTargetBranch MUST BE SET';
 
+<<<<<<< HEAD
     await gitFetch(['--prune']);
+=======
+    await git().fetch(['--prune']);
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
     const branches = await git().branch();
     if (branches.all.find((branch) => branch.includes(retrofitWorkBranch))) {
       // If manual command (not CI), force user to remove previous retrofit branches

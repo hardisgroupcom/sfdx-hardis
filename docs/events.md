@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ### Coming soon: DevOps Dreamin '25, London
 
 [Why you don't need DevOps vendors tools](https://devopsdreamin.com/agenda/)
@@ -13,30 +14,51 @@
 ### Trailblazer User Group '25, Casablanca
 
 [Salesforce Org Documentation with Open-Source and Agentforce](https://trailblazercommunitygroups.com/events/details/salesforce-salesforce-developer-group-casablanca-morocco-presents-salesforce-org-documentation-with-open-source-and-agentforce-salesforce-integration-with-connected-app/), by [Taha Basri](https://www.linkedin.com/in/tahabasri/)
+=======
+### Trailblazer User Group '25, Casablanca
+
+Salesforce Org Documentation with Open-Source and Agentforce, by [Taha Basri](https://www.linkedin.com/in/tahabasri/)
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/casa-user-group-docgen.png)
 
 ### Trailblazer Developer Group '25, Berlin (online)
 
+<<<<<<< HEAD
 [Summer of Docs – Auto-Document Your Salesforce Org Like a Pro](https://trailblazercommunitygroups.com/events/details/salesforce-salesforce-developer-group-berlin-germany-presents-summer-of-docs-auto-document-your-salesforce-org-like-a-pro/), by [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/) (Aspect) and [Roman Hentschke](https://www.linkedin.com/in/derroman/)
+=======
+Summer of Docs – Auto-Document Your Salesforce Org Like a Pro, by [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/) (Aspect) and [Roman Hentschke](https://www.linkedin.com/in/derroman/)
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/berlin-user-group-docgen.png)
 
 ### London's Calling '25, London
 
+<<<<<<< HEAD
 [Auto-generate your SF project Documentation site with open-source and Agentforce](https://www.londonscalling.net/sessions/auto-generate-your-sf-project-documentation-site-with-open-source-and-agentforce/)
+=======
+Auto-generate your SF project Documentation site with open-source and Agentforce
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 
 ![image](https://github.com/user-attachments/assets/9b99120c-b660-4f67-b734-793148ac9d00)
 
 ### Czech Dreamin '25, Prague
 
+<<<<<<< HEAD
 [Auto-generate your SF project Documentation site with open-source and Agentforce](https://czechdreamin.com/2025/), with [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/)
+=======
+Auto-generate your SF project Documentation site with open-source and Agentforce, with [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/)
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 
 ![Czech Dreamin 2025](https://github.com/user-attachments/assets/fa7b7f12-6d6a-437c-badd-20a626bb2163)
 
 ### Trailblazer Admin Group '25, Lyon
 
+<<<<<<< HEAD
 [Techs for Admins: Afterwork Salesforce Inspector Reloaded & sfdx-hardis](https://trailblazercommunitygroups.com/events/details/salesforce-salesforce-admin-group-lyon-france-presents-afterwork-salesforce-inspector-reloaded-et-sfdx-hardis-avec-cloudity/), with [Thomas Prouvot](https://www.linkedin.com/in/thomasprouvot/)
+=======
+Techs for Admins: Afterwork Salesforce Inspector Reloaded & sfdx-hardis, with [Thomas Prouvot](https://www.linkedin.com/in/thomasprouvot/)
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 
 ![](https://github.com/user-attachments/assets/90621fe0-6527-4a34-8a0b-c14bd6d21cbd)
 
@@ -48,7 +70,11 @@
 
 ### Wir Sind Ohana '24, Berlin
 
+<<<<<<< HEAD
 [Automate the Monitoring of your Salesforce orgs with open-source tools only!](https://wirsindohana.wordpress.com/), with [Yosra Saidani](https://www.linkedin.com/in/yosra-saidani-mvp/)
+=======
+Automate the Monitoring of your Salesforce orgs with open-source tools only!, with [Yosra Saidani](https://www.linkedin.com/in/yosra-saidani-mvp/)
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 
 [![Wir Sind Ohana Video](https://img.youtube.com/vi/xGbT6at7RZ0/0.jpg)](https://www.youtube.com/watch?v=xGbT6at7RZ0)
 
@@ -60,7 +86,11 @@
 
 ### French Touch Dreamin '23, Paris
 
+<<<<<<< HEAD
 [Automate the Monitoring of your Salesforce orgs with open-source tools only!](https://frenchtouchdreamin.com/index.php/french-touch-dreamin-2023/), with [Maxime Guenego](https://www.linkedin.com/in/maxime-guenego/)
+=======
+[Automate the Monitoring of your Salesforce orgs with open-source tools only!](https://frenchtouchdreamin.com/index.php/schedule/), with [Maxime Guenego](https://www.linkedin.com/in/maxime-guenego/)
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 
 ![French Touch Dreamin 2023](https://github.com/nvuillam/nvuillam/assets/17500430/8a2e1bbf-3402-4929-966d-5f99cb13cd29)
 
@@ -72,6 +102,10 @@
 
 ### Yeur Dreamin' 2023, Brussels
 
+<<<<<<< HEAD
 [An easy and complete Salesforce CI/CD release management with open-source only !](https://www.yeurdreamin.eu/2023-sessions/), with [Angélique Picoreau](https://www.linkedin.com/in/ang%C3%A9lique-picoreau-35328b36/)
+=======
+An easy and complete Salesforce CI/CD release management with open-source only !, with [Angélique Picoreau](https://www.linkedin.com/in/ang%C3%A9lique-picoreau-35328b36/)
+>>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
 
 [![image](https://github.com/nvuillam/nvuillam/assets/17500430/6470df20-7449-444b-a0a5-7dc22f5f6188)](https://www.linkedin.com/posts/nicolas-vuillamy_cicd-opensource-trailblazercommunity-activity-7076859027321704448-F1g-?utm_source=share&utm_medium=member_desktop)
