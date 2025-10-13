@@ -275,26 +275,26 @@ The command's technical implementation involves a series of orchestrated steps:
     const commitReadyRes = await prompts({
       type: 'select',
       name: 'value',
-      message: c.cyanBright('Have you already committed the updated metadata you want to deploy ?'),
+      message: c.cyanBright('Have you already committed the updated metadata you want to deploy?'),
       description: 'Select your current state regarding git commits and metadata updates',
       placeholder: 'Select commit status',
       choices: [
         {
-          title: '😎 Yes, my commit(s) is ready ! I staged my files then created one or multiple commits !',
+          title: '😎 Yes, my commit(s) are ready! I staged my files and created one or multiple commits.',
           value: 'commitReady',
           description:
-            "You have already pulled updates from your org (or locally updated the files if you're a nerd) then staged your files and created a commit",
+            "You have already pulled updates from your org (or locally updated the files if you're a nerd), staged your files, and created a commit",
         },
         {
-          title: '😐 No, please pull my latest updates from my org so I can commit my metadatas',
+          title: '😐 No, please pull my latest updates from my org so I can commit my metadata',
           value: 'pleasePull',
-          description: 'Pull latest updates from org so then you can stage files and create your commit',
+          description: 'Pull latest updates from org so you can stage files and create your commit',
         },
         {
-          title: '😱 What is a commit ? What does mean pull ? Help !',
+          title: '😱 What is a commit? What does pull mean? Help!',
           value: 'help',
           description:
-            "Don't panic, just click on the link that will appear in the console (CTRL + Click) and then you will know :)",
+            "Don't panic, just click on the link that will appear in the console (CTRL + Click) and you'll learn!",
         },
       ],
     });

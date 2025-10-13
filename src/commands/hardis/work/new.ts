@@ -105,8 +105,8 @@ The command's logic orchestrates various underlying processes:
     const { flags } = await this.parse(NewTask);
     this.debugMode = flags.debug || false;
 
-    uxLog("action", this, c.cyan('This tool will assist you to create a new User Story (dev or config) with SFDX Hardis CI/CD'));
-    uxLog("log", this, c.grey("When you don't know what to answer, you can let the default value and push ENTER"));
+    uxLog("action", this, c.cyan('Creating a new User Story (dev or config) with SFDX Hardis CI/CD'));
+    uxLog("log", this, c.grey("When unsure, press ENTER to use the default value"));
 
     // Make sure the git status is clean, to not delete uncommitted updates
     await checkGitClean({ allowStash: true });
@@ -154,7 +154,7 @@ The command's logic orchestrates various underlying processes:
       {
         type: 'select',
         name: 'branch',
-        message: c.cyanBright('What is the type of the User Story you want to do ?'),
+        message: c.cyanBright('What type of User Story do you want to create?'),
         description: 'Select the category of work that best describes your User Story',
         placeholder: 'Select User Story type',
         initial: 0,
@@ -171,13 +171,13 @@ The command's logic orchestrates various underlying processes:
     uxLog(
       "action",
       this,
-      c.cyan(`Checking out the most recent version of git branch ${c.bold(this.targetBranch)} from ${repoUrl} ...`)
+      c.cyan(`Checking out latest version of branch ${c.bold(this.targetBranch)} from ${repoUrl}...`)
     );
     await gitCheckOutRemote(this.targetBranch);
     // Pull latest version of target branch
     await gitPull();
     // Create new branch
-    uxLog("action", this, c.cyan(`Creating new local git branch ${c.green(branchName)}...`));
+    uxLog("action", this, c.cyan(`Creating new branch ${c.green(branchName)}...`));
     await ensureGitBranch(branchName);
     // Update config if necessary
     if (config.developmentBranch !== this.targetBranch && (config.availableTargetBranches || null) == null) {
@@ -185,7 +185,7 @@ The command's logic orchestrates various underlying processes:
         type: 'confirm',
         name: 'value',
         message: c.cyanBright(
-          `Do you want to update your default target git branch to ${c.green(this.targetBranch)} ?`
+          `Do you want to update your default target branch to ${c.green(this.targetBranch)}?`
         ),
         description: 'Set this branch as your default target for future work items',
         default: false,
@@ -210,7 +210,7 @@ The command's logic orchestrates various underlying processes:
         title: '🌎 Sandbox org with source tracking',
         value: 'sandbox',
         description:
-          "Release manager told me that I can work on Sandboxes on my project so let's use fresh dedicated one",
+          "Work in a developer sandbox provided by your Release Manager",
       });
     }
     if (allowedOrgTypes.includes('scratch') || allowedOrgTypes.length === 0) {
@@ -224,18 +224,18 @@ The command's logic orchestrates various underlying processes:
       orgTypeChoices.push({
         title: `😎 Current org ${flags['target-org']?.getConnection().instanceUrl.replace("https://", "")}`,
         value: 'currentOrg',
-        description: `Your default org with username ${flags['target-org']?.getUsername()} is already the org you want to use to work :)`,
+        description: `Use your default org with username ${flags['target-org']?.getUsername()}`,
       });
     }
     orgTypeChoices.push({
       title: "🤠 I'm hardcore, I don't need an org !",
       value: 'noOrg',
-      description: 'You just want to play with XML and sfdx-hardis configuration, and you know what you are doing !',
+      description: 'Work with XML and sfdx-hardis configuration only, without a connected org',
     });
     const orgTypeResponse = await prompts({
       type: 'select',
       name: 'value',
-      message: c.cyanBright(`In which Salesforce org do you want to work in ?`),
+      message: c.cyanBright(`Which Salesforce org do you want to work in?`),
       description: 'Choose the type of Salesforce org to use for your development work',
       placeholder: 'Select org type',
       initial: 0,
@@ -251,10 +251,10 @@ The command's logic orchestrates various underlying processes:
       // source tracked sandbox
       await this.selectOrCreateSandbox(branchName, config, flags, selectedOrgType);
     } else {
-      uxLog("warning", this, c.yellow(`No org selected... I hope you know what you are doing, don't break anything :)`));
+      uxLog("warning", this, c.yellow(`No org selected. Ensure you know what you're doing.`));
     }
 
-    uxLog("action", this, c.cyan(`You are now ready to work in branch ${c.green(branchName)} :)`));
+    uxLog("action", this, c.cyan(`Ready to work in branch ${c.green(branchName)}`));
     // Return an object to be displayed with --json
     return { outputString: 'Created new User Story' };
   }
@@ -267,7 +267,7 @@ The command's logic orchestrates various underlying processes:
       type: 'text',
       name: 'taskName',
       message: c.cyanBright(
-        `What is the name of your new User Story ? Please avoid accents or special characters`
+        `What is the name of your new User Story? Please avoid accents and special characters.`
       ),
       description: 'Enter a descriptive name for your User Story that will be used in the git branch name',
       placeholder: `Ex: ${taskNameExample}`,
@@ -295,20 +295,20 @@ The command's logic orchestrates various underlying processes:
       {
         title: c.yellow('🆕 Create new scratch org'),
         value: 'newScratchOrg',
-        description: "This will generate a new scratch org, and in a few minutes you'll be ready to work",
+        description: "Generate a new scratch org; you'll be ready to work in a few minutes",
       },
     ];
     if (currentOrg) {
       baseChoices.push({
         title: c.yellow(`♻️ Reuse current org`),
         value: currentOrg,
-        description: `This will reuse current org ${currentOrg.instanceUrl}. Beware of conflicts if others merged merge requests :)`,
+        description: `Reuse current org ${currentOrg.instanceUrl}. Beware of conflicts if others have merged changes.`,
       });
     }
     const scratchResponse = await prompts({
       type: 'select',
       name: 'value',
-      message: c.cyanBright(`Please select a scratch org to use for your branch ${c.green(branchName)}`),
+      message: c.cyanBright(`Select a scratch org for branch ${c.green(branchName)}`),
       description: 'Choose whether to create a new scratch org or reuse an existing one',
       placeholder: 'Select scratch org option',
       initial: 0,
@@ -350,7 +350,7 @@ The command's logic orchestrates various underlying processes:
         "action",
         this,
         c.cyan(
-          `Selected and opening scratch org ${c.green(scratchResponse.value.instanceUrl)} with user ${c.green(
+          `Selected scratch org ${c.green(scratchResponse.value.instanceUrl)} with user ${c.green(
             scratchResponse.value.username
           )}`
         )
@@ -388,7 +388,7 @@ The command's logic orchestrates various underlying processes:
         type: 'select',
         name: 'value',
         message: c.cyanBright(
-          `Do you want to update the sandbox according to git branch "${this.targetBranch}" current state ?`
+          `Do you want to update the sandbox to match branch "${this.targetBranch}" current state?`
         ),
         description: 'Choose whether to sync your sandbox with the latest changes from the target branch (packages, sources, permission sets, apex scripts, initial data)',
         placeholder: 'Select sync option',
@@ -396,7 +396,7 @@ The command's logic orchestrates various underlying processes:
           {
             title: '🧑‍🤝‍🧑 No, continue working on my current sandbox state',
             value: 'no',
-            description: 'Use if you are multiple users in the same SB, or have have uncommitted changes in your sandbox',
+            description: 'Use if multiple users share the same sandbox, or if you have uncommitted changes',
           },
           {
             title: '☢️ Yes, please try to update my sandbox !',
@@ -411,7 +411,7 @@ The command's logic orchestrates various underlying processes:
         const promptConfirm = await prompts({
           type: 'confirm',
           message: c.cyanBright(
-            `Are you really sure you want to update the dev sandbox with the state of git branch ${this.targetBranch} ? This will overwrite setup updates that you or other users have not committed yet`
+            `Confirm: Update dev sandbox with branch ${this.targetBranch} state? This will overwrite uncommitted changes by you or other users.`
           ),
           description: 'Confirm that you want to reset your sandbox to match the target branch state',
         });
@@ -451,7 +451,7 @@ The command's logic orchestrates various underlying processes:
             "warning",
             this,
             c.yellow(
-              'Your sandbox may not be completely initialized from git. You can send the error above to your release manager'
+              'Sandbox may not be fully initialized from git. Share the error above with your release manager.'
             )
           );
         }
@@ -464,12 +464,12 @@ The command's logic orchestrates various underlying processes:
           uxLog(
             "warning",
             this,
-            c.yellow(`If you really want your sandbox to be up to date with branch ${c.bold(this.targetBranch)}, you may:
+            c.yellow(`To sync sandbox with branch ${c.bold(this.targetBranch)}:
   - ${c.bold(
               'Fix the errors'
-            )} (probably by manually updating the target sandbox in setup), then run "New User Story" again and select again the same sandbox
-  - ${c.bold('Refresh your sandbox')} (ask your release manager if you don't know how)
-  Else, you can start working now (but beware of conflicts ^^):)
+            )} (manually update target sandbox in setup), then run "New User Story" again with same sandbox
+  - ${c.bold('Refresh your sandbox')} (contact release manager if needed)
+  Otherwise, start working now (beware of potential conflicts)
         `)
           );
         }
@@ -480,12 +480,12 @@ The command's logic orchestrates various underlying processes:
       const openOrgRes = await prompts({
         type: 'confirm',
         name: 'value',
-        message: c.cyanBright(`Do you want to open org ${c.green(orgUsername)} in your browser ?`),
+        message: c.cyanBright(`Do you want to open org ${c.green(orgUsername)} in your browser?`),
         description: 'Open the sandbox org in your web browser to start working on it',
         initial: true
       });
       if (openOrgRes.value === true) {
-        uxLog("action", this, c.cyan(`Opening org ${c.green(orgUsername)} so you can work in it...`));
+        uxLog("action", this, c.cyan(`Opening org ${c.green(orgUsername)}...`));
         await execSfdxJson('sf org open', this, {
           fail: true,
           output: false,
@@ -508,9 +508,9 @@ The command's logic orchestrates various underlying processes:
       type: 'select',
       name: 'value',
       message: c.cyanBright(
-        `Please select a sandbox org to use for your branch ${c.green(
+        `Select a sandbox org to work in branch ${c.green(
           branchName
-        )} (if you want to avoid conflicts, you should often refresh your sandbox)`
+        )}`
       ),
       description: 'Choose an existing sandbox or connect to a new one for this branch',
       placeholder: 'Select sandbox',
@@ -518,8 +518,8 @@ The command's logic orchestrates various underlying processes:
       choices: [
         ...[
           {
-            title: c.yellow('🌐 Connect to a sandbox not appearing in this list'),
-            description: 'Login in web browser to your source-tracked sandbox',
+            title: c.yellow('🌐 Connect to a sandbox not in this list'),
+            description: 'Login via web browser to your source-tracked sandbox',
             value: 'connectSandbox',
           },
           /* {
@@ -565,7 +565,7 @@ The command's logic orchestrates various underlying processes:
     // Selected sandbox from list
     else {
       await makeSureOrgIsConnected(sandboxResponse.value);
-      uxLog("action", this, c.cyan(`Setting sandbox org ${c.green(sandboxResponse.value.instanceUrl)} (${sandboxResponse.value.username}) as default org...`));
+      uxLog("action", this, c.cyan(`Setting ${c.green(sandboxResponse.value.instanceUrl)} (${sandboxResponse.value.username}) as default org...`));
       await execCommand(`sf config set target-org=${sandboxResponse.value.username}`, this, {
         output: true,
         fail: true,
