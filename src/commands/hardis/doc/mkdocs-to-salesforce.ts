@@ -247,7 +247,7 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
       uxLog("error", this, c.red(`Deployment failed:\n${deployRes.stderr + "\n" + deployRes.stdout}`));
       if ((deployRes.stderr + deployRes.stdout).includes("static resource cannot exceed")) {
         uxLog("error", this, c.red(`Documentation is too big to be hosted in a Static Resource.`));
-        uxLog("warning", this, c.yellow(`Cloudity can help you to host it somewhere else :)`));
+        uxLog("warning", this, c.yellow(`Cloudity can help you to host it somewhere else 😊`));
         uxLog("warning", this, c.yellow(`If you are interested, contact us on ${c.green(c.bold(CONSTANTS.CONTACT_URL))}`));
       }
       else {

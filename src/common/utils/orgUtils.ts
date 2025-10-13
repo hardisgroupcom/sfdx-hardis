@@ -144,7 +144,7 @@ export async function promptOrg(
       clearCache: true,
       descriptionForUi: 'It might be a sfdx-hardis cache issue, reset it and try again !',
     },
-    { username: '❌ Cancel', cancel: true, descriptionForUi: 'Get out of here :)' },
+    { username: '❌ Cancel', cancel: true, descriptionForUi: 'Get out of here 😊' },
   ];
 
   // Filter if we want to list only the scratch attached to current devhub
@@ -338,7 +338,7 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
     const loginRes = await execSfdxJson(loginCommand, this, { fail: true, output: false });
     return loginRes.result;
   }
-  // We shouldn't be here :)
+  // We shouldn't be here 😊
   uxLog("warning", this, c.yellow("What are we doing here ? Please declare an issue with the following text: " + instanceUrl + ":" + connectedStatus));
 }
 
@@ -756,7 +756,7 @@ export async function setConnectionVariables(conn, handleTechnical = false) {
         globalThis.jsForceConnTechnical = connTechnical;
       }
     } catch (e) {
-      uxLog("warning", this, c.yellow(`Unable to connect to technical org: ${e}\nThat's ok, we'll use default org :)`));
+      uxLog("warning", this, c.yellow(`Unable to connect to technical org: ${e}\nThat's ok, we'll use default org 😊`));
       globalThis.jsForceConnTechnical = null;
     }
   }

@@ -46,7 +46,7 @@ export abstract class TicketProvider {
   }
 
   // Process Ticket providers actions after a deployment.
-  // Can be comments on JIRA, and maybe later status changes ? :)
+  // Can be comments on JIRA, and maybe later status changes ? 😊
   public static async postDeploymentActions(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null) {
     const ticketProviders = this.getInstances();
     for (const ticketProvider of ticketProviders) {

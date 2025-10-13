@@ -79,7 +79,7 @@ export default class DxSources extends SfCommand<any> {
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DxSources);
     uxLog("error", this, c.red('This command is deprecated and will be removed in January 2025'));
-    uxLog("error", this, c.red('Nobody used Metadata format anymore :)'));
+    uxLog("error", this, c.red('Nobody used Metadata format anymore 😊'));
     uxLog(
       "error",
       this,

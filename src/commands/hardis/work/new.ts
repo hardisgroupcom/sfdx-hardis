@@ -425,7 +425,7 @@ The command's logic orchestrates various underlying processes:
             await installPackages(config.installedPackages || [], orgUsername);
           }
           try {
-            // Continue initialization even if push did not work... it could work and be not such a problem :)
+            // Continue initialization even if push did not work... it could work and be not such a problem 😊
             uxLog("action", this, c.cyan('Resetting local SF Cli tracking...'));
             await execCommand(`sf project delete tracking --no-prompt -o ${orgUsername}`, this, {
               fail: false,

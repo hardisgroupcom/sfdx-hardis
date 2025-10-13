@@ -217,7 +217,7 @@ The command's technical implementation involves:
           type: 'select',
           name: 'value',
           message: c.cyanBright(
-            'There are merge conflicts, please solve them, then select YES here. Otherwise, exit the script and call a developer for help :)'
+            'There are merge conflicts, please solve them, then select YES here. Otherwise, exit the script and call a developer for help 😊'
           ),
           description: 'Choose your next action after attempting to resolve merge conflicts',
           placeholder: 'Select an option',

@@ -1,6 +1,6 @@
 import { Hook } from '@oclif/core';
 
-// The use of this method is deprecated: use NotifProvider.sendNotification :)
+// The use of this method is deprecated: use NotifProvider.sendNotification 😊
 
 const hook: Hook<"finally"> = async (options) => {
   // Skip hooks from other commands than hardis commands

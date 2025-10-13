@@ -129,7 +129,7 @@ export abstract class GitProvider {
       if (prData?.flowDiffMarkdown?.markdownSummary) {
         markdownBody += "\n\n" + prData.flowDiffMarkdown.markdownSummary;
       }
-      markdownBody = removeMermaidLinks(markdownBody); // Remove "click" elements that are useless and ugly on some providers :)
+      markdownBody = removeMermaidLinks(markdownBody); // Remove "click" elements that are useless and ugly on some providers 😊
       const prMessageRequest: PullRequestMessageRequest = {
         title: prData.title || '',
         message: markdownBody,
@@ -143,7 +143,7 @@ export abstract class GitProvider {
       }
       // Post additional comments
       for (const flowDiff of prData?.flowDiffMarkdown?.flowDiffMarkdownList || []) {
-        const flowDiffMessage = removeMermaidLinks(flowDiff.markdown); // Remove "click" elements that are useless and ugly on some providers :)
+        const flowDiffMessage = removeMermaidLinks(flowDiff.markdown); // Remove "click" elements that are useless and ugly on some providers 😊
         const prMessageRequestAdditional: PullRequestMessageRequest = {
           title: `Differences for Flow ${flowDiff.name}`,
           message: flowDiffMessage,

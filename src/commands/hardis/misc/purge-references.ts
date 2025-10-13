@@ -119,7 +119,7 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
       placeholder: 'Select an option',
       choices: [
         { value: true, title: 'My local sfdx sources are up to date with the target org' },
-        { value: false, title: 'I need to retrieve metadatas :)' },
+        { value: false, title: 'I need to retrieve metadatas 😊' },
       ],
     });
     if (retrieveNeedRes.value === false) {

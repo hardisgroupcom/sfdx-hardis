@@ -122,7 +122,7 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
       if (orgUsername) {
         args.push(...['--target-org', `"${orgUsername}"`]);
       } else {
-        throw new SfError(c.yellow('For technical reasons, run again this command and select your org in the list :)'));
+        throw new SfError(c.yellow('For technical reasons, run again this command and select your org in the list 😊'));
       }
     }
     return await wrapSfdxCoreCommand('sfdx force:source:retrieve', args, this, flags.debug);

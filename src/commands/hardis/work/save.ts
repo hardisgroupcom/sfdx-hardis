@@ -225,7 +225,7 @@ The command's technical implementation involves a series of orchestrated steps:
     uxLog("log", this, summaryMsg);
     uxLog("log", this, `${c.yellow(`When your ${GitProvider.getMergeRequestName(this.gitUrl)} has been merged:`)}
 - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
-- Use New User Story menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`);
+- Use New User Story menu (sf hardis:work:new), even if you work in the same sandbox or scratch org 😊`);
     // Manual actions file
     const config = await getConfig('project');
     if (config.manualActionsFileUrl && config.manualActionsFileUrl !== '') {
@@ -473,7 +473,7 @@ The command's technical implementation involves a series of orchestrated steps:
         uxLog(
           "warning",
           this,
-          c.yellow(c.bold('Please make sure the attributes removed from Profiles are defined on Permission Sets :)'))
+          c.yellow(c.bold('Please make sure the attributes removed from Profiles are defined on Permission Sets 😊'))
         );
       }
 

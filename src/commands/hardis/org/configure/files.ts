@@ -138,7 +138,7 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
     const defaultTemplateChoice = {
       title: '📄 Blank template',
       value: 'blank',
-      description: 'Configure your files import/export from scratch :)',
+      description: 'Configure your files import/export from scratch 😊',
     };
 
     const templateResp = await prompts({

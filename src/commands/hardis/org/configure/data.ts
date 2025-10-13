@@ -263,7 +263,7 @@ The command's technical implementation involves:
     const defaultTemplateChoice = {
       title: '📄 Blank template',
       value: 'blank',
-      description: 'Configure your data import/export from scratch :)',
+      description: 'Configure your data import/export from scratch 😊',
     };
 
     const templateResp = await prompts({

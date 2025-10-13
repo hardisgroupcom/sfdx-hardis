@@ -215,7 +215,7 @@ export async function promptInstanceUrl(
   const allChoices = [
     {
       title: '📝 Custom login URL (Sandbox, DevHub or Production Org)',
-      description: `Recommended option :) Example: ${customLoginUrlExample}`,
+      description: `Recommended option 😊 Example: ${customLoginUrlExample}`,
       value: 'custom',
     },
     {
@@ -263,7 +263,7 @@ export async function promptInstanceUrl(
     type: 'text',
     name: 'value',
     message: c.cyanBright('Please input the base URL of the salesforce org'),
-    description: 'Copy paste the full URL of your currently open Salesforce org :)',
+    description: 'Copy paste the full URL of your currently open Salesforce org 😊',
     placeholder: 'Ex: https://myclient.my.salesforce.com , or myclient',
   });
   let urlCustom = (customUrlResponse?.value || "")
@@ -312,7 +312,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
           resolve(null);
         });
       });
-      uxLog("other", this, `Git repository cloned. ${c.yellow('Please run again the same command :)')}`);
+      uxLog("other", this, `Git repository cloned. ${c.yellow('Please run again the same command 😊')}`);
       process.exit(0);
     } else {
       throw new SfError('You need to be at the root of a git repository to run this command');
@@ -1712,7 +1712,7 @@ export async function generateSSLCertificate(
         "log",
         commandThis,
         c.grey(c.yellow(
-          `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file :)`
+          `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file 😊`
         ))
       );
       const isProduction = await isProductionOrg(options.targetUsername || null, { conn: conn });

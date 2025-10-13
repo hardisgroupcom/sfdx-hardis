@@ -354,7 +354,7 @@ export async function smartDeploy(
                 `Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${quickDeployRes.errorMessage}.`
               )
             );
-            uxLog("success", commandThis, c.green("Switching back to effective deployment not using QuickDeploy: that's ok :)"));
+            uxLog("success", commandThis, c.green("Switching back to effective deployment not using QuickDeploy: that's ok 😊"));
             const isProdOrg = await isProductionOrg(options.targetUsername || "", options);
             if (!isProdOrg) {
               testlevel = 'NoTestRun';
@@ -643,7 +643,7 @@ async function displayDeploymentLink(rawLog: string, options: any) {
   }
 }
 
-// In some case we can not deploy the whole package.xml, so let's split it before :)
+// In some case we can not deploy the whole package.xml, so let's split it before 😊
 async function buildDeploymentPackageXmls(
   packageXmlFile: string,
   check: boolean,
@@ -1025,7 +1025,7 @@ export async function deployMetadatas(
   } catch (e) {
     // workaround if --soapdeploy is not available
     if (JSON.stringify(e).includes('--soapdeploy') && !options.tryOnce === true) {
-      uxLog("warning", this, c.yellow("This may be a error with a workaround... let's try it :)"));
+      uxLog("warning", this, c.yellow("This may be a error with a workaround... let's try it 😊"));
       try {
         deployRes = await execCommand(deployCommand.replace(' --soapdeploy', ''), this, {
           output: true,
@@ -1035,7 +1035,7 @@ export async function deployMetadatas(
       } catch (e2) {
         if (JSON.stringify(e2).includes('NoTestRun')) {
           // Another workaround: try running tests
-          uxLog("warning", this, c.yellow("This may be again an error with a workaround... let's make a last attempt :)"));
+          uxLog("warning", this, c.yellow("This may be again an error with a workaround... let's make a last attempt 😊"));
           deployRes = await execCommand(
             deployCommand.replace(' --soapdeploy', '').replace('NoTestRun', 'RunLocalTests'),
             this,
@@ -1447,7 +1447,7 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
 
   if (minCoverage < 75.0) {
     killBoringExitHandlers();
-    throw new SfError(`[sfdx-hardis] Good try, hacker, but minimum ${codeCoverageText} can't be less than 75% :)`);
+    throw new SfError(`[sfdx-hardis] Good try, hacker, but minimum ${codeCoverageText} can't be less than 75% 😊`);
   }
 
   if (orgCoverage < minCoverage) {
