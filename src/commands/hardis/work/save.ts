@@ -16,6 +16,7 @@ import {
   gitPush,
   normalizeFileStatusPath,
   uxLog,
+  uxLogTable,
 } from '../../../common/utils/index.js';
 import { exportData } from '../../../common/utils/dataUtils.js';
 import { forceSourcePull } from '../../../common/utils/deployUtils.js';
@@ -428,9 +429,22 @@ The command's technical implementation involves a series of orchestrated steps:
     // Commit updates
     let gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0 && !this.noGit) {
-      uxLog("log", this, c.grey(`Committing updated files in local git branch ${c.green(this.currentBranch)}...`));
+      const commitMessage = '[sfdx-hardis] Update package content';
+      uxLog("action", this, c.cyan(`Adding new commit: ${commitMessage}`));
+
+      // Build files list for table
+      const filesTable = gitStatusWithConfig.staged.map((file) => {
+        const status = gitStatusWithConfig.files.find(f => f.path === file);
+        const statusLabel = status?.working_dir === 'D' ? 'deleted' : status?.index === 'A' ? 'created' : 'modified';
+        return {
+          Status: statusLabel,
+          File: file
+        };
+      });
+      uxLogTable(this, filesTable, ['Status', 'File']);
+
       try {
-        await git({ output: true }).commit('[sfdx-hardis] Update package content');
+        await git({ output: true }).commit(commitMessage);
       } catch (e) {
         uxLog(
           "warning",
@@ -476,11 +490,21 @@ The command's technical implementation involves a series of orchestrated steps:
         .filter((file) => !gitStatusFilesBeforeClean.includes(file.path))
         .map((file) => normalizeFileStatusPath(file.path, config));
       if (cleanedFiles.length > 0) {
-        uxLog("log", this, c.grey(`Cleaned the following list of files:\n${cleanedFiles.join('\n')}`));
         if (!this.noGit) {
           try {
             await git().add(cleanedFiles);
-            await git({ output: true }).commit('[sfdx-hardis] Clean sfdx project');
+
+            const commitMessage = '[sfdx-hardis] Clean sfdx project';
+            uxLog("action", this, c.cyan(`Adding new commit: ${commitMessage}`));
+
+            // Build files list for table
+            const filesTable = cleanedFiles.map((file) => ({
+              Status: 'modified',
+              File: file
+            }));
+            uxLogTable(this, filesTable, ['Status', 'File']);
+
+            await git({ output: true }).commit(commitMessage);
           } catch (e) {
             uxLog(
               "warning",
@@ -590,8 +614,22 @@ The command's technical implementation involves a series of orchestrated steps:
     }
     let gitStatusAfterDeployPlan = await git().status();
     if (gitStatusAfterDeployPlan.staged.length > 0 && !this.noGit) {
+      const commitMessage = '[sfdx-hardis] Update deployment plan';
+      uxLog("action", this, c.cyan(`(unused) Adding new commit: ${commitMessage}`));
+
+      // Build files list for table
+      const filesTable = gitStatusAfterDeployPlan.staged.map((file) => {
+        const status = gitStatusAfterDeployPlan.files.find(f => f.path === file);
+        const statusLabel = status?.working_dir === 'D' ? 'deleted' : status?.index === 'A' ? 'created' : 'modified';
+        return {
+          Status: statusLabel,
+          File: file
+        };
+      });
+      uxLogTable(this, filesTable, ['Status', 'File']);
+
       try {
-        await git({ output: true }).commit('[sfdx-hardis] Update deployment plan');
+        await git({ output: true }).commit(commitMessage);
       } catch (e) {
         uxLog(
           "warning",
