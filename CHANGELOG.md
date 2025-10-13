@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.7.3] 2025-10-13
+
 - Handle cases where Azure DevOps is hosted on visualstudio.com
 - Hide credentials from user logs when they are in remote.origin.url
 
