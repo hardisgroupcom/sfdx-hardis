@@ -10,6 +10,7 @@ import {
   createTempDir,
   execCommand,
   getCurrentGitBranch,
+  getGitRepoUrl,
   git,
   gitHasLocalUpdates,
   gitPush,
@@ -163,7 +164,7 @@ The command's technical implementation involves a series of orchestrated steps:
     const localBranch = (await getCurrentGitBranch()) || '';
 
     // Define current and target branches
-    this.gitUrl = (await git().listRemote(['--get-url']))?.trim() || '';
+    this.gitUrl = await getGitRepoUrl() || '';
     this.currentBranch = (await getCurrentGitBranch()) || '';
     if (this.targetBranch == null) {
       const userConfig = await getConfig('user');
