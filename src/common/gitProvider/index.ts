@@ -268,16 +268,27 @@ export abstract class GitProvider {
       // https://gitea.example.com/org/repo/compare/main...feature
       return `${gitUrlHttp}/compare/${encodeURIComponent(targetBranch)}...${encodeURIComponent(sourceBranch)}`;
     }
-    // Azure DevOps
+    // Azure DevOps (modern format)
     if (gitUrlHttp.includes("dev.azure.com")) {
       // https://dev.azure.com/org/project/_git/repo/pullrequestcreate?sourceRef=feature&targetRef=main
       // Try to extract the repo path after _git/
-      const match = gitUrlHttp.match(/dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)/);
+      const match = gitUrlHttp.match(/dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/?]+)/);
       if (match) {
         const org = match[1];
-        const project = match[2];
-        const repo = match[3];
-        return `https://dev.azure.com/${org}/${project}/_git/${repo}/pullrequestcreate?sourceRef=${encodeURIComponent(sourceBranch)}&targetRef=${encodeURIComponent(targetBranch)}`;
+        const project = decodeURIComponent(match[2]);
+        const repo = decodeURIComponent(match[3]);
+        return `https://dev.azure.com/${org}/${encodeURIComponent(project)}/_git/${encodeURIComponent(repo)}/pullrequestcreate?sourceRef=${encodeURIComponent(sourceBranch)}&targetRef=${encodeURIComponent(targetBranch)}`;
+      }
+    }
+    // Azure DevOps (legacy visualstudio.com format)
+    if (gitUrlHttp.includes("visualstudio.com")) {
+      // https://organization.visualstudio.com/Project/_git/repo/pullrequestcreate?sourceRef=feature&targetRef=main
+      const match = gitUrlHttp.match(/([^.]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/?]+)/);
+      if (match) {
+        const org = match[1];
+        const project = decodeURIComponent(match[2]);
+        const repo = decodeURIComponent(match[3]);
+        return `https://${org}.visualstudio.com/${encodeURIComponent(project)}/_git/${encodeURIComponent(repo)}/pullrequestcreate?sourceRef=${encodeURIComponent(sourceBranch)}&targetRef=${encodeURIComponent(targetBranch)}`;
       }
     }
     // Bitbucket (cloud)

@@ -12,6 +12,7 @@ import {
   extractRegexMatches,
   getCurrentGitBranch,
   getGitRepoRoot,
+  getGitRepoUrl,
   git,
   gitFetch,
   uxLog,
@@ -28,7 +29,7 @@ import { WebSocketClient } from '../websocketClient.js';
 import { countPackageXmlItems } from './xmlUtils.js';
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
-  const gitUrl = (await git().listRemote(['--get-url']))?.trim() || '';
+  const gitUrl = await getGitRepoUrl() || '';
   const message =
     options.message ||
     `What will be the target branch of your new User Story ? (the branch where you will make your ${GitProvider.getMergeRequestName(gitUrl)} after the User Story is completed)`;

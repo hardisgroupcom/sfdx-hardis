@@ -112,8 +112,28 @@ export async function getGitRepoUrl() {
   }
   const origin = await git().getConfig('remote.origin.url');
   if (origin && origin.value) {
-    // Replace https://username:token@gitlab.com/toto by https://gitlab.com/toto
-    return origin.value.replace(/\/\/(.*:.*@)/gm, `//`);
+    let url = origin.value;
+
+    // Convert SSH URL to HTTPS URL
+    // Handle formats like: git@github.com:owner/repo.git or ssh://git@github.com/owner/repo.git
+    if (url.startsWith('git@') || url.startsWith('ssh://')) {
+      // Handle git@github.com:owner/repo.git format
+      const sshMatch = url.match(/^git@([^:]+):(.+)$/);
+      if (sshMatch) {
+        url = `https://${sshMatch[1]}/${sshMatch[2]}`;
+      } else {
+        // Handle ssh://git@github.com/owner/repo.git format
+        url = url.replace(/^ssh:\/\/git@([^/]+)\//, 'https://$1/');
+      }
+      // Remove .git suffix if present
+      url = url.replace(/\.git$/, '');
+    }
+
+    // Remove credentials from HTTPS URLs
+    // Handle both formats: https://username:password@domain.com and https://username@domain.com
+    url = url.replace(/\/\/([^@/]+@)/gm, `//`);
+
+    return url;
   }
   return null;
 }
