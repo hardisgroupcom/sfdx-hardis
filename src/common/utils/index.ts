@@ -129,8 +129,9 @@ export async function getGitRepoUrl() {
       url = url.replace(/\.git$/, '');
     }
 
-    // Replace https://username:token@gitlab.com/toto by https://gitlab.com/toto
-    url = url.replace(/\/\/(.*:.*@)/gm, `//`);
+    // Remove credentials from HTTPS URLs
+    // Handle both formats: https://username:password@domain.com and https://username@domain.com
+    url = url.replace(/\/\/([^@/]+@)/gm, `//`);
 
     return url;
   }
