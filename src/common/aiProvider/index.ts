@@ -104,6 +104,31 @@ export abstract class AiProvider {
     return buildPromptFromTemplate(template, variables);
   }
 
+  public static async getAiDescription(
+    promptKey: PromptTemplate,
+    content: string,
+    name: string
+  ): Promise<string> {
+    let description = "_AI description not available_";
+
+    // check if there is a cached AI result
+    const aiCache = await UtilsAi.findAiCache(promptKey, [content], name);
+    if (aiCache.success) {
+      description = aiCache.cacheText || description;
+    }
+    // otherwise, call AI
+    else if (this.isAiAvailable()) {
+      const prompt = this.buildPrompt(promptKey, { VF_NAME: name, VF_XML: content });
+      const aiResponse = await this.promptAi(prompt, promptKey);
+      if (aiResponse?.success) {
+        description = aiResponse.promptResponse || description;
+        await UtilsAi.writeAiCache(promptKey, [content], name, description);
+      }
+    }
+
+    return description;
+  }
+
 }
 
 export interface AiResponse {

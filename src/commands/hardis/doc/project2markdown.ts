@@ -9,7 +9,7 @@ import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { completeAttributesDescriptionWithAi, getMetaHideLines, includeFromFile, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+import { completeAttributesDescriptionWithAi, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getConfig } from '../../../config/index.js';
@@ -29,6 +29,7 @@ import { DocBuilderObject } from '../../../common/docBuilder/docBuilderObject.js
 import { DocBuilderApex } from '../../../common/docBuilder/docBuilderApex.js';
 import { DocBuilderFlow } from '../../../common/docBuilder/docBuilderFlow.js';
 import { DocBuilderLwc } from '../../../common/docBuilder/docBuilderLwc.js';
+import { DocBuilderVisualforce } from '../../../common/docBuilder/docBuilderVisualforce.js';
 import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPackageXml.js';
 import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPermissionSet.js';
 import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
@@ -40,8 +41,6 @@ import { DocBuilderRoles } from '../../../common/docBuilder/docBuilderRoles.js';
 import { DocBuilderPackage } from '../../../common/docBuilder/docBuilderPackage.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../common/utils/gitUtils.js';
-import { UtilsAi } from '../../../common/aiProvider/utils.js';
-import { AiProvider } from '../../../common/aiProvider/index.js';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -1629,6 +1628,7 @@ ${Project2Markdown.htmlInstructions}
     const vfForMenu: Record<string, string> = { "All Visualforce Pages": "vfpages/index.md" };
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "vfpages"));
 
+    // Find all Visualforce page files
     const vfFiles = await glob("**/*.page", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
 
     if (vfFiles.length === 0) {
@@ -1653,8 +1653,7 @@ ${Project2Markdown.htmlInstructions}
       let label = "";
       let apiVersion = "";
       let description = "";
-
-      if (fs.existsSync(vfMetaFile)) {
+      if (await fs.pathExists(vfMetaFile)) {
         vfMetaXml = await fs.readFile(vfMetaFile, "utf8");
         const parsedMeta = new XMLParser().parse(vfMetaXml)?.ApexPage || {};
         label = parsedMeta?.label || "";
@@ -1663,59 +1662,46 @@ ${Project2Markdown.htmlInstructions}
       }
 
       // Find controller Apex class if declared
+      let controllerPath: string | undefined;
       const controllerMatch = vfMetaXml.match(/<controller>(.*?)<\/controller>/);
-      const controllerName = controllerMatch ? path.basename(controllerMatch[1], ".cls") : "None";
-
-      // Read VF page content
-      const vfContent = await fs.readFile(vfFile, "utf8");
-
-      // Build markdown
-      const mdLines: string[] = [
-        `## ${vfName}`,
-        "",
-        `**Label:** ${label}`,
-        `**API Version:** ${apiVersion}`,
-        `**Description:** ${description || "_No description available_"}`,
-        `**Controller:** ${controllerName}`,
-        "",
-        "## Visualforce Page Code",
-        "```html",
-        vfContent,
-        "```",
-        ""
-      ];
-
-      // Insert AI-generated description if available
-      const xmlStripped = vfContent + vfMetaXml;
-      const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_VISUALFORCE_PAGE", [xmlStripped], vfName);
-      let aiDescription = "_AI description not available_";
-
-      if (aiCache.success) {
-        aiDescription = includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText || aiDescription);
-      } else if (AiProvider.isAiAvailable()) {
-        const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_VISUALFORCE_PAGE", { VF_NAME: vfName, VF_XML: xmlStripped });
-        const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_VISUALFORCE_PAGE");
-        if (aiResponse?.success) {
-          aiDescription = aiResponse.promptResponse || aiDescription;
-          await UtilsAi.writeAiCache("PROMPT_DESCRIBE_VISUALFORCE_PAGE", [xmlStripped], vfName, aiDescription);
-        }
+      if (controllerMatch) {
+        const potentialPath = path.join(process.cwd(), controllerMatch[1]);
+        if (await fs.pathExists(potentialPath)) controllerPath = potentialPath;
       }
 
-      mdLines.splice(5, 0, `## AI-Generated Description\n\n${aiDescription}\n`);
+      // Combine VF content and metadata for DocBuilder
+      const combinedXml =
+        (await fs.readFile(vfFile, "utf8")) +
+        (vfMetaXml ? `\n${vfMetaXml}` : "");
 
-      await fs.writeFile(mdFile, getMetaHideLines() + mdLines.join("\n") + `\n${this.footer}\n`);
+      // Create DocBuilderVisualforce instance
+      const docBuilder = new DocBuilderVisualforce(vfName, combinedXml, mdFile, {
+        VF_FILE: vfFile,
+        VF_CONTROLLER_FILE: controllerPath,
+        VF_LABEL: label,
+        VF_API_VERSION: apiVersion,
+        VF_DESCRIPTION: description
+      });
+
+      // Generate Markdown (AI description handled internally)
+      await docBuilder.generateMarkdownFileFromXml();
     }
 
     WebSocketClient.sendProgressEndMessage();
+
+    // Add navigation node
     this.addNavNode("Visualforce Pages", vfForMenu);
 
-    // Write index file
+    // Write index file for VF pages
     const vfIndexFile = path.join(this.outputMarkdownRoot, "vfpages", "index.md");
-    await fs.writeFile(vfIndexFile, getMetaHideLines() + Object.keys(vfForMenu).map(name => `- [${name}](${vfForMenu[name]})`).join("\n") + `\n\n${this.footer}\n`);
+    await fs.writeFile(
+      vfIndexFile,
+      getMetaHideLines() +
+      Object.keys(vfForMenu).map(name => `- [${name}](${vfForMenu[name]})`).join("\n") +
+      `\n\n${this.footer}\n`
+    );
 
     uxLog("success", this, c.green(`Successfully generated documentation for Visualforce Pages at ${vfIndexFile}`));
   }
-
-
 
 }

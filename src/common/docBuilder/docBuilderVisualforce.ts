@@ -73,16 +73,31 @@ export class DocBuilderVisualforce extends DocBuilderRoot {
   }
 
   public async completeDocWithAiDescription(): Promise<string> {
+    try {
+      // Strip XML content for AI prompt
+      const xmlStripped = await this.stripXmlForAi();
 
-    if (AiProvider.isAiAvailable()) {
-      return super.completeDocWithAiDescription();
-    } else {
-      const fallback = await this.generateManualDescription();
-      this.markdownDoc = this.markdownDoc.replace(this.placeholder, fallback);
-      uxLog("log", this, "AI not available: inserting fallback Visualforce description.");
+      let description: string;
+
+      if (AiProvider.isAiAvailable()) {
+        // Use centralized helper
+        description = await AiProvider.getAiDescription(this.promptKey, xmlStripped, this.metadataName);
+      } else {
+        // Fallback if AI not available
+        description = await this.generateManualDescription();
+        uxLog("log", this, "AI not available: inserting fallback Visualforce description.");
+      }
+
+      // Replace placeholder in markdown
+      this.markdownDoc = this.markdownDoc.replace(this.placeholder, description);
+
       return this.markdownDoc;
+    } catch (error) {
+      uxLog("error", this, `Error generating AI description for ${this.metadataName}: ${error}`);
+      return this.markdownDoc.replace(this.placeholder, "_AI description failed_");
     }
   }
+
 
   public async generateJsonTree(): Promise<any> {
     const vfCode = await fs.readFile(this.additionalVariables.VF_FILE, "utf-8");
