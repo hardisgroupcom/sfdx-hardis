@@ -91,7 +91,7 @@ The command's technical implementation involves:
     // Check if not already existing
     const { exportJsonFile, filesProjectFolder } = await this.createConfigFiles();
 
-    // Trigger command to open SFDMU config file in VsCode extension
+    // Trigger command to open SFDMU config file in VS Code extension
     if (WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.sendReportFileMessage(exportJsonFile, 'Edit your Files export configuration', 'report');
     }

@@ -73,11 +73,11 @@ export async function forceSourcePush(scratchOrgAlias: string, commandThis: any,
     // Manage beta/legacy boza
     const stdOut = (e as any).stdout + (e as any).stderr;
     if (stdOut.includes(`getaddrinfo EAI_AGAIN`)) {
-      uxLog("error", this, c.red(c.bold('The error has been caused by your unstable internet connection. Please Try again !')));
+      uxLog("error", this, c.red(c.bold('The error appears to be caused by an unstable internet connection. Please try again.')));
     }
     // Analyze errors
     const { errLog } = await analyzeDeployErrorLogs(stdOut, true, {});
-    uxLog("error", commandThis, c.red('Sadly there has been push error(s)'));
+    uxLog("error", commandThis, c.red('Unfortunately, push errors occurred.'));
     uxLog("error", this, c.red('\n' + errLog));
     elapseEnd('project:deploy:start');
     killBoringExitHandlers();

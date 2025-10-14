@@ -229,7 +229,7 @@ export async function authOrg(orgAlias: string, options: any) {
       //   description: 'Choose the authentication method that works best for your environment. Use Web if unsure.',
       //   choices: [
       //     {
-      //       title: '🌐 Web Login (If VsCode is locally installed on your computer)',
+      //       title: '🌐 Web Login (If VS Code is locally installed on your computer)',
       //       value: 'web',
       //     },
       //     {

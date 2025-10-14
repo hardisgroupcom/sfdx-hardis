@@ -11,7 +11,7 @@ const hook: Hook<'init'> = async (options) => {
   const { isCI } = await import('../../common/utils/index.js');
   const { WebSocketClient } = await import('../../common/websocketClient.js');
 
-  // Initialize WebSocketClient to communicate with VsCode SFDX Hardis extension
+  // Initialize WebSocketClient to communicate with VS Code SFDX Hardis extension
   if (!isCI) {
     const context: any = { command: commandId, id: process.pid };
     const websocketArgIndex = options?.argv?.indexOf('--websocket');

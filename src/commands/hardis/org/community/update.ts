@@ -85,7 +85,7 @@ The command's technical implementation involves:
     }
     // Check empty result
     if (networksQueryRes.length === 0) {
-      const outputString = `No matching network records found with given names`;
+      const outputString = `No matching network records were found with the given names.`;
       uxLog("warning", this, c.yellow(outputString));
       return { outputString };
     }
@@ -98,14 +98,14 @@ The command's technical implementation involves:
         name: 'value',
         initial: true,
         message: c.cyanBright(
-          `Are you sure you want to update these ${c.bold(idToNameMap.size)} networks's status to '${status}' in org ${c.green(
+          `Are you sure you want to update these ${c.bold(idToNameMap.size)} networks' status to '${status}' in org ${c.green(
             flags['target-org'].getUsername()
-          )} (y/n)?`
+          )}?`
         ),
         description: 'Confirm that you want to change the status of the selected community networks',
       });
       if (confirmUpdate.value !== true) {
-        const outputString = 'Script cancelled by user';
+        const outputString = 'Script cancelled by user.';
         uxLog("warning", this, c.yellow(outputString));
         return { outputString };
       }
@@ -133,7 +133,7 @@ The command's technical implementation involves:
       orgId: flags['target-org'].getOrgId(),
       communityUpdatesSuccess: updateSuccessNb,
       communityUpdatesErrors: updateErrorsNb,
-      outputString: `${updateSuccessNb} network(s) were updated`,
+      outputString: `${updateSuccessNb} network(s) were updated.`,
     };
 
   }

@@ -197,7 +197,7 @@ The command's technical implementation involves:
     assert(createResult.status === 0 && createResult.result, this.buildSandboxCreateErrorMessage(createResult));
     this.sandboxOrgInfo = createResult.result;
     this.sandboxOrgUsername = this.sandboxOrgInfo.username;
-    // Trigger a status refresh on VsCode WebSocket Client
+    // Trigger a status refresh on VS Code WebSocket Client
     WebSocketClient.sendRefreshStatusMessage();
 
     // Open sandbox org for user if not in CI

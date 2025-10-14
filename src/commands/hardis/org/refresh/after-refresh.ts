@@ -90,7 +90,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }),
     websocket: Flags.string({
       summary: messages.getMessage('websocket'),
-      description: 'Websocket host:port for VsCode SFDX Hardis UI integration'
+      description: 'WebSocket host:port for VS Code SFDX Hardis UI integration'
     }),
     skipauth: Flags.boolean({
       default: false,
@@ -125,12 +125,12 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.result = {}
     /* jscpd:ignore-end */
     uxLog("action", this, c.cyan(`This command will restore information after the refresh of org ${this.instanceUrl}
-- Certificates
-- Other Metadatas
-- SAML SSO Config
-- Custom Settings
-- Records (using SFDMU projects)
-- Connected Apps`));
+  Certificates
+  Other metadata
+  SAML SSO Config
+  Custom Settings
+  Records (using SFDMU projects)
+  Connected Apps`));
     // Prompt user to select a save project path
     const saveProjectPathRoot = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
     // Only get immediate subfolders of saveProjectPathRoot (not recursive)
@@ -274,7 +274,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     if (!prompt.restore) {
       uxLog("warning", this, c.yellow('Metadata restore cancelled by user.'));
-      this.result = Object.assign(this.result, { success: false, message: 'Metadata restore cancelled by user' });
+      this.result = Object.assign(this.result, { success: false, message: 'Metadata restore cancelled by user.' });
       return;
     }
     // Deploy the metadata using the package.xml
@@ -560,7 +560,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       description: 'Once confirmed, the data loading will start'
     });
     if (!confirmRestore.confirm) {
-      uxLog("warning", this, c.yellow('Record restore cancelled by user'));
+      uxLog("warning", this, c.yellow('Record restore cancelled by user.'));
       return;
     }
 
@@ -762,7 +762,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       initial: true
     });
     if (!promptResponse.confirmDelete) {
-      throw new Error('Connected Apps deletion cancelled by user');
+      throw new Error('Connected Apps deletion cancelled by user.');
     }
 
     // Convert ProjectConnectedApp to the format required by deleteConnectedApps
@@ -788,7 +788,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
 
     if (!promptResponse.confirmDeploy) {
-      throw new Error('Connected Apps deployment cancelled by user');
+      throw new Error('Connected Apps deployment cancelled by user.');
     }
 
     // Convert ProjectConnectedApp to the format needed by deployConnectedApps

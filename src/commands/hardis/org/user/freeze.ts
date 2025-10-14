@@ -210,7 +210,7 @@ The command's technical implementation involves:
         description: 'Confirm freezing selected users, which will deactivate their accounts in the Salesforce org',
       });
       if (confirmfreeze.value !== true) {
-        const outputString = 'Script cancelled by user';
+        const outputString = 'Script cancelled by user.';
         uxLog("warning", this, c.yellow(outputString));
         return { outputString };
       }

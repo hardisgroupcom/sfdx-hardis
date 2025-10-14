@@ -187,7 +187,7 @@ export async function promptOrg(
 
   // Cancel
   if (org.cancel === true) {
-    uxLog("error", commandThis, c.red('Cancelled'));
+    uxLog("error", commandThis, c.red('Cancelled.'));
     process.exit(0);
   }
 
@@ -210,7 +210,7 @@ export async function promptOrg(
 
   // Token is expired: login again to refresh it
   if (org?.connectedStatus === 'RefreshTokenAuthError' || org?.connectedStatus?.includes('expired')) {
-    uxLog("action", this, c.yellow(`⚠️ Your authentication is expired. Please login again in the web browser`));
+    uxLog("action", this, c.yellow(`⚠️ Your authentication has expired. Please log in again using the web browser.`));
     if (getExecutionContext() === "web") {
       org = await authenticateUsingDeviceLogin(org.instanceUrl, org.username, null, {}, false, null);
     }
@@ -317,7 +317,7 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   }
   // Authentication is necessary
   if (connectedStatus?.includes("expired")) {
-    uxLog("action", this, c.yellow("Your auth token is expired, you need to authenticate again\n(Be patient after login, it can take a while 😑)"));
+    uxLog("action", this, c.yellow("Your auth token has expired. You need to authenticate again.\n(Be patient after logging in; it can take a while 😑)"));
     // Delete rotten authentication json file in case there has been a sandbox refresh
     const homeSfdxDir = path.join(process.env.HOME || process.env.USERPROFILE || "~", '.sfdx');
     const authFile = path.join(homeSfdxDir, `${targetOrg}.json`);
@@ -339,7 +339,7 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
     return loginRes.result;
   }
   // We shouldn't be here 😊
-  uxLog("warning", this, c.yellow("What are we doing here ? Please declare an issue with the following text: " + instanceUrl + ":" + connectedStatus));
+  uxLog("warning", this, c.yellow("What are we doing here? Please create an issue with the following text: " + instanceUrl + ":" + connectedStatus));
 }
 
 export async function promptOrgUsernameDefault(

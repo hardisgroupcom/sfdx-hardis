@@ -91,7 +91,7 @@ The command's technical implementation involves:
       description: 'Confirm that you want to perform a soft git reset on your current branch',
     });
     if (confirm.value === false) {
-      throw new SfError(c.red('[sfdx-hardis] Cancelled by user'));
+      throw new SfError(c.red('[sfdx-hardis] Cancelled by user.'));
     }
 
     // List all commits since the branch creation

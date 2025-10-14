@@ -108,7 +108,7 @@ export async function isPackageXmlEmpty(
 
 // Read package.xml files and build concatenated list of items
 export async function appendPackageXmlFilesContent(packageXmlFileList: string[], outputXmlFile: string) {
-  uxLog("log", this, c.grey(`Appending ${packageXmlFileList.join(',')} into ${outputXmlFile}...`));
+  uxLog("log", this, c.grey(`Appending ${packageXmlFileList.join(', ')} into ${outputXmlFile}...`));
   let firstPackageXmlContent: any = null;
   let allPackageXmlFilesTypes = {};
   // loop on packageXml files
@@ -159,7 +159,7 @@ export async function removePackageXmlFilesContent(
   // Read package.xml file to update
   const parsedPackageXml: any = await parseXmlFile(packageXmlFile);
   if (logFlag) {
-    uxLog("other", this, `Parsed ${packageXmlFile} :\n` + util.inspect(parsedPackageXml, false, null));
+    uxLog("other", this, `Parsed ${packageXmlFile}:\n` + util.inspect(parsedPackageXml, false, null));
   }
   let packageXmlMetadatasTypeLs: any;
   // get metadata types in parse result
@@ -172,7 +172,7 @@ export async function removePackageXmlFilesContent(
   // Read package.xml file to use for filtering first file
   const parsedPackageXmlRemove: any = await parseXmlFile(removePackageXmlFile);
   if (logFlag) {
-    uxLog("log", this, c.grey(`Parsed ${removePackageXmlFile} :\n` + util.inspect(parsedPackageXmlRemove, false, null)));
+    uxLog("log", this, c.grey(`Parsed ${removePackageXmlFile}:\n` + util.inspect(parsedPackageXmlRemove, false, null)));
   }
   let packageXmlRemoveMetadatasTypeLs: any;
   // get metadata types in parse result
@@ -202,7 +202,7 @@ export async function removePackageXmlFilesContent(
     // Manage * case contained in target
     if (removedOnly === true && typeMembers.includes('*')) {
       typeMembers = removeTypeMembers;
-      uxLog("log", this, c.grey(c.italic(`Found wildcard * on type ${c.bold(type.name)}, kept items: ${typeMembers.length}`)));
+      uxLog("log", this, c.grey(c.italic(`Found wildcard * on type ${c.bold(type.name)}; kept items: ${typeMembers.length}.`)));
     }
     // Manage * case contained in source
     else if (removeTypeMembers[0] && removeTypeMembers[0] === '*') {
@@ -256,7 +256,7 @@ export async function removePackageXmlFilesContent(
 
   // display in logs if requested
   if (logFlag) {
-    uxLog("other", this, 'Package.xml remove results :\n' + util.inspect(packageXmlMetadatasTypeLs, false, null));
+    uxLog("other", this, 'Package.xml remove results:\n' + util.inspect(packageXmlMetadatasTypeLs, false, null));
   }
 
   // Write in output file if required
@@ -288,7 +288,7 @@ export async function applyAllReplacementsDefinitions(
   referenceStrings: string[],
   replacementDefinitions: any[]
 ) {
-  uxLog("action", this, c.cyan(`Initializing replacements in files for ${referenceStrings.join(',')}...`));
+  uxLog("action", this, c.cyan(`Initializing replacements in files for ${referenceStrings.join(', ')}...`));
   for (const ref of referenceStrings) {
     for (const replacementDefinition of replacementDefinitions) {
       replacementDefinition.refRegexes = replacementDefinition.refRegexes.map((refRegex) => {

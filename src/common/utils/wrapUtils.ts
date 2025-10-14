@@ -50,7 +50,7 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
     await generateApexCoverageOutputFile();
     // Add deployment tips in error logs
     const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, { check: endArgs.includes("--checkonly") });
-    uxLog("error", commandThis, c.red(c.bold("Sadly there has been error(s)")));
+    uxLog("error", commandThis, c.red(c.bold("Unfortunately, there were errors.")));
     if (process.env?.SFDX_HARDIS_DEPLOY_ERR_COLORS === "false") {
       uxLog("other", this, "\n" + errLog);
     } else {

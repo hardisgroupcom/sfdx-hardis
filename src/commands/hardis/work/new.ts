@@ -362,7 +362,7 @@ The command's logic orchestrates various underlying processes:
         output: false,
         debug: this.debugMode,
       });
-      // Trigger a status refresh on VsCode WebSocket Client
+      // Trigger a status refresh on VS Code WebSocket Client
       WebSocketClient.sendRefreshStatusMessage();
     }
   }
@@ -494,7 +494,7 @@ The command's logic orchestrates various underlying processes:
       }
     }
 
-    // Trigger a status refresh on VsCode WebSocket Client
+    // Trigger a status refresh on VS Code WebSocket Client
     WebSocketClient.sendRefreshStatusMessage();
   }
 

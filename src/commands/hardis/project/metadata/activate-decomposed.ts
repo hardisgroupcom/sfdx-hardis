@@ -192,7 +192,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       // Check if user cancelled the selection
       if (!selectionResult.selectedTypes || selectionResult.selectedTypes.length === 0) {
-        uxLog("warning", this, c.yellow('Operation cancelled by user'));
+        uxLog("warning", this, c.yellow('Operation cancelled by user.'));
         results.cancelled = true;
         return results;
       }

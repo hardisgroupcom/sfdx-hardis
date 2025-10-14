@@ -134,7 +134,7 @@ See article below
         });
         usersToActivateFinal = selectUsers.value;
       } else if (confirmSelect.value !== 'all') {
-        const outputString = 'Script cancelled by user';
+        const outputString = 'Script cancelled by user.';
         uxLog("warning", this, c.yellow(outputString));
         return { outputString };
       }

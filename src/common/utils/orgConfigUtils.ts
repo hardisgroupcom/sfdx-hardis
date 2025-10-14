@@ -55,9 +55,9 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       executablePath: chromeExecutablePath
     });
   } catch (e: any) {
-    uxLog("error", this, c.red("List View with Mine has not been restored: Error while trying to launch puppeteer (Browser simulator)"));
+    uxLog("error", this, c.red("List view 'Mine' has not been restored: error while trying to launch Puppeteer (browser simulator)."));
     uxLog("error", this, c.red(e.message));
-    uxLog("error", this, c.red("You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Chrome/Chromium path. example: /usr/bin/chromium-browser"));
+    uxLog("error", this, c.red("You might need to set the PUPPETEER_EXECUTABLE_PATH environment variable to a Chrome/Chromium executable path. Example: /usr/bin/chromium-browser."));
     return { error: e };
   }
   const page = await browser.newPage();

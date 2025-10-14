@@ -213,7 +213,7 @@ The command's technical implementation involves:
       uxLog("warning", this, c.yellow(`Unable to remove folder ${tempFolder}, please delete it manually`));
     }
 
-    // Trigger commands refresh on VsCode WebSocket Client
+    // Trigger commands refresh on VS Code WebSocket Client
     WebSocketClient.sendRefreshCommandsMessage();
 
     // Set bac initial cwd

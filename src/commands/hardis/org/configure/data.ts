@@ -104,10 +104,10 @@ The command's technical implementation involves:
       'export.json'
     )} file.`);
     uxLog("other", this, message);
-    uxLog("log", this, c.grey(`You can now configure it using SFDMU documentation: ${c.yellow(sfdmuBaseDoc)}`));
-    uxLog("log", this, c.grey(`If you don't have unique field to identify an object, use composite external ids: ${c.yellow(sfdmuExternalIdsDoc)}`));
+    uxLog("log", this, c.grey(`You can now configure it using SFDMU documentation: ${c.yellow(sfdmuBaseDoc)}.`));
+    uxLog("log", this, c.grey(`If you don't have a unique field to identify an object, use composite external ids: ${c.yellow(sfdmuExternalIdsDoc)}.`));
 
-    // Trigger command to open SFDMU config file in VsCode extension
+    // Trigger command to open SFDMU config file in VS Code extension
     if (WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.sendReportFileMessage(exportJsonFile, 'Edit your SFDMU export.json file', 'report');
       WebSocketClient.sendReportFileMessage(sfdmuBaseDoc, 'SFDMU documentation (Basic)', 'docUrl');

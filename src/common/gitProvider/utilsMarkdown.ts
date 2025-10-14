@@ -96,7 +96,7 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
     flowDiffFilesSummary += `- [${flowName}](#${flowName})\n`;
     const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("Flow", flowName);
     try {
-      // Markdown with pure mermaidJs
+      // Markdown with pure MermaidJS
       if (supportsMermaidInPrMarkdown) {
         await generateDiffMarkdownWithMermaid(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }

@@ -91,7 +91,7 @@ export class FilesExporter {
     if (this.dtl === null) {
       this.dtl = await getFilesWorkspaceDetail(this.filesPath);
     }
-    uxLog("action", this.commandThis, c.cyan(`Initializing files export using workspace ${c.green(this.dtl.full_label)} ...`));
+    uxLog("action", this.commandThis, c.cyan(`Initializing files export for workspace ${c.green(this.dtl.full_label)}.`));
     uxLog("log", this.commandThis, c.italic(c.grey(this.dtl.description)));
 
     // Make sure export folder for files is existing
@@ -102,7 +102,7 @@ export class FilesExporter {
     if (!this.resumeExport) {
       if (this.hasExistingFiles) {
         // Restart mode: clear the output folder
-        uxLog("action", this.commandThis, c.yellow(`Restart mode: clearing output folder ${this.exportedFilesFolder}`));
+        uxLog("action", this.commandThis, c.yellow(`Restart mode: clearing output folder ${this.exportedFilesFolder}.`));
         await fs.emptyDir(this.exportedFilesFolder);
       }
     } else {
@@ -121,9 +121,9 @@ export class FilesExporter {
     await this.initializeCsvLog();
 
     // Phase 1: Calculate total files count for accurate progress tracking
-    uxLog("action", this.commandThis, c.cyan("Estimating total files to download..."));
+    uxLog("action", this.commandThis, c.cyan("Estimating total files to download."));
     const totalFilesCount = await this.calculateTotalFilesCount();
-    uxLog("log", this.commandThis, c.grey(`Estimated ${totalFilesCount} files to download`));
+    uxLog("log", this.commandThis, c.grey(`Estimated ${totalFilesCount} files to download.`));
 
     // Phase 2: Process downloads with accurate progress tracking
     await this.processDownloadsWithProgress(totalFilesCount);
@@ -295,7 +295,7 @@ export class FilesExporter {
         description: 'Proceed with the operation despite API usage warnings'
       });
       if (promptRes.value !== true) {
-        throw new SfError('Command cancelled by user');
+        throw new SfError('Command cancelled by user.');
       }
       if (this.startChunkNumber === 0) {
         uxLog(

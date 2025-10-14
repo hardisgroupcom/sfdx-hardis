@@ -191,7 +191,7 @@ The command's technical implementation involves:
       c.cyan(
         `Generating CSV files from ${c.green(tomlFile)} (encoding ${tomlFileEncoding}) into folder ${c.green(
           this.outputDir
-        )}`
+        )}.`
       )
     );
 
