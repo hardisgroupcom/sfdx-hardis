@@ -355,7 +355,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get target org
     let targetUsername = flags['target-org'].getUsername();
     if (!isCI) {
-      uxLog("warning", this, c.yellow("Just to be sure, please select the org you want to use for this command :)"))
+      uxLog("warning", this, c.yellow("Just to be sure, please select the org you want to use for this command 😊"))
       targetUsername = await promptOrgUsernameDefault(this, targetUsername, { devHub: false, setDefault: false, scratch: false });
     }
 
@@ -513,7 +513,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           }
         }
         if (impactingMetadataTypesInDelta.length === 0 && !(await isProductionOrg(targetUsername, {}))) {
-          uxLog("success", this, c.green("[SmartDeploymentTests] No Impacting metadata in delta package.xml: Skip test classes as the deployed items seem safe :)"));
+          uxLog("success", this, c.green("[SmartDeploymentTests] No Impacting metadata in delta package.xml: Skip test classes as the deployed items seem safe 😊"));
           this.testLevel = "NoTestRun";
           this.testClasses = "";
         }
@@ -675,7 +675,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
     const latestCommit = await getLatestGitCommit();
     if (latestCommit && this.isNoDelta(latestCommit)) {
-      uxLog("warning", this, c.yellow(c.bold((`[DeltaDeployment] Latest commit contains string "nodelta" so disable delta for this time :)`))));
+      uxLog("warning", this, c.yellow(c.bold((`[DeltaDeployment] Latest commit contains string "nodelta" so disable delta for this time 😊`))));
       return false;
     }
     if (this.checkOnly === false && !(process.env?.USE_DELTA_DEPLOYMENT_AFTER_MERGE === 'true')) {
@@ -751,7 +751,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     if (process.env?.USE_SMART_DEPLOYMENT_TESTS === 'true' || this.configInfo?.useSmartDeploymentTests === true) {
       const latestCommit = await getLatestGitCommit();
       if (latestCommit && this.isNoSmartDeploymentTests(latestCommit)) {
-        uxLog("warning", this, c.yellow(c.bold((`[SmartDeploymentTests] Latest commit contains string "nosmart" so disable smartDeploymentTests for this time :)`))));
+        uxLog("warning", this, c.yellow(c.bold((`[SmartDeploymentTests] Latest commit contains string "nosmart" so disable smartDeploymentTests for this time 😊`))));
         return false;
       }
       return true;

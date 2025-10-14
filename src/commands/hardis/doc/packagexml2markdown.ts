@@ -87,7 +87,7 @@ The command's technical implementation involves:
     const instanceUrl = flags?.['target-org']?.getConnection()?.instanceUrl;
     this.outputFile = await DocBuilderPackageXML.generatePackageXmlMarkdown(this.inputFile, this.outputFile, null, instanceUrl);
 
-    // Open file in a new VsCode tab if available
+    // Open file in a new VS Code tab if available
     WebSocketClient.requestOpenFile(this.outputFile);
 
     // Return an object to be displayed with --json

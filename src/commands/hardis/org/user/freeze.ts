@@ -114,7 +114,7 @@ The command's technical implementation involves:
         message: 'Please select profiles that you do you want to freeze users that are assigned to them ?',
         returnField: 'record',
         allowSelectMine: false,
-        allowSelectMineErrorMessage: "If you freeze your own profile, you'll be unable to unfreeze it later :)",
+        allowSelectMineErrorMessage: "If you freeze your own profile, you'll be unable to unfreeze it later 😊",
         allowSelectAll: false,
         allowSelectAllErrorMessage:
           'You can not select all profiles, keep at least one (usually System Administrator) so you can unfreeze later !',
@@ -210,7 +210,7 @@ The command's technical implementation involves:
         description: 'Confirm freezing selected users, which will deactivate their accounts in the Salesforce org',
       });
       if (confirmfreeze.value !== true) {
-        const outputString = 'Script cancelled by user';
+        const outputString = 'Script cancelled by user.';
         uxLog("warning", this, c.yellow(outputString));
         return { outputString };
       }

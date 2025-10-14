@@ -98,7 +98,7 @@ export const getConfig = async (layer: "project" | "branch" | "user" = 'user'): 
 export const setConfig = async (layer: string, propValues: any): Promise<string | void> => {
   if (layer === 'user' && (fs.readdirSync(process.cwd()).length === 0 || !isGitRepo())) {
     if (process?.argv?.includes('--debug')) {
-      uxLog("log", this, c.grey('Skip update user config file because current directory is not a salesforce project'));
+      uxLog("log", this, c.grey('Skipping update of user config file because the current directory is not a Salesforce project.'));
     }
     return;
   }

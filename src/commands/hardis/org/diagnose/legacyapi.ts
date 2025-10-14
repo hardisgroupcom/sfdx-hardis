@@ -208,7 +208,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       if (errors.length > 0) {
         const outputFileIp = await this.generateSummaryLog(errors, descriptor.severity);
         outputFileIps.push(outputFileIp);
-        // Trigger command to open CSV file in VsCode extension
+        // Trigger command to open CSV file in VS Code extension
         WebSocketClient.requestOpenFile(outputFileIp);
       }
     }

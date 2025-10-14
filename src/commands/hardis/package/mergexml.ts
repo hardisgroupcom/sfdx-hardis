@@ -128,7 +128,7 @@ The command's technical implementation involves:
     const msg = `Merged ${c.green(c.bold(this.packageXmlFiles.length))} files into ${c.green(this.resultFileName)}`;
     uxLog("action", this, c.cyan(msg));
 
-    // Trigger command to open files config file in VsCode extension
+    // Trigger command to open files config file in VS Code extension
     WebSocketClient.requestOpenFile(this.resultFileName);
 
     // Return an object to be displayed with --json

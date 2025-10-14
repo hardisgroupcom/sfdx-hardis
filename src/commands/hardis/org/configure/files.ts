@@ -91,7 +91,7 @@ The command's technical implementation involves:
     // Check if not already existing
     const { exportJsonFile, filesProjectFolder } = await this.createConfigFiles();
 
-    // Trigger command to open SFDMU config file in VsCode extension
+    // Trigger command to open SFDMU config file in VS Code extension
     if (WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.sendReportFileMessage(exportJsonFile, 'Edit your Files export configuration', 'report');
     }
@@ -138,7 +138,7 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
     const defaultTemplateChoice = {
       title: '📄 Blank template',
       value: 'blank',
-      description: 'Configure your files import/export from scratch :)',
+      description: 'Configure your files import/export from scratch 😊',
     };
 
     const templateResp = await prompts({

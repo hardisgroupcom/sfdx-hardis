@@ -72,7 +72,7 @@ export abstract class AiProvider {
       if (elapsedMinutes >= aiMaxTimeoutMinutes) {
         uxLog("warning", this, c.yellow(`AI calls reached maximum time allowed of ${aiMaxTimeoutMinutes} minutes. You can either:
 - Run command locally then commit + push
-- Increase using variable \`AI_MAX_TIMEOUT_MINUTES\` in your CI config (ex: AI_MAX_TIMEOUT_MINUTES=120) after making sure than your CI job timeout can handle it :)`));
+- Increase using variable \`AI_MAX_TIMEOUT_MINUTES\` in your CI config (ex: AI_MAX_TIMEOUT_MINUTES=120) after making sure than your CI job timeout can handle it 😊`));
         return { success: false, model: "none", forcedTimeout: true };
       }
     }

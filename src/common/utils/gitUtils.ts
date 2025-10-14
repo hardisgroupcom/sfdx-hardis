@@ -12,7 +12,9 @@ import {
   extractRegexMatches,
   getCurrentGitBranch,
   getGitRepoRoot,
+  getGitRepoUrl,
   git,
+  gitFetch,
   uxLog,
 } from './index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
@@ -27,7 +29,7 @@ import { WebSocketClient } from '../websocketClient.js';
 import { countPackageXmlItems } from './xmlUtils.js';
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
-  const gitUrl = (await git().listRemote(['--get-url']))?.trim() || '';
+  const gitUrl = await getGitRepoUrl() || '';
   const message =
     options.message ||
     `What will be the target branch of your new User Story ? (the branch where you will make your ${GitProvider.getMergeRequestName(gitUrl)} after the User Story is completed)`;
@@ -64,7 +66,7 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
 
 export async function getGitDeltaScope(currentBranch: string, targetBranch: string) {
   try {
-    await git().fetch(['origin', `${targetBranch}:${targetBranch}`]);
+    await gitFetch(['origin', `${targetBranch}:${targetBranch}`]);
   } catch (e) {
     uxLog(
       "other",
@@ -74,7 +76,7 @@ export async function getGitDeltaScope(currentBranch: string, targetBranch: stri
     );
   }
   try {
-    await git().fetch(['origin', `${currentBranch}:${currentBranch}`]);
+    await gitFetch(['origin', `${currentBranch}:${currentBranch}`]);
   } catch (e) {
     uxLog(
       "other",
@@ -232,7 +234,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
       truncatedNb = flowListUnique.length - maxFlowsToShow;
       flowListUnique.splice(maxFlowsToShow, flowListUnique.length - maxFlowsToShow);
       uxLog("warning", this, c.yellow(`[FlowGitDiff] Truncated flow list to 30 flows to avoid flooding Pull Request comments`));
-      uxLog("warning", this, c.yellow(`[FlowGitDiff] If you want to see the diff of truncated flows, use VsCode SFDX Hardis extension :)`));
+      uxLog("warning", this, c.yellow(`[FlowGitDiff] If you want to see the diff of truncated flows, use the VS Code SFDX Hardis extension 😊`));
     }
     flowDiffMarkdown = await flowDiffToMarkdownForPullRequest(flowListUnique, previousTargetBranchCommit, (logResults.at(-1) || logResults[0]).hash, truncatedNb);
   }

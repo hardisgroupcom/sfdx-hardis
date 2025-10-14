@@ -116,7 +116,7 @@ prompts
     if (prevUserName !== newUsername) {
       // Restart command so the org is selected as default org (will help to select profiles)
       const infoMsg =
-        'Default org changed. Please restart the same command if VsCode does not do that automatically for you :)';
+        'Default org changed. Please restart the same command if VS Code does not do that automatically for you 😊';
       uxLog("warning", this, c.yellow(infoMsg));
       const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ');
       WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);

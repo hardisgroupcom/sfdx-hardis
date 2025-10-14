@@ -150,7 +150,7 @@ The command's technical implementation involves:
       exportConfigFinal = Object.assign(exportConfigFinal, exportOptions.exportConfig);
     }
     const exportConfigHuman = humanizeObjectKeys(exportConfigFinal || {});
-    uxLog("action", this, c.cyan(`Export configuration has been defined (see details below)`));
+    uxLog("action", this, c.cyan(`Export configuration has been defined (see details below).`));
     uxLogTable(this, exportConfigHuman);
 
     // Check for existing files and prompt user if needed
@@ -164,7 +164,7 @@ The command's technical implementation involves:
           const hasFiles = files.length > 0;
 
           if (hasFiles) {
-            uxLog("action", this, c.yellow(`Found existing files in output folder: ${exportFolder}`));
+            uxLog("action", this, c.yellow(`Found existing files in output folder: ${exportFolder}.`));
             const resumePrompt = await prompts({
               type: 'confirm',
               message: c.cyanBright('Do you want to resume the previous export (validate and skip existing valid files)?'),

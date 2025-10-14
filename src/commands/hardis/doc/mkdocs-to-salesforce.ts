@@ -135,8 +135,8 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
       }
 
       if (success && !isCI) {
-        uxLog("action", this, c.cyan(`Opening the Custom Tab ${c.green(resName)} in your default browser...`));
-        uxLog("warning", this, c.yellow(`If you have an access issue, make sure the tab ${resName} is not hidden on your Profile...`));
+        uxLog("action", this, c.cyan(`Opening the Custom Tab ${c.green(resName)} in your default browser.`));
+        uxLog("warning", this, c.yellow(`If you have an access issue, make sure the tab ${resName} is not hidden on your profile.`));
         const sfPath = `lightning/n/${resName}`;
         await execCommand(`sf org open --path ${sfPath} --target-org ${targetUsername}`, this, { fail: false, output: true, debug: this.debugMode });
       }
@@ -151,14 +151,14 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
   }
 
   private async createDocMetadatas(resName: string, defaultProjectPath: string, type: any) {
-    uxLog("action", this, c.cyan(`Creating Static Resource ${resName} metadata...`));
+    uxLog("action", this, c.cyan(`Creating Static Resource ${resName} metadata.`));
     const staticResourcePath = path.join(defaultProjectPath, "staticresources");
     const mkDocsResourcePath = path.join(staticResourcePath, resName);
     await ensureDir(mkDocsResourcePath);
     await fs.move(path.join(process.cwd(), "site"), mkDocsResourcePath, { overwrite: true });
 
     // Create Static resource metadata
-    uxLog("action", this, c.cyan(`Creating Static Resource ${resName} metadata...`));
+    uxLog("action", this, c.cyan(`Creating Static Resource ${resName} metadata.`));
     const mkDocsResourceFileName = path.join(staticResourcePath, `${resName}.resource-meta.xml`);
     const mkDocsResourceMeta = `<?xml version="1.0" encoding="UTF-8"?>
 <StaticResource xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -169,7 +169,7 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
     await fs.writeFile(mkDocsResourceFileName, mkDocsResourceMeta);
 
     // Create visual force page
-    uxLog("action", this, c.cyan(`Creating VisualForce page ${resName} metadata...`));
+    uxLog("action", this, c.cyan(`Creating Visualforce page ${resName} metadata.`));
     const vfPagesPath = path.join(defaultProjectPath, "pages");
     await ensureDir(vfPagesPath);
     const vfPageFileName = path.join(vfPagesPath, `${resName}.page`);
@@ -225,7 +225,7 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
   }
 
   private async uploadDocMetadatas(resName: string, targetUsername: any, conn: any, tmpProjectPath: string, mkDocsResourcePath: string, vfPageMetaFile: string, tabMetaFile: string, permissionSetFile: string) {
-    uxLog("action", this, c.cyan(`Deploying Static Resource ${resName}, VisualForce page ${resName}, Custom Tab ${resName} and Permission Set ${resName} to org ${targetUsername}...`));
+    uxLog("action", this, c.cyan(`Deploying Static Resource ${resName}, Visualforce page ${resName}, Custom Tab ${resName}, and Permission Set ${resName} to org ${targetUsername}.`));
     let deployCommand = `sf project deploy start -m StaticResource:${resName} -m ApexPage:${resName} -m CustomTab:${resName} -m PermissionSet:${resName} --ignore-conflicts --ignore-warnings --target-org ${targetUsername}`;
     const isProdOrg = await isProductionOrg(targetUsername, { conn: conn });
     if (isProdOrg) {
@@ -246,22 +246,21 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
     if (deployRes.status !== 0) {
       uxLog("error", this, c.red(`Deployment failed:\n${deployRes.stderr + "\n" + deployRes.stdout}`));
       if ((deployRes.stderr + deployRes.stdout).includes("static resource cannot exceed")) {
-        uxLog("error", this, c.red(`Documentation is too big to be hosted in a Static Resource.`));
-        uxLog("warning", this, c.yellow(`Cloudity can help you to host it somewhere else :)`));
-        uxLog("warning", this, c.yellow(`If you are interested, contact us on ${c.green(c.bold(CONSTANTS.CONTACT_URL))}`));
+        uxLog("error", this, c.red('Documentation is too big to be hosted in a static resource.'));
+        uxLog("warning", this, c.yellow('Cloudity can help you host it elsewhere.'));
+        uxLog("warning", this, c.yellow(`If you're interested, contact us at ${c.green(c.bold(CONSTANTS.CONTACT_URL))}.`));
       }
       else {
-        uxLog("warning", this, c.yellow(`You can manually deploy the Static Resource ${resName},the VisualForce page ${resName} and the custom tab ${resName} to your org
-- Static Resource: ${mkDocsResourcePath} (If you upload using UI, zip the folder and make sure to have index.html at the zip root)
-- VisualForce page: ${vfPageMetaFile}
-- Custom tab: ${tabMetaFile}
-- Permission Set: ${permissionSetFile}
-You can also run the documentation locally using "mkdocs serve -v || python -m mkdocs serve -v || py -m mkdocs serve -v"
-`));
+        uxLog("warning", this, c.yellow(`You can manually deploy the Static Resource ${resName}, the Visualforce page ${resName}, and the Custom Tab ${resName} to your org:
+  - Static Resource: ${mkDocsResourcePath} (If you upload via the UI, zip the folder and ensure index.html is at the root of the zip.)
+  - Visualforce page: ${vfPageMetaFile}
+  - Custom Tab: ${tabMetaFile}
+  - Permission Set: ${permissionSetFile}
+You can also run the documentation locally using: "mkdocs serve -v" or "python -m mkdocs serve -v" or "py -m mkdocs serve -v".`));
       }
     }
     else {
-      uxLog("success", this, c.green(`SFDX Project documentation uploaded to salesforce and available in Custom Tab ${resName}`));
+      uxLog("success", this, c.green(`SFDX project documentation uploaded to Salesforce and is available in the Custom Tab ${resName}.`));
     }
     return deployRes;
   }

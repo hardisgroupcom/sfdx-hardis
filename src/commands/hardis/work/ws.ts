@@ -13,7 +13,7 @@ export default class WebSocketAction extends SfCommand<any> {
   public static description = `
 ## Command Behavior
 
-**Performs technical operations related to WebSocket communication, primarily for internal use by the sfdx-hardis VS Code Extension.**
+**Performs technical operations related to WebSocket communication, primarily for internal use by the sfdx-hardis VS Code extension.**
 
 This command is not intended for direct end-user interaction. It facilitates communication between the sfdx-hardis CLI and the VS Code Extension, enabling features like real-time status updates and plugin refreshes.
 

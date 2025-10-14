@@ -1,7 +1,7 @@
 /* eslint-disable no-useless-escape */
 /*
 This class is deprecated and kept for backward compatibility
-Use NotifProvider class instead :)
+Use NotifProvider class instead 😊
 */
 import { getCurrentGitBranch } from "./index.js";
 import { GitProvider } from "../gitProvider/index.js";

@@ -112,8 +112,28 @@ export async function getGitRepoUrl() {
   }
   const origin = await git().getConfig('remote.origin.url');
   if (origin && origin.value) {
-    // Replace https://username:token@gitlab.com/toto by https://gitlab.com/toto
-    return origin.value.replace(/\/\/(.*:.*@)/gm, `//`);
+    let url = origin.value;
+
+    // Convert SSH URL to HTTPS URL
+    // Handle formats like: git@github.com:owner/repo.git or ssh://git@github.com/owner/repo.git
+    if (url.startsWith('git@') || url.startsWith('ssh://')) {
+      // Handle git@github.com:owner/repo.git format
+      const sshMatch = url.match(/^git@([^:]+):(.+)$/);
+      if (sshMatch) {
+        url = `https://${sshMatch[1]}/${sshMatch[2]}`;
+      } else {
+        // Handle ssh://git@github.com/owner/repo.git format
+        url = url.replace(/^ssh:\/\/git@([^/]+)\//, 'https://$1/');
+      }
+      // Remove .git suffix if present
+      url = url.replace(/\.git$/, '');
+    }
+
+    // Remove credentials from HTTPS URLs
+    // Handle both formats: https://username:password@domain.com and https://username@domain.com
+    url = url.replace(/\/\/([^@/]+@)/gm, `//`);
+
+    return url;
   }
   return null;
 }
@@ -146,7 +166,7 @@ export async function checkSfdxPlugin(pluginName: string) {
       c.yellow(
         `[dependencies] Installing SF CLI plugin ${c.green(
           pluginName
-        )}... \nIf is stays stuck for too long, please run ${c.green(`sf plugins install ${pluginName}`)})`
+        )}... \nIf it stays stuck for too long, please run ${c.green(`sf plugins install ${pluginName}`)}`
       )
     );
     const installCommand = `echo y|sf plugins install ${pluginName}`;
@@ -195,7 +215,7 @@ export async function promptInstanceUrl(
   const allChoices = [
     {
       title: '📝 Custom login URL (Sandbox, DevHub or Production Org)',
-      description: `Recommended option :) Example: ${customLoginUrlExample}`,
+      description: `Recommended option 😊 Example: ${customLoginUrlExample}`,
       value: 'custom',
     },
     {
@@ -243,7 +263,7 @@ export async function promptInstanceUrl(
     type: 'text',
     name: 'value',
     message: c.cyanBright('Please input the base URL of the salesforce org'),
-    description: 'Copy paste the full URL of your currently open Salesforce org :)',
+    description: 'Copy paste the full URL of your currently open Salesforce org 😊',
     placeholder: 'Ex: https://myclient.my.salesforce.com , or myclient',
   });
   let urlCustom = (customUrlResponse?.value || "")
@@ -292,7 +312,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
           resolve(null);
         });
       });
-      uxLog("other", this, `Git repository cloned. ${c.yellow('Please run again the same command :)')}`);
+      uxLog("other", this, `Git repository cloned. ${c.yellow('Please run the same command again 😊')}`);
       process.exit(0);
     } else {
       throw new SfError('You need to be at the root of a git repository to run this command');
@@ -364,7 +384,207 @@ export async function selectGitBranch(
 
 export async function gitCheckOutRemote(branchName: string) {
   await git().checkout(branchName);
-  await git().pull();
+  await gitPull();
+}
+
+// Helper function to detect git authentication errors
+function isGitAuthError(error: any): boolean {
+  const errorStr = (error?.message || error?.toString() || '').toLowerCase();
+  const authErrorPatterns = [
+    'authentication failed',
+    'authentication error',
+    'could not read username',
+    'could not read password',
+    'invalid username or password',
+    'access denied',
+    'permission denied',
+    'publickey',
+    'could not read from remote repository',
+    'correct access rights',
+    '403',
+    '401',
+    'unauthorized',
+  ];
+  return authErrorPatterns.some((pattern) => errorStr.includes(pattern));
+}
+
+// Helper function to prompt for git credentials and update remote URL
+async function handleGitAuthError(operation: string): Promise<boolean> {
+  if (isCI) {
+    uxLog("error", this, c.red(`Git ${operation} failed due to authentication error in CI environment`));
+    return false;
+  }
+
+  uxLog("warning", this, c.yellow(`Git ${operation} failed due to authentication error.`));
+  uxLog("action", this, c.cyan('Please provide your Git credentials to continue.'));
+
+  const usernamePrompt = await prompts({
+    type: 'text',
+    name: 'username',
+    message: c.cyanBright('Enter your Git username'),
+    description: 'Your Git service username',
+    validate: (value: string) => (value && value.trim().length > 0) || 'Username is required',
+  });
+
+  if (!usernamePrompt.username) {
+    uxLog("error", this, c.red('Git username is required to continue'));
+    return false;
+  }
+
+  const passwordPrompt = await prompts({
+    type: 'text',
+    name: 'password',
+    message: c.cyanBright('Enter your Git password or Personal Access Token (PAT)'),
+    description: 'Your Git service password or PAT (input will be visible)',
+    validate: (value: string) => (value && value.trim().length > 0) || 'Password/PAT is required',
+  });
+
+  if (!passwordPrompt.password) {
+    uxLog("error", this, c.red('Git password/PAT is required to continue'));
+    return false;
+  }
+
+  const username = usernamePrompt.username;
+  const password = passwordPrompt.password;
+
+  try {
+    // Get current remote URL
+    const origin = await git().getConfig('remote.origin.url');
+    if (!origin || !origin.value) {
+      uxLog("error", this, c.red('Could not retrieve remote origin URL'));
+      return false;
+    }
+
+    let remoteUrl = origin.value;
+    const encodedUsername = encodeURIComponent(username);
+    const encodedPassword = encodeURIComponent(password);
+
+    // Update remote URL to include credentials
+    if (remoteUrl.startsWith('https://')) {
+      // Remove existing credentials if present
+      remoteUrl = remoteUrl.replace(/\/\/(.*:.*@)/gm, '//');
+      // Add new credentials
+      remoteUrl = remoteUrl.replace('https://', `https://${encodedUsername}:${encodedPassword}@`);
+    } else if (remoteUrl.startsWith('http://')) {
+      // Remove existing credentials if present
+      remoteUrl = remoteUrl.replace(/\/\/(.*:.*@)/gm, '//');
+      // Add new credentials
+      remoteUrl = remoteUrl.replace('http://', `http://${encodedUsername}:${encodedPassword}@`);
+    } else {
+      uxLog("error", this, c.red('Only HTTP(S) remote URLs are supported for credential injection'));
+      return false;
+    }
+
+    // Update the remote URL
+    await git().remote(['set-url', 'origin', remoteUrl]);
+    uxLog("action", this, c.green('Remote URL updated with credentials successfully'));
+    return true;
+  } catch (e: any) {
+    uxLog("error", this, c.red(`Failed to update remote URL: ${e?.message || e}`));
+    return false;
+  }
+}
+
+// Wrapper for git fetch with authentication error handling
+export async function gitFetch(argsOrOptions?: string[] | any, argsIfOptionsFirst?: string[]): Promise<any> {
+  // Handle both signatures: gitFetch(args) and gitFetch(options, args)
+  let args: string[] = [];
+  let options: any = {};
+
+  if (Array.isArray(argsOrOptions)) {
+    args = argsOrOptions;
+  } else if (argsOrOptions && typeof argsOrOptions === 'object' && !Array.isArray(argsOrOptions)) {
+    options = argsOrOptions;
+    args = argsIfOptionsFirst || [];
+  }
+
+  try {
+    if (options.output !== undefined || options.displayCommand !== undefined) {
+      return await git(options).fetch(args);
+    }
+    return await git().fetch(args);
+  } catch (error) {
+    if (isGitAuthError(error)) {
+      const credentialsUpdated = await handleGitAuthError('fetch');
+      if (credentialsUpdated) {
+        // Retry the operation
+        uxLog("action", this, c.cyan('Retrying git fetch with updated credentials.'));
+        if (options.output !== undefined || options.displayCommand !== undefined) {
+          return await git(options).fetch(args);
+        }
+        return await git().fetch(args);
+      }
+    }
+    throw error;
+  }
+}
+
+// Wrapper for git pull with authentication error handling
+export async function gitPull(argsOrOptions?: string[] | any, argsIfOptionsFirst?: string[]): Promise<any> {
+  // Handle both signatures: gitPull(args) and gitPull(options, args)
+  let args: string[] = [];
+  let options: any = {};
+
+  if (Array.isArray(argsOrOptions)) {
+    args = argsOrOptions;
+  } else if (argsOrOptions && typeof argsOrOptions === 'object' && !Array.isArray(argsOrOptions)) {
+    options = argsOrOptions;
+    args = argsIfOptionsFirst || [];
+  }
+
+  try {
+    if (options.output !== undefined || options.displayCommand !== undefined) {
+      return await git(options).pull(args);
+    }
+    return await git().pull(args);
+  } catch (error) {
+    if (isGitAuthError(error)) {
+      const credentialsUpdated = await handleGitAuthError('pull');
+      if (credentialsUpdated) {
+        // Retry the operation
+        uxLog("action", this, c.cyan('Retrying git pull with updated credentials...'));
+        if (options.output !== undefined || options.displayCommand !== undefined) {
+          return await git(options).pull(args);
+        }
+        return await git().pull(args);
+      }
+    }
+    throw error;
+  }
+}
+
+// Wrapper for git push with authentication error handling
+export async function gitPush(argsOrOptions?: string[] | any, argsIfOptionsFirst?: string[]): Promise<any> {
+  // Handle both signatures: gitPush(args) and gitPush(options, args)
+  let args: string[] = [];
+  let options: any = {};
+
+  if (Array.isArray(argsOrOptions)) {
+    args = argsOrOptions;
+  } else if (argsOrOptions && typeof argsOrOptions === 'object' && !Array.isArray(argsOrOptions)) {
+    options = argsOrOptions;
+    args = argsIfOptionsFirst || [];
+  }
+
+  try {
+    if (options.output !== undefined || options.displayCommand !== undefined) {
+      return await git(options).push(args);
+    }
+    return await git().push(args);
+  } catch (error) {
+    if (isGitAuthError(error)) {
+      const credentialsUpdated = await handleGitAuthError('push');
+      if (credentialsUpdated) {
+        // Retry the operation
+        uxLog("action", this, c.cyan('Retrying git push with updated credentials...'));
+        if (options.output !== undefined || options.displayCommand !== undefined) {
+          return await git(options).push(args);
+        }
+        return await git().push(args);
+      }
+    }
+    throw error;
+  }
 }
 
 // Get local git branch name
@@ -377,7 +597,7 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
       return false;
     }
   }
-  await git().fetch();
+  await gitFetch();
   const branches = await git().branch();
   const localBranches = await git().branchLocal();
   if (localBranches.current !== branchName) {
@@ -572,7 +792,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
     }
     // exit
     else {
-      uxLog("other", this, 'Cancelled by user');
+      uxLog("other", this, 'Cancelled by user.');
       process.exit(0);
     }
   } else {
@@ -602,8 +822,8 @@ export async function gitAddCommitPush(
   const currentgitBranch = (await git().branchLocal()).current;
   await git()
     .add(options.pattern || './*')
-    .commit(options.commitMessage || 'Updated by sfdx-hardis')
-    .push(['-u', 'origin', currentgitBranch]);
+    .commit(options.commitMessage || 'Updated by sfdx-hardis');
+  await gitPush(['-u', 'origin', currentgitBranch]);
 }
 
 // Normalize git FileStatus path
@@ -1136,14 +1356,14 @@ export async function generateReports(
     columns,
   });
   await fs.writeFile(reportFile, csv, 'utf8');
-  // Trigger command to open CSV file in VsCode extension
+  // Trigger command to open CSV file in VS Code extension
   try {
     if (!WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.requestOpenFile(reportFile);
     }
     WebSocketClient.sendReportFileMessage(reportFile, `${logLabel} (CSV)`, "report");
   } catch (e: any) {
-    uxLog("warning", commandThis, c.yellow(`[sfdx-hardis] Error opening file in VsCode: ${e.message}`));
+    uxLog("warning", commandThis, c.yellow(`[sfdx-hardis] Error opening file in VS Code: ${e.message}`));
   }
   const excel = csvStringify(resultSorted, {
     delimiter: '\t',
@@ -1178,7 +1398,7 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, sens
       globalThis.hardisLogFileStream.write(stripAnsi(text) + '\n');
     }
   }
-  // VsCode sfdx-hardis log
+  // VS Code sfdx-hardis log
   if (WebSocketClient.isAlive() && !text.includes('[command]') && !text.includes('[NotifProvider]')) {
     if (sensitive && !text.includes('SFDX_CLIENT_ID_') && !text.includes('SFDX_CLIENT_KEY_')) {
       WebSocketClient.sendCommandLogLineMessage('OBFUSCATED LOG LINE');
@@ -1186,9 +1406,9 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, sens
     else {
       let isQuestion = false;
       let textToSend = textInit;
-      if (textInit.includes("Look up in VsCode")) {
-        // Remove "Look up in VsCode" and everything after 
-        textToSend = textInit.split("Look up in VsCode")[0].trim();
+      if (textInit.includes("Look up in VS Code")) {
+        // Remove "Look up in VS Code" and everything after
+        textToSend = textInit.split("Look up in VS Code")[0].trim();
         isQuestion = true;
       }
 
@@ -1492,7 +1712,7 @@ export async function generateSSLCertificate(
         "log",
         commandThis,
         c.grey(c.yellow(
-          `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file :)`
+          `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file 😊`
         ))
       );
       const isProduction = await isProductionOrg(options.targetUsername || null, { conn: conn });

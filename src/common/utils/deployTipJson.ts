@@ -1,4 +1,4 @@
-// Analyze deployment errors to provide tips to user :)
+// Analyze deployment errors to provide tips to user 😊
 import c from "chalk";
 import format from "string-template";
 import { getAllTips } from "./deployTipsList.js";
@@ -127,7 +127,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
       }
     }
     else {
-      detailedErrorLines.push(...[c.yellow("No tip found for error. Try asking ChatGPT, Google or a Release Manager :)")])
+      detailedErrorLines.push(...[c.yellow("No tip found for error. Try asking ChatGPT, Google or a Release Manager 😊")])
     }
   }
   detailedErrorLines.push("");

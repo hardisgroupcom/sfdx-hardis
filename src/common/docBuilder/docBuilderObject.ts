@@ -44,7 +44,7 @@ export class DocBuilderObject extends DocBuilderRoot {
     ]);
     for (const field of fields) {
       lines.push(...[
-        `| ${field.fullName} | ${field.label || ""} | ${field.type || ""} | ${mdTableCell(field.description)} |`
+        `| ${field.fullName} | ${field.label || ""} | ${field.type || ""} | ${mdTableCell(String(field.description))} |`
       ]);
     }
     lines.push("");

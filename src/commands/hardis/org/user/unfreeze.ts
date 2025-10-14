@@ -205,7 +205,7 @@ The command's technical implementation involves:
         description: 'Confirm unfreezing selected users, which will reactivate their accounts in the Salesforce org',
       });
       if (confirmunfreeze.value !== true) {
-        const outputString = 'Script cancelled by user';
+        const outputString = 'Script cancelled by user.';
         uxLog("warning", this, c.yellow(outputString));
         return { outputString };
       }

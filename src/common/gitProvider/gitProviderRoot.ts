@@ -90,7 +90,12 @@ export abstract class GitProviderRoot {
     const replacements: any = {};
     const markdownImages = extractImagesFromMarkdown(markdownBody, sourceFile);
     for (const image of markdownImages) {
-      const imageUrl = await this.uploadImage(image.path);
+      let imageUrl: string | null = null;
+      try {
+        imageUrl = await this.uploadImage(image.path);
+      } catch (e) {
+        uxLog("warning", this, c.yellow(`[GitProvider] Error while trying to upload image ${image.path}.\n${(e as Error).message}\n${(e as Error).stack}`));
+      }
       if (imageUrl) {
         replacements[image.name] = imageUrl;
       }

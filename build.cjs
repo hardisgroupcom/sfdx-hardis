@@ -41,7 +41,7 @@ class SfdxHardisBuilder {
       this.buildIndividualMarkdownPageForTip(tip, tipFile);
       this.buildMainDeployFixesMarkdown(tip, deployTipsMd, linkName);
     }
-    fs.writeFileSync(deployTipsDocFile, deployTipsMd.join("\n") + "\n");
+    this.writeFileIfChanged(deployTipsDocFile, deployTipsMd.join("\n") + "\n");
     console.log("Written doc file " + deployTipsDocFile);
   }
 
@@ -102,7 +102,7 @@ class SfdxHardisBuilder {
     tipFileMd.push("```shell");
     tipFileMd.push(...tip.tip.split("\n"));
     tipFileMd.push("```");
-    fs.writeFileSync(tipFile, tipFileMd.join("\n") + "\n");
+    this.writeFileIfChanged(tipFile, tipFileMd.join("\n") + "\n");
   }
 
   async buildPromptTemplatesDocs() {
@@ -153,7 +153,7 @@ class SfdxHardisBuilder {
         ``,
         `If you do so, please don't forget to use the replacement variables :)`
       ];
-      fs.writeFileSync(templateDocFile, md.join("\n") + "\n");
+      this.writeFileIfChanged(templateDocFile, md.join("\n") + "\n");
       promptNav.push({ [templateName]: `prompt-templates/${templateName}.md` });
     }
 
@@ -188,7 +188,7 @@ class SfdxHardisBuilder {
         `You can also use the command \`sf hardis:doc:override-prompts\` to automatically create all override variable files at once.`,
         ``
       ];
-      fs.writeFileSync(variableDocFile, md.join("\n") + "\n");
+      this.writeFileIfChanged(variableDocFile, md.join("\n") + "\n");
       promptNav.push({ [variableName]: `prompt-templates/${variableName}.md` });
     }
 
@@ -228,6 +228,26 @@ class SfdxHardisBuilder {
     indexContent = indexContent.replace("[_See online documentation for a better navigation_](https://sfdx-hardis.cloudity.com)", "");
     fs.writeFileSync(indexFile, fixedLines.join("\n"));
     console.log("Fixed online index.md links");
+  }
+
+  writeFileIfChanged(filePath, content) {
+    let existingContent = "";
+    if (fs.existsSync(filePath)) {
+      existingContent = fs.readFileSync(filePath, "utf-8");
+    }
+    if (this.areContentsDifferent(existingContent, content)) {
+      fs.writeFileSync(filePath, content, "utf-8");
+      console.log(`Updated ${filePath}`);
+    } else {
+      console.log(`No changes in ${filePath}`);
+    }
+  }
+
+  // Check if changes are more than spacing, line endings or "-" differences
+  areContentsDifferent(contentA, contentB) {
+    // Function to remove all spaces, line endings and "-" from a string
+    const normalize = (str) => str.replace(/[\s\-]/g, '');
+    return normalize(contentA) !== normalize(contentB);
   }
 }
 

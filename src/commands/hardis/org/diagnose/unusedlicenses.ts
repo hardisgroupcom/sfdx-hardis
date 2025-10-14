@@ -36,7 +36,7 @@ Key functionalities:
 - **Notifications:** Sends notifications to configured channels (Grafana, Slack, MS Teams) with a summary of unused PSLAs.
 - **Interactive Deletion:** In non-CI environments, it offers an interactive prompt to bulk delete the identified unused PSLAs.
 
-Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for the inspiration during his great speaker session at [French Touch Dreamin '23](https://frenchtouchdreamin.com/), and his kind agreement for reusing such inspiration in this command :)
+Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for the inspiration during his great speaker session at [French Touch Dreamin '23](https://frenchtouchdreamin.com/), and his kind agreement for reusing such inspiration in this command 😊
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-licenses/) and can output Grafana, Slack and MsTeams Notifications.
 

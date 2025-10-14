@@ -75,13 +75,13 @@ The command performs the following technical steps:
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Generating CSV and Markdown with Permission Set Groups and their related Permission Sets`));
+    uxLog("action", this, c.cyan(`Generating CSV and Markdown for Permission Set Groups and their related Permission Sets.`));
     /* jscpd:ignore-end */
 
     const psgList: any[] = [];
     const globPatternPSG = process.cwd() + `/**/*.permissionsetgroup-meta.xml`;
     const psgFiles = await glob(globPatternPSG, { ignore: GLOB_IGNORE_PATTERNS });
-    uxLog("log", this, c.grey(`Found ${psgFiles.length} permission set groups`));
+    uxLog("log", this, c.grey(`Found ${psgFiles.length} permission set groups.`));
     for (const psgFile of psgFiles) {
       const psgName = (psgFile.replace(/\\/g, '/').split('/').pop() || '').replace('.permissionsetgroup-meta.xml', '');
       const psg = await parseXmlFile(psgFile);
@@ -116,11 +116,11 @@ The command performs the following technical steps:
     try {
       const csvText = csvLines.map((e) => e.join(',')).join('\n');
       await fs.writeFile(this.outputFile, csvText, 'utf8');
-      uxLog("action", this, c.cyan(`Permission set groups CSV file generated in ${c.bold(c.green(this.outputFile))}`));
-      // Trigger command to open CSV file in VsCode extension
+      uxLog("action", this, c.cyan(`Permission set groups CSV file generated at ${c.bold(c.green(this.outputFile))}.`));
+      // Trigger command to open CSV file in VS Code extension
       WebSocketClient.requestOpenFile(this.outputFile);
     } catch (e: any) {
-      uxLog("warning", this, c.yellow('Error while generating CSV log file:\n' + (e as Error).message + '\n' + e.stack));
+      uxLog("warning", this, c.yellow('Error while generating CSV file:\n' + (e as Error).message + '\n' + e.stack));
       this.outputFile = null;
     }
 
@@ -138,11 +138,11 @@ The command performs the following technical steps:
     const mdPsgText = mdPsg.join('\n');
     // mdPsgText = toc.insert(mdPsgText);
     await fs.writeFile(docFile, mdPsgText, 'utf8');
-    uxLog("action", this, c.cyan(`Permission set groups Markdown file generated in ${c.bold(c.green(docFile))}`));
-    // Trigger command to open CSV file in VsCode extension
+    uxLog("action", this, c.cyan(`Permission set groups Markdown file generated at ${c.bold(c.green(docFile))}.`));
+    // Trigger command to open CSV file in VS Code extension
     WebSocketClient.requestOpenFile(docFile);
 
     // Return an object to be displayed with --json
-    return { outputString: 'Permission set groups Documentation generated' };
+    return { outputString: 'Permission set groups documentation generated.' };
   }
 }

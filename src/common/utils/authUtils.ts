@@ -229,7 +229,7 @@ export async function authOrg(orgAlias: string, options: any) {
       //   description: 'Choose the authentication method that works best for your environment. Use Web if unsure.',
       //   choices: [
       //     {
-      //       title: '🌐 Web Login (If VsCode is locally installed on your computer)',
+      //       title: '🌐 Web Login (If VS Code is locally installed on your computer)',
       //       value: 'web',
       //     },
       //     {
@@ -279,7 +279,7 @@ export async function authOrg(orgAlias: string, options: any) {
       instanceUrl = loginResult?.instanceUrl || instanceUrl;
       updateSfCliCommandOrg = true;
     } else {
-      console.error(c.red(`[sfdx-hardis] Unable to connect to org ${orgAlias} with browser. Please try again :)`));
+      console.error(c.red(`[sfdx-hardis] Unable to connect to org ${orgAlias} with browser. Please try again 😊`));
     }
     if (logged) {
       // Retrieve default username or dev hub username if not returned by command
@@ -312,7 +312,7 @@ export async function authOrg(orgAlias: string, options: any) {
       // }
       // Display warning message in case of local usage (not CI), and not login command
       if (!(options?.Command?.id || "").startsWith("hardis:auth:login") && updateSfCliCommandOrg === true) {
-        uxLog("warning", this, c.yellow("*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND :) ***"));
+        uxLog("warning", this, c.yellow("*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND 😊 ***"));
       }
     } else {
       console.error(c.red('[sfdx-hardis][ERROR] You must be logged to an org to perform this action'));

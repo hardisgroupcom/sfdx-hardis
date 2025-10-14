@@ -123,7 +123,7 @@ The command's technical implementation involves:
     const branchMd = await getBranchMarkdown();
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = 'log';
-    let notifText = `No inactive configuration elements has been found in ${branchMd}`;
+    let notifText = `No inactive configuration elements were found in ${branchMd}.`;
     const attachments: MessageAttachment[] = [];
     if (this.inactiveItems.length > 0) {
       notifSeverity = 'warning';
@@ -173,7 +173,7 @@ The command's technical implementation involves:
         });
       }
 
-      notifText = `${this.inactiveItems.length} inactive configuration elements have been found in ${branchMd}`;
+      notifText = `${this.inactiveItems.length} inactive configuration elements were found in ${branchMd}`;
       // Build result file
       await this.buildCsvFile();
     } else {
