@@ -430,7 +430,7 @@ The command's technical implementation involves a series of orchestrated steps:
     let gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0 && !this.noGit) {
       const commitMessage = '[sfdx-hardis] Update package content';
-      uxLog("action", this, c.cyan(`Adding new commit: ${commitMessage}\n- Contains package.xml and destructiveChanges.xml updates based on your metadata changes.`));
+      uxLog("action", this, c.cyan(`🌿Adding new commit: ${commitMessage}\n- Contains package.xml and destructiveChanges.xml updates based on your metadata changes.`));
 
       // Build files list for table
       const filesTable = gitStatusWithConfig.staged.map((file) => {
@@ -495,7 +495,7 @@ The command's technical implementation involves a series of orchestrated steps:
             await git().add(cleanedFiles);
 
             const commitMessage = '[sfdx-hardis] Clean sfdx project';
-            uxLog("action", this, c.cyan(`Adding new commit: ${commitMessage}\n- Contains files that have been automatically cleaned per your configuration.`));
+            uxLog("action", this, c.cyan(`🌿Adding new commit: ${commitMessage}\n- Contains files that have been automatically cleaned per your configuration.`));
 
             // Build files list for table
             const filesTable = cleanedFiles.map((file) => ({
@@ -615,7 +615,7 @@ The command's technical implementation involves a series of orchestrated steps:
     let gitStatusAfterDeployPlan = await git().status();
     if (gitStatusAfterDeployPlan.staged.length > 0 && !this.noGit) {
       const commitMessage = '[sfdx-hardis] Update deployment plan';
-      uxLog("action", this, c.cyan(`Adding new commit: ${commitMessage}\n- Contains deployment plan updates (legacy feature).`));
+      uxLog("action", this, c.cyan(`🌿Adding new commit: ${commitMessage}\n- Contains deployment plan updates (legacy feature).`));
 
       // Build files list for table
       const filesTable = gitStatusAfterDeployPlan.staged.map((file) => {
