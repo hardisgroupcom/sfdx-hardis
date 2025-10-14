@@ -55,9 +55,9 @@ The command's technical implementation is straightforward:
 
   public async run(): Promise<AnyJson> {
     await clearCache();
-    uxLog("action", this, c.cyan('sfdx-hardis cache cleared'));
+    uxLog("action", this, c.cyan('sfdx-hardis cache cleared.'));
     return {
-      message: 'sfdx-hardis cache cleared',
+      message: 'sfdx-hardis cache cleared.',
     };
   }
 }

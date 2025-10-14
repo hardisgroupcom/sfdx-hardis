@@ -234,7 +234,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
       truncatedNb = flowListUnique.length - maxFlowsToShow;
       flowListUnique.splice(maxFlowsToShow, flowListUnique.length - maxFlowsToShow);
       uxLog("warning", this, c.yellow(`[FlowGitDiff] Truncated flow list to 30 flows to avoid flooding Pull Request comments`));
-      uxLog("warning", this, c.yellow(`[FlowGitDiff] If you want to see the diff of truncated flows, use VsCode SFDX Hardis extension :)`));
+      uxLog("warning", this, c.yellow(`[FlowGitDiff] If you want to see the diff of truncated flows, use the VS Code SFDX Hardis extension 😊`));
     }
     flowDiffMarkdown = await flowDiffToMarkdownForPullRequest(flowListUnique, previousTargetBranchCommit, (logResults.at(-1) || logResults[0]).hash, truncatedNb);
   }

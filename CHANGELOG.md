@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Enhances git commit logging with file status
+
 ## [6.7.3] 2025-10-13
 
 - Handle cases where Azure DevOps is hosted on visualstudio.com

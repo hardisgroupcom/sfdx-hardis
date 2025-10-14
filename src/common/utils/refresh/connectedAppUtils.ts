@@ -63,7 +63,7 @@ export async function createConnectedAppManifest(
 
   // Display the XML content for the manifest
   const manifestContent = await fs.readFile(manifestPath, 'utf8');
-  uxLog("log", command, c.cyan(`Package.xml manifest for ${connectedApps.length} Connected App(s):\n${manifestContent}`));
+  uxLog("log", command, c.cyan(`package.xml manifest for ${connectedApps.length} connected app(s):\n${manifestContent}`));
 
   return { manifestPath, tmpDir };
 }
@@ -108,7 +108,7 @@ export async function createDestructiveChangesManifest(
 
   // Display the XML content for destructive changes
   const destructiveXmlContent = await fs.readFile(destructiveChangesPath, 'utf8');
-  uxLog("log", command, c.cyan(`Destructive Changes XML for deleting ${connectedApps.length} Connected App(s):\n${destructiveXmlContent}`));
+  uxLog("log", command, c.cyan(`Destructive changes XML for deleting ${connectedApps.length} connected app(s):\n${destructiveXmlContent}`));
 
   return { destructiveChangesPath, packageXmlPath, tmpDir };
 }
@@ -142,7 +142,7 @@ export async function deleteConnectedApps(
 
       // Clean up
       await fs.remove(tmpDir);
-      uxLog("log", command, c.grey('Removed temporary deployment files'));
+      uxLog("log", command, c.grey('Removed temporary deployment files.'));
     }, command);
   });
 }
@@ -156,7 +156,7 @@ export async function disableConnectedAppIgnore(command: SfCommand<any>): Promis
 
   // Check if .forceignore exists
   if (!await fs.pathExists(forceignorePath)) {
-    uxLog("log", command, c.grey('No .forceignore file found, no modification needed'));
+    uxLog("log", command, c.grey('No .forceignore file found; no modification needed.'));
     return null;
   }
 
@@ -178,13 +178,13 @@ export async function disableConnectedAppIgnore(command: SfCommand<any>): Promis
 
   // Check if any lines were filtered out
   if (lines.length === filteredLines.length) {
-    uxLog("log", command, c.grey('No Connected App ignore patterns found in .forceignore'));
+    uxLog("log", command, c.grey('No Connected App ignore patterns found in .forceignore.'));
     return { forceignorePath, originalContent, tempBackupPath };
   }
 
   // Write modified .forceignore
   await fs.writeFile(forceignorePath, filteredLines.join('\n'));
-  uxLog("warning", command, c.cyan('Temporarily modified .forceignore to allow Connected App metadata operations'));
+  uxLog("warning", command, c.cyan('Temporarily modified .forceignore to allow Connected App metadata operations.'));
 
   return { forceignorePath, originalContent, tempBackupPath };
 }
@@ -204,7 +204,7 @@ export async function restoreConnectedAppIgnore(
     if (await fs.pathExists(backupInfo.tempBackupPath)) {
       await fs.writeFile(backupInfo.forceignorePath, backupInfo.originalContent);
       await fs.remove(backupInfo.tempBackupPath);
-      uxLog("log", command, c.grey('Restored original .forceignore file'));
+      uxLog("log", command, c.grey('Restored original .forceignore file.'));
     }
   } catch (error) {
     uxLog("warning", command, c.yellow(`Error restoring .forceignore: ${error}`));
@@ -289,7 +289,7 @@ export function validateConnectedApps(
     uxLog("error", command, c.red(errorMsg));
 
     if (availableApps.length > 0) {
-      uxLog("warning", command, c.yellow(`Available Connected Apps in the ${context}:`));
+      uxLog("warning", command, c.yellow(`Available connected apps in the ${context}:`));
       availableApps.forEach(name => {
         uxLog("log", command, c.grey(`  - ${name}`));
       });
@@ -355,7 +355,7 @@ export async function promptForConnectedAppSelection<T extends { fullName: strin
     type: 'multiselect',
     name: 'selectedApps',
     message: promptMessage,
-    description: 'Select Connected Apps to process',
+    description: 'Select Connected Apps to process.',
     choices: choices,
     initial: initialSelection,
   });
@@ -377,14 +377,14 @@ export async function findConnectedAppFile(
   command: SfCommand<any>,
   saveProjectPath: string
 ): Promise<string | null> {
-  uxLog("other", command, c.cyan(`Searching for Connected App: ${appName}`));
+  uxLog("other", command, c.cyan(`Searching for Connected App: ${appName}.`));
   try {
     // First, try an exact case-sensitive match
     const exactPattern = `**/${appName}.connectedApp-meta.xml`;
     const exactMatches = await glob(exactPattern, { ignore: GLOB_IGNORE_PATTERNS, cwd: saveProjectPath });
 
     if (exactMatches.length > 0) {
-      uxLog("success", command, c.green(`✓ Found Connected App: ${exactMatches[0]}`));
+      uxLog("success", command, c.green(`✓ Found connected app: ${exactMatches[0]}`));
       return path.join(saveProjectPath, exactMatches[0]);
     }
 
@@ -397,17 +397,17 @@ export async function findConnectedAppFile(
 
     for (const potentialPath of possiblePaths) {
       if (fs.existsSync(potentialPath)) {
-        uxLog("success", command, c.green(`✓ Found Connected App at standard path: ${potentialPath}`));
+        uxLog("success", command, c.green(`✓ Found connected app at standard path: ${potentialPath}`));
         return potentialPath;
       }
     }
 
     // If no exact match, try case-insensitive search by getting all ConnectedApp files
-    uxLog("warning", command, c.yellow(`No exact match found, trying case-insensitive search...`));
+    uxLog("warning", command, c.yellow(`No exact match found; trying case-insensitive search...`));
     const allConnectedAppFiles = await glob('**/*.connectedApp-meta.xml', { ignore: GLOB_IGNORE_PATTERNS, cwd: saveProjectPath });
 
     if (allConnectedAppFiles.length === 0) {
-      uxLog("error", command, c.red(`No Connected App files found in the project.`));
+      uxLog("error", command, c.red(`No connected app files found in the project.`));
       return null;
     }
 
@@ -425,13 +425,13 @@ export async function findConnectedAppFile(
     }
 
     // If still not found, list available Connected Apps
-    uxLog("error", command, c.red(`✗ Could not find Connected App "${appName}"`));
+    uxLog("error", command, c.red(`✗ Could not find connected app "${appName}".`));
     const allConnectedAppNames = allConnectedAppFiles.map(file => "- " + path.basename(file, '.connectedApp-meta.xml')).join('\n');
-    uxLog("warning", command, c.yellow(`Available Connected Apps:\n${allConnectedAppNames}`));
+    uxLog("warning", command, c.yellow(`Available connected apps:\n${allConnectedAppNames}`));
 
     return null;
   } catch (error) {
-    uxLog("error", command, c.red(`Error searching for Connected App: ${error}`));
+    uxLog("error", command, c.red(`Error searching for connected app: ${error}.`));
     return null;
   }
 }
@@ -448,7 +448,7 @@ export async function selectConnectedAppsForProcessing<T extends { fullName: str
   // If all flag or name is provided, use all connected apps from the list without prompting
   if (processAll || nameFilter) {
     const selectionReason = processAll ? 'all flag' : 'name filter';
-    uxLog("action", command, c.cyan(`Processing ${connectedApps.length} Connected App(s) based on ${selectionReason}`));
+    uxLog("action", command, c.cyan(`Processing ${connectedApps.length} connected app(s) based on ${selectionReason}.`));
     return connectedApps;
   }
 
@@ -490,7 +490,7 @@ export async function performConnectedAppOperationWithManifest(
     const { manifestPath, tmpDir } = await createConnectedAppManifest(connectedApps, command);
 
     // Execute the operation using the manifest
-    uxLog("log", command, c.cyan(`${operationName === 'retrieve' ? 'Retrieving' : 'Deploying'} ${connectedApps.length} Connected App(s) ${operationName === 'retrieve' ? 'from' : 'to'} org...`));
+    uxLog("log", command, c.cyan(`${operationName === 'retrieve' ? 'Retrieving' : 'Deploying'} ${connectedApps.length} connected app(s) ${operationName === 'retrieve' ? 'from' : 'to'} org...`));
 
     try {
       await commandFn(manifestPath, orgUsername, command);
@@ -506,7 +506,7 @@ export async function performConnectedAppOperationWithManifest(
 
     // Clean up
     await fs.remove(tmpDir);
-    uxLog("log", command, c.grey('Removed temporary manifest file'));
+    uxLog("log", command, c.grey('Removed temporary manifest file.'));
   }, command);
 }
 

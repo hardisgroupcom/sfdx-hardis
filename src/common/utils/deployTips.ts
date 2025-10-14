@@ -1,4 +1,4 @@
-// Analyze deployment errors to provide tips to user :)
+// Analyze deployment errors to provide tips to user 😊
 import c from "chalk";
 import format from "string-template";
 

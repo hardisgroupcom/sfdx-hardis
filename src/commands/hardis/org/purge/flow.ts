@@ -149,8 +149,8 @@ The command's technical implementation involves:
       });
 
       if (confirmDelete.value === false) {
-        uxLog("error", this, c.red('Action cancelled by user'));
-        return { outputString: 'Action cancelled by user' };
+        uxLog("error", this, c.red('Action cancelled by user.'));
+        return { outputString: 'Action cancelled by user.' };
       }
     }
 
@@ -230,8 +230,8 @@ The command's technical implementation involves:
         description: 'Permanently delete the selected flow interview records from the Salesforce org',
       });
       if (confirmDelete.value === false) {
-        uxLog("error", this, c.red('Action cancelled by user'));
-        return { outputString: 'Action cancelled by user' };
+        uxLog("error", this, c.red('Action cancelled by user.'));
+        return { outputString: 'Action cancelled by user.' };
       }
     }
     // Delete flow interviews
