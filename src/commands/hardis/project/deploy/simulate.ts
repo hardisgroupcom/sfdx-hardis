@@ -10,7 +10,7 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class DeploySimulate extends SfCommand<any> {
-  public static title = 'Simulate the deployment of a metadata in an org prompted to the user\nUsed by VsCode Extension';
+  public static title = 'Simulate the deployment of metadata in an org prompted to the user.\nUsed by VS Code extension.';
 
   public static description: string = `
 ## Command Behavior

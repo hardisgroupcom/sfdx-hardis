@@ -109,7 +109,7 @@ The command's technical implementation involves interacting with a Git provider'
     }
 
     // Startup
-    uxLog("action", this, c.cyan(`This command will extract pull request from Git Server`));
+    uxLog("action", this, c.cyan(`This command will extract pull requests from the Git server.`));
 
     const gitProvider = await GitProvider.getInstance(true);
     if (gitProvider == null) {
@@ -149,7 +149,7 @@ The command's technical implementation involves interacting with a Git provider'
         remote: true,
         checkOutPull: false,
         allowAll: true,
-        message: "Please select the target branch of PUll Requests"
+        message: "Please select the target branch of Pull Requests"
       });
       if (gitBranch && gitBranch !== "ALL BRANCHES") {
         this.targetBranch = gitBranch;
@@ -158,9 +158,9 @@ The command's technical implementation involves interacting with a Git provider'
 
     if (!isCI && !this.prStatus) {
       const statusRes = await prompts({
-        message: "Please select a status criteria, or all",
+        message: "Please select a status criterion, or All.",
         type: "select",
-        description: "Choose which pull request status to filter by",
+        description: "Choose which pull request status to filter by.",
         placeholder: "Select status",
         choices: [
           { title: "All status", value: "all" },

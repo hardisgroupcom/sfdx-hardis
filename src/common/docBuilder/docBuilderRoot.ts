@@ -121,7 +121,7 @@ export abstract class DocBuilderRoot {
         const forcedTimeoutText = `CI job reached maximum time allowed for allowed calls to AI. You can either:
 
     - Run command locally then commit + push
-    - Increase using variable \`AI_MAX_TIMEOUT_MINUTES\` in your CI config (ex: AI_MAX_TIMEOUT_MINUTES=120) after making sure than your CI job timeout can handle it :)`;
+    - Increase using variable \`AI_MAX_TIMEOUT_MINUTES\` in your CI config (ex: AI_MAX_TIMEOUT_MINUTES=120) after making sure than your CI job timeout can handle it 😊`;
         const replaceText = `## AI-Generated Description\n\n${includeFromFile(aiCache.aiCacheDirFile, forcedTimeoutText)}`;
         this.markdownDoc = this.markdownDoc.replace(this.placeholder, replaceText);
       }

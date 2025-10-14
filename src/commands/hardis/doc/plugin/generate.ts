@@ -118,12 +118,12 @@ The command's technical implementation involves:
     const mkdocsYmlFileExists = fs.existsSync(mkdocsYmlFile);
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/mkdocs', '.'), process.cwd(), { overwrite: false });
     if (!mkdocsYmlFileExists) {
-      uxLog("log", this, c.grey('Base mkdocs files copied in your SF Cli plugin folder'));
+      uxLog("log", this, c.grey('Base mkdocs files copied into your SF CLI plugin folder.'));
       uxLog(
         "warning",
         this,
         c.yellow(
-          'You should probably manually update mkdocs.yml and build-deploy-docs.yml with your repo & plugin information'
+          'You should probably update mkdocs.yml and build-deploy-docs.yml with your repository and plugin information.'
         )
       );
     }
@@ -270,6 +270,6 @@ The command's technical implementation involves:
     await fs.ensureDir(path.dirname(mdFileName));
     const yamlString = lines.join('\n') + '\n';
     await fs.writeFile(mdFileName, yamlString);
-    uxLog("log", this, c.grey('Generated file ' + c.bold(mdFileName)));
+    uxLog("log", this, c.grey('Generated file ' + c.bold(mdFileName) + '.'));
   }
 }

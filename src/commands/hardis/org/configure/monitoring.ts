@@ -101,7 +101,7 @@ The command's technical implementation involves a series of Git operations, file
         type: 'select',
         name: 'value',
         choices: [
-          { title: "Yes, I'm sure because I know what I'm doing, like Roman :)", value: 'yes' },
+          { title: "Yes, I'm sure because I know what I'm doing, like Roman 😊", value: 'yes' },
           { title: 'Mmmmm no, let me create another repo with the word "monitoring" in its name !', value: 'no' },
         ],
         message: c.cyanBright(
@@ -160,7 +160,7 @@ The command's technical implementation involves a series of Git operations, file
       // Restart command so the org is selected as default org (will help to select profiles)
       if (currentOrgId !== org.orgId) {
         const infoMsg =
-          'Default org changed. Please restart the same command if VsCode does not do that automatically for you :)';
+          'Default org changed. Please restart the same command if VS Code does not do that automatically for you 😊';
         uxLog("warning", this, c.yellow(infoMsg));
         const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ') + ' --orginstanceurl ' + org.instanceUrl;
         WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);
@@ -233,16 +233,16 @@ The command's technical implementation involves a series of Git operations, file
       await gitAddCommitPush({
         message: '[sfdx-hardis] Update monitoring configuration',
       });
-      uxLog("success", this, c.green('Your configuration for org monitoring is now ready :)'));
+      uxLog("success", this, c.green('Your configuration for org monitoring is now ready 😊'));
     } else {
-      uxLog("warning", this, c.yellow('Please manually git add, commit and push to the remote repository :)'));
+      uxLog("warning", this, c.yellow('Please manually git add, commit and push to the remote repository 😊'));
     }
     const branch = await getCurrentGitBranch();
     uxLog(
       "success",
       this,
       c.green(
-        `Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}:)`
+        `Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}😊`
       )
     );
     const scheduleMonitoringUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;

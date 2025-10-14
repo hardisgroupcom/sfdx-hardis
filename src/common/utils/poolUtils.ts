@@ -36,9 +36,9 @@ export async function getPoolStorage(options: any = {}) {
 export async function setPoolStorage(value: any, options: any = {}) {
   const providerInitialized = await initializeProvider(options);
   if (providerInitialized) {
-    uxLog("other", this, '[pool] ' + c.grey(`Updating poolstorage value...`));
+    uxLog("other", this, '[pool] ' + c.grey(`Updating pool storage value...`));
     const valueSetRes = await keyValueProvider.setValue(null, value);
-    uxLog("other", this, '[pool] ' + c.grey(`Updated poolstorage value`));
+    uxLog("other", this, '[pool] ' + c.grey(`Updated pool storage value.`));
     return valueSetRes;
   }
   return null;
@@ -56,7 +56,7 @@ export async function updateActiveScratchOrg(scratchOrg: string, keyValues: any,
 let updatingPool = false;
 export async function addScratchOrgToPool(scratchOrg: any, options: any = { position: 'last' }) {
   if (updatingPool === true) {
-    uxLog("log", this, c.grey('Already updating scratch org pool: try again in 2000 ms'));
+    uxLog("log", this, c.grey('Already updating scratch org pool. Try again in 2000 ms.'));
     await new Promise((resolve) => setTimeout(resolve, 2000));
     return await addScratchOrgToPool(scratchOrg, options);
   } else {
@@ -91,7 +91,7 @@ async function executeAddScratchOrgToPool(scratchOrg: any, options: any = { posi
     poolStorage.scratchOrgErrors = scratchOrgErrors;
     await setPoolStorage(poolStorage, options);
     */
-    uxLog("other", this, '[pool] ' + c.red('Scratch org creation error: \n' + JSON.stringify(scratchOrg)));
+    uxLog("other", this, '[pool] ' + c.red('Scratch org creation error:\n' + JSON.stringify(scratchOrg)));
   }
 }
 
@@ -123,7 +123,7 @@ export async function tryFetchScratchOrg(options: any) {
     );
     return null;
   }
-  uxLog("other", this, '[pool] ' + c.cyan('Trying to fetch a scratch org from scratch orgs pool to improve performances'));
+  uxLog("other", this, '[pool] ' + c.cyan('Trying to fetch a scratch org from the scratch orgs pool to improve performance.'));
   const scratchOrgs: Array<any> = poolStorage.scratchOrgs || [];
   if (scratchOrgs.length > 0) {
     const scratchOrg = scratchOrgs.shift();
@@ -174,7 +174,7 @@ export async function tryFetchScratchOrg(options: any) {
       fail: false,
       output: false,
     });
-    uxLog("action", this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
+    uxLog("action", this, c.cyan(`Open scratch org with URL: ${c.green(openRes?.result?.url)}`));
     // Return scratch org
     await updateActiveScratchOrg(scratchOrg, {
       Description: `Authenticated by ${os.userInfo().username} on ${moment().format('YYYYMMDD_hhmm')}`,

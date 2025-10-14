@@ -156,7 +156,7 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
         status: this.deployStatus === "valid" ? "valid" : this.deployStatus === "invalid" ? "invalid" : "tovalidate",
       };
       globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
-      // Post comments :)
+      // Post comments 😊
       await GitProvider.managePostPullRequestComment();
     }
 

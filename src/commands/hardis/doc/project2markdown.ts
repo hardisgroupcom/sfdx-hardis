@@ -62,7 +62,7 @@ mkdocs serve -v || python -m mkdocs serve -v || py -m mkdocs serve -v
 To just generate HTML pages that you can host anywhere, run \`mkdocs build -v || python -m mkdocs build -v || py -m mkdocs build -v\`
 `
 
-  public static description = `Generates a markdown documentation from a SFDX project
+  public static description = `Generates Markdown documentation from a SFDX project
 
 - Objects (with fields, validation rules, relationships and dependencies)
 - Automations
@@ -86,13 +86,13 @@ To just generate HTML pages that you can host anywhere, run \`mkdocs build -v ||
 
 Can work on any sfdx project, no need for it to be a sfdx-hardis flavored one.
 
-Generates markdown files will be written in **docs** folder (except README.md where a link to doc index is added)
+Generated markdown files will be written in the **docs** folder (except README.md, where a link to the doc index is added).
 
 - You can customize the pages following [mkdocs-material setup documentation](https://squidfunk.github.io/mkdocs-material/setup/)
 - You can manually add new markdown files in the "docs" folder to extend this documentation and add references to them in "mkdocs.yml"
 - You can also add images in folder "docs/assets" and embed them in markdown files.
 
-To read Flow documentations if your markdown reader doesn't handle MermaidJS syntax, this command could require @mermaid-js/mermaid-cli
+To read flow documentation, if your markdown reader doesn't handle MermaidJS syntax this command may require @mermaid-js/mermaid-cli.
 
 - Run \`npm install @mermaid-js/mermaid-cli --global\` if puppeteer works in your environment
 - It can also be run as a docker image
@@ -284,7 +284,7 @@ ${this.htmlInstructions}
 
     this.tempDir = await createTempDir()
     // Convert source to metadata API format to build prompts
-    uxLog("action", this, c.cyan("Converting source to metadata API format to ease the build of LLM prompts..."));
+    uxLog("action", this, c.cyan("Converting source to metadata API format to ease the build of LLM prompts."));
     await execCommand(`sf project convert source --metadata CustomObject --output-dir ${this.tempDir}`, this, { fail: true, output: true, debug: this.debugMode });
     this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(this.objectFiles);
@@ -383,7 +383,7 @@ ${Project2Markdown.htmlInstructions}
     }
 
 
-    // Open file in a new VsCode tab if available
+    // Open file in a new VS Code tab if available
     if (WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.sendReportFileMessage(this.outputMarkdownIndexFile, "Project documentation Index", "report");
     }
@@ -1379,7 +1379,7 @@ ${Project2Markdown.htmlInstructions}
     }
     uxLog("success", this, c.green(`Successfully generated ${flowFiles.length - flowSkips.length - flowWarnings.length - flowErrors.length} Flows documentation`));
     if (flowWarnings.length > 0) {
-      uxLog("warning", this, c.yellow(`Partially generated documentation (Markdown with mermaidJs but without SVG) for ${flowWarnings.length} Flows: ${this.humanDisplay(flowWarnings)}`));
+      uxLog("warning", this, c.yellow(`Partially generated documentation (Markdown with MermaidJS but without SVG) for ${flowWarnings.length} Flows: ${this.humanDisplay(flowWarnings)}`));
     }
     if (flowErrors.length > 0) {
       uxLog("warning", this, c.yellow(`Error generating documentation for ${flowErrors.length} Flows: ${this.humanDisplay(flowErrors)}`));
@@ -1499,7 +1499,7 @@ ${Project2Markdown.htmlInstructions}
       if (fs.existsSync(packageXmlCandidate.path)) {
         // Generate markdown for package.xml
         const packageMarkdownFile = await DocBuilderPackageXML.generatePackageXmlMarkdown(packageXmlCandidate.path, null, packageXmlCandidate, instanceUrl);
-        // Open file in a new VsCode tab if available
+        // Open file in a new VS Code tab if available
         WebSocketClient.requestOpenFile(packageMarkdownFile);
         packageXmlCandidate.markdownFile = packageMarkdownFile;
         this.outputPackageXmlMarkdownFiles.push(packageXmlCandidate);

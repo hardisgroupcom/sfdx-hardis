@@ -113,7 +113,7 @@ This command acts as an intelligent wrapper around the Salesforce CLI's metadata
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Deploy);
     uxLog("error", this, c.red('This command will be removed by Salesforce in November 2024.'));
-    uxLog("error", this, c.red('Please migrate to command sf hardis project deploy start'));
+    uxLog("error", this, c.red('Please migrate to the command `sf hardis project deploy start`.'));
     uxLog(
       "error",
       this,

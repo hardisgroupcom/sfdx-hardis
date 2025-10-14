@@ -292,7 +292,7 @@ If Flow history doc always display a single state, you probably need to update y
         },
       ];
     } else {
-      uxLog("log", this, c.grey("No updated metadata for today's backup :)"));
+      uxLog("log", this, c.grey("No updated metadata for today's backup 😊"));
     }
 
     // Post notifications

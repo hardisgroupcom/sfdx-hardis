@@ -112,8 +112,28 @@ export async function getGitRepoUrl() {
   }
   const origin = await git().getConfig('remote.origin.url');
   if (origin && origin.value) {
-    // Replace https://username:token@gitlab.com/toto by https://gitlab.com/toto
-    return origin.value.replace(/\/\/(.*:.*@)/gm, `//`);
+    let url = origin.value;
+
+    // Convert SSH URL to HTTPS URL
+    // Handle formats like: git@github.com:owner/repo.git or ssh://git@github.com/owner/repo.git
+    if (url.startsWith('git@') || url.startsWith('ssh://')) {
+      // Handle git@github.com:owner/repo.git format
+      const sshMatch = url.match(/^git@([^:]+):(.+)$/);
+      if (sshMatch) {
+        url = `https://${sshMatch[1]}/${sshMatch[2]}`;
+      } else {
+        // Handle ssh://git@github.com/owner/repo.git format
+        url = url.replace(/^ssh:\/\/git@([^/]+)\//, 'https://$1/');
+      }
+      // Remove .git suffix if present
+      url = url.replace(/\.git$/, '');
+    }
+
+    // Remove credentials from HTTPS URLs
+    // Handle both formats: https://username:password@domain.com and https://username@domain.com
+    url = url.replace(/\/\/([^@/]+@)/gm, `//`);
+
+    return url;
   }
   return null;
 }
@@ -146,7 +166,7 @@ export async function checkSfdxPlugin(pluginName: string) {
       c.yellow(
         `[dependencies] Installing SF CLI plugin ${c.green(
           pluginName
-        )}... \nIf is stays stuck for too long, please run ${c.green(`sf plugins install ${pluginName}`)})`
+        )}... \nIf it stays stuck for too long, please run ${c.green(`sf plugins install ${pluginName}`)}`
       )
     );
     const installCommand = `echo y|sf plugins install ${pluginName}`;
@@ -195,7 +215,7 @@ export async function promptInstanceUrl(
   const allChoices = [
     {
       title: '📝 Custom login URL (Sandbox, DevHub or Production Org)',
-      description: `Recommended option :) Example: ${customLoginUrlExample}`,
+      description: `Recommended option 😊 Example: ${customLoginUrlExample}`,
       value: 'custom',
     },
     {
@@ -243,7 +263,7 @@ export async function promptInstanceUrl(
     type: 'text',
     name: 'value',
     message: c.cyanBright('Please input the base URL of the salesforce org'),
-    description: 'Copy paste the full URL of your currently open Salesforce org :)',
+    description: 'Copy paste the full URL of your currently open Salesforce org 😊',
     placeholder: 'Ex: https://myclient.my.salesforce.com , or myclient',
   });
   let urlCustom = (customUrlResponse?.value || "")
@@ -292,7 +312,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
           resolve(null);
         });
       });
-      uxLog("other", this, `Git repository cloned. ${c.yellow('Please run again the same command :)')}`);
+      uxLog("other", this, `Git repository cloned. ${c.yellow('Please run the same command again 😊')}`);
       process.exit(0);
     } else {
       throw new SfError('You need to be at the root of a git repository to run this command');
@@ -396,8 +416,8 @@ async function handleGitAuthError(operation: string): Promise<boolean> {
     return false;
   }
 
-  uxLog("warning", this, c.yellow(`Git ${operation} failed due to authentication error`));
-  uxLog("action", this, c.cyan('Please provide your Git credentials to continue'));
+  uxLog("warning", this, c.yellow(`Git ${operation} failed due to authentication error.`));
+  uxLog("action", this, c.cyan('Please provide your Git credentials to continue.'));
 
   const usernamePrompt = await prompts({
     type: 'text',
@@ -489,7 +509,7 @@ export async function gitFetch(argsOrOptions?: string[] | any, argsIfOptionsFirs
       const credentialsUpdated = await handleGitAuthError('fetch');
       if (credentialsUpdated) {
         // Retry the operation
-        uxLog("action", this, c.cyan('Retrying git fetch with updated credentials...'));
+        uxLog("action", this, c.cyan('Retrying git fetch with updated credentials.'));
         if (options.output !== undefined || options.displayCommand !== undefined) {
           return await git(options).fetch(args);
         }
@@ -780,7 +800,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
     }
     // exit
     else {
-      uxLog("other", this, 'Cancelled by user');
+      uxLog("other", this, 'Cancelled by user.');
       process.exit(0);
     }
   } else {
@@ -1349,14 +1369,14 @@ export async function generateReports(
     columns,
   });
   await fs.writeFile(reportFile, csv, 'utf8');
-  // Trigger command to open CSV file in VsCode extension
+  // Trigger command to open CSV file in VS Code extension
   try {
     if (!WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.requestOpenFile(reportFile);
     }
     WebSocketClient.sendReportFileMessage(reportFile, `${logLabel} (CSV)`, "report");
   } catch (e: any) {
-    uxLog("warning", commandThis, c.yellow(`[sfdx-hardis] Error opening file in VsCode: ${e.message}`));
+    uxLog("warning", commandThis, c.yellow(`[sfdx-hardis] Error opening file in VS Code: ${e.message}`));
   }
   const excel = csvStringify(resultSorted, {
     delimiter: '\t',
@@ -1391,7 +1411,7 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, sens
       globalThis.hardisLogFileStream.write(stripAnsi(text) + '\n');
     }
   }
-  // VsCode sfdx-hardis log
+  // VS Code sfdx-hardis log
   if (WebSocketClient.isAlive() && !text.includes('[command]') && !text.includes('[NotifProvider]')) {
     if (sensitive && !text.includes('SFDX_CLIENT_ID_') && !text.includes('SFDX_CLIENT_KEY_')) {
       WebSocketClient.sendCommandLogLineMessage('OBFUSCATED LOG LINE');
@@ -1399,9 +1419,9 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, sens
     else {
       let isQuestion = false;
       let textToSend = textInit;
-      if (textInit.includes("Look up in VsCode")) {
-        // Remove "Look up in VsCode" and everything after 
-        textToSend = textInit.split("Look up in VsCode")[0].trim();
+      if (textInit.includes("Look up in VS Code")) {
+        // Remove "Look up in VS Code" and everything after
+        textToSend = textInit.split("Look up in VS Code")[0].trim();
         isQuestion = true;
       }
 
@@ -1705,7 +1725,7 @@ export async function generateSSLCertificate(
         "log",
         commandThis,
         c.grey(c.yellow(
-          `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file :)`
+          `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file 😊`
         ))
       );
       const isProduction = await isProductionOrg(options.targetUsername || null, { conn: conn });

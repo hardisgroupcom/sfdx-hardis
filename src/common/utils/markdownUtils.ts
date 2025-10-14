@@ -15,7 +15,7 @@ export async function generatePdfFileFromMarkdown(markdownFile: string): Promise
             }`,
       stylesheet_encoding: 'utf-8'
     });
-    uxLog("success", this, c.green(`PDF file generated from ${markdownFile} documentation: ${c.bold(outputPdfFile)}`));
+    uxLog("success", this, c.green(`PDF file generated from ${markdownFile} documentation: ${c.bold(outputPdfFile)}.`));
     return outputPdfFile;
   } catch (e: any) {
     uxLog("warning", this, c.yellow(`Error generating PDF file from ${markdownFile} documentation with CLI: ${e.message}`) + "\n" + c.grey(e.stack));

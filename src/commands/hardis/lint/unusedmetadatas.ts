@@ -102,7 +102,7 @@ The command's technical implementation involves:
     const branchMd = await getBranchMarkdown();
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = 'log';
-    let notifText = `No unused metadatas has been detected in ${branchMd}`;
+    let notifText = `No unused metadata were detected in ${branchMd}.`;
     const attachments: MessageAttachment[] = [];
     if (unusedLabels.length > 0) {
       attachments.push({
@@ -119,7 +119,7 @@ The command's technical implementation involves:
     uxLog("action", this, c.cyan("Summary"));
     if (unusedLabels.length > 0 || unusedCustomPermissions.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.unusedData.length} unused metadatas have been detected in ${branchMd}`;
+      notifText = `${this.unusedData.length} unused metadata were detected in ${branchMd}`;
       if (unusedLabels.length > 0) {
         uxLog("warning", this, c.yellow(`Unused Labels: ${unusedLabels.length}`));
       }

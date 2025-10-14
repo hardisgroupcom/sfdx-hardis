@@ -178,7 +178,7 @@ Example:
       const serviceNowApiQuery = `?sysparm_query=numberIN${ticketNumbers.join(',')}&sysparm_display_value=true`;
       const serviceNowApiUrlWithQuery = `${serviceNowUrl}${serviceNowApiResource}${serviceNowApiQuery}`;
       // Make API call to ServiceNow
-      uxLog("other", this, `Fetching Service now using query: ${serviceNowApiUrlWithQuery}`);
+      uxLog("other", this, `Fetching ServiceNow using query: ${serviceNowApiUrlWithQuery}`);
       let serviceNowApiRes;
       try {
         serviceNowApiRes = await axios.get(serviceNowApiUrlWithQuery, serviceNowApiOptions);
@@ -189,7 +189,7 @@ Example:
       }
       // Complete user stories with ServiceNow data
       const serviceNowRecords = serviceNowApiRes.data.result;
-      uxLog("other", this, `ServiceNow API call succeeded: ${serviceNowRecords.length} records found`);
+      uxLog("other", this, `ServiceNow API call succeeded: ${serviceNowRecords.length} records found.`);
       for (const userStory of this.userStories) {
         const ticketNumber = userStory?.[this.userStoriesConfig.ticketField];
         const serviceNowRecord = serviceNowRecords.find((record: any) => record.number === ticketNumber);

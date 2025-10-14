@@ -10,6 +10,7 @@ import {
   createTempDir,
   execCommand,
   getCurrentGitBranch,
+  getGitRepoUrl,
   git,
   gitHasLocalUpdates,
 <<<<<<< HEAD
@@ -18,6 +19,7 @@ import {
 >>>>>>> 19c1a367 (feat: integrate Agentforce AI for Visualforce page documentation)
   normalizeFileStatusPath,
   uxLog,
+  uxLogTable,
 } from '../../../common/utils/index.js';
 import { exportData } from '../../../common/utils/dataUtils.js';
 import { forceSourcePull } from '../../../common/utils/deployUtils.js';
@@ -166,7 +168,7 @@ The command's technical implementation involves a series of orchestrated steps:
     const localBranch = (await getCurrentGitBranch()) || '';
 
     // Define current and target branches
-    this.gitUrl = (await git().listRemote(['--get-url']))?.trim() || '';
+    this.gitUrl = await getGitRepoUrl() || '';
     this.currentBranch = (await getCurrentGitBranch()) || '';
     if (this.targetBranch == null) {
       const userConfig = await getConfig('user');
@@ -184,7 +186,7 @@ The command's technical implementation involves a series of orchestrated steps:
       "action",
       this,
       c.cyan(
-        `This command will help to prepare the ${GitProvider.getMergeRequestName(this.gitUrl)} from your branch ${c.green(localBranch)} to major branch ${c.green(
+        `Preparing ${GitProvider.getMergeRequestName(this.gitUrl)} from branch ${c.green(localBranch)} to ${c.green(
           this.targetBranch
         )}`
       )
@@ -211,7 +213,7 @@ The command's technical implementation involves a series of orchestrated steps:
     mergeRequestUrl = mergeRequestUrl || this.gitUrl.replace('.git', '');
 
     // Merge request
-    uxLog("action", this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold(GitProvider.getMergeRequestName(this.gitUrl))}, otherwise you can push new commits on ${c.green(this.currentBranch)} branch.`));
+    uxLog("action", this, c.cyan(`If your work is ${c.bold('completed')}, create a ${c.bold(GitProvider.getMergeRequestName(this.gitUrl))}, otherwise push new commits to the ${c.green(this.currentBranch)} branch.`));
     let summaryMsg = c.grey("");
     if (WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.sendReportFileMessage(mergeRequestUrl, `Create ${GitProvider.getMergeRequestName(this.gitUrl)}`, 'actionUrl');
@@ -224,19 +226,19 @@ The command's technical implementation involves a series of orchestrated steps:
     summaryMsg += c.grey(`- Source branch: ${c.green(this.currentBranch)}\n`);
     summaryMsg += c.grey(`- Target branch: ${c.green(this.targetBranch)}`);
     uxLog("log", this, summaryMsg);
-    uxLog("log", this, `${c.yellow(`When your ${GitProvider.getMergeRequestName(this.gitUrl)} will have been merged:`)}
+    uxLog("log", this, `${c.yellow(`When your ${GitProvider.getMergeRequestName(this.gitUrl)} has been merged:`)}
 - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
-- Use New User Story menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`);
+- Use New User Story menu (sf hardis:work:new), even if you work in the same sandbox or scratch org 😊`);
     // Manual actions file
     const config = await getConfig('project');
     if (config.manualActionsFileUrl && config.manualActionsFileUrl !== '') {
-      uxLog("warning", this, c.yellow(`If you have pre-deployment or post-deployment manual actions, make sure to write them in the file ${c.green(config.manualActionsFileUrl)}`));
+      uxLog("warning", this, c.yellow(`If you have pre-deployment or post-deployment manual actions, record them in ${c.green(config.manualActionsFileUrl)}`));
       if (WebSocketClient.isAliveWithLwcUI()) {
         WebSocketClient.sendReportFileMessage(config.manualActionsFileUrl, `Update Manual Actions file`, 'actionUrl');
       }
     }
     else {
-      uxLog("warning", this, c.yellow(`You should have a manual actions file defined. Ask your release manager to create one for the project and set its link in your .sfdx-hardis.yml file under manualActionsFileUrl property.`));
+      uxLog("warning", this, c.yellow(`Define a manual actions file. Ask your release manager to create one and set its URL in .sfdx-hardis.yml under manualActionsFileUrl.`));
     }
     if (!WebSocketClient.isAliveWithLwcUI()) {
       uxLog("log", this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(mergeRequestDoc)}`));
@@ -276,26 +278,26 @@ The command's technical implementation involves a series of orchestrated steps:
     const commitReadyRes = await prompts({
       type: 'select',
       name: 'value',
-      message: c.cyanBright('Have you already committed the updated metadata you want to deploy ?'),
+      message: c.cyanBright('Have you already committed the updated metadata you want to deploy?'),
       description: 'Select your current state regarding git commits and metadata updates',
       placeholder: 'Select commit status',
       choices: [
         {
-          title: '😎 Yes, my commit(s) is ready ! I staged my files then created one or multiple commits !',
+          title: '😎 Yes, my commit(s) are ready! I staged my files and created one or multiple commits.',
           value: 'commitReady',
           description:
-            "You have already pulled updates from your org (or locally updated the files if you're a nerd) then staged your files and created a commit",
+            "You have already pulled updates from your org (or locally updated the files if you're a nerd), staged your files, and created a commit",
         },
         {
-          title: '😐 No, please pull my latest updates from my org so I can commit my metadatas',
+          title: '😐 No, please pull my latest updates from my org so I can commit my metadata',
           value: 'pleasePull',
-          description: 'Pull latest updates from org so then you can stage files and create your commit',
+          description: 'Pull latest updates from org so you can stage files and create your commit',
         },
         {
-          title: '😱 What is a commit ? What does mean pull ? Help !',
+          title: '😱 What is a commit? What does pull mean? Help!',
           value: 'help',
           description:
-            "Don't panic, just click on the link that will appear in the console (CTRL + Click) and then you will know :)",
+            "Don't panic, just click on the link that will appear in the console (CTRL + Click) and you'll learn!",
         },
       ],
     });
@@ -307,9 +309,9 @@ The command's technical implementation involves a series of orchestrated steps:
         "action",
         this,
         c.cyan(
-          `Sources has been pulled from ${flags[
+          `Sources have been pulled from ${flags[
             'target-org'
-          ].getUsername()}, now you can stage and commit your updates !`
+          ].getUsername()}, now you can stage and commit your updates!`
         )
       );
       WebSocketClient.sendReportFileMessage("workbench.view.scm", "Commit your retrieved files", "actionCommand");
@@ -430,15 +432,28 @@ The command's technical implementation involves a series of orchestrated steps:
     // Commit updates
     let gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0 && !this.noGit) {
-      uxLog("log", this, c.grey(`Committing updated files in local git branch ${c.green(this.currentBranch)}...`));
+      const commitMessage = '[sfdx-hardis] Update package content';
+      uxLog("action", this, c.cyan(`🌿Adding new commit: ${commitMessage}\n- Contains package.xml and destructiveChanges.xml updates based on your metadata changes.`));
+
+      // Build files list for table
+      const filesTable = gitStatusWithConfig.staged.map((file) => {
+        const status = gitStatusWithConfig.files.find(f => f.path === file);
+        const statusLabel = status?.working_dir === 'D' ? 'deleted' : status?.index === 'A' ? 'created' : 'modified';
+        return {
+          Status: statusLabel,
+          File: file
+        };
+      });
+      uxLogTable(this, filesTable, ['Status', 'File']);
+
       try {
-        await git({ output: true }).commit('[sfdx-hardis] Update package content');
+        await git({ output: true }).commit(commitMessage);
       } catch (e) {
         uxLog(
           "warning",
           this,
           c.yellow(
-            `There may be an issue while committing files but it can be ok to ignore it\n${c.grey(
+            `There may be an issue while committing files, but it can be safely ignored\n${c.grey(
               (e as Error).message
             )}`
           )
@@ -461,13 +476,13 @@ The command's technical implementation involves a series of orchestrated steps:
         uxLog(
           "warning",
           this,
-          c.yellow(c.bold('Please make sure the attributes removed from Profiles are defined on Permission Sets :)'))
+          c.yellow(c.bold('Please make sure the attributes removed from Profiles are defined on Permission Sets 😊'))
         );
       }
 
       // Xml cleaning
       if (config.cleanXmlPatterns && config.cleanXmlPatterns.length > 0) {
-        uxLog("action", this, c.cyan('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
+        uxLog("action", this, c.cyan('Cleaning project using patterns defined in cleanXmlPatterns...'));
         await CleanXml.run([]);
       }
 
@@ -478,11 +493,21 @@ The command's technical implementation involves a series of orchestrated steps:
         .filter((file) => !gitStatusFilesBeforeClean.includes(file.path))
         .map((file) => normalizeFileStatusPath(file.path, config));
       if (cleanedFiles.length > 0) {
-        uxLog("log", this, c.grey(`Cleaned the following list of files:\n${cleanedFiles.join('\n')}`));
         if (!this.noGit) {
           try {
             await git().add(cleanedFiles);
-            await git({ output: true }).commit('[sfdx-hardis] Clean sfdx project');
+
+            const commitMessage = '[sfdx-hardis] Clean sfdx project';
+            uxLog("action", this, c.cyan(`🌿Adding new commit: ${commitMessage}\n- Contains files that have been automatically cleaned per your configuration.`));
+
+            // Build files list for table
+            const filesTable = cleanedFiles.map((file) => ({
+              Status: 'modified',
+              File: file
+            }));
+            uxLogTable(this, filesTable, ['Status', 'File']);
+
+            await git({ output: true }).commit(commitMessage);
           } catch (e) {
             uxLog(
               "warning",
@@ -592,14 +617,28 @@ The command's technical implementation involves a series of orchestrated steps:
     }
     let gitStatusAfterDeployPlan = await git().status();
     if (gitStatusAfterDeployPlan.staged.length > 0 && !this.noGit) {
+      const commitMessage = '[sfdx-hardis] Update deployment plan';
+      uxLog("action", this, c.cyan(`🌿Adding new commit: ${commitMessage}\n- Contains deployment plan updates (legacy feature).`));
+
+      // Build files list for table
+      const filesTable = gitStatusAfterDeployPlan.staged.map((file) => {
+        const status = gitStatusAfterDeployPlan.files.find(f => f.path === file);
+        const statusLabel = status?.working_dir === 'D' ? 'deleted' : status?.index === 'A' ? 'created' : 'modified';
+        return {
+          Status: statusLabel,
+          File: file
+        };
+      });
+      uxLogTable(this, filesTable, ['Status', 'File']);
+
       try {
-        await git({ output: true }).commit('[sfdx-hardis] Update deployment plan');
+        await git({ output: true }).commit(commitMessage);
       } catch (e) {
         uxLog(
           "warning",
           this,
           c.yellow(
-            `There may be an issue while committing files but it can be ok to ignore it\n${c.grey(
+            `There may be an issue while committing files, but it can be safely ignored\n${c.grey(
               (e as Error).message
             )}`
           )
@@ -632,7 +671,7 @@ The command's technical implementation involves a series of orchestrated steps:
         description: 'Choose whether to push your commits to the remote git repository',
       });
       if (pushResponse.push === true) {
-        uxLog("action", this, c.cyan(`Pushing new commit(s) in remote git branch ${c.green(`origin/${this.currentBranch}`)}...`));
+        uxLog("action", this, c.cyan(`Pushing commit(s) to remote branch ${c.green(`origin/${this.currentBranch}`)}...`));
         const configUSer = await getConfig('user');
         let pushResult: any;
         if (configUSer.canForcePush === true) {

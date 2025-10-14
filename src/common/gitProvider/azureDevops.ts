@@ -497,14 +497,26 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     let teamProject: string;
 
     if (remoteUrl.startsWith("https://")) {
-      // Handle HTTPS URLs with or without username
-      const httpsRegex = /https:\/\/(?:[^@]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)/;
-      const match = remoteUrl.match(httpsRegex);
-      if (match) {
-        const organization = match[1];
-        teamProject = decodeURIComponent(match[2]); // Decode URL-encoded project name
-        repositoryId = decodeURIComponent(match[3]); // Decode URL-encoded repository name
+      // Handle modern dev.azure.com URLs with or without username
+      const devAzureRegex = /https:\/\/(?:[^@]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)/;
+      const devAzureMatch = remoteUrl.match(devAzureRegex);
+      if (devAzureMatch) {
+        const organization = devAzureMatch[1];
+        teamProject = decodeURIComponent(devAzureMatch[2]); // Decode URL-encoded project name
+        repositoryId = decodeURIComponent(devAzureMatch[3]); // Decode URL-encoded repository name
         collectionUri = `https://dev.azure.com/${organization}/`;
+        return { collectionUri, teamProject, repositoryId };
+      }
+
+      // Handle legacy visualstudio.com URLs
+      // Format: https://organization.visualstudio.com/ProjectName/_git/RepoName
+      const vsRegex = /https:\/\/(?:[^@]+@)?([^.]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/?]+)/;
+      const vsMatch = remoteUrl.match(vsRegex);
+      if (vsMatch) {
+        const organization = vsMatch[1];
+        teamProject = decodeURIComponent(vsMatch[2]); // Decode URL-encoded project name
+        repositoryId = decodeURIComponent(vsMatch[3]); // Decode URL-encoded repository name
+        collectionUri = `https://${organization}.visualstudio.com/`;
         return { collectionUri, teamProject, repositoryId };
       }
     } else if (remoteUrl.startsWith("git@")) {

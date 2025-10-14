@@ -144,7 +144,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       // Generate diff
       const { outputDiffMdFile } = await generateFlowVisualGitDiff(this.flowFile, this.commitBefore, this.commitAfter, { svgMd: true, pngMd: false, mermaidMd: this.debugMode, debug: this.debugMode })
       diffMdFile = outputDiffMdFile;
-      // Open file in a new VsCode tab if available
+      // Open file in a new VS Code tab if available
       WebSocketClient.requestOpenFile(path.relative(process.cwd(), outputDiffMdFile));
     }
 
