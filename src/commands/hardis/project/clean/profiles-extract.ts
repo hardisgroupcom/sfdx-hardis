@@ -1,3 +1,7 @@
+// QUESTION: Where are the objects extracted in this code?
+// ANSWER: The objects are extracted in the generateObjectsList function.
+// This function calls conn.describeGlobal() to get all SObjects, then queries each one to check if it has records.
+// The user is then prompted to select which objects to extract. The selected objects are returned and used in the rest of the extraction process.
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { uxLog } from '../../../../common/utils/index.js';
@@ -11,6 +15,7 @@ import { Messages } from '@salesforce/core';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
+// Main command class for extracting Salesforce org profiles and related metadata
 export default class ProfilesExtract extends SfCommand<void> {
   public static readonly description = '';
 
@@ -39,59 +44,153 @@ export default class ProfilesExtract extends SfCommand<void> {
 
   protected csvFiles: string[] = [];
   protected outputFile: string;
+  protected activeProfileNames: Set<string> = new Set();
 
+  /**
+   * Main entry point for the command. Orchestrates the extraction process:
+   * - Prompts user to select objects
+   * - Extracts users, personas, relations, record types, apps, permissions, tabs, and object fields
+   * - Generates CSV and XLSX reports
+   */
   public async run(): Promise<void> {
-    // Ensure conn is initialized and spinner logic is inside the run method
     const { flags } = await this.parse(ProfilesExtract);
     const conn = flags['target-org'].getConnection();
     let selectedObjects: string[] = [];
     let numberOfPersonas = 1;
-
     try {
-
-
-
       selectedObjects = await this.generateObjectsList(conn);
-
       await this.generateUsersExtract(conn);
-
       numberOfPersonas = await this.generatePersonaExtract();
-
       await this.generateRelationExtract(selectedObjects, numberOfPersonas);
-
       await this.generateRTExtract(conn, selectedObjects, numberOfPersonas);
-
       await this.generateAppsExtract(conn, numberOfPersonas);
-
       await this.generatePermissionsExtract(conn, numberOfPersonas);
-
       await this.generateTabsExtract(conn, numberOfPersonas);
 
-      await this.generateObjectFieldsExtract(conn, selectedObjects, numberOfPersonas);
+      // 1. Extract profile field access and get all profiles
+      const profileFieldAccess = await this.getProfileFieldAccessData(conn, selectedObjects);
+      const profileNames = Array.from(new Set(profileFieldAccess.map(r => r.Profile).filter(Boolean)));
+
+      // 2. Pass profileNames to generateObjectFieldsExtract
+  await this.generateObjectFieldsExtract(conn, selectedObjects, numberOfPersonas, profileNames, profileFieldAccess);
+
+      // 3. Write the profile field access CSV (as before)
+      if (profileFieldAccess.length > 0) {
+        const reportDir = await getReportDirectory();
+        this.outputFile = path.join(reportDir, 'ProfileFieldAccess.csv');
+        await generateCsvFile(profileFieldAccess, this.outputFile, { fileTitle: 'Profile Field Access', noExcel: true });
+        this.csvFiles.push(this.outputFile);
+      } else {
+        uxLog('log', this, c.yellow('No profile field access records found, skipping ProfileFieldAccess.csv.'));
+      }
 
       this.outputFile = '';
       this.outputFile = await generateReportPath('profiles-extract', this.outputFile);
       await createXlsxFromCsvFiles(this.csvFiles, this.outputFile, { fileTitle: 'profiles extract' });
-
     } catch (error) {
       uxLog('log', this, c.red('Failed to fetch SObjects.'));
       throw error;
     }
   }
+  /**
+   * Extracts field-level access for profiles using FieldPermissions object.
+   * Generates a CSV report of profile-field access.
+   * @param conn Salesforce connection
+   */
+  // Returns all profile field access records as an array
+  async getProfileFieldAccessData(conn: any, selectedObjects: string[]) {
+    const fieldAccessRecords: { Profile: string; SObjectType: string; Field: string; PermissionsRead: string; PermissionsEdit: string }[] = [];
+    try {
+      let soql = `SELECT Field, PermissionsRead, PermissionsEdit, SObjectType, Parent.Profile.Name FROM FieldPermissions WHERE Parent.ProfileId != null`;
+      if (selectedObjects && selectedObjects.length > 0) {
+        const objectList = selectedObjects.map(obj => `'${obj}'`).join(", ");
+        soql += ` AND SObjectType IN (${objectList})`;
+      }
+      // Add filter for active profiles
+      if (this.activeProfileNames && this.activeProfileNames.size > 0) {
+        const profileList = Array.from(this.activeProfileNames)
+          .filter((name) => !!name)
+          .map(name => `'${name.replace(/'/g, "''")}'`).join(", ");
+        soql += ` AND Parent.Profile.Name IN (${profileList})`;
+      }
+      const result = await bulkQuery(soql, conn);
+      result.records.forEach((rec: any) => {
+        fieldAccessRecords.push({
+          Profile: rec['Parent.Profile.Name'],
+          SObjectType: rec['SobjectType'],
+          Field: rec['Field'],
+          PermissionsRead: rec['PermissionsRead'] === true || rec['PermissionsRead'] === 'true' ? 'Yes' : 'No',
+          PermissionsEdit: rec['PermissionsEdit'] === true || rec['PermissionsEdit'] === 'true' ? 'Yes' : 'No',
+        });
+      });
+      uxLog('log', this, c.green(`Fetched ${fieldAccessRecords.length} profile field access records.`));
+    } catch (error) {
+      uxLog('warning', this, c.yellow(`Failed to query FieldPermissions: ${(error as Error).message}`));
+    }
+    return fieldAccessRecords;
+  }
 
+  /**
+   * Prompts the user to select Salesforce objects (SObjects) that have records in the org.
+   * Generates a CSV report of the selected objects.
+   * @param conn Salesforce connection
+   * @returns Array of selected object API names
+   */
   private async generateObjectsList(conn: any): Promise<string[]> {
+
     let selectedObjects: string[] = [];
     uxLog('log', this, c.green('Fetching SObjects'));
     let sobjectsList: { label: string; name: string; masterObject: string; objectType: string }[] = [];
     try {
-      //ToDo
+      // Exclude objects whose API names start with any of these prefixes
+      const excludedPrefixes = [
+        'Active',
+        'Apex',
+        'AuraDefinition',
+        'Business',
+        'Content',
+        'Dashboard',
+        'Email',
+        'Flow',
+        'Forecasting',
+        'Formula',
+        'ListView',
+        'LoginGeo',
+        'Marketing',
+        'MatchingRule',
+        'PermissionSet',
+        'UiFormula',
+        'WebLink',
+        'pi__'
+      ];
+      // Exclude objects whose API names are in this explicit list
+      const excludedObjects = [
+        'AppDefinition', 'AppMenu', 'AssignmentRule', 'AsyncApexJob', 'AuthProvider', 'AuthSession',
+        'BrowserPolicyViolation', 'CampaignInfluenceModel', 'CaseStatus', 'ClientBrowser', 'Community',
+        'ConnectedApplication', 'ContractStatus', 'CronJobDetail', 'CronTrigger', 'CustomNotificationType',
+        'CustomPermission', 'DataType', 'DeleteEvent', 'Domain', 'DuplicateRule', 'EntityDefinition',
+        'FeedItem', 'FieldPermissions', 'FieldSecurityClassification', 'FileSearchActivity', 'FiscalYearSettings',
+        'Folder', 'Group', 'GroupMember', 'NamedCredential', 'OauthToken', 'ObjectPermissions', 'OrderStatus',
+        'OrgWideEmailAddress', 'Organization', 'PackageLicense', 'PartnerRole', 'Period', 'Profile', 'Publisher',
+        'QueueSobject', 'RecentlyViewed', 'RecordType', 'Report', 'Scontrol', 'SetupAuditTrail', 'SetupEntityAccess',
+        'SolutionStatus', 'StandardInvocableActionType', 'StaticResource', 'TabDefinition', 'TenantUsageEntitlement',
+        'Translation', 'VerificationHistory'
+      ];
       const sobjects = await conn.describeGlobal();
-      sobjectsList = sobjects.sobjects.filter(sobj => sobj.queryable).map((sobject) => ({
-        label: sobject.label,
-        name: sobject.name,
-        masterObject: '',
-        objectType: sobject.name.endsWith('__c') ? 'Custom' : 'Standard',
-      }));
+      sobjectsList = sobjects.sobjects
+        .filter(sobj =>
+          sobj.queryable &&
+          !excludedPrefixes.some(prefix => sobj.name.startsWith(prefix)) &&
+          !excludedObjects.includes(sobj.name) &&
+          !sobj.name.endsWith('History') &&
+          !sobj.name.endsWith('Share')
+        )
+        .map((sobject) => ({
+          label: sobject.label,
+          name: sobject.name,
+          masterObject: '',
+          objectType: sobject.name.endsWith('__c') ? 'Custom' : 'Standard',
+        }));
 
       // Debug: use a fixed list to avoid long waits on orgs with many objects
       // sobjectsList = [{
@@ -174,6 +273,11 @@ export default class ProfilesExtract extends SfCommand<void> {
     return selectedObjects;
   }
 
+  /**
+   * Extracts active users from the org, including their username, role, and profile.
+   * Generates a CSV report of users.
+   * @param conn Salesforce connection
+   */
   async generateUsersExtract(conn: any) {
     const usersRecords: { User: string; Role: string; Profil: string; Profil_a_Associe: string; Nouveau_Personna: string; Nouveau_Role: string; }[] = [];
     const userQuery = "SELECT username, UserRole.Name, Profile.Name FROM User WHERE IsActive = true order by username";
@@ -186,7 +290,10 @@ export default class ProfilesExtract extends SfCommand<void> {
       Nouveau_Personna: '',
       Nouveau_Role: '',
     })));
+    // Build set of active profile names (filter out empty/null)
+    this.activeProfileNames = new Set(userResult.records.map((user) => user['Profile.Name']).filter((n) => !!n));
     uxLog('log', this, c.green(`Fetched ${userResult.records.length} active users.`));
+    uxLog('log', this, c.cyan(`Active profiles: ${Array.from(this.activeProfileNames).join(', ')}`));
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Users.csv');
     await generateCsvFile(usersRecords, this.outputFile, { fileTitle: 'Users extract', noExcel: true });
@@ -194,6 +301,11 @@ export default class ProfilesExtract extends SfCommand<void> {
     return;
   }
 
+  /**
+   * Prompts the user for the number of personas to create.
+   * Generates a CSV report listing the personas.
+   * @returns The number of personas
+   */
   private async generatePersonaExtract() {
     let numberOfPersonas = 1;
     const statusRes = await prompts({
@@ -207,9 +319,9 @@ export default class ProfilesExtract extends SfCommand<void> {
       uxLog('log', this, `Creation of ${numberOfPersonas} personas.`);
     }
 
-    const persona: { Persona: string }[] = [];
+    const persona: { 'Nom des personas': string }[] = [];
     for (let i = 1; i <= numberOfPersonas; i++) {
-      persona.push({ Persona: `Persona${i}` });
+      persona.push({ 'Nom des personas': `Persona${i}` });
     }
 
     const reportDir = await getReportDirectory();
@@ -219,19 +331,27 @@ export default class ProfilesExtract extends SfCommand<void> {
     return numberOfPersonas;
   }
 
+  /**
+   * Generates a CSV mapping each selected object to persona permissions (Read, Create, Edit, Delete).
+   * @param selectedObjects Array of object API names
+   * @param numberOfPersonas Number of personas
+   */
   async generateRelationExtract(selectedObjects: string[], numberOfPersonas: number) {
     const relationRecords: any[] = [];
+    // Restore static persona columns (Persona1_Read, Persona1_Create, etc.)
     selectedObjects.forEach((objName) => {
+      const personaCols = {};
+      for (let i = 1; i <= numberOfPersonas; i++) {
+        personaCols[`Persona${i}_Read`] = '';
+        personaCols[`Persona${i}_Create`] = '';
+        personaCols[`Persona${i}_Edit`] = '';
+        personaCols[`Persona${i}_Delete`] = '';
+        personaCols[`Persona${i}_ViewAll`] = '';
+        personaCols[`Persona${i}_ModifyAll`] = '';
+      }
       relationRecords.push({
         Object: objName,
-        // Dynamically add persona fields based on numberOfPersonas
-        ...Array.from({ length: numberOfPersonas }, (_, i) => i + 1).reduce((acc, personaIndex) => {
-          acc[`Persona${personaIndex}_Read`] = '';
-          acc[`Persona${personaIndex}_Create`] = '';
-          acc[`Persona${personaIndex}_Edit`] = '';
-          acc[`Persona${personaIndex}_Delete`] = '';
-          return acc;
-        }, {} as Record<string, string>),
+        ...personaCols,
       });
     });
     const reportDir = await getReportDirectory();
@@ -241,6 +361,13 @@ export default class ProfilesExtract extends SfCommand<void> {
     return;
   }
 
+  /**
+   * Extracts record types for each selected object and maps persona access (Active, Default).
+   * Generates a CSV report of record types per object.
+   * @param conn Salesforce connection
+   * @param selectedObjects Array of object API names
+   * @param numberOfPersonas Number of personas
+   */
   async generateRTExtract(conn: any, selectedObjects: string[], numberOfPersonas: number) {
     const recordTypesRecords: any[] = [];
     for (const objName of selectedObjects) {
@@ -269,6 +396,12 @@ export default class ProfilesExtract extends SfCommand<void> {
     return;
   }
 
+  /**
+   * Extracts custom applications (AppDefinition) and maps persona access (Active, Default).
+   * Generates a CSV report of applications.
+   * @param conn Salesforce connection
+   * @param numberOfPersonas Number of personas
+   */
   async generateAppsExtract(conn: any, numberOfPersonas: number) {
     const appsRecords: any[] = [];
     try {
@@ -295,6 +428,12 @@ export default class ProfilesExtract extends SfCommand<void> {
     return;
   }
 
+  /**
+   * Extracts all boolean permission fields from PermissionSet object.
+   * Generates a CSV report mapping each permission to personas.
+   * @param conn Salesforce connection
+   * @param numberOfPersonas Number of personas
+   */
   async generatePermissionsExtract(conn: any, numberOfPersonas: number) {
     const permissionsRecords: any[] = [];
 
@@ -323,6 +462,12 @@ export default class ProfilesExtract extends SfCommand<void> {
     return;
   }
 
+  /**
+   * Extracts custom tabs and maps persona access.
+   * Generates a CSV report of tabs.
+   * @param conn Salesforce connection
+   * @param numberOfPersonas Number of personas
+   */
   async generateTabsExtract(conn: any, numberOfPersonas: number) {
     const tabsRecords: any[] = [];
     try {
@@ -348,7 +493,15 @@ export default class ProfilesExtract extends SfCommand<void> {
     return;
   }
 
-  async generateObjectFieldsExtract(conn: any, selectedObjects: string[], numberOfPersonas: number) {
+  /**
+   * For each selected object, extracts all fields and their metadata (label, type, picklist values, etc.).
+   * Maps persona visibility and read-only status for each field.
+   * Generates a CSV report per object.
+   * @param conn Salesforce connection
+   * @param selectedObjects Array of object API names
+   * @param numberOfPersonas Number of personas
+   */
+  async generateObjectFieldsExtract(conn: any, selectedObjects: string[], numberOfPersonas: number, profileNames: string[] = [], profileFieldAccess: any[] = []) {
     const fieldsRecords: any[] = [];
     for (const objName of selectedObjects) {
       try {
@@ -359,6 +512,37 @@ export default class ProfilesExtract extends SfCommand<void> {
           if (field.picklistValues && field.picklistValues.length > 0) {
             picklistValues = field.picklistValues.map(pv => pv.value).join('; ');
           }
+          // Add persona columns
+          const personaCols = Array.from({ length: numberOfPersonas }, (_, i) => i + 1).reduce((acc, personaIndex) => {
+            acc[`Persona${personaIndex}_View`] = '';
+            acc[`Persona${personaIndex}_Edit`] = '';
+            return acc;
+          }, {} as Record<string, string>);
+          // Add one column per profile, fill with 'none', 'edit', or 'read'
+          const profileCols = (profileNames || []).reduce((acc, profile) => {
+            // Find access for this field/profile/object (case-insensitive, and check both SObjectType and API_Name)
+            const access = profileFieldAccess.find((rec) => {
+              const profileMatch = rec.Profile === profile;
+              const objectMatch = (rec.SObjectType === objName || rec.SObjectType?.toLowerCase() === objName.toLowerCase());
+              // rec.Field can be 'ObjectName.FieldName' or just 'FieldName'
+              let recFieldName = rec.Field;
+              if (recFieldName && recFieldName.includes('.')) {
+                recFieldName = recFieldName.split('.').pop();
+              }
+              const fieldMatch = (recFieldName === field.name || recFieldName?.toLowerCase() === field.name.toLowerCase());
+              return profileMatch && objectMatch && fieldMatch;
+            });
+            let value = 'none';
+            if (access) {
+              if (access.PermissionsEdit === 'Yes') {
+                value = 'edit';
+              } else if (access.PermissionsRead === 'Yes') {
+                value = 'read';
+              }
+            }
+            acc[`Profile_${profile}`] = value;
+            return acc;
+          }, {} as Record<string, string>);
           fieldsRecords.push({
             Field_Label: field.label,
             API_Name: field.name,
@@ -372,12 +556,8 @@ export default class ProfilesExtract extends SfCommand<void> {
             TrackHistory: field.trackHistory ? 'Yes' : 'No',
             Description: field.description ? field.description : '',
             HelpText: field.inlineHelpText ? field.inlineHelpText : '',
-            // Dynamically add persona fields based on numberOfPersonas
-            ...Array.from({ length: numberOfPersonas }, (_, i) => i + 1).reduce((acc, personaIndex) => {
-              acc[`Persona${personaIndex}_Visible`] = '';
-              acc[`Persona${personaIndex}_ReadOnly`] = '';
-              return acc;
-            }, {} as Record<string, string>),
+            ...personaCols,
+            ...profileCols,
           });
         });
       } catch (error) {

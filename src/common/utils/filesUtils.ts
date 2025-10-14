@@ -1591,13 +1591,25 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string) {
   const workbook = new ExcelJS.Workbook();
   let worksheet: ExcelJS.Worksheet;
   for (const csvFile of csvFiles) {
+    if (!csvFile) {
+      console.warn(`[csvFilesToXls] Skipping null/undefined csvFile:`, csvFile);
+      continue;
+    }
     worksheet = await workbook.csv.readFile(csvFile);
     worksheet.name = path.basename(csvFile).replace('.csv', '').substring(0, 25);
     // Set filters
     worksheet.autoFilter = 'A1:Z1';
     // Adjust column size (only if the file is not too big, to avoid performances issues)
     if (worksheet.rowCount < 5000) {
-      worksheet.columns.forEach((column) => {
+      if (!worksheet.columns) {
+        console.error(`[csvFilesToXls] worksheet.columns is null for file: ${csvFile}`);
+        continue;
+      }
+      worksheet.columns.forEach((column, idx) => {
+        if (!column) {
+          console.error(`[csvFilesToXls] Null column at index ${idx} in file: ${csvFile}`);
+          return;
+        }
         const lengths = (column.values || []).map((v) => (v || '').toString().length);
         const maxLength = Math.max(...lengths.filter((v) => typeof v === 'number'));
         column.width = maxLength;
