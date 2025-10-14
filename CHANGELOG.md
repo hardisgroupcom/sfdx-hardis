@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.7.4] 2025-10-14
+
 - Enhances git commit logging with file status
+- Fix some grammar issues
 
 ## [6.7.3] 2025-10-13
 
