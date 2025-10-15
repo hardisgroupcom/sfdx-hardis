@@ -52,7 +52,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
-
+          SPELL_CSPELL_WORDS: "vfpages"
+          SPELL_CSPELL_FILTER_REGEX_EXCLUDE: ".mega-linter.yml"
 
       # Upload Mega-Linter artifacts
       - name: Archive production artifacts
