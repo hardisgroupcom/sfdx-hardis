@@ -260,6 +260,22 @@ Example:
         continue;
       }
       uxLog("success", this, `ServiceNow API call succeeded: ${serviceNowRecords.length} records found`);
+      if (table.subRecordFields) {
+        for (const subRecordField of table.subRecordFields) {
+          for (const record of serviceNowRecords) {
+            if (record[subRecordField] && record[subRecordField]?.url) {
+              try {
+                const serviceNowSubRecordQuery = await axios.get(record[subRecordField].url, serviceNowApiOptions);
+                record[subRecordField] = Object.assign(record[subRecordField], serviceNowSubRecordQuery?.data?.result || {});
+              }
+              catch (error: any) {
+                uxLog("error", this, c.red(`ServiceNow sub-record API call failed: ${error.message}\n${JSON.stringify(error?.response?.data || {})}`));
+              }
+            }
+          }
+        }
+      }
+      uxLog("action", this, c.cyan(`Matching ServiceNow records with user stories...`));
       for (const userStory of this.userStories) {
         const ticketNumber = userStory?.[this.userStoriesConfig.ticketField];
         const serviceNowRecord = serviceNowRecords.find((record: any) => record.number === ticketNumber);
