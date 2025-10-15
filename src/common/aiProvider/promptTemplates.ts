@@ -22,8 +22,10 @@ export type PromptTemplate =
   "PROMPT_DESCRIBE_ASSIGNMENT_RULES" |
   "PROMPT_DESCRIBE_APPROVAL_PROCESS" |
   "PROMPT_DESCRIBE_LWC" |
+  "PROMPT_DESCRIBE_VISUALFORCE_PAGE" |
   "PROMPT_DESCRIBE_AUTORESPONSE_RULES" |
-  "PROMPT_DESCRIBE_ESCALATION_RULES";
+  "PROMPT_DESCRIBE_ESCALATION_RULES" |
+  "PROMPT_DESCRIBE_VISUALFORCE_PAGE";
 
 // Loads a template, allowing override from local file, with caching
 const promptTemplateCache: Record<string, PromptTemplateDefinition> = {};
