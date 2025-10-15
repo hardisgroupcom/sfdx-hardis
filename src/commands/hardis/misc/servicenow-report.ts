@@ -241,7 +241,9 @@ Example:
     uxLog("action", this, c.cyan(`Fetching matching tickets from ServiceNow...`));
     for (const table of this.serviceNowConfig.tables) {
       const serviceNowApiResource = `/api/now/table/${table.tableName}`;
-      const serviceNowApiQuery = `?sysparm_query=numberIN${ticketNumbers.join(',')}&sysparm_display_value=true`;
+      const serviceNowApiQuery =
+        `?sysparm_query=numberIN${ticketNumbers.join(',')}&sysparm_display_value=true` +
+        (table.urlSuffix ? table.urlSuffix : '');
       const serviceNowApiUrlWithQuery = `${serviceNowUrl}${serviceNowApiResource}${serviceNowApiQuery}`;
       // Make API call to ServiceNow
       uxLog("log", this, `Fetching Service now using query: ${serviceNowApiUrlWithQuery}`);
@@ -260,12 +262,13 @@ Example:
         continue;
       }
       uxLog("success", this, `ServiceNow API call succeeded: ${serviceNowRecords.length} records found`);
+      // If subRecordFields is defined in config, fetch each sub-record using its URL
       if (table.subRecordFields) {
         for (const subRecordField of table.subRecordFields) {
           for (const record of serviceNowRecords) {
-            if (record[subRecordField] && record[subRecordField]?.url) {
+            if (record?.[subRecordField]?.link) {
               try {
-                const serviceNowSubRecordQuery = await axios.get(record[subRecordField].url, serviceNowApiOptions);
+                const serviceNowSubRecordQuery = await axios.get(record[subRecordField].link, serviceNowApiOptions);
                 record[subRecordField] = Object.assign(record[subRecordField], serviceNowSubRecordQuery?.data?.result || {});
               }
               catch (error: any) {
@@ -275,6 +278,7 @@ Example:
           }
         }
       }
+      // Match ServiceNow records to user stories based on ticket number
       uxLog("action", this, c.cyan(`Matching ServiceNow records with user stories...`));
       for (const userStory of this.userStories) {
         const ticketNumber = userStory?.[this.userStoriesConfig.ticketField];
