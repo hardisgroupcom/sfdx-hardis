@@ -1615,6 +1615,13 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string) {
         column.width = maxLength;
       });
     }
+    // Scan only the first row and convert string formulas
+    const firstRow = worksheet.getRow(1);
+    firstRow.eachCell((cell) => {
+      if (typeof cell.value === 'string' && cell.value.startsWith('=')) {
+        cell.value = { formula: cell.value.substring(1) };
+      }
+    });
   }
   await workbook.xlsx.writeFile(xslxFile);
 }

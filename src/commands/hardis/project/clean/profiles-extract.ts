@@ -338,16 +338,18 @@ export default class ProfilesExtract extends SfCommand<void> {
    */
   async generateRelationExtract(selectedObjects: string[], numberOfPersonas: number) {
     const relationRecords: any[] = [];
-    // Restore static persona columns (Persona1_Read, Persona1_Create, etc.)
+    // Generate dynamic persona columns using Excel formulas
     selectedObjects.forEach((objName) => {
-      const personaCols = {};
+      const personaCols: Record<string, string> = {};
       for (let i = 1; i <= numberOfPersonas; i++) {
-        personaCols[`Persona${i}_Read`] = '';
-        personaCols[`Persona${i}_Create`] = '';
-        personaCols[`Persona${i}_Edit`] = '';
-        personaCols[`Persona${i}_Delete`] = '';
-        personaCols[`Persona${i}_ViewAll`] = '';
-        personaCols[`Persona${i}_ModifyAll`] = '';
+        // Persona row in persona sheet is i+1 (header is row 1)
+        const personaRow = i + 1;
+        personaCols[`=persona!A${personaRow}&"_Read"`] = '';
+        personaCols[`=persona!A${personaRow}&"_Create"`] = '';
+        personaCols[`=persona!A${personaRow}&"_Edit"`] = '';
+        personaCols[`=persona!A${personaRow}&"_Delete"`] = '';
+        personaCols[`=persona!A${personaRow}&"_ViewAll"`] = '';
+        personaCols[`=persona!A${personaRow}&"_ModifyAll"`] = '';
       }
       relationRecords.push({
         Object: objName,
@@ -374,15 +376,16 @@ export default class ProfilesExtract extends SfCommand<void> {
       try {
         const rtResult = await conn.query(`SELECT Id, Name, DeveloperName FROM RecordType WHERE SobjectType='${objName}' ORDER BY Name`);
         rtResult.records.forEach((rt) => {
+          const personaCols: Record<string, string> = {};
+          for (let i = 1; i <= numberOfPersonas; i++) {
+            const personaRow = i + 1;
+            personaCols[`=persona!A${personaRow}&"_Actif"`] = '';
+            personaCols[`=persona!A${personaRow}&"_Default"`] = '';
+          }
           recordTypesRecords.push({
             Object: objName,
             Record_Type: rt.Name,
-            // Dynamically add persona fields based on numberOfPersonas
-            ...Array.from({ length: numberOfPersonas }, (_, i) => i + 1).reduce((acc, personaIndex) => {
-              acc[`Persona${personaIndex}_Actif`] = '';
-              acc[`Persona${personaIndex}_Default`] = '';
-              return acc;
-            }, {} as Record<string, string>),
+            ...personaCols,
           });
         });
       } catch (error) {
@@ -407,15 +410,16 @@ export default class ProfilesExtract extends SfCommand<void> {
     try {
       const rtResult = await conn.query(`SELECT Id, DurableId, DeveloperName, MasterLabel FROM AppDefinition WHERE NamespacePrefix != 'standard'`);
       rtResult.records.forEach((rt) => {
+        const personaCols: Record<string, string> = {};
+        for (let i = 1; i <= numberOfPersonas; i++) {
+          const personaRow = i + 1;
+          personaCols[`=persona!A${personaRow}&"_Actif"`] = '';
+          personaCols[`=persona!A${personaRow}&"_Default"`] = '';
+        }
         appsRecords.push({
           Application: rt.MasterLabel,
           DeveloperName: rt.DeveloperName,
-          // Dynamically add persona fields based on numberOfPersonas
-          ...Array.from({ length: numberOfPersonas }, (_, i) => i + 1).reduce((acc, personaIndex) => {
-            acc[`Persona${personaIndex}_Actif`] = '';
-            acc[`Persona${personaIndex}_Default`] = '';
-            return acc;
-          }, {} as Record<string, string>),
+          ...personaCols,
         });
       });
     } catch (error) {
@@ -445,14 +449,15 @@ export default class ProfilesExtract extends SfCommand<void> {
 
     // Print API name + Label
     permissionFields.forEach(field => {
+      const personaCols: Record<string, string> = {};
+      for (let i = 1; i <= numberOfPersonas; i++) {
+        const personaRow = i + 1;
+        personaCols[`=persona!A${personaRow}`] = '';
+      }
       permissionsRecords.push({
         Permission_Label: field.label,
         Permission_API_Name: field.name,
-        // Dynamically add persona fields based on numberOfPersonas
-        ...Array.from({ length: numberOfPersonas }, (_, i) => i + 1).reduce((acc, personaIndex) => {
-          acc[`Persona${personaIndex}`] = '';
-          return acc;
-        }, {} as Record<string, string>),
+        ...personaCols,
       });
     });
     const reportDir = await getReportDirectory();
@@ -473,14 +478,15 @@ export default class ProfilesExtract extends SfCommand<void> {
     try {
       const tabsResult = await conn.query(`SELECT Name, Label FROM TabDefinition WHERE IsCustom = true`);
       tabsResult.records.forEach((tab) => {
+        const personaCols: Record<string, string> = {};
+        for (let i = 1; i <= numberOfPersonas; i++) {
+          const personaRow = i + 1;
+          personaCols[`=persona!A${personaRow}`] = '';
+        }
         tabsRecords.push({
           Tab_Label: tab.Label,
           Tab_API_Name: tab.Name,
-          // Dynamically add persona fields based on numberOfPersonas
-          ...Array.from({ length: numberOfPersonas }, (_, i) => i + 1).reduce((acc, personaIndex) => {
-            acc[`Persona${personaIndex}`] = '';
-            return acc;
-          }, {} as Record<string, string>),
+          ...personaCols,
         });
       });
       const reportDir = await getReportDirectory();
@@ -512,12 +518,13 @@ export default class ProfilesExtract extends SfCommand<void> {
           if (field.picklistValues && field.picklistValues.length > 0) {
             picklistValues = field.picklistValues.map(pv => pv.value).join('; ');
           }
-          // Add persona columns
-          const personaCols = Array.from({ length: numberOfPersonas }, (_, i) => i + 1).reduce((acc, personaIndex) => {
-            acc[`Persona${personaIndex}_View`] = '';
-            acc[`Persona${personaIndex}_Edit`] = '';
-            return acc;
-          }, {} as Record<string, string>);
+          // Add persona columns using formula logic
+          const personaCols: Record<string, string> = {};
+          for (let i = 1; i <= numberOfPersonas; i++) {
+            const personaRow = i + 1;
+            personaCols[`=persona!A${personaRow}&"_View"`] = '';
+            personaCols[`=persona!A${personaRow}&"_Edit"`] = '';
+          }
           // Add one column per profile, fill with 'none', 'edit', or 'read'
           const profileCols = (profileNames || []).reduce((acc, profile) => {
             // Find access for this field/profile/object (case-insensitive, and check both SObjectType and API_Name)
