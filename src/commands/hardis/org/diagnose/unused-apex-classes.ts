@@ -22,7 +22,7 @@ export default class DiagnoseUnusedApexClasses extends SfCommand<any> {
 
   public static description = `List all async Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days.
   
-The result class list probably can be removed from the project, and that will improve your test classes performances :)
+The result class list probably can be removed from the project, and that will improve your test classes performances 😊
 
 The number of unused day is overridable using --days option. 
 
@@ -135,7 +135,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     let summary = `All async apex classes have been called during the latest ${this.lastNdays} days.`;
     if (this.unusedNumber > 0) {
       summary = `${this.unusedNumber} apex classes might not be used anymore.
-Note: Salesforce does not provide all info to be 100% sure that a class is not used, so double-check before deleting them :)`
+Note: Salesforce does not provide all info to be 100% sure that a class is not used, so double-check before deleting them 😊`
         ;
       const summaryClasses = this.asyncClassList.map(apexClass => {
         return {

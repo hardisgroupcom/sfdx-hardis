@@ -92,11 +92,11 @@ The command's technical implementation involves:
     const branchMd = await getBranchMarkdown();
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = 'log';
-    let notifText = `No missing descriptions on fields has been found in ${branchMd}`;
+    let notifText = `No missing descriptions on fields were found in ${branchMd}.`;
     let attachments: MessageAttachment[] = [];
     if (this.fieldsWithoutDescription.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.fieldsWithoutDescription.length} missing descriptions on fields have been found in ${branchMd}`;
+      notifText = `${this.fieldsWithoutDescription.length} fields with missing descriptions were found in ${branchMd}`;
       await this.buildCsvFile(this.fieldsWithoutDescription);
       attachments = [
         {
@@ -104,7 +104,7 @@ The command's technical implementation involves:
         },
       ];
     } else {
-      uxLog("other", this, 'No missing descriptions on fields have been found');
+      uxLog("other", this, 'No missing descriptions on fields were found.');
     }
     // Post notifications
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email

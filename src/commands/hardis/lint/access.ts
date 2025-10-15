@@ -156,9 +156,9 @@ The command's technical implementation involves:
   };
 
   private static messages = {
-    header: 'Check if elements(apex class and field) are at least in one permission set',
-    allElementsHaveRights: 'All elements are included in at least one Permission set or Profile',
-    someElementsDontHaveRights: 'Some elements are not included in at least one Permission set or Profile',
+    header: 'Check if elements (Apex classes and custom fields) are included in at least one Permission Set or Profile.',
+    allElementsHaveRights: 'All elements are included in at least one Permission Set or Profile.',
+    someElementsDontHaveRights: 'Some elements are not included in any Permission Set or Profile.',
   };
 
   private hasElementsWithNoRights = false;
@@ -582,7 +582,7 @@ The command's technical implementation involves:
       }
     } else if (this.missingElements.length > 0) {
       uxLog("warning", this, c.yellow('Please add missing access on permission set(s)'));
-      uxLog("warning", this, c.yellow('You can do it by running VsCode SFDX Hardis command Audit -> Detect missing permissions'));
+      uxLog("warning", this, c.yellow('You can do it by running VS Code SFDX Hardis command Audit -> Detect missing permissions.'));
     }
   }
 

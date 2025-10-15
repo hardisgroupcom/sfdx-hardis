@@ -497,14 +497,26 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     let teamProject: string;
 
     if (remoteUrl.startsWith("https://")) {
-      // Handle HTTPS URLs with or without username
-      const httpsRegex = /https:\/\/(?:[^@]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)/;
-      const match = remoteUrl.match(httpsRegex);
-      if (match) {
-        const organization = match[1];
-        teamProject = decodeURIComponent(match[2]); // Decode URL-encoded project name
-        repositoryId = decodeURIComponent(match[3]); // Decode URL-encoded repository name
+      // Handle modern dev.azure.com URLs with or without username
+      const devAzureRegex = /https:\/\/(?:[^@]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)/;
+      const devAzureMatch = remoteUrl.match(devAzureRegex);
+      if (devAzureMatch) {
+        const organization = devAzureMatch[1];
+        teamProject = decodeURIComponent(devAzureMatch[2]); // Decode URL-encoded project name
+        repositoryId = decodeURIComponent(devAzureMatch[3]); // Decode URL-encoded repository name
         collectionUri = `https://dev.azure.com/${organization}/`;
+        return { collectionUri, teamProject, repositoryId };
+      }
+
+      // Handle legacy visualstudio.com URLs
+      // Format: https://organization.visualstudio.com/ProjectName/_git/RepoName
+      const vsRegex = /https:\/\/(?:[^@]+@)?([^.]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/?]+)/;
+      const vsMatch = remoteUrl.match(vsRegex);
+      if (vsMatch) {
+        const organization = vsMatch[1];
+        teamProject = decodeURIComponent(vsMatch[2]); // Decode URL-encoded project name
+        repositoryId = decodeURIComponent(vsMatch[3]); // Decode URL-encoded repository name
+        collectionUri = `https://${organization}.visualstudio.com/`;
         return { collectionUri, teamProject, repositoryId };
       }
     } else if (remoteUrl.startsWith("git@")) {
@@ -598,9 +610,98 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     const workItemIds = (queryResult.workItems || []).map(item => item.id);
     if (workItemIds.length > 0) {
       this.attachmentsWorkItemId = Number(workItemIds[0]);
+      // Check the number of attached images: if too many, rename the work item with (full) then create a new one by cloning its parameters
+      const workItem = await witApi.getWorkItem(this.attachmentsWorkItemId, undefined, undefined, 1); // WorkItemExpand.Relations = 1
+      const attachedImages = (workItem.relations || []).filter(rel => rel.rel === "AttachedFile");
+      if (attachedImages.length >= 90) {
+        // Rename the work item
+        const newTitle = this.attachmentsWorkItemTitle + " (full)";
+        await witApi.updateWorkItem(
+          [],
+          [
+            {
+              op: "replace",
+              path: "/fields/System.Title",
+              value: newTitle
+            }
+          ],
+          this.attachmentsWorkItemId,
+          process.env.SYSTEM_TEAMPROJECT
+        );
+        uxLog("log", this, c.grey(`[Azure Integration] Renamed work item ${this.attachmentsWorkItemId} to '${newTitle}'`));
+
+        // Create a new work item by cloning the old one's parameters
+        const newWorkItem = await witApi.createWorkItem(
+          [],
+          [
+            {
+              op: "add",
+              path: "/fields/System.Title",
+              value: this.attachmentsWorkItemTitle
+            },
+            {
+              op: "add",
+              path: "/fields/System.WorkItemType",
+              value: workItem.fields?.["System.WorkItemType"] || "Task"
+            },
+            {
+              op: "add",
+              path: "/fields/System.Description",
+              value: "Technical work item used by sfdx-hardis to attach images for PR comments"
+            }
+          ],
+          process.env.SYSTEM_TEAMPROJECT!,
+          workItem.fields?.["System.WorkItemType"] || "Task"
+        );
+
+        if (newWorkItem && newWorkItem.id) {
+          this.attachmentsWorkItemId = newWorkItem.id;
+          uxLog("log", this, c.grey(`[Azure Integration] Created new technical work item ${this.attachmentsWorkItemId} (${this.attachmentsWorkItemTitle}) to store image attachments, previous one was full`));
+        }
+      } else {
+        uxLog("log", this, c.grey(`[Azure Integration] Found existing technical work item ${this.attachmentsWorkItemId} (${this.attachmentsWorkItemTitle}) for storing image attachments`));
+      }
       return this.attachmentsWorkItemId;
     }
-    uxLog("error", this, c.red(`[Azure Integration] You need to create a technical work item exactly named '${this.attachmentsWorkItemTitle}', then set its identifier in variable AZURE_ATTACHMENTS_WORK_ITEM_ID`));
+
+    // No work item found, create a new one
+    uxLog("log", this, c.grey(`[Azure Integration] No technical work item found with title '${this.attachmentsWorkItemTitle}' to store image attachments, attempting to create one automatically...`));
+    try {
+      const newWorkItem = await witApi.createWorkItem(
+        [],
+        [
+          {
+            op: "add",
+            path: "/fields/System.Title",
+            value: this.attachmentsWorkItemTitle
+          },
+          {
+            op: "add",
+            path: "/fields/System.WorkItemType",
+            value: "Task"
+          },
+          {
+            op: "add",
+            path: "/fields/System.Description",
+            value: "Technical work item used by sfdx-hardis to store image attachments for PR comments. This work item serves as a container for uploaded images and should not be deleted."
+          }
+        ],
+        process.env.SYSTEM_TEAMPROJECT!,
+        "Task"
+      );
+
+      if (newWorkItem && newWorkItem.id) {
+        this.attachmentsWorkItemId = newWorkItem.id;
+        uxLog("log", this, c.grey(`[Azure Integration] Successfully created technical work item ${this.attachmentsWorkItemId} (${this.attachmentsWorkItemTitle}) to store image attachments for PR comments`));
+        return this.attachmentsWorkItemId;
+      }
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[Azure Integration] Failed to automatically create technical work item for storing image attachments: ${(e as Error).message}`));
+      uxLog("warning", this, c.yellow(`[Azure Integration] Please manually create a work item (type: Task) with the exact title '${this.attachmentsWorkItemTitle}' in project '${process.env.SYSTEM_TEAMPROJECT}', or set the AZURE_ATTACHMENTS_WORK_ITEM_ID environment variable with an existing work item ID.`));
+      uxLog("warning", this, c.yellow(`[Azure Integration] This work item is required as a container to store image attachments for Pull Request comments.`));
+    }
+
+    uxLog("error", this, c.yellow(`[Azure Integration] Unable to find or create technical work item for image attachments. Image uploads to PR comments will not work until this is resolved.`));
     return null;
   }
 }

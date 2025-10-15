@@ -10,6 +10,7 @@ import {
   gitHasLocalUpdates,
   execCommand,
   git,
+  gitFetch,
   uxLog,
   isCI,
 } from '../../../../../common/utils/index.js';
@@ -165,7 +166,7 @@ export default class Retrofit extends SfCommand<any> {
     this.retrofitTargetBranch =
       this.retrofitTargetBranch || config.retrofitBranch || 'retrofitTargetBranch MUST BE SET';
 
-    await git().fetch(['--prune']);
+    await gitFetch(['--prune']);
     const branches = await git().branch();
     if (branches.all.find((branch) => branch.includes(retrofitWorkBranch))) {
       // If manual command (not CI), force user to remove previous retrofit branches

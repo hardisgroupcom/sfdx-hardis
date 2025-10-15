@@ -74,8 +74,8 @@ The command's technical implementation involves:
       const openRes = await prompts({
         type: 'confirm',
         name: 'value',
-        message: 'Do you want to open this org in Web Browser ?',
-        description: 'Launch the Salesforce org in your default web browser for immediate access',
+        message: 'Do you want to open this org in your web browser?',
+        description: 'Launch the Salesforce org in your default web browser for immediate access.',
       });
       if (openRes.value === true) {
         const openCommand = `sf org open --target-org ${org.username}`;

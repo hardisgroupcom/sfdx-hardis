@@ -98,7 +98,7 @@ The command's technical implementation involves:
       throw new Error(`No JS files found for LWC '${lwcName}'`);
     }
 
-    uxLog("log", this, c.grey(`Found ${lwcFiles.length} JS files for component '${lwcName}'`));
+    uxLog("log", this, c.grey(`Found ${lwcFiles.length} JS files for component '${lwcName}'.`));
 
     const labelNames = new Set<string>();
     const labelImportRegex = /@salesforce\/label\/c\.([a-zA-Z0-9_]+)/g;
@@ -168,7 +168,7 @@ The command's technical implementation involves:
       const translationFiles = await glob('**/translations/*.translation-meta.xml');
 
       if (translationFiles.length === 0) {
-        uxLog("warning", this, c.yellow(`No translation files found in **/translations/`));
+        uxLog("warning", this, c.yellow(`No translation files found in **/translations/.`));
         return { success: false, message: 'No translation files found' };
       }
 
@@ -183,12 +183,12 @@ The command's technical implementation involves:
         const parsedXml = await parseStringPromise(xmlContent, { explicitArray: false });
 
         if (!parsedXml.Translations) {
-          uxLog("warning", this, c.yellow(`Invalid translation file format: ${translationFile}`));
+          uxLog("warning", this, c.yellow(`Invalid translation file format: ${translationFile}.`));
           continue;
         }
 
         if (!parsedXml.Translations.customLabels) {
-          uxLog("warning", this, c.yellow(`No custom labels found in ${translationFile}`));
+          uxLog("warning", this, c.yellow(`No custom labels found in ${translationFile}.`));
           continue;
         }
 
@@ -201,7 +201,7 @@ The command's technical implementation involves:
         );
 
         if (matchedLabels.length === 0) {
-          uxLog("warning", this, c.yellow(`No matching custom labels found in ${languageCode}`));
+          uxLog("warning", this, c.yellow(`No matching custom labels found in ${languageCode}.`));
           continue;
         }
 
@@ -242,8 +242,8 @@ The command's technical implementation involves:
         return { success: false, message: 'No matching labels found' };
       }
 
-      uxLog("success", this, c.green(`Successfully extracted custom labels to ${outputDir}`));
-      uxLog("log", this, c.grey(`Processed ${totalFiles} translation files`));
+      uxLog("success", this, c.green(`Successfully extracted custom labels to ${outputDir}.`));
+      uxLog("log", this, c.grey(`Processed ${totalFiles} translation files.`));
 
       WebSocketClient.requestOpenFile(outputDir);
 

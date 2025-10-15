@@ -4,7 +4,47 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
- - Update CI/CD documentation
+## [6.7.4] 2025-10-14
+
+- Enhances git commit logging with file status
+- Fix some grammar issues
+
+## [6.7.3] 2025-10-13
+
+- Handle cases where Azure DevOps is hosted on visualstudio.com
+- Hide credentials from user logs when they are in remote.origin.url
+
+## [6.7.2] 2025-10-13
+
+- Add 2 events to come where sfdx-hardis will be demonstrated
+  - DevOps Dreamin: Why you don't need Salesforce DevOps vendors
+  - French Touch Dreamin: Refresh your full sandboxes without needing to reconfigure everything
+- CodeBuilder: Prompt user when Git remote is not authenticated, then update Git remote URL to use token authentication
+
+## [6.7.1] 2025-10-12
+
+- [hardis:org:diagnose:releaseupdates](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/releaseupdates/): Add Pending in list of statuses checked by the command
+- Update JSON schema to indicate useDeltaDeploymentWithDependencies is in beta
+- Fix activate-decomposed documentation formatting
+
+## [6.7.0] 2025-10-12
+
+- New command: [hardis:project:metadata:activate-decomposed](https://sfdx-hardis.cloudity.com/hardis/project/metadata/activate-decomposed/): Activate decomposed metadata types in `sfdx-project.json` and convert existing sources.
+
+- Improvements & Fixes
+  - Cast descriptions to string before formatting to avoid rendering issues.
+  - Avoid unnecessary file writes during builds to improve performance and CI speed.
+  - Update JSON Schema to reflect new features and validation rules.
+  - Add support for **Vector** (vector.dev) to enable ingestion by DataDog and other observability platforms.
+
+- Integrations
+  - BitBucket: show a clear message when the Pull Requests app must be installed.
+  - Azure Comment Reporter: create a Work Item and attach images when an item approaches the attachments limit.
+
+- Documentation
+  - Update CI/CD documentation with the latest integration and workflow changes.
+  - Update contributing documentation to include guidance for the vscode-sfdx-hardis extension.
+  - Ensure docs reference the new JSON Schema and decomposed metadata command where relevant.
 
 ## [6.6.0] 2025-10-05
 

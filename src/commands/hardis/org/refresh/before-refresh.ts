@@ -143,7 +143,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     uxLog("action", this, c.cyan(`This command will save information that must be restored after org refresh, in the following order:
 - Certificates
-- Other Metadatas
+- Other metadata
 - Custom Settings
 - Records (using SFDMU projects)
 - Connected Apps

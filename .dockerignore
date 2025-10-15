@@ -27,9 +27,9 @@ coverage
 # Ignore development configuration
 .vscode
 .idea
-*.swp
-*.swo
-*~
+**/*.swp
+**/*.swo
+**/*~
 
 # Ignore build artifacts
 lib
@@ -48,13 +48,13 @@ logs
 *.log
 
 # Ignore OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+**/.DS_Store
+**/.DS_Store?
+**/._*
+**/.Spotlight-V100
+**/.Trashes
+**/ehthumbs.db
+**/Thumbs.db
 
 # Ignore environment files
 .env

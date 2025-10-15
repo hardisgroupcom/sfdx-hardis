@@ -345,7 +345,7 @@ The command's technical implementation involves:
             output: false,
             debug: this.debugMode,
           });
-          // Trigger a status refresh on VsCode WebSocket Client
+          // Trigger a status refresh on VS Code WebSocket Client
           WebSocketClient.sendRefreshStatusMessage();
         }
         return;
@@ -397,7 +397,7 @@ The command's technical implementation involves:
     await setConfig('user', {
       scratchOrgPassword: this.scratchOrgPassword,
     });
-    // Trigger a status refresh on VsCode WebSocket Client
+    // Trigger a status refresh on VS Code WebSocket Client
     WebSocketClient.sendRefreshStatusMessage();
 
     if (isCI || this.pool === true) {

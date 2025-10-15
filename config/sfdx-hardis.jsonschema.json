@@ -334,6 +334,28 @@
             "description": "Command line to run",
             "title": "Command",
             "type": "string"
+          },
+          "context": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/context",
+            "description": "Context when the command must be run",
+            "title": "Context",
+            "default": "all",
+            "type": "string",
+            "enum": [
+              "all",
+              "check-deployment-only",
+              "process-deployment-only"
+            ],
+            "enumNames": [
+              "All",
+              "Check Deployment Only",
+              "Process Deployment Only"
+            ],
+            "examples": [
+              "all",
+              "check-deployment-only",
+              "process-deployment-only"
+            ]
           }
         },
         "title": "Command"
@@ -412,7 +434,7 @@
           "skipIfError": {
             "$id": "#/properties/commandsPostDeploy/items/properties/skipIfError",
             "description": "Do not run the command if there is a deployment error",
-            "title": "Skip if error",
+            "title": "Skip if deploy error",
             "default": "false",
             "type": "boolean"
           }
@@ -665,11 +687,11 @@
     },
     "developmentBranch": {
       "$id": "#/properties/developmentBranch",
-      "default": "developpement",
+      "default": "integration",
       "description": "When creating a new sfdx-hardis User Story, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
       "docUrl": "https://sfdx-hardis.cloudity.com/hardis/work/new/",
       "examples": [
-        "developpement",
+        "integration",
         "dev_lot2",
         "hotfixes"
       ],
@@ -1558,7 +1580,7 @@
       "default": false,
       "description": "Also deploy dependencies of the metadatas identified by delta deployment, to avoid broken deployments due to missing dependencies.\n Example: removed picklist value in a field, that is still used in a record type.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-with-dependencies-beta",
-      "title": "Use Delta Deployment with dependencies",
+      "title": "Use Delta Deployment with dependencies (beta)",
       "type": "boolean"
     },
     "useSmartDeploymentTests": {
