@@ -6,6 +6,7 @@ description: Easy handling of Salesforce DX to use CI/CD & DevOps principles on 
 
 - [Why choose sfdx-hardis?](#why-choose-sfdx-hardis)
   - [Because it is user-friendly](#because-it-is-user-friendly)
+  - [Because it is compliant with your tools](#because-it-is-compliant-with-your-tools)
   - [Because it is powerful](#because-it-is-powerful)
   - [Because there are no license costs](#because-there-are-no-license-costs)
   - [Because it is widely adopted](#because-it-is-widely-adopted)
@@ -34,6 +35,20 @@ Every persona can be autonomous in their tasks: Admins, Developers, Release Mana
 | **Developers**       | Same as Admins, + understand what's happening under the hood with the **Salesforce CLI**, thanks to the **Advanced mode** in the UI.                                |
 | **Release Managers** | Configure the CI/CD process using the **Visual DevOps Pipeline Builder**<br/>Follow the Pull Requests and Deployments thanks to the **DevOps Pipeline View**        |
 | **Project Managers** | Follow application lifecycle management using sfdx-hardis **native integrations** with ticketing systems like **Jira** and **Azure Boards**.                        |
+
+### Because it is compliant with your tools
+
+![Native Integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
+
+There are no "sfdx-hardis" servers anywhere. Everything runs in your own secured environment: Your Git platform, and your local VS Code or Salesforce Code Builder.
+
+sfdx-hardis has native integrations with your preferred applications: 
+
+- Git & CI/CD: GitHub, GitLab, Bitbucket, Azure DevOps, Gitea, Jenkins
+- Messaging: Slack, Microsoft Teams, Email
+- Ticketing: Jira, Azure Boards, or any other tool via webhooks
+- AI: Agentforce OpenAI, Anthropic, Gemini
+- Observability: Grafana, Vector.dev (DataDog, Splunk, etc...)
 
 ### Because it is powerful
 
