@@ -10,7 +10,7 @@
     "@gitbeaker/node": "^35.8.1",
     "@langchain/anthropic": "^0.3.30",
     "@langchain/community": "^0.3.56",
-    "@langchain/core": "^0.3.77",
+    "@langchain/core": "^0.3.78",
     "@langchain/google-genai": "^0.2.17",
     "@langchain/ollama": "^0.2.4",
     "@oclif/core": "^4.5.4",
