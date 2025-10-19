@@ -869,13 +869,20 @@
     },
     "genericTicketingProviderRegex": {
       "$id": "#/properties/genericTicketingProviderRegex",
-      "description": "Regular expression to identify ticket IDs from your ticketing system.",
+      "description": "Regular expression to identify ticket IDs from your ticketing system. Example: ([R|I][0-9]+-[0-9]+) for EasyVista.",
       "examples": [
-        "^[A-Z]{3}-\\d{4}$",
-        "^[A-Z]{2,5}-\\d{1,6}$"
+        "([R|I][0-9]+-[0-9]+)",
+        "(^[A-Z]{2,5}-\\d{1,6}$)"
       ],
       "title": "Generic Ticketing Provider Regex",
-      "type": "string"
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "GENERIC"
+        }
+      ]
     },
     "genericTicketingProviderUrlBuilder": {
       "$id": "#/properties/genericTicketingProviderUrlBuilder",
@@ -884,7 +891,14 @@
         "https://tickets.mycompany.com/ticket/{ticketId}"
       ],
       "title": "Generic Ticketing Provider URL Builder",
-      "type": "string"
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "GENERIC"
+        }
+      ]
     },
     "initPermissionSets": {
       "$id": "#/properties/initPermissionSets",
@@ -1074,11 +1088,18 @@
       "$id": "#/properties/jiraTicketRegex",
       "description": "Regular expression to identify Jira ticket IDs.",
       "examples": [
-        "(CLOUDITY01-\\d{1,6})",
+        "(CLOUDITY-[0-9]+)",
         "(?<=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\\d{1,6})(?=[^a-zA-Z0-9_-]|$)"
       ],
       "title": "Jira Ticket Regex",
-      "type": "string"
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "JIRA"
+        }
+      ]
     },
     "listViewsToSetToMine": {
       "$id": "#/properties/listViewsToSetToMine",
@@ -1608,7 +1629,6 @@
     },
     "ticketingProvider ": {
       "$id": "#/properties/ticketingProvider",
-      "default": "none",
       "description": "Ticketing provider used on the project",
       "enum": [
         "JIRA",
