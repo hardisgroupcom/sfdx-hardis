@@ -55,7 +55,7 @@ Example: `DEPLOYED_TO_{BRANCH}`
 
 ## Global configuration
 
-> Prioritize definiting these properties in **.sfdx-hardis.yml** file when possible, so VS Code extension can use them for UI features.
+> Prioritize defining these properties in **.sfdx-hardis.yml** file when possible, so VS Code extension can use them for UI features.
 
 ### Identify JIRA Tickets
 
