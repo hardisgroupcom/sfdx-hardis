@@ -2,30 +2,35 @@ import { Ticket } from "./index.js";
 import sortArray from "sort-array";
 import { extractRegexMatches } from "../utils/index.js";
 import { TicketProviderRoot } from "./ticketProviderRoot.js";
-import { getEnvVar } from "../../config/index.js";
+import { getConfig, getEnvVar } from "../../config/index.js";
 import { CommonPullRequestInfo } from "../gitProvider/index.js";
 
 export class GenericTicketingProvider extends TicketProviderRoot {
   private ticketRefRegex: string | null;
   private ticketUrlBuilder: string | null;
 
-  constructor() {
+  constructor(config: any) {
     super();
-    this.ticketRefRegex = getEnvVar("GENERIC_TICKETING_PROVIDER_REGEX"); // Example: ([R|I][0-9]+-[0-9]+)
-    this.ticketUrlBuilder = getEnvVar("GENERIC_TICKETING_PROVIDER_URL_BUILDER"); // Example: https://instance.easyvista.com/index.php?ticket={REF}
+    this.ticketRefRegex = getEnvVar("GENERIC_TICKETING_PROVIDER_REGEX") || config.genericTicketingProviderRegex; // Example: ([R|I][0-9]+-[0-9]+)
+    this.ticketUrlBuilder = getEnvVar("GENERIC_TICKETING_PROVIDER_URL_BUILDER") || config.genericTicketingProviderUrlBuilder; // Example: https://instance.easyvista.com/index.php?ticket={REF}
     if (this.ticketRefRegex && this.ticketUrlBuilder) {
       this.isActive = true;
     }
   }
 
-  public static isAvailable() {
-    return getEnvVar("GENERIC_TICKETING_PROVIDER_REGEX") && getEnvVar("GENERIC_TICKETING_PROVIDER_URL_BUILDER");
+  public static isAvailable(config: any): boolean {
+    return (
+      getEnvVar("GENERIC_TICKETING_PROVIDER_REGEX") || config.genericTicketingProviderRegex
+    ) && (
+        getEnvVar("GENERIC_TICKETING_PROVIDER_URL_BUILDER") || config.genericTicketingProviderUrlBuilder
+      );
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public static async getTicketsFromString(text: string, options = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
-    if (!this.isAvailable()) {
+    const config = await getConfig("project");
+    if (!this.isAvailable(config)) {
       return tickets;
     }
     // Extract tickets using GENERIC_TICKETING_PROVIDER_REGEX regexp

@@ -6,17 +6,17 @@ import { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { extractRegexMatches, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";
-import { getEnvVar } from "../../config/index.js";
+import { getConfig, getEnvVar } from "../../config/index.js";
 import { CommonPullRequestInfo } from "../gitProvider/index.js";
 
 export class JiraProvider extends TicketProviderRoot {
   private jiraClient: InstanceType<typeof JiraApi> | any = null;
 
-  constructor() {
+  constructor(config: any) {
     super();
     const jiraOptions: JiraApi.JiraApiOptions = {
       protocol: "https",
-      host: (getEnvVar("JIRA_HOST") || "").replace("https://", ""),
+      host: (getEnvVar("JIRA_HOST") || config.jiraHost || "").replace("https://", ""),
       apiVersion: "3",
       strictSSL: true,
     };
@@ -36,10 +36,10 @@ export class JiraProvider extends TicketProviderRoot {
     }
   }
 
-  public static isAvailable() {
+  public static isAvailable(config: any): boolean {
     if (
       // Basic auth
-      getEnvVar("JIRA_HOST") &&
+      (getEnvVar("JIRA_HOST") || config.jiraHost) &&
       getEnvVar("JIRA_TOKEN") &&
       getEnvVar("JIRA_EMAIL")
     ) {
@@ -47,7 +47,7 @@ export class JiraProvider extends TicketProviderRoot {
     }
     if (
       // Personal Access Token
-      getEnvVar("JIRA_HOST") &&
+      (getEnvVar("JIRA_HOST") || config.jiraHost) &&
       getEnvVar("JIRA_PAT")
     ) {
       return true;
@@ -80,8 +80,9 @@ export class JiraProvider extends TicketProviderRoot {
       }
     }
     // Extract JIRA tickets using Identifiers
-    const jiraBaseUrl = getEnvVar("JIRA_HOST") || "https://define.JIRA_HOST.in.cicd.variables/";
-    const jiraRegex = getEnvVar("JIRA_TICKET_REGEX") || "(?<=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\\d{1,6})(?=[^a-zA-Z0-9_-]|$)";
+    const config = await getConfig("project");
+    const jiraBaseUrl = getEnvVar("JIRA_HOST") || config.jiraHost || "https://define.JIRA_HOST.in.cicd.variables/";
+    const jiraRegex = getEnvVar("JIRA_TICKET_REGEX") || config.jiraTicketRegex || "(?<=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\\d{1,6})(?=[^a-zA-Z0-9_-]|$)";
     const jiraRefRegex = new RegExp(jiraRegex, "gm");
     const jiraRefs = await extractRegexMatches(jiraRefRegex, text);
     const jiraBaseUrlBrowse = jiraBaseUrl.replace(/\/$/, "") + "/browse/";

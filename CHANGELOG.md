@@ -4,6 +4,15 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.8.0] 2025-10-19
+
+- Ticketing providers: Add more variables that can be defined in .sfdx-hardis.yml
+  - ticketingProvider
+  - genericTicketingProviderRegex
+  - genericTicketingProviderUrlBuilder
+  - jiraHost
+  - jiraTicketRegex
+
 ## [6.7.4] 2025-10-14
 
 - Enhances git commit logging with file status
