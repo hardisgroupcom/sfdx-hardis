@@ -1627,7 +1627,7 @@
       "title": "Test level for deployments",
       "type": "string"
     },
-    "ticketingProvider ": {
+    "ticketingProvider": {
       "$id": "#/properties/ticketingProvider",
       "description": "Ticketing provider used on the project",
       "enum": [
