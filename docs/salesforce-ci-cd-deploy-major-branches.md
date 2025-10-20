@@ -19,11 +19,13 @@ Major branches are git branches that have a CI/CD associated org, and each new c
 
 Examples:
 
-- **Minor to major**: When a merge request from `dev_nico` to `ìntegration` **(1)** is validated and merged, a new state (commit) is detected in branch `integration`, so CI server automatically deploys to `associated Salesforce org Integration` **(2)**
+- **Minor to major**: When a merge request from `dev_nico` to `ìntegration` **(A)** is validated and merged, a new state (commit) is detected in branch `integration`, so CI server automatically deploys to `associated Salesforce org Integration` **(B)**
 
-- **Major to Major**: When a merge request from `integration` to `uat` **(3)** is validated and merged, a new state (commit) is detected in branch `uat`, so CI server automatically deploys to `associated Salesforce org UAT` **(4)**
+- **Major to Major**: When a merge request from `integration` to `uat` **(C)** is validated and merged, a new state (commit) is detected in branch `uat`, so CI server automatically deploys to `associated Salesforce org UAT` **(D)**
 
-- **Major to Major**: When a merge request from `preprod` to `production` **(5)** is validated and merged, a new state (commit) is detected in branch `production`, so CI server automatically deploys to `associated Salesforce org Production` **(6)**
+- **Major to Major**: When a merge request from `uat` to `preprod` **(E)** is validated and merged, a new state (commit) is detected in branch `preprod`, so CI server automatically deploys to `associated Salesforce org Preprod` **(F)**
+
+- **Major to Major**: When a merge request from `preprod` to `main` **(G)** is validated and merged, a new state (commit) is detected in branch `main`, so CI server automatically deploys to `associated Salesforce org Production` **(H)**
 
 ___
 

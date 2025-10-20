@@ -3309,6 +3309,84 @@ If defined, makes obsolete the parameter Default Pull Request target branch.</p>
         </div>
     </div>
 </div>
+<div class="accordion" id="accordiongenericTicketingProviderRegex">
+    <div class="card">
+        <div class="card-header" id="headinggenericTicketingProviderRegex">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#genericTicketingProviderRegex"
+                        aria-expanded="" aria-controls="genericTicketingProviderRegex" onclick="setAnchor('#genericTicketingProviderRegex')"><span class="property-name">genericTicketingProviderRegex</span></button>
+            </h2>
+        </div>
+
+        <div id="genericTicketingProviderRegex"
+             class="collapse property-definition-div" aria-labelledby="headinggenericTicketingProviderRegex"
+             data-parent="#accordiongenericTicketingProviderRegex">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#genericTicketingProviderRegex" onclick="anchorLink('genericTicketingProviderRegex')">genericTicketingProviderRegex</a></div><h4>Generic Ticketing Provider Regex</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Regular expression to identify ticket IDs from your ticketing system. Example: ([R|I][0-9]+-[0-9]+) for EasyVista.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="genericTicketingProviderRegex_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;([R|I][0-9]+-[0-9]+)&quot;</span>
+</pre></div>
+</div><div id="genericTicketingProviderRegex_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;(^[A-Z]{2,5}-\\d{1,6}$)&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordiongenericTicketingProviderUrlBuilder">
+    <div class="card">
+        <div class="card-header" id="headinggenericTicketingProviderUrlBuilder">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#genericTicketingProviderUrlBuilder"
+                        aria-expanded="" aria-controls="genericTicketingProviderUrlBuilder" onclick="setAnchor('#genericTicketingProviderUrlBuilder')"><span class="property-name">genericTicketingProviderUrlBuilder</span></button>
+            </h2>
+        </div>
+
+        <div id="genericTicketingProviderUrlBuilder"
+             class="collapse property-definition-div" aria-labelledby="headinggenericTicketingProviderUrlBuilder"
+             data-parent="#accordiongenericTicketingProviderUrlBuilder">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#genericTicketingProviderUrlBuilder" onclick="anchorLink('genericTicketingProviderUrlBuilder')">genericTicketingProviderUrlBuilder</a></div><h4>Generic Ticketing Provider URL Builder</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>URL pattern to build ticket URLs from ticket IDs. Use {ticketId} as placeholder for the ticket ID. Example: https://tickets.mycompany.com/ticket/{ticketId}</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="genericTicketingProviderUrlBuilder_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://tickets.mycompany.com/ticket/{ticketId}&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordioninitPermissionSets">
     <div class="card">
         <div class="card-header" id="headinginitPermissionSets">
@@ -4062,6 +4140,86 @@ If defined, makes obsolete the parameter Default Pull Request target branch.</p>
 </div><div id="instanceUrl_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://google.force.com&quot;</span>
 </pre></div>
 </div><div id="instanceUrl_ex3" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://apple.force.com&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionjiraHost">
+    <div class="card">
+        <div class="card-header" id="headingjiraHost">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#jiraHost"
+                        aria-expanded="" aria-controls="jiraHost" onclick="setAnchor('#jiraHost')"><span class="property-name">jiraHost</span></button>
+            </h2>
+        </div>
+
+        <div id="jiraHost"
+             class="collapse property-definition-div" aria-labelledby="headingjiraHost"
+             data-parent="#accordionjiraHost">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#jiraHost" onclick="anchorLink('jiraHost')">jiraHost</a></div><h4>Jira Host</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Jira host URL (without https://). Example: mycompany.atlassian.net</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="jiraHost_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;mycompany.atlassian.net&quot;</span>
+</pre></div>
+</div><div id="jiraHost_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;hardisgroup.atlassian.net&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionjiraTicketRegex">
+    <div class="card">
+        <div class="card-header" id="headingjiraTicketRegex">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#jiraTicketRegex"
+                        aria-expanded="" aria-controls="jiraTicketRegex" onclick="setAnchor('#jiraTicketRegex')"><span class="property-name">jiraTicketRegex</span></button>
+            </h2>
+        </div>
+
+        <div id="jiraTicketRegex"
+             class="collapse property-definition-div" aria-labelledby="headingjiraTicketRegex"
+             data-parent="#accordionjiraTicketRegex">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#jiraTicketRegex" onclick="anchorLink('jiraTicketRegex')">jiraTicketRegex</a></div><h4>Jira Ticket Regex</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Regular expression to identify Jira ticket IDs. Example: (CLOUDITY-[0-9]+)</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="jiraTicketRegex_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;(CLOUDITY-[0-9]+)&quot;</span>
+</pre></div>
+</div><div id="jiraTicketRegex_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;(?&lt;=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\\d{1,6})(?=[^a-zA-Z0-9_-]|$)&quot;</span>
 </pre></div>
 </div>
             </div>
@@ -6376,6 +6534,49 @@ If active, contributors will never be asked to refresh their sandbox metadata, t
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionticketingProvider">
+    <div class="card">
+        <div class="card-header" id="headingticketingProvider">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#ticketingProvider"
+                        aria-expanded="" aria-controls="ticketingProvider" onclick="setAnchor('#ticketingProvider')"><span class="property-name">ticketingProvider</span></button>
+            </h2>
+        </div>
+
+        <div id="ticketingProvider"
+             class="collapse property-definition-div" aria-labelledby="headingticketingProvider"
+             data-parent="#accordionticketingProvider">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#ticketingProvider" onclick="anchorLink('ticketingProvider')">ticketingProvider</a></div><h4>Ticketing Provider</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<span class="description"><p>Ticketing provider used on the project</p>
+</span><div class="enum-value" id="ticketingProvider_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"JIRA"</li><li class="list-group-item enum-item">"AZURE"</li><li class="list-group-item enum-item">"GENERIC"</li></ul>
+            </div>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="ticketingProvider_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;JIRA&quot;</span>
+</pre></div>
+</div><div id="ticketingProvider_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;AZURE&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionuseDeltaDeployment">
     <div class="card">
         <div class="card-header" id="headinguseDeltaDeployment">
@@ -6528,6 +6729,6 @@ Note: Smart Deployment Tests will be applied only for Pull Requests from minor (
 </div>
 
     <footer>
-        <p class="generated-by-footer">Generated using <a href="https://github.com/coveooss/json-schema-for-humans">json-schema-for-humans</a> on 2025-10-12 at 02:09:44 +0200</p>
+        <p class="generated-by-footer">Generated using <a href="https://github.com/coveooss/json-schema-for-humans">json-schema-for-humans</a> on 2025-10-19 at 23:07:37 +0200</p>
     </footer></body>
 </html>
