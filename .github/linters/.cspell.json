@@ -7,7 +7,8 @@
         ".vscode",
         "package-lock.json",
         "report",
-        ".cspell.json"
+        ".cspell.json",
+        "**/metadataList.ts"
     ],
     "language": "en",
     "version": "0.1",
@@ -309,6 +310,10 @@
         "accordiontarget",
         "accordiontest",
         "accordionuse",
+        "accordiongeneric",
+        "accordionjira",
+        "accordionticketing",
+        "hardisgroup",
         "activateduser",
         "activateinvalid",
         "addeduserpackagelicense",
