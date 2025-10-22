@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { Connection, Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { soqlQuery } from '../../../common/utils/apiUtils.js';
@@ -11,6 +11,9 @@ import { glob } from 'glob';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import fs from 'fs-extra';
+import { getNotificationButtons, getOrgMarkdown } from '../../../common/utils/notifUtils.js';
+import { NotifProvider, NotifSeverity } from '../../../common/notifProvider/index.js';
+import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -75,7 +78,10 @@ Example:
 \`\`\`
   `;
 
-  public static examples = ['$ sf hardis:misc:servicenow-report'];
+  public static examples = [
+    '$ sf hardis:misc:servicenow-report',
+    '$ sf hardis:misc:servicenow-report --config config/user-stories/my-config.json --where-choice "UAT all"'
+  ];
   /* jscpd:ignore-start */
   public static flags: any = {
     config: Flags.string({
@@ -114,6 +120,7 @@ Example:
   protected outputFilesRes: any = {};
   protected userStories: any[] = [];
   protected results: any[] = [];
+  protected conn: Connection;
 
   protected userStoriesConfig: any = {
     fields: [
@@ -165,15 +172,15 @@ Example:
 
     await this.initializeConfiguration();
 
-    const conn = flags['target-org']?.getConnection();
+    this.conn = flags['target-org']?.getConnection();
     // List user stories matching with criteria
-    const ticketNumbers = await this.fetchUserStories(conn);
+    const ticketNumbers = await this.fetchUserStories(this.conn);
 
     // Get matching demands and incidents from ServiceNow API with axios using ticket numbers
     await this.completeUserStoriesWithServiceNowInfo(ticketNumbers);
 
     // Build final result
-    await this.buildResult();
+    await this.handleResults();
 
     return { results: this.results, outputFilesRes: this.outputFilesRes };
   }
@@ -295,7 +302,7 @@ Example:
     }
   }
 
-  private async buildResult() {
+  private async handleResults() {
     uxLog("action", this, c.cyan(`Building final results...`));
     this.results = this.userStories.map((userStory: any) => {
       const serviceNowInfo = userStory.serviceNowInfo || {};
@@ -321,8 +328,32 @@ Example:
     uxLog("action", this, c.cyan(`Final results built with ${this.results.length} records.`));
     uxLogTable(this, this.results);
 
-    // Generate CSV file
-    await this.buildCsvFile();
+    // Process result
+    if (this.results.length > 0) {
+      // Generate output CSV file
+      this.outputFile = await generateReportPath('service-now-report', this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.results, this.outputFile, { fileTitle: 'ServiceNow cross-report' });
+
+      // Build notification
+      const orgMarkdown = await getOrgMarkdown(this.conn?.instanceUrl);
+      const notifButtons = await getNotificationButtons();
+      const notifSeverity: NotifSeverity = 'warning';
+      const notifText = `${this.results.length} ServiceNow report lines have been extracted from ${orgMarkdown}`
+      // Post notif
+      await setConnectionVariables(this.conn);// Required for some notifications providers like Email
+      await NotifProvider.postNotifications({
+        type: 'SERVICENOW_REPORT',
+        text: notifText,
+        attachments: [],
+        buttons: notifButtons,
+        severity: notifSeverity,
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+        logElements: this.results,
+        data: { metric: this.results.length },
+        metrics: {}
+      });
+    }
+
   }
 
   private getServiceNowConfig() {
@@ -391,8 +422,4 @@ Example:
     };
   }
 
-  private async buildCsvFile(): Promise<void> {
-    this.outputFile = await generateReportPath('user-story-report' + (this.whereChoice ? `-${this.whereChoice}` : ''), this.outputFile, { withDate: true });
-    this.outputFilesRes = await generateCsvFile(this.results, this.outputFile, { fileTitle: 'User Stories Report' });
-  }
 }

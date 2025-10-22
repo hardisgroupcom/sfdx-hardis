@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.8.1] 2025-10-22
+
 - Update Metadata List to use v65 one
+- Update servicenow-report commandto handle more use cases
 
 ## [6.8.0] 2025-10-19
 
@@ -43,12 +46,14 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - New command: [hardis:project:metadata:activate-decomposed](https://sfdx-hardis.cloudity.com/hardis/project/metadata/activate-decomposed/): Activate decomposed metadata types in `sfdx-project.json` and convert existing sources.
 
 - Improvements & Fixes
+
   - Cast descriptions to string before formatting to avoid rendering issues.
   - Avoid unnecessary file writes during builds to improve performance and CI speed.
   - Update JSON Schema to reflect new features and validation rules.
   - Add support for **Vector** (vector.dev) to enable ingestion by DataDog and other observability platforms.
 
 - Integrations
+
   - BitBucket: show a clear message when the Pull Requests app must be installed.
   - Azure Comment Reporter: create a Work Item and attach images when an item approaches the attachments limit.
 
