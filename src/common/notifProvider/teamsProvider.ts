@@ -93,7 +93,7 @@ export class TeamsProvider extends NotifProviderRoot {
         });
 
         if (response.ok) {
-          uxLog("action", this, c.cyan("[TeamsProvider] Sent Teams notification to webhook"));
+          uxLog("log", this, c.cyan("[TeamsProvider] Sent Teams notification to webhook"));
         } else {
           const errorText = await response.text();
           uxLog("error", this, c.grey("[TeamsProvider] Failed Teams message content:\n" + JSON.stringify(payload, null, 2)));
