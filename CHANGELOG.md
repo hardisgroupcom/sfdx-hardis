@@ -7,7 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [6.8.1] 2025-10-22
 
 - Update Metadata List to use v65 one
-- Update servicenow-report commandto handle more use cases
+- Update servicenow-report command to handle more use cases
 
 ## [6.8.0] 2025-10-19
 
