@@ -246,7 +246,7 @@ Example:
         (table.urlSuffix ? table.urlSuffix : '');
       const serviceNowApiUrlWithQuery = `${serviceNowUrl}${serviceNowApiResource}${serviceNowApiQuery}`;
       // Make API call to ServiceNow
-      uxLog("log", this, `Fetching Service now using query: ${serviceNowApiUrlWithQuery}`);
+      uxLog("log", this, `Fetching ServiceNow ${table.tableName} table using query: ${serviceNowApiUrlWithQuery}`);
       let serviceNowApiRes;
       try {
         serviceNowApiRes = await axios.get(serviceNowApiUrlWithQuery, serviceNowApiOptions);
@@ -258,22 +258,26 @@ Example:
       // Complete user stories with ServiceNow data
       const serviceNowRecords = serviceNowApiRes?.data?.result;
       if (!serviceNowRecords || serviceNowRecords.length === 0) {
-        uxLog("warning", this, c.yellow(`No records found in ServiceNow response.`));
+        uxLog("warning", this, c.yellow(`No ${table.tableName} records found in ServiceNow response.`));
         continue;
       }
-      uxLog("success", this, `ServiceNow API call succeeded: ${serviceNowRecords.length} records found`);
+      uxLog("success", this, `ServiceNow API call succeeded: ${serviceNowRecords.length} records of table ${table.tableName} have been found`);
       // If subRecordFields is defined in config, fetch each sub-record using its URL
       if (table.subRecordFields) {
         for (const subRecordField of table.subRecordFields) {
           for (const record of serviceNowRecords) {
-            if (record?.[subRecordField]?.link) {
+            if (record?.[subRecordField]?.link && typeof record[subRecordField].link === 'string') {
               try {
                 const serviceNowSubRecordQuery = await axios.get(record[subRecordField].link, serviceNowApiOptions);
                 record[subRecordField] = Object.assign(record[subRecordField], serviceNowSubRecordQuery?.data?.result || {});
+                uxLog("success", this, `ServiceNow sub-record API call succeeded for record ${record.number} field ${subRecordField}`);
               }
               catch (error: any) {
                 uxLog("error", this, c.red(`ServiceNow sub-record API call failed: ${error.message}\n${JSON.stringify(error?.response?.data || {})}`));
               }
+            }
+            else {
+              uxLog("warning", this, c.yellow(`No link found for sub-record field ${subRecordField} in record ${record.number}. Skipping sub-record fetch.`));
             }
           }
         }
