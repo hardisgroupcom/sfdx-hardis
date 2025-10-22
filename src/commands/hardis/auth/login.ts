@@ -42,7 +42,7 @@ The command's technical flow involves:
 
   public static examples = [
     '$ sf hardis:auth:login',
-    'CI=true sf hardis:auth:login'
+    'CI=true CI_COMMIT_REF_NAME=monitoring_myclient sf hardis:auth:login'
   ];
 
   // public static args = [{name: 'file'}];
