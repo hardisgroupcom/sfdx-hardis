@@ -120,6 +120,7 @@ Example:
   protected outputFilesRes: any = {};
   protected userStories: any[] = [];
   protected results: any[] = [];
+  protected invalidResults: any[] = [];
   protected conn: Connection;
 
   protected userStoriesConfig: any = {
@@ -307,7 +308,8 @@ Example:
     this.results = this.userStories.map((userStory: any) => {
       const serviceNowInfo = userStory.serviceNowInfo || {};
       // Build result object dynamically based on config
-      const result: any = {};
+      let result: any = {};
+      const invalidFields: string[] = [];
       for (const field of this.userStoriesConfig.reportFields) {
         if (field.special === "serviceNowTicketUrl") {
           if (!serviceNowInfo.sys_id) {
@@ -321,12 +323,42 @@ Example:
           const value = field.path.split('.').reduce((obj, prop) => obj && obj[prop], { ...userStory, serviceNowInfo });
           result[field.key] = value !== undefined && value !== null ? value : (field.default ?? 'NOT FOUND');
         }
+        // Check field validity
+        let isValueValid = true;
+        // Use a safe hasOwnProperty check to avoid calling Object.prototype methods on the target object.
+        if (Object.prototype.hasOwnProperty.call(field, 'valid')) {
+          const fieldValue = result[field.key];
+          if (field.valid === "NOT NULL") {
+            isValueValid = fieldValue !== null && fieldValue !== 'NOT FOUND';
+          } else {
+            isValueValid = fieldValue === field.valid;
+          }
+        }
+        // If any field is invalid for this result, mark the result as invalid
+        if (!isValueValid) {
+          invalidFields.push(field.key);
+        }
       }
+      const isValid = invalidFields.length === 0 ? true : false;
+      const invalidFieldsStr = invalidFields.join(", ");
+      result = Object.assign({ "Is Valid": isValid, "Invalid Fields": invalidFieldsStr }, result);
       return result;
     });
 
     uxLog("action", this, c.cyan(`Final results built with ${this.results.length} records.`));
     uxLogTable(this, this.results);
+
+    // Check results validity
+    this.invalidResults = this.results.filter((res) => {
+      return res["Is Valid"] === false;
+    });
+
+    uxLog("action", this, c.cyan(`${this.invalidResults.length} invalid results found.`));
+    if (this.invalidResults.length > 0) {
+      uxLog("warning", this, c.yellow(`Listing invalid results below.`));
+      uxLogTable(this, this.invalidResults);
+      process.exitCode = 1;
+    }
 
     // Process result
     if (this.results.length > 0) {
@@ -334,11 +366,19 @@ Example:
       this.outputFile = await generateReportPath('service-now-report', this.outputFile);
       this.outputFilesRes = await generateCsvFile(this.results, this.outputFile, { fileTitle: 'ServiceNow cross-report' });
 
+      if (this.invalidResults.length > 0) {
+        const invalidOutputFile = this.outputFile.replace('.csv', '-invalid.csv');
+        await generateCsvFile(this.invalidResults, invalidOutputFile, { fileTitle: 'ServiceNow cross-report - Invalid Entries' });
+      }
+
       // Build notification
       const orgMarkdown = await getOrgMarkdown(this.conn?.instanceUrl);
       const notifButtons = await getNotificationButtons();
       const notifSeverity: NotifSeverity = 'warning';
-      const notifText = `${this.results.length} ServiceNow report lines have been extracted from ${orgMarkdown}`
+      let notifText = `${this.results.length} ServiceNow report lines have been extracted from ${orgMarkdown}`;
+      if (this.invalidResults.length > 0) {
+        notifText += `, including ${this.invalidResults.length} invalid entries`;
+      }
       // Post notif
       await setConnectionVariables(this.conn);// Required for some notifications providers like Email
       await NotifProvider.postNotifications({

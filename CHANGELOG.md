@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.9.1] 2025-10-23
+
+- Bring back Microsoft Teams notifications [using Teams Workflow](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-ms-teams/)
+- Update servicenow-report to add validity rows management
+
 ## [6.8.1] 2025-10-22
 
 - Update Metadata List to use v65 one
