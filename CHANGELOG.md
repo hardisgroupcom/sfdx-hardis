@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add explicit message in case of error when authenticating to Git provider API
+
 ## [6.9.0] 2025-10-23
 
 - Bring back Microsoft Teams notifications [using Teams Workflow](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-ms-teams/)
