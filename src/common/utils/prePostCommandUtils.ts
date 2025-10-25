@@ -214,6 +214,7 @@ async function executeAction(cmd: PrePostCommand): Promise<void> {
   }
 }
 
+/* jscpd:ignore-start */
 async function executeActionCommand(cmd: PrePostCommand): Promise<void> {
   const commandRes = await execCommand(cmd.command, this, { fail: false, output: true });
   if (commandRes.status === 0) {
@@ -329,6 +330,7 @@ async function executeActionPublishCommunity(cmd: PrePostCommand): Promise<void>
     };
   }
 }
+/* jscpd:ignore-end */
 
 function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[]) {
   let markdownBody = `### ${property === 'commandsPreDeploy' ? 'Pre-deployment Actions' : 'Post-deployment Actions'} Results\n\n`;

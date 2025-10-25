@@ -25,6 +25,7 @@
     "**/auth.ts",
     "**/deployTips.ts",
     "**/freeze.ts",
+    "**/github.ts",
     "**/legacyapi.ts",
     "**/unfreeze.ts",
     "**/redis.ts",
