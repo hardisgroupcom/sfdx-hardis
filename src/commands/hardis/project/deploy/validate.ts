@@ -2,10 +2,11 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
-import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
+import { checkDeploymentOrgCoverage, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary } from '../../../../common/utils/gitUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { executePrePostCommands } from '../../../../common/utils/prePostCommandUtils.js';
 
 export default class ProjectDeployValidate extends SfCommand<any> {
   public static description = `sfdx-hardis wrapper for **sf project deploy validate** that displays tips to solve deployment errors.

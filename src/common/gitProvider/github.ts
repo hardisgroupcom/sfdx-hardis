@@ -257,6 +257,103 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
     }
   }
 
+  public async listPullRequestsInBranchSinceLastMerge(
+    currentBranchName: string,
+    targetBranchName: string,
+    childBranchesNames: string[],
+  ): Promise<CommonPullRequestInfo[]> {
+    if (!this.octokit || !this.repoOwner || !this.repoName) {
+      return [];
+    }
+
+    try {
+      // Step 1: Find the last merged PR from currentBranch to targetBranch
+      const { data: mergedPRs } = await this.octokit.rest.pulls.list({
+        owner: this.repoOwner,
+        repo: this.repoName,
+        state: "closed",
+        head: `${this.repoOwner}:${currentBranchName}`,
+        base: targetBranchName,
+        sort: "updated",
+        direction: "desc",
+        per_page: 1,
+      });
+
+      const lastMergeToTarget = mergedPRs.find((pr) => pr.merged_at);
+
+      // Step 2: Get commits since last merge
+      const compareOptions: any = {
+        owner: this.repoOwner,
+        repo: this.repoName,
+        base: lastMergeToTarget
+          ? lastMergeToTarget.merge_commit_sha!
+          : targetBranchName,
+        head: currentBranchName,
+        per_page: 100,
+      };
+
+      const { data: comparison } =
+        await this.octokit.rest.repos.compareCommits(compareOptions);
+
+      if (!comparison.commits || comparison.commits.length === 0) {
+        return [];
+      }
+
+      const commitSHAs = new Set(comparison.commits.map((c) => c.sha));
+
+      // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
+      const allBranches = [currentBranchName, ...childBranchesNames];
+
+      const prPromises = allBranches.map(async (branchName) => {
+        try {
+          const { data: prs } = await this.octokit!.rest.pulls.list({
+            owner: this.repoOwner!,
+            repo: this.repoName!,
+            state: "closed",
+            base: branchName,
+            per_page: 100,
+          });
+          return prs.filter((pr) => pr.merged_at);
+        } catch (err) {
+          uxLog(
+            "warning",
+            this,
+            c.yellow(`Error fetching merged PRs for branch ${branchName}: ${String(err)}`),
+          );
+          return [];
+        }
+      });
+
+      const prResults = await Promise.all(prPromises);
+      const allMergedPRs: any[] = prResults.flat();
+
+      // Step 4: Filter PRs whose merge commit is in our commit list
+      const relevantPRs = allMergedPRs.filter((pr) => {
+        return pr.merge_commit_sha && commitSHAs.has(pr.merge_commit_sha);
+      });
+
+      // Step 5: Remove duplicates
+      const uniquePRsMap = new Map();
+      for (const pr of relevantPRs) {
+        if (!uniquePRsMap.has(pr.number)) {
+          uniquePRsMap.set(pr.number, pr);
+        }
+      }
+
+      // Step 6: Convert to CommonPullRequestInfo
+      return Array.from(uniquePRsMap.values()).map((pr) =>
+        this.completePullRequestInfo(pr)
+      );
+    } catch (err) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(`Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`),
+      );
+      return [];
+    }
+  }
+
   private completePullRequestInfo(prData: any): CommonPullRequestInfo {
     const prInfo: CommonPullRequestInfo = {
       idNumber: prData?.number || 0,

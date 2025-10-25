@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { CONSTANTS } from '../../../../config/index.js';
-import { buildCheckDeployCommitSummary, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
+import { buildCheckDeployCommitSummary, handlePostDeploymentNotifications, setPullRequestData } from '../../../../common/utils/gitUtils.js';
 import { GitProvider, PullRequestData } from '../../../../common/gitProvider/index.js';
 import c from "chalk"
 import { uxLog } from '../../../../common/utils/index.js';
@@ -155,7 +155,7 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
         deployErrorsMarkdownBody: this.message,
         status: this.deployStatus === "valid" ? "valid" : this.deployStatus === "invalid" ? "invalid" : "tovalidate",
       };
-      globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
+      setPullRequestData(prData);
       // Post comments 😊
       await GitProvider.managePostPullRequestComment();
     }

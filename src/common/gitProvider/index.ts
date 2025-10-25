@@ -9,6 +9,7 @@ import Debug from "debug";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
 import { prompts } from "../utils/prompts.js";
 import { removeMermaidLinks } from "../utils/mermaidUtils.js";
+import { getPullRequestData } from "../utils/gitUtils.js";
 const debug = Debug("sfdxhardis");
 
 export abstract class GitProvider {
@@ -116,7 +117,7 @@ export abstract class GitProvider {
       );
       return;
     }
-    const prData = globalThis.pullRequestData;
+    const prData = getPullRequestData();
     const prCommentSent = globalThis.pullRequestCommentSent || false;
     if (prData && gitProvider && prCommentSent === false) {
       uxLog("warning", this, c.yellow("[Git Provider] Try to post a pull request comment/note..."));
