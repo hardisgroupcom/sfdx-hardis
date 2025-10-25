@@ -6,7 +6,7 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import { execCommand, extractRegexMatchesMultipleGroups, uxLog } from '../../../../common/utils/index.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
-import { CONSTANTS, getConfig, getReportDirectory } from '../../../../config/index.js';
+import { CONSTANTS, getConfig, getEnvVar, getReportDirectory } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateApexCoverageOutputFile } from '../../../../common/utils/deployUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
@@ -24,7 +24,7 @@ If following configuration is defined, it will fail if apex coverage target is n
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 
-You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes.
+You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 120 minutes.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-apex-tests/) and can output Grafana, Slack and MsTeams Notifications.
 `;
@@ -142,7 +142,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       ' --code-coverage' +
       ' --result-format human' +
       ` --output-dir ${reportDir}` +
-      ` --wait ${process.env.SFDX_TEST_WAIT_MINUTES || '60'}` +
+      ` --wait ${getEnvVar("SFDX_TEST_WAIT_MINUTES") || '60'}` +
       ` --test-level ${testlevel}` +
       (orgUsername ? ` --target-org ${orgUsername}` : '') +
       (debugMode ? ' --verbose' : '');

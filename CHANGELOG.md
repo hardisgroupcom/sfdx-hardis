@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Add explicit message in case of error when authenticating to Git provider API
+- Allow to override SFDX_TEST_WAIT_MINUTES and SFDX_DEPLOY_WAIT_MINUTES using CI/CD variables, and set 120 minutes as default value everywhere
 
 ## [6.9.0] 2025-10-23
 

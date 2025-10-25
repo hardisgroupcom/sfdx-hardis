@@ -454,7 +454,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
 
   private getPipelineVariablesConfig() {
     return `
-    SFDX_DEPLOY_WAIT_MINUTES: 150
+    SFDX_DEPLOY_WAIT_MINUTES: $(SFDX_DEPLOY_WAIT_MINUTES)
     CI_COMMIT_REF_NAME: $(BRANCH_NAME)
     CONFIG_BRANCH: $(BRANCH_NAME)
     ORG_ALIAS: $(BRANCH_NAME)
