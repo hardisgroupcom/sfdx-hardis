@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New feature: **Deployment actions** at Pull Request level
+  - Define pre-deploy and post-deploy commands to be executed during CI/CD deployments
+  - Display summary in Pull Request with details of each command execution
 - Add explicit message in case of error when authenticating to Git provider API
 - Allow to override SFDX_TEST_WAIT_MINUTES and SFDX_DEPLOY_WAIT_MINUTES using CI/CD variables, and set 120 minutes as default value everywhere
 
