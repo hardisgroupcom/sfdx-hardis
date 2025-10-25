@@ -128,6 +128,12 @@ export abstract class GitProvider {
       if (prData.codeCoverageMarkdownBody) {
         markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
       }
+      if (prData.commandsPreDeployMarkdownBody) {
+        markdownBody += "\n\n" + prData.commandsPreDeployMarkdownBody;
+      }
+      if (prData.commandsPostDeployMarkdownBody) {
+        markdownBody += "\n\n" + prData.commandsPostDeployMarkdownBody;
+      }
       if (prData.commitsSummary) {
         markdownBody += "\n\n" + prData.commitsSummary;
       }

@@ -1,4 +1,4 @@
-import { Connection } from '@salesforce/core';
+import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from 'fs-extra';
 import yaml from 'js-yaml';
@@ -10,6 +10,7 @@ import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { checkSfdxHardisTraceAvailable, listMajorOrgs } from './orgConfigUtils.js';
 import { soqlQuery } from './apiUtils.js';
 import { findDataWorkspaceByName, importData } from './dataUtils.js';
+import { setPullRequestData } from './gitUtils.js';
 
 
 export interface PrePostCommand {
@@ -105,6 +106,18 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       break;
     }
   }
+  manageResultMarkdownBody(property, commands);
+  // Check commands results
+  const failedCommands = commands.filter(c => c.result?.statusCode === "failed");
+  if (failedCommands.length > 0) {
+    uxLog("error", this, c.red(`[DeploymentActions] ${failedCommands.length} action(s) failed during ${actionLabel}:`));
+    // throw error if failed and allowFailure is not set
+    const failedAndnotAllowFailure = failedCommands.filter(c => c.allowFailure !== true);
+    if (failedAndnotAllowFailure.length > 0) {
+      await GitProvider.managePostPullRequestComment();
+      throw new SfError(`One or more ${actionLabel} have failed. See logs for more details.`);
+    }
+  }
 }
 
 async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[]) {
@@ -187,6 +200,9 @@ async function executeAction(cmd: PrePostCommand): Promise<void> {
       break;
     case 'data':
       await executeActionData(cmd);
+      break;
+    case 'publish-community':
+      await executeActionPublishCommunity(cmd);
       break;
     default:
       uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
@@ -283,6 +299,70 @@ async function executeActionData(cmd: PrePostCommand): Promise<void> {
   uxLog("success", this, c.green(`[DeploymentActions] Data import action [${cmd.id}] executed successfully`));
   cmd.result = {
     statusCode: "success",
-    output: JSON.stringify(res, null, 2)
+    output: (res.stdout || "") + "\n" + (res.stderr || "")
   };
+}
+
+async function executeActionPublishCommunity(cmd: PrePostCommand): Promise<void> {
+  const communityName = cmd.parameters?.get('communityName') || '';
+  if (!communityName) {
+    uxLog("error", this, c.red(`[DeploymentActions] No communityName parameter provided for action [${cmd.id}]: ${cmd.label}`));
+    cmd.result = {
+      statusCode: "failed",
+      skippedReason: "No communityName parameter provided"
+    };
+    return;
+  }
+  const publishCommand = `sf community publish --name "${communityName}"`;
+  const commandRes = await execCommand(publishCommand, this, { fail: false, output: true });
+  if (commandRes.status === 0) {
+    uxLog("success", this, c.green(`[DeploymentActions] Publish community action [${cmd.id}] executed successfully`));
+    cmd.result = {
+      statusCode: "success",
+      output: (commandRes.stdout || "") + "\n" + (commandRes.stderr || "")
+    };
+  } else {
+    uxLog("error", this, c.red(`[DeploymentActions] Publish community action [${cmd.id}] failed with status code ${commandRes.status}`));
+    cmd.result = {
+      statusCode: "failed",
+      output: (commandRes.stdout || "") + "\n" + (commandRes.stderr || "")
+    };
+  }
+}
+
+function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[]) {
+  let markdownBody = `### ${property === 'commandsPreDeploy' ? 'Pre-deployment Actions' : 'Post-deployment Actions'} Results\n\n`;
+  // Build markdown table
+  markdownBody += `| ID | Label | Type | Status | Details |\n`;
+  markdownBody += `|----|-------|------|--------|---------|\n`;
+  for (const cmd of commands) {
+    const statusIcon = cmd.result?.statusCode === "success" ? '✅' :
+      cmd.result?.statusCode === "failed" ? '❌' :
+        cmd.result?.statusCode === "skipped" ? '⚪' : '❓';
+    const detailsLink = cmd.result?.output ? `[View Details](#command-${cmd.id})` : 'N/A';
+    markdownBody += `| ${cmd.id} | ${cmd.label} | ${cmd.type} | ${statusIcon} ${cmd.result?.statusCode || 'not run'} | ${detailsLink} |\n`;
+  }
+  // Add details in html <detail> blocks, embedded in a root <details> block to avoid markdown rendering issues
+  markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
+  for (const cmd of commands) {
+    if (cmd.result?.output) {
+      // Truncate output if too long
+      const maxOutputLength = 10000;
+      let outputforMarkdown = cmd.result.output;
+      if (outputforMarkdown.length > maxOutputLength) {
+        outputforMarkdown = outputforMarkdown.substring(0, maxOutputLength) + `\n\n... Output truncated to ${maxOutputLength} characters ...`;
+      }
+      markdownBody += `\n<details id="command-${cmd.id}">\n<summary>Details for command ${cmd.id} - ${cmd.label}</summary>\n\n`;
+      markdownBody += '```\n';
+      markdownBody += outputforMarkdown
+      markdownBody += '\n```\n';
+      markdownBody += '</details>\n';
+    }
+  }
+  markdownBody += `\n</details>\n`;
+  const propertyFormatted = property === 'commandsPreDeploy' ? 'preDeployCommandsResultMarkdownBody' : 'postDeployCommandsResultMarkdownBody';
+  const prData = {
+    [propertyFormatted]: markdownBody
+  };
+  setPullRequestData(prData);
 }
