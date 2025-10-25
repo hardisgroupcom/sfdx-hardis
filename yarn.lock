@@ -1723,10 +1723,10 @@
     zod "^3.25.32"
     zod-to-json-schema "^3.22.3"
 
-"@langchain/google-genai@^0.2.17":
-  version "0.2.17"
-  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-0.2.17.tgz#91c388c845ea130da209bafcf2e0f5d870171f33"
-  integrity sha512-A21HhTJ5WQdh06ZMC8o/1HzkptHudzzRU8oExcWQ8aRa3Q9/4Es4bopEsEnu50rmDeARG3czMsUSUVS+BQYGEA==
+"@langchain/google-genai@^0.2.18":
+  version "0.2.18"
+  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-0.2.18.tgz#a53fab3f572cc661b98fbe04d9efa01ef428d81e"
+  integrity sha512-m9EiN3VKC01A7/625YQ6Q1Lqq8zueewADX4W5Tcme4RImN75zkg2Z7FYbD1Fo6Zwolc4wBNO6LUtbg3no4rv1Q==
   dependencies:
     "@google/generative-ai" "^0.24.0"
     uuid "^11.1.0"
