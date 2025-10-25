@@ -112,8 +112,8 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   if (failedCommands.length > 0) {
     uxLog("error", this, c.red(`[DeploymentActions] ${failedCommands.length} action(s) failed during ${actionLabel}:`));
     // throw error if failed and allowFailure is not set
-    const failedAndnotAllowFailure = failedCommands.filter(c => c.allowFailure !== true);
-    if (failedAndnotAllowFailure.length > 0) {
+    const failedAndNotAllowFailure = failedCommands.filter(c => c.allowFailure !== true);
+    if (failedAndNotAllowFailure.length > 0) {
       await GitProvider.managePostPullRequestComment();
       throw new SfError(`One or more ${actionLabel} have failed. See logs for more details.`);
     }
@@ -348,13 +348,13 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
     if (cmd.result?.output) {
       // Truncate output if too long
       const maxOutputLength = 10000;
-      let outputforMarkdown = cmd.result.output;
-      if (outputforMarkdown.length > maxOutputLength) {
-        outputforMarkdown = outputforMarkdown.substring(0, maxOutputLength) + `\n\n... Output truncated to ${maxOutputLength} characters ...`;
+      let outputForMarkdown = cmd.result.output;
+      if (outputForMarkdown.length > maxOutputLength) {
+        outputForMarkdown = outputForMarkdown.substring(0, maxOutputLength) + `\n\n... Output truncated to ${maxOutputLength} characters ...`;
       }
       markdownBody += `\n<details id="command-${cmd.id}">\n<summary>Details for command ${cmd.id} - ${cmd.label}</summary>\n\n`;
       markdownBody += '```\n';
-      markdownBody += outputforMarkdown
+      markdownBody += outputForMarkdown
       markdownBody += '\n```\n';
       markdownBody += '</details>\n';
     }
