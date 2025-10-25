@@ -42,6 +42,7 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
   uxLog("success", commandThis, c.green(`Data imported successfully from ${c.green(dtl?.full_label)} into ${targetUsername}`));
   uxLog("log", commandThis, c.italic(c.grey(res.stdout || '')));
   elapseEnd(`import ${dtl?.full_label}`);
+  return res;
 }
 
 // Delete data using sfdmu folder

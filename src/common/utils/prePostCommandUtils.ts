@@ -6,34 +6,67 @@ import yaml from 'js-yaml';
 import * as path from 'path';
 import { getConfig } from '../../config/index.js';
 import { execCommand, uxLog } from './index.js';
-import { GitProvider } from '../gitProvider/index.js';
+import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { checkSfdxHardisTraceAvailable, listMajorOrgs } from './orgConfigUtils.js';
 import { soqlQuery } from './apiUtils.js';
+import { findDataWorkspaceByName, importData } from './dataUtils.js';
 
+
+export interface PrePostCommand {
+  id: string;
+  label: string;
+  type: 'command' | 'data' | 'apex' | 'publish-community';
+  parameters?: Map<string, any>;
+  command: string;
+  context: 'all' | 'check-deployment-only' | 'process-deployment-only';
+  skipIfError?: boolean;
+  allowFailure?: boolean;
+  runOnlyOnceByOrg?: boolean;
+  // If command comes from a PR, we attach PR info
+  pullRequest?: CommonPullRequestInfo;
+  result?: {
+    statusCode: "success" | "failed" | "skipped";
+    output?: string;
+    skippedReason?: string;
+  };
+}
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection, extraCommands?: any[] }) {
   const branchConfig = await getConfig('branch');
-  const commands = [...(branchConfig[property] || []), ...(options.extraCommands || [])];
+  const commands: PrePostCommand[] = [...(branchConfig[property] || []), ...(options.extraCommands || [])];
   await completeWithCommandsFromPullRequests(property, commands);
   if (commands.length === 0) {
     uxLog("log", this, c.grey(`No ${property} found to run`));
     return;
   }
-  uxLog("action", this, c.cyan(`Processing ${property} found in .sfdx-hardis.yml configuration...`));
+  const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
+  uxLog("action", this, c.cyan(`[DeploymentActions] Found ${commands.length} ${actionLabel} to run`));
   for (const cmd of commands) {
     // If if skipIfError is true and deployment failed
     if (options.success === false && cmd.skipIfError === true) {
-      uxLog("warning", this, c.yellow(`Skipping skipIfError=true command [${cmd.id}]: ${cmd.label}`));
+      uxLog("warning", this, c.yellow(`[DeploymentActions] Skipping skipIfError=true action [${cmd.id}]: ${cmd.label}`));
+      cmd.result = {
+        statusCode: "skipped",
+        skippedReason: "skipIfError is true and deployment failed"
+      };
       continue;
     }
     // Skip if we are in another context than the requested one
     const cmdContext = cmd.context || "all";
     if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
-      uxLog("log", this, c.grey(`Skipping check-deployment-only command as we are in process deployment mode [${cmd.id}]: ${cmd.label}`));
+      uxLog("log", this, c.grey(`[DeploymentActions] Skipping check-deployment-only action as we are in process deployment mode [${cmd.id}]: ${cmd.label}`));
+      cmd.result = {
+        statusCode: "skipped",
+        skippedReason: "Action context is check-deployment-only but we are in process deployment mode"
+      };
       continue;
     }
     if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
-      uxLog("log", this, c.grey(`Skipping process-deployment-only command as we are in check deployment mode [${cmd.id}]: ${cmd.label}`));
+      uxLog("log", this, c.grey(`[DeploymentActions] Skipping process-deployment-only action as we are in check deployment mode [${cmd.id}]: ${cmd.label}`));
+      cmd.result = {
+        statusCode: "skipped",
+        skippedReason: "Action context is process-deployment-only but we are in check deployment mode"
+      };
       continue;
     }
     const runOnlyOnceByOrg = cmd.runOnlyOnceByOrg || false;
@@ -42,14 +75,18 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       const commandTraceQuery = `SELECT Id,CreatedDate FROM SfdxHardisTrace__c WHERE Type__c='${property}' AND Key__c='${cmd.id}' LIMIT 1`;
       const commandTraceRes = await soqlQuery(commandTraceQuery, options.conn);
       if (commandTraceRes?.records?.length > 0) {
-        uxLog("log", this, c.grey(`Skipping command [${cmd.id}]: ${cmd.label} because it has been defined with runOnlyOnceByOrg and has already been run on ${commandTraceRes.records[0].CreatedDate}`));
+        uxLog("log", this, c.grey(`[DeploymentActions] Skipping action [${cmd.id}]: ${cmd.label} because it has been defined with runOnlyOnceByOrg and has already been run on ${commandTraceRes.records[0].CreatedDate}`));
+        cmd.result = {
+          statusCode: "skipped",
+          skippedReason: "runOnlyOnceByOrg is true and command has already been run on this org"
+        };
         continue;
       }
     }
     // Run command
-    uxLog("action", this, c.cyan(`Running [${cmd.id}]: ${cmd.label}`));
-    const commandRes = await execCommand(cmd.command, this, { fail: false, output: true });
-    if (commandRes.status === 0 && runOnlyOnceByOrg) {
+    uxLog("action", this, c.cyan(`[DeploymentActions] Running action [${cmd.id}]: ${cmd.label}`));
+    await executeAction(cmd);
+    if (cmd.result?.statusCode === "success" && runOnlyOnceByOrg) {
       const hardisTraceRecord = {
         Name: property + "--" + cmd.id,
         Type__c: property,
@@ -57,25 +94,57 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       }
       const insertRes = await options.conn.insert("SfdxHardisTrace__c", [hardisTraceRecord]);
       if (insertRes[0].success) {
-        uxLog("success", this, c.green(`Stored SfdxHardisTrace__c entry ${insertRes[0].id} with command [${cmd.id}] so it is not run again in the future (runOnlyOnceByOrg: true)`));
+        uxLog("success", this, c.green(`[DeploymentActions] Stored SfdxHardisTrace__c entry ${insertRes[0].id} with command [${cmd.id}] so it is not run again in the future (runOnlyOnceByOrg: true)`));
       }
       else {
-        uxLog("error", this, c.red(`Error storing SfdxHardisTrace__c entry :` + JSON.stringify(insertRes, null, 2)));
+        uxLog("error", this, c.red(`[DeploymentActions] Error storing SfdxHardisTrace__c entry :` + JSON.stringify(insertRes, null, 2)));
+      }
+    }
+    else if (cmd.result?.statusCode === "failed" && cmd.allowFailure !== true) {
+      uxLog("error", this, c.red(`[DeploymentActions] Action [${cmd.id}] failed, stopping execution of further actions.`));
+      break;
+    }
+  }
+}
+
+async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[]) {
+  const pullRequests = await listAllPullRequestsToUse();
+  for (const pr of pullRequests) {
+    // Check if there is a .sfdx-hardis.PULL_REQUEST_ID.yml file in the PR
+    const prConfigFileName = path.join("scripts", "actions", `.sfdx-hardis.${pr.idStr}.yml`);
+    if (fs.existsSync(prConfigFileName)) {
+      try {
+        const prConfig = await fs.readFile(prConfigFileName, 'utf8');
+        const prConfigParsed = yaml.load(prConfig) as any;
+        if (prConfigParsed && prConfigParsed[property] && Array.isArray(prConfigParsed[property])) {
+          const prConfigCommands = prConfigParsed[property] as PrePostCommand[];
+          for (const cmd of prConfigCommands) {
+            cmd.pullRequest = pr;
+            commands.push(cmd);
+          }
+        }
+      } catch (e) {
+        uxLog("error", this, c.red(`Error while parsing ${prConfigFileName} file: ${(e as Error).message}`));
       }
     }
   }
 }
 
-async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: any[]) {
+let _cachedPullRequests: CommonPullRequestInfo[] | null = null;
+
+async function listAllPullRequestsToUse(): Promise<CommonPullRequestInfo[]> {
+  if (_cachedPullRequests) {
+    return _cachedPullRequests;
+  }
   const gitProvider = await GitProvider.getInstance();
   if (!gitProvider) {
     uxLog("warning", this, c.yellow('No git provider configured, skipping retrieval of commands from pull requests'));
-    return;
+    return [];
   }
   const pullRequestInfo = await gitProvider.getPullRequestInfo();
   if (!pullRequestInfo) {
     uxLog("warning", this, c.yellow('No pull request info available, skipping retrieval of commands from pull requests'));
-    return;
+    return [];
   }
   const majorOrgs = await listMajorOrgs();
   const childBranchesNames = recursiveGetChildBranches(
@@ -87,24 +156,8 @@ async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy
     pullRequestInfo.targetBranch,
     [...childBranchesNames]
   );
-  for (const pr of pullRequests) {
-    // Check if there is a .sfdx-hardis.PULL_REQUEST_ID.yml file in the PR
-    const prConfigFileName = path.join("scripts", "actions", `.sfdx-hardis.${pr.idStr}.yml`);
-    if (fs.existsSync(prConfigFileName)) {
-      try {
-        const prConfig = await fs.readFile(prConfigFileName, 'utf8');
-        const prConfigParsed = yaml.load(prConfig) as any;
-        if (prConfigParsed && prConfigParsed[property] && Array.isArray(prConfigParsed[property])) {
-          for (const cmd of prConfigParsed[property]) {
-            cmd.pullRequest = pr;
-            commands.push(cmd);
-          }
-        }
-      } catch (e) {
-        uxLog("error", this, c.red(`Error while parsing ${prConfigFileName} file: ${(e as Error).message}`));
-      }
-    }
-  }
+  _cachedPullRequests = pullRequests;
+  return pullRequests
 }
 
 function recursiveGetChildBranches(
@@ -122,4 +175,114 @@ function recursiveGetChildBranches(
     }
   }
   return collected;
+}
+
+async function executeAction(cmd: PrePostCommand): Promise<void> {
+  switch (cmd.type) {
+    case 'command':
+      await executeActionCommand(cmd);
+      break;
+    case 'apex':
+      await executeActionApex(cmd);
+      break;
+    case 'data':
+      await executeActionData(cmd);
+      break;
+    default:
+      uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
+      cmd.result = {
+        statusCode: "failed",
+        skippedReason: `Action type [${cmd.type}] is not implemented`
+      };
+      break;
+  }
+}
+
+async function executeActionCommand(cmd: PrePostCommand): Promise<void> {
+  const commandRes = await execCommand(cmd.command, this, { fail: false, output: true });
+  if (commandRes.status === 0) {
+    uxLog("success", this, c.green(`[DeploymentActions] Action [${cmd.id}] executed successfully`));
+    cmd.result = {
+      statusCode: "success",
+      output: (commandRes.stdout || "") + "\n" + (commandRes.stderr || "")
+    };
+  } else {
+    uxLog("error", this, c.red(`[DeploymentActions] Action [${cmd.id}] failed with status code ${commandRes.status}`));
+    cmd.result = {
+      statusCode: "failed",
+      output: (commandRes.stdout || "") + "\n" + (commandRes.stderr || "")
+    };
+  }
+}
+
+async function executeActionApex(cmd: PrePostCommand): Promise<void> {
+  const apexScript = cmd.parameters?.get('apexScript') || '';
+  if (!apexScript) {
+    uxLog("error", this, c.red(`[DeploymentActions] No apexScript parameter provided for action [${cmd.id}]: ${cmd.label}`));
+    cmd.result = {
+      statusCode: "failed",
+      skippedReason: "No apexScript parameter provided"
+    };
+    return;
+  }
+  if (!fs.existsSync(apexScript)) {
+    uxLog("error", this, c.red(`[DeploymentActions] Apex script file ${apexScript} does not exist for action [${cmd.id}]: ${cmd.label}`));
+    cmd.result = {
+      statusCode: "failed",
+      skippedReason: `Apex script file ${apexScript} does not exist`
+    };
+    return;
+  }
+  const apexCommand = `sf apex run --file ${apexScript}`;
+  const commandRes = await execCommand(apexCommand, this, { fail: false, output: true });
+  if (commandRes.status === 0) {
+    uxLog("success", this, c.green(`[DeploymentActions] Apex action [${cmd.id}] executed successfully`));
+    cmd.result = {
+      statusCode: "success",
+      output: (commandRes.stdout || "") + "\n" + (commandRes.stderr || "")
+    };
+  } else {
+    uxLog("error", this, c.red(`[DeploymentActions] Apex action [${cmd.id}] failed with status code ${commandRes.status}`));
+    cmd.result = {
+      statusCode: "failed",
+      output: (commandRes.stdout || "") + "\n" + (commandRes.stderr || "")
+    };
+  }
+}
+
+async function executeActionData(cmd: PrePostCommand): Promise<void> {
+  const sfdmuProject = cmd.parameters?.get('sfdmuProject') || '';
+  if (!sfdmuProject) {
+    uxLog("error", this, c.red(`[DeploymentActions] No sfdmuProject parameter provided for action [${cmd.id}]: ${cmd.label}`));
+    cmd.result = {
+      statusCode: "failed",
+      skippedReason: "No sfdmuProject parameter provided"
+    };
+    return;
+  }
+  const sfdmuPath = await findDataWorkspaceByName(sfdmuProject);
+  if (!sfdmuPath) {
+    uxLog("error", this, c.red(`[DeploymentActions] sfdmu project ${sfdmuProject} not found for action [${cmd.id}]: ${cmd.label}`));
+    cmd.result = {
+      statusCode: "failed",
+      skippedReason: `sfdmu project ${sfdmuProject} not found`
+    };
+    return;
+  }
+  let res: any;
+  try {
+    res = await importData(sfdmuPath, this);
+  } catch (e) {
+    uxLog("error", this, c.red(`[DeploymentActions] Data import action [${cmd.id}] failed: ${(e as Error).message}`));
+    cmd.result = {
+      statusCode: "failed",
+      output: (e as Error).message
+    };
+    return;
+  }
+  uxLog("success", this, c.green(`[DeploymentActions] Data import action [${cmd.id}] executed successfully`));
+  cmd.result = {
+    statusCode: "success",
+    output: JSON.stringify(res, null, 2)
+  };
 }
