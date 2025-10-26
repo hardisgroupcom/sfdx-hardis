@@ -113,10 +113,13 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   elapseEnd(`export ${dtl?.full_label}`);
 }
 
-export async function findDataWorkspaceByName(projectName: string) {
+export async function findDataWorkspaceByName(projectName: string, throwIfNotFound: boolean = true) {
   const folderPath = path.join(DATA_FOLDERS_ROOT, projectName);
   if (fs.existsSync(folderPath)) {
     return folderPath;
+  }
+  if (!throwIfNotFound) {
+    return null;
   }
   throw new SfError(`There is no sfdmu folder named ${projectName} in your workspace (${DATA_FOLDERS_ROOT})`);
 }

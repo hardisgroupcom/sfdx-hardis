@@ -15,7 +15,7 @@ export class DataAction extends ActionsProvider {
       uxLog('error', this, c.red(`[DeploymentActions] No sfdmuProject parameter provided for action ${cmd.label}`));
       return { statusCode: 'failed', skippedReason: 'No sfdmuProject parameter provided' };
     }
-    const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject);
+    const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject, false);
     if (!sfdmuProjectPath) {
       uxLog('error', this, c.red(`[DeploymentActions] Data workspace ${sfdmuProject} does not exist for action ${cmd.label}`));
       return { statusCode: 'failed', skippedReason: `Data workspace ${sfdmuProject} does not exist` };
@@ -30,7 +30,7 @@ export class DataAction extends ActionsProvider {
     const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject);
     let res: any;
     try {
-      res = await importData(sfdmuProjectPath, null, { fail: false, output: true });
+      res = await importData(sfdmuProjectPath!, null, { fail: false, output: true });
       if (res.status === 0) {
         return { statusCode: 'success', output: (res.stdout || '') + '\n' + (res.stderr || '') };
       }
