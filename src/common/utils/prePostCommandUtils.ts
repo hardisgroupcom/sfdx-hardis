@@ -5,11 +5,16 @@ import yaml from 'js-yaml';
 
 import * as path from 'path';
 import { getConfig } from '../../config/index.js';
-import { execCommand, uxLog } from './index.js';
+import { uxLog } from './index.js';
+import { CommandAction } from '../actionsProvider/commandAction.js';
+import { ApexAction } from '../actionsProvider/apexAction.js';
+import { DataAction } from '../actionsProvider/dataAction.js';
+import { PublishCommunityAction } from '../actionsProvider/publishCommunityAction.js';
+import { ManualAction } from '../actionsProvider/manualAction.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { checkSfdxHardisTraceAvailable, listMajorOrgs } from './orgConfigUtils.js';
 import { soqlQuery } from './apiUtils.js';
-import { findDataWorkspaceByName, importData } from './dataUtils.js';
+// data import moved to DataAction class in actionsProvider
 import { getPullRequestData, setPullRequestData } from './gitUtils.js';
 
 
@@ -230,21 +235,23 @@ Example: .sfdx-hardis.123.yml`;
 }
 
 async function executeAction(cmd: PrePostCommand): Promise<void> {
+  // Use ActionsProvider classes to execute actions
+  let actionInstance: any = null;
   switch (cmd.type || 'command') {
     case 'command':
-      await executeActionCommand(cmd);
+      actionInstance = new CommandAction();
       break;
     case 'apex':
-      await executeActionApex(cmd);
+      actionInstance = new ApexAction();
       break;
     case 'data':
-      await executeActionData(cmd);
+      actionInstance = new DataAction();
       break;
     case 'publish-community':
-      await executeActionPublishCommunity(cmd);
+      actionInstance = new PublishCommunityAction();
       break;
     case 'manual':
-      await executeActionManual(cmd);
+      actionInstance = new ManualAction();
       break;
     default:
       uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
@@ -252,152 +259,24 @@ async function executeAction(cmd: PrePostCommand): Promise<void> {
         statusCode: "failed",
         skippedReason: `Action type [${cmd.type}] is not implemented`
       };
-      break;
+      return;
+  }
+  try {
+    const res = await actionInstance.run(cmd);
+    cmd.result = res;
+  } catch (e) {
+    uxLog("error", this, c.red(`[DeploymentActions] Exception while running action [${cmd.id}]: ${(e as Error).message}`));
+    cmd.result = {
+      statusCode: 'failed',
+      output: (e as Error).message
+    };
   }
 }
 
 /* jscpd:ignore-start */
-async function executeActionCommand(cmd: PrePostCommand): Promise<void> {
-  const command = cmd.command;
-  if (!command) {
-    uxLog("error", this, c.red(`[DeploymentActions] No command provided for action [${cmd.id}]: ${cmd.label}`));
-    cmd.result = {
-      statusCode: "failed",
-      skippedReason: "No command provided"
-    };
-    return;
-  }
-  const commandRes = await execCommand(cmd.command, this, { fail: false, output: true });
-  if (commandRes.status === 0) {
-    uxLog("success", this, c.green(`[DeploymentActions] Action [${cmd.id}] executed successfully`));
-    cmd.result = {
-      statusCode: "success",
-      output: (commandRes.stdout || "") + "\n" + (commandRes.stderr || "")
-    };
-  } else {
-    uxLog("error", this, c.red(`[DeploymentActions] Action [${cmd.id}] failed with status code ${commandRes.status}`));
-    cmd.result = {
-      statusCode: "failed",
-      output: (commandRes.stdout || "") + "\n" + (commandRes.stderr || "")
-    };
-  }
-}
-
-async function executeActionApex(cmd: PrePostCommand): Promise<void> {
-  const apexScript = (cmd.parameters?.apexScript as string) || '';
-  if (!apexScript) {
-    uxLog("error", this, c.red(`[DeploymentActions] No apexScript parameter provided for action [${cmd.id}]: ${cmd.label}`));
-    cmd.result = {
-      statusCode: "failed",
-      skippedReason: "No apexScript parameter provided"
-    };
-    return;
-  }
-  if (!fs.existsSync(apexScript)) {
-    uxLog("error", this, c.red(`[DeploymentActions] Apex script file ${apexScript} does not exist for action [${cmd.id}]: ${cmd.label}`));
-    cmd.result = {
-      statusCode: "failed",
-      skippedReason: `Apex script file ${apexScript} does not exist`
-    };
-    return;
-  }
-  const apexCommand = `sf apex run --file ${apexScript}`;
-  const commandRes = await execCommand(apexCommand, this, { fail: false, output: true });
-  if (commandRes.status === 0) {
-    uxLog("success", this, c.green(`[DeploymentActions] Apex action [${cmd.id}] executed successfully`));
-    cmd.result = {
-      statusCode: "success",
-      output: (commandRes.stdout || "") + "\n" + (commandRes.stderr || "")
-    };
-  } else {
-    uxLog("error", this, c.red(`[DeploymentActions] Apex action [${cmd.id}] failed with status code ${commandRes.status}`));
-    cmd.result = {
-      statusCode: "failed",
-      output: (commandRes.stdout || "") + "\n" + (commandRes.stderr || "")
-    };
-  }
-}
-
-async function executeActionData(cmd: PrePostCommand): Promise<void> {
-  const sfdmuProject = (cmd.parameters?.sfdmuProject as string) || '';
-  if (!sfdmuProject) {
-    uxLog("error", this, c.red(`[DeploymentActions] No sfdmuProject parameter provided for action [${cmd.id}]: ${cmd.label}`));
-    cmd.result = {
-      statusCode: "failed",
-      skippedReason: "No sfdmuProject parameter provided"
-    };
-    return;
-  }
-  const sfdmuPath = await findDataWorkspaceByName(sfdmuProject);
-  if (!sfdmuPath) {
-    uxLog("error", this, c.red(`[DeploymentActions] sfdmu project ${sfdmuProject} not found for action [${cmd.id}]: ${cmd.label}`));
-    cmd.result = {
-      statusCode: "failed",
-      skippedReason: `sfdmu project ${sfdmuProject} not found`
-    };
-    return;
-  }
-  let res: any;
-  try {
-    res = await importData(sfdmuPath, this);
-  } catch (e) {
-    uxLog("error", this, c.red(`[DeploymentActions] Data import action [${cmd.id}] failed: ${(e as Error).message}`));
-    cmd.result = {
-      statusCode: "failed",
-      output: (e as Error).message
-    };
-    return;
-  }
-  uxLog("success", this, c.green(`[DeploymentActions] Data import action [${cmd.id}] executed successfully`));
-  cmd.result = {
-    statusCode: "success",
-    output: (res.stdout || "") + "\n" + (res.stderr || "")
-  };
-}
-
-async function executeActionPublishCommunity(cmd: PrePostCommand): Promise<void> {
-  const communityName = (cmd.parameters?.communityName as string) || '';
-  if (!communityName) {
-    uxLog("error", this, c.red(`[DeploymentActions] No communityName parameter provided for action [${cmd.id}]: ${cmd.label}`));
-    cmd.result = {
-      statusCode: "failed",
-      skippedReason: "No communityName parameter provided"
-    };
-    return;
-  }
-  const publishCommand = `sf community publish --name "${communityName}"`;
-  const commandRes = await execCommand(publishCommand, this, { fail: false, output: true });
-  if (commandRes.status === 0) {
-    uxLog("success", this, c.green(`[DeploymentActions] Publish community action [${cmd.id}] executed successfully`));
-    cmd.result = {
-      statusCode: "success",
-      output: (commandRes.stdout || "") + "\n" + (commandRes.stderr || "")
-    };
-  } else {
-    uxLog("error", this, c.red(`[DeploymentActions] Publish community action [${cmd.id}] failed with status code ${commandRes.status}`));
-    cmd.result = {
-      statusCode: "failed",
-      output: (commandRes.stdout || "") + "\n" + (commandRes.stderr || "")
-    };
-  }
-}
-
-async function executeActionManual(cmd: PrePostCommand): Promise<void> {
-  const instructions = (cmd.parameters?.instructions as string) || '';
-  if (!instructions) {
-    uxLog("error", this, c.red(`[DeploymentActions] No instructions parameter provided for manual action [${cmd.id}]: ${cmd.label}`));
-    cmd.result = {
-      statusCode: "failed",
-      skippedReason: "No instructions parameter provided"
-    };
-    return;
-  }
-  uxLog("success", this, c.green(`[DeploymentActions] Manual action [${cmd.id}] requires manual intervention:\n${instructions}`));
-  cmd.result = {
-    statusCode: "success",
-    output: `Manual action instructions:\n${instructions}`
-  };
-}
+/* Legacy action implementations moved to src/common/actionsProvider/*.ts
+   The concrete action classes encapsulate the previous executeAction* logic.
+   Kept for historical reference. */
 /* jscpd:ignore-end */
 
 function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[]) {
