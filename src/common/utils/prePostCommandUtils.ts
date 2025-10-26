@@ -15,6 +15,7 @@ import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvi
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection, extraCommands?: any[] }) {
   const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
+  uxLog("action", this, c.cyan(`[DeploymentActions] Listing ${actionLabel}...`));
   const branchConfig = await getConfig('branch');
   const commands: PrePostCommand[] = [...(branchConfig[property] || []), ...(options.extraCommands || [])];
   await completeWithCommandsFromPullRequests(property, commands);
@@ -34,7 +35,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     }
     // If if skipIfError is true and deployment failed
     if (options.success === false && cmd.skipIfError === true) {
-      uxLog("action", this, c.yellow(`[DeploymentActions] Skipping skipIfError=true action ${cmd.label}`));
+      uxLog("action", this, c.yellow(`[DeploymentActions] Skipping ${cmd.label} (skipIfError=true) `));
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "skipIfError is true and deployment failed"
@@ -44,7 +45,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     // Skip if we are in another context than the requested one
     const cmdContext = cmd.context || "all";
     if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping check-deployment-only action as we are in process deployment mode (${cmd.label})`));
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: check-deployment-only action, and we are in process deployment mode`));
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "Action context is check-deployment-only but we are in process deployment mode"
@@ -52,7 +53,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       continue;
     }
     if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping process-deployment-only action as we are in check deployment mode (${cmd.label})`));
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: process-deployment-only action as we are in check deployment mode`));
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "Action context is process-deployment-only but we are in check deployment mode"
@@ -65,7 +66,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       const commandTraceQuery = `SELECT Id,CreatedDate FROM SfdxHardisTrace__c WHERE Type__c='${property}' AND Key__c='${cmd.id}' LIMIT 1`;
       const commandTraceRes = await soqlQuery(commandTraceQuery, options.conn);
       if (commandTraceRes?.records?.length > 0) {
-        uxLog("action", this, c.grey(`[DeploymentActions] Skipping action ${cmd.label} because it has been defined with runOnlyOnceByOrg and has already been run on ${commandTraceRes.records[0].CreatedDate}`));
+        uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${cmd.label}: it has been defined with runOnlyOnceByOrg and has already been run on ${commandTraceRes.records[0].CreatedDate}`));
         cmd.result = {
           statusCode: "skipped",
           skippedReason: "runOnlyOnceByOrg is true and command has already been run on this org"
@@ -192,14 +193,21 @@ function recursiveGetChildBranches(
 async function checkForDraftCommandsFile(property: 'commandsPreDeploy' | 'commandsPostDeploy') {
   const prConfigFileName = path.join("scripts", "actions", `.sfdx-hardis.draft.yml`);
   if (fs.existsSync(prConfigFileName)) {
-    const errorMessage = `Draft commands file ${prConfigFileName} found.
-Please assign it to a Pull Request before proceeding., or delete it if you don't need it
-To assign it, rename the file to .sfdx-hardis.PULL_REQUEST_ID.yml, replacing PULL_REQUEST_ID with the actual ID of the Pull Request.
-Example: .sfdx-hardis.123.yml`;
+    let suggestedFileName = ".sfdx-hardis.PULL_REQUEST_ID.yml (ex: .sfdx-hardis.123.yml)";
+    const prInfo = await GitProvider.getPullRequestInfo();
+    if (prInfo && prInfo.idStr) {
+      suggestedFileName = `.sfdx-hardis.${prInfo.idStr}.yml`;
+    }
+    const errorMessage = `Draft deployment actions file ${prConfigFileName} found.
+
+Please assign it to a Pull Request before proceeding, or delete the file it if you don't need it.
+
+To assign it, rename .sfdx-hardis.draft.yml into ${suggestedFileName}.
+`;
     const propertyFormatted = property === 'commandsPreDeploy' ? 'preDeployCommandsResultMarkdownBody' : 'postDeployCommandsResultMarkdownBody';
     let prData = getPullRequestData()
     prData = Object.assign(prData, {
-      title: "❌ Error: Draft manual actions file found",
+      title: "❌ Error: Draft deployment actions file found",
       messageKey: prData.messageKey ?? 'deployment',
       [propertyFormatted]: errorMessage
     });
