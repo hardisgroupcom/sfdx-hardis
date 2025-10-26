@@ -16,8 +16,15 @@ import { setPullRequestData } from './gitUtils.js';
 export interface PrePostCommand {
   id: string;
   label: string;
-  type: 'command' | 'data' | 'apex' | 'publish-community';
-  parameters?: Map<string, any>;
+  type: 'command' | 'data' | 'apex' | 'publish-community' | 'manual';
+  // Known parameters used by action implementations. Additional keys allowed.
+  parameters?: {
+    apexScript?: string;     // for 'apex' actions
+    sfdmuProject?: string;   // for 'data' actions
+    communityName?: string;  // for 'publish-community' actions
+    instructions?: string;   // for 'manual' actions
+    [key: string]: any;
+  };
   command: string;
   context: 'all' | 'check-deployment-only' | 'process-deployment-only';
   skipIfError?: boolean;
@@ -33,14 +40,15 @@ export interface PrePostCommand {
 }
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection, extraCommands?: any[] }) {
+  const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
   const branchConfig = await getConfig('branch');
   const commands: PrePostCommand[] = [...(branchConfig[property] || []), ...(options.extraCommands || [])];
   await completeWithCommandsFromPullRequests(property, commands);
   if (commands.length === 0) {
+    uxLog("action", this, c.cyan(`[DeploymentActions] No ${actionLabel} defined in branch config or pull requests`));
     uxLog("log", this, c.grey(`No ${property} found to run`));
     return;
   }
-  const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
   uxLog("action", this, c.cyan(`[DeploymentActions] Found ${commands.length} ${actionLabel} to run`));
   for (const cmd of commands) {
     // If if skipIfError is true and deployment failed
@@ -204,6 +212,9 @@ async function executeAction(cmd: PrePostCommand): Promise<void> {
     case 'publish-community':
       await executeActionPublishCommunity(cmd);
       break;
+    case 'manual':
+      await executeActionManual(cmd);
+      break;
     default:
       uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
       cmd.result = {
@@ -233,7 +244,7 @@ async function executeActionCommand(cmd: PrePostCommand): Promise<void> {
 }
 
 async function executeActionApex(cmd: PrePostCommand): Promise<void> {
-  const apexScript = cmd.parameters?.get('apexScript') || '';
+  const apexScript = (cmd.parameters?.apexScript as string) || '';
   if (!apexScript) {
     uxLog("error", this, c.red(`[DeploymentActions] No apexScript parameter provided for action [${cmd.id}]: ${cmd.label}`));
     cmd.result = {
@@ -268,7 +279,7 @@ async function executeActionApex(cmd: PrePostCommand): Promise<void> {
 }
 
 async function executeActionData(cmd: PrePostCommand): Promise<void> {
-  const sfdmuProject = cmd.parameters?.get('sfdmuProject') || '';
+  const sfdmuProject = (cmd.parameters?.sfdmuProject as string) || '';
   if (!sfdmuProject) {
     uxLog("error", this, c.red(`[DeploymentActions] No sfdmuProject parameter provided for action [${cmd.id}]: ${cmd.label}`));
     cmd.result = {
@@ -305,7 +316,7 @@ async function executeActionData(cmd: PrePostCommand): Promise<void> {
 }
 
 async function executeActionPublishCommunity(cmd: PrePostCommand): Promise<void> {
-  const communityName = cmd.parameters?.get('communityName') || '';
+  const communityName = (cmd.parameters?.communityName as string) || '';
   if (!communityName) {
     uxLog("error", this, c.red(`[DeploymentActions] No communityName parameter provided for action [${cmd.id}]: ${cmd.label}`));
     cmd.result = {
@@ -329,6 +340,23 @@ async function executeActionPublishCommunity(cmd: PrePostCommand): Promise<void>
       output: (commandRes.stdout || "") + "\n" + (commandRes.stderr || "")
     };
   }
+}
+
+async function executeActionManual(cmd: PrePostCommand): Promise<void> {
+  const instructions = (cmd.parameters?.instructions as string) || '';
+  if (!instructions) {
+    uxLog("error", this, c.red(`[DeploymentActions] No instructions parameter provided for manual action [${cmd.id}]: ${cmd.label}`));
+    cmd.result = {
+      statusCode: "failed",
+      skippedReason: "No instructions parameter provided"
+    };
+    return;
+  }
+  uxLog("success", this, c.green(`[DeploymentActions] Manual action [${cmd.id}] requires manual intervention:\n${instructions}`));
+  cmd.result = {
+    statusCode: "success",
+    output: `Manual action instructions:\n${instructions}`
+  };
 }
 /* jscpd:ignore-end */
 

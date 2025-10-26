@@ -784,7 +784,7 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     uxLog("log", this, c.grey(`Using custom package-no-overwrite file defined at ${packageNoOverwrite}`));
   }
   if (fs.existsSync(packageNoOverwrite)) {
-    uxLog("action", this, c.cyan('Handling package-no-overwrite.xml...'));
+    uxLog("action", this, c.cyan('Handling package-no-overwrite.xml (Metadata that are not overwritten if existing in target org)...'));
     // If package-no-overwrite.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
     if (!(await isPackageXmlEmpty(packageNoOverwrite))) {
       const tmpDir = await createTempDir();
