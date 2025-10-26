@@ -335,14 +335,14 @@ async function executeActionPublishCommunity(cmd: PrePostCommand): Promise<void>
 function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[]) {
   let markdownBody = `### ${property === 'commandsPreDeploy' ? 'Pre-deployment Actions' : 'Post-deployment Actions'} Results\n\n`;
   // Build markdown table
-  markdownBody += `| ID | Label | Type | Status | Details |\n`;
-  markdownBody += `|----|-------|------|--------|---------|\n`;
+  markdownBody += `| Label | Type | Status | Details |\n`;
+  markdownBody += `|-------|------|--------|---------|\n`;
   for (const cmd of commands) {
     const statusIcon = cmd.result?.statusCode === "success" ? '✅' :
       cmd.result?.statusCode === "failed" ? '❌' :
         cmd.result?.statusCode === "skipped" ? '⚪' : '❓';
     const detailsLink = cmd.result?.output ? `[View Details](#command-${cmd.id})` : 'N/A';
-    markdownBody += `| ${cmd.id} | ${cmd.label} | ${cmd.type} | ${statusIcon} ${cmd.result?.statusCode || 'not run'} | ${detailsLink} |\n`;
+    markdownBody += `| ${cmd.label} | ${cmd.type} | ${statusIcon} ${cmd.result?.statusCode || 'not run'} | ${detailsLink} |\n`;
   }
   // Add details in html <detail> blocks, embedded in a root <details> block to avoid markdown rendering issues
   markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
