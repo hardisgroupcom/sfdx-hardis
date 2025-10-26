@@ -21,6 +21,7 @@
     "**/commands/hardis/work/**",
     "**/apex.ts",
     "**/access.ts",
+    "**/actionsProvider/*.ts",
     "**/audittrail.ts",
     "**/auth.ts",
     "**/deployTips.ts",
