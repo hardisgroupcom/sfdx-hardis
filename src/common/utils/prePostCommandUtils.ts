@@ -18,7 +18,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   uxLog("action", this, c.cyan(`[DeploymentActions] Listing ${actionLabel}...`));
   const branchConfig = await getConfig('branch');
   const commands: PrePostCommand[] = [...(branchConfig[property] || []), ...(options.extraCommands || [])];
-  await completeWithCommandsFromPullRequests(property, commands);
+  await completeWithCommandsFromPullRequests(property, commands, options.checkOnly);
   if (commands.length === 0) {
     uxLog("action", this, c.cyan(`[DeploymentActions] No ${actionLabel} defined in branch config or pull requests`));
     uxLog("log", this, c.grey(`No ${property} found to run`));
@@ -111,14 +111,14 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
         messageKey: prData.messageKey ?? 'deployment',
       });
       setPullRequestData(prData);
-      await GitProvider.managePostPullRequestComment();
+      await GitProvider.managePostPullRequestComment(options.checkOnly);
       throw new SfError(`One or more ${actionLabel} have failed. See logs for more details.`);
     }
   }
 }
 
-async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[]) {
-  await checkForDraftCommandsFile(property);
+async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean) {
+  await checkForDraftCommandsFile(property, checkOnly);
   const pullRequests = await listAllPullRequestsToUse();
   for (const pr of pullRequests) {
     // Check if there is a .sfdx-hardis.PULL_REQUEST_ID.yml file in the PR
@@ -191,7 +191,7 @@ function recursiveGetChildBranches(
   return collected;
 }
 
-async function checkForDraftCommandsFile(property: 'commandsPreDeploy' | 'commandsPostDeploy') {
+async function checkForDraftCommandsFile(property: 'commandsPreDeploy' | 'commandsPostDeploy', checkOnly: boolean) {
   const prConfigFileName = path.join("scripts", "actions", `.sfdx-hardis.draft.yml`);
   if (fs.existsSync(prConfigFileName)) {
     let suggestedFileName = ".sfdx-hardis.PULL_REQUEST_ID.yml (ex: .sfdx-hardis.123.yml)";
@@ -213,7 +213,7 @@ To assign it, rename .sfdx-hardis.draft.yml into ${suggestedFileName}.
       [propertyFormatted]: errorMessage
     });
     setPullRequestData(prData);
-    await GitProvider.managePostPullRequestComment();
+    await GitProvider.managePostPullRequestComment(checkOnly);
     uxLog("error", this, c.red(`[DeploymentActions] ${errorMessage}`));
     throw new SfError(`Draft commands file ${prConfigFileName} found. Please assign it to a Pull Request or delete it before proceeding.`);
   }

@@ -170,7 +170,7 @@ commandsPostDeploy:
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: checkOnly });
         } catch (errCoverage) {
-          await GitProvider.managePostPullRequestComment();
+          await GitProvider.managePostPullRequestComment(checkOnly);
           throw errCoverage;
         }
       }
@@ -178,9 +178,7 @@ commandsPostDeploy:
     // Run post deployment commands if defined
     await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: checkOnly, conn: conn });
     // Post comment if deployment check success
-    if (checkOnly) {
-      await GitProvider.managePostPullRequestComment();
-    }
+    await GitProvider.managePostPullRequestComment(checkOnly);
     // Post success deployment notifications
     if (process.exitCode === 0 && !checkOnly) {
       await handlePostDeploymentNotifications(flags, flags["target-org"].getUsername(), false, false, flags["debug"]);

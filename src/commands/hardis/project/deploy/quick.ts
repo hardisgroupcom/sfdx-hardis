@@ -111,7 +111,7 @@ commandsPostDeploy:
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: checkOnly });
         } catch (errCoverage) {
-          await GitProvider.managePostPullRequestComment();
+          await GitProvider.managePostPullRequestComment(false);
           throw errCoverage;
         }
       }

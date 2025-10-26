@@ -106,7 +106,7 @@ export abstract class GitProvider {
     }
   }
 
-  static async managePostPullRequestComment(): Promise<void> {
+  static async managePostPullRequestComment(checkOnly: boolean): Promise<void> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       uxLog("warning", this, c.yellow("[Git Provider] WARNING: No git provider found to post pull request comment. Maybe you should configure it ?"));
@@ -142,10 +142,10 @@ export abstract class GitProvider {
       }
       markdownBody = removeMermaidLinks(markdownBody); // Remove "click" elements that are useless and ugly on some providers 😊
       const prMessageRequest: PullRequestMessageRequest = {
-        title: prData.title || '',
+        title: prData.title || checkOnly === true ? "Deployment Check Results" : "Deployment Results",
         message: markdownBody,
         status: prData.status || 'tovalidate',
-        messageKey: prData.messageKey || '',
+        messageKey: checkOnly === true ? `deployment-check` : `deployment`,
       };
       // Post main message
       const postResult = await gitProvider.tryPostPullRequestMessage(prMessageRequest);

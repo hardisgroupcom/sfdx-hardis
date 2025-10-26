@@ -228,9 +228,7 @@ export async function smartDeploy(
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
     uxLog("action", this, c.cyan('Both package.xml and destructive changes files exist but are empty. Nothing to deploy.'));
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
-    if (check) {
-      await GitProvider.managePostPullRequestComment();
-    }
+    await GitProvider.managePostPullRequestComment(check);
     return { messages: [], quickDeploy, deployXmlCount: 0 };
   }
 
@@ -239,9 +237,7 @@ export async function smartDeploy(
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
     uxLog("action", this, 'No deployment or destructive changes to perform');
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
-    if (check) {
-      await GitProvider.managePostPullRequestComment();
-    }
+    await GitProvider.managePostPullRequestComment(check);
     return { messages: [], quickDeploy, deployXmlCount: 0 };
   }
 
@@ -267,9 +263,7 @@ export async function smartDeploy(
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
     uxLog("other", this, 'No deployment to perform');
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
-    if (check) {
-      await GitProvider.managePostPullRequestComment();
-    }
+    await GitProvider.managePostPullRequestComment(check);
     return { messages, quickDeploy, deployXmlCount };
   }
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
@@ -464,9 +458,7 @@ export async function smartDeploy(
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: check, testlevel: testlevel });
         } catch (errCoverage) {
-          if (check) {
-            await GitProvider.managePostPullRequestComment();
-          }
+          await GitProvider.managePostPullRequestComment(check);
           killBoringExitHandlers();
           throw errCoverage;
         }
@@ -534,9 +526,7 @@ export async function smartDeploy(
   // Run deployment post commands
   await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
   // Post pull request comment if available
-  if (check) {
-    await GitProvider.managePostPullRequestComment();
-  }
+  await GitProvider.managePostPullRequestComment(check);
   elapseEnd('all deployments');
   return { messages, quickDeploy, deployXmlCount };
 }
@@ -572,9 +562,7 @@ async function handleDeployError(
   await displayDeploymentLink(output, options);
   elapseEnd(`deploy ${deployment.label}`);
   await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check, conn: options.conn });
-  if (check) {
-    await GitProvider.managePostPullRequestComment();
-  }
+  await GitProvider.managePostPullRequestComment(check);
   killBoringExitHandlers();
   throw new SfError('Deployment failure. Check messages above');
 }
@@ -1445,9 +1433,7 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
   uxLog("error", this, c.red('\n' + errLog));
   await displayDeploymentLink((e as any).stdout + (e as any).stderr, options);
   // Post pull requests comments if necessary
-  if (options.check) {
-    await GitProvider.managePostPullRequestComment();
-  }
+  await GitProvider.managePostPullRequestComment(options.check);
   killBoringExitHandlers();
   throw new SfError('Metadata deployment failure. Check messages above');
 }

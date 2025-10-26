@@ -206,14 +206,14 @@ Notes:
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: checkOnly });
         } catch (errCoverage) {
-          await GitProvider.managePostPullRequestComment();
+          await GitProvider.managePostPullRequestComment(checkOnly);
           throw errCoverage;
         }
       }
     }
     // Run post deployment commands if defined
     await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: checkOnly, conn: conn });
-    await GitProvider.managePostPullRequestComment();
+    await GitProvider.managePostPullRequestComment(checkOnly);
     return result;
   }
 }
