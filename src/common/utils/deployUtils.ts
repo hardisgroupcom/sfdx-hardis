@@ -228,22 +228,26 @@ export async function smartDeploy(
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
     uxLog("action", this, c.cyan('Both package.xml and destructive changes files exist but are empty. Nothing to deploy.'));
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+    if (check) {
+      await GitProvider.managePostPullRequestComment();
+    }
     return { messages: [], quickDeploy, deployXmlCount: 0 };
   }
 
   // If we have empty package.xml and no destructive changes, there's nothing to do
   if (packageXmlIsEmpty && !hasDestructiveChanges) {
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
-    uxLog("other", this, 'No deployment or destructive changes to perform');
+    uxLog("action", this, 'No deployment or destructive changes to perform');
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+    if (check) {
+      await GitProvider.managePostPullRequestComment();
+    }
     return { messages: [], quickDeploy, deployXmlCount: 0 };
   }
 
   // If we have empty package.xml but destructive changes, log it
   if (packageXmlIsEmpty && hasDestructiveChanges) {
-    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
     uxLog("action", this, c.cyan('Package.xml is empty, but destructive changes are present. Will proceed with deployment of destructive changes.'));
-    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
   }
 
   const splitDeployments = await buildDeploymentPackageXmls(packageXmlFile, check, debugMode, options);
@@ -263,6 +267,9 @@ export async function smartDeploy(
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
     uxLog("other", this, 'No deployment to perform');
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+    if (check) {
+      await GitProvider.managePostPullRequestComment();
+    }
     return { messages, quickDeploy, deployXmlCount };
   }
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
