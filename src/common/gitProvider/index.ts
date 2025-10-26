@@ -142,10 +142,10 @@ export abstract class GitProvider {
       }
       markdownBody = removeMermaidLinks(markdownBody); // Remove "click" elements that are useless and ugly on some providers 😊
       const prMessageRequest: PullRequestMessageRequest = {
-        title: prData.title || checkOnly === true ? "Deployment Check Results" : "Deployment Results",
+        title: (checkOnly === true ? "Deployment Check Results" : "Deployment Results") + (prData.title ? `: ${prData.title}` : ""),
         message: markdownBody,
         status: prData.status || 'tovalidate',
-        messageKey: checkOnly === true ? `deployment-check` : `deployment`,
+        messageKey: (checkOnly === true) ? `deployment-check` : `deployment`,
       };
       // Post main message
       const postResult = await gitProvider.tryPostPullRequestMessage(prMessageRequest);
