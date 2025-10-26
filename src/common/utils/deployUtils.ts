@@ -479,10 +479,6 @@ export async function smartDeploy(
         };
         setPullRequestData(prDataCodeCoverage);
       }
-      // Post pull request comment if available
-      if (check) {
-        await GitProvider.managePostPullRequestComment();
-      }
 
       let extraInfo = options?.delta === true ? 'DELTA Deployment' : 'FULL Deployment';
       if (quickDeploy === true) {
@@ -530,6 +526,10 @@ export async function smartDeploy(
   }
   // Run deployment post commands
   await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+  // Post pull request comment if available
+  if (check) {
+    await GitProvider.managePostPullRequestComment();
+  }
   elapseEnd('all deployments');
   return { messages, quickDeploy, deployXmlCount };
 }
@@ -564,10 +564,10 @@ async function handleDeployError(
   }
   await displayDeploymentLink(output, options);
   elapseEnd(`deploy ${deployment.label}`);
+  await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check, conn: options.conn });
   if (check) {
     await GitProvider.managePostPullRequestComment();
   }
-  await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check, conn: options.conn });
   killBoringExitHandlers();
   throw new SfError('Deployment failure. Check messages above');
 }
@@ -1127,6 +1127,12 @@ export async function buildOrgManifest(
     const tmpDir = await createTempDir();
     uxLog("action", this, c.cyan(`Generating full package.xml from target org ${targetOrgUsernameAlias}...`));
     packageXmlOutputFile = path.join(tmpDir, 'packageTargetOrg.xml');
+  }
+  // Use forced file name, for development purposed only
+  if (process.env.FULL_ORG_MANIFEST_PATH) {
+    fs.copyFileSync(process.env.FULL_ORG_MANIFEST_PATH, packageXmlOutputFile);
+    uxLog("warning", this, c.grey(`Using forced package.xml output path from FULL_ORG_MANIFEST_PATH env var: ${packageXmlOutputFile}. This should be used only in development mode.`));
+    return process.env.FULL_ORG_MANIFEST_PATH;
   }
   const manifestName = path.basename(packageXmlOutputFile);
   const manifestDir = path.dirname(packageXmlOutputFile);

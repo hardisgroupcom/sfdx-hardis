@@ -82,6 +82,7 @@ export class GitlabProvider extends GitProviderRoot {
     uxLog("log", this, c.grey(`[Gitlab Integration] Unable to find related Merge Request Info`));
     return null;
   }
+
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId: string | null = null;
     const projectId = process.env.CI_PROJECT_ID || null;

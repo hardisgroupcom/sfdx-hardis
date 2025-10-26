@@ -33,7 +33,7 @@ export abstract class GitProvider {
         return new AzureDevopsProvider();
       }
       // Gitlab
-      else if (process.env.CI_JOB_TOKEN) {
+      else if (process.env.CI_JOB_TOKEN || process.env.CI_SFDX_HARDIS_GITLAB_TOKEN) {
         const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || null;
         if (token == null) {
           uxLog(

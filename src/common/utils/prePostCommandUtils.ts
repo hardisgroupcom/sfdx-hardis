@@ -184,6 +184,9 @@ async function listAllPullRequestsToUse(): Promise<CommonPullRequestInfo[]> {
     pullRequestInfo.targetBranch,
     [...childBranchesNames]
   );
+  if (!pullRequests.some(pr => pr.idStr === pullRequestInfo.idStr)) {
+    pullRequests.push(pullRequestInfo);
+  }
   _cachedPullRequests = pullRequests;
   return pullRequests
 }
