@@ -53,7 +53,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   for (const cmd of commands) {
     // If if skipIfError is true and deployment failed
     if (options.success === false && cmd.skipIfError === true) {
-      uxLog("warning", this, c.yellow(`[DeploymentActions] Skipping skipIfError=true action [${cmd.id}]: ${cmd.label}`));
+      uxLog("action", this, c.yellow(`[DeploymentActions] Skipping skipIfError=true action [${cmd.id}]: ${cmd.label}`));
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "skipIfError is true and deployment failed"
@@ -63,7 +63,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     // Skip if we are in another context than the requested one
     const cmdContext = cmd.context || "all";
     if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
-      uxLog("log", this, c.grey(`[DeploymentActions] Skipping check-deployment-only action as we are in process deployment mode [${cmd.id}]: ${cmd.label}`));
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping check-deployment-only action as we are in process deployment mode [${cmd.id}]: ${cmd.label}`));
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "Action context is check-deployment-only but we are in process deployment mode"
@@ -71,7 +71,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       continue;
     }
     if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
-      uxLog("log", this, c.grey(`[DeploymentActions] Skipping process-deployment-only action as we are in check deployment mode [${cmd.id}]: ${cmd.label}`));
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping process-deployment-only action as we are in check deployment mode [${cmd.id}]: ${cmd.label}`));
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "Action context is process-deployment-only but we are in check deployment mode"
@@ -84,7 +84,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       const commandTraceQuery = `SELECT Id,CreatedDate FROM SfdxHardisTrace__c WHERE Type__c='${property}' AND Key__c='${cmd.id}' LIMIT 1`;
       const commandTraceRes = await soqlQuery(commandTraceQuery, options.conn);
       if (commandTraceRes?.records?.length > 0) {
-        uxLog("log", this, c.grey(`[DeploymentActions] Skipping action [${cmd.id}]: ${cmd.label} because it has been defined with runOnlyOnceByOrg and has already been run on ${commandTraceRes.records[0].CreatedDate}`));
+        uxLog("action", this, c.grey(`[DeploymentActions] Skipping action [${cmd.id}]: ${cmd.label} because it has been defined with runOnlyOnceByOrg and has already been run on ${commandTraceRes.records[0].CreatedDate}`));
         cmd.result = {
           statusCode: "skipped",
           skippedReason: "runOnlyOnceByOrg is true and command has already been run on this org"
@@ -403,14 +403,13 @@ async function executeActionManual(cmd: PrePostCommand): Promise<void> {
 function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[]) {
   let markdownBody = `### ${property === 'commandsPreDeploy' ? 'Pre-deployment Actions' : 'Post-deployment Actions'} Results\n\n`;
   // Build markdown table
-  markdownBody += `| Label | Type | Status | Details |\n`;
-  markdownBody += `|-------|------|--------|---------|\n`;
+  markdownBody += `| Label | Type | Status |\n`;
+  markdownBody += `|-------|------|--------|\n`;
   for (const cmd of commands) {
     const statusIcon = cmd.result?.statusCode === "success" ? '✅' :
       cmd.result?.statusCode === "failed" ? '❌' :
         cmd.result?.statusCode === "skipped" ? '⚪' : '❓';
-    const detailsLink = cmd.result?.output ? `[View Details](#command-${cmd.id})` : 'N/A';
-    markdownBody += `| ${cmd.label} | ${cmd.type} | ${statusIcon} ${cmd.result?.statusCode || 'not run'} | ${detailsLink} |\n`;
+    markdownBody += `| ${cmd.label} | ${cmd.type} | ${statusIcon} ${cmd.result?.statusCode || 'not run'} |\n`;
   }
   // Add details in html <detail> blocks, embedded in a root <details> block to avoid markdown rendering issues
   markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
