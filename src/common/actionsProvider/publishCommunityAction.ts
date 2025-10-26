@@ -1,9 +1,8 @@
-import { ActionsProviderRoot, ActionResult } from './actionsProviderRoot.js';
-import { PrePostCommand } from '../utils/prePostCommandUtils.js';
+import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
 import { execCommand, uxLog } from '../utils/index.js';
 import c from 'chalk';
 
-export class PublishCommunityAction extends ActionsProviderRoot {
+export class PublishCommunityAction extends ActionsProvider {
   public getLabel(): string {
     return 'PublishCommunityAction';
   }

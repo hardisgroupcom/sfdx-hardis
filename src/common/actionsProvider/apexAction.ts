@@ -1,10 +1,9 @@
-import { ActionsProviderRoot, ActionResult } from './actionsProviderRoot.js';
-import { PrePostCommand } from '../utils/prePostCommandUtils.js';
+import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
 import { execCommand, uxLog } from '../utils/index.js';
 import fs from 'fs-extra';
 import c from 'chalk';
 
-export class ApexAction extends ActionsProviderRoot {
+export class ApexAction extends ActionsProvider {
   public getLabel(): string {
     return 'ApexAction';
   }

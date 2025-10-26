@@ -6,43 +6,12 @@ import yaml from 'js-yaml';
 import * as path from 'path';
 import { getConfig } from '../../config/index.js';
 import { uxLog } from './index.js';
-import { CommandAction } from '../actionsProvider/commandAction.js';
-import { ApexAction } from '../actionsProvider/apexAction.js';
-import { DataAction } from '../actionsProvider/dataAction.js';
-import { PublishCommunityAction } from '../actionsProvider/publishCommunityAction.js';
-import { ManualAction } from '../actionsProvider/manualAction.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { checkSfdxHardisTraceAvailable, listMajorOrgs } from './orgConfigUtils.js';
 import { soqlQuery } from './apiUtils.js';
 // data import moved to DataAction class in actionsProvider
 import { getPullRequestData, setPullRequestData } from './gitUtils.js';
-
-
-export interface PrePostCommand {
-  id: string;
-  label: string;
-  type: 'command' | 'data' | 'apex' | 'publish-community' | 'manual';
-  // Known parameters used by action implementations. Additional keys allowed.
-  parameters?: {
-    apexScript?: string;     // for 'apex' actions
-    sfdmuProject?: string;   // for 'data' actions
-    communityName?: string;  // for 'publish-community' actions
-    instructions?: string;   // for 'manual' actions
-    [key: string]: any;
-  };
-  command: string;
-  context: 'all' | 'check-deployment-only' | 'process-deployment-only';
-  skipIfError?: boolean;
-  allowFailure?: boolean;
-  runOnlyOnceByOrg?: boolean;
-  // If command comes from a PR, we attach PR info
-  pullRequest?: CommonPullRequestInfo;
-  result?: {
-    statusCode: "success" | "failed" | "skipped";
-    output?: string;
-    skippedReason?: string;
-  };
-}
+import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection, extraCommands?: any[] }) {
   const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
@@ -56,9 +25,16 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   }
   uxLog("action", this, c.cyan(`[DeploymentActions] Found ${commands.length} ${actionLabel} to run`));
   for (const cmd of commands) {
+    const actionsInstance = ActionsProvider.buildActionInstance(cmd);
+    const actionsIssues = await actionsInstance.checkValidityIssues(cmd);
+    if (actionsIssues) {
+      cmd.result = actionsIssues;
+      uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} is not valid: ${actionsIssues.skippedReason}`));
+      continue;
+    }
     // If if skipIfError is true and deployment failed
     if (options.success === false && cmd.skipIfError === true) {
-      uxLog("action", this, c.yellow(`[DeploymentActions] Skipping skipIfError=true action [${cmd.id}]: ${cmd.label}`));
+      uxLog("action", this, c.yellow(`[DeploymentActions] Skipping skipIfError=true action ${cmd.label}`));
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "skipIfError is true and deployment failed"
@@ -68,7 +44,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     // Skip if we are in another context than the requested one
     const cmdContext = cmd.context || "all";
     if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping check-deployment-only action as we are in process deployment mode [${cmd.id}]: ${cmd.label}`));
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping check-deployment-only action as we are in process deployment mode (${cmd.label})`));
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "Action context is check-deployment-only but we are in process deployment mode"
@@ -76,7 +52,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       continue;
     }
     if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping process-deployment-only action as we are in check deployment mode [${cmd.id}]: ${cmd.label}`));
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping process-deployment-only action as we are in check deployment mode (${cmd.label})`));
       cmd.result = {
         statusCode: "skipped",
         skippedReason: "Action context is process-deployment-only but we are in check deployment mode"
@@ -89,7 +65,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       const commandTraceQuery = `SELECT Id,CreatedDate FROM SfdxHardisTrace__c WHERE Type__c='${property}' AND Key__c='${cmd.id}' LIMIT 1`;
       const commandTraceRes = await soqlQuery(commandTraceQuery, options.conn);
       if (commandTraceRes?.records?.length > 0) {
-        uxLog("action", this, c.grey(`[DeploymentActions] Skipping action [${cmd.id}]: ${cmd.label} because it has been defined with runOnlyOnceByOrg and has already been run on ${commandTraceRes.records[0].CreatedDate}`));
+        uxLog("action", this, c.grey(`[DeploymentActions] Skipping action ${cmd.label} because it has been defined with runOnlyOnceByOrg and has already been run on ${commandTraceRes.records[0].CreatedDate}`));
         cmd.result = {
           statusCode: "skipped",
           skippedReason: "runOnlyOnceByOrg is true and command has already been run on this org"
@@ -98,7 +74,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       }
     }
     // Run command
-    uxLog("action", this, c.cyan(`[DeploymentActions] Running action [${cmd.id}]: ${cmd.label}`));
+    uxLog("action", this, c.cyan(`[DeploymentActions] Running action ${cmd.label}`));
     await executeAction(cmd);
     if (cmd.result?.statusCode === "success" && runOnlyOnceByOrg) {
       const hardisTraceRecord = {
@@ -115,7 +91,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       }
     }
     else if (cmd.result?.statusCode === "failed" && cmd.allowFailure !== true) {
-      uxLog("error", this, c.red(`[DeploymentActions] Action [${cmd.id}] failed, stopping execution of further actions.`));
+      uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} failed, stopping execution of further actions.`));
       break;
     }
   }
@@ -236,48 +212,18 @@ Example: .sfdx-hardis.123.yml`;
 
 async function executeAction(cmd: PrePostCommand): Promise<void> {
   // Use ActionsProvider classes to execute actions
-  let actionInstance: any = null;
-  switch (cmd.type || 'command') {
-    case 'command':
-      actionInstance = new CommandAction();
-      break;
-    case 'apex':
-      actionInstance = new ApexAction();
-      break;
-    case 'data':
-      actionInstance = new DataAction();
-      break;
-    case 'publish-community':
-      actionInstance = new PublishCommunityAction();
-      break;
-    case 'manual':
-      actionInstance = new ManualAction();
-      break;
-    default:
-      uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
-      cmd.result = {
-        statusCode: "failed",
-        skippedReason: `Action type [${cmd.type}] is not implemented`
-      };
-      return;
-  }
+  const actionInstance = ActionsProvider.buildActionInstance(cmd);
   try {
     const res = await actionInstance.run(cmd);
     cmd.result = res;
   } catch (e) {
-    uxLog("error", this, c.red(`[DeploymentActions] Exception while running action [${cmd.id}]: ${(e as Error).message}`));
+    uxLog("error", this, c.red(`[DeploymentActions] Exception while running action ${cmd.label}: ${(e as Error).message}`));
     cmd.result = {
       statusCode: 'failed',
       output: (e as Error).message
     };
   }
 }
-
-/* jscpd:ignore-start */
-/* Legacy action implementations moved to src/common/actionsProvider/*.ts
-   The concrete action classes encapsulate the previous executeAction* logic.
-   Kept for historical reference. */
-/* jscpd:ignore-end */
 
 function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[]) {
   let markdownBody = `### ${property === 'commandsPreDeploy' ? 'Pre-deployment Actions' : 'Post-deployment Actions'} Results\n\n`;
@@ -300,7 +246,7 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
       if (outputForMarkdown.length > maxOutputLength) {
         outputForMarkdown = outputForMarkdown.substring(0, maxOutputLength) + `\n\n... Output truncated to ${maxOutputLength} characters ...`;
       }
-      markdownBody += `\n<details id="command-${cmd.id}">\n<summary>Details for command ${cmd.id} - ${cmd.label}</summary>\n\n`;
+      markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${cmd.label}</summary>\n\n`;
       markdownBody += '```\n';
       markdownBody += outputForMarkdown
       markdownBody += '\n```\n';
