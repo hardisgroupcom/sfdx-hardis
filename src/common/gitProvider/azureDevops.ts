@@ -6,7 +6,7 @@ import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../ut
 import * as path from "path";
 import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
-import { CONSTANTS } from "../../config/index.js";
+import { CONSTANTS, getEnvVar } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
 
@@ -438,10 +438,11 @@ ${this.getPipelineVariablesConfig()}
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     // Get CI variables
+    const prInfo = await this.getPullRequestInfo();
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     const buildId = process.env.BUILD_BUILD_ID || null;
     const jobId = process.env.SYSTEM_JOB_ID || null;
-    const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
+    const pullRequestIdStr = getEnvVar("SYSTEM_PULLREQUEST_PULLREQUESTID") || prInfo?.idStr || null;
     if (repositoryId == null || pullRequestIdStr == null) {
       uxLog("log", this, c.grey("[Azure integration] No project and pull request, so no note thread..."));
       uxLog(

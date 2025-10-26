@@ -191,6 +191,8 @@ export class GithubProvider extends GitProviderRoot {
 
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
+    const prinfo = await this.getPullRequestInfo();
+    this.prNumber = this.prNumber || prinfo?.idNumber || null;
     if (this.repoName == null || this.prNumber == null) {
       uxLog("log", this, c.grey("[GitHub Integration] No project and merge request, so no note posted..."));
       return { posted: false, providerResult: { info: "No related pull request" } };

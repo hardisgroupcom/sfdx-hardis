@@ -305,7 +305,8 @@ export class BitbucketProvider extends GitProviderRoot {
   }
 
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
-    const pullRequestIdStr = process.env.BITBUCKET_PR_ID || null;
+    const prInfo = await this.getPullRequestInfo();
+    const pullRequestIdStr = process.env.BITBUCKET_PR_ID || prInfo?.idStr || null;
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
 

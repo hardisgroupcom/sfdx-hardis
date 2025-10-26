@@ -127,8 +127,9 @@ export class GitlabProvider extends GitProviderRoot {
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     // Get CI variables
+    const prInfo = await this.getPullRequestInfo();
     const projectId = process.env.CI_PROJECT_ID || null;
-    const mergeRequestId = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || null;
+    const mergeRequestId = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || prInfo?.idStr || null;
     if (projectId == null || mergeRequestId == null) {
       uxLog("log", this, c.grey("[Gitlab integration] No project and merge request, so no note posted..."));
       return { posted: false, providerResult: { info: "No related merge request" } };
