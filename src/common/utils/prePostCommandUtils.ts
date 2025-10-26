@@ -237,13 +237,20 @@ async function executeAction(cmd: PrePostCommand): Promise<void> {
 function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[]) {
   let markdownBody = `### ${property === 'commandsPreDeploy' ? 'Pre-deployment Actions' : 'Post-deployment Actions'} Results\n\n`;
   // Build markdown table
-  markdownBody += `| Label | Type | Status |\n`;
-  markdownBody += `|-------|------|--------|\n`;
+  markdownBody += `| Label | Type | Status | Details |\n`;
+  markdownBody += `|-------|------|--------|---------|\n`;
   for (const cmd of commands) {
     const statusIcon = cmd.result?.statusCode === "success" ? '✅' :
-      cmd.result?.statusCode === "failed" ? '❌' :
-        cmd.result?.statusCode === "skipped" ? '⚪' : '❓';
-    markdownBody += `| ${cmd.label} | ${cmd.type || 'command'} | ${statusIcon} ${cmd.result?.statusCode || 'not run'} |\n`;
+      (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ? '⚠️' :
+        (cmd.result?.statusCode === "failed") ? '❌' :
+          cmd.result?.statusCode === "skipped" ? '⚪' : '❓';
+    const statusCol = `${statusIcon} ${cmd.result?.statusCode || 'not run'}`;
+    const detailCol = cmd.result?.statusCode === "skipped" ?
+      (cmd.result?.skippedReason || '<!-- -->') :
+      (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ?
+        "Allowed to fail" :
+        "See details below";
+    markdownBody += `| ${cmd.label} | ${cmd.type || 'command'} | ${statusCol} | ${detailCol} |\n`;
   }
   // Add details in html <detail> blocks, embedded in a root <details> block to avoid markdown rendering issues
   markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
