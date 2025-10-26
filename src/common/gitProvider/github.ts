@@ -200,7 +200,7 @@ export class GithubProvider extends GitProviderRoot {
     const githubJobUrl = await this.getCurrentJobUrl();
     // Build note message
     const messageKey = prMessage.messageKey + "-" + this.workflow + "-" + this.prNumber;
-    let messageBody = `**${prMessage.title || ""}**
+    let messageBody = `## ${prMessage.title || ""}
 
 ${prMessage.message}
 
