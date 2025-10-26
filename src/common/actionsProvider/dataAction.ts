@@ -1,6 +1,7 @@
 import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
-import { execCommand, uxLog } from '../utils/index.js';
+import { uxLog } from '../utils/index.js';
 import c from 'chalk';
+import { findDataWorkspaceByName, importData } from '../utils/dataUtils.js';
 
 export class DataAction extends ActionsProvider {
   public getLabel(): string {
@@ -11,8 +12,13 @@ export class DataAction extends ActionsProvider {
   public async checkValidityIssues(cmd: PrePostCommand): Promise<ActionResult | null> {
     const sfdmuProject = (cmd.parameters?.sfdmuProject as string) || '';
     if (!sfdmuProject) {
-      uxLog('error', this, c.red(`[DeploymentActions] No sfdmuProject parameter provided for action [${cmd.id}]: ${cmd.label}`));
+      uxLog('error', this, c.red(`[DeploymentActions] No sfdmuProject parameter provided for action ${cmd.label}`));
       return { statusCode: 'failed', skippedReason: 'No sfdmuProject parameter provided' };
+    }
+    const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject);
+    if (!sfdmuProjectPath) {
+      uxLog('error', this, c.red(`[DeploymentActions] Data workspace ${sfdmuProject} does not exist for action ${cmd.label}`));
+      return { statusCode: 'failed', skippedReason: `Data workspace ${sfdmuProject} does not exist` };
     }
     return null;
   }
@@ -21,10 +27,16 @@ export class DataAction extends ActionsProvider {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
     const sfdmuProject = (cmd.parameters?.sfdmuProject as string) || '';
-    const dataCommand = `sf sfdmu run -p ${sfdmuProject}`;
-    const res = await execCommand(dataCommand, null, { fail: false, output: true });
-    if (res.status === 0) {
-      return { statusCode: 'success', output: (res.stdout || '') + '\n' + (res.stderr || '') };
+    const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject);
+    let res: any;
+    try {
+      res = await importData(sfdmuProjectPath, null, { fail: false, output: true });
+      if (res.status === 0) {
+        return { statusCode: 'success', output: (res.stdout || '') + '\n' + (res.stderr || '') };
+      }
+    } catch (error) {
+      uxLog('error', this, c.red(`[DeploymentActions] Error during data import for action ${cmd.label}: ${error}`));
+      return { statusCode: 'failed', output: `Error during data import: ${error}` };
     }
     return { statusCode: 'failed', output: (res.stdout || '') + '\n' + (res.stderr || '') };
   }
