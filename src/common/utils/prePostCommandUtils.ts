@@ -409,7 +409,7 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
     const statusIcon = cmd.result?.statusCode === "success" ? '✅' :
       cmd.result?.statusCode === "failed" ? '❌' :
         cmd.result?.statusCode === "skipped" ? '⚪' : '❓';
-    markdownBody += `| ${cmd.label} | ${cmd.type} | ${statusIcon} ${cmd.result?.statusCode || 'not run'} |\n`;
+    markdownBody += `| ${cmd.label} | ${cmd.type || 'command'} | ${statusIcon} ${cmd.result?.statusCode || 'not run'} |\n`;
   }
   // Add details in html <detail> blocks, embedded in a root <details> block to avoid markdown rendering issues
   markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
