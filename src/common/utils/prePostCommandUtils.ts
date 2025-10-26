@@ -10,7 +10,7 @@ import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { checkSfdxHardisTraceAvailable, listMajorOrgs } from './orgConfigUtils.js';
 import { soqlQuery } from './apiUtils.js';
 import { findDataWorkspaceByName, importData } from './dataUtils.js';
-import { setPullRequestData } from './gitUtils.js';
+import { getPullRequestData, setPullRequestData } from './gitUtils.js';
 
 
 export interface PrePostCommand {
@@ -122,6 +122,12 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     // throw error if failed and allowFailure is not set
     const failedAndNotAllowFailure = failedCommands.filter(c => c.allowFailure !== true);
     if (failedAndNotAllowFailure.length > 0) {
+      let prData = getPullRequestData()
+      prData = Object.assign(prData, {
+        title: "❌ Error: Failed deployment actions",
+        messageKey: prData.messageKey ?? 'deployment',
+      });
+      setPullRequestData(prData);
       await GitProvider.managePostPullRequestComment();
       throw new SfError(`One or more ${actionLabel} have failed. See logs for more details.`);
     }
@@ -129,6 +135,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
 }
 
 async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[]) {
+  await checkForDraftCommandsFile(property);
   const pullRequests = await listAllPullRequestsToUse();
   for (const pr of pullRequests) {
     // Check if there is a .sfdx-hardis.PULL_REQUEST_ID.yml file in the PR
@@ -196,6 +203,27 @@ function recursiveGetChildBranches(
     }
   }
   return collected;
+}
+
+async function checkForDraftCommandsFile(property: 'commandsPreDeploy' | 'commandsPostDeploy') {
+  const prConfigFileName = path.join("scripts", "actions", `.sfdx-hardis.draft.yml`);
+  if (fs.existsSync(prConfigFileName)) {
+    const errorMessage = `Draft commands file ${prConfigFileName} found.
+Please assign it to a Pull Request before proceeding., or delete it if you don't need it
+To assign it, rename the file to .sfdx-hardis.PULL_REQUEST_ID.yml, replacing PULL_REQUEST_ID with the actual ID of the Pull Request.
+Example: .sfdx-hardis.123.yml`;
+    const propertyFormatted = property === 'commandsPreDeploy' ? 'preDeployCommandsResultMarkdownBody' : 'postDeployCommandsResultMarkdownBody';
+    let prData = getPullRequestData()
+    prData = Object.assign(prData, {
+      title: "❌ Error: Draft manual actions file found",
+      messageKey: prData.messageKey ?? 'deployment',
+      [propertyFormatted]: errorMessage
+    });
+    setPullRequestData(prData);
+    await GitProvider.managePostPullRequestComment();
+    uxLog("error", this, c.red(`[DeploymentActions] ${errorMessage}`));
+    throw new SfError(`Draft commands file ${prConfigFileName} found. Please assign it to a Pull Request or delete it before proceeding.`);
+  }
 }
 
 async function executeAction(cmd: PrePostCommand): Promise<void> {
