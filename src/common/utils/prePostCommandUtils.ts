@@ -25,7 +25,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   }
   uxLog("action", this, c.cyan(`[DeploymentActions] Found ${commands.length} ${actionLabel} to run`));
   for (const cmd of commands) {
-    const actionsInstance = ActionsProvider.buildActionInstance(cmd);
+    const actionsInstance = await ActionsProvider.buildActionInstance(cmd);
     const actionsIssues = await actionsInstance.checkValidityIssues(cmd);
     if (actionsIssues) {
       cmd.result = actionsIssues;
@@ -212,7 +212,7 @@ Example: .sfdx-hardis.123.yml`;
 
 async function executeAction(cmd: PrePostCommand): Promise<void> {
   // Use ActionsProvider classes to execute actions
-  const actionInstance = ActionsProvider.buildActionInstance(cmd);
+  const actionInstance = await ActionsProvider.buildActionInstance(cmd);
   try {
     const res = await actionInstance.run(cmd);
     cmd.result = res;

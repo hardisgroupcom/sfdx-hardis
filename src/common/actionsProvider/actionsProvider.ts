@@ -2,11 +2,6 @@ import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import { uxLog } from '../utils/index.js';
 import { CommonPullRequestInfo } from '../gitProvider/index.js';
-import { CommandAction } from './commandAction.js';
-import { ApexAction } from './apexAction.js';
-import { DataAction } from './dataAction.js';
-import { PublishCommunityAction } from './publishCommunityAction.js';
-import { ManualAction } from './manualAction.js';
 
 export interface PrePostCommand {
   id: string;
@@ -38,30 +33,35 @@ export type ActionResult = {
 
 export abstract class ActionsProvider {
 
-  public static buildActionInstance(cmd: PrePostCommand): ActionsProvider {
+  public static async buildActionInstance(cmd: PrePostCommand): Promise<ActionsProvider> {
     let actionInstance: any = null;
-    switch (cmd.type || 'command') {
-      case 'command':
-        actionInstance = new CommandAction();
-        break;
-      case 'apex':
-        actionInstance = new ApexAction();
-        break;
-      case 'data':
-        actionInstance = new DataAction();
-        break;
-      case 'publish-community':
-        actionInstance = new PublishCommunityAction();
-        break;
-      case 'manual':
-        actionInstance = new ManualAction();
-        break;
-      default:
-        uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
-        cmd.result = {
-          statusCode: "failed",
-          skippedReason: `Action type [${cmd.type}] is not implemented`
-        };
+    const type = cmd.type || 'command';
+    if (type === 'command') {
+      const CommandAction = await import('./commandAction.js');
+      actionInstance = new CommandAction.CommandAction();
+    }
+    else if (type === 'apex') {
+      const ApexAction = await import('./apexAction.js');
+      actionInstance = new ApexAction.ApexAction();
+    }
+    else if (type === 'data') {
+      const DataAction = await import('./dataAction.js');
+      actionInstance = new DataAction.DataAction();
+    }
+    else if (type === 'publish-community') {
+      const PublishCommunityAction = await import('./publishCommunityAction.js');
+      actionInstance = new PublishCommunityAction.PublishCommunityAction();
+    }
+    else if (type === 'manual') {
+      const ManualAction = await import('./manualAction.js');
+      actionInstance = new ManualAction.ManualAction();
+    }
+    else {
+      uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
+      cmd.result = {
+        statusCode: "failed",
+        skippedReason: `Action type [${cmd.type}] is not implemented`
+      };
     }
     return actionInstance;
   }
