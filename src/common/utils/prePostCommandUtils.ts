@@ -230,7 +230,7 @@ Example: .sfdx-hardis.123.yml`;
 }
 
 async function executeAction(cmd: PrePostCommand): Promise<void> {
-  switch (cmd.type) {
+  switch (cmd.type || 'command') {
     case 'command':
       await executeActionCommand(cmd);
       break;
@@ -258,6 +258,15 @@ async function executeAction(cmd: PrePostCommand): Promise<void> {
 
 /* jscpd:ignore-start */
 async function executeActionCommand(cmd: PrePostCommand): Promise<void> {
+  const command = cmd.command;
+  if (!command) {
+    uxLog("error", this, c.red(`[DeploymentActions] No command provided for action [${cmd.id}]: ${cmd.label}`));
+    cmd.result = {
+      statusCode: "failed",
+      skippedReason: "No command provided"
+    };
+    return;
+  }
   const commandRes = await execCommand(cmd.command, this, { fail: false, output: true });
   if (commandRes.status === 0) {
     uxLog("success", this, c.green(`[DeploymentActions] Action [${cmd.id}] executed successfully`));
