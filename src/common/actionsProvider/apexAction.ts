@@ -9,7 +9,7 @@ export class ApexAction extends ActionsProvider {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async checkValidity(cmd: PrePostCommand): Promise<ActionResult | null> {
+  public async checkParameters(cmd: PrePostCommand): Promise<ActionResult | null> {
     const apexScript = (cmd.parameters?.apexScript as string) || '';
     if (!apexScript) {
       uxLog('error', this, c.red(`[DeploymentActions] No apexScript parameter provided for action [${cmd.id}]: ${cmd.label}`));
@@ -26,7 +26,7 @@ export class ApexAction extends ActionsProvider {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
     const apexScript = (cmd.parameters?.apexScript as string) || '';
-    const apexCommand = `sf apex run --file ${apexScript}`;
+    const apexCommand = `sf apex run --file ${apexScript}` + (this.customUsernameToUse ? ` --target-org ${this.customUsernameToUse}` : '');
     const res = await execCommand(apexCommand, null, { fail: false, output: true });
     if (res.status === 0) {
       return { statusCode: 'success', output: (res.stdout || '') + '\n' + (res.stderr || '') };

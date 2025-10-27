@@ -9,7 +9,7 @@ export class DataAction extends ActionsProvider {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async checkValidityIssues(cmd: PrePostCommand): Promise<ActionResult | null> {
+  public async checkParameters(cmd: PrePostCommand): Promise<ActionResult | null> {
     const sfdmuProject = (cmd.parameters?.sfdmuProject as string) || '';
     if (!sfdmuProject) {
       uxLog('error', this, c.red(`[DeploymentActions] No sfdmuProject parameter provided for action ${cmd.label}`));
@@ -28,9 +28,16 @@ export class DataAction extends ActionsProvider {
     if (validity) return validity;
     const sfdmuProject = (cmd.parameters?.sfdmuProject as string) || '';
     const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject);
+    const importOptions: any = {
+      fail: false,
+      output: true
+    }
+    if (this.customUsernameToUse) {
+      importOptions.targetUsername = this.customUsernameToUse;
+    }
     let res: any;
     try {
-      res = await importData(sfdmuProjectPath!, null, { fail: false, output: true });
+      res = await importData(sfdmuProjectPath!, null, importOptions);
       if (res.status === 0) {
         return { statusCode: 'success', output: (res.stdout || '') + '\n' + (res.stderr || '') };
       }

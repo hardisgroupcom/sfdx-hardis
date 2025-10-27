@@ -8,7 +8,7 @@ export class ManualAction extends ActionsProvider {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async checkValidityIssues(cmd: PrePostCommand): Promise<ActionResult | null> {
+  public async checkParameters(cmd: PrePostCommand): Promise<ActionResult | null> {
     const instructions = (cmd.parameters?.instructions as string) || '';
     if (!instructions) {
       uxLog('warning', this, c.yellow(`[DeploymentActions] No instructions for manual action [${cmd.id}]: ${cmd.label}`));

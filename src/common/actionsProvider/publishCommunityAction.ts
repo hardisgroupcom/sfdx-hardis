@@ -8,7 +8,7 @@ export class PublishCommunityAction extends ActionsProvider {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async checkValidityIssues(cmd: PrePostCommand): Promise<ActionResult | null> {
+  public async checkParameters(cmd: PrePostCommand): Promise<ActionResult | null> {
     const communityName = (cmd.parameters?.communityName as string) || '';
     if (!communityName) {
       uxLog('error', this, c.red(`[DeploymentActions] No communityName parameter provided for action [${cmd.id}]: ${cmd.label}`));
@@ -21,7 +21,7 @@ export class PublishCommunityAction extends ActionsProvider {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
     const communityName = (cmd.parameters?.communityName as string) || '';
-    const publishCmd = `sf community publish -n "${communityName}"`;
+    const publishCmd = `sf community publish -n "${communityName}"` + (this.customUsernameToUse ? ` --target-org ${this.customUsernameToUse}` : '');
     const res = await execCommand(publishCmd, null, { fail: false, output: true });
     if (res.status === 0) {
       return { statusCode: 'success', output: (res.stdout || '') + '\n' + (res.stderr || '') };

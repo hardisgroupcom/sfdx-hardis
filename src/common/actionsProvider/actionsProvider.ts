@@ -1,7 +1,9 @@
-import { SfError } from '@salesforce/core';
+import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import { uxLog } from '../utils/index.js';
 import { CommonPullRequestInfo } from '../gitProvider/index.js';
+import { authOrg } from '../utils/authUtils.js';
+import { findUserByUsernameLike } from '../utils/orgUtils.js';
 
 export interface PrePostCommand {
   id: string;
@@ -20,6 +22,7 @@ export interface PrePostCommand {
   skipIfError?: boolean;
   allowFailure?: boolean;
   runOnlyOnceByOrg?: boolean;
+  customUsername?: string;
   // If command comes from a PR, we attach PR info
   pullRequest?: CommonPullRequestInfo;
   result?: ActionResult;
@@ -32,6 +35,8 @@ export type ActionResult = {
 };
 
 export abstract class ActionsProvider {
+
+  public customUsernameToUse: string | null = null;
 
   public static async buildActionInstance(cmd: PrePostCommand): Promise<ActionsProvider> {
     let actionInstance: any = null;
@@ -76,8 +81,21 @@ export abstract class ActionsProvider {
    * Return an ActionResult when the command must be short-circuited
    * (for example: missing parameters -> failed, or manual -> skipped).
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async checkValidityIssues(cmd: PrePostCommand): Promise<ActionResult | null> {
+    const parametersValidityIssue = await this.checkParameters(cmd);
+    if (parametersValidityIssue) {
+      return parametersValidityIssue;
+    }
+    const authValidityIssue = await this.checkAuthCustomUsernameIssues(cmd);
+    if (authValidityIssue) {
+      return authValidityIssue;
+    }
+    return null;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async checkParameters(_cmd: PrePostCommand): Promise<ActionResult | null> {
+    uxLog('warning', this, c.yellow(`checkParameters is not implemented on ${this.getLabel()}`));
     return null;
   }
 
@@ -85,5 +103,40 @@ export abstract class ActionsProvider {
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     uxLog('warning', this, c.yellow(`run is not implemented on ${this.getLabel()}`));
     return { statusCode: 'skipped', skippedReason: 'Not implemented' };
+  }
+
+  public async checkAuthCustomUsernameIssues(cmd: PrePostCommand): Promise<ActionResult | null> {
+    if (this.customUsernameToUse) {
+      return null;
+    }
+    if (cmd.customUsername) {
+      const conn: Connection = globalThis.jsForceConn;
+      const user = await findUserByUsernameLike(cmd.customUsername, conn);
+      if (!user) {
+        uxLog('error', this, c.red(`[DeploymentActions] Custom username [${cmd.customUsername}] not found for action ${cmd.label}`));
+        return { statusCode: 'failed', skippedReason: `Custom username [${cmd.customUsername}] not found` };
+      }
+      let authResult: boolean;
+      try {
+        const instanceUrl = conn.instanceUrl;
+        authResult = await authOrg('', {
+          forceUsername: user.Username,
+          instanceUrl: instanceUrl,
+          setDefault: false,
+        });
+      } catch (error) {
+        uxLog('error', this, c.red(`[DeploymentActions] Error during authentication with custom username [${user.Username}] for action ${cmd.label}: ${error}`));
+        return { statusCode: 'failed', skippedReason: `Error during authentication with custom username [${user.Username}]: ${error}` };
+      }
+      if (authResult === true) {
+        this.customUsernameToUse = user.Username;
+        uxLog('log', this, c.green(`[DeploymentActions] Authenticated with custom username [${this.customUsernameToUse}] for action ${cmd.label}`));
+      }
+      else {
+        uxLog('error', this, c.red(`[DeploymentActions] Failed to authenticate with custom username [${user.Username}] for action ${cmd.label}`));
+        return { statusCode: 'failed', skippedReason: `Failed to authenticate with custom username [${user.Username}]` };
+      }
+    }
+    return null;
   }
 }
