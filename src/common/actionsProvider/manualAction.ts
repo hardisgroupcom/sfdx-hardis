@@ -22,6 +22,6 @@ export class ManualAction extends ActionsProvider {
     if (validity) return validity;
     const instructions = (cmd.parameters?.instructions as string) || '';
     // Manual actions are not executed automatically. We just record the instructions.
-    return { statusCode: 'skipped', skippedReason: 'Manual action - see output for instructions', output: instructions };
+    return { statusCode: 'manual', skippedReason: 'Manual action - see output for instructions', output: instructions };
   }
 }

@@ -241,10 +241,12 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
   markdownBody += `| <!-- --> | Label | Type | Status | Details |\n`;
   markdownBody += `|:--------:|-------|------|--------|---------|\n`;
   for (const cmd of commands) {
-    const statusIcon = cmd.result?.statusCode === "success" ? '✅' :
-      (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ? '⚠️' :
-        (cmd.result?.statusCode === "failed") ? '❌' :
-          cmd.result?.statusCode === "skipped" ? '⚪' : '❓';
+    const statusIcon = cmd.result?.statusCode === "manual" ?
+      "[ ]" :
+      cmd.result?.statusCode === "success" ? '✅' :
+        (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ? '⚠️' :
+          (cmd.result?.statusCode === "failed") ? '❌' :
+            cmd.result?.statusCode === "skipped" ? '⚪' : '❓';
     const statusCol = `${cmd.result?.statusCode || 'not run'}`;
     const detailCol = cmd.result?.statusCode === "skipped" ?
       (cmd.result?.skippedReason || '<!-- -->') :

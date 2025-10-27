@@ -26,7 +26,7 @@ export interface PrePostCommand {
 }
 
 export type ActionResult = {
-  statusCode: 'success' | 'failed' | 'skipped';
+  statusCode: 'success' | 'failed' | 'skipped' | "manual";
   output?: string;
   skippedReason?: string;
 };
