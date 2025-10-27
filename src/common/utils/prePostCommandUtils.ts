@@ -242,7 +242,7 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
   markdownBody += `|:--------:|-------|------|--------|---------|\n`;
   for (const cmd of commands) {
     const statusIcon = cmd.result?.statusCode === "manual" ?
-      "[ ]" :
+      "- [ ]" :
       cmd.result?.statusCode === "success" ? '✅' :
         (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ? '⚠️' :
           (cmd.result?.statusCode === "failed") ? '❌' :
