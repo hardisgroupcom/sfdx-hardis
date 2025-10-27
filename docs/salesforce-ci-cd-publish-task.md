@@ -4,57 +4,51 @@ description: Learn how to commit and create a merge request
 ---
 <!-- markdownlint-disable MD013 -->
 
-- [Commit your updates](#commit-your-updates)
-  - [Retrieve metadatas](#retrieve-metadatas)
+- [1. Commit your updates](#commit-your-updates)
+  - [Retrieve metadata](#retrieve-metadata)
   - [Stage and commit](#stage-and-commit)
-- [Prepare merge request](#prepare-merge-request)
-- [Create merge request](#create-merge-request)
+- [2. Prepare Merge request](#prepare-merge-request)
+- [3. Create merge request](#create-merge-request)
   - [Using Gitlab](#using-gitlab)
   - [Using Github](#using-github)
   - [Using Azure](#using-azure)
-- [Check merge request results](#check-merge-request-results)
+- [4. Check merge request results](#check-merge-request-results)
+
+> Note: Merge requests and pull requests are the same concept; different platforms use different names.
 
 ___
 
 ## Commit your updates
 
-_The following video shows how to perform theses operations_
+_The following video shows how to perform these operations._
+
+> Note: this video shows an older version of sfdx-hardis and will be updated to reference the new VS Code SFDX-Hardis UI.
 
 <div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/Ik6whtflmfY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
 
-### Retrieve metadatas
+### Retrieve metadata
 
-If you made updates on your org that you have not pulled yet, Use command [![Pull from org button](assets/images/btn-pull-from-org.jpg)](https://sfdx-hardis.cloudity.com/hardis/scratch/pull/) to **pull your latest updates in local files**
+Use the Sfdx-Hardis Metadata Retriever to identify and retrieve metadata from your org.
 
-If you updated config elements that you do not see in your local files, you may discuss with your release manager to [automate force retrieve metadatas](salesforce-ci-cd-retrieve.md)
+![Metadata Retriever button](assets/images/metadata-retriever.gif)
 
-#### Alternative: Use Org Browser
+- **Recent Changes** shows updates made in the org since its creation or the last source tracking reset.
 
-You can also use Salesforce extension Org Browser to manually browse and retrieve specific metadatas
+- **All Metadata** shows all metadata available in your org.
 
-![](assets/images/screenshot-org-browser.png)
-
-#### Alternative: Use contextual menu
-
-If Org Browser does not see items that you want to retrieve, like list views, you can right click on any **listViews** folder and use command **SFDX: Retrieve source from org**
-
-![](assets/images/screenshot-right-click-retrieve.png)
-
-#### Alternative: Use menu "Select and retrieve"
-
-If it is not possible to use pull configuration, you may retrieve metadatas using ![Select and retrieve button](assets/images/btn-select-retrieve.jpg) (but it will retrieve locally many files and it will be harder to select the ones you really need, select carefully the items that you stage and commit)
+Select the metadata you want to retrieve, then click the "Retrieve Selected" button.
 
 ### Stage and commit
 
-In VsCode Git extension, **stage** and **commit** created, updated and deleted files that you want to publish
+In the VS Code Git extension, **stage** and **commit** the created, updated and deleted files that you want to publish.
 
-- By selecting the metadata files you can **see the differences** with the previous versions, to know if you want to publish or not an updated file
+- By selecting a metadata file, you can **see the differences** with the previous version to decide whether to publish the update. You can partially stage file updates if needed.
 
-- **Never use Stage all function**
+- **Never use the Stage All function.**
 
-- If you see standard items like standard fields that do not contain customizations, do not commit them
+- If you see standard items (for example, standard fields) that do not contain user customizations, do not commit them.
 
-- **Important**: If you think that your sandbox may not be up to date according to elements published by your colleagues, look closely at the diff on those items, and stage only the updates that you want to publish
+- **Important**: If you think your sandbox may not be up to date with changes published by your colleagues, inspect the diffs carefully and stage only the updates you want to publish.
 
 ![](assets/images/screenshot-partial-commit.png)
 
@@ -66,49 +60,51 @@ ___
 
 ## Prepare merge request
 
-- **Once your commit is completed**, run command ![Save User Story button](assets/images/btn-save-publish-task.jpg) to prepare your merge request.
+- **Once your commit is completed**, run the command shown by the ![Save User Story button](assets/images/btn-save-publish-task.jpg) to prepare your merge request.
 
-- As you committed your files like explained in the previous section, select option ![Message my commit is ready](assets/images/msg-commit-ready.jpg) when prompted.
+- After committing your files as described in the previous section, select the **Message: my commit is ready** option when prompted.
 
-- Wait for the script to complete, and select **Push commit to server** when prompted
+- Wait for the script to complete, then select **Push commit to server** when prompted.
 
-> ![Under the hood](assets/images/engine.png) **_Under the hood_**
+If you want to create a Pull Request / Merge Request, click on the related button.
+
+![](assets/images/screenshot-work-save.png)
+
+> ![Under the hood](assets/images/engine.png) **Under the hood**
 >
 > The script performs the following operations:
 >
-> - Update `manifest/package.xml` automatically according to the committed updates
-> - Clean XML of metadatas according to .sfdx-hardis.yml config property `autoCleanTypes` and `autoRemoveUserPermissions`
-> - New git commit with automated updates
-> - Git push commit to git server
+> - Updates `manifest/package.xml` automatically based on the committed changes.
+> - Cleans metadata XML according to `.sfdx-hardis.yml` config properties `autoCleanTypes` and `autoRemoveUserPermissions`.
+> - Creates a new Git commit with automated updates.
+> - Pushes the commit to the Git server.
 >
-> More details in [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) command documentation
+> More details in the [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) command documentation.
 
 ___
 
 ## Create merge request
 
-It is now time to create your merge request to technically publish your updates at the upper level !
+Now create your merge request to publish your updates to the higher-level branch.
 
-Depending on the CI platform you use, follow the related guide.
+If you are working with a ticketing system like JIRA, make sure to add the ticket number(s) or the full ticket URL in the MR/PR title and description to help with release management.
 
-> If you are **publishing to a RUN branch** (ex: `preprod`), **AND** the **project also has a BUILD branch** (ex: `integration`), you need to **notify the release manager**
-> He/she will have to retrofit your updates once published
+For example, use a PR title like `CLOUDITY-456 Add condition on Account After Update Flow`.
 
-> If you are working with a ticketing system like JIRA, make sure to add the **full url** of the tickets in the MR/PR description, so it will help for the release management.
-> For example, use `https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4` , not `CLOUDITY-4`
+Depending on the CI platform you use, follow the appropriate guide.
 
 ### Using Gitlab
 
-See [Create a merge request using Gitlab](salesforce-ci-cd-merge-request-gitlab.md)
+See [Create a Merge Request using Gitlab](salesforce-ci-cd-merge-request-gitlab.md)
 
 ### Using Azure
 
-See [Create a merge request using Azure](salesforce-ci-cd-pull-request-azure.md)
+See [Create a Pull Request using Azure](salesforce-ci-cd-pull-request-azure.md)
 
 ### Using GitHub
 
-See [Create a merge request using Github](salesforce-ci-cd-pull-request-github.md)
+See [Create a Pull Request using Github](salesforce-ci-cd-pull-request-github.md)
 
 ## Check merge request results
 
-After you create your merge request, [check its control jobs results](salesforce-ci-cd-handle-merge-request-results.md) !
+After you create your merge request, check the results of its control jobs: [see how to handle merge request results](salesforce-ci-cd-handle-merge-request-results.md).
