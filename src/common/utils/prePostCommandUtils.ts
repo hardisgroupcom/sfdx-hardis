@@ -167,6 +167,7 @@ async function listAllPullRequestsToUse(): Promise<CommonPullRequestInfo[]> {
     pullRequestInfo.targetBranch,
     [...childBranchesNames]
   );
+  pullRequests.reverse(); // Oldest PR first
   if (!pullRequests.some(pr => pr.idStr === pullRequestInfo.idStr)) {
     pullRequests.push(pullRequestInfo);
   }
@@ -248,8 +249,10 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
     const detailCol = cmd.result?.statusCode === "skipped" ?
       (cmd.result?.skippedReason || '<!-- -->') :
       (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ?
-        "Allowed to fail" :
-        "See details below";
+        (cmd.result.skippedReason ? `${cmd.result.skippedReason} (Allowed to fail)` : "(Allowed to fail)") :
+        (cmd.result?.statusCode === "failed" && cmd.result.skippedReason) ?
+          cmd.result.skippedReason :
+          "See details below";
     const labelCol = cmd.pullRequest ?
       `${cmd.label} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))` :
       cmd.label;
@@ -265,7 +268,10 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
       if (outputForMarkdown.length > maxOutputLength) {
         outputForMarkdown = outputForMarkdown.substring(0, maxOutputLength) + `\n\n... Output truncated to ${maxOutputLength} characters ...`;
       }
-      markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${cmd.label}</summary>\n\n`;
+      const labeTitle = cmd.pullRequest ?
+        `${cmd.label} (${cmd.pullRequest.idStr || "?"})` :
+        cmd.label;
+      markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${labeTitle}</summary>\n\n`;
       markdownBody += '```\n';
       markdownBody += outputForMarkdown
       markdownBody += '\n```\n';
