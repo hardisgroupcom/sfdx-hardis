@@ -66,13 +66,14 @@ export default class ProfilesExtract extends SfCommand<void> {
       await this.generateAppsExtract(conn, numberOfPersonas);
       await this.generatePermissionsExtract(conn, numberOfPersonas);
       await this.generateTabsExtract(conn, numberOfPersonas);
+      await this.generatePermissionSetsExtract(conn, numberOfPersonas);
 
       // 1. Extract profile field access and get all profiles
       const profileFieldAccess = await this.getProfileFieldAccessData(conn, selectedObjects);
       const profileNames = Array.from(new Set(profileFieldAccess.map(r => r.Profile).filter(Boolean)));
 
       // 2. Pass profileNames to generateObjectFieldsExtract
-  await this.generateObjectFieldsExtract(conn, selectedObjects, numberOfPersonas, profileNames, profileFieldAccess);
+      await this.generateObjectFieldsExtract(conn, selectedObjects, numberOfPersonas, profileNames, profileFieldAccess);
 
       // 3. Write the profile field access CSV (as before)
       if (profileFieldAccess.length > 0) {
@@ -577,4 +578,47 @@ export default class ProfilesExtract extends SfCommand<void> {
     }
     return;
   }
+
+  /**
+   * Extracts all Permission Sets in the org.
+   * Generates a CSV report mapping each permission set to personas.
+   * @param conn 
+   * @param numberOfPersonas 
+   */
+  async generatePermissionSetsExtract(conn: any, numberOfPersonas: number) {
+    const permissionSetsRecords: { Name: string; Label: string; Description: string; IsCustom: string; [key: string]: string }[] = [];
+
+    try {
+      const result = await conn.query(
+        `SELECT Name, Label, Description, IsCustom FROM PermissionSet WHERE IsOwnedByProfile = false`
+      );
+
+      result.records.forEach((ps: any) => {
+        const personaCols: Record<string, string> = {};
+        for (let i = 1; i <= numberOfPersonas; i++) {
+          const personaRow = i + 1;
+          personaCols[`=persona!A${personaRow}&"_Assigned"`] = ''; // colonne dynamique pour chaque persona
+        }
+
+        permissionSetsRecords.push({
+          Name: ps.Name,
+          Label: ps.Label || '',
+          Description: ps.Description || '',
+          IsCustom: ps.IsCustom ? 'Yes' : 'No',
+          ...personaCols,
+        });
+      });
+
+      const reportDir = await getReportDirectory();
+      this.outputFile = path.join(reportDir, 'PermissionSets.csv');
+      await generateCsvFile(permissionSetsRecords, this.outputFile, {
+        fileTitle: 'Permission Sets extract',
+        noExcel: true,
+      });
+      this.csvFiles.push(this.outputFile);
+    } catch (error) {
+      uxLog('warning', this, c.yellow(`Failed to query PermissionSets: ${(error as Error).message}`));
+    }
+  }
+
 }
