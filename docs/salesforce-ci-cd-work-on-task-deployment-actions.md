@@ -59,36 +59,36 @@ commandsPostDeploy:
 
 Each action is an object with the following required and optional properties.
 
-| Field | Type | Required? | Description |
-|---|---|:---:|---|
-| `id` | string | Yes | Unique identifier for the action. |
-| `label` | string | Yes | Human-readable description of the action. |
-| `type` | string | Yes | One of `command`, `data`, `apex`, `publish-community`, `manual`. |
-| `context` | string | Yes | When the action should run. Allowed values: `all` (default), `check-deployment-only`, `process-deployment-only`. |
-| `command` | string | No | Shell command to run (used by `command` type). |
-| `parameters` | object | No | Parameters of the action (see action details) |
-| `customUsername` | string | No | Run the action with a specific username instead of the default target org. |
-| `skipIfError` | boolean | No | If true and the deployment itself failed, the action will be skipped. |
-| `allowFailure` | boolean | No | If true and the action fails, the deployment continues but the result is marked failed/allowed. |
-| `runOnlyOnceByOrg` | boolean | No | If true the action is recorded in the org (`SfdxHardisTrace__c` object required) and will not re-run on subsequent deployments. |
+| Field              | Type    | Required? | Description                                                                                                                     |
+|--------------------|---------|:---------:|---------------------------------------------------------------------------------------------------------------------------------|
+| `id`               | string  |    Yes    | Unique identifier for the action.                                                                                               |
+| `label`            | string  |    Yes    | Human-readable description of the action.                                                                                       |
+| `type`             | string  |    Yes    | One of `command`, `data`, `apex`, `publish-community`, `manual`.                                                                |
+| `context`          | string  |    Yes    | When the action should run. Allowed values: `all` (default), `check-deployment-only`, `process-deployment-only`.                |
+| `command`          | string  |    No     | Shell command to run (used by `command` type).                                                                                  |
+| `parameters`       | object  |    No     | Parameters of the action (see action details)                                                                                   |
+| `customUsername`   | string  |    No     | Run the action with a specific username instead of the default target org.                                                      |
+| `skipIfError`      | boolean |    No     | If true and the deployment itself failed, the action will be skipped.                                                           |
+| `allowFailure`     | boolean |    No     | If true and the action fails, the deployment continues but the result is marked failed/allowed.                                 |
+| `runOnlyOnceByOrg` | boolean |    No     | If true the action is recorded in the org (`SfdxHardisTrace__c` object required) and will not re-run on subsequent deployments. |
 
 ### Action implementations
 
-| Action type | Purpose |
-|---|---|
-| [`command`](#run-command) | Run an arbitrary shell or `sf` command. |
-| [`data`](#import-sfdmu-project) | Import a SFDMU project. |
-| [`apex`](#run-apex-script) | Run an Apex script file through the local `sf apex` integration. |
-| [`publish-community`](#publish-experience-site) | Publish an Experience Cloud (community) site. |
-| [`manual`](#manual-step) | Represent a manual step (no CLI execution). |
+| Action type                                     | Purpose                                                          |
+|-------------------------------------------------|------------------------------------------------------------------|
+| [`command`](#run-command)                       | Run an arbitrary shell or `sf` command.                          |
+| [`data`](#import-sfdmu-project)                 | Import a SFDMU project.                                          |
+| [`apex`](#run-apex-script)                      | Run an Apex script file through the local `sf apex` integration. |
+| [`publish-community`](#publish-experience-site) | Publish an Experience Cloud (community) site.                    |
+| [`manual`](#manual-step)                        | Represent a manual step (no CLI execution).                      |
 
 #### Run command
 
 Runs a custom command line. In case of multiple commands, use `&&` to separate them.
 
-| Custom parameter | Description | Example |
-|---|---|---|
-| `command` | Command line to run (string). | `echo "My custom command"` |
+| Custom parameter | Description                   | Example                    |
+|------------------|-------------------------------|----------------------------|
+| `command`        | Command line to run (string). | `echo "My custom command"` |
 
 Example:
 
@@ -105,8 +105,8 @@ Example:
 
 Runs a SFDMU import for the specified project name. Typically used post-deploy to load records such as templates or reference data.
 
-| Custom parameter | Description | Example |
-|---|---|---|
+| Custom parameter          | Description                       | Example         |
+|---------------------------|-----------------------------------|-----------------|
 | `parameters.sfdmuProject` | Name of the SFDMU project to run. | `EmailTemplate` |
 
 Example:
@@ -124,8 +124,8 @@ Example:
 
 Executes an Apex script file against the target org using `sf apex run --file`. Useful for initialization scripts or migrations that must run before or after metadata deployment.
 
-| Custom parameter | Description | Example |
-|---|---|---|
+| Custom parameter        | Description                                                 | Example                  |
+|-------------------------|-------------------------------------------------------------|--------------------------|
 | `parameters.apexScript` | Relative path to the `.apex` script file in the repository. | `scripts/apex/init.apex` |
 
 Example:
@@ -143,8 +143,8 @@ Example:
 
 Publishes the specified Experience Cloud (community) site using `sf community publish`. Use this when deployment changes require a publish step.
 
-| Custom parameter | Description | Example |
-|---|---|---|
+| Custom parameter           | Description                                       | Example            |
+|----------------------------|---------------------------------------------------|--------------------|
 | `parameters.communityName` | Name of the community/Experience site to publish. | `MyExperienceSite` |
 
 Example:
@@ -162,9 +162,9 @@ Example:
 
 Marks a manual step that cannot be automated. The PR result will show the instructions and an unchecked box for reviewers/operators to complete.
 
-| Custom parameter | Description | Example |
-|---|---|---|
-| `parameters.instructions` | Human-readable instructions or checklist for the operator/reviewer. Use a YAML block to preserve formatting. | |
+| Custom parameter          | Description                                                                                                  | Example |
+|---------------------------|--------------------------------------------------------------------------------------------------------------|---------|
+| `parameters.instructions` | Human-readable instructions or checklist for the operator/reviewer. Use a YAML block to preserve formatting. |         |
 
 Example:
 
