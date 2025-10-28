@@ -7,7 +7,7 @@ import { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { extractRegexMatches, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";
-import { getEnvVar } from "../../config/index.js";
+import { getConfig, getEnvVar } from "../../config/index.js";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces.js";
 import { CommonPullRequestInfo } from "../gitProvider/index.js";
@@ -18,7 +18,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   protected azureApi: InstanceType<typeof azdev.WebApi>;
   protected teamProject: string | null;
 
-  constructor() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  constructor(_config: any) {
     super();
     // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
     this.serverUrl = getEnvVar("SYSTEM_COLLECTIONURI");
@@ -34,7 +35,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     }
   }
 
-  public static isAvailable() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static isAvailable(_config: any): boolean {
     if (
       // Basic auth
       getEnvVar("SYSTEM_COLLECTIONURI") &&
@@ -69,12 +71,13 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       }
     }
     const ticketsSorted: Ticket[] = sortArray(tickets, { by: ["id"], order: ["asc"] });
-    if (!this.isAvailable()) {
+    const config = await getConfig("project");
+    if (!this.isAvailable(config)) {
       return ticketsSorted;
     }
     // Get tickets from Azure commits
     if (prInfo?.providerInfo?.commits) {
-      const azureBoardsProvider = new AzureBoardsProvider();
+      const azureBoardsProvider = new AzureBoardsProvider(config);
       const azureApi = azureBoardsProvider.azureApi;
       const azureGitApi = await azureApi.getGitApi();
       const repositoryId = getEnvVar("BUILD_REPOSITORY_ID") || "";

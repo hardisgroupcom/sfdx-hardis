@@ -60,8 +60,8 @@ jobs:
           SFDX_CLIENT_ID_MAIN: ${{ secrets.SFDX_CLIENT_ID_MAIN}}
           SFDX_CLIENT_KEY_MAIN: ${{ secrets.SFDX_CLIENT_KEY_MAIN}}
           SFDX_AUTH_URL_TECHNICAL_ORG: ${{ SFDX_AUTH_URL_TECHNICAL_ORG }}
-          SFDX_DEPLOY_WAIT_MINUTES: 120 # Override if necessary
-          SFDX_TEST_WAIT_MINUTES: 120 # Override if necessary
+          SFDX_DEPLOY_WAIT_MINUTES: ${{ vars.SFDX_DEPLOY_WAIT_MINUTES || '120' }}
+          SFDX_TEST_WAIT_MINUTES: ${{ vars.SFDX_TEST_WAIT_MINUTES || '120' }}
           CI_COMMIT_REF_NAME: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
           ORG_ALIAS: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
           CONFIG_BRANCH: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR

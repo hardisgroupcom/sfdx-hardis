@@ -4,6 +4,28 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add explicit message in case of error when authenticating to Git provider API
+- Allow to override SFDX_TEST_WAIT_MINUTES and SFDX_DEPLOY_WAIT_MINUTES using CI/CD variables, and set 120 minutes as default value everywhere
+
+## [6.9.0] 2025-10-23
+
+- Bring back Microsoft Teams notifications [using Teams Workflow](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-ms-teams/)
+- Update servicenow-report to add validity rows management
+
+## [6.8.1] 2025-10-22
+
+- Update Metadata List to use v65 one
+- Update servicenow-report command to handle more use cases
+
+## [6.8.0] 2025-10-19
+
+- Ticketing providers: Add more variables that can be defined in .sfdx-hardis.yml
+  - ticketingProvider
+  - genericTicketingProviderRegex
+  - genericTicketingProviderUrlBuilder
+  - jiraHost
+  - jiraTicketRegex
+
 ## [6.7.4] 2025-10-14
 
 - Enhances git commit logging with file status
@@ -32,12 +54,14 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - New command: [hardis:project:metadata:activate-decomposed](https://sfdx-hardis.cloudity.com/hardis/project/metadata/activate-decomposed/): Activate decomposed metadata types in `sfdx-project.json` and convert existing sources.
 
 - Improvements & Fixes
+
   - Cast descriptions to string before formatting to avoid rendering issues.
   - Avoid unnecessary file writes during builds to improve performance and CI speed.
   - Update JSON Schema to reflect new features and validation rules.
   - Add support for **Vector** (vector.dev) to enable ingestion by DataDog and other observability platforms.
 
 - Integrations
+
   - BitBucket: show a clear message when the Pull Requests app must be installed.
   - Azure Comment Reporter: create a Work Item and attach images when an item approaches the attachments limit.
 

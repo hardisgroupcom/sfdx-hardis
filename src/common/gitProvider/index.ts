@@ -13,70 +13,74 @@ const debug = Debug("sfdxhardis");
 
 export abstract class GitProvider {
   static async getInstance(prompt = false): Promise<GitProviderRoot | null> {
-    // Azure
-    if (process.env.SYSTEM_ACCESSTOKEN) {
-      const serverUrl = process.env.SYSTEM_COLLECTIONURI || null;
-      // a Personal Access Token must be defined
-      const token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || null;
-      if (serverUrl == null || token == null) {
-        uxLog(
-          "warning",
-          this,
-          c.yellow(`To benefit from Azure Pipelines advanced integration, you need to define the following variables as ENV vars:
+    try {
+      // Azure
+      if (process.env.SYSTEM_ACCESSTOKEN) {
+        const serverUrl = process.env.SYSTEM_COLLECTIONURI || null;
+        // a Personal Access Token must be defined
+        const token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || null;
+        if (serverUrl == null || token == null) {
+          uxLog(
+            "warning",
+            this,
+            c.yellow(`To benefit from Azure Pipelines advanced integration, you need to define the following variables as ENV vars:
 - SYSTEM_COLLECTIONURI
 - SYSTEM_ACCESSTOKEN or CI_SFDX_HARDIS_AZURE_TOKEN`),
-        );
-        return null;
+          );
+          return null;
+        }
+        return new AzureDevopsProvider();
       }
-      return new AzureDevopsProvider();
-    }
-    // Gitlab
-    else if (process.env.CI_JOB_TOKEN) {
-      const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || null;
-      if (token == null) {
-        uxLog(
-          "warning",
-          this,
-          c.yellow(`To benefit from Gitlab advanced integration, you need to :
+      // Gitlab
+      else if (process.env.CI_JOB_TOKEN) {
+        const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || null;
+        if (token == null) {
+          uxLog(
+            "warning",
+            this,
+            c.yellow(`To benefit from Gitlab advanced integration, you need to :
 - Go to Settings -> Access tokens -> create a project token named "SFDX HARDIS BOT" with developer access and scope "api", then copy its value
 - Go to Settings -> CI/CD -> Variables -> Create a masked variable named CI_SFDX_HARDIS_GITLAB_TOKEN, and paste the access token value`),
-        );
-        return null;
+          );
+          return null;
+        }
+        return new GitlabProvider();
       }
-      return new GitlabProvider();
-    }
-    // Github
-    else if (process.env.GITHUB_TOKEN) {
-      return new GithubProvider();
-    }
-    // Bitbucket
-    else if (process.env.BITBUCKET_WORKSPACE) {
-      const token = process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || null;
-      if (token == null) {
-        uxLog(
-          "warning",
-          this,
-          c.yellow(`To benefit from Bitbucket advanced integration, you need to :
+      // Github
+      else if (process.env.GITHUB_TOKEN) {
+        return new GithubProvider();
+      }
+      // Bitbucket
+      else if (process.env.BITBUCKET_WORKSPACE) {
+        const token = process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || null;
+        if (token == null) {
+          uxLog(
+            "warning",
+            this,
+            c.yellow(`To benefit from Bitbucket advanced integration, you need to :
 - Go to Repository Settings -> Access Tokens -> Create a repository access token with the scopes pullrequest, pullrequest:write, repository, repository:write and copy its value
 - Go to Repository Settings -> Repository Variables -> Create a variable named CI_SFDX_HARDIS_BITBUCKET_TOKEN and paste the access token value`),
-        );
-        return null;
+          );
+          return null;
+        }
+        return new BitbucketProvider();
       }
-      return new BitbucketProvider();
-    }
-    // If prompt allowed and no vars found, request to user
-    else if (prompt && !isCI) {
-      await GitProvider.handleManualGitServerAuth();
-      return this.getInstance(false);
-    }
-    else if (isCI) {
-      uxLog(
-        "log",
-        this,
-        c.grey(
-          "To use sfdx-hardis GitProvider capabilities, SYSTEM_ACCESSTOKEN, CI_JOB_TOKEN, GITHUB_TOKEN or CI_SFDX_HARDIS_BITBUCKET_TOKEN must be accessible for Azure Pipelines, Gitlab, GitHub or Bitbucket",
-        ),
-      );
+      // If prompt allowed and no vars found, request to user
+      else if (prompt && !isCI) {
+        await GitProvider.handleManualGitServerAuth();
+        return this.getInstance(false);
+      }
+      else if (isCI) {
+        uxLog(
+          "log",
+          this,
+          c.grey(
+            "To use sfdx-hardis GitProvider capabilities, SYSTEM_ACCESSTOKEN, CI_JOB_TOKEN, GITHUB_TOKEN or CI_SFDX_HARDIS_BITBUCKET_TOKEN must be accessible for Azure Pipelines, Gitlab, GitHub or Bitbucket",
+          ),
+        );
+      }
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[GitProvider] Error while trying to get git provider instance:\n${(e as Error).message}. Maybe an expired Personal Access Token ?`));
     }
     return null;
   }

@@ -21,7 +21,7 @@ import {
   uxLog,
   uxLogTable,
 } from './index.js';
-import { getApiVersion, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
+import { getApiVersion, getConfig, getEnvVar, getReportDirectory, setConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { deployCodeCoverageToMarkdown } from '../gitProvider/utilsMarkdown.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
@@ -327,7 +327,7 @@ export async function smartDeploy(
             `sf project deploy quick` +
             ` --job-id ${deploymentCheckId} ` +
             (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
-            ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
+            ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
             (debugMode ? ' --verbose' : '') +
             (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '');
           const quickDeployRes = await execSfdxJson(quickDeployCommand, commandThis, {
@@ -390,7 +390,7 @@ export async function smartDeploy(
         (testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true ? '' : ' --coverage-formatters json-summary') +
         ((testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true) && process.env?.COVERAGE_FORMATTER_JSON === "true" ? '' : ' --coverage-formatters json') +
         (debugMode ? ' --verbose' : '') +
-        ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
+        ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
         (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
         ` --json`;
       let deployRes;
@@ -949,7 +949,7 @@ export async function deployDestructiveChanges(
   await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges.xml'));
   const deployDelete =
     `sf project deploy ${options.check ? 'validate' : 'start'} --metadata-dir ${tmpDir}` +
-    ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
+    ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
     ` --test-level ${options.testLevel || 'NoTestRun'}` +
     ' --ignore-warnings' + // So it does not fail in case metadata is already deleted
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : '') +
@@ -1006,7 +1006,7 @@ export async function deployMetadatas(
   let deployCommand =
     `sf project deploy ${options.check ? 'validate' : 'start'}` +
     ` --metadata-dir ${options.deployDir || '.'}` +
-    ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
+    ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
     ` --test-level ${options.testlevel || 'RunLocalTests'}` +
     ` --api-version ${options.apiVersion || getApiVersion()}` +
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : '') +

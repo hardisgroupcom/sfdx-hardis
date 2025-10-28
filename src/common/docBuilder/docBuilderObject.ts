@@ -67,7 +67,7 @@ export class DocBuilderObject extends DocBuilderRoot {
     ]);
     for (const rule of validationRules) {
       lines.push(...[
-        `| ${rule.fullName} | ${rule.active ? "Yes" : "No ⚠️"} | ${rule.description || ""} | \`${rule.errorConditionFormula}\` |`
+        `| ${rule.fullName} | ${rule.active ? "Yes" : "No ⚠️"} | ${rule.description || ""} | ${mdTableCell(rule.errorConditionFormula)} |`
       ]);
     }
     lines.push("");
