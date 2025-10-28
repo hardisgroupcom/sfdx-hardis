@@ -1,4 +1,4 @@
-import { SfError } from '@salesforce/core';
+import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
@@ -16,7 +16,11 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
   if (dtl?.isDelete === true) {
     throw new SfError('Your export.json contains deletion info, please use appropriate delete command');
   }
-  const targetUsername = options.targetUsername || commandThis?.org?.getConnection().username;
+  let targetUsername = options.targetUsername || commandThis?.org?.getConnection().username;
+  if (!targetUsername) {
+    const conn: Connection = globalThis.jsForceConn;
+    targetUsername = conn.getUsername();
+  }
   uxLog("action", commandThis, c.cyan(`Importing data from ${c.green(dtl?.full_label)} into ${targetUsername}...`));
   /* jscpd:ignore-start */
   if (dtl?.description) {
