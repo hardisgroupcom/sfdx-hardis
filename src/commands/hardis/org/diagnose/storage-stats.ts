@@ -77,7 +77,12 @@ The command's technical implementation involves:
     const sObjectsFiltered = sObjects.sobjects.filter((obj: any) => {
       return customObjects.find((customObj: any) => customObj.fullName === obj.name) &&
         !obj.name.endsWith('__mdt') &&
-        obj.layoutable === true
+        obj.layoutable === true &&
+        obj.queryable === true &&
+        obj.retrieveable === true &&
+        obj.deletable === true &&
+        obj.updateable === true &&
+        obj.createable === true;
     });
     sortArray(sObjectsFiltered, { by: "name" });
     uxLog("log", this, `${sObjectsFiltered.length} SObjects after filtering technical ones.`);
@@ -92,10 +97,26 @@ The command's technical implementation involves:
     const selectedObjects = promptObjectsRes.value;
     uxLog("log", this, `${selectedObjects.length} SObjects selected for analysis.`);
 
-    // Query objects to know the count of records, storage used and their year of created date
-    const objectStorageStats: any[] = selectedObjects.map(async (obj: any) => {
-      return await this.calculateObjectStorageStats(obj, conn);
+    // Prompt user for stats on CreatedDate or LastModifiedDate
+    const promptDateFieldRes = await prompts({
+      type: 'select',
+      message: 'Select the date field to use for storage stats breakdown',
+      description: "Choose between CreatedDate or LastModifiedDate.",
+      choices: [
+        { title: 'CreatedDate', value: 'CreatedDate' },
+        { title: 'LastModifiedDate', value: 'LastModifiedDate' },
+      ],
     });
+    const dateField = promptDateFieldRes.value;
+    uxLog("log", this, `Using ${c.cyan(dateField)} for storage stats breakdown.`);
+
+    // Query objects to know the count of records, storage used and their year of created date
+    uxLog("action", this, `Requesting storage stats for selected SObjects...`);
+    const objectStorageStats: any[] = [];
+    for (const obj of selectedObjects) {
+      const res = await this.calculateObjectStorageStats(obj, dateField, conn);
+      objectStorageStats.push(res);
+    }
 
     uxLog("action", this, `Compiling storage stats...`);
     this.tableStorageInfos = objectStorageStats.flatMap(objStats => {
@@ -143,12 +164,12 @@ The command's technical implementation involves:
     }
   }
 
-  private async calculateObjectStorageStats(obj: any, conn) {
+  private async calculateObjectStorageStats(obj: any, dateField: string, conn) {
     uxLog("log", this, `Querying storage stats for object: ${c.cyan(obj.name)}...`);
-    const query = `SELECT CALENDAR_YEAR(CreatedDate) year, COUNT(Id) total
+    const query = `SELECT CALENDAR_YEAR(${dateField}) year, COUNT(Id) total
 FROM ${obj.name} 
-GROUP BY CALENDAR_YEAR(CreatedDate)
-ORDER BY CALENDAR_YEAR(CreatedDate) DESC`;
+GROUP BY CALENDAR_YEAR(${dateField})
+ORDER BY CALENDAR_YEAR(${dateField}) DESC`;
     const queryRes = await soqlQuery(query, conn);
     const yearlyStats = queryRes.records.map((record: any) => ({
       year: record.year,
