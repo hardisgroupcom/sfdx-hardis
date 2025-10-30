@@ -3,11 +3,15 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Connection, Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
+import fs from 'fs-extra';
 import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import sortArray from 'sort-array';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { getReportDirectory } from '../../../../config/index.js';
+import path from 'path';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -53,9 +57,10 @@ The command's technical implementation involves:
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
-  public static requiresProject = false;
+  public static requiresProject = true;
 
   protected debugMode = false;
+  protected cacheFilePath: string = '';
   protected tableStorageInfos: any[] = [];
   protected outputFile;
   protected outputFilesRes: any = {};
@@ -116,8 +121,10 @@ The command's technical implementation involves:
     const customObjects = await conn.metadata.list([{ type: 'CustomObject' }]);
     const sObjects = await conn.describeGlobal();
     uxLog("log", this, `${sObjects.sobjects.length} SObjects retrieved.`);
+    const emptyObjects = await this.getEmptyObjectsCache(conn);
     const sObjectsFiltered = sObjects.sobjects.filter((obj: any) => {
       return customObjects.find((customObj: any) => customObj.fullName === obj.name) &&
+        !emptyObjects.includes(obj.name) &&
         !obj.name.endsWith('__mdt') &&
         obj.layoutable === true &&
         obj.queryable === true &&
@@ -127,16 +134,22 @@ The command's technical implementation involves:
         obj.createable === true;
     });
     sortArray(sObjectsFiltered, { by: "name" });
-    uxLog("log", this, `${sObjectsFiltered.length} SObjects after filtering technical ones.`);
+    uxLog("log", this, `${sObjectsFiltered.length} SObjects after filtering`);
+    if (emptyObjects.length > 0) {
+      uxLog("log", this, `${emptyObjects.length} SObjects excluded based on empty objects cache. To remove it, delete file ${c.cyan(this.cacheFilePath)} in the reports directory.`);
+    }
 
     // Prompt user to select objects to analyze
     const promptObjectsRes = await prompts({
       type: 'multiselect',
       message: 'Select the SObjects to analyze for storage usage:',
       description: "Exclude objects you don't want to analyze.",
-      choices: sObjectsFiltered.map((obj: any) => ({ title: obj.name, value: obj })),
+      choices: sObjectsFiltered.map((obj: any) => ({ title: obj.name, value: obj.name })),
+      initial: sObjectsFiltered.map((obj: any) => obj), // all selected by default
     });
-    const selectedObjects = promptObjectsRes.value;
+    const selectedObjects = promptObjectsRes.value.map((objName: string) => {
+      return sObjectsFiltered.find((obj: any) => obj.name === objName);
+    });
     uxLog("log", this, `${selectedObjects.length} SObjects selected for analysis.`);
 
     // Prompt user for stats on CreatedDate or LastModifiedDate
@@ -153,12 +166,16 @@ The command's technical implementation involves:
     uxLog("log", this, `Using ${c.cyan(dateField)} for storage stats breakdown.`);
 
     // Query objects to know the count of records, storage used and their year of created date
-    uxLog("action", this, `Requesting storage stats for selected SObjects...`);
+    WebSocketClient.sendProgressStartMessage(`Calculating storage stats for ${selectedObjects.length} objects...`, selectedObjects.length);
     const objectStorageStats: any[] = [];
+    let step = 0;
     for (const obj of selectedObjects) {
       const res = await this.calculateObjectStorageStats(obj, dateField, conn);
       objectStorageStats.push(res);
+      step++;
+      WebSocketClient.sendProgressStepMessage(step);
     }
+    WebSocketClient.sendProgressEndMessage();
 
 
     uxLog("action", this, `Compiling storage stats...`);
@@ -177,7 +194,7 @@ The command's technical implementation involves:
         ...tableStorageInfo,
         Type: 'Total',
         RecordCount: objStats.totalRecords,
-        EstimatedStoragePercentage: ((objStats.totalRecords * averageSalesforceRecordSizeBytes) / (dataStorageLimit.Max * 1024 * 1024) * 100).toFixed(2),
+        EstimatedStoragePercentage: ((objStats.totalRecords * averageSalesforceRecordSizeBytes) / (dataStorageLimit.Max * 1024 * 1024) * 100).toFixed(2) + "%",
         EstimatedStorageMB: ((objStats.totalRecords * averageSalesforceRecordSizeBytes) / (1024 * 1024)).toFixed(2),
       };
       allLines.push(globalLine);
@@ -190,7 +207,7 @@ The command's technical implementation involves:
           Type: 'Year Breakdown',
           Year: year,
           RecordCount: recordCount,
-          EstimatedStoragePercentage: (storageUsedYearBytes / (dataStorageLimit.Max) * 100).toFixed(2),
+          EstimatedStoragePercentage: (storageUsedYearBytes / (dataStorageLimit.Max) * 100).toFixed(2) + "%",
           EstimatedStorageMB: storageUsedYearBytes.toFixed(2),
         };
         allLines.push(line);
@@ -198,18 +215,53 @@ The command's technical implementation involves:
       return allLines;
     });
 
-    // Generate output CSV file
-    this.outputFile = await generateReportPath('storage-stats', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(this.tableStorageInfos, this.outputFile, { fileTitle: "Unsecured OAuth Tokens" });
+    // Update empty objects cache
+    const newlyEmptyObjects = objectStorageStats.filter(obj => obj.totalRecords === 0).map(obj => obj.name);
+    const updatedEmptyObjects = Array.from(new Set([...emptyObjects, ...newlyEmptyObjects]));
+    await this.setEmptyObjectsCache(updatedEmptyObjects);
+    uxLog("log", this, `Empty objects cache updated with ${newlyEmptyObjects.length} newly detected empty objects.`);
+
+    // Remove objects with zero records from the report
+    this.tableStorageInfos = this.tableStorageInfos.filter(info => info.RecordCount > 0);
+
+    // Generate output CSV file with breakdown by year
+    this.outputFile = await generateReportPath('storage-stats-by' + dateField, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.tableStorageInfos, this.outputFile, { fileTitle: "Storage stats breakdown by " + dateField });
+
+    // Generate output CSV file with only total per object
+    const outputFileTotals = this.outputFile.replace('.csv', '-totals.csv');
+    const tableStorageInfosTotals = this.tableStorageInfos.filter(info => info.Type === 'Total');
+    const outputFilesResTotals = await generateCsvFile(tableStorageInfosTotals, outputFileTotals, { fileTitle: "Storage stats totals per object" });
+    this.outputFilesRes.totalPerObject = outputFilesResTotals;
 
     // Display results
     uxLog("action", this, `Storage stats usage`);
-    uxLogTable(this, this.tableStorageInfos);
+    uxLogTable(this, tableStorageInfosTotals);
 
     return {
       tableStorageInfos: this.tableStorageInfos,
+      tableStorageInfosTotals: tableStorageInfosTotals,
+      storageLimits: storageLimits,
       outputFiles: this.outputFilesRes,
     }
+  }
+
+  private async getEmptyObjectsCache(conn) {
+    const reportDir = await getReportDirectory();
+    this.cacheFilePath = path.join(reportDir, conn.getUsername()!.replace(/[^a-zA-Z0-9]/g, '_') + '_empty_tables_cache.json');
+    let emptyObjects: string[] = [];
+    if (fs.existsSync(this.cacheFilePath)) {
+      const cacheContent = await fs.readJSON(this.cacheFilePath, 'utf-8');
+      emptyObjects = cacheContent.emptyObjects || [];
+    }
+    return emptyObjects;
+  }
+
+  private async setEmptyObjectsCache(emptyObjects: string[]) {
+    const cacheContent = {
+      emptyObjects,
+    };
+    await fs.writeJSON(this.cacheFilePath, cacheContent, { spaces: 2 });
   }
 
   private async calculateObjectStorageStats(obj: any, dateField: string, conn) {
@@ -218,17 +270,27 @@ The command's technical implementation involves:
 FROM ${obj.name} 
 GROUP BY CALENDAR_YEAR(${dateField})
 ORDER BY CALENDAR_YEAR(${dateField}) DESC`;
-    const queryRes = await soqlQuery(query, conn);
-    const yearlyStats = queryRes.records.map((record: any) => ({
-      year: record.year,
-      total: record.total,
-    }));
-    const totalRecords = yearlyStats.reduce((acc: number, curr: any) => acc + curr.total, 0);
-    return {
-      name: obj.name,
-      label: obj.label,
-      totalRecords,
-      yearlyStats,
-    };
+    try {
+      const queryRes = await soqlQuery(query, conn);
+      const yearlyStats = queryRes.records.map((record: any) => ({
+        year: record.year,
+        total: record.total,
+      }));
+      const totalRecords = yearlyStats.reduce((acc: number, curr: any) => acc + curr.total, 0);
+      return {
+        name: obj.name,
+        label: obj.label,
+        totalRecords,
+        yearlyStats,
+      };
+    } catch (error: any) {
+      uxLog("error", this, `Error querying object ${c.cyan(obj.name)}: ${error.message}`);
+      return {
+        name: obj.name,
+        label: obj.label + ' (Query Error):' + error.message,
+        totalRecords: 0,
+        yearlyStats: [],
+      };
+    }
   }
 }
