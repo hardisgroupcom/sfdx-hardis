@@ -69,6 +69,48 @@ The command's technical implementation involves:
     this.outputFile = flags.outputfile || null;
     const conn: Connection = flags['target-org'].getConnection();
 
+    // Querying storage limit
+    uxLog("action", this, `Retrieving storage limits from the org...`);
+    const storageLimits = await conn.limits();
+    const dataStorageLimit = storageLimits.DataStorageMB;
+    const max = Number(dataStorageLimit.Max) || 0;
+    const remainingRaw = Number(dataStorageLimit.Remaining) || 0;
+
+    // Normalize values and detect over-usage
+    const overUsageMB = remainingRaw < 0 ? Math.abs(remainingRaw) : 0;
+    const remainingMB = remainingRaw < 0 ? 0 : remainingRaw;
+    const usedMB = max - remainingRaw; // if Remaining is negative this will be > max
+    const percentUsed = max > 0 ? (usedMB / max) * 100 : 0;
+
+    uxLog("log", this, `Data Storage Limit: ${c.cyan(max)} MB`);
+    uxLog(
+      "log",
+      this,
+      `Data Storage Used: ${c.cyan(usedMB)} MB${overUsageMB > 0 ? c.red(` (Over by ${overUsageMB} MB)`) : ''}`
+    );
+    uxLog(
+      "log",
+      this,
+      `Data Storage Remaining: ${c.cyan(remainingMB)} MB${overUsageMB > 0 ? c.red(` (Exceeded by ${overUsageMB} MB)`) : ''}`
+    );
+    uxLog("log", this, `Data Storage Usage Percent: ${c.cyan(percentUsed.toFixed(2))} %`);
+
+    if (overUsageMB > 0) {
+      uxLog(
+        "action",
+        this,
+        `Your org has exceeded the data storage limit by ${c.cyan(overUsageMB)} MB (${c.red(
+          `${(percentUsed - 100).toFixed(2)}%`
+        )} over the ${c.cyan(max)} MB limit).`
+      );
+    } else {
+      uxLog(
+        "action",
+        this,
+        `You have used ${c.cyan(percentUsed.toFixed(2))}% of your ${c.cyan(max)} MB data storage limit.`
+      );
+    }
+
     // List SObjects in org and filter them to exclude Salesforce platform technical ones , to keep only "Production" objects like Account, Contact, Custom Objects, etc.
     uxLog("action", this, `Listing SObjects from the org...`);
     const customObjects = await conn.metadata.list([{ type: 'CustomObject' }]);
@@ -118,7 +160,11 @@ The command's technical implementation involves:
       objectStorageStats.push(res);
     }
 
+
     uxLog("action", this, `Compiling storage stats...`);
+    // Sort by total records descending
+    sortArray(objectStorageStats, { by: 'totalRecords', order: 'desc' });
+    // Create one line by year per object
     this.tableStorageInfos = objectStorageStats.flatMap(objStats => {
       const allLines: any[] = [];
       // calculate object storage usage based on record count and average record size
@@ -128,9 +174,10 @@ The command's technical implementation involves:
         Label: objStats.label,
       };
       const globalLine = {
-        Type: 'Total',
         ...tableStorageInfo,
+        Type: 'Total',
         RecordCount: objStats.totalRecords,
+        EstimatedStoragePercentage: ((objStats.totalRecords * averageSalesforceRecordSizeBytes) / (dataStorageLimit.Max * 1024 * 1024) * 100).toFixed(2),
         EstimatedStorageMB: ((objStats.totalRecords * averageSalesforceRecordSizeBytes) / (1024 * 1024)).toFixed(2),
       };
       allLines.push(globalLine);
@@ -139,15 +186,16 @@ The command's technical implementation involves:
         const recordCount = yearStat.total;
         const storageUsedYearBytes = (recordCount * averageSalesforceRecordSizeBytes) / (1024 * 1024);
         const line = {
-          Type: 'Year Breakdown',
           ...tableStorageInfo,
+          Type: 'Year Breakdown',
           Year: year,
           RecordCount: recordCount,
+          EstimatedStoragePercentage: (storageUsedYearBytes / (dataStorageLimit.Max) * 100).toFixed(2),
           EstimatedStorageMB: storageUsedYearBytes.toFixed(2),
         };
         allLines.push(line);
       }
-      return tableStorageInfo;
+      return allLines;
     });
 
     // Generate output CSV file
