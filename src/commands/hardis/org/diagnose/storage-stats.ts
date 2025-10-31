@@ -216,7 +216,7 @@ The command's technical implementation involves:
       };
       const globalLine = {
         ...tableStorageInfo,
-        Type: 'Total',
+        Year: 'Total',
         RecordCount: objStats.totalRecords,
         EstimatedStoragePercentage: ((objStats.totalRecords * averageSalesforceRecordSizeBytes) / (dataStorageLimit.Max * 1024 * 1024) * 100).toFixed(2) + "%",
         EstimatedStorageMB: ((objStats.totalRecords * averageSalesforceRecordSizeBytes) / (1024 * 1024)).toFixed(2),
@@ -228,7 +228,6 @@ The command's technical implementation involves:
         const storageUsedYearBytes = (recordCount * averageSalesforceRecordSizeBytes) / (1024 * 1024);
         const line = {
           ...tableStorageInfo,
-          Type: 'Year Breakdown',
           Year: year,
           RecordCount: recordCount,
           EstimatedStoragePercentage: (storageUsedYearBytes / (dataStorageLimit.Max) * 100).toFixed(2) + "%",
@@ -254,7 +253,7 @@ The command's technical implementation involves:
 
     // Generate output CSV file with only total per object
     const outputFileTotals = this.outputFile.replace('.csv', '-totals.csv');
-    const tableStorageInfosTotals = this.tableStorageInfos.filter(info => info.Type === 'Total');
+    const tableStorageInfosTotals = this.tableStorageInfos.filter(info => info.Year === 'Total');
     const outputFilesResTotals = await generateCsvFile(tableStorageInfosTotals, outputFileTotals, { fileTitle: "Storage stats totals per object" });
     this.outputFilesRes.totalPerObject = outputFilesResTotals;
 
