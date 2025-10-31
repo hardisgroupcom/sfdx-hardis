@@ -19,18 +19,42 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class StorageStats extends SfCommand<any> {
   public static title = 'Extract Data Storage stats';
 
-  public static description = `
-## Command Behavior
+  public static description = `**Extracts and analyzes Data Storage usage for a Salesforce org, providing detailed per-object breakdowns with yearly trends.**
 
+This command provides a comprehensive overview of your Salesforce data storage consumption. It's particularly useful for:
+
+- **Storage Management:** Understanding which SObjects consume the most storage and how usage has evolved over time.
+- **Cost Optimization:** Identifying storage-heavy objects that could be candidates for data archival or cleanup strategies.
+- **Capacity Planning:** Tracking storage trends to predict when additional capacity will be needed.
+- **Compliance & Governance:** Monitoring data growth patterns to ensure alignment with data retention policies.
 
 Key functionalities:
-e width="560" height="315" src="https://www.youtube.com/embed/jHv8yrSK8Dg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+- **Storage Limits Analysis:** Retrieves and displays org data storage limits, including total capacity, used storage, remaining storage, and percentage used. Detects and alerts on over-usage scenarios.
+- **SObject Discovery & Filtering:** Automatically discovers all SObjects in the org and filters them to focus on production/custom objects (excludes metadata types, platform-only objects, and cached empty objects).
+- **Interactive Selection:** Prompts the user to select which SObjects to analyze and choose between \`CreatedDate\` or \`LastModifiedDate\` for temporal breakdown.
+- **Yearly Storage Breakdown:** Executes grouped SOQL queries per object to calculate record counts by year, providing historical growth trends.
+- **Storage Estimation:** Estimates storage usage for each object using an average record size heuristic (2 KB per record) and calculates the percentage of org quota consumed.
+- **Dual CSV Reports:** Generates two CSV files: a detailed by-year breakdown and a totals-per-object summary, both suitable for spreadsheet analysis and reporting.
+- **Empty Objects Cache:** Maintains a per-user cache of objects detected with zero records to optimize subsequent runs by skipping empty tables.
+- **Progress Tracking:** Sends WebSocket progress messages for integration with external UIs and monitoring dashboards.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's technical implementation involves:
 
+- **Limits Retrieval:** Calls \`conn.limits()\` to retrieve the \`DataStorageMB\` object containing \`Max\` and \`Remaining\` values. Handles negative \`Remaining\` values (over-usage scenarios) by calculating \`overUsageMB\` and adjusting display values.
+- **SObject Discovery:** Uses \`conn.metadata.list([{ type: 'CustomObject' }])\` to get custom objects and \`conn.describeGlobal()\` to get all SObjects. Filters by object capabilities (\`layoutable\`, \`queryable\`, \`retrieveable\`, \`createable\`, \`updateable\`, \`deletable\`) and excludes metadata types (\`__mdt\` suffix) and cached empty objects.
+- **User Interaction:** Uses \`prompts\` for interactive multi-select of SObjects and single-select for date field choice. All objects are pre-selected by default for user convenience.
+- **Yearly Aggregation Queries:** For each selected SObject, executes a grouped SOQL query: \`SELECT CALENDAR_YEAR(<DateField>) year, COUNT(Id) total FROM <SObject> GROUP BY CALENDAR_YEAR(<DateField>) ORDER BY CALENDAR_YEAR(<DateField>) DESC\`. Handles query errors gracefully (logs error and continues with next object).
+- **Storage Calculation:** Applies a conservative average record size of 2 KB (2048 bytes) to estimate storage consumption. Calculates both MB usage and percentage of org quota for each object and year.
+- **Report Generation:** Uses \`generateCsvFile\` and \`generateReportPath\` helpers to create two CSV files in the reports directory:
+  - Detailed breakdown: includes all yearly statistics per object
+  - Totals summary: includes only aggregate totals per object
+- **Caching Mechanism:** Writes a JSON cache file per authenticated username (sanitized) in the reports directory (\`<username>_empty_tables_cache.json\`) containing an array of empty object names. The cache is updated after each run with newly detected empty objects.
+- **Progress & UX:** Uses \`WebSocketClient\` to emit start/step/end progress messages for external monitoring. Outputs summary tables with \`uxLogTable\` and status messages with \`uxLog\`.
+- **Return Value:** Returns a JSON object containing \`tableStorageInfos\` (all rows), \`tableStorageInfosTotals\` (summary rows), \`storageLimits\` (org limits object), and \`outputFiles\` (paths to generated CSV/XLSX reports).
 </details>
 `;
 
