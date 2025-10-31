@@ -4,9 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.10.0] 2025-10-31
+
 - New command [hardis:org:diagnose:storage-stats](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/storage-stats/) to analyze storage usage per object and per year of creation / last update
 - Add explicit message in case of error when authenticating to Git provider API
 - Allow to override SFDX_TEST_WAIT_MINUTES and SFDX_DEPLOY_WAIT_MINUTES using CI/CD variables, and set 120 minutes as default value everywhere
+- Fix Validation Rules formula field in doc generation
 
 ## [6.9.0] 2025-10-23
 
