@@ -9,7 +9,7 @@ import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import sortArray from 'sort-array';
 import { prompts } from '../../../../common/utils/prompts.js';
-import { getReportDirectory } from '../../../../config/index.js';
+import { CONSTANTS, getReportDirectory } from '../../../../config/index.js';
 import path from 'path';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 
@@ -56,6 +56,10 @@ The command's technical implementation involves:
 - **Progress & UX:** Uses \`WebSocketClient\` to emit start/step/end progress messages for external monitoring. Outputs summary tables with \`uxLogTable\` and status messages with \`uxLog\`.
 - **Return Value:** Returns a JSON object containing \`tableStorageInfos\` (all rows), \`tableStorageInfosTotals\` (summary rows), \`storageLimits\` (org limits object), and \`outputFiles\` (paths to generated CSV/XLSX reports).
 </details>
+
+![](${CONSTANTS.DOC_URL_ROOT}/assets/images/storage-usage-year-breakdown.png)
+
+![](${CONSTANTS.DOC_URL_ROOT}/assets/images/storage-usage-total.png)
 `;
 
   public static examples = [
