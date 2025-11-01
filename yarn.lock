@@ -1718,10 +1718,10 @@
     zod "^3.22.4"
     zod-to-json-schema "^3.22.3"
 
-"@langchain/core@^0.3.78":
-  version "0.3.78"
-  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-0.3.78.tgz#40e69fba6688858edbcab4473358ec7affc685fd"
-  integrity sha512-Nn0x9erQlK3zgtRU1Z8NUjLuyW0gzdclMsvLQ6wwLeDqV91pE+YKl6uQb+L2NUDs4F0N7c2Zncgz46HxrvPzuA==
+"@langchain/core@^0.3.79":
+  version "0.3.79"
+  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-0.3.79.tgz#a7c8ee68e1a92133e073ebfcbebf53a885d9e0bd"
+  integrity sha512-ZLAs5YMM5N2UXN3kExMglltJrKKoW7hs3KMZFlXUnD7a5DFKBYxPFMeXA4rT+uvTxuJRZPCYX0JKI5BhyAWx4A==
   dependencies:
     "@cfworker/json-schema" "^4.0.2"
     ansi-styles "^5.0.0"
@@ -1972,10 +1972,10 @@
     proc-log "^4.0.0"
     which "^4.0.0"
 
-"@oclif/core@^4", "@oclif/core@^4.0.27", "@oclif/core@^4.5.4", "@oclif/core@^4.5.5", "@oclif/core@^4.5.6":
-  version "4.7.2"
-  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.7.2.tgz#9ebf36b4693500685956f3405c55526d191aa5ef"
-  integrity sha512-AmZnhEnyD7bFxmzEKRaOEr0kzonmwIip72eWZPWB5+7D9ayHa/QFX08zhaQT9eOo0//ed64v5p5QZIbYCbQaJQ==
+"@oclif/core@^4", "@oclif/core@^4.0.27", "@oclif/core@^4.5.5", "@oclif/core@^4.5.6", "@oclif/core@^4.8.0":
+  version "4.8.0"
+  resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.8.0.tgz#bde8fad00019c8c0a8e27787b4b42c4670842785"
+  integrity sha512-jteNUQKgJHLHFbbz806aGZqf+RJJ7t4gwF4MYa8fCwCxQ8/klJNWc0MvaJiBebk7Mc+J39mdlsB4XraaCKznFw==
   dependencies:
     ansi-escapes "^4.3.2"
     ansis "^3.17.0"
@@ -1996,10 +1996,10 @@
     wordwrap "^1.0.0"
     wrap-ansi "^7.0.0"
 
-"@oclif/plugin-command-snapshot@^5.3.6":
-  version "5.3.6"
-  resolved "https://registry.yarnpkg.com/@oclif/plugin-command-snapshot/-/plugin-command-snapshot-5.3.6.tgz#fa9786279b532d8a0c6add51717dd8ea9fc520c9"
-  integrity sha512-0uu1KoB5IvS79l7Ao92vUmVHh9eWqP5uWv4oD7aeNFmUnCQrTB8nhdclP2E6MqMoatB6C0Xv+TXWC/ISLqBu3A==
+"@oclif/plugin-command-snapshot@^5.3.8":
+  version "5.3.8"
+  resolved "https://registry.yarnpkg.com/@oclif/plugin-command-snapshot/-/plugin-command-snapshot-5.3.8.tgz#b952a270bfdfaea941f244363c4bcf781398d9b9"
+  integrity sha512-pxuW6kVAkAJBZzk7w2xUy32D+EQGeef15Kyjz13LYazHNXcVdrzP/5726VGfMnK3U4W1QyJ7CalzZxRLVvxQcg==
   dependencies:
     "@oclif/core" "^4"
     ansis "^3.17.0"
@@ -2008,7 +2008,7 @@
     lodash.difference "^4.5.0"
     lodash.get "^4.4.2"
     lodash.sortby "^4.7.0"
-    semver "^7.7.2"
+    semver "^7.7.3"
     ts-json-schema-generator "^1.5.1"
 
 "@oclif/plugin-help@^6.2.33":
@@ -2689,10 +2689,10 @@
   dependencies:
     "@types/node" ">=18.0.0"
 
-"@slack/types@^2.16.0", "@slack/types@^2.17.0":
-  version "2.17.0"
-  resolved "https://registry.yarnpkg.com/@slack/types/-/types-2.17.0.tgz#f00903485e12bba57b40b0e5e6ea28c889f57044"
-  integrity sha512-30KdPUBGJczlchnV8tKSxFG1yPk6rb8waba6HAoNHOy99zomzovQo6WpH9vQsY0g3RlxgVLojxKMRe0WjEjFWw==
+"@slack/types@^2.17.0", "@slack/types@^2.18.0":
+  version "2.18.0"
+  resolved "https://registry.yarnpkg.com/@slack/types/-/types-2.18.0.tgz#84dab2ebb4593049fa6757a3f69318ffe3876c54"
+  integrity sha512-ZKrdeoppbM+3l2KKOi4/3oFYKCEwiW3dQfdHZDcecJ9rAmEqWPnARYmac9taZNitb0xnSgu6GOpHgwaKI8se2g==
 
 "@slack/web-api@^7.11.0":
   version "7.11.0"
