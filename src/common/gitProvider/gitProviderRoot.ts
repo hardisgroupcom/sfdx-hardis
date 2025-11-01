@@ -68,6 +68,17 @@ export abstract class GitProviderRoot {
     return null;
   }
 
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  public async listPullRequestsInBranchSinceLastMerge(
+    _currentBranchName: string,
+    _targetBranchName: string,
+    _childBranchesNames: string[],
+  ): Promise<CommonPullRequestInfo[]> {
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+    uxLog("other", this, `Method listPullRequestsInBranchSinceLastMerge is not implemented yet on ${this.getLabel()}`);
+    return [];
+  }
+
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     uxLog("warning", this, c.yellow("Method postPullRequestMessage is not yet implemented on " + this.getLabel() + " to post " + JSON.stringify(prMessage)));
     return { posted: false, providerResult: { error: "Not implemented in sfdx-hardis" } };

@@ -6,7 +6,7 @@ import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../ut
 import * as path from "path";
 import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
-import { CONSTANTS } from "../../config/index.js";
+import { CONSTANTS, getEnvVar } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
 
@@ -331,13 +331,118 @@ ${this.getPipelineVariablesConfig()}
     return deploymentCheckId;
   }
 
+  public async listPullRequestsInBranchSinceLastMerge(
+    currentBranchName: string,
+    targetBranchName: string,
+    childBranchesNames: string[],
+  ): Promise<CommonPullRequestInfo[]> {
+    if (!this.azureApi || !process.env.SYSTEM_TEAMPROJECT || !process.env.BUILD_REPOSITORY_ID) {
+      return [];
+    }
+
+    try {
+      const gitApi = await this.azureApi.getGitApi();
+
+      // Step 1: Find the last completed PR from currentBranch to targetBranch
+      const lastMergePRs = await gitApi.getPullRequests(
+        process.env.BUILD_REPOSITORY_ID,
+        {
+          sourceRefName: `refs/heads/${currentBranchName}`,
+          targetRefName: `refs/heads/${targetBranchName}`,
+          status: PullRequestStatus.Completed,
+        },
+        process.env.SYSTEM_TEAMPROJECT,
+      );
+
+      const lastMergeToTarget = lastMergePRs && lastMergePRs.length > 0 ? lastMergePRs[0] : null;
+
+      // Step 2: Get commits between branches
+      const gitApiCommits = await gitApi.getCommitsBatch(
+        {
+          itemVersion: {
+            version: currentBranchName,
+            versionType: 0, // branch
+          },
+          compareVersion: {
+            version: lastMergeToTarget
+              ? lastMergeToTarget.lastMergeSourceCommit?.commitId
+              : targetBranchName,
+            versionType: lastMergeToTarget ? 2 : 0, // commit or branch
+          },
+        },
+        process.env.BUILD_REPOSITORY_ID,
+        process.env.SYSTEM_TEAMPROJECT,
+      );
+
+      if (!gitApiCommits || gitApiCommits.length === 0) {
+        return [];
+      }
+
+      const commitIds = new Set(gitApiCommits.map((c) => c.commitId));
+
+      // Step 3: Get all completed PRs targeting currentBranch and child branches (parallelized)
+      const allBranches = [currentBranchName, ...childBranchesNames];
+
+      const prPromises = allBranches.map(async (branchName) => {
+        try {
+          const prs = await gitApi.getPullRequests(
+            process.env.BUILD_REPOSITORY_ID!,
+            {
+              targetRefName: `refs/heads/${branchName}`,
+              status: PullRequestStatus.Completed,
+            },
+            process.env.SYSTEM_TEAMPROJECT,
+          );
+          return prs || [];
+        } catch (err) {
+          uxLog(
+            "warning",
+            this,
+            c.yellow(`Error fetching completed PRs for branch ${branchName}: ${String(err)}`),
+          );
+          return [];
+        }
+      });
+
+      const prResults = await Promise.all(prPromises);
+      const allMergedPRs: any[] = prResults.flat();
+
+      // Step 4: Filter PRs whose merge commit is in our commit list
+      const relevantPRs = allMergedPRs.filter((pr) => {
+        const mergeCommitId = pr.lastMergeSourceCommit?.commitId;
+        return mergeCommitId && commitIds.has(mergeCommitId);
+      });
+
+      // Step 5: Remove duplicates
+      const uniquePRsMap = new Map();
+      for (const pr of relevantPRs) {
+        if (!uniquePRsMap.has(pr.pullRequestId)) {
+          uniquePRsMap.set(pr.pullRequestId, pr);
+        }
+      }
+
+      // Step 6: Convert to CommonPullRequestInfo
+      return Array.from(uniquePRsMap.values()).map((pr) =>
+        this.completePullRequestInfo(pr)
+      );
+    } catch (err) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(`Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`),
+      );
+      return [];
+    }
+  }
+
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     // Get CI variables
+    const prInfo = await this.getPullRequestInfo();
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     const buildId = process.env.BUILD_BUILD_ID || null;
     const jobId = process.env.SYSTEM_JOB_ID || null;
-    const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
+    const pullRequestIdStr = getEnvVar("SYSTEM_PULLREQUEST_PULLREQUESTID") || prInfo?.idStr || null;
     if (repositoryId == null || pullRequestIdStr == null) {
       uxLog("log", this, c.grey("[Azure integration] No project and pull request, so no note thread..."));
       uxLog(
@@ -356,7 +461,7 @@ ${this.getPipelineVariablesConfig()}
     const azureBuildUri = `${SYSTEM_COLLECTIONURI}${encodeURIComponent(SYSTEM_TEAMPROJECT)}/_build/results?buildId=${buildId}&view=logs&j=${jobId}`;
     // Build thread message
     const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
-    let messageBody = `**${prMessage.title || ""}**
+    let messageBody = `## ${prMessage.title || ""}
 
 ${prMessage.message}
 

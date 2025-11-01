@@ -4,6 +4,7 @@ description: Learn how to create a new User Story using a tracked sandbox or a s
 ---
 <!-- markdownlint-disable MD013 -->
 
+- [Quick Start](#quick-start)
 - [Use cases](#use-cases)
 - [Sandbox or scratch org ?](#sandbox-or-scratch-org-)
 - [Source-tracked sandbox mode](#source-tracked-sandbox-mode)
@@ -16,6 +17,19 @@ description: Learn how to create a new User Story using a tracked sandbox or a s
   - [Pre-requisites (scratch org)](#pre-requisites-scratch-org)
   - [Start new User Story on scratch org](#start-new-user-story-on-scratch-org)
 
+___
+
+## Quick Start
+
+From Welcome Menu then DevOps Pipeline UI, click on **New User Story**
+
+Answer the questions, and if you have any doubt, ask your Release Manager.
+
+![](assets/images/screenshot-new-user-story-btn.png)
+
+![](assets/images/screenshot-new-user-story-1.png)
+
+Once the command is completed, you can start working in your dev sandbox or scratch org :)
 ___
 
 ## Use cases

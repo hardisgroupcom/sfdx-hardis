@@ -9,6 +9,7 @@ import Debug from "debug";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
 import { prompts } from "../utils/prompts.js";
 import { removeMermaidLinks } from "../utils/mermaidUtils.js";
+import { getPullRequestData } from "../utils/gitUtils.js";
 const debug = Debug("sfdxhardis");
 
 export abstract class GitProvider {
@@ -32,7 +33,7 @@ export abstract class GitProvider {
         return new AzureDevopsProvider();
       }
       // Gitlab
-      else if (process.env.CI_JOB_TOKEN) {
+      else if (process.env.CI_JOB_TOKEN || process.env.CI_SFDX_HARDIS_GITLAB_TOKEN) {
         const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || null;
         if (token == null) {
           uxLog(
@@ -105,7 +106,7 @@ export abstract class GitProvider {
     }
   }
 
-  static async managePostPullRequestComment(): Promise<void> {
+  static async managePostPullRequestComment(checkOnly: boolean): Promise<void> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       uxLog("warning", this, c.yellow("[Git Provider] WARNING: No git provider found to post pull request comment. Maybe you should configure it ?"));
@@ -116,7 +117,7 @@ export abstract class GitProvider {
       );
       return;
     }
-    const prData = globalThis.pullRequestData;
+    const prData = getPullRequestData();
     const prCommentSent = globalThis.pullRequestCommentSent || false;
     if (prData && gitProvider && prCommentSent === false) {
       uxLog("warning", this, c.yellow("[Git Provider] Try to post a pull request comment/note..."));
@@ -127,6 +128,12 @@ export abstract class GitProvider {
       if (prData.codeCoverageMarkdownBody) {
         markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
       }
+      if (prData.preDeployCommandsResultMarkdownBody) {
+        markdownBody += "\n\n" + prData.preDeployCommandsResultMarkdownBody;
+      }
+      if (prData.postDeployCommandsResultMarkdownBody) {
+        markdownBody += "\n\n" + prData.postDeployCommandsResultMarkdownBody;
+      }
       if (prData.commitsSummary) {
         markdownBody += "\n\n" + prData.commitsSummary;
       }
@@ -135,10 +142,10 @@ export abstract class GitProvider {
       }
       markdownBody = removeMermaidLinks(markdownBody); // Remove "click" elements that are useless and ugly on some providers 😊
       const prMessageRequest: PullRequestMessageRequest = {
-        title: prData.title || '',
+        title: (checkOnly === true ? "Deployment Check Results" : "Deployment Results") + (prData.title ? `\n\n${prData.title}` : ""),
         message: markdownBody,
         status: prData.status || 'tovalidate',
-        messageKey: prData.messageKey || '',
+        messageKey: (checkOnly === true) ? `deployment-check` : `deployment`,
       };
       // Post main message
       const postResult = await gitProvider.tryPostPullRequestMessage(prMessageRequest);

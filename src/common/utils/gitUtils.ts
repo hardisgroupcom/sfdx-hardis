@@ -125,6 +125,14 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
   return gitDeltaCommandRes;
 }
 
+export function getPullRequestData(): any {
+  return globalThis.pullRequestData || {};
+}
+
+export function setPullRequestData(prData: any): void {
+  globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
+}
+
 export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPullRequestInfo | null = null) {
   uxLog("action", this, c.cyan('Computing commits summary...'));
   const currentGitBranch = await getCurrentGitBranch();
@@ -272,7 +280,7 @@ export async function buildCheckDeployCommitSummary() {
       commitsSummary: commitsSummary.markdown,
       flowDiffMarkdown: commitsSummary.flowDiffMarkdown
     };
-    globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
+    setPullRequestData(prDataCommitsSummary);
   } catch (e3) {
     uxLog("warning", this, c.yellow('Unable to compute git summary:\n' + e3));
   }

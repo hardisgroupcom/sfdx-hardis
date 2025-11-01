@@ -1,4 +1,4 @@
-import { SfError } from '@salesforce/core';
+import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
@@ -16,7 +16,11 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
   if (dtl?.isDelete === true) {
     throw new SfError('Your export.json contains deletion info, please use appropriate delete command');
   }
-  const targetUsername = options.targetUsername || commandThis?.org?.getConnection().username;
+  let targetUsername = options.targetUsername || commandThis?.org?.getConnection().username;
+  if (!targetUsername) {
+    const conn: Connection = globalThis.jsForceConn;
+    targetUsername = conn.getUsername();
+  }
   uxLog("action", commandThis, c.cyan(`Importing data from ${c.green(dtl?.full_label)} into ${targetUsername}...`));
   /* jscpd:ignore-start */
   if (dtl?.description) {
@@ -42,6 +46,7 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
   uxLog("success", commandThis, c.green(`Data imported successfully from ${c.green(dtl?.full_label)} into ${targetUsername}`));
   uxLog("log", commandThis, c.italic(c.grey(res.stdout || '')));
   elapseEnd(`import ${dtl?.full_label}`);
+  return res;
 }
 
 // Delete data using sfdmu folder
@@ -112,10 +117,13 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   elapseEnd(`export ${dtl?.full_label}`);
 }
 
-export async function findDataWorkspaceByName(projectName: string) {
+export async function findDataWorkspaceByName(projectName: string, throwIfNotFound: boolean = true) {
   const folderPath = path.join(DATA_FOLDERS_ROOT, projectName);
   if (fs.existsSync(folderPath)) {
     return folderPath;
+  }
+  if (!throwIfNotFound) {
+    return null;
   }
   throw new SfError(`There is no sfdmu folder named ${projectName} in your workspace (${DATA_FOLDERS_ROOT})`);
 }
