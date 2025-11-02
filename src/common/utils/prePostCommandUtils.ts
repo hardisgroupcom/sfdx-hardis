@@ -244,7 +244,7 @@ function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: bool
   if (!isPreDeploy && checkOnly) {
     return '';
   }
-  const manualCommands = commands.filter(c => c.result?.statusCode === "manual");
+  const manualCommands = commands.filter(c => c.type === "manual");
   if (manualCommands.length === 0) {
     return '';
   }
