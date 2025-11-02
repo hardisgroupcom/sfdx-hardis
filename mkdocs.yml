@@ -99,7 +99,7 @@ nav:
               - Configure Salesforce: salesforce-ci-cd-work-on-task-configuration.md
               - Handle Profiles: salesforce-ci-cd-work-on-task-profiles.md
               - Install packages: salesforce-ci-cd-work-on-task-install-packages.md
-              - Deployment actions: salesforce-ci-cd-work-on-task-deployment-actions.md
+              - Deployment actions (beta): salesforce-ci-cd-work-on-task-deployment-actions.md
               - Develop in Salesforce: salesforce-ci-cd-work-on-task-development.md
           - Save / Publish your User Story: salesforce-ci-cd-publish-task.md
           - Create Pull Request:

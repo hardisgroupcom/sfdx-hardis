@@ -1,4 +1,6 @@
-## Deployment actions (pre/post deployment)
+## Deployment actions (beta)
+
+> This feature is currently in beta, but you can start using it right away.
 
 ### What are deployment actions ?
 
