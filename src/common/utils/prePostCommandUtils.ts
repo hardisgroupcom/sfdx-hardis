@@ -37,7 +37,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       continue;
     }
     // If if skipIfError is true and deployment failed
-    if (options.success === false && cmd.skipIfError === true) {
+    if (options.success === false && !(cmd?.skipIfError === false)) {
       uxLog("action", this, c.yellow(`[DeploymentActions] Skipping ${cmd.label} (skipIfError=true) `));
       cmd.result = {
         statusCode: "skipped",
