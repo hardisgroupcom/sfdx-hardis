@@ -46,13 +46,13 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
   if (!options.checkAuth) {
     // Check if we are already authenticated
     let orgDisplayCommand = 'sf org display';
-    if (orgAlias && (isCI || isDevHub) && !orgAlias.includes('force://') && !options.forceUsername) {
-      orgDisplayCommand += ' --target-org ' + orgAlias;
-      setDefaultOrg = options.setDefault ?? (orgAlias !== 'TECHNICAL_ORG' ? true : false);
-    }
-    else if (options.forceUsername) {
+    if (options.forceUsername) {
       orgDisplayCommand += ' --target-org ' + options.forceUsername;
       setDefaultOrg = options.setDefault ?? false;
+    }
+    else if (orgAlias && (isCI || isDevHub) && !orgAlias.includes('force://')) {
+      orgDisplayCommand += ' --target-org ' + orgAlias;
+      setDefaultOrg = options.setDefault ?? (orgAlias !== 'TECHNICAL_ORG' ? true : false);
     }
     else {
       const argv = options?.argv || [];

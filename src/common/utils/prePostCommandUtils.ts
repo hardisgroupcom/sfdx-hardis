@@ -24,8 +24,10 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     uxLog("log", this, c.grey(`No ${property} found to run`));
     return;
   }
-  uxLog("action", this, c.cyan(`[DeploymentActions] Found ${commands.length} ${actionLabel} to run`));
-  uxLog("log", this, c.grey(commands.map(c => `- ${c.label} (${c.type || 'command'})`).join('\n')));
+  uxLog("action", this, c.cyan(
+    `[DeploymentActions] Found ${commands.length} ${actionLabel} to run\n` +
+    commands.map(c => `- ${c.label} (${c.type || 'command'})`).join('\n')
+  ));
   for (const cmd of commands) {
     const actionsInstance = await ActionsProvider.buildActionInstance(cmd);
     const actionsIssues = await actionsInstance.checkValidityIssues(cmd);
