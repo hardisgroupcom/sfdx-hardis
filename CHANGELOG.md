@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Define pre-deploy and post-deploy commands to be executed during CI/CD deployments
   - Display summary in Pull Request with details of each command execution
 - Update CI/CD documentation & screenshots
+- Do not display generated time in JSON Schema doc
 
 ## [6.10.0] 2025-10-31
 
