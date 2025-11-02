@@ -294,12 +294,24 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
   markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
   for (const cmd of commands) {
     if (cmd.result?.output) {
-      // Truncate output if too long
-      const maxOutputLength = 10000;
+      // Truncate output if too long: Either the last 2000 characters, either the last 50 lines (if they are not more than 2000 characters)
+      // Indicate when output has been truncated
+      const maxOutputLength = 2000;
       let outputForMarkdown = cmd.result.output;
+      const outputLines = outputForMarkdown.split('\n');
       if (outputForMarkdown.length > maxOutputLength) {
-        outputForMarkdown = outputForMarkdown.substring(0, maxOutputLength) + `\n\n... Output truncated to ${maxOutputLength} characters ...`;
+        outputForMarkdown = outputForMarkdown.substring(outputForMarkdown.length - maxOutputLength);
       }
+      if (outputLines.length > 50) {
+        const last50Lines = outputLines.slice(-50).join('\n');
+        if (last50Lines.length <= maxOutputLength) {
+          outputForMarkdown = last50Lines;
+        }
+      }
+      if (outputForMarkdown.length < cmd.result.output.length) {
+        outputForMarkdown = `... (output truncated, total length was ${cmd.result.output.length} characters)\n` + outputForMarkdown;
+      }
+
       const labeTitle = cmd.pullRequest ?
         `${cmd.label} (${cmd.pullRequest.idStr || "?"})` :
         cmd.label;

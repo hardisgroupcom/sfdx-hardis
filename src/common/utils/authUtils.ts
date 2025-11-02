@@ -46,9 +46,9 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
   if (!options.checkAuth) {
     // Check if we are already authenticated
     let orgDisplayCommand = 'sf org display';
-    if (orgAlias && (isCI || isDevHub) && !orgAlias.includes('force://')) {
+    if (orgAlias && (isCI || isDevHub) && !orgAlias.includes('force://') && !options.forceUsername) {
       orgDisplayCommand += ' --target-org ' + orgAlias;
-      setDefaultOrg = orgAlias !== 'TECHNICAL_ORG' ? true : false;
+      setDefaultOrg = options.setDefault ?? (orgAlias !== 'TECHNICAL_ORG' ? true : false);
     }
     else if (options.forceUsername) {
       orgDisplayCommand += ' --target-org ' + options.forceUsername;
@@ -208,7 +208,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         ` --jwt-key-file ${crtKeyfile}` +
         ` --username ${username}` +
         ` --instance-url ${instanceUrl}` +
-        (orgAlias ? ` --alias ${orgAlias}` : '');
+        (orgAlias && !options.forceUsername ? ` --alias ${orgAlias}` : '');
       const jwtAuthRes = await execSfdxJson(loginCommand, this, {
         fail: false,
         output: false
