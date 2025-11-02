@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- New feature: **Deployment actions** at Pull Request level
+- New feature: [**Deployment actions**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/) at Pull Request level
   - Define pre-deploy and post-deploy commands to be executed during CI/CD deployments
   - Display summary in Pull Request with details of each command execution
 - Update CI/CD documentation & screenshots
