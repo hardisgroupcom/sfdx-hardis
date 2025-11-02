@@ -762,3 +762,16 @@ export async function setConnectionVariables(conn, handleTechnical = false) {
   }
   tryTechnical = false;
 }
+
+const FIND_USER_BY_USERNAME_LIKE_CACHE: any = {};
+export async function findUserByUsernameLike(usernameLike: string, conn: Connection): Promise<Record<string, any> | null> {
+  if (FIND_USER_BY_USERNAME_LIKE_CACHE[usernameLike]) {
+    return FIND_USER_BY_USERNAME_LIKE_CACHE[usernameLike];
+  }
+  const users = await conn.query(`SELECT Id, Username FROM User WHERE Username LIKE '${usernameLike}%' AND IsActive=true LIMIT 1`);
+  if (users.records.length > 0) {
+    FIND_USER_BY_USERNAME_LIKE_CACHE[usernameLike] = users.records[0];
+    return users.records[0];
+  }
+  return null;
+}

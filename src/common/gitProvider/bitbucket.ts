@@ -195,8 +195,118 @@ export class BitbucketProvider extends GitProviderRoot {
     return deploymentCheckId;
   }
 
+  public async listPullRequestsInBranchSinceLastMerge(
+    currentBranchName: string,
+    targetBranchName: string,
+    childBranchesNames: string[],
+  ): Promise<CommonPullRequestInfo[]> {
+    if (!this.bitbucket || !process.env.BITBUCKET_WORKSPACE || !process.env.BITBUCKET_REPO_SLUG) {
+      return [];
+    }
+
+    try {
+      const workspace = process.env.BITBUCKET_WORKSPACE;
+      const repoSlug = process.env.BITBUCKET_REPO_SLUG;
+
+      // Step 1: Find the last merged PR from currentBranch to targetBranch
+      const lastMergeResponse = await this.bitbucket.pullrequests.list({
+        workspace,
+        repo_slug: repoSlug,
+        q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`,
+      } as any);
+
+      const lastMergePRs =
+        lastMergeResponse &&
+          lastMergeResponse.data &&
+          lastMergeResponse.data.values
+          ? lastMergeResponse.data.values
+          : [];
+      const lastMergeToTarget =
+        lastMergePRs.length > 0 ? lastMergePRs[0] : null;
+
+      // Step 2: Get commits between branches
+      const commitsResponse = await this.bitbucket.commits.list({
+        workspace,
+        repo_slug: repoSlug,
+        include: currentBranchName,
+        exclude: lastMergeToTarget
+          ? lastMergeToTarget.merge_commit?.hash
+          : targetBranchName,
+      } as any);
+
+      const commits =
+        commitsResponse &&
+          commitsResponse.data &&
+          commitsResponse.data.values
+          ? commitsResponse.data.values
+          : [];
+
+      if (commits.length === 0) {
+        return [];
+      }
+
+      const commitHashes = new Set(commits.map((c: any) => c.hash));
+
+      // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
+      const allBranches = [currentBranchName, ...childBranchesNames];
+
+      const prPromises = allBranches.map(async (branchName) => {
+        try {
+          const response = await this.bitbucket.pullrequests.list({
+            workspace,
+            repo_slug: repoSlug,
+            q: `destination.branch.name = "${branchName}" AND state = "MERGED"`,
+          } as any);
+
+          const values =
+            response && response.data && response.data.values
+              ? response.data.values
+              : [];
+          return values;
+        } catch (err) {
+          uxLog(
+            "warning",
+            this,
+            c.yellow(`Error fetching merged PRs for branch ${branchName}: ${String(err)}`),
+          );
+          return [];
+        }
+      });
+
+      const prResults = await Promise.all(prPromises);
+      const allMergedPRs: any[] = prResults.flat();
+
+      // Step 4: Filter PRs whose merge commit is in our commit list
+      const relevantPRs = allMergedPRs.filter((pr) => {
+        const mergeCommitHash = pr.merge_commit?.hash;
+        return mergeCommitHash && commitHashes.has(mergeCommitHash);
+      });
+
+      // Step 5: Remove duplicates
+      const uniquePRsMap = new Map();
+      for (const pr of relevantPRs) {
+        if (!uniquePRsMap.has(pr.id)) {
+          uniquePRsMap.set(pr.id, pr);
+        }
+      }
+
+      // Step 6: Convert to CommonPullRequestInfo
+      return Array.from(uniquePRsMap.values()).map((pr) =>
+        this.completePullRequestInfo(pr)
+      );
+    } catch (err) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(`Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`),
+      );
+      return [];
+    }
+  }
+
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
-    const pullRequestIdStr = process.env.BITBUCKET_PR_ID || null;
+    const prInfo = await this.getPullRequestInfo();
+    const pullRequestIdStr = process.env.BITBUCKET_PR_ID || prInfo?.idStr || null;
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
 
@@ -209,7 +319,7 @@ export class BitbucketProvider extends GitProviderRoot {
     const bitbucketJobUrl = await this.getCurrentJobUrl();
 
     const messageKey = `${prMessage.messageKey}-${pullRequestId}`;
-    let messageBody = `**${prMessage.title || ''}**
+    let messageBody = `## ${prMessage.title || ''}
 
         ${prMessage.message}
         

@@ -4,12 +4,21 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.11.0] 2025-11-02
+
+- New feature: [**Deployment actions**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/) at Pull Request level
+  - Define pre-deploy and post-deploy commands to be executed during CI/CD deployments
+  - Display summary in Pull Request with details of each command execution
+- Update CI/CD documentation & screenshots
+- Do not display generated time in JSON Schema doc
+
 ## [6.10.0] 2025-10-31
 
 - New command [hardis:org:diagnose:storage-stats](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/storage-stats/) to analyze storage usage per object and per year of creation / last update
 - Add explicit message in case of error when authenticating to Git provider API
 - Allow to override SFDX_TEST_WAIT_MINUTES and SFDX_DEPLOY_WAIT_MINUTES using CI/CD variables, and set 120 minutes as default value everywhere
 - Fix Validation Rules formula field in doc generation
+
 
 ## [6.9.0] 2025-10-23
 

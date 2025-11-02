@@ -82,6 +82,7 @@ export class GitlabProvider extends GitProviderRoot {
     uxLog("log", this, c.grey(`[Gitlab Integration] Unable to find related Merge Request Info`));
     return null;
   }
+
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId: string | null = null;
     const projectId = process.env.CI_PROJECT_ID || null;
@@ -126,8 +127,9 @@ export class GitlabProvider extends GitProviderRoot {
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     // Get CI variables
+    const prInfo = await this.getPullRequestInfo();
     const projectId = process.env.CI_PROJECT_ID || null;
-    const mergeRequestId = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || null;
+    const mergeRequestId = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || prInfo?.idStr || null;
     if (projectId == null || mergeRequestId == null) {
       uxLog("log", this, c.grey("[Gitlab integration] No project and merge request, so no note posted..."));
       return { posted: false, providerResult: { info: "No related merge request" } };
@@ -136,7 +138,7 @@ export class GitlabProvider extends GitProviderRoot {
     const gitlabCIJobUrl = process.env.CI_JOB_URL;
     // Build note message
     const messageKey = prMessage.messageKey + "-" + gitlabCiJobName + "-" + mergeRequestId;
-    let messageBody = `**${prMessage.title || ""}**
+    let messageBody = `## ${prMessage.title || ""}
 
 ${prMessage.message}
 
@@ -176,6 +178,158 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
         providerResult: gitlabPostNoteResult,
       };
       return prResult;
+    }
+  }
+
+  public async listPullRequestsInBranchSinceLastMerge(
+    currentBranchName: string,
+    targetBranchName: string,
+    childBranchesNames: string[],
+  ): Promise<CommonPullRequestInfo[]> {
+    if (!this.gitlabApi) {
+      return [];
+    }
+
+    try {
+      // Get project ID from the API configuration
+      const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH;
+      if (!projectId) {
+        uxLog("warning", this, c.yellow("[Gitlab Integration] CI_PROJECT_ID or CI_PROJECT_PATH environment variable is required"));
+        return [];
+      }
+
+      // Step 1: Find the last merged MR from currentBranch to targetBranch
+      const lastMergeToTarget = await this.findLastMergedMR(currentBranchName, targetBranchName, projectId);
+
+      // Step 2: Get all commits in currentBranch since that merge (or all if no previous merge)
+      const commitsSinceLastMerge = await this.getCommitsSinceLastMerge(currentBranchName, lastMergeToTarget, projectId);
+
+      if (commitsSinceLastMerge.length === 0) {
+        return [];
+      }
+
+      // Create a Set of commit SHAs for fast lookup
+      const commitSHAs = new Set(commitsSinceLastMerge.map((c) => c.id));
+
+      // Step 3: Get all merged MRs targeting currentBranch and child branches (parallelized)
+      const allBranches = [currentBranchName, ...childBranchesNames];
+
+      const mrPromises = allBranches.map(async (branchName) => {
+        try {
+          const mergedMRs = await this.gitlabApi!.MergeRequests.all({
+            projectId,
+            targetBranch: branchName,
+            state: "merged",
+            perPage: 100,
+          });
+          return mergedMRs;
+        } catch (err) {
+          uxLog(
+            "warning",
+            this,
+            c.yellow(`Error fetching merged MRs for branch ${branchName}: ${String(err)}`),
+          );
+          return [];
+        }
+      });
+
+      const mrResults = await Promise.all(mrPromises);
+      const allMergedMRs: any[] = mrResults.flat();
+
+      // Step 4: Filter MRs whose merge commit SHA is in our commit list
+      const relevantMRs = allMergedMRs.filter((mr) => {
+        // Check if the merge commit SHA is in our commits
+        const mergeCommitSha = mr.mergeCommitSha || mr.merge_commit_sha;
+        if (mergeCommitSha && commitSHAs.has(mergeCommitSha)) {
+          return true;
+        }
+
+        // Also check if the MR's SHA (last commit before merge) is in our commits
+        if (mr.sha && commitSHAs.has(mr.sha)) {
+          return true;
+        }
+
+        return false;
+      });
+
+      // Step 5: Remove duplicates (same MR might be found through different branches)
+      const uniqueMRsMap = new Map<number, any>();
+      for (const mr of relevantMRs) {
+        if (mr.iid && !uniqueMRsMap.has(mr.iid)) {
+          uniqueMRsMap.set(mr.iid, mr);
+        }
+      }
+
+      // Step 6: Convert to CommonPullRequestInfo
+      return Array.from(uniqueMRsMap.values()).map((mr) =>
+        this.completePullRequestInfo(mr)
+      );
+    } catch (err) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(`Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`),
+      );
+      return [];
+    }
+  }
+
+  private async findLastMergedMR(
+    sourceBranch: string,
+    targetBranch: string,
+    projectId: string | number,
+  ): Promise<any | null> {
+    try {
+      const mergedMRs = await this.gitlabApi!.MergeRequests.all({
+        projectId,
+        sourceBranch,
+        targetBranch,
+        state: "merged",
+        orderBy: "updated_at",
+        sort: "desc",
+        perPage: 1,
+      });
+
+      return mergedMRs.length > 0 ? mergedMRs[0] : null;
+    } catch (err) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(`Error finding last merged MR from ${sourceBranch} to ${targetBranch}: ${String(err)}`),
+      );
+      return null;
+    }
+  }
+
+  private async getCommitsSinceLastMerge(
+    branchName: string,
+    lastMerge: any | null,
+    projectId: string | number,
+  ): Promise<any[]> {
+    try {
+      const options: any = {
+        refName: branchName,
+        perPage: 100,
+      };
+
+      // If there was a previous merge, get commits since that merge commit
+      if (lastMerge) {
+        const mergeCommitSha = lastMerge.mergeCommitSha || lastMerge.merge_commit_sha;
+        if (mergeCommitSha) {
+          // Get commits since the merge commit
+          options.since = lastMerge.mergedAt || lastMerge.merged_at;
+        }
+      }
+
+      const commits = await this.gitlabApi!.Commits.all(projectId, options);
+      return commits || [];
+    } catch (err) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(`Error fetching commits for branch ${branchName}: ${String(err)}`),
+      );
+      return [];
     }
   }
 

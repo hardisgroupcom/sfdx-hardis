@@ -19,39 +19,62 @@ import { WebSocketClient } from '../websocketClient.js';
 import { decryptFile } from '../cryptoUtils.js';
 import spawn from 'cross-spawn';
 
+// Options used by authOrg / authenticateUsingDeviceLogin
+export interface AuthOrgOptions {
+  checkAuth?: boolean;
+  argv?: string[];
+  debug?: boolean;
+  scratch?: boolean;
+  setDefault?: boolean;
+  forceUsername?: string;
+  Command?: {
+    flags?: Record<string, any>;
+    id?: string;
+  };
+  [key: string]: any;
+}
+
+// (removed accidental default export)
+
 // Authorize an org with sfdxAuthUrl, manually or with JWT
-export async function authOrg(orgAlias: string, options: any) {
+export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promise<boolean> {
   const isDevHub = orgAlias.includes('DevHub');
 
   let doConnect = true;
-  let alias = null;
+  let alias: string | null = null;
   let setDefaultOrg = false;
   if (!options.checkAuth) {
     // Check if we are already authenticated
     let orgDisplayCommand = 'sf org display';
-    if (orgAlias && (isCI || isDevHub) && !orgAlias.includes('force://')) {
+    if (options.forceUsername) {
+      orgDisplayCommand += ' --target-org ' + options.forceUsername;
+      setDefaultOrg = options.setDefault ?? false;
+    }
+    else if (orgAlias && (isCI || isDevHub) && !orgAlias.includes('force://')) {
       orgDisplayCommand += ' --target-org ' + orgAlias;
-      setDefaultOrg = orgAlias !== 'TECHNICAL_ORG' ? true : false;
-    } else {
+      setDefaultOrg = options.setDefault ?? (orgAlias !== 'TECHNICAL_ORG' ? true : false);
+    }
+    else {
+      const argv = options?.argv || [];
       if (
-        options?.argv.includes('--target-org') ||
-        options?.argv.includes('--targetusername') ||
-        options?.argv.includes('-o') ||
-        options?.argv.includes('-u')
+        argv.includes('--target-org') ||
+        argv.includes('--targetusername') ||
+        argv.includes('-o') ||
+        argv.includes('-u')
       ) {
         const posUsername =
-          options.argv.indexOf('--target-org') > -1
-            ? options.argv.indexOf('--target-org') + 1
-            : options.argv.indexOf('--targetusername') > -1
-              ? options.argv.indexOf('--targetusername') + 1
-              : options.argv.indexOf('-o') > -1
-                ? options.argv.indexOf('-o') + 1
-                : options.argv.indexOf('-u') > -1
-                  ? options.argv.indexOf('-u') + 1 : null;
+          argv.indexOf('--target-org') > -1
+            ? argv.indexOf('--target-org') + 1
+            : argv.indexOf('--targetusername') > -1
+              ? argv.indexOf('--targetusername') + 1
+              : argv.indexOf('-o') > -1
+                ? argv.indexOf('-o') + 1
+                : argv.indexOf('-u') > -1
+                  ? argv.indexOf('-u') + 1 : null;
         if (posUsername === null) {
           throw new SfError("Unable to find alias (authUtils.authOrg)")
         }
-        alias = options.argv[posUsername];
+        alias = argv[posUsername] as string | null;
         orgDisplayCommand += ' --target-org ' + alias;
       }
     }
@@ -133,16 +156,19 @@ export async function authOrg(orgAlias: string, options: any) {
       await execCommand(authCommand, this, { fail: true, output: false });
       uxLog("action", this, c.cyan('Successfully logged using sfdxAuthUrl'));
       await fs.remove(authFile);
-      return;
+      return true;
     }
 
     // Get auth variables, with priority CLI arguments, environment variables, then .sfdx-hardis.yml config file
+    const cmdFlags = options.Command?.flags || {};
     let username =
-      typeof options.Command.flags?.targetusername === 'string'
-        ? options.Command.flags?.targetusername
-        : process.env.TARGET_USERNAME || isDevHub
-          ? config.devHubUsername
-          : config.targetUsername;
+      options.forceUsername ?
+        options.forceUsername :
+        typeof cmdFlags.targetusername === 'string'
+          ? cmdFlags.targetusername
+          : process.env.TARGET_USERNAME || isDevHub
+            ? config.devHubUsername
+            : config.targetUsername || null;
     if (username == null && isCI) {
       const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
       console.error(
@@ -159,14 +185,16 @@ export async function authOrg(orgAlias: string, options: any) {
       process.exit(1);
     }
     let instanceUrl =
-      typeof options.Command?.flags?.instanceurl === 'string' &&
-        (options.Command?.flags?.instanceurl || '').startsWith('https')
-        ? options.Command.flags.instanceurl
-        : (process.env.INSTANCE_URL || '').startsWith('https')
-          ? process.env.INSTANCE_URL
-          : config.instanceUrl
-            ? config.instanceUrl
-            : 'https://login.salesforce.com';
+      options.instanceUrl ?
+        options.instanceUrl :
+        typeof options.Command?.flags?.instanceurl === 'string' &&
+          (options.Command?.flags?.instanceurl || '').startsWith('https')
+          ? options.Command.flags.instanceurl
+          : (process.env.INSTANCE_URL || '').startsWith('https')
+            ? process.env.INSTANCE_URL
+            : config.instanceUrl
+              ? config.instanceUrl
+              : 'https://login.salesforce.com';
     // Get JWT items clientId and certificate key
     const sfdxClientId = await getSfdxClientId(orgAlias, config);
     const crtKeyfile = await getCertificateKeyFile(orgAlias, config);
@@ -180,7 +208,7 @@ export async function authOrg(orgAlias: string, options: any) {
         ` --jwt-key-file ${crtKeyfile}` +
         ` --username ${username}` +
         ` --instance-url ${instanceUrl}` +
-        (orgAlias ? ` --alias ${orgAlias}` : '');
+        (orgAlias && !options.forceUsername ? ` --alias ${orgAlias}` : '');
       const jwtAuthRes = await execSfdxJson(loginCommand, this, {
         fail: false,
         output: false
@@ -316,12 +344,20 @@ export async function authOrg(orgAlias: string, options: any) {
       }
     } else {
       console.error(c.red('[sfdx-hardis][ERROR] You must be logged to an org to perform this action'));
-      process.exit(1); // Exit because we should succeed to connect
+      throw new SfError(`You must be logged to an org to perform this action`);
+      // process.exit(1); // Exit because we should succeed to connect
     }
+    return true;
   }
+  // If we skipped connection because we were already connected
+  if (!doConnect) {
+    return true;
+  }
+  // Fallback: should not be reached, but satisfy the boolean return contract
+  return false;
 }
 
-export async function authenticateUsingDeviceLogin(instanceUrl: any, orgAlias: string, configInfoUsr: any, options: any, isDevHub: boolean, loginResult: any) {
+export async function authenticateUsingDeviceLogin(instanceUrl: string, orgAlias: string, configInfoUsr: any, options: AuthOrgOptions, isDevHub: boolean, loginResult: any) {
   uxLog("action", this, c.cyan("Authenticating using device login..."));
   const loginCommandArgs = ['org login device', '--instance-url', instanceUrl];
   if (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias) {
@@ -504,7 +540,7 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
         )}`
       )
     );
-    console.error(c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
+    uxLog("error", this, c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
   }
   return null;
 }

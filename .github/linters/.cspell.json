@@ -8,7 +8,8 @@
     "package-lock.json",
     "report",
     ".cspell.json",
-    "**/metadataList.ts"
+    "**/metadataList.ts",
+    "**/actionsProvider/**"
   ],
   "language": "en",
   "version": "0.1",
