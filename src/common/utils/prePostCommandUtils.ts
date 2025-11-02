@@ -97,7 +97,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       break;
     }
   }
-  manageResultMarkdownBody(property, commands);
+  manageResultMarkdownBody(property, commands, options.checkOnly);
   // Check commands results
   const failedCommands = commands.filter(c => c.result?.statusCode === "failed");
   if (failedCommands.length > 0) {
@@ -235,14 +235,44 @@ async function executeAction(cmd: PrePostCommand): Promise<void> {
   }
 }
 
-function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[]) {
+function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: boolean, checkOnly: boolean): string {
+  if (isPreDeploy && !checkOnly) {
+    return '';
+  }
+  if (!isPreDeploy && checkOnly) {
+    return '';
+  }
+  const manualCommands = commands.filter(c => c.result?.statusCode === "manual");
+  if (manualCommands.length === 0) {
+    return '';
+  }
+  const title = isPreDeploy
+    ? `#### Manual Actions to perform before proceeding with deployment:\n\n`
+    : `#### Manual Actions to perform after deployment:\n\n`;
+  let section = title;
+  for (const cmd of manualCommands) {
+    const labelCol = cmd.pullRequest
+      ? `${cmd.label} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))`
+      : cmd.label;
+    section += `- [ ] ${labelCol}\n`;
+  }
+  section += `\n---\n\n`;
+  return section;
+}
+
+function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean) {
   let markdownBody = `### ${property === 'commandsPreDeploy' ? 'Pre-deployment Actions' : 'Post-deployment Actions'} Results\n\n`;
+
+  // Add manual actions section
+  const isPreDeploy = property === 'commandsPreDeploy';
+  markdownBody += buildManualActionsSection(commands, isPreDeploy, checkOnly);
+
   // Build markdown table
   markdownBody += `| <!-- --> | Label | Type | Status | Details |\n`;
   markdownBody += `|:--------:|-------|------|--------|---------|\n`;
   for (const cmd of commands) {
     const statusIcon = cmd.result?.statusCode === "manual" ?
-      "- [ ]" :
+      "👋" :
       cmd.result?.statusCode === "success" ? '✅' :
         (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ? '⚠️' :
           (cmd.result?.statusCode === "failed") ? '❌' :
