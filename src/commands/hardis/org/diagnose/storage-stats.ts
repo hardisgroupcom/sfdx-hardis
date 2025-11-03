@@ -92,6 +92,7 @@ The command's technical implementation involves:
   protected tableStorageInfos: any[] = [];
   protected outputFile;
   protected outputFilesRes: any = {};
+  protected dateGranularity: 'year' | 'month' | 'day' = 'year';
 
 
   /* jscpd:ignore-end */
@@ -186,12 +187,51 @@ The command's technical implementation involves:
       message: 'Select the date field to use for storage stats breakdown',
       description: "Choose between CreatedDate or LastModifiedDate.",
       choices: [
-        { title: 'CreatedDate', value: 'CreatedDate' },
-        { title: 'LastModifiedDate', value: 'LastModifiedDate' },
+        { title: 'Created Date', value: 'CreatedDate' },
+        { title: 'Last Modified Date', value: 'LastModifiedDate' },
+        { title: 'Record Type (if applicable)', value: 'RecordType.Name' },
+        { title: "Custom (will exclude objects who doesn't have the field)", value: 'custom' }
       ],
     });
-    const dateField = promptDateFieldRes.value;
+    let dateField = promptDateFieldRes.value;
+    if (dateField === 'custom') {
+      const promptFieldRes = await prompts({
+        type: 'text',
+        message: 'Enter the API name of the custom date field to use for storage stats breakdown',
+        description: "Objects without this field will be excluded from the analysis.",
+        placeholder: 'My_Date_Field__c, RecordType.Name, SBQQ_Quote__r.Status__c or SBQQ__Quote__r.RecordType.Name',
+      });
+      dateField = promptFieldRes.value;
+    }
+
     uxLog("log", this, `Using ${c.cyan(dateField)} for storage stats breakdown.`);
+
+    // Check if the selected field is a date field to prompt for granularity
+    // We need to check at least one object to determine the field type
+    let isDateFieldForGranularity = false;
+    if (dateField === 'CreatedDate' || dateField === 'LastModifiedDate') {
+      isDateFieldForGranularity = true;
+    } else if (selectedObjects.length > 0) {
+      // Check the first selected object to determine field type
+      const firstObjCheck = await this.checkFieldExistenceAndType(selectedObjects[0], dateField, conn);
+      isDateFieldForGranularity = firstObjCheck.isDateField;
+    }
+
+    // Prompt for date granularity if the field is a date/datetime
+    if (isDateFieldForGranularity) {
+      const promptGranularityRes = await prompts({
+        type: 'select',
+        message: 'Select the breakdown granularity for the date field',
+        description: "Choose how you want to group the storage statistics.",
+        choices: [
+          { title: 'By Year (CALENDAR_YEAR)', value: 'year' },
+          { title: 'By Month (CALENDAR_MONTH)', value: 'month' },
+          { title: 'By Day (exact date)', value: 'day' }
+        ],
+      });
+      this.dateGranularity = promptGranularityRes.value;
+      uxLog("log", this, `Using ${c.cyan(this.dateGranularity)} granularity for date breakdown.`);
+    }
 
     // Query objects to know the count of records, storage used and their year of created date
     WebSocketClient.sendProgressStartMessage(`Calculating storage stats for ${selectedObjects.length} objects...`, selectedObjects.length);
@@ -209,8 +249,12 @@ The command's technical implementation involves:
     uxLog("action", this, `Compiling storage stats...`);
     // Sort by total records descending
     sortArray(objectStorageStats, { by: 'totalRecords', order: 'desc' });
-    // Create one line by year per object
+    // Create one line by breakdown per object
     this.tableStorageInfos = objectStorageStats.flatMap(objStats => {
+      // Skip objects that don't have the field
+      if (objStats.skipped) {
+        return [];
+      }
       const allLines: any[] = [];
       // calculate object storage usage based on record count and average record size
       const averageSalesforceRecordSizeBytes = 2 * 1024; // 2 KB average size per record
@@ -220,30 +264,32 @@ The command's technical implementation involves:
       };
       const globalLine = {
         ...tableStorageInfo,
-        Year: 'Total',
+        Breakdown: 'Total',
         RecordCount: objStats.totalRecords,
         EstimatedStoragePercentage: ((objStats.totalRecords * averageSalesforceRecordSizeBytes) / (dataStorageLimit.Max * 1024 * 1024) * 100).toFixed(2) + "%",
         EstimatedStorageMB: ((objStats.totalRecords * averageSalesforceRecordSizeBytes) / (1024 * 1024)).toFixed(2),
       };
       allLines.push(globalLine);
-      for (const yearStat of objStats.yearlyStats) {
-        const year = yearStat.year;
-        const recordCount = yearStat.total;
-        const storageUsedYearBytes = (recordCount * averageSalesforceRecordSizeBytes) / (1024 * 1024);
+      for (const breakdownStat of objStats.breakdownStats) {
+        const breakdownValue = breakdownStat.breakdown;
+        const recordCount = breakdownStat.total;
+        const storageUsedBreakdownBytes = (recordCount * averageSalesforceRecordSizeBytes) / (1024 * 1024);
         const line = {
           ...tableStorageInfo,
-          Year: year,
+          Breakdown: breakdownValue,
           RecordCount: recordCount,
-          EstimatedStoragePercentage: (storageUsedYearBytes / (dataStorageLimit.Max) * 100).toFixed(2) + "%",
-          EstimatedStorageMB: storageUsedYearBytes.toFixed(2),
+          EstimatedStoragePercentage: (storageUsedBreakdownBytes / (dataStorageLimit.Max) * 100).toFixed(2) + "%",
+          EstimatedStorageMB: storageUsedBreakdownBytes.toFixed(2),
         };
         allLines.push(line);
       }
       return allLines;
     });
 
-    // Update empty objects cache
-    const newlyEmptyObjects = objectStorageStats.filter(obj => obj.totalRecords === 0).map(obj => obj.name);
+    // Update empty objects cache (exclude objects that were skipped or had errors)
+    const newlyEmptyObjects = objectStorageStats
+      .filter(obj => obj.totalRecords === 0 && !obj.skipped && !obj.error)
+      .map(obj => obj.name);
     const updatedEmptyObjects = Array.from(new Set([...emptyObjects, ...newlyEmptyObjects]));
     await this.setEmptyObjectsCache(updatedEmptyObjects);
     uxLog("log", this, `Empty objects cache updated with ${newlyEmptyObjects.length} newly detected empty objects.`);
@@ -251,13 +297,18 @@ The command's technical implementation involves:
     // Remove objects with zero records from the report
     this.tableStorageInfos = this.tableStorageInfos.filter(info => info.RecordCount > 0);
 
-    // Generate output CSV file with breakdown by year
-    this.outputFile = await generateReportPath('storage-stats-by' + dateField, this.outputFile);
-    this.outputFilesRes = await generateCsvFile(this.tableStorageInfos, this.outputFile, { fileTitle: "Storage stats breakdown by " + dateField });
+    // Generate output CSV file with breakdown
+    const granularitySuffix = isDateFieldForGranularity ? `-${this.dateGranularity}` : '';
+    const fileBaseName = `storage-stats-by-${dateField.replace(/\./g, '_')}${granularitySuffix}`;
+    this.outputFile = await generateReportPath(fileBaseName, this.outputFile);
+    const fileTitleBreakdown = isDateFieldForGranularity
+      ? `Storage stats breakdown by ${dateField} (${this.dateGranularity})`
+      : `Storage stats breakdown by ${dateField}`;
+    this.outputFilesRes = await generateCsvFile(this.tableStorageInfos, this.outputFile, { fileTitle: fileTitleBreakdown });
 
     // Generate output CSV file with only total per object
     const outputFileTotals = this.outputFile.replace('.csv', '-totals.csv');
-    const tableStorageInfosTotals = this.tableStorageInfos.filter(info => info.Year === 'Total');
+    const tableStorageInfosTotals = this.tableStorageInfos.filter(info => info.Breakdown === 'Total');
     const outputFilesResTotals = await generateCsvFile(tableStorageInfosTotals, outputFileTotals, { fileTitle: "Storage stats totals per object" });
     this.outputFilesRes.totalPerObject = outputFilesResTotals;
 
@@ -291,32 +342,236 @@ The command's technical implementation involves:
     await fs.writeJSON(this.cacheFilePath, cacheContent, { spaces: 2 });
   }
 
+  private async checkFieldExistenceAndType(obj: any, dateField: string, conn): Promise<{ isValid: boolean; isDateField: boolean; errorResult?: any }> {
+    // Standard date fields are always valid and are date fields
+    if (dateField === 'CreatedDate' || dateField === 'LastModifiedDate') {
+      return { isValid: true, isDateField: true };
+    }
+
+    const fieldPath = dateField.split('.');
+
+    try {
+      const describe = await conn.sobject(obj.name).describe();
+      const fieldName = fieldPath[0];
+
+      // Determine the field to check in describe
+      let fieldToCheck = fieldName;
+
+      // Special case: RecordType.Name -> check RecordTypeId
+      if (fieldName === 'RecordType') {
+        fieldToCheck = 'RecordTypeId';
+      }
+      // Special case: Custom relationships ending with __r -> convert to __c (e.g., SBQQ_Quote__r -> SBQQ_Quote__c)
+      else if (fieldName.endsWith('__r')) {
+        fieldToCheck = fieldName.replace(/__r$/, '__c');
+      }
+
+      const field = describe.fields.find((f: any) => f.name === fieldToCheck);
+      if (!field) {
+        uxLog("warning", this, c.yellow(`Skipping object ${c.cyan(obj.name)}: field ${c.cyan(dateField)} not found`));
+        return {
+          isValid: false,
+          isDateField: false,
+          errorResult: {
+            name: obj.name,
+            label: obj.label,
+            totalRecords: 0,
+            breakdownStats: [],
+            skipped: true,
+            skipReason: `Field ${dateField} not found on object`
+          }
+        };
+      }
+
+      // Navigate through relationship fields recursively
+      if (fieldPath.length > 1 && field.referenceTo && field.referenceTo.length > 0) {
+        return await this.checkRelatedFieldPath(obj, field, fieldPath.slice(1), conn, [field.referenceTo[0]]);
+      } else {
+        // Direct field on the object, check its type
+        const isDateField = field.type === 'date' || field.type === 'datetime';
+        return { isValid: true, isDateField };
+      }
+    } catch (error: any) {
+      uxLog("error", this, `Error describing object ${c.cyan(obj.name)}: ${error.message}`);
+      return {
+        isValid: false,
+        isDateField: false,
+        errorResult: {
+          name: obj.name,
+          label: obj.label + ' (Describe Error): ' + error.message,
+          totalRecords: 0,
+          breakdownStats: [],
+          error: true,
+        }
+      };
+    }
+  }
+
+  private async checkRelatedFieldPath(
+    originalObj: any,
+    currentField: any,
+    remainingPath: string[],
+    conn: any,
+    relationshipChain: string[]
+  ): Promise<{ isValid: boolean; isDateField: boolean; errorResult?: any }> {
+    const relatedObjectName = currentField.referenceTo[0]; // Take first reference (polymorphic not fully supported)
+    const nextFieldName = remainingPath[0];
+
+    try {
+      const relatedDescribe = await conn.sobject(relatedObjectName).describe();
+
+      // Determine the field to check in describe
+      let fieldToCheck = nextFieldName;
+
+      // Special case: RecordType.Name -> check RecordTypeId
+      if (nextFieldName === 'RecordType') {
+        fieldToCheck = 'RecordTypeId';
+      }
+      // Special case: Custom relationships ending with __r -> convert to __c
+      else if (nextFieldName.endsWith('__r')) {
+        fieldToCheck = nextFieldName.replace(/__r$/, '__c');
+      }
+
+      const relatedField = relatedDescribe.fields.find((f: any) => f.name === fieldToCheck);
+
+      if (!relatedField) {
+        const relationshipPath = relationshipChain.join(' -> ');
+        uxLog("warning", this, c.yellow(`Skipping object ${c.cyan(originalObj.name)}: field ${c.cyan(nextFieldName)} not found on ${c.cyan(relatedObjectName)} (path: ${relationshipPath})`));
+        return {
+          isValid: false,
+          isDateField: false,
+          errorResult: {
+            name: originalObj.name,
+            label: originalObj.label,
+            totalRecords: 0,
+            breakdownStats: [],
+            skipped: true,
+            skipReason: `Field ${nextFieldName} not found on related object ${relatedObjectName} (relationship path: ${relationshipPath})`
+          }
+        };
+      }
+
+      // If there are more levels to traverse
+      if (remainingPath.length > 1 && relatedField.referenceTo && relatedField.referenceTo.length > 0) {
+        return await this.checkRelatedFieldPath(
+          originalObj,
+          relatedField,
+          remainingPath.slice(1),
+          conn,
+          [...relationshipChain, relatedField.referenceTo[0]]
+        );
+      } else {
+        // This is the final field, check its type
+        const isDateField = relatedField.type === 'date' || relatedField.type === 'datetime';
+        return { isValid: true, isDateField };
+      }
+    } catch (error: any) {
+      const relationshipPath = relationshipChain.join(' -> ');
+      uxLog("error", this, `Error describing related object ${c.cyan(relatedObjectName)}: ${error.message} (path: ${relationshipPath})`);
+      return {
+        isValid: false,
+        isDateField: false,
+        errorResult: {
+          name: originalObj.name,
+          label: originalObj.label + ` (Describe Error on ${relatedObjectName}): ` + error.message,
+          totalRecords: 0,
+          breakdownStats: [],
+          error: true,
+        }
+      };
+    }
+  }
+
   private async calculateObjectStorageStats(obj: any, dateField: string, conn) {
     uxLog("log", this, `Querying storage stats for object: ${c.cyan(obj.name)}...`);
-    const query = `SELECT CALENDAR_YEAR(${dateField}) year, COUNT(Id) total
+
+    // Check if field exists on object and determine its type
+    const fieldCheck = await this.checkFieldExistenceAndType(obj, dateField, conn);
+    if (!fieldCheck.isValid) {
+      return fieldCheck.errorResult;
+    }
+
+    // Build query based on field type
+    let query: string;
+    let groupByClause: string;
+    let orderByClause: string;
+
+    // Use appropriate date function for date/datetime fields based on granularity
+    if (fieldCheck.isDateField) {
+      switch (this.dateGranularity) {
+        case 'year':
+          groupByClause = `CALENDAR_YEAR(${dateField})`;
+          orderByClause = `CALENDAR_YEAR(${dateField})`;
+          break;
+        case 'month':
+          groupByClause = `CALENDAR_YEAR(${dateField}), CALENDAR_MONTH(${dateField})`;
+          orderByClause = `CALENDAR_YEAR(${dateField}), CALENDAR_MONTH(${dateField})`;
+          break;
+        case 'day':
+          groupByClause = dateField;
+          orderByClause = `${dateField}`;
+          break;
+        default:
+          groupByClause = `CALENDAR_YEAR(${dateField})`;
+          orderByClause = `CALENDAR_YEAR(${dateField})`;
+      }
+
+      // Build appropriate SELECT clause based on granularity
+      let selectClause: string;
+      if (this.dateGranularity === 'month') {
+        selectClause = `CALENDAR_YEAR(${dateField}) year, CALENDAR_MONTH(${dateField}) month, COUNT(Id) total`;
+      } else if (this.dateGranularity === 'day') {
+        selectClause = `${dateField} breakdown, COUNT(Id) total`;
+      } else {
+        selectClause = `CALENDAR_YEAR(${dateField}) breakdown, COUNT(Id) total`;
+      }
+
+      query = `SELECT ${selectClause}
 FROM ${obj.name} 
-GROUP BY CALENDAR_YEAR(${dateField})
-ORDER BY CALENDAR_YEAR(${dateField}) DESC`;
+GROUP BY ${groupByClause}
+ORDER BY ${orderByClause}`;
+    } else {
+      // For non-date fields (RecordType.Name, picklists, text fields), use direct grouping
+      groupByClause = dateField;
+      query = `SELECT ${dateField} breakdown, COUNT(Id) total
+FROM ${obj.name} 
+GROUP BY ${dateField}
+ORDER BY ${dateField}`;
+    }
+
     try {
       const queryRes = await soqlQuery(query, conn);
-      const yearlyStats = queryRes.records.map((record: any) => ({
-        year: record.year,
-        total: record.total,
-      }));
-      const totalRecords = yearlyStats.reduce((acc: number, curr: any) => acc + curr.total, 0);
+      const breakdownStats = queryRes.records.map((record: any) => {
+        // Handle month granularity (year and month fields)
+        if (record.year !== undefined && record.month !== undefined) {
+          // Format as YYYY-MM for better readability
+          const monthStr = String(record.month).padStart(2, '0');
+          return {
+            breakdown: `${record.year}-${monthStr}`,
+            total: record.total,
+          };
+        }
+        // Handle other cases (year, day, or non-date fields)
+        return {
+          breakdown: record.breakdown || 'N/A',
+          total: record.total,
+        };
+      });
+      const totalRecords = breakdownStats.reduce((acc: number, curr: any) => acc + curr.total, 0);
       return {
         name: obj.name,
         label: obj.label,
         totalRecords,
-        yearlyStats,
+        breakdownStats,
       };
     } catch (error: any) {
       uxLog("error", this, `Error querying object ${c.cyan(obj.name)}: ${error.message}`);
       return {
         name: obj.name,
-        label: obj.label + ' (Query Error):' + error.message,
+        label: obj.label + ' (Query Error): ' + error.message,
         totalRecords: 0,
-        yearlyStats: [],
+        breakdownStats: [],
+        error: true,
       };
     }
   }
