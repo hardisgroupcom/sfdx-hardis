@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.11.2] 2025-11-03
+
 - Enhances storage stats with breakdown and filtering
 
 ## [6.11.1] 2025-11-02
