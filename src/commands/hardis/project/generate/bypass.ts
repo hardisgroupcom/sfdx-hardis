@@ -385,6 +385,28 @@ The command's technical implementation involves:
     return results;
   }
 
+
+  public async queryFlows(connection: Connection) {
+    const query = `SELECT Id, ApiName, Label, TriggerObjectOrEvent.QualifiedApiName FROM FlowDefinitionView WHERE ManageableState ='unmanaged'`;
+    const results = await soqlQuery(query, connection);
+    uxLog("log", this, c.grey(`Found ${results.records.length} Flows.`));
+    return results;
+  }
+
+  public filterFlowResults(flowResults, sObjects) {
+    // Only keep flows that are triggered on the specified sObjects or that don't have a trigger object
+    return flowResults.records.filter((flow) => {
+      const triggerObject = flow.TriggerObjectOrEvent?.QualifiedApiName;
+      return (
+        !triggerObject ||
+        (triggerObject &&
+          Object.keys(sObjects).includes(
+            triggerObject.replace("__c", "")
+          ))
+      );
+    });
+  }
+  
   // XML Generation
   public generateXML(
     type: "customPermission" | "permissionSet",
@@ -843,28 +865,6 @@ The command's technical implementation involves:
   }
 
   // Flows
-
-  public async queryFlows(connection: Connection) {
-    const query = `SELECT Id, ApiName, Label, TriggerObjectOrEvent.QualifiedApiName FROM FlowDefinitionView WHERE ManageableState ='unmanaged'`;
-    const results = await soqlQuery(query, connection);
-    uxLog("log", this, c.grey(`Found ${results.records.length} Flows.`));
-    return results;
-  }
-
-  public filterFlowResults(flowResults, sObjects) {
-    // Only keep flows that are triggered on the specified sObjects or that don't have a trigger object
-    return flowResults.records.filter((flow) => {
-      const triggerObject = flow.TriggerObjectOrEvent?.QualifiedApiName;
-      return (
-        !triggerObject ||
-        (triggerObject &&
-          Object.keys(sObjects).includes(
-            triggerObject.replace("__c", "")
-          ))
-      );
-    });
-  }
-
   public async handleFlowFile(
     filePath: string,
     name: string
