@@ -406,7 +406,7 @@ The command's technical implementation involves:
       );
     });
   }
-  
+
   // XML Generation
   public generateXML(
     type: "customPermission" | "permissionSet",
@@ -573,12 +573,7 @@ The command's technical implementation involves:
         };
       }
 
-      const creditsText = this.skipCredits
-        ? ""
-        : `/* Updated ${CREDITS_TEXT} */
-      `;
-      fileContent.ValidationRule.errorConditionFormula[0] = `${creditsText}
-      AND( AND(NOT(${bypassPermissionName}), NOT($Permission.BypassAllVRs)), ${validationRuleContent})`;
+      fileContent.ValidationRule.errorConditionFormula[0] = `AND( AND(NOT(${bypassPermissionName}), NOT($Permission.BypassAllVRs)), ${validationRuleContent})`;
       await writeXmlFile(filePath, fileContent);
       return {
         sObject,
