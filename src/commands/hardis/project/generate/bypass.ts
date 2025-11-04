@@ -83,6 +83,12 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
       required: false,
       default: false,
     }),
+    "apply-to-flows": Flags.boolean({
+      aliases: ["applyToFlows"],
+      description: "Apply bypass to Flows",
+      required: false,
+      default: false,
+    }),
     "metadata-source": Flags.string({
       char: "r",
       aliases: ["metadataSource"],
@@ -159,6 +165,7 @@ The command's technical implementation involves:
     this.skipCredits = flags["skip-credits"] || false;
     let applyToTriggers = flags["apply-to-triggers"] || null;
     let applyToVrs = flags["apply-to-vrs"] || null;
+    let applyToFlows = flags["apply-to-flows"] || null;
     const sObjects = flags.objects || null;
     const automations = flags.automations || null;
 
@@ -168,7 +175,7 @@ The command's technical implementation involves:
 
     // Filter objects
     if (sObjects) {
-      const sObjectsFromFlag = flags.sObjects.split(",").map((s) => s.trim());
+      const sObjectsFromFlag = sObjects.split(",").map((s) => s.trim());
       targetSObjects = Object.fromEntries(
         Object.entries(availableSObjects).filter(([key]) => {
           const res = sObjectsFromFlag.includes(key);
@@ -222,7 +229,7 @@ The command's technical implementation involves:
       });
     }
 
-    if (applyToVrs == null && applyToTriggers == null) {
+    if (applyToVrs == null && applyToTriggers == null && applyToFlows == null) {
       promptsNeeded.push({
         type: "multiselect",
         name: "applyTo",
@@ -232,9 +239,12 @@ The command's technical implementation involves:
         choices: [
           { title: "Validation Rules", value: "applyToVrs" },
           { title: "Triggers", value: "applyToTriggers" },
+          { title: "Flows", value: "applyToFlows" },
         ],
       });
     }
+
+    // Add prompt to ask if the user wants to handle flows without sObjects, currently, all flows without sObjects are handled
 
     if (this.retrieveFromOrg == undefined || this.retrieveFromOrg == null) {
       promptsNeeded.push({
@@ -269,6 +279,9 @@ The command's technical implementation involves:
       if (!applyToVrs) {
         applyToVrs = promptResults.applyTo?.includes("applyToVrs");
       }
+      if(!applyToFlows){
+        applyToFlows = promptResults.applyTo?.includes("applyToFlows");
+      }
 
       if (promptResults.elementSource) {
         this.retrieveFromOrg = promptResults.elementSource === "org";
@@ -297,6 +310,11 @@ The command's technical implementation involves:
     if (applyToTriggers) {
       uxLog("action", this, c.cyan(`Applying bypass to Triggers...`));
       await this.applyBypassToTriggers(connection, targetSObjects);
+    }
+
+    if(applyToFlows) {
+      uxLog("action", this, c.cyan(`Applying bypass to Flows...`));
+      await this.applyBypassToFlows(connection, targetSObjects);
     }
 
     return {
@@ -439,7 +457,7 @@ The command's technical implementation involves:
   // Metadata handling
   public async retrieveMetadataFiles(
     records: any[],
-    metadataType: "ValidationRule" | "ApexTrigger"
+    metadataType: "ValidationRule" | "ApexTrigger" | "Flow"
   ): Promise<any[]> {
     const recordsChunks = this.chunkArray(records);
     const results: any[] = [];
@@ -448,12 +466,14 @@ The command's technical implementation involves:
       let command = `sf project retrieve start --metadata`;
       command += chunk
         .map((record: any) => {
-          return metadataType === "ValidationRule"
-            ? ` ValidationRule:${record.EntityDefinition.QualifiedApiName}.${record.ValidationName}`
-            : ` ApexTrigger:${record.Name}`;
-        })
-        .join(" ");
-
+          if(metadataType === "Flow"){
+            return ` Flow:${record.ApiName}`;
+          }else if (metadataType === "ValidationRule") {
+            return ` ValidationRule:${record.EntityDefinition.QualifiedApiName}.${record.ValidationName}`;
+          } else {
+            return ` ApexTrigger:${record.Name}`;
+          }
+        }).join(" ");
       try {
         const result = await execCommand(
           `${command} --ignore-conflicts --json`,
@@ -509,7 +529,7 @@ The command's technical implementation involves:
 
       if (
         typeof validationRuleContent === "string" &&
-        validationRuleContent.includes(bypassPermissionName)
+        ( validationRuleContent.includes(bypassPermissionName) || validationRuleContent.includes('BypassAllVRs'))
       ) {
         return {
           sObject,
@@ -820,5 +840,199 @@ The command's technical implementation involves:
     }
     uxLog("action", this, c.cyan(`Trigger bypass report:`));
     uxLogTable(this, triggerReport);
+  }
+
+  // Flows
+
+  public async queryFlows(connection: Connection) {
+    const query = `SELECT Id, ApiName, Label, TriggerObjectOrEvent.QualifiedApiName FROM FlowDefinitionView WHERE ManageableState ='unmanaged'`;
+    const results = await soqlQuery(query, connection);
+    uxLog("log", this, c.grey(`Found ${results.records.length} Flows.`));
+    return results;
+  }
+
+  public filterFlowResults(flowResults, sObjects) {
+    // Only keep flows that are triggered on the specified sObjects or that don't have a trigger object
+    return flowResults.records.filter((flow) => {
+      const triggerObject = flow.TriggerObjectOrEvent?.QualifiedApiName;
+      return (
+        !triggerObject ||
+        (triggerObject &&
+          Object.keys(sObjects).includes(
+            triggerObject.replace("__c", "")
+          ))
+      );
+    });
+  }
+
+  public async handleFlowFile(
+    filePath: string,
+    name: string
+  ): Promise<{ [key: string]: string | null }> {
+    
+    try {
+      if (!fs.existsSync(filePath)) {
+        return {
+          sObject: null,
+          name,
+          action: STATUS.FAILED,
+          comment: "File not found",
+        };
+      }
+
+      const fileContent = await parseXmlFile(filePath);
+
+      // sObject is not required for a flow
+      const sObject = fileContent?.Flow?.start?.[0]?.object?.[0] ?? null;
+      const filterFormula = fileContent?.Flow?.start?.[0]?.filterFormula?.[0] ?? null;
+      const filterLogic = fileContent?.Flow?.start?.[0]?.filterLogic?.[0] ?? null;
+
+      // Formula mode
+      if (filterFormula) {
+        const bypassPermissionName = `$Permission.Bypass${sObject}Flows`;
+        if (typeof filterFormula === "string" &&
+          (filterFormula.includes(bypassPermissionName) || filterFormula.includes('$Permission.BypassAllFlows'))) {
+          return {
+            sObject,
+            name,
+            action: STATUS.IGNORED,
+            comment: "SFDX-Hardis Bypass already implemented",
+          };
+        }
+
+        if (typeof filterFormula === "string" && /bypass/i.test(filterFormula)) {
+          return {
+            sObject,
+            name,
+            action: STATUS.SKIPPED,
+            comment: "Another bypass mechanism exists",
+          };
+        }
+
+        if(sObject){
+          fileContent.Flow.start[0].filterFormula[0] = `AND( AND(NOT(${bypassPermissionName}), NOT($Permission.BypassAllFlows)), ${filterFormula})`;
+        }else{
+          fileContent.Flow.start[0].filterFormula[0] = `AND( NOT($Permission.BypassAllFlows), ${filterFormula})`;
+        }
+      }
+      // Structured mode
+      else if (filterLogic) {
+        // Transform existing filters from structured mode to formula mode
+        // Standard filter logic
+        // Custom filter logic
+      }
+      // No filter defined
+      else {
+        if (sObject) {
+          fileContent.Flow.start[0].filterFormula = [`AND(NOT($Permission.BypassAllFlows), NOT($Permission.Bypass${sObject}Flows))`];
+        }else{
+          fileContent.Flow.start[0].filterFormula = [`NOT($Permission.BypassAllFlows)`];
+        }
+      }
+
+      await writeXmlFile(filePath, fileContent);
+
+      return {
+        sObject,
+        name,
+        action: STATUS.ADDED,
+        comment: "Bypass implemented",
+      };
+    } catch (error) {
+      return {
+        sObject: null,
+        name,
+        action: STATUS.FAILED,
+        comment: `Error processing file : ${error}`,
+      };
+    }
+  }
+
+  public async applyBypassToFlows(
+    connection: Connection,
+    sObjects: { [key: string]: string }
+  ): Promise<void> {
+    const flowResults = await this.queryFlows(connection);
+
+    const filteredFlowResults = this.filterFlowResults(
+      flowResults,
+      sObjects
+    );
+
+    if (!filteredFlowResults || filteredFlowResults?.length === 0) {
+      uxLog("log", this, c.grey("No flows found for the specified sObjects."));
+      return;
+    }
+
+    const flowReport: any = [];
+
+    const eligibleMetadataFilePaths: any = [];
+
+    if (this.retrieveFromOrg) {
+      const retrievedFlowChunks = await this.retrieveMetadataFiles(
+        filteredFlowResults,
+        "Flow"
+      );
+
+      for (const retrievedFlows of retrievedFlowChunks) {
+        if (
+          retrievedFlows?.status !== 1 &&
+          retrievedFlows?.result?.files &&
+          Array.isArray(retrievedFlows.result.files) &&
+          retrievedFlows.result.files.length > 0
+        ) {
+          for (const metadataFile of retrievedFlows.result.files) {
+            if (
+              metadataFile?.type !== "Flow" ||
+              metadataFile?.problemType === "Error"
+            ) {
+              continue;
+            }
+            const name = metadataFile.fullName;
+            const filePath = metadataFile.filePath;
+            eligibleMetadataFilePaths.push({ filePath, name });
+          }
+        } else {
+          uxLog(
+            "log",
+            this,
+            c.grey("No Flow files found in the retrieved metadata chunk.")
+          );
+        }
+      }
+    } else {
+      if (filteredFlowResults) {
+        for (const record of filteredFlowResults) {
+          const name = record.ApiName;
+          const filePath = await MetadataUtils.findMetaFileFromTypeAndName(
+            "Flow",
+            name
+          );
+          if (filePath === null) {
+            // TODO: add to report instead of log
+            uxLog(
+              "log",
+              this,
+              c.grey(`The Flow ${name} does not have a corresponding metadata file locally. Skipping.`)
+            );
+          } else {
+            eligibleMetadataFilePaths.push({ filePath, name });
+          }
+        }
+      }
+    }
+
+    for (const eligibleMetadataFilePath of eligibleMetadataFilePaths) {
+      flowReport.push(
+        await this.handleFlowFile(
+          eligibleMetadataFilePath.filePath,
+          eligibleMetadataFilePath.name
+        )
+      );
+    }
+
+    uxLog("action", this, c.cyan(`Flow bypass report:`));
+    uxLogTable(this, flowReport);
+    
   }
 }
