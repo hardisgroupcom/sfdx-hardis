@@ -10,7 +10,7 @@ import {
   soqlQueryTooling,
 } from "../../../../common/utils/apiUtils.js";
 import { execCommand, uxLog, uxLogTable } from "../../../../common/utils/index.js";
-import { prompts } from "../../../../common/utils/prompts.js";
+import { prompts, PromptsQuestion } from "../../../../common/utils/prompts.js";
 import c from "chalk";
 import path from "path";
 import fs from "fs";
@@ -24,6 +24,7 @@ import {
   writeXmlFile,
 } from "../../../../common/utils/xmlUtils.js";
 import { MetadataUtils } from "../../../../common/metadata-utils/index.js";
+// import { file } from "@oclif/core/args";
 
 // Constants
 const ALLOWED_AUTOMATIONS = ["Flow", "Trigger", "VR"];
@@ -243,9 +244,7 @@ The command's technical implementation involves:
         ],
       });
     }
-
-    // Add prompt to ask if the user wants to handle flows without sObjects, currently, all flows without sObjects are handled
-
+    
     if (this.retrieveFromOrg == undefined || this.retrieveFromOrg == null) {
       promptsNeeded.push({
         type: "select",
@@ -286,6 +285,32 @@ The command's technical implementation involves:
       if (promptResults.elementSource) {
         this.retrieveFromOrg = promptResults.elementSource === "org";
       }
+    }
+    // Q: move just before the use or keep in here to ask the user within the same prompt block?
+    if(applyToFlows){
+      const extraPromptsForFlows: PromptsQuestion[] = [{
+        type: "select",
+        name: "includeFlowsWithoutSObjects",
+        message: "Do you wish to include flows that are not triggered by specific sObjects?",
+        description: "These flows will also have the bypass logic applied.",
+        placeholder: "Select an option",
+        choices: [
+          { title: "Yes", value: true },
+          { title: "No", value: false },
+        ],
+      },{
+        type: "select",
+        name: "transformSimpleConditionsToFormulas",
+        message: "Do you wish to transform simple flow entry conditions to formulas?",
+        description: "This will apply to all flows, including those without specific sObjects.",
+        placeholder: "Select an option",
+        choices: [
+          { title: "Yes", value: true },
+          { title: "No", value: false },
+        ],
+      }];
+      const flowPromptResults = await prompts(extraPromptsForFlows);
+      console.log(flowPromptResults);
     }
 
     // Validate selections
@@ -904,25 +929,98 @@ The command's technical implementation involves:
           };
         }
 
-        if(sObject){
-          fileContent.Flow.start[0].filterFormula[0] = `AND( AND(NOT(${bypassPermissionName}), NOT($Permission.BypassAllFlows)), ${filterFormula})`;
-        }else{
-          fileContent.Flow.start[0].filterFormula[0] = `AND( NOT($Permission.BypassAllFlows), ${filterFormula})`;
-        }
+        fileContent.Flow.start[0].filterFormula[0] = sObject ? `AND( AND(NOT(${bypassPermissionName}), NOT($Permission.BypassAllFlows)), ${filterFormula})` : `AND( NOT($Permission.BypassAllFlows), ${filterFormula})`;
       }
       // Structured mode
       else if (filterLogic) {
-        // Transform existing filters from structured mode to formula mode
         // Standard filter logic
-        // Custom filter logic
+        if(filterLogic === 'and' || filterLogic === 'or'){
+          // Transform existing filters from structured mode to formula mode
+          const structuredFilters = fileContent.Flow.start[0].filters;
+          const formulaParts: string[] = [];
+          for (const structuredFilter of structuredFilters) {
+            const structuredField = structuredFilter?.field?.[0] ?? null;
+            const structuredOperator = structuredFilter?.operator?.[0] ?? null;
+            const structuredValue = structuredFilter?.value?.[0] ?? null;
+
+            // https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_visual_workflow.htm#FlowElementReferenceOrValue
+            let formulaValue : string | boolean | null | undefined = undefined;
+            if(structuredValue == null){
+              formulaValue = null;
+            }else if(structuredValue?.stringValue){
+              formulaValue = `"${structuredValue?.stringValue}"`;
+            }else if(structuredValue?.booleanValue){
+              formulaValue = structuredValue?.booleanValue === 'true';
+            }else if(structuredValue?.dateValue){
+              formulaValue = `DATEVALUE("${structuredValue?.dateValue}")`;
+            }else if(structuredValue?.dateTimeValue){
+              formulaValue = `DATETIMEVALUE("${structuredValue?.dateTimeValue}")`;
+            }else{
+              console.log('Unknown structured value type : ' + JSON.stringify(structuredValue, null, 2));
+            }
+            
+            // https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_visual_workflow.htm#FlowRecordFilter
+            switch (structuredOperator) {
+              case 'EqualTo':
+                formulaParts.push(`({!$Record.${structuredField}} = ${formulaValue})`);
+                break;
+              case 'NotEqualTo':
+                formulaParts.push(`({!$Record.${structuredField}} != ${formulaValue})`);
+                break;
+              case 'GreaterThan':
+                formulaParts.push(`({!$Record.${structuredField}} > ${formulaValue})`);
+                break;
+              case 'GreaterThanOrEqualTo':
+                formulaParts.push(`({!$Record.${structuredField}} >= ${formulaValue})`);
+                break;
+              case 'LessThan':
+                formulaParts.push(`({!$Record.${structuredField}} < ${formulaValue})`);
+                break;
+              case 'LessThanOrEqualTo':
+                formulaParts.push(`({!$Record.${structuredField}} <= ${formulaValue})`);
+                break;
+              case 'StartsWith':
+                formulaValue = typeof formulaValue === 'boolean'? `"${formulaValue}"` : formulaValue;
+                formulaParts.push(`(BEGINS({!$Record.${structuredField}}, ${formulaValue}))`);
+                break;
+              case 'EndsWith':
+                formulaValue = typeof formulaValue === 'boolean'? `"${formulaValue}"` : formulaValue;
+                formulaParts.push(`(RIGHT({!$Record.${structuredField}}, LEN(${formulaValue})) = ${formulaValue})`);
+                break;
+              case 'Contains':
+                formulaValue = typeof formulaValue === 'boolean'? `"${formulaValue}"` : formulaValue;
+                formulaParts.push(`(CONTAINS({!$Record.${structuredField}}, ${formulaValue}))`);
+                break;
+              case 'IsNull':
+                if(typeof formulaValue === 'boolean' && formulaValue === false){
+                  formulaParts.push(`(NOT(ISBLANK({!$Record.${structuredField}})))`);
+                }else if(typeof formulaValue === 'boolean' && formulaValue === true){
+                  formulaParts.push(`(ISBLANK({!$Record.${structuredField}}))`);
+                }
+                break;
+            }
+          }
+          fileContent.Flow.start[0].filterFormula = [formulaParts.length === 0
+            ? `AND(${sObject ? `AND(NOT($Permission.Bypass${sObject}Flows), NOT($Permission.BypassAllFlows))` : `NOT($Permission.BypassAllFlows)`})`
+            : `AND(${sObject ? `AND(NOT($Permission.Bypass${sObject}Flows), NOT($Permission.BypassAllFlows))` : `NOT($Permission.BypassAllFlows)`}, ${filterLogic.toUpperCase()}(${formulaParts.join(',')}))`
+          ];
+          // delete structured filters and logic if it exists
+          delete fileContent.Flow.start[0].filters;
+          delete fileContent.Flow.start[0].filterLogic;
+        }
+        // Custom filter logic: too complex to handle automatically
+        else{
+          return {
+            sObject,
+            name,
+            action: STATUS.SKIPPED,
+            comment: "Custom Condition Logic detected, manual formula transformation required.",
+          };
+        }
       }
       // No filter defined
       else {
-        if (sObject) {
-          fileContent.Flow.start[0].filterFormula = [`AND(NOT($Permission.BypassAllFlows), NOT($Permission.Bypass${sObject}Flows))`];
-        }else{
-          fileContent.Flow.start[0].filterFormula = [`NOT($Permission.BypassAllFlows)`];
-        }
+        fileContent.Flow.start[0].filterFormula = [sObject ? `AND(NOT($Permission.BypassAllFlows), NOT($Permission.Bypass${sObject}Flows))` : `NOT($Permission.BypassAllFlows)`];
       }
 
       await writeXmlFile(filePath, fileContent);
