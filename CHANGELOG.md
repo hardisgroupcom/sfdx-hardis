@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.11.3] 2025-11-04
+
+- Handles errors from pull request commands
+
 ## [6.11.2] 2025-11-03
 
 - Enhances storage stats with breakdown and filtering

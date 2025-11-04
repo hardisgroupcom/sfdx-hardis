@@ -18,7 +18,11 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   uxLog("action", this, c.cyan(`[DeploymentActions] Listing ${actionLabel}...`));
   const branchConfig = await getConfig('branch');
   const commands: PrePostCommand[] = [...(branchConfig[property] || []), ...(options.extraCommands || [])];
-  await completeWithCommandsFromPullRequests(property, commands, options.checkOnly);
+  try {
+    await completeWithCommandsFromPullRequests(property, commands, options.checkOnly);
+  } catch (e) {
+    uxLog("error", this, c.red(`[DeploymentActions] Error while retrieving commands from pull requests: ${(e as Error).message}\n ${(e as Error).stack}\n You might report the issue on sfdx-hardis GitHub repository.`));
+  }
   if (commands.length === 0) {
     uxLog("action", this, c.cyan(`[DeploymentActions] No ${actionLabel} defined in branch config or pull requests`));
     uxLog("log", this, c.grey(`No ${property} found to run`));
