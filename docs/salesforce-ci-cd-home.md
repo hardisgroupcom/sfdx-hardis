@@ -2,6 +2,7 @@
 title: Salesforce CI/CD with sfdx-hardis
 description: Easy handling of Salesforce DX to use CI/CD & DevOps principles on your Salesforce projects
 ---
+
 <!-- markdownlint-disable MD013 -->
 
 - [Why choose sfdx-hardis?](#why-choose-sfdx-hardis)
@@ -15,7 +16,7 @@ description: Easy handling of Salesforce DX to use CI/CD & DevOps principles on 
   - [As a Contributor](#as-a-contributor)
   - [As a Release Manager](#as-a-release-manager)
 
-___
+---
 
 ## Why choose sfdx-hardis?
 
@@ -30,7 +31,7 @@ There are many ways to do DevOps with Salesforce. Each has its advantages and li
 Every persona can be autonomous in their tasks: Admins, Developers, Release Managers and even Project Leaders.
 
 | Role                 | How they use sfdx-hardis                                                                                                                                            |
-|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Admins**           | [Build their pull requests](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/) using the **VS Code extension** with clicks. No command line required. |
 | **Developers**       | Same as Admins, + understand what's happening under the hood with the **Salesforce CLI**, thanks to the **Advanced mode** in the UI.                                |
 | **Release Managers** | Configure the CI/CD process using the **Visual DevOps Pipeline Builder**<br/>Follow the Pull Requests and Deployments thanks to the **DevOps Pipeline View**        |
@@ -42,7 +43,7 @@ Every persona can be autonomous in their tasks: Admins, Developers, Release Mana
 
 There are no "sfdx-hardis" servers anywhere. Everything runs in your own secured environment: Your Git platform, and your local VS Code or Salesforce Code Builder.
 
-sfdx-hardis has native integrations with your preferred applications: 
+sfdx-hardis has native integrations with your preferred applications:
 
 - Git & CI/CD: GitHub, GitLab, Bitbucket, Azure DevOps, Gitea, Jenkins
 - Messaging: Slack, Microsoft Teams, Email
@@ -55,7 +56,7 @@ sfdx-hardis has native integrations with your preferred applications:
 Advanced features make sfdx-hardis a credible alternative to expensive Salesforce DevOps tools.
 
 | Feature                                  | Description                                                                                                                                                                                                                                                                                                       |
-|------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Delta Deployments**                    | [Improve performance by deploying only updated metadata.](salesforce-ci-cd-config-delta-deployment.md)                                                                                                                                                                                                            |
 | **Overwrite Management**                 | [Define which metadata will never be overwritten if it already exists in the target org.](salesforce-ci-cd-config-overwrite.md)                                                                                                                                                                                   |
 | **Smart Apex Test Runs**                 | [Skip tests when a pull request to a sandbox cannot break Apex tests to improve performance.](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests)                                                                                                                              |
@@ -67,7 +68,7 @@ Advanced features make sfdx-hardis a credible alternative to expensive Salesforc
 We provide **ready-to-use CI/CD pipeline workflows** for the following Git platforms, with the results of deployment simulation jobs posted as comments on pull requests:
 
 | Platform       | CI/CD template                                                                                                                                                                                                                                                                                           |
-|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GitLab         | [GitLab CI configuration](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.gitlab-ci.yml)                                                                                                                                                                                            |
 | Azure DevOps   | [Azure Pipelines checks](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-checks.yml), [Azure Pipelines deployment](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/azure-pipelines-deployment.yml)                                               |
 | GitHub & Gitea | [GitHub Actions / Gitea workflow checks](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/check-deploy.yml), [GitHub Actions / Gitea workflow deployment](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/.github/workflows/process-deploy.yml) |
@@ -105,15 +106,15 @@ _See the presentation of sfdx-hardis at Dreamforce!_
 
 <div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/o0Mm9F07UFs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
 
-_See slides of the [Dreamforce '23 session](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl){target=_blank}_
+_See slides of the [Dreamforce '23 session](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl){target=\_blank}_
 
 <iframe src="https://www.slideshare.net/slideshow/embed_code/key/qroQjoKmRUUjqx?hostedIn=slideshare&page=upload" width="714" height="600" frameborder="0" marginwidth="0" marginheight="0" scrolling="no"></iframe>
 
 _See a detailed article on SalesforceDevOps.net_
 
-[![](assets/images/article-cicd-salesforcedevopsnet.jpg)](https://salesforcedevops.net/index.php/2023/03/01/sfdx-hardis-open-source-salesforce-release-management/){target=_blank}
+[![](assets/images/article-cicd-salesforcedevopsnet.jpg)](https://salesforcedevops.net/index.php/2023/03/01/sfdx-hardis-open-source-salesforce-release-management/){target=\_blank}
 
-___
+---
 
 ## Get started
 
@@ -128,6 +129,13 @@ You can also contact us at [**Cloudity**](https://cloudity.com/). Our Profession
 - Training for your contributors and release managers
 - Change management to accelerate DevOps adoption in your organization
 
+<div style="text-align:center; margin:2rem 0;">
+  <a href="https://cloudity.com/#form" target="_blank" rel="noopener noreferrer" role="button" aria-label="Cloudity Professional Services"
+     style="display:inline-block; padding:0.75rem 1.25rem; background:#0070d2; color:#ffffff; text-decoration:none; border-radius:0.25rem; font-weight:600;">
+    Contact Cloudity Professional Services
+  </a>
+</div>
+
 Please read the [Setup Guide](salesforce-ci-cd-setup-home.md) to learn how to initialize and maintain a Salesforce CI/CD project.
 
 ### As a Contributor
@@ -137,6 +145,3 @@ Please read the [Contributor Guide](salesforce-ci-cd-use-home.md) to learn how t
 ### As a Release Manager
 
 Please read the [Release Manager Guide](salesforce-ci-cd-release-home.md) to learn how to be a release manager on a Salesforce CI/CD project.
-
-
-
