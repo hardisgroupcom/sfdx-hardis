@@ -10,7 +10,7 @@ import {
   soqlQueryTooling,
 } from "../../../../common/utils/apiUtils.js";
 import { execCommand, uxLog, uxLogTable } from "../../../../common/utils/index.js";
-import { prompts, PromptsQuestion } from "../../../../common/utils/prompts.js";
+import { prompts } from "../../../../common/utils/prompts.js";
 import c from "chalk";
 import path from "path";
 import fs from "fs";
@@ -24,7 +24,6 @@ import {
   writeXmlFile,
 } from "../../../../common/utils/xmlUtils.js";
 import { MetadataUtils } from "../../../../common/metadata-utils/index.js";
-// import { file } from "@oclif/core/args";
 
 // Constants
 const ALLOWED_AUTOMATIONS = ["Flow", "Trigger", "VR"];
@@ -41,8 +40,6 @@ const STATUS = {
 export default class HardisProjectGenerateBypass extends SfCommand<any> {
   private skipCredits = false;
   private retrieveFromOrg;
-  private includeAllFlows;
-  private transformToFormulas;
 
   public static flags: any = {
     "target-org": requiredOrgFlagWithDeprecations,
@@ -90,16 +87,6 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
     "apply-to-flows": Flags.boolean({
       aliases: ["applyToFlows"],
       description: "Apply bypass to Flows",
-      required: false,
-      default: false,
-    }),
-    "include-all-flows": Flags.boolean({
-      description: "Include all Flows, regardless of sObject references",
-      required: false,
-      default: false,
-    }),
-    "transform-to-formulas": Flags.boolean({
-      description: "Transform simple conditions in Validation Rules to formulas",
       required: false,
       default: false,
     }),
@@ -180,8 +167,6 @@ The command's technical implementation involves:
     let applyToTriggers = flags["apply-to-triggers"] || null;
     let applyToVrs = flags["apply-to-vrs"] || null;
     let applyToFlows = flags["apply-to-flows"] || null;
-    this.includeAllFlows = flags["include-all-flows"] || null;
-    this.transformToFormulas = flags["transform-to-formulas"] || null;
     const sObjects = flags.objects || null;
     const automations = flags.automations || null;
 
@@ -301,45 +286,6 @@ The command's technical implementation involves:
         this.retrieveFromOrg = promptResults.elementSource === "org";
       }
     }
-    // Q: move just before the use or keep in here to ask the user within the same prompt block?
-    if(applyToFlows){
-      // Q: use AI to handle complex filter logic ?
-      const extraPromptsForFlows: PromptsQuestion[] = [];
-      if(this.includeAllFlows == null || this.includeAllFlows == undefined){
-        extraPromptsForFlows.push({
-          type: "select",
-          name: "includeFlowsWithoutSObjects",
-          message: "Do you wish to include flows that are not triggered by specific sObjects?",
-          description: "These flows will also have the bypass logic applied.",
-          placeholder: "Select an option",
-          choices: [
-            { title: "Yes", value: true },
-            { title: "No", value: false },
-          ],
-        });
-      }
-      if(this.transformToFormulas == null || this.transformToFormulas == undefined){
-        extraPromptsForFlows.push({
-          type: "select",
-          name: "transformSimpleConditionsToFormulas",
-          message: "Do you wish to transform simple flow entry conditions to formulas?",
-          description: "This will apply to all flows, including those without specific sObjects.",
-          placeholder: "Select an option",
-          choices: [
-            { title: "Yes", value: true },
-            { title: "No", value: false },
-          ],
-        });
-      }
-
-      const flowPromptResults = await prompts(extraPromptsForFlows);
-      if(flowPromptResults.includeFlowsWithoutSObjects){
-        this.includeAllFlows = flowPromptResults.includeFlowsWithoutSObjects;
-      }
-      if(flowPromptResults.transformSimpleConditionsToFormulas){
-        this.transformToFormulas = flowPromptResults.transformSimpleConditionsToFormulas;
-      }
-    }
 
     // Validate selections
     if (!Object.keys(targetSObjects).length) {
@@ -447,15 +393,13 @@ The command's technical implementation involves:
   }
 
   public filterFlowResults(flowResults, sObjects) {
-    // Only keep flows that are triggered on the specified sObjects or that don't have a trigger object
     return flowResults.records.filter((flow) => {
       const triggerObject = flow.TriggerObjectOrEvent?.QualifiedApiName;
       return (
-        (!triggerObject && this.includeAllFlows) ||
-        (triggerObject &&
-          Object.keys(sObjects).includes(
-            triggerObject.replace("__c", "")
-          ))
+        triggerObject &&
+        Object.keys(sObjects).includes(
+          triggerObject.replace("__c", "")
+        )
       );
     });
   }
@@ -930,127 +874,71 @@ The command's technical implementation involves:
 
       const fileContent = await parseXmlFile(filePath);
 
-      // sObject is not required for a flow
       const sObject = fileContent?.Flow?.start?.[0]?.object?.[0] ?? null;
+      if(sObject == null){
+        return {
+          sObject: null,
+          name,
+          action: STATUS.SKIPPED,
+          comment: "No sObject found",
+        };
+      }
+
       const filterFormula = fileContent?.Flow?.start?.[0]?.filterFormula?.[0] ?? null;
-      const filterLogic = fileContent?.Flow?.start?.[0]?.filterLogic?.[0] ?? null;
 
-      // Formula mode
-      if (filterFormula) {
-        const bypassPermissionName = `$Permission.Bypass${sObject}Flows`;
-        if (typeof filterFormula === "string" &&
-          (filterFormula.includes(bypassPermissionName) || filterFormula.includes('$Permission.BypassAllFlows'))) {
-          return {
-            sObject,
-            name,
-            action: STATUS.IGNORED,
-            comment: "SFDX-Hardis Bypass already implemented",
-          };
-        }
-
-        if (typeof filterFormula === "string" && /bypass/i.test(filterFormula)) {
-          return {
-            sObject,
-            name,
-            action: STATUS.SKIPPED,
-            comment: "Another bypass mechanism exists",
-          };
-        }
-
-        fileContent.Flow.start[0].filterFormula[0] = sObject ? `AND( AND(NOT(${bypassPermissionName}), NOT($Permission.BypassAllFlows)), ${filterFormula})` : `AND( NOT($Permission.BypassAllFlows), ${filterFormula})`;
+      // Check if a bypass already exists in formula mode
+      if (filterFormula && typeof filterFormula === "string" && /bypass/i.test(filterFormula) ) {
+        return {
+          sObject,
+          name,
+          action: STATUS.SKIPPED,
+          comment: "Another bypass mechanism exists",
+        };
       }
-      // Structured mode
-      else if (filterLogic && this.transformToFormulas) {
-        // Standard filter logic
-        if(filterLogic === 'and' || filterLogic === 'or'){
-          // Transform existing filters from structured mode to formula mode
-          const structuredFilters = fileContent.Flow.start[0].filters;
-          const formulaParts: string[] = [];
-          for (const structuredFilter of structuredFilters) {
-            const structuredField = structuredFilter?.field?.[0] ?? null;
-            const structuredOperator = structuredFilter?.operator?.[0] ?? null;
-            const structuredValue = structuredFilter?.value?.[0] ?? null;
 
-            // https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_visual_workflow.htm#FlowElementReferenceOrValue
-            let formulaValue : string | boolean | null | undefined = undefined;
-            if(structuredValue == null){
-              formulaValue = null;
-            }else if(structuredValue?.stringValue){
-              formulaValue = `"${structuredValue?.stringValue}"`;
-            }else if(structuredValue?.booleanValue){
-              formulaValue = structuredValue?.booleanValue === 'true';
-            }else if(structuredValue?.dateValue){
-              formulaValue = `DATEVALUE("${structuredValue?.dateValue}")`;
-            }else if(structuredValue?.dateTimeValue){
-              formulaValue = `DATETIMEVALUE("${structuredValue?.dateTimeValue}")`;
-            }else{
-              uxLog("warning", this, 'Unsupported structured value type : ' + JSON.stringify(structuredValue, null, 2));
-            }
-            
-            // https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_visual_workflow.htm#FlowRecordFilter
-            switch (structuredOperator) {
-              case 'EqualTo':
-                formulaParts.push(`({!$Record.${structuredField}} = ${formulaValue})`);
-                break;
-              case 'NotEqualTo':
-                formulaParts.push(`({!$Record.${structuredField}} != ${formulaValue})`);
-                break;
-              case 'GreaterThan':
-                formulaParts.push(`({!$Record.${structuredField}} > ${formulaValue})`);
-                break;
-              case 'GreaterThanOrEqualTo':
-                formulaParts.push(`({!$Record.${structuredField}} >= ${formulaValue})`);
-                break;
-              case 'LessThan':
-                formulaParts.push(`({!$Record.${structuredField}} < ${formulaValue})`);
-                break;
-              case 'LessThanOrEqualTo':
-                formulaParts.push(`({!$Record.${structuredField}} <= ${formulaValue})`);
-                break;
-              case 'StartsWith':
-                formulaValue = typeof formulaValue === 'boolean'? `"${formulaValue}"` : formulaValue;
-                formulaParts.push(`(BEGINS({!$Record.${structuredField}}, ${formulaValue}))`);
-                break;
-              case 'EndsWith':
-                formulaValue = typeof formulaValue === 'boolean'? `"${formulaValue}"` : formulaValue;
-                formulaParts.push(`(RIGHT({!$Record.${structuredField}}, LEN(${formulaValue})) = ${formulaValue})`);
-                break;
-              case 'Contains':
-                formulaValue = typeof formulaValue === 'boolean'? `"${formulaValue}"` : formulaValue;
-                formulaParts.push(`(CONTAINS({!$Record.${structuredField}}, ${formulaValue}))`);
-                break;
-              case 'IsNull':
-                if(typeof formulaValue === 'boolean' && formulaValue === false){
-                  formulaParts.push(`(NOT(ISBLANK({!$Record.${structuredField}})))`);
-                }else if(typeof formulaValue === 'boolean' && formulaValue === true){
-                  formulaParts.push(`(ISBLANK({!$Record.${structuredField}}))`);
-                }
-                break;
-            }
+      const firstNodeName = fileContent?.Flow?.start?.[0]?.connector?.[0]?.targetReference?.[0] ?? null;
+      if(firstNodeName == 'SFDX_HARDIS_FLOW_BYPASS_DO_NOT_RENAME'){
+        return {
+          sObject,
+          name,
+          action: STATUS.IGNORED,
+          comment: "SFDX-Hardis Bypass already implemented",
+        };
+      }
+
+      if(!Object.keys(fileContent.Flow ?? {}).includes('decisions')){
+        fileContent.Flow.decisions = [];
+      }
+      fileContent.Flow.decisions.push({
+        "name": ["SFDX_HARDIS_FLOW_BYPASS_DO_NOT_RENAME"],
+        "label": ["Is Bypass Activated?"],
+        "description": ["Check if the bypass custom permission is assigned to the running user." + (this.skipCredits ? "" : " " + CREDITS_TEXT)],
+        "locationX": ["0"],
+        "locationY": ["0"],
+        "defaultConnectorLabel": ["No"],
+        "rules": [
+          {
+            "name": ["SFDX_HARDIS_BypassYes"],
+            "conditionLogic": ["or"],
+            "conditions": [
+              {
+                "leftValueReference": [`$Permission.Bypass${sObject}Flows`],
+                "operator": ["EqualTo"],
+                "rightValue": [{"booleanValue": ["true"]}]
+              },
+              {
+                "leftValueReference": ["$Permission.BypassAllFlows"],
+                "operator": ["EqualTo"],
+                "rightValue": [{"booleanValue": ["true"]}]
+              }
+            ],
+            "label": ["Yes"],
+            "connector": [{"targetReference": [ firstNodeName ]}]
           }
-          fileContent.Flow.start[0].filterFormula = [formulaParts.length === 0
-            ? `AND(${sObject ? `AND(NOT($Permission.Bypass${sObject}Flows), NOT($Permission.BypassAllFlows))` : `NOT($Permission.BypassAllFlows)`})`
-            : `AND(${sObject ? `AND(NOT($Permission.Bypass${sObject}Flows), NOT($Permission.BypassAllFlows))` : `NOT($Permission.BypassAllFlows)`}, ${filterLogic.toUpperCase()}(${formulaParts.join(',')}))`
-          ];
-          // delete structured filters and logic if it exists
-          delete fileContent.Flow.start[0].filters;
-          delete fileContent.Flow.start[0].filterLogic;
-        }
-        // Custom filter logic: too complex to handle automatically
-        else{
-          // Q: Use GPT ?
-          return {
-            sObject,
-            name,
-            action: STATUS.SKIPPED,
-            comment: "Custom Condition Logic detected, manual formula transformation required.",
-          };
-        }
-      }
-      // No filter defined
-      else {
-        fileContent.Flow.start[0].filterFormula = [sObject ? `AND(NOT($Permission.BypassAllFlows), NOT($Permission.Bypass${sObject}Flows))` : `NOT($Permission.BypassAllFlows)`];
-      }
+        ]
+      });
+
+      fileContent.Flow.start[0].connector[0].targetReference[0] = 'SFDX_HARDIS_FLOW_BYPASS_DO_NOT_RENAME';
 
       await writeXmlFile(filePath, fileContent);
 
