@@ -41,9 +41,12 @@ const STATUS = {
 export default class HardisProjectGenerateBypass extends SfCommand<any> {
   private skipCredits = false;
   private retrieveFromOrg;
+  private includeAllFlows;
+  private transformToFormulas;
 
   public static flags: any = {
     "target-org": requiredOrgFlagWithDeprecations,
+    // TODO: detect sObjects from folder and use them instead of asking the user
     objects: Flags.string({
       aliases: ["sObjects"],
       char: "s",
@@ -87,6 +90,16 @@ export default class HardisProjectGenerateBypass extends SfCommand<any> {
     "apply-to-flows": Flags.boolean({
       aliases: ["applyToFlows"],
       description: "Apply bypass to Flows",
+      required: false,
+      default: false,
+    }),
+    "include-all-flows": Flags.boolean({
+      description: "Include all Flows, regardless of sObject references",
+      required: false,
+      default: false,
+    }),
+    "transform-to-formulas": Flags.boolean({
+      description: "Transform simple conditions in Validation Rules to formulas",
       required: false,
       default: false,
     }),
@@ -167,6 +180,8 @@ The command's technical implementation involves:
     let applyToTriggers = flags["apply-to-triggers"] || null;
     let applyToVrs = flags["apply-to-vrs"] || null;
     let applyToFlows = flags["apply-to-flows"] || null;
+    this.includeAllFlows = flags["include-all-flows"] || null;
+    this.transformToFormulas = flags["transform-to-formulas"] || null;
     const sObjects = flags.objects || null;
     const automations = flags.automations || null;
 
@@ -244,7 +259,7 @@ The command's technical implementation involves:
         ],
       });
     }
-    
+
     if (this.retrieveFromOrg == undefined || this.retrieveFromOrg == null) {
       promptsNeeded.push({
         type: "select",
@@ -288,29 +303,42 @@ The command's technical implementation involves:
     }
     // Q: move just before the use or keep in here to ask the user within the same prompt block?
     if(applyToFlows){
-      const extraPromptsForFlows: PromptsQuestion[] = [{
-        type: "select",
-        name: "includeFlowsWithoutSObjects",
-        message: "Do you wish to include flows that are not triggered by specific sObjects?",
-        description: "These flows will also have the bypass logic applied.",
-        placeholder: "Select an option",
-        choices: [
-          { title: "Yes", value: true },
-          { title: "No", value: false },
-        ],
-      },{
-        type: "select",
-        name: "transformSimpleConditionsToFormulas",
-        message: "Do you wish to transform simple flow entry conditions to formulas?",
-        description: "This will apply to all flows, including those without specific sObjects.",
-        placeholder: "Select an option",
-        choices: [
-          { title: "Yes", value: true },
-          { title: "No", value: false },
-        ],
-      }];
+      // Q: use AI to handle complex filter logic ?
+      const extraPromptsForFlows: PromptsQuestion[] = [];
+      if(this.includeAllFlows == null || this.includeAllFlows == undefined){
+        extraPromptsForFlows.push({
+          type: "select",
+          name: "includeFlowsWithoutSObjects",
+          message: "Do you wish to include flows that are not triggered by specific sObjects?",
+          description: "These flows will also have the bypass logic applied.",
+          placeholder: "Select an option",
+          choices: [
+            { title: "Yes", value: true },
+            { title: "No", value: false },
+          ],
+        });
+      }
+      if(this.transformToFormulas == null || this.transformToFormulas == undefined){
+        extraPromptsForFlows.push({
+          type: "select",
+          name: "transformSimpleConditionsToFormulas",
+          message: "Do you wish to transform simple flow entry conditions to formulas?",
+          description: "This will apply to all flows, including those without specific sObjects.",
+          placeholder: "Select an option",
+          choices: [
+            { title: "Yes", value: true },
+            { title: "No", value: false },
+          ],
+        });
+      }
+
       const flowPromptResults = await prompts(extraPromptsForFlows);
-      console.log(flowPromptResults);
+      if(flowPromptResults.includeFlowsWithoutSObjects){
+        this.includeAllFlows = flowPromptResults.includeFlowsWithoutSObjects;
+      }
+      if(flowPromptResults.transformSimpleConditionsToFormulas){
+        this.transformToFormulas = flowPromptResults.transformSimpleConditionsToFormulas;
+      }
     }
 
     // Validate selections
@@ -423,7 +451,7 @@ The command's technical implementation involves:
     return flowResults.records.filter((flow) => {
       const triggerObject = flow.TriggerObjectOrEvent?.QualifiedApiName;
       return (
-        !triggerObject ||
+        (!triggerObject && this.includeAllFlows) ||
         (triggerObject &&
           Object.keys(sObjects).includes(
             triggerObject.replace("__c", "")
@@ -932,7 +960,7 @@ The command's technical implementation involves:
         fileContent.Flow.start[0].filterFormula[0] = sObject ? `AND( AND(NOT(${bypassPermissionName}), NOT($Permission.BypassAllFlows)), ${filterFormula})` : `AND( NOT($Permission.BypassAllFlows), ${filterFormula})`;
       }
       // Structured mode
-      else if (filterLogic) {
+      else if (filterLogic && this.transformToFormulas) {
         // Standard filter logic
         if(filterLogic === 'and' || filterLogic === 'or'){
           // Transform existing filters from structured mode to formula mode
@@ -956,7 +984,7 @@ The command's technical implementation involves:
             }else if(structuredValue?.dateTimeValue){
               formulaValue = `DATETIMEVALUE("${structuredValue?.dateTimeValue}")`;
             }else{
-              console.log('Unknown structured value type : ' + JSON.stringify(structuredValue, null, 2));
+              uxLog("warning", this, 'Unsupported structured value type : ' + JSON.stringify(structuredValue, null, 2));
             }
             
             // https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_visual_workflow.htm#FlowRecordFilter
@@ -1010,6 +1038,7 @@ The command's technical implementation involves:
         }
         // Custom filter logic: too complex to handle automatically
         else{
+          // Q: Use GPT ?
           return {
             sObject,
             name,
