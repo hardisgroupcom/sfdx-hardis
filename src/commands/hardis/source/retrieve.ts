@@ -43,42 +43,50 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
       // @ts-ignore force char override for backward compat
       char: 'a',
     }),
-    sourcepath: Flags.string({
+    sourcepath: Flags.string({ // deprecated, replaced by sourcedir
       char: 'p',
       description: 'sourcePath',
       longDescription: 'sourcePath',
       exclusive: ['manifest', 'metadata'],
       multiple: true,
     }),
-    wait: Flags.integer({
-      char: 'w',
-      description: 'wait',
+    sourcedir: Flags.string({
+      // char: 'd', // already taken by "debug"
+      description: 'sourceDir',
+      longDescription: 'sourceDir',
+      exclusive: ['manifest', 'metadata'],
+      multiple: true,
     }),
     manifest: Flags.directory({
       char: 'x',
       description: 'manifest',
-      exclusive: ['metadata', 'sourcepath'],
+      exclusive: ['metadata', 'sourcepath', 'sourcedir'],
     }),
     metadata: Flags.string({
       char: 'm',
       description: 'metadata',
       longDescription: 'metadata',
-      exclusive: ['manifest', 'sourcepath'],
+      exclusive: ['manifest', 'sourcepath', 'sourcedir'],
       multiple: true,
     }),
     packagenames: Flags.string({
       char: 'n',
+      aliases: ['package-name'],
       description: 'packagenames',
       multiple: true,
     }),
-    tracksource: Flags.boolean({
+    tracksource: Flags.boolean({ // deprecated
       char: 't',
       description: 'tracksource',
     }),
-    forceoverwrite: Flags.boolean({
+    forceoverwrite: Flags.boolean({ // deprecated
       char: 'f',
       description: 'forceoverwrite',
       dependsOn: ['tracksource'],
+    }),
+    ignoreconflicts: Flags.boolean({
+      char: 'c',
+      description: 'ignoreconflicts'
     }),
     verbose: Flags.boolean({
       description: 'verbose',
@@ -99,6 +107,29 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
 
   public async run(): Promise<any> {
     const { flags } = await this.parse(SourceRetrieve);
+    if(flags.tracksource) {
+      uxLog("error", this, c.red('The --tracksource flag is not supported anymore.'));
+    }
+    if(flags.forceoverwrite) {
+      uxLog("warning", this, c.red('The --forceoverwrite flag is not supported anymore. It is being automatically replaced by --ignore-conflicts. Please use it going forward.'));
+      flags.ignoreconflicts = true;
+      delete flags.forceoverwrite;
+    }
+    if(flags.packagenames) {
+      uxLog("warning", this, c.red('The --packagenames flag is not supported anymore. It is being automatically replaced by --package-names. Please use it going forward.'));
+      flags['package-name'] = flags.packagenames;
+      delete flags.packagenames;
+    }
+    if(flags.sourcepath) {
+      uxLog("warning", this, c.red('The --sourcepath flag is not supported anymore. It is being automatically replaced by --source-dir. Please use it going forward.'));
+      flags['source-dir'] = flags.sourcepath;
+      delete flags.sourcepath;
+    }
+    if(flags.apiversion){
+      uxLog("warning", this, c.red('The --apiversion flag is not supported anymore. It is being automatically replaced by --api-version. Please use it going forward.'));
+      flags['api-version'] = flags.apiversion;
+      delete flags.apiversion;
+    }
     uxLog("error", this, c.red('This command will be removed by Salesforce in November 2024.'));
     uxLog("error", this, c.red('Please migrate to command sf hardis project retrieve start'));
     uxLog(
@@ -125,7 +156,7 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
         throw new SfError(c.yellow('For technical reasons, run again this command and select your org in the list 😊'));
       }
     }
-    return await wrapSfdxCoreCommand('sfdx force:source:retrieve', args, this, flags.debug);
+    return await wrapSfdxCoreCommand('sf project retrieve start', args, this, flags.debug);
   }
 }
 /* jscpd:ignore-end */
