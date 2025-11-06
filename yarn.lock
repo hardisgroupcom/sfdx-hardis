@@ -1721,7 +1721,7 @@
 "@langchain/core@^0.3.79":
   version "0.3.79"
   resolved "https://registry.yarnpkg.com/@langchain/core/-/core-0.3.79.tgz#a7c8ee68e1a92133e073ebfcbebf53a885d9e0bd"
-  integrity sha512-ZLAs5YMM5N2UXN3kExMglltJrKKoW7hs3KMZFlXUnD7a5DFKBYxPFMeXA4rT+uvTxuJRZPCYX0JKI5BhyAWx4A==
+  integrity "sha1-p8juaOGpITPgc+v8vr9TqIXZ4L0= sha512-ZLAs5YMM5N2UXN3kExMglltJrKKoW7hs3KMZFlXUnD7a5DFKBYxPFMeXA4rT+uvTxuJRZPCYX0JKI5BhyAWx4A=="
   dependencies:
     "@cfworker/json-schema" "^4.0.2"
     ansi-styles "^5.0.0"
@@ -1975,7 +1975,7 @@
 "@oclif/core@^4", "@oclif/core@^4.0.27", "@oclif/core@^4.5.5", "@oclif/core@^4.5.6", "@oclif/core@^4.8.0":
   version "4.8.0"
   resolved "https://registry.yarnpkg.com/@oclif/core/-/core-4.8.0.tgz#bde8fad00019c8c0a8e27787b4b42c4670842785"
-  integrity sha512-jteNUQKgJHLHFbbz806aGZqf+RJJ7t4gwF4MYa8fCwCxQ8/klJNWc0MvaJiBebk7Mc+J39mdlsB4XraaCKznFw==
+  integrity "sha1-vej60AAZyMCo4neHtLQsRnCEJ4U= sha512-jteNUQKgJHLHFbbz806aGZqf+RJJ7t4gwF4MYa8fCwCxQ8/klJNWc0MvaJiBebk7Mc+J39mdlsB4XraaCKznFw=="
   dependencies:
     ansi-escapes "^4.3.2"
     ansis "^3.17.0"
@@ -1999,7 +1999,7 @@
 "@oclif/plugin-command-snapshot@^5.3.8":
   version "5.3.8"
   resolved "https://registry.yarnpkg.com/@oclif/plugin-command-snapshot/-/plugin-command-snapshot-5.3.8.tgz#b952a270bfdfaea941f244363c4bcf781398d9b9"
-  integrity sha512-pxuW6kVAkAJBZzk7w2xUy32D+EQGeef15Kyjz13LYazHNXcVdrzP/5726VGfMnK3U4W1QyJ7CalzZxRLVvxQcg==
+  integrity "sha1-uVKicL/frqlB8kQ2PEvPeBOY2bk= sha512-pxuW6kVAkAJBZzk7w2xUy32D+EQGeef15Kyjz13LYazHNXcVdrzP/5726VGfMnK3U4W1QyJ7CalzZxRLVvxQcg=="
   dependencies:
     "@oclif/core" "^4"
     ansis "^3.17.0"
@@ -2692,7 +2692,7 @@
 "@slack/types@^2.17.0", "@slack/types@^2.18.0":
   version "2.18.0"
   resolved "https://registry.yarnpkg.com/@slack/types/-/types-2.18.0.tgz#84dab2ebb4593049fa6757a3f69318ffe3876c54"
-  integrity sha512-ZKrdeoppbM+3l2KKOi4/3oFYKCEwiW3dQfdHZDcecJ9rAmEqWPnARYmac9taZNitb0xnSgu6GOpHgwaKI8se2g==
+  integrity "sha1-hNqy67RZMEn6Z1ej9pMY/+OHbFQ= sha512-ZKrdeoppbM+3l2KKOi4/3oFYKCEwiW3dQfdHZDcecJ9rAmEqWPnARYmac9taZNitb0xnSgu6GOpHgwaKI8se2g=="
 
 "@slack/web-api@^7.11.0":
   version "7.11.0"
