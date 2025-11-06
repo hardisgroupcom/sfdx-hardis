@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Excludes training branches from merge target suggestions
+- GitHub integration: Includes error stack in logs for easier debugging
+
 ## [6.11.4] 2025-11-06
 
 - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): Fix bug when there are no Apex classes in the org

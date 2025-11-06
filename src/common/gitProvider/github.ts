@@ -358,7 +358,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
       uxLog(
         "warning",
         this,
-        c.yellow(`Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`),
+        c.yellow(`Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}\n${err instanceof Error ? err.stack : ""}`),
       );
       return [];
     }
