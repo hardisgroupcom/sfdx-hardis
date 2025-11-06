@@ -26,7 +26,15 @@ export class GithubProvider extends GitProviderRoot {
     this.serverUrl = github?.context?.serverUrl || process.env.GITHUB_SERVER_URL || null;
     this.workflow = github?.context?.workflow || process.env.GITHUB_WORKFLOW || null;
     this.branch = github?.context?.ref || process.env.GITHUB_REF || null;
-    this.prNumber = github?.context?.payload?.pull_request?.number || (process.env.GITHUB_REF_NAME ? parseInt(process.env.GITHUB_REF_NAME.split("/")?.[0] || "0") : null);
+    const ctxPrNumber = github?.context?.payload?.pull_request?.number;
+    const envRefFirstSegment = process.env.GITHUB_REF_NAME ? process.env.GITHUB_REF_NAME.split("/")?.[0] || "" : "";
+    const envPrNumber = envRefFirstSegment ? parseInt(envRefFirstSegment, 10) : NaN;
+    this.prNumber =
+      typeof ctxPrNumber === "number" && ctxPrNumber > 0
+        ? ctxPrNumber
+        : Number.isFinite(envPrNumber) && envPrNumber > 0
+          ? envPrNumber
+          : null;
     this.runId = github?.context?.runId || process.env.GITHUB_RUN_ID || null;
   }
 
