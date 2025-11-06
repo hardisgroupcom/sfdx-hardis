@@ -7,7 +7,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [6.11.4] 2025-11-06
 
 - GitHub integration: Fix way to get Pull Request number
-- As SF Cli now requires NodeJs >= 24, set the same requirement to sfdx-hardis + Update workflows and docker images
+- As SF Cli now requires NodeJs >= 24, set the same requirement to sfdx-hardis default  workflows
 
 ## [6.11.3] 2025-11-04
 
