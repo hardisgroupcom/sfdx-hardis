@@ -14,7 +14,7 @@ You must declare an org (usually production) as a DevHub and activate sandbox tr
 
 - Go to `Setup -> Dev Hub`
 
-- [Activate Dev Hub]([https://help.salesforce.com/articleView?id=sfdx_setup_enable_devhub.htm&type=5](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_setup_enable_devhub.htm)
+- [Activate Dev Hub](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_setup_enable_devhub.htm)
 
 - [Activate Sandbox tracking](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_setup_enable_source_tracking_sandboxes.htm)
   - If sandbox were already existing, you need to refresh them if you want their source tracking to be activated
