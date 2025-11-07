@@ -51,7 +51,7 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
       multiple: true,
     }),
     sourcedir: Flags.string({
-      // char: 'd', // already taken by "debug"
+      char: 'd',
       description: 'sourceDir',
       longDescription: 'sourceDir',
       exclusive: ['manifest', 'metadata'],
@@ -92,7 +92,7 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
       description: 'verbose',
     }),
     debug: Flags.boolean({
-      char: 'd',
+      // char: 'd', // deprecated, used by sourcedir, force --debug instead
       default: false,
       description: 'debugMode',
     }),
@@ -107,28 +107,71 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
 
   public async run(): Promise<any> {
     const { flags } = await this.parse(SourceRetrieve);
+    const args = this.argv;
+
+    if(args.includes('-d')){
+      uxLog("warning", this, c.red('The -d flag is deprecated for debug mode. Please use --debug instead.'));
+    }
     if(flags.tracksource) {
       uxLog("error", this, c.red('The --tracksource flag is not supported anymore.'));
+      process.exitCode = 1;
     }
     if(flags.forceoverwrite) {
-      uxLog("warning", this, c.red('The --forceoverwrite flag is not supported anymore. It is being automatically replaced by --ignore-conflicts. Please use it going forward.'));
+      uxLog("warning", this, c.red('The --forceoverwrite (-f) flag is not supported anymore. It is being automatically replaced by --ignore-conflicts (-c). Please use it going forward.'));
       flags.ignoreconflicts = true;
+      if(args.includes('--forceoverwrite')) {
+        args.splice(args.indexOf('--forceoverwrite'), 1);
+        args.push('--ignore-conflicts');
+      }
+      if(args.includes('-f')) {
+        args.splice(args.indexOf('-f'), 1);
+        args.push('-c');
+      }
       delete flags.forceoverwrite;
     }
     if(flags.packagenames) {
       uxLog("warning", this, c.red('The --packagenames flag is not supported anymore. It is being automatically replaced by --package-names. Please use it going forward.'));
       flags['package-name'] = flags.packagenames;
+      if(args.includes('--packagenames')) {
+        args.splice(args.indexOf('--packagenames'), 1);
+        args.push('--package-names');
+      }
       delete flags.packagenames;
     }
     if(flags.sourcepath) {
-      uxLog("warning", this, c.red('The --sourcepath flag is not supported anymore. It is being automatically replaced by --source-dir. Please use it going forward.'));
+      uxLog("warning", this, c.red('The --sourcepath (-p) flag is not supported anymore. It is being automatically replaced by --source-dir (-d). Please use it going forward.'));
       flags['source-dir'] = flags.sourcepath;
+      if(args.includes('--sourcepath')) {
+        args.splice(args.indexOf('--sourcepath'), 1);
+        args.push('--source-dir');
+      }
+      if(args.includes('-p')) {
+        args.splice(args.indexOf('-p'), 1);
+        args.push('--source-dir'); // wrap utils considers -d for debug only
+      }
       delete flags.sourcepath;
     }
     if(flags.apiversion){
       uxLog("warning", this, c.red('The --apiversion flag is not supported anymore. It is being automatically replaced by --api-version. Please use it going forward.'));
       flags['api-version'] = flags.apiversion;
+      if(args.includes('--apiversion')) {
+        args.splice(args.indexOf('--apiversion'), 1);
+        args.push('--api-version');
+      }
       delete flags.apiversion;
+    }
+    if(flags.targetusername){
+      uxLog("warning", this, c.red('The --target-username (-u) flag is not supported anymore. It is being automatically replaced by --target-org (-o). Please use it going forward.'));
+      flags['target-org'] = flags.targetusername;
+      if(args.includes('--targetusername')) {
+        args.splice(args.indexOf('--targetusername'), 1);
+        args.push('--target-org');
+      }
+      if(args.includes('-u')) {
+        args.splice(args.indexOf('-u'), 1);
+        args.push('-o');
+      }
+      delete flags.targetusername;
     }
     uxLog("error", this, c.red('This command will be removed by Salesforce in November 2024.'));
     uxLog("error", this, c.red('Please migrate to command sf hardis project retrieve start'));
@@ -139,7 +182,7 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
         'See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm'
       )
     );
-    const args = this.argv;
+
     // Manage user selection for metadatas
     if (!isCI && !flags.sourcepath && !flags.manifest && !flags.metadata && !flags.packagenames) {
       const metadatas = await MetadataUtils.promptMetadataTypes();
