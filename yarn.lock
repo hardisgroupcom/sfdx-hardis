@@ -1605,10 +1605,10 @@
   dependencies:
     lodash "^4.17.21"
 
-"@jsforce/jsforce-node@^3.10.4":
-  version "3.10.7"
-  resolved "https://registry.yarnpkg.com/@jsforce/jsforce-node/-/jsforce-node-3.10.7.tgz#9a377e8da925d1eec713ca43ea0bc1ba6aafd7f6"
-  integrity sha512-+2E7c/rRqB2QRtjFiBOkJwyZWw1vViQ2eeHIfLnF8WT6t8J5h16KyJ4dMyiw4JJx/WUT7xtNFiZ0kz85LS//cw==
+"@jsforce/jsforce-node@^3.10.8":
+  version "3.10.8"
+  resolved "https://registry.yarnpkg.com/@jsforce/jsforce-node/-/jsforce-node-3.10.8.tgz#f13903a0885fa3501a513512984cf9a717aebb9a"
+  integrity sha512-XGD/ivZz+htN5SgctFyEZ+JNG6C8FXzaEwvPbRSdsIy/hpWlexY38XtTpdT5xX3KnYSnOE4zA1M/oIbTm7RD/Q==
   dependencies:
     "@sindresorhus/is" "^4"
     base64url "^3.0.1"
@@ -2379,15 +2379,15 @@
     strip-ansi "6.0.1"
     ts-retry-promise "^0.8.1"
 
-"@salesforce/core@^8.18.1", "@salesforce/core@^8.23.1", "@salesforce/core@^8.5.1", "@salesforce/core@^8.8.0":
-  version "8.23.1"
-  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-8.23.1.tgz#89e04518d6d4033ef6a248380eb952328068797c"
-  integrity sha512-/mQMu6g0gmkKQsl+G93VkkU+yrLEjnBzdUu0sPlS0WY5jM4M9sxg97LmRXa6dchECU3c/ugamsXaP6j6QmEfsQ==
+"@salesforce/core@^8.18.1", "@salesforce/core@^8.23.1", "@salesforce/core@^8.23.4", "@salesforce/core@^8.5.1", "@salesforce/core@^8.8.0":
+  version "8.23.4"
+  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-8.23.4.tgz#f1fa18eace08f685e72975a09d96e7f6958ca3b4"
+  integrity sha512-+JZMFD76P7X8fLSrHJRi9+ygjTehqZqJRXxmNq51miqIHY1Xlb0qH/yr9u5QEGsFIOZ8H8oStl/Zj+ZbrFs0vw==
   dependencies:
-    "@jsforce/jsforce-node" "^3.10.4"
+    "@jsforce/jsforce-node" "^3.10.8"
     "@salesforce/kit" "^3.2.4"
-    "@salesforce/schemas" "^1.10.0"
-    "@salesforce/ts-types" "^2.0.11"
+    "@salesforce/schemas" "^1.10.3"
+    "@salesforce/ts-types" "^2.0.12"
     ajv "^8.17.1"
     change-case "^4.1.2"
     fast-levenshtein "^3.0.0"
@@ -2401,7 +2401,7 @@
     pino-abstract-transport "^1.2.0"
     pino-pretty "^11.3.0"
     proper-lockfile "^4.1.2"
-    semver "^7.6.3"
+    semver "^7.7.3"
     ts-retry-promise "^0.8.1"
 
 "@salesforce/dev-config@^4.3.1", "@salesforce/dev-config@^4.3.2":
@@ -2453,7 +2453,7 @@
   resolved "https://registry.yarnpkg.com/@salesforce/prettier-config/-/prettier-config-0.0.3.tgz#ba648d4886bb38adabe073dbea0b3a91b3753bb0"
   integrity sha512-hYOhoPTCSYMDYn+U1rlEk16PoBeAJPkrdg4/UtAzupM1mRRJOwEPMG1d7U8DxJFKuXW3DMEYWr2MwAIBDaHmFg==
 
-"@salesforce/schemas@^1.10.0":
+"@salesforce/schemas@^1.10.3":
   version "1.10.3"
   resolved "https://registry.yarnpkg.com/@salesforce/schemas/-/schemas-1.10.3.tgz#52c867fdd60679cf216110aa49542b7ad391f5d1"
   integrity sha512-FKfvtrYTcvTXE9advzS25/DEY9yJhEyLvStm++eQFtnAaX1pe4G3oGHgiQ0q55BM5+0AlCh0+0CVtQv1t4oJRA==
