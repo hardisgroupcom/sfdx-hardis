@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Excludes training branches from merge target suggestions
 - GitHub integration: Includes error stack in logs for easier debugging
+- Fix display of commands in GitHub Actions logs
 
 ## [6.11.4] 2025-11-06
 
