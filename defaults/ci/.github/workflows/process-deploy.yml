@@ -22,6 +22,10 @@ jobs:
   process_deployment:
     name: Process Deployment to Major Org
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+      issues: write
     steps:
       # Git Checkout
       - name: Checkout Code
