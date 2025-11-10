@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): If there are multiple `-` in a generated branch name , replace by single `-`, otherwise it messes with mermaid diagrams
+
 ## [6.11.5] 2025-11-09
 
 - Excludes training branches from merge target suggestions
