@@ -4,6 +4,7 @@ import { Connection } from '@salesforce/core';
 import ora, { Ora } from 'ora';
 import { WebSocketClient } from '../websocketClient.js';
 import { generateCsvFile, generateReportPath } from './filesUtils.js';
+import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
 
 // Constants for record limits
 const MAX_CHUNKS = Number(process.env.SOQL_MAX_BATCHES ?? 50);
@@ -143,12 +144,12 @@ export async function bulkQueryByChunks(
   const results = { records: [] as any[] };
   let lastRecordId = null;
   let hasMoreRecords = true;
-
   while (hasMoreRecords) {
-    let soqlQueryWithLimit = `${soqlQuery} ORDER BY Id LIMIT ${batchSize}`;
+    let soqlQueryWithLimit = `${soqlQuery} ORDER BY Id`;
     if (lastRecordId) {
-      soqlQueryWithLimit = `${soqlQuery} WHERE Id > '${lastRecordId}' ORDER BY Id LIMIT ${batchSize}`;
+      soqlQueryWithLimit = `${soqlQuery} WHERE Id > '${lastRecordId}' ORDER BY Id`;
     }
+    soqlQueryWithLimit = await parseSoqlAndReapplyLimit(soqlQueryWithLimit, batchSize, this);
     const chunkResults = await bulkQuery(soqlQueryWithLimit, conn, retries);
     results.records.push(...chunkResults.records);
     if (chunkResults.records.length > 0) {
