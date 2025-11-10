@@ -93,7 +93,7 @@ export default class OrgPurgeProfile extends SfCommand<any> {
     const selectedProfiles = await promptProfiles(flags['target-org'].getConnection(),{multiselect: true, returnApiName: true});
     
     uxLog("action", this, c.cyan(`Filtering full org manifest to only keep relevant metadata types...`));
-    await this.filterFullOrgPackageByRelevantMetadatatTypes(packageFilteredPackagesPath, packageFilteredProfilePath, selectedProfiles);  
+    await this.filterFullOrgPackageByRelevantMetadataTypes(packageFilteredPackagesPath, packageFilteredProfilePath, selectedProfiles);  
     
     uxLog("action", this, c.cyan(`Retrieving metadatas required for profile purge (this will take some time)...`));
     await execCommand(
@@ -208,9 +208,9 @@ export default class OrgPurgeProfile extends SfCommand<any> {
     });
   }
 
-  async filterFullOrgPackageByRelevantMetadatatTypes(packageFilteredPackagesPath: string, packageFilteredProfilePath: string,     selectedProfiles: string[]): Promise<void> {
+  async filterFullOrgPackageByRelevantMetadataTypes(packageFilteredPackagesPath: string, packageFilteredProfilePath: string,     selectedProfiles: string[]): Promise<void> {
     const parsedPackage = await parsePackageXmlFile(packageFilteredPackagesPath);
-    const keysTokeep = Array.from(new Set([
+    const keysToKeep = Array.from(new Set([
       ...this.attributesToMute
         .map((a: any) => a.packageType)
         .filter((pkgType: any) => pkgType != null),
@@ -218,7 +218,7 @@ export default class OrgPurgeProfile extends SfCommand<any> {
     ]));
 
     for (const key of Object.keys(parsedPackage)){
-      if (!keysTokeep.includes(key)) {
+      if (!keysToKeep.includes(key)) {
         delete parsedPackage[key];
       }
     }
