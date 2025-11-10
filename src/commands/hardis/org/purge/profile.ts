@@ -1,0 +1,242 @@
+import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
+import { promptProfiles } from '../../../../common/utils/orgUtils.js';
+import { getReportDirectory } from '../../../../config/index.js';
+import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
+import * as path from 'path';
+import { execCommand, filterPackageXml, uxLog } from '../../../../common/utils/index.js';
+import c from 'chalk';
+import fs from 'fs';
+import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { prompts } from '../../../../common/utils/prompts.js';
+import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
+
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages('sfdx-hardis', 'org');
+
+export default class OrgPurgeProfile extends SfCommand<any> {
+  public static title = 'Mute Profile Attributes';
+
+  public static description = `
+`;
+
+  public static examples = [
+  ];
+
+  public static flags: any = {
+    debug: Flags.boolean({
+      char: 'd',
+      default: false,
+      description: messages.getMessage('debugMode'),
+    }),
+    websocket: Flags.string({
+      description: messages.getMessage('websocket'),
+    }),
+    skipauth: Flags.boolean({
+      description: 'Skip authentication check when a default username is required',
+    }),
+    'target-org': requiredOrgFlagWithDeprecations,
+  };
+
+  protected attributesToMute = [
+    {
+      "packageType": "ApexClass",
+      "nodeNameOnProfile": "classAccesses",
+      "attributesToMute": ["enabled"],
+      "muteValue": false
+    },{
+      "packageType": "CustomField",
+      "nodeNameOnProfile": "fieldPermissions",
+      "attributesToMute": ["readable", "editable"],
+      "muteValue": false
+    },{
+      "packageType": "CustomObject",
+      "nodeNameOnProfile": "objectPermissions",
+      "attributesToMute": ["allowCreate", "allowDelete", "allowEdit", "allowRead", "modifyAllRecords", "viewAllFields", "viewAllRecords"],
+      "muteValue": false
+    },{
+      "packageType": null,
+      "nodeNameOnProfile": "userPermissions",
+      "attributesToMute": ["enabled"],
+      "muteValue": false,
+      "excludedNames": ["ChatterInternalUser", "ViewHelpLink", "LightningConsoleAllowedForUser", "ActivitiesAccess", ],
+      "excludedFiles": ["Admin.profile-meta.xml"]
+    }
+  ];
+  
+  public async run(): Promise<AnyJson> {
+    const { flags } = await this.parse(OrgPurgeProfile);
+
+    const orgUsername = flags['target-org'].getUsername();
+    const conn = flags['target-org'].getConnection();
+    const instanceUrlKey = conn.instanceUrl.replace(/https?:\/\//, '').replace(/\./g, '_').toUpperCase();
+
+    const reportDir = await getReportDirectory();
+
+    const packageFullOrgPath = path.join(reportDir, `org-package-xml-full_${instanceUrlKey}.xml`);
+    const packageFilteredPackagesPath = path.join(reportDir, `org-package-xml-filtered-packages_${instanceUrlKey}.xml`);
+    const packageFilteredProfilePath = path.join(reportDir, `org-package-xml-filtered-profile-purge_${instanceUrlKey}.xml`);
+
+    // Check if user has uncommitted changes
+    if (!await this.checkUncommittedChanges()) {
+      uxLog("error", this, c.yellow(`You have uncommitted changes in your git repository. Please commit or stash them before running this command.`));
+      return {};
+    }
+
+    uxLog("action", this, c.cyan(`Loading full org manifest for profile retrieval...`));
+    await this.loadFullOrgManifest(conn, orgUsername, packageFullOrgPath);
+
+    uxLog("action", this, c.cyan(`Filtering full org manifest to remove unwanted namespaces...`));
+    await this.filterFullOrgPackageByNamespaces(packageFullOrgPath, packageFilteredPackagesPath);
+
+    const selectedProfiles = await promptProfiles(flags['target-org'].getConnection(),{multiselect: true, returnApiName: true});
+    
+    uxLog("action", this, c.cyan(`Filtering full org manifest to only keep relevant metadata types...`));
+    await this.filterFullOrgPackageByRelevantMetadatatTypes(packageFilteredPackagesPath, packageFilteredProfilePath, selectedProfiles);  
+    
+    uxLog("action", this, c.cyan(`Retrieving metadatas required for profile purge (this will take some time)...`));
+    await execCommand(
+      `sf project retrieve start --manifest ${packageFilteredProfilePath} --target-org ${orgUsername} --ignore-conflicts --json`,
+      this,
+      { output: false, fail: true }
+    );
+
+    
+    uxLog("action", this, c.cyan(`Muting unwanted profile attributes...`));
+    const profilesDir = path.join('force-app', 'main', 'default', 'profiles');
+    for (const selectedProfile of selectedProfiles) {
+      const profileFilePath = path.join(profilesDir, `${selectedProfile}.profile-meta.xml`);
+      if (!fs.existsSync(profileFilePath)) {
+        uxLog("warning", this, c.yellow(`Profile file ${profileFilePath} does not exist. Skipping.`));
+        continue;
+      }
+      
+      const profileWithMutedAttributes = await this.muteProfileAttributes(profileFilePath);
+      await writeXmlFile(profileFilePath, profileWithMutedAttributes);
+      uxLog("success", this, c.green(`Profile ${selectedProfile} processed and unwanted attributes muted.`));
+    }
+
+    uxLog("action", this, c.cyan(`Deploying muted profiles back to the org...`));
+    await this.deployToOrg(orgUsername, selectedProfiles);
+
+    return { orgId: flags['target-org'].getOrgId(), outputString: "Successfully purged profiles." };
+  }
+  
+  private async checkUncommittedChanges(): Promise<boolean> {
+    const gitResult = await execCommand('git status --porcelain', this, { output: true, fail: false });
+    const output = typeof gitResult === 'string' ? gitResult : (gitResult && (gitResult as any).stdout) || '';
+    return output.trim() === '';
+  }
+
+  private async loadFullOrgManifest(conn: any, orgUsername: string, packageFullOrgPath: string): Promise<void> {
+    // Check if full org manifest already exists
+    let useExistingManifest = false;
+    if (fs.existsSync(packageFullOrgPath)) {
+      const promptResults = await prompts({
+        type: "select",
+        name: "useExistingManifest",
+        message: "Do you want to use the existing full org manifest or generate a new one?",
+        description: "A full org manifest file was found from a previous run. You can either use it or generate a new one to ensure it's up to date. It may take some time to generate a new one.",
+        choices: [
+          { title: "Use the existing full org manifest", value: true },
+          { title: "Generate a new full org manifest", value: false },
+        ],
+      });
+      useExistingManifest = promptResults.useExistingManifest;
+    }
+    if (!useExistingManifest) {
+      uxLog("action", this, c.cyan(`Generating full org manifest for profile retrieval...`));
+      await buildOrgManifest(orgUsername, packageFullOrgPath, conn);
+    }
+  }
+
+  private async muteProfileAttributes(profileFilePath: string): Promise<void> {
+    const profileParsedXml:any = await parseXmlFile(profileFilePath);
+    const filename = path.basename(profileFilePath);
+    for (const attributeConfig of this.attributesToMute) {
+      const excludedFiles = attributeConfig.excludedFiles || [];
+      if (excludedFiles.includes(filename)) {
+        continue;
+      }
+      const excludedNames = attributeConfig.excludedNames || [];
+      const muteValue = attributeConfig.muteValue || false;
+      const nodeName = attributeConfig.nodeNameOnProfile;
+      const attributesToMute = attributeConfig.attributesToMute;
+      if (profileParsedXml?.Profile?.[nodeName]) {
+        for(let i=0; i<profileParsedXml?.Profile?.[nodeName].length; i++){
+          for(const attr of attributesToMute){
+            if(!excludedNames.includes(profileParsedXml.Profile[nodeName][i]['name'])){
+              if(profileParsedXml?.Profile?.[nodeName][i][attr] !== undefined){
+                profileParsedXml.Profile[nodeName][i][attr] = muteValue;
+              }
+            }
+          }
+        }
+      }
+    }
+    return profileParsedXml;
+  }
+
+  async filterFullOrgPackageByNamespaces(packageFullOrgPath: string, packageFilteredPackagesPath: string): Promise<void> {
+    const namespaceOptions: { title: string; value: string }[] = [];
+    try{
+      const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
+      for (const installedPackage of installedPackages) {
+        if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
+          namespaceOptions.push({
+            title: installedPackage.SubscriberPackageNamespace, // Display title
+            value: installedPackage.SubscriberPackageNamespace
+          });
+        }
+      }
+    }catch(error){
+      uxLog("warning", this, c.yellow(`Could not retrieve installed packages. Namespace filtering will be skipped.`));
+    }
+
+    const selectedNamespacesPrompt = await prompts({
+      type: 'multiselect',
+      name: "namespaces",
+      message: "Which namespaces do you want to remove from the full org manifest?",
+      description: "Select all namespaces you want to remove",
+      choices: namespaceOptions
+    });
+
+    await filterPackageXml(packageFullOrgPath, packageFilteredPackagesPath, {
+      removeNamespaces: selectedNamespacesPrompt.namespaces,
+      removeStandard: false
+    });
+  }
+
+  async filterFullOrgPackageByRelevantMetadatatTypes(packageFilteredPackagesPath: string, packageFilteredProfilePath: string,     selectedProfiles: string[]): Promise<void> {
+    const parsedPackage = await parsePackageXmlFile(packageFilteredPackagesPath);
+    const keysTokeep = Array.from(new Set([
+      ...this.attributesToMute
+        .map((a: any) => a.packageType)
+        .filter((pkgType: any) => pkgType != null),
+      'Profile',
+    ]));
+
+    for (const key of Object.keys(parsedPackage)){
+      if (!keysTokeep.includes(key)) {
+        delete parsedPackage[key];
+      }
+    }
+
+    parsedPackage['Profile'] = selectedProfiles;
+    await writePackageXmlFile(packageFilteredProfilePath, parsedPackage);
+  }
+
+  async deployToOrg(orgUsername: string, selectedProfiles: string[]): Promise<void> {
+    try {
+      await execCommand(
+        `sf project deploy start --metadata "Profile:${selectedProfiles.join(',')}" --target-org ${orgUsername} --ignore-conflicts --json`,
+        this,
+        { output: true, fail: false }
+      );
+      uxLog("success", this, c.green(`Profiles deployed successfully.`));
+    } catch (error) {
+      uxLog("error", this, c.red(`Failed to deploy profiles.`));
+    }
+  }
+}
