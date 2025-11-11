@@ -140,7 +140,7 @@ The command's technical implementation involves:
     this.formatFlowRecords();
 
     // Confirm deletion
-    if (this.promptUser) {
+    if (this.promptUser && !isCI) {
       const confirmDelete = await prompts({
         type: 'confirm',
         name: 'value',
