@@ -419,6 +419,20 @@
               "process-deployment-only"
             ]
           },
+          "allowFailure": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/allowFailure",
+            "description": "Allow action to fail without marking the deployment as failed",
+            "title": "Allow failure",
+            "default": false,
+            "type": "boolean"
+          },
+          "runOnlyOnceByOrg": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/runOnlyOnceByOrg",
+            "description": "Run this action only once per target org (useful for idempotent post-deploy tasks)",
+            "title": "Run only once by org",
+            "default": false,
+            "type": "boolean"
+          },
           "customUsername": {
             "$id": "#/properties/commandsPostDeploy/items/properties/customUsername",
             "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the Connected App used by deployment user.",

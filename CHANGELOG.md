@@ -5,6 +5,8 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): If there are multiple `-` in a generated branch name , replace by single `-`, otherwise it messes with mermaid diagrams
+- Update json schema to add allowFailure & runOnlyOnceByOrg
+- Fix File Export SOQL with LIMIT Clause
 
 ## [6.11.5] 2025-11-09
 
