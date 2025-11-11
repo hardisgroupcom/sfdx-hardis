@@ -288,6 +288,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
         direction: "desc",
         per_page: 1,
       });
+      uxLog("log", this, c.grey(`[GitHub Integration] Finding last merged PR from ${currentBranchName} to ${targetBranchName}`));
 
       const lastMergeToTarget = mergedPRs.find((pr) => pr.merged_at);
 
@@ -299,11 +300,12 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
           ? lastMergeToTarget.merge_commit_sha!
           : targetBranchName,
         head: currentBranchName,
-        per_page: 100,
+        per_page: 1000,
       };
 
       const { data: comparison } =
         await this.octokit.rest.repos.compareCommits(compareOptions);
+      uxLog("log", this, c.grey(`[GitHub Integration] Comparing commits between ${compareOptions.base} and ${compareOptions.head}`));
 
       if (!comparison.commits || comparison.commits.length === 0) {
         return [];
@@ -321,14 +323,15 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
             repo: this.repoName!,
             state: "closed",
             base: branchName,
-            per_page: 100,
+            per_page: 1000,
           });
+          uxLog("log", this, c.grey(`[GitHub Integration] Fetching merged PRs for branch ${branchName}`));
           return prs.filter((pr) => pr.merged_at);
         } catch (err) {
           uxLog(
             "warning",
             this,
-            c.yellow(`Error fetching merged PRs for branch ${branchName}: ${String(err)}`),
+            c.yellow(`[GitHub Integration] Error fetching merged PRs for branch ${branchName}: ${String(err)}`),
           );
           return [];
         }
@@ -350,15 +353,17 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
         }
       }
 
+      const uniquePRs = Array.from(uniquePRsMap.values());
+
       // Step 6: Convert to CommonPullRequestInfo
-      return Array.from(uniquePRsMap.values()).map((pr) =>
+      return uniquePRs.map((pr) =>
         this.completePullRequestInfo(pr)
       );
     } catch (err) {
       uxLog(
         "warning",
         this,
-        c.yellow(`Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}\n${err instanceof Error ? err.stack : ""}`),
+        c.yellow(`[GitHub Integration] Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}\n${err instanceof Error ? err.stack : ""}`),
       );
       return [];
     }

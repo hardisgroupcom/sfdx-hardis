@@ -260,8 +260,10 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
         }
       }
 
+      const uniqueMRs = Array.from(uniqueMRsMap.values());
+
       // Step 6: Convert to CommonPullRequestInfo
-      return Array.from(uniqueMRsMap.values()).map((mr) =>
+      return uniqueMRs.map((mr) =>
         this.completePullRequestInfo(mr)
       );
     } catch (err) {
@@ -288,6 +290,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
         orderBy: "updated_at",
         sort: "desc",
         perPage: 1,
+        maxPages: 1,
       });
 
       return mergedMRs.length > 0 ? mergedMRs[0] : null;
