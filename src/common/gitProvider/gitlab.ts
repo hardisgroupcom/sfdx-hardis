@@ -66,12 +66,65 @@ export class GitlabProvider extends GitProviderRoot {
     }
     // Case when we find MR from a commit
     const sha = await git().revparse(["HEAD"]);
-    const latestMergeRequestsOnBranch = await this.gitlabApi.MergeRequests.all({
-      projectId: projectId || "",
-      state: "merged",
-      sort: "desc",
-      sha: sha,
+    // Fetch recent merged MRs and pick the one whose merge commit SHA matches the current HEAD
+    let allMergedMRs: any[] = [];
+    try {
+      // Prefer the commit-level endpoint (more efficient) if available:
+      // GET /projects/:id/repository/commits/:sha/merge_requests
+      // This returns merge requests related to the commit directly.
+      try {
+        const commitMrs = await this.gitlabApi.Commits.mergeRequests(projectId || "", sha);
+        if (Array.isArray(commitMrs) && commitMrs.length > 0) {
+          allMergedMRs = commitMrs;
+        }
+      } catch (err) {
+        // Some GitLab instances or gitbeaker versions may not expose this helper -> fall back below
+        uxLog(
+          "log",
+          this,
+          c.grey(`[Gitlab Integration] Commit-level MR lookup not available or failed: ${String(err)}. Falling back to filtered MR list.`),
+        );
+      }
+
+      // Fallback: fetch merged MRs but narrow the scope to be performant
+      if (allMergedMRs.length === 0) {
+        // try to limit by the current branch (CI variable or local git)
+        const currentBranch = process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch());
+        allMergedMRs = await this.gitlabApi.MergeRequests.all({
+          projectId: projectId || "",
+          state: "merged",
+          // prefer filtering by targetBranch to reduce results; if unknown, omit the filter
+          ...(currentBranch ? { targetBranch: currentBranch } : {}),
+          orderBy: "updated_at",
+          sort: "desc",
+          perPage: 100,
+          maxPages: 1,
+        });
+      }
+    } catch (err) {
+      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error fetching merged MRs: ${String(err)}`));
+      // as a last resort try a small unfiltered query to avoid huge responses
+      try {
+        allMergedMRs = await this.gitlabApi.MergeRequests.all({
+          projectId: projectId || "",
+          state: "merged",
+          perPage: 10,
+          maxPages: 1,
+          orderBy: "updated_at",
+          sort: "desc",
+        });
+      } catch (innerErr) {
+        uxLog("warning", this, c.yellow(`[Gitlab Integration] Fallback query failed: ${String(innerErr)}`));
+        allMergedMRs = [];
+      }
+    }
+
+    const matchedMr = allMergedMRs.find((mr: any) => {
+      const mergeSha = mr.mergeCommitSha || mr.merge_commit_sha;
+      return mergeSha === sha;
     });
+
+    const latestMergeRequestsOnBranch = matchedMr ? [matchedMr] : [];
     if (latestMergeRequestsOnBranch.length > 0) {
       const currentGitBranch = await getCurrentGitBranch();
       const candidateMergeRequests = latestMergeRequestsOnBranch.filter((pr) => pr.target_branch === currentGitBranch);
@@ -199,6 +252,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       }
 
       // Step 1: Find the last merged MR from currentBranch to targetBranch
+      uxLog("log", this, c.grey(`[Gitlab Integration] Finding last merged MR from ${currentBranchName} to ${targetBranchName}`));
       const lastMergeToTarget = await this.findLastMergedMR(currentBranchName, targetBranchName, projectId);
 
       // Step 2: Get all commits in currentBranch since that merge (or all if no previous merge)
@@ -222,13 +276,10 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
             state: "merged",
             perPage: 100,
           });
+          uxLog("log", this, c.grey(`[Gitlab Integration] Fetching merged MRs for branch ${branchName}`));
           return mergedMRs;
         } catch (err) {
-          uxLog(
-            "warning",
-            this,
-            c.yellow(`Error fetching merged MRs for branch ${branchName}: ${String(err)}`),
-          );
+          uxLog("warning", this, c.yellow(`[Gitlab Integration] Error fetching merged MRs for branch ${branchName}: ${String(err)}`));
           return [];
         }
       });
@@ -267,11 +318,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
         this.completePullRequestInfo(mr)
       );
     } catch (err) {
-      uxLog(
-        "warning",
-        this,
-        c.yellow(`Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`),
-      );
+      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}\n${err instanceof Error ? err.stack : ""}`));
       return [];
     }
   }
@@ -295,11 +342,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
 
       return mergedMRs.length > 0 ? mergedMRs[0] : null;
     } catch (err) {
-      uxLog(
-        "warning",
-        this,
-        c.yellow(`Error finding last merged MR from ${sourceBranch} to ${targetBranch}: ${String(err)}`),
-      );
+      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error finding last merged MR from ${sourceBranch} to ${targetBranch}: ${String(err)}`));
       return null;
     }
   }
@@ -327,11 +370,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       const commits = await this.gitlabApi!.Commits.all(projectId, options);
       return commits || [];
     } catch (err) {
-      uxLog(
-        "warning",
-        this,
-        c.yellow(`Error fetching commits for branch ${branchName}: ${String(err)}`),
-      );
+      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error fetching commits for branch ${branchName}: ${String(err)}`));
       return [];
     }
   }
