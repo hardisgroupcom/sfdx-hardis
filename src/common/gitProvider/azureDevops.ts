@@ -352,33 +352,52 @@ ${this.getPipelineVariablesConfig()}
           status: PullRequestStatus.Completed,
         },
         process.env.SYSTEM_TEAMPROJECT,
+        undefined,
+        undefined,
+        1, // top: only need the latest one
       );
+      uxLog("log", this, c.grey(`[Azure Integration][listPullRequestsInBranchSinceLastMerge] Last merge PR query: ${currentBranchName} -> ${targetBranchName}`));
 
-      const lastMergeToTarget = lastMergePRs && lastMergePRs.length > 0 ? lastMergePRs[0] : null;
+      const lastMergedPrToTarget = lastMergePRs && lastMergePRs.length > 0 ? lastMergePRs[0] : null;
 
-      // Step 2: Get commits between branches
-      const gitApiCommits = await gitApi.getCommitsBatch(
-        {
-          itemVersion: {
-            version: currentBranchName,
-            versionType: 0, // branch
-          },
-          compareVersion: {
-            version: lastMergeToTarget
-              ? lastMergeToTarget.lastMergeSourceCommit?.commitId
-              : targetBranchName,
-            versionType: lastMergeToTarget ? 2 : 0, // commit or branch
-          },
+      // Step 2: Get commits since last merge
+      const commitsCriteria: any = {
+        compareVersion: {
+          version: currentBranchName,
+          versionType: 0, // GitVersionType.Branch
         },
+      };
+
+      // If there was a previous merge, use the merge commit (from target branch) as the base comparison point
+      if (lastMergedPrToTarget?.lastMergeSourceCommit?.commitId) {
+        commitsCriteria.itemVersion = {
+          version: lastMergedPrToTarget?.lastMergeSourceCommit?.commitId,
+          versionType: 2, // GitVersionType.Commit
+        };
+      } else {
+        // No previous merge, compare against target branch to get all commits
+        // Just list all commits in currentBranch
+        commitsCriteria.itemVersion = {
+          version: targetBranchName,
+          versionType: 0, // GitVersionType.Branch
+        };
+      }
+
+      const commits = await gitApi.getCommitsBatch(
+        commitsCriteria,
         process.env.BUILD_REPOSITORY_ID,
         process.env.SYSTEM_TEAMPROJECT,
       );
+      uxLog("log", this, c.grey(`[Azure Integration][listPullRequestsInBranchSinceLastMerge] Found ${commits?.length || 0} commits since last merge`));
 
-      if (!gitApiCommits || gitApiCommits.length === 0) {
+      if (!commits || commits.length === 0) {
         return [];
       }
 
-      const commitIds = new Set(gitApiCommits.map((c) => c.commitId));
+      // Create a Set of commit IDs for fast lookup
+      const commitIds = new Set(
+        commits.map((c) => c.commitId).filter((id) => id),
+      );
 
       // Step 3: Get all completed PRs targeting currentBranch and child branches (parallelized)
       const allBranches = [currentBranchName, ...childBranchesNames];
@@ -393,6 +412,7 @@ ${this.getPipelineVariablesConfig()}
             },
             process.env.SYSTEM_TEAMPROJECT,
           );
+          uxLog("log", this, c.grey(`[Azure Integration][listPullRequestsInBranchSinceLastMerge] Found ${prs?.length || 0} completed PRs for branch ${branchName}`));
           return prs || [];
         } catch (err) {
           uxLog(
@@ -409,8 +429,19 @@ ${this.getPipelineVariablesConfig()}
 
       // Step 4: Filter PRs whose merge commit is in our commit list
       const relevantPRs = allMergedPRs.filter((pr) => {
-        const mergeCommitId = pr.lastMergeSourceCommit?.commitId;
-        return mergeCommitId && commitIds.has(mergeCommitId);
+        // Check if the merge commit ID is in our commits
+        const mergeCommitId = pr.lastMergeCommit?.commitId;
+        if (mergeCommitId && commitIds.has(mergeCommitId)) {
+          return true;
+        }
+
+        // Also check the source commit (last commit from the PR branch before merge)
+        const sourceCommitId = pr.lastMergeSourceCommit?.commitId;
+        if (sourceCommitId && commitIds.has(sourceCommitId)) {
+          return true;
+        }
+
+        return false;
       });
 
       // Step 5: Remove duplicates
@@ -421,8 +452,11 @@ ${this.getPipelineVariablesConfig()}
         }
       }
 
+      const uniquePRs = Array.from(uniquePRsMap.values());
+      uxLog("log", this, c.grey(`[Azure Integration][listPullRequestsInBranchSinceLastMerge] Returning ${uniquePRs.length} unique PRs`));
+
       // Step 6: Convert to CommonPullRequestInfo
-      return Array.from(uniquePRsMap.values()).map((pr) =>
+      return uniquePRs.map((pr) =>
         this.completePullRequestInfo(pr)
       );
     } catch (err) {
