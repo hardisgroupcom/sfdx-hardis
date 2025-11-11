@@ -513,7 +513,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
     // Check for existing threads from a previous run
-    uxLog("log", this, c.grey("[Azure integration] Listing Threads of Pull Request..."));
+    uxLog("log", this, c.grey(`[Azure integration] Listing Threads of Pull Request #${pullRequestId} ...`));
     const existingThreads = await azureGitApi.getThreads(repositoryId, pullRequestId);
     let existingThreadId: number | null = null;
     let existingThreadComment: GitPullRequestCommentThread | null = null;

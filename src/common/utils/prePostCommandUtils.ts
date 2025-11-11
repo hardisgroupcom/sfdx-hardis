@@ -183,7 +183,7 @@ async function listAllPullRequestsToUse(checkOnly: boolean): Promise<CommonPullR
       targetBranchToUse = prTargetOrgDef.mergeTargets[0]; // Use first merge target as target branch
     }
     else {
-      uxLog("warning", this, c.yellow(`[GitProvider] Target branch ${pullRequestInfo.targetBranch} not found in major orgs list, cannot retrieve pull requests to get commands from.`));
+      uxLog("warning", this, c.yellow(`[GitProvider] Target branch ${pullRequestInfo.targetBranch} not found in major orgs list, cannot retrieve pull requests to get commands from.\nPR: ${JSON.stringify(pullRequestInfo, null, 2)}`));
       return [];
     }
   }

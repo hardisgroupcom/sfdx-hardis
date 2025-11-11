@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add more logs to help investigation in case of issue
+
 ## [6.12.2] 2025-11-11
 
 - Deployment Actions: When a custom username is defined, authenticate using the current Pull Request target branch, and not the origin Pull Request
