@@ -16,12 +16,38 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgPurgeProfile extends SfCommand<any> {
-  public static title = 'Mute Profile Attributes';
+  public static title = 'Remove PS attributes from Profile';
 
   public static description = `
+## Command Behavior
+
+**Removes or "mutes" Permission Sets attributes from selected Salesforce Profile metadata files and redeploys the cleaned profiles to the target org.**
+
+This command is intended to safely remove PS attributes from Profiles after a migration from Profile-based to PS-based permission management. It:
+- Builds or reuses a full org manifest to determine metadata present in the org.
+- Filters the manifest to remove selected managed package namespaces and keep only relevant metadata types required for profile processing.
+- Retrieves the necessary metadata (profiles, objects, fields, classes) into the local project.
+- Iterates over selected profile files and mutes configured attributes (for example: classAccesses.enabled, fieldPermissions.readable/editable, objectPermissions.* and userPermissions.enabled).
+- Writes the modified profile XML files back to the repository
+- Deploys the updated profiles to the target org.
+
+The command checks for uncommitted changes and will not run if the working tree has modifications, and it allows reusing a previously generated full org manifest to speed up repeated runs.
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+- **Manifest generation:** Uses 'buildOrgManifest' to create a full org 'package.xml'. If an existing manifest file is available the user can choose to reuse it.
+- **Namespace filtering:** Queries installed packages using 'MetadataUtils.listInstalledPackages' to propose namespaces to remove from the manifest.
+- **Metadata filtering:** Keeps only metadata types required to safely mute profiles (Profile plus the package types configured in the command).
+- **Profile processing:** Parses profile XML files, iterates nodes ('classAccesses', 'fieldPermissions', 'objectPermissions', 'userPermissions') and sets attributes to configured mute values, skipping configured excluded names/files.
+- **Retrieval & Deployment:** Uses the Salesforce CLI ('sf project retrieve' / 'sf project deploy') via 'execCommand' to retrieve metadata and deploy the updated profiles.
+- **Exit behavior:** Returns an object with 'orgId' and an 'outputString'. Errors are logged to the console and do not throw uncaught exceptions within the command.
+</details>
 `;
 
   public static examples = [
+    `sf hardis:org:purge:profile`,
+    `sf hardis:org:purge:profile --target-org my-org@example.com`,
   ];
 
   public static flags: any = {
@@ -45,26 +71,26 @@ export default class OrgPurgeProfile extends SfCommand<any> {
       "nodeNameOnProfile": "classAccesses",
       "attributesToMute": ["enabled"],
       "muteValue": false
-    },{
+    }, {
       "packageType": "CustomField",
       "nodeNameOnProfile": "fieldPermissions",
       "attributesToMute": ["readable", "editable"],
       "muteValue": false
-    },{
+    }, {
       "packageType": "CustomObject",
       "nodeNameOnProfile": "objectPermissions",
       "attributesToMute": ["allowCreate", "allowDelete", "allowEdit", "allowRead", "modifyAllRecords", "viewAllFields", "viewAllRecords"],
       "muteValue": false
-    },{
+    }, {
       "packageType": null,
       "nodeNameOnProfile": "userPermissions",
       "attributesToMute": ["enabled"],
       "muteValue": false,
-      "excludedNames": ["ChatterInternalUser", "ViewHelpLink", "LightningConsoleAllowedForUser", "ActivitiesAccess", ],
+      "excludedNames": ["ChatterInternalUser", "ViewHelpLink", "LightningConsoleAllowedForUser", "ActivitiesAccess",],
       "excludedFiles": ["Admin.profile-meta.xml"]
     }
   ];
-  
+
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgPurgeProfile);
 
@@ -90,11 +116,11 @@ export default class OrgPurgeProfile extends SfCommand<any> {
     uxLog("action", this, c.cyan(`Filtering full org manifest to remove unwanted namespaces...`));
     await this.filterFullOrgPackageByNamespaces(packageFullOrgPath, packageFilteredPackagesPath);
 
-    const selectedProfiles = await promptProfiles(flags['target-org'].getConnection(),{multiselect: true, returnApiName: true});
-    
+    const selectedProfiles = await promptProfiles(flags['target-org'].getConnection(), { multiselect: true, returnApiName: true });
+
     uxLog("action", this, c.cyan(`Filtering full org manifest to only keep relevant metadata types...`));
-    await this.filterFullOrgPackageByRelevantMetadataTypes(packageFilteredPackagesPath, packageFilteredProfilePath, selectedProfiles);  
-    
+    await this.filterFullOrgPackageByRelevantMetadataTypes(packageFilteredPackagesPath, packageFilteredProfilePath, selectedProfiles);
+
     uxLog("action", this, c.cyan(`Retrieving metadatas required for profile purge (this will take some time)...`));
     await execCommand(
       `sf project retrieve start --manifest ${packageFilteredProfilePath} --target-org ${orgUsername} --ignore-conflicts --json`,
@@ -102,7 +128,7 @@ export default class OrgPurgeProfile extends SfCommand<any> {
       { output: false, fail: true }
     );
 
-    
+
     uxLog("action", this, c.cyan(`Muting unwanted profile attributes...`));
     const profilesDir = path.join('force-app', 'main', 'default', 'profiles');
     for (const selectedProfile of selectedProfiles) {
@@ -111,7 +137,7 @@ export default class OrgPurgeProfile extends SfCommand<any> {
         uxLog("warning", this, c.yellow(`Profile file ${profileFilePath} does not exist. Skipping.`));
         continue;
       }
-      
+
       const profileWithMutedAttributes = await this.muteProfileAttributes(profileFilePath);
       await writeXmlFile(profileFilePath, profileWithMutedAttributes);
       uxLog("success", this, c.green(`Profile ${selectedProfile} processed and unwanted attributes muted.`));
@@ -122,7 +148,7 @@ export default class OrgPurgeProfile extends SfCommand<any> {
 
     return { orgId: flags['target-org'].getOrgId(), outputString: "Successfully purged profiles." };
   }
-  
+
   private async checkUncommittedChanges(): Promise<boolean> {
     const gitResult = await execCommand('git status --porcelain', this, { output: true, fail: false });
     const output = typeof gitResult === 'string' ? gitResult : (gitResult && (gitResult as any).stdout) || '';
@@ -152,7 +178,7 @@ export default class OrgPurgeProfile extends SfCommand<any> {
   }
 
   private async muteProfileAttributes(profileFilePath: string): Promise<void> {
-    const profileParsedXml:any = await parseXmlFile(profileFilePath);
+    const profileParsedXml: any = await parseXmlFile(profileFilePath);
     const filename = path.basename(profileFilePath);
     for (const attributeConfig of this.attributesToMute) {
       const excludedFiles = attributeConfig.excludedFiles || [];
@@ -164,10 +190,10 @@ export default class OrgPurgeProfile extends SfCommand<any> {
       const nodeName = attributeConfig.nodeNameOnProfile;
       const attributesToMute = attributeConfig.attributesToMute;
       if (profileParsedXml?.Profile?.[nodeName]) {
-        for(let i=0; i<profileParsedXml?.Profile?.[nodeName].length; i++){
-          for(const attr of attributesToMute){
-            if(!excludedNames.includes(profileParsedXml.Profile[nodeName][i]['name'])){
-              if(profileParsedXml?.Profile?.[nodeName][i][attr] !== undefined){
+        for (let i = 0; i < profileParsedXml?.Profile?.[nodeName].length; i++) {
+          for (const attr of attributesToMute) {
+            if (!excludedNames.includes(profileParsedXml.Profile[nodeName][i]['name'])) {
+              if (profileParsedXml?.Profile?.[nodeName][i][attr] !== undefined) {
                 profileParsedXml.Profile[nodeName][i][attr] = muteValue;
               }
             }
@@ -180,7 +206,7 @@ export default class OrgPurgeProfile extends SfCommand<any> {
 
   async filterFullOrgPackageByNamespaces(packageFullOrgPath: string, packageFilteredPackagesPath: string): Promise<void> {
     const namespaceOptions: { title: string; value: string }[] = [];
-    try{
+    try {
       const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
       for (const installedPackage of installedPackages) {
         if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
@@ -190,7 +216,7 @@ export default class OrgPurgeProfile extends SfCommand<any> {
           });
         }
       }
-    }catch(error){
+    } catch (error) {
       uxLog("warning", this, c.yellow(`Could not retrieve installed packages. Namespace filtering will be skipped.`));
     }
 
@@ -208,7 +234,7 @@ export default class OrgPurgeProfile extends SfCommand<any> {
     });
   }
 
-  async filterFullOrgPackageByRelevantMetadataTypes(packageFilteredPackagesPath: string, packageFilteredProfilePath: string,     selectedProfiles: string[]): Promise<void> {
+  async filterFullOrgPackageByRelevantMetadataTypes(packageFilteredPackagesPath: string, packageFilteredProfilePath: string, selectedProfiles: string[]): Promise<void> {
     const parsedPackage = await parsePackageXmlFile(packageFilteredPackagesPath);
     const keysToKeep = Array.from(new Set([
       ...this.attributesToMute
@@ -217,7 +243,7 @@ export default class OrgPurgeProfile extends SfCommand<any> {
       'Profile',
     ]));
 
-    for (const key of Object.keys(parsedPackage)){
+    for (const key of Object.keys(parsedPackage)) {
       if (!keysToKeep.includes(key)) {
         delete parsedPackage[key];
       }
