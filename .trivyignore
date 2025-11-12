@@ -64,6 +64,10 @@ CVE-2025-59343
 # fast-redact prototype pollution: Low security, harmless for sfdx-hardis use
 CVE-2025-57319
 
+# expr-eval https://avd.aquasec.com/nvd/cve-2025-12735
+# expr-eval does not restrict functions passed to the evaluate function: Dependency of langchain-community, harmless for sfdx-hardis use
+CVE-2025-12735
+
 # Dockerfile https://avd.aquasec.com/misconfig/ds002
 # Image using root user, that's ok as we are using it in CI/CD jobs containers, so not risky for sfdx-hardis
 DS002

@@ -125,7 +125,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
 
 async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean) {
   await checkForDraftCommandsFile(property, checkOnly);
-  const pullRequests = await listAllPullRequestsToUse();
+  const pullRequests = await listAllPullRequestsToUse(checkOnly);
   for (const pr of pullRequests) {
     // Check if there is a .sfdx-hardis.PULL_REQUEST_ID.yml file in the PR
     const prConfigFileName = path.join("scripts", "actions", `.sfdx-hardis.${pr.idStr}.yml`);
@@ -149,7 +149,7 @@ async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy
 
 let _cachedPullRequests: CommonPullRequestInfo[] | null = null;
 
-async function listAllPullRequestsToUse(): Promise<CommonPullRequestInfo[]> {
+async function listAllPullRequestsToUse(checkOnly: boolean): Promise<CommonPullRequestInfo[]> {
   if (_cachedPullRequests) {
     return _cachedPullRequests;
   }
@@ -164,16 +164,41 @@ async function listAllPullRequestsToUse(): Promise<CommonPullRequestInfo[]> {
     return [];
   }
   const majorOrgs = await listMajorOrgs();
+
+  // Source & target are not the same if we are in checkOnly mode or deployment mode
+  let sourceBranchToUse = '';
+  let targetBranchToUse = '';
+  if (checkOnly) {
+    sourceBranchToUse = pullRequestInfo.sourceBranch;
+    targetBranchToUse = pullRequestInfo.targetBranch;
+  }
+  else {
+    const prTargetOrgDef = majorOrgs.find(o => o.branchName === pullRequestInfo.targetBranch);
+    if (prTargetOrgDef) {
+      if (!prTargetOrgDef.mergeTargets || prTargetOrgDef.mergeTargets.length === 0) {
+        uxLog("warning", this, c.yellow(`[GitProvider] No merge targets defined for target branch ${prTargetOrgDef.branchName}, cannot retrieve pull requests to get commands from.`));
+        return [];
+      }
+      sourceBranchToUse = prTargetOrgDef.branchName;
+      targetBranchToUse = prTargetOrgDef.mergeTargets[0]; // Use first merge target as target branch
+    }
+    else {
+      uxLog("warning", this, c.yellow(`[GitProvider] Target branch ${pullRequestInfo.targetBranch} not found in major orgs list, cannot retrieve pull requests to get commands from.\nPR: ${JSON.stringify(pullRequestInfo, null, 2)}`));
+      return [];
+    }
+  }
+
   const childBranchesNames = recursiveGetChildBranches(
-    pullRequestInfo.targetBranch,
+    targetBranchToUse,
     majorOrgs,
   );
   const pullRequests = await gitProvider.listPullRequestsInBranchSinceLastMerge(
-    pullRequestInfo.sourceBranch,
-    pullRequestInfo.targetBranch,
+    sourceBranchToUse,
+    targetBranchToUse,
     [...childBranchesNames]
   );
   pullRequests.reverse(); // Oldest PR first
+  // Add current PR if not already present
   if (!pullRequests.some(pr => pr.idStr === pullRequestInfo.idStr)) {
     pullRequests.push(pullRequestInfo);
   }

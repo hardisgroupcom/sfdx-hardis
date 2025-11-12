@@ -4,6 +4,38 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add more logs to help investigation in case of issue
+
+## [6.12.2] 2025-11-11
+
+- Deployment Actions: When a custom username is defined, authenticate using the current Pull Request target branch, and not the origin Pull Request
+- Fix detection of deployment actions during deployments
+
+## [6.12.1] 2025-11-11
+
+- Optimize & fix git providers integrations
+
+## [6.12.0] 2025-11-10
+
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): If there are multiple `-` in a generated branch name , replace by single `-`, otherwise it messes with mermaid diagrams
+- Update json schema to add allowFailure & runOnlyOnceByOrg
+- Fix File Export SOQL with LIMIT Clause
+- [hardis:org:purge:flow](https://sfdx-hardis.cloudity.com/hardis/org/purge/flow/): Do not prompt user in CI context
+
+## [6.11.5] 2025-11-09
+
+- Excludes training branches from merge target suggestions
+- GitHub integration: Includes error stack in logs for easier debugging
+- Fix display of commands in GitHub Actions logs
+- Add permissions to Github deployment workflow
+- Upgrade npm dependencies
+
+## [6.11.4] 2025-11-06
+
+- [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): Fix bug when there are no Apex classes in the org
+- GitHub integration: Fix way to get Pull Request number
+- As SF Cli now requires NodeJs >= 24, set the same requirement to sfdx-hardis default  workflows
+
 ## [6.11.3] 2025-11-04
 
 - Handles errors from pull request commands

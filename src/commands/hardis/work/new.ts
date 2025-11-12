@@ -272,7 +272,9 @@ The command's logic orchestrates various underlying processes:
       description: 'Enter a descriptive name for your User Story that will be used in the git branch name',
       placeholder: `Ex: ${taskNameExample}`,
     });
-    const taskName = taskResponse.taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-');
+    let taskName = taskResponse.taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-');
+    // If there are multiple "-" , replace by single "-", otherwise it messes with mermaid diagrams
+    taskName = taskName.replace(/-+/g, '-');
     if (validationRegex != null && !new RegExp(validationRegex).test(taskName)) {
       uxLog(
         "warning",
