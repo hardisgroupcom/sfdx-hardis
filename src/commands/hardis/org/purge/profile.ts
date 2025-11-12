@@ -11,6 +11,7 @@ import fs from 'fs';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -141,6 +142,18 @@ The command checks for uncommitted changes and will not run if the working tree 
       const profileWithMutedAttributes = await this.muteProfileAttributes(profileFilePath);
       await writeXmlFile(profileFilePath, profileWithMutedAttributes);
       uxLog("success", this, c.green(`Profile ${selectedProfile} processed and unwanted attributes muted.`));
+      WebSocketClient.sendReportFileMessage(profileFilePath, `See updated ${path.basename(profileFilePath, ".profile-meta.xml")} profile `, 'report');
+    }
+
+    const promptDeployRes = await prompts({
+      type: "confirm",
+      message: `Do you want to deploy ${selectedProfiles} profiles back to the org now?`,
+      description: "Deploying the profiles will overwrite the existing profiles in the target org with the muted versions. Profiles: " + selectedProfiles.join(", "),
+      initial: true,
+    });
+    if (!promptDeployRes.value === true) {
+      uxLog("error", this, c.blue(`Deployment cancelled by user. Exiting without deploying profiles.`));
+      return { orgId: flags['target-org'].getOrgId(), outputString: "Profile purge completed without deployment." };
     }
 
     uxLog("action", this, c.cyan(`Deploying muted profiles back to the org...`));
@@ -258,11 +271,13 @@ The command checks for uncommitted changes and will not run if the working tree 
       await execCommand(
         `sf project deploy start --metadata "Profile:${selectedProfiles.join(',')}" --target-org ${orgUsername} --ignore-conflicts --json`,
         this,
-        { output: true, fail: false }
+        { output: true, fail: true }
       );
-      uxLog("success", this, c.green(`Profiles deployed successfully.`));
+      uxLog("action", this, c.cyan(`Successfully deployed ${selectedProfiles.length}`));
+      uxLog("success", this, c.green(`Profiles deployed successfully:\n${selectedProfiles.join(', ')}`));
     } catch (error) {
-      uxLog("error", this, c.red(`Failed to deploy profiles.`));
+      uxLog("action", this, c.red(`Failed to deploy profiles.`));
+      uxLog("error", this, c.red(JSON.stringify(error, null, 2)));
     }
   }
 }
