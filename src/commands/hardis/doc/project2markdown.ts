@@ -29,6 +29,7 @@ import { DocBuilderObject } from '../../../common/docBuilder/docBuilderObject.js
 import { DocBuilderApex } from '../../../common/docBuilder/docBuilderApex.js';
 import { DocBuilderFlow } from '../../../common/docBuilder/docBuilderFlow.js';
 import { DocBuilderLwc } from '../../../common/docBuilder/docBuilderLwc.js';
+import { DocBuilderVisualforce } from '../../../common/docBuilder/docBuilderVisualforce.js';
 import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPackageXml.js';
 import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPermissionSet.js';
 import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
@@ -140,6 +141,9 @@ ${this.htmlInstructions}
     '$ sf hardis:doc:project2markdown --hide-apex-code'
   ];
 
+  protected vfPageDescriptions: any[] = [];
+  protected apexClassDescriptions: any[] = [];
+
   public static flags: any = {
     "diff-only": Flags.boolean({
       default: false,
@@ -238,6 +242,7 @@ ${this.htmlInstructions}
       "  - [Apex](apex/index.md)",
       "  - [Lightning Web Components](lwc/index.md)",
       "- [Lightning Pages](pages/index.md)",
+      "- [Visualforce Pages](vfpages/index.md)",
       "- [Packages](packages/index.md)",
       "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
       "- [Branches & Orgs](sfdx-hardis-branches-and-orgs.md)",
@@ -331,6 +336,11 @@ ${this.htmlInstructions}
     // List LWC & generate doc
     if (!(process?.env?.GENERATE_LWC_DOC === 'false')) {
       await this.generateLwcDocumentation();
+    }
+
+    // List Visualforce pages & generate doc
+    if (!(process.env.GENERATE_VF_DOC === 'false')) {
+      await this.generateVfPageDocumentation();
     }
 
     // Write output index file
@@ -1221,7 +1231,7 @@ ${Project2Markdown.htmlInstructions}
       this.objectDescriptions.push({
         name: objectName,
         label: objectXmlParsed?.CustomObject?.label || "",
-        description: String(objectXmlParsed?.CustomObject?.description || ""),
+        description: objectXmlParsed?.CustomObject?.description || "",
       });
       objectsForMenu[objectName] = "objects/" + objectName + ".md";
       if (this.withPdf) {
@@ -1604,4 +1614,94 @@ ${Project2Markdown.htmlInstructions}
 
     uxLog("success", this, c.green(`Successfully generated documentation for Lightning Web Components at ${lwcIndexFile}`));
   }
+
+  private async generateVfPageDocumentation() {
+    uxLog(
+      "action",
+      this,
+      c.cyan(
+        "Preparing generation of Visualforce Pages documentation... " +
+        "(if you don't want it, define GENERATE_VF_DOC=false in your environment variables)"
+      )
+    );
+
+    const vfForMenu: Record<string, string> = { "All Visualforce Pages": "vfpages/index.md" };
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "vfpages"));
+
+    // Find all Visualforce page files
+    const vfFiles = await glob("**/*.page", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
+
+    if (vfFiles.length === 0) {
+      uxLog("log", this, c.yellow("No Visualforce pages found in the project"));
+      return;
+    }
+
+    WebSocketClient.sendProgressStartMessage("Generating Visualforce Pages documentation...", vfFiles.length);
+
+    let counter = 0;
+    for (const vfFile of vfFiles) {
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter);
+
+      const vfName = path.basename(vfFile, ".page");
+      const mdFile = path.join(this.outputMarkdownRoot, "vfpages", vfName + ".md");
+      vfForMenu[vfName] = "vfpages/" + vfName + ".md";
+
+      // Read VF page XML metadata if exists
+      const vfMetaFile = vfFile.replace(/\.page$/, ".page-meta.xml");
+      let vfMetaXml = "";
+      let label = "";
+      let apiVersion = "";
+      let description = "";
+      if (await fs.pathExists(vfMetaFile)) {
+        vfMetaXml = await fs.readFile(vfMetaFile, "utf8");
+        const parsedMeta = new XMLParser().parse(vfMetaXml)?.ApexPage || {};
+        label = parsedMeta?.label || "";
+        apiVersion = parsedMeta?.apiVersion || "";
+        description = parsedMeta?.description || "";
+      }
+
+      // Find controller Apex class if declared
+      let controllerPath: string | undefined;
+      const controllerMatch = vfMetaXml.match(/<controller>(.*?)<\/controller>/);
+      if (controllerMatch) {
+        const potentialPath = path.join(process.cwd(), controllerMatch[1]);
+        if (await fs.pathExists(potentialPath)) controllerPath = potentialPath;
+      }
+
+      // Combine VF content and metadata for DocBuilder
+      const combinedXml =
+        (await fs.readFile(vfFile, "utf8")) +
+        (vfMetaXml ? `\n${vfMetaXml}` : "");
+
+      // Create DocBuilderVisualforce instance
+      const docBuilder = new DocBuilderVisualforce(vfName, combinedXml, mdFile, {
+        VF_FILE: vfFile,
+        VF_CONTROLLER_FILE: controllerPath,
+        VF_LABEL: label,
+        VF_API_VERSION: apiVersion,
+        VF_DESCRIPTION: description
+      });
+
+      // Generate Markdown (AI description handled internally)
+      await docBuilder.generateMarkdownFileFromXml();
+    }
+
+    WebSocketClient.sendProgressEndMessage();
+
+    // Add navigation node
+    this.addNavNode("Visualforce Pages", vfForMenu);
+
+    // Write index file for VF pages
+    const vfIndexFile = path.join(this.outputMarkdownRoot, "vfpages", "index.md");
+    await fs.writeFile(
+      vfIndexFile,
+      getMetaHideLines() +
+      Object.keys(vfForMenu).map(name => `- [${name}](${vfForMenu[name]})`).join("\n") +
+      `\n\n${this.footer}\n`
+    );
+
+    uxLog("success", this, c.green(`Successfully generated documentation for Visualforce Pages at ${vfIndexFile}`));
+  }
+
 }
