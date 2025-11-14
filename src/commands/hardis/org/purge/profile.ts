@@ -12,6 +12,7 @@ import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } 
 import { prompts } from '../../../../common/utils/prompts.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -52,6 +53,10 @@ The command checks for uncommitted changes and will not run if the working tree 
   ];
 
   public static flags: any = {
+    outputfile: Flags.string({
+      char: 'f',
+      description: 'Force the path and name of output report file. Must end with .csv',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -92,9 +97,13 @@ The command checks for uncommitted changes and will not run if the working tree 
     }
   ];
 
+  protected outputFile;
+  protected outputFilesRes: any = {};
+  protected allChanges: { profile: string; node: string; name: string; attribute: string; oldValue: any; newValue: any }[] = [];
+
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgPurgeProfile);
-
+    this.outputFile = flags.outputfile || null;
     const orgUsername = flags['target-org'].getUsername();
     const conn = flags['target-org'].getConnection();
     const instanceUrlKey = conn.instanceUrl.replace(/https?:\/\//, '').replace(/\./g, '_').toUpperCase();
@@ -110,7 +119,7 @@ The command checks for uncommitted changes and will not run if the working tree 
     if (!await this.checkUncommittedChanges()) {
       const confirmPromptRes = await prompts({
         type: "confirm",
-        message: `You have uncommitted changes in your git repository, do you want to continue anyway? This may lead to overwrite of your uncommitted changes.`,
+        message: `You have uncommitted changes in your git repository, do you want to continue anyway? This may lead to overwrite your uncommitted changes.`,
         description: "It's recommended to commit, stash or discard your changes before proceeding.",
       });
       if (!confirmPromptRes.value === true) {
@@ -152,6 +161,10 @@ The command checks for uncommitted changes and will not run if the working tree 
       WebSocketClient.sendReportFileMessage(profileFilePath, `See updated ${path.basename(profileFilePath, ".profile-meta.xml")} profile `, 'report');
     }
 
+    // Generate output CSV file
+    this.outputFile = await generateReportPath('profile-muted-attributes', this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.allChanges, this.outputFile, { fileTitle: 'Profile muted attributes report' });
+
     const promptDeployRes = await prompts({
       type: "confirm",
       message: `Do you want to deploy ${selectedProfiles} profiles back to the org now?`,
@@ -166,7 +179,12 @@ The command checks for uncommitted changes and will not run if the working tree 
     uxLog("action", this, c.cyan(`Deploying muted profiles back to the org...`));
     await this.deployToOrg(orgUsername, selectedProfiles);
 
-    return { orgId: flags['target-org'].getOrgId(), outputString: "Successfully purged profiles." };
+    return {
+      orgId: flags['target-org'].getOrgId(),
+      outputString: "Successfully purged profiles.",
+      outputFile: this.outputFile,
+      outputFilesRes: this.outputFilesRes
+    };
   }
 
   private async checkUncommittedChanges(): Promise<boolean> {
@@ -202,6 +220,8 @@ The command checks for uncommitted changes and will not run if the working tree 
   }
 
   private async muteProfileAttributes(profileFilePath: string): Promise<any> {
+    const profileName = path.basename(profileFilePath, '.profile-meta.xml');
+    uxLog("action", this, c.cyan(`Processing profile: ${profileName}`));
     const profileParsedXml: any = await parseXmlFile(profileFilePath);
     const filename = path.basename(profileFilePath);
     const changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[] = [];
@@ -236,10 +256,11 @@ The command checks for uncommitted changes and will not run if the working tree 
           if (nodeObj && Object.prototype.hasOwnProperty.call(nodeObj, attr)) {
             const oldVal = nodeObj[attr];
             // Only record a change if the value actually differs
+            const memberName = nodeObj.name || nodeObj.apexClass || nodeObj.field || nodeObj.object || nodeObj.apexPage || nodeObj.recordType || 'unknown';
             if (oldVal !== muteValue) {
               changes.push({
                 node: nodeName,
-                name: memberName || '(unknown)',
+                name: memberName,
                 attribute: attr,
                 oldValue: oldVal,
                 newValue: muteValue,
@@ -253,7 +274,7 @@ The command checks for uncommitted changes and will not run if the working tree 
 
     // Build a single summary string and emit it with one uxLog("log") call
     const summaryLines: string[] = [];
-    summaryLines.push(`Profile file: ${filename}`);
+    summaryLines.push(`Profile: ${profileName}`);
     if (changes.length === 0) {
       summaryLines.push('No attributes muted.');
     } else {
@@ -267,7 +288,7 @@ The command checks for uncommitted changes and will not run if the working tree 
       }
     }
     uxLog('log', this, c.cyan(summaryLines.join('\n')));
-
+    this.allChanges.push(...changes.map(change => ({ profile: profileName, ...change })));
     return profileParsedXml;
   }
 
