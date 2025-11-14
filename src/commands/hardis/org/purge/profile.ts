@@ -114,7 +114,6 @@ The command checks for uncommitted changes and will not run if the working tree 
     uxLog("action", this, c.cyan(`Loading full org manifest for profile retrieval...`));
     await this.loadFullOrgManifest(conn, orgUsername, packageFullOrgPath);
 
-    uxLog("action", this, c.cyan(`Filtering full org manifest to remove unwanted namespaces...`));
     await this.filterFullOrgPackageByNamespaces(packageFullOrgPath, packageFilteredPackagesPath);
 
     const selectedProfiles = await promptProfiles(flags['target-org'].getConnection(), { multiselect: true, returnApiName: true });
@@ -178,7 +177,11 @@ The command checks for uncommitted changes and will not run if the working tree 
         message: "Do you want to use the existing full org manifest or generate a new one?",
         description: "A full org manifest file was found from a previous run. You can either use it or generate a new one to ensure it's up to date. It may take some time to generate a new one.",
         choices: [
-          { title: "Use the existing full org manifest", value: true },
+          {
+            title: `Use the existing full org manifest`,
+            description: `Cache file is located at ${path.relative(process.cwd(), packageFullOrgPath)}`,
+            value: true
+          },
           { title: "Generate a new full org manifest", value: false },
         ],
       });
@@ -220,6 +223,7 @@ The command checks for uncommitted changes and will not run if the working tree 
   async filterFullOrgPackageByNamespaces(packageFullOrgPath: string, packageFilteredPackagesPath: string): Promise<void> {
     const namespaceOptions: { title: string; value: string }[] = [];
     try {
+      uxLog("action", this, c.cyan(`Retrieving installed packages to list namespaces...`));
       const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
       for (const installedPackage of installedPackages) {
         if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
@@ -230,7 +234,32 @@ The command checks for uncommitted changes and will not run if the working tree 
         }
       }
     } catch (error) {
-      uxLog("warning", this, c.yellow(`Could not retrieve installed packages. Namespace filtering will be skipped.`));
+      uxLog("warning", this, c.yellow(`Could not retrieve installed packages. Listing namespaces by parsing the XML file.`));
+    }
+    if (namespaceOptions.length === 0) {
+      uxLog("action", this, c.cyan(`No installed packages found via API. Parsing package XML to list namespaces...`));
+      // Fallback: parse the package XML to find namespaces
+      const parsedPackageXml = await parsePackageXmlFile(packageFullOrgPath);
+      const allTypes = Object.keys(parsedPackageXml);
+      const namespaceSet: Set<string> = new Set();
+      for (const typeEntry of allTypes) {
+        for (const member of parsedPackageXml[typeEntry]) {
+          const parts = member.split('__');
+          if (parts.length > 2 && !member.includes(".")) {
+            const namespace = parts[0];
+            namespaceSet.add(namespace);
+          } else if (parts.length > 1 && !member.includes(".") && !member.includes("__c") && parts[1].length > 1) {
+            const namespace = parts[0];
+            namespaceSet.add(namespace);
+          }
+        }
+      }
+      for (const namespace of namespaceSet) {
+        namespaceOptions.push({
+          title: namespace,
+          value: namespace
+        });
+      }
     }
 
     const selectedNamespacesPrompt = await prompts({
@@ -241,6 +270,7 @@ The command checks for uncommitted changes and will not run if the working tree 
       choices: namespaceOptions
     });
 
+    uxLog("action", this, c.cyan(`Filtering full org manifest to remove unwanted namespaces...`));
     await filterPackageXml(packageFullOrgPath, packageFilteredPackagesPath, {
       removeNamespaces: selectedNamespacesPrompt.namespaces,
       removeStandard: false
