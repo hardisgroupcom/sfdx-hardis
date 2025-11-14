@@ -71,7 +71,7 @@ The command checks for uncommitted changes and will not run if the working tree 
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
-  protected attributesToMute = [
+  protected attributesToMuteDefinition = [
     {
       "packageType": "ApexClass",
       "nodeNameOnProfile": "classAccesses",
@@ -87,12 +87,23 @@ The command checks for uncommitted changes and will not run if the working tree 
       "nodeNameOnProfile": "objectPermissions",
       "attributesToMute": ["allowCreate", "allowDelete", "allowEdit", "allowRead", "modifyAllRecords", "viewAllFields", "viewAllRecords"],
       "muteValue": false
-    }, {
-      "packageType": null,
+    },
+    {
+      "nodeNameOnProfile": "tabVisibilities",
+      "attributesToMute": [],
+      "includedNames": ["standard-DelegatedAccount"],
+      "action": "remove"
+    },
+    {
       "nodeNameOnProfile": "userPermissions",
       "attributesToMute": ["enabled"],
       "muteValue": false,
-      "excludedNames": ["ChatterInternalUser", "ViewHelpLink", "LightningConsoleAllowedForUser", "ActivitiesAccess",],
+      "excludedNames": [
+        "ActivitiesAccess",
+        "ChatterInternalUser",
+        "LightningConsoleAllowedForUser",
+        "ViewHelpLink",
+      ],
       "excludedFiles": ["Admin.profile-meta.xml"]
     }
   ];
@@ -226,37 +237,64 @@ The command checks for uncommitted changes and will not run if the working tree 
     const filename = path.basename(profileFilePath);
     const changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[] = [];
 
-    for (const attributeConfig of this.attributesToMute) {
+    for (const attributeConfig of this.attributesToMuteDefinition) {
       const excludedFiles = attributeConfig.excludedFiles || [];
       if (excludedFiles.includes(filename)) {
         continue;
       }
-      const excludedNames = attributeConfig.excludedNames || [];
-      const muteValue = attributeConfig.muteValue || false;
       const nodeName = attributeConfig.nodeNameOnProfile;
-      const attributesToMute = attributeConfig.attributesToMute;
 
       if (!profileParsedXml?.Profile?.[nodeName]) {
         continue;
       }
-
       // Ensure we work with an array to simplify processing
       if (!Array.isArray(profileParsedXml.Profile[nodeName])) {
         profileParsedXml.Profile[nodeName] = [profileParsedXml.Profile[nodeName]];
       }
 
+      const muteValue = attributeConfig.muteValue || false;
+      const attributesToMute = attributeConfig.attributesToMute;
+      const includedNames = attributeConfig.includedNames || [];
+      const excludedNames = attributeConfig.excludedNames || [];
+      const action = attributeConfig.action || 'mute';
+      if (action === 'remove') {
+        // Remove nodes with names in includedNames
+        profileParsedXml.Profile[nodeName] = profileParsedXml.Profile[nodeName].filter((nodeObj: any) => {
+          let memberName = nodeObj.apexClass || nodeObj.field || nodeObj.object || nodeObj.apexPage || nodeObj.tab || nodeObj.recordType || nodeObj.application || nodeObj.name || 'unknown';
+          if (Array.isArray(memberName)) {
+            memberName = memberName[0];
+          }
+          if (includedNames.includes(memberName)) {
+            changes.push({
+              node: nodeName,
+              name: memberName,
+              attribute: 'entire node',
+              oldValue: JSON.stringify(nodeObj),
+              newValue: 'removed',
+            });
+            return false; // Exclude this node
+          }
+        });
+        continue; // Move to next attributeConfig
+      }
+
       for (let i = 0; i < profileParsedXml.Profile[nodeName].length; i++) {
         const nodeObj = profileParsedXml.Profile[nodeName][i];
-        const memberName = nodeObj?.name;
+        let memberName = nodeObj.apexClass || nodeObj.field || nodeObj.object || nodeObj.apexPage || nodeObj.tab || nodeObj.recordType || nodeObj.application || nodeObj.name || 'unknown';
+        if (Array.isArray(memberName)) {
+          memberName = memberName[0];
+        }
 
         for (const attr of attributesToMute) {
           if (memberName && excludedNames.includes(memberName)) {
             continue;
           }
           if (nodeObj && Object.prototype.hasOwnProperty.call(nodeObj, attr)) {
-            const oldVal = nodeObj[attr];
+            let oldVal = nodeObj[attr];
+            if (Array.isArray(oldVal)) {
+              oldVal = oldVal[0];
+            }
             // Only record a change if the value actually differs
-            const memberName = nodeObj.name || nodeObj.apexClass || nodeObj.field || nodeObj.object || nodeObj.apexPage || nodeObj.recordType || 'unknown';
             if (oldVal !== muteValue) {
               changes.push({
                 node: nodeName,
@@ -352,7 +390,7 @@ The command checks for uncommitted changes and will not run if the working tree 
   async filterFullOrgPackageByRelevantMetadataTypes(packageFilteredPackagesPath: string, packageFilteredProfilePath: string, selectedProfiles: string[]): Promise<void> {
     const parsedPackage = await parsePackageXmlFile(packageFilteredPackagesPath);
     const keysToKeep = Array.from(new Set([
-      ...this.attributesToMute
+      ...this.attributesToMuteDefinition
         .map((a: any) => a.packageType)
         .filter((pkgType: any) => pkgType != null),
       'Profile',
