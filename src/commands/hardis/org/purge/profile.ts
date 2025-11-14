@@ -99,16 +99,25 @@ The command checks for uncommitted changes and will not run if the working tree 
     const conn = flags['target-org'].getConnection();
     const instanceUrlKey = conn.instanceUrl.replace(/https?:\/\//, '').replace(/\./g, '_').toUpperCase();
 
-    const reportDir = await getReportDirectory();
+    uxLog("action", this, c.cyan(`Starting profile attributes purge process on org: ${conn.instanceUrl}`));
 
+    const reportDir = await getReportDirectory();
     const packageFullOrgPath = path.join(reportDir, `org-package-xml-full_${instanceUrlKey}.xml`);
     const packageFilteredPackagesPath = path.join(reportDir, `org-package-xml-filtered-packages_${instanceUrlKey}.xml`);
     const packageFilteredProfilePath = path.join(reportDir, `org-package-xml-filtered-profile-purge_${instanceUrlKey}.xml`);
 
     // Check if user has uncommitted changes
     if (!await this.checkUncommittedChanges()) {
-      uxLog("error", this, c.yellow(`You have uncommitted changes in your git repository. Please commit or stash them before running this command.`));
-      return {};
+      uxLog("warning", this, c.yellow(`You have uncommitted changes in your git repository`));
+      const confirmPromptRes = await prompts({
+        type: "confirm",
+        message: `Do you want to continue anyway? This may lead to overwrite of your uncommitted changes.`,
+        description: "It's recommended to commit, stash or discard your changes before proceeding.",
+      });
+      if (!confirmPromptRes.value === true) {
+        uxLog("error", this, c.blue(`Operation cancelled by user. Exiting without making changes.`));
+        return {};
+      }
     }
 
     uxLog("action", this, c.cyan(`Loading full org manifest for profile retrieval...`));
