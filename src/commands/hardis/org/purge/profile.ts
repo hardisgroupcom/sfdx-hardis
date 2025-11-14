@@ -108,10 +108,9 @@ The command checks for uncommitted changes and will not run if the working tree 
 
     // Check if user has uncommitted changes
     if (!await this.checkUncommittedChanges()) {
-      uxLog("warning", this, c.yellow(`You have uncommitted changes in your git repository`));
       const confirmPromptRes = await prompts({
         type: "confirm",
-        message: `Do you want to continue anyway? This may lead to overwrite of your uncommitted changes.`,
+        message: `You have uncommitted changes in your git repository, do you want to continue anyway? This may lead to overwrite of your uncommitted changes.`,
         description: "It's recommended to commit, stash or discard your changes before proceeding.",
       });
       if (!confirmPromptRes.value === true) {
@@ -202,9 +201,11 @@ The command checks for uncommitted changes and will not run if the working tree 
     }
   }
 
-  private async muteProfileAttributes(profileFilePath: string): Promise<void> {
+  private async muteProfileAttributes(profileFilePath: string): Promise<any> {
     const profileParsedXml: any = await parseXmlFile(profileFilePath);
     const filename = path.basename(profileFilePath);
+    const changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[] = [];
+
     for (const attributeConfig of this.attributesToMute) {
       const excludedFiles = attributeConfig.excludedFiles || [];
       if (excludedFiles.includes(filename)) {
@@ -214,18 +215,59 @@ The command checks for uncommitted changes and will not run if the working tree 
       const muteValue = attributeConfig.muteValue || false;
       const nodeName = attributeConfig.nodeNameOnProfile;
       const attributesToMute = attributeConfig.attributesToMute;
-      if (profileParsedXml?.Profile?.[nodeName]) {
-        for (let i = 0; i < profileParsedXml?.Profile?.[nodeName].length; i++) {
-          for (const attr of attributesToMute) {
-            if (!excludedNames.includes(profileParsedXml.Profile[nodeName][i]['name'])) {
-              if (profileParsedXml?.Profile?.[nodeName][i][attr] !== undefined) {
-                profileParsedXml.Profile[nodeName][i][attr] = muteValue;
-              }
+
+      if (!profileParsedXml?.Profile?.[nodeName]) {
+        continue;
+      }
+
+      // Ensure we work with an array to simplify processing
+      if (!Array.isArray(profileParsedXml.Profile[nodeName])) {
+        profileParsedXml.Profile[nodeName] = [profileParsedXml.Profile[nodeName]];
+      }
+
+      for (let i = 0; i < profileParsedXml.Profile[nodeName].length; i++) {
+        const nodeObj = profileParsedXml.Profile[nodeName][i];
+        const memberName = nodeObj?.name;
+
+        for (const attr of attributesToMute) {
+          if (memberName && excludedNames.includes(memberName)) {
+            continue;
+          }
+          if (nodeObj && Object.prototype.hasOwnProperty.call(nodeObj, attr)) {
+            const oldVal = nodeObj[attr];
+            // Only record a change if the value actually differs
+            if (oldVal !== muteValue) {
+              changes.push({
+                node: nodeName,
+                name: memberName || '(unknown)',
+                attribute: attr,
+                oldValue: oldVal,
+                newValue: muteValue,
+              });
+              nodeObj[attr] = muteValue;
             }
           }
         }
       }
     }
+
+    // Build a single summary string and emit it with one uxLog("log") call
+    const summaryLines: string[] = [];
+    summaryLines.push(`Profile file: ${filename}`);
+    if (changes.length === 0) {
+      summaryLines.push('No attributes muted.');
+    } else {
+      summaryLines.push(`Muted ${changes.length} attribute(s):`);
+      for (const ch of changes) {
+        summaryLines.push(
+          `- [${ch.node}] ${ch.name} -> ${ch.attribute}: ${JSON.stringify(ch.oldValue)} => ${JSON.stringify(
+            ch.newValue
+          )}`
+        );
+      }
+    }
+    uxLog('log', this, c.cyan(summaryLines.join('\n')));
+
     return profileParsedXml;
   }
 
@@ -307,8 +349,11 @@ The command checks for uncommitted changes and will not run if the working tree 
 
   async deployToOrg(orgUsername: string, selectedProfiles: string[]): Promise<void> {
     try {
+      const metadataArgs = selectedProfiles
+        .map((p) => `--metadata "Profile:${p}"`)
+        .join(' ');
       await execCommand(
-        `sf project deploy start --metadata "Profile:${selectedProfiles.join(',')}" --target-org ${orgUsername} --ignore-conflicts --json`,
+        `sf project deploy start ${metadataArgs} --target-org ${orgUsername} --ignore-conflicts --json`,
         this,
         { output: true, fail: true }
       );
