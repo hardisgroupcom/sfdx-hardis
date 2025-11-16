@@ -10,7 +10,7 @@ import * as EmailValidator from 'email-validator';
 import sortArray from 'sort-array';
 import { AuthInfo, Connection, SfError } from '@salesforce/core';
 import { importData } from './dataUtils.js';
-import { soqlQuery } from './apiUtils.js';
+import { soqlQuery, soqlQueryTooling } from './apiUtils.js';
 import { isSfdxProject } from './projectUtils.js';
 import { deployMetadatas, smartDeploy, forceSourcePush } from './deployUtils.js';
 import { PACKAGE_ROOT_DIR } from '../../settings.js';
@@ -63,9 +63,11 @@ export async function promptProfiles(
     allowSelectAllErrorMessage: 'You can not select all profiles',
     allowSelectMine: true,
     allowSelectMineErrorMessage: 'You can not select the profile your user is assigned to',
+    returnApiName: false
   }
 ) {
   const profiles = await listProfiles(conn);
+  let selectedProfiles: any[] = [];
   // Profiles returned by active connection
   if (profiles.length > 0) {
     const profilesSelection = await prompts({
@@ -102,7 +104,7 @@ export async function promptProfiles(
         throw new SfError(options.allowSelectMineErrorMessage);
       }
     }
-    return profilesSelection.value || null;
+    selectedProfiles = profilesSelection.value || [];
   } else {
     // Manual input of comma separated profiles
     const profilesSelection = await prompts({
@@ -113,8 +115,36 @@ export async function promptProfiles(
       name: 'value',
       initial: options?.initialSelection[0] || null,
     });
-    return options.multiselect ? profilesSelection.value.split(',') : profilesSelection.value;
+    selectedProfiles = options.multiselect ? profilesSelection.value.split(',') : profilesSelection.value;
   }
+  if(options.returnApiName){
+    const apinames: string[] = [];
+    for(const profileName of selectedProfiles){
+      // Map standard profile names to their API names
+      const standardProfileMapping: Record<string, string> = {
+        'System Administrator': 'Admin',
+        'Standard User':'Standard',
+        'Solution Manager':'SolutionManager',
+        'Marketing User':'MarketingUser',
+        'Contract Manager':'ContractManager',
+        'Read Only':'ReadOnly'
+      };
+      if(Object.keys(standardProfileMapping).includes(profileName.trim())){
+        apinames.push(standardProfileMapping[profileName.trim()]);
+      }else{
+        uxLog("log", this, 'Profile not found in predefined standard profiles, querying ApiName (FullName)...');
+        const results = await soqlQueryTooling(`SELECT Id, Name, FullName FROM Profile WHERE Name='${profileName.trim()}'`, conn);
+        if(results.records.length > 0){ // Fullname limits the results to 1 row only.
+          apinames.push(results.records[0].FullName);
+        }else{
+          uxLog("warning", this, `Profile '${profileName.trim()}' not found`);
+        }
+      }
+    }
+    return apinames;
+  }
+
+  return selectedProfiles;
 }
 
 export async function promptOrg(
