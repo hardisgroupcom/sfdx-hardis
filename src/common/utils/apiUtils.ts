@@ -147,7 +147,10 @@ export async function bulkQueryByChunks(
   while (hasMoreRecords) {
     let soqlQueryWithLimit = `${soqlQuery} ORDER BY Id`;
     if (lastRecordId) {
-      soqlQueryWithLimit = `${soqlQuery} WHERE Id > '${lastRecordId}' ORDER BY Id`;
+      // Check if query already has a WHERE clause to use AND instead of WHERE
+      const hasWhere = soqlQuery.toUpperCase().includes(' WHERE ');
+      const connector = hasWhere ? 'AND' : 'WHERE';
+      soqlQueryWithLimit = `${soqlQuery} ${connector} Id > '${lastRecordId}' ORDER BY Id`;
     }
     soqlQueryWithLimit = await parseSoqlAndReapplyLimit(soqlQueryWithLimit, batchSize, this);
     const chunkResults = await bulkQuery(soqlQueryWithLimit, conn, retries);
