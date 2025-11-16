@@ -148,7 +148,7 @@ export async function bulkQueryByChunks(
     let soqlQueryWithLimit = `${soqlQuery} ORDER BY Id`;
     if (lastRecordId) {
       // Check if query already has a WHERE clause to use AND instead of WHERE
-      const hasWhere = soqlQuery.toUpperCase().includes('WHERE');
+      const hasWhere = soqlQuery.toUpperCase().includes(' WHERE ');
       const connector = hasWhere ? 'AND' : 'WHERE';
       soqlQueryWithLimit = `${soqlQuery} ${connector} Id > '${lastRecordId}' ORDER BY Id`;
     }
