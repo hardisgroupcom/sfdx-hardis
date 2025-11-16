@@ -195,7 +195,7 @@ class SfdxHardisBuilder {
     console.log("Prompt templates and variables documentation generated");
   }
 
-  // Read README.md 
+  // Read README.md
   // Find sub-content between HTML comments <!-- PAGENAME.md start --> and <!-- PAGENAME.md end --> (example: <!-- contributing.md start --> & <!-- contributing.md end -->)
   // For each start & and found, generate a new markdown file in docs/ folder with the name PAGENAME.md (example: contributing.md)
   async generatePagesFromReadme() {

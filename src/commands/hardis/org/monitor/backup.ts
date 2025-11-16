@@ -33,7 +33,7 @@ The command exists in 2 modes: filtered(default & recommended) and full.
 
 ## Filtered mode (default, better performances)
 
-Automatically skips metadatas from installed packages with namespace.  
+Automatically skips metadatas from installed packages with namespace.
 
 You can remove more metadata types from backup, especially in case you have too many metadatas and that provokes a crash, using:
 

@@ -145,7 +145,6 @@ export class ApiProvider extends NotifProviderRoot {
       await this.formatPayloadLoki();
       return;
     }
-
     this.payloadFormatted = this.payload;
   }
 
