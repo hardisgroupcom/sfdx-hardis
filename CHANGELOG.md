@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.12.3] 2025-11-17
+
 - Add more logs to help investigation in case of issue
 - Fix: Issue with extraCommands defined in PR description text (#1540)
 - Fix: Resolve duplicate WHERE clause in bulkQueryByChunks pagination (#1539)
