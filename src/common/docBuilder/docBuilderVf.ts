@@ -548,16 +548,6 @@ export class DocBuilderVf extends DocBuilderRoot {
     let hasReferences = false;
 
     // Link to related Apex classes
-    if (this.apexParsedInfoMap.size > 0) {
-      lines.push('### Related Apex Classes');
-      for (const [className] of this.apexParsedInfoMap) {
-        lines.push(`- [${className}](../apex/${className}.md)`);
-      }
-      lines.push('');
-      hasReferences = true;
-    }
-
-    // Link to related objects if standard controller is used
     if (this.vfParsedInfo?.controllerName) {
       // Assuming standard controllers are often SObject names
       const sobjectName = this.vfParsedInfo.controllerName.endsWith('__c')
@@ -636,7 +626,6 @@ export class DocBuilderVf extends DocBuilderRoot {
 
   private generateAnalysisSummary(performance: VfPerformanceMetrics, security: VfSecurityAnalysis, practices: VfBestPractices): string {
     const summaries: string[] = [];
-
     if (performance.estimatedRenderComplexity !== 'low') {
       summaries.push(`Performance: ${performance.estimatedRenderComplexity} render complexity.`);
     }
@@ -653,7 +642,9 @@ export class DocBuilderVf extends DocBuilderRoot {
     if (security.recommendations.length > 0) {
       summaries.push('Security: Recommendations for addressing concerns are available.');
     }
-
+    if (security.recommendations.length > 0) {
+      summaries.push('Security: Recommendations for addressing concerns are available.');
+    }
     if (practices.recommendations.length > 0) {
       summaries.push('Best Practices: Opportunities for adherence to best practices identified.');
     }
