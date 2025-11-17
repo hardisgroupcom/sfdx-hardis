@@ -286,14 +286,38 @@ The command's technical implementation involves:
     response: Array<{ body?: SobjectRaw } | SobjectRaw>
   ): Array<PackageMetadata> {
     return response.map((entry) => {
+      const regOverrides = new Map([
+        ["RemoteProxy", "remotesite"],
+        ["QuickActionDefinition", "quickaction"],
+        ["mdt", "md"],
+      ]);
       const b = (entry as any).body ?? entry;
-      const typeName = b.attributes?.type;
+      const retrievedType = b.attributes?.type;
+      const isMdt = retrievedType.split("__")?.[1] === "mdt";
+      const typeName = isMdt ? "mdt" : retrievedType
       const isListView = typeName === "ListView";
-      const regType = this.registry.getTypeByName(typeName);
+      let regType;
+      try {
+        regType = this.registry.getTypeByName(
+          regOverrides.get(typeName) ?? typeName
+        );
+      } catch (error) {
+        console.log("Errored item:", [typeName, b.Id]);
+      }
+
+      if (isMdt) {
+        // We need to add the MDT to the possible lists, and look in the customMetadata folder for it
+        // We also then need to look for the custom metadata definition itself (in objects folder)
+        console.log("MDT: ", [b.Id, typeName]);
+        const Name = 
+      }
+
+      // Custom metadata name looks like:
+      // typeName (minus __mdt) + "." + DeveloperName
 
       return {
         Id: b.Id,
-        retrievedType: typeName,
+        retrievedType: retrievedType,
         type: regType,
         SobjectType: isListView ? b.SobjectType : null,
         directoryName: regType?.directoryName,
@@ -320,7 +344,7 @@ The command's technical implementation involves:
     // Get All Org SObject with prefix key
     const globalObjectsResult = await connection.tooling.describeGlobal();
 
-    const orgObjPrefixKeyMap = new Map<string, string>(
+    const toolingPrefixMap = new Map<string, string>(
       globalObjectsResult.sobjects
         .filter((s) => s.keyPrefix)
         .map((s) => [s.keyPrefix as string, s.name])
@@ -329,22 +353,11 @@ The command's technical implementation involves:
     const unlockedPackageMetadata: PackageMetadata[] = [];
 
     for (const [pfx, members] of memberByTypeMap) {
-      let objName;
       let useCompositeFallback = false;
       const supportsComposite = platformPrefixMap.has(pfx);
-      const objByPrefix = orgObjPrefixKeyMap.get(pfx);
-      switch (objByPrefix) {
-        case "RemoteProxy":
-          objName = "remotesite";
-          break;
-        case "QuickActionDefinition":
-          objName = "quickAction";
-          break;
-        case undefined:
-          useCompositeFallback = supportsComposite;
-          break;
-        default:
-          objName = objByPrefix;
+      const objName = toolingPrefixMap.get(pfx);
+      if (objName === undefined) {
+        useCompositeFallback = supportsComposite;
       }
 
       if (members.length > 25) {
@@ -379,15 +392,16 @@ The command's technical implementation involves:
           ...this.preparePackageMetadata(response.compositeResponse)
         );
       } else {
-        objName = platformPrefixMap.get(pfx);
-        if (!objName) {
+        const compName = platformPrefixMap.get(pfx);
+        if (!compName) {
           const msg = `Could not find reference to the component prefix: ${c.yellow(
             pfx
           )}. No items of this type fetched.`;
           uxLog("error", this, c.cyan(msg));
+          uxLog("other", this, c.cyan(`Members: ${JSON.stringify(members)}`));
           continue;
         }
-        const url = `/composite/sobjects/${objName}`;
+        const url = `/composite/sobjects/${compName}`;
         const response: Array<any> = await connection.requestPost(url, {
           ids: members,
           fields: ["FIELDS(STANDARD)"],
@@ -400,22 +414,28 @@ The command's technical implementation involves:
   }
 
   private async matchFilesExistInProject(unlockedPackageMetadata, rootFolder) {
-    const filesForMultiselect: Array<any> = [];
+    const filesForMultiselect: Array<{
+      title: string;
+      value: string;
+      elements: string[];
+    }> = [];
     for (const el of unlockedPackageMetadata) {
       // console.log([el.directoryName, el.Name]);
-      if (!el.directoryName) continue;
-      if (el.SobjectType) continue; // Handled by Custom Object
-      const findManagedPattern =
-        rootFolder + `/**/${el.directoryName}/${el.Name}*`;
-      const matchingCustomFiles = await glob(findManagedPattern, {
+      if (!el.directoryName || el.SobjectType) continue;
+      if (!el.Name) continue;
+      const dir = el.strictDirectoryName
+        ? el.strictDirectoryName
+        : el.directoryName;
+      const locationPattern = rootFolder + `/**/${dir}/${el.Name}*`;
+      const matches = await glob(locationPattern, {
         cwd: process.cwd(),
         ignore: GLOB_IGNORE_PATTERNS,
       });
-      if (matchingCustomFiles.length) {
+      if (matches.length) {
         filesForMultiselect.push({
           title: `${el.Name} (${el.retrievedType})`,
           value: el.Id,
-          elements: matchingCustomFiles,
+          elements: matches,
         });
       }
     }
