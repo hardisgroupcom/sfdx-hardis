@@ -17,7 +17,8 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
   uxLog("action", this, c.cyan(`[DeploymentActions] Listing ${actionLabel}...`));
   const branchConfig = await getConfig('branch');
-  const commands: PrePostCommand[] = [...(branchConfig[property] || []), ...(options.extraCommands || [])];
+  const extraCommands = (options.extraCommands || []).filter(cmd => cmd.preOrPost === property);
+  const commands: PrePostCommand[] = [...(branchConfig[property] || []), ...(extraCommands || [])];
   try {
     await completeWithCommandsFromPullRequests(property, commands, options.checkOnly);
   } catch (e) {
