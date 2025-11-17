@@ -478,16 +478,21 @@ export class DocBuilderVf extends DocBuilderRoot {
     };
 
     // Generate recommendations
+    // cspell:disable-next-line
     if (practices.usesViewState && (this.vfParsedInfo?.components.length || 0) > 30) {
+      // cspell:disable-next-line
       practices.recommendations.push('Consider optimizing ViewState - page has many components or complex forms. Minimize components in `apex:form` or use `rerender` for partial page updates.');
+      // cspell:disable-next-line
     } else if (practices.usesViewState && (this.vfRawContent.match(/<apex:(page|pageBlock|form)/gi) || []).length > 1) {
       // Multiple forms or nested forms can also indicate viewstate issues
+      // cspell:disable-next-line
       practices.recommendations.push('Multiple `apex:form` or nested `apex:form` structures may lead to ViewState issues. Review design for ViewState optimization.');
     }
 
     if (this.vfRawContent.includes('apex:commandButton') || this.vfRawContent.includes('apex:commandLink')) {
       const hasRerender = this.vfRawContent.includes('rerender="');
       if (!hasRerender) {
+        // cspell:disable-next-line
         practices.recommendations.push('Consider adding `rerender` attributes to `apex:commandButton` or `apex:commandLink` for partial page updates to improve user experience and reduce ViewState size on postbacks.');
       }
     }
@@ -548,6 +553,16 @@ export class DocBuilderVf extends DocBuilderRoot {
     let hasReferences = false;
 
     // Link to related Apex classes
+    if (this.apexParsedInfoMap.size > 0) {
+      lines.push('### Related Apex Classes');
+      for (const [className] of this.apexParsedInfoMap) {
+        lines.push(`- [${className}](../apex/${className}.md)`);
+      }
+      lines.push('');
+      hasReferences = true;
+    }
+
+    // Link to related objects if standard controller is used
     if (this.vfParsedInfo?.controllerName) {
       // Assuming standard controllers are often SObject names
       const sobjectName = this.vfParsedInfo.controllerName.endsWith('__c')
@@ -626,6 +641,7 @@ export class DocBuilderVf extends DocBuilderRoot {
 
   private generateAnalysisSummary(performance: VfPerformanceMetrics, security: VfSecurityAnalysis, practices: VfBestPractices): string {
     const summaries: string[] = [];
+
     if (performance.estimatedRenderComplexity !== 'low') {
       summaries.push(`Performance: ${performance.estimatedRenderComplexity} render complexity.`);
     }
@@ -648,7 +664,9 @@ export class DocBuilderVf extends DocBuilderRoot {
     if (practices.recommendations.length > 0) {
       summaries.push('Best Practices: Opportunities for adherence to best practices identified.');
     }
+    // cspell:disable-next-line
     if (practices.usesViewState) {
+      // cspell:disable-next-line
       summaries.push('Best Practices: Uses ViewState (consider optimization).');
     }
 
