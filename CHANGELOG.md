@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Improve JIRA authentication and display logs
+
 ## [6.12.4] 2025-11-18
 
 - Upgrade dependencies
