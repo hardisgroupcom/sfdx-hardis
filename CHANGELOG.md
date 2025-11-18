@@ -4,7 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Improve JIRA authentication and display logs
+- Improve JIRA authentication and display 
+- [hardis:project:deploy:notify](https://sfdx-hardis.cloudity.com/hardis/project/deploy/notify/): Make default org optional
 
 ## [6.12.4] 2025-11-18
 
