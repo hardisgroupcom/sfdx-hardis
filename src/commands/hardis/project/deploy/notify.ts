@@ -136,7 +136,7 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
     this.deployStatus = flags["deploy-status"] || "unknown";
     this.message = flags.message || "";
     this.debugMode = flags.debug || false;
-    await setConnectionVariables(flags['target-org']?.getConnection(), true);
+    await setConnectionVariables(flags?.['target-org']?.getConnection(), true);
 
 
     uxLog("action", this, c.cyan("Handling Pull Request comments for a deployment check job..."));
