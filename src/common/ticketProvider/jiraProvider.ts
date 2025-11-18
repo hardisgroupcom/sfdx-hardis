@@ -25,11 +25,13 @@ export class JiraProvider extends TicketProviderRoot {
       jiraOptions.username = getEnvVar("JIRA_EMAIL") || "";
       jiraOptions.password = getEnvVar("JIRA_TOKEN") || "";
       this.isActive = true;
+      uxLog("log", this, c.grey("[JiraProvider] Using JIRA_EMAIL and JIRA_TOKEN for authentication"));
     }
     // Personal access token
-    if (getEnvVar("JIRA_PAT")) {
+    else if (getEnvVar("JIRA_PAT")) {
       jiraOptions.bearer = getEnvVar("JIRA_PAT") || "";
       this.isActive = true;
+      uxLog("log", this, c.grey("[JiraProvider] Using JIRA_PAT for authentication"));
     }
     if (this.isActive) {
       this.jiraClient = new JiraApi(jiraOptions);

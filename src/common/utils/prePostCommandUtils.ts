@@ -323,38 +323,51 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
     markdownBody += `| ${statusIcon} | ${labelCol} | ${cmd.type || 'command'} | ${statusCol} | ${detailCol} |\n`;
   }
   // Add details in html <detail> blocks, embedded in a root <details> block to avoid markdown rendering issues
-  markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
-  for (const cmd of commands) {
-    if (cmd.result?.output) {
-      // Truncate output if too long: Either the last 2000 characters, either the last 50 lines (if they are not more than 2000 characters)
-      // Indicate when output has been truncated
-      const maxOutputLength = 2000;
-      let outputForMarkdown = cmd.result.output;
-      const outputLines = outputForMarkdown.split('\n');
-      if (outputForMarkdown.length > maxOutputLength) {
-        outputForMarkdown = outputForMarkdown.substring(outputForMarkdown.length - maxOutputLength);
-      }
-      if (outputLines.length > 50) {
-        const last50Lines = outputLines.slice(-50).join('\n');
-        if (last50Lines.length <= maxOutputLength) {
-          outputForMarkdown = last50Lines;
+  const commandsInResults = commands.filter(c => (c.result && c.result.output) || c.type === "manual");
+  if (commandsInResults.length === 0) {
+    markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
+    for (const cmd of commands) {
+      if (cmd.result?.output) {
+        // Truncate output if too long: Either the last 2000 characters, either the last 50 lines (if they are not more than 2000 characters)
+        // Indicate when output has been truncated
+        const maxOutputLength = 2000;
+        let outputForMarkdown = cmd.result.output;
+        const outputLines = outputForMarkdown.split('\n');
+        if (outputForMarkdown.length > maxOutputLength) {
+          outputForMarkdown = outputForMarkdown.substring(outputForMarkdown.length - maxOutputLength);
         }
-      }
-      if (outputForMarkdown.length < cmd.result.output.length) {
-        outputForMarkdown = `... (output truncated, total length was ${cmd.result.output.length} characters)\n` + outputForMarkdown;
-      }
+        if (outputLines.length > 50) {
+          const last50Lines = outputLines.slice(-50).join('\n');
+          if (last50Lines.length <= maxOutputLength) {
+            outputForMarkdown = last50Lines;
+          }
+        }
+        if (outputForMarkdown.length < cmd.result.output.length) {
+          outputForMarkdown = `... (output truncated, total length was ${cmd.result.output.length} characters)\n` + outputForMarkdown;
+        }
 
-      const labeTitle = cmd.pullRequest ?
-        `${cmd.label} (${cmd.pullRequest.idStr || "?"})` :
-        cmd.label;
-      markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${labeTitle}</summary>\n\n`;
-      markdownBody += '```\n';
-      markdownBody += outputForMarkdown
-      markdownBody += '\n```\n';
-      markdownBody += '</details>\n';
+        const labelTitle = cmd.pullRequest ?
+          `${cmd.label} (${cmd.pullRequest.idStr || "?"})` :
+          cmd.label;
+        markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${labelTitle}</summary>\n\n`;
+        markdownBody += '```\n';
+        markdownBody += outputForMarkdown
+        markdownBody += '\n```\n';
+        markdownBody += '</details>\n';
+      }
+      else if (cmd.type === "manual") {
+        const labelTitle = cmd.pullRequest ?
+          `${cmd.label} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))` :
+          cmd.label;
+        markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${labelTitle}</summary>\n\n`;
+        markdownBody += '```\n';
+        markdownBody += cmd?.parameters?.instructions || "No instructions provided.";
+        markdownBody += '\n```\n';
+        markdownBody += '</details>\n';
+      }
     }
+    markdownBody += `\n</details>\n`;
   }
-  markdownBody += `\n</details>\n`;
   const propertyFormatted = property === 'commandsPreDeploy' ? 'preDeployCommandsResultMarkdownBody' : 'postDeployCommandsResultMarkdownBody';
   const prData = {
     [propertyFormatted]: markdownBody
