@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.12.6] 2025-11-18
+
+- QuickFix typo in deployment actions
+
 ## [6.12.5] 2025-11-18
 
 - Improve JIRA authentication and display 

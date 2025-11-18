@@ -324,7 +324,7 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
   }
   // Add details in html <detail> blocks, embedded in a root <details> block to avoid markdown rendering issues
   const commandsInResults = commands.filter(c => (c.result && c.result.output) || c.type === "manual");
-  if (commandsInResults.length === 0) {
+  if (commandsInResults.length > 0) {
     markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
     for (const cmd of commands) {
       if (cmd.result?.output) {
