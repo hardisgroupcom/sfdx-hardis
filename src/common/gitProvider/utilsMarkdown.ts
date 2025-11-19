@@ -109,7 +109,7 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
         await generateDiffMarkdownWithPng(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }
     } catch (e: any) {
-      uxLog("warning", this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff for ${flowName}: ${e.message}`));
+      uxLog("warning", this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff for ${flowName}: ${e.message}`) + "\n" + c.grey(e.stack));
     }
   }
   if (truncatedNb > 0) {
