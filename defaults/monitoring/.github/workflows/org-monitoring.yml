@@ -318,7 +318,8 @@ jobs:
           SFDX_CLIENT_ID_MONITORING_MYCLIENT__PREPROD_SANDBOX: ${{ secrets.SFDX_CLIENT_ID_MONITORING_MYCLIENT__PREPROD_SANDBOX}}
           SFDX_CLIENT_KEY_MONITORING_MYCLIENT__PREPROD_SANDBOX: ${{ secrets.SFDX_CLIENT_KEY_MONITORING_MYCLIENT__PREPROD_SANDBOX}}
           SFDX_DEPLOY_WAIT_MINUTES: ${{ vars.SFDX_DEPLOY_WAIT_MINUTES || '120' }}
-          SFDX_TEST_WAIT_MINUTES: ${{ vars.SFDX_TEST_WAIT_MINUTES || '120' }} # Override if necessary    CI_COMMIT_REF_NAME: ${{ matrix.branch }}
+          SFDX_TEST_WAIT_MINUTES: ${{ vars.SFDX_TEST_WAIT_MINUTES || '120' }} # Override if necessary    
+          CI_COMMIT_REF_NAME: ${{ matrix.branch }}
           ORG_ALIAS: ${{ matrix.branch }}
           CONFIG_BRANCH: ${{ matrix.branch }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

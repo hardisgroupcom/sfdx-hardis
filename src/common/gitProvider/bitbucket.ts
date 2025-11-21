@@ -343,15 +343,15 @@ export class BitbucketProvider extends GitProviderRoot {
     const messageKey = `${prMessage.messageKey}-${pullRequestId}`;
     let messageBody = `## ${prMessage.title || ''}
 
-        ${prMessage.message}
-        
-        \n_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${bitbucketBuildNumber}](${bitbucketJobUrl})_
-        \n<!-- sfdx-hardis message-key ${messageKey} -->
-        `;
+    ${prMessage.message}
+
+\n_Powered by[sfdx - hardis](${CONSTANTS.DOC_URL_ROOT}) from job[${bitbucketBuildNumber}](${bitbucketJobUrl}) _
+\n < !--sfdx - hardis message - key ${messageKey} -->
+  `;
 
     // Add deployment id if present
     if (globalThis.pullRequestDeploymentId) {
-      messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
+      messageBody += `\n < !--sfdx - hardis deployment - id ${globalThis.pullRequestDeploymentId} --> `;
     }
 
     messageBody = await this.uploadAndReplaceImageReferences(messageBody, prMessage.sourceFile || "");
@@ -373,7 +373,7 @@ export class BitbucketProvider extends GitProviderRoot {
     for (const existingComment of existingComments?.data?.values || []) {
       if (
         existingComment?.content?.raw &&
-        existingComment?.content.raw?.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)
+        existingComment?.content.raw?.includes(`< !--sfdx - hardis message - key ${messageKey} --> `)
       ) {
         existingCommentId = existingComment.id || null;
       }
@@ -395,7 +395,7 @@ export class BitbucketProvider extends GitProviderRoot {
         posted: (pullRequestComment?.data?.id || -1) > 0,
         providerResult: pullRequestComment,
       };
-      uxLog("log", this, c.grey(`[Bitbucket integration] Updated Pull Request comment ${existingCommentId}`));
+      uxLog("log", this, c.grey(`[Bitbucket integration] Updated Pull Request comment ${existingCommentId} `));
       return prResult;
     } else {
       // Create new comment if no existing comment was found
@@ -413,9 +413,9 @@ export class BitbucketProvider extends GitProviderRoot {
         providerResult: pullRequestComment,
       };
       if (prResult.posted) {
-        uxLog("log", this, c.grey(`[Bitbucket integration] Posted Pull Request comment on ${pullRequestId}`));
+        uxLog("log", this, c.grey(`[Bitbucket integration] Posted Pull Request comment on ${pullRequestId} `));
       } else {
-        uxLog("warning", this, c.yellow(`[Bitbucket integration] Unable to post Pull Request comment on ${pullRequestId}:\n${JSON.stringify(pullRequestComment, null, 2)}`));
+        uxLog("warning", this, c.yellow(`[Bitbucket integration] Unable to post Pull Request comment on ${pullRequestId}: \n${JSON.stringify(pullRequestComment, null, 2)} `));
       }
       return prResult;
     }
@@ -449,15 +449,15 @@ export class BitbucketProvider extends GitProviderRoot {
         _body: filesForm as any,
       });
       if (attachmentResponse) {
-        const imageRef = `${this.serverUrl}/${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG}/downloads/${imageName}`;
-        uxLog("log", this, c.grey(`[Bitbucket Integration] Image uploaded for comment: ${imageRef}`));
+        const imageRef = `${this.serverUrl} /${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG} /downloads/${imageName} `;
+        uxLog("log", this, c.grey(`[Bitbucket Integration] Image uploaded for comment: ${imageRef} `));
         return imageRef;
       }
       else {
-        uxLog("warning", this, c.yellow(`[Bitbucket Integration] Image uploaded but unable to get URL from response\n${JSON.stringify(attachmentResponse, null, 2)}`));
+        uxLog("warning", this, c.yellow(`[Bitbucket Integration] Image uploaded but unable to get URL from response\n${JSON.stringify(attachmentResponse, null, 2)} `));
       }
     } catch (e) {
-      uxLog("warning", this, c.yellow(`[Bitbucket Integration] Error while uploading image in downloads section ${localImagePath}\n${(e as Error).message}`));
+      uxLog("warning", this, c.yellow(`[Bitbucket Integration] Error while uploading image in downloads section ${localImagePath} \n${(e as Error).message} `));
     }
     return null;
   }

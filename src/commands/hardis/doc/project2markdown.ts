@@ -15,7 +15,7 @@ import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml,
 import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { glob } from 'glob';
-import { GLOB_IGNORE_PATTERNS, listApexFiles, listFlowFiles, listPageFiles, returnApexType } from '../../../common/utils/projectUtils.js';
+import { GLOB_IGNORE_PATTERNS, listApexFiles, listFlowFiles, listVfFiles, listPageFiles, returnApexType } from '../../../common/utils/projectUtils.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
@@ -29,6 +29,7 @@ import { DocBuilderObject } from '../../../common/docBuilder/docBuilderObject.js
 import { DocBuilderApex } from '../../../common/docBuilder/docBuilderApex.js';
 import { DocBuilderFlow } from '../../../common/docBuilder/docBuilderFlow.js';
 import { DocBuilderLwc } from '../../../common/docBuilder/docBuilderLwc.js';
+import { DocBuilderVf, VfDocGenerationResult, VfDocBuilderConfig } from '../../../common/docBuilder/docBuilderVf.js';
 import { DocBuilderPackageXML } from '../../../common/docBuilder/docBuilderPackageXml.js';
 import { DocBuilderPermissionSet } from '../../../common/docBuilder/docBuilderPermissionSet.js';
 import { DocBuilderPermissionSetGroup } from '../../../common/docBuilder/docBuilderPermissionSetGroup.js';
@@ -76,6 +77,7 @@ To just generate HTML pages that you can host anywhere, run \`mkdocs build -v ||
 - Code
   - Apex
   - Lightning Web Components
+  - Visualforce Pages
 - Lightning Pages
 - Packages
 - SFDX-Hardis Config
@@ -189,6 +191,7 @@ ${this.htmlInstructions}
   protected apexDescriptions: any[] = [];
   protected flowDescriptions: any[] = [];
   protected lwcDescriptions: any[] = [];
+  protected vfDescriptions: any[] = [];
   protected packageDescriptions: any[] = [];
   protected pageDescriptions: any[] = [];
   protected profileDescriptions: any[] = [];
@@ -203,6 +206,8 @@ ${this.htmlInstructions}
   protected objectFiles: string[];
   protected allObjectsNames: string[];
   protected tempDir: string;
+  protected packageDirs: any[] = [];
+  protected projectRoot: string;
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
@@ -237,6 +242,7 @@ ${this.htmlInstructions}
       "- Code",
       "  - [Apex](apex/index.md)",
       "  - [Lightning Web Components](lwc/index.md)",
+      "  - [Visualforce Pages](vf/index.md)",
       "- [Lightning Pages](pages/index.md)",
       "- [Packages](packages/index.md)",
       "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
@@ -331,6 +337,11 @@ ${this.htmlInstructions}
     // List LWC & generate doc
     if (!(process?.env?.GENERATE_LWC_DOC === 'false')) {
       await this.generateLwcDocumentation();
+    }
+
+    // List VisualForce & generate doc
+    if (!(process?.env?.GENERATE_VF_DOC === 'false')) {
+      await this.generateVfDocumentation();
     }
 
     // Write output index file
@@ -1604,4 +1615,144 @@ ${Project2Markdown.htmlInstructions}
 
     uxLog("success", this, c.green(`Successfully generated documentation for Lightning Web Components at ${lwcIndexFile}`));
   }
+
+  private async generateVfDocumentation() {
+    uxLog(
+      "action",
+      this,
+      c.cyan(
+        "Preparing generation of Visualforce Pages documentation... " +
+        "(if you don't want it, define GENERATE_VF_DOC=false in your environment variables)"
+      )
+    );
+
+    const projectRoot = this.projectRoot || process.cwd();
+    const outputRoot = this.outputMarkdownRoot;
+
+    // Configuration for VF documentation
+    const vfConfig: VfDocBuilderConfig = {
+      enableSecurityAnalysis: process.env.DISABLE_VF_SECURITY_ANALYSIS !== 'true',
+      enablePerformanceMetrics: process.env.DISABLE_VF_PERFORMANCE_METRICS !== 'true',
+      enableBestPractices: process.env.DISABLE_VF_BEST_PRACTICES !== 'true',
+      enableCrossReferences: true,
+      maxApexClassesToParse: parseInt(process.env.VF_MAX_APEX_CLASSES || '10')
+    };
+
+    // Get all VF files
+    const vfFilePaths = await listVfFiles(projectRoot);
+    if (vfFilePaths.length === 0) {
+      uxLog("log", this, c.yellow("No Visualforce page files found."));
+      return;
+    }
+
+    const vfDocResults: VfDocGenerationResult[] = [];
+    WebSocketClient.sendProgressStartMessage("Generating Visualforce documentation...", vfFilePaths.length);
+
+    let counter = 0;
+
+    for (const vfFilePath of vfFilePaths) {
+      try {
+        const pageName = path.basename(vfFilePath, ".page");
+
+        // Create DocBuilderVf instance with enhanced configuration
+        const vfBuilder = new DocBuilderVf(pageName, vfFilePath, outputRoot, projectRoot, vfConfig);
+
+        // Delegate the entire generation to DocBuilderVf
+        const result = await vfBuilder.build();
+
+        vfDocResults.push(result);
+
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, vfFilePaths.length);
+
+        // Add small delay to avoid overwhelming the system with large projects
+        if (vfFilePaths.length > 10) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+      } catch (err: any) {
+        uxLog("warning", this, c.yellow(`Failed to generate documentation for ${vfFilePath}: ${err.message}`));
+        if (typeof this.debug === 'function') {
+          this.debug(err.stack);
+        }
+      }
+    }
+
+    WebSocketClient.sendProgressEndMessage();
+
+    // --- Build index.md based on collected results ---
+    const indexLines = [
+      '# Visualforce Pages',
+      '',
+      `*Automatically generated documentation for ${vfDocResults.length} Visualforce pages*`,
+      '',
+    ];
+
+    // Sort results by name for consistent menu order
+    const sortedResults = vfDocResults.sort((a, b) => a.name.localeCompare(b.name));
+
+    // Generate summary statistics
+    const totalComponents = sortedResults.reduce((sum, result) => {
+      const componentMatch = result.markdownContent.match(/Component Count: (\d+)/);
+      return sum + (componentMatch ? parseInt(componentMatch[1]) : 0);
+    }, 0);
+
+    const pagesWithSecurityConcerns = sortedResults.filter(result =>
+      result.markdownContent.includes('Potential SOQL Injection: ⚠️ Yes') ||
+      result.markdownContent.includes('Potential XSS: ⚠️ Yes')
+    ).length;
+
+    indexLines.push('## Summary');
+    indexLines.push(`- **Total Pages:** ${sortedResults.length}`);
+    indexLines.push(`- **Total Components:** ${totalComponents}`);
+    indexLines.push(`- **Pages with Security Concerns:** ${pagesWithSecurityConcerns}`);
+    indexLines.push('');
+
+    // Use the static buildIndexTable method from DocBuilderVf
+    const indexTableLines = DocBuilderVf.buildIndexTable(outputRoot, sortedResults);
+    indexLines.push(...indexTableLines);
+
+    indexLines.push('', this.footer);
+    await fs.writeFile(path.join(outputRoot, 'vf', 'index.md'), indexLines.join("\n"), 'utf-8');
+
+    // Update class properties with a more structured list for internal use
+    this.vfDescriptions = sortedResults.map(r => ({
+      name: r.name,
+      description: r.shortDescription,
+      path: r.outputPath,
+      hasSecurityConcerns: r.markdownContent.includes('Potential SOQL Injection: ⚠️ Yes') ||
+        r.markdownContent.includes('Potential XSS: ⚠️ Yes')
+    }));
+
+    // For addNavNode, transform the collected results
+    const vfForMenuTransformed: Record<string, string> = {};
+    for (const result of sortedResults) {
+      vfForMenuTransformed[result.name] = path.relative(outputRoot, result.outputPath);
+    }
+    this.addNavNode("Visualforce Pages", vfForMenuTransformed);
+
+    uxLog("success", this, c.green(`Successfully generated documentation for ${sortedResults.length} Visualforce pages.`));
+
+    // Log security summary
+    if (pagesWithSecurityConcerns > 0) {
+      uxLog("warning", this, c.yellow(`${pagesWithSecurityConcerns} pages have potential security concerns. Review the generated documentation.`));
+    }
+
+    // --- Optional PDF generation ---
+    if (this.withPdf) {
+      uxLog("action", this, c.cyan("Generating PDF files for Visualforce documentation..."));
+
+      for (const result of sortedResults) {
+        if (await fs.pathExists(result.outputPath)) {
+          try {
+            await generatePdfFileFromMarkdown(result.outputPath);
+            uxLog("log", this, c.green(`PDF generated for ${result.name}`));
+          } catch (err: any) {
+            uxLog("warning", this, c.yellow(`Failed to generate PDF for ${result.name}: ${err.message}`));
+          }
+        }
+      }
+      uxLog("success", this, c.green("All Visualforce PDFs generated successfully."));
+    }
+  }
+
 }

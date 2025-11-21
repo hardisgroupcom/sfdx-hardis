@@ -50,7 +50,7 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
       flowMarkdownDoc = await docBuilder.completeDocWithAiDescription();
     }
 
-    // Add link to history flow doc 
+    // Add link to history flow doc
     const historyFlowDoc = path.join("docs", "flows", flowName + "-history.md");
     if (fs.existsSync(historyFlowDoc)) {
       const historyLink = `[(_View History_)](${flowName + "-history.md"})`;
@@ -668,7 +668,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
   }).join("\n");
   await fs.writeFile(diffMdFile, diffMarkdownFixed);
 
-  // Add link to main flow doc 
+  // Add link to main flow doc
   const mainFlowDoc = path.join("docs", "flows", path.basename(flowFile).replace(".flow-meta.xml", ".md"));
   if (fs.existsSync(mainFlowDoc)) {
     const mainFlowDocContent = await fs.readFile(mainFlowDoc, "utf8");

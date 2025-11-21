@@ -506,7 +506,7 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
     `./.ssh/${orgAlias}.key`,
     './ssh/server.key',
   ];
-  // Check if we find multiple files 
+  // Check if we find multiple files
   const filesFound = filesToTry.filter((file) => fs.existsSync(file));
   if (filesFound.length > 1) {
     console.warn(

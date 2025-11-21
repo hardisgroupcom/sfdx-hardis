@@ -210,14 +210,14 @@ export class GithubProvider extends GitProviderRoot {
     const messageKey = prMessage.messageKey + "-" + this.workflow + "-" + this.prNumber;
     let messageBody = `## ${prMessage.title || ""}
 
-${prMessage.message}
+    ${prMessage.message}
 
-_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}](${githubJobUrl})_
-<!-- sfdx-hardis message-key ${messageKey} -->
-`;
+_Powered by[sfdx - hardis](${CONSTANTS.DOC_URL_ROOT}) from job[${this.workflow}](${githubJobUrl}) _
+  < !--sfdx - hardis message - key ${messageKey} -->
+    `;
     // Add deployment id if present
     if (globalThis.pullRequestDeploymentId) {
-      messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
+      messageBody += `\n < !--sfdx - hardis deployment - id ${globalThis.pullRequestDeploymentId} --> `;
     }
 
     // Check for existing note from a previous run
@@ -229,7 +229,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
     });
     let existingCommentId: number | null = null;
     for (const existingComment of existingComments.data) {
-      if (existingComment?.body?.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
+      if (existingComment?.body?.includes(`< !--sfdx - hardis message - key ${messageKey} --> `)) {
         existingCommentId = existingComment.id;
       }
     }
@@ -282,13 +282,13 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
         owner: this.repoOwner,
         repo: this.repoName,
         state: "closed",
-        head: `${this.repoOwner}:${currentBranchName}`,
+        head: `${this.repoOwner}:${currentBranchName} `,
         base: targetBranchName,
         sort: "updated",
         direction: "desc",
         per_page: 1,
       });
-      uxLog("log", this, c.grey(`[GitHub Integration] Finding last merged PR from ${currentBranchName} to ${targetBranchName}`));
+      uxLog("log", this, c.grey(`[GitHub Integration] Finding last merged PR from ${currentBranchName} to ${targetBranchName} `));
 
       const lastMergeToTarget = mergedPRs.find((pr) => pr.merged_at);
 
@@ -305,7 +305,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
 
       const { data: comparison } =
         await this.octokit.rest.repos.compareCommits(compareOptions);
-      uxLog("log", this, c.grey(`[GitHub Integration] Comparing commits between ${compareOptions.base} and ${compareOptions.head}`));
+      uxLog("log", this, c.grey(`[GitHub Integration] Comparing commits between ${compareOptions.base} and ${compareOptions.head} `));
 
       if (!comparison.commits || comparison.commits.length === 0) {
         return [];
@@ -331,7 +331,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
           uxLog(
             "warning",
             this,
-            c.yellow(`[GitHub Integration] Error fetching merged PRs for branch ${branchName}: ${String(err)}`),
+            c.yellow(`[GitHub Integration] Error fetching merged PRs for branch ${branchName}: ${String(err)} `),
           );
           return [];
         }
@@ -363,7 +363,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
       uxLog(
         "warning",
         this,
-        c.yellow(`[GitHub Integration] Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}\n${err instanceof Error ? err.stack : ""}`),
+        c.yellow(`[GitHub Integration]Error in listPullRequestsInBranchSinceLastMerge: ${String(err)} \n${err instanceof Error ? err.stack : ""} `),
       );
       return [];
     }

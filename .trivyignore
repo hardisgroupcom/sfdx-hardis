@@ -38,7 +38,7 @@ CVE-2022-21681
 # Risk: Memory leak, not risky for sfdx-hardis
 CVE-2025-29087
 
-# lodash.template https://avd.aquasec.com/nvd/cve-2021-23337 
+# lodash.template https://avd.aquasec.com/nvd/cve-2021-23337
 # Risk: Command injection via template. The dependency is located within Core SF Cli library (.local/share/sf/node_modules/lodash.template/package.json)
 # so is applicable to all uses of Salesforce CLI, with or without sfdx-hardis
 # Let's trust core Salesforce team to have assessed that this CVE is not risky in their context, otherwise it would mean that all uses of Salesforce CLI in the world would be a security risk ^^
@@ -60,7 +60,7 @@ CVE-2025-9288
 # tar-fs symlink validation bypass, located in @salesforce/cli so they'll fix that soon
 CVE-2025-59343
 
-# fast-redact https://avd.aquasec.com/nvd/cve-2025-57319 
+# fast-redact https://avd.aquasec.com/nvd/cve-2025-57319
 # fast-redact prototype pollution: Low security, harmless for sfdx-hardis use
 CVE-2025-57319
 

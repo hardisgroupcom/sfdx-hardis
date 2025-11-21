@@ -130,7 +130,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     }
     else {
       if (this.commitAfter === "" && !isCI) {
-        // Compute between 2 commits: prompt for the second one      
+        // Compute between 2 commits: prompt for the second one
         const commitAfterSelectRes = await prompts({
           type: 'select',
           name: 'after',

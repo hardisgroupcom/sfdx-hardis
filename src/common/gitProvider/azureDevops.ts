@@ -497,16 +497,16 @@ ${this.getPipelineVariablesConfig()}
     const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
     let messageBody = `## ${prMessage.title || ""}
 
-${prMessage.message}
+    ${prMessage.message}
 
 <br/>
 
-_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](${azureBuildUri})_
-<!-- sfdx-hardis message-key ${messageKey} -->
-`;
+_Powered by[sfdx - hardis](${CONSTANTS.DOC_URL_ROOT}) from job[${azureJobName}](${azureBuildUri}) _
+  < !--sfdx - hardis message - key ${messageKey} -->
+    `;
     // Add deployment id if present
     if (globalThis.pullRequestDeploymentId) {
-      messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
+      messageBody += `\n < !--sfdx - hardis deployment - id ${globalThis.pullRequestDeploymentId} --> `;
     }
     // Upload attached images if necessary
     messageBody = await this.uploadAndReplaceImageReferences(messageBody, prMessage.sourceFile || "");
@@ -523,7 +523,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
         continue;
       }
       for (const comment of existingThread?.comments || []) {
-        if ((comment?.content || "").includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
+        if ((comment?.content || "").includes(`< !--sfdx - hardis message - key ${messageKey} --> `)) {
           existingThreadComment = existingThread;
           existingThreadCommentId = (existingThread.comments || [])[0].id;
           existingThreadId = existingThread.id || null;
@@ -560,7 +560,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
       posted: (azureEditThreadResult.id || -1) > 0,
       providerResult: azureEditThreadResult,
     };
-    uxLog("log", this, c.grey(`[Azure integration] Posted Pull Request Thread ${azureEditThreadResult.id}`));
+    uxLog("log", this, c.grey(`[Azure integration] Posted Pull Request Thread ${azureEditThreadResult.id} `));
     return prResult;
   }
 
@@ -581,9 +581,10 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
       targetBranch: (prData.targetRefName || "").replace("refs/heads/", ""),
       title: prData.title || "",
       description: prData.description || "",
-      webUrl: `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT || "")}/_git/${encodeURIComponent(
+      webUrl: `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT || "")} /_git/${encodeURIComponent(
         process.env.BUILD_REPOSITORYNAME || "",
-      )}/pullrequest/${prData.pullRequestId}`,
+      )
+        } /pullrequest/${prData.pullRequestId} `,
       authorName: prData?.createdBy?.displayName || "",
       providerInfo: prData,
       customBehaviors: {}
@@ -593,25 +594,25 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
 
   private getPipelineVariablesConfig() {
     return `
-    SFDX_DEPLOY_WAIT_MINUTES: $(SFDX_DEPLOY_WAIT_MINUTES)
-    CI_COMMIT_REF_NAME: $(BRANCH_NAME)
-    CONFIG_BRANCH: $(BRANCH_NAME)
-    ORG_ALIAS: $(BRANCH_NAME)
-    SLACK_TOKEN: $(SLACK_TOKEN)
-    SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
-    NOTIF_EMAIL_ADDRESS: $(NOTIF_EMAIL_ADDRESS)
-    CI: "true"
-    SYSTEM_ACCESSTOKEN: $(System.AccessToken)
-    CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
-    SYSTEM_COLLECTIONURI: $(System.CollectionUri)
-    SYSTEM_TEAMPROJECT: $(System.TeamProject)
-    SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
-    SYSTEM_JOB_ID: $(System.JobId)
-    SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
-    BUILD_REPOSITORY_ID: $(Build.Repository.ID)
-    BUILD_REPOSITORYNAME: $(Build.Repository.Name)
-    BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
-    BUILD_BUILD_ID: $(Build.BuildId)`;
+SFDX_DEPLOY_WAIT_MINUTES: $(SFDX_DEPLOY_WAIT_MINUTES)
+CI_COMMIT_REF_NAME: $(BRANCH_NAME)
+CONFIG_BRANCH: $(BRANCH_NAME)
+ORG_ALIAS: $(BRANCH_NAME)
+SLACK_TOKEN: $(SLACK_TOKEN)
+SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
+NOTIF_EMAIL_ADDRESS: $(NOTIF_EMAIL_ADDRESS)
+CI: "true"
+SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+SYSTEM_TEAMPROJECT: $(System.TeamProject)
+SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
+SYSTEM_JOB_ID: $(System.JobId)
+SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+BUILD_REPOSITORYNAME: $(Build.Repository.Name)
+BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+BUILD_BUILD_ID: $(Build.BuildId)`;
   }
 
   // Do not make crash the whole process in case there is an issue with integration
@@ -620,7 +621,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     try {
       prResult = await this.postPullRequestMessage(prMessage);
     } catch (e) {
-      uxLog("warning", this, c.yellow(`[GitProvider] Error while trying to post pull request message.\n${(e as Error).message}\n${(e as Error).stack}`));
+      uxLog("warning", this, c.yellow(`[GitProvider] Error while trying to post pull request message.\n${(e as Error).message} \n${(e as Error).stack} `));
       prResult = { posted: false, providerResult: { error: e } };
     }
     return prResult;

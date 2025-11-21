@@ -50,24 +50,24 @@ export async function restoreArrangedFiles(arrangedFiles: any[], commandThis: an
   }
 }
 // Parse the given query and re-apply the limit clause if exists and is lower than the provided limit
-export async function parseSoqlAndReapplyLimit(soqlQuery: string, limit: number | undefined, commandThis: any){
+export async function parseSoqlAndReapplyLimit(soqlQuery: string, limit: number | undefined, commandThis: any) {
   const limitRegex = /\slimit (\d+)\s?/ig;
   let tempSoqlQuery = soqlQuery;
   let newLimit: number | undefined;
   const matches = tempSoqlQuery.matchAll(limitRegex);
   if (matches) {
-    for(const match of matches){ 
+    for (const match of matches) {
       newLimit = match[1] ? parseInt(match[1]) : undefined;
-    } 
+    }
   }
-  
+
   if (newLimit && limit && newLimit <= limit) {
     tempSoqlQuery = tempSoqlQuery.replace(limitRegex, ' ') + ` LIMIT ${newLimit}`;
   } else if (limit) {
     tempSoqlQuery = tempSoqlQuery.replace(limitRegex, ' ') + ` LIMIT ${limit}`;
   }
   //Replace 2 or more spaces with single space
-  tempSoqlQuery = tempSoqlQuery.replace(/\s{2,}/g,' ');
-  uxLog("log",commandThis, c.grey(`New Query: ${tempSoqlQuery}`));
+  tempSoqlQuery = tempSoqlQuery.replace(/\s{2,}/g, ' ');
+  uxLog("log", commandThis, c.grey(`New Query: ${tempSoqlQuery}`));
   return tempSoqlQuery;
 }

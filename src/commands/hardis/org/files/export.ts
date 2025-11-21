@@ -36,7 +36,7 @@ Key functionalities:
   - **Size Validation:** For both ContentVersion and Attachment files, verifies actual file size matches expected size
   - **Status Tracking:** Files are categorized with specific statuses: \`success\` (valid files), \`failed\` (download errors), \`skipped\` (filtered files), \`invalid\` (downloaded but failed validation)
   - All validation results are logged in the CSV export log for audit purposes
-- **Resume/Restart Capability:** 
+- **Resume/Restart Capability:**
   - **Resume Mode:** When \`--resume\` flag is used (default in CI environments), checks existing downloaded files for validity. Valid files are skipped, invalid files are re-downloaded.
   - **Restart Mode:** When resume is disabled, clears the output folder and starts a fresh export.
   - **Interactive Mode:** When existing files are found and \`--resume\` is not explicitly specified (non-CI environments), prompts the user to choose between resume or restart.

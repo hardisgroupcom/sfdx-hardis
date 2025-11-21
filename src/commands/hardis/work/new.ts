@@ -472,7 +472,7 @@ The command's logic orchestrates various underlying processes:
             )} (manually update target sandbox in setup), then run "New User Story" again with same sandbox
   - ${c.bold('Refresh your sandbox')} (contact release manager if needed)
   Otherwise, start working now (beware of potential conflicts)
-        `)
+          `)
           );
         }
       }
@@ -482,7 +482,7 @@ The command's logic orchestrates various underlying processes:
       const openOrgRes = await prompts({
         type: 'confirm',
         name: 'value',
-        message: c.cyanBright(`Do you want to open org ${c.green(orgUsername)} in your browser?`),
+        message: c.cyanBright(`Do you want to open org ${c.green(orgUsername)} in your browser ? `),
         description: 'Open the sandbox org in your web browser to start working on it',
         initial: true
       });
@@ -512,7 +512,8 @@ The command's logic orchestrates various underlying processes:
       message: c.cyanBright(
         `Select a sandbox org to work in branch ${c.green(
           branchName
-        )}`
+        )
+        } `
       ),
       description: 'Choose an existing sandbox or connect to a new one for this branch',
       placeholder: 'Select sandbox',
@@ -532,7 +533,7 @@ The command's logic orchestrates various underlying processes:
         ...sandboxOrgList.map((sandboxOrg: any) => {
           return {
             title: sandboxOrg.instanceUrl,
-            description: `☁️ Use sandbox org ${c.yellow(sandboxOrg.username || sandboxOrg.alias)}`,
+            description: `☁️ Use sandbox org ${c.yellow(sandboxOrg.username || sandboxOrg.alias)} `,
             value: sandboxOrg,
           };
         }),
@@ -568,7 +569,7 @@ The command's logic orchestrates various underlying processes:
     else {
       await makeSureOrgIsConnected(sandboxResponse.value);
       uxLog("action", this, c.cyan(`Setting ${c.green(sandboxResponse.value.instanceUrl)} (${sandboxResponse.value.username}) as default org...`));
-      await execCommand(`sf config set target-org=${sandboxResponse.value.username}`, this, {
+      await execCommand(`sf config set target - org=${sandboxResponse.value.username} `, this, {
         output: true,
         fail: true,
       });

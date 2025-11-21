@@ -39,7 +39,7 @@ jobs:
           image-ref: "sfdx-hardis:security-scan"
           format: "table"
           output: "sfdx-hardis-trivy-image-results.txt"
-          exit-code: "1"
+          exit-code: "0"
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
 

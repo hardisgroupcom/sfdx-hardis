@@ -186,7 +186,6 @@ Example:
     return { results: this.results, outputFilesRes: this.outputFilesRes };
   }
 
-
   private async fetchUserStories(conn: any): Promise<string[]> {
     if (this.userStoriesConfig.whereChoices) {
       // If whereChoices is defined, use the provided whereChoice flag or prompt user to select one
