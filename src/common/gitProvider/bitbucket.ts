@@ -209,10 +209,14 @@ export class BitbucketProvider extends GitProviderRoot {
       const repoSlug = process.env.BITBUCKET_REPO_SLUG;
 
       // Step 1: Find the last merged PR from currentBranch to targetBranch
+      const lastMergeQuery = `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`;
+      uxLog("log", this, c.grey(`[Bitbucket Integration] Finding last merged PR with query: ${lastMergeQuery}`));
+
       const lastMergeResponse = await this.bitbucket.pullrequests.list({
         workspace,
         repo_slug: repoSlug,
-        q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`,
+        q: lastMergeQuery,
+        sort: '-updated_on',
       } as any);
 
       const lastMergePRs =
@@ -224,14 +228,24 @@ export class BitbucketProvider extends GitProviderRoot {
       const lastMergeToTarget =
         lastMergePRs.length > 0 ? lastMergePRs[0] : null;
 
+      if (lastMergeToTarget) {
+        uxLog("log", this, c.grey(`[Bitbucket Integration] Last merged PR: #${lastMergeToTarget.id} - ${lastMergeToTarget.title}`));
+      } else {
+        uxLog("log", this, c.grey(`[Bitbucket Integration] No previous merge found from ${currentBranchName} to ${targetBranchName}`));
+      }
+
       // Step 2: Get commits between branches
+      const excludeRef = lastMergeToTarget
+        ? lastMergeToTarget.merge_commit?.hash
+        : targetBranchName;
+
+      uxLog("log", this, c.grey(`[Bitbucket Integration] Getting commits: include=${currentBranchName}, exclude=${excludeRef}`));
+
       const commitsResponse = await this.bitbucket.commits.list({
         workspace,
         repo_slug: repoSlug,
         include: currentBranchName,
-        exclude: lastMergeToTarget
-          ? lastMergeToTarget.merge_commit?.hash
-          : targetBranchName,
+        exclude: excludeRef,
       } as any);
 
       const commits =
@@ -240,6 +254,8 @@ export class BitbucketProvider extends GitProviderRoot {
           commitsResponse.data.values
           ? commitsResponse.data.values
           : [];
+
+      uxLog("log", this, c.grey(`[Bitbucket Integration] Found ${commits.length} commits between branches`));
 
       if (commits.length === 0) {
         return [];
@@ -250,25 +266,27 @@ export class BitbucketProvider extends GitProviderRoot {
       // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
       const allBranches = [currentBranchName, ...childBranchesNames];
 
+      uxLog("log", this, c.grey(`[Bitbucket Integration] Fetching merged PRs for branches: ${allBranches.join(', ')}`));
+
       const prPromises = allBranches.map(async (branchName) => {
         try {
+          const branchQuery = `destination.branch.name = "${branchName}" AND state = "MERGED"`;
           const response = await this.bitbucket.pullrequests.list({
             workspace,
             repo_slug: repoSlug,
-            q: `destination.branch.name = "${branchName}" AND state = "MERGED"`,
+            q: branchQuery,
           } as any);
 
           const values =
             response && response.data && response.data.values
               ? response.data.values
               : [];
+
+          uxLog("log", this, c.grey(`[Bitbucket Integration] Found ${values.length} merged PRs for branch ${branchName}`));
+
           return values;
         } catch (err) {
-          uxLog(
-            "warning",
-            this,
-            c.yellow(`Error fetching merged PRs for branch ${branchName}: ${String(err)}`),
-          );
+          uxLog("warning", this, c.yellow(`[Bitbucket Integration] Error fetching merged PRs for branch ${branchName}: ${String(err)}`));
           return [];
         }
       });
@@ -276,11 +294,15 @@ export class BitbucketProvider extends GitProviderRoot {
       const prResults = await Promise.all(prPromises);
       const allMergedPRs: any[] = prResults.flat();
 
+      uxLog("log", this, c.grey(`[Bitbucket Integration] Total merged PRs fetched: ${allMergedPRs.length}`));
+
       // Step 4: Filter PRs whose merge commit is in our commit list
       const relevantPRs = allMergedPRs.filter((pr) => {
         const mergeCommitHash = pr.merge_commit?.hash;
         return mergeCommitHash && commitHashes.has(mergeCommitHash);
       });
+
+      uxLog("log", this, c.grey(`[Bitbucket Integration] Relevant PRs (matching commits): ${relevantPRs.length}`));
 
       // Step 5: Remove duplicates
       const uniquePRsMap = new Map();
@@ -290,16 +312,16 @@ export class BitbucketProvider extends GitProviderRoot {
         }
       }
 
+      const uniquePRs = Array.from(uniquePRsMap.values());
+
+      uxLog("log", this, c.grey(`[Bitbucket Integration] Unique PRs after deduplication: ${uniquePRs.length}`));
+
       // Step 6: Convert to CommonPullRequestInfo
-      return Array.from(uniquePRsMap.values()).map((pr) =>
+      return uniquePRs.map((pr) =>
         this.completePullRequestInfo(pr)
       );
     } catch (err) {
-      uxLog(
-        "warning",
-        this,
-        c.yellow(`Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`),
-      );
+      uxLog("warning", this, c.yellow(`Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`));
       return [];
     }
   }

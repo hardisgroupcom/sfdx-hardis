@@ -21,6 +21,7 @@ export class ManualAction extends ActionsProvider {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
     const instructions = (cmd.parameters?.instructions as string) || '';
+    uxLog('log', this, c.grey(`[DeploymentActions] Manual action [${cmd.id}]: ${cmd.label}\nInstructions:\n${instructions}`));
     // Manual actions are not executed automatically. We just record the instructions.
     return { statusCode: 'manual', skippedReason: 'Manual action - see output for instructions', output: instructions };
   }

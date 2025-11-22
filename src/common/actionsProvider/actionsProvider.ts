@@ -1,7 +1,7 @@
 import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import { getCurrentGitBranch, uxLog } from '../utils/index.js';
-import { CommonPullRequestInfo } from '../gitProvider/index.js';
+import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { authOrg } from '../utils/authUtils.js';
 import { findUserByUsernameLike } from '../utils/orgUtils.js';
 
@@ -119,10 +119,12 @@ export abstract class ActionsProvider {
       let authResult: boolean;
       try {
         const instanceUrl = conn.instanceUrl;
-        let targetBranch = cmd.pullRequest?.targetBranch;
+        const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+        let targetBranch = prInfo?.targetBranch;
         if (!targetBranch) {
           targetBranch = await getCurrentGitBranch({ formatted: true }) || undefined;
         }
+        uxLog('log', this, c.grey(`[DeploymentActions] Authenticating with custom username [${user.Username}] for action ${cmd.label}, using targetBranch ${targetBranch}...`));
         authResult = await authOrg(targetBranch!, {
           forceUsername: user.Username,
           instanceUrl: instanceUrl,
