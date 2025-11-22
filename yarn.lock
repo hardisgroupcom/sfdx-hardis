@@ -9243,10 +9243,10 @@ math-intrinsics@^1.1.0:
   resolved "https://registry.yarnpkg.com/math-intrinsics/-/math-intrinsics-1.1.0.tgz#a0dd74be81e2aa5c2f27e65ce283605ee4e2b7f9"
   integrity sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==
 
-md-to-pdf@^5.2.4:
-  version "5.2.4"
-  resolved "https://registry.yarnpkg.com/md-to-pdf/-/md-to-pdf-5.2.4.tgz#a81fa2e07fa36756828d0f84f7eeb59d3078fb05"
-  integrity sha512-s6080i4ZSBfvn7qplSVjdqP9eWi9rIWj+t5pucEKnpAHan89VLQuQPhVx06vWIM+6JX2HrJ1wNRFMiwLlS01vg==
+md-to-pdf@^5.2.5:
+  version "5.2.5"
+  resolved "https://registry.yarnpkg.com/md-to-pdf/-/md-to-pdf-5.2.5.tgz#aa67e866fbf24d46e4d5e62b629fab61baa3d028"
+  integrity sha512-TG8TgDM0PmEwCldR6j/1QP9gBElLL3DSn5ID8P3bEXEl3Y2zHOUSyszHzabWnDNxklRjKbi40ybli8YQJ5Ym5w==
   dependencies:
     arg "^5.0.2"
     chalk "^4.1.2"
