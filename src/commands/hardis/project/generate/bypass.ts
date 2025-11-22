@@ -384,17 +384,17 @@ The command's technical implementation involves:
   public async generateReports(): Promise<void> {
     const baseFilePath = await generateReportPath('project-generate-bypass-<REPLACEME>', this.outputFile, { withDate: true, withBranchName: false});
     let metadataGenerationReportFilePath = baseFilePath;
-    let ImplementationReportFilePath = baseFilePath;
+    let implementationReportFilePath = baseFilePath;
     if(baseFilePath.includes('<REPLACEME>')){
       metadataGenerationReportFilePath = baseFilePath.replace('<REPLACEME>', 'generation');
-      ImplementationReportFilePath = baseFilePath.replace('<REPLACEME>', 'implementation');
+      implementationReportFilePath = baseFilePath.replace('<REPLACEME>', 'implementation');
     }else{
       metadataGenerationReportFilePath = baseFilePath.replace('.csv', '-generation.csv');
-      ImplementationReportFilePath = baseFilePath.replace('.csv', '-implementation.csv');
+      implementationReportFilePath = baseFilePath.replace('.csv', '-implementation.csv');
     }
 
     await generateCsvFile(this.reports.metadataGeneration, metadataGenerationReportFilePath, { fileTitle: 'Bypass Metadata Generation Report' });
-    await generateCsvFile(this.reports.implementation, ImplementationReportFilePath, { fileTitle: 'Bypass Implementation Report' });
+    await generateCsvFile(this.reports.implementation, implementationReportFilePath, { fileTitle: 'Bypass Implementation Report' });
   }
 
   // Query methods
