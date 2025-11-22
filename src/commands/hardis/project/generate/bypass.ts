@@ -24,25 +24,60 @@ import {
   writeXmlFile,
 } from "../../../../common/utils/xmlUtils.js";
 import { MetadataUtils } from "../../../../common/metadata-utils/index.js";
+import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
 
 // Constants
-const ALLOWED_AUTOMATIONS = ["Flow", "Trigger", "VR"];
-const CREDITS_TEXT =
-  "by sfdx-hardis : https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/";
+const ALLOWED_AUTOMATIONS = ["Flow", "Trigger", "VR"]; // TODO: type and remove hardcoded
 
-const STATUS = {
+const CREDITS_TEXT ="by sfdx-hardis : https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/";
+
+const IMPLEMENTATION_OUTCOME = {
   ADDED: "added",
   SKIPPED: "skipped",
   IGNORED: "ignored",
   FAILED: "failed",
+} as const;
+type ImplementationOutcome = typeof IMPLEMENTATION_OUTCOME[keyof typeof IMPLEMENTATION_OUTCOME];
+
+const METADATA_GENERATION_OUTCOME = {
+  GENERATED: "generated",
+  OVERRIDDEN: "overridden",
+  FAILED: "failed",
+} as const;
+type MetadataGenerationOutcome = typeof METADATA_GENERATION_OUTCOME[keyof typeof METADATA_GENERATION_OUTCOME];
+
+type BypassImplementationReportItem = {
+  sObject?: string | null;
+  name?: string | null;
+  automation?: "ValidationRule" | "Trigger" | "Flow";
+  outcome: ImplementationOutcome;
+  comment?: string;
 };
+
+type BypassMetadataGenerationReportItem = {
+  sObject: string;
+  automation: string;
+  outcome: MetadataGenerationOutcome;
+  customPermissionFilePath?: string;
+  permissionSetFilePath?: string;
+}
 
 export default class HardisProjectGenerateBypass extends SfCommand<any> {
   private skipCredits = false;
   private retrieveFromOrg;
+  private outputFile;
+
+  private reports = {
+    metadataGeneration: [] as BypassMetadataGenerationReportItem[],
+    implementation: [] as BypassImplementationReportItem[],
+  }
 
   public static flags: any = {
     "target-org": requiredOrgFlagWithDeprecations,
+    outputfile: Flags.string({
+      char: 'f',
+      description: 'Force the path and name of output report file. Must end with .csv',
+    }),
     // TODO: detect sObjects from folder and use them instead of asking the user
     objects: Flags.string({
       aliases: ["sObjects"],
@@ -169,6 +204,7 @@ The command's technical implementation involves:
     let applyToFlows = flags["apply-to-flows"] || null;
     const sObjects = flags.objects || null;
     const automations = flags.automations || null;
+    this.outputFile = flags.outputfile || null;
 
     const availableSObjects = await this.getFilteredSObjects(connection);
     let targetSObjects = {};
@@ -181,13 +217,7 @@ The command's technical implementation involves:
         Object.entries(availableSObjects).filter(([key]) => {
           const res = sObjectsFromFlag.includes(key);
           if (!res) {
-            uxLog(
-              "warning",
-              this,
-              c.yellow(
-                `Warning: sObject "${key}" is not available or not customizable. Skipping.`
-              )
-            );
+            uxLog("warning", this, c.yellow(`Warning: sObject "${key}" is not available or not customizable. Skipping.`));
           }
           return res;
         })
@@ -224,9 +254,13 @@ The command's technical implementation involves:
       promptsNeeded.push({
         type: "multiselect",
         name: "automations",
-        message: "Select automations to bypass",
-        description: "Choose which types of automation should be bypassed",
-        choices: ALLOWED_AUTOMATIONS.map((a) => ({ title: a, value: a })),
+        message: "Select which automations to bypass",
+        description: "This will generate bypass custom permissions and permission sets for the selected automation types and sObjects",
+        choices: [
+          {title: "Flows", value: "Flow"}, 
+          {title: "Triggers", value: "Trigger"},
+          {title: "Validation Rules", value: "VR"},
+        ],
       });
     }
 
@@ -234,13 +268,12 @@ The command's technical implementation involves:
       promptsNeeded.push({
         type: "multiselect",
         name: "applyTo",
-        message:
-          "To which automations do you want to automatically apply the bypass?",
-        description: "Select which automation types should have automatic bypass logic applied",
+        message: "Where do you wish to have the bypass applied ?",
+        description: "Choose which automation types should have the bypass logic applied automatically. The metadata files will be modified accordingly.",
         choices: [
-          { title: "Validation Rules", value: "applyToVrs" },
-          { title: "Triggers", value: "applyToTriggers" },
-          { title: "Flows", value: "applyToFlows" },
+          { title: "Flows (as a decision node)", value: "applyToFlows" },
+          { title: "Triggers (within the .trigger file)", value: "applyToTriggers" },
+          { title: "Validation Rules (encapsuling the existing validation logic)", value: "applyToVrs" },
         ],
       });
     }
@@ -291,63 +324,78 @@ The command's technical implementation involves:
     if (!Object.keys(targetSObjects).length) {
       throw new SfError(c.red("ERROR: You must select at least one sObject."));
     }
+    
     if (!targetAutomations.length) {
-      throw new SfError(
-        c.red("ERROR: You must select at least one automation type.")
-      );
+      throw new SfError(c.red("ERROR: You must select at least one automation type."));
     }
 
     // Generate files and apply bypasses
-    uxLog("action", this, c.cyan(`Generating bypass files for selected sObjects and automations...`));
+    uxLog("action", this, c.cyan(`Generating bypass metadata files for selected sObjects and target automations...`));
     this.generateFiles(targetSObjects, targetAutomations);
 
     if (applyToVrs) {
-      uxLog("action", this, c.cyan(`Applying bypass to Validation Rules...`));
+      uxLog("action", this, c.cyan(`Implementing the bypass logic to Validation Rules...`));      
       await this.applyBypassToValidationRules(connection, targetSObjects);
     }
 
     if (applyToTriggers) {
-      uxLog("action", this, c.cyan(`Applying bypass to Triggers...`));
+      uxLog("action", this, c.cyan(`Implementing the bypass logic to Triggers...`));
       await this.applyBypassToTriggers(connection, targetSObjects);
     }
 
     if(applyToFlows) {
-      uxLog("action", this, c.cyan(`Applying bypass to Flows...`));
+      uxLog("action", this, c.cyan(`Implementing the bypass logic to Flows...`));
       await this.applyBypassToFlows(connection, targetSObjects);
     }
 
+    uxLog("action", this, c.cyan(`Bypass generation and implementation is completed.`));
+    
+    if(applyToVrs || applyToTriggers|| applyToFlows){
+      uxLog("action", this, c.cyan(`Bypass implementation report:`));
+      uxLogTable(this, this.reports.implementation);
+    }
+
+    uxLog("action", this, c.cyan(`Generating report files...`));
+    await this.generateReports();
+
     return {
-      outputString: "Generated bypass custom permissions and permission sets",
+      outputString: "Bypass generation and implementation completed.",
     };
+  }
+
+  public async generateReports(): Promise<void> {
+    const baseFilePath = await generateReportPath('project-generate-bypass-<REPLACEME>', this.outputFile, { withDate: true, withBranchName: false});
+    let metadataGenerationReportFilePath = baseFilePath;
+    let ImplementationReportFilePath = baseFilePath;
+    if(baseFilePath.includes('<REPLACEME>')){
+      metadataGenerationReportFilePath = baseFilePath.replace('<REPLACEME>', 'generation');
+      ImplementationReportFilePath = baseFilePath.replace('<REPLACEME>', 'implementation');
+    }else{
+      metadataGenerationReportFilePath = baseFilePath.replace('.csv', '-generation.csv');
+      ImplementationReportFilePath = baseFilePath.replace('.csv', '-implementation.csv');
+    }
+
+    await generateCsvFile(this.reports.metadataGeneration, metadataGenerationReportFilePath, { fileTitle: 'Bypass Metadata Generation Report' });
+    await generateCsvFile(this.reports.implementation, ImplementationReportFilePath, { fileTitle: 'Bypass Implementation Report' });
   }
 
   // Query methods
   public async querySObjects(connection: Connection) {
-    const sObjectsQuery = `
-    Select Id, Label, DeveloperName, QualifiedApiName, DurableId, IsTriggerable, IsCustomizable, IsApexTriggerable 
+    const sObjectsQuery = `SELECT Id, Label, DeveloperName, QualifiedApiName, DurableId, IsTriggerable, IsCustomizable, IsApexTriggerable 
       FROM EntityDefinition WHERE IsTriggerable = true AND IsCustomizable = true and IsCustomSetting = false ORDER BY DeveloperName`;
     const results = await soqlQuery(sObjectsQuery, connection);
     uxLog("log", this, c.grey(`Found ${results.records.length} sObjects.`));
     return results;
   }
 
-  public async getFilteredSObjects(
-    connection: Connection
-  ): Promise<{ [key: string]: string }> {
+  public async getFilteredSObjects(connection: Connection): Promise<{ [key: string]: string }> {
     const sObjectResults = await this.querySObjects(connection);
     const sObjectsDict: { [key: string]: string } = {};
-
     for (const record of sObjectResults.records) {
-      if (
-        !record.DeveloperName.endsWith("__Share") &&
-        !record.DeveloperName.endsWith("__ChangeEvent")
-      ) {
-        sObjectsDict[
-          record.DeveloperName
-        ] = `${record.Label} (${record.QualifiedApiName})`;
+      if (!record.DeveloperName.endsWith("__Share") && !record.DeveloperName.endsWith("__ChangeEvent")) {
+        sObjectsDict[record.DeveloperName] = `${record.Label} (${record.QualifiedApiName})`;
       }
     }
-
     return sObjectsDict;
   }
 
@@ -369,10 +417,7 @@ The command's technical implementation involves:
     });
   }
 
-  public async queryValidationRules(
-    connection: Connection,
-    sObjects: { [key: string]: string }
-  ) {
+  public async queryValidationRules(connection: Connection, sObjects: { [key: string]: string }) {
     const query = `SELECT ValidationName, EntityDefinition.QualifiedApiName, ManageableState FROM ValidationRule 
       WHERE ManageableState != 'installed' AND EntityDefinition.DeveloperName IN (${Object.keys(
       sObjects
@@ -384,7 +429,6 @@ The command's technical implementation involves:
     return results;
   }
 
-
   public async queryFlows(connection: Connection) {
     const query = `SELECT Id, ApiName, Label, TriggerObjectOrEvent.QualifiedApiName FROM FlowDefinitionView WHERE ManageableState ='unmanaged'`;
     const results = await soqlQuery(query, connection);
@@ -395,12 +439,7 @@ The command's technical implementation involves:
   public filterFlowResults(flowResults, sObjects) {
     return flowResults.records.filter((flow) => {
       const triggerObject = flow.TriggerObjectOrEvent?.QualifiedApiName;
-      return (
-        triggerObject &&
-        Object.keys(sObjects).includes(
-          triggerObject.replace("__c", "")
-        )
-      );
+      return triggerObject && Object.keys(sObjects).includes(triggerObject.replace("__c", ""));
     });
   }
 
@@ -434,38 +473,50 @@ The command's technical implementation involves:
   }
 
   private generateXMLFiles(sObject: string, automation: string) {
-    const customPermissionFile = path.join(
+    // TODO: use current folder path from sf project
+    const customPermissionFilePath = path.join(
       `force-app/main/default/customPermissions/Bypass${sObject}${automation}s.customPermission-meta.xml`
     );
-    const permissionSetFile = path.join(
+    const permissionSetFilePath = path.join(
       `force-app/main/default/permissionsets/Bypass${sObject}${automation}s.permissionset-meta.xml`
     );
 
-    fsExtra.ensureDirSync(path.dirname(customPermissionFile));
-    fs.writeFileSync(
-      customPermissionFile,
-      this.generateXML("customPermission", sObject, automation),
-      "utf-8"
-    );
-    fsExtra.ensureDirSync(path.dirname(permissionSetFile));
-    fs.writeFileSync(
-      permissionSetFile,
-      this.generateXML("permissionSet", sObject, automation),
-      "utf-8"
-    );
+    const baseReportItem: BypassMetadataGenerationReportItem = {
+      sObject,
+      automation,
+      outcome: METADATA_GENERATION_OUTCOME.FAILED,
+    };
 
-    uxLog(
-      "log",
-      this,
-      c.grey(`Created: ${path.basename(customPermissionFile)} for ${sObject}`)
-    );
-    uxLog("log", this, c.grey(`Created: ${path.basename(permissionSetFile)} for ${sObject}`));
+    try {
+  
+      fsExtra.ensureDirSync(path.dirname(customPermissionFilePath));
+      fs.writeFileSync(
+        customPermissionFilePath,
+        this.generateXML("customPermission", sObject, automation),
+        "utf-8"
+      );
+  
+      fsExtra.ensureDirSync(path.dirname(permissionSetFilePath));
+      fs.writeFileSync(
+        permissionSetFilePath,
+        this.generateXML("permissionSet", sObject, automation),
+        "utf-8"
+      );
+  
+      uxLog("log", this, c.grey(`Created: ${path.basename(customPermissionFilePath)} for ${sObject}`));
+      uxLog("log", this, c.grey(`Created: ${path.basename(permissionSetFilePath)} for ${sObject}`));
+
+      baseReportItem.outcome = METADATA_GENERATION_OUTCOME.GENERATED;
+      baseReportItem.customPermissionFilePath = customPermissionFilePath;
+      baseReportItem.permissionSetFilePath = permissionSetFilePath;
+      this.reports.metadataGeneration.push(baseReportItem);
+    } catch (error) {
+      uxLog("error", this, c.red(`Error generating XML files for ${sObject} and ${automation}: ${error}`));
+      this.reports.metadataGeneration.push(baseReportItem);
+    }
   }
 
-  generateFiles(
-    targetSObjects: { [key: string]: string },
-    targetAutomations: string[]
-  ): void {
+  generateFiles(targetSObjects: { [key: string]: string },targetAutomations: string[]): void {
     Object.keys(targetSObjects).forEach((developerName) => {
       targetAutomations.forEach((automation) => {
         this.generateXMLFiles(developerName, automation);
@@ -474,44 +525,34 @@ The command's technical implementation involves:
   }
 
   // Metadata handling
-  public async retrieveMetadataFiles(
-    records: any[],
-    metadataType: "ValidationRule" | "ApexTrigger" | "Flow"
-  ): Promise<any[]> {
+  public async retrieveMetadataFiles(records: any[], metadataType: "ValidationRule" | "ApexTrigger" | "Flow"): Promise<any[]> {
     const recordsChunks = this.chunkArray(records);
     const results: any[] = [];
-
     for (const chunk of recordsChunks) {
       let command = `sf project retrieve start --metadata`;
-      command += chunk
-        .map((record: any) => {
-          if(metadataType === "Flow"){
-            return ` Flow:${record.ApiName}`;
-          }else if (metadataType === "ValidationRule") {
-            return ` ValidationRule:${record.EntityDefinition.QualifiedApiName}.${record.ValidationName}`;
-          } else {
-            return ` ApexTrigger:${record.Name}`;
-          }
-        }).join(" ");
+      command += chunk.map((record: any) => {
+        if (metadataType === "Flow") {
+          return ` Flow:${record.ApiName}`;
+        } else if (metadataType === "ValidationRule") {
+          return ` ValidationRule:${record.EntityDefinition.QualifiedApiName}.${record.ValidationName}`;
+        } else {
+          return ` ApexTrigger:${record.Name}`;
+        }
+      }).join(" ");
       try {
-        const result = await execCommand(
-          `${command} --ignore-conflicts --json`,
-          this,
-          {
-            debug: false,
-            retry: {
-              retryDelay: 30,
-              retryStringConstraint: "error",
-              retryMaxAttempts: 3,
-            },
-          }
-        );
+        const result = await execCommand(`${command} --ignore-conflicts --json`, this, {
+          debug: false,
+          retry: {
+            retryDelay: 30,
+            retryStringConstraint: "error",
+            retryMaxAttempts: 3,
+          },
+        });
         results.push(result);
       } catch (error) {
         uxLog("error", this, c.red(`Error retrieving ${metadataType}: ${error}`));
       }
     }
-
     return results;
   }
 
@@ -522,11 +563,7 @@ The command's technical implementation involves:
   }
 
   // Validation Rules
-  public async handleValidationRuleFile(
-    filePath: string,
-    sObject: string,
-    name: string
-  ) {
+  public async handleValidationRuleFile(filePath: string, sObject: string, name: string): Promise<BypassImplementationReportItem> {
     try {
       const fileContent = await parseXmlFile(filePath);
       if (
@@ -535,15 +572,15 @@ The command's technical implementation involves:
       ) {
         return {
           sObject,
+          automation: "ValidationRule",
           name,
-          action: STATUS.FAILED,
+          outcome: IMPLEMENTATION_OUTCOME.FAILED,
           comment:
             "Invalid validation rule format or missing error condition formula",
         };
       }
 
-      const validationRuleContent =
-        fileContent.ValidationRule.errorConditionFormula[0];
+      const validationRuleContent = fileContent.ValidationRule.errorConditionFormula[0];
       const bypassPermissionName = `$Permission.Bypass${sObject}VRs`;
 
       if (
@@ -552,20 +589,19 @@ The command's technical implementation involves:
       ) {
         return {
           sObject,
+          automation: "ValidationRule",
           name,
-          action: STATUS.IGNORED,
+          outcome: IMPLEMENTATION_OUTCOME.IGNORED,
           comment: "SFDX-Hardis Bypass already implemented",
         };
       }
 
-      if (
-        typeof validationRuleContent === "string" &&
-        /bypass/i.test(validationRuleContent)
-      ) {
+      if (typeof validationRuleContent === "string" && /bypass/i.test(validationRuleContent)) {
         return {
           sObject,
+          automation: "ValidationRule",
           name,
-          action: STATUS.SKIPPED,
+          outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
           comment: "Another bypass mechanism exists",
         };
       }
@@ -574,48 +610,32 @@ The command's technical implementation involves:
       await writeXmlFile(filePath, fileContent);
       return {
         sObject,
+        automation: "ValidationRule",
         name,
-        action: STATUS.ADDED,
+        outcome: IMPLEMENTATION_OUTCOME.ADDED,
         comment: "SFDX-Hardis Bypass implemented",
       };
     } catch (error) {
       return {
         sObject,
+        automation: "ValidationRule",
         name,
-        action: STATUS.FAILED,
+        outcome: IMPLEMENTATION_OUTCOME.FAILED,
         comment: `Error processing file : ${error}`,
       };
     }
   }
 
-  public async applyBypassToValidationRules(
-    connection: Connection,
-    sObjects: { [key: string]: string }
-  ): Promise<void> {
-    const validationRuleRecords = await this.queryValidationRules(
-      connection,
-      sObjects
-    );
-
+  public async applyBypassToValidationRules(connection: Connection, sObjects: { [key: string]: string }): Promise<void> {
+    const validationRuleRecords = await this.queryValidationRules(connection, sObjects);
     if (!validationRuleRecords || validationRuleRecords.records.length === 0) {
       uxLog("log", this, c.grey("No validation rules found for the specified sObjects."));
-      return;
     }
-
-    uxLog(
-      "log",
-      this,
-      c.grey(`Processing ${validationRuleRecords.records.length} Validation Rules.`)
-    );
-
-    const validationRulesTableReport: any = [];
+    uxLog("log", this, c.grey(`Processing ${validationRuleRecords.records.length} Validation Rules.`));
     const eligibleMetadataFilePaths: any = [];
 
     if (this.retrieveFromOrg) {
-      const retrievedValidationRulesChunks = await this.retrieveMetadataFiles(
-        validationRuleRecords.records,
-        "ValidationRule"
-      );
+      const retrievedValidationRulesChunks = await this.retrieveMetadataFiles(validationRuleRecords.records, "ValidationRule");
       for (const retrievedValidationRules of retrievedValidationRulesChunks) {
         if (
           retrievedValidationRules?.status !== 1 &&
@@ -630,20 +650,12 @@ The command's technical implementation involves:
             ) {
               continue;
             }
-
-            const [sObject, name] = metadataFile.fullName.split(".") as [
-              string,
-              string
-            ];
+            const [sObject, name] = metadataFile.fullName.split(".") as [string, string];
             const filePath = metadataFile.filePath;
             eligibleMetadataFilePaths.push({ filePath, sObject, name });
           }
         } else {
-          uxLog(
-            "log",
-            this,
-            c.grey("No Validation Rule files found in the retrieved metadata chunk.")
-          );
+          uxLog("log", this, c.grey("No Validation Rule files found in the retrieved metadata chunk."));
         }
       }
     } else {
@@ -651,49 +663,40 @@ The command's technical implementation involves:
         for (const record of validationRuleRecords.records) {
           const sObject = record.EntityDefinition.QualifiedApiName;
           const name = record.ValidationName;
-          const filePath = await MetadataUtils.findMetaFileFromTypeAndName(
-            "ValidationRule",
-            name
-          );
+          const filePath = await MetadataUtils.findMetaFileFromTypeAndName("ValidationRule", name);
           if (filePath === null) {
-            // TODO: add to report instead of log
-            uxLog(
-              "log",
-              this,
-              c.grey(`The validation rule ${name} for sObject ${sObject} does not have a corresponding metadata file locally. Skipping.`)
-            );
+            this.reports.implementation.push({
+              sObject,
+              automation: "ValidationRule",
+              name,
+              outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
+              comment: `File not found locally.`,
+            });
           } else {
             eligibleMetadataFilePaths.push({ filePath, sObject, name });
           }
         }
       }
     }
-
     for (const eligibleMetadataFilePath of eligibleMetadataFilePaths) {
-      validationRulesTableReport.push(
-        await this.handleValidationRuleFile(
-          eligibleMetadataFilePath.filePath,
-          eligibleMetadataFilePath.sObject,
-          eligibleMetadataFilePath.name
-        )
-      );
+      this.reports.implementation.push(await this.handleValidationRuleFile(
+        eligibleMetadataFilePath.filePath,
+        eligibleMetadataFilePath.sObject,
+        eligibleMetadataFilePath.name
+      ));
     }
-    uxLog("action", this, c.cyan(`Validation Rules bypass report:`));
-    uxLogTable(this, validationRulesTableReport);
   }
 
   // Triggers
-  public async handleTriggerFile(
-    filePath: string,
-    name: string
-  ): Promise<{ [key: string]: string | null }> {
+  public async handleTriggerFile(filePath: string, name: string): Promise<BypassImplementationReportItem> {
     try {
       if (!fs.existsSync(filePath)) {
         return {
           sObject: null,
+          automation: "Trigger",
           name,
-          action: STATUS.FAILED,
-          comment: "File not found",
+          outcome: IMPLEMENTATION_OUTCOME.FAILED,
+          comment: "File not found locally.",
         };
       }
 
@@ -702,20 +705,20 @@ The command's technical implementation involves:
       if (typeof fileContent !== "string") {
         return {
           sObject: null,
+          automation: "Trigger",
           name,
-          action: STATUS.FAILED,
+          outcome: IMPLEMENTATION_OUTCOME.FAILED,
           comment: "Invalid file content format",
         };
       }
 
-      const match = fileContent.match(
-        /trigger\s+\w+\s+on\s+(\w+)\s*\([^)]*\)\s*{\s*/i
-      );
+      const match = fileContent.match(/trigger\s+\w+\s+on\s+(\w+)\s*\([^)]*\)\s*{\s*/i);
       if (!match) {
         return {
           sObject: null,
+          automation: "Trigger",
           name,
-          action: STATUS.FAILED,
+          outcome: IMPLEMENTATION_OUTCOME.FAILED,
           comment: "Unable to detect sObject",
         };
       }
@@ -726,8 +729,9 @@ The command's technical implementation involves:
       if (fileContent.includes(bypassCheckLine)) {
         return {
           sObject,
+          automation: "Trigger",
           name,
-          action: STATUS.IGNORED,
+          outcome: IMPLEMENTATION_OUTCOME.IGNORED,
           comment: "Bypass already implemented",
         };
       }
@@ -735,66 +739,46 @@ The command's technical implementation involves:
       if (/bypass|PAD\.can/i.test(fileContent)) {
         return {
           sObject,
+          automation: "Trigger",
           name,
-          action: STATUS.SKIPPED,
+          outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
           comment: "Another bypass exists",
         };
       }
 
-      const fullBypassLine = `${bypassCheckLine}${this.skipCredits ? "" : "// Updated " + CREDITS_TEXT
-        }`;
+      const fullBypassLine = `${bypassCheckLine}${this.skipCredits ? "" : "// Updated " + CREDITS_TEXT}`;
       const openBraceIndex = fileContent.indexOf("{");
       const beforeBrace = fileContent.substring(0, openBraceIndex + 1);
       const afterBrace = fileContent.substring(openBraceIndex + 1).trimStart();
-
       fsExtra.ensureDirSync(path.dirname(filePath));
-      fs.writeFileSync(
-        filePath,
-        `${beforeBrace}\n\t${fullBypassLine}\n\t${afterBrace}`,
-        "utf-8"
-      );
+      fs.writeFileSync(filePath, `${beforeBrace}\n\t${fullBypassLine}\n\t${afterBrace}`, "utf-8");
       return {
         sObject,
+        automation: "Trigger",
         name,
-        action: STATUS.ADDED,
+        outcome: IMPLEMENTATION_OUTCOME.ADDED,
         comment: "Bypass implemented",
       };
     } catch (error) {
       return {
         sObject: null,
+        automation: "Trigger",
         name,
-        action: STATUS.FAILED,
+        outcome: IMPLEMENTATION_OUTCOME.FAILED,
         comment: `Error processing file : ${error}`,
       };
     }
   }
 
-  public async applyBypassToTriggers(
-    connection: Connection,
-    sObjects: { [key: string]: string }
-  ): Promise<void> {
+  public async applyBypassToTriggers(connection: Connection, sObjects: { [key: string]: string }): Promise<void> {
     const triggerResults = await this.queryTriggers(connection);
-
-    const filteredTriggersResults = this.filterTriggerResults(
-      triggerResults,
-      sObjects
-    );
-
+    const filteredTriggersResults = this.filterTriggerResults(triggerResults, sObjects);
     if (!filteredTriggersResults || filteredTriggersResults?.length === 0) {
       uxLog("log", this, c.grey("No triggers found for the specified sObjects."));
-      return;
     }
-
-    const triggerReport: any = [];
-
     const eligibleMetadataFilePaths: any = [];
-
     if (this.retrieveFromOrg) {
-      const retrievedTriggersChunks = await this.retrieveMetadataFiles(
-        filteredTriggersResults,
-        "ApexTrigger"
-      );
-
+      const retrievedTriggersChunks = await this.retrieveMetadataFiles(filteredTriggersResults, "ApexTrigger");
       for (const retrievedTriggers of retrievedTriggersChunks) {
         if (
           retrievedTriggers?.status !== 1 &&
@@ -815,98 +799,82 @@ The command's technical implementation involves:
             eligibleMetadataFilePaths.push({ filePath, name });
           }
         } else {
-          uxLog(
-            "log",
-            this,
-            c.grey("No Trigger files found in the retrieved metadata chunk.")
-          );
+          uxLog("log", this, c.grey("No Trigger files found in the retrieved metadata chunk."));
         }
       }
     } else {
       if (filteredTriggersResults) {
         for (const record of filteredTriggersResults) {
           const name = record.Name;
-          const filePath = await MetadataUtils.findMetaFileFromTypeAndName(
-            "ApexTrigger",
-            name
-          );
+          const filePath = await MetadataUtils.findMetaFileFromTypeAndName("ApexTrigger", name);
           if (filePath === null) {
-            // TODO: add to report instead of log
-            uxLog(
-              "log",
-              this,
-              c.grey(`The trigger ${name} does not have a corresponding metadata file locally. Skipping.`)
-            );
+            this.reports.implementation.push({
+              sObject: null,
+              automation: "Trigger",
+              name,
+              outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
+              comment: `File not found locally.`,
+            })
           } else {
             eligibleMetadataFilePaths.push({ filePath, name });
           }
         }
       }
     }
-
     for (const eligibleMetadataFilePath of eligibleMetadataFilePaths) {
-      triggerReport.push(
-        await this.handleTriggerFile(
-          eligibleMetadataFilePath.filePath,
-          eligibleMetadataFilePath.name
-        )
-      );
+      this.reports.implementation.push(await this.handleTriggerFile(
+        eligibleMetadataFilePath.filePath,
+        eligibleMetadataFilePath.name
+      ));
     }
-    uxLog("action", this, c.cyan(`Trigger bypass report:`));
-    uxLogTable(this, triggerReport);
   }
 
   // Flows
-  public async handleFlowFile(
-    filePath: string,
-    name: string
-  ): Promise<{ [key: string]: string | null }> {
-    
+  public async handleFlowFile(filePath: string, name: string): Promise<BypassImplementationReportItem> {
     try {
       if (!fs.existsSync(filePath)) {
         return {
           sObject: null,
+          automation: "Flow",
           name,
-          action: STATUS.FAILED,
+          outcome: IMPLEMENTATION_OUTCOME.FAILED,
           comment: "File not found",
         };
       }
 
       const fileContent = await parseXmlFile(filePath);
-
       const sObject = fileContent?.Flow?.start?.[0]?.object?.[0] ?? null;
-      if(sObject == null){
+      if (sObject == null) {
         return {
           sObject: null,
+          automation: "Flow",
           name,
-          action: STATUS.SKIPPED,
+          outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
           comment: "No sObject found",
         };
       }
-
       const filterFormula = fileContent?.Flow?.start?.[0]?.filterFormula?.[0] ?? null;
-
       // Check if a bypass already exists in formula mode
-      if (filterFormula && typeof filterFormula === "string" && /bypass/i.test(filterFormula) ) {
+      if (filterFormula && typeof filterFormula === "string" && /bypass/i.test(filterFormula)) {
         return {
           sObject,
+          automation: "Flow",
           name,
-          action: STATUS.SKIPPED,
+          outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
           comment: "Another bypass mechanism exists",
         };
       }
-
       const firstNodeName = fileContent?.Flow?.start?.[0]?.connector?.[0]?.targetReference?.[0] ?? null;
-      if(firstNodeName == 'SFDX_HARDIS_FLOW_BYPASS_DO_NOT_RENAME'){
+      if (firstNodeName == 'SFDX_HARDIS_FLOW_BYPASS_DO_NOT_RENAME') {
         return {
           sObject,
+          automation: "Flow",
           name,
-          action: STATUS.IGNORED,
+          outcome: IMPLEMENTATION_OUTCOME.IGNORED,
           comment: "SFDX-Hardis Bypass already implemented",
         };
       }
-
-      if(!Object.keys(fileContent.Flow ?? {}).includes('decisions')){
+      if (!Object.keys(fileContent.Flow ?? {}).includes('decisions')) {
         fileContent.Flow.decisions = [];
       }
       fileContent.Flow.decisions.push({
@@ -937,53 +905,35 @@ The command's technical implementation involves:
           }
         ]
       });
-
       fileContent.Flow.start[0].connector[0].targetReference[0] = 'SFDX_HARDIS_FLOW_BYPASS_DO_NOT_RENAME';
-
       await writeXmlFile(filePath, fileContent);
-
       return {
         sObject,
+        automation: "Flow",
         name,
-        action: STATUS.ADDED,
+        outcome: IMPLEMENTATION_OUTCOME.ADDED,
         comment: "Bypass implemented",
       };
     } catch (error) {
       return {
         sObject: null,
+        automation: "Flow",
         name,
-        action: STATUS.FAILED,
+        outcome: IMPLEMENTATION_OUTCOME.FAILED,
         comment: `Error processing file : ${error}`,
       };
     }
   }
 
-  public async applyBypassToFlows(
-    connection: Connection,
-    sObjects: { [key: string]: string }
-  ): Promise<void> {
+  public async applyBypassToFlows(connection: Connection, sObjects: { [key: string]: string }): Promise<void> {
     const flowResults = await this.queryFlows(connection);
-
-    const filteredFlowResults = this.filterFlowResults(
-      flowResults,
-      sObjects
-    );
-
+    const filteredFlowResults = this.filterFlowResults(flowResults, sObjects);
     if (!filteredFlowResults || filteredFlowResults?.length === 0) {
       uxLog("log", this, c.grey("No flows found for the specified sObjects."));
-      return;
     }
-
-    const flowReport: any = [];
-
     const eligibleMetadataFilePaths: any = [];
-
     if (this.retrieveFromOrg) {
-      const retrievedFlowChunks = await this.retrieveMetadataFiles(
-        filteredFlowResults,
-        "Flow"
-      );
-
+      const retrievedFlowChunks = await this.retrieveMetadataFiles(filteredFlowResults, "Flow");
       for (const retrievedFlows of retrievedFlowChunks) {
         if (
           retrievedFlows?.status !== 1 &&
@@ -1003,46 +953,40 @@ The command's technical implementation involves:
             eligibleMetadataFilePaths.push({ filePath, name });
           }
         } else {
-          uxLog(
-            "log",
-            this,
-            c.grey("No Flow files found in the retrieved metadata chunk.")
-          );
+          uxLog("log", this, c.grey("No Flow files found in the retrieved metadata chunk."));
         }
       }
     } else {
       if (filteredFlowResults) {
         for (const record of filteredFlowResults) {
           const name = record.ApiName;
-          const filePath = await MetadataUtils.findMetaFileFromTypeAndName(
-            "Flow",
-            name
-          );
+          const filePath = await MetadataUtils.findMetaFileFromTypeAndName("Flow", name);
           if (filePath === null) {
-            // TODO: add to report instead of log
-            uxLog(
-              "log",
-              this,
-              c.grey(`The Flow ${name} does not have a corresponding metadata file locally. Skipping.`)
-            );
+            this.reports.implementation.push({
+              sObject: null,
+              automation: "Flow",
+              name,
+              outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
+              comment: "File not found locally",
+            });
           } else {
             eligibleMetadataFilePaths.push({ filePath, name });
           }
         }
       }
     }
-
     for (const eligibleMetadataFilePath of eligibleMetadataFilePaths) {
-      flowReport.push(
-        await this.handleFlowFile(
-          eligibleMetadataFilePath.filePath,
-          eligibleMetadataFilePath.name
-        )
-      );
+      this.reports.implementation.push(await this.handleFlowFile(
+        eligibleMetadataFilePath.filePath,
+        eligibleMetadataFilePath.name
+      ));
     }
-
-    uxLog("action", this, c.cyan(`Flow bypass report:`));
-    uxLogTable(this, flowReport);
-    
   }
 }
+
+/**
+ * Command TODO:
+ * - Add option to determine sobjects directly from current project instead of calling API
+ * - While generating, check if the metadata file already exists, if yes, warning
+ * - Before implementing, check if the permission set file exists, if not, warning
+ */
