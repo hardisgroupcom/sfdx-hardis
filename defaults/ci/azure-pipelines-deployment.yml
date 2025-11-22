@@ -56,6 +56,13 @@ jobs:
           sf version --verbose --json
         displayName: "Install SFDX & plugins"
 
+      # Extract Pull Request ID from merge commit
+      - script: |
+          PR_ID=$(git log -1 --pretty=%B | head -1 | sed -n 's/.*[Mm]erged[[:space:]]\+[Pp][Rr][[:space:]]*\([0-9]\+\).*/\1/p')
+          [ -n "$PR_ID" ] && echo "Found Pull Request ID: $PR_ID" && echo "##vso[task.setvariable variable=PULL_REQUEST_ID]$PR_ID"
+        displayName: "Extract Pull Request ID"
+        continueOnError: true
+
       # Login & Deploy sfdx sources to related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
       - script: |
           sf hardis:auth:login
@@ -85,7 +92,7 @@ jobs:
           SYSTEM_TEAMPROJECT: $(System.TeamProject)
           SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
           SYSTEM_JOB_ID: $(System.JobId)
-          SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+          SYSTEM_PULLREQUEST_PULLREQUESTID: $(PULL_REQUEST_ID)
           BUILD_REPOSITORY_ID: $(Build.Repository.ID)
           BUILD_REPOSITORYNAME: $(Build.Repository.Name)
           BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
