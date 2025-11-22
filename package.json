@@ -16,7 +16,7 @@
     "@oclif/core": "^4.8.0",
     "@salesforce/core": "^8.23.4",
     "@salesforce/sf-plugins-core": "^11.3.12",
-    "@slack/types": "^2.18.0",
+    "@slack/types": "^2.19.0",
     "@slack/web-api": "^7.12.0",
     "@supercharge/promise-pool": "^3.2.0",
     "@xmldom/xmldom": "^0.9.8",
@@ -37,7 +37,7 @@
     "extract-zip": "^2.0.1",
     "farmhash": "^4.0.2",
     "fast-xml-parser": "^4.5.3",
-    "form-data": "^4.0.4",
+    "form-data": "^4.0.5",
     "fs-extra": "^11.3.2",
     "fs-readdir-recursive": "^1.1.0",
     "glob": "^12.0.0",
@@ -75,7 +75,7 @@
   },
   "resolutions": {
     "@langchain/core": "0.3.57",
-    "form-data": "4.0.4",
+    "form-data": "4.0.5",
     "tmp": "0.2.5",
     "prebuild-install/tar-fs": "2.1.4",
     "@puppeteer/browsers/tar-fs": "3.1.1"
