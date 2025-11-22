@@ -17,7 +17,8 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
   uxLog("action", this, c.cyan(`[DeploymentActions] Listing ${actionLabel}...`));
   const branchConfig = await getConfig('branch');
-  const commands: PrePostCommand[] = [...(branchConfig[property] || []), ...(options.extraCommands || [])];
+  const extraCommands = (options.extraCommands || []).filter(cmd => cmd.preOrPost === property);
+  const commands: PrePostCommand[] = [...(branchConfig[property] || []), ...(extraCommands || [])];
   try {
     await completeWithCommandsFromPullRequests(property, commands, options.checkOnly);
   } catch (e) {
@@ -125,7 +126,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
 
 async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean) {
   await checkForDraftCommandsFile(property, checkOnly);
-  const pullRequests = await listAllPullRequestsToUse();
+  const pullRequests = await listAllPullRequestsToUse(checkOnly);
   for (const pr of pullRequests) {
     // Check if there is a .sfdx-hardis.PULL_REQUEST_ID.yml file in the PR
     const prConfigFileName = path.join("scripts", "actions", `.sfdx-hardis.${pr.idStr}.yml`);
@@ -149,7 +150,7 @@ async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy
 
 let _cachedPullRequests: CommonPullRequestInfo[] | null = null;
 
-async function listAllPullRequestsToUse(): Promise<CommonPullRequestInfo[]> {
+async function listAllPullRequestsToUse(checkOnly: boolean): Promise<CommonPullRequestInfo[]> {
   if (_cachedPullRequests) {
     return _cachedPullRequests;
   }
@@ -164,16 +165,41 @@ async function listAllPullRequestsToUse(): Promise<CommonPullRequestInfo[]> {
     return [];
   }
   const majorOrgs = await listMajorOrgs();
+
+  // Source & target are not the same if we are in checkOnly mode or deployment mode
+  let sourceBranchToUse = '';
+  let targetBranchToUse = '';
+  if (checkOnly) {
+    sourceBranchToUse = pullRequestInfo.sourceBranch;
+    targetBranchToUse = pullRequestInfo.targetBranch;
+  }
+  else {
+    const prTargetOrgDef = majorOrgs.find(o => o.branchName === pullRequestInfo.targetBranch);
+    if (prTargetOrgDef) {
+      if (!prTargetOrgDef.mergeTargets || prTargetOrgDef.mergeTargets.length === 0) {
+        uxLog("warning", this, c.yellow(`[GitProvider] No merge targets defined for target branch ${prTargetOrgDef.branchName}, cannot retrieve pull requests to get commands from.`));
+        return [];
+      }
+      sourceBranchToUse = prTargetOrgDef.branchName;
+      targetBranchToUse = prTargetOrgDef.mergeTargets[0]; // Use first merge target as target branch
+    }
+    else {
+      uxLog("warning", this, c.yellow(`[GitProvider] Target branch ${pullRequestInfo.targetBranch} not found in major orgs list, cannot retrieve pull requests to get commands from.\nPR: ${JSON.stringify(pullRequestInfo, null, 2)}`));
+      return [];
+    }
+  }
+
   const childBranchesNames = recursiveGetChildBranches(
-    pullRequestInfo.targetBranch,
+    targetBranchToUse,
     majorOrgs,
   );
   const pullRequests = await gitProvider.listPullRequestsInBranchSinceLastMerge(
-    pullRequestInfo.sourceBranch,
-    pullRequestInfo.targetBranch,
+    sourceBranchToUse,
+    targetBranchToUse,
     [...childBranchesNames]
   );
   pullRequests.reverse(); // Oldest PR first
+  // Add current PR if not already present
   if (!pullRequests.some(pr => pr.idStr === pullRequestInfo.idStr)) {
     pullRequests.push(pullRequestInfo);
   }
@@ -297,38 +323,51 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
     markdownBody += `| ${statusIcon} | ${labelCol} | ${cmd.type || 'command'} | ${statusCol} | ${detailCol} |\n`;
   }
   // Add details in html <detail> blocks, embedded in a root <details> block to avoid markdown rendering issues
-  markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
-  for (const cmd of commands) {
-    if (cmd.result?.output) {
-      // Truncate output if too long: Either the last 2000 characters, either the last 50 lines (if they are not more than 2000 characters)
-      // Indicate when output has been truncated
-      const maxOutputLength = 2000;
-      let outputForMarkdown = cmd.result.output;
-      const outputLines = outputForMarkdown.split('\n');
-      if (outputForMarkdown.length > maxOutputLength) {
-        outputForMarkdown = outputForMarkdown.substring(outputForMarkdown.length - maxOutputLength);
-      }
-      if (outputLines.length > 50) {
-        const last50Lines = outputLines.slice(-50).join('\n');
-        if (last50Lines.length <= maxOutputLength) {
-          outputForMarkdown = last50Lines;
+  const commandsInResults = commands.filter(c => (c.result && c.result.output) || c.type === "manual");
+  if (commandsInResults.length > 0) {
+    markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
+    for (const cmd of commands) {
+      if (cmd.result?.output) {
+        // Truncate output if too long: Either the last 2000 characters, either the last 50 lines (if they are not more than 2000 characters)
+        // Indicate when output has been truncated
+        const maxOutputLength = 2000;
+        let outputForMarkdown = cmd.result.output;
+        const outputLines = outputForMarkdown.split('\n');
+        if (outputForMarkdown.length > maxOutputLength) {
+          outputForMarkdown = outputForMarkdown.substring(outputForMarkdown.length - maxOutputLength);
         }
-      }
-      if (outputForMarkdown.length < cmd.result.output.length) {
-        outputForMarkdown = `... (output truncated, total length was ${cmd.result.output.length} characters)\n` + outputForMarkdown;
-      }
+        if (outputLines.length > 50) {
+          const last50Lines = outputLines.slice(-50).join('\n');
+          if (last50Lines.length <= maxOutputLength) {
+            outputForMarkdown = last50Lines;
+          }
+        }
+        if (outputForMarkdown.length < cmd.result.output.length) {
+          outputForMarkdown = `... (output truncated, total length was ${cmd.result.output.length} characters)\n` + outputForMarkdown;
+        }
 
-      const labeTitle = cmd.pullRequest ?
-        `${cmd.label} (${cmd.pullRequest.idStr || "?"})` :
-        cmd.label;
-      markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${labeTitle}</summary>\n\n`;
-      markdownBody += '```\n';
-      markdownBody += outputForMarkdown
-      markdownBody += '\n```\n';
-      markdownBody += '</details>\n';
+        const labelTitle = cmd.pullRequest ?
+          `${cmd.label} (${cmd.pullRequest.idStr || "?"})` :
+          cmd.label;
+        markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${labelTitle}</summary>\n\n`;
+        markdownBody += '```\n';
+        markdownBody += outputForMarkdown
+        markdownBody += '\n```\n';
+        markdownBody += '</details>\n';
+      }
+      else if (cmd.type === "manual") {
+        const labelTitle = cmd.pullRequest ?
+          `${cmd.label} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))` :
+          cmd.label;
+        markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${labelTitle}</summary>\n\n`;
+        markdownBody += '```\n';
+        markdownBody += cmd?.parameters?.instructions || "No instructions provided.";
+        markdownBody += '\n```\n';
+        markdownBody += '</details>\n';
+      }
     }
+    markdownBody += `\n</details>\n`;
   }
-  markdownBody += `\n</details>\n`;
   const propertyFormatted = property === 'commandsPreDeploy' ? 'preDeployCommandsResultMarkdownBody' : 'postDeployCommandsResultMarkdownBody';
   const prData = {
     [propertyFormatted]: markdownBody

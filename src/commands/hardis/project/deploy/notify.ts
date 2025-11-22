@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { CONSTANTS } from '../../../../config/index.js';
@@ -118,7 +118,7 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
-    'target-org': requiredOrgFlagWithDeprecations,
+    'target-org': optionalOrgFlagWithDeprecations,
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -136,7 +136,7 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
     this.deployStatus = flags["deploy-status"] || "unknown";
     this.message = flags.message || "";
     this.debugMode = flags.debug || false;
-    await setConnectionVariables(flags['target-org']?.getConnection(), true);
+    await setConnectionVariables(flags?.['target-org']?.getConnection(), true);
 
 
     uxLog("action", this, c.cyan("Handling Pull Request comments for a deployment check job..."));
@@ -160,7 +160,7 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
 
     // Post notifications after successful deployment
     if (this.checkOnly === false && this.deployStatus === "valid") {
-      await handlePostDeploymentNotifications(flags, flags["target-org"].getUsername(), false, false, this.debugMode, this.message);
+      await handlePostDeploymentNotifications(flags, flags["target-org"]?.getUsername(), false, false, this.debugMode, this.message);
     }
     // Fallback
     else {
