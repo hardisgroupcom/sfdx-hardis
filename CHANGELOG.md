@@ -4,7 +4,25 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.12.6] 2025-11-18
+
+- QuickFix typo in deployment actions
+
+## [6.12.5] 2025-11-18
+
+- Improve JIRA authentication and display 
+- [hardis:project:deploy:notify](https://sfdx-hardis.cloudity.com/hardis/project/deploy/notify/): Make default org optional
+- Improve pre/post deployment commands details display in PR comments
+
+## [6.12.4] 2025-11-18
+
+- Upgrade dependencies
+
+## [6.12.3] 2025-11-17
+
 - Add more logs to help investigation in case of issue
+- Fix: Issue with extraCommands defined in PR description text (#1540)
+- Fix: Resolve duplicate WHERE clause in bulkQueryByChunks pagination (#1539)
 
 ## [6.12.2] 2025-11-11
 

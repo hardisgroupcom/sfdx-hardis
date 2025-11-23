@@ -418,6 +418,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           label: 'Purge Flow Versions (added from PR config)',
           skipIfError: true,
           context: 'process-deployment-only',
+          preOrPost: 'commandsPreDeploy',
         })
         uxLog("action", this, c.cyan('[SmartDeploy] Purge Flow Versions command added to deployment options (from PR config)'));
       }
@@ -442,6 +443,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
             label: 'Destructive Changes After Deployment (added from PR config)',
             skipIfError: true,
             context: 'process-deployment-only',
+            preOrPost: 'commandsPostDeploy',
           });
           uxLog("action", this, c.cyan('[SmartDeploy] Destructive Changes After Deployment command added to deployment options (from PR config)'));
         }
