@@ -6,6 +6,11 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/): Added ability to apply the bypass to flows
 
+## [6.12.7] 2025-11-24
+
+- Include stack trace in warning log for Flow diff generation errors
+- Upgrade dependencies
+
 ## [6.12.6] 2025-11-18
 
 - QuickFix typo in deployment actions
