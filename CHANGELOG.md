@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.12.8] 2025-11-25
+
+- Upgrade isomorphic-dompurify
+
 ## [6.12.7] 2025-11-24
 
 - Include stack trace in warning log for Flow diff generation errors
