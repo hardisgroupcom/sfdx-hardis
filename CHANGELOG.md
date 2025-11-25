@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.12.9] 2025-11-25
+
+- Fixes compatibility issues caused by upgrading to parse5 v8.0.0.
+
 ## [6.12.8] 2025-11-25
 
 - Upgrade isomorphic-dompurify
