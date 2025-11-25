@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.12.10] 2025-11-25
+
+- Temporary downgrade isomorphic-dompurify package (jsdom dep not compliant with NodeJS < 20.19.5 and CodeBuilder / Agentforce Vibes is below)
+
 ## [6.12.9] 2025-11-25
 
 - Fixes compatibility issues caused by upgrading to parse5 v8.0.0.
