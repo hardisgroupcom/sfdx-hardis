@@ -1498,4 +1498,3 @@ export async function generateApexCoverageOutputFile(): Promise<void> {
     uxLog("error", this, c.red(`Error while generating Apex coverage output file: ${e.message}`));
   }
 }
-

@@ -193,21 +193,21 @@ export class GitlabProvider extends GitProviderRoot {
     const messageKey = prMessage.messageKey + "-" + gitlabCiJobName + "-" + mergeRequestId;
     let messageBody = `## ${prMessage.title || ""}
 
-${prMessage.message}
+    ${prMessage.message}
 
-_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
-<!-- sfdx-hardis message-key ${messageKey} -->
-`;
+_Powered by[sfdx - hardis](${CONSTANTS.DOC_URL_ROOT}) from job[${gitlabCiJobName}](${gitlabCIJobUrl}) _
+  < !--sfdx - hardis message - key ${messageKey} -->
+    `;
     // Add deployment id if present
     if (globalThis.pullRequestDeploymentId) {
-      messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
+      messageBody += `\n < !--sfdx - hardis deployment - id ${globalThis.pullRequestDeploymentId} --> `;
     }
     // Check for existing note from a previous run
     uxLog("log", this, c.grey("[Gitlab integration] Listing Notes of Merge Request..."));
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
     let existingNoteId: number | null = null;
     for (const existingNote of existingNotes) {
-      if (existingNote.body.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
+      if (existingNote.body.includes(`< !--sfdx - hardis message - key ${messageKey} --> `)) {
         existingNoteId = existingNote.id;
       }
     }
@@ -252,7 +252,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       }
 
       // Step 1: Find the last merged MR from currentBranch to targetBranch
-      uxLog("log", this, c.grey(`[Gitlab Integration] Finding last merged MR from ${currentBranchName} to ${targetBranchName}`));
+      uxLog("log", this, c.grey(`[Gitlab Integration] Finding last merged MR from ${currentBranchName} to ${targetBranchName} `));
       const lastMergeToTarget = await this.findLastMergedMR(currentBranchName, targetBranchName, projectId);
 
       // Step 2: Get all commits in currentBranch since that merge (or all if no previous merge)
@@ -279,7 +279,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
           uxLog("log", this, c.grey(`[Gitlab Integration] Fetching merged MRs for branch ${branchName}`));
           return mergedMRs;
         } catch (err) {
-          uxLog("warning", this, c.yellow(`[Gitlab Integration] Error fetching merged MRs for branch ${branchName}: ${String(err)}`));
+          uxLog("warning", this, c.yellow(`[Gitlab Integration] Error fetching merged MRs for branch ${branchName}: ${String(err)} `));
           return [];
         }
       });
@@ -318,7 +318,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
         this.completePullRequestInfo(mr)
       );
     } catch (err) {
-      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}\n${err instanceof Error ? err.stack : ""}`));
+      uxLog("warning", this, c.yellow(`[Gitlab Integration]Error in listPullRequestsInBranchSinceLastMerge: ${String(err)} \n${err instanceof Error ? err.stack : ""} `));
       return [];
     }
   }
@@ -342,7 +342,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
 
       return mergedMRs.length > 0 ? mergedMRs[0] : null;
     } catch (err) {
-      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error finding last merged MR from ${sourceBranch} to ${targetBranch}: ${String(err)}`));
+      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error finding last merged MR from ${sourceBranch} to ${targetBranch}: ${String(err)} `));
       return null;
     }
   }
@@ -370,7 +370,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       const commits = await this.gitlabApi!.Commits.all(projectId, options);
       return commits || [];
     } catch (err) {
-      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error fetching commits for branch ${branchName}: ${String(err)}`));
+      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error fetching commits for branch ${branchName}: ${String(err)} `));
       return [];
     }
   }

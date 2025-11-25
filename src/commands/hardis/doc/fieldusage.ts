@@ -52,7 +52,7 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
   public async querySObjects(connection: Connection, sObjectsFilter?: string[]) {
     let sObjectsQuery = `
       SELECT Id, DeveloperName, PublisherId, IsCustomizable, IsCustomSetting
-      FROM EntityDefinition 
+      FROM EntityDefinition
       WHERE IsCustomizable = true
     `;
 
@@ -90,7 +90,7 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
     uxLog("other", this, `Extracting fields for sObject: ${sObjectName}.`);
     const queryTooling = `
       SELECT Id, DeveloperName
-      FROM CustomField 
+      FROM CustomField
       WHERE EntityDefinition.DeveloperName = '${sObjectName}'
     `;
     const fieldResults = await soqlQueryTooling(queryTooling, connection);

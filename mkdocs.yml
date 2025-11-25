@@ -209,6 +209,7 @@ nav:
               - Describe Flow: prompt-templates/PROMPT_DESCRIBE_FLOW.md
               - Describe Flow Diff: prompt-templates/PROMPT_DESCRIBE_FLOW_DIFF.md
               - Describe LWC: prompt-templates/PROMPT_DESCRIBE_LWC.md
+              - Describe VF: prompt-templates/PROMPT_DESCRIBE_VF.md
               - Describe Object: prompt-templates/PROMPT_DESCRIBE_OBJECT.md
               - Describe Package: prompt-templates/PROMPT_DESCRIBE_PACKAGE.md
               - Describe Page: prompt-templates/PROMPT_DESCRIBE_PAGE.md

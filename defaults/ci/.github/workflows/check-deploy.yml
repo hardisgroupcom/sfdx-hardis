@@ -59,7 +59,7 @@ jobs:
           SFDX_CLIENT_KEY_PREPROD: ${{ secrets.SFDX_CLIENT_KEY_PREPROD}}
           SFDX_CLIENT_ID_MAIN: ${{ secrets.SFDX_CLIENT_ID_MAIN}}
           SFDX_CLIENT_KEY_MAIN: ${{ secrets.SFDX_CLIENT_KEY_MAIN}}
-          SFDX_AUTH_URL_TECHNICAL_ORG: ${{ SFDX_AUTH_URL_TECHNICAL_ORG }}
+          SFDX_AUTH_URL_TECHNICAL_ORG: ${{ secrets.SFDX_AUTH_URL_TECHNICAL_ORG }}
           SFDX_DEPLOY_WAIT_MINUTES: ${{ vars.SFDX_DEPLOY_WAIT_MINUTES || '120' }}
           SFDX_TEST_WAIT_MINUTES: ${{ vars.SFDX_TEST_WAIT_MINUTES || '120' }}
           CI_COMMIT_REF_NAME: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
