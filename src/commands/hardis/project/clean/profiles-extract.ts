@@ -235,6 +235,7 @@ Key capabilities:
           if (result.totalSize > 0) {
             sobjectsWithRecords.push({ Object_Label: sobject.label, API_Name: sobject.name, Object_Type: sobject.objectType });
           }
+          uxLog('log', this, `Checked ${sobject.name}: ${result.totalSize} records.`);
         } catch (error) {
           uxLog('warning', this, c.yellow(`Failed to query ${sobject.name}: ${(error as Error).message}`));
         }
