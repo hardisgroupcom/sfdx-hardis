@@ -46,8 +46,8 @@ Key capabilities:
 `;
 
   public static readonly examples = [
-    `$ sf hardis:project:clean:profiles-extract --target-org my-org
-    Successfully exported SObjects with records to exports/sobjects_with_records.xlsx`,
+    `$ sf hardis:project:clean:profiles-extract`,
+    `$ sf hardis:project:clean:profiles-extract --target-org my-org`,
   ];
 
   public static readonly flags = {
@@ -338,8 +338,8 @@ Key capabilities:
     const statusRes = await prompts({
       message: "Please enter the number of personas to create",
       type: "number",
-      description: "Select objects to extract",
-      placeholder: "Select objects",
+      description: "One tab by personal will be created in the final Excel file",
+      placeholder: "Input a number of personas (better too much than too few!)",
     });
     if (statusRes && statusRes.value !== 0) {
       numberOfPersonas = statusRes.value;
