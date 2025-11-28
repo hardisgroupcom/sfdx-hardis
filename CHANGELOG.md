@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.13.0] 2025-11-28
+
 - New command [hardis:org:purge:profile](https://sfdx-hardis.cloudity.com/hardis/org/purge/profile/): Removes or "mutes" Permission Sets attributes from selected Salesforce Profile metadata files and redeploys the cleaned profiles to the target org.
 - New command [hardis:project:clean:profiles-extract](https://sfdx-hardis.cloudity.com/hardis/project/clean/profiles-extract/)
 - Adds site/ to .gitignore only in monitoring repositories
