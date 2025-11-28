@@ -1,9 +1,9 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { CONSTANTS } from '../../../../config/index.js';
-import { buildCheckDeployCommitSummary, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
+import { buildCheckDeployCommitSummary, handlePostDeploymentNotifications, setPullRequestData } from '../../../../common/utils/gitUtils.js';
 import { GitProvider, PullRequestData } from '../../../../common/gitProvider/index.js';
 import c from "chalk"
 import { uxLog } from '../../../../common/utils/index.js';
@@ -118,7 +118,7 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
-    'target-org': requiredOrgFlagWithDeprecations,
+    'target-org': optionalOrgFlagWithDeprecations,
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -136,38 +136,35 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
     this.deployStatus = flags["deploy-status"] || "unknown";
     this.message = flags.message || "";
     this.debugMode = flags.debug || false;
-    await setConnectionVariables(flags['target-org']?.getConnection(), true);
+    await setConnectionVariables(flags?.['target-org']?.getConnection(), true);
 
-    // Deployment check mode
-    if (this.checkOnly) {
-      uxLog("action", this, c.cyan("Handling Pull Request comments for a deployment check job..."));
-      // Add deployment info
-      await buildCheckDeployCommitSummary();
-      const prData: Partial<PullRequestData> = {
-        messageKey: "deployment",
-        title:
-          (this.checkOnly && this.deployStatus === "valid") ? "✅ Deployment check success" :
-            (!this.checkOnly && this.deployStatus === "valid") ? "✅ Deployment success" :
-              (this.checkOnly && this.deployStatus === "invalid") ? "❌ Deployment check failure" :
-                (!this.checkOnly && this.deployStatus === "invalid") ? "❌ Deployment failure" :
-                  (this.checkOnly && this.deployStatus === "unknown") ? "🤷 Deployment check status unknown" :
-                    "🤷 Deployment  status unknown",
-        deployErrorsMarkdownBody: this.message,
-        status: this.deployStatus === "valid" ? "valid" : this.deployStatus === "invalid" ? "invalid" : "tovalidate",
-      };
-      globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
-      // Post comments 😊
-      await GitProvider.managePostPullRequestComment();
-    }
+
+    uxLog("action", this, c.cyan("Handling Pull Request comments for a deployment check job..."));
+    // Add deployment info
+    await buildCheckDeployCommitSummary();
+    const prData: Partial<PullRequestData> = {
+      messageKey: "deployment",
+      title:
+        (this.checkOnly && this.deployStatus === "valid") ? "✅ Deployment check success" :
+          (!this.checkOnly && this.deployStatus === "valid") ? "✅ Deployment success" :
+            (this.checkOnly && this.deployStatus === "invalid") ? "❌ Deployment check failure" :
+              (!this.checkOnly && this.deployStatus === "invalid") ? "❌ Deployment failure" :
+                (this.checkOnly && this.deployStatus === "unknown") ? "🤷 Deployment check status unknown" :
+                  "🤷 Deployment  status unknown",
+      deployErrorsMarkdownBody: this.message,
+      status: this.deployStatus === "valid" ? "valid" : this.deployStatus === "invalid" ? "invalid" : "tovalidate",
+    };
+    setPullRequestData(prData);
+    // Post comments 😊
+    await GitProvider.managePostPullRequestComment(this.checkOnly);
 
     // Post notifications after successful deployment
-    else if (this.checkOnly === false && this.deployStatus === "valid") {
-      await handlePostDeploymentNotifications(flags, flags["target-org"].getUsername(), false, false, this.debugMode, this.message);
+    if (this.checkOnly === false && this.deployStatus === "valid") {
+      await handlePostDeploymentNotifications(flags, flags["target-org"]?.getUsername(), false, false, this.debugMode, this.message);
     }
     // Fallback
     else {
       uxLog("warning", this, c.yellow("No notification has been sent"));
-      uxLog("warning", this, c.yellow("- Pull Request comments are sent if --check-only is true"));
       uxLog("warning", this, c.yellow("- Slack / Teams / Email / JIRA messages are sent only if --check-only is false and --deploy-status is valid"));
     }
 

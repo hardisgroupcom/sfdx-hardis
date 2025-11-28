@@ -239,6 +239,10 @@ function guessMatchingMergeTargets(branchName: string, majorOrgs: any[]): string
   else if (isIntegration(branchName)) {
     return majorOrgs.filter(org => isUat(org.branchName)).map(org => org.branchName);
   }
+  if (branchName.toLowerCase().includes('training')) {
+    uxLog('log', this, c.grey(`Branch ${branchName} appears to be a training branch, that's probably ok to have no merge targets.`));
+    return [];
+  }
   uxLog("warning", this, c.yellow(`Unable to guess merge targets for ${branchName}.
 Please set them manually in config/branches/.sfdx-hardis.${branchName}.yml
 Example:

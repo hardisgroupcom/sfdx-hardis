@@ -8,6 +8,7 @@ import { findJsonInString, stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
 import { analyzeDeployErrorLogsJson } from "./deployTipJson.js";
 import { PullRequestData } from "../gitProvider/index.js";
+import { setPullRequestData } from "./gitUtils.js";
 
 let logRes: string | null = null;
 let errorsAndTips: any[] = [];
@@ -298,7 +299,7 @@ export async function updatePullRequestResult(errorsAndTips: Array<any>, failedT
     prData.deployErrorsMarkdownBody = testFailuresToMarkdown(failedTests);
     prData.status = "invalid";
   }
-  globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
+  setPullRequestData(prData);
 }
 
 async function findAiTip(errorLine: any): Promise<AiResponse | null> {

@@ -5,12 +5,12 @@ import c from 'chalk';
 import { GitProvider } from '../../../common/gitProvider/index.js';
 import {
   checkDeploymentOrgCoverage,
-  executePrePostCommands,
   extractOrgCoverageFromLog,
 } from '../../../common/utils/deployUtils.js';
 import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS } from '../../../config/index.js';
+import { executePrePostCommands } from '../../../common/utils/prePostCommandUtils.js';
 
 // Wrapper for sfdx force:source:deploy
 export class Deploy extends SfCommand<any> {
@@ -206,14 +206,14 @@ Notes:
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: checkOnly });
         } catch (errCoverage) {
-          await GitProvider.managePostPullRequestComment();
+          await GitProvider.managePostPullRequestComment(checkOnly);
           throw errCoverage;
         }
       }
     }
     // Run post deployment commands if defined
     await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: checkOnly, conn: conn });
-    await GitProvider.managePostPullRequestComment();
+    await GitProvider.managePostPullRequestComment(checkOnly);
     return result;
   }
 }

@@ -296,18 +296,24 @@
     },
     "commandsPreDeploy": {
       "$id": "#/properties/commandsPreDeploy",
-      "description": "List of commands to run before a deployment",
+      "description": "List of actions to run before a deployment",
       "examples": [
         [
           {
             "id": "knowledgeUnassign",
             "label": "Remove KnowledgeUser right to the user who has it",
-            "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json"
+            "type": "command",
+            "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json",
+            "context": "all"
           },
           {
-            "id": "knowledgeAssign",
-            "label": "Assign Knowledge user to desired username",
-            "command": "sf data update record --sobject User --where \"Username='deployment-user@myclient.com'\" --values \"UserPermissionsKnowledgeUser='true'\" --json"
+            "id": "importDataPackage",
+            "label": "Import SFDMU data package",
+            "type": "data",
+            "parameters": {
+              "sfdmuProject": "EmailTemplate"
+            },
+            "context": "process-deployment-only"
           }
         ]
       ],
@@ -319,15 +325,71 @@
         "properties": {
           "id": {
             "$id": "#/properties/commandsPreDeploy/items/properties/id",
-            "description": "Identifier of the command (can be any string)",
+            "description": "Identifier of the action (can be any string)",
             "title": "Id",
             "type": "string"
           },
           "label": {
             "$id": "#/properties/commandsPreDeploy/items/properties/label",
-            "description": "Label of the command (what does it do ?)",
+            "description": "Label of the action (what does it do ?)",
             "title": "Label",
             "type": "string"
+          },
+          "type": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/type",
+            "description": "Type of the action",
+            "title": "Type",
+            "type": "string",
+            "enum": [
+              "command",
+              "data",
+              "apex",
+              "publish-community",
+              "manual"
+            ],
+            "enumNames": [
+              "Command",
+              "Data Import",
+              "Apex Script",
+              "Publish Community",
+              "Manual Action"
+            ],
+            "examples": [
+              "command",
+              "data",
+              "apex",
+              "publish-community",
+              "manual"
+            ]
+          },
+          "parameters": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/parameters",
+            "description": "Known parameters used by action implementations. Additional keys allowed.",
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "apexScript": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/apexScript",
+                "description": "Apex script path to run for 'apex' actions",
+                "type": "string"
+              },
+              "sfdmuProject": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/sfdmuProject",
+                "description": "Path to SFDMU project for 'data' actions",
+                "type": "string"
+              },
+              "communityName": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/communityName",
+                "description": "Community name for 'publish-community' actions",
+                "type": "string"
+              },
+              "instructions": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/instructions",
+                "description": "Human-readable instructions for 'manual' actions",
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
           },
           "command": {
             "$id": "#/properties/commandsPreDeploy/items/properties/command",
@@ -337,7 +399,7 @@
           },
           "context": {
             "$id": "#/properties/commandsPreDeploy/items/properties/context",
-            "description": "Context when the command must be run",
+            "description": "Context when the action must be run",
             "title": "Context",
             "default": "all",
             "type": "string",
@@ -356,32 +418,62 @@
               "check-deployment-only",
               "process-deployment-only"
             ]
+          },
+          "allowFailure": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/allowFailure",
+            "description": "Allow action to fail without marking the deployment as failed",
+            "title": "Allow failure",
+            "default": false,
+            "type": "boolean"
+          },
+          "runOnlyOnceByOrg": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/runOnlyOnceByOrg",
+            "description": "Run this action only once per target org (useful for idempotent post-deploy tasks)",
+            "title": "Run only once by org",
+            "default": false,
+            "type": "boolean"
+          },
+          "customUsername": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/customUsername",
+            "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the Connected App used by deployment user.",
+            "title": "Custom Username",
+            "type": "string"
           }
         },
-        "title": "Command"
+        "required": [
+          "id",
+          "label",
+          "type",
+          "context"
+        ],
+        "title": "Action"
       },
-      "required": [
-        "id",
-        "label",
-        "command"
-      ],
-      "title": "Commands Pre-Deployment",
+      "title": "Actions Pre-Deployment",
       "type": "array"
     },
     "commandsPostDeploy": {
       "$id": "#/properties/commandsPostDeploy",
-      "description": "List of commands to run after a deployment",
+      "description": "List of actions to run after a deployment",
       "examples": [
         [
           {
             "id": "knowledgeUnassign",
             "label": "Remove KnowledgeUser right to the user who has it",
-            "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json"
+            "type": "command",
+            "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json",
+            "context": "all",
+            "skipIfError": false
           },
           {
-            "id": "knowledgeAssign",
-            "label": "Assign Knowledge user to desired username",
-            "command": "sf data update record --sobject User --where \"Username='admin-user@myclient.com'\" --values \"UserPermissionsKnowledgeUser='true'\" --json"
+            "id": "publishCommunity",
+            "label": "Publish community after deploy",
+            "type": "publish-community",
+            "parameters": {
+              "communityName": "CustomerPortal"
+            },
+            "context": "process-deployment-only",
+            "allowFailure": false,
+            "runOnlyOnceByOrg": true
           }
         ]
       ],
@@ -389,19 +481,75 @@
         "$id": "#/properties/commandsPostDeploy/items",
         "type": "object",
         "additionalProperties": false,
-        "description": "Command definition",
+        "description": "Action definition",
         "properties": {
           "id": {
             "$id": "#/properties/commandsPostDeploy/items/properties/id",
-            "description": "Identifier of the command (can be any string)",
+            "description": "Identifier of the action (can be any string)",
             "title": "Id",
             "type": "string"
           },
           "label": {
             "$id": "#/properties/commandsPostDeploy/items/properties/label",
-            "description": "Label of the command (what does it do ?)",
+            "description": "Label of the action (what does it do ?)",
             "title": "Label",
             "type": "string"
+          },
+          "type": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/type",
+            "description": "Type of the action",
+            "title": "Type",
+            "type": "string",
+            "enum": [
+              "command",
+              "data",
+              "apex",
+              "publish-community",
+              "manual"
+            ],
+            "enumNames": [
+              "Command",
+              "Data Import",
+              "Apex Script",
+              "Publish Community",
+              "Manual Action"
+            ],
+            "examples": [
+              "command",
+              "data",
+              "apex",
+              "publish-community",
+              "manual"
+            ]
+          },
+          "parameters": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/parameters",
+            "description": "Known parameters used by action implementations. Additional keys allowed.",
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "apexScript": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/apexScript",
+                "description": "Apex script path to run for 'apex' actions",
+                "type": "string"
+              },
+              "sfdmuProject": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/sfdmuProject",
+                "description": "Path to SFDMU project for 'data' actions",
+                "type": "string"
+              },
+              "communityName": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/communityName",
+                "description": "Community name for 'publish-community' actions",
+                "type": "string"
+              },
+              "instructions": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/instructions",
+                "description": "Human-readable instructions for 'manual' actions",
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
           },
           "command": {
             "$id": "#/properties/commandsPostDeploy/items/properties/command",
@@ -411,7 +559,7 @@
           },
           "context": {
             "$id": "#/properties/commandsPostDeploy/items/properties/context",
-            "description": "Context when the command must be run",
+            "description": "Context when the action must be run",
             "title": "Context",
             "default": "all",
             "type": "string",
@@ -433,20 +581,41 @@
           },
           "skipIfError": {
             "$id": "#/properties/commandsPostDeploy/items/properties/skipIfError",
-            "description": "Do not run the command if there is a deployment error",
+            "description": "Do not run the action if there is a deployment error",
             "title": "Skip if deploy error",
-            "default": "false",
+            "default": false,
             "type": "boolean"
+          },
+          "allowFailure": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/allowFailure",
+            "description": "Allow action to fail without marking the deployment as failed",
+            "title": "Allow failure",
+            "default": false,
+            "type": "boolean"
+          },
+          "runOnlyOnceByOrg": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/runOnlyOnceByOrg",
+            "description": "Run this action only once per target org (useful for idempotent post-deploy tasks)",
+            "title": "Run only once by org",
+            "default": false,
+            "type": "boolean"
+          },
+          "customUsername": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/customUsername",
+            "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the Connected App used by deployment user.",
+            "title": "Custom Username",
+            "type": "string"
           }
         },
         "required": [
           "id",
           "label",
-          "command"
+          "type",
+          "context"
         ],
-        "title": "Command"
+        "title": "Action"
       },
-      "title": "Commands Post-Deployment",
+      "title": "Actions Post-Deployment",
       "type": "array"
     },
     "customCommands": {

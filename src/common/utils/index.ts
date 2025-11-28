@@ -867,7 +867,9 @@ export async function execCommand(
     spinner: true,
   }
 ): Promise<any> {
-  let commandLog = `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.blue(command)))}`;
+  let commandLog = isCI && process.env.GITHUB_ACTIONS ?
+    `[sfdx-hardis][command] ${c.bold(c.bgBlue(c.yellow(command)))}` :
+    `[sfdx-hardis][command] ${c.bold(c.bgWhite(c.blue(command)))}`;
   const execOptions: any = { maxBuffer: 10000 * 10000 };
   if (options.cwd) {
     execOptions.cwd = options.cwd;

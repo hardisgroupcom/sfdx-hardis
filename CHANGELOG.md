@@ -4,8 +4,101 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Adds site/ to .gitignore only in monitoring repositories
+
+## [6.12.10] 2025-11-25
+
+- Temporary downgrade isomorphic-dompurify package (jsdom dep not compliant with NodeJS < 20.19.5 and CodeBuilder / Agentforce Vibes is below)
+
+## [6.12.9] 2025-11-25
+
+- Fixes compatibility issues caused by upgrading to parse5 v8.0.0.
+
+## [6.12.8] 2025-11-25
+
+- Upgrade isomorphic-dompurify
+
+## [6.12.7] 2025-11-24
+
+- Include stack trace in warning log for Flow diff generation errors
+- Upgrade dependencies
+
+## [6.12.6] 2025-11-18
+
+- QuickFix typo in deployment actions
+
+## [6.12.5] 2025-11-18
+
+- Improve JIRA authentication and display
+- [hardis:project:deploy:notify](https://sfdx-hardis.cloudity.com/hardis/project/deploy/notify/): Make default org optional
+- Improve pre/post deployment commands details display in PR comments
+
+## [6.12.4] 2025-11-18
+
+- Upgrade dependencies
+
+## [6.12.3] 2025-11-17
+
+- Add more logs to help investigation in case of issue
+- Fix: Issue with extraCommands defined in PR description text (#1540)
+- Fix: Resolve duplicate WHERE clause in bulkQueryByChunks pagination (#1539)
+
+## [6.12.2] 2025-11-11
+
+- Deployment Actions: When a custom username is defined, authenticate using the current Pull Request target branch, and not the origin Pull Request
+- Fix detection of deployment actions during deployments
+
+## [6.12.1] 2025-11-11
+
+- Optimize & fix git providers integrations
+
+## [6.12.0] 2025-11-10
+
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): If there are multiple `-` in a generated branch name , replace by single `-`, otherwise it messes with mermaid diagrams
+- Update json schema to add allowFailure & runOnlyOnceByOrg
+- Fix File Export SOQL with LIMIT Clause
+- [hardis:org:purge:flow](https://sfdx-hardis.cloudity.com/hardis/org/purge/flow/): Do not prompt user in CI context
+
+## [6.11.5] 2025-11-09
+
+- Excludes training branches from merge target suggestions
+- GitHub integration: Includes error stack in logs for easier debugging
+- Fix display of commands in GitHub Actions logs
+- Add permissions to Github deployment workflow
+- Upgrade npm dependencies
+
+## [6.11.4] 2025-11-06
+
+- [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): Fix bug when there are no Apex classes in the org
+- GitHub integration: Fix way to get Pull Request number
+- As SF Cli now requires NodeJs >= 24, set the same requirement to sfdx-hardis default workflows
+
+## [6.11.3] 2025-11-04
+
+- Handles errors from pull request commands
+
+## [6.11.2] 2025-11-03
+
+- Enhances storage stats with breakdown and filtering
+
+## [6.11.1] 2025-11-02
+
+- Fix manual checkbox display in PR comments
+
+## [6.11.0] 2025-11-02
+
+- New feature: [**Deployment actions**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/) at Pull Request level
+  - Define pre-deploy and post-deploy commands to be executed during CI/CD deployments
+  - Display summary in Pull Request with details of each command execution
+- Update CI/CD documentation & screenshots
+- Do not display generated time in JSON Schema doc
+
+## [6.10.0] 2025-10-31
+
+- New command [hardis:org:diagnose:storage-stats](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/storage-stats/) to analyze storage usage per object and per year of creation / last update
 - Add explicit message in case of error when authenticating to Git provider API
 - Allow to override SFDX_TEST_WAIT_MINUTES and SFDX_DEPLOY_WAIT_MINUTES using CI/CD variables, and set 120 minutes as default value everywhere
+- Fix Validation Rules formula field in doc generation
 
 ## [6.9.0] 2025-10-23
 

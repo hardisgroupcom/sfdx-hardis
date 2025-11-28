@@ -26,7 +26,15 @@ export class GithubProvider extends GitProviderRoot {
     this.serverUrl = github?.context?.serverUrl || process.env.GITHUB_SERVER_URL || null;
     this.workflow = github?.context?.workflow || process.env.GITHUB_WORKFLOW || null;
     this.branch = github?.context?.ref || process.env.GITHUB_REF || null;
-    this.prNumber = github?.context?.payload?.pull_request?.number || (process.env.GITHUB_REF_NAME ? parseInt(process.env.GITHUB_REF_NAME.split("/")?.[0] || "0") : null);
+    const ctxPrNumber = github?.context?.payload?.pull_request?.number;
+    const envRefFirstSegment = process.env.GITHUB_REF_NAME ? process.env.GITHUB_REF_NAME.split("/")?.[0] || "" : "";
+    const envPrNumber = envRefFirstSegment ? parseInt(envRefFirstSegment, 10) : NaN;
+    this.prNumber =
+      typeof ctxPrNumber === "number" && ctxPrNumber > 0
+        ? ctxPrNumber
+        : Number.isFinite(envPrNumber) && envPrNumber > 0
+          ? envPrNumber
+          : null;
     this.runId = github?.context?.runId || process.env.GITHUB_RUN_ID || null;
   }
 
@@ -191,6 +199,8 @@ export class GithubProvider extends GitProviderRoot {
 
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
+    const prInfo = await this.getPullRequestInfo();
+    this.prNumber = this.prNumber || prInfo?.idNumber || null;
     if (this.repoName == null || this.prNumber == null) {
       uxLog("log", this, c.grey("[GitHub Integration] No project and merge request, so no note posted..."));
       return { posted: false, providerResult: { info: "No related pull request" } };
@@ -198,7 +208,7 @@ export class GithubProvider extends GitProviderRoot {
     const githubJobUrl = await this.getCurrentJobUrl();
     // Build note message
     const messageKey = prMessage.messageKey + "-" + this.workflow + "-" + this.prNumber;
-    let messageBody = `**${prMessage.title || ""}**
+    let messageBody = `## ${prMessage.title || ""}
 
 ${prMessage.message}
 
@@ -254,6 +264,108 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${this.workflow}]
         providerResult: githubCommentCreateResult,
       };
       return prResult;
+    }
+  }
+
+  public async listPullRequestsInBranchSinceLastMerge(
+    currentBranchName: string,
+    targetBranchName: string,
+    childBranchesNames: string[],
+  ): Promise<CommonPullRequestInfo[]> {
+    if (!this.octokit || !this.repoOwner || !this.repoName) {
+      return [];
+    }
+
+    try {
+      // Step 1: Find the last merged PR from currentBranch to targetBranch
+      const { data: mergedPRs } = await this.octokit.rest.pulls.list({
+        owner: this.repoOwner,
+        repo: this.repoName,
+        state: "closed",
+        head: `${this.repoOwner}:${currentBranchName}`,
+        base: targetBranchName,
+        sort: "updated",
+        direction: "desc",
+        per_page: 1,
+      });
+      uxLog("log", this, c.grey(`[GitHub Integration] Finding last merged PR from ${currentBranchName} to ${targetBranchName}`));
+
+      const lastMergeToTarget = mergedPRs.find((pr) => pr.merged_at);
+
+      // Step 2: Get commits since last merge
+      const compareOptions: any = {
+        owner: this.repoOwner,
+        repo: this.repoName,
+        base: lastMergeToTarget
+          ? lastMergeToTarget.merge_commit_sha!
+          : targetBranchName,
+        head: currentBranchName,
+        per_page: 1000,
+      };
+
+      const { data: comparison } =
+        await this.octokit.rest.repos.compareCommits(compareOptions);
+      uxLog("log", this, c.grey(`[GitHub Integration] Comparing commits between ${compareOptions.base} and ${compareOptions.head}`));
+
+      if (!comparison.commits || comparison.commits.length === 0) {
+        return [];
+      }
+
+      const commitSHAs = new Set(comparison.commits.map((c) => c.sha));
+
+      // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
+      const allBranches = [currentBranchName, ...childBranchesNames];
+
+      const prPromises = allBranches.map(async (branchName) => {
+        try {
+          const { data: prs } = await this.octokit!.rest.pulls.list({
+            owner: this.repoOwner!,
+            repo: this.repoName!,
+            state: "closed",
+            base: branchName,
+            per_page: 1000,
+          });
+          uxLog("log", this, c.grey(`[GitHub Integration] Fetching merged PRs for branch ${branchName}`));
+          return prs.filter((pr) => pr.merged_at);
+        } catch (err) {
+          uxLog(
+            "warning",
+            this,
+            c.yellow(`[GitHub Integration] Error fetching merged PRs for branch ${branchName}: ${String(err)}`),
+          );
+          return [];
+        }
+      });
+
+      const prResults = await Promise.all(prPromises);
+      const allMergedPRs: any[] = prResults.flat();
+
+      // Step 4: Filter PRs whose merge commit is in our commit list
+      const relevantPRs = allMergedPRs.filter((pr) => {
+        return pr.merge_commit_sha && commitSHAs.has(pr.merge_commit_sha);
+      });
+
+      // Step 5: Remove duplicates
+      const uniquePRsMap = new Map();
+      for (const pr of relevantPRs) {
+        if (!uniquePRsMap.has(pr.number)) {
+          uniquePRsMap.set(pr.number, pr);
+        }
+      }
+
+      const uniquePRs = Array.from(uniquePRsMap.values());
+
+      // Step 6: Convert to CommonPullRequestInfo
+      return uniquePRs.map((pr) =>
+        this.completePullRequestInfo(pr)
+      );
+    } catch (err) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(`[GitHub Integration] Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}\n${err instanceof Error ? err.stack : ""}`),
+      );
+      return [];
     }
   }
 

@@ -1,4 +1,4 @@
-import { Connection, SfError } from '@salesforce/core';
+import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
@@ -27,17 +27,16 @@ import { deployCodeCoverageToMarkdown } from '../gitProvider/utilsMarkdown.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { importData } from './dataUtils.js';
 import { analyzeDeployErrorLogs } from './deployTips.js';
-import { callSfdxGitDelta } from './gitUtils.js';
+import { callSfdxGitDelta, getPullRequestData, setPullRequestData } from './gitUtils.js';
 import { createBlankSfdxProject, GLOB_IGNORE_PATTERNS, isSfdxProject } from './projectUtils.js';
 import { prompts } from './prompts.js';
 import { arrangeFilesBefore, restoreArrangedFiles } from './workaroundUtils.js';
 import { countPackageXmlItems, isPackageXmlEmpty, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
 import { ResetMode } from 'simple-git';
 import { isProductionOrg } from './orgUtils.js';
-import { soqlQuery } from './apiUtils.js';
-import { checkSfdxHardisTraceAvailable } from './orgConfigUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
 import { WebSocketClient } from '../websocketClient.js';
+import { executePrePostCommands } from './prePostCommandUtils.js';
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -226,13 +225,19 @@ export async function smartDeploy(
 
   // Special case: both package.xml and destructive changes files exist but are empty
   if (packageXmlIsEmpty && hasEmptyDestructiveChanges && !hasDestructiveChanges) {
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
     uxLog("action", this, c.cyan('Both package.xml and destructive changes files exist but are empty. Nothing to deploy.'));
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+    await GitProvider.managePostPullRequestComment(check);
     return { messages: [], quickDeploy, deployXmlCount: 0 };
   }
 
   // If we have empty package.xml and no destructive changes, there's nothing to do
   if (packageXmlIsEmpty && !hasDestructiveChanges) {
-    uxLog("other", this, 'No deployment or destructive changes to perform');
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+    uxLog("action", this, 'No deployment or destructive changes to perform');
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+    await GitProvider.managePostPullRequestComment(check);
     return { messages: [], quickDeploy, deployXmlCount: 0 };
   }
 
@@ -255,7 +260,10 @@ export async function smartDeploy(
     });
     deployXmlCount = 1;
   } else if (deployXmlCount === 0) {
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
     uxLog("other", this, 'No deployment to perform');
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+    await GitProvider.managePostPullRequestComment(check);
     return { messages, quickDeploy, deployXmlCount };
   }
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
@@ -450,15 +458,13 @@ export async function smartDeploy(
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: check, testlevel: testlevel });
         } catch (errCoverage) {
-          if (check) {
-            await GitProvider.managePostPullRequestComment();
-          }
+          await GitProvider.managePostPullRequestComment(check);
           killBoringExitHandlers();
           throw errCoverage;
         }
       } else {
         // Handle notif message when there is no apex
-        const existingPrData = globalThis.pullRequestData || {};
+        const existingPrData = getPullRequestData();
         const prDataCodeCoverage: PullRequestData = {
           messageKey: existingPrData.messageKey ?? 'deployment',
           title: existingPrData.title ?? check ? '✅ Deployment check success' : '✅ Deployment success',
@@ -470,11 +476,7 @@ export async function smartDeploy(
                 : '✅ No code coverage: It seems there is not Apex in this project',
           deployStatus: 'valid',
         };
-        globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCodeCoverage);
-      }
-      // Post pull request comment if available
-      if (check) {
-        await GitProvider.managePostPullRequestComment();
+        setPullRequestData(prDataCodeCoverage);
       }
 
       let extraInfo = options?.delta === true ? 'DELTA Deployment' : 'FULL Deployment';
@@ -523,6 +525,8 @@ export async function smartDeploy(
   }
   // Run deployment post commands
   await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, conn: options.conn, extraCommands: options.extraCommands });
+  // Post pull request comment if available
+  await GitProvider.managePostPullRequestComment(check);
   elapseEnd('all deployments');
   return { messages, quickDeploy, deployXmlCount };
 }
@@ -557,10 +561,8 @@ async function handleDeployError(
   }
   await displayDeploymentLink(output, options);
   elapseEnd(`deploy ${deployment.label}`);
-  if (check) {
-    await GitProvider.managePostPullRequestComment();
-  }
   await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check, conn: options.conn });
+  await GitProvider.managePostPullRequestComment(check);
   killBoringExitHandlers();
   throw new SfError('Deployment failure. Check messages above');
 }
@@ -777,7 +779,7 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     uxLog("log", this, c.grey(`Using custom package-no-overwrite file defined at ${packageNoOverwrite}`));
   }
   if (fs.existsSync(packageNoOverwrite)) {
-    uxLog("action", this, c.cyan('Handling package-no-overwrite.xml...'));
+    uxLog("action", this, c.cyan('Handling package-no-overwrite.xml (Metadata that are not overwritten if existing in target org)...'));
     // If package-no-overwrite.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
     if (!(await isPackageXmlEmpty(packageNoOverwrite))) {
       const tmpDir = await createTempDir();
@@ -1121,6 +1123,12 @@ export async function buildOrgManifest(
     uxLog("action", this, c.cyan(`Generating full package.xml from target org ${targetOrgUsernameAlias}...`));
     packageXmlOutputFile = path.join(tmpDir, 'packageTargetOrg.xml');
   }
+  // Use forced file name, for development purposed only
+  if (process.env.FULL_ORG_MANIFEST_PATH) {
+    fs.copyFileSync(process.env.FULL_ORG_MANIFEST_PATH, packageXmlOutputFile);
+    uxLog("warning", this, c.grey(`Using forced package.xml output path from FULL_ORG_MANIFEST_PATH env var: ${packageXmlOutputFile}. This should be used only in development mode.`));
+    return process.env.FULL_ORG_MANIFEST_PATH;
+  }
   const manifestName = path.basename(packageXmlOutputFile);
   const manifestDir = path.dirname(packageXmlOutputFile);
   // Get default org if not sent as argument (should not happen but better safe than sorry)
@@ -1281,61 +1289,6 @@ export async function createEmptyPackageXml(): Promise<string> {
   return emptyPackageXmlPath;
 }
 
-export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection, extraCommands?: any[] }) {
-  const branchConfig = await getConfig('branch');
-  const commands = [...(branchConfig[property] || []), ...(options.extraCommands || [])];
-
-  if (commands.length === 0) {
-    uxLog("log", this, c.grey(`No ${property} found to run`));
-    return;
-  }
-  uxLog("action", this, c.cyan(`Processing ${property} found in .sfdx-hardis.yml configuration...`));
-  for (const cmd of commands) {
-    // If if skipIfError is true and deployment failed
-    if (options.success === false && cmd.skipIfError === true) {
-      uxLog("warning", this, c.yellow(`Skipping skipIfError=true command [${cmd.id}]: ${cmd.label}`));
-      continue;
-    }
-    // Skip if we are in another context than the requested one
-    const cmdContext = cmd.context || "all";
-    if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
-      uxLog("log", this, c.grey(`Skipping check-deployment-only command as we are in process deployment mode [${cmd.id}]: ${cmd.label}`));
-      continue;
-    }
-    if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
-      uxLog("log", this, c.grey(`Skipping process-deployment-only command as we are in check deployment mode [${cmd.id}]: ${cmd.label}`));
-      continue;
-    }
-    const runOnlyOnceByOrg = cmd.runOnlyOnceByOrg || false;
-    if (runOnlyOnceByOrg) {
-      await checkSfdxHardisTraceAvailable(options.conn);
-      const commandTraceQuery = `SELECT Id,CreatedDate FROM SfdxHardisTrace__c WHERE Type__c='${property}' AND Key__c='${cmd.id}' LIMIT 1`;
-      const commandTraceRes = await soqlQuery(commandTraceQuery, options.conn);
-      if (commandTraceRes?.records?.length > 0) {
-        uxLog("log", this, c.grey(`Skipping command [${cmd.id}]: ${cmd.label} because it has been defined with runOnlyOnceByOrg and has already been run on ${commandTraceRes.records[0].CreatedDate}`));
-        continue;
-      }
-    }
-    // Run command
-    uxLog("action", this, c.cyan(`Running [${cmd.id}]: ${cmd.label}`));
-    const commandRes = await execCommand(cmd.command, this, { fail: false, output: true });
-    if (commandRes.status === 0 && runOnlyOnceByOrg) {
-      const hardisTraceRecord = {
-        Name: property + "--" + cmd.id,
-        Type__c: property,
-        Key__c: cmd.id
-      }
-      const insertRes = await options.conn.insert("SfdxHardisTrace__c", [hardisTraceRecord]);
-      if (insertRes[0].success) {
-        uxLog("success", this, c.green(`Stored SfdxHardisTrace__c entry ${insertRes[0].id} with command [${cmd.id}] so it is not run again in the future (runOnlyOnceByOrg: true)`));
-      }
-      else {
-        uxLog("error", this, c.red(`Error storing SfdxHardisTrace__c entry :` + JSON.stringify(insertRes, null, 2)));
-      }
-    }
-  }
-}
-
 export async function extractOrgCoverageFromLog(stdout) {
   let orgCoverage: number | null = null;
 
@@ -1480,9 +1433,7 @@ async function checkDeploymentErrors(e, options, commandThis = null) {
   uxLog("error", this, c.red('\n' + errLog));
   await displayDeploymentLink((e as any).stdout + (e as any).stderr, options);
   // Post pull requests comments if necessary
-  if (options.check) {
-    await GitProvider.managePostPullRequestComment();
-  }
+  await GitProvider.managePostPullRequestComment(options.check);
   killBoringExitHandlers();
   throw new SfError('Metadata deployment failure. Check messages above');
 }
@@ -1494,7 +1445,7 @@ async function updatePullRequestResultCoverage(
   orgCoverageTarget: number,
   options: any
 ) {
-  const existingPrData = globalThis.pullRequestData || {};
+  const existingPrData = getPullRequestData();
   const prDataCodeCoverage: Partial<PullRequestData> = {
     messageKey: existingPrData.messageKey ?? 'deployment',
     title: existingPrData.title ?? options.check ? '✅ Deployment check success' : '✅ Deployment success',
@@ -1520,7 +1471,7 @@ async function updatePullRequestResultCoverage(
   } else {
     prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget);
   }
-  globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCodeCoverage);
+  setPullRequestData(prDataCodeCoverage);
 }
 
 export async function generateApexCoverageOutputFile(): Promise<void> {
@@ -1547,3 +1498,4 @@ export async function generateApexCoverageOutputFile(): Promise<void> {
     uxLog("error", this, c.red(`Error while generating Apex coverage output file: ${e.message}`));
   }
 }
+

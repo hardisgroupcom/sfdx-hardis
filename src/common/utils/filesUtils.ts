@@ -20,6 +20,7 @@ import { getApiVersion, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { FileDownloader } from './fileDownloader.js';
 import { ApiLimitsManager } from './limitUtils.js';
+import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
 
 export const filesFolderRoot = path.join('.', 'scripts', 'files');
 
@@ -150,7 +151,8 @@ export class FilesExporter {
     const sampleSize = Math.min(attachmentBatchSize, totalParentRecords);
     if (sampleSize > 0) {
       // Get sample of parent IDs
-      const sampleQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT Id FROM') + ` LIMIT ${sampleSize}`;
+      let sampleQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT Id FROM');
+      sampleQuery = await parseSoqlAndReapplyLimit(sampleQuery, sampleSize, this);
       await this.waitIfApiLimitApproached('REST');
       this.totalRestApiCalls++;
       const sampleParents = await soqlQuery(sampleQuery, this.conn);
@@ -170,7 +172,8 @@ export class FilesExporter {
 
     // Count ContentVersions - use COUNT() query with sampling for memory efficiency
     if (sampleSize > 0) {
-      const sampleQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT Id FROM') + ` LIMIT ${sampleSize}`;
+      let sampleQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT Id FROM');
+      sampleQuery = await parseSoqlAndReapplyLimit(sampleQuery, sampleSize, this);
       const sampleParents = await soqlQuery(sampleQuery, this.conn);
 
       if (sampleParents.records.length > 0) {
@@ -1066,9 +1069,9 @@ export class FilesImporter {
 
     // Start progress tracking
     WebSocketClient.sendProgressStartMessage("Importing files", this.totalFiles);
-
+    const soqlQueryWithLimit = await parseSoqlAndReapplyLimit(this.dtl.soqlQuery, undefined, this);
     // Query parent objects to find Ids corresponding to field value used as folder name
-    const parentObjectsRes = await bulkQuery(this.dtl.soqlQuery, this.conn);
+    const parentObjectsRes = await bulkQuery(soqlQueryWithLimit, this.conn);
     const parentObjects = parentObjectsRes.records;
 
     let processedFiles = 0;

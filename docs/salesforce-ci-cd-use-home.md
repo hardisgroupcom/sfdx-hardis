@@ -4,12 +4,12 @@ description: Learn how to work on a Salesforce DX CI/CD Project
 ---
 <!-- markdownlint-disable MD013 -->
 
-- [Initialization](#initialization)
+- [Pre-requisites](#pre-requisites)
 - [Make updates on your Salesforce project](#make-updates-on-your-salesforce-project)
 
 ___
 
-### Initialization
+### Pre-requisites
 
 You need a stack of applications and to have Salesforce sources on your computer to be able to start to work on a CI/CD project.
 
