@@ -50,6 +50,7 @@ Key capabilities:
     `$ sf hardis:project:clean:profiles-extract --target-org my-org`,
   ];
 
+  /* jscpd:ignore-start */
   public static readonly flags = {
     'target-org': Flags.requiredOrg({
       char: 'o',
@@ -67,7 +68,7 @@ Key capabilities:
       description: 'Skip authentication check when a default username is required',
     }),
   };
-
+  /* jscpd:ignore-end */
   protected csvFiles: string[] = [];
   protected outputFile = '';
   protected activeProfileNames: Set<string> = new Set();
@@ -417,6 +418,7 @@ Key capabilities:
    * @param conn Salesforce connection
    * @param numberOfPersonas Number of personas
    */
+  /* jscpd:ignore-start */
   async generateAppsExtract(conn: any, numberOfPersonas: number) {
     const appsRecords: any[] = [];
     try {
@@ -443,6 +445,7 @@ Key capabilities:
     this.csvFiles.push(this.outputFile);
     return;
   }
+  /* jscpd:ignore-end */
 
   /**
    * Extracts all boolean permission fields from PermissionSet object.
