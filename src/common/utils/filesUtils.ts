@@ -1462,7 +1462,7 @@ export async function countLinesInFile(file: string) {
  * @returns {Promise<string>} - A Promise that resolves to the full path of the report.
  */
 export async function generateReportPath(fileNamePrefix: string, outputFile: string, options: { withDate: boolean } = { withDate: false }): Promise<string> {
-  if (outputFile == null) {
+  if (outputFile == null || outputFile === '') {
     const reportDir = await getReportDirectory();
     const branchName =
       (!isGitRepo()) ? 'no-git' :
@@ -1557,6 +1557,73 @@ async function csvToXls(csvFile: string, xslxFile: string) {
       const lengths = (column.values || []).map((v) => (v || '').toString().length);
       const maxLength = Math.max(...lengths.filter((v) => typeof v === 'number'));
       column.width = maxLength;
+    });
+  }
+  await workbook.xlsx.writeFile(xslxFile);
+}
+
+export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath: string, options: { fileTitle?: string; csvFileTitle?: string; xlsFileTitle?: string; }) {
+  try {
+    const xlsDirName = path.join(path.dirname(outputPath), 'xls');
+    const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
+    const xslxFile = path.join(xlsDirName, xslFileName);
+    await fs.ensureDir(xlsDirName);
+    await csvFilesToXls(csvFilesPath, xslxFile);
+    uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
+    const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
+    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
+    // result.xlsxFile = xslxFile;
+    if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+      try {
+        uxLog("other", this, c.italic(c.grey(`Opening XLSX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
+        await open(xslxFile, { wait: false });
+      } catch (e) {
+        uxLog("warning", this, c.yellow('Error while opening XLSX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+      }
+    }
+  } catch (e2) {
+    uxLog(
+      "warning",
+      this,
+      c.yellow('Error while generating XLSX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
+    );
+  }
+}
+
+async function csvFilesToXls(csvFiles: string[], xslxFile: string) {
+  const workbook = new ExcelJS.Workbook();
+  let worksheet: ExcelJS.Worksheet;
+  for (const csvFile of csvFiles) {
+    if (!csvFile) {
+      console.warn(`[csvFilesToXls] Skipping null/undefined csvFile:`, csvFile);
+      continue;
+    }
+    worksheet = await workbook.csv.readFile(csvFile);
+    worksheet.name = path.basename(csvFile).replace('.csv', '').substring(0, 25);
+    // Set filters
+    worksheet.autoFilter = 'A1:Z1';
+    // Adjust column size (only if the file is not too big, to avoid performances issues)
+    if (worksheet.rowCount < 5000) {
+      if (!worksheet.columns) {
+        console.error(`[csvFilesToXls] worksheet.columns is null for file: ${csvFile}`);
+        continue;
+      }
+      worksheet.columns.forEach((column, idx) => {
+        if (!column) {
+          console.error(`[csvFilesToXls] Null column at index ${idx} in file: ${csvFile}`);
+          return;
+        }
+        const lengths = (column.values || []).map((v) => (v || '').toString().length);
+        const maxLength = Math.max(...lengths.filter((v) => typeof v === 'number'));
+        column.width = maxLength;
+      });
+    }
+    // Scan only the first row and convert string formulas
+    const firstRow = worksheet.getRow(1);
+    firstRow.eachCell((cell) => {
+      if (typeof cell.value === 'string' && cell.value.startsWith('=')) {
+        cell.value = { formula: cell.value.substring(1) };
+      }
     });
   }
   await workbook.xlsx.writeFile(xslxFile);
