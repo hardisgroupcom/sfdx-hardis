@@ -17,7 +17,33 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 // Main command class for extracting Salesforce org profiles and related metadata
 export default class ProfilesExtract extends SfCommand<void> {
-  public static readonly description = '';
+  public static readonly description = `
+## Command Behavior
+
+**Guides administrators through extracting Salesforce profiles, personas, and related metadata into structured CSV/XLSX deliverables.**
+
+The command inventories SObjects that contain data, lets the user pick the ones to document, and then produces persona-centric spreadsheets that cover users, personas, relationships, record types, apps, permissions, tabs, fields, and permission sets. The output consolidates everything into both CSV files and a single Excel workbook, making it easy to audit access models or prepare remediation plans.
+
+Key capabilities:
+
+- **Interactive object discovery:** Lists queryable objects with records and allows multi-selection.
+- **Persona modeling:** Lets users define the number of personas and generates cross-object matrices that leverage Excel formulas for faster updates.
+- **Comprehensive metadata export:** Captures users, record types, apps, permissions, tabs, fields, and permission sets with persona/profile visibility indicators.
+- **Profile field access coverage:** Retrieves FieldPermissions to surface read/edit status per profile and field.
+- **Consolidated reporting:** Produces standalone CSVs plus an aggregated XLSX stored in the report directory.
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+- **Salesforce connectivity:** Uses the requested target org connection from \`Flags.requiredOrg\` to fetch metadata and records.
+- **Bulk/REST queries:** Relies on \`bulkQuery\` and standard SOQL to evaluate record counts and pull FieldPermissions, Users, RecordTypes, Applications, Tabs, and PermissionSets.
+- **Describe calls:** Invokes \`describeGlobal\` and \`describeSObject\` to enumerate objects and field-level metadata, including picklists and formulas.
+- **Prompt-driven input:** Utilizes the shared \`prompts\` utility to collect object selections and persona counts, ensuring consistent CLI UX.
+- **Reporting pipeline:** Writes intermediate CSV files via \`generateCsvFile\`, stores them under the report directory from \`getReportDirectory\`, and finally merges them using \`createXlsxFromCsvFiles\`.
+- **Logging & diagnostics:** Uses \`uxLog\` with chalk coloring for progress, warnings, and debug output, integrating with the project-wide logging style.
+
+</details>
+`;
 
   public static readonly examples = [
     `$ sf hardis:project:clean:profiles-extract --target-org my-org
@@ -43,7 +69,7 @@ export default class ProfilesExtract extends SfCommand<void> {
   };
 
   protected csvFiles: string[] = [];
-  protected outputFile: string;
+  protected outputFile = '';
   protected activeProfileNames: Set<string> = new Set();
 
   /**
