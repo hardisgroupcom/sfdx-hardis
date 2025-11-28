@@ -85,8 +85,10 @@ Key capabilities:
     let numberOfPersonas = 1;
     try {
       selectedObjects = await this.generateObjectsList(conn);
+      uxLog("action", this, c.green('Handling extract of Users...'));
       await this.generateUsersExtract(conn);
       numberOfPersonas = await this.generatePersonaExtract();
+      uxLog("action", this, c.green(`Generating extracts for ${numberOfPersonas} personas...`));
       await this.generateRelationExtract(selectedObjects, numberOfPersonas);
       await this.generateRTExtract(conn, selectedObjects, numberOfPersonas);
       await this.generateAppsExtract(conn, numberOfPersonas);
@@ -95,6 +97,7 @@ Key capabilities:
       await this.generatePermissionSetsExtract(conn, numberOfPersonas);
 
       // 1. Extract profile field access and get all profiles
+      uxLog("action", this, c.green('Extracting profile field access...'));
       const profileFieldAccess = await this.getProfileFieldAccessData(conn, selectedObjects);
       const profileNames = Array.from(new Set(profileFieldAccess.map(r => r.Profile).filter(Boolean)));
 
@@ -113,6 +116,7 @@ Key capabilities:
 
       this.outputFile = '';
       this.outputFile = await generateReportPath('profiles-extract', this.outputFile);
+      uxLog("action", this, c.green('Generating final XLSX report...'));
       await createXlsxFromCsvFiles(this.csvFiles, this.outputFile, { fileTitle: 'profiles extract' });
     } catch (error) {
       uxLog('log', this, c.red('Failed to fetch SObjects.'));
@@ -166,7 +170,7 @@ Key capabilities:
   private async generateObjectsList(conn: any): Promise<string[]> {
 
     let selectedObjects: string[] = [];
-    uxLog('log', this, c.green('Fetching SObjects'));
+    uxLog('action', this, c.green('Fetching SObjects list...'));
     let sobjectsList: { label: string; name: string; masterObject: string; objectType: string }[] = [];
     try {
       // Exclude objects whose API names start with any of these prefixes
@@ -219,32 +223,12 @@ Key capabilities:
           objectType: sobject.name.endsWith('__c') ? 'Custom' : 'Standard',
         }));
 
-      // Debug: use a fixed list to avoid long waits on orgs with many objects
-      // sobjectsList = [{
-      //   label: 'Compte', name: 'Account', masterObject: '', objectType: 'Standard'
-      // }, {
-      //   label: 'Contact', name: 'Contact', masterObject: '', objectType: 'Standard'
-      // }, { 
-      //   label: 'Opportunité', name: 'Opportunity', masterObject: '', objectType: 'Standard'
-      // }, {
-      //   label: 'Produit', name: 'Product2', masterObject: '', objectType: 'Standard'
-      // }, {
-      //   label: 'Abonnement', name: 'sofactoapp__Abonnement__c', masterObject: '', objectType: 'Custom'
-      // }, {
-      //   label: 'Accès produit', name: 'AccesProduit__c', masterObject: '', objectType: 'Custom' 
-      // }, {
-      //   label: 'Bénéficiaire', name: 'Beneficiaire__c', masterObject: '', objectType: 'Custom'
-      // }, { 
-      //   label: 'Grille tarification', name: 'GrilleTarification__c ', masterObject: '', objectType: 'Custom'
-      // }]
-
       uxLog('log', this, c.green('Fetching SObjects completed.'));
       uxLog('log', this, c.green(`Fetched ${sobjectsList.length} SObjects.`));
 
-
       const sobjectsWithRecords: { Object_Label: string; API_Name: string; Object_Type: string }[] = [];
 
-      uxLog('log', this, 'Checking SObjects for records');
+      uxLog('action', this, 'Checking SObjects for records...');
       for (const sobject of sobjectsList) {
         try {
           const result = await conn.query(`SELECT COUNT() FROM ${sobject.name}`);
@@ -271,10 +255,9 @@ Key capabilities:
       }
 
       const statusRes = await prompts({
-        message: "Please select objects to extract",
+        message: "Please select SObjects to add in the output Excel file",
         type: "multiselect",
-        description: "Select objects to extract",
-        placeholder: "Select objects",
+        description: "Be careful, you can't update the selection later without re-running the command :)",
         choices: choices,
       });
 
@@ -283,6 +266,7 @@ Key capabilities:
         uxLog('log', this, `You selected ${selectedObjects.length} objects.`);
       }
 
+      uxLog("log", this, c.green('Generating Objects.csv report...'));
       const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, 'Objects.csv');
       // Without xlsx
