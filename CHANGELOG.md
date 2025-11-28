@@ -4,13 +4,32 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Adds site/ to .gitignore only in monitoring repositories
+
+## [6.12.10] 2025-11-25
+
+- Temporary downgrade isomorphic-dompurify package (jsdom dep not compliant with NodeJS < 20.19.5 and CodeBuilder / Agentforce Vibes is below)
+
+## [6.12.9] 2025-11-25
+
+- Fixes compatibility issues caused by upgrading to parse5 v8.0.0.
+
+## [6.12.8] 2025-11-25
+
+- Upgrade isomorphic-dompurify
+
+## [6.12.7] 2025-11-24
+
+- Include stack trace in warning log for Flow diff generation errors
+- Upgrade dependencies
+
 ## [6.12.6] 2025-11-18
 
 - QuickFix typo in deployment actions
 
 ## [6.12.5] 2025-11-18
 
-- Improve JIRA authentication and display 
+- Improve JIRA authentication and display
 - [hardis:project:deploy:notify](https://sfdx-hardis.cloudity.com/hardis/project/deploy/notify/): Make default org optional
 - Improve pre/post deployment commands details display in PR comments
 
@@ -52,7 +71,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): Fix bug when there are no Apex classes in the org
 - GitHub integration: Fix way to get Pull Request number
-- As SF Cli now requires NodeJs >= 24, set the same requirement to sfdx-hardis default  workflows
+- As SF Cli now requires NodeJs >= 24, set the same requirement to sfdx-hardis default workflows
 
 ## [6.11.3] 2025-11-04
 
@@ -80,7 +99,6 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Add explicit message in case of error when authenticating to Git provider API
 - Allow to override SFDX_TEST_WAIT_MINUTES and SFDX_DEPLOY_WAIT_MINUTES using CI/CD variables, and set 120 minutes as default value everywhere
 - Fix Validation Rules formula field in doc generation
-
 
 ## [6.9.0] 2025-10-23
 
