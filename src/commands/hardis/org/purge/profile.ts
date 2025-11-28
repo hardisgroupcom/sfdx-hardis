@@ -375,8 +375,8 @@ The command checks for uncommitted changes and will not run if the working tree 
     const selectedNamespacesPrompt = await prompts({
       type: 'multiselect',
       name: "namespaces",
-      message: "Which namespaces do you want to remove from the full org manifest?",
-      description: "Select all namespaces you want to remove",
+      message: "Select the namespaces you want to ignore in the selected profiles that will be processed.",
+      description: "You will NOT disable access to elements related to namespaces that you will select.",
       choices: namespaceOptions
     });
 
