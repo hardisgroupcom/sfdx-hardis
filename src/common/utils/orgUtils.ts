@@ -117,31 +117,31 @@ export async function promptProfiles(
     });
     selectedProfiles = options.multiselect ? profilesSelection.value.split(',') : profilesSelection.value;
   }
-  if(options.returnApiName){
-    const apinames: string[] = [];
-    for(const profileName of selectedProfiles){
+  if (options.returnApiName) {
+    const apiNames: string[] = [];
+    for (const profileName of selectedProfiles) {
       // Map standard profile names to their API names
       const standardProfileMapping: Record<string, string> = {
         'System Administrator': 'Admin',
-        'Standard User':'Standard',
-        'Solution Manager':'SolutionManager',
-        'Marketing User':'MarketingUser',
-        'Contract Manager':'ContractManager',
-        'Read Only':'ReadOnly'
+        'Standard User': 'Standard',
+        'Solution Manager': 'SolutionManager',
+        'Marketing User': 'MarketingUser',
+        'Contract Manager': 'ContractManager',
+        'Read Only': 'ReadOnly'
       };
-      if(Object.keys(standardProfileMapping).includes(profileName.trim())){
-        apinames.push(standardProfileMapping[profileName.trim()]);
-      }else{
+      if (Object.keys(standardProfileMapping).includes(profileName.trim())) {
+        apiNames.push(standardProfileMapping[profileName.trim()]);
+      } else {
         uxLog("log", this, 'Profile not found in predefined standard profiles, querying ApiName (FullName)...');
         const results = await soqlQueryTooling(`SELECT Id, Name, FullName FROM Profile WHERE Name='${profileName.trim()}'`, conn);
-        if(results.records.length > 0){ // Fullname limits the results to 1 row only.
-          apinames.push(results.records[0].FullName);
-        }else{
+        if (results.records.length > 0) { // Fullname limits the results to 1 row only.
+          apiNames.push(results.records[0].FullName);
+        } else {
           uxLog("warning", this, `Profile '${profileName.trim()}' not found`);
         }
       }
     }
-    return apinames;
+    return apiNames;
   }
 
   return selectedProfiles;

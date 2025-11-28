@@ -52,6 +52,7 @@ The command checks for uncommitted changes and will not run if the working tree 
     `sf hardis:org:purge:profile --target-org my-org@example.com`,
   ];
 
+  /* jscpd:ignore-start */
   public static flags: any = {
     outputfile: Flags.string({
       char: 'f',
@@ -70,7 +71,7 @@ The command checks for uncommitted changes and will not run if the working tree 
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
-
+  /* jscpd:ignore-end */
   protected attributesToMuteDefinition = [
     {
       "packageType": "ApexClass",
@@ -279,12 +280,13 @@ The command checks for uncommitted changes and will not run if the working tree 
       }
 
       for (let i = 0; i < profileParsedXml.Profile[nodeName].length; i++) {
+        /* jscpd:ignore-start */
         const nodeObj = profileParsedXml.Profile[nodeName][i];
         let memberName = nodeObj.apexClass || nodeObj.field || nodeObj.object || nodeObj.apexPage || nodeObj.tab || nodeObj.recordType || nodeObj.application || nodeObj.name || 'unknown';
         if (Array.isArray(memberName)) {
           memberName = memberName[0];
         }
-
+        /* jscpd:ignore-end */
         for (const attr of attributesToMute) {
           if (memberName && excludedNames.includes(memberName)) {
             continue;
@@ -343,8 +345,9 @@ The command checks for uncommitted changes and will not run if the working tree 
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       uxLog("warning", this, c.yellow(`Could not retrieve installed packages. Listing namespaces by parsing the XML file.`));
+      uxLog("other", this, error?.message);
     }
     if (namespaceOptions.length === 0) {
       uxLog("action", this, c.cyan(`No installed packages found via API. Parsing package XML to list namespaces...`));
