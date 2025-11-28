@@ -280,16 +280,16 @@ export default class ProfilesExtract extends SfCommand<void> {
    * @param conn Salesforce connection
    */
   async generateUsersExtract(conn: any) {
-    const usersRecords: { User: string; Role: string; Profil: string; Profil_a_Associe: string; Nouveau_Personna: string; Nouveau_Role: string; }[] = [];
+    const usersRecords: { User: string; Role: string; Profile: string; Profile_to_Associate: string; New_Persona: string; New_Role: string; }[] = [];
     const userQuery = "SELECT username, UserRole.Name, Profile.Name FROM User WHERE IsActive = true order by username";
     const userResult = await bulkQuery(userQuery, conn);
     usersRecords.push(...userResult.records.map((user) => ({
       User: user.Username,
       Role: user['UserRole.Name'],
-      Profil: user['Profile.Name'],
-      Profil_a_Associe: '',
-      Nouveau_Personna: '',
-      Nouveau_Role: '',
+      Profile: user['Profile.Name'],
+      Profile_to_Associate: '',
+      New_Persona: '',
+      New_Role: '',
     })));
     // Build set of active profile names (filter out empty/null)
     this.activeProfileNames = new Set(userResult.records.map((user) => user['Profile.Name']).filter((n) => !!n));
@@ -320,9 +320,9 @@ export default class ProfilesExtract extends SfCommand<void> {
       uxLog('log', this, `Creation of ${numberOfPersonas} personas.`);
     }
 
-    const persona: { 'Nom des personas': string }[] = [];
+    const persona: { 'Persona Name': string }[] = [];
     for (let i = 1; i <= numberOfPersonas; i++) {
-      persona.push({ 'Nom des personas': `Persona${i}` });
+      persona.push({ 'Persona Name': `Persona${i}` });
     }
 
     const reportDir = await getReportDirectory();
@@ -380,7 +380,7 @@ export default class ProfilesExtract extends SfCommand<void> {
           const personaCols: Record<string, string> = {};
           for (let i = 1; i <= numberOfPersonas; i++) {
             const personaRow = i + 1;
-            personaCols[`=persona!A${personaRow}&"_Actif"`] = '';
+            personaCols[`=persona!A${personaRow}&"_Active"`] = '';
             personaCols[`=persona!A${personaRow}&"_Default"`] = '';
           }
           recordTypesRecords.push({
@@ -414,7 +414,7 @@ export default class ProfilesExtract extends SfCommand<void> {
         const personaCols: Record<string, string> = {};
         for (let i = 1; i <= numberOfPersonas; i++) {
           const personaRow = i + 1;
-          personaCols[`=persona!A${personaRow}&"_Actif"`] = '';
+          personaCols[`=persona!A${personaRow}&"_Active"`] = '';
           personaCols[`=persona!A${personaRow}&"_Default"`] = '';
         }
         appsRecords.push({
@@ -586,7 +586,7 @@ export default class ProfilesExtract extends SfCommand<void> {
    * @param numberOfPersonas 
    */
   async generatePermissionSetsExtract(conn: any, numberOfPersonas: number) {
-    const permissionSetsRecords: { Name: string; Label: string; Description: string; IsCustom: string; [key: string]: string }[] = [];
+    const permissionSetsRecords: { Name: string; Label: string; Description: string; IsCustom: string;[key: string]: string }[] = [];
 
     try {
       const result = await conn.query(
@@ -597,7 +597,7 @@ export default class ProfilesExtract extends SfCommand<void> {
         const personaCols: Record<string, string> = {};
         for (let i = 1; i <= numberOfPersonas; i++) {
           const personaRow = i + 1;
-          personaCols[`=persona!A${personaRow}&"_Assigned"`] = ''; // colonne dynamique pour chaque persona
+          personaCols[`=persona!A${personaRow}&"_Assigned"`] = ''; // Dynamic column for each persona
         }
 
         permissionSetsRecords.push({
