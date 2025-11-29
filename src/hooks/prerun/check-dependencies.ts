@@ -108,7 +108,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
         .map((line) => line.trim())
         .filter((line) => line !== '');
       let updated = false;
-      for (const gitIgnoreMandatoryLine of await getHardisGitRepoIgnoreContent()) {
+      for (const gitIgnoreMandatoryLine of await getHardisGitRepoIgnoreContent(isMon)) {
         if (!gitIgnoreLines.includes(gitIgnoreMandatoryLine)) {
           gitIgnoreLines.push(gitIgnoreMandatoryLine);
           updated = true;
@@ -188,12 +188,11 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
   }
 }
 
-async function getHardisGitRepoIgnoreContent() {
+async function getHardisGitRepoIgnoreContent(isMonitoring: boolean) {
   const gitIgnoreContent = [
     '.cache/',
     'config/user/',
     'hardis-report/',
-    'site/',
     'tmp/',
     '**/__tests__/**',
     // Metadatas to be ignored
@@ -204,6 +203,9 @@ async function getHardisGitRepoIgnoreContent() {
     '**/data/**/target/**',
     'force-app/main/default/appMenus/AppSwitcher.appMenu-meta.xml',
   ];
+  if (isMonitoring) {
+    gitIgnoreContent.push('site/');
+  }
   return gitIgnoreContent;
 }
 
