@@ -30,8 +30,10 @@ SALESFORCE_PRE_COMMANDS:
     continue_if_failed: false
 
 SALESFORCE_CODE_ANALYZER_APEX_ARGUMENTS:
+  - --config-file
+  - ./code-analyzer.yml
   - --rule-selector
-  - pmd
+  - pmd:SfdxHardis
 
 SALESFORCE_CODE_ANALYZER_APEX_COMMAND_REMOVE_ARGUMENTS:
   - --rule-selector
