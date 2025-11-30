@@ -24,9 +24,9 @@ SALESFORCE_PRE_COMMANDS:
     continue_if_failed: false
   - command: mkdir -p "${DEFAULT_WORKSPACE}/config" && wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/pmd-ruleset.xml -O "${DEFAULT_WORKSPACE}/config/pmd-ruleset.xml"
     continue_if_failed: false
-  - command: wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/code-analyzer/config/code-analyzer.yml -O "${DEFAULT_WORKSPACE}/code-analyzer.yml"
+  - command: wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/code-analyzer.yml -O "${DEFAULT_WORKSPACE}/code-analyzer.yml"
     continue_if_failed: false
-  - command: wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/code-analyzer/config/pmd-ruleset.xml -O "${DEFAULT_WORKSPACE}/pmd-ruleset.xml"
+  - command: wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/pmd-ruleset.xml -O "${DEFAULT_WORKSPACE}/pmd-ruleset.xml"
     continue_if_failed: false
 
 SALESFORCE_CODE_ANALYZER_APEX_ARGUMENTS:
