@@ -979,7 +979,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
         uxLog("error", this, c.red(`Error retrieving Custom Setting ${settingName}: ${error.message || error}`));
       }
     }
-    uxLog("action", this, c.cyan(`Custom Settings retrieval completed (${successCs.length} successful, ${errorCs.length} failed)`));
+    uxLog("action", this, c.cyan(`Custom Settings retrieval completed (${successCs.length} successful, ${emptyCs.length} empty, ${errorCs.length} failed)`));
     if (successCs.length > 0) {
       const successCsNames = successCs.map(cs => "- " + cs).join('\n');
       uxLog("success", this, c.green(`Successfully retrieved Custom Settings:\n${successCsNames}`));
