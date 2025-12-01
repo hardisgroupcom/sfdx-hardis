@@ -928,6 +928,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     await this.saveConfig();
     uxLog("log", this, c.cyan(`Retrieving ${selectedSettings.settings.length} selected Custom Settings`));
     const successCs: any = [];
+    const emptyCs: any = [];
     const errorCs: any = [];
     // Retrieve each selected Custom Setting
     for (const settingName of selectedSettings.settings) {
@@ -964,8 +965,12 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
           uxLog("log", this, c.grey(`Custom Setting ${settingName} has been downloaded to ${resultFile}`));
           successCs.push(settingName);
         }
+        else if (result?.result?.records && result.result.records?.length === 0) {
+          uxLog("warning", this, c.yellow(`Custom Setting ${settingName} has no records in the org`));
+          emptyCs.push(settingName);
+        }
         else {
-          uxLog("warning", this, c.red(`Custom Setting ${settingName} was not retrieved correctly, or has no values. No file found at ${resultFile}`));
+          uxLog("error", this, c.red(`Custom Setting ${settingName} was not retrieved correctly. No file found at ${resultFile}`));
           errorCs.push(settingName);
           continue;
         }
@@ -978,6 +983,10 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     if (successCs.length > 0) {
       const successCsNames = successCs.map(cs => "- " + cs).join('\n');
       uxLog("success", this, c.green(`Successfully retrieved Custom Settings:\n${successCsNames}`));
+    }
+    if (emptyCs.length > 0) {
+      const emptyCsNames = emptyCs.map(cs => "- " + cs).join('\n');
+      uxLog("warning", this, c.yellow(`Custom Settings with no records:\n${emptyCsNames}`));
     }
     if (errorCs.length > 0) {
       const errorCsNames = errorCs.map(cs => "- " + cs).join('\n');
