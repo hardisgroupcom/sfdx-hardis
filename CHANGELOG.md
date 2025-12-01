@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/): Display a different message in case of empty Custom Settings or export error.
+- MegaLinter config: disable CodeSpell
 
 ## [6.14.0] 2025-11-30
 
