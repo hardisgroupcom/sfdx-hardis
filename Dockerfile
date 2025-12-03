@@ -13,6 +13,7 @@ RUN apk add --update --no-cache \
             # Required for docker
             docker \
             openrc \
+            openjdk17 \
             # Required for puppeteer
             chromium \
             nss \
@@ -34,6 +35,10 @@ ENV PUPPETEER_EXECUTABLE_PATH="${CHROMIUM_PATH}"
 # Add node packages to path #
 # hadolint ignore=DL3044
 ENV PATH="/node_modules/.bin:${PATH}"
+
+# Set Java environment for code scanner (PMD)
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 ARG SFDX_CLI_VERSION=latest
 ARG SFDX_HARDIS_VERSION=latest

@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Required for docker
     docker.io \
     fonts-liberation \
+    openjdk-17-jdk \
     # Required for mermaid cli
     libglib2.0-0 \
     libnss3 \
@@ -59,6 +60,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Add node packages to path
 ENV PATH="/node_modules/.bin:${PATH}"
+
+# Set Java environment for code scanner (PMD)
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # Chromium path for puppeteer
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
