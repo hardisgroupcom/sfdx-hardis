@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.14.1] 2025-12-01
+
+- [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/): Display a different message in case of empty Custom Settings or export error.
+- MegaLinter config: disable CodeSpell
+
 ## [6.14.0] 2025-11-30
 
 - Upgrade MegaLinter default config + code-analyzer.yml + updated rulesets
