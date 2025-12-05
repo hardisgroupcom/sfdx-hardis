@@ -131,6 +131,8 @@ refresh_scratch_org_pool:
 # Run apex unit tests in testing scratch org
 test_apex:
   stage: test
+  when: delayed   # Orgs just created can be not ready yet, let's wait a while before running tests
+  start_in: 2 minutes
   tags: # Change or even remove tags if standard runners
     - ubuntu
   only:
@@ -153,8 +155,6 @@ test_apex:
     paths:
       - hardis-report
     expire_in: 1 week
-  when: delayed   # Orgs just created can be not ready yet, let's wait a while before running tests
-  start_in: 2 minutes
 
 # Automated tests
 #test_automation:
