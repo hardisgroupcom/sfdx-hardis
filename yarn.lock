@@ -1000,17 +1000,17 @@
   dependencies:
     chalk "^4.1.0"
 
-"@cparra/apex-reflection@2.19.0":
-  version "2.19.0"
-  resolved "https://registry.yarnpkg.com/@cparra/apex-reflection/-/apex-reflection-2.19.0.tgz#adb6d181ac5027823df8cbb05228a89fa1c56ff0"
-  integrity sha512-BtZnykjiHxox5XYkGYKZ+lZ+2J168F9cUV40O4TiNHjR0d16bJ+gauzaprNtl8+C31J0lW7ZOPQS7M66QGek7Q==
+"@cparra/apex-reflection@2.21.1":
+  version "2.21.1"
+  resolved "https://registry.yarnpkg.com/@cparra/apex-reflection/-/apex-reflection-2.21.1.tgz#66a0c1dc8a5ebfe8266e241e4a441661c8202c5c"
+  integrity sha512-ciNzZnAK0ikruEn1Wj8+e0cA6K5ShFx91AwduzW2nYK6cXqs8Qr3QUAPk82WKA8437FNqKLDd7v2TJMSSvzayg==
 
-"@cparra/apexdocs@^3.14.1":
-  version "3.14.1"
-  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.14.1.tgz#8ae939621663616c24d1785462b5635f8743bb93"
-  integrity sha512-rin57h+bP4voMcIXZo+3SzPiVpJ5DRwFHpi7Geb4jY5YodgBz96jO3VmKN/MT2tEdieg3lW7vOUC4yY6Z5Dzcg==
+"@cparra/apexdocs@^3.15.1":
+  version "3.15.1"
+  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.15.1.tgz#964e10d6d4f684b681fc4ae9e631e3c191538e39"
+  integrity sha512-lZFuDfzLYGlfMKluUZXlOXlk+aQango1zkY49vnhiknEHfSuOdqtVrd6X+DB9v9nvnJRCG6hnVQJkeetGlMCOQ==
   dependencies:
-    "@cparra/apex-reflection" "2.19.0"
+    "@cparra/apex-reflection" "2.21.1"
     "@salesforce/source-deploy-retrieve" "^12.20.1"
     "@types/js-yaml" "^4.0.9"
     "@types/yargs" "^17.0.32"
@@ -1020,7 +1020,7 @@
     fast-xml-parser "^4.4.0"
     fp-ts "^2.16.8"
     handlebars "^4.7.8"
-    js-yaml "^4.1.0"
+    js-yaml "4.1.1"
     minimatch "^10.0.1"
     yargs "^17.7.2"
 
@@ -8340,6 +8340,13 @@ js-tokens@^4.0.0:
   resolved "https://registry.yarnpkg.com/js-tokens/-/js-tokens-4.0.0.tgz#19203fb59991df98e3a287050d4647cdeaf32499"
   integrity sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==
 
+js-yaml@4.1.1, js-yaml@^4.1.0, js-yaml@^4.1.1:
+  version "4.1.1"
+  resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-4.1.1.tgz#854c292467705b699476e1a2decc0c8a3458806b"
+  integrity sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==
+  dependencies:
+    argparse "^2.0.1"
+
 js-yaml@^3.13.1:
   version "3.14.2"
   resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-3.14.2.tgz#77485ce1dd7f33c061fd1b16ecea23b55fcb04b0"
@@ -8347,13 +8354,6 @@ js-yaml@^3.13.1:
   dependencies:
     argparse "^1.0.7"
     esprima "^4.0.0"
-
-js-yaml@^4.1.0, js-yaml@^4.1.1:
-  version "4.1.1"
-  resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-4.1.1.tgz#854c292467705b699476e1a2decc0c8a3458806b"
-  integrity sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==
-  dependencies:
-    argparse "^2.0.1"
 
 js2xmlparser@^4.0.1, js2xmlparser@^4.0.2:
   version "4.0.2"
