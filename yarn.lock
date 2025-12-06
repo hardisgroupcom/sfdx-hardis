@@ -1668,10 +1668,10 @@
   resolved "https://registry.yarnpkg.com/@kwsites/promise-deferred/-/promise-deferred-1.1.1.tgz#8ace5259254426ccef57f3175bc64ed7095ed919"
   integrity sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==
 
-"@langchain/anthropic@^0.3.30":
-  version "0.3.30"
-  resolved "https://registry.yarnpkg.com/@langchain/anthropic/-/anthropic-0.3.30.tgz#3c7ac0795a7ae6f8a54ea34d46d361afd55145c6"
-  integrity sha512-ZO6b8G+6OxI/4drCSWIzMC67o7ZhWGlX6OXhO30X0BgtMYHwpYlU7ATPT/9+IvOcFSytC7GZsWb5zKknLku0vw==
+"@langchain/anthropic@^0.3.33":
+  version "0.3.33"
+  resolved "https://registry.yarnpkg.com/@langchain/anthropic/-/anthropic-0.3.33.tgz#039d4187b2365777a5e635f71928a43c190227f4"
+  integrity sha512-uaMwieUNQbFbu0TQG6Kiub2m7hGcdjQRwniu2RzB4mroUsYCcFThv3MDumEjFMQZW/9P0eyzzTGPXJCNdQUoZg==
   dependencies:
     "@anthropic-ai/sdk" "^0.65.0"
     fast-xml-parser "^4.4.1"
