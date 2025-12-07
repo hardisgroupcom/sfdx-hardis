@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.14.3] 2025-12-07
+
+- Optimize gitlab-ci workflow for scratch orgs testing step
+- Upgrade dependencies
+
 ## [6.14.2] 2025-12-03
 
 - Add Java (JDK 11+) to Docker image to support PMD engine in Salesforce Code Analyzer
