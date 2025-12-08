@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.14.4] 2025-12-08
+
+- Ignore a trivy issue located in @salesforce/cli package (will be fixed by Salesforce)
+
 ## [6.14.3] 2025-12-07
 
 - Optimize gitlab-ci workflow for scratch orgs testing step
