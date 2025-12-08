@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Ticketing: replace the deprecated `jira-client` dependency with the `jira.js` SDK to improve Atlassian Cloud API v3 compatibility and authentication handling.
+- Node.js 20 compatibility: force `parse5@6.0.1` through Yarn resolutions to avoid the `ERR_REQUIRE_ESM` crash caused by newer jsdom transitive dependencies.
+- Ticketing: while collecting Jira tickets, also capture assignee/reporter identifiers so downstream logs and notifications can surface owners.
+
 ## [6.14.4] 2025-12-08
 
 - Ignore a trivy issue located in @salesforce/cli package (will be fixed by Salesforce)
