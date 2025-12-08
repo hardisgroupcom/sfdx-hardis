@@ -119,7 +119,8 @@
     "/messages",
     "/defaults",
     "/oclif.manifest.json",
-    "/oclif.lock"
+    "/oclif.lock",
+    "/yarn.lock"
   ],
   "homepage": "https://sfdx-hardis.cloudity.com",
   "keywords": [
