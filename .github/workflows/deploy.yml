@@ -32,6 +32,8 @@ jobs:
       - run: ALPHAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="alpha$ALPHAID"
       - run: yarn config set network-timeout 300000
       - run: yarn publish --tag alpha
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   push_alpha_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
@@ -232,6 +234,8 @@ jobs:
       - run: yarn config set version-git-tag false && tsc -b
       - run: CANARYID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="canary$CANARYID"
       - run: yarn config set network-timeout 300000 && yarn publish --tag canary
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   push_canary_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/canary'
@@ -342,6 +346,8 @@ jobs:
       - run: yarn config set version-git-tag false && tsc -b
       - run: BETAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="beta$BETAID"
       - run: yarn config set network-timeout 300000 && yarn publish --tag beta
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   push_beta_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -615,6 +621,8 @@ jobs:
           scope: "nvuillam"
       - run: yarn install --frozen-lockfile
       - run: yarn config set network-timeout 300000 && yarn publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   push_release_to_registry:
     if: github.event_name == 'release'
