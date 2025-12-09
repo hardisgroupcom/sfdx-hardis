@@ -11,13 +11,15 @@ import { CommonPullRequestInfo } from "../gitProvider/index.js";
 
 export class JiraProvider extends TicketProviderRoot {
   private jiraClient: Version3Client | null = null;
+  private jiraHost: string | null = null;
 
   constructor(config: any) {
     super();
     const rawHost = getEnvVar("JIRA_HOST") || config.jiraHost || "";
     const sanitizedHost = rawHost.startsWith("http") ? rawHost : `https://${rawHost}`;
+    this.jiraHost = sanitizedHost.replace(/\/$/, "");
     const jiraOptions: ConstructorParameters<typeof Version3Client>[0] = {
-      host: sanitizedHost.replace(/\/$/, ""),
+      host: this.jiraHost || '',
     };
     // Basic Auth
     if (getEnvVar("JIRA_EMAIL") && getEnvVar("JIRA_TOKEN")) {
@@ -119,7 +121,7 @@ export class JiraProvider extends TicketProviderRoot {
       uxLog(
         "action",
         this,
-        c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + process.env.JIRA_HOST + " ..."),
+        c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + this.jiraHost + " ..."),
       );
     }
     for (const ticket of tickets) {
