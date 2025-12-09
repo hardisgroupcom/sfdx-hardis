@@ -81,6 +81,9 @@ export function mdTableCell(str: string) {
   if (!str) {
     return "<!-- -->"
   }
+  if (typeof str !== "string") {
+    str = String(str);
+  }
   return str.replace(/\n/gm, "<br/>").replace(/\|/gm, "");
 }
 

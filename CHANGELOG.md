@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fix crash when generating documentation when a formula is just `true`
+
 ## [6.15.0] 2025-12-08
 
 - Ticketing: replace the deprecated `jira-client` dependency with the `jira.js` SDK to improve Atlassian Cloud API v3 compatibility and authentication handling.
