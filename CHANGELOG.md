@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.15.1] 2025-12-10
+
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fix crash when generating documentation when a formula is just `true`
 - Jira Provider: Fix label of jira server in output message when coming from config file.
 
