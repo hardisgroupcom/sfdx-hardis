@@ -13,6 +13,20 @@ Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you
   - Run `tsc --watch` to transpile typescript into js everytime you update a TS file
 - Debug commands using `NODE_OPTIONS=--inspect-brk sf hardis:somecommand --someparameter somevalue` (you can also debug commands using VsCode Sfdx-Hardis setting)
 
+Note: If you want to test CI with the sfdx-hardis version of your current branch, add the the following script in your pipeline before calling sfdx hardis.
+
+```shell
+TEMP_DIR=$(mktemp -d)
+git clone https://github.com/hardisgroupcom/sfdx-hardis.git $TEMP_DIR
+cd $TEMP_DIR
+git checkout fixes/jira_data_center
+yarn
+npm install typescript -g
+tsc
+sf plugins link
+cd -
+```
+
 ### VsCode Extension: vscode-sfdx-hardis
 
 - Install Node.js ([recommended version](https://nodejs.org/en/))

@@ -12,6 +12,8 @@ import { CommonPullRequestInfo } from "../gitProvider/index.js";
 export class JiraProvider extends TicketProviderRoot {
   private jiraClient: Version3Client | null = null;
   private jiraHost: string | null = null;
+  private jiraAuthMode: "JIRA_EMAIL+JIRA_TOKEN" | "JIRA_PAT" | "JIRA_PAT(DATA_CENTER_WORKAROUND)";
+  private jiraIsAuthenticated: boolean = false;
 
   constructor(config: any) {
     super();
@@ -30,6 +32,7 @@ export class JiraProvider extends TicketProviderRoot {
         },
       };
       this.isActive = true;
+      this.jiraAuthMode = "JIRA_EMAIL+JIRA_TOKEN"
       uxLog("log", this, c.grey("[JiraProvider] Using JIRA_EMAIL and JIRA_TOKEN for authentication"));
     }
     // Personal access token
@@ -40,6 +43,7 @@ export class JiraProvider extends TicketProviderRoot {
         },
       };
       this.isActive = true;
+      this.jiraAuthMode = "JIRA_PAT"
       uxLog("log", this, c.grey("[JiraProvider] Using JIRA_PAT for authentication"));
     }
     if (this.isActive) {
@@ -68,6 +72,46 @@ export class JiraProvider extends TicketProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis JIRA connector";
+  }
+
+  public async authenticate(): Promise<boolean> {
+    if (!this.jiraClient) {
+      return false;
+    }
+    if (this.jiraIsAuthenticated) {
+      return true;
+    }
+    const user = await this.jiraClient!.myself.getCurrentUser();
+    if (user?.active) {
+      this.jiraIsAuthenticated = true;
+      uxLog("log", this, "JIRA authentication successful with mode: " + this.jiraAuthMode);
+      return true;
+    }
+    if (this.jiraAuthMode === "JIRA_PAT") {
+      uxLog("log", this, "Authentication failed with JIRA_PAT: trying workaround for Jira Data Center...");
+      // Override the request method to inject Bearer PAT
+      const originalSendRequest = this.jiraClient.sendRequest.bind(
+        this.jiraClient,
+      );
+      this.jiraClient.sendRequest = async (
+        requestConfig: any,
+        callback: any,
+      ) => {
+        requestConfig.headers = {
+          ...requestConfig.headers,
+          Authorization: `Bearer ${getEnvVar("JIRA_PAT")}`,
+        };
+        return originalSendRequest(requestConfig, callback);
+      };
+      this.jiraAuthMode = "JIRA_PAT(DATA_CENTER_WORKAROUND)";
+      return this.authenticate();
+    }
+    uxLog(
+      "error",
+      this,
+      `JIRA authentication failed with mode ${this.jiraAuthMode}: Active user check failed. ${user ? JSON.stringify(user) : user}`,
+    );
+    return false;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

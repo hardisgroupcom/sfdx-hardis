@@ -281,8 +281,9 @@ export async function buildCheckDeployCommitSummary() {
       flowDiffMarkdown: commitsSummary.flowDiffMarkdown
     };
     setPullRequestData(prDataCommitsSummary);
-  } catch (e3) {
-    uxLog("warning", this, c.yellow('Unable to compute git summary:\n' + e3));
+  } catch (e3: any) {
+    uxLog("warning", this, c.yellow('Unable to compute git summary:\n' + e3.message));
+    uxLog("log", this, c.grey(e3.stack));
   }
 }
 
