@@ -11,7 +11,7 @@ import { getConfig } from "../../config/index.js";
 export const allTicketProviders = [JiraProvider, GenericTicketingProvider, AzureBoardsProvider];
 
 export abstract class TicketProvider {
-  static instances: TicketProviderRoot[] | null;
+  static instances: TicketProviderRoot[] | null = null;
 
   static async getInstances(config: any): Promise<TicketProviderRoot[]> {
     if (this.instances !== null) {
@@ -25,7 +25,8 @@ export abstract class TicketProvider {
         ticketProviders.push(new provider(config));
       }
     }
-    return ticketProviders;
+    this.instances = ticketProviders;
+    return this.instances;
   }
 
   // Returns all providers ticket references from input string
