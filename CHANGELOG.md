@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Add new Grafana Dashboard "Search Salesforce Org by Org Identifier"
+- Add workaround to authenticate with JIRA_PAT on Jira Data Center servers
 
 ## [6.15.1] 2025-12-10
 

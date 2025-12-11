@@ -11,10 +11,17 @@ import { getConfig } from "../../config/index.js";
 export const allTicketProviders = [JiraProvider, GenericTicketingProvider, AzureBoardsProvider];
 
 export abstract class TicketProvider {
-  static getInstances(config: any): TicketProviderRoot[] {
+  static instances: TicketProviderRoot[] | null;
+
+  static async getInstances(config: any): Promise<TicketProviderRoot[]> {
+    if (this.instances !== null) {
+      return this.instances;
+    }
     const ticketProviders: TicketProviderRoot[] = [];
     for (const provider of allTicketProviders) {
       if (provider.isAvailable(config)) {
+        const providerInstance = new provider(config);
+        await providerInstance.authenticate();
         ticketProviders.push(new provider(config));
       }
     }
@@ -35,7 +42,7 @@ export abstract class TicketProvider {
   // Adds ticket info by calling ticket providers APIs when possible
   public static async collectTicketsInfo(tickets: Ticket[]): Promise<Ticket[]> {
     const config = await getConfig("project");
-    const ticketProviders = this.getInstances(config);
+    const ticketProviders = await this.getInstances(config);
     if (ticketProviders.length === 0) {
       uxLog("error", this, c.grey(`[TicketProvider] No ticket provider has been configured`));
     }
@@ -51,7 +58,7 @@ export abstract class TicketProvider {
   // Can be comments on JIRA, and maybe later status changes ? 😊
   public static async postDeploymentActions(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null) {
     const config = await getConfig("project");
-    const ticketProviders = this.getInstances(config);
+    const ticketProviders = await this.getInstances(config);
     for (const ticketProvider of ticketProviders) {
       if (ticketProvider.isActive) {
         await ticketProvider.postDeploymentComments(tickets, org, pullRequestInfo);

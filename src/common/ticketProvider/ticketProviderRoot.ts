@@ -12,6 +12,11 @@ export abstract class TicketProviderRoot {
     throw new SfError("getLabel should be implemented on this call");
   }
 
+  public async authenticate(): Promise<boolean> {
+    // Method to override if the ticketing provider requires authentication
+    return true;
+  }
+
   public async collectTicketsInfo(tickets: Ticket[]) {
     uxLog("warning", this, c.yellow("collectTicketsInfo is not implemented on " + this.getLabel()));
     return tickets;
