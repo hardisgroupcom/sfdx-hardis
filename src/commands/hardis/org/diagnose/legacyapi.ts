@@ -207,6 +207,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     // Display summary
     uxLog("action", this, c.cyan('Results of Legacy API calls analysis:'));
     const logLines: string[] = [];
+    let totalErrNb = 0;
     for (const descriptor of this.legacyApiDescriptors) {
       const errorCount = descriptor.totalErrors;
       const colorMethod =
@@ -215,11 +216,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           : descriptor.severity === 'WARNING' && errorCount > 0
             ? c.yellow
             : c.green;
+      totalErrNb += errorCount;
       const line = colorMethod(`- ${descriptor.deprecationRelease} : ${c.bold(errorCount)}`);
       logLines.push(line);
     }
     uxLog("log", this, logLines.join('\n'));
-    if (this.legacyApiDescriptors.some((descriptor) => descriptor.totalErrors > 0)) {
+    if (totalErrNb > 0) {
       uxLog("warning", this, c.yellow(this.articleTextLegacyApi));
     }
 
