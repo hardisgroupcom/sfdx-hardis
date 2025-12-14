@@ -532,6 +532,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         hostname = await dnsPromises.reverse(ip);
       } catch (e) {
         hostname = 'unknown';
+        uxLog("other", this, c.grey(`Unable to resolve hostname for IP ${ip}: ${e}`));
       }
       const formattedHostname = Array.isArray(hostname) ? hostname.join(', ') : hostname;
       const ipResult = { CLIENT_IP: ip, CLIENT_HOSTNAME: formattedHostname, SFDX_HARDIS_COUNT: count };
