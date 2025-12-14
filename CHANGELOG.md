@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.16.0] 2025-12-14
+
 - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/) enhancements:
   - Detect calls to API Login to anticipate their [deprecation in Summer 27](https://help.salesforce.com/s/articleView?id=005132110&type=1)
   - Make the command more efficient when handling a high number of log files
