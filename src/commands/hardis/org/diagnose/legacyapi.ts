@@ -31,6 +31,7 @@ type LegacyApiDescriptor = {
   errors: any[];
   totalErrors: number;
   ipCounts: Record<string, number>;
+  apiResources?: string[];
 };
 
 export default class LegacyApi extends SfCommand<any> {
@@ -119,6 +120,17 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       totalErrors: 0,
       ipCounts: {},
     },
+    {
+      apiFamily: ['SOAP'],
+      minApiVersion: 0.0,
+      maxApiVersion: Number.POSITIVE_INFINITY,
+      severity: 'WARNING',
+      deprecationRelease: 'Summer 27 - retirement of SOAP login',
+      errors: [] as any[],
+      totalErrors: 0,
+      ipCounts: {},
+      apiResources: ['login'],
+    },
   ];
 
   protected allErrors: any[] = [];
@@ -188,8 +200,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     await this.flushDescriptorErrors();
 
     // Display summary
-    uxLog("other", this, '');
-    uxLog("action", this, c.cyan('Results:'));
+    uxLog("action", this, c.cyan('Results of Legacy API calls analysis:'));
     for (const descriptor of this.legacyApiDescriptors) {
       const errorCount = descriptor.totalErrors;
       const colorMethod =
@@ -198,9 +209,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           : descriptor.severity === 'WARNING' && errorCount > 0
             ? c.yellow
             : c.green;
-      uxLog("other", this, colorMethod(`- ${descriptor.deprecationRelease} : ${c.bold(errorCount)}`));
+      uxLog("log", this, colorMethod(`- ${descriptor.deprecationRelease} : ${c.bold(errorCount)}`));
     }
-    uxLog("other", this, '');
 
     // Build command result
     let msg = 'No deprecated API call has been found in ApiTotalUsage logs';
@@ -400,10 +410,11 @@ See article to solve issue before it's too late:
       if (!descriptor.errors || descriptor.errors.length === 0) {
         continue;
       }
-      descriptor.totalErrors += descriptor.errors.length;
-      this.captureNotificationSample(descriptor.errors);
-      this.updateIpCounts(descriptor, descriptor.errors);
-      await this.appendRowsToCsv(descriptor.errors);
+      const descriptorErrors = descriptor.errors;
+      descriptor.totalErrors += descriptorErrors.length;
+      this.captureNotificationSample(descriptorErrors);
+      this.updateIpCounts(descriptor, descriptorErrors);
+      await this.appendRowsToCsv(descriptorErrors);
       descriptor.errors = [];
     }
   }
@@ -455,30 +466,32 @@ See article to solve issue before it's too late:
           chunk: (results) => {
             // Look in check the entries that match a deprecation description
             for (const logEntry of results.data as any[]) {
-              const apiVersion = logEntry.API_VERSION ? parseFloat(logEntry.API_VERSION) : parseFloat('999.0');
-              const apiFamily = logEntry.API_FAMILY || null;
+              const apiVersion = this.parseApiVersion(logEntry.API_VERSION);
+              const apiFamily = (logEntry.API_FAMILY || '').toUpperCase();
+              const apiResource = (logEntry.API_RESOURCE || '').toLowerCase();
               for (const legacyApiDescriptor of this.legacyApiDescriptors) {
                 if (
-                  legacyApiDescriptor.apiFamily.includes(apiFamily) &&
-                  legacyApiDescriptor.minApiVersion <= apiVersion &&
-                  legacyApiDescriptor.maxApiVersion >= apiVersion
+                  !this.matchesApiFamily(legacyApiDescriptor, apiFamily) ||
+                  !this.matchesApiVersion(legacyApiDescriptor, apiVersion) ||
+                  !this.matchesApiResource(legacyApiDescriptor, apiResource)
                 ) {
-                  logEntry.SFDX_HARDIS_DEPRECATION_RELEASE = legacyApiDescriptor.deprecationRelease;
-                  logEntry.SFDX_HARDIS_SEVERITY = legacyApiDescriptor.severity;
-                  if (legacyApiDescriptor.severity === 'ERROR') {
-                    logEntry.severity = 'error';
-                    logEntry.severityIcon = severityIconError;
-                  } else if (legacyApiDescriptor.severity === 'WARNING') {
-                    logEntry.severity = 'warning';
-                    logEntry.severityIcon = severityIconWarning;
-                  } else {
-                    // severity === 'INFO'
-                    logEntry.severity = 'info';
-                    logEntry.severityIcon = severityIconInfo;
-                  }
-                  legacyApiDescriptor.errors.push(logEntry);
-                  break;
+                  continue;
                 }
+                logEntry.SFDX_HARDIS_DEPRECATION_RELEASE = legacyApiDescriptor.deprecationRelease;
+                logEntry.SFDX_HARDIS_SEVERITY = legacyApiDescriptor.severity;
+                if (legacyApiDescriptor.severity === 'ERROR') {
+                  logEntry.severity = 'error';
+                  logEntry.severityIcon = severityIconError;
+                } else if (legacyApiDescriptor.severity === 'WARNING') {
+                  logEntry.severity = 'warning';
+                  logEntry.severityIcon = severityIconWarning;
+                } else {
+                  // severity === 'INFO'
+                  logEntry.severity = 'info';
+                  logEntry.severityIcon = severityIconInfo;
+                }
+                legacyApiDescriptor.errors.push(logEntry);
+                break;
               }
             }
           },
@@ -536,5 +549,37 @@ See article to solve issue before it's too late:
     }
     uxLog("log", this, c.italic(c.cyan(`Please see info about ${severity} API callers in ${c.bold(outputFileIps)}`)));
     return outputFileIps;
+  }
+
+  private parseApiVersion(rawValue: string | number | undefined): number {
+    if (rawValue === undefined || rawValue === null || rawValue === '') {
+      return Number.POSITIVE_INFINITY;
+    }
+    if (typeof rawValue === 'number') {
+      return Number.isFinite(rawValue) ? rawValue : Number.POSITIVE_INFINITY;
+    }
+    const parsed = parseFloat(rawValue);
+    return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
+  }
+
+  private matchesApiFamily(descriptor: LegacyApiDescriptor, apiFamily: string): boolean {
+    if (!apiFamily) {
+      return false;
+    }
+    return descriptor.apiFamily.some((family) => family.toUpperCase() === apiFamily);
+  }
+
+  private matchesApiVersion(descriptor: LegacyApiDescriptor, apiVersion: number): boolean {
+    return apiVersion >= descriptor.minApiVersion && apiVersion <= descriptor.maxApiVersion;
+  }
+
+  private matchesApiResource(descriptor: LegacyApiDescriptor, apiResource: string): boolean {
+    if (!descriptor.apiResources || descriptor.apiResources.length === 0) {
+      return true;
+    }
+    if (!apiResource) {
+      return false;
+    }
+    return descriptor.apiResources.some((resource) => resource.toLowerCase() === apiResource);
   }
 }
