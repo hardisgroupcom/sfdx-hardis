@@ -113,7 +113,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       apiFamily: ['SOAP', 'REST', 'BULK_API'],
       minApiVersion: 21.0,
       maxApiVersion: 30.0,
-      severity: 'WARNING',
+      severity: 'ERROR',
       deprecationRelease: 'Summer 25 - retirement of 21 to 30',
       errors: [] as any[],
       totalErrors: 0,
@@ -153,6 +153,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.tempDir = await createTempDir();
 
     // Get EventLogFile records with EventType = 'ApiTotalUsage'
+    uxLog("action", this, c.cyan(`Querying org for EventLogFile entries of type ${eventType} to detect Legacy API calls...`));
     const logCountQuery = `SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`;
     const logCountRes = await soqlQuery(logCountQuery, conn);
     if (logCountRes.totalSize === 0) {
@@ -176,10 +177,14 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const eventLogRes: any = await soqlQuery(logCollectQuery, conn);
 
     // Collect legacy api calls from logs
-    uxLog("action", this, c.cyan('Calling org API to get CSV content of each EventLogFile record, then parse and analyze it...'));
+    WebSocketClient.sendProgressStartMessage("Downloading and analyzing log files...", eventLogRes.records.length);
+    let counter = 0;
     for (const eventLogFile of eventLogRes.records) {
       await this.collectDeprecatedApiCalls(eventLogFile.LogFile, conn);
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter, eventLogRes.records.length);
     }
+    WebSocketClient.sendProgressEndMessage();
     await this.flushDescriptorErrors();
 
     // Display summary
@@ -288,6 +293,7 @@ See article to solve issue before it's too late:
         LegacyApiCalls: totalErrorsFound,
       },
     });
+    uxLog("log", this, c.grey(notifDetailText));
 
     if ((this.argv || []).includes('legacyapi')) {
       process.exitCode = statusCode;
@@ -435,12 +441,12 @@ See article to solve issue before it's too late:
     const severityIconInfo = getSeverityIcon('info');
 
     // Download file as stream, and process chuck by chuck
-    uxLog("log", this, c.grey(`- processing ${logFileUrl}...`));
+    uxLog("log", this, c.grey(`Downloading ${logFileUrl}...`));
     const fetchUrl = `${conn.instanceUrl}${logFileUrl}`;
     const outputFile = path.join(this.tempDir, Math.random().toString(36).substring(7) + ".csv");
     const downloadResult = await new FileDownloader(fetchUrl, { conn: conn, outputFile: outputFile }).download();
     if (downloadResult.success) {
-      uxLog("log", this, c.grey(`-- parsing downloaded CSV from ${outputFile} and check for deprecated calls...`));
+      uxLog("log", this, c.grey(`Parsing downloaded CSV from ${outputFile} and check for deprecated calls...`));
       const outputFileStream = fs.createReadStream(outputFile, { encoding: 'utf8' });
       await new Promise((resolve, reject) => {
         Papa.parse(outputFileStream, {
@@ -528,7 +534,7 @@ See article to solve issue before it's too late:
     if (outputFileIpsRes.xlsxFile) {
       this.outputFilesRes.xlsxFile2 = outputFileIpsRes.xlsxFile;
     }
-    uxLog("other", this, c.italic(c.cyan(`Please see info about ${severity} API callers in ${c.bold(outputFileIps)}`)));
+    uxLog("log", this, c.italic(c.cyan(`Please see info about ${severity} API callers in ${c.bold(outputFileIps)}`)));
     return outputFileIps;
   }
 }
