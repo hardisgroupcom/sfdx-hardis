@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Add new Grafana Dashboard "Search Salesforce Org by Org Identifier"
+- Fix default ConnectedApp name if it contains multiple `_`
 
 ## [6.15.1] 2025-12-10
 
