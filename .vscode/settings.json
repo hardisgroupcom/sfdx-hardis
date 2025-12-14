@@ -1,11 +1,10 @@
 {
   "files.exclude": {
-    "**/.git": true,
-    "**/.svn": true,
-    "**/.hg": true,
-    "**/CVS": true,
     "**/.DS_Store": true,
-    "**/node_modules": true,
+    "**/.git": true,
+    "**/.hg": true,
+    "**/.svn": true,
+    "**/CVS": true
   },
   "search.exclude": {
     "**/lib": true,
@@ -15,10 +14,23 @@
   "editor.tabSize": 2,
   "editor.formatOnSave": true,
   "rewrap.wrappingColumn": 80,
+  "files.watcherExclude": {
+    "**/lib/**": true,
+    "**/bin/**": true,
+    "**/defaults/**": true,
+    "**/docs/**": true,
+    "**/hardis-report/**": true,
+    "**/.git/**": true
+  },
   "typescript.tsserver.exclude": [
     "**/node_modules",
     "**/dist",
-    "**/build"
+    "**/build",
+    "**/lib",
+    "**/defaults/**",
+    "**/docs/**",
+    "**/hardis-report/**",
+    "**/.vscode/**"
   ],
   "pasteImage.path": "${projectRoot}/docs/assets/images",
   "pasteImage.basePath": "${projectRoot}",

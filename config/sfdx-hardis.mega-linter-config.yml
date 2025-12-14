@@ -11,11 +11,34 @@ DISABLE:
   - HTML
   - SPELL # Uncomment to enable checks of spelling mistakes # - SPELL # Uncomment to disable checks of spelling mistakes
   - XML
+
+# Remove when code-analyzer config is matching sfdx-scanner config
+SALESFORCE_CODE_ANALYZER_APEX_DISABLE_ERRORS: true
+SALESFORCE_CODE_ANALYZER_AURA_DISABLE_ERRORS: true
+SALESFORCE_CODE_ANALYZER_LWC_DISABLE_ERRORS: true
+
 SHOW_ELAPSED_TIME: true
 FILTER_REGEX_EXCLUDE: (\.vscode|staticresources/)
-PRE_COMMANDS:
+SALESFORCE_PRE_COMMANDS:
+  - command: echo "Downloading Code Analyzer configuration files... If it fails, you need to manually add code-analyzer.yml and pmd-ruleset.yml at the root of your repository."
+    continue_if_failed: false
   - command: mkdir -p "${DEFAULT_WORKSPACE}/config" && wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/pmd-ruleset.xml -O "${DEFAULT_WORKSPACE}/config/pmd-ruleset.xml"
     continue_if_failed: false
+  - command: wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/code-analyzer.yml -O "${DEFAULT_WORKSPACE}/code-analyzer.yml"
+    continue_if_failed: false
+  - command: wget https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/pmd-ruleset.xml -O "${DEFAULT_WORKSPACE}/pmd-ruleset.xml"
+    continue_if_failed: false
+
+SALESFORCE_CODE_ANALYZER_APEX_ARGUMENTS:
+  - --config-file
+  - ./code-analyzer.yml
+  - --rule-selector
+  - pmd:SfdxHardis
+
+SALESFORCE_CODE_ANALYZER_APEX_COMMAND_REMOVE_ARGUMENTS:
+  - --rule-selector
+  - pmd:Recommended
+
 SALESFORCE_SFDX_SCANNER_APEX_ARGUMENTS:
   - --pmdconfig
   - ./config/pmd-ruleset.xml

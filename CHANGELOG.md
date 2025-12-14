@@ -6,6 +6,51 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/): Added ability to apply the bypass to flows
 
+## [6.16.0] 2025-12-14
+
+- [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/) enhancements:
+  - Detect calls to API Login to anticipate their [deprecation in Summer 27](https://help.salesforce.com/s/articleView?id=005132110&type=1)
+  - Make the command more efficient when handling a high number of log files
+  - Api Versions 21 to 30 are now flagged as errors.
+- Add new Grafana Dashboard "Search Salesforce Org by Org Identifier"
+- Fix default ConnectedApp name if it contains multiple `_`
+- Fix tsconfig & vscode settings to improve VsCode performances
+
+## [6.15.1] 2025-12-10
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fix crash when generating documentation when a formula is just `true`
+- Jira Provider: Fix label of jira server in output message when coming from config file.
+
+## [6.15.0] 2025-12-08
+
+- Ticketing: replace the deprecated `jira-client` dependency with the `jira.js` SDK to improve Atlassian Cloud API v3 compatibility and authentication handling.
+- Node.js 20 compatibility: force `parse5@6.0.1` through Yarn resolutions to avoid the `ERR_REQUIRE_ESM` crash caused by newer jsdom transitive dependencies.
+- Ticketing: while collecting Jira tickets, also capture assignee/reporter identifiers so downstream logs and notifications can surface owners.
+- Add yarn.lock in the released package
+- GitHub Actions: consolidate the alpha, canary, beta and release deployment workflows into a single `deploy.yml` to reduce duplication and keep security tooling aligned.
+
+## [6.14.4] 2025-12-08
+
+- Ignore a trivy issue located in @salesforce/cli package (will be fixed by Salesforce)
+
+## [6.14.3] 2025-12-07
+
+- Optimize gitlab-ci workflow for scratch orgs testing step
+- Upgrade dependencies
+
+## [6.14.2] 2025-12-03
+
+- Add Java (JDK 11+) to Docker image to support PMD engine in Salesforce Code Analyzer
+
+## [6.14.1] 2025-12-01
+
+- [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/): Display a different message in case of empty Custom Settings or export error.
+- MegaLinter config: disable CodeSpell
+
+## [6.14.0] 2025-11-30
+
+- Upgrade MegaLinter default config + code-analyzer.yml + updated rulesets
+
 ## [6.13.0] 2025-11-28
 
 - New command [hardis:org:purge:profile](https://sfdx-hardis.cloudity.com/hardis/org/purge/profile/): Removes or "mutes" Permission Sets attributes from selected Salesforce Profile metadata files and redeploys the cleaned profiles to the target org.
