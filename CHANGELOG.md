@@ -4,8 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/) enhancements:
+  - Detect calls to API Login to anticipate their [deprecation in Summer 27](https://help.salesforce.com/s/articleView?id=005132110&type=1)
+  - Make the command more efficient when handling a high number of log files
+  - Api Versions 21 to 30 are now flagged as errors.
 - Add new Grafana Dashboard "Search Salesforce Org by Org Identifier"
 - Fix default ConnectedApp name if it contains multiple `_`
+- Fix tsconfig & vscode settings to improve VsCode performances
 
 ## [6.15.1] 2025-12-10
 

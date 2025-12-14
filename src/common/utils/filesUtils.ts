@@ -1518,7 +1518,7 @@ export async function generateCsvFile(
   return result;
 }
 
-async function createXlsxFromCsv(outputPath: string, options: { fileTitle?: string; csvFileTitle?: string; xlsFileTitle?: string; noExcel?: boolean; }, result: any) {
+export async function createXlsxFromCsv(outputPath: string, options: { fileTitle?: string; csvFileTitle?: string; xlsFileTitle?: string; noExcel?: boolean; }, result: any) {
   try {
     const xlsDirName = path.join(path.dirname(outputPath), 'xls');
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');

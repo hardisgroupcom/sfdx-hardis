@@ -10,5 +10,12 @@
   },
   "include": [
     "./src/**/*.ts"
+  ],
+  "exclude": [
+    "lib",
+    "defaults",
+    "docs",
+    "hardis-report",
+    "**/*.d.ts"
   ]
 }
