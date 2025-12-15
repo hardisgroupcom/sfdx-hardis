@@ -107,12 +107,6 @@ Key functionalities:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
-    'conversation-link-domain': Flags.string({
-      description: 'Lightning Experience domain used to build clickable conversation links (example: https://myorg.lightning.force.com)',
-    }),
-    'conversation-agent-api': Flags.string({
-      description: 'Optional override for the Agent API name query parameter embedded in the conversation link',
-    }),
     'conversation-time-filter': Flags.integer({
       description: 'Time filter (days) appended to the Lightning analytics URL when generating conversation links',
       default: 30,
@@ -133,10 +127,9 @@ Key functionalities:
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
     const conn = flags['target-org'].getConnection();
-    const conversationLinkDomain = flags['conversation-link-domain'] || null;
-    const agentApiNameOverride = flags['conversation-agent-api'] || null;
     const timeFilterFlag = flags['conversation-time-filter'];
     const timeFilterDays = Number.isFinite(timeFilterFlag) && timeFilterFlag > 0 ? timeFilterFlag : 30;
+    const conversationLinkDomain = resolveConversationLinkDomain(conn.instanceUrl);
 
     this.queryString = AGENTFORCE_FEEDBACK_QUERY.trim();
 
@@ -145,7 +138,6 @@ Key functionalities:
     const transcriptsBySession = await fetchConversationTranscripts(sessionIds, conn);
     const exportRecords = buildAgentforceFeedbackRecords(rawResult.records, {
       conversationLinkDomain,
-      agentApiNameOverride,
       timeFilterDays,
       transcriptsBySession,
     });
@@ -164,7 +156,6 @@ Key functionalities:
 
 interface ConversationLinkOptions {
   conversationLinkDomain: string | null;
-  agentApiNameOverride: string | null;
   timeFilterDays: number;
 }
 
@@ -186,7 +177,6 @@ function buildAgentforceFeedbackRecords(records: AnyJson[] | undefined, options:
   const safeRecords = Array.isArray(records) ? records : [];
   const safeOptions: AgentforceRecordOptions = options || {
     conversationLinkDomain: null,
-    agentApiNameOverride: null,
     timeFilterDays: 30,
     transcriptsBySession: new Map<string, string>(),
   };
@@ -208,7 +198,7 @@ function buildAgentforceFeedbackRecords(records: AnyJson[] | undefined, options:
       domain: safeOptions.conversationLinkDomain,
       conversationId,
       sessionId,
-      agentApiName: safeOptions.agentApiNameOverride || agentApiName,
+      agentApiName,
       timeFilterDays: safeOptions.timeFilterDays,
     });
 
@@ -293,6 +283,30 @@ function buildConversationUrl(params: {
     url.searchParams.set('c__agentApiName', agentApiName);
   }
   return url.toString();
+}
+
+function resolveConversationLinkDomain(instanceUrl?: string): string | null {
+  if (!instanceUrl) {
+    return null;
+  }
+  try {
+    const parsed = new URL(instanceUrl);
+    const { protocol } = parsed;
+    let host = parsed.hostname;
+    if (host.endsWith('.my.salesforce.com')) {
+      host = host.replace('.my.salesforce.com', '.lightning.force.com');
+    } else if (host.endsWith('.salesforce.com') && !host.includes('.lightning.')) {
+      host = host.replace('.salesforce.com', '.lightning.force.com');
+    }
+    const potentialDomain = `${protocol}//${host}`;
+    const normalized = normalizeLightningDomain(potentialDomain);
+    if (normalized) {
+      return normalized;
+    }
+    return normalizeLightningDomain(parsed.origin);
+  } catch {
+    return null;
+  }
 }
 
 function normalizeLightningDomain(domain: string): string | null {
