@@ -271,6 +271,9 @@ async function fetchRowsPage(
 }
 
 function normalizeQueryResponse(response: QueryConnectResponse): DataCloudSqlQueryResult {
+  if (typeof response !== "object" || response === null) {
+    throw new SfError("Invalid response format received from Data Cloud SQL query.\n" + JSON.stringify(response, null, 2));
+  }
   const metadata = response.metadata ?? [];
   const dataRows = response.data ?? [];
   const records = metadata.length ? dataRows.map((row) => mapRowToRecord(row, metadata)) : [];
