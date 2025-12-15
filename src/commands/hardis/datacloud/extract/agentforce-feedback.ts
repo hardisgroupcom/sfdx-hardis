@@ -5,70 +5,6 @@ import { dataCloudSqlQuery } from "../../../../common/utils/dataCloudUtils.js";
 import { uxLog } from "../../../../common/utils/index.js";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
 
-const excludedConversationIds = [
-  //  '26db0dae-7c84-4b45-937f-b30a79d69697',
-  // '2533ccb9-f5ef-4f67-adb4-a6035f5055bf',
-  '8981bfeb-d3e8-4085-b515-d26e54fdff88'
-];
-const excludedConversationFilter = excludedConversationIds.length
-  ? ` AND gar.generationGroupId__c NOT IN (${excludedConversationIds.map((id) => `'${id}'`).join(', ')})`
-  : '';
-
-const AGENTFORCE_FEEDBACK_QUERY = `
-WITH feedback_cte AS (
-  SELECT
-    COALESCE(usr.ssot__username__c, gar.userId__c) AS userName,
-    ggn.timestamp__c AS conversationDate,
-    gaf.feedback__c AS feedbackSentiment,
-    gfd.feedbackText__c AS feedbackMessage,
-    gat.tagValue__c AS userUtterance,
-    ggn.responseText__c AS agentResponse,
-    gar.generationGroupId__c AS conversationId,
-    gar.gatewayRequestId__c AS gatewayRequestId
-  FROM GenAIGeneration__dlm ggn
-  JOIN GenAIGatewayResponse__dlm grs ON ggn.generationResponseId__c = grs.generationResponseId__c
-  JOIN GenAIGatewayRequest__dlm gar ON grs.generationRequestId__c = gar.gatewayRequestId__c
-  JOIN GenAIGatewayRequestTag__dlm gat ON gar.gatewayRequestId__c = gat.parent__c AND gat.tag__c = 'user_utterance'
-  LEFT JOIN GenAIFeedback__dlm gaf ON gar.generationGroupId__c = gaf.generationGroupId__c
-  LEFT JOIN GenAIFeedbackDetail__dlm gfd ON gaf.feedbackId__c = gfd.parent__c
-  LEFT JOIN ssot__User__dlm usr ON usr.ssot__Id__c = gar.userId__c
-  WHERE gaf.feedback__c IN ('GOOD','BAD')${excludedConversationFilter}
-), session_lookup AS (
-  SELECT
-    ais.ssot__GenAiGatewayRequestId__c AS gatewayRequestId,
-    ai.ssot__AiAgentSessionId__c AS sessionId,
-    ROW_NUMBER() OVER (
-      PARTITION BY ais.ssot__GenAiGatewayRequestId__c
-      ORDER BY ais.ssot__StartTimestamp__c DESC
-    ) AS rowNum
-  FROM ssot__AiAgentInteractionStep__dlm ais
-  JOIN ssot__AiAgentInteraction__dlm ai ON ai.ssot__Id__c = ais.ssot__AiAgentInteractionId__c
-), session_agent_info AS (
-  SELECT
-    part.ssot__AiAgentSessionId__c AS sessionId,
-    MAX(part.ssot__AiAgentApiName__c) AS agentApiName
-  FROM ssot__AiAgentSessionParticipant__dlm part
-  WHERE part.ssot__AiAgentApiName__c IS NOT NULL
-  GROUP BY part.ssot__AiAgentSessionId__c
-)
-SELECT
-  fb.userName,
-  fb.conversationDate,
-  fb.feedbackSentiment,
-  fb.feedbackMessage,
-  fb.userUtterance,
-  fb.agentResponse,
-  fb.conversationId,
-  fb.gatewayRequestId,
-  sess.sessionId,
-  agent.agentApiName AS agentApiName
-FROM feedback_cte fb
-LEFT JOIN (SELECT gatewayRequestId, sessionId FROM session_lookup WHERE rowNum = 1) sess ON sess.gatewayRequestId = fb.gatewayRequestId
-LEFT JOIN session_agent_info agent ON agent.sessionId = sess.sessionId
-ORDER BY fb.conversationDate DESC
-LIMIT 500;
-`;
-
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
@@ -131,7 +67,7 @@ Key functionalities:
     const timeFilterDays = Number.isFinite(timeFilterFlag) && timeFilterFlag > 0 ? timeFilterFlag : 30;
     const conversationLinkDomain = resolveConversationLinkDomain(conn.instanceUrl);
 
-    this.queryString = AGENTFORCE_FEEDBACK_QUERY.trim();
+    this.queryString = buildMainQuery().trim();
 
     const rawResult = await dataCloudSqlQuery(this.queryString, conn, {});
     const sessionIds = extractSessionIds(rawResult.records);
@@ -148,7 +84,15 @@ Key functionalities:
     uxLog("other", this, JSON.stringify(resultCopy, null, 2));
 
     this.outputFile = await generateReportPath('datacloud-agentforce-feedback', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(exportRecords, this.outputFile, { fileTitle: 'DataCloud Agentforce Feedback' });
+    this.outputFilesRes = await generateCsvFile(exportRecords, this.outputFile, {
+      fileTitle: 'DataCloud Agentforce Feedback',
+      columnsCustomStyles: {
+        'Full conversation': { width: 50, wrap: true },
+        'Message containing GOOD/BAD': { width: 50, wrap: true },
+        'ConversationId': { width: 40 },
+        'Conversation URL': { width: 80, hyperlinkFromValue: true },
+      },
+    });
 
     return { sqlResult: JSON.parse(JSON.stringify(result)) };
   }
@@ -444,5 +388,79 @@ function isNewer(candidateDate: string, existingDate: string): boolean {
     return true;
   }
   return candidateTime >= existingTime;
+}
+
+function buildMainQuery() {
+  const agentforceFeedbackExcludedConversationIds = process.env.AGENTFORCE_FEEDBACK_EXCLUDED_CONV_IDS;
+  let excludedConversationIds: string[] = [];
+  if (agentforceFeedbackExcludedConversationIds) {
+    excludedConversationIds = agentforceFeedbackExcludedConversationIds.split(",").map(id => id.trim()).filter(id => id);
+  }
+  else {
+    excludedConversationIds = [
+      // Ugly hardcoded but... need it for now !
+      '8981bfeb-d3e8-4085-b515-d26e54fdff88'
+    ];
+  }
+  const excludedConversationFilter = excludedConversationIds.length
+    ? ` AND gar.generationGroupId__c NOT IN (${excludedConversationIds.map((id) => `'${id}'`).join(', ')})`
+    : '';
+
+  const AGENTFORCE_FEEDBACK_QUERY = `
+WITH feedback_cte AS (
+  SELECT
+    COALESCE(usr.ssot__username__c, gar.userId__c) AS userName,
+    ggn.timestamp__c AS conversationDate,
+    gaf.feedback__c AS feedbackSentiment,
+    gfd.feedbackText__c AS feedbackMessage,
+    gat.tagValue__c AS userUtterance,
+    ggn.responseText__c AS agentResponse,
+    gar.generationGroupId__c AS conversationId,
+    gar.gatewayRequestId__c AS gatewayRequestId
+  FROM GenAIGeneration__dlm ggn
+  JOIN GenAIGatewayResponse__dlm grs ON ggn.generationResponseId__c = grs.generationResponseId__c
+  JOIN GenAIGatewayRequest__dlm gar ON grs.generationRequestId__c = gar.gatewayRequestId__c
+  JOIN GenAIGatewayRequestTag__dlm gat ON gar.gatewayRequestId__c = gat.parent__c AND gat.tag__c = 'user_utterance'
+  LEFT JOIN GenAIFeedback__dlm gaf ON gar.generationGroupId__c = gaf.generationGroupId__c
+  LEFT JOIN GenAIFeedbackDetail__dlm gfd ON gaf.feedbackId__c = gfd.parent__c
+  LEFT JOIN ssot__User__dlm usr ON usr.ssot__Id__c = gar.userId__c
+  WHERE gaf.feedback__c IN ('GOOD','BAD')${excludedConversationFilter}
+), session_lookup AS (
+  SELECT
+    ais.ssot__GenAiGatewayRequestId__c AS gatewayRequestId,
+    ai.ssot__AiAgentSessionId__c AS sessionId,
+    ROW_NUMBER() OVER (
+      PARTITION BY ais.ssot__GenAiGatewayRequestId__c
+      ORDER BY ais.ssot__StartTimestamp__c DESC
+    ) AS rowNum
+  FROM ssot__AiAgentInteractionStep__dlm ais
+  JOIN ssot__AiAgentInteraction__dlm ai ON ai.ssot__Id__c = ais.ssot__AiAgentInteractionId__c
+), session_agent_info AS (
+  SELECT
+    part.ssot__AiAgentSessionId__c AS sessionId,
+    MAX(part.ssot__AiAgentApiName__c) AS agentApiName
+  FROM ssot__AiAgentSessionParticipant__dlm part
+  WHERE part.ssot__AiAgentApiName__c IS NOT NULL
+  GROUP BY part.ssot__AiAgentSessionId__c
+)
+SELECT
+  fb.userName,
+  fb.conversationDate,
+  fb.feedbackSentiment,
+  fb.feedbackMessage,
+  fb.userUtterance,
+  fb.agentResponse,
+  fb.conversationId,
+  fb.gatewayRequestId,
+  sess.sessionId,
+  agent.agentApiName AS agentApiName
+FROM feedback_cte fb
+LEFT JOIN (SELECT gatewayRequestId, sessionId FROM session_lookup WHERE rowNum = 1) sess ON sess.gatewayRequestId = fb.gatewayRequestId
+LEFT JOIN session_agent_info agent ON agent.sessionId = sess.sessionId
+ORDER BY fb.conversationDate DESC
+LIMIT 500;
+`;
+
+  return AGENTFORCE_FEEDBACK_QUERY;
 }
 
