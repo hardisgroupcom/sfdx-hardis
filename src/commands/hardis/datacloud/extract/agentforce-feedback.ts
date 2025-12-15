@@ -1,4 +1,4 @@
-import { Connection, Messages } from "@salesforce/core";
+import { Connection, Messages, SfError } from "@salesforce/core";
 import { Flags, requiredOrgFlagWithDeprecations, SfCommand } from "@salesforce/sf-plugins-core";
 import { AnyJson } from "@salesforce/ts-types";
 import { dataCloudSqlQuery } from "../../../../common/utils/dataCloudUtils.js";
@@ -47,6 +47,15 @@ Key functionalities:
       description: 'Time filter (days) appended to the Lightning analytics URL when generating conversation links',
       default: 30,
     }),
+    'date-from': Flags.string({
+      description: 'Optional ISO-8601 timestamp (UTC) to include conversations starting from this date',
+    }),
+    'date-to': Flags.string({
+      description: 'Optional ISO-8601 timestamp (UTC) to include conversations up to this date',
+    }),
+    'last-n-days': Flags.integer({
+      description: 'Optional rolling window (days) to include only the most recent conversations',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -66,8 +75,13 @@ Key functionalities:
     const timeFilterFlag = flags['conversation-time-filter'];
     const timeFilterDays = Number.isFinite(timeFilterFlag) && timeFilterFlag > 0 ? timeFilterFlag : 30;
     const conversationLinkDomain = resolveConversationLinkDomain(conn.instanceUrl);
+    const dateFilterOptions = resolveDateFilterOptions({
+      dateFromInput: flags['date-from'],
+      dateToInput: flags['date-to'],
+      lastNDaysInput: flags['last-n-days'],
+    });
 
-    this.queryString = buildMainQuery().trim();
+    this.queryString = buildMainQuery(dateFilterOptions).trim();
 
     const rawResult = await dataCloudSqlQuery(this.queryString, conn, {});
     const sessionIds = extractSessionIds(rawResult.records);
@@ -115,6 +129,17 @@ interface AgentforceCsvRecord {
   "Full conversation": string;
   "ConversationId": string;
   "Conversation URL": string;
+}
+
+interface AgentforceQueryFilters {
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+interface DateFilterOptionsInput {
+  dateFromInput?: string;
+  dateToInput?: string;
+  lastNDaysInput?: number;
 }
 
 function buildAgentforceFeedbackRecords(records: AnyJson[] | undefined, options: AgentforceRecordOptions) {
@@ -390,7 +415,7 @@ function isNewer(candidateDate: string, existingDate: string): boolean {
   return candidateTime >= existingTime;
 }
 
-function buildMainQuery() {
+function buildMainQuery(filters: AgentforceQueryFilters = {}) {
   const agentforceFeedbackExcludedConversationIds = process.env.AGENTFORCE_FEEDBACK_EXCLUDED_CONV_IDS;
   let excludedConversationIds: string[] = [];
   if (agentforceFeedbackExcludedConversationIds) {
@@ -405,6 +430,7 @@ function buildMainQuery() {
   const excludedConversationFilter = excludedConversationIds.length
     ? ` AND gar.generationGroupId__c NOT IN (${excludedConversationIds.map((id) => `'${id}'`).join(', ')})`
     : '';
+  const dateFilterClause = buildDateFilterClause(filters);
 
   const AGENTFORCE_FEEDBACK_QUERY = `
 WITH feedback_cte AS (
@@ -424,7 +450,7 @@ WITH feedback_cte AS (
   LEFT JOIN GenAIFeedback__dlm gaf ON gar.generationGroupId__c = gaf.generationGroupId__c
   LEFT JOIN GenAIFeedbackDetail__dlm gfd ON gaf.feedbackId__c = gfd.parent__c
   LEFT JOIN ssot__User__dlm usr ON usr.ssot__Id__c = gar.userId__c
-  WHERE gaf.feedback__c IN ('GOOD','BAD')${excludedConversationFilter}
+  WHERE gaf.feedback__c IN ('GOOD','BAD')${excludedConversationFilter}${dateFilterClause}
 ), session_lookup AS (
   SELECT
     ais.ssot__GenAiGatewayRequestId__c AS gatewayRequestId,
@@ -462,5 +488,84 @@ LIMIT 500;
 `;
 
   return AGENTFORCE_FEEDBACK_QUERY;
+}
+
+function resolveDateFilterOptions(inputs: DateFilterOptionsInput): AgentforceQueryFilters {
+  const { dateFromInput, dateToInput, lastNDaysInput } = inputs;
+  const parsedFrom = parseDateInput(dateFromInput, '--date-from');
+  const parsedTo = parseDateInput(dateToInput, '--date-to');
+
+  let effectiveFrom = parsedFrom;
+  let effectiveTo = parsedTo;
+
+  if (lastNDaysInput !== undefined && lastNDaysInput !== null) {
+    if (!Number.isFinite(lastNDaysInput) || lastNDaysInput <= 0) {
+      throw new SfError('--last-n-days must be a positive integer');
+    }
+    const now = new Date();
+    const relativeFrom = new Date(now);
+    relativeFrom.setUTCDate(relativeFrom.getUTCDate() - lastNDaysInput);
+    effectiveFrom = chooseLaterDate(effectiveFrom, relativeFrom);
+    effectiveTo = chooseEarlierDate(effectiveTo, now);
+  }
+
+  if (effectiveFrom && effectiveTo && effectiveFrom.getTime() > effectiveTo.getTime()) {
+    throw new SfError('Date filters are inconsistent: start date is after end date');
+  }
+
+  const filters: AgentforceQueryFilters = {};
+  if (effectiveFrom) {
+    filters.dateFrom = effectiveFrom.toISOString();
+  }
+  if (effectiveTo) {
+    filters.dateTo = effectiveTo.toISOString();
+  }
+  return filters;
+}
+
+function parseDateInput(value: string | undefined, flagName: string): Date | null {
+  if (!value) {
+    return null;
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new SfError(`Invalid ${flagName} value. Use ISO-8601 format, e.g. 2024-08-01T00:00:00Z`);
+  }
+  return parsed;
+}
+
+function chooseLaterDate(first: Date | null, second: Date | null): Date | null {
+  if (!first) {
+    return second;
+  }
+  if (!second) {
+    return first;
+  }
+  return first.getTime() >= second.getTime() ? first : second;
+}
+
+function chooseEarlierDate(first: Date | null, second: Date | null): Date | null {
+  if (!first) {
+    return second;
+  }
+  if (!second) {
+    return first;
+  }
+  return first.getTime() <= second.getTime() ? first : second;
+}
+
+function buildDateFilterClause(filters: AgentforceQueryFilters): string {
+  const clauses: string[] = [];
+  if (filters.dateFrom) {
+    clauses.push(` AND ggn.timestamp__c >= TIMESTAMP '${escapeSqlLiteral(filters.dateFrom)}'`);
+  }
+  if (filters.dateTo) {
+    clauses.push(` AND ggn.timestamp__c <= TIMESTAMP '${escapeSqlLiteral(filters.dateTo)}'`);
+  }
+  return clauses.join('');
+}
+
+function escapeSqlLiteral(value: string): string {
+  return value.replace(/'/g, "''");
 }
 
