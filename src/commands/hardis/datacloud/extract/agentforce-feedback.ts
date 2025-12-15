@@ -101,9 +101,10 @@ Key functionalities:
     this.outputFilesRes = await generateCsvFile(exportRecords, this.outputFile, {
       fileTitle: 'DataCloud Agentforce Feedback',
       columnsCustomStyles: {
-        'Full conversation': { width: 50, wrap: true },
-        'Message containing GOOD/BAD': { width: 50, wrap: true },
-        'ConversationId': { width: 40 },
+        'Full conversation': { width: 60, wrap: true },
+        'Feedback type': { width: 10 },
+        'Feedback message': { width: 30, wrap: true },
+        'ConversationId': { width: 35 },
         'Conversation URL': { width: 80, hyperlinkFromValue: true },
       },
     });
@@ -124,8 +125,8 @@ interface AgentforceRecordOptions extends ConversationLinkOptions {
 interface AgentforceCsvRecord {
   "User": string;
   "ConversationDate": string;
-  "Feedback GOOD/BAD": string;
-  "Message containing GOOD/BAD": string;
+  "Feedback type": string;
+  "Feedback message": string;
   "Full conversation": string;
   "ConversationId": string;
   "Conversation URL": string;
@@ -174,8 +175,8 @@ function buildAgentforceFeedbackRecords(records: AnyJson[] | undefined, options:
     const exportRecord: AgentforceCsvRecord = {
       "User": userName,
       "ConversationDate": conversationDate,
-      "Feedback GOOD/BAD": feedbackValue,
-      "Message containing GOOD/BAD": feedbackMessage,
+      "Feedback type": feedbackValue,
+      "Feedback message": feedbackMessage,
       "Full conversation": conversation,
       "ConversationId": conversationId,
       "Conversation URL": conversationUrl,
