@@ -21,7 +21,7 @@ Key functionalities:
 </details>
 `;
 
-  public static examples = ['$ sf hardis:datacloud:sql-query -q agentforce-chat-feedback'];
+  public static examples = ['$ sf hardis:datacloud:sql-query -q test'];
 
   public static flags: any = {
     query: Flags.string({

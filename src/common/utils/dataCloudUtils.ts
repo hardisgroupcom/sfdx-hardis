@@ -1,4 +1,4 @@
-import { Connection } from "@salesforce/core";
+import { Connection, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { uxLog } from "./index.js";
 
@@ -8,6 +8,7 @@ const DEFAULT_WORKLOAD_NAME = "sfdx-hardis-cli";
 const DEFAULT_ROW_LIMIT = 2000;
 const DEFAULT_POLL_INTERVAL_MS = 5000;
 const DEFAULT_POLL_TIMEOUT_MS = 120000;
+const DEFAULT_OMIT_SCHEMA = false;
 
 const SUCCESS_STATUSES = new Set(["finished", "resultsproduced"]);
 const RUNNING_STATUSES = new Set(["running", "queued"]);
@@ -84,7 +85,7 @@ export async function dataCloudSqlQuery(
   options?: DataCloudSqlQueryOptions,
 ): Promise<DataCloudSqlQueryResult> {
   if (!query || !query.trim()) {
-    throw new Error("The Data Cloud SQL query must be a non-empty string.");
+    throw new SfError("The Data Cloud SQL query must be a non-empty string.");
   }
 
   const settings = resolveOptions(options);
@@ -92,10 +93,10 @@ export async function dataCloudSqlQuery(
   try {
     const initialChunk = await submitInitialQuery(query.trim(), conn, settings);
     if (!initialChunk.metadata.length) {
-      throw new Error("Data Cloud SQL query did not return column metadata.");
+      throw new SfError(`Data Cloud SQL query did not return column metadata.\n${JSON.stringify(initialChunk)}`);
     }
     if (!initialChunk.status.queryId) {
-      throw new Error("Data Cloud SQL query did not return a queryId needed for pagination.");
+      throw new SfError(`Data Cloud SQL query did not return a queryId needed for pagination.\n${JSON.stringify(initialChunk)}`);
     }
 
     let metadata = initialChunk.metadata;
@@ -145,7 +146,7 @@ async function submitInitialQuery(
   options: RequiredQueryOptions,
 ): Promise<DataCloudSqlQueryResult> {
   const endpoint = buildQueryConnectUrl(conn, options);
-  uxLog("log", this, `[DataCloudSqlQuery] Submitting initial query to ${endpoint}: ${query}`);
+  uxLog("log", this, `[DataCloudSqlQuery] Submitting initial query to ${endpoint}:\n${query}`);
   const response = await conn.request<QueryConnectResponse>({
     method: "POST",
     url: endpoint,
@@ -166,7 +167,7 @@ async function waitForQueryCompletion(
 
   while (isRunningStatus(currentStatus.completionStatus)) {
     if (Date.now() > deadline) {
-      throw new Error(
+      throw new SfError(
         `Timed out after ${options.pollTimeoutMs}ms while waiting for Data Cloud query ${currentStatus.queryId} to finish.`,
       );
     }
@@ -175,7 +176,7 @@ async function waitForQueryCompletion(
     currentStatus = await fetchQueryStatus(conn, currentStatus.queryId, options, waitTimeMs);
 
     if (isFailureStatus(currentStatus.completionStatus)) {
-      throw new Error(`Data Cloud SQL query ${currentStatus.queryId} failed with status ${currentStatus.completionStatus}.`);
+      throw new SfError(`Data Cloud SQL query ${currentStatus.queryId} failed with status ${currentStatus.completionStatus}.`);
     }
 
     if (isRunningStatus(currentStatus.completionStatus) && options.pollIntervalMs > 0) {
@@ -184,7 +185,7 @@ async function waitForQueryCompletion(
   }
 
   if (!isSuccessStatus(currentStatus.completionStatus)) {
-    throw new Error(`Unexpected Data Cloud SQL query status: ${currentStatus.completionStatus || "Unknown"}.`);
+    throw new SfError(`Unexpected Data Cloud SQL query status: ${currentStatus.completionStatus || "Unknown"}.`);
   }
 
   return currentStatus;
@@ -299,7 +300,7 @@ function normalizeStatusResponse(status: QueryConnectStatusResponse, fallbackQue
 
 function mapRowToRecord(row: AnyJson[], metadata: DataCloudQueryColumnMetadata[]): DataCloudRecord {
   if (!metadata.length) {
-    throw new Error("Cannot map Data Cloud rows without column metadata.");
+    throw new SfError("Cannot map Data Cloud rows without column metadata.");
   }
 
   return metadata.reduce<DataCloudRecord>((acc, column, index) => {
@@ -352,7 +353,7 @@ function resolveOptions(options?: DataCloudSqlQueryOptions): RequiredQueryOption
     pollIntervalMs: options?.pollIntervalMs || DEFAULT_POLL_INTERVAL_MS,
     pollTimeoutMs: options?.pollTimeoutMs || DEFAULT_POLL_TIMEOUT_MS,
     waitTimeMs: options?.waitTimeMs || DEFAULT_POLL_INTERVAL_MS,
-    omitSchema: options?.omitSchema ?? true,
+    omitSchema: options?.omitSchema ?? DEFAULT_OMIT_SCHEMA,
   };
 }
 
@@ -385,7 +386,7 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function wrapQueryError(error: unknown): Error {
+function wrapQueryError(error: unknown): SfError {
   if (isSfRequestError(error)) {
     const details = [error.message];
     const bodyMessage = (error.body as { message?: string; error_description?: string } | undefined)?.message;
@@ -399,13 +400,13 @@ function wrapQueryError(error: unknown): Error {
     if (error.statusCode) {
       details.push(`(status ${error.statusCode})`);
     }
-    return new Error(`Data Cloud SQL query failed: ${details.filter(Boolean).join(" ")}`.trim());
+    return new SfError(`Data Cloud SQL query failed: ${details.filter(Boolean).join(" ")}`.trim());
   }
 
-  return error instanceof Error ? error : new Error("Unknown error while executing Data Cloud SQL query.");
+  return error instanceof SfError ? error : new SfError("Unknown error while executing Data Cloud SQL query.");
 }
 
-function isSfRequestError(error: unknown): error is Error & {
+function isSfRequestError(error: unknown): error is SfError & {
   statusCode?: number;
   body?: { message?: string; error_description?: string };
 } {
