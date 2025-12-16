@@ -30,6 +30,8 @@ Key functionalities:
     '$ sf hardis:datacloud:extract:agentforce-feedback --outputfile ./reports/agentforce-feedback.csv'
   ];
 
+  /* jscpd:ignore-start */
+
   public static flags: any = {
     outputfile: Flags.string({
       char: 'f',

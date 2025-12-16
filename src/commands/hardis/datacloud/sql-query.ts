@@ -23,6 +23,8 @@ Key functionalities:
 
   public static examples = ['$ sf hardis:datacloud:sql-query -q test'];
 
+  /* jscpd:ignore-start */
+
   public static flags: any = {
     query: Flags.string({
       char: 'q',
