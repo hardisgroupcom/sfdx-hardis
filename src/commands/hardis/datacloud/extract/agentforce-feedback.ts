@@ -1,9 +1,12 @@
 import { Connection, Messages, SfError } from "@salesforce/core";
 import { Flags, requiredOrgFlagWithDeprecations, SfCommand } from "@salesforce/sf-plugins-core";
 import { AnyJson } from "@salesforce/ts-types";
+import c from "chalk";
 import { dataCloudSqlQuery } from "../../../../common/utils/dataCloudUtils.js";
 import { uxLog } from "../../../../common/utils/index.js";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
+import { NotifProvider } from "../../../../common/notifProvider/index.js";
+import { setConnectionVariables } from "../../../../common/utils/orgUtils.js";
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -83,9 +86,12 @@ Key functionalities:
 
     this.queryString = buildMainQuery(dateFilterOptions).trim();
 
+    uxLog("action", this, c.cyan("Querying Feedbacks table..."));
     const rawResult = await dataCloudSqlQuery(this.queryString, conn, {});
     const sessionIds = extractSessionIds(rawResult.records);
+    uxLog("action", this, c.cyan("Fetching full conversations transcripts..."));
     const transcriptsBySession = await fetchConversationTranscripts(sessionIds, conn);
+    uxLog("action", this, c.cyan("Aggregating and filtering data..."))
     const exportRecords = buildAgentforceFeedbackRecords(rawResult.records, {
       conversationLinkDomain,
       timeFilterDays,
@@ -108,8 +114,36 @@ Key functionalities:
         'Conversation URL': { width: 80, hyperlinkFromValue: true },
       },
     });
+    const feedbackStats = computeFeedbackStats(exportRecords);
+    const notifSeverity = feedbackStats.badCount > 0 ? 'warning' : 'log';
+    const notifText = buildNotificationText(feedbackStats, dateFilterOptions);
+    const attachedFiles = collectFeedbackReportFiles(this.outputFilesRes);
+    uxLog("action", this, c.cyan(notifText));
 
-    return { sqlResult: JSON.parse(JSON.stringify(result)) };
+    await setConnectionVariables(conn);
+    await NotifProvider.postNotifications({
+      type: 'AGENTFORCE_FEEDBACK',
+      text: notifText,
+      buttons: [],
+      attachments: [],
+      severity: notifSeverity,
+      attachedFiles,
+      logElements: [],
+      data: { metric: feedbackStats.badCount, totalFeedback: feedbackStats.totalCount },
+      metrics: {
+        agentforceFeedbackGood: feedbackStats.goodCount,
+        agentforceFeedbackBad: feedbackStats.badCount,
+      },
+      alwaysSend: true,
+    });
+
+    return {
+      sqlResult: JSON.parse(JSON.stringify(result)),
+      feedbacksGood: feedbackStats.goodCount,
+      feedbacksBad: feedbackStats.badCount,
+      csvLogFile: this.outputFile,
+      xlsxLogFile: this.outputFilesRes?.xlsxFile,
+    };
   }
 }
 
@@ -489,6 +523,60 @@ LIMIT 500;
 `;
 
   return AGENTFORCE_FEEDBACK_QUERY;
+}
+
+interface FeedbackStats {
+  totalCount: number;
+  goodCount: number;
+  badCount: number;
+}
+
+function computeFeedbackStats(records: AgentforceCsvRecord[]): FeedbackStats {
+  let goodCount = 0;
+  let badCount = 0;
+  records.forEach((record) => {
+    const normalizedType = normalizeFeedbackType(record["Feedback type"]);
+    if (normalizedType === 'GOOD') {
+      goodCount += 1;
+    } else if (normalizedType === 'BAD') {
+      badCount += 1;
+    }
+  });
+  return { totalCount: records.length, goodCount, badCount };
+}
+
+function buildNotificationText(stats: FeedbackStats, filters: AgentforceQueryFilters): string {
+  const lines = [`Agentforce feedback summary: ${stats.goodCount} GOOD / ${stats.badCount} BAD (total ${stats.totalCount}).`];
+  const windowDescription = describeFeedbackDateRange(filters);
+  if (windowDescription) {
+    lines.push(windowDescription);
+  }
+  return lines.join('\n');
+}
+
+function describeFeedbackDateRange(filters: AgentforceQueryFilters): string | null {
+  if (!filters.dateFrom && !filters.dateTo) {
+    return null;
+  }
+  if (filters.dateFrom && filters.dateTo) {
+    return `Window: ${filters.dateFrom} → ${filters.dateTo}`;
+  }
+  if (filters.dateFrom) {
+    return `Window starting ${filters.dateFrom}`;
+  }
+  return `Window until ${filters.dateTo}`;
+}
+
+function normalizeFeedbackType(value: string): string {
+  return (value || '').trim().toUpperCase();
+}
+
+function collectFeedbackReportFiles(outputFilesRes: any): string[] {
+  const files: string[] = [];
+  if (outputFilesRes?.xlsxFile) {
+    files.push(outputFilesRes.xlsxFile);
+  }
+  return files;
 }
 
 function resolveDateFilterOptions(inputs: DateFilterOptionsInput): AgentforceQueryFilters {

@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- New command [hardis:datacloud:sql-query.ts]() allowing to query Data Cloud tables with Ansi SQL
+- New command [hardis:datacloud:extract:agentforce-feedback.ts]() allowing to generate reports of positive and negative Agentforce chats feedback, with full transcript and notifications.
+- Allow to force sending notifications if postNotifications is called with `alwaysSend: true`
+
 ## [6.16.0] 2025-12-14
 
 - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/) enhancements:
