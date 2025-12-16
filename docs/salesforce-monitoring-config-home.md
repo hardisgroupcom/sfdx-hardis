@@ -81,6 +81,22 @@ Example in env var:
 NOTIFICATIONS_DISABLE=METADATA_STATUS,UNUSED_METADATAS
 ```
 
+You can also decide to skip posting logs or metrics to API for all notification types or specific ones by defining env variables **NOTIF_API_SKIP_LOGS** and **NOTIF_API_SKIP_METRICS**.
+
+Examples:
+
+```sh
+# Skip posting logs to API and JSON file for specific notification types
+NOTIF_API_SKIP_LOGS=UNUSED_USERS,METADATA_STATUS
+```
+
+```sh
+# Skip posting logs to API and JSON file for all notification types
+NOTIF_API_SKIP_LOGS=all
+# Skip posting metrics to API for specific notification types
+NOTIF_API_SKIP_METRICS=METADATA_STATUS,UNUSED_METADATAS
+```
+
 ## Monitoring commands
 
 You can decide to disable commands by defining either a **monitoringDisable** property in `.sfdx-hardis.yml`, or a comma separated list in env variable **MONITORING_DISABLE**
