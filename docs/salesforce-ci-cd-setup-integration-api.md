@@ -86,6 +86,23 @@ ApexTestsFailingClasses,source=sfdx-hardis,type=APEX_TESTS,orgIdentifier=hardis-
 ApexTestsCodeCoverage,source=sfdx-hardis,type=APEX_TESTS,orgIdentifier=hardis-group,gitIdentifier=monitoring-hardis-org/monitoring_hardis_group metric=90.00
 ```
 
+## Skip Configuration
+
+You can skip sending logs or metrics to the API based on notification type by defining the following CI/CD variables:
+
+- **NOTIF_API_SKIP_LOGS** : Comma-separated list of notification types to skip for logs, or `all` to skip all logs
+- **NOTIF_API_SKIP_METRICS** : Comma-separated list of notification types to skip for metrics, or `all` to skip all metrics
+
+Examples of configuration:
+
+```sh
+NOTIF_API_SKIP_LOGS=all
+```
+
+```sh
+NOTIF_API_SKIP_METRICS=APEX_TESTS,DEPLOYMENT
+```
+
 ## Troubleshooting
 
 If you want to see the content of the API notifications in execution logs, you can define `NOTIF_API_DEBUG=true`
