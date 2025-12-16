@@ -16,7 +16,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
     name: Deploy alpha
     runs-on: ubuntu-latest
-    permissions: read-all
+    permissions:
+      id-token: write # Required for OIDC
+      contents: read
     environment:
       name: alpha
     steps:
@@ -219,7 +221,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/canary'
     name: Deploy canary
     runs-on: ubuntu-latest
-    permissions: read-all
+    permissions:
+      id-token: write # Required for OIDC
+      contents: read
     environment:
       name: canary
     steps:
@@ -331,7 +335,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     name: Deploy beta
     runs-on: ubuntu-latest
-    permissions: read-all
+    permissions:
+      id-token: write # Required for OIDC
+      contents: read
     environment:
       name: beta
     steps:
@@ -609,7 +615,9 @@ jobs:
     if: github.event_name == 'release'
     name: Deploy release
     runs-on: ubuntu-latest
-    permissions: read-all
+    permissions:
+      id-token: write # Required for OIDC
+      contents: read
     environment:
       name: release
     steps:
