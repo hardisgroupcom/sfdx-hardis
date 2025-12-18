@@ -98,7 +98,7 @@ Key functionalities:
       fileTitle: 'DataCloud Agentforce Conversations',
       columnsCustomStyles: {
         'DateTime': { width: 26 },
-        'Conversation transcript': { width: 90, wrap: true, maxHeight: 30 },
+        'Conversation transcript': { width: 90, wrap: true, maxHeight: 50 },
         'ConversationId': { width: 36 },
         'ConversationUrl': { width: 80, hyperlinkFromValue: true },
       },

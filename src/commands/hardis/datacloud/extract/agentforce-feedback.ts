@@ -109,7 +109,7 @@ Key functionalities:
     this.outputFilesRes = await generateCsvFile(exportRecords, this.outputFile, {
       fileTitle: 'DataCloud Agentforce Feedback',
       columnsCustomStyles: {
-        'Full conversation': { width: 60, wrap: true },
+        'Full conversation': { width: 60, wrap: true, maxHeight: 50 },
         'Feedback type': { width: 10 },
         'Feedback message': { width: 30, wrap: true },
         'ConversationId': { width: 35 },
