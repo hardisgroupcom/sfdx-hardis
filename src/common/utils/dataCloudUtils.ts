@@ -104,21 +104,21 @@ export async function dataCloudSqlQuery(
     const rawData: AnyJson[][] = [...initialChunk.rawData];
     let status = initialChunk.status;
 
-    if (initialChunk.hasMoreRows || isRunningStatus(status.completionStatus)) {
-      status = await waitForQueryCompletion(conn, status, settings);
-      const pagination = await fetchRemainingRows(
-        conn,
-        status.queryId,
-        metadata,
-        records.length,
-        status.rowCount,
-        settings,
-      );
+    status = await waitForQueryCompletion(conn, status, settings);
+    const pagination = await fetchRemainingRows(
+      conn,
+      status.queryId,
+      metadata,
+      records.length,
+      status.rowCount,
+      settings,
+    );
 
-      if (!metadata.length && pagination.metadata.length) {
-        metadata = pagination.metadata;
-      }
+    if (!metadata.length && pagination.metadata.length) {
+      metadata = pagination.metadata;
+    }
 
+    if (pagination.records.length) {
       records.push(...pagination.records);
       rawData.push(...pagination.rawData);
     }

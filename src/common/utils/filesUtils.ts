@@ -1495,6 +1495,7 @@ export interface ExcelColumnStyle {
   wrap?: boolean;
   width?: number;
   hyperlinkFromValue?: boolean;
+  maxHeight?: number;
 }
 
 export interface ExcelExportOptions {
@@ -1625,6 +1626,7 @@ function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelEx
   }
 
   const columnStylePreferences = new Map<string, ExcelColumnStyle>();
+  const columnMaxHeightConstraints = new Map<number, number>();
   Object.entries(options?.columnsCustomStyles ?? {}).forEach(([columnName, style]) => {
     if (!columnName || !style) {
       return;
@@ -1635,6 +1637,7 @@ function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelEx
       wrap: style.wrap === true,
       width: typeof style.width === 'number' && style.width > 0 ? style.width : undefined,
       hyperlinkFromValue: style.hyperlinkFromValue === true,
+      maxHeight: typeof style.maxHeight === 'number' && style.maxHeight > 0 ? style.maxHeight : undefined,
     };
 
     columnStylePreferences.set(normalizedName, sanitizedStyle);
@@ -1653,7 +1656,8 @@ function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelEx
     if (!column) {
       return;
     }
-    const headerName = headerByColumn.get(column.number ?? idx + 1) ?? '';
+    const columnNumber = column.number ?? idx + 1;
+    const headerName = headerByColumn.get(columnNumber) ?? '';
     const normalizedHeader = headerName.trim().toLowerCase();
     const stylePreferences = columnStylePreferences.get(normalizedHeader);
     const preferredWidth = stylePreferences?.width;
@@ -1686,7 +1690,36 @@ function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelEx
         cell.font = { ...(cell.font || {}), color: { argb: 'FF0563C1' }, underline: true };
       });
     }
+
+    if (stylePreferences?.maxHeight && columnNumber) {
+      columnMaxHeightConstraints.set(columnNumber, stylePreferences.maxHeight);
+    }
   });
+
+  if (columnMaxHeightConstraints.size > 0) {
+    worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+      if (rowNumber === 1 || !row) {
+        return;
+      }
+      let enforcedMaxHeight: number | undefined;
+      columnMaxHeightConstraints.forEach((maxHeight, columnNumber) => {
+        const cell = row.getCell(columnNumber);
+        if (!cell) {
+          return;
+        }
+        const hasValue = cell.value !== null && cell.value !== undefined && cell.value !== '';
+        if (!hasValue) {
+          return;
+        }
+        enforcedMaxHeight = typeof enforcedMaxHeight === 'number' ? Math.min(enforcedMaxHeight, maxHeight) : maxHeight;
+      });
+      if (typeof enforcedMaxHeight === 'number') {
+        if (!row.height || row.height > enforcedMaxHeight) {
+          row.height = enforcedMaxHeight;
+        }
+      }
+    });
+  }
 }
 
 function extractHyperlinkTarget(cell: ExcelJS.Cell): string | null {
