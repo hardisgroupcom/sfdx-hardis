@@ -99,6 +99,8 @@ Key functionalities:
       columnsCustomStyles: {
         'DateTime': { width: 26 },
         'Conversation transcript': { width: 90, wrap: true, maxHeight: 50 },
+        'Feedback': { width: 12 },
+        'Feedback message': { width: 45, wrap: true, maxHeight: 50 },
         'ConversationId': { width: 36 },
         'ConversationUrl': { width: 80, hyperlinkFromValue: true },
       },
@@ -123,6 +125,8 @@ interface ConversationCsvRecord {
   "User": string;
   "DateTime": string;
   "Conversation transcript": string;
+  "Feedback": string;
+  "Feedback message": string;
   "ConversationId": string;
   "ConversationUrl": string;
 }
@@ -161,7 +165,12 @@ WITH conversation_base AS (
     gar.generationGroupId__c AS conversationId,
     gar.gatewayRequestId__c AS gatewayRequestId,
     gat.tagValue__c AS userUtterance,
-    ggn.responseText__c AS agentResponse
+    ggn.responseText__c AS agentResponse,
+    ROW_NUMBER() OVER (
+      PARTITION BY gar.generationGroupId__c
+      ORDER BY ggn.timestamp__c DESC,
+        gar.gatewayRequestId__c DESC
+    ) AS rowNum
   FROM GenAIGeneration__dlm ggn
   JOIN GenAIGatewayResponse__dlm grs ON ggn.generationResponseId__c = grs.generationResponseId__c
   JOIN GenAIGatewayRequest__dlm gar ON grs.generationRequestId__c = gar.gatewayRequestId__c
@@ -185,7 +194,30 @@ WITH conversation_base AS (
   FROM ssot__AiAgentSessionParticipant__dlm part
   WHERE part.ssot__AiAgentApiName__c IS NOT NULL
   GROUP BY part.ssot__AiAgentSessionId__c
-)
+  ), latest_feedback AS (
+    SELECT
+      gaf.generationGroupId__c AS conversationId,
+      gaf.feedback__c AS feedbackSentiment,
+      gfd.feedbackText__c AS feedbackMessage,
+      COALESCE(
+        gaf.timestamp__c,
+        TIMESTAMP '1900-01-01 00:00:00Z'
+      ) AS feedbackTimestamp,
+      ROW_NUMBER() OVER (
+        PARTITION BY gaf.generationGroupId__c
+        ORDER BY COALESCE(
+          gaf.timestamp__c,
+          TIMESTAMP '1900-01-01 00:00:00Z'
+        ) DESC,
+        gaf.feedbackId__c DESC
+      ) AS rowNum
+    FROM GenAIFeedback__dlm gaf
+    LEFT JOIN GenAIFeedbackDetail__dlm gfd ON gaf.feedbackId__c = gfd.parent__c
+    ), conversation_primary AS (
+      SELECT *
+      FROM conversation_base
+      WHERE rowNum = 1
+  )
 SELECT
   base.userName,
   base.conversationDate,
@@ -194,10 +226,17 @@ SELECT
   sess.sessionId,
   agent.agentApiName,
   base.userUtterance,
-  base.agentResponse
-FROM conversation_base base
+  base.agentResponse,
+  fb.feedbackSentiment,
+  fb.feedbackMessage
+FROM conversation_primary base
 LEFT JOIN (SELECT gatewayRequestId, sessionId FROM session_lookup WHERE rowNum = 1) sess ON sess.gatewayRequestId = base.gatewayRequestId
 LEFT JOIN session_agent_info agent ON agent.sessionId = sess.sessionId
+LEFT JOIN (
+  SELECT conversationId, feedbackSentiment, feedbackMessage
+  FROM latest_feedback
+  WHERE rowNum = 1
+) fb ON fb.conversationId = base.conversationId
 ${excludedSessionClause}
 ORDER BY base.conversationDate DESC
 ;
@@ -213,6 +252,7 @@ function buildConversationRecords(records: AnyJson[] | undefined, options: Conve
   };
 
   const filteredRecords: ConversationCsvRecord[] = [];
+  const seenConversationIds = new Set<string>();
 
   safeRecords.forEach((record) => {
     const normalized = normalizeKeys(record as Record<string, AnyJson>);
@@ -224,6 +264,9 @@ function buildConversationRecords(records: AnyJson[] | undefined, options: Conve
     const conversationId = sanitizePlaceholderValue(stringValue(normalized["conversationid"] ?? normalized["generationgroupid__c"]));
     const baseUserUtterance = stringValue(normalized["userutterance"] ?? normalized["tagvalue__c"]);
     const baseAgentResponse = stringValue(normalized["agentresponse"] ?? normalized["responsetext"]);
+    const feedbackValueRaw = sanitizePlaceholderValue(stringValue(normalized["feedbacksentiment"] ?? normalized["feedback__c"]));
+    const feedbackValue = feedbackValueRaw ? feedbackValueRaw.toUpperCase() : '';
+    const feedbackMessage = sanitizePlaceholderValue(stringValue(normalized["feedbackmessage"] ?? normalized["feedbacktext__c"]));
     const transcript = sessionId ? safeOptions.transcriptsBySession.get(sessionId) || '' : '';
     const transcriptUserUtterance = extractSpeakerSegment(transcript, 'USER');
     const transcriptAgentResponse = extractSpeakerSegment(transcript, 'AGENT');
@@ -242,10 +285,17 @@ function buildConversationRecords(records: AnyJson[] | undefined, options: Conve
       return;
     }
 
+    if (seenConversationIds.has(conversationId)) {
+      return;
+    }
+    seenConversationIds.add(conversationId);
+
     filteredRecords.push({
       "User": userName,
       "DateTime": conversationDate,
       "Conversation transcript": conversation,
+      "Feedback": feedbackValue,
+      "Feedback message": feedbackMessage,
       "ConversationId": conversationId,
       "ConversationUrl": conversationUrl,
     });
