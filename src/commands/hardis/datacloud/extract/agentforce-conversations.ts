@@ -138,7 +138,7 @@ interface DateFilterOptionsInput {
   lastNDaysInput?: number;
 }
 
-const DEFAULT_CONVERSATION_TIME_FILTER_DAYS = 30;
+const DEFAULT_CONVERSATION_TIME_FILTER_DAYS = 365;
 const DEFAULT_EXCLUDED_CONVERSATION_IDS = [
   '8981bfeb-d3e8-4085-b515-d26e54fdff88',
   'df15617e-5a56-46b4-aed6-22c81efb4ccd',
