@@ -4,8 +4,22 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Add new Grafana Dashboard "Search Salesforce Org by Org Identifier"
 - Add workaround to authenticate with JIRA_PAT on Jira Data Center servers
+
+## [6.16.1] 2025-12-16
+
+- Notif Provider: Add NOTIF_API_SKIP_LOGS and NOTIF_API_SKIP_METRICS env variables to skip posting logs or metrics to API for all notification types or specific ones. (See details in [documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-api/#skip-configuration))
+- CI: Use npm trusted providers to deploy package
+
+## [6.16.0] 2025-12-14
+
+- [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/) enhancements:
+  - Detect calls to API Login to anticipate their [deprecation in Summer 27](https://help.salesforce.com/s/articleView?id=005132110&type=1)
+  - Make the command more efficient when handling a high number of log files
+  - Api Versions 21 to 30 are now flagged as errors.
+- Add new Grafana Dashboard "Search Salesforce Org by Org Identifier"
+- Fix default ConnectedApp name if it contains multiple `_`
+- Fix tsconfig & vscode settings to improve VsCode performances
 
 ## [6.15.1] 2025-12-10
 

@@ -1631,6 +1631,11 @@ export async function generateSSLCertificate(
     });
     // Build default app name from branch name by replacing all non-alphanumeric characters with empty string
     let appNameDflt = branchName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+    // Replace "monitoring" by "mon"
+    appNameDflt = appNameDflt.replace(/monitoring/g, 'mon');
+    // Remove multiple "_" in the name
+    appNameDflt = appNameDflt.replace(/_+/g, '_');
+    // Truncate to 20 characters max
     if (appNameDflt.length > 20) {
       appNameDflt = appNameDflt.substring(0, 20);
     }
