@@ -50,7 +50,24 @@ export class ApiProvider extends NotifProviderRoot {
     await this.buildPayload(notifMessage);
     // Format payload according to API endpoint: for example, Grafana loki
     await this.formatPayload();
-    // Send notif
+    // Send notif logs
+    this.managePostLogs(apiPromises, notifMessage);
+    // Handle Metrics API if provided
+    this.managePostMetrics(apiPromises, notifMessage);
+    await Promise.allSettled(apiPromises);
+    return;
+  }
+
+  private managePostLogs(apiPromises: Promise<void>[], notifMessage: NotifMessage) {
+    const notifApiSkipLogs = getEnvVar("NOTIF_API_SKIP_LOGS");
+    if (notifApiSkipLogs === "all") {
+      uxLog("log", this, `[ApiProvider] Skipped posting logs to API and JSON file as NOTIF_API_SKIP_LOGS is set to 'all'`);
+      return;
+    }
+    else if (notifApiSkipLogs && notifApiSkipLogs?.split(",").includes(notifMessage.type)) {
+      uxLog("log", this, `[ApiProvider] Skipped posting logs to API and JSON file for notification type '${notifMessage.type}' as NOTIF_API_SKIP_LOGS includes it`);
+      return;
+    }
     if (this.apiUrl !== null) {
       apiPromises.push(this.sendToApi());
     }
@@ -58,9 +75,20 @@ export class ApiProvider extends NotifProviderRoot {
     if (this.jsonLogsFile !== null) {
       apiPromises.push(this.writeLogsToJsonFile(this.jsonLogsFile));
     }
-    // Handle Metrics API if provided
+  }
+
+  private managePostMetrics(apiPromises: Promise<void>[], notifMessage: NotifMessage) {
     this.metricsApiUrl = getEnvVar("NOTIF_API_METRICS_URL");
     if (this.metricsApiUrl !== null) {
+      const notifApiSkipMetrics = getEnvVar("NOTIF_API_SKIP_METRICS");
+      if (notifApiSkipMetrics === "all") {
+        uxLog("log", this, `[ApiProvider] Skipped posting metrics to API as NOTIF_API_SKIP_METRICS is set to 'all'`);
+        return;
+      }
+      else if (notifApiSkipMetrics && notifApiSkipMetrics?.split(",").includes(notifMessage.type)) {
+        uxLog("log", this, `[ApiProvider]Skipped posting metrics to API for notification type '${notifMessage.type}' as NOTIF_API_SKIP_METRICS includes it`);
+        return;
+      }
       // Detect metrics format based on URL
       this.detectMetricsFormat();
       this.buildMetricsPayload();
@@ -68,8 +96,6 @@ export class ApiProvider extends NotifProviderRoot {
         apiPromises.push(this.sendToMetricsApi());
       }
     }
-    await Promise.allSettled(apiPromises);
-    return;
   }
 
   // Build message

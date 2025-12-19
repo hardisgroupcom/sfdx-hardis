@@ -8,6 +8,11 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - New command [hardis:datacloud:extract:agentforce-feedback.ts](https://sfdx-hardis.cloudity.com/hardis/datacloud/extract/agentforce-feedback/) allowing to generate reports of positive and negative Agentforce chats feedback, with full transcript and notifications.
 - Allow to force sending notifications if postNotifications is called with `alwaysSend: true`
 
+## [6.16.1] 2025-12-16
+
+- Notif Provider: Add NOTIF_API_SKIP_LOGS and NOTIF_API_SKIP_METRICS env variables to skip posting logs or metrics to API for all notification types or specific ones. (See details in [documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-api/#skip-configuration))
+- CI: Use npm trusted providers to deploy package
+
 ## [6.16.0] 2025-12-14
 
 - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/) enhancements:
