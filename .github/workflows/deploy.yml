@@ -16,7 +16,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
     name: Deploy alpha
     runs-on: ubuntu-latest
-    permissions: read-all
+    permissions:
+      id-token: write # Required for OIDC
+      contents: read
     environment:
       name: alpha
     steps:
@@ -31,7 +33,7 @@ jobs:
       - run: yarn config set version-git-tag false
       - run: ALPHAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="alpha$ALPHAID"
       - run: yarn config set network-timeout 300000
-      - run: yarn publish --tag alpha
+      - run: npm publish --tag alpha
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -219,7 +221,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/canary'
     name: Deploy canary
     runs-on: ubuntu-latest
-    permissions: read-all
+    permissions:
+      id-token: write # Required for OIDC
+      contents: read
     environment:
       name: canary
     steps:
@@ -233,7 +237,7 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn config set version-git-tag false && tsc -b
       - run: CANARYID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="canary$CANARYID"
-      - run: yarn config set network-timeout 300000 && yarn publish --tag canary
+      - run: yarn config set network-timeout 300000 && npm publish --tag canary
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -331,7 +335,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     name: Deploy beta
     runs-on: ubuntu-latest
-    permissions: read-all
+    permissions:
+      id-token: write # Required for OIDC
+      contents: read
     environment:
       name: beta
     steps:
@@ -345,7 +351,7 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn config set version-git-tag false && tsc -b
       - run: BETAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="beta$BETAID"
-      - run: yarn config set network-timeout 300000 && yarn publish --tag beta
+      - run: yarn config set network-timeout 300000 && npm publish --tag beta
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -609,7 +615,9 @@ jobs:
     if: github.event_name == 'release'
     name: Deploy release
     runs-on: ubuntu-latest
-    permissions: read-all
+    permissions:
+      id-token: write # Required for OIDC
+      contents: read
     environment:
       name: release
     steps:
@@ -621,7 +629,7 @@ jobs:
           scope: "nvuillam"
       - run: yarn config set registry "https://registry.npmjs.org"
       - run: yarn install --frozen-lockfile
-      - run: yarn config set network-timeout 300000 && yarn publish
+      - run: yarn config set network-timeout 300000 && npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

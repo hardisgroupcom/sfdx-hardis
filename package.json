@@ -188,7 +188,10 @@
       ]
     }
   },
-  "repository": "https://github.com/hardisgroupcom/sfdx-hardis",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hardisgroupcom/sfdx-hardis.git"
+  },
   "scripts": {
     "build": "wireit",
     "build:doc": "sf hardis:doc:plugin:generate",
