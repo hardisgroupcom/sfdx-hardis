@@ -102,7 +102,7 @@ The command's technical implementation involves:
         description: "If you choose 'No', the org will be connected but not set as default.",
         default: true,
       });
-      if (!promptDefaultRes) {
+      if (!promptDefaultRes.setDefault) {
         setDefault = false;
       }
     }

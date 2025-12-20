@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): Fix default org prompt whose response was ignored.
+
 ## [6.16.1] 2025-12-16
 
 - Notif Provider: Add NOTIF_API_SKIP_LOGS and NOTIF_API_SKIP_METRICS env variables to skip posting logs or metrics to API for all notification types or specific ones. (See details in [documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-api/#skip-configuration))
