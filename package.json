@@ -38,7 +38,7 @@
     "farmhash": "^4.0.2",
     "fast-xml-parser": "^4.5.3",
     "form-data": "^4.0.5",
-    "fs-extra": "^11.3.2",
+    "fs-extra": "^11.3.3",
     "fs-readdir-recursive": "^1.1.0",
     "glob": "^13.0.0",
     "he": "^1.2.0",
