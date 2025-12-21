@@ -49,6 +49,10 @@ ___
 
 ___
 
+_Featured on SalesforceBen_
+
+[![SalesforceBen Interview](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfben-sfdx-hardis.jpg)](https://www.youtube.com/watch?v=vtWx_IWoL9k)
+
 _See Dreamforce presentation_
 
 [![See Dreamforce presentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/play-dreamforce-session.png)](https://www.youtube.com/watch?v=o0Mm9F07UFs)
@@ -144,17 +148,21 @@ sf hardis:<COMMAND> <OPTIONS>
 
 <!-- events.md start -->
 
-### Coming soon: DevOps Dreamin '25, London
+### French Touch Dreamin '25
 
-[Why you don't need DevOps vendors tools](https://devopsdreamin.com/agenda/)
+Refresh your full sandboxes without needing to reconfigure everything — with [Mehdi Abdennasser](https://www.linkedin.com/in/mehdi-abdennasser/)
 
-<img width="1320" height="370" alt="image" src="https://github.com/user-attachments/assets/bc1e3831-9e89-4098-bedd-40cafbba3cfd" />
+Paris, France — 02/12/2025
 
-### Coming soon: French Touch Dreamin '25, Paris
+<img width="1920" height="1080" alt="Untitled design (14)" src="https://github.com/user-attachments/assets/853b9d66-973e-43ef-bfcf-fe044d1d4d94" />
 
-[Refresh your full sandboxes without needing to reconfigure everything](https://frenchtouchdreamin.com/index.php/sessions/refresh-your-full-sandboxes-without-needing-to-reconfigure-everything/), with [Mehdi Abdennasser](https://www.linkedin.com/in/mehdi-abdennasser/)
+### DevOps Dreamin
 
-<img width="1901" height="661" alt="image" src="https://github.com/user-attachments/assets/7b01704b-5dd5-463e-914b-71c867632ea5" />
+Why you don't need DevOps vendors tools
+
+London, UK — 20/11/2025
+
+<img width="1920" height="1080" alt="Untitled design (13)" src="https://github.com/user-attachments/assets/d626363c-64af-43fb-b0a0-d2f0afcb9c1d" />
 
 ### Trailblazer User Group '25, Casablanca
 
@@ -270,6 +278,10 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 [![Wir Sind Ohana 2024: Automate Monitoring with Open-Source](https://img.youtube.com/vi/xGbT6at7RZ0/0.jpg)](https://www.youtube.com/watch?v=xGbT6at7RZ0){target=blank}
 
 ### Podcasts
+
+- SalesforceBen Deep Dives with Peter Chittum, 2025: _**Simplify Salesforce Deployment with SFDX Hardis**_
+
+[![Video](https://github.com/user-attachments/assets/383f6e9a-8102-42bc-be24-42663e9959d4)](https://www.youtube.com/watch?v=vtWx_IWoL9k)
 
 - Apex Hours 2025 - Org monitoring with Grafana + AI generated doc
 

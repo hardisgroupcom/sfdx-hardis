@@ -41,6 +41,10 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 ### Podcasts
 
+- SalesforceBen Deep Dives with Peter Chittum, 2025: _**Simplify Salesforce Deployment with SFDX Hardis**_
+
+[![Video](https://github.com/user-attachments/assets/383f6e9a-8102-42bc-be24-42663e9959d4)](https://www.youtube.com/watch?v=vtWx_IWoL9k)
+
 - Apex Hours 2025 - Org monitoring with Grafana + AI generated doc
 
 [![Apex Hours 2025: Org monitoring with Grafana + AI generated doc](https://img.youtube.com/vi/oDaCh66pRcI/0.jpg)](https://www.youtube.com/watch?v=oDaCh66pRcI){target=blank}

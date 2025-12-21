@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): Fix default org prompt whose response was ignored.
 - CI: Add stale workflow
+- Doc: Add events and videos about sfdx-hardis
 
 ## [6.16.1] 2025-12-16
 
