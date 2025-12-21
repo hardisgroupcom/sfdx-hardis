@@ -816,6 +816,7 @@
     "noprompt",
     "nopull",
     "nosmart",
+    "nostale",
     "notestrunrunspecifiedtestsrunlocaltestsrunalltestsinorg",
     "nothrow",
     "notif",
