@@ -1,0 +1,24 @@
+name: "Mark and close stale issues"
+on:
+  schedule:
+    # Every wednesday at 00:00
+    - cron: "0 0 * * 3"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          stale-issue-message: "This issue is stale because it has been open 30 days with no activity. Remove stale label or comment, or this will be closed in 7 days."
+          days-before-issue-stale: 30
+          days-before-issue-close: 7
+          stale-issue-label: "stale"
+          exempt-issue-labels: "pinned,security,nostale"
+          # Disable PR processing as requested ("stale only the issues")
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
