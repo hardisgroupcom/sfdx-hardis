@@ -1,14 +1,18 @@
-### Coming soon: DevOps Dreamin '25, London
+### French Touch Dreamin '25
 
-[Why you don't need DevOps vendors tools](https://devopsdreamin.com/agenda/)
+Refresh your full sandboxes without needing to reconfigure everything — with [Mehdi Abdennasser](https://www.linkedin.com/in/mehdi-abdennasser/)
 
-<img width="1320" height="370" alt="image" src="https://github.com/user-attachments/assets/bc1e3831-9e89-4098-bedd-40cafbba3cfd" />
+Paris, France — 02/12/2025
 
-### Coming soon: French Touch Dreamin '25, Paris
+<img width="1920" height="1080" alt="Untitled design (14)" src="https://github.com/user-attachments/assets/853b9d66-973e-43ef-bfcf-fe044d1d4d94" />
 
-[Refresh your full sandboxes without needing to reconfigure everything](https://frenchtouchdreamin.com/index.php/sessions/refresh-your-full-sandboxes-without-needing-to-reconfigure-everything/), with [Mehdi Abdennasser](https://www.linkedin.com/in/mehdi-abdennasser/)
+### DevOps Dreamin
 
-<img width="1901" height="661" alt="image" src="https://github.com/user-attachments/assets/7b01704b-5dd5-463e-914b-71c867632ea5" />
+Why you don't need DevOps vendors tools
+
+London, UK — 20/11/2025
+
+<img width="1920" height="1080" alt="Untitled design (13)" src="https://github.com/user-attachments/assets/d626363c-64af-43fb-b0a0-d2f0afcb9c1d" />
 
 ### Trailblazer User Group '25, Casablanca
 
