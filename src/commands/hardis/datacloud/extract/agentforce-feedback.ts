@@ -254,6 +254,8 @@ function buildAgentforceFeedbackRecords(records: AnyJson[] | undefined, options:
   return Array.from(dedupMap.values()).map((entry) => entry.record);
 }
 
+/* jscpd:ignore-start */
+
 function isNewer(candidateDate: string, existingDate: string): boolean {
   if (!candidateDate) {
     return false;
@@ -271,6 +273,7 @@ function isNewer(candidateDate: string, existingDate: string): boolean {
   }
   return candidateTime >= existingTime;
 }
+/* jscpd:ignore-end */
 
 function buildMainQuery(filters: AgentforceQueryFilters = {}) {
   const excludedConversationIds = resolveExcludedConversationIds();

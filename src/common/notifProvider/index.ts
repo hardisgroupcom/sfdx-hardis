@@ -36,7 +36,7 @@ export abstract class NotifProvider {
     const config = await getConfig("user");
     const notificationsDisable =
       config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);
-    uxLog("error", this, c.grey(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
+    uxLog("log", this, c.grey(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
     const notifProviders = this.getInstances();
     if (notifProviders.length === 0 && isCI) {
       uxLog(
@@ -48,7 +48,7 @@ export abstract class NotifProvider {
       );
     }
     for (const notifProvider of notifProviders) {
-      uxLog("error", this, c.grey(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
+      uxLog("log", this, c.grey(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
       // Skip if matching NOTIFICATIONS_DISABLE except for Api
       if (notificationsDisable.includes(notifMessage.type) && notifProvider.isUserNotifProvider()) {
         uxLog(
@@ -103,6 +103,7 @@ export interface NotifMessage {
   | "ORG_INFO"
   | "ORG_LIMITS"
   | "RELEASE_UPDATES"
+  | "AGENTFORCE_CONVERSATIONS"
   | "AGENTFORCE_FEEDBACK";
   buttons?: NotifButton[];
   attachments?: any[];

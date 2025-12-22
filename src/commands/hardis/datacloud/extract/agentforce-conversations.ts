@@ -4,6 +4,8 @@ import { AnyJson } from "@salesforce/ts-types";
 import { dataCloudSqlQuery } from "../../../../common/utils/dataCloudUtils.js";
 import { uxLog } from "../../../../common/utils/index.js";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
+import { NotifProvider } from "../../../../common/notifProvider/index.js";
+import { setConnectionVariables } from "../../../../common/utils/orgUtils.js";
 import c from "chalk";
 import {
   AgentforceQueryFilters,
@@ -149,6 +151,30 @@ The command's technical implementation involves:
         'ConversationId': { width: 36 },
         'ConversationUrl': { width: 80, hyperlinkFromValue: true },
       },
+    });
+
+    const conversationStats = computeConversationStats(exportRecords);
+    const notifText = buildConversationNotificationText(conversationStats, dateFilterOptions);
+    const attachedFiles = collectConversationReportFiles(this.outputFilesRes);
+    uxLog("action", this, c.cyan(notifText));
+
+    await setConnectionVariables(conn);
+    await NotifProvider.postNotifications({
+      type: 'AGENTFORCE_CONVERSATIONS',
+      text: notifText,
+      buttons: [],
+      attachments: [],
+      severity: 'log',
+      attachedFiles,
+      logElements: [],
+      data: { metric: conversationStats.totalCount },
+      metrics: {
+        agentforceConversationCount: conversationStats.totalCount,
+        agentforceConversationFeedbackCount: conversationStats.withFeedback,
+        agentforceConversationFeedbackBad: conversationStats.feedbackBad,
+        agentforceConversationFeedbackGood: conversationStats.feedbackGood,
+      },
+      alwaysSend: true,
     });
 
     return {
@@ -345,6 +371,58 @@ function isNewer(candidateDate: string, existingDate: string): boolean {
     return true;
   }
   return candidateTime >= existingTime;
+}
+
+interface ConversationStats {
+  totalCount: number;
+  withFeedback: number;
+  feedbackBad: number;
+  feedbackGood: number;
+}
+
+function computeConversationStats(records: ConversationCsvRecord[]): ConversationStats {
+  let withFeedback = 0;
+  let feedbackBad = 0;
+  let feedbackGood = 0;
+  records.forEach((record) => {
+    const feedback = (record["Feedback"] || "").trim().toUpperCase();
+    if (feedback) {
+      withFeedback += 1;
+      if (feedback === "BAD") {
+        feedbackBad += 1;
+      } else if (feedback === "GOOD") {
+        feedbackGood += 1;
+      }
+    }
+  });
+  return {
+    totalCount: records.length,
+    withFeedback,
+    feedbackBad,
+    feedbackGood,
+  };
+}
+
+function buildConversationNotificationText(stats: ConversationStats, filters: AgentforceQueryFilters): string {
+  const lines = [
+    `Agentforce conversations exported: ${stats.totalCount} (with feedback: ${stats.withFeedback}, GOOD: ${stats.feedbackGood}, BAD: ${stats.feedbackBad}).`,
+  ];
+  if (filters.dateFrom && filters.dateTo) {
+    lines.push(`Window: ${filters.dateFrom} → ${filters.dateTo}`);
+  } else if (filters.dateFrom) {
+    lines.push(`Window starting ${filters.dateFrom}`);
+  } else if (filters.dateTo) {
+    lines.push(`Window until ${filters.dateTo}`);
+  }
+  return lines.join('\n');
+}
+
+function collectConversationReportFiles(outputFilesRes: any): string[] {
+  const files: string[] = [];
+  if (outputFilesRes?.xlsxFile) {
+    files.push(outputFilesRes.xlsxFile);
+  }
+  return files;
 }
 
 function buildExcludedConversationFilter(): string {
