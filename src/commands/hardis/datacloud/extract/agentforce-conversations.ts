@@ -276,8 +276,7 @@ function buildConversationRecords(records: AnyJson[] | undefined, options: Conve
     timeFilterDays: DEFAULT_CONVERSATION_TIME_FILTER_DAYS,
   };
 
-  const filteredRecords: ConversationCsvRecord[] = [];
-  const seenConversationIds = new Set<string>();
+  const dedupMap = new Map<string, { record: ConversationCsvRecord; conversationDate: string }>();
 
   safeRecords.forEach((record) => {
     const normalized = normalizeKeys(record as Record<string, AnyJson>);
@@ -310,12 +309,7 @@ function buildConversationRecords(records: AnyJson[] | undefined, options: Conve
       return;
     }
 
-    if (seenConversationIds.has(conversationId)) {
-      return;
-    }
-    seenConversationIds.add(conversationId);
-
-    filteredRecords.push({
+    const exportRecord: ConversationCsvRecord = {
       "User": userName,
       "DateTime": conversationDate,
       "Conversation transcript": conversation,
@@ -323,10 +317,34 @@ function buildConversationRecords(records: AnyJson[] | undefined, options: Conve
       "Feedback message": feedbackMessage,
       "ConversationId": conversationId,
       "ConversationUrl": conversationUrl,
-    });
+    };
+
+    const dedupKey = sessionId || conversationId || conversationUrl;
+    const existing = dedupMap.get(dedupKey);
+    if (!existing || isNewer(conversationDate, existing.conversationDate)) {
+      dedupMap.set(dedupKey, { record: exportRecord, conversationDate });
+    }
   });
 
-  return filteredRecords;
+  return Array.from(dedupMap.values()).map((entry) => entry.record);
+}
+
+function isNewer(candidateDate: string, existingDate: string): boolean {
+  if (!candidateDate) {
+    return false;
+  }
+  if (!existingDate) {
+    return true;
+  }
+  const candidateTime = Date.parse(candidateDate);
+  const existingTime = Date.parse(existingDate);
+  if (Number.isNaN(candidateTime)) {
+    return false;
+  }
+  if (Number.isNaN(existingTime)) {
+    return true;
+  }
+  return candidateTime >= existingTime;
 }
 
 function buildExcludedConversationFilter(): string {
