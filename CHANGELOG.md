@@ -6,6 +6,13 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Add workaround to authenticate with JIRA_PAT on Jira Data Center servers
 
+- [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): Fix default org prompt whose response was ignored.
+- New command [hardis:datacloud:sql-query.ts](https://sfdx-hardis.cloudity.com/hardis/datacloud/sql-query/) allowing to query Data Cloud tables with Ansi SQL
+- New command [hardis:datacloud:extract:agentforce-feedback.ts](https://sfdx-hardis.cloudity.com/hardis/datacloud/extract/agentforce-feedback/) allowing to generate reports of positive and negative Agentforce chats feedback, with full transcript and notifications.
+- Allow to force sending notifications if postNotifications is called with `alwaysSend: true`
+- CI: Add stale workflow
+- Doc: Add events and videos about sfdx-hardis
+
 ## [6.16.1] 2025-12-16
 
 - Notif Provider: Add NOTIF_API_SKIP_LOGS and NOTIF_API_SKIP_METRICS env variables to skip posting logs or metrics to API for all notification types or specific ones. (See details in [documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-api/#skip-configuration))
