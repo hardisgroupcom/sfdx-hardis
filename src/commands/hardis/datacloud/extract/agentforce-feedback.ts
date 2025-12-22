@@ -136,12 +136,13 @@ The command's technical implementation involves:
       timeFilterDays,
       transcriptsBySession,
     });
+    /* jscpd:ignore-start */
     const result = { ...rawResult, records: exportRecords, returnedRows: exportRecords.length };
 
     const { records: _records, ...resultCopy } = result;
     void _records;
     uxLog("other", this, JSON.stringify(resultCopy, null, 2));
-
+    /* jscpd:ignore-end */
     this.outputFile = await generateReportPath('datacloud-agentforce-feedback', this.outputFile);
     this.outputFilesRes = await generateCsvFile(exportRecords, this.outputFile, {
       fileTitle: 'DataCloud Agentforce Feedback',
