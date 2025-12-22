@@ -1,7 +1,10 @@
 import { Connection, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { uxLog } from "./index.js";
+import fs from "fs-extra";
+import path from "path";
 
+export const DATA_CLOUD_QUERIES_FOLDER_ROOT = path.join(process.cwd(), 'scripts', 'data-cloud-queries');
 const QUERY_CONNECT_PATH = "ssot/query-sql";
 const DEFAULT_DATASPACE = "default";
 const DEFAULT_WORKLOAD_NAME = "sfdx-hardis-cli";
@@ -79,13 +82,49 @@ interface QueryConnectRowsResponse {
   data?: AnyJson[][];
 }
 
+export async function listAvailableDataCloudQueries(): Promise<string[]> {
+  // List folders in DATA_CLOUD_QUERIES_FOLDER_ROOT
+  const queries: string[] = [];
+  if (fs.existsSync(DATA_CLOUD_QUERIES_FOLDER_ROOT)) {
+    const files = await fs.readdir(DATA_CLOUD_QUERIES_FOLDER_ROOT);
+    for (const file of files) {
+      const fullPath = path.join(DATA_CLOUD_QUERIES_FOLDER_ROOT, file);
+      const stat = await fs.stat(fullPath);
+      if (stat.isFile() && path.extname(file).toLowerCase() === '.sql') {
+        queries.push(path.basename(file, '.sql'));
+      }
+    }
+  }
+  return queries;
+}
+
+export async function loadDataCloudQueryFromFile(queryName: string): Promise<string> {
+  const filePath = path.join(DATA_CLOUD_QUERIES_FOLDER_ROOT, `${queryName}.sql`);
+  if (!fs.existsSync(filePath)) {
+    throw new SfError(`Data Cloud query file not found: ${filePath}`);
+  }
+  const queryContent = await fs.readFile(filePath, 'utf8');
+  return queryContent;
+}
+
+export async function saveDataCloudQueryToFile(
+  queryName: string,
+  queryContent: string
+): Promise<string> {
+  // Ensure the folder exists
+  await fs.ensureDir(DATA_CLOUD_QUERIES_FOLDER_ROOT);
+  const filePath = path.join(DATA_CLOUD_QUERIES_FOLDER_ROOT, `${queryName}.sql`);
+  await fs.writeFile(filePath, queryContent, 'utf8');
+  return filePath;
+}
+
 export async function dataCloudSqlQuery(
   query: string,
   conn: Connection,
   options?: DataCloudSqlQueryOptions,
 ): Promise<DataCloudSqlQueryResult> {
   if (!query || !query.trim()) {
-    throw new SfError("The Data Cloud SQL query must be a non-empty string.");
+    throw new SfError("[DataCloudSqlQuery] The Data Cloud SQL query must be a non-empty string.");
   }
 
   const settings = resolveOptions(options);
@@ -93,10 +132,10 @@ export async function dataCloudSqlQuery(
   try {
     const initialChunk = await submitInitialQuery(query.trim(), conn, settings);
     if (!initialChunk.metadata.length) {
-      throw new SfError(`Data Cloud SQL query did not return column metadata.\n${JSON.stringify(initialChunk)}`);
+      throw new SfError(`[DataCloudSqlQuery] Data Cloud SQL query did not return column metadata.\n${JSON.stringify(initialChunk)}`);
     }
     if (!initialChunk.status.queryId) {
-      throw new SfError(`Data Cloud SQL query did not return a queryId needed for pagination.\n${JSON.stringify(initialChunk)}`);
+      throw new SfError(`[DataCloudSqlQuery] Data Cloud SQL query did not return a queryId needed for pagination.\n${JSON.stringify(initialChunk)}`);
     }
 
     let metadata = initialChunk.metadata;
@@ -122,6 +161,8 @@ export async function dataCloudSqlQuery(
       records.push(...pagination.records);
       rawData.push(...pagination.rawData);
     }
+
+    uxLog("log", this, `[DataCloudSqlQuery] Retrieved ${records.length} records.`);
 
     return {
       queryId: status.queryId,
@@ -403,10 +444,10 @@ function wrapQueryError(error: unknown): SfError {
     if (error.statusCode) {
       details.push(`(status ${error.statusCode})`);
     }
-    return new SfError(`Data Cloud SQL query failed: ${details.filter(Boolean).join(" ")}`.trim());
+    return new SfError(`[DataCloudSqlQuery] Data Cloud SQL query failed: ${details.filter(Boolean).join(" ")}`.trim());
   }
 
-  return error instanceof SfError ? error : new SfError("Unknown error while executing Data Cloud SQL query.");
+  return error instanceof SfError ? error : new SfError("[DataCloudSqlQuery] Unknown error while executing Data Cloud SQL query.");
 }
 
 function isSfRequestError(error: unknown): error is SfError & {

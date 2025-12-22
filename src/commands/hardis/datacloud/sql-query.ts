@@ -1,9 +1,11 @@
 import { Messages } from "@salesforce/core";
 import { Flags, requiredOrgFlagWithDeprecations, SfCommand } from "@salesforce/sf-plugins-core";
 import { AnyJson } from "@salesforce/ts-types";
-import { dataCloudSqlQuery } from "../../../common/utils/dataCloudUtils.js";
+import { dataCloudSqlQuery, listAvailableDataCloudQueries, loadDataCloudQueryFromFile, saveDataCloudQueryToFile } from "../../../common/utils/dataCloudUtils.js";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils.js";
 import { uxLog } from "../../../common/utils/index.js";
+import { prompts } from "../../../common/utils/prompts.js";
+import c from "chalk";
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -21,7 +23,11 @@ Key functionalities:
 </details>
 `;
 
-  public static examples = ['$ sf hardis:datacloud:sql-query -q test'];
+  public static examples = [
+    '$ sf hardis:datacloud:sql-query',
+    '$ sf hardis:datacloud:sql-query -q "SELECT ssot__Name__c, ssot__CreatedDate__c FROM ssot__Account__dlm LIMIT 10"',
+    '$ sf hardis:datacloud:sql-query -q test'
+  ];
 
   /* jscpd:ignore-start */
 
@@ -29,7 +35,6 @@ Key functionalities:
     query: Flags.string({
       char: 'q',
       description: 'Data Cloud query string',
-      required: true,
     }),
     outputfile: Flags.string({
       char: 'f',
@@ -75,6 +80,49 @@ ORDER BY
 LIMIT 5000;
       `;
     }
+
+    if (this.queryString === '' || this.queryString == null) {
+      const availableQueries = await listAvailableDataCloudQueries();
+      if (availableQueries.length > 0) {
+        const queryChoicePromptRes = await prompts({
+          type: 'select',
+          message: 'Please select a predefined Data Cloud SQL query or choose "Custom Query" to enter your own:',
+          description: 'Available predefined queries',
+          choices: [...availableQueries.map(q => ({ title: q, value: q })), { title: 'Custom Query', value: 'custom' }],
+        });
+        if (queryChoicePromptRes.value !== 'custom') {
+          this.queryString = await loadDataCloudQueryFromFile(queryChoicePromptRes.value);
+        }
+      }
+    }
+    if (this.queryString === '' || this.queryString == null) {
+      const customQueryPromptRes = await prompts({
+        type: 'text',
+        message: 'Please enter your Data Cloud SQL query:',
+        description: 'Custom Data Cloud SQL query',
+      });
+      this.queryString = customQueryPromptRes.value;
+      // Prompt user if he wants to save the query
+      const saveQueryPromptRes = await prompts({
+        type: 'confirm',
+        message: 'Do you want to save this query for future use?',
+        description: 'Save Data Cloud SQL query in local files',
+        initial: false,
+      });
+      if (saveQueryPromptRes.value) {
+        const saveQueryNamePromptRes = await prompts({
+          type: 'text',
+          message: 'Enter a name for the saved query:',
+          description: 'Name of the Data Cloud SQL query to save',
+        });
+        if (saveQueryNamePromptRes.value) {
+          await saveDataCloudQueryToFile(saveQueryNamePromptRes.value.trim(), this.queryString);
+        }
+      }
+    }
+
+    uxLog("action", this, c.cyan('Executing Data Cloud SQL query...'));
+
     const result = await dataCloudSqlQuery(this.queryString, conn, {});
     this.logJson(result);
 
