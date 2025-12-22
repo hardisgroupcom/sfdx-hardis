@@ -21,10 +21,15 @@ export class EmailProvider extends NotifProviderRoot {
       throw new SfError("[EmailProvider] You need to define a variable NOTIF_EMAIL_ADDRESS to use sfdx-hardis Email notifications");
     }
     const emailAddresses = mainEmailAddress.split(",");
-    // Add branch custom Teams channel if defined
+    // Add branch custom emaild if defined
     const customEmailChannelVariable = `NOTIF_EMAIL_ADDRESS_${(await getCurrentGitBranch() || "").toUpperCase()}`;
     if (getEnvVar(customEmailChannelVariable)) {
       emailAddresses.push(...(getEnvVar(customEmailChannelVariable) || "").split(","));
+    }
+    // Add notif type custom emails if defined
+    const customEmailNotifTypeVariable = `NOTIF_EMAIL_ADDRESS_${notifMessage.type.toUpperCase()}`;
+    if (getEnvVar(customEmailNotifTypeVariable)) {
+      emailAddresses.push(...(getEnvVar(customEmailNotifTypeVariable) || "").split(","));
     }
 
     /* jscpd:ignore-start */

@@ -5,6 +5,9 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): Fix default org prompt whose response was ignored.
+- New command [hardis:datacloud:sql-query.ts](https://sfdx-hardis.cloudity.com/hardis/datacloud/sql-query/) allowing to query Data Cloud tables with Ansi SQL
+- New command [hardis:datacloud:extract:agentforce-feedback.ts](https://sfdx-hardis.cloudity.com/hardis/datacloud/extract/agentforce-feedback/) allowing to generate reports of positive and negative Agentforce chats feedback, with full transcript and notifications.
+- Allow to force sending notifications if postNotifications is called with `alwaysSend: true`
 - CI: Add stale workflow
 - Doc: Add events and videos about sfdx-hardis
 

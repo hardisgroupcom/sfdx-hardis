@@ -11,6 +11,9 @@ export abstract class NotifProviderRoot {
 
   // By default, we don't send logs to other notif targets than API to avoid noise
   public isApplicableForNotif(notifMessage: NotifMessage) {
+    if (notifMessage.alwaysSend) {
+      return true;
+    }
     return ["critical", "error", "warning", "info", "success"].includes(notifMessage.severity);
   }
 

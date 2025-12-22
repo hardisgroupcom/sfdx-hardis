@@ -102,7 +102,8 @@ export interface NotifMessage {
   | "UNSECURED_CONNECTED_APPS"
   | "ORG_INFO"
   | "ORG_LIMITS"
-  | "RELEASE_UPDATES";
+  | "RELEASE_UPDATES"
+  | "AGENTFORCE_FEEDBACK";
   buttons?: NotifButton[];
   attachments?: any[];
   severity: NotifSeverity;
@@ -111,6 +112,7 @@ export interface NotifMessage {
   logElements: any[];
   metrics: any;
   data: any;
+  alwaysSend?: boolean;
 }
 
 export interface NotifButton {
