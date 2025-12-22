@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add workaround to authenticate with JIRA_PAT on Jira Data Center servers
+
 - [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): Fix default org prompt whose response was ignored.
 - New command [hardis:datacloud:sql-query.ts](https://sfdx-hardis.cloudity.com/hardis/datacloud/sql-query/) allowing to query Data Cloud tables with Ansi SQL
 - New command [hardis:datacloud:extract:agentforce-feedback.ts](https://sfdx-hardis.cloudity.com/hardis/datacloud/extract/agentforce-feedback/) allowing to generate reports of positive and negative Agentforce chats feedback, with full transcript and notifications.
