@@ -31,6 +31,7 @@
     "**/legacyapi.ts",
     "**/unfreeze.ts",
     "**/redis.ts",
+    "**/agentforce-feedback.ts",
     "**/*.json",
     "**/*.svg",
     "**/*.yml",

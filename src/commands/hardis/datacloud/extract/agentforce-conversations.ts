@@ -4,6 +4,8 @@ import { AnyJson } from "@salesforce/ts-types";
 import { dataCloudSqlQuery } from "../../../../common/utils/dataCloudUtils.js";
 import { uxLog } from "../../../../common/utils/index.js";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
+import { NotifProvider } from "../../../../common/notifProvider/index.js";
+import { setConnectionVariables } from "../../../../common/utils/orgUtils.js";
 import c from "chalk";
 import {
   AgentforceQueryFilters,
@@ -151,6 +153,30 @@ The command's technical implementation involves:
       },
     });
 
+    const conversationStats = computeConversationStats(exportRecords);
+    const notifText = buildConversationNotificationText(conversationStats, dateFilterOptions);
+    const attachedFiles = collectConversationReportFiles(this.outputFilesRes);
+    uxLog("action", this, c.cyan(notifText));
+
+    await setConnectionVariables(conn);
+    await NotifProvider.postNotifications({
+      type: 'AGENTFORCE_CONVERSATIONS',
+      text: notifText,
+      buttons: [],
+      attachments: [],
+      severity: 'log',
+      attachedFiles,
+      logElements: [],
+      data: { metric: conversationStats.totalCount },
+      metrics: {
+        agentforceConversationCount: conversationStats.totalCount,
+        agentforceConversationFeedbackCount: conversationStats.withFeedback,
+        agentforceConversationFeedbackBad: conversationStats.feedbackBad,
+        agentforceConversationFeedbackGood: conversationStats.feedbackGood,
+      },
+      alwaysSend: true,
+    });
+
     return {
       result: JSON.parse(JSON.stringify(result)),
       csvLogFile: this.outputFile,
@@ -276,8 +302,7 @@ function buildConversationRecords(records: AnyJson[] | undefined, options: Conve
     timeFilterDays: DEFAULT_CONVERSATION_TIME_FILTER_DAYS,
   };
 
-  const filteredRecords: ConversationCsvRecord[] = [];
-  const seenConversationIds = new Set<string>();
+  const dedupMap = new Map<string, { record: ConversationCsvRecord; conversationDate: string }>();
 
   safeRecords.forEach((record) => {
     const normalized = normalizeKeys(record as Record<string, AnyJson>);
@@ -310,12 +335,7 @@ function buildConversationRecords(records: AnyJson[] | undefined, options: Conve
       return;
     }
 
-    if (seenConversationIds.has(conversationId)) {
-      return;
-    }
-    seenConversationIds.add(conversationId);
-
-    filteredRecords.push({
+    const exportRecord: ConversationCsvRecord = {
       "User": userName,
       "DateTime": conversationDate,
       "Conversation transcript": conversation,
@@ -323,10 +343,86 @@ function buildConversationRecords(records: AnyJson[] | undefined, options: Conve
       "Feedback message": feedbackMessage,
       "ConversationId": conversationId,
       "ConversationUrl": conversationUrl,
-    });
+    };
+
+    const dedupKey = sessionId || conversationId || conversationUrl;
+    const existing = dedupMap.get(dedupKey);
+    if (!existing || isNewer(conversationDate, existing.conversationDate)) {
+      dedupMap.set(dedupKey, { record: exportRecord, conversationDate });
+    }
   });
 
-  return filteredRecords;
+  return Array.from(dedupMap.values()).map((entry) => entry.record);
+}
+
+function isNewer(candidateDate: string, existingDate: string): boolean {
+  if (!candidateDate) {
+    return false;
+  }
+  if (!existingDate) {
+    return true;
+  }
+  const candidateTime = Date.parse(candidateDate);
+  const existingTime = Date.parse(existingDate);
+  if (Number.isNaN(candidateTime)) {
+    return false;
+  }
+  if (Number.isNaN(existingTime)) {
+    return true;
+  }
+  return candidateTime >= existingTime;
+}
+
+interface ConversationStats {
+  totalCount: number;
+  withFeedback: number;
+  feedbackBad: number;
+  feedbackGood: number;
+}
+
+function computeConversationStats(records: ConversationCsvRecord[]): ConversationStats {
+  let withFeedback = 0;
+  let feedbackBad = 0;
+  let feedbackGood = 0;
+  records.forEach((record) => {
+    const feedback = (record["Feedback"] || "").trim().toUpperCase();
+    if (feedback) {
+      withFeedback += 1;
+      if (feedback === "BAD") {
+        feedbackBad += 1;
+      } else if (feedback === "GOOD") {
+        feedbackGood += 1;
+      }
+    }
+  });
+  return {
+    totalCount: records.length,
+    withFeedback,
+    feedbackBad,
+    feedbackGood,
+  };
+}
+
+function buildConversationNotificationText(stats: ConversationStats, filters: AgentforceQueryFilters): string {
+  const lines = [
+    `Agentforce conversations exported: ${stats.totalCount} (with feedback: ${stats.withFeedback}, GOOD: ${stats.feedbackGood}, BAD: ${stats.feedbackBad}).`,
+  ];
+  if (filters.dateFrom && filters.dateTo) {
+    lines.push(`Window: ${filters.dateFrom} → ${filters.dateTo}`);
+  } else if (filters.dateFrom) {
+    lines.push(`Window starting ${filters.dateFrom}`);
+  } else if (filters.dateTo) {
+    lines.push(`Window until ${filters.dateTo}`);
+  }
+  return lines.join('\n');
+}
+
+function collectConversationReportFiles(outputFilesRes: any): string[] {
+  const files: string[] = [];
+  if (outputFilesRes?.xlsxFile) {
+    files.push(outputFilesRes.xlsxFile);
+  }
+  return files;
 }
 
 function buildExcludedConversationFilter(): string {
