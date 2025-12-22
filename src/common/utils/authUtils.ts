@@ -43,6 +43,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
   let doConnect = true;
   let alias: string | null = null;
   let setDefaultOrg = false;
+  let orgInfo: any = {};
   if (!options.checkAuth) {
     // Check if we are already authenticated
     let orgDisplayCommand = 'sf org display';
@@ -92,6 +93,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         (orgInfoResult.result.username === orgAlias && orgInfoResult.result.id != null) ||
         (isDevHub && orgInfoResult.result.id != null))
     ) {
+      orgInfo = orgInfoResult.result;
       if (orgInfoResult.result.apiVersion) {
         globalThis.currentOrgApiVersion = orgInfoResult.result.apiVersion;
       }
@@ -125,6 +127,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
           }`;
         await execSfdxJson(setDefaultOrgCommand, this, { fail: false });
       }
+      globalThis.justConnectedOrg = sanitizeOrg(orgInfoResult.result);
       doConnect = false;
     }
   }
@@ -284,7 +287,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
           ` --instance-url ${instanceUrl}` +
           (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --alias ${orgAlias}` : '');
         try {
-          loginResult = await execCommand(loginCommand, this, { output: false, fail: true, spinner: false });
+          loginResult = await execSfdxJson(loginCommand, this, { output: false, fail: true, spinner: false });
         } catch (e) {
           // Give instructions if server is unavailable
           if (((e as Error).message || '').includes('Cannot start the OAuth redirect server on port')) {
@@ -303,8 +306,8 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
       }
       await clearCache('sf org list');
       logged = loginResult.status === 0;
-      username = loginResult?.username || 'err';
-      instanceUrl = loginResult?.instanceUrl || instanceUrl;
+      username = loginResult?.result?.username || loginResult?.username || 'err';
+      instanceUrl = loginResult?.result?.instanceUrl || loginResult?.instanceUrl || instanceUrl;
       updateSfCliCommandOrg = true;
     } else {
       console.error(c.red(`[sfdx-hardis] Unable to connect to org ${orgAlias} with browser. Please try again 😊`));
@@ -342,6 +345,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
       if (!(options?.Command?.id || "").startsWith("hardis:auth:login") && updateSfCliCommandOrg === true) {
         uxLog("warning", this, c.yellow("*** IF YOU SEE AN AUTH ERROR PLEASE RUN AGAIN THE SAME COMMAND 😊 ***"));
       }
+      globalThis.justConnectedOrg = sanitizeOrg({ username, instanceUrl, ...orgInfo });
     } else {
       console.error(c.red('[sfdx-hardis][ERROR] You must be logged to an org to perform this action'));
       throw new SfError(`You must be logged to an org to perform this action`);
@@ -543,4 +547,14 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
     uxLog("error", this, c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
   }
   return null;
+}
+
+function sanitizeOrg(org: any) {
+  if (org?.accessToken) {
+    org.accessToken = '***REDACTED***';
+  }
+  if (org?.refreshToken) {
+    org.refreshToken = '***REDACTED***';
+  }
+  return org;
 }
