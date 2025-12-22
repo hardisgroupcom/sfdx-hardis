@@ -6,7 +6,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [6.17.1] 2025-12-22
 
-- [hardis:datacloud:extract:agentforce-conversations](https://sfdx-hardis.cloudity.com/hardis/datacloud/extract/agentforce-conversations/): Fix duplicate results
+- [hardis:datacloud:extract:agentforce-conversations](https://sfdx-hardis.cloudity.com/hardis/datacloud/extract/agentforce-conversations/):
+  - Fix duplicate results
+  - Send notifications
 
 ## [6.17.0] 2025-12-22
 
