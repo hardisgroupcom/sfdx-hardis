@@ -1705,10 +1705,10 @@
     zod "^3.22.4"
     zod-to-json-schema "^3.22.3"
 
-"@langchain/core@^0.3.79":
-  version "0.3.79"
-  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-0.3.79.tgz#a7c8ee68e1a92133e073ebfcbebf53a885d9e0bd"
-  integrity "sha1-p8juaOGpITPgc+v8vr9TqIXZ4L0= sha512-ZLAs5YMM5N2UXN3kExMglltJrKKoW7hs3KMZFlXUnD7a5DFKBYxPFMeXA4rT+uvTxuJRZPCYX0JKI5BhyAWx4A=="
+"@langchain/core@^0.3.80":
+  version "0.3.80"
+  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-0.3.80.tgz#c494a6944e53ab28bf32dc531e257b17cfc8f797"
+  integrity sha512-vcJDV2vk1AlCwSh3aBm/urQ1ZrlXFFBocv11bz/NBUfLWD5/UDNMzwPdaAd2dKvNmTWa9FM2lirLU3+JCf4cRA==
   dependencies:
     "@cfworker/json-schema" "^4.0.2"
     ansi-styles "^5.0.0"
