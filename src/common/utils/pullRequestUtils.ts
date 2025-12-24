@@ -5,20 +5,54 @@ import path from "path";
 import fs from "fs-extra";
 import yaml from "js-yaml";
 import { listMajorOrgs } from "./orgConfigUtils.js";
+import { SfError } from "@salesforce/core";
 
 let _cachedPullRequests: CommonPullRequestInfo[] | null = null;
 
 export async function getPullRequestScopedSfdxHardisConfig(pr: CommonPullRequestInfo): Promise<object | null> {
+  const configFromPrDescription = getYamlFromPrDescription(pr);
+  let configFromFile: object | null = null;
   const prConfigFileName = path.join("scripts", "actions", `.sfdx-hardis.${pr.idStr}.yml`);
   if (fs.existsSync(prConfigFileName)) {
     try {
       const prConfig = await fs.readFile(prConfigFileName, 'utf8');
-      const prConfigParsed = yaml.load(prConfig) as any;
-      return prConfigParsed;
+      configFromFile = yaml.load(prConfig) as any;
     }
     catch (err) {
-      uxLog("warning", this, c.yellow(`[PullRequestUtils] Error reading PR config file ${prConfigFileName}: ${err}`));
-      return null;
+      throw new SfError(`[PullRequestUtils] Error reading/parsing PR config file ${prConfigFileName} for PR ${pr.idStr}: ${err}`);
+    }
+  }
+  if (!configFromFile && !configFromPrDescription) {
+    return null;
+  }
+  if (!configFromFile) {
+    return configFromPrDescription;
+  }
+  if (!configFromPrDescription) {
+    return configFromFile;
+  }
+  // Merge config from file and from PR description (PR description has precedence). Log when a property has been overridden
+  const mergedConfig: any = { ...configFromFile };
+  for (const [key, value] of Object.entries(configFromPrDescription)) {
+    if (Object.prototype.hasOwnProperty.call(mergedConfig, key)) {
+      uxLog("log", this, c.grey(`[PullRequestUtils] Overriding PR config property '${key}' from PR description for PR ${pr.idStr} ${pr.webUrl}`));
+    }
+    mergedConfig[key] = value;
+  }
+  return mergedConfig;
+}
+
+function getYamlFromPrDescription(pr: CommonPullRequestInfo): object | null {
+  const yamlStart = pr.description.indexOf("```yaml");
+  const yamlEnd = pr.description.indexOf("```", yamlStart + 1);
+  if (yamlStart !== -1 && yamlEnd !== -1) {
+    const yamlContent = pr.description.substring(yamlStart + 7, yamlEnd).trim();
+    try {
+      const parsedYaml = yaml.load(yamlContent) as any;
+      return parsedYaml;
+    }
+    catch (err) {
+      throw new SfError(`[PullRequestUtils] Error parsing YAML from PR description for PR ${pr.idStr} ${pr.webUrl}: ${err}`);
     }
   }
   return null;
