@@ -107,6 +107,22 @@ Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-s
 
 Note: if you want to disable Smart test classes for a PR, add **nosmart** in the text of the latest commit.
 
+### Custom Apex Test Classes (optional)
+
+You can force Smart Deploy to run a specific list of Apex Test Classes. This is **not recommended** because best practice is to run all local tests. Enable it only if you have a specific need.
+
+- \`enableDeploymentApexTestClasses\` (boolean, default: false): Activate the custom list.
+- \`deploymentApexTestClasses\` (array of strings): The Apex Test Classes to run. Used only when the flag above is true.
+
+Example configuration in \`config/.sfdx-hardis.yml\` (can also be scoped to branches in \`config/branches/.sfdx-hardis-BRANCHNAME.yml\` or in Pull Request description):
+
+\`\`\`yaml
+enableDeploymentApexTestClasses: true
+deploymentApexTestClasses:
+  - MyTestClass1
+  - MyTestClass2
+\`\`\`
+
 ### Dynamic deployment items / Overwrite management
 
 If necessary,you can define the following files (that supports wildcards <members>*</members>):
@@ -196,6 +212,16 @@ If some words are found **in the Pull Request description**, special behaviors w
 | NO_DELTA | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request |
 | PURGE_FLOW_VERSIONS | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
 | DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package |
+
+You can also override some \`.sfdx-hardis.yml\` properties directly in the Pull Request description using YAML blocks. Supported keys: \`deploymentApexTestClasses\`, \`commandsPreDeploy\`, \`commandsPostDeploy\`.
+
+Example (in PR description):
+
+\`\`\`yaml
+deploymentApexTestClasses:
+  - MyTestClass1
+  - MyTestClass2
+\`\`\`
 
 > For example, define \`PURGE_FLOW_VERSIONS\` and \`DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT\` in your Pull Request comments if you want to delete fields that are used in an active flow.
 
