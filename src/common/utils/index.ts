@@ -1764,7 +1764,7 @@ export async function generateSSLCertificate(
         },
       ]);
       const contactEmail = await promptUserEmail(
-        'Enter a contact email for the External Client App (ex: nicolas.vuillamy@cloudity.com)'
+        'Enter a contact email for the External Client App (ex: teoman.sertcelik@gmail.com)'
       );
 
       // Sanitize app name for metadata
