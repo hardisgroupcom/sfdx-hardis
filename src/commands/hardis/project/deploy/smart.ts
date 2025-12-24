@@ -29,11 +29,12 @@ import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { smartDeploy, removePackageXmlContent, createEmptyPackageXml } from '../../../../common/utils/deployUtils.js';
 import { extendPackageFileWithDependencies, appendPackageModifications } from '../../../../common/utils/deltaUtils.js';
 import { isProductionOrg, promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
-import { getApexTestClasses } from '../../../../common/utils/classUtils.js';
+import { getApexTestClasses, selectTestClassesFromPullRequests } from '../../../../common/utils/classUtils.js';
 import { listMajorOrgs, restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -361,7 +362,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     await setConnectionVariables(flags['target-org']?.getConnection(), true);
 
-    await this.initTestLevelAndTestClasses(flags);
+    await this.initTestLevelAndTestClasses(flags.testlevel, flags.runtests);
 
     await this.handlePackages(targetUsername);
 
@@ -629,9 +630,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
   }
 
-  private async initTestLevelAndTestClasses(flags) {
-    const givenTestlevel = flags.testlevel || this.configInfo.testLevel || 'RunLocalTests';
-    this.testClasses = flags.runtests || this.configInfo.runtests || '';
+  private async initTestLevelAndTestClasses(testLevelFlag?: string, runTestsFlag?: string) {
+    uxLog("action", this, c.cyan('[SmartDeploy] Initializing test level and test classes to run...'));
+    let givenTestlevel = testLevelFlag || this.configInfo.testLevel || 'RunLocalTests';
+    this.testClasses = runTestsFlag || this.configInfo.runtests || '';
 
     // Auto-detect all APEX test classes within project in order to run "dynamic" RunSpecifiedTests deployment
     if (['RunRepositoryTests', 'RunRepositoryTestsExceptSeeAllData'].includes(givenTestlevel)) {
@@ -640,17 +642,37 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         givenTestlevel === 'RunRepositoryTestsExceptSeeAllData'
       );
       if (Array.isArray(testClassList) && testClassList.length) {
-        flags.testlevel = 'RunSpecifiedTests';
+        givenTestlevel = 'RunSpecifiedTests';
         this.testClasses = testClassList.join(" ");
       } else {
         // Default back to RunLocalTests in case if repository has zero tests
-        flags.testlevel = 'RunLocalTests';
+        givenTestlevel = 'RunLocalTests';
         this.testClasses = '';
       }
     }
 
-    this.testLevel = flags.testlevel || this.configInfo.testLevel || 'RunLocalTests';
+    const enableDeploymentApexTestClasses = this.configInfo.enableDeploymentApexTestClasses || false;
+    // Select test classes from PRs if allowed
+    if (enableDeploymentApexTestClasses === true) {
+      uxLog("log", this, c.cyan('[SmartDeploy] enableDeploymentApexTestClasses is activated (not recommended by default): identifying test classes from Config file and Pull Requests...'));
+      const selectedTestClassesForAllPrs = this.configInfo.deploymentApexTestClasses || [];
+      if (selectedTestClassesForAllPrs.length > 0) {
+        uxLog("log", this, c.grey(`[SmartDeploy] Test classes selected from config file: ${selectedTestClassesForAllPrs.join(" ")}`));
+      }
+      const pullRequests = await listAllPullRequestsForCurrentScope(this.checkOnly);
+      const selectedTestClassesFromPrs = await selectTestClassesFromPullRequests(pullRequests);
+      const allSelectedTestClasses: string[] = [...selectedTestClassesForAllPrs, ...selectedTestClassesFromPrs];
+      if (allSelectedTestClasses.length > 0) {
+        givenTestlevel = 'RunSpecifiedTests';
+        this.testClasses = allSelectedTestClasses.join(" ");
+        uxLog("log", this, c.grey(`[SmartDeploy] Test classes selected from PRs: ${this.testClasses}`));
+      } else {
+        uxLog("warning", this, c.yellow(`[SmartDeploy] No test class selected from PRs, keeping previous test level and classes.`));
+      }
+    }
 
+    this.testLevel = givenTestlevel || this.configInfo.testLevel || 'RunLocalTests';
+    uxLog("log", this, c.grey(`[SmartDeploy] Final test level: ${c.bold(this.testLevel)}.`));
     // Test classes are only valid for RunSpecifiedTests
     if (this.testLevel != 'RunSpecifiedTests') {
       this.testClasses = '';

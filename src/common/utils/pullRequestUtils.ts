@@ -1,9 +1,28 @@
 import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
 import { uxLog } from "./index.js";
 import c from "chalk";
+import path from "path";
+import fs from "fs-extra";
+import yaml from "js-yaml";
 import { listMajorOrgs } from "./orgConfigUtils.js";
 
 let _cachedPullRequests: CommonPullRequestInfo[] | null = null;
+
+export async function getPullRequestScopedSfdxHardisConfig(pr: CommonPullRequestInfo): Promise<object | null> {
+  const prConfigFileName = path.join("scripts", "actions", `.sfdx-hardis.${pr.idStr}.yml`);
+  if (fs.existsSync(prConfigFileName)) {
+    try {
+      const prConfig = await fs.readFile(prConfigFileName, 'utf8');
+      const prConfigParsed = yaml.load(prConfig) as any;
+      return prConfigParsed;
+    }
+    catch (err) {
+      uxLog("warning", this, c.yellow(`[PullRequestUtils] Error reading PR config file ${prConfigFileName}: ${err}`));
+      return null;
+    }
+  }
+  return null;
+}
 
 export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Promise<CommonPullRequestInfo[]> {
   if (_cachedPullRequests) {
@@ -11,12 +30,12 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
   }
   const gitProvider = await GitProvider.getInstance();
   if (!gitProvider) {
-    uxLog("warning", this, c.yellow('No git provider configured, skipping retrieval of commands from pull requests'));
+    uxLog("warning", this, c.yellow('[GitProvider] No git provider configured, skipping retrieval of pull requests'));
     return [];
   }
   const pullRequestInfo = await gitProvider.getPullRequestInfo();
   if (!pullRequestInfo) {
-    uxLog("warning", this, c.yellow('No pull request info available, skipping retrieval of commands from pull requests'));
+    uxLog("warning", this, c.yellow('[GitProvider] No pull request info available, skipping retrieval of pull requests'));
     return [];
   }
   const majorOrgs = await listMajorOrgs();
@@ -32,14 +51,14 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
     const prTargetOrgDef = majorOrgs.find(o => o.branchName === pullRequestInfo.targetBranch);
     if (prTargetOrgDef) {
       if (!prTargetOrgDef.mergeTargets || prTargetOrgDef.mergeTargets.length === 0) {
-        uxLog("warning", this, c.yellow(`[GitProvider] No merge targets defined for target branch ${prTargetOrgDef.branchName}, cannot retrieve pull requests to get commands from.`));
+        uxLog("warning", this, c.yellow(`[GitProvider] No merge targets defined for target branch ${prTargetOrgDef.branchName}, cannot retrieve pull requests.`));
         return [];
       }
       sourceBranchToUse = prTargetOrgDef.branchName;
       targetBranchToUse = prTargetOrgDef.mergeTargets[0]; // Use first merge target as target branch
     }
     else {
-      uxLog("warning", this, c.yellow(`[GitProvider] Target branch ${pullRequestInfo.targetBranch} not found in major orgs list, cannot retrieve pull requests to get commands from.\nPR: ${JSON.stringify(pullRequestInfo, null, 2)}`));
+      uxLog("warning", this, c.yellow(`[GitProvider] Target branch ${pullRequestInfo.targetBranch} not found in major orgs list, cannot retrieve pull requests.\nPR: ${JSON.stringify(pullRequestInfo, null, 2)}`));
       return [];
     }
   }

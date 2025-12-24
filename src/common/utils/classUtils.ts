@@ -3,6 +3,7 @@ import c from "chalk";
 import readFilesRecursive from "fs-readdir-recursive";
 import * as path from "path";
 import * as fs from "fs";
+import { getPullRequestScopedSfdxHardisConfig } from "./pullRequestUtils.js";
 
 function findSubstringInFile(filePath: string, substring: string): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
@@ -50,6 +51,20 @@ export async function getApexTestClasses(classRegexFilter: string = "", excludeS
 
   uxLog("log", this, c.grey(`Found APEX tests: ${c.bold(testClasses.join())}`));
   return testClasses;
+}
+
+export async function selectTestClassesFromPullRequests(pullRequests: any[]) {
+  const selectedTestClasses: Set<string> = new Set<string>();
+  for (const pr of pullRequests) {
+    const prConfigParsed = await getPullRequestScopedSfdxHardisConfig(pr);
+    if (prConfigParsed && prConfigParsed['deploymentApexTestClasses'] && Array.isArray(prConfigParsed['deploymentApexTestClasses'])) {
+      const prTestClasses = prConfigParsed['deploymentApexTestClasses'] as string[];
+      for (const testClass of prTestClasses) {
+        selectedTestClasses.add(testClass);
+      }
+    }
+  }
+  return Array.from(selectedTestClasses).sort((a, b) => a.localeCompare(b));
 }
 
 async function matchRegexFilter(classRegexFilter: string, className: string) {

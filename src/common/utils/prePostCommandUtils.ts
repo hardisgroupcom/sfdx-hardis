@@ -1,7 +1,6 @@
 import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from 'fs-extra';
-import yaml from 'js-yaml';
 
 import * as path from 'path';
 import { getConfig } from '../../config/index.js';
@@ -12,7 +11,7 @@ import { soqlQuery } from './apiUtils.js';
 // data import moved to DataAction class in actionsProvider
 import { getPullRequestData, setPullRequestData } from './gitUtils.js';
 import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
-import { listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
+import { getPullRequestScopedSfdxHardisConfig, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection, extraCommands?: any[] }) {
   const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
@@ -130,20 +129,12 @@ async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy
   const pullRequests = await listAllPullRequestsForCurrentScope(checkOnly);
   for (const pr of pullRequests) {
     // Check if there is a .sfdx-hardis.PULL_REQUEST_ID.yml file in the PR
-    const prConfigFileName = path.join("scripts", "actions", `.sfdx-hardis.${pr.idStr}.yml`);
-    if (fs.existsSync(prConfigFileName)) {
-      try {
-        const prConfig = await fs.readFile(prConfigFileName, 'utf8');
-        const prConfigParsed = yaml.load(prConfig) as any;
-        if (prConfigParsed && prConfigParsed[property] && Array.isArray(prConfigParsed[property])) {
-          const prConfigCommands = prConfigParsed[property] as PrePostCommand[];
-          for (const cmd of prConfigCommands) {
-            cmd.pullRequest = pr;
-            commands.push(cmd);
-          }
-        }
-      } catch (e) {
-        uxLog("error", this, c.red(`Error while parsing ${prConfigFileName} file: ${(e as Error).message}`));
+    const prConfigParsed = await getPullRequestScopedSfdxHardisConfig(pr);
+    if (prConfigParsed && prConfigParsed[property] && Array.isArray(prConfigParsed[property])) {
+      const prConfigCommands = prConfigParsed[property] as PrePostCommand[];
+      for (const cmd of prConfigCommands) {
+        cmd.pullRequest = pr;
+        commands.push(cmd);
       }
     }
   }
