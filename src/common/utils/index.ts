@@ -1720,6 +1720,7 @@ export async function generateSSLCertificate(
       type: 'select',
       name: 'value',
       message: c.cyanBright('Which type of app do you want to create for CI/CD authentication?'),
+      description: 'Select the type of OAuth app to create for CI/CD authentication',
       choices: [
         {
           title: 'Connected App (Traditional)',
