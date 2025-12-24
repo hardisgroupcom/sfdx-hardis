@@ -1708,7 +1708,7 @@
 "@langchain/core@^0.3.80":
   version "0.3.80"
   resolved "https://registry.yarnpkg.com/@langchain/core/-/core-0.3.80.tgz#c494a6944e53ab28bf32dc531e257b17cfc8f797"
-  integrity sha512-vcJDV2vk1AlCwSh3aBm/urQ1ZrlXFFBocv11bz/NBUfLWD5/UDNMzwPdaAd2dKvNmTWa9FM2lirLU3+JCf4cRA==
+  integrity "sha1-xJSmlE5Tqyi/MtxTHiV7F8/I95c= sha512-vcJDV2vk1AlCwSh3aBm/urQ1ZrlXFFBocv11bz/NBUfLWD5/UDNMzwPdaAd2dKvNmTWa9FM2lirLU3+JCf4cRA=="
   dependencies:
     "@cfworker/json-schema" "^4.0.2"
     ansi-styles "^5.0.0"
@@ -6971,9 +6971,9 @@ glob-parent@^6.0.2:
     is-glob "^4.0.3"
 
 glob@^10.2.2, glob@^10.3.10:
-  version "10.4.5"
-  resolved "https://registry.yarnpkg.com/glob/-/glob-10.4.5.tgz#f4d9f0b90ffdbab09c9d77f5f29b4262517b0956"
-  integrity sha512-7Bv8RF0k6xjo7d4A/PxYLbUCfb6c+Vpd2/mB2yRDlew7Jb5hEXiCD9ibfO7wpk8i4sevK6DFny9h7EYbM3/sHg==
+  version "10.5.0"
+  resolved "https://registry.yarnpkg.com/glob/-/glob-10.5.0.tgz#8ec0355919cd3338c28428a23d4f24ecc5fe738c"
+  integrity sha512-DfXN8DfhJ7NH3Oe7cFmu3NCu1wKbkReJ8TorzSAFbSKrlNaQSKfIzqYqVY8zlbs2NLBbWpRiU52GX2PbaBVNkg==
   dependencies:
     foreground-child "^3.1.0"
     jackspeak "^3.1.2"
@@ -8501,9 +8501,9 @@ ky@^1.2.0:
   integrity sha512-XybQJ3d4Ea1kI27DoelE5ZCT3bSJlibYTtQuMsyzKox3TMyayw1asgQdl54WroAm+fIA3ZCr8zXW2RpR7qWVpA==
 
 "langchain@>=0.2.3 <0.3.0 || >=0.3.4 <0.4.0", langchain@^0.3.36:
-  version "0.3.36"
-  resolved "https://registry.yarnpkg.com/langchain/-/langchain-0.3.36.tgz#6ab7f4028adae16bf74538aa2127df9fe2fddf02"
-  integrity sha512-PqC19KChFF0QlTtYDFgfEbIg+SCnCXox29G8tY62QWfj9bOW7ew2kgWmPw5qoHLOTKOdQPvXET20/1Pdq8vAtQ==
+  version "0.3.37"
+  resolved "https://registry.yarnpkg.com/langchain/-/langchain-0.3.37.tgz#6931ee5af763a6df35c0ac467eab028ba0ad17de"
+  integrity "sha1-aTHuWvdjpt81wKxGfqsCi6CtF94= sha512-1jPsZ6xsxkcQPUvqRjvfuOLwZLLyt49hzcOK7OYAJovIkkOxd5gzK4Yw6giPUQ8g4XHyvULNlWBz+subdkcokw=="
   dependencies:
     "@langchain/openai" ">=0.1.0 <0.7.0"
     "@langchain/textsplitters" ">=0.0.0 <0.2.0"
