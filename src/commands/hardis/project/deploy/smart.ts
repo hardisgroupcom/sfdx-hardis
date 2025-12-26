@@ -696,14 +696,14 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       if (allSelectedTestClasses.length > 0) {
         givenTestlevel = 'RunSpecifiedTests';
         this.testClasses = allSelectedTestClasses.join(" ");
-        uxLog("log", this, c.grey(`[SmartDeploy] Test classes selected from PRs: ${this.testClasses}`));
+        uxLog("log", this, c.green(`[SmartDeploy] Test classes selected from PRs:\n - ${this.testClasses.split(" ").join("\n - ")}`));
       } else {
         uxLog("warning", this, c.yellow(`[SmartDeploy] No test class selected from PRs, keeping previous test level and classes.`));
       }
     }
 
     this.testLevel = givenTestlevel || this.configInfo.testLevel || 'RunLocalTests';
-    uxLog("log", this, c.grey(`[SmartDeploy] Final test level: ${c.bold(this.testLevel)}.`));
+    uxLog("log", this, c.green(`[SmartDeploy] Final test level: ${c.bold(this.testLevel)}.`));
     // Test classes are only valid for RunSpecifiedTests
     if (this.testLevel != 'RunSpecifiedTests') {
       this.testClasses = '';
