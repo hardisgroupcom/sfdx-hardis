@@ -520,15 +520,7 @@ ${this.getPipelineVariablesConfig()}
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     const buildId = process.env.BUILD_BUILD_ID || null;
     const jobId = process.env.SYSTEM_JOB_ID || null;
-    let pullRequestIdStr = getEnvVar("SYSTEM_PULLREQUEST_PULLREQUESTID") || prInfo?.idStr || null;
-
-    // If still null, try to extract from commit message as fallback
-    if (pullRequestIdStr === null) {
-      const extractedPrId = await this.extractPullRequestIdFromCommitMessage();
-      if (extractedPrId !== null) {
-        pullRequestIdStr = String(extractedPrId);
-      }
-    }
+    const pullRequestIdStr = getEnvVar("SYSTEM_PULLREQUEST_PULLREQUESTID") || prInfo?.idStr || null;
 
     if (repositoryId == null || pullRequestIdStr == null) {
       uxLog("log", this, c.grey("[Azure integration] No project and pull request, so no note thread..."));
