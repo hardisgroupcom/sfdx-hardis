@@ -3783,8 +3783,8 @@ If defined, makes obsolete the parameter Default Pull Request target branch.</p>
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#deploymentPlan" onclick="anchorLink('deploymentPlan')">deploymentPlan</a></div><h4>Deployment plan</h4><span class="badge badge-dark value-type">Type: object</span><br/>
-<span class="description"><p>Deployment plan that will be performed during deployments. Can be based on packageXmlFile for sources or on dataPath for sfdmu data deployments</p>
+    <a href="#deploymentPlan" onclick="anchorLink('deploymentPlan')">deploymentPlan</a></div><h4>(DEPRECATED) Deployment plan</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>(DEPRECATED) Deployment plan that will be performed during deployments. Can be based on packageXmlFile for sources or on dataPath for sfdmu data deployments</p>
 </span>
         
 
@@ -4446,6 +4446,40 @@ If defined, makes obsolete the parameter Default Pull Request target branch.</p>
 </div><div id="enableDeploymentApexTestClasses_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">false</span>
 </pre></div>
 </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionenableDeprecatedDeploymentPlan">
+    <div class="card">
+        <div class="card-header" id="headingenableDeprecatedDeploymentPlan">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#enableDeprecatedDeploymentPlan"
+                        aria-expanded="" aria-controls="enableDeprecatedDeploymentPlan" onclick="setAnchor('#enableDeprecatedDeploymentPlan')"><span class="property-name">enableDeprecatedDeploymentPlan</span></button>
+            </h2>
+        </div>
+
+        <div id="enableDeprecatedDeploymentPlan"
+             class="collapse property-definition-div" aria-labelledby="headingenableDeprecatedDeploymentPlan"
+             data-parent="#accordionenableDeprecatedDeploymentPlan">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#enableDeprecatedDeploymentPlan" onclick="anchorLink('enableDeprecatedDeploymentPlan')">enableDeprecatedDeploymentPlan</a></div><h4>Enable Deprecated Deployment Plan</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>If true, allows the use of the deprecated 'deploymentPlan' configuration for deployments. It's better to use deployment actions at branch or PR level</p>
+</span>
+        
+
+        
+        
+
+        
             </div>
         </div>
     </div>

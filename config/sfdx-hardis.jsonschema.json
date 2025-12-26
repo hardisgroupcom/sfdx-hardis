@@ -1042,6 +1042,17 @@
       "title": "Doc: Deploy to Salesforce Org",
       "type": "boolean"
     },
+    "enableDeltaDeploymentBetweenMajorBranches": {
+      "$id": "#/properties/enableDeltaDeploymentBetweenMajorBranches",
+      "description": "Enable delta deployments between major branches (ex: integration -> uat). Not recommended, as real DevOps best practice is to deploy full source: use only if you have specific needs.",
+      "default": false,
+      "examples": [
+        true,
+        false
+      ],
+      "title": "Enable delta deployments between major branches (NOT RECOMMENDED)",
+      "type": "boolean"
+    },
     "enableDeploymentApexTestClasses": {
       "$id": "#/properties/enableDeploymentApexTestClasses",
       "description": "Enable the use of custom Apex Test Classes list during deployments. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.",

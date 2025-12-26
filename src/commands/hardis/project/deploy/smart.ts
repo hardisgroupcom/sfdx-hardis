@@ -12,7 +12,7 @@ Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com
 */
 
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
@@ -683,6 +683,9 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Select test classes from PRs if allowed
     if (enableDeploymentApexTestClasses === true) {
       uxLog("log", this, c.cyan('[SmartDeploy] enableDeploymentApexTestClasses is activated (not recommended by default): identifying test classes from Config file and Pull Requests...'));
+      if (!this.configInfo.enableDeltaDeploymentBetweenMajorBranches) {
+        throw new SfError('[SmartDeploy] It is mandatory to set enableDeltaDeploymentBetweenMajorBranches to true when using enableDeploymentApexTestClasses to avoid missing test classes in delta deployments between major branches.');
+      }
       const selectedTestClassesForAllPrs = this.configInfo.deploymentApexTestClasses || [];
       if (selectedTestClassesForAllPrs.length > 0) {
         uxLog("log", this, c.grey(`[SmartDeploy] Test classes selected from config file: ${selectedTestClassesForAllPrs.join(" ")}`));
@@ -730,6 +733,21 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       uxLog("warning", this, c.yellow(c.bold((`[DeltaDeployment] Latest commit contains string "nodelta" so disable delta for this time 😊`))));
       return false;
     }
+    if (process.env?.ALWAYS_ENABLE_DELTA_DEPLOYMENT === 'true' || this.configInfo?.enableDeltaDeploymentBetweenMajorBranches === true) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(`[DeltaDeployment] Delta deployment has been explicitly enabled with property enableDeltaDeploymentBetweenMajorBranches or variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`)
+      );
+      uxLog(
+        "warning",
+        this,
+        c.yellow(
+          `[DeltaDeployment] It is not recommended to use delta deployments for merges between major branches, use this config at your own responsibility`
+        )
+      );
+      return true;
+    }
     if (this.checkOnly === false && !(process.env?.USE_DELTA_DEPLOYMENT_AFTER_MERGE === 'true')) {
       uxLog(
         "warning",
@@ -746,21 +764,6 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         )
       );
       return false;
-    }
-    if (process.env?.ALWAYS_ENABLE_DELTA_DEPLOYMENT === 'true') {
-      uxLog(
-        "warning",
-        this,
-        c.yellow(`[DeltaDeployment] Delta deployment has been explicitly enabled with variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`)
-      );
-      uxLog(
-        "warning",
-        this,
-        c.yellow(
-          `[DeltaDeployment] It is not recommended to use delta deployments for merges between major branches, use this config at your own responsibility`
-        )
-      );
-      return true;
     }
     let currentBranch = await getCurrentGitBranch();
     let parentBranch = process.env.FORCE_TARGET_BRANCH || null;
