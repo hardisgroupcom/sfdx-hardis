@@ -680,6 +680,8 @@
         "ignoreerrors",
         "ignorerights",
         "ignorewarnings",
+        "accordionenable",
+        "mktemp",
         "iids",
         "includemanaged",
         "includepackages",

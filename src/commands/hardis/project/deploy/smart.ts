@@ -12,7 +12,7 @@ Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com
 */
 
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
@@ -29,11 +29,12 @@ import { CONSTANTS, getConfig } from '../../../../config/index.js';
 import { smartDeploy, removePackageXmlContent, createEmptyPackageXml } from '../../../../common/utils/deployUtils.js';
 import { extendPackageFileWithDependencies, appendPackageModifications } from '../../../../common/utils/deltaUtils.js';
 import { isProductionOrg, promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
-import { getApexTestClasses } from '../../../../common/utils/classUtils.js';
+import { getApexTestClasses, selectTestClassesFromPullRequests } from '../../../../common/utils/classUtils.js';
 import { listMajorOrgs, restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -105,6 +106,22 @@ Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-s
 - Translations
 
 Note: if you want to disable Smart test classes for a PR, add **nosmart** in the text of the latest commit.
+
+### Custom Apex Test Classes (optional)
+
+You can force Smart Deploy to run a specific list of Apex Test Classes. This is **not recommended** because best practice is to run all local tests. Enable it only if you have a specific need.
+
+- \`enableDeploymentApexTestClasses\` (boolean, default: false): Activate the custom list.
+- \`deploymentApexTestClasses\` (array of strings): The Apex Test Classes to run. Used only when the flag above is true.
+
+Example configuration in \`config/.sfdx-hardis.yml\` (can also be scoped to branches in \`config/branches/.sfdx-hardis-BRANCHNAME.yml\` or in Pull Request description):
+
+\`\`\`yaml
+enableDeploymentApexTestClasses: true
+deploymentApexTestClasses:
+  - MyTestClass1
+  - MyTestClass2
+\`\`\`
 
 ### Dynamic deployment items / Overwrite management
 
@@ -196,6 +213,16 @@ If some words are found **in the Pull Request description**, special behaviors w
 | PURGE_FLOW_VERSIONS | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
 | DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package |
 
+You can also override some \`.sfdx-hardis.yml\` properties directly in the Pull Request description using YAML blocks. Supported keys: \`deploymentApexTestClasses\`, \`commandsPreDeploy\`, \`commandsPostDeploy\`.
+
+Example (in PR description):
+
+\`\`\`yaml
+deploymentApexTestClasses:
+  - MyTestClass1
+  - MyTestClass2
+\`\`\`
+
 > For example, define \`PURGE_FLOW_VERSIONS\` and \`DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT\` in your Pull Request comments if you want to delete fields that are used in an active flow.
 
 Note: it is also possible to define these behaviors as ENV variables:
@@ -204,6 +231,8 @@ Note: it is also possible to define these behaviors as ENV variables:
 - For a specific branch, by appending the target branch name (example: \`PURGE_FLOW_VERSIONS_UAT=true\`)
 
 ### Deployment plan (deprecated)
+
+> **This feature is deactivated by default (enable with \`enableDeprecatedDeploymentPlan\` in project configuration). Use preCommands and postCommands instead.** 
 
 If you need to deploy in multiple steps, you can define a property \`deploymentPlan\` in \`.sfdx-hardis.yml\`.
 
@@ -361,7 +390,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     await setConnectionVariables(flags['target-org']?.getConnection(), true);
 
-    await this.initTestLevelAndTestClasses(flags);
+    await this.initTestLevelAndTestClasses(flags.testlevel, flags.runtests);
 
     await this.handlePackages(targetUsername);
 
@@ -629,9 +658,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
   }
 
-  private async initTestLevelAndTestClasses(flags) {
-    const givenTestlevel = flags.testlevel || this.configInfo.testLevel || 'RunLocalTests';
-    this.testClasses = flags.runtests || this.configInfo.runtests || '';
+  private async initTestLevelAndTestClasses(testLevelFlag?: string, runTestsFlag?: string) {
+    uxLog("action", this, c.cyan('[SmartDeploy] Initializing test level and test classes to run...'));
+    let givenTestlevel = testLevelFlag || this.configInfo.testLevel || 'RunLocalTests';
+    this.testClasses = runTestsFlag || this.configInfo.runtests || '';
 
     // Auto-detect all APEX test classes within project in order to run "dynamic" RunSpecifiedTests deployment
     if (['RunRepositoryTests', 'RunRepositoryTestsExceptSeeAllData'].includes(givenTestlevel)) {
@@ -640,17 +670,40 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         givenTestlevel === 'RunRepositoryTestsExceptSeeAllData'
       );
       if (Array.isArray(testClassList) && testClassList.length) {
-        flags.testlevel = 'RunSpecifiedTests';
+        givenTestlevel = 'RunSpecifiedTests';
         this.testClasses = testClassList.join(" ");
       } else {
         // Default back to RunLocalTests in case if repository has zero tests
-        flags.testlevel = 'RunLocalTests';
+        givenTestlevel = 'RunLocalTests';
         this.testClasses = '';
       }
     }
 
-    this.testLevel = flags.testlevel || this.configInfo.testLevel || 'RunLocalTests';
+    const enableDeploymentApexTestClasses = this.configInfo.enableDeploymentApexTestClasses || false;
+    // Select test classes from PRs if allowed
+    if (enableDeploymentApexTestClasses === true) {
+      uxLog("log", this, c.cyan('[SmartDeploy] enableDeploymentApexTestClasses is activated (not recommended by default): identifying test classes from Config file and Pull Requests...'));
+      if (!this.configInfo.enableDeltaDeploymentBetweenMajorBranches) {
+        throw new SfError('[SmartDeploy] It is mandatory to set enableDeltaDeploymentBetweenMajorBranches to true when using enableDeploymentApexTestClasses to avoid missing test classes in delta deployments between major branches.');
+      }
+      const selectedTestClassesForAllPrs = this.configInfo.deploymentApexTestClasses || [];
+      if (selectedTestClassesForAllPrs.length > 0) {
+        uxLog("log", this, c.grey(`[SmartDeploy] Test classes selected from config file: ${selectedTestClassesForAllPrs.join(" ")}`));
+      }
+      const pullRequests = await listAllPullRequestsForCurrentScope(this.checkOnly);
+      const selectedTestClassesFromPrs = await selectTestClassesFromPullRequests(pullRequests, this.testClasses !== '' ? this.testClasses.split(" ") : []);
+      const allSelectedTestClasses: string[] = [...selectedTestClassesForAllPrs, ...selectedTestClassesFromPrs];
+      if (allSelectedTestClasses.length > 0) {
+        givenTestlevel = 'RunSpecifiedTests';
+        this.testClasses = allSelectedTestClasses.join(" ");
+        uxLog("log", this, c.green(`[SmartDeploy] Test classes selected from PRs:\n - ${this.testClasses.split(" ").join("\n - ")}`));
+      } else {
+        uxLog("warning", this, c.yellow(`[SmartDeploy] No test class selected from PRs, keeping previous test level and classes.`));
+      }
+    }
 
+    this.testLevel = givenTestlevel || this.configInfo.testLevel || 'RunLocalTests';
+    uxLog("log", this, c.green(`[SmartDeploy] Final test level: ${c.bold(this.testLevel)}.`));
     // Test classes are only valid for RunSpecifiedTests
     if (this.testLevel != 'RunSpecifiedTests') {
       this.testClasses = '';
@@ -680,6 +733,21 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       uxLog("warning", this, c.yellow(c.bold((`[DeltaDeployment] Latest commit contains string "nodelta" so disable delta for this time 😊`))));
       return false;
     }
+    if (process.env?.ALWAYS_ENABLE_DELTA_DEPLOYMENT === 'true' || this.configInfo?.enableDeltaDeploymentBetweenMajorBranches === true) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(`[DeltaDeployment] Delta deployment has been explicitly enabled with property enableDeltaDeploymentBetweenMajorBranches or variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`)
+      );
+      uxLog(
+        "warning",
+        this,
+        c.yellow(
+          `[DeltaDeployment] It is not recommended to use delta deployments for merges between major branches, use this config at your own responsibility`
+        )
+      );
+      return true;
+    }
     if (this.checkOnly === false && !(process.env?.USE_DELTA_DEPLOYMENT_AFTER_MERGE === 'true')) {
       uxLog(
         "warning",
@@ -696,21 +764,6 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         )
       );
       return false;
-    }
-    if (process.env?.ALWAYS_ENABLE_DELTA_DEPLOYMENT === 'true') {
-      uxLog(
-        "warning",
-        this,
-        c.yellow(`[DeltaDeployment] Delta deployment has been explicitly enabled with variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`)
-      );
-      uxLog(
-        "warning",
-        this,
-        c.yellow(
-          `[DeltaDeployment] It is not recommended to use delta deployments for merges between major branches, use this config at your own responsibility`
-        )
-      );
-      return true;
     }
     let currentBranch = await getCurrentGitBranch();
     let parentBranch = process.env.FORCE_TARGET_BRANCH || null;
