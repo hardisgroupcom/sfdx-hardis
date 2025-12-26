@@ -691,7 +691,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         uxLog("log", this, c.grey(`[SmartDeploy] Test classes selected from config file: ${selectedTestClassesForAllPrs.join(" ")}`));
       }
       const pullRequests = await listAllPullRequestsForCurrentScope(this.checkOnly);
-      const selectedTestClassesFromPrs = await selectTestClassesFromPullRequests(pullRequests, this.testClasses.split(" "));
+      const selectedTestClassesFromPrs = await selectTestClassesFromPullRequests(pullRequests, this.testClasses !== '' ? this.testClasses.split(" ") : []);
       const allSelectedTestClasses: string[] = [...selectedTestClassesForAllPrs, ...selectedTestClassesFromPrs];
       if (allSelectedTestClasses.length > 0) {
         givenTestlevel = 'RunSpecifiedTests';
