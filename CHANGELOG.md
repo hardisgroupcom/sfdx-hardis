@@ -4,7 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Add capability to **select specific Apex Test Classes** to run during deployments in Smart Deploy feature.
+- Add capability to **select specific Apex Test Classes (beta)** to run during deployments in Smart Deploy feature.
   - New config property `enableDeploymentApexTestClasses` (boolean, default: false): Enable the use of custom Apex Test Classes list during deployments. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.
   - New config property `deploymentApexTestClasses` (array of strings): List of Apex Test Classes that will be run during deployments. Requires `enableDeploymentApexTestClasses` to be set to true (Not recommended, use only if you have specific needs).
 - Add capability to override Pull Request config properties **deploymentApexTestClasses**, **commandsPreDeploy** and **commandsPostDeploy** directly in Pull Request description using special syntax.

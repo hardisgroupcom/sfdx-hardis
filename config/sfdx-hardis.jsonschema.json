@@ -856,7 +856,7 @@
     },
     "deploymentApexTestClasses": {
       "$id": "#/properties/deploymentApexTestClasses",
-      "description": "List of Apex Test Classes that will be run during deployments. Requires enableDeploymentApexTestClasses to be set to true (Not recommended, use only if you have specific needs)",
+      "description": "List of Apex Test Classes that will be run during deployments. Requires enableDeploymentApexTestClasses and enableDeltaDeploymentBetweenMajorBranches to be set to true (Not recommended, use only if you have specific needs)",
       "examples": [
         [
           "MyTestClass1",
@@ -866,7 +866,7 @@
       "items": {
         "type": "string"
       },
-      "title": "Apex Test Classes to run during deployments (NOT RECOMMENDED)",
+      "title": "Apex Test Classes to run during deployments (NOT RECOMMENDED) (Beta)",
       "type": "array"
     },
     "developmentBranch": {
@@ -1055,13 +1055,13 @@
     },
     "enableDeploymentApexTestClasses": {
       "$id": "#/properties/enableDeploymentApexTestClasses",
-      "description": "Enable the use of custom Apex Test Classes list during deployments. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.",
+      "description": "Enable the use of custom Apex Test Classes list during deployments. Requires enableDeltaDeploymentBetweenMajorBranches to be set to true. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.",
       "default": false,
       "examples": [
         true,
         false
       ],
-      "title": "Enable custom Apex Test Classes during deployments (NOT RECOMMENDED)",
+      "title": "Enable custom Apex Test Classes during deployments (NOT RECOMMENDED) (Beta)",
       "type": "boolean"
     },
     "enableDeprecatedDeploymentPlan": {
@@ -1810,7 +1810,7 @@
       "$id": "#/properties/testCoverageNotBlocking",
       "default": false,
       "description": "Does not make the deployment job fail if apex tests code coverage is failing",
-      "title": "Test Coverage not blocking",
+      "title": "Test Coverage not blocking (not recommended)",
       "type": "boolean"
     },
     "testLevel": {
@@ -1826,12 +1826,12 @@
         "RunAllTestsInOrg"
       ],
       "enumNames": [
-        "No Test Run",
-        "Run Specified Tests",
-        "Run Repository Tests",
-        "Run Repository Tests Except SeeAllData",
-        "Run Local Tests",
-        "Run All Tests In Org"
+        "No Test Run (not recommended, better use deploymentApexTestClasses)",
+        "Run Specified Tests (never use it)",
+        "Run Repository Tests (will run only test classes that are present in the repository)",
+        "Run Repository Tests Except SeeAllData (same than RunRepositoryTests but without test classes with SeeAllData=true)",
+        "Run Local Tests (recommended at least for production deployments)",
+        "Run All Tests In Org (never use it)"
       ],
       "examples": [
         "RunRepositoryTests",
