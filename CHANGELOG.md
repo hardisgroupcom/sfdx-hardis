@@ -17,6 +17,8 @@ deploymentApexTestClasses:
   - MyTestClass2
 ```
 
+- Disable deploymentPlan feature by default (can be re-enabled with `enableDeprecatedDeploymentPlan` in project configuration)
+
 ## [6.17.1] 2025-12-22
 
 - [hardis:datacloud:extract:agentforce-conversations](https://sfdx-hardis.cloudity.com/hardis/datacloud/extract/agentforce-conversations/):

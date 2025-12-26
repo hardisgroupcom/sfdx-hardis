@@ -884,7 +884,7 @@
     },
     "deploymentPlan": {
       "$id": "#/properties/deploymentPlan",
-      "description": "Deployment plan that will be performed during deployments. Can be based on packageXmlFile for sources or on dataPath for sfdmu data deployments",
+      "description": "(DEPRECATED) Deployment plan that will be performed during deployments. Can be based on packageXmlFile for sources or on dataPath for sfdmu data deployments",
       "examples": [
         {
           "packages": [
@@ -985,7 +985,7 @@
           "type": "array"
         }
       },
-      "title": "Deployment plan",
+      "title": "(DEPRECATED) Deployment plan",
       "type": "object"
     },
     "devHubAlias": {
@@ -1051,6 +1051,13 @@
         false
       ],
       "title": "Enable custom Apex Test Classes during deployments (NOT RECOMMENDED)",
+      "type": "boolean"
+    },
+    "enableDeprecatedDeploymentPlan": {
+      "$id": "#/properties/enableDeprecatedDeploymentPlan",
+      "description": "If true, allows the use of the deprecated 'deploymentPlan' configuration for deployments. It's better to use deployment actions at branch or PR level",
+      "default": false,
+      "title": "Enable Deprecated Deployment Plan",
       "type": "boolean"
     },
     "extends": {

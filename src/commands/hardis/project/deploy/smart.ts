@@ -232,6 +232,8 @@ Note: it is also possible to define these behaviors as ENV variables:
 
 ### Deployment plan (deprecated)
 
+> **This feature is deactivated by default (enable with \`enableDeprecatedDeploymentPlan\` in project configuration). Use preCommands and postCommands instead.** 
+
 If you need to deploy in multiple steps, you can define a property \`deploymentPlan\` in \`.sfdx-hardis.yml\`.
 
 - If a file \`manifest/package.xml\` is found, it will be placed with order 0 in the deployment plan
