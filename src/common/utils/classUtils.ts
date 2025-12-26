@@ -4,6 +4,7 @@ import readFilesRecursive from "fs-readdir-recursive";
 import * as path from "path";
 import * as fs from "fs";
 import { getPullRequestScopedSfdxHardisConfig } from "./pullRequestUtils.js";
+import { CommonPullRequestInfo } from "../gitProvider/index.js";
 
 function findSubstringInFile(filePath: string, substring: string): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
@@ -53,7 +54,7 @@ export async function getApexTestClasses(classRegexFilter: string = "", excludeS
   return testClasses;
 }
 
-export async function selectTestClassesFromPullRequests(pullRequests: any[], allAvailableTestClasses: string[]) {
+export async function selectTestClassesFromPullRequests(pullRequests: CommonPullRequestInfo[], allAvailableTestClasses: string[]) {
   const selectedTestClasses: Set<string> = new Set<string>();
   const checkTestClassesExistence = allAvailableTestClasses && allAvailableTestClasses.length > 0;
   for (const pr of pullRequests) {
@@ -67,7 +68,7 @@ export async function selectTestClassesFromPullRequests(pullRequests: any[], all
         else if (checkTestClassesExistence && allAvailableTestClasses.includes(testClass)) {
           selectedTestClasses.add(testClass);
         } else {
-          uxLog("warning", this, c.yellow(`Test class ${testClass} from PR ${pr.number} is not available in the repository and will be ignored.`));
+          uxLog("warning", this, c.yellow(`Test class ${testClass} from PR ${pr.idStr} is not available in the repository and will be ignored.`));
         }
       }
     }
