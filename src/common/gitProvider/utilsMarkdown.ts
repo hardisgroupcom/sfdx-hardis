@@ -80,8 +80,7 @@ export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTar
     [
       '',
       `<details><summary>🧪 Apex test classes</summary>`,
-      "",
-      `Apex Test classes run:`,
+      '',
       ...options.testClasses.split(" ").map(tc => `  - ${tc}`),
       '',
       `</details>`,
