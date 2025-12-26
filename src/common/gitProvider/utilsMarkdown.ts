@@ -69,12 +69,25 @@ ${err.stack}
   return md;
 }
 
-export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTarget: number) {
+export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTarget: number, options: { check: boolean, testClasses?: string }) {
+  let messageLines: string[] = [];
   if (orgCoverage < orgCoverageTarget) {
-    return `❌ Your code coverage is insufficient: **${orgCoverage}%**, while your target is **${orgCoverageTarget}%**`;
+    messageLines.push(`❌ Your code coverage is insufficient: **${orgCoverage}%**, while your target is **${orgCoverageTarget}%**`);
   } else {
-    return `✅ Your code coverage is ok 😊 **${orgCoverage}%**, while target is **${orgCoverageTarget}%**`;
+    messageLines.push(`✅ Your code coverage is ok 😊 **${orgCoverage}%**, while target is **${orgCoverageTarget}%**`);
   }
+  const testClassesInfoLines = options.testClasses ?
+    [
+      '',
+      `<details><summary>🧪 Apex test classes</summary>`,
+      "",
+      `Apex Test classes run:`,
+      ...options.testClasses.split(" ").map(tc => `  - ${tc}`),
+      '',
+      `</details>`,
+    ] : [];
+  messageLines = messageLines.concat(testClassesInfoLines);
+  return messageLines.join("\n");
 }
 
 export function mdTableCell(str: string) {
