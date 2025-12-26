@@ -3672,8 +3672,8 @@ If defined, makes obsolete the parameter Default Pull Request target branch.</p>
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#deploymentApexTestClasses" onclick="anchorLink('deploymentApexTestClasses')">deploymentApexTestClasses</a></div><h4>Apex Test Classes to run during deployments (NOT RECOMMENDED)</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
-<span class="description"><p>List of Apex Test Classes that will be run during deployments. Requires enableDeploymentApexTestClasses to be set to true (Not recommended, use only if you have specific needs)</p>
+    <a href="#deploymentApexTestClasses" onclick="anchorLink('deploymentApexTestClasses')">deploymentApexTestClasses</a></div><h4>Apex Test Classes to run during deployments (NOT RECOMMENDED) (Beta)</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<span class="description"><p>List of Apex Test Classes that will be run during deployments. Requires enableDeploymentApexTestClasses and enableDeltaDeploymentBetweenMajorBranches to be set to true (Not recommended, use only if you have specific needs)</p>
 </span>
         
 
@@ -4471,8 +4471,8 @@ If defined, makes obsolete the parameter Default Pull Request target branch.</p>
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#enableDeploymentApexTestClasses" onclick="anchorLink('enableDeploymentApexTestClasses')">enableDeploymentApexTestClasses</a></div><h4>Enable custom Apex Test Classes during deployments (NOT RECOMMENDED)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
-<span class="description"><p>Enable the use of custom Apex Test Classes list during deployments. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.</p>
+    <a href="#enableDeploymentApexTestClasses" onclick="anchorLink('enableDeploymentApexTestClasses')">enableDeploymentApexTestClasses</a></div><h4>Enable custom Apex Test Classes during deployments (NOT RECOMMENDED) (Beta)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Enable the use of custom Apex Test Classes list during deployments. Requires enableDeltaDeploymentBetweenMajorBranches to be set to true. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.</p>
 </span>
         
 
@@ -7731,7 +7731,7 @@ If active, contributors will never be asked to refresh their sandbox metadata, t
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#testCoverageNotBlocking" onclick="anchorLink('testCoverageNotBlocking')">testCoverageNotBlocking</a></div><h4>Test Coverage not blocking</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+    <a href="#testCoverageNotBlocking" onclick="anchorLink('testCoverageNotBlocking')">testCoverageNotBlocking</a></div><h4>Test Coverage not blocking (not recommended)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <span class="description"><p>Does not make the deployment job fail if apex tests code coverage is failing</p>
 </span>
         
