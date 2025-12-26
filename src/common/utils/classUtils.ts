@@ -53,14 +53,22 @@ export async function getApexTestClasses(classRegexFilter: string = "", excludeS
   return testClasses;
 }
 
-export async function selectTestClassesFromPullRequests(pullRequests: any[]) {
+export async function selectTestClassesFromPullRequests(pullRequests: any[], allAvailableTestClasses: string[]) {
   const selectedTestClasses: Set<string> = new Set<string>();
+  const checkTestClassesExistence = allAvailableTestClasses && allAvailableTestClasses.length > 0;
   for (const pr of pullRequests) {
     const prConfigParsed = await getPullRequestScopedSfdxHardisConfig(pr);
     if (prConfigParsed && prConfigParsed['deploymentApexTestClasses'] && Array.isArray(prConfigParsed['deploymentApexTestClasses'])) {
       const prTestClasses = prConfigParsed['deploymentApexTestClasses'] as string[];
       for (const testClass of prTestClasses) {
-        selectedTestClasses.add(testClass);
+        if (!checkTestClassesExistence) {
+          selectedTestClasses.add(testClass);
+        }
+        else if (checkTestClassesExistence && allAvailableTestClasses.includes(testClass)) {
+          selectedTestClasses.add(testClass);
+        } else {
+          uxLog("warning", this, c.yellow(`Test class ${testClass} from PR ${pr.number} is not available in the repository and will be ignored.`));
+        }
       }
     }
   }
