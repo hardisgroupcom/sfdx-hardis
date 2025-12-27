@@ -9,7 +9,7 @@
     "@cparra/apexdocs": "^3.19.0",
     "@gitbeaker/node": "^35.8.1",
     "@langchain/anthropic": "^0.3.34",
-    "@langchain/community": "^0.3.58",
+    "@langchain/community": "^0.3.59",
     "@langchain/core": "^0.3.80",
     "@langchain/google-genai": "^0.2.18",
     "@langchain/ollama": "^0.2.4",
