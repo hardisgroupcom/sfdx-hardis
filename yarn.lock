@@ -995,17 +995,17 @@
   dependencies:
     chalk "^4.1.0"
 
-"@cparra/apex-reflection@2.21.1":
-  version "2.21.1"
-  resolved "https://registry.yarnpkg.com/@cparra/apex-reflection/-/apex-reflection-2.21.1.tgz#66a0c1dc8a5ebfe8266e241e4a441661c8202c5c"
-  integrity sha512-ciNzZnAK0ikruEn1Wj8+e0cA6K5ShFx91AwduzW2nYK6cXqs8Qr3QUAPk82WKA8437FNqKLDd7v2TJMSSvzayg==
+"@cparra/apex-reflection@2.23.1":
+  version "2.23.1"
+  resolved "https://registry.yarnpkg.com/@cparra/apex-reflection/-/apex-reflection-2.23.1.tgz#dc6190cefea04b5a17d5c7e9a67c97127dbf77bd"
+  integrity sha512-68TIQ72C9L3YoOM21qhbZxTd7TQqJzw1P/Z9HL8QZJsXppLwS4EVOgAXe0G0Z0w//uTowj9T6Q2AwOsS+4vl0A==
 
-"@cparra/apexdocs@^3.16.1":
-  version "3.16.1"
-  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.16.1.tgz#3f0cb9d18c34b1ff0f734b95e61b0148320632ef"
-  integrity sha512-PmwS8gvZ6+cvtLSk6pCPn3pkZRvrpyUYwaG/7k33MMTxLiHl2n3i9LD0GQ8C2v+LhBkxX8Oh2HDYOcLzEH3+ow==
+"@cparra/apexdocs@^3.19.0":
+  version "3.19.0"
+  resolved "https://registry.yarnpkg.com/@cparra/apexdocs/-/apexdocs-3.19.0.tgz#3d1857dedb6bb54793844999c5c32f0e052e8fcc"
+  integrity sha512-QmwBv0GBdhzVNvLb7w/C6E6/ZVFla3RpV9bK6gPDAdmVeekHp52wyC9TCDgqeuNnHyj8Rk6ChTs2wE7ans4WAQ==
   dependencies:
-    "@cparra/apex-reflection" "2.21.1"
+    "@cparra/apex-reflection" "2.23.1"
     "@salesforce/source-deploy-retrieve" "^12.20.1"
     "@types/js-yaml" "^4.0.9"
     "@types/yargs" "^17.0.32"
