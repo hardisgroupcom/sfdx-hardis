@@ -28,6 +28,12 @@ export default class ConfigureAuth extends SfCommand<any> {
 
 This command facilitates the setup of automated CI/CD pipelines, enabling seamless deployments from specific Git branches to designated Salesforce orgs. It supports both standard Salesforce orgs and Dev Hub configurations, catering to various enterprise deployment workflows.
 
+This command supports two authentication app types:
+- **Connected App** (traditional) - Standard OAuth app that works with all Salesforce editions
+- **External Client App** (modern) - Fully metadata-based, packageable in 2GP, requires API v59+
+
+Both use JWT Bearer flow with SSL certificates for secure CI/CD authentication.
+
 Key functionalities include:
 
 - **Org Selection/Login:** Guides the user to select an existing Salesforce org or log in to a new one.
@@ -35,6 +41,7 @@ Key functionalities include:
 - **Merge Target Definition:** Enables defining target Git branches into which the configured branch can merge, ensuring controlled deployment flows.
 - **Salesforce Username Configuration:** Prompts for the Salesforce username to be used by the CI server for deployments.
 - **SSL Certificate Generation:** Automatically generates an SSL certificate for secure authentication.
+- **App Type Selection:** Choose between Connected App (traditional) or External Client App (modern, metadata-based).
 
 <details markdown="1">
 <summary>Technical explanations</summary>
