@@ -30,3 +30,24 @@ To avoid that, standard tab visibility must be added in the Profile XML.
 
 You can use sfdx-hardis command [Fix Profile Tabs](https://sfdx-hardis.cloudity.com/hardis/project/fix/profiletabs/) to Show / Hide tabs in your Profile XML files.
 
+### Application visibility
+
+While you can deploy custom application visibility settings through the Profile XML, **hiding standard applications for a profile cannot be deployed** via metadata.
+
+This is a Salesforce platform limitation: standard applications can be set as visible or default in the Profile XML, but hiding them must be done manually in the target org.
+
+**Manual steps required:**
+
+1. Go to **Setup** in the target org
+2. Navigate to **Profiles**
+3. Select the profile you want to modify
+4. Scroll to the **Custom App Settings** or **Connected App Access** section
+5. Uncheck the standard application(s) you want to hide
+6. Save the profile
+
+**Important notes:**
+
+- Ensure at least one application remains set as the default for each profile (see [Missing profile default application](sf-deployment-assistant/Missing-profile-default-application.md))
+- This manual step must be repeated in each environment (sandbox, pre-production, production)
+- Document this manual step in your deployment checklist or use [deployment actions](salesforce-ci-cd-work-on-task-deployment-actions.md#manual-step) to track it
+
