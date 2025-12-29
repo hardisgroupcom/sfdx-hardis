@@ -16,6 +16,11 @@ type FieldUsageRow = {
   populatedPercentage: string;
 };
 
+type SkippedFieldInfo = {
+  fieldName: string;
+  reason: string;
+};
+
 export default class HardisDocObjectFieldUsage extends SfCommand<any> {
   public static description = `
 ## Command Behavior
@@ -97,6 +102,7 @@ This command focuses on a single sObject and measures how many records populate 
     sObjectName: string,
     fields: any[],
     useTooling: boolean,
+    skippedFields: SkippedFieldInfo[],
     batchSize = 5
   ): Promise<Record<string, number>> {
     const counts: Record<string, number> = {};
@@ -106,11 +112,18 @@ This command focuses on a single sObject and measures how many records populate 
     const apiVersion = connection.getApiVersion();
     const basePath = useTooling ? `/services/data/v${apiVersion}/tooling` : `/services/data/v${apiVersion}`;
     const compositeEndpoint = `${basePath}/composite`;
-// temporary test
-    // for (let i = 0; i < 20; i += batchSize) {
+
     for (let i = 0; i < fields.length; i += batchSize) {
       const batch = fields.slice(i, i + batchSize);
       const referenceMap: Record<string, string> = {};
+      uxLog(
+        "log",
+        this,
+        c.grey(
+          `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(fields.length / batchSize)} ` +
+            `(${i + 1}-${i + batch.length} / ${fields.length} fields)`
+        )
+      );
 
       const compositeRequest = batch.map((field, idx) => {
         const referenceId = `ref${i + idx}`;
@@ -146,11 +159,15 @@ This command focuses on a single sObject and measures how many records populate 
               item.body?.[0]?.message ||
               (item.errors && item.errors[0]?.message) ||
               'Unknown error';
-            uxLog("warning", this, c.yellow(`Composite query failed for ${fieldName}: ${errorMessage}`));
+            const warning = `Composite query failed for ${fieldName}: ${errorMessage}`;
+            uxLog("warning", this, c.yellow(warning));
+            skippedFields.push({ fieldName, reason: warning });
           }
         });
       } catch (error: any) {
-        uxLog("warning", this, c.yellow(`Composite request batch starting at index ${i} failed: ${error.message}`));
+        const warning = `Composite request batch starting at index ${i} failed: ${error.message}`;
+        uxLog("warning", this, c.yellow(warning));
+        batch.forEach((field) => skippedFields.push({ fieldName: field.name, reason: warning }));
       }
     }
 
@@ -163,7 +180,7 @@ This command focuses on a single sObject and measures how many records populate 
     fieldName: string,
     useTooling: boolean
   ): Promise<any> {
-    const query = `SELECT ${fieldName}, COUNT(Id) FROM ${sObjectName} GROUP BY ${fieldName} ORDER BY COUNT(Id) DESC`;
+    const query = `SELECT ${fieldName}, COUNT(Id) FROM ${sObjectName} GROUP BY ${fieldName} ORDER BY COUNT(Id) DESC LIMIT 1000`;
     return useTooling ? soqlQueryTooling(query, connection) : soqlQuery(query, connection);
   }
 
@@ -306,13 +323,16 @@ This command focuses on a single sObject and measures how many records populate 
     uxLog("action", this, c.cyan(`Counting total ${sObjectName} records...`));
     const totalRecords = await this.countRecords(connection, sObjectName, useTooling);
 
-    const fieldCounts = await this.countFieldsWithComposite(connection, sObjectName, eligibleFields, useTooling);
+    const skippedFields: SkippedFieldInfo[] = [];
+    const fieldCounts = await this.countFieldsWithComposite(connection, sObjectName, eligibleFields, useTooling, skippedFields);
 
     const rows: FieldUsageRow[] = [];
     for (const field of eligibleFields) {
       const populatedRecords = fieldCounts[field.name];
       if (typeof populatedRecords !== 'number') {
-        uxLog("warning", this, c.yellow(`Skipping field ${field.name} because composite response had no count.`));
+        const warning = `Skipping field ${field.name} because composite response had no count.`;
+        uxLog("warning", this, c.yellow(warning));
+        skippedFields.push({ fieldName: field.name, reason: warning });
         continue;
       }
       const percentage = totalRecords === 0 ? 0 : (populatedRecords / totalRecords) * 100;
@@ -348,12 +368,26 @@ This command focuses on a single sObject and measures how many records populate 
       logLabel: `Object field usage for ${sObjectName}`,
     });
 
+    if (skippedFields.length > 0) {
+      const skippedColumns = [
+        { key: 'fieldName', header: 'Field API Name' },
+        { key: 'reason', header: 'Reason' },
+      ];
+      uxLog("warning", this, c.yellow(`${skippedFields.length} fields were skipped due to errors. See skipped-fields report.`));
+      const skippedReport = await generateReports(skippedFields, skippedColumns, this, {
+        logFileName: `object-field-usage-${sObjectName}-skipped-fields`,
+        logLabel: `Skipped fields for ${sObjectName}`,
+      });
+      reportFiles.push(...skippedReport);
+    }
+
     const outputString = `Processed object field usage for ${sObjectName} with ${totalRecords} total records.`;
     return {
       outputString,
       result: resultSorted,
       reportFiles,
       totalRecords,
+      skippedFields,
     };
   }
 }
