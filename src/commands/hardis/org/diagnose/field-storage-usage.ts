@@ -9,26 +9,6 @@ import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { createXlsxFromCsvFiles, generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 
-export function estimateStorageBytes(fieldType: string, filledCount: number, averageLength: number): number {
-  const perCharBytes = 2;
-  switch (fieldType) {
-    case 'boolean':
-      return filledCount;
-    case 'date':
-    case 'datetime':
-      return filledCount * 4;
-    case 'int':
-    case 'double':
-    case 'currency':
-    case 'percent':
-      return filledCount * 8;
-    case 'reference':
-      return filledCount * 36; // 18-character Id stored as UTF-16
-    default:
-      return filledCount * averageLength * perCharBytes;
-  }
-}
-
 export default class FieldStorageUsage extends SfCommand<any> {
   public static flags: any = {
     'target-org': requiredOrgFlagWithDeprecations,
@@ -41,12 +21,11 @@ export default class FieldStorageUsage extends SfCommand<any> {
   public static description = `
 ## Command Behavior
 
-**Calculates how much storage each field consumes across selected objects and highlights which fields are actually used.**
+**Counts how many records contain a value for each field across selected objects and highlights which fields are actually used.**
 
 The command discovers relevant objects (excluding managed package and technical objects), prompts you to pick which ones to analyze (if none are provided through the \`--sobjects\` flag), and then:
 
 - **Measures usage**: Counts how many records have a value for every supported field.
-- **Estimates storage**: Approximates field storage based on value length (text) or default byte sizes (numbers, dates, references).
 - **Reporting**: Produces one summary CSV plus one CSV per object, and a consolidated XLSX with a summary sheet and one sheet per object showing only fields that contain data.
 
 <details markdown="1">
@@ -54,10 +33,10 @@ The command discovers relevant objects (excluding managed package and technical 
 
 - **Object discovery**: Uses \`describeGlobal\` combined with metadata filters to keep only queryable, layoutable objects, excluding technical/managed-package ones and change/event/feed/history objects.
 - **Interactive selection**: When \`--sobjects\` is omitted, a multiselect prompt lets you pick the objects to scan.
-- **Per-field metrics**: Runs aggregate SOQL such as \`COUNT(Field__c)\` and \`SUM(LENGTH(Field__c))\` when supported to derive fill rate and storage. Non-text fields fall back to small byte-size heuristics.
+- **Per-field metrics**: Runs aggregate SOQL such as \`COUNT(Field__c)\` to derive fill rate (records with a value). No storage estimation is performed.
 - **Outputs**:
-  - Summary CSV with totals per object (records, fields with data, estimated storage).
-  - One CSV per object listing only fields that have at least one non-null value.
+  - Summary CSV with totals per object (records and fields that have at least one value).
+  - One CSV per object listing only fields that have at least one non-null value, with counts and fill rate.
   - A single XLSX combining all CSVs into individual tabs (summary + one tab per object).
 </details>
 `;
@@ -66,19 +45,6 @@ The command discovers relevant objects (excluding managed package and technical 
     '$ sf hardis:org:diagnose:field-storage-usage',
     '$ sf hardis:org:diagnose:field-storage-usage --sobjects Account,Contact',
   ];
-
-  private readonly lengthSupportedTypes = new Set([
-    'string',
-    'textarea',
-    'longtextarea',
-    'richtextarea',
-    'email',
-    'phone',
-    'url',
-    'encryptedstring',
-    'picklist',
-    'multipicklist',
-  ]);
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(FieldStorageUsage);
@@ -109,13 +75,12 @@ The command discovers relevant objects (excluding managed package and technical 
         continue;
       }
 
-      const totalStorageMB = stats.fieldsWithData.reduce((acc, f) => acc + f.estimatedStorageMB, 0);
       summaryRows.push({
         Object: obj.name,
         Label: obj.label,
         TotalRecords: stats.totalRecords,
-        FieldsAnalyzed: stats.fieldsWithData.length,
-        EstimatedStorageMB: Number(totalStorageMB.toFixed(4)),
+        FieldsWithData: stats.fieldsWithData.length,
+        TotalFilledRecords: stats.fieldsWithData.reduce((acc, f) => acc + f.filledRecords, 0),
       });
 
       const objectRows = stats.fieldsWithData.map((field) => ({
@@ -126,8 +91,6 @@ The command discovers relevant objects (excluding managed package and technical 
         TotalRecords: stats.totalRecords,
         FilledRecords: field.filledRecords,
         FillRate: stats.totalRecords > 0 ? `${((field.filledRecords / stats.totalRecords) * 100).toFixed(2)}%` : '0%',
-        AverageCharacters: Number(field.averageLength.toFixed(2)),
-        EstimatedStorageMB: Number(field.estimatedStorageMB.toFixed(4)),
       }));
 
       const sanitizedName = obj.name.replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -135,11 +98,11 @@ The command discovers relevant objects (excluding managed package and technical 
       objectCsvFiles.push(objectCsvPath);
     }
 
-    sortArray(summaryRows, { by: 'EstimatedStorageMB', order: 'desc' });
-    await generateCsvFile(summaryRows, summaryFile, { fileTitle: 'Field storage usage summary', noExcel: true });
+    sortArray(summaryRows, { by: 'TotalFilledRecords', order: 'desc' });
+    await generateCsvFile(summaryRows, summaryFile, { fileTitle: 'Field usage summary', noExcel: true });
 
     if (summaryRows.length > 0) {
-      uxLog("action", this, `Field storage usage summary (top 10 by storage)`);
+      uxLog("action", this, `Field usage summary (top 10 by filled records)`);
       uxLogTable(this, summaryRows.slice(0, 10));
     }
 
@@ -161,13 +124,15 @@ The command discovers relevant objects (excluding managed package and technical 
       if (!obj.queryable || !obj.retrieveable || !obj.layoutable) {
         return false;
       }
-      if (obj.name.endsWith('__mdt') || obj.name.endsWith('__tag') || obj.name.endsWith('__feed') || obj.name.endsWith('__history')) {
+      const excludedSuffixes = ['__mdt', '__tag', '__feed', '__history'];
+      if (excludedSuffixes.some((suffix) => obj.name.endsWith(suffix))) {
         return false;
       }
       if (obj.name.endsWith('ChangeEvent')) {
         return false;
       }
-      if (/__.+__c$/i.test(obj.name)) {
+      const doubleUnderscoreCount = (obj.name.match(/__/g) || []).length;
+      if (doubleUnderscoreCount > 1) {
         return false; // Exclude managed package objects
       }
       if (sObjectsFilter && sObjectsFilter.length > 0) {
@@ -242,7 +207,7 @@ The command discovers relevant objects (excluding managed package and technical 
       }
     }
 
-    sortArray(fieldsWithData, { by: 'estimatedStorageMB', order: 'desc' });
+    sortArray(fieldsWithData, { by: 'filledRecords', order: 'desc' });
 
     return {
       name: obj.name,
@@ -253,30 +218,15 @@ The command discovers relevant objects (excluding managed package and technical 
   }
 
   private async analyzeField(conn: Connection, objectName: string, field: any, totalRecords: number) {
-    const supportsLength = this.lengthSupportedTypes.has(field.type);
     const selectParts = [`COUNT(Id) totalRecords`, `COUNT(${field.name}) filledRecords`];
-    if (supportsLength) {
-      selectParts.push(`SUM(LENGTH(${field.name})) totalLength`);
-    }
-
     const query = `SELECT ${selectParts.join(', ')} FROM ${objectName}`;
 
     let queryRes;
     try {
       queryRes = await soqlQuery(query, conn);
     } catch (error: any) {
-      if (supportsLength) {
-        try {
-          const fallbackQuery = `SELECT COUNT(Id) totalRecords, COUNT(${field.name}) filledRecords FROM ${objectName}`;
-          queryRes = await soqlQuery(fallbackQuery, conn);
-        } catch (fallbackError: any) {
-          uxLog("warning", this, c.yellow(`Skipping field ${c.cyan(field.name)} on ${c.cyan(objectName)} (query error: ${fallbackError.message})`));
-          return null;
-        }
-      } else {
-        uxLog("warning", this, c.yellow(`Skipping field ${c.cyan(field.name)} on ${c.cyan(objectName)} (query error: ${error.message})`));
-        return null;
-      }
+      uxLog("warning", this, c.yellow(`Skipping field ${c.cyan(field.name)} on ${c.cyan(objectName)} (query error: ${error.message})`));
+      return null;
     }
 
     const record = queryRes.records[0] || {};
@@ -285,18 +235,11 @@ The command discovers relevant objects (excluding managed package and technical 
       return null;
     }
 
-    const totalLength = supportsLength ? this.getAggregateValue(record, 'totalLength') : 0;
-    const averageLength = supportsLength && filledRecords > 0 ? totalLength / filledRecords : (field.length || 0);
-    const storageBytes = estimateStorageBytes(field.type, filledRecords, averageLength || 0);
-    const estimatedStorageMB = storageBytes / (1024 * 1024);
-
     return {
       apiName: field.name,
       label: field.label,
       type: field.type,
       filledRecords,
-      averageLength,
-      estimatedStorageMB,
       totalRecords,
     };
   }
