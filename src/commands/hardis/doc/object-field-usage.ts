@@ -4,7 +4,7 @@ import { Connection } from '@salesforce/core';
 import c from 'chalk';
 import sortArray from 'sort-array';
 import { generateReports, uxLog, uxLogTable } from '../../../common/utils/index.js';
-import { soqlQuery } from '../../../common/utils/apiUtils.js';
+import { soqlQuery, soqlQueryTooling } from '../../../common/utils/apiUtils.js';
 
 type FieldUsageRow = {
   sObjectName: string;
@@ -53,14 +53,129 @@ This command focuses on a single sObject and measures how many records populate 
   }
 
   protected extractCount(result: any): number {
-    return Number(result.totalSize ?? 0);
+    if (!result) {
+      return 0;
+    }
+    if (typeof result.totalSize === 'number') {
+      return Number(result.totalSize);
+    }
+    const records = result.records || [];
+    if (records.length > 0) {
+      const firstRecord = records[0];
+      if (firstRecord && typeof firstRecord.expr0 !== 'undefined') {
+        return Number(firstRecord.expr0);
+      }
+      const firstKey = Object.keys(firstRecord || {})[0];
+      if (firstKey && typeof firstRecord[firstKey] !== 'undefined') {
+        return Number(firstRecord[firstKey]);
+      }
+    }
+    return 0;
   }
 
-  protected async countRecords(connection: Connection, sObjectName: string, fieldName?: string): Promise<number> {
+  protected async countRecords(
+    connection: Connection,
+    sObjectName: string,
+    useTooling: boolean,
+    fieldName?: string
+  ): Promise<number> {
     const whereClause = fieldName ? ` WHERE ${fieldName} != null` : '';
     const query = `SELECT COUNT() FROM ${sObjectName}${whereClause}`;
-    const result = await soqlQuery(query, connection);
+    const result = useTooling ? await soqlQueryTooling(query, connection) : await soqlQuery(query, connection);
     return this.extractCount(result);
+  }
+
+  protected async countFieldsWithComposite(
+    connection: Connection,
+    sObjectName: string,
+    fields: any[],
+    useTooling: boolean,
+    batchSize = 5
+  ): Promise<Record<string, number>> {
+    const counts: Record<string, number> = {};
+    if (!fields.length) {
+      return counts;
+    }
+    const apiVersion = connection.getApiVersion();
+    const basePath = useTooling ? `/services/data/v${apiVersion}/tooling` : `/services/data/v${apiVersion}`;
+    const compositeEndpoint = `${basePath}/composite`;
+
+    for (let i = 0; i < fields.length; i += batchSize) {
+      const batch = fields.slice(i, i + batchSize);
+      const referenceMap: Record<string, string> = {};
+
+      const compositeRequest = batch.map((field, idx) => {
+        const referenceId = `ref${i + idx}`;
+        referenceMap[referenceId] = field.name;
+        const batchQuery = `SELECT COUNT() FROM ${sObjectName} WHERE ${field.name} != null`;
+        const encodedQuery = encodeURIComponent(batchQuery);
+        return {
+          method: 'GET',
+          url: `${basePath}/query/?q=${encodedQuery}`,
+          referenceId,
+        };
+      });
+
+      const payload = { compositeRequest };
+      try {
+        const response: any = await connection.request({
+          method: 'POST',
+          url: compositeEndpoint,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const compositeResponse = response?.compositeResponse || [];
+        compositeResponse.forEach((item: any) => {
+          const fieldName = referenceMap[item.referenceId];
+          if (!fieldName) {
+            return;
+          }
+          if (item.httpStatusCode >= 200 && item.httpStatusCode < 300) {
+            counts[fieldName] = this.extractCount(item.body);
+          } else {
+            const errorMessage =
+              item.body?.message ||
+              item.body?.[0]?.message ||
+              (item.errors && item.errors[0]?.message) ||
+              'Unknown error';
+            uxLog("warning", this, c.yellow(`Composite query failed for ${fieldName}: ${errorMessage}`));
+          }
+        });
+      } catch (error: any) {
+        uxLog("warning", this, c.yellow(`Composite request batch starting at index ${i} failed: ${error.message}`));
+      }
+    }
+
+    return counts;
+  }
+
+  protected isInvalidTypeError(error: any): boolean {
+    const message = (error?.message || '').toLowerCase();
+    const name = (error?.name || error?.code || '').toLowerCase();
+    return (
+      name === 'invalid_type' ||
+      message.includes('sobject type') ||
+      message.includes('unknown type') ||
+      message.includes('is not supported') ||
+      message.includes('invalid type')
+    );
+  }
+
+  protected async describeTarget(
+    connection: Connection,
+    sObjectName: string
+  ): Promise<{ describeResult: any, useTooling: boolean }> {
+    try {
+      const describeResult = await connection.describe(sObjectName);
+      return { describeResult, useTooling: false };
+    } catch (error) {
+      if (!this.isInvalidTypeError(error)) {
+        throw error;
+      }
+      uxLog("warning", this, c.yellow(`Standard API describe failed for ${sObjectName}. Retrying with Tooling API...`));
+      const describeResult = await connection.tooling.describe(sObjectName);
+      return { describeResult, useTooling: true };
+    }
   }
 
   protected filterDescribeFields(fields: any[]): any[] {
@@ -97,7 +212,8 @@ This command focuses on a single sObject and measures how many records populate 
     this.validateIdentifier(sObjectName, 'sObject');
 
     uxLog("action", this, c.cyan(`Describing ${sObjectName}...`));
-    const describeResult = await connection.describe(sObjectName);
+    const { describeResult, useTooling } = await this.describeTarget(connection, sObjectName);
+    uxLog("action", this, c.cyan(`Using ${useTooling ? 'Tooling' : 'standard'} API for ${sObjectName}.`));
     const eligibleFields = this.filterDescribeFields(describeResult?.fields || []);
     if (eligibleFields.length === 0) {
       const outputString = `No eligible fields found on ${sObjectName}.`;
@@ -106,25 +222,27 @@ This command focuses on a single sObject and measures how many records populate 
     }
 
     uxLog("action", this, c.cyan(`Counting total ${sObjectName} records...`));
-    const totalRecords = await this.countRecords(connection, sObjectName);
+    const totalRecords = await this.countRecords(connection, sObjectName, useTooling);
+
+    const fieldCounts = await this.countFieldsWithComposite(connection, sObjectName, eligibleFields, useTooling);
 
     const rows: FieldUsageRow[] = [];
     for (const field of eligibleFields) {
-      try {
-        const populatedRecords = await this.countRecords(connection, sObjectName, field.name);
-        const percentage = totalRecords === 0 ? 0 : (populatedRecords / totalRecords) * 100;
-        rows.push({
-          sObjectName,
-          fieldApiName: field.name,
-          fieldLabel: field.label || field.name,
-          totalRecords,
-          populatedRecords,
-          populatedPercentageNumeric: percentage,
-          populatedPercentage: `${percentage.toFixed(2)}%`,
-        });
-      } catch (error: any) {
-        uxLog("warning", this, c.yellow(`Skipping field ${field.name} due to error: ${error.message}`));
+      const populatedRecords = fieldCounts[field.name];
+      if (typeof populatedRecords !== 'number') {
+        uxLog("warning", this, c.yellow(`Skipping field ${field.name} because composite response had no count.`));
+        continue;
       }
+      const percentage = totalRecords === 0 ? 0 : (populatedRecords / totalRecords) * 100;
+      rows.push({
+        sObjectName,
+        fieldApiName: field.name,
+        fieldLabel: field.label || field.name,
+        totalRecords,
+        populatedRecords,
+        populatedPercentageNumeric: percentage,
+        populatedPercentage: `${percentage.toFixed(2)}%`,
+      });
     }
 
     const columns = [
