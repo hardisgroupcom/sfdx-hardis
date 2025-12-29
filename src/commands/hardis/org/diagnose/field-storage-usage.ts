@@ -93,7 +93,7 @@ The command discovers relevant objects (excluding managed package and technical 
         FillRate: stats.totalRecords > 0 ? `${((field.filledRecords / stats.totalRecords) * 100).toFixed(2)}%` : '0%',
       }));
 
-      const sanitizedName = obj.name.replace(/[^a-zA-Z0-9_-]/g, '_') || 'object';
+      const sanitizedName = obj.name.replace(/[^a-zA-Z0-9_-]/g, '_');
       const objectCsvPath = await this.buildObjectCsv(objectRows, sanitizedName, reportDir);
       objectCsvFiles.push(objectCsvPath);
     }
@@ -131,7 +131,7 @@ The command discovers relevant objects (excluding managed package and technical 
       if (obj.name.endsWith('ChangeEvent')) {
         return false;
       }
-      if (/^.+__.+__c$/i.test(obj.name)) {
+      if (/^[A-Za-z0-9]+__[A-Za-z0-9_]+__c$/i.test(obj.name)) {
         return false; // Exclude managed package objects
       }
       if (sObjectsFilter && sObjectsFilter.length > 0) {
@@ -191,7 +191,7 @@ The command discovers relevant objects (excluding managed package and technical 
       if (!field.queryable || field.calculated === true || field.type === 'address') {
         return false;
       }
-      if (field.autoNumber === true) {
+      if (field.autoNumber) {
         return false;
       }
       return true;
@@ -249,11 +249,7 @@ The command discovers relevant objects (excluding managed package and technical 
   }
 
   private getAggregateValue(record: any, key: string): number {
-    if (record[key] !== undefined) {
-      return Number(record[key]) || 0;
-    }
-    const entry = Object.entries(record).find(([k]) => k.toLowerCase() === key.toLowerCase());
-    return entry ? Number(entry[1]) || 0 : 0;
+    return Number(record[key]) || 0;
   }
 
   private async buildObjectCsv(rows: any[], sanitizedName: string, reportDir: string) {
