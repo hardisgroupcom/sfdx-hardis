@@ -10,6 +10,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { createXlsxFromCsvFiles, generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 
 export default class FieldStorageUsage extends SfCommand<any> {
+  private static readonly MAX_ALLOWED_DOUBLE_UNDERSCORES = 1;
   public static flags: any = {
     'target-org': requiredOrgFlagWithDeprecations,
     sobjects: Flags.string({
@@ -132,7 +133,8 @@ The command discovers relevant objects (excluding managed package and technical 
         return false;
       }
       const doubleUnderscoreCount = (obj.name.match(/__/g) || []).length;
-      if (doubleUnderscoreCount > 1) {
+      // Managed package objects typically contain two occurrences of "__" (namespace + __c)
+      if (doubleUnderscoreCount > FieldStorageUsage.MAX_ALLOWED_DOUBLE_UNDERSCORES) {
         return false; // Exclude managed package objects
       }
       if (sObjectsFilter && sObjectsFilter.length > 0) {
@@ -199,6 +201,7 @@ The command discovers relevant objects (excluding managed package and technical 
 
     const fieldsWithData: any[] = [];
 
+    // Sequential processing helps avoid overwhelming API limits on large orgs
     for (const field of fields) {
       const fieldStats = await this.analyzeField(conn, obj.name, field, totalRecords);
       if (fieldStats && fieldStats.filledRecords > 0) {
@@ -232,7 +235,11 @@ The command discovers relevant objects (excluding managed package and technical 
       return null;
     }
 
-    const record = queryRes.records[0] || {};
+    const record = queryRes.records[0];
+    if (!record) {
+      uxLog("warning", this, c.yellow(`Skipping field ${c.cyan(field.name)} on ${c.cyan(objectName)} (no aggregate row returned)`));
+      return null;
+    }
     const filledRecords = this.getAggregateValue(record, 'filledRecords');
     if (filledRecords === 0) {
       return null;
