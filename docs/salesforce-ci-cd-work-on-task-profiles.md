@@ -41,9 +41,10 @@ This is a Salesforce platform limitation: standard applications can be set as vi
 1. Go to **Setup** in the target org
 2. Navigate to **Profiles**
 3. Select the profile you want to modify
-4. Scroll to the **Custom App Settings** or **Connected App Access** section
-5. Uncheck the standard application(s) you want to hide
-6. Save the profile
+4. Scroll to the **Custom App Settings** section
+5. Find the standard application(s) you want to hide
+6. Uncheck the **Visible** checkbox for the application(s)
+7. Save the profile
 
 **Important notes:**
 
