@@ -226,10 +226,17 @@ ${formatClasses(changedClasses, changed)}
 
 export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, commitAfter: string,
   options: { mermaidMd: boolean, svgMd: boolean, pngMd: boolean, debug: boolean } = { mermaidMd: false, svgMd: true, pngMd: false, debug: false }) {
-  const result: any = { outputDiffMdFile: "", hasFlowDiffs: false };
+  const result: any = { outputDiffMdFile: "", hasFlowDiffs: false, isFlowDeletedOrAdded: false };
   const { mermaidMdBefore, flowXmlBefore } = await getFlowXmlBefore(commitBefore, flowFile);
   const { mermaidMdAfter, flowXmlAfter } = await getFlowXmlAfter(commitAfter, flowFile);
   const flowLabel = path.basename(flowFile, ".flow-meta.xml");
+
+  // Check if flow was deleted (exists in before but not in after) or added (exists in after but not in before)
+  if (flowXmlBefore === "" || flowXmlAfter === "") {
+    result.isFlowDeletedOrAdded = true;
+    uxLog("log", this, c.grey(`[FlowGitDiff] Flow ${flowLabel} was ${flowXmlBefore === "" ? "added" : "deleted"}, skipping diagram generation for PR comment`));
+    return result;
+  }
 
   const reportDir = await getReportDirectory();
   await fs.ensureDir(path.join(reportDir, "flow-diff"));
