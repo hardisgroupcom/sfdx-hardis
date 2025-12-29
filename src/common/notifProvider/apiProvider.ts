@@ -2,7 +2,8 @@ import { Connection, SfError } from "@salesforce/core";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils/index.js";
-import { NotifMessage, NotifSeverity, UtilsNotifs } from "./index.js";
+import type { NotifMessage, NotifSeverity } from "./types.js";
+import { UtilsNotifs } from "./utils.js";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
 
 import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils.js";
@@ -140,7 +141,10 @@ export class ApiProvider extends NotifProviderRoot {
     const repoName = (await getGitRepoName() || "").replace(".git", "");
     const currentGitBranch = await getCurrentGitBranch();
     const conn: Connection = globalThis.jsForceConn;
-    const orgIdentifier = (conn.instanceUrl) ? conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__") : currentGitBranch || "ERROR apiProvider";
+    const monitoringKeyOverride = getEnvVar("SFDX_HARDIS_MONITORING_KEY") || getEnvVar("MONITORING_KEY");
+    const orgIdentifier = monitoringKeyOverride
+      ? monitoringKeyOverride
+      : (conn.instanceUrl) ? conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__") : currentGitBranch || "ERROR apiProvider";
     const notifKey = orgIdentifier + "!!" + notifMessage.type;
     this.payload = {
       source: "sfdx-hardis",
