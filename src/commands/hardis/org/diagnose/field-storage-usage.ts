@@ -131,7 +131,8 @@ The command discovers relevant objects (excluding managed package and technical 
       if (obj.name.endsWith('ChangeEvent')) {
         return false;
       }
-      if (/^[A-Za-z0-9]+__[A-Za-z0-9_]+__c$/i.test(obj.name)) {
+      const doubleUnderscoreCount = (obj.name.match(/__/g) || []).length;
+      if (doubleUnderscoreCount > 1) {
         return false; // Exclude managed package objects
       }
       if (sObjectsFilter && sObjectsFilter.length > 0) {
@@ -161,8 +162,7 @@ The command discovers relevant objects (excluding managed package and technical 
       type: 'multiselect',
       message: 'Select the SObjects to analyze for field storage usage:',
       description: "Exclude objects you don't want to analyze.",
-      choices,
-      initial: choices.map((choice: any) => choice.value),
+      choices
     });
 
     const selectedNames: string[] = promptObjectsRes.value || [];
@@ -217,8 +217,7 @@ The command discovers relevant objects (excluding managed package and technical 
   }
 
   private async analyzeField(conn: Connection, objectName: string, field: any, totalRecords: number) {
-    const selectParts = [`COUNT(${field.name}) filledRecords`];
-    const query = `SELECT ${selectParts.join(', ')} FROM ${objectName}`;
+    const query = `SELECT COUNT(${field.name}) filledRecords FROM ${objectName}`;
 
     let queryRes;
     try {
