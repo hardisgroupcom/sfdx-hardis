@@ -107,7 +107,7 @@ Certificates are not supposed to be stored in Git Repositories, please:
 `;
         await fs.writeFile(cert, certText);
         certCounter++;
-        uxLog("log", this, c.grey(`Replaced certificate content of ${cert}`));
+        uxLog("warning", this, c.grey(`Replaced certificate content of ${cert}`));
       }
     }
 
@@ -135,7 +135,7 @@ Certificates are not supposed to be stored in Git Repositories, please:
         if (updatedContent !== content) {
           await fs.writeFile(metaFile, updatedContent);
           metadataCounter++;
-          uxLog("log", this, c.grey(`Replaced sensitive fields in ${metaFile}`));
+          uxLog("warning", this, c.grey(`Replaced sensitive fields in ${metaFile}`));
         }
       }
     }
