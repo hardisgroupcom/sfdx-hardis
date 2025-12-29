@@ -93,7 +93,7 @@ The command discovers relevant objects (excluding managed package and technical 
         FillRate: stats.totalRecords > 0 ? `${((field.filledRecords / stats.totalRecords) * 100).toFixed(2)}%` : '0%',
       }));
 
-      const sanitizedName = obj.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const sanitizedName = obj.name.replace(/[^a-zA-Z0-9_-]/g, '_') || 'object';
       const objectCsvPath = await this.buildObjectCsv(objectRows, sanitizedName, reportDir);
       objectCsvFiles.push(objectCsvPath);
     }
@@ -131,8 +131,7 @@ The command discovers relevant objects (excluding managed package and technical 
       if (obj.name.endsWith('ChangeEvent')) {
         return false;
       }
-      const doubleUnderscoreCount = (obj.name.match(/__/g) || []).length;
-      if (doubleUnderscoreCount > 1) {
+      if (/^.+__.+__c$/i.test(obj.name)) {
         return false; // Exclude managed package objects
       }
       if (sObjectsFilter && sObjectsFilter.length > 0) {
@@ -181,7 +180,7 @@ The command discovers relevant objects (excluding managed package and technical 
     }
     let totalRecords = 0;
     try {
-      const totalRecordsRes = await soqlQuery(`SELECT COUNT() total FROM ${obj.name}`, conn);
+      const totalRecordsRes = await soqlQuery(`SELECT COUNT() FROM ${obj.name}`, conn);
       totalRecords = totalRecordsRes.totalSize;
     } catch (error: any) {
       uxLog("warning", this, c.yellow(`Skipping object ${c.cyan(obj.name)} (count query failed: ${error.message})`));
@@ -218,7 +217,7 @@ The command discovers relevant objects (excluding managed package and technical 
   }
 
   private async analyzeField(conn: Connection, objectName: string, field: any, totalRecords: number) {
-    const selectParts = [`COUNT(Id) totalRecords`, `COUNT(${field.name}) filledRecords`];
+    const selectParts = [`COUNT(${field.name}) filledRecords`];
     const query = `SELECT ${selectParts.join(', ')} FROM ${objectName}`;
 
     let queryRes;
@@ -226,6 +225,11 @@ The command discovers relevant objects (excluding managed package and technical 
       queryRes = await soqlQuery(query, conn);
     } catch (error: any) {
       uxLog("warning", this, c.yellow(`Skipping field ${c.cyan(field.name)} on ${c.cyan(objectName)} (query error: ${error.message})`));
+      return null;
+    }
+
+    if (!queryRes.records || queryRes.records.length === 0) {
+      uxLog("warning", this, c.yellow(`Skipping field ${c.cyan(field.name)} on ${c.cyan(objectName)} (no aggregate result returned)`));
       return null;
     }
 
