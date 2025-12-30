@@ -6,6 +6,10 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Do not post a pull request comment when a flow has been created or deleted
 - Allow to override Grafana notification Monitoring key using SFDX_HARDIS_MONITORING_KEY
+- [hardis:project:clean:sensitive-metadatas](https://sfdx-hardis.cloudity.com/hardis/project/clean/sensitive-metadatas/): Remove secrets from more metadata types:
+  - Connected Apps 
+  - Auth Providers
+  - Named Credentials
 - Docs: Improve clarity of manual steps for hiding standard applications
 
 ## [6.18.0] 2025-12-26
