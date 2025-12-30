@@ -287,12 +287,12 @@ The command's technical implementation involves:
       promptsNeeded.push({
         type: "multiselect",
         name: "applyTo",
-        message: "Where do you wish to have the bypass applied ?",
+        message: "Where do you wish to have the bypass applied?",
         description: "Choose which automation types should have the bypass logic applied automatically. The metadata files will be modified accordingly.",
         choices: [
           { title: "Flows (as a decision node)", value: "applyToFlows" },
           { title: "Triggers (within the .trigger file)", value: "applyToTriggers" },
-          { title: "Validation Rules (encapsuling the existing validation logic)", value: "applyToVrs" },
+          { title: "Validation Rules (encapsulating the existing validation logic)", value: "applyToVrs" },
         ],
       });
     }
@@ -448,7 +448,7 @@ The command's technical implementation involves:
   }
 
   public async queryFlows(connection: Connection) {
-    const query = `SELECT Id, ApiName, Label, TriggerObjectOrEvent.QualifiedApiName FROM FlowDefinitionView WHERE ManageableState ='unmanaged'`;
+    const query = `SELECT Id, ApiName, Label, TriggerObjectOrEvent.QualifiedApiName FROM FlowDefinitionView WHERE ManageableState = 'unmanaged'`;
     const results = await soqlQuery(query, connection);
     uxLog("log", this, c.grey(`Found ${results.records.length} Flows.`));
     return results;
@@ -852,7 +852,7 @@ The command's technical implementation involves:
               name,
               outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
               comment: `File not found locally.`,
-            })
+            });
           } else {
             eligibleMetadataFilePaths.push({ filePath, name });
           }
@@ -990,6 +990,23 @@ The command's technical implementation involves:
           }
         ]
       });
+      // Ensure the start connector and its targetReference array exist before assignment
+      const startArray = fileContent.Flow.start;
+      if (
+        !Array.isArray(startArray) ||
+        startArray.length === 0 ||
+        !Array.isArray(startArray[0].connector) ||
+        startArray[0].connector.length === 0 ||
+        !Array.isArray(startArray[0].connector[0].targetReference)
+      ) {
+        return {
+          sObject,
+          automation: "Flow",
+          name,
+          outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
+          comment: "Flow start connector not found; cannot attach bypass decision",
+        };
+      }
       connector.targetReference[0] = 'SFDX_HARDIS_FLOW_BYPASS_DO_NOT_RENAME';
       await writeXmlFile(filePath, fileContent);
       return {
