@@ -881,17 +881,55 @@ The command's technical implementation involves:
       }
 
       const fileContent = await parseXmlFile(filePath);
-      const sObject = fileContent?.Flow?.start?.[0]?.object?.[0] ?? null;
+      
+      // Validate Flow structure - ensure we have a start element
+      if (!fileContent?.Flow?.start || !Array.isArray(fileContent.Flow.start) || fileContent.Flow.start.length === 0) {
+        return {
+          sObject: null,
+          automation: "Flow",
+          name,
+          outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
+          comment: "Flow does not have a start element (may be scheduled, autolaunched, or screen flow)",
+        };
+      }
+
+      const startElement = fileContent.Flow.start[0];
+
+      // Validate that start element has an object (record-triggered flow)
+      const sObject = startElement?.object?.[0] ?? null;
       if (sObject == null) {
         return {
           sObject: null,
           automation: "Flow",
           name,
           outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
-          comment: "No sObject found",
+          comment: "No sObject found (may be scheduled, autolaunched, or screen flow)",
         };
       }
-      const filterFormula = fileContent?.Flow?.start?.[0]?.filterFormula?.[0] ?? null;
+
+      // Validate that start element has connector and targetReference
+      if (!startElement.connector || !Array.isArray(startElement.connector) || startElement.connector.length === 0) {
+        return {
+          sObject,
+          automation: "Flow",
+          name,
+          outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
+          comment: "Flow start element does not have a connector",
+        };
+      }
+
+      const connector = startElement.connector[0];
+      if (!connector.targetReference || !Array.isArray(connector.targetReference) || connector.targetReference.length === 0) {
+        return {
+          sObject,
+          automation: "Flow",
+          name,
+          outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
+          comment: "Flow start connector does not have a targetReference",
+        };
+      }
+
+      const filterFormula = startElement?.filterFormula?.[0] ?? null;
       // Check if a bypass already exists in formula mode
       if (filterFormula && typeof filterFormula === "string" && /bypass/i.test(filterFormula)) {
         return {
@@ -902,7 +940,7 @@ The command's technical implementation involves:
           comment: "Another bypass mechanism exists",
         };
       }
-      const firstNodeName = fileContent?.Flow?.start?.[0]?.connector?.[0]?.targetReference?.[0] ?? null;
+      const firstNodeName = connector.targetReference?.[0] ?? null;
       if (firstNodeName === null) {
         return {
           sObject,
@@ -952,7 +990,7 @@ The command's technical implementation involves:
           }
         ]
       });
-      fileContent.Flow.start[0].connector[0].targetReference[0] = 'SFDX_HARDIS_FLOW_BYPASS_DO_NOT_RENAME';
+      connector.targetReference[0] = 'SFDX_HARDIS_FLOW_BYPASS_DO_NOT_RENAME';
       await writeXmlFile(filePath, fileContent);
       return {
         sObject,
