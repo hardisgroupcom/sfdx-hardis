@@ -11,6 +11,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Auth Providers
   - Named Credentials
 - [hardis:org:configure:auth](https://sfdx-hardis.cloudity.com/hardis/org/configure/auth/): Allow to create External Client Apps (metadata-based connected apps) for CI/CD authentication
+- DevOps: Improve identification of Pull Request in Azure Pipelines context
 - Docs: Improve clarity of manual steps for hiding standard applications
 
 ## [6.18.0] 2025-12-26

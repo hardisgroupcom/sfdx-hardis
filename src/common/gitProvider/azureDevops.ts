@@ -113,14 +113,58 @@ ${this.getPipelineVariablesConfig()}
     return false;
   }
 
+  // Extract PR ID from commit message (fallback when SYSTEM_PULLREQUEST_PULLREQUESTID is null after merge)
+  private async extractPullRequestIdFromCommitMessage(): Promise<number | null> {
+    try {
+      const log = await git().log(['-1']); // Get the latest commit message
+      const commitMessage = log?.latest?.message || '';
+      if (!commitMessage) {
+        return null;
+      }
+      // Azure DevOps merge commit patterns:
+      // - "Merge pull request #123 from branch-name"
+      // - "Merged PR #123: Title"
+      // - "Merge PR #123"
+      // - "Merged pull request #123"
+      const prIdPatterns = [
+        /(?:Merge|Merged)\s+(?:pull\s+request|PR)\s+#(\d+)/i,
+        /(?:Merge|Merged)\s+PR\s+#(\d+)/i,
+        /pull\s+request\s+#(\d+)/i,
+        /PR\s+#(\d+)/i,
+      ];
+      for (const pattern of prIdPatterns) {
+        const match = commitMessage.match(pattern);
+        if (match && match[1]) {
+          const prId = Number(match[1]);
+          if (!isNaN(prId) && prId > 0) {
+            uxLog("log", this, c.grey(`[Azure Integration] Extracted PR ID ${prId} from commit message`));
+            return prId;
+          }
+        }
+      }
+    } catch (error) {
+      uxLog("log", this, c.grey(`[Azure Integration] Unable to extract PR ID from commit message: ${(error as Error).message}`));
+    }
+    return null;
+  }
+
   // Find pull request info
   public async getPullRequestInfo(): Promise<CommonPullRequestInfo | null> {
     // Case when PR is found in the context
     // Get CI variables
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
-    const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
+    let pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
     const azureGitApi = await this.azureApi.getGitApi();
     const currentGitBranch = await getCurrentGitBranch();
+
+    // If SYSTEM_PULLREQUEST_PULLREQUESTID is null or invalid, try to extract from commit message
+    if (pullRequestIdStr === null) {
+      const extractedPrId = await this.extractPullRequestIdFromCommitMessage();
+      if (extractedPrId !== null) {
+        pullRequestIdStr = String(extractedPrId);
+      }
+    }
+
     if (
       pullRequestIdStr !== null &&
       !(pullRequestIdStr || "").includes("SYSTEM_PULLREQUEST_PULLREQUESTID") &&
@@ -477,6 +521,7 @@ ${this.getPipelineVariablesConfig()}
     const buildId = process.env.BUILD_BUILD_ID || null;
     const jobId = process.env.SYSTEM_JOB_ID || null;
     const pullRequestIdStr = getEnvVar("SYSTEM_PULLREQUEST_PULLREQUESTID") || prInfo?.idStr || null;
+
     if (repositoryId == null || pullRequestIdStr == null) {
       uxLog("log", this, c.grey("[Azure integration] No project and pull request, so no note thread..."));
       uxLog(
