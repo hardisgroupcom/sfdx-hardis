@@ -4,6 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:diagnose:field-storage-usage](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/field-storage-usage/): New command to analyze field storage usage in Salesforce orgs.
 - Do not post a pull request comment when a flow has been created or deleted
 - Allow to override Grafana notification Monitoring key using SFDX_HARDIS_MONITORING_KEY
 - [hardis:project:clean:sensitive-metadatas](https://sfdx-hardis.cloudity.com/hardis/project/clean/sensitive-metadatas/): Remove secrets from more metadata types:
