@@ -1544,6 +1544,7 @@ export async function restoreLocalSfdxInfo() {
 // Generate External Client App metadata files in a temporary directory
 export async function generateExternalClientAppMetadata(
   appName: string,
+  profileName: string,
   contactEmail: string,
   crtContent: string,
   consumerKey: string,
@@ -1583,7 +1584,27 @@ export async function generateExternalClientAppMetadata(
     <shouldRotateConsumerSecret>false</shouldRotateConsumerSecret>
 </ExtlClntAppGlobalOauthSettings>`;
 
-  // 4. Package.xml
+  // 4. ExtlClntAppOauthConfigurablePolicies (.ecaOauthPlcy-meta.xml)
+  // - 4 hours refresh token validity
+  // - Admin approved / pre-authorized for selected profile
+  const ecaOauthPolicies = `<?xml version="1.0" encoding="UTF-8"?>
+<ExtlClntAppOauthConfigurablePolicies xmlns="http://soap.sforce.com/2006/04/metadata">
+    <commaSeparatedProfile>${profileName}</commaSeparatedProfile>
+    <externalClientApplication>${appName}</externalClientApplication>
+    <ipRelaxationPolicyType>Enforce</ipRelaxationPolicyType>
+    <isClientCredentialsFlowEnabled>false</isClientCredentialsFlowEnabled>
+    <isGuestCodeCredFlowEnabled>false</isGuestCodeCredFlowEnabled>
+    <isNamedUserJwtEnabled>false</isNamedUserJwtEnabled>
+    <isTokenExchangeFlowEnabled>false</isTokenExchangeFlowEnabled>
+    <label>${appName}OAuthSettings_defaultPolicy</label>
+    <permittedUsersPolicyType>AdminApprovedPreAuthorized</permittedUsersPolicyType>
+    <refreshTokenPolicyType>SpecificLifetime</refreshTokenPolicyType>
+    <refreshTokenValidityPeriod>4</refreshTokenValidityPeriod>
+    <refreshTokenValidityUnit>Hours</refreshTokenValidityUnit>
+    <requiredSessionLevel>STANDARD</requiredSessionLevel>
+</ExtlClntAppOauthConfigurablePolicies>`;
+
+  // 5. Package.xml
   const packageXml = `<?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
@@ -1598,6 +1619,10 @@ export async function generateExternalClientAppMetadata(
         <members>${appName}GlblOAuth</members>
         <name>ExtlClntAppGlobalOauthSettings</name>
     </types>
+    <types>
+      <members>${appName}OAuthSettings_defaultPolicy</members>
+      <name>ExtlClntAppOauthConfigurablePolicies</name>
+    </types>
     <version>${getApiVersion()}</version>
 </Package>`;
 
@@ -1605,10 +1630,12 @@ export async function generateExternalClientAppMetadata(
   const externalClientAppsDir = path.join(tmpDir, 'externalClientApps');
   const extlClntAppOauthSettingsDir = path.join(tmpDir, 'extlClntAppOauthSettings');
   const extlClntAppGlobalOauthSetsDir = path.join(tmpDir, 'extlClntAppGlobalOauthSets');
+  const extlClntAppOauthPoliciesDir = path.join(tmpDir, 'extlClntAppOauthPolicies');
 
   await fs.ensureDir(externalClientAppsDir);
   await fs.ensureDir(extlClntAppOauthSettingsDir);
   await fs.ensureDir(extlClntAppGlobalOauthSetsDir);
+  await fs.ensureDir(extlClntAppOauthPoliciesDir);
 
   // Write files
   await fs.writeFile(path.join(tmpDir, 'package.xml'), packageXml);
@@ -1623,6 +1650,10 @@ export async function generateExternalClientAppMetadata(
   await fs.writeFile(
     path.join(extlClntAppGlobalOauthSetsDir, `${appName}GlblOAuth.ecaGlblOauth-meta.xml`),
     ecaGlobalOauthSettings
+  );
+  await fs.writeFile(
+    path.join(extlClntAppOauthPoliciesDir, `${appName}OAuthSettings_defaultPolicy.ecaOauthPlcy-meta.xml`),
+    ecaOauthPolicies
   );
 }
 
@@ -1815,6 +1846,16 @@ export async function generateSSLCertificate(
         'Enter a contact email for the External Client App (ex: teoman.sertcelik@gmail.com)'
       );
 
+      const profileSelection = await promptProfiles(conn, {
+        multiselect: false,
+        message: 'What profile will be pre-authorized for the External Client App ? (ex: System Administrator)',
+        initialSelection: ['System Administrator', 'Administrateur Système'],
+      });
+
+      const selectedProfile = Array.isArray(profileSelection)
+        ? (profileSelection[0] as string)
+        : (profileSelection as string);
+
       // Sanitize app name for metadata
       const sanitizedAppName = promptResponses.appName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() || 'sfdxhardis';
 
@@ -1822,6 +1863,7 @@ export async function generateSSLCertificate(
       const tmpDirMd = await createTempDir();
       await generateExternalClientAppMetadata(
         sanitizedAppName,
+        selectedProfile || 'System Administrator',
         contactEmail,
         crtContent,
         consumerKey,
@@ -1843,6 +1885,14 @@ export async function generateSSLCertificate(
 - externalClientApps/${sanitizedAppName}.eca-meta.xml
 - extlClntAppOauthSettings/${sanitizedAppName}OAuthSettings.ecaOauth-meta.xml
 - extlClntAppGlobalOauthSets/${sanitizedAppName}GlblOAuth.ecaGlblOauth-meta.xml (certificate and consumer key hidden)`));
+
+        uxLog(
+          "log",
+          commandThis,
+          c.grey(
+            `External Client App OAuth policy metadata file:\n- extlClntAppOauthPolicies/${sanitizedAppName}OAuthSettings_defaultPolicy.ecaOauthPlcy-meta.xml (AdminApprovedPreAuthorized, refresh token 4 hours)`
+          )
+        );
 
         uxLog(
           "log",
