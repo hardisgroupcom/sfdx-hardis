@@ -346,6 +346,27 @@ This command focuses on one or more sObjects and measures how many records popul
     return { rows: resultSorted, totalRecords, skippedFields };
   }
 
+  protected async generateFieldUsageCsvReport(
+    rows: FieldUsageRow[],
+    reportName: string,
+    fileTitle: string
+  ): Promise<string> {
+    const csvPath = await generateReportPath(reportName, '', { withDate: true });
+    const csvData = rows.map((row) => ({
+      sObjectName: row.sObjectName,
+      fieldApiName: row.fieldApiName,
+      fieldLabel: row.fieldLabel,
+      totalRecords: row.totalRecords,
+      populatedRecords: row.populatedRecords,
+      populatedPercentage: row.populatedPercentage,
+    }));
+    await generateCsvFile(csvData, csvPath, {
+      fileTitle,
+      noExcel: true,
+    });
+    return csvPath;
+  }
+
   protected filterDescribeFields(fields: any[]): any[] {
     if (!Array.isArray(fields)) {
       return [];
@@ -563,37 +584,21 @@ This command focuses on one or more sObjects and measures how many records popul
       if (!rows.length) {
         continue;
       }
-      const csvPath = await generateReportPath(`object-field-usage-${context.sObjectName}`, '', { withDate: true });
-      const csvData = rows.map((row) => ({
-        sObjectName: row.sObjectName,
-        fieldApiName: row.fieldApiName,
-        fieldLabel: row.fieldLabel,
-        totalRecords: row.totalRecords,
-        populatedRecords: row.populatedRecords,
-        populatedPercentage: row.populatedPercentage,
-      }));
-      await generateCsvFile(csvData, csvPath, {
-        fileTitle: `Field usage - ${context.sObjectName}`,
-        noExcel: true,
-      });
+      const csvPath = await this.generateFieldUsageCsvReport(
+        rows,
+        `object-field-usage-${context.sObjectName}`,
+        `Field usage - ${context.sObjectName}`
+      );
       csvFilesForXlsx.push(csvPath);
       reportFiles.push({ type: 'csv', file: csvPath });
     }
 
     if (aggregatedRows.length > 0) {
-      const summaryCsv = await generateReportPath('object-field-usage-summary', '', { withDate: true });
-      const summaryData = aggregatedRows.map((row) => ({
-        sObjectName: row.sObjectName,
-        fieldApiName: row.fieldApiName,
-        fieldLabel: row.fieldLabel,
-        totalRecords: row.totalRecords,
-        populatedRecords: row.populatedRecords,
-        populatedPercentage: row.populatedPercentage,
-      }));
-      await generateCsvFile(summaryData, summaryCsv, {
-        fileTitle: 'Object field usage summary',
-        noExcel: true,
-      });
+      const summaryCsv = await this.generateFieldUsageCsvReport(
+        aggregatedRows,
+        'object-field-usage-summary',
+        'Object field usage summary'
+      );
       csvFilesForXlsx.push(summaryCsv);
       reportFiles.push({ type: 'csv', file: summaryCsv });
     }
