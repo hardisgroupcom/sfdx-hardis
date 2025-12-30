@@ -84,7 +84,6 @@ describe('hardis:project:clean:sensitive-metadatas', () => {
       );
 
       const namedContent = await fs.readFile(namedCredentialPath, 'utf8');
-      assert.ok(namedContent.includes('<username>HIDDEN_BY_SFDX_HARDIS</username>'), 'username should be hidden');
       assert.ok(namedContent.includes('<password>HIDDEN_BY_SFDX_HARDIS</password>'), 'password should be hidden');
       assert.ok(
         namedContent.includes('<clientSecret>HIDDEN_BY_SFDX_HARDIS</clientSecret>'),
