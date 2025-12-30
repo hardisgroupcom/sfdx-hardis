@@ -942,7 +942,7 @@ The command's technical implementation involves:
       }
 
       const firstNodeName = connector.targetReference[0];
-      if (firstNodeName == 'SFDX_HARDIS_FLOW_BYPASS_DO_NOT_RENAME') {
+      if (firstNodeName === 'SFDX_HARDIS_FLOW_BYPASS_DO_NOT_RENAME') {
         return {
           sObject,
           automation: "Flow",
