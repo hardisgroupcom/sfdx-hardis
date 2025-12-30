@@ -2,7 +2,8 @@ import { Connection, SfError } from "@salesforce/core";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils/index.js";
-import { NotifMessage, NotifSeverity, UtilsNotifs } from "./index.js";
+import type { NotifMessage, NotifSeverity } from "./types.js";
+import { UtilsNotifs } from "./utils.js";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
 
 import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils.js";
@@ -50,7 +51,24 @@ export class ApiProvider extends NotifProviderRoot {
     await this.buildPayload(notifMessage);
     // Format payload according to API endpoint: for example, Grafana loki
     await this.formatPayload();
-    // Send notif
+    // Send notif logs
+    this.managePostLogs(apiPromises, notifMessage);
+    // Handle Metrics API if provided
+    this.managePostMetrics(apiPromises, notifMessage);
+    await Promise.allSettled(apiPromises);
+    return;
+  }
+
+  private managePostLogs(apiPromises: Promise<void>[], notifMessage: NotifMessage) {
+    const notifApiSkipLogs = getEnvVar("NOTIF_API_SKIP_LOGS");
+    if (notifApiSkipLogs === "all") {
+      uxLog("log", this, `[ApiProvider] Skipped posting logs to API and JSON file as NOTIF_API_SKIP_LOGS is set to 'all'`);
+      return;
+    }
+    else if (notifApiSkipLogs && notifApiSkipLogs?.split(",").includes(notifMessage.type)) {
+      uxLog("log", this, `[ApiProvider] Skipped posting logs to API and JSON file for notification type '${notifMessage.type}' as NOTIF_API_SKIP_LOGS includes it`);
+      return;
+    }
     if (this.apiUrl !== null) {
       apiPromises.push(this.sendToApi());
     }
@@ -58,9 +76,20 @@ export class ApiProvider extends NotifProviderRoot {
     if (this.jsonLogsFile !== null) {
       apiPromises.push(this.writeLogsToJsonFile(this.jsonLogsFile));
     }
-    // Handle Metrics API if provided
+  }
+
+  private managePostMetrics(apiPromises: Promise<void>[], notifMessage: NotifMessage) {
     this.metricsApiUrl = getEnvVar("NOTIF_API_METRICS_URL");
     if (this.metricsApiUrl !== null) {
+      const notifApiSkipMetrics = getEnvVar("NOTIF_API_SKIP_METRICS");
+      if (notifApiSkipMetrics === "all") {
+        uxLog("log", this, `[ApiProvider] Skipped posting metrics to API as NOTIF_API_SKIP_METRICS is set to 'all'`);
+        return;
+      }
+      else if (notifApiSkipMetrics && notifApiSkipMetrics?.split(",").includes(notifMessage.type)) {
+        uxLog("log", this, `[ApiProvider]Skipped posting metrics to API for notification type '${notifMessage.type}' as NOTIF_API_SKIP_METRICS includes it`);
+        return;
+      }
       // Detect metrics format based on URL
       this.detectMetricsFormat();
       this.buildMetricsPayload();
@@ -68,8 +97,6 @@ export class ApiProvider extends NotifProviderRoot {
         apiPromises.push(this.sendToMetricsApi());
       }
     }
-    await Promise.allSettled(apiPromises);
-    return;
   }
 
   // Build message
@@ -114,7 +141,10 @@ export class ApiProvider extends NotifProviderRoot {
     const repoName = (await getGitRepoName() || "").replace(".git", "");
     const currentGitBranch = await getCurrentGitBranch();
     const conn: Connection = globalThis.jsForceConn;
-    const orgIdentifier = (conn.instanceUrl) ? conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__") : currentGitBranch || "ERROR apiProvider";
+    const monitoringKeyOverride = getEnvVar("SFDX_HARDIS_MONITORING_KEY") || getEnvVar("MONITORING_KEY");
+    const orgIdentifier = monitoringKeyOverride
+      ? monitoringKeyOverride
+      : (conn.instanceUrl) ? conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__") : currentGitBranch || "ERROR apiProvider";
     const notifKey = orgIdentifier + "!!" + notifMessage.type;
     this.payload = {
       source: "sfdx-hardis",

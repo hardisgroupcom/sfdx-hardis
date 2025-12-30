@@ -102,6 +102,10 @@ sfdx-hardis CI/CD is used in production by major companies around the world.
 
 It is also featured in many conferences, blogs, and webinars.
 
+_Interview on SalesforceBen about sfdx-hardis and DevOps for Salesforce, including a demo_
+
+<div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/vtWx_IWoL9k" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
 _See the presentation of sfdx-hardis at Dreamforce!_
 
 <div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/o0Mm9F07UFs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>

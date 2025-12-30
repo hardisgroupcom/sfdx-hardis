@@ -80,6 +80,14 @@ CVE-2025-64756
 # expr-eval vulnerable to Prototype Pollution, harmless for sfdx-hardis use as we don't use expr-eval directly
 CVE-2025-13204
 
+# https://avd.aquasec.com/nvd/cve-2024-21907 
+# Improper Handling of Exceptional Conditions in Newtonsoft.Json, located in @salesforce/cli so they'll fix that soon
+CVE-2024-21907
+
+# https://avd.aquasec.com/nvd/cve-2025-65945   
+# auth0/node-jws Improperly Verifies HMAC Signature, located in @salesforce/cli so they'll fix that soon
+CVE-2025-65945
+
 # Dockerfile https://avd.aquasec.com/misconfig/ds002
 # Image using root user, that's ok as we are using it in CI/CD jobs containers, so not risky for sfdx-hardis
 DS002

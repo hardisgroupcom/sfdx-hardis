@@ -1462,7 +1462,7 @@ export async function countLinesInFile(file: string) {
  * @returns {Promise<string>} - A Promise that resolves to the full path of the report.
  */
 export async function generateReportPath(fileNamePrefix: string, outputFile: string, options: { withDate: boolean } = { withDate: false }): Promise<string> {
-  if (outputFile == null) {
+  if (outputFile == null || outputFile === '') {
     const reportDir = await getReportDirectory();
     const branchName =
       (!isGitRepo()) ? 'no-git' :
@@ -1491,10 +1491,25 @@ export async function generateReportPath(fileNamePrefix: string, outputFile: str
  * @param {string} outputPath - The path where the CSV file will be written.
  * @returns {Promise<void>} - A Promise that resolves when the operation is complete.
  */
+export interface ExcelColumnStyle {
+  wrap?: boolean;
+  width?: number;
+  hyperlinkFromValue?: boolean;
+  maxHeight?: number;
+}
+
+export interface ExcelExportOptions {
+  fileTitle?: string;
+  csvFileTitle?: string;
+  xlsFileTitle?: string;
+  noExcel?: boolean;
+  columnsCustomStyles?: Record<string, ExcelColumnStyle>;
+}
+
 export async function generateCsvFile(
   data: any[],
   outputPath: string,
-  options: { fileTitle?: string, csvFileTitle?: string, xlsFileTitle?: string, noExcel?: boolean }
+  options: ExcelExportOptions = {}
 ): Promise<any> {
   const result: any = {};
   try {
@@ -1518,13 +1533,13 @@ export async function generateCsvFile(
   return result;
 }
 
-async function createXlsxFromCsv(outputPath: string, options: { fileTitle?: string; csvFileTitle?: string; xlsFileTitle?: string; noExcel?: boolean; }, result: any) {
+export async function createXlsxFromCsv(outputPath: string, options: ExcelExportOptions, result: any) {
   try {
     const xlsDirName = path.join(path.dirname(outputPath), 'xls');
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
     const xslxFile = path.join(xlsDirName, xslFileName);
     await fs.ensureDir(xlsDirName);
-    await csvToXls(outputPath, xslxFile);
+    await csvToXls(outputPath, xslxFile, options);
     uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
     WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
@@ -1546,18 +1561,179 @@ async function createXlsxFromCsv(outputPath: string, options: { fileTitle?: stri
   }
 }
 
-async function csvToXls(csvFile: string, xslxFile: string) {
+async function csvToXls(csvFile: string, xslxFile: string, options: ExcelExportOptions) {
   const workbook = new ExcelJS.Workbook();
   const worksheet = await workbook.csv.readFile(csvFile);
-  // Set filters
-  worksheet.autoFilter = 'A1:Z1';
-  // Adjust column size (only if the file is not too big, to avoid performances issues)
-  if (worksheet.rowCount < 5000) {
-    worksheet.columns.forEach((column) => {
-      const lengths = (column.values || []).map((v) => (v || '').toString().length);
-      const maxLength = Math.max(...lengths.filter((v) => typeof v === 'number'));
-      column.width = maxLength;
+  applyWorksheetFormatting(worksheet, options);
+  await workbook.xlsx.writeFile(xslxFile);
+}
+
+export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath: string, options: ExcelExportOptions = {}) {
+  try {
+    const xlsDirName = path.join(path.dirname(outputPath), 'xls');
+    const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
+    const xslxFile = path.join(xlsDirName, xslFileName);
+    await fs.ensureDir(xlsDirName);
+    await csvFilesToXls(csvFilesPath, xslxFile, options);
+    uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
+    const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
+    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
+    // result.xlsxFile = xslxFile;
+    if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+      try {
+        uxLog("other", this, c.italic(c.grey(`Opening XLSX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
+        await open(xslxFile, { wait: false });
+      } catch (e) {
+        uxLog("warning", this, c.yellow('Error while opening XLSX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+      }
+    }
+  } catch (e2) {
+    uxLog(
+      "warning",
+      this,
+      c.yellow('Error while generating XLSX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
+    );
+  }
+}
+
+async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: ExcelExportOptions) {
+  const workbook = new ExcelJS.Workbook();
+  let worksheet: ExcelJS.Worksheet;
+  for (const csvFile of csvFiles) {
+    if (!csvFile) {
+      console.warn(`[csvFilesToXls] Skipping null/undefined csvFile:`, csvFile);
+      continue;
+    }
+    worksheet = await workbook.csv.readFile(csvFile);
+    worksheet.name = path.basename(csvFile).replace('.csv', '').substring(0, 25);
+    applyWorksheetFormatting(worksheet, options);
+    // Scan only the first row and convert string formulas
+    const firstRow = worksheet.getRow(1);
+    firstRow.eachCell((cell) => {
+      if (typeof cell.value === 'string' && cell.value.startsWith('=')) {
+        cell.value = { formula: cell.value.substring(1) };
+      }
     });
   }
   await workbook.xlsx.writeFile(xslxFile);
+}
+
+function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelExportOptions) {
+  worksheet.autoFilter = 'A1:Z1';
+
+  if (!worksheet.columns) {
+    return;
+  }
+
+  const columnStylePreferences = new Map<string, ExcelColumnStyle>();
+  const columnMaxHeightConstraints = new Map<number, number>();
+  Object.entries(options?.columnsCustomStyles ?? {}).forEach(([columnName, style]) => {
+    if (!columnName || !style) {
+      return;
+    }
+
+    const normalizedName = columnName.trim().toLowerCase();
+    const sanitizedStyle: ExcelColumnStyle = {
+      wrap: style.wrap === true,
+      width: typeof style.width === 'number' && style.width > 0 ? style.width : undefined,
+      hyperlinkFromValue: style.hyperlinkFromValue === true,
+      maxHeight: typeof style.maxHeight === 'number' && style.maxHeight > 0 ? style.maxHeight : undefined,
+    };
+
+    columnStylePreferences.set(normalizedName, sanitizedStyle);
+  });
+
+  const headerRow = worksheet.getRow(1);
+  const headerByColumn = new Map<number, string>();
+  headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    const headerValue = (cell?.text ?? (cell.value ?? '')).toString();
+    headerByColumn.set(colNumber, headerValue);
+  });
+
+  const shouldAutoFit = worksheet.rowCount < 5000;
+
+  worksheet.columns.forEach((column, idx) => {
+    if (!column) {
+      return;
+    }
+    const columnNumber = column.number ?? idx + 1;
+    const headerName = headerByColumn.get(columnNumber) ?? '';
+    const normalizedHeader = headerName.trim().toLowerCase();
+    const stylePreferences = columnStylePreferences.get(normalizedHeader);
+    const preferredWidth = stylePreferences?.width;
+
+    if (typeof preferredWidth === 'number') {
+      column.width = preferredWidth;
+    } else if (shouldAutoFit) {
+      const lengths = (column.values || []).map((value) => (value ?? '').toString().length);
+      const filteredLengths = lengths.filter((len) => Number.isFinite(len));
+      const maxLength = filteredLengths.length > 0 ? Math.max(...filteredLengths) : 10;
+      column.width = maxLength;
+    }
+
+    if (stylePreferences?.wrap) {
+      const updatedAlignment = { ...(column.alignment || {}), wrapText: true };
+      column.alignment = updatedAlignment;
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        cell.alignment = { ...(cell.alignment || {}), wrapText: true };
+      });
+    }
+
+    if (stylePreferences?.hyperlinkFromValue) {
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        const hyperlinkTarget = extractHyperlinkTarget(cell);
+        if (!hyperlinkTarget) {
+          return;
+        }
+        const textValue = cell.text?.trim() || hyperlinkTarget;
+        cell.value = { text: textValue, hyperlink: hyperlinkTarget };
+        cell.font = { ...(cell.font || {}), color: { argb: 'FF0563C1' }, underline: true };
+      });
+    }
+
+    if (stylePreferences?.maxHeight && columnNumber) {
+      columnMaxHeightConstraints.set(columnNumber, stylePreferences.maxHeight);
+    }
+  });
+
+  if (columnMaxHeightConstraints.size > 0) {
+    worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+      if (rowNumber === 1 || !row) {
+        return;
+      }
+      let enforcedMaxHeight: number | undefined;
+      columnMaxHeightConstraints.forEach((maxHeight, columnNumber) => {
+        const cell = row.getCell(columnNumber);
+        if (!cell) {
+          return;
+        }
+        const hasValue = cell.value !== null && cell.value !== undefined && cell.value !== '';
+        if (!hasValue) {
+          return;
+        }
+        enforcedMaxHeight = typeof enforcedMaxHeight === 'number' ? Math.min(enforcedMaxHeight, maxHeight) : maxHeight;
+      });
+      if (typeof enforcedMaxHeight === 'number') {
+        if (!row.height || row.height > enforcedMaxHeight) {
+          row.height = enforcedMaxHeight;
+        }
+      }
+    });
+  }
+}
+
+function extractHyperlinkTarget(cell: ExcelJS.Cell): string | null {
+  const rawValue = typeof cell.value === 'string' ? cell.value : cell.text;
+  if (!rawValue) {
+    return null;
+  }
+  const trimmed = rawValue.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return isLikelyHyperlink(trimmed) ? trimmed : null;
+}
+
+function isLikelyHyperlink(value: string): boolean {
+  return /^(https?:\/\/|mailto:)/i.test(value);
 }

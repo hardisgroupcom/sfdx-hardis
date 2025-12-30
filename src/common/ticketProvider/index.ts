@@ -69,5 +69,11 @@ export interface Ticket {
   body?: string;
   status?: string;
   statusLabel?: string;
+  author?: string;
+  authorLabel?: string;
+  assignee?: string;
+  assigneeLabel?: string;
+  reporter?: string;
+  reporterLabel?: string;
   foundOnServer?: boolean;
 }

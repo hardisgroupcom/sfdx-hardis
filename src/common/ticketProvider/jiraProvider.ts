@@ -1,4 +1,4 @@
-import JiraApi from "jira-client";
+import { Version3Client, Version3Models } from "jira.js";
 import { TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
 import sortArray from "sort-array";
@@ -10,31 +10,40 @@ import { getConfig, getEnvVar } from "../../config/index.js";
 import { CommonPullRequestInfo } from "../gitProvider/index.js";
 
 export class JiraProvider extends TicketProviderRoot {
-  private jiraClient: InstanceType<typeof JiraApi> | any = null;
+  private jiraClient: Version3Client | null = null;
+  private jiraHost: string | null = null;
 
   constructor(config: any) {
     super();
-    const jiraOptions: JiraApi.JiraApiOptions = {
-      protocol: "https",
-      host: (getEnvVar("JIRA_HOST") || config.jiraHost || "").replace("https://", ""),
-      apiVersion: "3",
-      strictSSL: true,
+    const rawHost = getEnvVar("JIRA_HOST") || config.jiraHost || "";
+    const sanitizedHost = rawHost.startsWith("http") ? rawHost : `https://${rawHost}`;
+    this.jiraHost = sanitizedHost.replace(/\/$/, "");
+    const jiraOptions: ConstructorParameters<typeof Version3Client>[0] = {
+      host: this.jiraHost || '',
     };
     // Basic Auth
     if (getEnvVar("JIRA_EMAIL") && getEnvVar("JIRA_TOKEN")) {
-      jiraOptions.username = getEnvVar("JIRA_EMAIL") || "";
-      jiraOptions.password = getEnvVar("JIRA_TOKEN") || "";
+      jiraOptions.authentication = {
+        basic: {
+          email: getEnvVar("JIRA_EMAIL") || "",
+          apiToken: getEnvVar("JIRA_TOKEN") || "",
+        },
+      };
       this.isActive = true;
       uxLog("log", this, c.grey("[JiraProvider] Using JIRA_EMAIL and JIRA_TOKEN for authentication"));
     }
     // Personal access token
     else if (getEnvVar("JIRA_PAT")) {
-      jiraOptions.bearer = getEnvVar("JIRA_PAT") || "";
+      jiraOptions.authentication = {
+        oauth2: {
+          accessToken: getEnvVar("JIRA_PAT") || "",
+        },
+      };
       this.isActive = true;
       uxLog("log", this, c.grey("[JiraProvider] Using JIRA_PAT for authentication"));
     }
     if (this.isActive) {
-      this.jiraClient = new JiraApi(jiraOptions);
+      this.jiraClient = new Version3Client(jiraOptions);
     }
   }
 
@@ -104,32 +113,47 @@ export class JiraProvider extends TicketProviderRoot {
   }
 
   public async collectTicketsInfo(tickets: Ticket[]) {
+    if (!this.jiraClient) {
+      return tickets;
+    }
     const jiraTicketsNumber = tickets.filter((ticket) => ticket.provider === "JIRA").length;
     if (jiraTicketsNumber > 0) {
       uxLog(
         "action",
         this,
-        c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + process.env.JIRA_HOST + " ..."),
+        c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + this.jiraHost + " ..."),
       );
     }
     for (const ticket of tickets) {
       if (ticket.provider === "JIRA") {
-        let ticketInfo: JiraApi.JsonResponse | null = null;
+        let ticketInfo: Version3Models.Issue | null = null;
         try {
-          ticketInfo = await this.jiraClient.getIssue(ticket.id);
+          ticketInfo = await this.jiraClient.issues.getIssue({ issueIdOrKey: ticket.id });
         } catch (e) {
           uxLog("warning", this, c.yellow(`[JiraApi] Error while trying to get ${ticket.id} information: ${(e as Error).message}`));
         }
         if (ticketInfo) {
-          const body =
-            ticketInfo?.fields?.description?.content?.length > 0
-              ? ticketInfo.fields?.description?.content?.map((content) => content.text).join("\n")
-              : "";
+          const body = this.getPlainTextFromDescription(ticketInfo?.fields?.description as Version3Models.Document | string | null | undefined);
           ticket.foundOnServer = true;
           ticket.subject = ticketInfo?.fields?.summary || "";
           ticket.body = body;
           ticket.status = ticketInfo.fields?.status?.id || "";
           ticket.statusLabel = ticketInfo.fields?.status?.name || "";
+          const assignee = ticketInfo.fields?.assignee as Version3Models.UserDetails | undefined;
+          const reporter = ticketInfo.fields?.reporter as Version3Models.UserDetails | undefined;
+          if (assignee) {
+            ticket.assignee = assignee.accountId || assignee.name || "";
+            ticket.assigneeLabel = assignee.displayName || "";
+          }
+          if (reporter) {
+            ticket.reporter = reporter.accountId || reporter.name || "";
+            ticket.reporterLabel = reporter.displayName || "";
+          }
+          const preferredOwner = assignee || reporter;
+          if (preferredOwner) {
+            ticket.author = preferredOwner.accountId || preferredOwner.name || "";
+            ticket.authorLabel = preferredOwner.displayName || "";
+          }
           if (ticket.subject === "") {
             uxLog("warning", this, c.yellow("[JiraProvider] Unable to collect JIRA ticket info for " + ticket.id));
             if (JSON.stringify(ticketInfo).includes("<!DOCTYPE html>")) {
@@ -149,6 +173,9 @@ export class JiraProvider extends TicketProviderRoot {
   }
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
+    if (!this.jiraClient) {
+      return tickets;
+    }
     uxLog("action", this, c.cyan(`[JiraProvider] Try to post comments on ${tickets.length} tickets...`));
 
     const genericHtmlResponseError = "Probably config/access error since response is HTML";
@@ -181,7 +208,7 @@ export class JiraProvider extends TicketProviderRoot {
         );
         // Post comment
         try {
-          const commentPostRes = await this.jiraClient.addCommentAdvanced(ticket.id, { body: jiraComment });
+          const commentPostRes = await this.jiraClient.issueComments.addComment({ issueIdOrKey: ticket.id, comment: jiraComment });
           if (JSON.stringify(commentPostRes).includes("<!DOCTYPE html>")) {
             throw new SfError(genericHtmlResponseError);
           }
@@ -192,12 +219,12 @@ export class JiraProvider extends TicketProviderRoot {
 
         // Add deployment label to JIRA ticket
         try {
-          const issueUpdate = {
+          await this.jiraClient.issues.editIssue({
+            issueIdOrKey: ticket.id,
             update: {
               labels: [{ add: tag }],
             },
-          };
-          await this.jiraClient.updateIssue(ticket.id, issueUpdate);
+          });
           taggedTickets.push(ticket);
         } catch (e6) {
           if ((e6 as any).message != null && (e6 as any).message.includes("<!doctype html>")) {
@@ -231,8 +258,8 @@ export class JiraProvider extends TicketProviderRoot {
     prTitle: string,
     prUrl: string,
     prAuthor: string,
-  ) {
-    const comment = {
+  ): Version3Models.Document {
+    const comment: Version3Models.Document = {
       version: 1,
       type: "doc",
       content: [
@@ -323,5 +350,33 @@ export class JiraProvider extends TicketProviderRoot {
       ],
     };
     return comment;
+  }
+
+  private getPlainTextFromDescription(description: Version3Models.Document | string | null | undefined): string {
+    if (!description) {
+      return "";
+    }
+    if (typeof description === "string") {
+      return description;
+    }
+    const segments: string[] = [];
+    const visitNode = (node: any) => {
+      if (!node) {
+        return;
+      }
+      if (typeof node.text === "string") {
+        segments.push(node.text);
+      }
+      if (Array.isArray(node.content)) {
+        for (const child of node.content) {
+          visitNode(child);
+        }
+        if (node.type === "paragraph") {
+          segments.push("\n");
+        }
+      }
+    };
+    visitNode(description);
+    return segments.join("").replace(/\n{3,}/g, "\n\n").trim();
   }
 }

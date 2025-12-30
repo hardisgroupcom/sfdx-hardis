@@ -1,7 +1,8 @@
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
-import { NotifMessage, UtilsNotifs } from "./index.js";
+import type { NotifMessage } from "./types.js";
+import { UtilsNotifs } from "./utils.js";
 import { getEnvVar } from "../../config/index.js";
 
 interface AdaptiveCardElement {

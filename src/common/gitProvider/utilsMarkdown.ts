@@ -69,17 +69,32 @@ ${err.stack}
   return md;
 }
 
-export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTarget: number) {
+export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTarget: number, options: { check: boolean, testClasses?: string }) {
+  let messageLines: string[] = [];
   if (orgCoverage < orgCoverageTarget) {
-    return `❌ Your code coverage is insufficient: **${orgCoverage}%**, while your target is **${orgCoverageTarget}%**`;
+    messageLines.push(`❌ Your code coverage is insufficient: **${orgCoverage}%**, while your target is **${orgCoverageTarget}%**`);
   } else {
-    return `✅ Your code coverage is ok 😊 **${orgCoverage}%**, while target is **${orgCoverageTarget}%**`;
+    messageLines.push(`✅ Your code coverage is ok 😊 **${orgCoverage}%**, while target is **${orgCoverageTarget}%**`);
   }
+  const testClassesInfoLines = options.testClasses ?
+    [
+      '',
+      `<details><summary>🧪 Apex test classes</summary>`,
+      '',
+      ...options.testClasses.split(" ").map(tc => `  - ${tc}`),
+      '',
+      `</details>`,
+    ] : [];
+  messageLines = messageLines.concat(testClassesInfoLines);
+  return messageLines.join("\n");
 }
 
 export function mdTableCell(str: string) {
   if (!str) {
     return "<!-- -->"
+  }
+  if (typeof str !== "string") {
+    str = String(str);
   }
   return str.replace(/\n/gm, "<br/>").replace(/\|/gm, "");
 }
@@ -122,24 +137,24 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
 }
 
 async function generateDiffMarkdownWithMermaid(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile, hasFlowDiffs } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: false, debug: false });
-  if (outputDiffMdFile && hasFlowDiffs) {
+  const { outputDiffMdFile, hasFlowDiffs, isFlowDeletedOrAdded } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: false, debug: false });
+  if (outputDiffMdFile && hasFlowDiffs && !isFlowDeletedOrAdded) {
     const flowDiffMarkdownMermaid = await fs.readFile(outputDiffMdFile.replace(".md", ".mermaid.md"), "utf8");
     flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownMermaid, markdownFile: outputDiffMdFile });
   }
 }
 
 async function generateDiffMarkdownWithSvg(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile, hasFlowDiffs } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: true, pngMd: false, debug: false });
-  if (outputDiffMdFile && hasFlowDiffs && fs.existsSync(outputDiffMdFile)) {
+  const { outputDiffMdFile, hasFlowDiffs, isFlowDeletedOrAdded } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: true, pngMd: false, debug: false });
+  if (outputDiffMdFile && hasFlowDiffs && !isFlowDeletedOrAdded && fs.existsSync(outputDiffMdFile)) {
     const flowDiffMarkdownWithSvg = await fs.readFile(outputDiffMdFile, "utf8");
     flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithSvg, markdownFile: outputDiffMdFile });
   }
 }
 
 async function generateDiffMarkdownWithPng(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile, hasFlowDiffs } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: true, debug: false });
-  if (outputDiffMdFile && hasFlowDiffs && fs.existsSync(outputDiffMdFile)) {
+  const { outputDiffMdFile, hasFlowDiffs, isFlowDeletedOrAdded } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: true, debug: false });
+  if (outputDiffMdFile && hasFlowDiffs && !isFlowDeletedOrAdded && fs.existsSync(outputDiffMdFile)) {
     const flowDiffMarkdownWithPng = await fs.readFile(outputDiffMdFile, "utf8");
     flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithPng, markdownFile: outputDiffMdFile });
   }

@@ -4,13 +4,128 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Do not post a pull request comment when a flow has been created or deleted
+- Allow to override Grafana notification Monitoring key using SFDX_HARDIS_MONITORING_KEY
+- [hardis:project:clean:sensitive-metadatas](https://sfdx-hardis.cloudity.com/hardis/project/clean/sensitive-metadatas/): Remove secrets from more metadata types:
+  - Connected Apps 
+  - Auth Providers
+  - Named Credentials
+- [hardis:org:configure:auth](https://sfdx-hardis.cloudity.com/hardis/org/configure/auth/): Allow to create External Client Apps (metadata-based connected apps) for CI/CD authentication
+- Docs: Improve clarity of manual steps for hiding standard applications
+
+## [6.18.0] 2025-12-26
+
+- Add capability to **select specific Apex Test Classes (beta)** to run during deployments in Smart Deploy feature.
+  - New config property `enableDeploymentApexTestClasses` (boolean, default: false): Enable the use of custom Apex Test Classes list during deployments. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.
+  - New config property `deploymentApexTestClasses` (array of strings): List of Apex Test Classes that will be run during deployments. Requires `enableDeploymentApexTestClasses` to be set to true (Not recommended, use only if you have specific needs).
+- Add capability to override Pull Request config properties **deploymentApexTestClasses**, **commandsPreDeploy** and **commandsPostDeploy** directly in Pull Request description using special syntax.
+
+Example:
+
+```yaml
+deploymentApexTestClasses:
+  - MyTestClass1
+  - MyTestClass2
+```
+
+- Disable deploymentPlan feature by default (can be re-enabled with `enableDeprecatedDeploymentPlan` in project configuration)
+
+## [6.17.1] 2025-12-22
+
+- [hardis:datacloud:extract:agentforce-conversations](https://sfdx-hardis.cloudity.com/hardis/datacloud/extract/agentforce-conversations/):
+  - Fix duplicate results
+  - Send notifications
+
+## [6.17.0] 2025-12-22
+
+- [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): Fix default org prompt whose response was ignored.
+- New command [hardis:datacloud:sql-query](https://sfdx-hardis.cloudity.com/hardis/datacloud/sql-query/) allowing to query Data Cloud tables with Ansi SQL
+- New command [hardis:datacloud:extract:agentforce-conversations](https://sfdx-hardis.cloudity.com/hardis/datacloud/extract/agentforce-conversations/) allowing to generate reports of Agentforce conversations, including feedback
+- New command [hardis:datacloud:extract:agentforce-feedback](https://sfdx-hardis.cloudity.com/hardis/datacloud/extract/agentforce-feedback/) allowing to generate reports of positive and negative Agentforce chats feedback, with full transcript and notifications.
+- Allow to force sending notifications if postNotifications is called with `alwaysSend: true`
+- CI: Add stale workflow
+- Doc: Add events and videos about sfdx-hardis
+
+## [6.16.1] 2025-12-16
+
+- Notif Provider: Add NOTIF_API_SKIP_LOGS and NOTIF_API_SKIP_METRICS env variables to skip posting logs or metrics to API for all notification types or specific ones. (See details in [documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-api/#skip-configuration))
+- CI: Use npm trusted providers to deploy package
+
+## [6.16.0] 2025-12-14
+
+- [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/) enhancements:
+  - Detect calls to API Login to anticipate their [deprecation in Summer 27](https://help.salesforce.com/s/articleView?id=005132110&type=1)
+  - Make the command more efficient when handling a high number of log files
+  - Api Versions 21 to 30 are now flagged as errors.
+- Add new Grafana Dashboard "Search Salesforce Org by Org Identifier"
+- Fix default ConnectedApp name if it contains multiple `_`
+- Fix tsconfig & vscode settings to improve VsCode performances
+
+## [6.15.1] 2025-12-10
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fix crash when generating documentation when a formula is just `true`
+- Jira Provider: Fix label of jira server in output message when coming from config file.
+
+## [6.15.0] 2025-12-08
+
+- Ticketing: replace the deprecated `jira-client` dependency with the `jira.js` SDK to improve Atlassian Cloud API v3 compatibility and authentication handling.
+- Node.js 20 compatibility: force `parse5@6.0.1` through Yarn resolutions to avoid the `ERR_REQUIRE_ESM` crash caused by newer jsdom transitive dependencies.
+- Ticketing: while collecting Jira tickets, also capture assignee/reporter identifiers so downstream logs and notifications can surface owners.
+- Add yarn.lock in the released package
+- GitHub Actions: consolidate the alpha, canary, beta and release deployment workflows into a single `deploy.yml` to reduce duplication and keep security tooling aligned.
+
+## [6.14.4] 2025-12-08
+
+- Ignore a trivy issue located in @salesforce/cli package (will be fixed by Salesforce)
+
+## [6.14.3] 2025-12-07
+
+- Optimize gitlab-ci workflow for scratch orgs testing step
+- Upgrade dependencies
+
+## [6.14.2] 2025-12-03
+
+- Add Java (JDK 11+) to Docker image to support PMD engine in Salesforce Code Analyzer
+
+## [6.14.1] 2025-12-01
+
+- [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/): Display a different message in case of empty Custom Settings or export error.
+- MegaLinter config: disable CodeSpell
+
+## [6.14.0] 2025-11-30
+
+- Upgrade MegaLinter default config + code-analyzer.yml + updated rulesets
+
+## [6.13.0] 2025-11-28
+
+- New command [hardis:org:purge:profile](https://sfdx-hardis.cloudity.com/hardis/org/purge/profile/): Removes or "mutes" Permission Sets attributes from selected Salesforce Profile metadata files and redeploys the cleaned profiles to the target org.
+- New command [hardis:project:clean:profiles-extract](https://sfdx-hardis.cloudity.com/hardis/project/clean/profiles-extract/)
+- Adds site/ to .gitignore only in monitoring repositories
+
+## [6.12.10] 2025-11-25
+
+- Temporary downgrade isomorphic-dompurify package (jsdom dep not compliant with NodeJS < 20.19.5 and CodeBuilder / Agentforce Vibes is below)
+
+## [6.12.9] 2025-11-25
+
+- Fixes compatibility issues caused by upgrading to parse5 v8.0.0.
+
+## [6.12.8] 2025-11-25
+
+- Upgrade isomorphic-dompurify
+
+## [6.12.7] 2025-11-24
+
+- Include stack trace in warning log for Flow diff generation errors
+- Upgrade dependencies
+
 ## [6.12.6] 2025-11-18
 
 - QuickFix typo in deployment actions
 
 ## [6.12.5] 2025-11-18
 
-- Improve JIRA authentication and display 
+- Improve JIRA authentication and display
 - [hardis:project:deploy:notify](https://sfdx-hardis.cloudity.com/hardis/project/deploy/notify/): Make default org optional
 - Improve pre/post deployment commands details display in PR comments
 
@@ -52,7 +167,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/): Fix bug when there are no Apex classes in the org
 - GitHub integration: Fix way to get Pull Request number
-- As SF Cli now requires NodeJs >= 24, set the same requirement to sfdx-hardis default  workflows
+- As SF Cli now requires NodeJs >= 24, set the same requirement to sfdx-hardis default workflows
 
 ## [6.11.3] 2025-11-04
 
@@ -80,7 +195,6 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Add explicit message in case of error when authenticating to Git provider API
 - Allow to override SFDX_TEST_WAIT_MINUTES and SFDX_DEPLOY_WAIT_MINUTES using CI/CD variables, and set 120 minutes as default value everywhere
 - Fix Validation Rules formula field in doc generation
-
 
 ## [6.9.0] 2025-10-23
 
