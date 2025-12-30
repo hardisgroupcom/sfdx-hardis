@@ -25,11 +25,12 @@ import {
 } from "../../../../common/utils/xmlUtils.js";
 import { MetadataUtils } from "../../../../common/metadata-utils/index.js";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
+import { WebSocketClient } from "../../../../common/websocketClient.js";
 
 // Constants
 const ALLOWED_AUTOMATIONS = ["Flow", "Trigger", "VR"]; // TODO: type and remove hardcoded
 
-const CREDITS_TEXT ="by sfdx-hardis : https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/";
+const CREDITS_TEXT = "by sfdx-hardis : https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/";
 
 const IMPLEMENTATION_OUTCOME = {
   ADDED: "added",
@@ -275,9 +276,9 @@ The command's technical implementation involves:
         message: "Select which automations to bypass",
         description: "This will generate bypass custom permissions and permission sets for the selected automation types and sObjects",
         choices: [
-          {title: "Flows", value: "Flow"}, 
-          {title: "Triggers", value: "Trigger"},
-          {title: "Validation Rules", value: "VR"},
+          { title: "Flows", value: "Flow" },
+          { title: "Triggers", value: "Trigger" },
+          { title: "Validation Rules", value: "VR" },
         ],
       });
     }
@@ -329,7 +330,7 @@ The command's technical implementation involves:
       if (!applyToVrs) {
         applyToVrs = promptResults.applyTo?.includes("applyToVrs");
       }
-      if(!applyToFlows){
+      if (!applyToFlows) {
         applyToFlows = promptResults.applyTo?.includes("applyToFlows");
       }
 
@@ -342,7 +343,7 @@ The command's technical implementation involves:
     if (!Object.keys(targetSObjects).length) {
       throw new SfError(c.red("ERROR: You must select at least one sObject."));
     }
-    
+
     if (!targetAutomations.length) {
       throw new SfError(c.red("ERROR: You must select at least one automation type."));
     }
@@ -352,7 +353,7 @@ The command's technical implementation involves:
     this.generateFiles(targetSObjects, targetAutomations);
 
     if (applyToVrs) {
-      uxLog("action", this, c.cyan(`Implementing the bypass logic to Validation Rules...`));      
+      uxLog("action", this, c.cyan(`Implementing the bypass logic to Validation Rules...`));
       await this.applyBypassToValidationRules(connection, targetSObjects);
     }
 
@@ -361,14 +362,14 @@ The command's technical implementation involves:
       await this.applyBypassToTriggers(connection, targetSObjects);
     }
 
-    if(applyToFlows) {
+    if (applyToFlows) {
       uxLog("action", this, c.cyan(`Implementing the bypass logic to Flows...`));
       await this.applyBypassToFlows(connection, targetSObjects);
     }
 
     uxLog("action", this, c.cyan(`Bypass generation and implementation is completed.`));
-    
-    if(applyToVrs || applyToTriggers|| applyToFlows){
+
+    if (applyToVrs || applyToTriggers || applyToFlows) {
       uxLog("action", this, c.cyan(`Bypass implementation report:`));
       uxLogTable(this, this.reports.implementation);
     }
@@ -382,13 +383,13 @@ The command's technical implementation involves:
   }
 
   public async generateReports(): Promise<void> {
-    const baseFilePath = await generateReportPath('project-generate-bypass-<REPLACEME>', this.outputFile, { withDate: true, withBranchName: false});
+    const baseFilePath = await generateReportPath('project-generate-bypass-<REPLACEME>', this.outputFile, { withDate: true, withBranchName: false });
     let metadataGenerationReportFilePath = baseFilePath;
     let implementationReportFilePath = baseFilePath;
-    if(baseFilePath.includes('<REPLACEME>')){
+    if (baseFilePath.includes('<REPLACEME>')) {
       metadataGenerationReportFilePath = baseFilePath.replace('<REPLACEME>', 'generation');
       implementationReportFilePath = baseFilePath.replace('<REPLACEME>', 'implementation');
-    }else{
+    } else {
       metadataGenerationReportFilePath = baseFilePath.replace('.csv', '-generation.csv');
       implementationReportFilePath = baseFilePath.replace('.csv', '-implementation.csv');
     }
@@ -506,21 +507,21 @@ The command's technical implementation involves:
     };
 
     try {
-  
+
       fsExtra.ensureDirSync(path.dirname(customPermissionFilePath));
       fs.writeFileSync(
         customPermissionFilePath,
         this.generateXML("customPermission", sObject, automation),
         "utf-8"
       );
-  
+
       fsExtra.ensureDirSync(path.dirname(permissionSetFilePath));
       fs.writeFileSync(
         permissionSetFilePath,
         this.generateXML("permissionSet", sObject, automation),
         "utf-8"
       );
-  
+
       uxLog("log", this, c.grey(`Created: ${path.basename(customPermissionFilePath)} for ${sObject}`));
       uxLog("log", this, c.grey(`Created: ${path.basename(permissionSetFilePath)} for ${sObject}`));
 
@@ -534,11 +535,18 @@ The command's technical implementation involves:
     }
   }
 
-  generateFiles(targetSObjects: { [key: string]: string },targetAutomations: string[]): void {
+  generateFiles(targetSObjects: { [key: string]: string }, targetAutomations: string[]): void {
+    let counter = 0;
+    const totalSteps = Object.keys(targetSObjects).length * targetAutomations.length;
+    WebSocketClient.sendProgressStartMessage("Generating bypass metadata files...", totalSteps);
     Object.keys(targetSObjects).forEach((developerName) => {
+      counter++;
       targetAutomations.forEach((automation) => {
         this.generateXMLFiles(developerName, automation);
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, totalSteps);
       });
+      WebSocketClient.sendProgressEndMessage(totalSteps);
     });
   }
 
@@ -603,7 +611,7 @@ The command's technical implementation involves:
 
       if (
         typeof validationRuleContent === "string" &&
-        ( validationRuleContent.includes(bypassPermissionName) || validationRuleContent.includes('BypassAllVRs'))
+        (validationRuleContent.includes(bypassPermissionName) || validationRuleContent.includes('BypassAllVRs'))
       ) {
         return {
           sObject,
@@ -910,16 +918,16 @@ The command's technical implementation involves:
               {
                 "leftValueReference": [`$Permission.Bypass${sObject}Flows`],
                 "operator": ["EqualTo"],
-                "rightValue": [{"booleanValue": ["true"]}]
+                "rightValue": [{ "booleanValue": ["true"] }]
               },
               {
                 "leftValueReference": ["$Permission.BypassAllFlows"],
                 "operator": ["EqualTo"],
-                "rightValue": [{"booleanValue": ["true"]}]
+                "rightValue": [{ "booleanValue": ["true"] }]
               }
             ],
             "label": ["Yes"],
-            "connector": [{"targetReference": [ firstNodeName ]}]
+            "connector": [{ "targetReference": [firstNodeName] }]
           }
         ]
       });
