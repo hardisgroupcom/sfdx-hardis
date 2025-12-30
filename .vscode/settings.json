@@ -4,7 +4,8 @@
     "**/.git": true,
     "**/.hg": true,
     "**/.svn": true,
-    "**/CVS": true
+    "**/CVS": true,
+    "**/node_modules": true,
   },
   "search.exclude": {
     "**/lib": true,
@@ -20,7 +21,8 @@
     "**/defaults/**": true,
     "**/docs/**": true,
     "**/hardis-report/**": true,
-    "**/.git/**": true
+    "**/.git/**": true,
+    "**/node_modules/**": true
   },
   "typescript.tsserver.exclude": [
     "**/node_modules",

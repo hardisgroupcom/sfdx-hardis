@@ -3651,6 +3651,75 @@ If defined, makes obsolete the parameter Default Pull Request target branch.</p>
         </div>
     </div>
 </div>
+<div class="accordion" id="accordiondeploymentApexTestClasses">
+    <div class="card">
+        <div class="card-header" id="headingdeploymentApexTestClasses">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#deploymentApexTestClasses"
+                        aria-expanded="" aria-controls="deploymentApexTestClasses" onclick="setAnchor('#deploymentApexTestClasses')"><span class="property-name">deploymentApexTestClasses</span></button>
+            </h2>
+        </div>
+
+        <div id="deploymentApexTestClasses"
+             class="collapse property-definition-div" aria-labelledby="headingdeploymentApexTestClasses"
+             data-parent="#accordiondeploymentApexTestClasses">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#deploymentApexTestClasses" onclick="anchorLink('deploymentApexTestClasses')">deploymentApexTestClasses</a></div><h4>Apex Test Classes to run during deployments (NOT RECOMMENDED) (Beta)</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<span class="description"><p>List of Apex Test Classes that will be run during deployments. Requires enableDeploymentApexTestClasses and enableDeltaDeploymentBetweenMajorBranches to be set to true (Not recommended, use only if you have specific needs)</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="deploymentApexTestClasses_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#deploymentApexTestClasses" onclick="anchorLink('deploymentApexTestClasses')">deploymentApexTestClasses</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#deploymentApexTestClasses_items" onclick="anchorLink('deploymentApexTestClasses_items')">deploymentApexTestClasses items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="deploymentApexTestClasses_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;MyTestClass1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;MyTestClass2&quot;</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordiondevelopmentBranch">
     <div class="card">
         <div class="card-header" id="headingdevelopmentBranch">
@@ -3714,8 +3783,8 @@ If defined, makes obsolete the parameter Default Pull Request target branch.</p>
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#deploymentPlan" onclick="anchorLink('deploymentPlan')">deploymentPlan</a></div><h4>Deployment plan</h4><span class="badge badge-dark value-type">Type: object</span><br/>
-<span class="description"><p>Deployment plan that will be performed during deployments. Can be based on packageXmlFile for sources or on dataPath for sfdmu data deployments</p>
+    <a href="#deploymentPlan" onclick="anchorLink('deploymentPlan')">deploymentPlan</a></div><h4>(DEPRECATED) Deployment plan</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>(DEPRECATED) Deployment plan that will be performed during deployments. Can be based on packageXmlFile for sources or on dataPath for sfdmu data deployments</p>
 </span>
         
 
@@ -4337,6 +4406,120 @@ If defined, makes obsolete the parameter Default Pull Request target branch.</p>
 <br/><div id="docDeployToOrg_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">true</span>
 </pre></div>
 </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionenableDeltaDeploymentBetweenMajorBranches">
+    <div class="card">
+        <div class="card-header" id="headingenableDeltaDeploymentBetweenMajorBranches">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#enableDeltaDeploymentBetweenMajorBranches"
+                        aria-expanded="" aria-controls="enableDeltaDeploymentBetweenMajorBranches" onclick="setAnchor('#enableDeltaDeploymentBetweenMajorBranches')"><span class="property-name">enableDeltaDeploymentBetweenMajorBranches</span></button>
+            </h2>
+        </div>
+
+        <div id="enableDeltaDeploymentBetweenMajorBranches"
+             class="collapse property-definition-div" aria-labelledby="headingenableDeltaDeploymentBetweenMajorBranches"
+             data-parent="#accordionenableDeltaDeploymentBetweenMajorBranches">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#enableDeltaDeploymentBetweenMajorBranches" onclick="anchorLink('enableDeltaDeploymentBetweenMajorBranches')">enableDeltaDeploymentBetweenMajorBranches</a></div><h4>Enable delta deployments between major branches (NOT RECOMMENDED)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Enable delta deployments between major branches (ex: integration -> uat). Not recommended, as real DevOps best practice is to deploy full source: use only if you have specific needs.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="enableDeltaDeploymentBetweenMajorBranches_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">true</span>
+</pre></div>
+</div><div id="enableDeltaDeploymentBetweenMajorBranches_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">false</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionenableDeploymentApexTestClasses">
+    <div class="card">
+        <div class="card-header" id="headingenableDeploymentApexTestClasses">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#enableDeploymentApexTestClasses"
+                        aria-expanded="" aria-controls="enableDeploymentApexTestClasses" onclick="setAnchor('#enableDeploymentApexTestClasses')"><span class="property-name">enableDeploymentApexTestClasses</span></button>
+            </h2>
+        </div>
+
+        <div id="enableDeploymentApexTestClasses"
+             class="collapse property-definition-div" aria-labelledby="headingenableDeploymentApexTestClasses"
+             data-parent="#accordionenableDeploymentApexTestClasses">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#enableDeploymentApexTestClasses" onclick="anchorLink('enableDeploymentApexTestClasses')">enableDeploymentApexTestClasses</a></div><h4>Enable custom Apex Test Classes during deployments (NOT RECOMMENDED) (Beta)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Enable the use of custom Apex Test Classes list during deployments. Requires enableDeltaDeploymentBetweenMajorBranches to be set to true. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="enableDeploymentApexTestClasses_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">true</span>
+</pre></div>
+</div><div id="enableDeploymentApexTestClasses_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">false</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionenableDeprecatedDeploymentPlan">
+    <div class="card">
+        <div class="card-header" id="headingenableDeprecatedDeploymentPlan">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#enableDeprecatedDeploymentPlan"
+                        aria-expanded="" aria-controls="enableDeprecatedDeploymentPlan" onclick="setAnchor('#enableDeprecatedDeploymentPlan')"><span class="property-name">enableDeprecatedDeploymentPlan</span></button>
+            </h2>
+        </div>
+
+        <div id="enableDeprecatedDeploymentPlan"
+             class="collapse property-definition-div" aria-labelledby="headingenableDeprecatedDeploymentPlan"
+             data-parent="#accordionenableDeprecatedDeploymentPlan">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#enableDeprecatedDeploymentPlan" onclick="anchorLink('enableDeprecatedDeploymentPlan')">enableDeprecatedDeploymentPlan</a></div><h4>Enable Deprecated Deployment Plan</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>If true, allows the use of the deprecated 'deploymentPlan' configuration for deployments. It's better to use deployment actions at branch or PR level</p>
+</span>
+        
+
+        
+        
+
+        
             </div>
         </div>
     </div>
@@ -7548,7 +7731,7 @@ If active, contributors will never be asked to refresh their sandbox metadata, t
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#testCoverageNotBlocking" onclick="anchorLink('testCoverageNotBlocking')">testCoverageNotBlocking</a></div><h4>Test Coverage not blocking</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+    <a href="#testCoverageNotBlocking" onclick="anchorLink('testCoverageNotBlocking')">testCoverageNotBlocking</a></div><h4>Test Coverage not blocking (not recommended)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <span class="description"><p>Does not make the deployment job fail if apex tests code coverage is failing</p>
 </span>
         
