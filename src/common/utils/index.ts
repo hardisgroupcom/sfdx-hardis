@@ -1577,6 +1577,7 @@ export async function generateExternalClientAppMetadata(
     <externalClientApplication>${appName}</externalClientApplication>
     <isConsumerSecretOptional>true</isConsumerSecretOptional>
     <isIntrospectAllTokens>false</isIntrospectAllTokens>
+    <isNamedUserJwtEnabled>true</isNamedUserJwtEnabled>
     <isPkceRequired>false</isPkceRequired>
     <isSecretRequiredForRefreshToken>false</isSecretRequiredForRefreshToken>
     <label>${appName} Global OAuth</label>
@@ -1594,7 +1595,7 @@ export async function generateExternalClientAppMetadata(
     <ipRelaxationPolicyType>Enforce</ipRelaxationPolicyType>
     <isClientCredentialsFlowEnabled>false</isClientCredentialsFlowEnabled>
     <isGuestCodeCredFlowEnabled>false</isGuestCodeCredFlowEnabled>
-    <isNamedUserJwtEnabled>false</isNamedUserJwtEnabled>
+    <isNamedUserJwtEnabled>true</isNamedUserJwtEnabled>
     <isTokenExchangeFlowEnabled>false</isTokenExchangeFlowEnabled>
     <label>${appName}OAuthSettings_defaultPolicy</label>
     <permittedUsersPolicyType>AdminApprovedPreAuthorized</permittedUsersPolicyType>
