@@ -20,3 +20,4 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Stepan Stepanov](https://www.linkedin.com/in/stepan-stepanov-79a48734/), for implementing the deployment mode _delta with dependencies_
 - [Shamina Mossodeean](https://www.linkedin.com/in/shaminam/), for automating SF decomposed metadata
 - [Michael Havrilla](https://www.linkedin.com/in/%F0%9F%92%BB-michael-havrilla-69063036/), for the integration with Vector.dev allowing to provide monitoring logs to external systems like DataDog
+- [Teoman Sertcelik](https://www.linkedin.com/in/teoman-sertcelik/), for allowing to configure authentication using External Client App
