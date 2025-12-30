@@ -27,7 +27,7 @@ const SENSITIVE_METADATA_TARGETS = [
   {
     description: 'Named Credentials',
     relativePattern: `**/*.namedCredential-meta.xml`,
-    tags: ['username', 'password', 'clientSecret', 'privateKey'],
+    tags: ['password', 'clientSecret', 'privateKey'],
   },
 ];
 
