@@ -1459,23 +1459,23 @@ export async function countLinesInFile(file: string) {
  * @param {string} outputFile - The output file path. If null, a new path is generated.
  * @param {Object} [options] - Additional options for generating the report path.
  * @param {boolean} [options.withDate=false] - Whether to append a timestamp to the file name.
+ * @param {boolean} [options.withBranchName=true] - Whether to include the branch name in the file name.
+ * @param {string} [options.fileExtension='csv'] - The file extension to use for the report file.
+ * @param {string} [options.fileNamePartsSeparator='-'] - The separator to use between file name parts.
  * @returns {Promise<string>} - A Promise that resolves to the full path of the report.
  */
-export async function generateReportPath(fileNamePrefix: string, outputFile: string, options: { withDate: boolean } = { withDate: false }): Promise<string> {
+export async function generateReportPath(fileNamePrefix: string, outputFile: string, options: { withDate?: boolean; withBranchName?: boolean; fileExtension?: string; fileNamePartsSeparator?: string } = {}): Promise<string> {
+  const { withDate = false, withBranchName = true, fileExtension = 'csv', fileNamePartsSeparator = '-' } = options;
   if (outputFile == null || outputFile === '') {
     const reportDir = await getReportDirectory();
-    const branchName =
-      (!isGitRepo()) ? 'no-git' :
-        process.env.CI_COMMIT_REF_NAME ||
-        (await getCurrentGitBranch({ formatted: true })) ||
-        'branch-not-found';
-    let newOutputFile = path.join(reportDir, `${fileNamePrefix}-${branchName.split('/').pop()}.csv`);
-    if (options.withDate) {
-      // Add date time info
-      const date = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0];
-      newOutputFile = path.join(reportDir, `${fileNamePrefix}-${branchName.split('/').pop()}-${date}.csv`);
+    const fileNameParts: string[] = [fileNamePrefix];
+    if (withBranchName) {
+      fileNameParts.push(!isGitRepo() ? 'no-git' : process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || 'branch-not-found');
     }
-    return newOutputFile;
+    if (withDate) {
+      fileNameParts.push(new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0]);
+    }
+    return path.join(reportDir, fileNameParts.join(fileNamePartsSeparator) + '.' + fileExtension);
   } else {
     await fs.ensureDir(path.dirname(outputFile));
     return outputFile;
