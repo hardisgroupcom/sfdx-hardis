@@ -897,7 +897,7 @@ The command's technical implementation involves:
 
       // Validate that start element has an object (record-triggered flow)
       const sObject = startElement?.object?.[0] ?? null;
-      if (sObject === null) {
+      if (sObject == null) {
         return {
           sObject: null,
           automation: "Flow",
