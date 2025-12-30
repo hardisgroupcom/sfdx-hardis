@@ -1711,7 +1711,7 @@ export async function generateSSLCertificate(
     WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, "Help to configure CI variables", "docUrl");
     await prompts({
       type: 'confirm',
-      message: c.cyanBright('Please confirm when variables have been set'),
+      message: c.cyanBright('Please confirm when variables have been set (expand section above to see values)'),
       description: 'Confirm when you have configured the required CI/CD environment variables in your deployment platform',
     });
 
