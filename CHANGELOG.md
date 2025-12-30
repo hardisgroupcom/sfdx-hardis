@@ -5,6 +5,8 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Do not post a pull request comment when a flow has been created or deleted
+- Allow to override Grafana notification Monitoring key using SFDX_HARDIS_MONITORING_KEY
+- Docs: Improve clarity of manual steps for hiding standard applications
 
 ## [6.18.0] 2025-12-26
 
