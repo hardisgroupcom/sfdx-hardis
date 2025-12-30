@@ -1750,6 +1750,54 @@ export async function generateSSLCertificate(
     // Read certificate content (shared by both flows)
     const crtContent = await fs.readFile(crtFile, 'utf8');
 
+    const buildDeployParamsForAuthMetadata = async (deployDir: string): Promise<any> => {
+      const isProduction = await isProductionOrg(options.targetUsername || null, { conn: conn });
+      const deployParams: any = {
+        deployDir,
+        testlevel: isProduction ? 'RunLocalTests' : 'NoTestRun',
+        targetUsername: options.targetUsername ? options.targetUsername : null,
+      };
+
+      if (!isProduction) {
+        return deployParams;
+      }
+
+      let uniqueTestClass = process.env.SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS || null;
+      if (!uniqueTestClass) {
+        const testClasses = await conn.tooling.query(
+          "SELECT Id, Name FROM ApexClass WHERE Name LIKE '%Test%' OR Name LIKE '%test%' OR Name LIKE '%TEST%' ORDER BY Name LIMIT 1"
+        );
+        if (testClasses.totalSize > 0) {
+          uniqueTestClass = testClasses.records[0].Name;
+        }
+      }
+      if (uniqueTestClass) {
+        deployParams.testlevel = 'RunSpecifiedTests';
+        deployParams.runTests = [uniqueTestClass];
+        uxLog(
+          "log",
+          commandThis,
+          c.grey(
+            `Production org detected, will run test class found ${uniqueTestClass} on deployment.\nIf you want to specify a specific test class, set SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS variable`
+          )
+        );
+      }
+
+      return deployParams;
+    };
+
+    const deployAuthMetadataAndCleanup = async (deployDir: string, successLabel: string): Promise<void> => {
+      const deployParams = await buildDeployParamsForAuthMetadata(deployDir);
+      const deployRes = await deployMetadatas(deployParams);
+      if (deployRes?.status !== 0) {
+        throw new Error('[sfdx-hardis] Failed to deploy metadatas');
+      }
+      uxLog("action", commandThis, c.cyan(`Successfully deployed ${c.green(successLabel)}`));
+      // Cleanup temporary metadata directory and local certificate after successful deployment
+      await fs.remove(deployDir);
+      await fs.remove(crtFile);
+    };
+
     // Branch based on app type selection
     if (appTypeResponse.value === 'externalClientApp') {
       // ========== EXTERNAL CLIENT APP FLOW ==========
@@ -1804,37 +1852,7 @@ export async function generateSSLCertificate(
           ))
         );
 
-        const isProduction = await isProductionOrg(options.targetUsername || null, { conn: conn });
-        const deployParams: any = {
-          deployDir: tmpDirMd,
-          testlevel: isProduction ? 'RunLocalTests' : 'NoTestRun',
-          targetUsername: options.targetUsername ? options.targetUsername : null,
-        };
-
-        // If is Production org, find the first Apex test class to run
-        if (isProduction) {
-          let uniqueTestClass = process.env.SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS || null;
-          if (!uniqueTestClass) {
-            const testClasses = await conn.tooling.query(
-              "SELECT Id, Name FROM ApexClass WHERE Name LIKE '%Test%' OR Name LIKE '%test%' OR Name LIKE '%TEST%' ORDER BY Name LIMIT 1"
-            );
-            if (testClasses.totalSize > 0) {
-              uniqueTestClass = testClasses.records[0].Name;
-            }
-          }
-          if (uniqueTestClass) {
-            deployParams.testlevel = 'RunSpecifiedTests';
-            deployParams.runTests = [uniqueTestClass];
-            uxLog("log", commandThis, c.grey(`Production org detected, will run test class found ${uniqueTestClass} on deployment.
-If you want to specify a specific test class, set SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS variable`));
-          }
-        }
-
-        const deployRes = await deployMetadatas(deployParams);
-        console.assert(deployRes.status === 0, c.red('[sfdx-hardis] Failed to deploy metadatas'));
-        uxLog("action", commandThis, c.cyan(`Successfully deployed ${c.green(sanitizedAppName)} External Client App`));
-        await fs.remove(tmpDirMd);
-        await fs.remove(crtFile);
+        await deployAuthMetadataAndCleanup(tmpDirMd, `${sanitizedAppName} External Client App`);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         uxLog(
@@ -1948,35 +1966,7 @@ If deployment fails, create the External Client App manually:
             `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file 😊`
           ))
         );
-        const isProduction = await isProductionOrg(options.targetUsername || null, { conn: conn });
-        const deployParams: any = {
-          deployDir: tmpDirMd,
-          testlevel: isProduction ? 'RunLocalTests' : 'NoTestRun',
-          targetUsername: options.targetUsername ? options.targetUsername : null,
-        };
-        // If is Production org, find the first Apex test class to run
-        if (isProduction) {
-          let uniqueTestClass = process.env.SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS || null;
-          if (!uniqueTestClass) {
-            const testClasses = await conn.tooling.query(
-              "SELECT Id, Name FROM ApexClass WHERE Name LIKE '%Test%' OR Name LIKE '%test%' OR Name LIKE '%TEST%' ORDER BY Name LIMIT 1"
-            );
-            if (testClasses.totalSize > 0) {
-              uniqueTestClass = testClasses.records[0].Name;
-            }
-          }
-          if (uniqueTestClass) {
-            deployParams.testlevel = 'RunSpecifiedTests';
-            deployParams.runTests = [uniqueTestClass];
-            uxLog("log", commandThis, c.grey(`Production org detected, will run test class found ${uniqueTestClass} on deployment.
-If you want to specify a specific test class, set SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS variable`));
-          }
-        }
-        const deployRes = await deployMetadatas(deployParams);
-        console.assert(deployRes.status === 0, c.red('[sfdx-hardis] Failed to deploy metadatas'));
-        uxLog("action", commandThis, c.cyan(`Successfully deployed ${c.green(promptResponses.appName)} Connected App`));
-        await fs.remove(tmpDirMd);
-        await fs.remove(crtFile);
+        await deployAuthMetadataAndCleanup(tmpDirMd, `${promptResponses.appName} Connected App`);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         uxLog(
