@@ -4,15 +4,17 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.19.0] 2025-12-30
+
 - [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/): Added ability to apply the bypass to flows
-- Do not post a pull request comment when a flow has been created or deleted
-- Allow to override Grafana notification Monitoring key using SFDX_HARDIS_MONITORING_KEY
+- [hardis:org:configure:auth](https://sfdx-hardis.cloudity.com/hardis/org/configure/auth/): Allow to create External Client Apps (metadata-based connected apps) for CI/CD authentication
 - [hardis:project:clean:sensitive-metadatas](https://sfdx-hardis.cloudity.com/hardis/project/clean/sensitive-metadatas/): Remove secrets from more metadata types:
   - Connected Apps 
   - Auth Providers
   - Named Credentials
-- [hardis:org:configure:auth](https://sfdx-hardis.cloudity.com/hardis/org/configure/auth/): Allow to create External Client Apps (metadata-based connected apps) for CI/CD authentication
 - DevOps: Improve identification of Pull Request in Azure Pipelines context
+- DevOps: Do not post a pull request comment when a flow has been created or deleted
+- Monitoring: Allow to override Grafana notification Monitoring key using SFDX_HARDIS_MONITORING_KEY
 - Docs: Improve clarity of manual steps for hiding standard applications
 
 ## [6.18.0] 2025-12-26
