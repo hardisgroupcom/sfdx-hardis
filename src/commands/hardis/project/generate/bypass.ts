@@ -940,8 +940,16 @@ The command's technical implementation involves:
           comment: "Another bypass mechanism exists",
         };
       }
-
-      const firstNodeName = connector.targetReference[0];
+      const firstNodeName = connector.targetReference?.[0] ?? null;
+      if (firstNodeName === null) {
+        return {
+          sObject,
+          automation: "Flow",
+          name,
+          outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
+          comment: "Flow has no start connector or target reference",
+        };
+      }
       if (firstNodeName === 'SFDX_HARDIS_FLOW_BYPASS_DO_NOT_RENAME') {
         return {
           sObject,
