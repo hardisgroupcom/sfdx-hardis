@@ -3,6 +3,8 @@ import c from "chalk";
 import readFilesRecursive from "fs-readdir-recursive";
 import * as path from "path";
 import * as fs from "fs";
+import { getPullRequestScopedSfdxHardisConfig } from "./pullRequestUtils.js";
+import { CommonPullRequestInfo } from "../gitProvider/index.js";
 
 function findSubstringInFile(filePath: string, substring: string): Promise<boolean> {
   return new Promise<boolean>((resolve, reject) => {
@@ -50,6 +52,28 @@ export async function getApexTestClasses(classRegexFilter: string = "", excludeS
 
   uxLog("log", this, c.grey(`Found APEX tests: ${c.bold(testClasses.join())}`));
   return testClasses;
+}
+
+export async function selectTestClassesFromPullRequests(pullRequests: CommonPullRequestInfo[], allAvailableTestClasses: string[]) {
+  const selectedTestClasses: Set<string> = new Set<string>();
+  const checkTestClassesExistence = allAvailableTestClasses && allAvailableTestClasses.length > 0;
+  for (const pr of pullRequests) {
+    const prConfigParsed = await getPullRequestScopedSfdxHardisConfig(pr);
+    if (prConfigParsed && prConfigParsed['deploymentApexTestClasses'] && Array.isArray(prConfigParsed['deploymentApexTestClasses'])) {
+      const prTestClasses = prConfigParsed['deploymentApexTestClasses'] as string[];
+      for (const testClass of prTestClasses) {
+        if (!checkTestClassesExistence) {
+          selectedTestClasses.add(testClass);
+        }
+        else if (checkTestClassesExistence && allAvailableTestClasses.includes(testClass)) {
+          selectedTestClasses.add(testClass);
+        } else {
+          uxLog("warning", this, c.yellow(`Test class ${testClass} from PR ${pr.idStr} is not available in the repository and will be ignored.`));
+        }
+      }
+    }
+  }
+  return Array.from(selectedTestClasses).sort((a, b) => a.localeCompare(b));
 }
 
 async function matchRegexFilter(classRegexFilter: string, className: string) {

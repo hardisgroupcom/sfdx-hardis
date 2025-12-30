@@ -522,6 +522,11 @@ The command's technical implementation involves a series of orchestrated steps:
   }
 
   private async buildDeploymentPlan() {
+    const configProject = await getConfig('project');
+    if (!(configProject?.enableDeprecatedDeploymentPlan === true)) {
+      uxLog("log", this, c.cyan('Deployment plan generation is disabled in project configuration. Enable it with enableDeprecatedDeploymentPlan: true in .sfdx-hardis.yml'));
+      return await git().status();
+    }
     // Build deployment plan splits
     let splitConfig = await this.getSeparateDeploymentsConfig();
     const localPackageXml = path.join('manifest', 'package.xml');

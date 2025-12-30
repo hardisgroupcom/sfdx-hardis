@@ -1,17 +1,17 @@
 import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from 'fs-extra';
-import yaml from 'js-yaml';
 
 import * as path from 'path';
 import { getConfig } from '../../config/index.js';
 import { uxLog } from './index.js';
-import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
-import { checkSfdxHardisTraceAvailable, listMajorOrgs } from './orgConfigUtils.js';
+import { GitProvider } from '../gitProvider/index.js';
+import { checkSfdxHardisTraceAvailable } from './orgConfigUtils.js';
 import { soqlQuery } from './apiUtils.js';
 // data import moved to DataAction class in actionsProvider
 import { getPullRequestData, setPullRequestData } from './gitUtils.js';
 import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
+import { getPullRequestScopedSfdxHardisConfig, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection, extraCommands?: any[] }) {
   const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
@@ -126,102 +126,18 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
 
 async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean) {
   await checkForDraftCommandsFile(property, checkOnly);
-  const pullRequests = await listAllPullRequestsToUse(checkOnly);
+  const pullRequests = await listAllPullRequestsForCurrentScope(checkOnly);
   for (const pr of pullRequests) {
     // Check if there is a .sfdx-hardis.PULL_REQUEST_ID.yml file in the PR
-    const prConfigFileName = path.join("scripts", "actions", `.sfdx-hardis.${pr.idStr}.yml`);
-    if (fs.existsSync(prConfigFileName)) {
-      try {
-        const prConfig = await fs.readFile(prConfigFileName, 'utf8');
-        const prConfigParsed = yaml.load(prConfig) as any;
-        if (prConfigParsed && prConfigParsed[property] && Array.isArray(prConfigParsed[property])) {
-          const prConfigCommands = prConfigParsed[property] as PrePostCommand[];
-          for (const cmd of prConfigCommands) {
-            cmd.pullRequest = pr;
-            commands.push(cmd);
-          }
-        }
-      } catch (e) {
-        uxLog("error", this, c.red(`Error while parsing ${prConfigFileName} file: ${(e as Error).message}`));
+    const prConfigParsed = await getPullRequestScopedSfdxHardisConfig(pr);
+    if (prConfigParsed && prConfigParsed[property] && Array.isArray(prConfigParsed[property])) {
+      const prConfigCommands = prConfigParsed[property] as PrePostCommand[];
+      for (const cmd of prConfigCommands) {
+        cmd.pullRequest = pr;
+        commands.push(cmd);
       }
     }
   }
-}
-
-let _cachedPullRequests: CommonPullRequestInfo[] | null = null;
-
-async function listAllPullRequestsToUse(checkOnly: boolean): Promise<CommonPullRequestInfo[]> {
-  if (_cachedPullRequests) {
-    return _cachedPullRequests;
-  }
-  const gitProvider = await GitProvider.getInstance();
-  if (!gitProvider) {
-    uxLog("warning", this, c.yellow('No git provider configured, skipping retrieval of commands from pull requests'));
-    return [];
-  }
-  const pullRequestInfo = await gitProvider.getPullRequestInfo();
-  if (!pullRequestInfo) {
-    uxLog("warning", this, c.yellow('No pull request info available, skipping retrieval of commands from pull requests'));
-    return [];
-  }
-  const majorOrgs = await listMajorOrgs();
-
-  // Source & target are not the same if we are in checkOnly mode or deployment mode
-  let sourceBranchToUse = '';
-  let targetBranchToUse = '';
-  if (checkOnly) {
-    sourceBranchToUse = pullRequestInfo.sourceBranch;
-    targetBranchToUse = pullRequestInfo.targetBranch;
-  }
-  else {
-    const prTargetOrgDef = majorOrgs.find(o => o.branchName === pullRequestInfo.targetBranch);
-    if (prTargetOrgDef) {
-      if (!prTargetOrgDef.mergeTargets || prTargetOrgDef.mergeTargets.length === 0) {
-        uxLog("warning", this, c.yellow(`[GitProvider] No merge targets defined for target branch ${prTargetOrgDef.branchName}, cannot retrieve pull requests to get commands from.`));
-        return [];
-      }
-      sourceBranchToUse = prTargetOrgDef.branchName;
-      targetBranchToUse = prTargetOrgDef.mergeTargets[0]; // Use first merge target as target branch
-    }
-    else {
-      uxLog("warning", this, c.yellow(`[GitProvider] Target branch ${pullRequestInfo.targetBranch} not found in major orgs list, cannot retrieve pull requests to get commands from.\nPR: ${JSON.stringify(pullRequestInfo, null, 2)}`));
-      return [];
-    }
-  }
-
-  const childBranchesNames = recursiveGetChildBranches(
-    targetBranchToUse,
-    majorOrgs,
-  );
-  const pullRequests = await gitProvider.listPullRequestsInBranchSinceLastMerge(
-    sourceBranchToUse,
-    targetBranchToUse,
-    [...childBranchesNames]
-  );
-  pullRequests.reverse(); // Oldest PR first
-  // Add current PR if not already present
-  if (!pullRequests.some(pr => pr.idStr === pullRequestInfo.idStr)) {
-    pullRequests.push(pullRequestInfo);
-  }
-  _cachedPullRequests = pullRequests;
-  return pullRequests
-}
-
-function recursiveGetChildBranches(
-  branchName: string,
-  majorOrgs: any[],
-  collected: Set<string> = new Set(),
-): Set<string> {
-  const directChildren = majorOrgs
-    .filter((o) => o.mergeTargets.includes(branchName))
-    .map((o) => o.branchName);
-  for (const child of directChildren) {
-    if (!collected.has(child)) {
-      collected.add(child);
-      recursiveGetChildBranches(child, majorOrgs, collected);
-    }
-  }
-  return collected;
 }
 
 async function checkForDraftCommandsFile(property: 'commandsPreDeploy' | 'commandsPostDeploy', checkOnly: boolean) {

@@ -229,7 +229,11 @@ export async function promptOrg(
       devHub: options.devHub === true,
       setDefault: options.setDefault !== false,
     });
-    return options.setDefault !== false ? await MetadataUtils.getCurrentOrg() : {};
+    const justConnectedOrg = globalThis.justConnectedOrg;
+    if (justConnectedOrg) {
+      return justConnectedOrg;
+    }
+    return {};
   }
 
   // Reset cache and try again

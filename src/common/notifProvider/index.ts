@@ -7,6 +7,7 @@ import { TeamsProvider } from "./teamsProvider.js";
 import { CONSTANTS, getConfig } from "../../config/index.js";
 import { EmailProvider } from "./emailProvider.js";
 import { ApiProvider } from "./apiProvider.js";
+import type { NotifMessage } from "./types.js";
 
 export abstract class NotifProvider {
   static getInstances(): NotifProviderRoot[] {
@@ -36,7 +37,7 @@ export abstract class NotifProvider {
     const config = await getConfig("user");
     const notificationsDisable =
       config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);
-    uxLog("error", this, c.grey(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
+    uxLog("log", this, c.grey(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
     const notifProviders = this.getInstances();
     if (notifProviders.length === 0 && isCI) {
       uxLog(
@@ -48,7 +49,7 @@ export abstract class NotifProvider {
       );
     }
     for (const notifProvider of notifProviders) {
-      uxLog("error", this, c.grey(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
+      uxLog("log", this, c.grey(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
       // Skip if matching NOTIFICATIONS_DISABLE except for Api
       if (notificationsDisable.includes(notifMessage.type) && notifProvider.isUserNotifProvider()) {
         uxLog(
@@ -78,45 +79,5 @@ export abstract class NotifProvider {
   }
 }
 
-export type NotifSeverity = "critical" | "error" | "warning" | "info" | "success" | "log";
-
-export interface NotifMessage {
-  text: string;
-  type:
-  | "ACTIVE_USERS"
-  | "AUDIT_TRAIL"
-  | "APEX_TESTS"
-  | "BACKUP"
-  | "DEPLOYMENT"
-  | "LEGACY_API"
-  | "LICENSES"
-  | "LINT_ACCESS"
-  | "UNUSED_METADATAS"
-  | "METADATA_STATUS"
-  | "MISSING_ATTRIBUTES"
-  | "SERVICENOW_REPORT"
-  | "UNUSED_LICENSES"
-  | "UNUSED_USERS"
-  | "UNUSED_APEX_CLASSES"
-  | "CONNECTED_APPS"
-  | "UNSECURED_CONNECTED_APPS"
-  | "ORG_INFO"
-  | "ORG_LIMITS"
-  | "RELEASE_UPDATES";
-  buttons?: NotifButton[];
-  attachments?: any[];
-  severity: NotifSeverity;
-  sideImage?: string;
-  attachedFiles?: string[];
-  logElements: any[];
-  metrics: any;
-  data: any;
-}
-
-export interface NotifButton {
-  text: string;
-  url?: string;
-  style?: "primary" | "danger";
-}
-
 export const UtilsNotifs = utilsNotifs;
+export type { NotifMessage, NotifButton, NotifSeverity } from "./types.js";

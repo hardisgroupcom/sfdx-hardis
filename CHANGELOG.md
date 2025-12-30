@@ -5,6 +5,48 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/): Added ability to apply the bypass to flows
+- Do not post a pull request comment when a flow has been created or deleted
+- Allow to override Grafana notification Monitoring key using SFDX_HARDIS_MONITORING_KEY
+- [hardis:project:clean:sensitive-metadatas](https://sfdx-hardis.cloudity.com/hardis/project/clean/sensitive-metadatas/): Remove secrets from more metadata types:
+  - Connected Apps 
+  - Auth Providers
+  - Named Credentials
+- [hardis:org:configure:auth](https://sfdx-hardis.cloudity.com/hardis/org/configure/auth/): Allow to create External Client Apps (metadata-based connected apps) for CI/CD authentication
+- DevOps: Improve identification of Pull Request in Azure Pipelines context
+- Docs: Improve clarity of manual steps for hiding standard applications
+
+## [6.18.0] 2025-12-26
+
+- Add capability to **select specific Apex Test Classes (beta)** to run during deployments in Smart Deploy feature.
+  - New config property `enableDeploymentApexTestClasses` (boolean, default: false): Enable the use of custom Apex Test Classes list during deployments. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.
+  - New config property `deploymentApexTestClasses` (array of strings): List of Apex Test Classes that will be run during deployments. Requires `enableDeploymentApexTestClasses` to be set to true (Not recommended, use only if you have specific needs).
+- Add capability to override Pull Request config properties **deploymentApexTestClasses**, **commandsPreDeploy** and **commandsPostDeploy** directly in Pull Request description using special syntax.
+
+Example:
+
+```yaml
+deploymentApexTestClasses:
+  - MyTestClass1
+  - MyTestClass2
+```
+
+- Disable deploymentPlan feature by default (can be re-enabled with `enableDeprecatedDeploymentPlan` in project configuration)
+
+## [6.17.1] 2025-12-22
+
+- [hardis:datacloud:extract:agentforce-conversations](https://sfdx-hardis.cloudity.com/hardis/datacloud/extract/agentforce-conversations/):
+  - Fix duplicate results
+  - Send notifications
+
+## [6.17.0] 2025-12-22
+
+- [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): Fix default org prompt whose response was ignored.
+- New command [hardis:datacloud:sql-query](https://sfdx-hardis.cloudity.com/hardis/datacloud/sql-query/) allowing to query Data Cloud tables with Ansi SQL
+- New command [hardis:datacloud:extract:agentforce-conversations](https://sfdx-hardis.cloudity.com/hardis/datacloud/extract/agentforce-conversations/) allowing to generate reports of Agentforce conversations, including feedback
+- New command [hardis:datacloud:extract:agentforce-feedback](https://sfdx-hardis.cloudity.com/hardis/datacloud/extract/agentforce-feedback/) allowing to generate reports of positive and negative Agentforce chats feedback, with full transcript and notifications.
+- Allow to force sending notifications if postNotifications is called with `alwaysSend: true`
+- CI: Add stale workflow
+- Doc: Add events and videos about sfdx-hardis
 
 ## [6.16.1] 2025-12-16
 

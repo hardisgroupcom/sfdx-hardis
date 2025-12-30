@@ -456,7 +456,7 @@ export async function smartDeploy(
       const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || '');
       if (orgCoveragePercent) {
         try {
-          await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: check, testlevel: testlevel });
+          await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: check, testlevel: testlevel, testClasses: options.testClasses });
         } catch (errCoverage) {
           await GitProvider.managePostPullRequestComment(check);
           killBoringExitHandlers();
@@ -1443,7 +1443,7 @@ async function updatePullRequestResultCoverage(
   coverageStatus: string,
   orgCoverage: number,
   orgCoverageTarget: number,
-  options: any
+  options: { check: boolean, testClasses?: string }
 ) {
   const existingPrData = getPullRequestData();
   const prDataCodeCoverage: Partial<PullRequestData> = {
@@ -1458,7 +1458,7 @@ async function updatePullRequestResultCoverage(
   if (coverageStatus === 'invalid') {
     prDataCodeCoverage.title =
       existingPrData.deployStatus === 'valid' ? '❌ Deployment failed: Code coverage error' : prDataCodeCoverage.title;
-    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget);
+    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget, options);
     prDataCodeCoverage.status = 'invalid';
   }
   // Code coverage failure but ignored thanks to config testCoverageNotBlocking
@@ -1467,9 +1467,9 @@ async function updatePullRequestResultCoverage(
       existingPrData.deployStatus === 'valid'
         ? '✅⚠️ Deployment success with ignored Code coverage error'
         : prDataCodeCoverage.title;
-    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget);
+    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget, options);
   } else {
-    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget);
+    prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget, options);
   }
   setPullRequestData(prDataCodeCoverage);
 }
