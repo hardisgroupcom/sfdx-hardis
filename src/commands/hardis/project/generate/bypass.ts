@@ -903,6 +903,15 @@ The command's technical implementation involves:
         };
       }
       const firstNodeName = fileContent?.Flow?.start?.[0]?.connector?.[0]?.targetReference?.[0] ?? null;
+      if (firstNodeName == null) {
+        return {
+          sObject,
+          automation: "Flow",
+          name,
+          outcome: IMPLEMENTATION_OUTCOME.SKIPPED,
+          comment: "Flow has no start connector or target reference",
+        };
+      }
       if (firstNodeName == 'SFDX_HARDIS_FLOW_BYPASS_DO_NOT_RENAME') {
         return {
           sObject,
