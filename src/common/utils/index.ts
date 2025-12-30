@@ -1541,6 +1541,123 @@ export async function restoreLocalSfdxInfo() {
   }
 }
 
+// Generate External Client App metadata files in a temporary directory
+export async function generateExternalClientAppMetadata(
+  appName: string,
+  profileName: string,
+  contactEmail: string,
+  crtContent: string,
+  consumerKey: string,
+  tmpDir: string
+): Promise<void> {
+  // 1. ExternalClientApplication (.eca-meta.xml)
+  const ecaMetadata = `<?xml version="1.0" encoding="UTF-8"?>
+<ExternalClientApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <contactEmail>${contactEmail}</contactEmail>
+    <description>External Client App for sfdx-hardis CI/CD authentication</description>
+    <distributionState>Local</distributionState>
+    <isProtected>false</isProtected>
+    <label>${appName}</label>
+</ExternalClientApplication>`;
+
+  // 2. ExtlClntAppOauthSettings (.ecaOauth-meta.xml)
+  const ecaOauthSettings = `<?xml version="1.0" encoding="UTF-8"?>
+<ExtlClntAppOauthSettings xmlns="http://soap.sforce.com/2006/04/metadata">
+    <commaSeparatedOauthScopes>Api,Web,RefreshToken</commaSeparatedOauthScopes>
+    <externalClientApplication>${appName}</externalClientApplication>
+    <label>${appName} OAuth Settings</label>
+</ExtlClntAppOauthSettings>`;
+
+  // 3. ExtlClntAppGlobalOauthSettings (.ecaGlblOauth-meta.xml)
+  const ecaGlobalOauthSettings = `<?xml version="1.0" encoding="UTF-8"?>
+<ExtlClntAppGlobalOauthSettings xmlns="http://soap.sforce.com/2006/04/metadata">
+    <callbackUrl>http://localhost:1717/OauthRedirect</callbackUrl>
+    <certificate>${crtContent}</certificate>
+    <consumerKey>${consumerKey}</consumerKey>
+    <externalClientApplication>${appName}</externalClientApplication>
+    <isConsumerSecretOptional>true</isConsumerSecretOptional>
+    <isIntrospectAllTokens>false</isIntrospectAllTokens>
+    <isNamedUserJwtEnabled>true</isNamedUserJwtEnabled>
+    <isPkceRequired>false</isPkceRequired>
+    <isSecretRequiredForRefreshToken>false</isSecretRequiredForRefreshToken>
+    <label>${appName} Global OAuth</label>
+    <shouldRotateConsumerKey>false</shouldRotateConsumerKey>
+    <shouldRotateConsumerSecret>false</shouldRotateConsumerSecret>
+</ExtlClntAppGlobalOauthSettings>`;
+
+  // 4. ExtlClntAppOauthConfigurablePolicies (.ecaOauthPlcy-meta.xml)
+  // - 4 hours refresh token validity
+  // - Admin approved / pre-authorized for selected profile
+  const ecaOauthPolicies = `<?xml version="1.0" encoding="UTF-8"?>
+<ExtlClntAppOauthConfigurablePolicies xmlns="http://soap.sforce.com/2006/04/metadata">
+    <commaSeparatedProfile>${profileName}</commaSeparatedProfile>
+    <externalClientApplication>${appName}</externalClientApplication>
+    <ipRelaxationPolicyType>Enforce</ipRelaxationPolicyType>
+    <isClientCredentialsFlowEnabled>false</isClientCredentialsFlowEnabled>
+    <isGuestCodeCredFlowEnabled>false</isGuestCodeCredFlowEnabled>
+    <isNamedUserJwtEnabled>true</isNamedUserJwtEnabled>
+    <isTokenExchangeFlowEnabled>false</isTokenExchangeFlowEnabled>
+    <label>${appName}OAuthSettings_defaultPolicy</label>
+    <permittedUsersPolicyType>AdminApprovedPreAuthorized</permittedUsersPolicyType>
+    <refreshTokenPolicyType>SpecificLifetime</refreshTokenPolicyType>
+    <refreshTokenValidityPeriod>4</refreshTokenValidityPeriod>
+    <refreshTokenValidityUnit>Hours</refreshTokenValidityUnit>
+    <requiredSessionLevel>STANDARD</requiredSessionLevel>
+</ExtlClntAppOauthConfigurablePolicies>`;
+
+  // 5. Package.xml
+  const packageXml = `<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>${appName}</members>
+        <name>ExternalClientApplication</name>
+    </types>
+    <types>
+        <members>${appName}OAuthSettings</members>
+        <name>ExtlClntAppOauthSettings</name>
+    </types>
+    <types>
+        <members>${appName}GlblOAuth</members>
+        <name>ExtlClntAppGlobalOauthSettings</name>
+    </types>
+    <types>
+      <members>${appName}OAuthSettings_defaultPolicy</members>
+      <name>ExtlClntAppOauthConfigurablePolicies</name>
+    </types>
+    <version>${getApiVersion()}</version>
+</Package>`;
+
+  // Create directories
+  const externalClientAppsDir = path.join(tmpDir, 'externalClientApps');
+  const extlClntAppOauthSettingsDir = path.join(tmpDir, 'extlClntAppOauthSettings');
+  const extlClntAppGlobalOauthSetsDir = path.join(tmpDir, 'extlClntAppGlobalOauthSets');
+  const extlClntAppOauthPoliciesDir = path.join(tmpDir, 'extlClntAppOauthPolicies');
+
+  await fs.ensureDir(externalClientAppsDir);
+  await fs.ensureDir(extlClntAppOauthSettingsDir);
+  await fs.ensureDir(extlClntAppGlobalOauthSetsDir);
+  await fs.ensureDir(extlClntAppOauthPoliciesDir);
+
+  // Write files
+  await fs.writeFile(path.join(tmpDir, 'package.xml'), packageXml);
+  await fs.writeFile(
+    path.join(externalClientAppsDir, `${appName}.eca-meta.xml`),
+    ecaMetadata
+  );
+  await fs.writeFile(
+    path.join(extlClntAppOauthSettingsDir, `${appName}OAuthSettings.ecaOauth-meta.xml`),
+    ecaOauthSettings
+  );
+  await fs.writeFile(
+    path.join(extlClntAppGlobalOauthSetsDir, `${appName}GlblOAuth.ecaGlblOauth-meta.xml`),
+    ecaGlobalOauthSettings
+  );
+  await fs.writeFile(
+    path.join(extlClntAppOauthPoliciesDir, `${appName}OAuthSettings_defaultPolicy.ecaOauthPlcy-meta.xml`),
+    ecaOauthPolicies
+  );
+}
+
 // Generate SSL certificate in temporary folder and copy the key in project directory
 export async function generateSSLCertificate(
   branchName: string,
@@ -1626,9 +1743,31 @@ export async function generateSSLCertificate(
     WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, "Help to configure CI variables", "docUrl");
     await prompts({
       type: 'confirm',
-      message: c.cyanBright('Please confirm when variables have been set'),
+      message: c.cyanBright('Please confirm when variables have been set (expand section above to see values)'),
       description: 'Confirm when you have configured the required CI/CD environment variables in your deployment platform',
     });
+
+    // Ask user which type of app to create
+    const appTypeResponse = await prompts({
+      type: 'select',
+      name: 'value',
+      message: c.cyanBright('Which type of app do you want to create for CI/CD authentication?'),
+      description: 'Select the type of OAuth app to create for CI/CD authentication',
+      choices: [
+        {
+          title: 'External Client App (Recommended)',
+          value: 'externalClientApp',
+          description: 'Metadata-based app - fully deployable, requires API v59+'
+        },
+        {
+          title: 'Connected App (Legacy)',
+          value: 'connectedApp',
+          description: 'Standard Connected App - works with all Salesforce editions'
+        },
+      ],
+      initial: 0,
+    });
+
     // Build default app name from branch name by replacing all non-alphanumeric characters with empty string
     let appNameDflt = branchName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
     // Replace "monitoring" by "mon"
@@ -1639,28 +1778,184 @@ export async function generateSSLCertificate(
     if (appNameDflt.length > 20) {
       appNameDflt = appNameDflt.substring(0, 20);
     }
-    // Request info for deployment
-    const promptResponses = await prompts([
-      {
-        type: 'text',
-        name: 'appName',
-        initial: 'sfdxhardis' + appNameDflt,
-        message: c.cyanBright('How would you like to name the Connected App ?'),
-        description: 'Name for the Connected App that will be created in your Salesforce org',
-        placeholder: 'Ex: sfdx_hardis',
-      },
-    ]);
-    const contactEmail = await promptUserEmail(
-      'Enter a contact email for the Connect App (ex: nicolas.vuillamy@cloudity.com)'
-    );
-    const profile = await promptProfiles(conn, {
-      multiselect: false,
-      message: 'What profile will be used for the connected app ? (ex: System Administrator)',
-      initialSelection: ['System Administrator', 'Administrateur Système'],
-    });
+
+    // Read certificate content (shared by both flows)
     const crtContent = await fs.readFile(crtFile, 'utf8');
-    // Build ConnectedApp metadata
-    const connectedAppMetadata = `<?xml version="1.0" encoding="UTF-8"?>
+
+    const buildDeployParamsForAuthMetadata = async (deployDir: string): Promise<any> => {
+      const isProduction = await isProductionOrg(options.targetUsername || null, { conn: conn });
+      const deployParams: any = {
+        deployDir,
+        testlevel: isProduction ? 'RunLocalTests' : 'NoTestRun',
+        targetUsername: options.targetUsername ? options.targetUsername : null,
+      };
+
+      if (!isProduction) {
+        return deployParams;
+      }
+
+      let uniqueTestClass = process.env.SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS || null;
+      if (!uniqueTestClass) {
+        const testClasses = await conn.tooling.query(
+          "SELECT Id, Name FROM ApexClass WHERE Name LIKE '%Test%' OR Name LIKE '%test%' OR Name LIKE '%TEST%' ORDER BY Name LIMIT 1"
+        );
+        if (testClasses.totalSize > 0) {
+          uniqueTestClass = testClasses.records[0].Name;
+        }
+      }
+      if (uniqueTestClass) {
+        deployParams.testlevel = 'RunSpecifiedTests';
+        deployParams.runTests = [uniqueTestClass];
+        uxLog(
+          "log",
+          commandThis,
+          c.grey(
+            `Production org detected, will run test class found ${uniqueTestClass} on deployment.\nIf you want to specify a specific test class, set SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS variable`
+          )
+        );
+      }
+
+      return deployParams;
+    };
+
+    const deployAuthMetadataAndCleanup = async (deployDir: string, successLabel: string): Promise<void> => {
+      const deployParams = await buildDeployParamsForAuthMetadata(deployDir);
+      const deployRes = await deployMetadatas(deployParams);
+      if (deployRes?.status !== 0) {
+        throw new Error('[sfdx-hardis] Failed to deploy metadatas');
+      }
+      uxLog("action", commandThis, c.cyan(`Successfully deployed ${c.green(successLabel)}`));
+      // Cleanup temporary metadata directory and local certificate after successful deployment
+      await fs.remove(deployDir);
+      await fs.remove(crtFile);
+    };
+
+    // Branch based on app type selection
+    if (appTypeResponse.value === 'externalClientApp') {
+      // ========== EXTERNAL CLIENT APP FLOW ==========
+      const promptResponses = await prompts([
+        {
+          type: 'text',
+          name: 'appName',
+          initial: 'sfdxhardis' + appNameDflt,
+          message: c.cyanBright('How would you like to name the External Client App?'),
+          description: 'Name for the External Client App that will be created in your Salesforce org',
+          placeholder: 'Ex: sfdx_hardis',
+        },
+      ]);
+      const contactEmail = await promptUserEmail(
+        'Enter a contact email for the External Client App (ex: teoman.sertcelik@gmail.com)'
+      );
+
+      const profileSelection = await promptProfiles(conn, {
+        multiselect: false,
+        message: 'What profile will be pre-authorized for the External Client App ? (ex: System Administrator)',
+        initialSelection: ['System Administrator', 'Administrateur Système'],
+      });
+
+      const selectedProfile = Array.isArray(profileSelection)
+        ? (profileSelection[0] as string)
+        : (profileSelection as string);
+
+      // Sanitize app name for metadata
+      const sanitizedAppName = promptResponses.appName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() || 'sfdxhardis';
+
+      // Create metadata folder and generate ECA metadata files
+      const tmpDirMd = await createTempDir();
+      await generateExternalClientAppMetadata(
+        sanitizedAppName,
+        selectedProfile || 'System Administrator',
+        contactEmail,
+        crtContent,
+        consumerKey,
+        tmpDirMd
+      );
+
+      // Deploy metadatas
+      try {
+        uxLog(
+          "action",
+          commandThis,
+          c.cyan(
+            `Deploying External Client App ${c.bold(sanitizedAppName)} into target org ${options.targetUsername || ''} ...`
+          )
+        );
+
+        // Log metadata info (hide sensitive data)
+        uxLog("log", commandThis, c.grey(`External Client App metadata files:
+- externalClientApps/${sanitizedAppName}.eca-meta.xml
+- extlClntAppOauthSettings/${sanitizedAppName}OAuthSettings.ecaOauth-meta.xml
+- extlClntAppGlobalOauthSets/${sanitizedAppName}GlblOAuth.ecaGlblOauth-meta.xml (certificate and consumer key hidden)`));
+
+        uxLog(
+          "log",
+          commandThis,
+          c.grey(
+            `External Client App OAuth policy metadata file:\n- extlClntAppOauthPolicies/${sanitizedAppName}OAuthSettings_defaultPolicy.ecaOauthPlcy-meta.xml (AdminApprovedPreAuthorized, refresh token 4 hours)`
+          )
+        );
+
+        uxLog(
+          "log",
+          commandThis,
+          c.grey(c.yellow(
+            `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the External Client App 😊`
+          ))
+        );
+
+        await deployAuthMetadataAndCleanup(tmpDirMd, `${sanitizedAppName} External Client App`);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (e) {
+        uxLog(
+          "error",
+          commandThis,
+          c.red(
+            'Error pushing External Client App metadata. Maybe the app name is already taken?\nYou may try again with another app name'
+          )
+        );
+        uxLog(
+          "warning",
+          commandThis,
+          c.yellow(`
+${c.bold('MANUAL INSTRUCTIONS')}
+If deployment fails, create the External Client App manually:
+1. Go to Setup > App Manager > New External Client App
+2. Set App Name: ${sanitizedAppName}
+3. Contact Email: ${contactEmail}
+4. Enable OAuth Settings with scopes: Api, Web, RefreshToken
+5. Upload the certificate file: ${c.bold(crtFile)} (delete from your computer after!)
+6. Copy Consumer Key to CI/CD variable ${c.green(c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`))}`)
+        );
+        await prompts({
+          type: 'confirm',
+          message: c.cyanBright(
+            'You need to manually configure the External Client App. Follow the MANUAL INSTRUCTIONS above, then continue here'
+          ),
+          description: 'Confirm when you have completed the manual External Client App configuration steps',
+        });
+      }
+    } else {
+      // ========== CONNECTED APP FLOW (existing logic) ==========
+      const promptResponses = await prompts([
+        {
+          type: 'text',
+          name: 'appName',
+          initial: 'sfdxhardis' + appNameDflt,
+          message: c.cyanBright('How would you like to name the Connected App ?'),
+          description: 'Name for the Connected App that will be created in your Salesforce org',
+          placeholder: 'Ex: sfdx_hardis',
+        },
+      ]);
+      const contactEmail = await promptUserEmail(
+        'Enter a contact email for the Connect App (ex: nicolas.vuillamy@cloudity.com)'
+      );
+      const profile = await promptProfiles(conn, {
+        multiselect: false,
+        message: 'What profile will be used for the connected app ? (ex: System Administrator)',
+        initialSelection: ['System Administrator', 'Administrateur Système'],
+      });
+      // Build ConnectedApp metadata
+      const connectedAppMetadata = `<?xml version="1.0" encoding="UTF-8"?>
 <ConnectedApp xmlns="http://soap.sforce.com/2006/04/metadata">
   <contactEmail>${contactEmail}</contactEmail>
   <label>${promptResponses.appName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() || 'sfdxhardis'}</label>
@@ -1683,7 +1978,7 @@ export async function generateSSLCertificate(
   <profileName>${profile || 'System Administrator'}</profileName>
 </ConnectedApp>
 `;
-    const packageXml = `<?xml version="1.0" encoding="UTF-8"?>
+      const packageXml = `<?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
   <types>
     <members>${promptResponses.appName}</members>
@@ -1692,94 +1987,67 @@ export async function generateSSLCertificate(
   <version>${getApiVersion()}</version>
 </Package>
 `;
-    // create metadata folder
-    const tmpDirMd = await createTempDir();
-    const connectedAppDir = path.join(tmpDirMd, 'connectedApps');
-    await fs.ensureDir(connectedAppDir);
-    await fs.writeFile(path.join(tmpDirMd, 'package.xml'), packageXml);
-    await fs.writeFile(path.join(connectedAppDir, `${promptResponses.appName}.connectedApp`), connectedAppMetadata);
+      // create metadata folder
+      const tmpDirMd = await createTempDir();
+      const connectedAppDir = path.join(tmpDirMd, 'connectedApps');
+      await fs.ensureDir(connectedAppDir);
+      await fs.writeFile(path.join(tmpDirMd, 'package.xml'), packageXml);
+      await fs.writeFile(path.join(connectedAppDir, `${promptResponses.appName}.connectedApp`), connectedAppMetadata);
 
-    // Deploy metadatas
-    try {
-      uxLog(
-        "action",
-        commandThis,
-        c.cyan(
-          `Deploying Connected App ${c.bold(promptResponses.appName)} into target org ${options.targetUsername || ''
-          } ...`
-        )
-      );
-      // Replace sensitive info in connectedAppMetadata for logging
-      const connectedAppMetadataForLog = connectedAppMetadata
-        .replace(consumerKey, '***CONSUMERKEY_HIDDEN_FROM_LOGS***')
-        .replace(crtContent, '***CERTIFICATE_HIDDEN_FROM_LOGS***');
+      // Deploy metadatas
+      try {
+        uxLog(
+          "action",
+          commandThis,
+          c.cyan(
+            `Deploying Connected App ${c.bold(promptResponses.appName)} into target org ${options.targetUsername || ''
+            } ...`
+          )
+        );
+        // Replace sensitive info in connectedAppMetadata for logging
+        const connectedAppMetadataForLog = connectedAppMetadata
+          .replace(consumerKey, '***CONSUMERKEY_HIDDEN_FROM_LOGS***')
+          .replace(crtContent, '***CERTIFICATE_HIDDEN_FROM_LOGS***');
 
-      uxLog("log", commandThis, c.grey(`Connected App metadatas XML:\n${connectedAppMetadataForLog}`));
-      uxLog(
-        "log",
-        commandThis,
-        c.grey(c.yellow(
-          `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file 😊`
-        ))
-      );
-      const isProduction = await isProductionOrg(options.targetUsername || null, { conn: conn });
-      const deployParams: any = {
-        deployDir: tmpDirMd,
-        testlevel: isProduction ? 'RunLocalTests' : 'NoTestRun',
-        targetUsername: options.targetUsername ? options.targetUsername : null,
-      };
-      // If is Production org, find the first Apex test class to run
-      if (isProduction) {
-        let uniqueTestClass = process.env.SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS || null;
-        if (!uniqueTestClass) {
-          const testClasses = await conn.tooling.query(
-            "SELECT Id, Name FROM ApexClass WHERE Name LIKE '%Test%' OR Name LIKE '%test%' OR Name LIKE '%TEST%' ORDER BY Name LIMIT 1"
-          );
-          if (testClasses.totalSize > 0) {
-            uniqueTestClass = testClasses.records[0].Name;
-          }
-        }
-        if (uniqueTestClass) {
-          deployParams.testlevel = 'RunSpecifiedTests';
-          deployParams.runTests = [uniqueTestClass];
-          uxLog("log", commandThis, c.grey(`Production org detected, will run test class found ${uniqueTestClass} on deployment.
-If you want to specify a specific test class, set SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS variable`));
-        }
-      }
-      const deployRes = await deployMetadatas(deployParams);
-      console.assert(deployRes.status === 0, c.red('[sfdx-hardis] Failed to deploy metadatas'));
-      uxLog("action", commandThis, c.cyan(`Successfully deployed ${c.green(promptResponses.appName)} Connected App`));
-      await fs.remove(tmpDirMd);
-      await fs.remove(crtFile);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) {
-      uxLog(
-        "error",
-        commandThis,
-        c.red(
-          'Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name'
-        )
-      );
-      uxLog(
-        "warning",
-        commandThis,
-        c.yellow(`
+        uxLog("log", commandThis, c.grey(`Connected App metadatas XML:\n${connectedAppMetadataForLog}`));
+        uxLog(
+          "log",
+          commandThis,
+          c.grey(c.yellow(
+            `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file 😊`
+          ))
+        );
+        await deployAuthMetadataAndCleanup(tmpDirMd, `${promptResponses.appName} Connected App`);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (e) {
+        uxLog(
+          "error",
+          commandThis,
+          c.red(
+            'Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name'
+          )
+        );
+        uxLog(
+          "warning",
+          commandThis,
+          c.yellow(`
 ${c.bold('MANUAL INSTRUCTIONS')}
 If this is a Test class issue (production env), you may have to create manually connected app ${promptResponses.appName
-          }:
+            }:
 - Follow instructions here: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm
   - Use certificate ${c.bold(crtFile)} in "Use Digital Signature section" (delete the file from your computer after !)
 - Once created, update CI/CD variable ${c.green(
-            c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
-          )} with the ConsumerKey of the newly created connected app`)
-      );
-      await prompts({
-        type: 'confirm',
-        message: c.cyanBright(
-          'You need to manually configure the connected app. Follow the MANUAL INSTRUCTIONS above, then continue here'
-        ),
-        description: 'Confirm when you have completed the manual Connected App configuration steps',
-      });
+              c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
+            )} with the ConsumerKey of the newly created connected app`)
+        );
+        await prompts({
+          type: 'confirm',
+          message: c.cyanBright(
+            'You need to manually configure the connected app. Follow the MANUAL INSTRUCTIONS above, then continue here'
+          ),
+          description: 'Confirm when you have completed the manual Connected App configuration steps',
+        });
+      }
     }
   } else {
     // Tell infos to install manually
