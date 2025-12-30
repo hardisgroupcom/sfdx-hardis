@@ -349,7 +349,6 @@ The command's technical implementation involves:
     }
 
     // Generate files and apply bypasses
-    uxLog("action", this, c.cyan(`Generating bypass metadata files for selected sObjects and target automations...`));
     this.generateFiles(targetSObjects, targetAutomations);
 
     if (applyToVrs) {
@@ -522,8 +521,20 @@ The command's technical implementation involves:
         "utf-8"
       );
 
-      uxLog("log", this, c.grey(`Created: ${path.basename(customPermissionFilePath)} for ${sObject}`));
-      uxLog("log", this, c.grey(`Created: ${path.basename(permissionSetFilePath)} for ${sObject}`));
+      const createdMessages = [
+        `Created: ${path.basename(customPermissionFilePath)} for ${sObject}`,
+        `Created: ${path.basename(permissionSetFilePath)} for ${sObject}`,
+      ];
+      // In VS Code UI, prefer sending details through the websocket so they appear within the progress widget.
+      if (WebSocketClient.isAliveWithLwcUI()) {
+        for (const message of createdMessages) {
+          WebSocketClient.sendCommandLogLineMessage(message, 'log');
+        }
+      } else {
+        for (const message of createdMessages) {
+          uxLog("log", this, c.grey(message));
+        }
+      }
 
       baseReportItem.outcome = METADATA_GENERATION_OUTCOME.GENERATED;
       baseReportItem.customPermissionFilePath = customPermissionFilePath;
@@ -539,15 +550,16 @@ The command's technical implementation involves:
     let counter = 0;
     const totalSteps = Object.keys(targetSObjects).length * targetAutomations.length;
     WebSocketClient.sendProgressStartMessage("Generating bypass metadata files...", totalSteps);
-    Object.keys(targetSObjects).forEach((developerName) => {
+    for (const developerName of Object.keys(targetSObjects)) {
       counter++;
-      targetAutomations.forEach((automation) => {
+      WebSocketClient.sendProgressStepMessage(counter, totalSteps);
+      for (const automation of targetAutomations) {
         this.generateXMLFiles(developerName, automation);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, totalSteps);
-      });
-      WebSocketClient.sendProgressEndMessage(totalSteps);
-    });
+      }
+    }
+    WebSocketClient.sendProgressEndMessage(totalSteps);
   }
 
   // Metadata handling
