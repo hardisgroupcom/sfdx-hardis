@@ -12,7 +12,7 @@
         "**/actionsProvider/**"
     ],
     "language": "en",
-    "version": "0.1",
+    "version": "0.2",
     "words": [
         "AAAS",
         "AAAU",
@@ -67,6 +67,8 @@
         "CONV",
         "Callout",
         "Catg",
+        "Sertcelik",
+        "Teoman",
         "Chantier",
         "Chittum",
         "Clnt",
