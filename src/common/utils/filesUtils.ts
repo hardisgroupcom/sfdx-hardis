@@ -1466,7 +1466,7 @@ export async function countLinesInFile(file: string) {
  */
 export async function generateReportPath(fileNamePrefix: string, outputFile: string, options: { withDate?: boolean; withBranchName?: boolean; fileExtension?: string; fileNamePartsSeparator?: string } = {}): Promise<string> {
   const { withDate = false, withBranchName = true, fileExtension = 'csv', fileNamePartsSeparator = '-' } = options;
-  if (outputFile == null) {
+  if (outputFile == null || outputFile === '') {
     const reportDir = await getReportDirectory();
     const fileNameParts: string[] = [fileNamePrefix];
     if (withBranchName) {
