@@ -599,7 +599,7 @@ This command focuses on one or more sObjects and measures how many records popul
         'object-field-usage-summary',
         'Object field usage summary'
       );
-      csvFilesForXlsx.push(summaryCsv);
+      csvFilesForXlsx.unshift(summaryCsv);
       reportFiles.push({ type: 'csv', file: summaryCsv });
     }
 
