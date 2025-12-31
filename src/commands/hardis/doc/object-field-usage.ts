@@ -9,7 +9,7 @@ import { soqlQuery, soqlQueryTooling } from '../../../common/utils/apiUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { createXlsxFromCsvFiles, generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { listOrgSObjectsFiltered } from '../../../common/utils/orgUtils.js';
+import { listOrgSObjects } from '../../../common/utils/orgUtils.js';
 
 type FieldUsageRow = {
   sObjectName: string;
@@ -57,6 +57,7 @@ This command focuses on one or more sObjects and measures how many records popul
 `;
 
   public static examples = [
+    '$ sf hardis:doc:object-field-usage',
     '$ sf hardis:doc:object-field-usage --objects Account,Contact',
     '$ sf hardis:doc:object-field-usage --target-org myOrgAlias --objects CustomObject__c',
     '$ sf hardis:doc:object-field-usage --objects Account --fields SalesRegionAcct__c,Region__c',
@@ -461,17 +462,20 @@ This command focuses on one or more sObjects and measures how many records popul
 
     const objectContexts: ObjectContext[] = [];
     if (uniqueObjects.length === 0 || hasPromptSentinel) {
-      const availableSObjects = await listOrgSObjectsFiltered(connection);
-      const sObjectsFiltered = Object.entries(availableSObjects).map(([name, label]) => ({ name, label }));
-      sortArray(sObjectsFiltered, { by: 'name' });
+      const availableSObjects = await listOrgSObjects(connection);
+      const sObjectApiNames = (availableSObjects?.records || [])
+        .map((record: any) => record?.QualifiedApiName)
+        .filter((apiName: any) => typeof apiName === 'string' && apiName.length > 0)
+        .filter((apiName: string) => !apiName.endsWith('__Share') && !apiName.endsWith('__ChangeEvent'));
+      sortArray(sObjectApiNames);
 
       const promptObjectsRes = await prompts({
         type: 'multiselect',
         name: 'value',
         message: 'Select the SObjects to analyze:',
         description: "Exclude objects you don't want to analyze.",
-        choices: sObjectsFiltered.map((obj: any) => ({ title: obj.name, value: obj.name })),
-        initial: sObjectsFiltered.map((obj: any) => obj.name),
+        choices: sObjectApiNames.map((apiName: string) => ({ title: apiName, value: apiName })),
+        initial: sObjectApiNames,
       });
       const selectedObjects = promptObjectsRes.value || [];
       if (!selectedObjects.length) {
