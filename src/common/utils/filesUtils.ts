@@ -1539,6 +1539,8 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
     const xslxFile = path.join(xlsDirName, xslFileName);
     await fs.ensureDir(xlsDirName);
+    // Delete existing file if any
+    await fs.remove(xslxFile);
     await csvToXls(outputPath, xslxFile, options);
     uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
@@ -1574,6 +1576,8 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
     const xslxFile = path.join(xlsDirName, xslFileName);
     await fs.ensureDir(xlsDirName);
+    // Delete existing file if any
+    await fs.remove(xslxFile);
     await csvFilesToXls(csvFilesPath, xslxFile, options);
     uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
@@ -1599,13 +1603,62 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
 async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: ExcelExportOptions) {
   const workbook = new ExcelJS.Workbook();
   let worksheet: ExcelJS.Worksheet;
+  const usedWorksheetNames = new Set<string>();
+
+  const sanitizeWorksheetName = (name: string): string => {
+    // Excel constraints: max 31 chars, no : \ / ? * [ ] and no control chars.
+    const withoutControlChars = Array.from(name || '')
+      .filter((char) => char >= ' ')
+      .join('');
+    return withoutControlChars
+      .replace(/\.csv$/i, '')
+      .replace(/[\u005B\u005D*\\\\?:/]/g, ' ')
+      .trim();
+  };
+
+  const makeUniqueWorksheetName = (desiredName: string): string => {
+    const maxLength = 31;
+    const base = sanitizeWorksheetName(desiredName) || 'Sheet';
+
+    let candidate = base.substring(0, maxLength);
+    if (!usedWorksheetNames.has(candidate)) {
+      return candidate;
+    }
+
+    for (let i = 2; i < 1000; i++) {
+      const suffix = `_${i}`;
+      const available = Math.max(1, maxLength - suffix.length);
+      candidate = `${base.substring(0, available)}${suffix}`;
+      if (!usedWorksheetNames.has(candidate)) {
+        return candidate;
+      }
+    }
+
+    const hashSuffix = crypto.createHash('sha1').update(base).digest('hex').substring(0, 6);
+    const finalSuffix = `_${hashSuffix}`;
+    const available = Math.max(1, maxLength - finalSuffix.length);
+    return `${base.substring(0, available)}${finalSuffix}`;
+  };
+
   for (const csvFile of csvFiles) {
     if (!csvFile) {
       console.warn(`[csvFilesToXls] Skipping null/undefined csvFile:`, csvFile);
       continue;
     }
+    if (!fs.existsSync(csvFile)) {
+      console.warn(`[csvFilesToXls] Skipping missing csvFile:`, csvFile);
+      continue;
+    }
+    const stat = await fs.stat(csvFile);
+    if (!stat || stat.size === 0) {
+      console.warn(`[csvFilesToXls] Skipping empty csvFile:`, csvFile);
+      continue;
+    }
     worksheet = await workbook.csv.readFile(csvFile);
-    worksheet.name = path.basename(csvFile).replace('.csv', '').substring(0, 25);
+    const desiredWorksheetName = path.basename(csvFile).replace('.csv', '');
+    const worksheetName = makeUniqueWorksheetName(desiredWorksheetName);
+    worksheet.name = worksheetName;
+    usedWorksheetNames.add(worksheetName);
     applyWorksheetFormatting(worksheet, options);
     // Scan only the first row and convert string formulas
     const firstRow = worksheet.getRow(1);

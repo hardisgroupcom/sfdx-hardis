@@ -26,6 +26,7 @@ import {
 import { MetadataUtils } from "../../../../common/metadata-utils/index.js";
 import { generateCsvFile, generateReportPath } from "../../../../common/utils/filesUtils.js";
 import { WebSocketClient } from "../../../../common/websocketClient.js";
+import { listOrgSObjectsFiltered } from "../../../../common/utils/orgUtils.js";
 
 // Constants
 const ALLOWED_AUTOMATIONS = ["Flow", "Trigger", "VR"]; // TODO: type and remove hardcoded
@@ -225,7 +226,7 @@ The command's technical implementation involves:
     const automations = flags.automations || null;
     this.outputFile = flags.outputfile || null;
 
-    const availableSObjects = await this.getFilteredSObjects(connection);
+    const availableSObjects = await listOrgSObjectsFiltered(connection);
     let targetSObjects = {};
     let targetAutomations = [];
 
@@ -397,25 +398,6 @@ The command's technical implementation involves:
     await generateCsvFile(this.reports.implementation, implementationReportFilePath, { fileTitle: 'Bypass Implementation Report' });
   }
 
-  // Query methods
-  public async querySObjects(connection: Connection) {
-    const sObjectsQuery = `SELECT Id, Label, DeveloperName, QualifiedApiName, DurableId, IsTriggerable, IsCustomizable, IsApexTriggerable 
-      FROM EntityDefinition WHERE IsTriggerable = true AND IsCustomizable = true and IsCustomSetting = false ORDER BY DeveloperName`;
-    const results = await soqlQuery(sObjectsQuery, connection);
-    uxLog("log", this, c.grey(`Found ${results.records.length} sObjects.`));
-    return results;
-  }
-
-  public async getFilteredSObjects(connection: Connection): Promise<{ [key: string]: string }> {
-    const sObjectResults = await this.querySObjects(connection);
-    const sObjectsDict: { [key: string]: string } = {};
-    for (const record of sObjectResults.records) {
-      if (!record.DeveloperName.endsWith("__Share") && !record.DeveloperName.endsWith("__ChangeEvent")) {
-        sObjectsDict[record.DeveloperName] = `${record.Label} (${record.QualifiedApiName})`;
-      }
-    }
-    return sObjectsDict;
-  }
 
   public async queryTriggers(connection: Connection) {
     const query = `SELECT Id, Name, Status, IsValid, Body, BodyCrc, TableEnumOrId, ManageableState From ApexTrigger WHERE ManageableState != 'installed'`;
@@ -881,7 +863,7 @@ The command's technical implementation involves:
       }
 
       const fileContent = await parseXmlFile(filePath);
-      
+
       // Validate Flow structure - ensure we have a start element
       if (!fileContent?.Flow?.start || !Array.isArray(fileContent.Flow.start) || fileContent.Flow.start.length === 0) {
         return {

@@ -809,3 +809,24 @@ export async function findUserByUsernameLike(usernameLike: string, conn: Connect
   }
   return null;
 }
+
+
+// Query methods
+export async function listOrgSObjects(connection: Connection) {
+  const sObjectsQuery = `SELECT Id, Label, DeveloperName, QualifiedApiName, DurableId, IsTriggerable, IsCustomizable, IsApexTriggerable 
+      FROM EntityDefinition WHERE IsTriggerable = true AND IsCustomizable = true and IsCustomSetting = false ORDER BY DeveloperName`;
+  const results = await soqlQuery(sObjectsQuery, connection);
+  uxLog("log", this, c.grey(`Found ${results.records.length} sObjects.`));
+  return results;
+}
+
+export async function listOrgSObjectsFiltered(connection: Connection): Promise<{ [key: string]: string }> {
+  const sObjectResults = await listOrgSObjects(connection);
+  const sObjectsDict: { [key: string]: string } = {};
+  for (const record of sObjectResults.records) {
+    if (!record.DeveloperName.endsWith("__Share") && !record.DeveloperName.endsWith("__ChangeEvent")) {
+      sObjectsDict[record.DeveloperName] = `${record.Label} (${record.QualifiedApiName})`;
+    }
+  }
+  return sObjectsDict;
+}
