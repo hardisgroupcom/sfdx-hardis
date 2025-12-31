@@ -4,10 +4,12 @@ import { AnyJson } from '@salesforce/ts-types';
 import { Connection } from '@salesforce/core';
 import c from 'chalk';
 import sortArray from 'sort-array';
-import { generateReports, isCI, uxLog, uxLogTable } from '../../../common/utils/index.js';
+import { generateReports, isCI, uxLog } from '../../../common/utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../../../common/utils/apiUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { createXlsxFromCsvFiles, generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
+import { WebSocketClient } from '../../../common/websocketClient.js';
+import { listOrgSObjectsFiltered } from '../../../common/utils/orgUtils.js';
 
 type FieldUsageRow = {
   sObjectName: string;
@@ -142,7 +144,7 @@ This command focuses on one or more sObjects and measures how many records popul
         this,
         c.grey(
           `Processing ${sObjectName}: batch ${Math.floor(i / batchSize) + 1}/${totalBatches} ` +
-            `(${i + 1}-${i + batch.length} / ${fields.length} fields)`
+          `(${i + 1}-${i + batch.length} / ${fields.length} fields)`
         )
       );
 
@@ -266,9 +268,9 @@ This command focuses on one or more sObjects and measures how many records popul
       { key: 'percentage', header: 'Percentage' },
     ];
 
-    uxLog("action", this, c.cyan(`Found ${rows.length} distinct values for ${fieldName}.`));
-    uxLog("action", this, c.cyan(`Total ${sObjectName} records: ${totalRecords}.`));
-    uxLogTable(this, rows, columns.map((col) => col.key));
+    uxLog("log", this, c.cyan(`Found ${rows.length} distinct values for ${fieldName}.`));
+    uxLog("log", this, c.cyan(`Total ${sObjectName} records: ${totalRecords}.`));
+    // uxLogTable(this, rows, columns.map((col) => col.key));
 
     const reportFiles = await generateReports(rows, columns, this, {
       logFileName: `object-field-distribution-${sObjectName}-${fieldName}`,
@@ -294,7 +296,7 @@ This command focuses on one or more sObjects and measures how many records popul
       return { rows: [], totalRecords: 0, skippedFields: [] };
     }
 
-    uxLog("action", this, c.cyan(`Counting total ${sObjectName} records...`));
+    uxLog("log", this, c.cyan(`Counting total ${sObjectName} records...`));
     const totalRecords = await this.countRecords(connection, sObjectName, useTooling);
 
     const skippedFields: SkippedFieldInfo[] = [];
@@ -327,21 +329,21 @@ This command focuses on one or more sObjects and measures how many records popul
       });
     }
 
-    const columns = [
-      { key: 'fieldApiName', header: 'Field API Name' },
-      { key: 'fieldLabel', header: 'Field Label' },
-      { key: 'populatedRecords', header: 'Populated Records' },
-      { key: 'populatedPercentage', header: 'Populated %' },
-    ];
+    // const columns = [
+    //   { key: 'fieldApiName', header: 'Field API Name' },
+    //   { key: 'fieldLabel', header: 'Field Label' },
+    //   { key: 'populatedRecords', header: 'Populated Records' },
+    //   { key: 'populatedPercentage', header: 'Populated %' },
+    // ];
 
     const resultSorted = sortArray(rows, {
       by: ['populatedPercentageNumeric'],
       order: ['desc'],
     });
 
-    uxLog("action", this, c.cyan(`Computed population metrics for ${resultSorted.length} fields on ${sObjectName}.`));
-    uxLog("action", this, c.cyan(`Total records for ${sObjectName}: ${totalRecords}.`));
-    uxLogTable(this, resultSorted, columns.map((col) => col.key));
+    uxLog("log", this, c.grey(`Computed population metrics for ${resultSorted.length} fields on ${sObjectName}.`));
+    uxLog("log", this, c.grey(`Total records for ${sObjectName}: ${totalRecords}.`));
+    //uxLogTable(this, resultSorted, columns.map((col) => col.key));
 
     return { rows: resultSorted, totalRecords, skippedFields };
   }
@@ -378,7 +380,7 @@ This command focuses on one or more sObjects and measures how many records popul
       if (!this.identifierRegex.test(field.name)) {
         return false;
       }
-      if(!field.custom) {
+      if (!field.custom) {
         return false;
       }
       if (field.calculated || field.deprecatedAndHidden) {
@@ -423,9 +425,7 @@ This command focuses on one or more sObjects and measures how many records popul
       name: 'value',
       initial: true,
       message: c.cyanBright(
-        `About to execute approximately ${plannedCalls} API call(s) for ${objectNames.length} object(s): ${objectNames.join(
-          ', '
-        )}. Continue?`
+        `About to execute approximately ${plannedCalls} API call(s) for ${objectNames.length} object(s). Continue?`
       ),
       description: 'Confirm API usage',
     });
@@ -461,17 +461,8 @@ This command focuses on one or more sObjects and measures how many records popul
 
     const objectContexts: ObjectContext[] = [];
     if (uniqueObjects.length === 0 || hasPromptSentinel) {
-      const describeGlobal = await connection.describeGlobal();
-      const sObjectsFiltered = describeGlobal.sobjects
-        .filter(
-          (obj: any) =>
-            obj?.name &&
-            obj.name !== 'Name' &&
-            obj.name !== 'Id' &&
-            obj.queryable === true &&
-            obj.retrieveable === true
-        )
-        .map((obj: any) => ({ name: obj.name, label: obj.label || obj.name }));
+      const availableSObjects = await listOrgSObjectsFiltered(connection);
+      const sObjectsFiltered = Object.entries(availableSObjects).map(([name, label]) => ({ name, label }));
       sortArray(sObjectsFiltered, { by: 'name' });
 
       const promptObjectsRes = await prompts({
@@ -494,13 +485,13 @@ This command focuses on one or more sObjects and measures how many records popul
 
     const fieldsInput = flags.fields
       ? Array.from(
-          new Set(
-            (flags.fields as string)
-              .split(',')
-              .map((item) => item.trim())
-              .filter((item) => item.length > 0)
-          )
+        new Set(
+          (flags.fields as string)
+            .split(',')
+            .map((item) => item.trim())
+            .filter((item) => item.length > 0)
         )
+      )
       : [];
     if (fieldsInput.length > 0) {
       fieldsInput.forEach((fieldName) => this.validateIdentifier(fieldName, 'field'));
@@ -509,13 +500,18 @@ This command focuses on one or more sObjects and measures how many records popul
       }
     }
 
+    WebSocketClient.sendProgressStartMessage(`Describing ${uniqueObjects.length} objects...`);
+    let counter = 0;
     for (const sObjectName of uniqueObjects) {
-      uxLog("action", this, c.cyan(`Describing ${sObjectName}...`));
+      uxLog("log", this, c.grey(`Describing ${sObjectName}...`));
       const context = await this.describeTarget(connection, sObjectName);
-      uxLog("action", this, c.cyan(`Using ${context.useTooling ? 'Tooling' : 'standard'} API for ${sObjectName}.`));
+      uxLog("log", this, c.grey(`Using ${context.useTooling ? 'Tooling' : 'standard'} API for ${sObjectName}.`));
       const eligibleFields = this.filterDescribeFields(context.describeResult?.fields || []);
       objectContexts.push({ sObjectName, ...context, eligibleFields });
+      WebSocketClient.sendProgressStepMessage(counter + 1, uniqueObjects.length);
+      counter++;
     }
+    WebSocketClient.sendProgressEndMessage(uniqueObjects.length);
 
     const plannedApiCalls = this.estimateApiCalls(objectContexts, fieldsInput);
     const proceed = await this.confirmApiUsage(plannedApiCalls, uniqueObjects);
@@ -563,6 +559,8 @@ This command focuses on one or more sObjects and measures how many records popul
     const aggregatedSkipped: SkippedFieldInfo[] = [];
     const totalRecordsMap: Record<string, number> = {};
 
+    WebSocketClient.sendProgressStartMessage(`Processing field usage for ${objectContexts.length} objects...`);
+    counter = 0;
     for (const context of objectContexts) {
       const { rows, totalRecords, skippedFields } = await this.processObjectFieldUsage(
         connection,
@@ -574,11 +572,14 @@ This command focuses on one or more sObjects and measures how many records popul
       perObjectRows[context.sObjectName] = rows;
       aggregatedSkipped.push(...skippedFields);
       totalRecordsMap[context.sObjectName] = totalRecords;
+      WebSocketClient.sendProgressStepMessage(counter + 1, objectContexts.length);
+      counter++;
     }
+    WebSocketClient.sendProgressEndMessage(objectContexts.length);
 
+    uxLog("action", this, c.cyan(`Generating reports...`));
     const reportFiles: any[] = [];
     const csvFilesForXlsx: string[] = [];
-
     for (const context of objectContexts) {
       const rows = perObjectRows[context.sObjectName] || [];
       if (!rows.length) {
