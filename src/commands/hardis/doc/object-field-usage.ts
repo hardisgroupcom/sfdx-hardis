@@ -1,7 +1,7 @@
 import path from 'path';
 import { Flags, SfCommand, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { AnyJson } from '@salesforce/ts-types';
-import { Connection } from '@salesforce/core';
+import { Connection, Messages } from '@salesforce/core';
 import c from 'chalk';
 import sortArray from 'sort-array';
 import { generateReports, isCI, uxLog } from '../../../common/utils/index.js';
@@ -41,6 +41,9 @@ type FieldDistributionResult = {
   totalRecords: number;
 };
 
+Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
+const messages = Messages.loadMessages("sfdx-hardis", "org");
+
 export default class HardisDocObjectFieldUsage extends SfCommand<any> {
   public static description = `
 ## Command Behavior
@@ -74,6 +77,13 @@ This command focuses on one or more sObjects and measures how many records popul
       char: 'f',
       description: 'Comma-separated API names of fields to analyze (requires exactly one --objects value)',
       required: false,
+    }),
+    websocket: Flags.string({
+      description: messages.getMessage("websocket"),
+    }),
+    skipauth: Flags.boolean({
+      description:
+        "Skip authentication check when a default username is required",
     }),
   };
 
