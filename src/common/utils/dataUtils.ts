@@ -23,9 +23,7 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
   }
   uxLog("action", commandThis, c.cyan(`Importing data from ${c.green(dtl?.full_label)} into ${targetUsername}...`));
   /* jscpd:ignore-start */
-  if (dtl?.description) {
-    uxLog("log", commandThis, c.italic(c.grey("Data Workspace Description:" + dtl?.description)));
-  }
+  uxLog("log", commandThis, c.italic(c.grey("Data Workspace:\n" + JSON.stringify(dtl?.exportJson, null, 2))));
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const config = await getConfig('branch');
   const dataImportCommand =
@@ -68,9 +66,8 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
     uxLog("warning", commandThis, c.yellow(`If you see a sfdmu error, you probably need to add a property sfdmuCanModify: YOUR_ORG_INSTANCE_URL in the related config/branches/.sfdx-hardis.YOUR_BRANCH.yml config file.`));
   }
   uxLog("action", commandThis, c.cyan(`Deleting data from ${c.green(dtl?.full_label)} ...`));
-  if (dtl?.description) {
-    uxLog("log", commandThis, c.italic(c.grey("Data Workspace Description:" + dtl?.description)));
-  }
+  uxLog("log", commandThis, c.italic(c.grey("Data Workspace:\n" + JSON.stringify(dtl?.exportJson, null, 2))));
+
   const targetUsername = options.targetUsername || options.conn.username;
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const dataImportCommand =
@@ -100,9 +97,7 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   }
   /* jscpd:ignore-end */
   uxLog("action", commandThis, c.cyan(`Exporting data from ${c.green(dtl?.full_label)} ...`));
-  if (dtl?.description) {
-    uxLog("log", commandThis, c.italic(c.grey("Data Workspace Description:" + dtl?.description)));
-  }
+  uxLog("log", commandThis, c.italic(c.grey("Data Workspace:\n" + JSON.stringify(dtl?.exportJson, null, 2))));
   const sourceUsername = options.sourceUsername || commandThis?.org?.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const dataImportCommand = `sf sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath} --noprompt`;

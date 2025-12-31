@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.20.0] 2025-12-31
+
 - [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/): Analyze field usage and data completeness for Salesforce objects
+- Improve display of data export logs
 
 ## [6.19.0] 2025-12-30
 
