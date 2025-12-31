@@ -1539,6 +1539,8 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
     const xslxFile = path.join(xlsDirName, xslFileName);
     await fs.ensureDir(xlsDirName);
+    // Delete existing file if any
+    await fs.remove(xslxFile);
     await csvToXls(outputPath, xslxFile, options);
     uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
@@ -1574,6 +1576,8 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
     const xslxFile = path.join(xlsDirName, xslFileName);
     await fs.ensureDir(xlsDirName);
+    // Delete existing file if any
+    await fs.remove(xslxFile);
     await csvFilesToXls(csvFilesPath, xslxFile, options);
     uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
