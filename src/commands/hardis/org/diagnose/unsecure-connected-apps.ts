@@ -33,6 +33,7 @@ Key functionalities:
 - **Security Status Assessment:** Evaluates each Connected App's security configuration by checking the \`IsUsingAdminAuthorization\` flag to determine if admin pre-approval is required.
 - **Ignore List Support:** Skips warning/escalation for Connected Apps configured in \`monitoringUnsecureConnectedAppsIgnore\` (project config) or \`MONITORING_UNSECURE_CONNECTED_APPS_IGNORE\` (environment variable). Matching OAuth tokens are marked as *Ignored*.
 - **Unsecured App Detection:** Identifies Connected Apps that allow users to authorize themselves without admin approval, which can pose security risks.
+- **Phantom App Cleanup (Optional):** Detects unsecured Connected Apps that are not present in the Installed Connected Apps list and offers an interactive option to revoke their OAuth tokens (forces re-authentication if still needed).
 - **Detailed Reporting:** Generates two comprehensive CSV reports:
   - **OAuth Tokens Report:** Lists all OAuth tokens with security status, user information, and usage data
   - **Connected Apps Summary:** Aggregates unsecured Connected Apps with counts of associated OAuth tokens
@@ -54,6 +55,7 @@ The command's technical implementation involves:
 - **Ignore Handling:** Normalizes Connected App names and marks matching OAuth tokens as *Ignored* so they do not contribute to unsecured Connected App counts and notifications.
 - **Data Transformation:** Processes raw SOQL results to add security status indicators and reorganize data for optimal reporting and analysis.
 - **Aggregation Processing:** Groups OAuth tokens by Connected App name to provide summary statistics and identify the most problematic applications.
+- **Token Revocation:** Optionally calls Salesforce OAuth revoke endpoint using each token's \`DeleteToken\` value to revoke OAuth tokens for selected phantom Connected Apps.
 - **Report Generation:** Uses \`generateCsvFile\` to create structured CSV reports with proper formatting and metadata for easy analysis and sharing.
 - **Notification Integration:** Integrates with the \`NotifProvider\` to send security alerts with detailed metrics, including the number of unsecured Connected Apps and associated OAuth tokens.
 - **File Management:** Generates multiple output formats (CSV, XLSX) and manages file paths using \`generateReportPath\` for consistent report organization.
