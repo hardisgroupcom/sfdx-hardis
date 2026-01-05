@@ -341,11 +341,13 @@ To secure a connected app:
         });
         if (deleteTokensPromptRes?.value.length > 0) {
           const tokensToDelete = unsecuredOAuthTokens.filter(token => deleteTokensPromptRes.value.includes(token.AppName));
-          uxLog("action", this, `Deleting ${tokensToDelete.length} OAuth Tokens...`);
+          WebSocketClient.sendProgressStartMessage(`Deleting ${tokensToDelete.length} OAuth Tokens...`, tokensToDelete.length);
+          let counter = 0;
           for (const tokenToDelete of tokensToDelete) {
             const deleteTokenRecord = allOAuthTokens.find(t => t.Id === tokenToDelete["x-Token-Id"]);
             if (!deleteTokenRecord) {
               uxLog("error", this, c.red(`• OAuth Token Id ${tokenToDelete["x-Token-Id"]} for App ${tokenToDelete.AppName} not found. Skipping...`));
+              counter++;
               continue;
             }
             const deleteTokenUrl = `${conn.instanceUrl}/services/oauth2/revoke?token=${encodeURIComponent(deleteTokenRecord.DeleteToken)}`;
@@ -357,7 +359,11 @@ To secure a connected app:
             catch (error) {
               uxLog("error", this, c.red(`• Failed to delete OAuth Token Id ${tokenToDelete["x-Token-Id"]} for App ${tokenToDelete.AppName}. Error: ${error}`));
             }
+            counter++;
+            WebSocketClient.sendProgressStepMessage(counter, tokensToDelete.length);
           }
+          WebSocketClient.sendProgressEndMessage(tokensToDelete.length);
+          uxLog("action", this, c.green(`OAuth Token deletion process completed.`));
         }
       }
     }
