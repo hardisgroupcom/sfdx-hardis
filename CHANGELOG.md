@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Add OAuth Token usage details
   - Find application using AppMenuItem Id when its name is not matching
   - Allow to ignore some connected apps using `monitoringUnsecureConnectedAppsIgnore` (project config) or `MONITORING_UNSECURE_CONNECTED_APPS_IGNORE` (env var) config property.
+  - Allow to delete "ghost" OAuth Tokens if user confirms it
 
 ## [6.20.0] 2025-12-31
 
