@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { Connection, Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
@@ -101,7 +101,7 @@ The command's technical implementation involves:
     const { flags } = await this.parse(UnsecuredConnectedApps);
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
-    const conn = flags['target-org'].getConnection();
+    const conn: Connection = flags['target-org'].getConnection();
 
     const normalizeAppName = (appName: string): string => (appName || '').trim().toLowerCase();
 
@@ -130,7 +130,7 @@ The command's technical implementation involves:
     const totalTokens = tokensCountQueryRes.totalSize;
     uxLog("log", this, `${totalTokens} OAuth Tokens found.`);
 
-    const baseOAuthTokenQuery = "SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name , User.Profile.Name, UseCount, AppMenuItem.Id, AppMenuItem.Label, AppMenuItem.Name, AppMenuItem.ApplicationId, Id FROM OAuthToken";
+    const baseOAuthTokenQuery = "SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name , User.Profile.Name, UseCount, AppMenuItem.Id, AppMenuItem.Label, AppMenuItem.Name, AppMenuItem.ApplicationId, Id, DeleteToken FROM OAuthToken";
     const allOAuthTokenQuery = baseOAuthTokenQuery + " ORDER BY CreatedDate ASC";
     const allOAuthTokenQueryRes = await bulkQuery(allOAuthTokenQuery, conn);
     const allOAuthTokens = allOAuthTokenQueryRes.records;
@@ -282,14 +282,14 @@ To secure a connected app:
     }
 
     // Suggest to ignore connected apps that we are not able to find in either Connected Apps, either in OAuthUsage setup page
-    if (!isCI) {
-      const uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps: string[] = [];
-      for (const appName of uniqueUnsecuredAppNames) {
-        const matchingConnectedApp = allConnectedApps.find(app => app.Name === appName);
-        if (!matchingConnectedApp) {
-          uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.push(appName);
-        }
+    const uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps: string[] = [];
+    for (const appName of uniqueUnsecuredAppNames) {
+      const matchingConnectedApp = allConnectedApps.find(app => app.Name === appName);
+      if (!matchingConnectedApp) {
+        uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.push(appName);
       }
+    }
+    if (!isCI) {
       if (uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.length > 0) {
         const confirmPromptRes = await prompts({
           type: 'confirm',
@@ -316,6 +316,45 @@ To secure a connected app:
             config.monitoringUnsecureConnectedAppsIgnore = monitoringUnsecureConnectedAppsIgnore;
             await setConfig("project", config);
             uxLog("log", this, c.green(`Ignore list updated in sfdx-hardis config file. You can also use ENV variable MONITORING_UNSECURE_CONNECTED_APPS_IGNORE to set it.`));
+          }
+        }
+      }
+    }
+
+    // Suggest to delete tokens for some connected apps using https://MyDomainName.my.salesforce.com/services/oauth2/revoke?token=(the Delete Token)
+    if (!isCI && unsecuredOAuthTokens.length > 0) {
+      const confirmDeleteRes = await prompts({
+        type: 'confirm',
+        message: `Do you want to delete auth tokens related to "Phantom" Connected Apps that you don't see in Salesforce Setup ?`,
+        description: 'These are connected apps that are not installed in your org and are not visible in OAuth Usage Setup page. Deleting their tokens will force users to re-authenticate if they need them.',
+        initial: false,
+      });
+      if (confirmDeleteRes.value === true) {
+        // Prompt user to select the apps
+        const deleteTokensPromptRes = await prompts({
+          type: 'multiselect',
+          message: 'Select the Apps for which you want to delete OAuth Tokens',
+          choices: uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.map(appName => ({ title: appName, value: appName })),
+          description: 'The OAuth Tokens for the selected Apps will be deleted.',
+        });
+        if (deleteTokensPromptRes?.value.length > 0) {
+          const tokensToDelete = unsecuredOAuthTokens.filter(token => deleteTokensPromptRes.value.includes(token.AppName));
+          uxLog("action", this, `Deleting ${tokensToDelete.length} OAuth Tokens...`);
+          for (const tokenToDelete of tokensToDelete) {
+            const deleteTokenRecord = allOAuthTokens.find(t => t.Id === tokenToDelete["x-Token-Id"]);
+            if (!deleteTokenRecord) {
+              uxLog("error", this, c.red(`• OAuth Token Id ${tokenToDelete["x-Token-Id"]} for App ${tokenToDelete.AppName} not found. Skipping...`));
+              continue;
+            }
+            const deleteTokenUrl = `${conn.instanceUrl}/services/oauth2/revoke?token=${encodeURIComponent(deleteTokenRecord.DeleteToken)}`;
+            uxLog("log", this, `• Deleting OAuth Token Id ${tokenToDelete["x-Token-Id"]} for App ${tokenToDelete.AppName} ...`);
+            try {
+              await conn.requestPost(deleteTokenUrl, {});
+              uxLog("success", this, c.green(`• OAuth Token Id ${tokenToDelete["x-Token-Id"]} for App ${tokenToDelete.AppName} deleted.`));
+            }
+            catch (error) {
+              uxLog("error", this, c.red(`• Failed to delete OAuth Token Id ${tokenToDelete["x-Token-Id"]} for App ${tokenToDelete.AppName}. Error: ${error}`));
+            }
           }
         }
       }
