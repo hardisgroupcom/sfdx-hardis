@@ -1,17 +1,18 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { bulkQuery, soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
-import { CONSTANTS } from '../../../../config/index.js';
+import { CONSTANTS, getConfig, getEnvVarList, setConfig } from '../../../../config/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import sortArray from 'sort-array';
+import { prompts } from '../../../../common/utils/prompts.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -30,11 +31,12 @@ Key functionalities:
 
 - **OAuth Token Analysis:** Queries all OAuth tokens in the org using SOQL to retrieve comprehensive token information including app names, users, authorization status, and usage statistics.
 - **Security Status Assessment:** Evaluates each Connected App's security configuration by checking the \`IsUsingAdminAuthorization\` flag to determine if admin pre-approval is required.
+- **Ignore List Support:** Skips warning/escalation for Connected Apps configured in \`monitoringUnsecureConnectedAppsIgnore\` (project config) or \`MONITORING_UNSECURE_CONNECTED_APPS_IGNORE\` (environment variable). Matching OAuth tokens are marked as *Ignored*.
 - **Unsecured App Detection:** Identifies Connected Apps that allow users to authorize themselves without admin approval, which can pose security risks.
 - **Detailed Reporting:** Generates two comprehensive CSV reports:
   - **OAuth Tokens Report:** Lists all OAuth tokens with security status, user information, and usage data
   - **Connected Apps Summary:** Aggregates unsecured Connected Apps with counts of associated OAuth tokens
-- **Visual Indicators:** Uses status icons (❌ for unsecured, ✅ for secured) to provide immediate visual feedback on security status.
+- **Visual Indicators:** Uses status icons (❌ for unsecured, ✅ for secured, ⚪ for ignored) to provide immediate visual feedback on security status.
 - **Security Recommendations:** Provides actionable guidance on how to secure Connected Apps through proper configuration.
 - **Notifications:** Sends alerts to configured channels (Grafana, Slack, MS Teams) with security findings and attached reports.
 
@@ -49,6 +51,7 @@ The command's technical implementation involves:
 
 - **SOQL Query Execution:** Executes a comprehensive SOQL query on the \`OauthToken\` object, joining with \`AppMenuItem\` and \`User\` objects to gather complete security context.
 - **Security Analysis Logic:** Analyzes the \`AppMenuItem.IsUsingAdminAuthorization\` field to determine if a Connected App requires admin pre-approval for user authorization.
+- **Ignore Handling:** Normalizes Connected App names and marks matching OAuth tokens as *Ignored* so they do not contribute to unsecured Connected App counts and notifications.
 - **Data Transformation:** Processes raw SOQL results to add security status indicators and reorganize data for optimal reporting and analysis.
 - **Aggregation Processing:** Groups OAuth tokens by Connected App name to provide summary statistics and identify the most problematic applications.
 - **Report Generation:** Uses \`generateCsvFile\` to create structured CSV reports with proper formatting and metadata for easy analysis and sharing.
@@ -84,6 +87,7 @@ The command's technical implementation involves:
   public static requiresProject = false;
 
   protected debugMode = false;
+  protected unsecuredConnectedAppsToIgnore: string[] = [];
 
   protected connectedAppResults: any[] = [];
   protected outputFile;
@@ -99,15 +103,35 @@ The command's technical implementation involves:
     this.outputFile = flags.outputfile || null;
     const conn = flags['target-org'].getConnection();
 
-    // Collect all Connected Apps
+    const normalizeAppName = (appName: string): string => (appName || '').trim().toLowerCase();
+
+    // Read config to get list of connected apps to ignore
+    const config = await getConfig("project");
+    this.unsecuredConnectedAppsToIgnore = getEnvVarList("MONITORING_UNSECURE_CONNECTED_APPS_IGNORE") || config.monitoringUnsecureConnectedAppsIgnore || [];
+    const unsecuredConnectedAppsToIgnoreSet = new Set(this.unsecuredConnectedAppsToIgnore.map(normalizeAppName));
+    if (this.unsecuredConnectedAppsToIgnore.length > 0) {
+      uxLog("action", this, c.yellow(`${this.unsecuredConnectedAppsToIgnore.length} Connected Apps will be ignored based on sfdx-hardis config file or MONITORING_UNSECURE_CONNECTED_APPS_IGNORE ENV variable:`));
+      this.unsecuredConnectedAppsToIgnore.forEach(appName => {
+        uxLog("log", this, `• ${appName}`);
+      });
+    }
+
+    // List available connected apps
+    uxLog("action", this, c.cyan(`Listing all installed Connected Apps from ${conn.instanceUrl} ...`));
+    const connectedAppQuery = `SELECT Id, Name FROM ConnectedApplication ORDER BY Name ASC`;
+    const connectedAppQueryRes = await bulkQuery(connectedAppQuery, conn);
+    const allConnectedApps = connectedAppQueryRes.records;
+    uxLog("log", this, `${allConnectedApps.length} Connected Apps found.`);
+
+    // Collect all OAuth Tokens
     uxLog("action", this, c.cyan(`Extracting all OAuth Tokens from ${conn.instanceUrl} ...`));
     const tokensCountQuery = `SELECT count() FROM OauthToken`;
     const tokensCountQueryRes = await soqlQuery(tokensCountQuery, conn);
     const totalTokens = tokensCountQueryRes.totalSize;
     uxLog("log", this, `${totalTokens} OAuth Tokens found.`);
 
-    const allOAuthTokenQuery =
-      `SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name , User.Profile.Name, UseCount FROM OAuthToken ORDER BY CreatedDate ASC`;
+    const baseOAuthTokenQuery = "SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name , User.Profile.Name, UseCount, AppMenuItem.Id, AppMenuItem.Label, AppMenuItem.Name, AppMenuItem.ApplicationId, Id FROM OAuthToken";
+    const allOAuthTokenQuery = baseOAuthTokenQuery + " ORDER BY CreatedDate ASC";
     const allOAuthTokenQueryRes = await bulkQuery(allOAuthTokenQuery, conn);
     const allOAuthTokens = allOAuthTokenQueryRes.records;
 
@@ -117,7 +141,7 @@ The command's technical implementation involves:
       uxLog("warning", this, c.yellow(`Salesforce API limit of 2500 OAuth Tokens reached. We will need to re-query to get all tokens...`));
       let lastCreatedDate = allOAuthTokens.length > 0 ? allOAuthTokens[allOAuthTokens.length - 1].CreatedDate : null;
       while (lastCreatedDate != null) {
-        const remainingTokensQuery = `SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name , User.Profile.Name, UseCount FROM OAuthToken WHERE CreatedDate > ${lastCreatedDate} ORDER BY CreatedDate ASC`;
+        const remainingTokensQuery = `${baseOAuthTokenQuery} WHERE CreatedDate > ${lastCreatedDate} ORDER BY CreatedDate ASC`;
         const remainingTokensQueryRes = await bulkQuery(remainingTokensQuery, conn);
         const remainingTokens = remainingTokensQueryRes.records;
         if (remainingTokens.length > 0) {
@@ -135,17 +159,34 @@ The command's technical implementation involves:
     uxLog("log", this, `${allOAuthTokens.length} OAuth Tokens retrieved.`);
     sortArray(allOAuthTokens, { by: 'AppName' });
 
-    const allOAuthTokensWithStatus = allOAuthTokens.map(app => {
-      const adminPreApproved = app["AppMenuItem.IsUsingAdminAuthorization"] ?? false;
+    const allOAuthTokensWithStatus = allOAuthTokens.map(oAuthToken => {
+      const adminPreApproved = oAuthToken["AppMenuItem.IsUsingAdminAuthorization"] ?? false;
+      let appName = oAuthToken.AppName ? oAuthToken.AppName : 'N/A';
+      if (oAuthToken["AppMenuItem.ApplicationId"]) {
+        const matchingConnectedApp = allConnectedApps.find(app => app.Id === oAuthToken["AppMenuItem.ApplicationId"]);
+        if (matchingConnectedApp) {
+          appName = matchingConnectedApp.Name;
+        }
+        else {
+          throw new SfError(`Connected App with Id ${oAuthToken["AppMenuItem.ApplicationId"]} not found among installed Connected Apps.`);
+        }
+      }
+
+      const isIgnored = unsecuredConnectedAppsToIgnoreSet.has(normalizeAppName(appName));
       const appResult = {
-        AppName: app.AppName,
-        "Status": adminPreApproved ? '✅ Secured' : '❌ Unsecured',
+        AppName: appName,
+        "Status": isIgnored ? '⚪ Ignored' : (adminPreApproved ? '✅ Secured' : '❌ Unsecured'),
         "Admin Pre-Approved": adminPreApproved ? 'Yes' : 'No',
-        "User": app["User.Name"] ? app["User.Name"] : 'N/A',
-        "User Profile": app["User.Profile.Name"] ? app["User.Profile.Name"] : 'N/A',
-        "Last Used Date": app.LastUsedDate ? new Date(app.LastUsedDate).toISOString().split('T')[0] : 'N/A',
-        "Created Date": app.CreatedDate ? new Date(app.CreatedDate).toISOString().split('T')[0] : 'N/A',
-        "Use Count": app.UseCount ? app.UseCount : 0,
+        "User": oAuthToken["User.Name"] ? oAuthToken["User.Name"] : 'N/A',
+        "User Profile": oAuthToken["User.Profile.Name"] ? oAuthToken["User.Profile.Name"] : 'N/A',
+        "Last Used Date": oAuthToken.LastUsedDate ? new Date(oAuthToken.LastUsedDate).toISOString().split('T')[0] : 'N/A',
+        "Created Date": oAuthToken.CreatedDate ? new Date(oAuthToken.CreatedDate).toISOString().split('T')[0] : 'N/A',
+        "Use Count": oAuthToken.UseCount ? oAuthToken.UseCount : 0,
+        "x-Token-Id": oAuthToken.Id ? oAuthToken.Id : 'N/A',
+        "x-Token-AppName": oAuthToken.AppName ? oAuthToken.AppName : 'N/A',
+        "x-Token-AppMenuItemLabel": oAuthToken["AppMenuItem.Label"] ? oAuthToken["AppMenuItem.Label"] : 'N/A',
+        "x-Token-AppMenuItemId": oAuthToken["AppMenuItem.Id"] ? oAuthToken["AppMenuItem.Id"] : 'N/A',
+        "x-AppName-Different-From-Label": (oAuthToken.AppName && oAuthToken["AppMenuItem.Label"] && oAuthToken.AppName !== oAuthToken["AppMenuItem.Label"]) ? 'Yes' : 'No',
       }
       return appResult;
     });
@@ -238,6 +279,46 @@ To secure a connected app:
     if (numberWarnings > 0) {
       const OAuthUsageSetupUrl = `${conn.instanceUrl}/lightning/setup/ConnectedAppsUsage/home`;
       WebSocketClient.sendReportFileMessage(OAuthUsageSetupUrl, 'Review OAuth Connected Apps', "actionUrl");
+    }
+
+    // Suggest to ignore connected apps that we are not able to find in either Connected Apps, either in OAuthUsage setup page
+    if (!isCI) {
+      const uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps: string[] = [];
+      for (const appName of uniqueUnsecuredAppNames) {
+        const matchingConnectedApp = allConnectedApps.find(app => app.Name === appName);
+        if (!matchingConnectedApp) {
+          uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.push(appName);
+        }
+      }
+      if (uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.length > 0) {
+        const confirmPromptRes = await prompts({
+          type: 'confirm',
+          message: `There are ${uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.length} unsecured Connected Apps with OAuth Tokens that are not found among installed Connected Apps. Do you want to ignore some of them in future scans ?`,
+          initial: false,
+          description: 'You will be able to select which Apps to ignore in the next prompt.',
+        });
+        if (confirmPromptRes.value === true) {
+          const ignorePromptRes = await prompts({
+            type: 'multiselect',
+            message: 'Select the Apps for which you want to ignore future warnings (only for apps that you don\'t see in OAuth Token usage UI)',
+            choices: uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.map(appName => ({ title: appName, value: appName })),
+            description: 'The selected Apps will be added to the ignore list in sfdx-hardis config file.',
+          });
+          if (ignorePromptRes?.value.length > 0) {
+            const config = await getConfig("project");
+            const monitoringUnsecureConnectedAppsIgnore = config.monitoringUnsecureConnectedAppsIgnore || [];
+            for (const appName of ignorePromptRes.value) {
+              if (!monitoringUnsecureConnectedAppsIgnore.includes(appName)) {
+                monitoringUnsecureConnectedAppsIgnore.push(appName);
+                uxLog("log", this, c.green(`• ${appName} added to ignore list.`));
+              }
+            }
+            config.monitoringUnsecureConnectedAppsIgnore = monitoringUnsecureConnectedAppsIgnore;
+            await setConfig("project", config);
+            uxLog("log", this, c.green(`Ignore list updated in sfdx-hardis config file. You can also use ENV variable MONITORING_UNSECURE_CONNECTED_APPS_IGNORE to set it.`));
+          }
+        }
+      }
     }
 
     if ((this.argv || []).includes('unsecure-connected-apps')) {

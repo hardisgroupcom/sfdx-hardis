@@ -1463,6 +1463,21 @@
       "title": "Monitoring usernames to exclude",
       "type": "array"
     },
+    "monitoringUnsecureConnectedAppsIgnore": {
+      "$id": "#/properties/monitoringUnsecureConnectedAppsIgnore",
+      "description": "List of Connected App names to ignore while running Unsecure Connected Apps monitoring command",
+      "examples": [
+        [
+          "ForcePad",
+          "Another Unsecure Connected App"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Unsecure Connected Apps to ignore",
+      "type": "array"
+    },
     "msTeamsWebhookUrl": {
       "$id": "#/properties/msTeamsWebhookUrl",
       "default": "",
