@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/) enhancements:
+  - Add OAuth Token usage details
+  - Find application using AppMenuItem Id when its name is not matching
+  - Allow to ignore some connected apps using `monitoringUnsecureConnectedAppsIgnore` (project config) or `MONITORING_UNSECURE_CONNECTED_APPS_IGNORE` (env var) config property.
+  - Allow to delete "ghost" OAuth Tokens if user confirms it
+
 ## [6.20.0] 2025-12-31
 
 - [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/): Analyze field usage and data completeness for Salesforce objects

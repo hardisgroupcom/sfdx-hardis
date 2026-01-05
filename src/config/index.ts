@@ -220,13 +220,21 @@ export async function getReportDirectory() {
   return reportDir;
 }
 
-export function getEnvVar(envVarName: string) {
+export function getEnvVar(envVarName: string): string | null {
   const varValue = process.env[envVarName] || null;
   // Avoid Azure cases that sends the expression as string if variable not defined
   if (varValue && varValue.includes(`(${envVarName}`)) {
     return null;
   }
   return varValue;
+}
+
+export function getEnvVarList(envVarName: string, separator: string = ','): string[] | null {
+  const varValue = getEnvVar(envVarName);
+  if (varValue) {
+    return varValue.split(separator).map((item) => item.trim());
+  }
+  return null;
 }
 
 export async function promptForProjectName() {
