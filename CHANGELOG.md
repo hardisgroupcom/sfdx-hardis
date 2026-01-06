@@ -5,6 +5,10 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Update Security Documentation
+- [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/) enhancements
+  - Filter fields from managed packages
+  - Add field creation date in the reports
+  - Update CSV generation options to avoid sending WebSocket notifications in some contexts
 
 ## [6.21.0] 2025-01-06
 

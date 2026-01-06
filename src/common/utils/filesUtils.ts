@@ -1504,6 +1504,7 @@ export interface ExcelExportOptions {
   xlsFileTitle?: string;
   noExcel?: boolean;
   columnsCustomStyles?: Record<string, ExcelColumnStyle>;
+  skipNotifyToWebSocket?: boolean;
 }
 
 export async function generateCsvFile(
@@ -1517,11 +1518,13 @@ export async function generateCsvFile(
     await fs.writeFile(outputPath, csvContent, 'utf8');
     uxLog("action", this, c.cyan(c.italic(`Please see detailed CSV log in ${c.bold(outputPath)}`)));
     result.csvFile = outputPath;
-    if (!WebSocketClient.isAliveWithLwcUI()) {
+    if (!WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket) {
       WebSocketClient.requestOpenFile(outputPath);
     }
     const csvFileTitle = options?.fileTitle ? `${options.fileTitle} (CSV)` : options?.csvFileTitle ?? "Report (CSV)";
-    WebSocketClient.sendReportFileMessage(outputPath, csvFileTitle, "report");
+    if (!options?.skipNotifyToWebSocket) {
+      WebSocketClient.sendReportFileMessage(outputPath, csvFileTitle, "report");
+    }
     if (data.length > 0 && !options?.noExcel) {
       await createXlsxFromCsv(outputPath, options, result);
     } else {

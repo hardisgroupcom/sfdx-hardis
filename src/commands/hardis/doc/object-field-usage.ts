@@ -10,11 +10,13 @@ import { prompts } from '../../../common/utils/prompts.js';
 import { createXlsxFromCsvFiles, generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { listOrgSObjects } from '../../../common/utils/orgUtils.js';
+import { isManagedApiName } from '../../../common/utils/projectUtils.js';
 
 type FieldUsageRow = {
   sObjectName: string;
   fieldApiName: string;
   fieldLabel: string;
+  fieldCreatedDate: string;
   totalRecords: number;
   populatedRecords: number;
   populatedPercentageNumeric: number;
@@ -89,7 +91,89 @@ This command focuses on one or more sObjects and measures how many records popul
 
   protected identifierRegex = /^[A-Za-z][A-Za-z0-9_]*$/;
   protected compositeBatchSize = 5;
+  protected toolingCustomFieldBatchSize = 80;
   protected objectsPromptSentinel = '__PROMPT_OBJECTS__';
+
+  protected formatDateOnly(value: any): string {
+    if (!value) {
+      return 'N/A';
+    }
+    try {
+      return new Date(value).toISOString().split('T')[0];
+    } catch {
+      return 'N/A';
+    }
+  }
+
+  protected async fetchFieldCreatedDates(
+    connection: Connection,
+    sObjectName: string,
+    fieldApiNames: string[]
+  ): Promise<Record<string, string>> {
+    const createdDateByField: Record<string, string> = {};
+    if (!fieldApiNames.length) {
+      return createdDateByField;
+    }
+
+    // We only analyze custom fields in this command, and Tooling CustomField exposes CreatedDate.
+    // FieldDefinition does NOT expose CreatedDate in Tooling API.
+    try {
+      const objectDeveloperName = sObjectName.endsWith('__c') ? sObjectName.replace(/__c$/, '') : sObjectName;
+      const customObjectRes = await soqlQueryTooling(
+        `SELECT Id FROM CustomObject WHERE DeveloperName = '${objectDeveloperName.replace(/'/g, "\\'")}' LIMIT 1`,
+        connection
+      );
+      const tableEnumOrId = customObjectRes?.records?.[0]?.Id || sObjectName;
+
+      const requestedApiNames = fieldApiNames.filter((name) => typeof name === 'string' && name.length > 0);
+      const developerNames = Array.from(
+        new Set(
+          requestedApiNames
+            .filter((name) => name.endsWith('__c'))
+            .map((name) => {
+              if (isManagedApiName(name)) {
+                // ns__Field__c -> DeveloperName = Field
+                const parts = name.split('__');
+                return parts[1] || name.replace(/__c$/, '');
+              }
+              return name.replace(/__c$/, '');
+            })
+        )
+      );
+
+      for (let i = 0; i < developerNames.length; i += this.toolingCustomFieldBatchSize) {
+        const chunk = developerNames.slice(i, i + this.toolingCustomFieldBatchSize);
+        const inClause = chunk.map((name) => `'${name.replace(/'/g, "\\'")}'`).join(',');
+        const query =
+          `SELECT DeveloperName, NamespacePrefix, CreatedDate ` +
+          `FROM CustomField ` +
+          `WHERE TableEnumOrId = '${String(tableEnumOrId).replace(/'/g, "\\'")}' ` +
+          `AND DeveloperName IN (${inClause})`;
+
+        const res = await soqlQueryTooling(query, connection);
+        for (const record of res?.records || []) {
+          const devName = record?.DeveloperName;
+          if (!devName) {
+            continue;
+          }
+          const ns = record?.NamespacePrefix;
+          const apiName = `${ns ? ns + '__' : ''}${devName}__c`;
+          createdDateByField[apiName] = this.formatDateOnly(record?.CreatedDate);
+        }
+      }
+    } catch (error: any) {
+      uxLog(
+        'warning',
+        this,
+        c.yellow(
+          `Unable to query Tooling CustomField for created dates on ${sObjectName}. ` +
+          `Created Date column will be set to N/A. Error: ${error?.message || error}`
+        )
+      );
+    }
+
+    return createdDateByField;
+  }
 
   protected validateIdentifier(identifier: string, label: string) {
     if (!this.identifierRegex.test(identifier)) {
@@ -311,6 +395,13 @@ This command focuses on one or more sObjects and measures how many records popul
     const totalRecords = await this.countRecords(connection, sObjectName, useTooling);
 
     const skippedFields: SkippedFieldInfo[] = [];
+
+    const fieldCreatedDates = await this.fetchFieldCreatedDates(
+      connection,
+      sObjectName,
+      eligibleFields.map((f) => f.name).filter((name) => typeof name === 'string' && name.length > 0)
+    );
+
     const fieldCounts = await this.countFieldsWithComposite(
       connection,
       sObjectName,
@@ -333,6 +424,7 @@ This command focuses on one or more sObjects and measures how many records popul
         sObjectName,
         fieldApiName: field.name,
         fieldLabel: field.label || field.name,
+        fieldCreatedDate: fieldCreatedDates[field.name] || 'N/A',
         totalRecords,
         populatedRecords,
         populatedPercentageNumeric: percentage,
@@ -369,6 +461,7 @@ This command focuses on one or more sObjects and measures how many records popul
       sObjectName: row.sObjectName,
       fieldApiName: row.fieldApiName,
       fieldLabel: row.fieldLabel,
+      fieldCreatedDate: row.fieldCreatedDate,
       totalRecords: row.totalRecords,
       populatedRecords: row.populatedRecords,
       populatedPercentage: row.populatedPercentage,
@@ -376,6 +469,7 @@ This command focuses on one or more sObjects and measures how many records popul
     await generateCsvFile(csvData, csvPath, {
       fileTitle,
       noExcel: true,
+      skipNotifyToWebSocket: true,
     });
     return csvPath;
   }
@@ -423,7 +517,8 @@ This command focuses on one or more sObjects and measures how many records popul
         return sum;
       }
       const compositeCalls = Math.ceil(eligibleCount / this.compositeBatchSize);
-      return sum + 1 + compositeCalls; // 1 for total records + composite batches
+      const createdDateCalls = Math.ceil(eligibleCount / this.toolingCustomFieldBatchSize) || 1;
+      return sum + 1 + createdDateCalls + compositeCalls; // total count + CustomField chunks + composite batches
     }, 0);
   }
 
@@ -521,7 +616,16 @@ This command focuses on one or more sObjects and measures how many records popul
       const context = await this.describeTarget(connection, sObjectName);
       uxLog("log", this, c.grey(`Using ${context.useTooling ? 'Tooling' : 'standard'} API for ${sObjectName}.`));
       const eligibleFields = this.filterDescribeFields(context.describeResult?.fields || []);
-      objectContexts.push({ sObjectName, ...context, eligibleFields });
+      // Filter eligible fields to remove those with namespaces
+      const eligibleFieldsFiltered = eligibleFields.filter((field) => {
+        if (isManagedApiName(field.name) && !fieldsInput.includes(field.name)) {
+          return false;
+        }
+        return true;
+      });
+      if (eligibleFieldsFiltered.length > 0) {
+        objectContexts.push({ sObjectName, ...context, eligibleFields: eligibleFieldsFiltered });
+      }
       WebSocketClient.sendProgressStepMessage(counter + 1, uniqueObjects.length);
       counter++;
     }
@@ -635,6 +739,7 @@ This command focuses on one or more sObjects and measures how many records popul
 
     if (csvFilesForXlsx.length > 0) {
       const consolidatedBase = await generateReportPath('object-field-usage', '', { withDate: true });
+      uxLog("action", this, c.cyan(`Generating consolidated XLSX report...`));
       await createXlsxFromCsvFiles(csvFilesForXlsx, consolidatedBase, { fileTitle: 'Object field usage (all)' });
       const consolidatedXlsx = path.join(
         path.dirname(consolidatedBase),
