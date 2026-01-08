@@ -5,6 +5,75 @@ description: Post Notes on Azure Repos Pull Request from CI jobs
 
 <!-- markdownlint-disable MD013 -->
 
+## Create Pipelines
+
+You need to create two pipelines in Azure DevOps, using the YAML files provided in your project.
+
+### Pipeline 1: Check Pull Request
+
+This pipeline will run validation checks on every Pull Request.
+
+- Go to **Pipelines**
+- Select **New pipeline**
+- Select **Azure Repos Git**
+- Select your repository
+- Select **Existing Azure Pipelines YAML file**
+- Select path `azure-pipelines-checks.yml` (select your work git branch if needed)
+- Click on **Continue**
+- Click on the arrow next to "Run" and select **Save**
+- Rename the pipeline to **Check Pull Request** (click on the name to edit)
+
+### Pipeline 2: Deploy to org
+
+This pipeline will deploy changes to the Salesforce org when a Pull Request is merged.
+
+- Go to **Pipelines**
+- Select **New pipeline**
+- Select **Azure Repos Git**
+- Select your repository
+- Select **Existing Azure Pipelines YAML file**
+- Select path `azure-pipelines-deployment.yml` (select your work git branch if needed)
+- Click on **Continue**
+- Click on the arrow next to "Run" and select **Save**
+- Rename the pipeline to **Deploy to org** (click on the name to edit)
+
+## Configure Triggers and Policies
+
+### Check Pull Request Pipeline
+
+By default, Azure Pipelines might trigger on every commit to any branch. We want to restrict this and ensure it runs for Pull Requests.
+
+1. **Disable Continuous Integration trigger:**
+
+   - Go to **Pipelines** -> Select "Check Pull Request" pipeline -> **Edit**
+   - Open the menu **⋮** (Triggers)
+   - Tick **Override the YAML continuous integration trigger from here**
+   - Select **Disable continuous integration**
+   - **Save**
+
+2. **Configure Branch Policy:**
+
+   - Go to **Repos** -> **Branches**
+   - Click on the **...** menu next to your major branches (e.g., `integration`, `master`, ...)
+   - Select **Branch policies**
+   - In **Build Validation**, click **+**
+   - Select your "Check Pull Request" pipeline
+   - Keep default settings and **Save**
+   - (Optional but recommended) In **Branch policies**, enable **Require a minimum number of reviewers** and **Check for linked work items** if you want to enforce best practices.
+   - Ideally, you should also **Lock** your major branches (Repos -> Branches -> ... -> Lock) to prevent direct pushes.
+
+### Deploy to org Pipeline
+
+This pipeline should run automatically when changes are pushed (merged) to major branches.
+
+1. **Configure Branch Filters:**
+   - Go to **Pipelines** -> Select "Deploy to org" pipeline -> **Edit**
+   - Open the menu **⋮** (Triggers)
+   - In **Branch filters**, tick **Override the YAML continuous integration trigger from here**
+   - Ensure **Enable continuous integration** is checked
+   - **Include** all your major branches (e.g., `integration`, `uat`, `production`...)
+   - **Save**
+
 ## Azure Pull Request notes
 
 In order to avoid to have to open job logs to see deployment errors, sfdx-hardis can post them as a thread on the Pull Request UI

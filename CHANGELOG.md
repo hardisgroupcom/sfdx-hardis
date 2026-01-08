@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Update Security Documentation
+- Update Azure Pipelines setup documentation
 - [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/) enhancements
   - Filter fields from managed packages
   - Add field creation date in the reports

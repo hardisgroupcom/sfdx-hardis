@@ -34,10 +34,10 @@ For example, run the command for `integration`, `uat`, `preprod` and `production
 >
 > At runtime, we use [OAuth 2.0 JSON Web Tokens (JWT) bearer flow](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_jwt_flow.htm) with the client Id stored in secured CI/CD Variable + the Certificate decrypted on the fly using token stored in secured CI/CD variable.
 
-See how to set CI variables on different Git providers:
+See how to configure Pipelines and CI/CD variables on different Git providers:
 
 - [Gitlab tutorial](salesforce-ci-cd-setup-auth-gitlab.md)
-- [Azure tutorial](salesforce-ci-cd-setup-auth-azure.md)
+- [Azure tutorial](salesforce-ci-cd-setup-auth-azure.md), **with Pipeline setup instructions**
 - [GitHub tutorial](salesforce-ci-cd-setup-auth-github.md)
 - [BitBucket tutorial](salesforce-ci-cd-setup-auth-bitbucket.md)
 - [Jenkins tutorial](salesforce-ci-cd-setup-auth-jenkins.md)
