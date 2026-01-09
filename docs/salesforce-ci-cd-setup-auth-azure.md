@@ -4,6 +4,10 @@ description: Learn how to configure CI/CD variables for CI Server authentication
 ---
 <!-- markdownlint-disable MD013 -->
 
+## PRE-REQUISITES
+
+If you are building a CI/CD pipeline, follow the steps in [Configure Integrations between sfdx-hardis and Azure Pipelines](salesforce-ci-cd-setup-integration-azure.md) to create your pipelines.
+
 ## Define sfdx-hardis environment variables
 
 - Go to **Project -> Pipelines**
