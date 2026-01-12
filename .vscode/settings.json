@@ -4,13 +4,12 @@
     "**/.git": true,
     "**/.hg": true,
     "**/.svn": true,
-    "**/CVS": true,
-    "**/node_modules": true,
+    "**/CVS": true
   },
   "search.exclude": {
     "**/lib": true,
     "**/bin": true,
-    "**/node_modules": true,
+    "**/node_modules": true
   },
   "editor.tabSize": 2,
   "editor.formatOnSave": true,

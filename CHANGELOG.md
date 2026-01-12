@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/): Add a summary message
+- Upgrade farmhash package to about issues when installing npm packages with --no-script
 
 ## [6.21.1] 2025-01-09
 
