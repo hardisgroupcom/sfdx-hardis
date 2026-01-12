@@ -4,7 +4,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { Connection, Messages } from '@salesforce/core';
 import c from 'chalk';
 import sortArray from 'sort-array';
-import { generateReports, isCI, uxLog } from '../../../common/utils/index.js';
+import { generateReports, isCI, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../../../common/utils/apiUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { createXlsxFromCsvFiles, generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
@@ -664,6 +664,26 @@ This command focuses on one or more sObjects and measures how many records popul
         totalRecords = singleResult.totalRecords ?? totalRecords;
       }
 
+      uxLog("action", this, c.cyan(`Summary:`));
+      const fieldSummaryRows = fieldsInput.map((fieldApiName) => {
+        const distinctValues = aggregatedResults.filter((r: any) => r?.fieldApiName === fieldApiName).length;
+        return {
+          sObjectName: context.sObjectName,
+          fieldApiName,
+          distinctValues,
+          totalRecords: totalRecords ?? 'N/A',
+        };
+      });
+      if (fieldSummaryRows.length > 0) {
+        uxLogTable(this, fieldSummaryRows, ['sObjectName', 'fieldApiName', 'distinctValues', 'totalRecords']);
+      }
+      if (aggregatedReportFiles.length > 0) {
+        uxLog("log", this, c.grey('Report files:'));
+        for (const rf of aggregatedReportFiles) {
+          uxLog("log", this, c.grey(`- ${rf?.type || 'file'}: ${rf?.file || ''}`));
+        }
+      }
+
       return {
         outputString: `Processed value distribution for ${context.sObjectName} fields: ${fieldsInput.join(', ')}.`,
         result: aggregatedResults,
@@ -747,6 +767,56 @@ This command focuses on one or more sObjects and measures how many records popul
         path.basename(consolidatedBase).replace('.csv', '.xlsx')
       );
       reportFiles.push({ type: 'xlsx', file: consolidatedXlsx });
+    }
+
+    uxLog("action", this, c.cyan(`Summary:`));
+
+    const perObjectSummary = objectContexts.map((context) => {
+      const rows = perObjectRows[context.sObjectName] || [];
+      const skippedCount = aggregatedSkipped.filter((s) => s.sObjectName === context.sObjectName).length;
+      const neverUsedFields = rows.filter((r) => (r?.populatedPercentageNumeric ?? 0) === 0).length;
+      const mostPopulated = rows.length > 0 ? rows[0] : null;
+      const leastPopulated = rows.length > 0 ? rows[rows.length - 1] : null;
+      return {
+        sObjectName: context.sObjectName,
+        totalRecords: totalRecordsMap[context.sObjectName] ?? 0,
+        fieldsAnalyzed: rows.length,
+        neverUsedFields,
+        skippedFields: skippedCount,
+        mostPopulated: mostPopulated ? `${mostPopulated.fieldApiName} (${mostPopulated.populatedPercentage})` : 'N/A',
+        leastPopulated: leastPopulated ? `${leastPopulated.fieldApiName} (${leastPopulated.populatedPercentage})` : 'N/A',
+      };
+    });
+
+    perObjectSummary.sort((a, b) => {
+      if (b.neverUsedFields !== a.neverUsedFields) {
+        return b.neverUsedFields - a.neverUsedFields;
+      }
+      if (b.fieldsAnalyzed !== a.fieldsAnalyzed) {
+        return b.fieldsAnalyzed - a.fieldsAnalyzed;
+      }
+      return String(a.sObjectName).localeCompare(String(b.sObjectName));
+    });
+
+    const totalFieldsAnalyzed = aggregatedRows.length;
+    uxLog(
+      "log",
+      this,
+      c.grey(
+        `Analyzed ${objectContexts.length} object(s), ${totalFieldsAnalyzed} field(s) ` +
+        `(${aggregatedSkipped.length} skipped).`
+      )
+    );
+    if (perObjectSummary.length > 0) {
+      uxLogTable(this, perObjectSummary, [
+        'sObjectName',
+        'totalRecords',
+        'fieldsAnalyzed',
+        'neverUsedFields',
+        'skippedFields',
+        'mostPopulated',
+        'leastPopulated',
+      ]);
     }
 
     const outputString = `Processed object field usage for ${objectContexts.length} object(s).`;
