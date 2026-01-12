@@ -1755,14 +1755,14 @@ export async function generateSSLCertificate(
       description: 'Select the type of OAuth app to create for CI/CD authentication',
       choices: [
         {
-          title: 'External Client App (Recommended)',
-          value: 'externalClientApp',
-          description: 'Metadata-based app - fully deployable, requires API v59+'
-        },
-        {
-          title: 'Connected App (Legacy)',
+          title: 'Connected App (Legacy but works everytime)',
           value: 'connectedApp',
           description: 'Standard Connected App - works with all Salesforce editions'
+        },
+        {
+          title: 'External Client App (Recommended by SF but some issues have been reported)',
+          value: 'externalClientApp',
+          description: 'Metadata-based app - fully deployable, requires API v59+'
         },
       ],
       initial: 0,

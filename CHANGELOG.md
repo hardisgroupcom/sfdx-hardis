@@ -4,6 +4,7 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/): Use Connected App by default because issues have been reported with External Client Apps in some Salesforce editions / setups.
 - [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/): Add a summary message
 - Upgrade farmhash package to about issues when installing npm packages with --no-script
 
