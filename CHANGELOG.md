@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Upgrade farmhash package to about issues when installing npm packages with --no-script
+
 ## [6.21.1] 2025-01-09
 
 - Update Security Documentation
