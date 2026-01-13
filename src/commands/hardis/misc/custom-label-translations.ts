@@ -128,6 +128,53 @@ The command's technical implementation involves:
     return extractedLabels;
   }
 
+  /**
+   * Extract original custom label values from CustomLabels.labels-meta.xml
+   */
+  private async extractOriginalLabels(labelNames: string[], debugMode: boolean): Promise<Map<string, any>> {
+    uxLog("log", this, c.grey(`Looking for original custom label definitions...`));
+
+    const originalLabels = new Map<string, any>();
+    const customLabelsFiles = await glob('**/labels/CustomLabels.labels-meta.xml', { ignore: GLOB_IGNORE_PATTERNS });
+
+    if (customLabelsFiles.length === 0) {
+      uxLog("warning", this, c.yellow(`No CustomLabels.labels-meta.xml found.`));
+      return originalLabels;
+    }
+
+    for (const customLabelsFile of customLabelsFiles) {
+      const xmlContent = await fs.readFile(customLabelsFile, 'utf8');
+      const parsedXml = await parseStringPromise(xmlContent, { explicitArray: false });
+
+      if (!parsedXml.CustomLabels || !parsedXml.CustomLabels.labels) {
+        continue;
+      }
+
+      const labels = Array.isArray(parsedXml.CustomLabels.labels)
+        ? parsedXml.CustomLabels.labels
+        : [parsedXml.CustomLabels.labels];
+
+      for (const label of labels) {
+        const labelName = label.fullName || label.name;
+        
+        if (labelNames.includes(labelName)) {
+          originalLabels.set(labelName, {
+            name: labelName,
+            label: label.value || '',
+            shortDescription: label.shortDescription || '',
+          });
+
+          if (debugMode) {
+            uxLog("log", this, c.grey(`Found original: ${labelName} = "${label.value}"`));
+          }
+        }
+      }
+    }
+
+    uxLog("log", this, c.grey(`Found ${originalLabels.size} original label definitions.`));
+    return originalLabels;
+  }
+
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(CustomLabelTranslations);
     const debugMode = flags.debug || false;
@@ -161,6 +208,7 @@ The command's technical implementation involves:
     uxLog("log", this, c.grey(`Processing custom labels: ${labelNames.join(', ')}`));
 
     try {
+      const originalLabels = await this.extractOriginalLabels(labelNames, debugMode);
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const outputDir = path.join('extracted-translations', `${this.outputDirPrefix}-${timestamp}`);
       await fs.ensureDir(outputDir);
@@ -245,9 +293,43 @@ The command's technical implementation involves:
       uxLog("success", this, c.green(`Successfully extracted custom labels to ${outputDir}.`));
       uxLog("log", this, c.grey(`Processed ${totalFiles} translation files.`));
 
+      if (originalLabels.size > 0) {
+        const originalXmlLabels: any[] = [];
+        
+        for (const labelName of labelNames) {
+          const original = originalLabels.get(labelName);
+          if (original) {
+            originalXmlLabels.push({
+              name: original.name,
+              label: original.label,
+              shortDescription: original.shortDescription,
+            });
+          }
+        }
+
+        if (originalXmlLabels.length > 0) {
+          const originalXml = {
+            Translations: {
+              $: { xmlns: "http://soap.sforce.com/2006/04/metadata" },
+              customLabels: originalXmlLabels
+            }
+          };
+
+          const builder = new Builder({
+            xmldec: { version: '1.0', encoding: 'UTF-8' },
+            renderOpts: { pretty: true, indent: '    ', newline: '\n' }
+          });
+          const outputXml = builder.buildObject(originalXml);
+
+          const originalFile = path.join(outputDir, 'original.translation-meta.xml');
+          await fs.writeFile(originalFile, outputXml);
+
+          uxLog("log", this, c.grey(`Generated original labels file: original.translation-meta.xml`));
+        }
+      }
+
       WebSocketClient.requestOpenFile(outputDir);
 
-      // Return an object to be displayed with --json
       return {
         success: true,
         outputDirectory: outputDir,
