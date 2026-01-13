@@ -17,11 +17,16 @@ export class GitlabProvider extends GitProviderRoot {
     this.serverUrl = process.env.CI_SERVER_URL || "";
     // It's better to have a project token defined in a CI_SFDX_HARDIS_GITLAB_TOKEN variable, to have the rights to act on Pull Requests
     this.token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || "";
-    this.gitlabApi = new Gitlab({
+    const gitlabConfig: ConstructorParameters<typeof Gitlab>[0] = {
       host: this.serverUrl,
       token: this.token,
-      agent: process?.env?.GITLAB_API_REJECT_UNAUTHORIZED === "false" ? new HttpsAgent({ rejectUnauthorized: false }) : undefined,
-    });
+    };
+
+    if (process.env.GITLAB_API_REJECT_UNAUTHORIZED === "false") {
+      gitlabConfig.agent = new HttpsAgent({ rejectUnauthorized: false });
+    }
+
+    this.gitlabApi = new Gitlab(gitlabConfig);
   }
 
   public getLabel(): string {
