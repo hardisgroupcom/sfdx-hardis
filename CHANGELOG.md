@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.22.0] 2025-01-13
+
 - [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/):
   - Use Connected App by default because issues have been reported with External Client Apps in some Salesforce editions / setups.
   - Add copy tags around values so VsCode SFDX-Hardis can display a copy button
