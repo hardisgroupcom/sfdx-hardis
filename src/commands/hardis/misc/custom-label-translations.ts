@@ -160,7 +160,9 @@ The command's technical implementation involves:
         if (labelNames.includes(labelName)) {
           originalLabels.set(labelName, {
             name: labelName,
-            label: label.value || ''
+            label: label.value || '',
+            shortDescription: label.shortDescription || '',
+            value: label.value || ''
           });
 
           if (debugMode) {
@@ -300,7 +302,9 @@ The command's technical implementation involves:
           if (original) {
             originalXmlLabels.push({
               name: original.name,
-              label: original.label
+              label: original.label,
+              shortDescription: original.shortDescription,
+              value: original.value
             });
           }
         }
@@ -319,16 +323,15 @@ The command's technical implementation involves:
           });
           const outputXml = builder.buildObject(originalXml);
 
-          const originalFile = path.join(outputDir, 'en_US.translation-meta.xml');
+          const originalFile = path.join(outputDir, 'original.translation-meta.xml');
           await fs.writeFile(originalFile, outputXml);
 
-          uxLog("log", this, c.grey(`Generated original labels file: en_US.translation-meta.xml`));
+          uxLog("log", this, c.grey(`Generated original labels file: original.translation-meta.xml`));
         }
       }
 
       WebSocketClient.requestOpenFile(outputDir);
 
-      // Return an object to be displayed with --json
       return {
         success: true,
         outputDirectory: outputDir,
