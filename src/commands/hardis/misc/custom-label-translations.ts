@@ -162,7 +162,6 @@ The command's technical implementation involves:
             name: labelName,
             label: label.value || '',
             shortDescription: label.shortDescription || '',
-            value: label.value || ''
           });
 
           if (debugMode) {
@@ -304,7 +303,6 @@ The command's technical implementation involves:
               name: original.name,
               label: original.label,
               shortDescription: original.shortDescription,
-              value: original.value
             });
           }
         }
