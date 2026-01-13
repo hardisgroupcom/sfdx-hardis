@@ -1713,15 +1713,31 @@ export async function generateSSLCertificate(
     description: 'Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.',
   });
   if (confirmResponse.value === true) {
-    uxLog("action", commandThis, c.cyan('Please configure both below variables in your CI/CD platform.\n(expand section below to see values)'));
+    const clientIdStringRaw = `SFDX_CLIENT_ID_${branchName.toUpperCase()}`;
+    const clientKeyStringRaw = `SFDX_CLIENT_KEY_${branchName.toUpperCase()}`;
+    const idKeyValues = {
+      clientIdString: clientIdStringRaw,
+      clientIdValueString: consumerKey,
+      clientKeyString: clientKeyStringRaw,
+      clientKeyValueString: encryptionKey,
+    }
+    // Add <copy></copy> around values if we have VsCode UI to allow to display copy icon
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      for (const key of Object.keys(idKeyValues)) {
+        idKeyValues[key] = `<copy>${idKeyValues[key]}</copy>`;
+      }
+    }
+
+    uxLog("action", commandThis, c.cyan('Please configure both below variables in your CI/CD platform.'));
     uxLog(
       "log",
       commandThis,
       c.grey(
         c.cyanBright(
-          `${c.green(
-            c.bold(`- SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
-          )} with value ${c.bold(c.green(consumerKey))}`
+          `- Variable: ${c.green(
+            c.bold(idKeyValues.clientIdString)
+          )}
+          - Value: ${c.bold(c.green(idKeyValues.clientIdValueString))}`
         )),
       true
     );
@@ -1729,21 +1745,23 @@ export async function generateSSLCertificate(
       "log",
       commandThis,
       c.grey(c.cyanBright(
-        `${c.green(
-          c.bold(`- SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)
-        )} with value ${c.bold(c.green(encryptionKey))}`
+        `- Variable: ${c.green(
+          c.bold(idKeyValues.clientKeyString)
+        )}
+        - Value: ${c.bold(c.green(idKeyValues.clientKeyValueString))}`
       )),
       true
     );
     uxLog(
       "log",
       commandThis,
-      c.grey(c.yellow(`Help to configure CI variables is here: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`))
+      c.grey(c.yellow(`Help to configure CI/CD variables: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`))
     );
+    uxLog("warning", commandThis, c.yellow(`If you are using GitHub or Azure, you also need to manually add references to ${clientIdStringRaw} and ${clientKeyStringRaw} in your pipeline YAML definition file (.github/workflows/*.yml or azure-pipelines-*.yml).`));
     WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, "Help to configure CI variables", "docUrl");
     await prompts({
       type: 'confirm',
-      message: c.cyanBright('Please confirm when variables have been set (expand section above to see values)'),
+      message: c.cyanBright('Please confirm when variables have been set (copy the variable names and values in the section above)'),
       description: 'Confirm when you have configured the required CI/CD environment variables in your deployment platform',
     });
 
