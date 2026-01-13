@@ -1,5 +1,6 @@
-import { Gitlab } from "@gitbeaker/node";
+import { Gitlab } from "@gitbeaker/rest";
 import c from "chalk";
+import { Agent as HttpsAgent } from "https";
 import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { GitProviderRoot } from "./gitProviderRoot.js";
@@ -19,7 +20,7 @@ export class GitlabProvider extends GitProviderRoot {
     this.gitlabApi = new Gitlab({
       host: this.serverUrl,
       token: this.token,
-      rejectUnauthorized: process?.env?.GITLAB_API_REJECT_UNAUTHORIZED === "false" ? false : true,
+      agent: process?.env?.GITLAB_API_REJECT_UNAUTHORIZED === "false" ? new HttpsAgent({ rejectUnauthorized: false }) : undefined,
     });
   }
 
@@ -73,7 +74,7 @@ export class GitlabProvider extends GitProviderRoot {
       // GET /projects/:id/repository/commits/:sha/merge_requests
       // This returns merge requests related to the commit directly.
       try {
-        const commitMrs = await this.gitlabApi.Commits.mergeRequests(projectId || "", sha);
+        const commitMrs = await this.gitlabApi.Commits.allMergeRequests(projectId || "", sha);
         if (Array.isArray(commitMrs) && commitMrs.length > 0) {
           allMergedMRs = commitMrs;
         }
@@ -182,8 +183,9 @@ export class GitlabProvider extends GitProviderRoot {
     // Get CI variables
     const prInfo = await this.getPullRequestInfo();
     const projectId = process.env.CI_PROJECT_ID || null;
-    const mergeRequestId = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || prInfo?.idStr || null;
-    if (projectId == null || mergeRequestId == null) {
+    const mergeRequestIdRaw = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || prInfo?.idStr || null;
+    const mergeRequestId = mergeRequestIdRaw ? parseInt(String(mergeRequestIdRaw), 10) : NaN;
+    if (projectId == null || !Number.isFinite(mergeRequestId)) {
       uxLog("log", this, c.grey("[Gitlab integration] No project and merge request, so no note posted..."));
       return { posted: false, providerResult: { info: "No related merge request" } };
     }
@@ -216,7 +218,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
     if (existingNoteId) {
       // Update existing note
       uxLog("log", this, c.grey("[Gitlab integration] Updating Merge Request Note on Gitlab..."));
-      const gitlabEditNoteResult = await this.gitlabApi.MergeRequestNotes.edit(projectId, mergeRequestId, existingNoteId, messageBody);
+      const gitlabEditNoteResult = await this.gitlabApi.MergeRequestNotes.edit(projectId, mergeRequestId, existingNoteId, { body: messageBody });
       const prResult: PullRequestMessageResult = {
         posted: gitlabEditNoteResult.id > 0,
         providerResult: gitlabEditNoteResult,
