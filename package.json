@@ -7,7 +7,7 @@
   "dependencies": {
     "@actions/github": "6.0.1",
     "@cparra/apexdocs": "3.20.0",
-    "@gitbeaker/node": "35.8.1",
+    "@gitbeaker/rest": "^43.8.0",
     "@langchain/anthropic": "0.3.34",
     "@langchain/community": "0.3.59",
     "@langchain/core": "0.3.80",

@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/): Add a summary message
 - Upgrade farmhash package to about issues when installing npm packages with --no-script
 - Upgrade dependencies + package.json according to yarn.lock
+- Migrate from @gitbeaker/node (deprecated) to @gitbeaker/rest
 
 ## [6.21.1] 2025-01-09
 
