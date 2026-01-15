@@ -30,7 +30,7 @@
     "cross-spawn": "7.0.6",
     "csv-stringify": "6.6.0",
     "debug": "4.4.3",
-    "diff": "7.0.0",
+    "diff": "8.0.3",
     "dotenv": "16.6.1",
     "email-validator": "2.0.4",
     "exceljs": "4.4.0",
