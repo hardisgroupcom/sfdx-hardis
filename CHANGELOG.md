@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Fix issue when using skipCodeCoverage=true
+
 ## [6.22.0] 2025-01-13
 
 - [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/):
