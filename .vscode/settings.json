@@ -37,5 +37,9 @@
   "pasteImage.basePath": "${projectRoot}",
   "pasteImage.showFilePathConfirmInputBox": true,
   "pasteImage.filePathConfirmInputBoxMode": "onlyName",
-  "workbench.colorCustomizations": {}
+  "workbench.colorCustomizations": {},
+  "megalinter.run.flavor": "javascript",
+  "megalinter.run.version": "beta",
+  "megalinter.debug": false,
+  "megalinter.run.applyFixes": false
 }
