@@ -1459,23 +1459,23 @@ export async function countLinesInFile(file: string) {
  * @param {string} outputFile - The output file path. If null, a new path is generated.
  * @param {Object} [options] - Additional options for generating the report path.
  * @param {boolean} [options.withDate=false] - Whether to append a timestamp to the file name.
+ * @param {boolean} [options.withBranchName=true] - Whether to include the branch name in the file name.
+ * @param {string} [options.fileExtension='csv'] - The file extension to use for the report file.
+ * @param {string} [options.fileNamePartsSeparator='-'] - The separator to use between file name parts.
  * @returns {Promise<string>} - A Promise that resolves to the full path of the report.
  */
-export async function generateReportPath(fileNamePrefix: string, outputFile: string, options: { withDate: boolean } = { withDate: false }): Promise<string> {
+export async function generateReportPath(fileNamePrefix: string, outputFile: string, options: { withDate?: boolean; withBranchName?: boolean; fileExtension?: string; fileNamePartsSeparator?: string } = {}): Promise<string> {
+  const { withDate = false, withBranchName = true, fileExtension = 'csv', fileNamePartsSeparator = '-' } = options;
   if (outputFile == null || outputFile === '') {
     const reportDir = await getReportDirectory();
-    const branchName =
-      (!isGitRepo()) ? 'no-git' :
-        process.env.CI_COMMIT_REF_NAME ||
-        (await getCurrentGitBranch({ formatted: true })) ||
-        'branch-not-found';
-    let newOutputFile = path.join(reportDir, `${fileNamePrefix}-${branchName.split('/').pop()}.csv`);
-    if (options.withDate) {
-      // Add date time info
-      const date = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0];
-      newOutputFile = path.join(reportDir, `${fileNamePrefix}-${branchName.split('/').pop()}-${date}.csv`);
+    const fileNameParts: string[] = [fileNamePrefix];
+    if (withBranchName) {
+      fileNameParts.push(!isGitRepo() ? 'no-git' : process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || 'branch-not-found');
     }
-    return newOutputFile;
+    if (withDate) {
+      fileNameParts.push(new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0]);
+    }
+    return path.join(reportDir, fileNameParts.join(fileNamePartsSeparator) + '.' + fileExtension);
   } else {
     await fs.ensureDir(path.dirname(outputFile));
     return outputFile;
@@ -1504,6 +1504,7 @@ export interface ExcelExportOptions {
   xlsFileTitle?: string;
   noExcel?: boolean;
   columnsCustomStyles?: Record<string, ExcelColumnStyle>;
+  skipNotifyToWebSocket?: boolean;
 }
 
 export async function generateCsvFile(
@@ -1517,11 +1518,13 @@ export async function generateCsvFile(
     await fs.writeFile(outputPath, csvContent, 'utf8');
     uxLog("action", this, c.cyan(c.italic(`Please see detailed CSV log in ${c.bold(outputPath)}`)));
     result.csvFile = outputPath;
-    if (!WebSocketClient.isAliveWithLwcUI()) {
+    if (!WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket) {
       WebSocketClient.requestOpenFile(outputPath);
     }
     const csvFileTitle = options?.fileTitle ? `${options.fileTitle} (CSV)` : options?.csvFileTitle ?? "Report (CSV)";
-    WebSocketClient.sendReportFileMessage(outputPath, csvFileTitle, "report");
+    if (!options?.skipNotifyToWebSocket) {
+      WebSocketClient.sendReportFileMessage(outputPath, csvFileTitle, "report");
+    }
     if (data.length > 0 && !options?.noExcel) {
       await createXlsxFromCsv(outputPath, options, result);
     } else {
@@ -1539,6 +1542,8 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
     const xslxFile = path.join(xlsDirName, xslFileName);
     await fs.ensureDir(xlsDirName);
+    // Delete existing file if any
+    await fs.remove(xslxFile);
     await csvToXls(outputPath, xslxFile, options);
     uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
@@ -1574,6 +1579,8 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
     const xslxFile = path.join(xlsDirName, xslFileName);
     await fs.ensureDir(xlsDirName);
+    // Delete existing file if any
+    await fs.remove(xslxFile);
     await csvFilesToXls(csvFilesPath, xslxFile, options);
     uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
@@ -1599,13 +1606,62 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
 async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: ExcelExportOptions) {
   const workbook = new ExcelJS.Workbook();
   let worksheet: ExcelJS.Worksheet;
+  const usedWorksheetNames = new Set<string>();
+
+  const sanitizeWorksheetName = (name: string): string => {
+    // Excel constraints: max 31 chars, no : \ / ? * [ ] and no control chars.
+    const withoutControlChars = Array.from(name || '')
+      .filter((char) => char >= ' ')
+      .join('');
+    return withoutControlChars
+      .replace(/\.csv$/i, '')
+      .replace(/[\u005B\u005D*\\\\?:/]/g, ' ')
+      .trim();
+  };
+
+  const makeUniqueWorksheetName = (desiredName: string): string => {
+    const maxLength = 31;
+    const base = sanitizeWorksheetName(desiredName) || 'Sheet';
+
+    let candidate = base.substring(0, maxLength);
+    if (!usedWorksheetNames.has(candidate)) {
+      return candidate;
+    }
+
+    for (let i = 2; i < 1000; i++) {
+      const suffix = `_${i}`;
+      const available = Math.max(1, maxLength - suffix.length);
+      candidate = `${base.substring(0, available)}${suffix}`;
+      if (!usedWorksheetNames.has(candidate)) {
+        return candidate;
+      }
+    }
+
+    const hashSuffix = crypto.createHash('sha1').update(base).digest('hex').substring(0, 6);
+    const finalSuffix = `_${hashSuffix}`;
+    const available = Math.max(1, maxLength - finalSuffix.length);
+    return `${base.substring(0, available)}${finalSuffix}`;
+  };
+
   for (const csvFile of csvFiles) {
     if (!csvFile) {
       console.warn(`[csvFilesToXls] Skipping null/undefined csvFile:`, csvFile);
       continue;
     }
+    if (!fs.existsSync(csvFile)) {
+      console.warn(`[csvFilesToXls] Skipping missing csvFile:`, csvFile);
+      continue;
+    }
+    const stat = await fs.stat(csvFile);
+    if (!stat || stat.size === 0) {
+      console.warn(`[csvFilesToXls] Skipping empty csvFile:`, csvFile);
+      continue;
+    }
     worksheet = await workbook.csv.readFile(csvFile);
-    worksheet.name = path.basename(csvFile).replace('.csv', '').substring(0, 25);
+    const desiredWorksheetName = path.basename(csvFile).replace('.csv', '');
+    const worksheetName = makeUniqueWorksheetName(desiredWorksheetName);
+    worksheet.name = worksheetName;
+    usedWorksheetNames.add(worksheetName);
     applyWorksheetFormatting(worksheet, options);
     // Scan only the first row and convert string formulas
     const firstRow = worksheet.getRow(1);

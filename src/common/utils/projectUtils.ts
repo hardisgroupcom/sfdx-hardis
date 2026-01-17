@@ -84,6 +84,11 @@ export async function isManagedFlow(flowFile: string) {
   return true;
 }
 
+export function isManagedApiName(apiName: string) {
+  const apiNameParts = apiName.split('__');
+  return apiNameParts.length > 2 && apiNameParts[0].length > 0;
+}
+
 export async function listApexFiles(packageDirs) {
   const apexFiles: any[] = [];
   const skippedApex: string[] = [];

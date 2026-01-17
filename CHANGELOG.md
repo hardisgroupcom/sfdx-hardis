@@ -4,13 +4,51 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- Do not post a pull request comment when a flow has been created or deleted
-- Allow to override Grafana notification Monitoring key using SFDX_HARDIS_MONITORING_KEY
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Fix issue when using skipCodeCoverage=true
+
+## [6.22.0] 2025-01-13
+
+- [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/):
+  - Use Connected App by default because issues have been reported with External Client Apps in some Salesforce editions / setups.
+  - Add copy tags around values so VsCode SFDX-Hardis can display a copy button
+- [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/): Add a summary message
+- Upgrade farmhash package to about issues when installing npm packages with --no-script
+- Upgrade dependencies + package.json according to yarn.lock
+- Migrate from @gitbeaker/node (deprecated) to @gitbeaker/rest
+
+## [6.21.1] 2025-01-09
+
+- Update Security Documentation
+- Update Azure Pipelines setup documentation
+- [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/) enhancements
+  - Filter fields from managed packages
+  - Add field creation date in the reports
+  - Update CSV generation options to avoid sending WebSocket notifications in some contexts
+
+## [6.21.0] 2025-01-06
+
+- [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/) enhancements:
+  - Add OAuth Token usage details
+  - Find application using AppMenuItem Id when its name is not matching
+  - Allow to ignore some connected apps using `monitoringUnsecureConnectedAppsIgnore` (project config) or `MONITORING_UNSECURE_CONNECTED_APPS_IGNORE` (env var) config property.
+  - Allow to delete "ghost" OAuth Tokens if user confirms it
+
+## [6.20.0] 2025-12-31
+
+- [hardis:doc:object-field-usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/): Analyze field usage and data completeness for Salesforce objects
+- Improve display of data export logs
+
+## [6.19.0] 2025-12-30
+
+- [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/): Added ability to apply the bypass to flows
+- [hardis:org:configure:auth](https://sfdx-hardis.cloudity.com/hardis/org/configure/auth/): Allow to create External Client Apps (metadata-based connected apps) for CI/CD authentication
 - [hardis:project:clean:sensitive-metadatas](https://sfdx-hardis.cloudity.com/hardis/project/clean/sensitive-metadatas/): Remove secrets from more metadata types:
-  - Connected Apps 
+  - Connected Apps
   - Auth Providers
   - Named Credentials
-- [hardis:org:configure:auth](https://sfdx-hardis.cloudity.com/hardis/org/configure/auth/): Allow to create External Client Apps (metadata-based connected apps) for CI/CD authentication
+- DevOps: Improve identification of Pull Request in Azure Pipelines context
+- DevOps: Do not post a pull request comment when a flow has been created or deleted
+- Monitoring: Allow to override Grafana notification Monitoring key using SFDX_HARDIS_MONITORING_KEY
 - Docs: Improve clarity of manual steps for hiding standard applications
 
 ## [6.18.0] 2025-12-26
