@@ -4,7 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Fix issue when using skipCodeCoverage=true
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/):
+  - Fix issue when using skipCodeCoverage=true
+  - Check if a deployment is only caused by coverage failure but components and tests are ok (testCoverageNotBlocking)
 
 ## [6.22.0] 2025-01-13
 

@@ -551,13 +551,17 @@ async function handleDeployError(
   // Handle coverage error if ignored
   if (
     check === true &&
-    branchConfig?.testCoverageNotBlocking === true &&
-    (output.includes('=== Test Success') || output.includes('Test Success [')) &&
-    !output.includes('Test Failures') &&
-    (output.includes('=== Apex Code Coverage') || output.includes("Failing: 0"))
+    branchConfig?.testCoverageNotBlocking === true
   ) {
-    uxLog("warning", commandThis, c.yellow(c.bold('Deployment status: Deploy check success & Ignored test coverage error')));
-    return { status: 0, stdout: (e as any).stdout, stderr: (e as any).stderr, testCoverageNotBlockingActivated: true };
+    const jsonResult = findJsonInString(output);
+    if (isDeployCheckCoverageOnlyFailure(jsonResult, commandThis)) {
+      uxLog(
+        "warning",
+        commandThis,
+        c.yellow(c.bold('Deployment status: Deploy check success & Ignored test coverage error'))
+      );
+      return { status: 0, stdout: (e as any).stdout, stderr: (e as any).stderr, testCoverageNotBlockingActivated: true };
+    }
   }
   // Handle Effective error
   const { errLog } = await analyzeDeployErrorLogs(output, true, { check: check });
@@ -573,6 +577,88 @@ async function handleDeployError(
   await GitProvider.managePostPullRequestComment(check);
   killBoringExitHandlers();
   throw new SfError('Deployment failure. Check messages above');
+}
+
+/**
+ * Returns true when a deploy-check (validate) failed only because of Apex code coverage.
+ * This is used for branchConfig.testCoverageNotBlocking=true, to avoid masking real failures.
+ */
+export function isDeployCheckCoverageOnlyFailure(jsonResult: any, commandThis: any): boolean {
+  if (!jsonResult?.result) {
+    uxLog(
+      "log",
+      commandThis,
+      c.grey('[testCoverageNotBlocking] No JSON result found in deploy output: cannot classify as coverage-only failure')
+    );
+    return false;
+  }
+
+  // When present, require the command to be a validation (deploy check)
+  if (jsonResult.result.checkOnly === false) {
+    uxLog(
+      "log",
+      commandThis,
+      c.grey('[testCoverageNotBlocking] JSON result.checkOnly is false: not a deploy-check validation')
+    );
+    return false;
+  }
+
+  const details = jsonResult.result.details;
+  if (!details) {
+    uxLog(
+      "log",
+      commandThis,
+      c.grey('[testCoverageNotBlocking] JSON result.details is missing: cannot validate failure reason')
+    );
+    return false;
+  }
+
+  // Do not ignore if we have real metadata/component failures
+  if (details.componentFailures.length > 0) {
+    uxLog(
+      "log",
+      commandThis,
+      c.grey(
+        `[testCoverageNotBlocking] Found component failures (${details.componentFailures.length}): not a coverage-only failure`
+      )
+    );
+    return false;
+  }
+
+  if (jsonResult.result.numberComponentErrors > 0) {
+    uxLog(
+      "log",
+      commandThis,
+      c.grey(
+        `[testCoverageNotBlocking] numberComponentErrors=${jsonResult.result.numberComponentErrors}: not a coverage-only failure`
+      )
+    );
+    return false;
+  }
+
+  if (jsonResult.result.numberTestErrors > 0) {
+    uxLog(
+      "log",
+      commandThis,
+      c.grey(
+        `[testCoverageNotBlocking] numberTestErrors=${jsonResult.result.numberTestErrors}: test errors detected, not a coverage-only failure`
+      )
+    );
+    return false;
+  }
+
+  if (jsonResult.result.numberTestsTotal !== jsonResult.result.numberTestsCompleted) {
+    uxLog(
+      "log",
+      commandThis,
+      c.grey(
+        `[testCoverageNotBlocking] numberTestsTotal (${jsonResult.result.numberTestsTotal}) != numberTestsCompleted (${jsonResult.result.numberTestsCompleted}): not a coverage-only failure`
+      )
+    );
+    return false;
+  }
+
+  return true;
 }
 
 export function shortenLogLines(rawLog: string) {
