@@ -377,19 +377,19 @@ export async function smartDeploy(
             }
           }
         }
-      }
-      // Adjust testlevel for deployment if needed for special case testCoverageNotBlocking
-      else if (check === false && branchConfig?.testCoverageNotBlocking === true) {
-        const isProdOrg = await isProductionOrg(options.targetUsername || "", options);
-        if (!isProdOrg) {
-          testlevel = 'NoTestRun';
-          uxLog(
-            "success",
-            commandThis,
-            c.green(
-              'Note: run with NoTestRun as we had previously succeeded to simulate the deployment with testCoverageNotBlocking=true'
-            )
-          );
+        // Adjust testlevel for deployment if needed for special case testCoverageNotBlocking
+        else if (check === false && branchConfig?.testCoverageNotBlocking === true) {
+          const isProdOrg = await isProductionOrg(options.targetUsername || "", options);
+          if (!isProdOrg) {
+            testlevel = 'NoTestRun';
+            uxLog(
+              "success",
+              commandThis,
+              c.green(
+                'Note: run with NoTestRun as we had previously succeeded to simulate the deployment with testCoverageNotBlocking=true'
+              )
+            );
+          }
         }
       }
       // No QuickDeploy Available, or QuickDeploy failing : try full deploy
