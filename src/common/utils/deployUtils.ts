@@ -327,6 +327,7 @@ export async function smartDeploy(
           } (${nbDeployedItems} items)${hasDestructiveChanges ? ' with destructive changes' : ''}...`
         )
       );
+      const branchConfig = await getConfig('branch');
       // Try QuickDeploy
       if (check === false && (process.env?.SFDX_HARDIS_QUICK_DEPLOY || '') !== 'false') {
         const deploymentCheckId = await GitProvider.getDeploymentCheckId();
@@ -377,8 +378,21 @@ export async function smartDeploy(
           }
         }
       }
+      // Adjust testlevel for deployment if needed for special case testCoverageNotBlocking
+      else if (check === false && branchConfig?.testCoverageNotBlocking === true) {
+        const isProdOrg = await isProductionOrg(options.targetUsername || "", options);
+        if (!isProdOrg) {
+          testlevel = 'NoTestRun';
+          uxLog(
+            "success",
+            commandThis,
+            c.green(
+              'Note: run with NoTestRun as we had previously succeeded to simulate the deployment with testCoverageNotBlocking=true'
+            )
+          );
+        }
+      }
       // No QuickDeploy Available, or QuickDeploy failing : try full deploy
-      const branchConfig = await getConfig('branch');
       const reportDir = await getReportDirectory();
       const hasCoverageFormatterJson =
         process.env?.COVERAGE_FORMATTER_JSON === "true" && testlevel !== 'NoTestRun' ?
