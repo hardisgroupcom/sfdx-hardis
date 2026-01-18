@@ -35,7 +35,7 @@ const REMOTE_CONFIGS: any = {};
 
 export const getApiVersion = () => {
   // globalThis.currentOrgApiVersion is set during authentication check (so not set if --skipauth option is used)
-  return process.env.SFDX_API_VERSION || globalThis.currentOrgApiVersion || '63.0';
+  return process.env.SFDX_API_VERSION || globalThis.currentOrgApiVersion || '64.0';
 }
 
 export const CONSTANTS = {

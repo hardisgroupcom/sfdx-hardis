@@ -4,10 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/):
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) enhancements & fixes:
   - Fix issue when using skipCodeCoverage=true
   - Check if a deployment is only caused by coverage failure but components and tests are ok (testCoverageNotBlocking)
   - Deploy with NoTestRun if deployment simulation has been performed with testCoverageNotBlocking=true
+- [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/) enhancements & fixes:
+  - Fix creation of External Client App
+  - Improve prompts when selecting branches (filter those with / in their name)
+- Update default api version to 64.0
 
 ## [6.22.0] 2025-01-13
 
