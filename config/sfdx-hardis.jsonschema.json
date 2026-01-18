@@ -1848,7 +1848,7 @@
         "Run Repository Tests Except SeeAllData (same than RunRepositoryTests but without test classes with SeeAllData=true)",
         "Run Specified Tests (never use it, instead use Run Local Tests + deploymentApexTestClasses)",
         "Run All Tests In Org (never use it)",
-        "No Test Run (not recommended, better use Run Local Tests + deploymentApexTestClasses)",
+        "No Test Run (not recommended, better use Run Local Tests + deploymentApexTestClasses)"
       ],
       "examples": [
         "RunRepositoryTests",
