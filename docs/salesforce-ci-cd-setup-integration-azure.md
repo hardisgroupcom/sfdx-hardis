@@ -60,7 +60,6 @@ By default, Azure Pipelines might trigger on every commit to any branch. We want
    - Select your "Check Pull Request" pipeline
    - Keep default settings and **Save**
    - (Optional but recommended) In **Branch policies**, enable **Require a minimum number of reviewers** and **Check for linked work items** if you want to enforce best practices.
-   - Ideally, you should also **Lock** your major branches (Repos -> Branches -> ... -> Lock) to prevent direct pushes.
 
 ### Deploy to org Pipeline
 
