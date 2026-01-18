@@ -135,6 +135,10 @@ prompts
     let branchName = '';
     let instanceUrl = 'https://login.salesforce.com';
     const branches = await git().branch(["--list", "-r"]);
+    const branchesFiltered = branches.all
+      .map((branch: string) => branch.replace('origin/', ''))
+      .filter((branch: string) => branch !== branchName && !branch.includes("/"));
+
     if (!devHub) {
       const branchResponse = await prompts({
         type: 'select',
@@ -142,10 +146,10 @@ prompts
         message: c.cyanBright(
           'What is the name of the git branch you want to configure Automated CI/CD deployments from ? (Ex: integration,uat,preprod,main)'
         ),
-        choices: branches.all.map((branch: string) => {
+        choices: branchesFiltered.map((branch: string) => {
           return {
-            title: branch.replace('origin/', ''),
-            value: branch.replace('origin/', ''),
+            title: branch,
+            value: branch,
           };
         }),
         description: 'Enter the git branch name for this org configuration',
@@ -181,10 +185,10 @@ prompts
         message: c.cyanBright(
           `What are the target git branches that ${branchName} will be able to merge in ? (Ex: for integration, the target will be uat)`
         ),
-        choices: branches.all.map((branch: string) => {
+        choices: branchesFiltered.map((branch: string) => {
           return {
-            title: branch.replace('origin/', ''),
-            value: branch.replace('origin/', ''),
+            title: branch,
+            value: branch,
           };
         }),
         initial: initialMergeTargets,

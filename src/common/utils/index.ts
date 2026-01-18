@@ -1799,14 +1799,14 @@ export async function generateSSLCertificate(
       description: 'Select the type of OAuth app to create for CI/CD authentication',
       choices: [
         {
-          title: 'Connected App (Legacy but works everytime)',
-          value: 'connectedApp',
-          description: 'Standard Connected App - works with all Salesforce editions'
+          title: 'External Client App (Recommended by the mothership)',
+          value: 'externalClientApp',
+          description: 'External Client App are the replacement of Connected Apps'
         },
         {
-          title: 'External Client App (Recommended by SF but some issues have been reported)',
-          value: 'externalClientApp',
-          description: 'Metadata-based app - fully deployable, requires API v59+'
+          title: 'Connected App (Legacy)',
+          value: 'connectedApp',
+          description: 'Does not work starting Spring 26 except if you post a case to SF to request activation of Connected Apps creation'
         },
       ],
       initial: 0,
