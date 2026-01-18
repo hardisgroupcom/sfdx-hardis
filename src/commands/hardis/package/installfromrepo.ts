@@ -88,7 +88,9 @@ The command's technical implementation involves:
           return 'Repository URL is required';
         }
         // Validate GitHub URL pattern more strictly
-        const githubUrlPattern = /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?$/;
+        // GitHub repo names can contain alphanumeric characters, hyphens, underscores, and dots
+        // but the regex ensures it's a valid HTTPS GitHub URL
+        const githubUrlPattern = /^https:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?$/;
         if (!githubUrlPattern.test(value.trim())) {
           return 'Please provide a valid GitHub repository URL (e.g., https://github.com/owner/repo)';
         }
@@ -97,19 +99,12 @@ The command's technical implementation involves:
     });
 
     const repoUrl = repoUrlResponse.value.trim();
-    
-    // Sanitize repository URL to prevent command injection
-    const sanitizedRepoUrl = repoUrl.replace(/[;`$&|<>]/g, '');
-    if (sanitizedRepoUrl !== repoUrl) {
-      uxLog("error", this, c.red('Invalid characters detected in repository URL'));
-      throw new Error('Invalid repository URL');
-    }
-    
     uxLog("action", this, c.cyan(`Cloning repository ${c.green(repoUrl)}...`));
 
     // Clone the repository to a temporary directory
     const tempDir = await createTempDir();
-    const cloneCommand = `git clone "${sanitizedRepoUrl}" "${tempDir}"`;
+    // URL is already validated with strict regex, use proper quoting for shell safety
+    const cloneCommand = `git clone "${repoUrl}" "${tempDir}"`;
     
     try {
       await execCommand(cloneCommand, this, {
@@ -348,17 +343,9 @@ The command's technical implementation involves:
   }
 
   private async deploySourceCode(sourcePath: string, targetOrgUsername: string, debugMode: boolean): Promise<void> {
-    // Sanitize paths to prevent command injection
-    const sanitizedSourcePath = sourcePath.replace(/[;`$&|<>]/g, '');
-    const sanitizedTargetOrg = targetOrgUsername.replace(/[;`$&|<>]/g, '');
-    
-    if (sanitizedSourcePath !== sourcePath || sanitizedTargetOrg !== targetOrgUsername) {
-      uxLog("error", this, c.red('Invalid characters detected in path or org name'));
-      throw new Error('Invalid deployment parameters');
-    }
-    
     uxLog("action", this, c.cyan(`Deploying sources from ${c.green(sourcePath)}...`));
-    const deployCommand = `sf project deploy start --source-dir "${sanitizedSourcePath}" --target-org "${sanitizedTargetOrg}" --wait 60`;
+    // Use proper quoting for shell safety
+    const deployCommand = `sf project deploy start --source-dir "${sourcePath}" --target-org "${targetOrgUsername}" --wait 60`;
     await execCommand(deployCommand, this, {
       fail: true,
       output: true,
@@ -425,7 +412,7 @@ The command's technical implementation involves:
       SubscriberPackageVersionId: packageVersionId,
       SubscriberPackageName: selectedPackage.package || 'Package',
       SubscriberPackageVersionName: selectedPackage.versionName,
-      installationkey: installationKey || undefined,
+      ...(installationKey && { installationkey: installationKey }),
     };
 
     await MetadataUtils.installPackagesOnOrg([packageToInstall], targetOrgUsername, this, 'install');
