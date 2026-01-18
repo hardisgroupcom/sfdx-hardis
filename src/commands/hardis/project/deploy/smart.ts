@@ -319,6 +319,7 @@ If you want to disable the calculation and display of Flow Visual Git Diff in Pu
         'RunRepositoryTests',
         'RunRepositoryTestsExceptSeeAllData',
         'RunLocalTests',
+        "RunRelevantTests",
         'RunAllTestsInOrg',
       ],
       description: messages.getMessage('testLevelExtended'),
