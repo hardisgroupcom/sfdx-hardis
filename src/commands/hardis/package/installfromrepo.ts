@@ -87,19 +87,29 @@ The command's technical implementation involves:
         if (!value || value.trim() === '') {
           return 'Repository URL is required';
         }
-        if (!value.includes('github.com')) {
-          return 'Please provide a valid GitHub repository URL';
+        // Validate GitHub URL pattern more strictly
+        const githubUrlPattern = /^https?:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?$/;
+        if (!githubUrlPattern.test(value.trim())) {
+          return 'Please provide a valid GitHub repository URL (e.g., https://github.com/owner/repo)';
         }
         return true;
       },
     });
 
     const repoUrl = repoUrlResponse.value.trim();
+    
+    // Sanitize repository URL to prevent command injection
+    const sanitizedRepoUrl = repoUrl.replace(/[;`$&|<>]/g, '');
+    if (sanitizedRepoUrl !== repoUrl) {
+      uxLog("error", this, c.red('Invalid characters detected in repository URL'));
+      throw new Error('Invalid repository URL');
+    }
+    
     uxLog("action", this, c.cyan(`Cloning repository ${c.green(repoUrl)}...`));
 
     // Clone the repository to a temporary directory
     const tempDir = await createTempDir();
-    const cloneCommand = `git clone ${repoUrl} ${tempDir}`;
+    const cloneCommand = `git clone "${sanitizedRepoUrl}" "${tempDir}"`;
     
     try {
       await execCommand(cloneCommand, this, {
@@ -109,7 +119,16 @@ The command's technical implementation involves:
       });
       uxLog("action", this, c.green('Repository cloned successfully'));
     } catch (error) {
-      uxLog("error", this, c.red(`Failed to clone repository: ${error}`));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('Authentication failed')) {
+        uxLog("error", this, c.red('Failed to clone repository: Authentication required. Please check repository access.'));
+      } else if (errorMessage.includes('not found') || errorMessage.includes('Repository not found')) {
+        uxLog("error", this, c.red('Failed to clone repository: Repository not found. Please check the URL.'));
+      } else if (errorMessage.includes('network') || errorMessage.includes('Could not resolve host')) {
+        uxLog("error", this, c.red('Failed to clone repository: Network issue detected. Please check your internet connection.'));
+      } else {
+        uxLog("error", this, c.red(`Failed to clone repository: ${errorMessage}`));
+      }
       throw error;
     }
 
@@ -282,14 +301,7 @@ The command's technical implementation involves:
 
         if (deployMethodResponse.value === 'source') {
           // Deploy sources using sf project deploy start
-          uxLog("action", this, c.cyan(`Deploying sources from ${c.green(localPackagePath)}...`));
-          const deployCommand = `sf project deploy start --source-dir ${localPackagePath} --target-org ${targetOrgUsername} --wait 60`;
-          await execCommand(deployCommand, this, {
-            fail: true,
-            output: true,
-            debug: debugMode,
-          });
-          uxLog("action", this, c.green('Package deployed successfully'));
+          await this.deploySourceCode(localPackagePath, targetOrgUsername, debugMode);
         } else {
           // Install using package ID
           await this.installPackageById(selectedPackage, repoProjectJson, targetOrgUsername);
@@ -313,27 +325,13 @@ The command's technical implementation involves:
 
           if (deployMethodResponse.value === 'source') {
             // Deploy sources from temp directory
-            uxLog("action", this, c.cyan('Deploying sources from repository...'));
-            const deployCommand = `sf project deploy start --source-dir ${packageFullPath} --target-org ${targetOrgUsername} --wait 60`;
-            await execCommand(deployCommand, this, {
-              fail: true,
-              output: true,
-              debug: debugMode,
-            });
-            uxLog("action", this, c.green('Package deployed successfully'));
+            await this.deploySourceCode(packageFullPath, targetOrgUsername, debugMode);
           } else {
             await this.installPackageById(selectedPackage, repoProjectJson, targetOrgUsername);
           }
         } else {
           // No package ID available, only deploy sources
-          uxLog("action", this, c.cyan('Deploying sources from repository...'));
-          const deployCommand = `sf project deploy start --source-dir ${packageFullPath} --target-org ${targetOrgUsername} --wait 60`;
-          await execCommand(deployCommand, this, {
-            fail: true,
-            output: true,
-            debug: debugMode,
-          });
-          uxLog("action", this, c.green('Package deployed successfully'));
+          await this.deploySourceCode(packageFullPath, targetOrgUsername, debugMode);
         }
       }
     }
@@ -347,6 +345,26 @@ The command's technical implementation involves:
       package: selectedPackage.package || packagePath,
       localPath: localPackagePath,
     };
+  }
+
+  private async deploySourceCode(sourcePath: string, targetOrgUsername: string, debugMode: boolean): Promise<void> {
+    // Sanitize paths to prevent command injection
+    const sanitizedSourcePath = sourcePath.replace(/[;`$&|<>]/g, '');
+    const sanitizedTargetOrg = targetOrgUsername.replace(/[;`$&|<>]/g, '');
+    
+    if (sanitizedSourcePath !== sourcePath || sanitizedTargetOrg !== targetOrgUsername) {
+      uxLog("error", this, c.red('Invalid characters detected in path or org name'));
+      throw new Error('Invalid deployment parameters');
+    }
+    
+    uxLog("action", this, c.cyan(`Deploying sources from ${c.green(sourcePath)}...`));
+    const deployCommand = `sf project deploy start --source-dir "${sanitizedSourcePath}" --target-org "${sanitizedTargetOrg}" --wait 60`;
+    await execCommand(deployCommand, this, {
+      fail: true,
+      output: true,
+      debug: debugMode,
+    });
+    uxLog("action", this, c.green('Package deployed successfully'));
   }
 
   private async installPackageById(selectedPackage: any, repoProjectJson: any, targetOrgUsername: string): Promise<void> {
