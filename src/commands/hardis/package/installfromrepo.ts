@@ -77,20 +77,21 @@ The command's technical implementation involves:
     const debugMode = flags.debug || false;
 
     // Prompt for GitHub repository URL
+    const exampleRepoUrl = 'https://github.com/SalesforceLabs/LightningWebChartJS';
     const repoUrlResponse = await prompts({
       type: 'text',
       name: 'value',
-      message: c.cyanBright('Please enter the GitHub repository URL (e.g., https://github.com/SalesforceLabs/LightningWebChartJS)'),
+      message: c.cyanBright(`Please enter the GitHub repository URL (e.g., ${exampleRepoUrl})`),
       description: 'Enter the full GitHub repository URL containing the SFDX project you want to install',
-      placeholder: 'Ex: https://github.com/SalesforceLabs/LightningWebChartJS',
+      placeholder: `Ex: ${exampleRepoUrl}`,
       validate: (value: string) => {
         if (!value || value.trim() === '') {
           return 'Repository URL is required';
         }
         // Validate GitHub URL pattern more strictly
-        // GitHub repo names can contain alphanumeric characters, hyphens, underscores, and dots
-        // but the regex ensures it's a valid HTTPS GitHub URL
-        const githubUrlPattern = /^https:\/\/(www\.)?github\.com\/[\w-]+\/[\w.-]+\/?$/;
+        // GitHub repo names can contain alphanumeric characters, hyphens, underscores
+        // and may end with .git suffix
+        const githubUrlPattern = /^https:\/\/(www\.)?github\.com\/[\w-]+\/[\w-]+(?:\.git)?\/?$/;
         if (!githubUrlPattern.test(value.trim())) {
           return 'Please provide a valid GitHub repository URL (e.g., https://github.com/owner/repo)';
         }
