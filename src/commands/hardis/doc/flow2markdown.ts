@@ -154,8 +154,12 @@ The command leverages several internal utilities and external libraries to achie
 
       // Open file in a new VS Code tab if available
       WebSocketClient.requestOpenFile(outputFile);
+      WebSocketClient.sendReportFileMessage(outputFile, path.basename(outputFile).replace(".md", "") + " Documentation", 'report');
       outputFiles.push(outputFile);
-
+    }
+    uxLog("action", this, c.green(`Markdown documentation generated for ${this.inputFiles.length} Flow(s).`));
+    for (const outputFile of outputFiles) {
+      uxLog("log", this, c.grey(`- ${outputFile}`));
     }
     // Return an object to be displayed with --json
     return { outputFiles: outputFiles };

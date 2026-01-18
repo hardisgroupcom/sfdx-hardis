@@ -13,6 +13,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Fix creation of External Client App
   - Improve prompts when selecting branches (filter those with / in their name)
 - Update default api version to 64.0
+- Improve logging and documentation generation for Flow to Markdown and Flow Visual Git Diff commands
 
 ## [6.22.0] 2025-01-13
 
