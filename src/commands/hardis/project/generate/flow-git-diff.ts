@@ -126,7 +126,6 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
 
     if (this.commitBefore === "allStates") {
       diffMdFile = await generateHistoryDiffMarkdown(this.flowFile, this.debugMode);
-      uxLog("warning", this, c.yellow(`It is recommended to use mkdocs-material to read it correctly (see https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/#doc-html-pages)`));
     }
     else {
       if (this.commitAfter === "" && !isCI) {
@@ -144,8 +143,15 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       // Generate diff
       const { outputDiffMdFile } = await generateFlowVisualGitDiff(this.flowFile, this.commitBefore, this.commitAfter, { svgMd: true, pngMd: false, mermaidMd: this.debugMode, debug: this.debugMode })
       diffMdFile = outputDiffMdFile;
-      // Open file in a new VS Code tab if available
-      WebSocketClient.requestOpenFile(path.relative(process.cwd(), outputDiffMdFile));
+    }
+
+    // Open file in a new VS Code tab if available
+    WebSocketClient.requestOpenFile(path.relative(process.cwd(), diffMdFile));
+    WebSocketClient.sendReportFileMessage(diffMdFile, path.basename(diffMdFile).replace(".md", "") + " Documentation", 'report');
+
+    uxLog("action", this, c.green(`Markdown Flow diff documentation generated for ${path.basename(diffMdFile).replace(".md", "")}.`));
+    if (this.commitBefore === "allStates") {
+      uxLog("warning", this, c.yellow(`It is recommended to use mkdocs-material to read it correctly (see https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/#doc-html-pages)`));
     }
 
     // Return an object to be displayed with --json
