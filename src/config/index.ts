@@ -10,7 +10,7 @@ getConfig(layer) returns:
 - project if layer is project
 */
 
-import { SfError } from '@salesforce/core';
+import { Connection, SfError } from '@salesforce/core';
 import axios from 'axios';
 import c from 'chalk';
 import { cosmiconfig } from 'cosmiconfig';
@@ -33,12 +33,8 @@ const username = os.userInfo().username;
 const userConfigFiles = [`config/user/.${moduleName}.${username}.yaml`, `config/user/.${moduleName}.${username}.yml`];
 const REMOTE_CONFIGS: any = {};
 
-export const getApiVersion = () => {
-  // globalThis.currentOrgApiVersion is set during authentication check (so not set if --skipauth option is used)
-  return process.env.SFDX_API_VERSION || globalThis.currentOrgApiVersion || '64.0';
-}
-
 export const CONSTANTS = {
+  DEFAULT_API_VERSION: '65.0',
   DOC_URL_ROOT: "https://sfdx-hardis.cloudity.com",
   WEBSITE_URL: "https://cloudity.com",
   CONTACT_URL: "https://cloudity.com/#form",
@@ -93,6 +89,16 @@ export const CONSTANTS = {
       "CustomFeedFilter"
     ]
 };
+
+export const getApiVersion = (conn: Connection | null = null) => {
+  // globalThis.currentOrgApiVersion is set during authentication check (so not set if --skipauth option is used)
+  return process.env.SFDX_API_VERSION || globalThis.currentOrgApiVersion || (conn ? conn.getApiVersion() || CONSTANTS.DEFAULT_API_VERSION : CONSTANTS.DEFAULT_API_VERSION);
+}
+
+export const getApiVersionNumber = (conn: Connection | null = null) => {
+  const apiVersion = getApiVersion(conn);
+  return parseFloat(apiVersion);
+}
 
 async function getBranchConfigFiles() {
   if (!isGitRepo()) {

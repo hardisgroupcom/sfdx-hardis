@@ -259,7 +259,7 @@
       "output": []
     },
     "test:compile": {
-      "command": "tsc -p \"./test\" --pretty",
+      "command": "node ./scripts/run-if-ci.mjs tsc -p \"./test\" --pretty",
       "files": [
         "test/**/*.ts",
         "**/tsconfig.json"
@@ -274,7 +274,7 @@
       ]
     },
     "test:only": {
-      "command": "nyc mocha \"test/**/*.test.ts\"",
+      "command": "node ./scripts/run-if-ci.mjs nyc mocha \"test/**/*.test.ts\"",
       "env": {
         "FORCE_COLOR": "2"
       },

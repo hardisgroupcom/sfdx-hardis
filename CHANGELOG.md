@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.23.1] 2025-01-19
+
+- [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/): Make External Client App metadata compliant with the remote org api version (format differs between 65.0 and 66.0)
+- Improve developer experience by not running all tests at each commit (it will be done by CI/CD jobs anyway)
+
 ## [6.23.0] 2025-01-18
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) enhancements & fixes:
