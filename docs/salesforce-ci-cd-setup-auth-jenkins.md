@@ -16,9 +16,9 @@ description: Learn how to configure CI/CD variables for CI Server authentication
 
 More info: [Jenkins documentation](https://www.jenkins.io/doc/book/using/using-credentials/){target=blank}
 
-## Reference variables in your pipeline YAML files
+## Reference variables in your Jenkinsfile
 
-When you defined your secret variables in Jenkins, you need to reference them in your pipeline YAML files using the syntax `VARIABLE_NAME: ${{ secrets.VARIABLE_NAME }}`, so their values are correctly passed to the pipeline.
+When you defined your secret variables in Jenkins, you need to reference them in your pipeline YAML files using the syntax `VARIABLE_NAME: credentials('VARIABLE_NAME')`, so their values are correctly passed to the pipeline.
 
 Example:
 
@@ -29,7 +29,7 @@ Example:
     }
 ```
 
-Impacted YAML files if present in your repo:
+Impacted files if present in your repo:
 
 - `Jenkinsfile`
 
