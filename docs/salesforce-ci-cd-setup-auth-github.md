@@ -17,3 +17,20 @@ description: Learn how to configure CI/CD variables for CI Server authentication
 ![](assets/images/screenshot-monitoring-github-variable-add.png.jpg)
 
 More info: [GitHub documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository){target=blank}
+
+## Reference variables in your pipeline YAML files
+
+When you defined your secret variables in GitHub Actions, you need to reference them in your pipeline YAML files using the syntax `VARIABLE_NAME: ${{ secrets.VARIABLE_NAME }}`, so their values are correctly passed to the pipeline.
+
+Example:
+
+```yaml
+          SFDX_CLIENT_ID_MY_ORG: ${{ secrets.SFDX_CLIENT_ID_MY_ORG }}
+          SFDX_CLIENT_KEY_MY_ORG: ${{ secrets.SFDX_CLIENT_KEY_MY_ORG }}
+```
+
+Impacted YAML files if present in your repo:
+
+- `.github/workflows/check-deploy.yml`
+- `.github/workflows/process-deploy.yml`
+- `.github/workflows/org-monitoring.yml`
