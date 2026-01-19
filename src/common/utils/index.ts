@@ -11,10 +11,10 @@ import * as util from 'util';
 import which from 'which';
 import * as xml2js from 'xml2js';
 const exec = util.promisify(child.exec);
-import { SfError } from '@salesforce/core';
+import { Connection, SfError } from '@salesforce/core';
 import ora from 'ora';
 import { simpleGit, FileStatusResult, SimpleGit } from 'simple-git';
-import { CONSTANTS, getApiVersion, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
+import { CONSTANTS, getApiVersion, getApiVersionNumber, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import { encryptFile } from '../cryptoUtils.js';
 import { deployMetadatas, shortenLogLines } from './deployUtils.js';
@@ -1548,7 +1548,8 @@ export async function generateExternalClientAppMetadata(
   contactEmail: string,
   crtContent: string,
   consumerKey: string,
-  tmpDir: string
+  tmpDir: string,
+  conn: Connection
 ): Promise<void> {
   // 1. ExternalClientApplication (.eca-meta.xml)
   const ecaMetadata = `<?xml version="1.0" encoding="UTF-8"?>
@@ -1602,7 +1603,7 @@ export async function generateExternalClientAppMetadata(
     <ipRelaxationPolicyType>Enforce</ipRelaxationPolicyType>
     <isClientCredentialsFlowEnabled>false</isClientCredentialsFlowEnabled>
     <isGuestCodeCredFlowEnabled>false</isGuestCodeCredFlowEnabled>
-    <isNamedUserJwtEnabled>true</isNamedUserJwtEnabled>
+    ${getApiVersionNumber(conn) < 65 ? '<isNamedUserJwtEnabled>true</isNamedUserJwtEnabled>' : ''}
     <isTokenExchangeFlowEnabled>false</isTokenExchangeFlowEnabled>
     <label>${appName}OAuthSettings_defaultPolicy</label>
     <permittedUsersPolicyType>AdminApprovedPreAuthorized</permittedUsersPolicyType>
@@ -1912,7 +1913,8 @@ export async function generateSSLCertificate(
         contactEmail,
         crtContent,
         consumerKey,
-        tmpDirMd
+        tmpDirMd,
+        conn
       );
 
       // Deploy metadatas
