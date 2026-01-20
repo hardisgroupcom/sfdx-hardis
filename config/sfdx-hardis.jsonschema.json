@@ -1143,7 +1143,8 @@
             "SubscriberPackageVersionNumber": "2.11.0.1",
             "installOnScratchOrgs": false,
             "installDuringDeployments": true,
-            "installationkey": "MyInstallationKey"
+            "installationkey": "MyInstallationKey",
+            "VersionSettings": "namespace"
           },
           {
             "Id": "0A35r000000GveVCAS",
@@ -1154,7 +1155,8 @@
             "SubscriberPackageVersionName": "Summer2021",
             "SubscriberPackageVersionNumber": "1.22.0.2",
             "installOnScratchOrgs": true,
-            "installDuringDeployments": true
+            "installDuringDeployments": true,
+            "VersionSettings": "namespace"
           }
         ]
       ],
@@ -1221,6 +1223,15 @@
               "1.22.0.2"
             ],
             "title": "Subscriber Version Number",
+            "type": "string"
+          },
+          "VersionSettings": {
+            "$Id": "#/properties/install/properties/packages/items/VersionSettings",
+            "examples": [
+              "namespace",
+              "none"
+            ],
+            "title": "Version Settings",
             "type": "string"
           },
           "installDuringDeployments": {
