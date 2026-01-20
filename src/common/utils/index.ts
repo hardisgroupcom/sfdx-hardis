@@ -588,7 +588,7 @@ export async function gitPush(argsOrOptions?: string[] | any, argsIfOptionsFirst
 }
 
 // Get local git branch name
-export async function ensureGitBranch(branchName: string, options: any = { init: false, parent: 'current' }) {
+export async function ensureGitBranch(branchName: string, options: any = { init: false, parent: 'current', logAsAction: false }) {
   if (!isGitRepo()) {
     if (options.init) {
       await ensureGitRepository({ init: true });
@@ -604,6 +604,9 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
     if (branches.all.includes(branchName)) {
       // Existing branch: checkout & pull
       await git().checkout(branchName);
+      if (options.logAsAction) {
+        uxLog("action", this, c.green(`Checked out git branch ${c.bold(branchName)}`));
+      }
       // await git().pull()
     } else {
       if (options?.parent === 'main') {
@@ -620,6 +623,9 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
       } else {
         // Not existing branch: create it from current branch
         await git().checkoutBranch(branchName, localBranches.current);
+      }
+      if (options.logAsAction) {
+        uxLog("action", this, c.green(`Created and checked out git branch ${c.bold(branchName)}`));
       }
     }
   }
@@ -1735,7 +1741,7 @@ export async function generateSSLCertificate(
     name: 'value',
     initial: true,
     message: c.cyanBright(
-      "Do you want sfdx-hardis to configure the SFDX connected app on your org ?"
+      "Do you want sfdx-hardis to configure the SF CLI External Client App or Connected App on your org ?"
     ),
     description: 'Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.',
   });
@@ -1863,7 +1869,78 @@ export async function generateSSLCertificate(
       return deployParams;
     };
 
-    const deployAuthMetadataAndCleanup = async (deployDir: string, successLabel: string): Promise<void> => {
+    type AuthMetadataType = 'ExternalClientApplication' | 'ConnectedApp';
+
+    const metadataTypeLabels: Record<AuthMetadataType, string> = {
+      ExternalClientApplication: 'External Client App',
+      ConnectedApp: 'Connected App',
+    };
+
+    const metadataItemExists = async (metadataType: AuthMetadataType, fullName: string): Promise<boolean> => {
+      try {
+        const readResult = await conn.metadata.read(metadataType, fullName);
+        const candidates = Array.isArray(readResult) ? readResult : [readResult];
+        return candidates.some((item: any) => {
+          if (!item || item.statusCode) {
+            return false;
+          }
+          const candidateName = (item.fullName || item.fullname || '').toString().toLowerCase();
+          return candidateName === fullName.toLowerCase();
+        });
+      } catch (error: any) {
+        const statusCode = error?.result?.statusCode || error?.statusCode;
+        if (statusCode === 'INVALID_CROSS_REFERENCE_KEY' || statusCode === 'INVALID_TYPE') {
+          return false;
+        }
+        uxLog(
+          "warning",
+          commandThis,
+          c.yellow(`Unable to verify existing ${metadataTypeLabels[metadataType] || metadataType}: ${error.message}`)
+        );
+        return false;
+      }
+    };
+
+    const ensureAuthMetadataSlotIsFree = async (metadataInfo: {
+      type: AuthMetadataType;
+      fullName: string;
+      friendlyLabel?: string;
+    }): Promise<void> => {
+      const label = metadataInfo.friendlyLabel || metadataTypeLabels[metadataInfo.type] || metadataInfo.type;
+      let alreadyExists = await metadataItemExists(metadataInfo.type, metadataInfo.fullName);
+      if (!alreadyExists) {
+        return;
+      }
+      const orgLabel = options.targetUsername || 'target org';
+      const setupLocation = metadataInfo.type === "ExternalClientApplication" ? "External Client App Manager" : "App Manager";
+      const basePromptMessage = `${label} named ${metadataInfo.fullName} already exists in ${orgLabel}. Delete it in Setup > ${setupLocation} before continuing.`;
+      let promptMessage = `${basePromptMessage} Have you deleted it?`;
+      while (alreadyExists) {
+        const confirmation = await prompts({
+          type: 'confirm',
+          name: 'value',
+          initial: true,
+          message: c.cyanBright(promptMessage),
+          description: 'Select yes once the record is deleted from Setup > App Manager. Choose no to cancel deployment.',
+        });
+        if (!confirmation.value) {
+          throw new SfError(`[sfdx-hardis] Deployment canceled: ${label} ${metadataInfo.fullName} still exists.`);
+        }
+        alreadyExists = await metadataItemExists(metadataInfo.type, metadataInfo.fullName);
+        if (alreadyExists) {
+          promptMessage = `${label} ${metadataInfo.fullName} is still detected in ${orgLabel}. Salesforce may need a few seconds to purge deleted apps. Retry once it disappears. Have you deleted it now?`;
+        }
+      }
+    };
+
+    const deployAuthMetadataAndCleanup = async (
+      deployDir: string,
+      successLabel: string,
+      metadataInfo?: { type: AuthMetadataType; fullName: string; friendlyLabel?: string }
+    ): Promise<void> => {
+      if (metadataInfo) {
+        await ensureAuthMetadataSlotIsFree(metadataInfo);
+      }
       const deployParams = await buildDeployParamsForAuthMetadata(deployDir);
       const deployRes = await deployMetadatas(deployParams);
       if (deployRes?.status !== 0) {
@@ -1943,7 +2020,11 @@ export async function generateSSLCertificate(
           ))
         );
 
-        await deployAuthMetadataAndCleanup(tmpDirMd, `${sanitizedAppName} External Client App`);
+        await deployAuthMetadataAndCleanup(tmpDirMd, `${sanitizedAppName} External Client App`, {
+          type: 'ExternalClientApplication',
+          fullName: sanitizedAppName,
+          friendlyLabel: 'External Client App',
+        });
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         uxLog(
@@ -2057,7 +2138,11 @@ If deployment fails, create the External Client App manually:
             `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file 😊`
           ))
         );
-        await deployAuthMetadataAndCleanup(tmpDirMd, `${promptResponses.appName} Connected App`);
+        await deployAuthMetadataAndCleanup(tmpDirMd, `${promptResponses.appName} Connected App`, {
+          type: 'ConnectedApp',
+          fullName: promptResponses.appName,
+          friendlyLabel: 'Connected App',
+        });
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         uxLog(
