@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.23.2] 2025-01-20
+
 - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/) enhancements:
   - Before deploying External Client App, check that there is not an already existing one with the same name
   - Suggest to git add+commit+push as soon as the branch is created to simplify configuration on Azure Pipelines
