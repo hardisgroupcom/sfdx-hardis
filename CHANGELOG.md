@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.23.3] 2025-01-22
+
+- Improve OIDC deployment config
+
 ## [6.23.2] 2025-01-20
 
 - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/) enhancements:

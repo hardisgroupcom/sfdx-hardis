@@ -34,8 +34,6 @@ jobs:
       - run: ALPHAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="alpha$ALPHAID"
       - run: yarn config set network-timeout 300000
       - run: npm publish --tag alpha
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   push_alpha_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
@@ -238,8 +236,6 @@ jobs:
       - run: yarn config set version-git-tag false && tsc -b
       - run: CANARYID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="canary$CANARYID"
       - run: yarn config set network-timeout 300000 && npm publish --tag canary
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   push_canary_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/canary'
@@ -339,7 +335,7 @@ jobs:
       id-token: write # Required for OIDC
       contents: read
     environment:
-      name: beta
+      name: release
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -352,8 +348,6 @@ jobs:
       - run: yarn config set version-git-tag false && tsc -b
       - run: BETAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="beta$BETAID"
       - run: yarn config set network-timeout 300000 && npm publish --tag beta
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   push_beta_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -364,7 +358,7 @@ jobs:
       packages: write
       security-events: write
     environment:
-      name: beta
+      name: release
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -446,7 +440,7 @@ jobs:
     permissions:
       packages: write
     environment:
-      name: beta
+      name: release
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -492,7 +486,7 @@ jobs:
       packages: write
       security-events: write
     environment:
-      name: beta
+      name: release
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -574,7 +568,7 @@ jobs:
     permissions:
       packages: write
     environment:
-      name: beta
+      name: release
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -630,8 +624,6 @@ jobs:
       - run: yarn config set registry "https://registry.npmjs.org"
       - run: yarn install --frozen-lockfile
       - run: yarn config set network-timeout 300000 && npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   push_release_to_registry:
     if: github.event_name == 'release'
