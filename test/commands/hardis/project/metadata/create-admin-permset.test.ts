@@ -6,6 +6,8 @@ import os from 'os';
 import path from 'path';
 import CreateAdminPermset from '../../../../../src/commands/hardis/project/metadata/create-admin-permset.js';
 
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+
 describe('hardis:project:metadata:create-admin-permset', () => {
   const $$ = new TestContext();
   let tmpDir: string;

@@ -118,7 +118,7 @@ The command performs the following operations:
             if (!fullName) continue;
             if (shouldSkipField(parsed)) continue;
             fieldInfos.push({ name: fullName, editable: isFieldEditable(parsed) });
-          } catch (e) {
+          } catch {
             // ignore parse errors per-field
           }
         }
