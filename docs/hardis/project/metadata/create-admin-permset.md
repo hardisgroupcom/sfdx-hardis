@@ -26,7 +26,7 @@ sf hardis:project:metadata:create-admin-permset --name MyAdminPermSet
 ## Parameters
 
 | Name            | Type   | Description                                              | Default                 |
-| --------------- | ------ | -------------------------------------------------------- | ----------------------- |
+|-----------------|--------|----------------------------------------------------------|-------------------------|
 | `--name` / `-n` | string | Name of the permission set (used for label and filename) | `ObjectRightsModifyAll` |
 
 ## Output
@@ -44,7 +44,7 @@ force-app/main/default/permissionsets/<name>.permissionset-meta.xml
 For each custom object found in `force-app/main/default/objects/`, the permission set grants:
 
 | Permission       | Value  |
-| ---------------- | ------ |
+|------------------|--------|
 | allowCreate      | `true` |
 | allowRead        | `true` |
 | allowEdit        | `true` |
@@ -57,7 +57,7 @@ For each custom object found in `force-app/main/default/objects/`, the permissio
 For each field on the objects:
 
 | Permission | Value                                   |
-| ---------- | --------------------------------------- |
+|------------|-----------------------------------------|
 | readable   | `true`                                  |
 | editable   | `true` (unless non-editable field type) |
 
@@ -68,7 +68,7 @@ The command intelligently filters out metadata that should not be included:
 ### Excluded Objects
 
 | Object Type                     | Reason                                            |
-| ------------------------------- | ------------------------------------------------- |
+|---------------------------------|---------------------------------------------------|
 | Platform Events (`__e`)         | Cannot have CRUD permissions                      |
 | Custom Metadata Types (`__mdt`) | Managed separately, no record-level access        |
 | PersonAccount                   | Synthetic object, permissions managed via Account |
@@ -76,7 +76,7 @@ The command intelligently filters out metadata that should not be included:
 ### Excluded Fields
 
 | Field Type                 | Reason                               |
-| -------------------------- | ------------------------------------ |
+|----------------------------|--------------------------------------|
 | Formula fields             | Read-only by definition              |
 | AutoNumber fields          | System-generated, read-only          |
 | Roll-Up Summary fields     | Calculated, read-only                |
