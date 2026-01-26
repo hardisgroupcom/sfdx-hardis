@@ -52,6 +52,10 @@ _Note: in this example, we merge directly in **preprod**, but in more advanced o
 
 - RETROFIT IN **BUILD LAYER** _**(3)**_
 
+It is recommended to activate sf-gt-merge-driver to auto-solve many conflicts during the retrofit step.
+
+![activate-merge-driver](assets/images/activate-merge-driver-in-sfdx-hardis.gif)
+
   - Create a sub-branch to `integration`, named `retrofit-from-run` for example
 
   - Using Git IDE, manually merge `main` (or `preprod`) branch into `retrofit-from-run`
