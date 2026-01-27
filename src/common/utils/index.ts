@@ -1609,6 +1609,7 @@ export async function generateExternalClientAppMetadata(
     <ipRelaxationPolicyType>Enforce</ipRelaxationPolicyType>
     <isClientCredentialsFlowEnabled>false</isClientCredentialsFlowEnabled>
     <isGuestCodeCredFlowEnabled>false</isGuestCodeCredFlowEnabled>
+    ${getApiVersionNumber(conn) < 63 ? '<isNamedUserJwtEnabled>true</isNamedUserJwtEnabled>' : ''}
     <isTokenExchangeFlowEnabled>false</isTokenExchangeFlowEnabled>
     <label>${appName}OAuthSettings_defaultPolicy</label>
     <permittedUsersPolicyType>AdminApprovedPreAuthorized</permittedUsersPolicyType>
