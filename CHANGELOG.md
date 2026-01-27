@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.23.4] 2025-01-27
+
 - Always use `sf org login web` as `sf org login device` has been retired
 - Update [BUILD/RUN documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-hotfixes/) to add info to activate [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) to auto-solve conflicts during retrofits
 
