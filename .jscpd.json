@@ -1,9 +1,6 @@
 {
   "threshold": 0,
-  "reporters": [
-    "html",
-    "markdown"
-  ],
+  "reporters": ["html", "markdown"],
   "ignore": [
     "**/node_modules/**",
     "**/.git/**",
@@ -35,6 +32,8 @@
     "**/*.json",
     "**/*.svg",
     "**/*.yml",
-    "**/*.xml"
+    "**/*.xml",
+    "**/megalinter-reports/**",
+    "**/lib/**"
   ]
 }

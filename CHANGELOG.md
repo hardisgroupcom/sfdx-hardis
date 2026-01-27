@@ -4,7 +4,41 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Fix issue when using skipCodeCoverage=true
+## [6.23.4] 2025-01-27
+
+- Always use `sf org login web` as `sf org login device` has been retired
+- Update [BUILD/RUN documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-hotfixes/) to add info to activate [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) to auto-solve conflicts during retrofits
+
+## [6.23.3] 2025-01-22
+
+- Improve OIDC deployment config
+
+## [6.23.2] 2025-01-20
+
+- [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/) enhancements:
+  - Before deploying External Client App, check that there is not an already existing one with the same name
+  - Suggest to git add+commit+push as soon as the branch is created to simplify configuration on Azure Pipelines
+  - Improve assistance messages and links to documentation
+- Enhance CI/CD documentation and error messages for Azure, GitHub, and Jenkins variable referencing
+
+## [6.23.1] 2025-01-19
+
+- [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/): Make External Client App metadata compliant with the remote org api version (format differs between 65.0 and 66.0)
+- Improve developer experience by not running all tests at each commit (it will be done by CI/CD jobs anyway)
+
+## [6.23.0] 2025-01-18
+
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) enhancements & fixes:
+  - Implement usage of **RunRelevantTests** deployment mode
+  - Fix issue when using skipCodeCoverage=true
+  - Check if a deployment is only caused by coverage failure but components and tests are ok (testCoverageNotBlocking)
+  - Deploy with NoTestRun if deployment simulation has been performed with testCoverageNotBlocking=true
+  - smartDeploymentTests: Add more metadata types that can not break apex test classes
+- [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/) enhancements & fixes:
+  - Fix creation of External Client App
+  - Improve prompts when selecting branches (filter those with / in their name)
+- Update default api version to 64.0
+- Improve logging and documentation generation for Flow to Markdown and Flow Visual Git Diff commands
 
 ## [6.22.0] 2025-01-13
 

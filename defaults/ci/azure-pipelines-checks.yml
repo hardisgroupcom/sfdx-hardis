@@ -115,6 +115,9 @@ jobs:
             -e CI=true \
             -e SYSTEM_ACCESSTOKEN=$(System.AccessToken) \
             -e GIT_AUTHORIZATION_BEARER=$(System.AccessToken) \
+            -e SYSTEM_PULLREQUEST_SOURCECOMMITID=$(System.PullRequest.SourceCommitId) \
+            -e SYSTEM_PULLREQUEST_TARGETBRANCH=$(System.PullRequest.TargetBranch) \
+            -e BUILD_REASON=$(Build.Reason) \
             oxsecurity/megalinter-salesforce:latest
         displayName: Run MegaLinter
       # Publish Megalinter reports

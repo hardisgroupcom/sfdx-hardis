@@ -11,10 +11,10 @@ import * as util from 'util';
 import which from 'which';
 import * as xml2js from 'xml2js';
 const exec = util.promisify(child.exec);
-import { SfError } from '@salesforce/core';
+import { Connection, SfError } from '@salesforce/core';
 import ora from 'ora';
 import { simpleGit, FileStatusResult, SimpleGit } from 'simple-git';
-import { CONSTANTS, getApiVersion, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
+import { CONSTANTS, getApiVersion, getApiVersionNumber, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import { encryptFile } from '../cryptoUtils.js';
 import { deployMetadatas, shortenLogLines } from './deployUtils.js';
@@ -262,7 +262,7 @@ export async function promptInstanceUrl(
   const customUrlResponse = await prompts({
     type: 'text',
     name: 'value',
-    message: c.cyanBright('Please input the base URL of the salesforce org'),
+    message: c.cyanBright('Please input the base URL of the salesforce org (just copy paste any full URL of your org,i\'ll clean it 🙃):'),
     description: 'Copy paste the full URL of your currently open Salesforce org 😊',
     placeholder: 'Ex: https://myclient.my.salesforce.com , or myclient',
   });
@@ -588,7 +588,7 @@ export async function gitPush(argsOrOptions?: string[] | any, argsIfOptionsFirst
 }
 
 // Get local git branch name
-export async function ensureGitBranch(branchName: string, options: any = { init: false, parent: 'current' }) {
+export async function ensureGitBranch(branchName: string, options: any = { init: false, parent: 'current', logAsAction: false }) {
   if (!isGitRepo()) {
     if (options.init) {
       await ensureGitRepository({ init: true });
@@ -604,6 +604,9 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
     if (branches.all.includes(branchName)) {
       // Existing branch: checkout & pull
       await git().checkout(branchName);
+      if (options.logAsAction) {
+        uxLog("action", this, c.green(`Checked out git branch ${c.bold(branchName)}`));
+      }
       // await git().pull()
     } else {
       if (options?.parent === 'main') {
@@ -620,6 +623,9 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
       } else {
         // Not existing branch: create it from current branch
         await git().checkoutBranch(branchName, localBranches.current);
+      }
+      if (options.logAsAction) {
+        uxLog("action", this, c.green(`Created and checked out git branch ${c.bold(branchName)}`));
       }
     }
   }
@@ -1548,7 +1554,8 @@ export async function generateExternalClientAppMetadata(
   contactEmail: string,
   crtContent: string,
   consumerKey: string,
-  tmpDir: string
+  tmpDir: string,
+  conn: Connection
 ): Promise<void> {
   // 1. ExternalClientApplication (.eca-meta.xml)
   const ecaMetadata = `<?xml version="1.0" encoding="UTF-8"?>
@@ -1563,7 +1570,7 @@ export async function generateExternalClientAppMetadata(
   // 2. ExtlClntAppOauthSettings (.ecaOauth-meta.xml)
   const ecaOauthSettings = `<?xml version="1.0" encoding="UTF-8"?>
 <ExtlClntAppOauthSettings xmlns="http://soap.sforce.com/2006/04/metadata">
-    <commaSeparatedOauthScopes>Api,Web,RefreshToken</commaSeparatedOauthScopes>
+    <commaSeparatedOauthScopes>Api, Web, RefreshToken</commaSeparatedOauthScopes>
     <externalClientApplication>${appName}</externalClientApplication>
     <label>${appName} OAuth Settings</label>
 </ExtlClntAppOauthSettings>`;
@@ -1575,11 +1582,18 @@ export async function generateExternalClientAppMetadata(
     <certificate>${crtContent}</certificate>
     <consumerKey>${consumerKey}</consumerKey>
     <externalClientApplication>${appName}</externalClientApplication>
+    <isClientCredentialsFlowEnabled>false</isClientCredentialsFlowEnabled>
+    <isCodeCredFlowEnabled>false</isCodeCredFlowEnabled>
+    <isCodeCredPostOnly>false</isCodeCredPostOnly>
     <isConsumerSecretOptional>true</isConsumerSecretOptional>
+    <isDeviceFlowEnabled>false</isDeviceFlowEnabled>
     <isIntrospectAllTokens>false</isIntrospectAllTokens>
-    <isNamedUserJwtEnabled>true</isNamedUserJwtEnabled>
+    <isNamedUserJwtEnabled>false</isNamedUserJwtEnabled>
     <isPkceRequired>false</isPkceRequired>
+    <isRefreshTokenRotationEnabled>false</isRefreshTokenRotationEnabled>
     <isSecretRequiredForRefreshToken>false</isSecretRequiredForRefreshToken>
+    <isSecretRequiredForTokenExchange>false</isSecretRequiredForTokenExchange>
+    <isTokenExchangeEnabled>false</isTokenExchangeEnabled>
     <label>${appName} Global OAuth</label>
     <shouldRotateConsumerKey>false</shouldRotateConsumerKey>
     <shouldRotateConsumerSecret>false</shouldRotateConsumerSecret>
@@ -1595,7 +1609,7 @@ export async function generateExternalClientAppMetadata(
     <ipRelaxationPolicyType>Enforce</ipRelaxationPolicyType>
     <isClientCredentialsFlowEnabled>false</isClientCredentialsFlowEnabled>
     <isGuestCodeCredFlowEnabled>false</isGuestCodeCredFlowEnabled>
-    <isNamedUserJwtEnabled>true</isNamedUserJwtEnabled>
+    ${getApiVersionNumber(conn) < 65 ? '<isNamedUserJwtEnabled>true</isNamedUserJwtEnabled>' : ''}
     <isTokenExchangeFlowEnabled>false</isTokenExchangeFlowEnabled>
     <label>${appName}OAuthSettings_defaultPolicy</label>
     <permittedUsersPolicyType>AdminApprovedPreAuthorized</permittedUsersPolicyType>
@@ -1605,7 +1619,16 @@ export async function generateExternalClientAppMetadata(
     <requiredSessionLevel>STANDARD</requiredSessionLevel>
 </ExtlClntAppOauthConfigurablePolicies>`;
 
-  // 5. Package.xml
+  // 5. ExtlClntAppConfigurablePolicies (.ecaPlcy-meta.xml)
+  const extlClntAppPolicies = `<?xml version="1.0" encoding="UTF-8"?>
+<ExtlClntAppConfigurablePolicies xmlns="http://soap.sforce.com/2006/04/metadata">
+    <externalClientApplication>${appName}</externalClientApplication>
+    <isEnabled>true</isEnabled>
+    <isOauthPluginEnabled>true</isOauthPluginEnabled>
+    <label>${appName}_defaultPolicy</label>
+</ExtlClntAppConfigurablePolicies>`;
+
+  // 6. Package.xml
   const packageXml = `<?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
@@ -1621,8 +1644,12 @@ export async function generateExternalClientAppMetadata(
         <name>ExtlClntAppGlobalOauthSettings</name>
     </types>
     <types>
-      <members>${appName}OAuthSettings_defaultPolicy</members>
-      <name>ExtlClntAppOauthConfigurablePolicies</name>
+        <members>${appName}OAuthSettings_defaultPolicy</members>
+        <name>ExtlClntAppOauthConfigurablePolicies</name>
+    </types>
+    <types>
+        <members>${appName}_defaultPolicy</members>
+        <name>ExtlClntAppConfigurablePolicies</name>
     </types>
     <version>${getApiVersion()}</version>
 </Package>`;
@@ -1632,11 +1659,13 @@ export async function generateExternalClientAppMetadata(
   const extlClntAppOauthSettingsDir = path.join(tmpDir, 'extlClntAppOauthSettings');
   const extlClntAppGlobalOauthSetsDir = path.join(tmpDir, 'extlClntAppGlobalOauthSets');
   const extlClntAppOauthPoliciesDir = path.join(tmpDir, 'extlClntAppOauthPolicies');
+  const extlClntAppPoliciesDir = path.join(tmpDir, 'extlClntAppPolicies');
 
   await fs.ensureDir(externalClientAppsDir);
   await fs.ensureDir(extlClntAppOauthSettingsDir);
   await fs.ensureDir(extlClntAppGlobalOauthSetsDir);
   await fs.ensureDir(extlClntAppOauthPoliciesDir);
+  await fs.ensureDir(extlClntAppPoliciesDir);
 
   // Write files
   await fs.writeFile(path.join(tmpDir, 'package.xml'), packageXml);
@@ -1655,6 +1684,10 @@ export async function generateExternalClientAppMetadata(
   await fs.writeFile(
     path.join(extlClntAppOauthPoliciesDir, `${appName}OAuthSettings_defaultPolicy.ecaOauthPlcy-meta.xml`),
     ecaOauthPolicies
+  );
+  await fs.writeFile(
+    path.join(extlClntAppPoliciesDir, `${appName}_defaultPolicy.ecaPlcy-meta.xml`),
+    extlClntAppPolicies
   );
 }
 
@@ -1708,7 +1741,7 @@ export async function generateSSLCertificate(
     name: 'value',
     initial: true,
     message: c.cyanBright(
-      "Do you want sfdx-hardis to configure the SFDX connected app on your org ?"
+      "Do you want sfdx-hardis to configure the SF CLI External Client App or Connected App on your org ?"
     ),
     description: 'Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.',
   });
@@ -1773,14 +1806,14 @@ export async function generateSSLCertificate(
       description: 'Select the type of OAuth app to create for CI/CD authentication',
       choices: [
         {
-          title: 'Connected App (Legacy but works everytime)',
-          value: 'connectedApp',
-          description: 'Standard Connected App - works with all Salesforce editions'
+          title: 'External Client App (Recommended by the mothership)',
+          value: 'externalClientApp',
+          description: 'External Client App are the replacement of Connected Apps'
         },
         {
-          title: 'External Client App (Recommended by SF but some issues have been reported)',
-          value: 'externalClientApp',
-          description: 'Metadata-based app - fully deployable, requires API v59+'
+          title: 'Connected App (Legacy)',
+          value: 'connectedApp',
+          description: 'Does not work starting Spring 26 except if you post a case to SF to request activation of Connected Apps creation'
         },
       ],
       initial: 0,
@@ -1836,7 +1869,78 @@ export async function generateSSLCertificate(
       return deployParams;
     };
 
-    const deployAuthMetadataAndCleanup = async (deployDir: string, successLabel: string): Promise<void> => {
+    type AuthMetadataType = 'ExternalClientApplication' | 'ConnectedApp';
+
+    const metadataTypeLabels: Record<AuthMetadataType, string> = {
+      ExternalClientApplication: 'External Client App',
+      ConnectedApp: 'Connected App',
+    };
+
+    const metadataItemExists = async (metadataType: AuthMetadataType, fullName: string): Promise<boolean> => {
+      try {
+        const readResult = await conn.metadata.read(metadataType, fullName);
+        const candidates = Array.isArray(readResult) ? readResult : [readResult];
+        return candidates.some((item: any) => {
+          if (!item || item.statusCode) {
+            return false;
+          }
+          const candidateName = (item.fullName || item.fullname || '').toString().toLowerCase();
+          return candidateName === fullName.toLowerCase();
+        });
+      } catch (error: any) {
+        const statusCode = error?.result?.statusCode || error?.statusCode;
+        if (statusCode === 'INVALID_CROSS_REFERENCE_KEY' || statusCode === 'INVALID_TYPE') {
+          return false;
+        }
+        uxLog(
+          "warning",
+          commandThis,
+          c.yellow(`Unable to verify existing ${metadataTypeLabels[metadataType] || metadataType}: ${error.message}`)
+        );
+        return false;
+      }
+    };
+
+    const ensureAuthMetadataSlotIsFree = async (metadataInfo: {
+      type: AuthMetadataType;
+      fullName: string;
+      friendlyLabel?: string;
+    }): Promise<void> => {
+      const label = metadataInfo.friendlyLabel || metadataTypeLabels[metadataInfo.type] || metadataInfo.type;
+      let alreadyExists = await metadataItemExists(metadataInfo.type, metadataInfo.fullName);
+      if (!alreadyExists) {
+        return;
+      }
+      const orgLabel = options.targetUsername || 'target org';
+      const setupLocation = metadataInfo.type === "ExternalClientApplication" ? "External Client App Manager" : "App Manager";
+      const basePromptMessage = `${label} named ${metadataInfo.fullName} already exists in ${orgLabel}. Delete it in Setup > ${setupLocation} before continuing.`;
+      let promptMessage = `${basePromptMessage} Have you deleted it?`;
+      while (alreadyExists) {
+        const confirmation = await prompts({
+          type: 'confirm',
+          name: 'value',
+          initial: true,
+          message: c.cyanBright(promptMessage),
+          description: 'Select yes once the record is deleted from Setup > App Manager. Choose no to cancel deployment.',
+        });
+        if (!confirmation.value) {
+          throw new SfError(`[sfdx-hardis] Deployment canceled: ${label} ${metadataInfo.fullName} still exists.`);
+        }
+        alreadyExists = await metadataItemExists(metadataInfo.type, metadataInfo.fullName);
+        if (alreadyExists) {
+          promptMessage = `${label} ${metadataInfo.fullName} is still detected in ${orgLabel}. Salesforce may need a few seconds to purge deleted apps. Retry once it disappears. Have you deleted it now?`;
+        }
+      }
+    };
+
+    const deployAuthMetadataAndCleanup = async (
+      deployDir: string,
+      successLabel: string,
+      metadataInfo?: { type: AuthMetadataType; fullName: string; friendlyLabel?: string }
+    ): Promise<void> => {
+      if (metadataInfo) {
+        await ensureAuthMetadataSlotIsFree(metadataInfo);
+      }
       const deployParams = await buildDeployParamsForAuthMetadata(deployDir);
       const deployRes = await deployMetadatas(deployParams);
       if (deployRes?.status !== 0) {
@@ -1886,7 +1990,8 @@ export async function generateSSLCertificate(
         contactEmail,
         crtContent,
         consumerKey,
-        tmpDirMd
+        tmpDirMd,
+        conn
       );
 
       // Deploy metadatas
@@ -1903,15 +2008,9 @@ export async function generateSSLCertificate(
         uxLog("log", commandThis, c.grey(`External Client App metadata files:
 - externalClientApps/${sanitizedAppName}.eca-meta.xml
 - extlClntAppOauthSettings/${sanitizedAppName}OAuthSettings.ecaOauth-meta.xml
-- extlClntAppGlobalOauthSets/${sanitizedAppName}GlblOAuth.ecaGlblOauth-meta.xml (certificate and consumer key hidden)`));
-
-        uxLog(
-          "log",
-          commandThis,
-          c.grey(
-            `External Client App OAuth policy metadata file:\n- extlClntAppOauthPolicies/${sanitizedAppName}OAuthSettings_defaultPolicy.ecaOauthPlcy-meta.xml (AdminApprovedPreAuthorized, refresh token 4 hours)`
-          )
-        );
+- extlClntAppGlobalOauthSets/${sanitizedAppName}GlblOAuth.ecaGlblOauth-meta.xml (certificate and consumer key hidden)
+- extlClntAppPolicies/${sanitizedAppName}_defaultPolicy.ecaPlcy-meta.xml
+- extlClntAppOauthPolicies/${sanitizedAppName}OAuthSettings_defaultPolicy.ecaOauthPlcy-meta.xml`));
 
         uxLog(
           "log",
@@ -1921,7 +2020,11 @@ export async function generateSSLCertificate(
           ))
         );
 
-        await deployAuthMetadataAndCleanup(tmpDirMd, `${sanitizedAppName} External Client App`);
+        await deployAuthMetadataAndCleanup(tmpDirMd, `${sanitizedAppName} External Client App`, {
+          type: 'ExternalClientApplication',
+          fullName: sanitizedAppName,
+          friendlyLabel: 'External Client App',
+        });
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         uxLog(
@@ -2035,7 +2138,11 @@ If deployment fails, create the External Client App manually:
             `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file 😊`
           ))
         );
-        await deployAuthMetadataAndCleanup(tmpDirMd, `${promptResponses.appName} Connected App`);
+        await deployAuthMetadataAndCleanup(tmpDirMd, `${promptResponses.appName} Connected App`, {
+          type: 'ConnectedApp',
+          fullName: promptResponses.appName,
+          friendlyLabel: 'Connected App',
+        });
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         uxLog(

@@ -3,9 +3,9 @@
   "description": "Swiss-army-knife Toolbox for Salesforce.\n Allows you to define a complete CD/CD Pipeline.\n Orchestrate base commands and assist users with interactive wizards",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
-  "version": "6.22.0",
+  "version": "6.23.4",
   "dependencies": {
-    "@actions/github": "6.0.1",
+    "@actions/github": "7.0.0",
     "@cparra/apexdocs": "3.20.0",
     "@gitbeaker/rest": "^43.8.0",
     "@langchain/anthropic": "0.3.34",
@@ -14,7 +14,7 @@
     "@langchain/google-genai": "0.2.18",
     "@langchain/ollama": "0.2.4",
     "@oclif/core": "4.8.0",
-    "@salesforce/core": "8.24.0",
+    "@salesforce/core": "8.25.0",
     "@salesforce/sf-plugins-core": "11.3.12",
     "@slack/types": "2.19.0",
     "@slack/web-api": "7.13.0",
@@ -30,7 +30,7 @@
     "cross-spawn": "7.0.6",
     "csv-stringify": "6.6.0",
     "debug": "4.4.3",
-    "diff": "7.0.0",
+    "diff": "8.0.3",
     "dotenv": "16.6.1",
     "email-validator": "2.0.4",
     "exceljs": "4.4.0",
@@ -51,7 +51,7 @@
     "make-fetch-happen": "14.0.3",
     "marked": "14.1.4",
     "md-to-pdf": "5.2.5",
-    "mega-linter-runner": "8.8.0",
+    "mega-linter-runner": "9.3.0",
     "moment": "2.30.1",
     "open": "10.2.0",
     "openai": "4.104.0",
@@ -78,6 +78,7 @@
     "form-data": "4.0.5",
     "qs": "6.14.1",
     "tmp": "0.2.5",
+    "undici": "6.23.0",
     "prebuild-install/tar-fs": "2.1.4",
     "@puppeteer/browsers/tar-fs": "3.1.1",
     "parse5": "6.0.1"
@@ -107,7 +108,7 @@
     "@types/ws": "8.18.1",
     "@types/xml2js": "0.4.14",
     "eslint-plugin-sf-plugin": "1.20.33",
-    "oclif": "4.22.63",
+    "oclif": "4.22.68",
     "tmp": "0.2.5",
     "ts-node": "10.9.2",
     "typescript": "5.9.3"
@@ -258,7 +259,7 @@
       "output": []
     },
     "test:compile": {
-      "command": "tsc -p \"./test\" --pretty",
+      "command": "node ./scripts/run-if-ci.mjs tsc -p \"./test\" --pretty",
       "files": [
         "test/**/*.ts",
         "**/tsconfig.json"
@@ -273,7 +274,7 @@
       ]
     },
     "test:only": {
-      "command": "nyc mocha \"test/**/*.test.ts\"",
+      "command": "node ./scripts/run-if-ci.mjs nyc mocha \"test/**/*.test.ts\"",
       "env": {
         "FORCE_COLOR": "2"
       },

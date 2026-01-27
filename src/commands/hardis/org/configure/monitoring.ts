@@ -13,6 +13,7 @@ import {
   generateSSLCertificate,
   getCurrentGitBranch,
   getGitRepoName,
+  git,
   gitAddCommitPush,
   uxLog,
 } from '../../../../common/utils/index.js';
@@ -116,12 +117,14 @@ The command's technical implementation involves a series of Git operations, file
     }
     const preRequisitesUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
     uxLog("warning", this, c.yellow('Monitoring pre-requisites documentation: ' + c.bold(preRequisitesUrl)));
+    WebSocketClient.sendReportFileMessage(preRequisitesUrl, 'Monitoring pre-requisites', "docUrl");
+    // Confirm pre-requisites
     const confirmPreRequisites = await prompts({
       type: 'select',
       name: 'value',
       choices: [
-        { title: 'Yes', value: 'yes' },
-        { title: 'No, help me !', value: 'no' },
+        { title: '😎 Yes', value: 'yes' },
+        { title: 'ℹ️ No, bring me to the documentation!', value: 'no' },
       ],
       message: c.cyanBright('Did you configure the sfdx-hardis monitoring pre-requisites on your Git server ?'),
       description: 'Confirm that you have set up the required CI/CD variables and permissions for monitoring',
@@ -179,10 +182,12 @@ The command's technical implementation involves a series of Git operations, file
         .replace(/--/gm, '__')
         .replace(/-/gm, '_');
 
+    uxLog("action", this, c.cyan(`Handling monitoring git branch ${c.bold(branchName)}...`));
+
     // Checkout branch, or create it if not existing (stash before if necessary)
     await execCommand('git add --all', this, { output: true, fail: false });
     await execCommand('git stash', this, { output: true, fail: false });
-    await ensureGitBranch(branchName, { parent: 'main' });
+    await ensureGitBranch(branchName, { parent: 'main', logAsAction: true });
 
     // Create sfdx project if not existing yet
     if (!fs.existsSync('sfdx-project.json')) {
@@ -215,6 +220,26 @@ The command's technical implementation involves a series of Git operations, file
       './.sfdx-hardis.yml'
     );
 
+    // Check if current branch is existing on remote origin, and if not suggest to push (with confirmation)
+    const remoteBranches = await git().listRemote(['--heads', 'origin']);
+    const branchExistsOnRemote = remoteBranches.includes(`refs/heads/${branchName}`);
+    if (!branchExistsOnRemote) {
+      const confirmPushToRemote = await prompts({
+        type: 'confirm',
+        initial: true,
+        message: c.cyanBright(
+          `Branch ${branchName} does not exist on server. Do you want to push it now? (it is harmless but required to configure Azure Pipelines for example)`
+        ),
+        description: 'This will create the branch on remote origin; if you don\'t understand this, just say yes 😊',
+      });
+      if (confirmPushToRemote.value === true) {
+        uxLog("action", this, c.cyan(`Pushing branch ${c.bold(branchName)} to git remote server...`));
+        await gitAddCommitPush({
+          message: '[sfdx-hardis] Update monitoring configuration',
+        });
+      }
+    }
+
     // Generate SSL certificate (requires openssl to be installed on computer)
     await generateSSLCertificate(branchName, './.ssh', this, flags['target-org'].getConnection(), {});
 
@@ -239,9 +264,9 @@ The command's technical implementation involves a series of Git operations, file
     }
     const branch = await getCurrentGitBranch();
     uxLog(
-      "success",
+      "warning",
       this,
-      c.green(
+      c.yellow(
         `Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}😊`
       )
     );
@@ -250,7 +275,23 @@ The command's technical implementation involves a series of Git operations, file
       'Please follow the instructions to schedule sfdx-hardis monitoring on your Git server: ' +
       c.bold(scheduleMonitoringUrl);
     uxLog("warning", this, c.yellow(msg));
-    await open(scheduleMonitoringUrl, { wait: true });
+    WebSocketClient.sendReportFileMessage(scheduleMonitoringUrl, 'Schedule sfdx-hardis monitoring', "actionUrl");
+    uxLog(
+      "warning",
+      this,
+      c.yellow(
+        'You can also configure Slack/Teams notifications and Grafana integration to visualize monitoring results more easily.'
+      )
+    );
+    const slackIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-slack/`;
+    WebSocketClient.sendReportFileMessage(slackIntegrationUrl, 'Slack integration', "docUrl");
+    const teamsIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-ms-teams/`;
+    WebSocketClient.sendReportFileMessage(teamsIntegrationUrl, 'Teams integration', "docUrl");
+    const grafanaIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-api/`;
+    WebSocketClient.sendReportFileMessage(grafanaIntegrationUrl, 'Grafana integration', "docUrl");
+    uxLog("log", this, 'Slack integration doc: ' + slackIntegrationUrl);
+    uxLog("log", this, 'Teams integration doc: ' + teamsIntegrationUrl);
+    uxLog("log", this, 'Grafana integration doc: ' + grafanaIntegrationUrl);
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };
   }

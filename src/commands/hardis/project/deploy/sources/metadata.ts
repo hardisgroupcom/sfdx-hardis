@@ -48,7 +48,7 @@ export default class DxSources extends SfCommand<any> {
     testlevel: Flags.string({
       char: 'l',
       default: 'RunLocalTests',
-      options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunAllTestsInOrg'],
+      options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunRelevantTests', 'RunAllTestsInOrg'],
       description: messages.getMessage('testLevel'),
     }),
     debug: Flags.boolean({

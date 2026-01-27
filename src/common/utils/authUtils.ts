@@ -5,9 +5,7 @@ import {
   createTempDir,
   execCommand,
   execSfdxJson,
-  findJsonInString,
   getCurrentGitBranch,
-  getExecutionContext,
   isCI,
   promptInstanceUrl,
   uxLog,
@@ -17,7 +15,6 @@ import { SfError } from '@salesforce/core';
 import { clearCache } from '../cache/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { decryptFile } from '../cryptoUtils.js';
-import spawn from 'cross-spawn';
 
 // Options used by authOrg / authenticateUsingDeviceLogin
 export interface AuthOrgOptions {
@@ -249,61 +246,31 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
       instanceUrl = await promptInstanceUrl(orgTypes, orgAlias);
 
       const configInfoUsr = await getConfig('user');
-
-      const executionContext = getExecutionContext();
-
-      // // Prompt user for Web or Device login
-      // const loginTypeRes = await prompts({
-      //   name: 'loginType',
-      //   type: 'select',
-      //   message: "Select a login type",
-      //   description: 'Choose the authentication method that works best for your environment. Use Web if unsure.',
-      //   choices: [
-      //     {
-      //       title: '🌐 Web Login (If VS Code is locally installed on your computer)',
-      //       value: 'web',
-      //     },
-      //     {
-      //       title: '📟 Device Login (Useful for CodeBuilder / CodeSpaces)',
-      //       value: 'device',
-      //       description: 'Look at the instructions in the console terminal if you select this option',
-      //     },
-      //   ],
-      //   default: 'web',
-      //   initial: 'web',
-      // });
-
       let loginResult: any = null;
-      // Manage device login
-      if (executionContext === "web") {
-        loginResult = await authenticateUsingDeviceLogin(instanceUrl, orgAlias, configInfoUsr, options, isDevHub, loginResult);
-      }
-      // Web Login if device login not used
-      if (loginResult == null) {
-        uxLog("action", this, c.cyan("Authenticating using web login..."));
-        const loginCommand =
-          'sf org login web' +
-          (alias ? ` --alias ${alias}` : options.setDefault === false ? '' : isDevHub ? ' --set-default-dev-hub' : ' --set-default') +
-          ` --instance-url ${instanceUrl}` +
-          (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --alias ${orgAlias}` : '');
-        try {
-          loginResult = await execSfdxJson(loginCommand, this, { output: false, fail: true, spinner: false });
-        } catch (e) {
-          // Give instructions if server is unavailable
-          if (((e as Error).message || '').includes('Cannot start the OAuth redirect server on port')) {
-            uxLog(
-              "warning",
-              this,
-              c.yellow(
-                c.bold(
-                  'You might have a ghost SF CLI command. Open Task Manager, search for Node.js processes, kill them, then try again'
-                )
+      uxLog("action", this, c.cyan("Authenticating using web login..."));
+      const loginCommand =
+        'sf org login web' +
+        (alias ? ` --alias ${alias}` : options.setDefault === false ? '' : isDevHub ? ' --set-default-dev-hub' : ' --set-default') +
+        ` --instance-url ${instanceUrl}` +
+        (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --alias ${orgAlias}` : '');
+      try {
+        loginResult = await execSfdxJson(loginCommand, this, { output: false, fail: true, spinner: false });
+      } catch (e) {
+        // Give instructions if server is unavailable
+        if (((e as Error).message || '').includes('Cannot start the OAuth redirect server on port')) {
+          uxLog(
+            "warning",
+            this,
+            c.yellow(
+              c.bold(
+                'You might have a ghost SF CLI command. Open Task Manager, search for Node.js processes, kill them, then try again'
               )
-            );
-          }
-          throw e;
+            )
+          );
         }
+        throw e;
       }
+
       await clearCache('sf org list');
       logged = loginResult.status === 0;
       username = loginResult?.result?.username || loginResult?.username || 'err';
@@ -361,58 +328,6 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
   return false;
 }
 
-export async function authenticateUsingDeviceLogin(instanceUrl: string, orgAlias: string, configInfoUsr: any, options: AuthOrgOptions, isDevHub: boolean, loginResult: any) {
-  uxLog("action", this, c.cyan("Authenticating using device login..."));
-  const loginCommandArgs = ['org login device', '--instance-url', instanceUrl];
-  if (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias) {
-    loginCommandArgs.push(...['--alias', orgAlias]);
-  }
-  if (options.setDefault === true && isDevHub) {
-    loginCommandArgs.push('--set-default-dev-hub');
-  }
-  if (options.setDefault === true && !isDevHub) {
-    loginCommandArgs.push('--set-default');
-  }
-  const loginCommand = 'sf ' + loginCommandArgs.join(' ') + " --json";
-  try {
-    // Spawn and get output in real time to send it to the console
-    const authProcess = spawn(loginCommand, { shell: true });
-    if (!authProcess.stdout || !authProcess.stderr) {
-      throw new SfError('Error during device login (no output)');
-    }
-    let allOutput = "";
-    authProcess.stdout.on('data', (data) => {
-      allOutput += data.toString();
-      const jsonOutput = findJsonInString(allOutput);
-      if (jsonOutput) {
-        if (jsonOutput.verification_uri && jsonOutput.user_code) {
-          uxLog("action", this, `To authenticate, visit ${c.cyan(jsonOutput.verification_uri)} and enter code ${c.green(jsonOutput.user_code)}`);
-          allOutput = "";
-        }
-        else if (jsonOutput?.status === 0 && jsonOutput?.result?.username) {
-          loginResult = jsonOutput.result;
-          loginResult.status = loginResult.status ?? jsonOutput.status;
-        }
-      }
-    });
-    authProcess.stderr.on('data', (data) => {
-      uxLog("warning", this, "Warning: " + c.yellow(data.toString()));
-    });
-    await new Promise((resolve, reject) => {
-      authProcess.on('close', (data) => {
-        resolve(data);
-      });
-      authProcess.on('error', (data) => {
-        reject(data);
-      });
-    });
-  } catch (e) {
-    uxLog("error", this, c.red(`Device login error: \n${(e as Error).message || e}. Falling back to web login...`));
-    loginResult = null;
-  }
-  return loginResult;
-}
-
 // Get clientId for SFDX connected app
 async function getSfdxClientId(orgAlias: string, config: any) {
   // Try to find in global variables
@@ -452,7 +367,8 @@ async function getSfdxClientId(orgAlias: string, config: any) {
         )} with the Consumer Key value defined on SFDX Connected app`
       )
     );
-    console.error(c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
+    console.warn(c.yellow(`If you configured ${sfdxClientIdVarNameUpper} but still see this message, you may have forgotten to reference the variable name in your GitHub or Azure YML pipeline.`));
+    console.warn(c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
   }
   return null;
 }
@@ -496,7 +412,8 @@ async function getKey(orgAlias: string, config: any) {
         )} with the value of SSH private key encryption key`
       )
     );
-    console.error(c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
+    console.warn(c.yellow(`If you configured ${sfdxClientKeyVarNameUpper} but still see this message, you may have forgotten to reference the variable name in your GitHub or Azure YML pipeline.`));
+    console.warn(c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
   }
   return null;
 }

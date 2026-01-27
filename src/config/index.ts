@@ -10,7 +10,7 @@ getConfig(layer) returns:
 - project if layer is project
 */
 
-import { SfError } from '@salesforce/core';
+import { Connection, SfError } from '@salesforce/core';
 import axios from 'axios';
 import c from 'chalk';
 import { cosmiconfig } from 'cosmiconfig';
@@ -33,39 +33,72 @@ const username = os.userInfo().username;
 const userConfigFiles = [`config/user/.${moduleName}.${username}.yaml`, `config/user/.${moduleName}.${username}.yml`];
 const REMOTE_CONFIGS: any = {};
 
-export const getApiVersion = () => {
-  // globalThis.currentOrgApiVersion is set during authentication check (so not set if --skipauth option is used)
-  return process.env.SFDX_API_VERSION || globalThis.currentOrgApiVersion || '63.0';
-}
-
 export const CONSTANTS = {
+  DEFAULT_API_VERSION: '65.0',
   DOC_URL_ROOT: "https://sfdx-hardis.cloudity.com",
   WEBSITE_URL: "https://cloudity.com",
   CONTACT_URL: "https://cloudity.com/#form",
-  NOT_IMPACTING_METADATA_TYPES: process.env.NOT_IMPACTING_METADATA_TYPES?.split(",") ?? [
-    "Audience",
-    "AuraDefinitionBundle",
-    "Bot",
-    "BotVersion",
-    "ContentAsset",
-    "CustomObjectTranslation",
-    "CustomSite",
-    "CustomTab",
-    "Dashboard",
-    "ExperienceBundle",
-    "Flexipage",
-    "GlobalValueSetTranslation",
-    "Layout",
-    "LightningComponentBundle",
-    "NavigationMenu",
-    "ReportType",
-    "Report",
-    "SiteDotCom",
-    "StandardValueSetTranslation",
-    "StaticResource",
-    "Translations"
-  ]
+  NOT_IMPACTING_METADATA_TYPES: process.env.NOT_IMPACTING_METADATA_TYPES
+    ?.split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0) ?? [
+      "ActionLinkGroupTemplate",
+      "AnalyticSnapshot",
+      "AppMenu",
+      "Audience",
+      "AuraDefinitionBundle",
+      "Bot",
+      "BotVersion",
+      "BrandingSet",
+      "ContentAsset",
+      "CustomApplication",
+      "CustomApplicationComponent",
+      "CustomLabel",
+      "CustomObjectTranslation",
+      "CustomPageWebLink",
+      "CustomSite",
+      "CustomTab",
+      "CustomValueSetTranslation",
+      "Dashboard",
+      "DashboardFolder",
+      "Document",
+      "EmailTemplate",
+      "ExperienceBundle",
+      "FlexiPage",
+      "GlobalValueSetTranslation",
+      "HomePageComponent",
+      "HomePageLayout",
+      "Layout",
+      "Letterhead",
+      "LightningExperienceTheme",
+      "LightningComponentBundle",
+      "LightningMessageChannel",
+      "ListView",
+      "NavigationMenu",
+      "PathAssistant",
+      "QuickAction",
+      "ReportType",
+      "Report",
+      "ReportFolder",
+      "SiteDotCom",
+      "StandardValueSetTranslation",
+      "StaticResource",
+      "Translations",
+      "WebLink",
+      "CustomHelpMenuSection",
+      "CustomFeedFilter"
+    ]
 };
+
+export const getApiVersion = (conn: Connection | null = null) => {
+  // globalThis.currentOrgApiVersion is set during authentication check (so not set if --skipauth option is used)
+  return process.env.SFDX_API_VERSION || globalThis.currentOrgApiVersion || (conn ? conn.getApiVersion() || CONSTANTS.DEFAULT_API_VERSION : CONSTANTS.DEFAULT_API_VERSION);
+}
+
+export const getApiVersionNumber = (conn: Connection | null = null) => {
+  const apiVersion = getApiVersion(conn);
+  return parseFloat(apiVersion);
+}
 
 async function getBranchConfigFiles() {
   if (!isGitRepo()) {

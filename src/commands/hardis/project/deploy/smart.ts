@@ -83,27 +83,51 @@ Activate Smart Deployment tests with:
 
 Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-separated list on env var NOT_IMPACTING_METADATA_TYPES)
 
+- ActionLinkGroupTemplate
+- AnalyticSnapshot
+- AppMenu
 - Audience
 - AuraDefinitionBundle
 - Bot
 - BotVersion
+- BrandingSet
 - ContentAsset
+- CustomApplication
+- CustomApplicationComponent
+- CustomLabel
+- CustomFeedFilter
+- CustomHelpMenuSection
 - CustomObjectTranslation
+- CustomPageWebLink
 - CustomSite
 - CustomTab
+- CustomValueSetTranslation
 - Dashboard
+- DashboardFolder
+- Document
+- EmailTemplate
 - ExperienceBundle
-- Flexipage
+- FlexiPage
 - GlobalValueSetTranslation
+- HomePageComponent
+- HomePageLayout
 - Layout
+- Letterhead
+- LightningExperienceTheme
 - LightningComponentBundle
+- LightningMessageChannel
+- ListView
 - NavigationMenu
+- PathAssistant
+- QuickAction
 - ReportType
 - Report
+- ReportFolder
 - SiteDotCom
 - StandardValueSetTranslation
 - StaticResource
 - Translations
+- WebLink
 
 Note: if you want to disable Smart test classes for a PR, add **nosmart** in the text of the latest commit.
 
@@ -319,6 +343,7 @@ If you want to disable the calculation and display of Flow Visual Git Diff in Pu
         'RunRepositoryTests',
         'RunRepositoryTestsExceptSeeAllData',
         'RunLocalTests',
+        "RunRelevantTests",
         'RunAllTestsInOrg',
       ],
       description: messages.getMessage('testLevelExtended'),
