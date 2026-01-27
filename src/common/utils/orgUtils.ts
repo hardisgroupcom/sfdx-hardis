@@ -3,7 +3,7 @@ import { prompts } from './prompts.js';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, getExecutionContext, isCI, uxLog } from './index.js';
+import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isCI, uxLog } from './index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getConfig, setConfig } from '../../config/index.js';
 import * as EmailValidator from 'email-validator';
@@ -16,7 +16,6 @@ import { deployMetadatas, smartDeploy, forceSourcePush } from './deployUtils.js'
 import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { clearCache } from '../cache/index.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
-import { authenticateUsingDeviceLogin } from './authUtils.js';
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -245,14 +244,9 @@ export async function promptOrg(
   // Token is expired: login again to refresh it
   if (org?.connectedStatus === 'RefreshTokenAuthError' || org?.connectedStatus?.includes('expired')) {
     uxLog("action", this, c.yellow(`⚠️ Your authentication has expired. Please log in again using the web browser.`));
-    if (getExecutionContext() === "web") {
-      org = await authenticateUsingDeviceLogin(org.instanceUrl, org.username, null, {}, false, null);
-    }
-    else {
-      const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}`;
-      const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
-      org = loginResult.result;
-    }
+    const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}`;
+    const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
+    org = loginResult.result;
   }
 
   if (options.setDefault === true) {
@@ -362,10 +356,6 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
       } catch (e: any) {
         uxLog("warning", this, c.red(`Error while deleting potentially rotten auth file ${c.green(authFile)}: ${e.message}\nYou might need to delete it manually.`));
       }
-    }
-    if (getExecutionContext() === "web") {
-      orgResult = await authenticateUsingDeviceLogin(instanceUrl, targetOrg, null, {}, false, null);
-      return orgResult;
     }
     // Authenticate again
     const loginCommand = 'sf org login web' + ` --instance-url ${instanceUrl}`;
