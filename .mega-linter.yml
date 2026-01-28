@@ -58,7 +58,7 @@ LLM_ADVISOR_LEVEL: ERROR
 
 # Choose your provider and model
 LLM_PROVIDER: google # openai, anthropic, google, huggingface, mistral, deepseek, grok, ollama
-LLM_MODEL_NAME: gemini-3-flash
+LLM_MODEL_NAME: gemini-2.5-pro
 LLM_MAX_TOKENS: "1000"
 LLM_TEMPERATURE: "0.1"
 ADDITIONAL_EXCLUDED_DIRECTORIES:
