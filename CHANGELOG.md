@@ -4,10 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.23.5] 2025-01-28
+
 - Authentication: When callback url post is busy, try to kill the ghost process then try again to run `sf org login web`
 - Display error in case of parsing issue in .sfdx-hardis.yml files
 - Switch MegaLinter LLM Advisor to Google Gemini 3
-- barbudgliujed swiiitch
 
 ## [6.23.4] 2025-01-27
 
