@@ -148,15 +148,22 @@ export const setConfig = async (layer: string, propValues: any): Promise<string 
 
 // Load configuration from file
 async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
-  const configExplorer = await cosmiconfig(moduleName, {
-    searchPlaces,
-  }).search();
-  let config = configExplorer != null ? configExplorer.config : {};
-  if (config.extends) {
-    const remoteConfig = await loadFromRemoteConfigFile(config.extends);
-    config = Object.assign(remoteConfig, config);
+  try {
+    const configExplorer = await cosmiconfig(moduleName, {
+      searchPlaces,
+    }).search();
+    let config = configExplorer != null ? configExplorer.config : {};
+    if (config.extends) {
+      const remoteConfig = await loadFromRemoteConfigFile(config.extends);
+      config = Object.assign(remoteConfig, config);
+    }
+    return config;
+  } catch (err) {
+    uxLog("error", this, c.red('[sfdx-hardis] Unable to read configuration file.\n' + (err as Error).message));
+    throw new SfError(
+      '[sfdx-hardis] Unable to read configuration file.\n' + (err as Error).message
+    );
   }
-  return config;
 }
 
 async function loadFromRemoteConfigFile(url) {

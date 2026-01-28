@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Authentication: When callback url post is busy, try to kill the ghost process then try again to run `sf org login web`
+- Display error in case of parsing issue in .sfdx-hardis.yml files
+
 ## [6.23.4] 2025-01-27
 
 - Always use `sf org login web` as `sf org login device` has been retired
