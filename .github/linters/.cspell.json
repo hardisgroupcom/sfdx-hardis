@@ -296,6 +296,8 @@
         "accordiondevelopment",
         "accordiondoc",
         "accordionenable",
+        "accordionlangchain",
+        "accordionopenai",
         "accordionextends",
         "accordiongeneric",
         "accordioninit",
