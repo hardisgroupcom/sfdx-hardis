@@ -6,7 +6,8 @@ import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
 import { Connection } from "@salesforce/core";
 import { UtilsAi } from "./utils.js";
-import { getConfig, getEnvVar } from "../../config/index.js";
+import { getEnvVar } from "../../config/index.js";
+import { resolveBooleanFlag } from "./providerConfigUtils.js";
 
 export class AgentforceProvider extends AiProviderRoot {
   protected conn: Connection;
@@ -41,13 +42,11 @@ export class AgentforceProvider extends AiProviderRoot {
     if (!hasConnection) {
       return null;
     }
-    const projectConfig = await getConfig('user');
-    const rootConfig = projectConfig || {};
-    const envEnabled = this.parseBoolean(getEnvVar("USE_AGENTFORCE"));
-    const configEnabled = typeof rootConfig.useAgentforce === "boolean"
-      ? rootConfig.useAgentforce
-      : (typeof rootConfig.USE_AGENTFORCE === "boolean" ? rootConfig.USE_AGENTFORCE : undefined);
-    const enabled = envEnabled ?? configEnabled ?? false;
+    const { enabled, rootConfig } = await resolveBooleanFlag({
+      envVar: "USE_AGENTFORCE",
+      configKey: "useAgentforce",
+      defaultValue: false,
+    });
     if (!enabled) {
       return null;
     }
@@ -60,20 +59,6 @@ export class AgentforceProvider extends AiProviderRoot {
       || rootConfig.GENERIC_AGENTFORCE_PROMPT_URL
       || `/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{PROMPT_TEMPLATE}}/generations`;
     return { promptTemplate, promptUrlTemplate };
-  }
-
-  private static parseBoolean(value: string | null): boolean | undefined {
-    if (value == null) {
-      return undefined;
-    }
-    const normalized = value.toLowerCase();
-    if (normalized === "true") {
-      return true;
-    }
-    if (normalized === "false") {
-      return false;
-    }
-    return undefined;
   }
 
   public getLabel(): string {

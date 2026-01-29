@@ -4,7 +4,8 @@ import { AiProviderRoot } from "./aiProviderRoot.js";
 import c from "chalk";
 import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
-import { getConfig, getEnvVar } from "../../config/index.js";
+import { getEnvVar } from "../../config/index.js";
+import { resolveBooleanFlag } from "./providerConfigUtils.js";
 
 export class OpenAiProvider extends AiProviderRoot {
   protected openai: OpenAI;
@@ -37,13 +38,11 @@ export class OpenAiProvider extends AiProviderRoot {
     if (!getEnvVar("OPENAI_API_KEY")) {
       return null;
     }
-    const projectConfig = await getConfig('user');
-    const rootConfig = projectConfig || {};
-    const envEnabled = this.parseBoolean(getEnvVar("USE_OPENAI_DIRECT"));
-    const configEnabled = typeof rootConfig.useOpenaiDirect === "boolean"
-      ? rootConfig.useOpenaiDirect
-      : (typeof rootConfig.USE_OPENAI_DIRECT === "boolean" ? rootConfig.USE_OPENAI_DIRECT : undefined);
-    const enabled = envEnabled ?? configEnabled ?? true;
+    const { enabled, rootConfig } = await resolveBooleanFlag({
+      envVar: "USE_OPENAI_DIRECT",
+      configKey: "useOpenaiDirect",
+      defaultValue: true,
+    });
     if (!enabled) {
       return null;
     }
@@ -52,20 +51,6 @@ export class OpenAiProvider extends AiProviderRoot {
       || rootConfig.OPENAI_MODEL
       || "gpt-4o-mini";
     return { modelName };
-  }
-
-  private static parseBoolean(value: string | null): boolean | undefined {
-    if (value == null) {
-      return undefined;
-    }
-    const normalized = value.toLowerCase();
-    if (normalized === "true") {
-      return true;
-    }
-    if (normalized === "false") {
-      return false;
-    }
-    return undefined;
   }
 
   public async promptAi(promptText: string, template: PromptTemplate | null = null): Promise<AiResponse | null> {
