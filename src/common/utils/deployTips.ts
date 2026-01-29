@@ -307,7 +307,7 @@ async function findAiTip(errorLine: any): Promise<AiResponse | null> {
     return null;
   }
   alreadyProcessedErrors.push(errorLine);
-  if (AiProvider.isAiAvailable()) {
+  if (await AiProvider.isAiAvailable()) {
     if (alreadyProcessedErrors.length > parseInt(process.env.MAX_DEPLOYMENT_TIPS_AI_CALLS || "20")) {
       uxLog("warning", this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
       return null;

@@ -4,44 +4,100 @@ import { AiProviderRoot } from "./aiProviderRoot.js";
 import c from "chalk";
 import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
-import { getEnvVar } from "../../config/index.js";
 import { LangChainProviderFactory } from "./langChainProviders/langChainProviderFactory.js";
 import { ModelConfig, ProviderType } from "./langChainProviders/langChainBaseProvider.js";
+import { getConfig, getEnvVar } from "../../config/index.js";
 
 export class LangChainProvider extends AiProviderRoot {
   private model: BaseChatModel;
   private modelName: string;
 
-  constructor() {
+  private constructor(options: LangChainResolvedConfig) {
     super();
-    const provider = getEnvVar("LANGCHAIN_LLM_PROVIDER");
-    if (!provider) {
-      throw new Error("LANGCHAIN_LLM_PROVIDER environment variable must be set to use LangChain integration");
+    if (!options.provider) {
+      throw new Error("LangChain provider must be defined (ex: openai, anthropic, google-genai, ollama)");
+    }
+    if (!options.modelName) {
+      throw new Error("LangChain model must be defined to use LangChain integration");
     }
 
-    const providerType = provider.toLowerCase() as ProviderType;
-    const modelName = getEnvVar("LANGCHAIN_LLM_MODEL");
-    const apiKey = getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY");
-
-    if (!modelName) {
-      throw new Error("LANGCHAIN_LLM_MODEL environment variable must be set to use LangChain integration");
-    }
-
-    this.modelName = modelName;
+    this.modelName = options.modelName;
+    const providerType = options.provider.toLowerCase() as ProviderType;
 
     // Common configuration for all providers
     const config: ModelConfig = {
-      temperature: Number(getEnvVar("LANGCHAIN_LLM_TEMPERATURE")) || undefined,
-      timeout: Number(getEnvVar("LANGCHAIN_LLM_TIMEOUT")) || undefined,
-      maxTokens: Number(getEnvVar("LANGCHAIN_LLM_MAX_TOKENS")) || undefined,
-      maxRetries: Number(getEnvVar("LANGCHAIN_LLM_MAX_RETRIES")) || undefined,
-      baseUrl: getEnvVar("LANGCHAIN_LLM_BASE_URL") || undefined,
-      apiKey: apiKey || undefined
+      temperature: options.temperature,
+      timeout: options.timeout,
+      maxTokens: options.maxTokens,
+      maxRetries: options.maxRetries,
+      baseUrl: options.baseUrl,
+      apiKey: options.apiKey
     };
 
-    // factory pattern so that adding support for new providers is easy in the future
-    const llmProvider = LangChainProviderFactory.createProvider(providerType, modelName, config);
+    const llmProvider = LangChainProviderFactory.createProvider(providerType, this.modelName, config);
     this.model = llmProvider.getModel();
+  }
+
+  public static async isConfigured(): Promise<boolean> {
+    const options = await this.resolveConfig();
+    return options != null;
+  }
+
+  public static async create(): Promise<LangChainProvider> {
+    const options = await this.resolveConfig();
+    if (!options) {
+      throw new Error("LangChain provider is not properly configured");
+    }
+    return new LangChainProvider(options);
+  }
+
+  private static async resolveConfig(): Promise<LangChainResolvedConfig | null> {
+    const projectConfig = await getConfig('user');
+    const langchainConfig = projectConfig?.ai?.langchain || {};
+    const provider = getEnvVar("LANGCHAIN_LLM_PROVIDER") || langchainConfig.provider;
+    const modelName = getEnvVar("LANGCHAIN_LLM_MODEL") || langchainConfig.modelName;
+    const enabled = this.parseBoolean(getEnvVar("USE_LANGCHAIN_LLM"), langchainConfig.enabled, provider && modelName);
+
+    if (!enabled || !provider || !modelName) {
+      return null;
+    }
+
+    return {
+      provider,
+      modelName,
+      temperature: this.parseNumber(getEnvVar("LANGCHAIN_LLM_TEMPERATURE"), langchainConfig.temperature),
+      timeout: this.parseNumber(getEnvVar("LANGCHAIN_LLM_TIMEOUT"), langchainConfig.timeout),
+      maxTokens: this.parseNumber(getEnvVar("LANGCHAIN_LLM_MAX_TOKENS"), langchainConfig.maxTokens),
+      maxRetries: this.parseNumber(getEnvVar("LANGCHAIN_LLM_MAX_RETRIES"), langchainConfig.maxRetries),
+      baseUrl: getEnvVar("LANGCHAIN_LLM_BASE_URL") || langchainConfig.baseUrl,
+      apiKey: getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY") || undefined,
+    };
+  }
+
+  private static parseBoolean(envValue: string | null, configValue?: boolean, fallback?: boolean): boolean {
+    if (envValue != null) {
+      const normalized = envValue.toLowerCase();
+      if (normalized === "true") {
+        return true;
+      }
+      if (normalized === "false") {
+        return false;
+      }
+    }
+    if (configValue !== undefined) {
+      return configValue;
+    }
+    return Boolean(fallback);
+  }
+
+  private static parseNumber(envValue: string | null, configValue?: number): number | undefined {
+    if (envValue != null) {
+      const parsed = Number(envValue);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    return configValue;
   }
 
   public getLabel(): string {
@@ -98,4 +154,15 @@ export class LangChainProvider extends AiProviderRoot {
       return null;
     }
   }
-} 
+}
+
+interface LangChainResolvedConfig {
+  provider: string;
+  modelName: string;
+  temperature?: number;
+  timeout?: number;
+  maxTokens?: number;
+  maxRetries?: number;
+  baseUrl?: string;
+  apiKey?: string;
+}

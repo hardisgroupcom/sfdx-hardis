@@ -156,7 +156,7 @@ export async function completeAttributesDescriptionWithAi(attributesMarkdown: st
     uxLog("log", this, c.grey("Used AI cache for attributes completion (set IGNORE_AI_CACHE=true to force call to AI)"));
     return aiCache.cacheText ? includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText) : attributesMarkdown;
   }
-  if (AiProvider.isAiAvailable()) {
+  if (await AiProvider.isAiAvailable()) {
     // Invoke AI Service
     const prompt = AiProvider.buildPrompt("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", { "MARKDOWN": attributesMarkdown, "OBJECT_NAME": objectName });
     const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD");

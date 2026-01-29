@@ -4,17 +4,62 @@ import { AiProviderRoot } from "./aiProviderRoot.js";
 import c from "chalk";
 import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
+import { getConfig, getEnvVar } from "../../config/index.js";
 
 export class OpenAiProvider extends AiProviderRoot {
   protected openai: OpenAI;
+  private modelName: string;
 
-  constructor() {
+  private constructor(modelName: string) {
     super();
+    this.modelName = modelName || "gpt-4o-mini";
     this.openai = new OpenAI();
   }
 
   public getLabel(): string {
     return "OpenAi connector";
+  }
+
+  public static async isConfigured(): Promise<boolean> {
+    const config = await this.resolveConfig();
+    return config != null;
+  }
+
+  public static async create(): Promise<OpenAiProvider> {
+    const config = await this.resolveConfig();
+    if (!config) {
+      throw new Error("OpenAI provider is not properly configured");
+    }
+    return new OpenAiProvider(config.modelName);
+  }
+
+  private static async resolveConfig(): Promise<OpenAiResolvedConfig | null> {
+    if (!getEnvVar("OPENAI_API_KEY")) {
+      return null;
+    }
+    const projectConfig = await getConfig('user');
+    const openAiConfig = projectConfig?.ai?.openai || {};
+    const envEnabled = this.parseBoolean(getEnvVar("USE_OPENAI_DIRECT"));
+    const enabled = envEnabled ?? openAiConfig.enabled ?? true;
+    if (!enabled) {
+      return null;
+    }
+    const modelName = getEnvVar("OPENAI_MODEL") || openAiConfig.modelName || "gpt-4o-mini";
+    return { modelName };
+  }
+
+  private static parseBoolean(value: string | null): boolean | undefined {
+    if (value == null) {
+      return undefined;
+    }
+    const normalized = value.toLowerCase();
+    if (normalized === "true") {
+      return true;
+    }
+    if (normalized === "false") {
+      return false;
+    }
+    return undefined;
   }
 
   public async promptAi(promptText: string, template: PromptTemplate | null = null): Promise<AiResponse | null> {
@@ -23,7 +68,7 @@ export class OpenAiProvider extends AiProviderRoot {
       uxLog("warning", this, c.yellow(`[OpenAi] Already performed maximum ${maxCalls} calls. Increase it by defining AI_MAXIMUM_CALL_NUMBER env variable`));
       return null;
     }
-    const gptModel = process.env.OPENAI_MODEL || "gpt-4o-mini";
+    const gptModel = this.modelName;
     if (process.env?.DEBUG_PROMPTS === "true") {
       uxLog("log", this, c.grey(`[OpenAi] Requesting the following prompt to ${gptModel}${template ? ' using template ' + template : ''}:\n${promptText}`));
     }
@@ -51,4 +96,8 @@ export class OpenAiProvider extends AiProviderRoot {
     }
     return aiResponse;
   }
+}
+
+interface OpenAiResolvedConfig {
+  modelName: string;
 }

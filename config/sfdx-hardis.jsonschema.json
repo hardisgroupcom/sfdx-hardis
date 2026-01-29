@@ -58,6 +58,131 @@
   },
   "description": "Configuration file definition for sfdx-hardis Salesforce DX plugin",
   "properties": {
+    "ai": {
+      "$id": "#/properties/ai",
+      "description": "Configuration for AI providers used by sfdx-hardis commands. API keys must still be provided via secured environment variables.",
+      "title": "AI configuration",
+      "type": "object",
+      "properties": {
+        "langchain": {
+          "$id": "#/properties/ai/properties/langchain",
+          "description": "Define default LangChain provider, model and tuning parameters without storing secrets in source control.",
+          "title": "LangChain settings",
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Set to true to enable LangChain integration (equivalent to USE_LANGCHAIN_LLM).",
+              "title": "Enable LangChain",
+              "type": "boolean",
+              "default": false
+            },
+            "provider": {
+              "description": "LLM provider identifier (ex: openai, anthropic, google-genai, ollama).",
+              "title": "LangChain provider",
+              "type": "string"
+            },
+            "modelName": {
+              "description": "Model identifier to use with the selected provider (ex: gpt-4o, gemini-1.5-pro).",
+              "title": "LangChain model",
+              "type": "string"
+            },
+            "temperature": {
+              "description": "Sampling temperature override for LangChain requests.",
+              "title": "Temperature",
+              "type": "number"
+            },
+            "maxTokens": {
+              "description": "Maximum number of tokens generated per LangChain response.",
+              "title": "Max tokens",
+              "type": "number"
+            },
+            "maxRetries": {
+              "description": "Maximum number of retries for failed LangChain requests.",
+              "title": "Max retries",
+              "type": "number"
+            },
+            "timeout": {
+              "description": "Timeout in milliseconds applied to LangChain calls.",
+              "title": "Timeout",
+              "type": "number"
+            },
+            "baseUrl": {
+              "description": "Custom base URL for HTTP-based providers (for example a local Ollama endpoint).",
+              "title": "Base URL",
+              "type": "string"
+            }
+          },
+          "examples": [
+            {
+              "enabled": true,
+              "provider": "google-genai",
+              "modelName": "gemini-1.5-pro",
+              "temperature": 0.1,
+              "maxTokens": 1000
+            }
+          ]
+        },
+        "openai": {
+          "$id": "#/properties/ai/properties/openai",
+          "description": "Configure default OpenAI model when using the direct OpenAI connector (API key must stay in OPENAI_API_KEY).",
+          "title": "OpenAI settings",
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Set to true to enable the direct OpenAI connector (equivalent to USE_OPENAI_DIRECT flag).",
+              "title": "Enable OpenAI",
+              "type": "boolean",
+              "default": true
+            },
+            "modelName": {
+              "description": "Name of the OpenAI model to use by default (ex: gpt-4o, gpt-4o-mini).",
+              "title": "OpenAI model",
+              "type": "string",
+              "default": "gpt-4o-mini"
+            }
+          },
+          "examples": [
+            {
+              "enabled": true,
+              "modelName": "gpt-4o-mini"
+            }
+          ]
+        },
+        "agentforce": {
+          "$id": "#/properties/ai/properties/agentforce",
+          "description": "Configure default prompt template and endpoint when using Salesforce Agentforce prompts.",
+          "title": "Agentforce settings",
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "description": "Set to true to enable Agentforce integration (equivalent to USE_AGENTFORCE).",
+              "title": "Enable Agentforce",
+              "type": "boolean",
+              "default": false
+            },
+            "promptTemplate": {
+              "description": "Prompt template API name to use by default (ex: SfdxHardisGenericPrompt).",
+              "title": "Prompt template",
+              "type": "string",
+              "default": "SfdxHardisGenericPrompt"
+            },
+            "promptUrl": {
+              "description": "Custom template URL supporting placeholders {{API_VERSION}} and {{PROMPT_TEMPLATE}}.",
+              "title": "Prompt URL",
+              "type": "string",
+              "default": "/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{PROMPT_TEMPLATE}}/generations"
+            }
+          },
+          "examples": [
+            {
+              "enabled": true,
+              "promptTemplate": "SfdxHardisGenericPrompt",
+              "promptUrl": "/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{PROMPT_TEMPLATE}}/generations"
+            }
+          ]
+        }
+      }
+    },
     "allowedOrgTypes": {
       "$id": "#/properties/allowedOrgTypes",
       "description": "Types of Salesforce Orgs allowed for config & development. If not set, Sandbox Orgs and Scratch Orgs are allowed by default",

@@ -1,4 +1,3 @@
-import { getEnvVar } from "../../config/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
 import path from 'path';
 import fs from 'fs-extra';
@@ -6,27 +5,6 @@ import { XMLParser } from "fast-xml-parser";
 import farmhash from 'farmhash';
 
 export class UtilsAi {
-  public static isOpenAiAvailable() {
-    if (getEnvVar("OPENAI_API_KEY")) {
-      return true;
-    }
-    return false;
-  }
-
-  public static isLangChainAvailable() {
-    if (getEnvVar("USE_LANGCHAIN_LLM") === "true" && getEnvVar("LANGCHAIN_LLM_MODEL")) {
-      return true;
-    }
-    return false;
-  }
-
-  public static isAgentforceAvailable() {
-    if (getEnvVar("USE_AGENTFORCE") === "true" && (globalThis.jsForceConn || globalThis.jsForceConnTechnical)) {
-      return true;
-    }
-    return false;
-  }
-
   public static getPromptsLanguage(): string {
     return process.env.PROMPTS_LANGUAGE || "en";
   }
