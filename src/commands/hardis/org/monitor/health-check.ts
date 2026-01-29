@@ -102,7 +102,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const conn = flags['target-org'].getConnection();
 
     uxLog('action', this, c.cyan('Retrieve latest Security Health Check score...'));
-    const scoreQuery = `SELECT Id, DurableId, CustomBaselineId, Score, CreatedDate FROM SecurityHealthCheck ORDER BY CreatedDate DESC LIMIT 1`;
+    const scoreQuery = `SELECT Id, DurableId, CustomBaselineId, Score FROM SecurityHealthCheck LIMIT 1`;
     const scoreResult = await soqlQueryTooling(scoreQuery, conn);
     if (!scoreResult.records || scoreResult.records.length === 0) {
       throw new SfError('No SecurityHealthCheck record found for this org. You need "View Setup and Configuration" permissions.');
@@ -113,9 +113,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const scoreText = scoreValue != null ? `${scoreValue.toFixed(2)}%` : 'Not available';
 
     uxLog('action', this, c.cyan('Retrieve Security Health Check indicators...'));
-    const risksQuery = `SELECT Id, DurableId, SecurityHealthCheckId, RiskType, Setting, SettingGroup, SettingRiskCategory, OrgValue, OrgValueRaw, StandardValue, StandardValueRaw FROM SecurityHealthCheckRisks WHERE SecurityHealthCheckId = '${this.healthCheckSummary.Id}' ORDER BY RiskType, Setting`;
+    const risksQuery = `SELECT Id, DurableId, SecurityHealthCheckId, RiskType, Setting, SettingGroup, SettingRiskCategory, OrgValue, OrgValueRaw, StandardValue, StandardValueRaw FROM SecurityHealthCheckRisks ORDER BY RiskType, Setting`;
     const risksResult = await soqlQueryTooling(risksQuery, conn);
-    this.healthCheckRisks = risksResult.records || [];
+    this.healthCheckRisks = (risksResult.records || []).filter((risk) => risk.Id === this.healthCheckSummary.Id);
+
 
     const riskCounts = this.getRiskCounts();
     const riskSummaryRows = [
