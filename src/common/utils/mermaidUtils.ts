@@ -725,7 +725,7 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
     const replaceText = `## AI-Generated Differences Summary\n\n${includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText || "")}`;
     return flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
   }
-  if (AiProvider.isAiAvailable()) {
+  if (await AiProvider.isAiAvailable()) {
     // Invoke AI Service
     const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW_DIFF", { "FLOW_XML_NEW": flowXmlNewStripped, "FLOW_XML_PREVIOUS": flowXmlPreviousStripped });
     const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_FLOW_DIFF");
