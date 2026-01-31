@@ -11,6 +11,7 @@ import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../.
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
+import sortArray from 'sort-array';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -113,7 +114,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const scoreText = scoreValue != null ? `${scoreValue.toFixed(2)}%` : 'Not available';
 
     uxLog('action', this, c.cyan('Retrieve Security Health Check indicators...'));
-    const risksQuery = `SELECT Id, DurableId, SecurityHealthCheckId, RiskType, Setting, SettingGroup, SettingRiskCategory, OrgValue, OrgValueRaw, StandardValue, StandardValueRaw FROM SecurityHealthCheckRisks ORDER BY RiskType, Setting`;
+    const risksQuery = `SELECT Id, DurableId, RiskType, Setting, SettingGroup, SettingRiskCategory, OrgValue, OrgValueRaw, StandardValue, StandardValueRaw FROM SecurityHealthCheckRisks ORDER BY RiskType, Setting`;
     const risksResult = await soqlQueryTooling(risksQuery, conn);
     this.healthCheckRisks = (risksResult.records || []).filter((risk) => risk.Id === this.healthCheckSummary.Id);
 
@@ -171,7 +172,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       uxLog('warning', this, c.yellow(`Detected ${riskCounts.high} high and ${riskCounts.medium} medium risk indicators.`));
     }
 
-    this.reportRows = this.buildReportRows(scoreValue, scoreSeverity, riskCounts);
+    this.reportRows = this.buildReportRows();
     this.outputFile = await generateReportPath('org-health-check', this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.reportRows, this.outputFile, { fileTitle: 'Security Health Check' });
 
@@ -187,30 +188,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     } as AnyJson;
   }
 
-  protected buildReportRows(scoreValue: number | null, scoreSeverity: NotifSeverity, riskCounts: RiskCounts) {
-    const summaryRow = {
-      EntryType: 'Summary',
-      HealthCheckId: this.healthCheckSummary.Id,
-      CreatedDate: this.healthCheckSummary.CreatedDate,
-      Score: scoreValue,
-      ScoreSeverity: scoreSeverity,
-      ScoreSeverityIcon: getSeverityIcon(scoreSeverity),
-      CustomBaselineId: this.healthCheckSummary.CustomBaselineId || '',
-      DurableId: this.healthCheckSummary.DurableId || '',
-      HighRiskCount: riskCounts.high,
-      MediumRiskCount: riskCounts.medium,
-      LowRiskCount: riskCounts.low,
-      InformationalCount: riskCounts.informational,
-      MeetsStandardCount: riskCounts.meets,
-    };
-
-    const riskRows = this.healthCheckRisks.map((risk) => {
+  protected buildReportRows() {
+    const reportRows = this.healthCheckRisks.map((risk) => {
       const severity: NotifSeverity = risk.RiskType === 'HIGH_RISK' ? 'error' : risk.RiskType === 'MEDIUM_RISK' ? 'warning' : 'success';
       return {
-        EntryType: 'Risk',
-        SecurityHealthCheckId: risk.SecurityHealthCheckId,
-        RiskType: risk.RiskType,
         SettingRiskCategory: risk.SettingRiskCategory,
+        RiskType: risk.RiskType,
         SettingGroup: risk.SettingGroup,
         Setting: risk.Setting,
         OrgValue: risk.OrgValue,
@@ -221,8 +204,14 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         SeverityIcon: getSeverityIcon(severity),
       };
     });
-
-    return [summaryRow, ...riskRows];
+    sortArray(reportRows, {
+      by: ['SettingRiskCategory', 'RiskType', 'Setting'],
+      order: ['asc', 'asc', 'asc'],
+      customOrders: {
+        SettingRiskCategory: ['HIGH_RISK', 'MEDIUM_RISK', 'LOW_RISK', 'INFORMATIONAL'],
+      },
+    });
+    return reportRows;
   }
 
   protected getRiskCounts(): RiskCounts {
