@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- CI: Test docker images security using package generated from local sources
+- CI: Test security on Ubuntu based docker images
+
 ## [6.23.5] 2025-01-28
 
 - Authentication: When callback url post is busy, try to kill the ghost process then try again to run `sf org login web`

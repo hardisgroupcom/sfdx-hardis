@@ -31,6 +31,7 @@ test_session*
 *.tgz
 *.sig
 package.json.bak.
+!defaults/empty.tgz
 
 
 npm-shrinkwrap.json
