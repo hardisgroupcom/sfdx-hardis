@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
-import { AnyJson } from '@salesforce/ts-types';
+import { AnyJson, JsonMap } from '@salesforce/ts-types';
 import c from 'chalk';
 import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { CONSTANTS, getEnvVar } from '../../../../config/index.js';
@@ -17,17 +17,33 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 const parseNumberWithDefault = (value: any, defaultValue: number): number => {
-  const parsed = Number(value);
+  const parsed = value != null ? Number(value) : NaN;
   return Number.isFinite(parsed) ? parsed : defaultValue;
 };
 
-interface RiskCounts {
+interface RiskCounts extends JsonMap {
   high: number;
   medium: number;
   meets: number;
-  low: number;
-  informational: number;
-  [key: string]: number;
+}
+
+interface SecurityHealthCheckRisk extends JsonMap {
+  Id?: string;
+  RiskType?: 'HIGH_RISK' | 'MEDIUM_RISK' | 'MEETS_STANDARD';
+  Setting?: string;
+  SettingGroup?: string;
+  SettingRiskCategory?: string;
+  OrgValue?: string | number | null;
+  OrgValueRaw?: string | number | null;
+  StandardValue?: string | number | null;
+  StandardValueRaw?: string | number | null;
+}
+
+interface MonitorHealthCheckResult extends JsonMap {
+  outputString: string;
+  score: number | null;
+  riskCounts: RiskCounts;
+  risks: SecurityHealthCheckRisk[];
 }
 
 export default class MonitorHealthCheck extends SfCommand<any> {
@@ -87,7 +103,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   protected riskAttachmentLimit = Math.max(1, Math.round(parseNumberWithDefault(getEnvVar('HEALTH_CHECK_ATTACHMENT_LIMIT'), 10)));
 
   protected healthCheckSummary: any = null;
-  protected healthCheckRisks: any[] = [];
+  protected healthCheckRisks: SecurityHealthCheckRisk[] = [];
   protected reportRows: any[] = [];
   protected outputFile;
   protected outputFilesRes: any = {};
@@ -116,7 +132,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     uxLog('action', this, c.cyan('Retrieve Security Health Check indicators...'));
     const risksQuery = `SELECT Id, DurableId, RiskType, Setting, SettingGroup, SettingRiskCategory, OrgValue, OrgValueRaw, StandardValue, StandardValueRaw FROM SecurityHealthCheckRisks ORDER BY RiskType, Setting`;
     const risksResult = await soqlQueryTooling(risksQuery, conn);
-    this.healthCheckRisks = (risksResult.records || []).filter((risk) => risk.Id === this.healthCheckSummary.Id);
+    const riskRecords = (risksResult.records || []) as SecurityHealthCheckRisk[];
+    this.healthCheckRisks = riskRecords.filter((risk) => risk.Id === this.healthCheckSummary.Id);
 
 
     const riskCounts = this.getRiskCounts();
@@ -145,18 +162,6 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         severity: 'info',
         severityIcon: getSeverityIcon('info'),
       },
-      {
-        Category: 'Low risk indicators',
-        Value: riskCounts.low,
-        severity: 'info',
-        severityIcon: getSeverityIcon('info'),
-      },
-      {
-        Category: 'Informational indicators',
-        Value: riskCounts.informational,
-        severity: 'info',
-        severityIcon: getSeverityIcon('info'),
-      },
     ];
     uxLogTable(this, riskSummaryRows);
 
@@ -180,12 +185,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     await setConnectionVariables(flags['target-org']?.getConnection());
     await NotifProvider.postNotifications(notifPayload);
 
-    return {
+    const result: MonitorHealthCheckResult = {
       outputString: 'Security Health Check executed on org ' + flags['target-org'].getConnection().instanceUrl,
       score: scoreValue,
       riskCounts,
       risks: this.healthCheckRisks,
-    } as AnyJson;
+    };
+    return result;
   }
 
   protected buildReportRows() {
@@ -215,7 +221,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   protected getRiskCounts(): RiskCounts {
-    const base: RiskCounts = { high: 0, medium: 0, meets: 0, low: 0, informational: 0 };
+    const base: RiskCounts = { high: 0, medium: 0, meets: 0 };
     for (const risk of this.healthCheckRisks) {
       if (risk.RiskType === 'HIGH_RISK') {
         base.high += 1;
@@ -223,12 +229,6 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         base.medium += 1;
       } else if (risk.RiskType === 'MEETS_STANDARD') {
         base.meets += 1;
-      }
-
-      if (risk.SettingRiskCategory === 'LOW_RISK') {
-        base.low += 1;
-      } else if (risk.SettingRiskCategory === 'INFORMATIONAL') {
-        base.informational += 1;
       }
     }
     return base;
@@ -309,8 +309,6 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         Score: scoreValue ?? 0,
         HighRisk: riskCounts.high,
         MediumRisk: riskCounts.medium,
-        LowRisk: riskCounts.low,
-        Informational: riskCounts.informational,
         MeetsStandard: riskCounts.meets,
         Indicators: this.healthCheckRisks.length,
       },
@@ -319,8 +317,6 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         score: scoreValue,
         highRisk: riskCounts.high,
         mediumRisk: riskCounts.medium,
-        lowRisk: riskCounts.low,
-        informational: riskCounts.informational,
         meetsStandard: riskCounts.meets,
       },
     };
