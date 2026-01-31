@@ -46,7 +46,7 @@ export class DocBuilderProfile extends DocBuilderRoot {
     ];
   }
 
-  public stripXmlForAi(): Promise<string> {
+  public async stripXmlForAi(): Promise<string> {
     const xmlObj = new XMLParser().parse(this.metadataXml);
     // Remove class access: not relevant for prompt
     if (xmlObj?.Profile?.classAccesses) {
@@ -90,7 +90,7 @@ export class DocBuilderProfile extends DocBuilderRoot {
       xmlObj.Profile.tabVisibilities = xmlObj.Profile.tabVisibilities.filter(tab => tab.visibility === 'Hidden');
     }
     const xmlStripped = new XMLBuilder().build(xmlObj);
-    return xmlStripped
+    return xmlStripped;
   }
 
   // Generate json for display with jsTree npm library 

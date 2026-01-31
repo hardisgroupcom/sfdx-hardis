@@ -1,20 +1,61 @@
 name: Docker Security Scan
 on:
   push:
+    branches:
+      - main
+      - master
   pull_request:
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 jobs:
-  docker-security-scan:
-    name: Build and Scan Docker Image
+  prepare-package:
+    name: Prepare local plugin package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build from sources
+        run: yarn compile
+
+      - name: Package current sources
+        run: yarn pack --filename sfdx-hardis-local.tgz
+
+      - name: Upload packaged plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfdx-hardis-local
+          path: sfdx-hardis-local.tgz
+
+  docker-security-scan-alpine:
+    name: Build and Scan Docker Image (Alpine)
+    needs: prepare-package
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Download packaged plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: sfdx-hardis-local
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -27,6 +68,7 @@ jobs:
           platforms: linux/amd64
           build-args: |
             SFDX_HARDIS_VERSION=latest
+            SFDX_HARDIS_TGZ=sfdx-hardis-local.tgz
             SFDX_CLI_VERSION=latest
           load: true
           push: false
@@ -88,3 +130,93 @@ jobs:
             sfdx-hardis-image-sbom.spdx.json
             sfdx-hardis-trivy-image-results.txt
             sfdx-hardis-trivy-image-results.sarif
+
+  docker-security-scan-ubuntu:
+    name: Build and Scan Docker Image (Ubuntu)
+    needs: prepare-package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download packaged plugin
+        uses: actions/download-artifact@v4
+        with:
+          name: sfdx-hardis-local
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Ubuntu image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile-ubuntu
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=latest
+            SFDX_HARDIS_TGZ=sfdx-hardis-local.tgz
+            SFDX_CLI_VERSION=latest
+          load: true
+          push: false
+          tags: |
+            sfdx-hardis-ubuntu:security-scan
+
+      - name: Run Trivy vulnerability scanner (Ubuntu)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "sfdx-hardis-ubuntu:security-scan"
+          format: "table"
+          output: "sfdx-hardis-ubuntu-trivy-image-results.txt"
+          exit-code: "1"
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Generate Trivy security report (Ubuntu)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: "sfdx-hardis-ubuntu:security-scan"
+          format: "sarif"
+          output: "sfdx-hardis-ubuntu-trivy-image-results.sarif"
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Generate SBOM (CycloneDX format, Ubuntu)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: "sfdx-hardis-ubuntu:security-scan"
+          format: "cyclonedx"
+          output: "sfdx-hardis-ubuntu-image-sbom.cyclonedx.json"
+          scan-type: "image"
+
+      - name: Generate SBOM (SPDX format, Ubuntu)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: "sfdx-hardis-ubuntu:security-scan"
+          format: "spdx-json"
+          output: "sfdx-hardis-ubuntu-image-sbom.spdx.json"
+          scan-type: "image"
+
+      - name: Upload Trivy scan results to GitHub Security tab (Ubuntu)
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "sfdx-hardis-ubuntu-trivy-image-results.sarif"
+          category: "trivy-ubuntu"
+
+      - name: Upload SBOM artifacts (Ubuntu)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-and-sbom-documents-ubuntu
+          path: |
+            sfdx-hardis-ubuntu-image-sbom.cyclonedx.json
+            sfdx-hardis-ubuntu-image-sbom.spdx.json
+            sfdx-hardis-ubuntu-trivy-image-results.txt
+            sfdx-hardis-ubuntu-trivy-image-results.sarif
