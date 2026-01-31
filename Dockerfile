@@ -54,7 +54,7 @@ RUN npm install --no-cache yarn -g && \
         sf plugins install @salesforce/plugin-packaging && \
         sf plugins install @salesforce/plugin-deploy-retrieve && \
         # Prefer local plugin package (built from current sources); fallback to registry version
-        if echo 'y' | sf plugins install /tmp/sfdx-hardis.tgz; then \
+        if echo 'y' | sf plugins install file:/tmp/sfdx-hardis.tgz; then \
             echo 'Installed local sfdx-hardis package'; \
         else \
             echo 'Local package not found; installing sfdx-hardis@'"${SFDX_HARDIS_VERSION}"; \
