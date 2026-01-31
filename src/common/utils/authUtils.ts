@@ -1,6 +1,8 @@
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
+import { exec as childExec } from 'node:child_process';
+import { promisify } from 'node:util';
 import {
   createTempDir,
   execCommand,
@@ -15,6 +17,8 @@ import { SfError } from '@salesforce/core';
 import { clearCache } from '../cache/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { decryptFile } from '../cryptoUtils.js';
+
+const execAsync = promisify(childExec);
 
 // Options used by authOrg / authenticateUsingDeviceLogin
 export interface AuthOrgOptions {
@@ -253,22 +257,43 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         (alias ? ` --alias ${alias}` : options.setDefault === false ? '' : isDevHub ? ' --set-default-dev-hub' : ' --set-default') +
         ` --instance-url ${instanceUrl}` +
         (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --alias ${orgAlias}` : '');
-      try {
-        loginResult = await execSfdxJson(loginCommand, this, { output: false, fail: true, spinner: false });
-      } catch (e) {
-        // Give instructions if server is unavailable
-        if (((e as Error).message || '').includes('Cannot start the OAuth redirect server on port')) {
-          uxLog(
-            "warning",
-            this,
-            c.yellow(
-              c.bold(
-                'You might have a ghost SF CLI command. Open Task Manager, search for Node.js processes, kill them, then try again'
+      const maxWebLoginAttempts = 2;
+      for (let attempt = 1; attempt <= maxWebLoginAttempts; attempt++) {
+        try {
+          loginResult = await execSfdxJson(loginCommand, this, { output: false, fail: true, spinner: false });
+          break;
+        } catch (e) {
+          const errorMessage = (e as Error).message || '';
+          const blockedPort = extractPortFromOauthError(e);
+          if (blockedPort && attempt < maxWebLoginAttempts) {
+            const freed = await attemptToFreeOauthRedirectPort(blockedPort, this);
+            if (freed) {
+              uxLog(
+                "action",
+                this,
+                c.cyan(
+                  `[sfdx-hardis] Retrying web login (attempt ${attempt + 1}/${maxWebLoginAttempts}) after freeing port ${blockedPort}`
+                )
+              );
+              continue;
+            }
+          }
+          if (errorMessage.includes('Cannot start the OAuth redirect server on port')) {
+            uxLog(
+              "warning",
+              this,
+              c.yellow(
+                c.bold(
+                  'You might have a ghost SF CLI command. Open Task Manager, search for Node.js processes, kill them, then try again'
+                )
               )
-            )
-          );
+            );
+          }
+          throw e;
         }
-        throw e;
+      }
+      if (loginResult == null) {
+        throw new SfError('sf org login web did not return any result');
       }
 
       await clearCache('sf org list');
@@ -462,6 +487,98 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
       )
     );
     uxLog("error", this, c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
+  }
+  return null;
+}
+
+async function attemptToFreeOauthRedirectPort(port: number, context: any): Promise<boolean> {
+  uxLog(
+    "warning",
+    context,
+    c.yellow(`[sfdx-hardis] OAuth redirect port ${port} is busy. Attempting to terminate the blocking process...`)
+  );
+  const freed = await killProcessesListeningOnPort(port);
+  if (freed) {
+    uxLog("other", context, c.green(`[sfdx-hardis] Port ${port} freed successfully.`));
+  } else {
+    uxLog(
+      "error",
+      context,
+      c.red(`[sfdx-hardis] Unable to free port ${port}. Please close the conflicting application manually.`)
+    );
+  }
+  return freed;
+}
+
+async function killProcessesListeningOnPort(port: number): Promise<boolean> {
+  const normalizedPort = Number(port);
+  if (!Number.isFinite(normalizedPort)) {
+    return false;
+  }
+  const numericPidPattern = /^\d+$/;
+  if (process.platform === 'win32') {
+    const netstatResult = await safeExecCommand(`netstat -ano | findstr :${normalizedPort}`);
+    const pids = new Set(
+      netstatResult.stdout
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const parts = line.split(/\s+/);
+          return parts[parts.length - 1];
+        })
+        .filter((pid) => pid && numericPidPattern.test(pid))
+    );
+    if (!pids.size) {
+      return false;
+    }
+    let killed = false;
+    for (const pid of pids) {
+      const killResult = await safeExecCommand(`taskkill /PID ${pid} /F`);
+      killed = killResult.success || killed;
+    }
+    return killed;
+  }
+  const lsofResult = await safeExecCommand(`lsof -ti tcp:${normalizedPort}`);
+  const pids = new Set(
+    lsofResult.stdout
+      .split(/\s+/)
+      .map((pid) => pid.trim())
+      .filter((pid) => pid && numericPidPattern.test(pid))
+  );
+  let killed = false;
+  for (const pid of pids) {
+    const killResult = await safeExecCommand(`kill -9 ${pid}`);
+    killed = killResult.success || killed;
+  }
+  if (killed) {
+    return true;
+  }
+  const fuserResult = await safeExecCommand(`fuser -k -n tcp ${normalizedPort}`);
+  return fuserResult.success;
+}
+
+async function safeExecCommand(command: string): Promise<{ success: boolean; stdout: string; stderr: string }> {
+  try {
+    const { stdout, stderr } = await execAsync(command, { windowsHide: true });
+    return { success: true, stdout, stderr };
+  } catch (error) {
+    const stdout = (error as any)?.stdout ?? '';
+    const stderr = (error as any)?.stderr ?? '';
+    return { success: false, stdout, stderr };
+  }
+}
+
+function extractPortFromOauthError(error: unknown): number | null {
+  const message =
+    typeof error === 'string' ? error : error instanceof Error ? error.message : '';
+  const directMatch = message.match(/port\s+(\d{2,5})/i);
+  if (directMatch?.[1]) {
+    return Number(directMatch[1]);
+  }
+  const eaddrMatch = message.match(/EADDRINUSE[^0-9]*(\d{2,5})/i) ?? message.match(/:(\d{2,5})\b/);
+  if (eaddrMatch?.[1]) {
+    return Number(eaddrMatch[1]);
   }
   return null;
 }
