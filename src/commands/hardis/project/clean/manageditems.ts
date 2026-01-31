@@ -119,11 +119,16 @@ The command's technical implementation involves:
 
   private async folderContainsLocalItems(folder: string): Promise<boolean> {
     // Do not remove managed folders when there are local custom items defined on it
-    const subFiles = await glob(folder + '/**/*', { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
+    const subFiles = await glob('**/*', {
+      cwd: folder,
+      ignore: GLOB_IGNORE_PATTERNS,
+    });
     const standardItems = subFiles.filter((file) => {
-      return !fs.lstatSync(file).isDirectory() && !path.basename(file).startsWith(`${this.namespace}__`);
+      const fullPath = path.join(folder, file);
+      return !fs.lstatSync(fullPath).isDirectory() && !path.basename(file).startsWith(`${this.namespace}__`);
     });
     if (standardItems.length > 0) {
+
       return true;
     }
     return false;
