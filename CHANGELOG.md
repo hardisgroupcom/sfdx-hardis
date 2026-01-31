@@ -4,9 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- CI: Test docker images security using package generated from local sources
-- CI: Test security on Ubuntu based docker images
-- CI: avoid duplicate jobs
+- Upgrade dependencies
+- CI improvements:
+  - Test docker images security using package generated from local sources
+  - Test security on Ubuntu based docker images
+  - Avoid duplicate jobs
 
 ## [6.23.5] 2025-01-28
 
