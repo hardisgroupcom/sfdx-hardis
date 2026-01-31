@@ -64,11 +64,6 @@ RUN npm install --no-cache yarn -g && \
         fi && \
     echo 'y' | sf plugins install sfdx-git-delta && \
     echo 'y' | sf plugins install sfdmu && \
-    # Force patched fast-xml-parser to address CVE-2026-25128 across CLI and installed plugins
-    if [ -d "/usr/local/lib/node_modules/@salesforce/cli" ]; then npm --prefix /usr/local/lib/node_modules/@salesforce/cli install --omit=dev --no-package-lock --no-save fast-xml-parser@5.3.4 tar@6.2.1; fi && \
-    if [ -d "/root/.local/share/sf/node_modules/sfdx-hardis" ]; then npm --prefix /root/.local/share/sf/node_modules/sfdx-hardis install --omit=dev --no-package-lock --no-save fast-xml-parser@5.3.4 tar@6.2.1; fi && \
-    if [ -d "/root/.local/share/sf/node_modules/sfdx-git-delta" ]; then npm --prefix /root/.local/share/sf/node_modules/sfdx-git-delta install --omit=dev --no-package-lock --no-save fast-xml-parser@5.3.4 tar@6.2.1; fi && \
-    if [ -d "/root/.local/share/sf/node_modules/@cparra/apexdocs" ]; then npm --prefix /root/.local/share/sf/node_modules/@cparra/apexdocs install --omit=dev --no-package-lock --no-save fast-xml-parser@5.3.4 tar@6.2.1; fi && \
     sf version --verbose --json && \
     # Clean up npm cache and temporary files
     rm -rf /root/.npm/_cacache && \
