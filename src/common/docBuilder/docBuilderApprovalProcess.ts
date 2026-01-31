@@ -49,7 +49,7 @@ export class DocBuilderApprovalProcess extends DocBuilderRoot {
     ];
   }
 
-  public stripXmlForAi(): Promise<string> {
+  public async stripXmlForAi(): Promise<string> {
 
     const xmlObj = new XMLParser().parse(this.metadataXml);
 

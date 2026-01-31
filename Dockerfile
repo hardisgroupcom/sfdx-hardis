@@ -1,6 +1,6 @@
 # Docker image to run sfdx-hardis
 
-FROM python:3.12.10-alpine3.22
+FROM python:3.12.12-alpine3.23
 
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
 
@@ -20,7 +20,9 @@ RUN apk add --update --no-cache \
             freetype \
             harfbuzz \
             ca-certificates \
-            ttf-freefont && \
+        ttf-freefont && \
+    # Pull latest security patches for base packages (openssl, openjdk, etc.)
+    apk upgrade --no-cache && \
     # Clean up package cache
     rm -rf /var/cache/apk/*
 
@@ -42,13 +44,24 @@ ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 ARG SFDX_CLI_VERSION=latest
 ARG SFDX_HARDIS_VERSION=latest
+# Default to a placeholder so deploy workflows (remote install) do not fail on missing file
+ARG SFDX_HARDIS_TGZ=defaults/empty.tgz
+
+# Include pre-packaged plugin from the build context when provided
+COPY ${SFDX_HARDIS_TGZ} /tmp/sfdx-hardis.tgz
 
 # Install npm packages +install sfdx plugins & display versions
 RUN npm install --no-cache yarn -g && \
     npm install --no-cache @salesforce/cli@${SFDX_CLI_VERSION} -g && \
-    sf plugins install @salesforce/plugin-packaging && \
-    sf plugins install @salesforce/plugin-deploy-retrieve && \
-    echo 'y' | sf plugins install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
+        sf plugins install @salesforce/plugin-packaging && \
+        sf plugins install @salesforce/plugin-deploy-retrieve && \
+        # Prefer local plugin package (built from current sources); fallback to registry version
+        if echo 'y' | sf plugins install file:/tmp/sfdx-hardis.tgz; then \
+            echo 'Installed local sfdx-hardis package'; \
+        else \
+            echo 'Local package not found; installing sfdx-hardis@'"${SFDX_HARDIS_VERSION}"; \
+            echo 'y' | sf plugins install sfdx-hardis@${SFDX_HARDIS_VERSION}; \
+        fi && \
     echo 'y' | sf plugins install sfdx-git-delta && \
     echo 'y' | sf plugins install sfdmu && \
     sf version --verbose --json && \
