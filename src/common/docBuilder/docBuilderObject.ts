@@ -95,7 +95,7 @@ export class DocBuilderObject extends DocBuilderRoot {
     ];
   }
 
-  public stripXmlForAi(): Promise<string> {
+  public async stripXmlForAi(): Promise<string> {
     const xmlObj = new XMLParser().parse(this.metadataXml);
     // Remove record types picklist values
     if (xmlObj?.CustomObject?.recordTypes) {
@@ -122,7 +122,7 @@ export class DocBuilderObject extends DocBuilderRoot {
       delete xmlObj.CustomObject.listViews;
     }
     const xmlStripped = new XMLBuilder().build(xmlObj);
-    return xmlStripped
+    return xmlStripped;
   }
 
 }
