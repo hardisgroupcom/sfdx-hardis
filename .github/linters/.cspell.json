@@ -421,6 +421,7 @@
         "clickjack",
         "clientid",
         "cloudiscore",
+        "folderscan",
         "codecov",
         "codecoverage",
         "codestyle",

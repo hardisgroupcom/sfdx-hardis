@@ -64,6 +64,18 @@ Key functionalities:
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/) and can output Grafana, Slack and MsTeams Notifications.
 
+### Excel report example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-health-check-excel.jpg)
+
+### Grafana example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-health-check-grafana.jpg)
+
+### Slack example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-health-check-slack.jpg)
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -129,7 +141,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const scoreText = scoreValue != null ? `${scoreValue.toFixed(2)}%` : 'Not available';
 
     uxLog('action', this, c.cyan('Retrieve Security Health Check indicators...'));
-    const risksQuery = `SELECT Id, DurableId, RiskType, Setting, SettingGroup, SettingRiskCategory, OrgValue, OrgValueRaw, StandardValue, StandardValueRaw FROM SecurityHealthCheckRisks ORDER BY RiskType, Setting`;
+    const risksQuery = `SELECT Id, DurableId, RiskType, Setting, SettingGroup, SettingRiskCategory, OrgValue, StandardValue FROM SecurityHealthCheckRisks ORDER BY RiskType, Setting`;
     const risksResult = await soqlQueryTooling(risksQuery, conn);
     const riskRecords = (risksResult.records || []) as SecurityHealthCheckRisk[];
     this.healthCheckRisks = riskRecords.filter((risk) => risk.Id === this.healthCheckSummary.Id);
@@ -202,9 +214,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         SettingGroup: risk.SettingGroup,
         Setting: risk.Setting,
         OrgValue: risk.OrgValue,
-        OrgValueRaw: risk.OrgValueRaw,
         StandardValue: risk.StandardValue,
-        StandardValueRaw: risk.StandardValueRaw,
         SettingRiskCategory: risk.SettingRiskCategory,
         RiskType: risk.RiskType,
       };
@@ -346,8 +356,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     return risks
       .map((risk) => {
         const groupLabel = risk.SettingGroup ? ` (${risk.SettingGroup})` : '';
-        const orgValue = risk.OrgValue ?? risk.OrgValueRaw ?? 'N/A';
-        const standardValue = risk.StandardValue ?? risk.StandardValueRaw ?? 'N/A';
+        const orgValue = risk.OrgValue ?? 'N/A';
+        const standardValue = risk.StandardValue ?? 'N/A';
         return `• ${risk.Setting || 'Unknown'}${groupLabel}: Org=${orgValue} / Baseline=${standardValue}`;
       })
       .join('\n');
