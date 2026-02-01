@@ -94,6 +94,7 @@ You can force the daily run of all commands by defining env var `MONITORING_IGNO
 | [Detect limits issues](salesforce-monitoring-org-limits.md)                                                        | Daily     |
 | [Detect calls to deprecated API versions](salesforce-monitoring-deprecated-api-calls.md)                           | Daily     |
 | [Check Release Updates](salesforce-monitoring-release-updates.md)                                                  | Weekly    |
+| [Security Health Check](salesforce-monitoring-health-check.md)                                                     | Weekly    |
 | [Detect inactive users](salesforce-monitoring-inactive-users.md)                                                   | Weekly    |
 | [Detect not used Apex Classes (Batch,Schedulable,Queueable)](salesforce-monitoring-unused-apex-classes.md)         | Weekly    |
 | [Detect not used Connected Apps](salesforce-monitoring-unused-connected-apps.md)                                   | Weekly    |

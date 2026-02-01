@@ -80,6 +80,12 @@ export default class MonitorAll extends SfCommand<any> {
       frequency: 'weekly',
     },
     {
+      key: 'ORG_HEALTH_CHECK',
+      title: 'Run Salesforce Security Health Check',
+      command: 'sf hardis:org:monitor:health-check',
+      frequency: 'weekly',
+    },
+    {
       key: 'UNUSED_METADATAS',
       title: 'Detect custom labels and custom permissions that are not in use',
       command: 'sf hardis:lint:unusedmetadatas',

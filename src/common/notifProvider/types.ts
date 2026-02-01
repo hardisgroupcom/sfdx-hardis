@@ -26,6 +26,7 @@ export interface NotifMessage {
   | "UNUSED_APEX_CLASSES"
   | "CONNECTED_APPS"
   | "UNSECURED_CONNECTED_APPS"
+  | "ORG_HEALTH_CHECK"
   | "ORG_INFO"
   | "ORG_LIMITS"
   | "RELEASE_UPDATES"
