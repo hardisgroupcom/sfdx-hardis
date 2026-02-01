@@ -22,6 +22,10 @@ Sfdx-hardis command: [sf hardis:org:monitor:health-check](https://sfdx-hardis.cl
 
 Key: **ORG_HEALTH_CHECK**
 
+### Excel report example
+
+![](assets/images/screenshot-monitoring-health-check-excel.jpg)
+
 ### Grafana example
 
 ![](assets/images/screenshot-monitoring-health-check-grafana.jpg)

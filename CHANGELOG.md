@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.24.0] 2025-02-01
+
+- New command [hardis:org:monitor:health-check](https://sfdx-hardis.cloudity.com/hardis/org/monitor/health-check/) to analyze Salesforce Security Health Check and report deviations from recommended baseline.
+- [hardis:project:clean:manageditems](https://sfdx-hardis.cloudity.com/hardis/project/clean/manageditems/) fix: OS agnostic folderscan for local items in clean managed items command
+- [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/): Fix External Client App creation according to Api Version
 - Upgrade dependencies
 - CI improvements:
   - Test docker images security using package generated from local sources
