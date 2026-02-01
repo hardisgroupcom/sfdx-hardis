@@ -100,7 +100,6 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   protected warningScoreThreshold = parseNumberWithDefault(getEnvVar('HEALTH_CHECK_THRESHOLD_WARNING'), 80);
   protected errorScoreThreshold = parseNumberWithDefault(getEnvVar('HEALTH_CHECK_THRESHOLD_ERROR'), 60);
-  protected riskAttachmentLimit = Math.max(1, Math.round(parseNumberWithDefault(getEnvVar('HEALTH_CHECK_ATTACHMENT_LIMIT'), 10)));
 
   protected healthCheckSummary: any = null;
   protected healthCheckRisks: SecurityHealthCheckRisk[] = [];
@@ -145,13 +144,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         severityIcon: getSeverityIcon(scoreSeverity),
       },
       {
-        Category: 'High risk settings',
+        Category: 'Error severity settings',
         Value: riskCounts.high,
         severity: riskCounts.high > 0 ? 'error' : 'success',
         severityIcon: getSeverityIcon(riskCounts.high > 0 ? 'error' : 'success'),
       },
       {
-        Category: 'Medium risk settings',
+        Category: 'Warning severity settings',
         Value: riskCounts.medium,
         severity: riskCounts.medium > 0 ? 'warning' : 'success',
         severityIcon: getSeverityIcon(riskCounts.medium > 0 ? 'warning' : 'success'),
@@ -172,9 +171,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     uxLog(uxSeverityLevel, this, severityColor(`Security Health Check score: ${scoreText}`));
 
     if (riskCounts.high === 0 && riskCounts.medium === 0) {
-      uxLog('success', this, c.green('No high or medium risk indicators detected.'));
+      uxLog('success', this, c.green('No error or warning severity indicators detected.'));
     } else {
-      uxLog('warning', this, c.yellow(`Detected ${riskCounts.high} high and ${riskCounts.medium} medium risk indicators.`));
+      uxLog('warning', this, c.yellow(`Detected ${riskCounts.high} error-severity and ${riskCounts.medium} warning-severity indicators.`));
     }
 
     this.reportRows = this.buildReportRows();
@@ -196,25 +195,27 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   protected buildReportRows() {
     const reportRows = this.healthCheckRisks.map((risk) => {
-      const severity: NotifSeverity = risk.RiskType === 'HIGH_RISK' ? 'error' : risk.RiskType === 'MEDIUM_RISK' ? 'warning' : 'success';
+      const severity = this.getRowSeverity(risk);
       return {
-        SettingRiskCategory: risk.SettingRiskCategory,
-        RiskType: risk.RiskType,
+        SeverityIcon: getSeverityIcon(severity),
+        Severity: severity,
         SettingGroup: risk.SettingGroup,
         Setting: risk.Setting,
         OrgValue: risk.OrgValue,
         OrgValueRaw: risk.OrgValueRaw,
         StandardValue: risk.StandardValue,
         StandardValueRaw: risk.StandardValueRaw,
-        Severity: severity,
-        SeverityIcon: getSeverityIcon(severity),
+        SettingRiskCategory: risk.SettingRiskCategory,
+        RiskType: risk.RiskType,
       };
     });
     sortArray(reportRows, {
-      by: ['SettingRiskCategory', 'RiskType', 'Setting'],
-      order: ['asc', 'asc', 'asc'],
+      by: ['Severity', 'SettingRiskCategory', 'RiskType', 'Setting'],
+      order: ['Severity', "SettingRiskCategory", 'RiskType', 'asc'],
       customOrders: {
+        Severity: ['error', 'warning', 'info', 'success'],
         SettingRiskCategory: ['HIGH_RISK', 'MEDIUM_RISK', 'LOW_RISK', 'INFORMATIONAL'],
+        RiskType: ['HIGH_RISK', 'MEDIUM_RISK', 'MEETS_STANDARD'],
       },
     });
     return reportRows;
@@ -223,11 +224,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   protected getRiskCounts(): RiskCounts {
     const base: RiskCounts = { high: 0, medium: 0, meets: 0 };
     for (const risk of this.healthCheckRisks) {
-      if (risk.RiskType === 'HIGH_RISK') {
+      const severity = this.getRowSeverity(risk);
+      if (severity === 'error') {
         base.high += 1;
-      } else if (risk.RiskType === 'MEDIUM_RISK') {
+      } else if (severity === 'warning') {
         base.medium += 1;
-      } else if (risk.RiskType === 'MEETS_STANDARD') {
+      } else if (severity === 'success') {
         base.meets += 1;
       }
     }
@@ -255,6 +257,19 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     return Number.isFinite(parsed) ? parsed : null;
   }
 
+  protected getRowSeverity(risk: SecurityHealthCheckRisk): NotifSeverity {
+    if (risk.RiskType === 'MEETS_STANDARD') {
+      return 'success';
+    }
+    if (risk.RiskType === 'HIGH_RISK') {
+      return risk.SettingRiskCategory === 'HIGH_RISK' ? 'error' : 'warning';
+    }
+    if (risk.RiskType === 'MEDIUM_RISK') {
+      return 'warning';
+    }
+    return 'info';
+  }
+
   protected async buildNotifications(
     flags,
     scoreValue: number | null,
@@ -264,8 +279,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   ): Promise<NotifMessage> {
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
-    const highRisks = this.healthCheckRisks.filter((risk) => risk.RiskType === 'HIGH_RISK');
-    const mediumRisks = this.healthCheckRisks.filter((risk) => risk.RiskType === 'MEDIUM_RISK');
+    const risksWithSeverity = this.healthCheckRisks.map((risk) => ({ risk, severity: this.getRowSeverity(risk) }));
+    const highRisks = risksWithSeverity.filter((entry) => entry.severity === 'error').map((entry) => entry.risk);
+    const mediumRisks = risksWithSeverity.filter((entry) => entry.severity === 'warning').map((entry) => entry.risk);
 
     let notifSeverity: NotifSeverity = scoreSeverity;
     if (highRisks.length > 0) {
@@ -276,21 +292,21 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     let notifText = `Security Health Check score for ${orgMarkdown} is ${scoreText}.`;
     if (highRisks.length > 0) {
-      notifText = `Security Health Check score for ${orgMarkdown} is ${scoreText} with ${highRisks.length} high risk indicators.`;
+      notifText = `Security Health Check score for ${orgMarkdown} is ${scoreText} with ${highRisks.length} error-severity indicators.`;
     } else if (mediumRisks.length > 0) {
-      notifText = `Security Health Check score for ${orgMarkdown} is ${scoreText} with ${mediumRisks.length} medium risk indicators.`;
+      notifText = `Security Health Check score for ${orgMarkdown} is ${scoreText} with ${mediumRisks.length} warning-severity indicators.`;
     }
 
     const notifAttachments: MessageAttachment[] = [];
-    const highList = this.formatRisksForAttachment(highRisks.slice(0, this.riskAttachmentLimit));
+    const highList = this.formatRisksForAttachment(highRisks);
     if (highList) {
-      notifAttachments.push({ title: 'High risk settings', text: highList });
-      uxLog('error', this, c.red(`High risk settings:\n${highList}`));
+      notifAttachments.push({ title: 'Error severity settings', text: highList });
+      uxLog('error', this, c.red(`Error severity settings:\n${highList}`));
     }
-    const mediumList = this.formatRisksForAttachment(mediumRisks.slice(0, this.riskAttachmentLimit));
+    const mediumList = this.formatRisksForAttachment(mediumRisks);
     if (mediumList && notifSeverity !== 'error') {
-      notifAttachments.push({ title: 'Medium risk settings', text: mediumList });
-      uxLog('warning', this, c.yellow(`Medium risk settings:\n${mediumList}`));
+      notifAttachments.push({ title: 'Warning severity settings', text: mediumList });
+      uxLog('warning', this, c.yellow(`Warning severity settings:\n${mediumList}`));
     }
 
     if (notifSeverity === 'error') {
