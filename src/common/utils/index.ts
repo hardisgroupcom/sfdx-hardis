@@ -1114,7 +1114,7 @@ export async function filterPackageXml(
     uxLog("log", this, c.grey(`Removing items from namespaces ${options.removeNamespaces.join(',')} ...`));
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       type.members = type.members.filter((member: string) => {
-        const startsWithNamespace = options.removeNamespaces.filter((ns: string) => member.startsWith(ns)).length > 0;
+        const startsWithNamespace = options.removeNamespaces.filter((ns: string) => member.startsWith(ns + '__')).length > 0;
         if (startsWithNamespace) {
           const splits = member.split('.');
           if (
@@ -1609,7 +1609,7 @@ export async function generateExternalClientAppMetadata(
     <ipRelaxationPolicyType>Enforce</ipRelaxationPolicyType>
     <isClientCredentialsFlowEnabled>false</isClientCredentialsFlowEnabled>
     <isGuestCodeCredFlowEnabled>false</isGuestCodeCredFlowEnabled>
-    ${getApiVersionNumber(conn) >= 61 && getApiVersionNumber(conn) <= 63 ? '<isNamedUserJwtEnabled>true</isNamedUserJwtEnabled>': ''}
+    ${getApiVersionNumber(conn) >= 61 && getApiVersionNumber(conn) <= 63 ? '<isNamedUserJwtEnabled>true</isNamedUserJwtEnabled>' : ''}
     <isTokenExchangeFlowEnabled>false</isTokenExchangeFlowEnabled>
     <label>${appName}OAuthSettings_defaultPolicy</label>
     <permittedUsersPolicyType>AdminApprovedPreAuthorized</permittedUsersPolicyType>
