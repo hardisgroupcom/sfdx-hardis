@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:misc:servicenow-report](https://sfdx-hardis.cloudity.com/hardis/misc/servicenow-report/): Allow to add ORDER BY and LIMIT in the query definitions
+
 ## [6.24.0] 2025-02-01
 
 - New command [hardis:org:monitor:health-check](https://sfdx-hardis.cloudity.com/hardis/org/monitor/health-check/) to analyze Salesforce Security Health Check and report deviations from recommended baseline.

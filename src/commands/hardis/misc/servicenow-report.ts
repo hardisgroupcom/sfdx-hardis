@@ -215,7 +215,8 @@ Example:
       }
     }
     uxLog("action", this, c.cyan(`Fetching user stories from Salesforce...`));
-    const userStoriesQuery = `SELECT ${this.userStoriesConfig.fields.join(', ')} FROM ${this.userStoriesConfig.table} WHERE ${this.userStoriesConfig.where} ORDER BY ${this.userStoriesConfig.orderBy}`;
+    const userStoriesQuery = `SELECT ${this.userStoriesConfig.fields.join(', ')} FROM ${this.userStoriesConfig.table} WHERE ${this.userStoriesConfig.where}`
+      + (this.userStoriesConfig.orderBy && !this.userStoriesConfig.where.includes('ORDER BY') ? ` ORDER BY ${this.userStoriesConfig.orderBy}` : '');
     const userStoriesRes = await soqlQuery(userStoriesQuery, conn);
     this.userStories = userStoriesRes.records;
     const initialUserStoriesCount = this.userStories.length;
