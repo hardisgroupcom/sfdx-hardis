@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:diagnose:unusedusers](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/) Enhance unused users diagnosis with new license types and notification types
+
 ## [6.24.1] 2025-02-03
 
 - [hardis:misc:servicenow-report](https://sfdx-hardis.cloudity.com/hardis/misc/servicenow-report/): Allow to add ORDER BY and LIMIT in the query definitions
