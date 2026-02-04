@@ -7,6 +7,7 @@ import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { bulkQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
+import type { NotifMessage } from '../../../../common/notifProvider/index.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { CONSTANTS } from '../../../../config/index.js';
@@ -75,7 +76,7 @@ The command's technical implementation involves:
     }),
     licensetypes: Flags.string({
       char: 'l',
-      options: ['all', 'all-crm', 'all-paying'],
+      options: ['all', 'all-crm', 'all-paying', 'experience'],
       description: 'Type of licenses to check. If set, do not use licenseidentifiers option. In CI, default is all-crm',
     }),
     licenseidentifiers: Flags.string({
@@ -109,6 +110,7 @@ The command's technical implementation involves:
     'all-crm': 'SFDC,AUL,AUL1,AULL_IGHT',
     'all-paying':
       'SFDC,AUL,AUL1,AULL_IGHT,PID_Customer_Community,PID_Customer_Community_Login,PID_Partner_Community,PID_Partner_Community_Login',
+    experience: 'PID_Customer_Community,PID_Customer_Community_Login,PID_Partner_Community,PID_Partner_Community_Login',
   };
 
   protected returnActiveUsers = false;
@@ -152,11 +154,13 @@ The command's technical implementation involves:
 
     // Generate output CSV file
     if (this.users.length > 0) {
-      this.outputFile = await generateReportPath(
-        this.returnActiveUsers ? 'active-users' : 'unused-users',
-        this.outputFile
-      );
-      this.outputFilesRes = await generateCsvFile(this.users, this.outputFile, { fileTitle: "Inactive users found" });
+      const reportPrefix = this.getReportFilePrefix();
+      const periodLabel = this.getRangeLabel();
+      const reportTitle = this.returnActiveUsers
+        ? `Active users found (${periodLabel})`
+        : `Inactive users found (${periodLabel})`;
+      this.outputFile = await generateReportPath(reportPrefix, this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.users, this.outputFile, { fileTitle: reportTitle });
     }
 
     let summary;
@@ -213,6 +217,7 @@ The command's technical implementation involves:
             { value: 'all', title: 'All licenses types' },
             { value: `all-crm`, title: 'Salesforce Licenses' },
             { value: `all-paying`, title: 'Salesforce Licences + Experience + Other paying' },
+            { value: `experience`, title: 'Experience licenses only' },
           ],
         });
         this.licenseTypes = licenseTypesResponse.licensetypes;
@@ -299,12 +304,13 @@ The command's technical implementation involves:
         : `*${this.users.length}* active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`;
       attachments = [{ text: notifDetailText }];
     }
-    const metrics = this.returnActiveUsers ? { ActiveUsers: this.users.length } : { UnusedUsers: this.users.length };
+    const notificationType = this.getNotificationType();
+    const metrics = { [notificationType]: this.users.length };
     /* jscpd:ignore-start */
     // Send notifications
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
-      type: this.returnActiveUsers ? 'ACTIVE_USERS' : 'UNUSED_USERS',
+      type: notificationType,
       text: notifText,
       attachments: attachments,
       buttons: notifButtons,
@@ -316,5 +322,42 @@ The command's technical implementation involves:
     });
     /* jscpd:ignore-end */
     return [];
+  }
+
+  private getNotificationType(): NotifMessage['type'] {
+    const normalizedLicenseType = (this.licenseTypes || '').toLowerCase();
+    const days = this.lastNdays ?? 0;
+    if (!this.returnActiveUsers) {
+      if (normalizedLicenseType === 'all-crm' && days === 180) {
+        return 'UNUSED_USERS_CRM_6_MONTHS';
+      }
+      if (normalizedLicenseType === 'experience' && days === 180) {
+        return 'UNUSED_USERS_EXPERIENCE_6_MONTHS';
+      }
+      return 'UNUSED_USERS';
+    }
+    if (normalizedLicenseType === 'all-crm' && days === 7) {
+      return 'ACTIVE_USERS_CRM_WEEKLY';
+    }
+    if (normalizedLicenseType === 'experience' && days === 30) {
+      return 'ACTIVE_USERS_EXPERIENCE_MONTHLY';
+    }
+    return 'ACTIVE_USERS';
+  }
+
+  private getReportFilePrefix(): string {
+    const base = this.getNotificationType().toLowerCase().replace(/_/g, '-');
+    const suffix = this.getRangeSuffix();
+    return `${base}-${suffix}`;
+  }
+
+  private getRangeSuffix(): string {
+    const days = this.lastNdays ?? 0;
+    return days > 0 ? `last-${days}-days` : 'custom-period';
+  }
+
+  private getRangeLabel(): string {
+    const days = this.lastNdays ?? 0;
+    return days > 0 ? `last ${days} days` : 'custom period';
   }
 }
