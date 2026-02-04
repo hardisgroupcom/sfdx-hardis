@@ -13,48 +13,48 @@ export default class MonitorAll extends SfCommand<any> {
   public static title = 'Monitor org';
 
   public static monitoringCommandsDefault = [
-    /*    {
-          key: 'AUDIT_TRAIL',
-          title: 'Detect suspect setup actions in major org',
-          command: 'sf hardis:org:diagnose:audittrail',
-          frequency: 'daily',
-        },
-        {
-          key: 'LEGACY_API',
-          title: 'Detect calls to deprecated API versions',
-          command: 'sf hardis:org:diagnose:legacyapi',
-          frequency: 'daily',
-        },
-        {
-          key: 'ORG_LIMITS',
-          title: 'Detect if org limits are close to be reached',
-          command: 'sf hardis:org:monitor:limits',
-          frequency: 'daily',
-        },
-        {
-          key: 'UNSECURED_CONNECTED_APPS',
-          title: 'Detect unsecured Connected Apps in an org',
-          command: 'sf hardis:org:diagnose:unsecure-connected-apps',
-          frequency: 'daily',
-        },
-        {
-          key: 'LICENSES',
-          title: 'Extract licenses information',
-          command: 'sf hardis:org:diagnose:licenses',
-          frequency: 'weekly',
-        },
-        {
-          key: 'LINT_ACCESS',
-          title: 'Detect custom elements with no access rights defined in permission sets',
-          command: 'sf hardis:lint:access',
-          frequency: 'weekly',
-        },
-        {
-          key: 'UNUSED_LICENSES',
-          title: 'Detect permission set licenses that are assigned to users that do not need them',
-          command: 'sf hardis:org:diagnose:unusedlicenses',
-          frequency: 'weekly',
-        }, */
+    {
+      key: 'AUDIT_TRAIL',
+      title: 'Detect suspect setup actions in major org',
+      command: 'sf hardis:org:diagnose:audittrail',
+      frequency: 'daily',
+    },
+    {
+      key: 'LEGACY_API',
+      title: 'Detect calls to deprecated API versions',
+      command: 'sf hardis:org:diagnose:legacyapi',
+      frequency: 'daily',
+    },
+    {
+      key: 'ORG_LIMITS',
+      title: 'Detect if org limits are close to be reached',
+      command: 'sf hardis:org:monitor:limits',
+      frequency: 'daily',
+    },
+    {
+      key: 'UNSECURED_CONNECTED_APPS',
+      title: 'Detect unsecured Connected Apps in an org',
+      command: 'sf hardis:org:diagnose:unsecure-connected-apps',
+      frequency: 'daily',
+    },
+    {
+      key: 'LICENSES',
+      title: 'Extract licenses information',
+      command: 'sf hardis:org:diagnose:licenses',
+      frequency: 'weekly',
+    },
+    {
+      key: 'LINT_ACCESS',
+      title: 'Detect custom elements with no access rights defined in permission sets',
+      command: 'sf hardis:lint:access',
+      frequency: 'weekly',
+    },
+    {
+      key: 'UNUSED_LICENSES',
+      title: 'Detect permission set licenses that are assigned to users that do not need them',
+      command: 'sf hardis:org:diagnose:unusedlicenses',
+      frequency: 'weekly',
+    },
     {
       key: 'UNUSED_USERS',
       title: 'Detect active users without recent logins',
@@ -85,7 +85,6 @@ export default class MonitorAll extends SfCommand<any> {
       command: 'sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes experience --lastndays 30',
       frequency: 'weekly',
     },
-    /*
     {
       key: 'ORG_INFO',
       title: 'Get org info + SF instance info + next major upgrade date',
@@ -134,7 +133,6 @@ export default class MonitorAll extends SfCommand<any> {
       command: 'sf hardis:lint:missingattributes',
       frequency: 'weekly',
     },
-    */
   ];
 
   public static description = `Monitor org, generate reports and sends notifications
