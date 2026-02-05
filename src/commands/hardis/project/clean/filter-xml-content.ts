@@ -175,7 +175,7 @@ The command's technical implementation involves:
             // Found matching type tag
             found = true;
             uxLog("other", this, '\nFound type: ' + eltKey);
-            uxLog("other", this, elementValue[eltKey]);
+            uxLog("other", this, JSON.stringify(elementValue[eltKey], null, 2));
             // Filter type values
             const typeValues = elementValue[eltKey];
             const newTypeValues: any[] = [];
