@@ -158,7 +158,7 @@ export async function completeAttributesDescriptionWithAi(attributesMarkdown: st
   }
   if (await AiProvider.isAiAvailable()) {
     // Invoke AI Service
-    const prompt = AiProvider.buildPrompt("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", { "MARKDOWN": attributesMarkdown, "OBJECT_NAME": objectName });
+    const prompt = await AiProvider.buildPrompt("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", { "MARKDOWN": attributesMarkdown, "OBJECT_NAME": objectName });
     const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD");
     // Replace description in markdown
     if (aiResponse?.success) {

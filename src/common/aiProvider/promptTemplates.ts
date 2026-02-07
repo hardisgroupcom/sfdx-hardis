@@ -60,7 +60,7 @@ function getPromptTemplate(template: PromptTemplate): PromptTemplateDefinition {
 // Loads a prompt variable, allowing override from local file, with caching
 const promptVariableCache: Record<string, string> = {};
 
-function getPromptVariable(variable: PromptVariable): string {
+async function getPromptVariable(variable: PromptVariable): Promise<string> {
   if (promptVariableCache[variable]) {
     return promptVariableCache[variable];
   }
@@ -84,13 +84,13 @@ function getPromptVariable(variable: PromptVariable): string {
     }
   }
 
-  const promptsLanguage = UtilsAi.getPromptsLanguage();
+  const promptsLanguage = await UtilsAi.getPromptsLanguage();
   const value = variableData.text?.[promptsLanguage] || variableData.text?.["en"] || "";
   promptVariableCache[variable] = value;
   return value;
 }
 
-export function buildPromptFromTemplate(template: PromptTemplate, variables: object): string {
+export async function buildPromptFromTemplate(template: PromptTemplate, variables: object): Promise<string> {
   const templateData = getPromptTemplate(template);
   const missingVariables = templateData.variables.filter((variable) => !variables[variable.name]);
   if (missingVariables.length > 0) {
@@ -103,12 +103,12 @@ export function buildPromptFromTemplate(template: PromptTemplate, variables: obj
     }
   }
 
-  const promptsLanguage = UtilsAi.getPromptsLanguage();
+  const promptsLanguage = await UtilsAi.getPromptsLanguage();
   let prompt: string = process.env?.[template] || templateData.text?.[promptsLanguage] || (templateData.text?.["en"] + `\n\nIMPORTANT: Please reply in the language corresponding to ISO code "${promptsLanguage}" (for example, in french for "fr", in english for "en", in german for "de", etc.)`);
 
   // Replace prompt variables first (format: {{VARIABLE_NAME}})
   for (const variableName of Object.keys(PROMPT_VARIABLES) as PromptVariable[]) {
-    const variableContent = getPromptVariable(variableName);
+    const variableContent = await getPromptVariable(variableName);
     prompt = prompt.replaceAll(`{{${variableName}}}`, variableContent);
   }
 

@@ -112,8 +112,8 @@ export abstract class AiProvider {
     }
   }
 
-  static buildPrompt(template: PromptTemplate, variables: object): string {
-    return buildPromptFromTemplate(template, variables);
+  static async buildPrompt(template: PromptTemplate, variables: object): Promise<string> {
+    return await buildPromptFromTemplate(template, variables);
   }
 
 }

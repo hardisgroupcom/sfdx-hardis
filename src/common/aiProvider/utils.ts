@@ -3,15 +3,31 @@ import path from 'path';
 import fs from 'fs-extra';
 import { XMLParser } from "fast-xml-parser";
 import farmhash from 'farmhash';
+import { getConfig } from "../../config/index.js";
 
 export class UtilsAi {
-  public static getPromptsLanguage(): string {
-    return process.env.PROMPTS_LANGUAGE || "en";
+  public static async getPromptsLanguage(): Promise<string> {
+    let strLanguage: string | null = null;
+    if (process.env.PROMPTS_LANGUAGE) {
+      strLanguage = process.env.PROMPTS_LANGUAGE;
+    }
+    else {
+      const config = await getConfig("user", { cache: true });
+      if (config.promptsLanguage) {
+        strLanguage = config.promptsLanguage;
+      }
+    }
+    if (strLanguage) {
+      const languages = strLanguage.split(",").map(lang => lang.trim());
+      // If there are multiple languages, get the first one
+      return languages[0];
+    }
+    return "en";
   }
 
   public static async findAiCache(template: PromptTemplate, promptParameters: any[], uniqueId: string): Promise<{ success: boolean, cacheText?: string, fingerPrint: string, aiCacheDirFile: string }> {
     const fingerPrint = this.getFingerPrint(promptParameters);
-    const lang = this.getPromptsLanguage();
+    const lang = await this.getPromptsLanguage();
 
     // Manual override by user
     const aiManualOverride = path.join("docs", "cache-ai-results", `${lang}-${template}-${uniqueId}.md`);

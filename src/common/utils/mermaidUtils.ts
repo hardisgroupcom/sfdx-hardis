@@ -727,7 +727,7 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
   }
   if (await AiProvider.isAiAvailable()) {
     // Invoke AI Service
-    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW_DIFF", { "FLOW_XML_NEW": flowXmlNewStripped, "FLOW_XML_PREVIOUS": flowXmlPreviousStripped });
+    const prompt = await AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW_DIFF", { "FLOW_XML_NEW": flowXmlNewStripped, "FLOW_XML_PREVIOUS": flowXmlPreviousStripped });
     const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_FLOW_DIFF");
     // Replace description in markdown
     if (aiResponse?.success) {

@@ -50,7 +50,7 @@ export class DocBuilderRoles {
       const variables = {
         ROLES_DESCRIPTION: rolesStrings
       };
-      const prompt = AiProvider.buildPrompt(promptKey, variables);
+      const prompt = await AiProvider.buildPrompt(promptKey, variables);
       const aiResponse = await AiProvider.promptAi(prompt, promptKey);
       if (aiResponse?.success) {
         let responseText = aiResponse.promptResponse || "No AI description available";
