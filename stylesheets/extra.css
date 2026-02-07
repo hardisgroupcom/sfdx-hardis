@@ -1,0 +1,72 @@
+/* Force all sidebar/menu links in dark mode to be white for consistency */
+[data-md-color-scheme="slate"] .md-nav__link,
+[data-md-color-scheme="slate"] .md-nav__link--active,
+[data-md-color-scheme="slate"] .md-nav__item--active>.md-nav__link,
+[data-md-color-scheme="slate"] .md-nav__item--nested>.md-nav__link,
+[data-md-color-scheme="slate"] .md-nav__link:visited,
+[data-md-color-scheme="slate"] .md-nav__link:focus,
+[data-md-color-scheme="slate"] .md-nav__link:hover {
+  color: #fff !important;
+}
+
+/* stylelint-disable SelectorFormat */
+.md-typeset__table {
+  min-width: 100%;
+}
+
+.md-typeset table:not([class]) {
+  display: table;
+}
+
+/* light mode table header bgcolor */
+.md-typeset__table th {
+  background-color: #f2edfe;
+}
+
+/* dark mode table header bgcolor */
+[data-md-color-scheme="slate"] .md-typeset__table th {
+  background-color: hsla(var(--md-hue), 25%, 25%, 1)
+}
+
+/* light mode alternating table bg colors */
+.md-typeset__table tr:nth-child(2n) {
+  background-color: #f8f8f8;
+}
+
+/* dark mode alternating table bg colors */
+[data-md-color-scheme="slate"] .md-typeset__table tr:nth-child(2n) {
+  background-color: hsla(var(--md-hue), 25%, 25%, 1)
+}
+
+:root {
+  --md-primary-fg-color: #0057B8;
+  --md-primary-bg-color: #F5F7FA;
+  --md-accent-fg-color: #FFB81C;
+  --md-footer-bg-color: #1B1464;
+  --md-footer-fg-color: #FFB81C;
+  --md-header-bg-color: #1B1464;
+  --md-header-fg-color: #FFB81C;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #FFB81C;
+  /* Use accent yellow for primary text for better contrast */
+  --md-primary-bg-color: #181B2A;
+  --md-accent-fg-color: #FFB81C;
+  --md-footer-bg-color: #181B2A;
+  --md-footer-fg-color: #FFB81C;
+  --md-header-bg-color: #181B2A;
+  --md-header-fg-color: #FFB81C;
+}
+
+/* Improve link readability in dark mode */
+[data-md-color-scheme="slate"] a,
+[data-md-color-scheme="slate"] .md-typeset a {
+  color: #FFB81C;
+}
+
+/* Optional: Make code blocks and inline code more readable in dark mode */
+[data-md-color-scheme="slate"] code,
+[data-md-color-scheme="slate"] pre {
+  color: #FFB81C;
+}
