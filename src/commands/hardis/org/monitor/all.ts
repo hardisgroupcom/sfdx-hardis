@@ -62,9 +62,27 @@ export default class MonitorAll extends SfCommand<any> {
       frequency: 'weekly',
     },
     {
-      key: 'ACTIVE_USERS',
+      key: 'UNUSED_USERS_CRM_6_MONTHS',
+      title: 'Detect active users without recent logins',
+      command: 'sf hardis:org:diagnose:unusedusers --licensetypes all-crm --lastndays 180',
+      frequency: 'weekly',
+    },
+    {
+      key: 'UNUSED_USERS_EXPERIENCE_6_MONTHS',
+      title: 'Detect active users without recent logins',
+      command: 'sf hardis:org:diagnose:unusedusers --licensetypes experience --lastndays 180',
+      frequency: 'weekly',
+    },
+    {
+      key: 'ACTIVE_USERS_CRM_WEEKLY',
       title: 'Detect active users with recent logins',
-      command: 'sf hardis:org:diagnose:unusedusers --returnactiveusers',
+      command: 'sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes all-crm --lastndays 7',
+      frequency: 'weekly',
+    },
+    {
+      key: 'ACTIVE_USERS_EXPERIENCE_MONTHLY',
+      title: 'Detect active users with recent logins',
+      command: 'sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes experience --lastndays 30',
       frequency: 'weekly',
     },
     {
@@ -77,6 +95,12 @@ export default class MonitorAll extends SfCommand<any> {
       key: 'RELEASE_UPDATES',
       title: 'Gather warnings about incoming and overdue Release Updates',
       command: 'sf hardis:org:diagnose:releaseupdates',
+      frequency: 'weekly',
+    },
+    {
+      key: 'ORG_HEALTH_CHECK',
+      title: 'Run Salesforce Security Health Check',
+      command: 'sf hardis:org:monitor:health-check',
       frequency: 'weekly',
     },
     {

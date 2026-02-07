@@ -4,6 +4,24 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:diagnose:unusedusers](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/) Enhance unused users diagnosis with new license types and notification types
+
+## [6.24.1] 2025-02-03
+
+- [hardis:misc:servicenow-report](https://sfdx-hardis.cloudity.com/hardis/misc/servicenow-report/): Allow to add ORDER BY and LIMIT in the query definitions
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): Fix filtering of namespaced metadatas
+
+## [6.24.0] 2025-02-01
+
+- New command [hardis:org:monitor:health-check](https://sfdx-hardis.cloudity.com/hardis/org/monitor/health-check/) to analyze Salesforce Security Health Check and report deviations from recommended baseline.
+- [hardis:project:clean:manageditems](https://sfdx-hardis.cloudity.com/hardis/project/clean/manageditems/) fix: OS agnostic folderscan for local items in clean managed items command
+- [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/): Fix External Client App creation according to Api Version
+- Upgrade dependencies
+- CI improvements:
+  - Test docker images security using package generated from local sources
+  - Test security on Ubuntu based docker images
+  - Avoid duplicate jobs
+
 ## [6.23.5] 2025-01-28
 
 - Authentication: When callback url port is busy, try to kill the ghost process then try again to run `sf org login web`
