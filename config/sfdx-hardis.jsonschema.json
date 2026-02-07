@@ -69,7 +69,19 @@
       "$id": "#/properties/langchainLlmProvider",
       "description": "LLM provider identifier used with LangChain (ex: openai, anthropic, google-genai, ollama). Equivalent to LANGCHAIN_LLM_PROVIDER env var.",
       "title": "LangChain provider",
-      "type": "string"
+      "type": "string",
+      "enum": [
+        "openai",
+        "anthropic",
+        "google-genai",
+        "ollama"
+      ],
+      "enumNames": [
+        "OpenAI",
+        "Anthropic Claude",
+        "Google Gemini (GenAI)",
+        "Ollama"
+      ]
     },
     "langchainLlmModel": {
       "$id": "#/properties/langchainLlmModel",
