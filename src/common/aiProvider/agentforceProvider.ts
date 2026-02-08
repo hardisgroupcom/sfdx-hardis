@@ -88,7 +88,7 @@ export class AgentforceProvider extends AiProviderRoot {
           }
         }
       },
-      "outputLanguage": UtilsAi.getPromptsLanguage(),
+      "outputLanguage": (await UtilsAi.getPromptsLanguage()),
       "additionalConfig": {
         /*  "numGenerations": 1,
             "temperature": 0,
