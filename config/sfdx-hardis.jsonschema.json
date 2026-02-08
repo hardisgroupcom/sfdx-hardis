@@ -60,7 +60,7 @@
   "properties": {
     "promptsLanguage": {
       "$id": "#/properties/promptsLanguage",
-      "description": "Language used for AI-generated prompts. If not set, the default language is English (en). Supported languages are defined in the code but not limited to: English (en), French (fr), Spanish (es), German (de), Italian (it), Portuguese (pt). If multiple languages, separate them with comma and the first one will be used as default language for prompts. (mirrors PROMPTS_LANGUAGE environment variable)",
+      "description": "Language used for AI-generated prompts. If not set, the default language is English (en). Supported languages are defined in the code but not limited to: English (en), French (fr), Spanish (es), German (de), Italian (it), Portuguese (pt). If multiple languages, separate them with comma (ex: \"en,fr,de\") and the first one will be used as default language for prompts. (mirrors PROMPTS_LANGUAGE environment variable)",
       "title": "Prompts language(s)",
       "type": "string",
       "default": "en"
