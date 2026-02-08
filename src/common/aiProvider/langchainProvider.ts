@@ -52,7 +52,7 @@ export class LangChainProvider extends AiProviderRoot {
   }
 
   private static async resolveConfig(): Promise<LangChainResolvedConfig | null> {
-    const projectConfig = await getConfig('user');
+    const projectConfig = await getConfig('user', { cache: true });
     const rootConfig = projectConfig || {};
     const provider = getEnvVar("LANGCHAIN_LLM_PROVIDER") || rootConfig.langchainLlmProvider || rootConfig.LANGCHAIN_LLM_PROVIDER;
     const modelName = getEnvVar("LANGCHAIN_LLM_MODEL") || rootConfig.langchainLlmModel || rootConfig.LANGCHAIN_LLM_MODEL;

@@ -13,7 +13,7 @@ interface BooleanFlagResult {
 }
 
 export async function resolveBooleanFlag(options: BooleanFlagOptions): Promise<BooleanFlagResult> {
-  const projectConfig = await getConfig("user");
+  const projectConfig = await getConfig("user", { cache: true });
   const rootConfig = projectConfig || {};
   const envValue = parseBoolean(getEnvVar(options.envVar));
   const configValue = readBooleanConfig(rootConfig, options.configKey, options.legacyConfigKey);
