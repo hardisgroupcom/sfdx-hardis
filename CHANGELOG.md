@@ -4,7 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
+  - Refactor to parallelize generation and LLMs invocation (default: 5, can be overridden with property promptsParallelCallNumber or variable PROMPTS_PARALLEL_CALL_NUMBER )
 - [hardis:org:diagnose:unusedusers](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/) Enhance unused users diagnosis with new license types and notification types
+- LLM Integration: allow to configure settings in .sfdx-hardis.yml.
 
 ## [6.24.1] 2025-02-03
 

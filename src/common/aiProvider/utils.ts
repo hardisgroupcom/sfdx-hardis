@@ -84,4 +84,21 @@ export class UtilsAi {
   public static normalizeString(str: string) {
     return str.normalize().trim().replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\r\n/g, '\n');
   }
+
+  public static async getPromptsParallelCallNumber(): Promise<number> {
+    if (process.env.PROMPTS_PARALLEL_CALL_NUMBER) {
+      const envVal = parseInt(process.env.PROMPTS_PARALLEL_CALL_NUMBER, 10);
+      if (!isNaN(envVal) && envVal > 0) {
+        return envVal;
+      }
+    }
+    const config = await getConfig("user", { cache: true });
+    if (config.promptsParallelCallNumber) {
+      const configVal = parseInt(String(config.promptsParallelCallNumber), 10);
+      if (!isNaN(configVal) && configVal > 0) {
+        return configVal;
+      }
+    }
+    return 5;
+  }
 }

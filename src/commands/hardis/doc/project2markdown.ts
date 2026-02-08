@@ -40,6 +40,8 @@ import { DocBuilderRoles } from '../../../common/docBuilder/docBuilderRoles.js';
 import { DocBuilderPackage } from '../../../common/docBuilder/docBuilderPackage.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../common/utils/gitUtils.js';
+import { PromisePool } from '@supercharge/promise-pool';
+import { UtilsAi } from '../../../common/aiProvider/utils.js';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -436,14 +438,15 @@ ${Project2Markdown.htmlInstructions}
       return;
     }
     const apexForMenu: any = { "All Apex Classes": "apex/index.md" }
-    WebSocketClient.sendProgressStartMessage("Generating Apex documentation...", apexFiles.length);
-    let counter = 0;
+
+    // Phase 1: Collect data and prepare work items
+    type ApexWorkItem = { apexName: string; apexContent: string; mdFile: string; needsAi: boolean; apexMdContent: string; mermaidClassDiagram: string };
+    const workItems: ApexWorkItem[] = [];
     for (const apexFile of apexFiles) {
       const apexName = path.basename(apexFile, ".cls").replace(".trigger", "");
       const apexContent = await fs.readFile(apexFile, "utf8");
       const mdFile = path.join(this.outputMarkdownRoot, "apex", apexName + ".md");
       if (fs.existsSync(mdFile)) {
-        const apexName = path.basename(apexFile, ".cls").replace(".trigger", "");
         apexForMenu[apexName] = "apex/" + apexName + ".md";
         let apexMdContent = await fs.readFile(mdFile, "utf8");
         // Replace object links
@@ -459,22 +462,36 @@ ${Project2Markdown.htmlInstructions}
           }
           const firstHeading = apexMdContent.indexOf("## ");
           apexMdContent = apexMdContent.substring(0, firstHeading) + insertion + apexMdContent.substring(firstHeading);
-          const apexDocBuilder = new DocBuilderApex(apexName, apexContent, "", {
-            "CLASS_NAME": apexName,
-            "APEX_CODE": apexContent
-          });
-          apexDocBuilder.markdownDoc = apexMdContent;
-          apexMdContent = await apexDocBuilder.completeDocWithAiDescription();
-          await fs.writeFile(mdFile, getMetaHideLines() + apexMdContent);
-        }
-        uxLog("log", this, c.grey(`Generated markdown for Apex class ${apexName}`));
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(mdFile);
+          workItems.push({ apexName, apexContent, mdFile, needsAi: true, apexMdContent, mermaidClassDiagram });
+        } else {
+          workItems.push({ apexName, apexContent, mdFile, needsAi: false, apexMdContent: "", mermaidClassDiagram: "" });
         }
       }
-      counter++;
-      WebSocketClient.sendProgressStepMessage(counter, apexFiles.length);
     }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating Apex documentation...", workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        if (item.needsAi) {
+          const apexDocBuilder = new DocBuilderApex(item.apexName, item.apexContent, "", {
+            "CLASS_NAME": item.apexName,
+            "APEX_CODE": item.apexContent
+          });
+          apexDocBuilder.markdownDoc = item.apexMdContent;
+          const updatedContent = await apexDocBuilder.completeDocWithAiDescription();
+          await fs.writeFile(item.mdFile, getMetaHideLines() + updatedContent);
+        }
+        uxLog("log", this, c.grey(`Generated markdown for Apex class ${item.apexName}`));
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(item.mdFile);
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
     WebSocketClient.sendProgressEndMessage();
     this.addNavNode("Apex", apexForMenu);
 
@@ -501,13 +518,12 @@ ${Project2Markdown.htmlInstructions}
         packages.push(pckg);
       }
     }
-    WebSocketClient.sendProgressStartMessage("Generating Installed Packages documentation...", packages.length);
-    let counter = 0;
-    // Process packages
+
+    // Phase 1: Collect data and prepare work items
+    const workItems: { packageName: string; mdFile: string; pckg: any; packageMetadatas: string; tmpOutput: string; mdFileBad: string }[] = [];
     for (const pckg of packages) {
       const packageName = pckg.SubscriberPackageName;
       const mdFile = path.join(this.outputMarkdownRoot, "packages", makeFileNameGitCompliant(packageName) + ".md");
-      // Generate package page and add it to menu
       packagesForMenu[packageName] = "packages/" + makeFileNameGitCompliant(packageName) + ".md";
       this.packageDescriptions.push({
         name: packageName,
@@ -525,22 +541,31 @@ ${Project2Markdown.htmlInstructions}
           packageMetadatas = await fs.readFile(tmpOutput, "utf8");
         }
       }
-      // Add Packages in documentation
-      await new DocBuilderPackage(makeFileNameGitCompliant(packageName), pckg, mdFile, {
-        "PACKAGE_METADATAS": packageMetadatas,
-        "PACKAGE_FILE": tmpOutput
-      }).generateMarkdownFileFromXml();
-      if (this.withPdf) {
-        await generatePdfFileFromMarkdown(mdFile);
-      }
-      // Recovery to save git repos: Kill existing file if it has been created with forbidden characters
       const mdFileBad = path.join(this.outputMarkdownRoot, "packages", packageName + ".md");
-      if (mdFileBad !== mdFile && fs.existsSync(mdFileBad)) {
-        await fs.remove(mdFileBad);
-      }
-      counter++;
-      WebSocketClient.sendProgressStepMessage(counter, packages.length);
+      workItems.push({ packageName, mdFile, pckg, packageMetadatas, tmpOutput, mdFileBad });
     }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating Installed Packages documentation...", workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        await new DocBuilderPackage(makeFileNameGitCompliant(item.packageName), item.pckg, item.mdFile, {
+          "PACKAGE_METADATAS": item.packageMetadatas,
+          "PACKAGE_FILE": item.tmpOutput
+        }).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(item.mdFile);
+        }
+        // Recovery to save git repos: Kill existing file if it has been created with forbidden characters
+        if (item.mdFileBad !== item.mdFile && fs.existsSync(item.mdFileBad)) {
+          await fs.remove(item.mdFileBad);
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
     this.addNavNode("Packages", packagesForMenu);
     // Write index file for packages folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "packages"));
@@ -553,13 +578,13 @@ ${Project2Markdown.htmlInstructions}
     const packageDirs = this.project?.getPackageDirectories() || [];
     const pageFiles = await listPageFiles(packageDirs);
     const pagesForMenu: any = { "All Lightning pages": "pages/index.md" }
-    WebSocketClient.sendProgressStartMessage("Generating Lightning Pages documentation...", pageFiles.length);
-    let counter = 0;
+
+    // Phase 1: Collect data and prepare work items
+    const workItems: { pageName: string; mdFile: string; pageXml: string }[] = [];
     for (const pagefile of pageFiles) {
       const pageName = path.basename(pagefile, ".flexipage-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "pages", pageName + ".md");
       pagesForMenu[pageName] = "pages/" + pageName + ".md";
-      // Add Pages in documentation
       const pageXml = await fs.readFile(pagefile, "utf8");
       const pageXmlParsed = new XMLParser().parse(pageXml);
       this.pageDescriptions.push({
@@ -567,13 +592,23 @@ ${Project2Markdown.htmlInstructions}
         type: prettifyFieldName(pageXmlParsed?.FlexiPage?.type || "Unknown"),
         impactedObjects: this.allObjectsNames.filter(objectName => pageXml.includes(`${objectName}`))
       });
-      await new DocBuilderPage(pageName, pageXml, mdFile).generateMarkdownFileFromXml();
-      if (this.withPdf) {
-        await generatePdfFileFromMarkdown(mdFile);
-      }
-      counter++;
-      WebSocketClient.sendProgressStepMessage(counter, pageFiles.length);
+      workItems.push({ pageName, mdFile, pageXml });
     }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating Lightning Pages documentation...", workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        await new DocBuilderPage(item.pageName, item.pageXml, item.mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(item.mdFile);
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
     WebSocketClient.sendProgressEndMessage();
     this.addNavNode("Lightning Pages", pagesForMenu);
 
@@ -592,8 +627,9 @@ ${Project2Markdown.htmlInstructions}
       uxLog("log", this, c.yellow("No profile found in the project"));
       return;
     }
-    WebSocketClient.sendProgressStartMessage("Generating Profiles documentation...", profilesFiles.length);
-    let counter = 0;
+
+    // Phase 1: Collect data and prepare work items
+    const workItems: { profileName: string; mdFile: string; profileXml: string }[] = [];
     for (const profileFile of profilesFiles) {
       const profileName = path.basename(profileFile, ".profile-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "profiles", profileName + ".md");
@@ -605,14 +641,23 @@ ${Project2Markdown.htmlInstructions}
         userLicense: prettifyFieldName(profileXmlParsed?.Profile?.userLicense || "Unknown"),
         impactedObjects: this.allObjectsNames.filter(objectName => profileXml.includes(`${objectName}`))
       });
-      // Add Profiles code in documentation
-      await new DocBuilderProfile(profileName, profileXml, mdFile).generateMarkdownFileFromXml();
-      if (this.withPdf) {
-        await generatePdfFileFromMarkdown(mdFile);
-      }
-      counter++;
-      WebSocketClient.sendProgressStepMessage(counter, profilesFiles.length);
+      workItems.push({ profileName, mdFile, profileXml });
     }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating Profiles documentation...", workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        await new DocBuilderProfile(item.profileName, item.profileXml, item.mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(item.mdFile);
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
     WebSocketClient.sendProgressEndMessage();
     this.addNavNode("Profiles", profilesForMenu);
     // Write index file for profiles folder
@@ -630,8 +675,9 @@ ${Project2Markdown.htmlInstructions}
       uxLog("log", this, c.yellow("No permission set found in the project"));
       return;
     }
-    WebSocketClient.sendProgressStartMessage("Generating Permission Sets documentation...", psFiles.length);
-    let counter = 0;
+
+    // Phase 1: Collect data and prepare work items
+    const workItems: { psName: string; mdFile: string; psXml: string }[] = [];
     for (const psFile of psFiles) {
       const psName = path.basename(psFile, ".permissionset-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "permissionsets", psName + ".md");
@@ -643,17 +689,26 @@ ${Project2Markdown.htmlInstructions}
         userLicense: prettifyFieldName(psXmlParsed?.PermissionSet?.license || "Unknown"),
         impactedObjects: this.allObjectsNames.filter(objectName => psXml.includes(`${objectName}`))
       });
-      // Add Permission Sets code in documentation
-      await new DocBuilderPermissionSet(psName, psXml, mdFile).generateMarkdownFileFromXml();
-      // Permission Set Groups Table
-      const relatedPsg = DocBuilderPermissionSetGroup.buildIndexTable('../permissionsetgroups/', this.permissionSetGroupsDescriptions, psName);
-      await replaceInFile(mdFile, '<!-- Permission Set Groups table -->', relatedPsg.join("\n"));
-      if (this.withPdf) {
-        await generatePdfFileFromMarkdown(mdFile);
-      }
-      counter++;
-      WebSocketClient.sendProgressStepMessage(counter, psFiles.length);
+      workItems.push({ psName, mdFile, psXml });
     }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating Permission Sets documentation...", workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        await new DocBuilderPermissionSet(item.psName, item.psXml, item.mdFile).generateMarkdownFileFromXml();
+        // Permission Set Groups Table
+        const relatedPsg = DocBuilderPermissionSetGroup.buildIndexTable('../permissionsetgroups/', this.permissionSetGroupsDescriptions, item.psName);
+        await replaceInFile(item.mdFile, '<!-- Permission Set Groups table -->', relatedPsg.join("\n"));
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(item.mdFile);
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
     WebSocketClient.sendProgressEndMessage();
     this.addNavNode("Permission Sets", psForMenu);
     // Write index file for permission sets folder
@@ -671,8 +726,9 @@ ${Project2Markdown.htmlInstructions}
       uxLog("log", this, c.yellow("No permission set group found in the project"));
       return;
     }
-    WebSocketClient.sendProgressStartMessage("Generating Permission Set Groups documentation...", psgFiles.length);
-    let counter = 0;
+
+    // Phase 1: Collect data and prepare work items
+    const workItems: { psgName: string; mdFile: string; psgXml: string }[] = [];
     for (const psgFile of psgFiles) {
       const psgName = path.basename(psgFile, ".permissionsetgroup-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "permissionsetgroups", psgName + ".md");
@@ -688,13 +744,23 @@ ${Project2Markdown.htmlInstructions}
         description: psgXmlParsed?.PermissionSetGroup?.description || "None",
         relatedPermissionSets: permissionSets,
       });
-      await new DocBuilderPermissionSetGroup(psgName, psgXml, mdFile).generateMarkdownFileFromXml();
-      if (this.withPdf) {
-        await generatePdfFileFromMarkdown(mdFile);
-      }
-      counter++;
-      WebSocketClient.sendProgressStepMessage(counter, psgFiles.length);
+      workItems.push({ psgName, mdFile, psgXml });
     }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating Permission Set Groups documentation...", workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        await new DocBuilderPermissionSetGroup(item.psgName, item.psgXml, item.mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(item.mdFile);
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
     WebSocketClient.sendProgressEndMessage();
     this.addNavNode("Permission Set Groups", psgForMenu);
 
@@ -747,57 +813,48 @@ ${Project2Markdown.htmlInstructions}
     sortCrossPlatform(assignmentRulesFiles);
     const builder = new XMLBuilder();
 
-    // Count total rules for progress tracking
-    let totalRules = 0;
+    // Phase 1: Collect data and prepare work items
+    const workItems: { currentRuleName: string; mdFile: string; ruleXml: string }[] = [];
     for (const assignmentRulesFile of assignmentRulesFiles) {
       const assignmentRulesXml = await fs.readFile(assignmentRulesFile, "utf8");
       const assignmentRulesXmlParsed = new XMLParser().parse(assignmentRulesXml);
-      let rulesList = assignmentRulesXmlParsed?.AssignmentRules?.assignmentRule || [];
-      if (!Array.isArray(rulesList)) {
-        rulesList = [rulesList];
-      }
-      totalRules += rulesList.length;
-    }
-
-    if (totalRules === 0) {
-      uxLog("log", this, c.yellow("No assignment rule found in the project"));
-      return;
-    }
-
-    WebSocketClient.sendProgressStartMessage("Generating Assignment Rules documentation...", totalRules);
-    let counter = 0;
-    for (const assignmentRulesFile of assignmentRulesFiles) {
-
-      const assignmentRulesXml = await fs.readFile(assignmentRulesFile, "utf8");
-      const assignmentRulesXmlParsed = new XMLParser().parse(assignmentRulesXml);
-
       const assignmentRulesName = path.basename(assignmentRulesFile, ".assignmentRules-meta.xml");
-      // parsing one singe XML file with all the Assignment Rules per object:
       let rulesList = assignmentRulesXmlParsed?.AssignmentRules?.assignmentRule || [];
       if (!Array.isArray(rulesList)) {
         rulesList = [rulesList];
       }
-
       for (const rule of rulesList) {
         const currentRuleName = assignmentRulesName + "." + rule?.fullName;
         assignmentRulesForMenu[currentRuleName] = "assignmentRules/" + currentRuleName + ".md";
         const mdFile = path.join(this.outputMarkdownRoot, "assignmentRules", currentRuleName + ".md");
-
         this.assignmentRulesDescriptions.push({
           name: currentRuleName,
           active: rule.active,
         });
-
         const ruleXml = builder.build({ assignmentRule: rule });
-
-        await new DocBuilderAssignmentRules(currentRuleName, ruleXml, mdFile).generateMarkdownFileFromXml();
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(mdFile);
-        }
-        counter++;
-        WebSocketClient.sendProgressStepMessage(counter, totalRules);
+        workItems.push({ currentRuleName, mdFile, ruleXml });
       }
     }
+
+    if (workItems.length === 0) {
+      uxLog("log", this, c.yellow("No assignment rule found in the project"));
+      return;
+    }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating Assignment Rules documentation...", workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        await new DocBuilderAssignmentRules(item.currentRuleName, item.ruleXml, item.mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(item.mdFile);
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
     WebSocketClient.sendProgressEndMessage();
 
     this.addNavNode("Assignment Rules", assignmentRulesForMenu);
@@ -822,29 +879,37 @@ ${Project2Markdown.htmlInstructions}
       uxLog("log", this, c.yellow("No approval process found in the project"));
       return;
     }
-    WebSocketClient.sendProgressStartMessage("Generating Approval Processes documentation...", approvalProcessFiles.length);
-    let counter = 0;
+
+    // Phase 1: Collect data and prepare work items
+    const workItems: { approvalProcessName: string; mdFile: string; approvalProcessXml: string }[] = [];
     for (const approvalProcessFile of approvalProcessFiles) {
       const approvalProcessName = path.basename(approvalProcessFile, ".approvalProcess-meta.xml");
       const mdFile = path.join(this.outputMarkdownRoot, "approvalProcesses", approvalProcessName + ".md");
-
       approvalProcessesForMenu[approvalProcessName] = "approvalProcesses/" + approvalProcessName + ".md";
       const approvalProcessXml = await fs.readFile(approvalProcessFile, "utf8");
-
       const approvalProcessXmlParsed = new XMLParser().parse(approvalProcessXml);
       this.approvalProcessesDescriptions.push({
         name: approvalProcessName,
         active: approvalProcessXmlParsed?.ApprovalProcess?.active,
         impactedObjects: this.allObjectsNames.filter(objectName => approvalProcessXml.includes(`${objectName}`))
       });
-
-      await new DocBuilderApprovalProcess(approvalProcessName, approvalProcessXml, mdFile).generateMarkdownFileFromXml();
-      if (this.withPdf) {
-        await generatePdfFileFromMarkdown(mdFile);
-      }
-      counter++;
-      WebSocketClient.sendProgressStepMessage(counter, approvalProcessFiles.length);
+      workItems.push({ approvalProcessName, mdFile, approvalProcessXml });
     }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating Approval Processes documentation...", workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        await new DocBuilderApprovalProcess(item.approvalProcessName, item.approvalProcessXml, item.mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(item.mdFile);
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
     WebSocketClient.sendProgressEndMessage();
 
     this.addNavNode("Approval Processes", approvalProcessesForMenu);
@@ -864,58 +929,49 @@ ${Project2Markdown.htmlInstructions}
     }));
     sortCrossPlatform(autoResponseRulesFiles);
     const builder = new XMLBuilder();
-    // Count total rules for progress tracking
-    let totalRules = 0;
+
+    // Phase 1: Collect data and prepare work items
+    const workItems: { currentRuleName: string; mdFile: string; ruleXml: string }[] = [];
     for (const autoResponseRulesFile of autoResponseRulesFiles) {
       const autoResponseRulesXml = await fs.readFile(autoResponseRulesFile, "utf8");
       const autoResponseRulesXmlParsed = new XMLParser().parse(autoResponseRulesXml);
-      let rulesList = autoResponseRulesXmlParsed?.AutoResponseRules?.autoResponseRule || [];
-      if (!Array.isArray(rulesList)) {
-        rulesList = [rulesList];
-      }
-      totalRules += rulesList.length;
-    }
-
-    if (totalRules === 0) {
-      uxLog("log", this, c.yellow("No auto-response rules found in the project"));
-      return;
-    }
-
-    WebSocketClient.sendProgressStartMessage("Generating AutoResponse Rules documentation...", totalRules);
-    let counter = 0;
-    for (const autoResponseRulesFile of autoResponseRulesFiles) {
-
-      const autoResponseRulesXml = await fs.readFile(autoResponseRulesFile, "utf8");
-      const autoResponseRulesXmlParsed = new XMLParser().parse(autoResponseRulesXml);
-
       const autoResponseRulesName = path.basename(autoResponseRulesFile, ".autoResponseRules-meta.xml");
-
-      // parsing one single XML file with all the AutoResponse Rules per object:
       let rulesList = autoResponseRulesXmlParsed?.AutoResponseRules?.autoResponseRule || [];
       if (!Array.isArray(rulesList)) {
         rulesList = [rulesList];
       }
-
       for (const rule of rulesList) {
         const currentRuleName = autoResponseRulesName + "." + rule?.fullName;
         autoResponseRulesForMenu[currentRuleName] = "autoResponseRules/" + currentRuleName + ".md";
         const mdFile = path.join(this.outputMarkdownRoot, "autoResponseRules", currentRuleName + ".md");
-
         this.autoResponseRulesDescriptions.push({
           name: currentRuleName,
           active: rule.active,
         });
-
         const ruleXml = builder.build({ autoResponseRule: rule });
-
-        await new DocBuilderAutoResponseRules(currentRuleName, ruleXml, mdFile).generateMarkdownFileFromXml();
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(mdFile);
-        }
-        counter++;
-        WebSocketClient.sendProgressStepMessage(counter, totalRules);
+        workItems.push({ currentRuleName, mdFile, ruleXml });
       }
     }
+
+    if (workItems.length === 0) {
+      uxLog("log", this, c.yellow("No auto-response rules found in the project"));
+      return;
+    }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating AutoResponse Rules documentation...", workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        await new DocBuilderAutoResponseRules(item.currentRuleName, item.ruleXml, item.mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(item.mdFile);
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
     WebSocketClient.sendProgressEndMessage();
     this.addNavNode("AutoResponse Rules", autoResponseRulesForMenu);
 
@@ -937,61 +993,48 @@ ${Project2Markdown.htmlInstructions}
     sortCrossPlatform(escalationRulesFiles);
     const builder = new XMLBuilder();
 
-    // Count total rules for progress tracking
-    let totalRules = 0;
+    // Phase 1: Collect data and prepare work items
+    const workItems: { currentRuleName: string; mdFile: string; ruleXml: string }[] = [];
     for (const escalationRulesFile of escalationRulesFiles) {
       const escalationRulesXml = await fs.readFile(escalationRulesFile, "utf8");
       const escalationRulesXmlParsed = new XMLParser().parse(escalationRulesXml);
-      let rulesList = escalationRulesXmlParsed?.EscalationRules?.escalationRule || [];
-      if (!Array.isArray(rulesList)) {
-        rulesList = [rulesList];
-      }
-      totalRules += rulesList.length;
-    }
-
-    if (totalRules === 0) {
-      uxLog("log", this, c.yellow("No escalation rules found in the project"));
-      return;
-    }
-
-    WebSocketClient.sendProgressStartMessage("Generating Escalation Rules documentation...", totalRules);
-
-    let counter = 0;
-    for (const escalationRulesFile of escalationRulesFiles) {
-
-      const escalationRulesXml = await fs.readFile(escalationRulesFile, "utf8");
-      const escalationRulesXmlParsed = new XMLParser().parse(escalationRulesXml);
-
       const escalationRulesName = path.basename(escalationRulesFile, ".escalationRules-meta.xml");
-
-      // parsing one singe XML file with all the Escalation Rules for Case:
       let rulesList = escalationRulesXmlParsed?.EscalationRules?.escalationRule || [];
       if (!Array.isArray(rulesList)) {
         rulesList = [rulesList];
       }
-
       for (const rule of rulesList) {
-        counter++;
-        WebSocketClient.sendProgressStepMessage(counter);
-
         const currentRuleName = escalationRulesName + "." + rule?.fullName;
         escalationRulesForMenu[currentRuleName] = "escalationRules/" + currentRuleName + ".md";
         const mdFile = path.join(this.outputMarkdownRoot, "escalationRules", currentRuleName + ".md");
-
         this.escalationRulesDescriptions.push({
           name: currentRuleName,
           active: rule.active,
         });
-
         const ruleXml = builder.build({ escalationRule: rule });
-
-        await new DocBuilderEscalationRules(currentRuleName, ruleXml, mdFile).generateMarkdownFileFromXml();
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(mdFile);
-        }
+        workItems.push({ currentRuleName, mdFile, ruleXml });
       }
     }
 
+    if (workItems.length === 0) {
+      uxLog("log", this, c.yellow("No escalation rules found in the project"));
+      return;
+    }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating Escalation Rules documentation...", workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        await new DocBuilderEscalationRules(item.currentRuleName, item.ruleXml, item.mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(item.mdFile);
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
     WebSocketClient.sendProgressEndMessage();
 
     this.addNavNode("Escalation Rules", escalationRulesForMenu);
@@ -1158,78 +1201,93 @@ ${Project2Markdown.htmlInstructions}
     const objectLinksInfo = await this.generateLinksInfo();
     const objectsForMenu: any = { "All objects": "objects/index.md" }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
-    WebSocketClient.sendProgressStartMessage("Generating Objects documentation...", this.objectFiles.length);
-    let counter = 0;
+
+    // Phase 1: Collect data and prepare work items
+    type ObjectWorkItem = { objectName: string; objectXml: string; objectMdFile: string; objectXmlParsed: any; skip: boolean };
+    const workItems: ObjectWorkItem[] = [];
     for (const objectFile of this.objectFiles) {
       const objectName = path.basename(objectFile, ".object");
       if ((objectName.endsWith("__dlm") || objectName.endsWith("__dll")) && !(process.env?.INCLUDE_DATA_CLOUD_DOC === "true")) {
         uxLog("log", this, c.grey(`Skip Data Cloud Object ${objectName}... (use INCLUDE_DATA_CLOUD_DOC=true to enforce it)`));
-        counter++;
-        WebSocketClient.sendProgressStepMessage(counter, this.objectFiles.length);
+        workItems.push({ objectName, objectXml: "", objectMdFile: "", objectXmlParsed: null, skip: true });
         continue;
       }
-      uxLog("log", this, c.grey(`Generating markdown for Object ${objectName}...`));
       const objectXml = (await fs.readFile(path.join(this.tempDir, objectFile), "utf8")).toString();
       const objectMdFile = path.join(this.outputMarkdownRoot, "objects", objectName + ".md");
-      // Build filtered XML
       const objectXmlParsed = new XMLParser().parse(objectXml);
-      // Main AI markdown
-      await new DocBuilderObject(
-        objectName,
-        objectXml,
-        objectMdFile, {
-        "ALL_OBJECTS_LIST": this.allObjectsNames.join(","),
-        "ALL_OBJECT_LINKS": objectLinksInfo
-      }).generateMarkdownFileFromXml();
-      // Fields table
-      await this.buildAttributesTables(objectName, objectXmlParsed, objectMdFile);
-      // Mermaid schema
-      const mermaidSchema = await new ObjectModelBuilder(objectName).buildObjectsMermaidSchema();
-      await replaceInFile(objectMdFile, '<!-- Mermaid schema -->', '## Schema\n\n```mermaid\n' + mermaidSchema + '\n```\n');
-      if (this.withPdf) {
-        /** Regenerate using Mermaid CLI to convert Mermaid code into SVG */
-        await generateMarkdownFileWithMermaid(objectMdFile, objectMdFile, null, true);
-      }
-      // Flows Table
-      const relatedObjectFlowsTable = DocBuilderFlow.buildIndexTable('../flows/', this.flowDescriptions, this.outputMarkdownRoot, objectName);
-      await replaceInFile(objectMdFile, '<!-- Flows table -->', relatedObjectFlowsTable.join("\n"));
-      // Apex Table
-      const relatedApexTable = DocBuilderApex.buildIndexTable('../apex/', this.apexDescriptions, objectName);
-      await replaceInFile(objectMdFile, '<!-- Apex table -->', relatedApexTable.join("\n"));
-      // Lightning Pages table
-      const relatedPages = DocBuilderPage.buildIndexTable('../pages/', this.pageDescriptions, objectName);
-      await replaceInFile(objectMdFile, '<!-- Pages table -->', relatedPages.join("\n"));
-      // Add Profiles table
-      const relatedProfilesTable = DocBuilderProfile.buildIndexTable('../profiles/', this.profileDescriptions, objectName);
-      await replaceInFile(objectMdFile, '<!-- Profiles table -->', relatedProfilesTable.join("\n"));
-      // Add Permission Sets table
-      const relatedPermissionSetsTable = DocBuilderPermissionSet.buildIndexTable('../permissionsets/', this.permissionSetsDescriptions, objectName);
-      await replaceInFile(objectMdFile, '<!-- PermissionSets table -->', relatedPermissionSetsTable.join("\n"));
-      // Add Approval Processes table
-      const relatedApprovalProcessTable = DocBuilderApprovalProcess.buildIndexTable('../approvalProcesses/', this.approvalProcessesDescriptions, objectName);
-      await replaceInFile(objectMdFile, '<!-- ApprovalProcess table -->', relatedApprovalProcessTable.join("\n"));
-      // Assignment Rules table
-      const relatedAssignmentRulesTable = DocBuilderAssignmentRules.buildIndexTable('../assignmentRules/', this.assignmentRulesDescriptions, objectName);
-      await replaceInFile(objectMdFile, '<!-- AssignmentRules table -->', relatedAssignmentRulesTable.join("\n"));
-      // AutoResponse Rules table
-      const relatedAutoResponseRulesTable = DocBuilderAutoResponseRules.buildIndexTable('../autoResponseRules/', this.autoResponseRulesDescriptions, objectName);
-      await replaceInFile(objectMdFile, '<!-- AutoResponseRules table -->', relatedAutoResponseRulesTable.join("\n"));
-      // Escalation Rules table
-      const relatedEscalationRulesTable = DocBuilderEscalationRules.buildIndexTable('../escalationRules/', this.escalationRulesDescriptions, objectName);
-      await replaceInFile(objectMdFile, '<!-- EscalationRules table -->', relatedEscalationRulesTable.join("\n"));
-
+      objectsForMenu[objectName] = "objects/" + objectName + ".md";
       this.objectDescriptions.push({
         name: objectName,
         label: objectXmlParsed?.CustomObject?.label || "",
         description: String(objectXmlParsed?.CustomObject?.description || ""),
       });
-      objectsForMenu[objectName] = "objects/" + objectName + ".md";
-      if (this.withPdf) {
-        await generatePdfFileFromMarkdown(objectMdFile);
-      }
-      counter++;
-      WebSocketClient.sendProgressStepMessage(counter, this.objectFiles.length);
+      workItems.push({ objectName, objectXml, objectMdFile, objectXmlParsed, skip: false });
     }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating Objects documentation...", workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        if (item.skip) {
+          counter++;
+          WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+          return;
+        }
+        uxLog("log", this, c.grey(`Generating markdown for Object ${item.objectName}...`));
+        // Main AI markdown
+        await new DocBuilderObject(
+          item.objectName,
+          item.objectXml,
+          item.objectMdFile, {
+          "ALL_OBJECTS_LIST": this.allObjectsNames.join(","),
+          "ALL_OBJECT_LINKS": objectLinksInfo
+        }).generateMarkdownFileFromXml();
+        // Fields table
+        await this.buildAttributesTables(item.objectName, item.objectXmlParsed, item.objectMdFile);
+        // Mermaid schema
+        const mermaidSchema = await new ObjectModelBuilder(item.objectName).buildObjectsMermaidSchema();
+        await replaceInFile(item.objectMdFile, '<!-- Mermaid schema -->', '## Schema\n\n```mermaid\n' + mermaidSchema + '\n```\n');
+        if (this.withPdf) {
+          /** Regenerate using Mermaid CLI to convert Mermaid code into SVG */
+          await generateMarkdownFileWithMermaid(item.objectMdFile, item.objectMdFile, null, true);
+        }
+        // Flows Table
+        const relatedObjectFlowsTable = DocBuilderFlow.buildIndexTable('../flows/', this.flowDescriptions, this.outputMarkdownRoot, item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- Flows table -->', relatedObjectFlowsTable.join("\n"));
+        // Apex Table
+        const relatedApexTable = DocBuilderApex.buildIndexTable('../apex/', this.apexDescriptions, item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- Apex table -->', relatedApexTable.join("\n"));
+        // Lightning Pages table
+        const relatedPages = DocBuilderPage.buildIndexTable('../pages/', this.pageDescriptions, item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- Pages table -->', relatedPages.join("\n"));
+        // Add Profiles table
+        const relatedProfilesTable = DocBuilderProfile.buildIndexTable('../profiles/', this.profileDescriptions, item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- Profiles table -->', relatedProfilesTable.join("\n"));
+        // Add Permission Sets table
+        const relatedPermissionSetsTable = DocBuilderPermissionSet.buildIndexTable('../permissionsets/', this.permissionSetsDescriptions, item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- PermissionSets table -->', relatedPermissionSetsTable.join("\n"));
+        // Add Approval Processes table
+        const relatedApprovalProcessTable = DocBuilderApprovalProcess.buildIndexTable('../approvalProcesses/', this.approvalProcessesDescriptions, item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- ApprovalProcess table -->', relatedApprovalProcessTable.join("\n"));
+        // Assignment Rules table
+        const relatedAssignmentRulesTable = DocBuilderAssignmentRules.buildIndexTable('../assignmentRules/', this.assignmentRulesDescriptions, item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- AssignmentRules table -->', relatedAssignmentRulesTable.join("\n"));
+        // AutoResponse Rules table
+        const relatedAutoResponseRulesTable = DocBuilderAutoResponseRules.buildIndexTable('../autoResponseRules/', this.autoResponseRulesDescriptions, item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- AutoResponseRules table -->', relatedAutoResponseRulesTable.join("\n"));
+        // Escalation Rules table
+        const relatedEscalationRulesTable = DocBuilderEscalationRules.buildIndexTable('../escalationRules/', this.escalationRulesDescriptions, item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- EscalationRules table -->', relatedEscalationRulesTable.join("\n"));
+
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(item.objectMdFile);
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
     WebSocketClient.sendProgressEndMessage();
     this.addNavNode("Objects", objectsForMenu);
 
@@ -1294,8 +1352,8 @@ ${Project2Markdown.htmlInstructions}
       return;
     }
     // Generate Flows documentation
-    WebSocketClient.sendProgressStartMessage("Generating Flows documentation...", flowFiles.length);
-    let counter = 0;
+    type FlowWorkItem = { flowFile: string; flowName: string; flowXml: string; outputFlowMdFile: string; skip: boolean };
+    const flowWorkItems: FlowWorkItem[] = [];
     for (const flowFile of flowFiles) {
       const flowName = path.basename(flowFile, ".flow-meta.xml");
       const flowXml = (await fs.readFile(flowFile, "utf8")).toString();
@@ -1311,31 +1369,45 @@ ${Project2Markdown.htmlInstructions}
       const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", flowName + ".md");
       if (this.diffOnly && !updatedFlowNames.includes(flowName) && fs.existsSync(outputFlowMdFile)) {
         flowSkips.push(flowFile);
-        counter++;
-        WebSocketClient.sendProgressStepMessage(counter, flowFiles.length);
-        continue;
+        flowWorkItems.push({ flowFile, flowName, flowXml, outputFlowMdFile, skip: true });
+      } else {
+        flowWorkItems.push({ flowFile, flowName, flowXml, outputFlowMdFile, skip: false });
       }
-      uxLog("log", this, c.grey(`Generating markdown for Flow ${flowFile}...`));
-      const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFlowMdFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: flowDeps });
-      if (!genRes) {
-        flowErrors.push(flowFile);
-        counter++;
-        WebSocketClient.sendProgressStepMessage(counter, flowFiles.length);
-        continue;
-      }
-      if (this.debugMode) {
-        await fs.copyFile(outputFlowMdFile, outputFlowMdFile.replace(".md", ".mermaid.md"));
-      }
-      const gen2res = await generateMarkdownFileWithMermaid(outputFlowMdFile, outputFlowMdFile, null, this.withPdf);
-      if (!gen2res) {
-        flowWarnings.push(flowFile);
-        counter++;
-        WebSocketClient.sendProgressStepMessage(counter, flowFiles.length);
-        continue;
-      }
-      counter++;
-      WebSocketClient.sendProgressStepMessage(counter, flowFiles.length);
     }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating Flows documentation...", flowWorkItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(flowWorkItems)
+      .process(async (item) => {
+        if (item.skip) {
+          counter++;
+          WebSocketClient.sendProgressStepMessage(counter, flowWorkItems.length);
+          return;
+        }
+        uxLog("log", this, c.grey(`Generating markdown for Flow ${item.flowFile}...`));
+        const genRes = await generateFlowMarkdownFile(item.flowName, item.flowXml, item.outputFlowMdFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: flowDeps });
+        if (!genRes) {
+          flowErrors.push(item.flowFile);
+          counter++;
+          WebSocketClient.sendProgressStepMessage(counter, flowWorkItems.length);
+          return;
+        }
+        if (this.debugMode) {
+          await fs.copyFile(item.outputFlowMdFile, item.outputFlowMdFile.replace(".md", ".mermaid.md"));
+        }
+        const gen2res = await generateMarkdownFileWithMermaid(item.outputFlowMdFile, item.outputFlowMdFile, null, this.withPdf);
+        if (!gen2res) {
+          flowWarnings.push(item.flowFile);
+          counter++;
+          WebSocketClient.sendProgressStepMessage(counter, flowWorkItems.length);
+          return;
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, flowWorkItems.length);
+      });
     WebSocketClient.sendProgressEndMessage();
     this.flowDescriptions = sortArray(this.flowDescriptions, { by: ['object', 'name'], order: ['asc', 'asc'] }) as any[]
 
@@ -1505,35 +1577,16 @@ ${Project2Markdown.htmlInstructions}
 
     const packageDirs = this.project?.getPackageDirectories() || [];
 
-    // Count total LWC components for progress tracking
-    let totalLwcComponents = 0;
+    // Phase 1: Collect data and prepare work items
+    type LwcWorkItem = { lwcName: string; mdFile: string; lwcDirPath: string; jsContent: string; htmlContent: string; lwcMetaXml: string };
+    const workItems: LwcWorkItem[] = [];
     for (const packageDir of packageDirs) {
-      const lwcMetaFiles = await glob(`${packageDir.path}/**/lwc/**/*.js-meta.xml`, {
-        cwd: process.cwd(),
-        ignore: GLOB_IGNORE_PATTERNS
-      });
-      totalLwcComponents += lwcMetaFiles.length;
-    }
-    if (totalLwcComponents === 0) {
-      uxLog("log", this, c.yellow("No Lightning Web Component found in the project"));
-      return;
-    }
-
-    WebSocketClient.sendProgressStartMessage("Generating Lightning Web Components documentation...", totalLwcComponents);
-
-    let counter = 0;
-    // Find all LWC components in all package directories
-    for (const packageDir of packageDirs) {
-      // Find LWC components (directories with .js-meta.xml files)
       const lwcMetaFiles = await glob(`${packageDir.path}/**/lwc/**/*.js-meta.xml`, {
         cwd: process.cwd(),
         ignore: GLOB_IGNORE_PATTERNS
       });
 
       for (const lwcMetaFile of lwcMetaFiles) {
-        counter++;
-        WebSocketClient.sendProgressStepMessage(counter);
-
         const lwcDirPath = path.dirname(lwcMetaFile);
         const lwcName = path.basename(lwcDirPath);
         const mdFile = path.join(this.outputMarkdownRoot, "lwc", lwcName + ".md");
@@ -1573,20 +1626,36 @@ ${Project2Markdown.htmlInstructions}
           )
         });
 
-        // Generate the documentation file
-        await new DocBuilderLwc(lwcName, "", mdFile, {
-          LWC_PATH: lwcDirPath,
-          LWC_NAME: lwcName,
-          LWC_JS_CODE: jsContent,
-          LWC_HTML_CODE: htmlContent,
-          LWC_JS_META: lwcMetaXml
+        workItems.push({ lwcName, mdFile, lwcDirPath, jsContent, htmlContent, lwcMetaXml });
+      }
+    }
+
+    if (workItems.length === 0) {
+      uxLog("log", this, c.yellow("No Lightning Web Component found in the project"));
+      return;
+    }
+
+    // Phase 2: Generate documentation with parallel AI calls
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating Lightning Web Components documentation...", workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        await new DocBuilderLwc(item.lwcName, "", item.mdFile, {
+          LWC_PATH: item.lwcDirPath,
+          LWC_NAME: item.lwcName,
+          LWC_JS_CODE: item.jsContent,
+          LWC_HTML_CODE: item.htmlContent,
+          LWC_JS_META: item.lwcMetaXml
         }).generateMarkdownFileFromXml();
 
         if (this.withPdf) {
-          await generatePdfFileFromMarkdown(mdFile);
+          await generatePdfFileFromMarkdown(item.mdFile);
         }
-      }
-    }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
 
     WebSocketClient.sendProgressEndMessage();
 

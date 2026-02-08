@@ -65,6 +65,19 @@
       "type": "string",
       "default": "en"
     },
+    "promptsParallelCallNumber": {
+      "$id": "#/properties/promptsParallelCallNumber",
+      "description": "Number of parallel AI prompt calls when generating project documentation. Higher values speed up documentation generation but may hit API rate limits. (mirrors PROMPTS_PARALLEL_CALL_NUMBER environment variable)",
+      "title": "Prompts parallel call number",
+      "type": "number",
+      "default": 5,
+      "minimum": 1,
+      "examples": [
+        1,
+        5,
+        10
+      ]
+    },
     "useLangchainLlm": {
       "$id": "#/properties/useLangchainLlm",
       "description": "Set to true to enable LangChain integration (mirrors the USE_LANGCHAIN_LLM environment variable).",
@@ -92,7 +105,7 @@
     },
     "langchainLlmModel": {
       "$id": "#/properties/langchainLlmModel",
-      "description": "Model identifier to use with the configured LangChain provider (ex: gpt-4o, gemini-1.5-pro). Equivalent to LANGCHAIN_LLM_MODEL env var.",
+      "description": "Model identifier to use with the configured LangChain provider. Latest models: OpenAI (gpt-5.2, gpt-5.2-mini, gpt-5, gpt-4.1, gpt-4o, gpt-4o-mini...), Anthropic (claude-opus-4-6, claude-3-5-sonnet, claude-3-5-haiku, claude-3-haiku...), Google Gemini (gemini-3-pro, gemini-3-pro-deep-think, gemini-3-flash, gemini-2.5-flash-lite...). Equivalent to LANGCHAIN_LLM_MODEL env var.",
       "title": "LangChain model",
       "type": "string"
     },
