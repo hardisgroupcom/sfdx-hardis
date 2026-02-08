@@ -1,4 +1,3 @@
-import { UtilsAi } from "./utils.js";
 import c from 'chalk';
 import { AiProviderRoot } from "./aiProviderRoot.js";
 import { OpenAiProvider } from "./openaiProvider.js";
@@ -11,21 +10,24 @@ import { LangChainProvider } from "./langchainProvider.js";
 import { formatMarkdownForMkDocs } from "../utils/markdownUtils.js";
 
 let IS_AI_AVAILABLE: boolean | null = null;
+type ProviderKey = "langchain" | "openai" | "agentforce";
+const DEFAULT_PROVIDER_ORDER: ProviderKey[] = ["langchain", "openai", "agentforce"];
 
 export abstract class AiProvider {
-  static isAiAvailable(): boolean {
+  static async isAiAvailable(): Promise<boolean> {
     if (process.env?.DISABLE_AI === "true") {
       uxLog("warning", this, c.yellow("[AI Provider] AI calls have been disabled using env var DISABLE_AI=true"))
       return false;
     }
-    return this.getInstance() != null;
+    const instance = await this.getInstance();
+    return instance != null;
   }
 
   static async isAiAvailableWithUserPrompt() {
     if (IS_AI_AVAILABLE !== null) {
       return IS_AI_AVAILABLE;
     }
-    if (this.isAiAvailable()) {
+    if (await this.isAiAvailable()) {
       IS_AI_AVAILABLE = true;
       return IS_AI_AVAILABLE;
     }
@@ -40,27 +42,37 @@ export abstract class AiProvider {
         process.env.OPENAI_API_KEY = promptRes.token;
       }
     }
-    IS_AI_AVAILABLE = this.isAiAvailable();
+    IS_AI_AVAILABLE = await this.isAiAvailable();
     return IS_AI_AVAILABLE;
   }
 
-  static getInstance(): AiProviderRoot | null {
-    // LangChain
-    if (UtilsAi.isLangChainAvailable()) {
-      return new LangChainProvider();
-    }
-    // OpenAi
-    else if (UtilsAi.isOpenAiAvailable()) {
-      return new OpenAiProvider();
-    }
-    else if (UtilsAi.isAgentforceAvailable()) {
-      return new AgentforceProvider();
+  static async getInstance(): Promise<AiProviderRoot | null> {
+    const order = DEFAULT_PROVIDER_ORDER;
+
+    for (const provider of order) {
+      try {
+        if (provider === "langchain") {
+          if (await LangChainProvider.isConfigured()) {
+            return await LangChainProvider.create();
+          }
+        } else if (provider === "openai") {
+          if (await OpenAiProvider.isConfigured()) {
+            return await OpenAiProvider.create();
+          }
+        } else if (provider === "agentforce") {
+          if (await AgentforceProvider.isConfigured()) {
+            return await AgentforceProvider.create();
+          }
+        }
+      } catch (error) {
+        uxLog("warning", this, c.yellow(`[AI Provider] Unable to initialize ${provider} connector: ${(error as Error).message}`));
+      }
     }
     return null;
   }
 
   static async promptAi(prompt: string, template: PromptTemplate): Promise<AiResponse | null> {
-    const aiInstance = this.getInstance();
+    const aiInstance = await this.getInstance();
     if (!aiInstance) {
       throw new SfError("aiInstance should be set");
     }
@@ -100,8 +112,8 @@ export abstract class AiProvider {
     }
   }
 
-  static buildPrompt(template: PromptTemplate, variables: object): string {
-    return buildPromptFromTemplate(template, variables);
+  static async buildPrompt(template: PromptTemplate, variables: object): Promise<string> {
+    return await buildPromptFromTemplate(template, variables);
   }
 
 }

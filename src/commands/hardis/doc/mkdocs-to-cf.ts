@@ -11,6 +11,7 @@ import { execCommand, getCurrentGitBranch, uxLog } from '../../../common/utils/i
 import { CONSTANTS, getEnvVar } from '../../../config/index.js';
 import which from 'which';
 import { generateMkDocsHTML } from '../../../common/docBuilder/docUtils.js';
+import { UtilsAi } from '../../../common/aiProvider/utils.js';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -154,7 +155,7 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
   // If none of them is found, use the default project name
   private async getProjectName(): Promise<string> {
     const defaultProjectName = (getEnvVar('CLOUDFLARE_PROJECT_NAME') || this.currentGitBranch).replace(/\//g, "-").toLowerCase();
-    const promptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
+    const promptsLanguage = await UtilsAi.getPromptsLanguage();
     const languageScopedProjectVariableName = `CLOUDFLARE_PROJECT_NAME_${promptsLanguage?.toUpperCase()}`;
     if (getEnvVar(languageScopedProjectVariableName)) {
       return getEnvVar(languageScopedProjectVariableName) || defaultProjectName;

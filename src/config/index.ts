@@ -112,18 +112,26 @@ async function getBranchConfigFiles() {
   return branchConfigFiles;
 }
 
-export const getConfig = async (layer: "project" | "branch" | "user" = 'user'): Promise<any> => {
+const promptTemplateCache: Record<string, any> = {};
+
+export const getConfig = async (layer: "project" | "branch" | "user" = 'user', options: { cache: boolean } = { cache: false }): Promise<any> => {
+  if (options.cache && promptTemplateCache[layer]) {
+    return promptTemplateCache[layer];
+  }
   const defaultConfig = await loadFromConfigFile(projectConfigFiles);
   if (layer === 'project') {
+    promptTemplateCache['project'] = defaultConfig;
     return defaultConfig;
   }
   let branchConfig = await loadFromConfigFile(await getBranchConfigFiles());
   branchConfig = Object.assign(defaultConfig, branchConfig);
   if (layer === 'branch') {
+    promptTemplateCache['branch'] = branchConfig;
     return branchConfig;
   }
   let userConfig = await loadFromConfigFile(userConfigFiles);
   userConfig = Object.assign(branchConfig, userConfig);
+  promptTemplateCache['user'] = userConfig;
   return userConfig;
 };
 
