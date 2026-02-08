@@ -52,7 +52,7 @@ export class UtilsAi {
     const fingerPrint = this.getFingerPrint(promptParameters);
     const aiCacheDir = path.join("docs", "cache-ai-results");
     await fs.ensureDir(aiCacheDir);
-    const lang = this.getPromptsLanguage();
+    const lang = await this.getPromptsLanguage();
     const aiCacheDirFile = path.join(aiCacheDir, `${lang}-${template}-${uniqueId}-${fingerPrint}.md`);
     const otherCacheFiles = fs.readdirSync(aiCacheDir).filter((file) => file.includes(`${lang}-${template}-${uniqueId}`) && !file.includes(fingerPrint));
     for (const otherCacheFile of otherCacheFiles) {
