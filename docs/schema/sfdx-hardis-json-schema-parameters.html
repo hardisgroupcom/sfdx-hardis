@@ -26,6 +26,527 @@
         
 
         
+<div class="accordion" id="accordionpromptsLanguage">
+    <div class="card">
+        <div class="card-header" id="headingpromptsLanguage">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#promptsLanguage"
+                        aria-expanded="" aria-controls="promptsLanguage" onclick="setAnchor('#promptsLanguage')"><span class="property-name">promptsLanguage</span></button>
+            </h2>
+        </div>
+
+        <div id="promptsLanguage"
+             class="collapse property-definition-div" aria-labelledby="headingpromptsLanguage"
+             data-parent="#accordionpromptsLanguage">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#promptsLanguage" onclick="anchorLink('promptsLanguage')">promptsLanguage</a></div><h4>Prompts language(s)</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: "en"</span><br/>
+<span class="description"><p>Language used for AI-generated prompts. If not set, the default language is English (en). Supported languages are defined in the code but not limited to: English (en), French (fr), Spanish (es), German (de), Italian (it), Portuguese (pt). If multiple languages, separate them with comma (ex: "en,fr,de") and the first one will be used as default language for prompts. (mirrors PROMPTS_LANGUAGE environment variable)</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionpromptsParallelCallNumber">
+    <div class="card">
+        <div class="card-header" id="headingpromptsParallelCallNumber">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#promptsParallelCallNumber"
+                        aria-expanded="" aria-controls="promptsParallelCallNumber" onclick="setAnchor('#promptsParallelCallNumber')"><span class="property-name">promptsParallelCallNumber</span></button>
+            </h2>
+        </div>
+
+        <div id="promptsParallelCallNumber"
+             class="collapse property-definition-div" aria-labelledby="headingpromptsParallelCallNumber"
+             data-parent="#accordionpromptsParallelCallNumber">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#promptsParallelCallNumber" onclick="anchorLink('promptsParallelCallNumber')">promptsParallelCallNumber</a></div><h4>Prompts parallel call number</h4><span class="badge badge-dark value-type">Type: number</span> <span class="badge badge-success default-value">Default: 5</span><br/>
+<span class="description"><p>Number of parallel AI prompt calls when generating project documentation. Higher values speed up documentation generation but may hit API rate limits. (mirrors PROMPTS<em>PARALLEL</em>CALL_NUMBER environment variable)</p>
+</span>
+        
+
+        
+        <p><span class="badge badge-light restriction numeric-restriction" id="promptsParallelCallNumber_number">Value must be greater or equal to <code>1</code></span></p>
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="promptsParallelCallNumber_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="mf">1</span>
+</pre></div>
+</div><div id="promptsParallelCallNumber_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="mf">5</span>
+</pre></div>
+</div><div id="promptsParallelCallNumber_ex3" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="mf">10</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionuseLangchainLlm">
+    <div class="card">
+        <div class="card-header" id="headinguseLangchainLlm">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#useLangchainLlm"
+                        aria-expanded="" aria-controls="useLangchainLlm" onclick="setAnchor('#useLangchainLlm')"><span class="property-name">useLangchainLlm</span></button>
+            </h2>
+        </div>
+
+        <div id="useLangchainLlm"
+             class="collapse property-definition-div" aria-labelledby="headinguseLangchainLlm"
+             data-parent="#accordionuseLangchainLlm">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#useLangchainLlm" onclick="anchorLink('useLangchainLlm')">useLangchainLlm</a></div><h4>Enable LangChain</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Set to true to enable LangChain integration (mirrors the USE<em>LANGCHAIN</em>LLM environment variable).</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionlangchainLlmProvider">
+    <div class="card">
+        <div class="card-header" id="headinglangchainLlmProvider">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#langchainLlmProvider"
+                        aria-expanded="" aria-controls="langchainLlmProvider" onclick="setAnchor('#langchainLlmProvider')"><span class="property-name">langchainLlmProvider</span></button>
+            </h2>
+        </div>
+
+        <div id="langchainLlmProvider"
+             class="collapse property-definition-div" aria-labelledby="headinglangchainLlmProvider"
+             data-parent="#accordionlangchainLlmProvider">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#langchainLlmProvider" onclick="anchorLink('langchainLlmProvider')">langchainLlmProvider</a></div><h4>LangChain provider</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<span class="description"><p>LLM provider identifier used with LangChain (ex: openai, anthropic, google-genai, ollama). Equivalent to LANGCHAIN<em>LLM</em>PROVIDER env var.</p>
+</span><div class="enum-value" id="langchainLlmProvider_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"openai"</li><li class="list-group-item enum-item">"anthropic"</li><li class="list-group-item enum-item">"google-genai"</li><li class="list-group-item enum-item">"ollama"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionlangchainLlmModel">
+    <div class="card">
+        <div class="card-header" id="headinglangchainLlmModel">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#langchainLlmModel"
+                        aria-expanded="" aria-controls="langchainLlmModel" onclick="setAnchor('#langchainLlmModel')"><span class="property-name">langchainLlmModel</span></button>
+            </h2>
+        </div>
+
+        <div id="langchainLlmModel"
+             class="collapse property-definition-div" aria-labelledby="headinglangchainLlmModel"
+             data-parent="#accordionlangchainLlmModel">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#langchainLlmModel" onclick="anchorLink('langchainLlmModel')">langchainLlmModel</a></div><h4>LangChain model</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Model identifier to use with the configured LangChain provider. Latest models: OpenAI (gpt-5.2, gpt-5.2-mini, gpt-5, gpt-4.1, gpt-4o, gpt-4o-mini...), Anthropic (claude-opus-4-6, claude-3-5-sonnet, claude-3-5-haiku, claude-3-haiku...), Google Gemini (gemini-3-pro, gemini-3-pro-deep-think, gemini-3-flash, gemini-2.5-flash-lite...). Equivalent to LANGCHAIN<em>LLM</em>MODEL env var.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionlangchainLlmTemperature">
+    <div class="card">
+        <div class="card-header" id="headinglangchainLlmTemperature">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#langchainLlmTemperature"
+                        aria-expanded="" aria-controls="langchainLlmTemperature" onclick="setAnchor('#langchainLlmTemperature')"><span class="property-name">langchainLlmTemperature</span></button>
+            </h2>
+        </div>
+
+        <div id="langchainLlmTemperature"
+             class="collapse property-definition-div" aria-labelledby="headinglangchainLlmTemperature"
+             data-parent="#accordionlangchainLlmTemperature">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#langchainLlmTemperature" onclick="anchorLink('langchainLlmTemperature')">langchainLlmTemperature</a></div><h4>LangChain temperature</h4><span class="badge badge-dark value-type">Type: number</span><br/>
+<span class="description"><p>Sampling temperature override for LangChain requests (maps to LANGCHAIN<em>LLM</em>TEMPERATURE env var).</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionlangchainLlmMaxTokens">
+    <div class="card">
+        <div class="card-header" id="headinglangchainLlmMaxTokens">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#langchainLlmMaxTokens"
+                        aria-expanded="" aria-controls="langchainLlmMaxTokens" onclick="setAnchor('#langchainLlmMaxTokens')"><span class="property-name">langchainLlmMaxTokens</span></button>
+            </h2>
+        </div>
+
+        <div id="langchainLlmMaxTokens"
+             class="collapse property-definition-div" aria-labelledby="headinglangchainLlmMaxTokens"
+             data-parent="#accordionlangchainLlmMaxTokens">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#langchainLlmMaxTokens" onclick="anchorLink('langchainLlmMaxTokens')">langchainLlmMaxTokens</a></div><h4>LangChain max tokens</h4><span class="badge badge-dark value-type">Type: number</span><br/>
+<span class="description"><p>Maximum number of tokens generated per LangChain response (maps to LANGCHAIN<em>LLM</em>MAX_TOKENS env var).</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionlangchainLlmMaxRetries">
+    <div class="card">
+        <div class="card-header" id="headinglangchainLlmMaxRetries">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#langchainLlmMaxRetries"
+                        aria-expanded="" aria-controls="langchainLlmMaxRetries" onclick="setAnchor('#langchainLlmMaxRetries')"><span class="property-name">langchainLlmMaxRetries</span></button>
+            </h2>
+        </div>
+
+        <div id="langchainLlmMaxRetries"
+             class="collapse property-definition-div" aria-labelledby="headinglangchainLlmMaxRetries"
+             data-parent="#accordionlangchainLlmMaxRetries">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#langchainLlmMaxRetries" onclick="anchorLink('langchainLlmMaxRetries')">langchainLlmMaxRetries</a></div><h4>LangChain max retries</h4><span class="badge badge-dark value-type">Type: number</span><br/>
+<span class="description"><p>Maximum number of retries for failed LangChain requests (maps to LANGCHAIN<em>LLM</em>MAX_RETRIES env var).</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionlangchainLlmTimeout">
+    <div class="card">
+        <div class="card-header" id="headinglangchainLlmTimeout">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#langchainLlmTimeout"
+                        aria-expanded="" aria-controls="langchainLlmTimeout" onclick="setAnchor('#langchainLlmTimeout')"><span class="property-name">langchainLlmTimeout</span></button>
+            </h2>
+        </div>
+
+        <div id="langchainLlmTimeout"
+             class="collapse property-definition-div" aria-labelledby="headinglangchainLlmTimeout"
+             data-parent="#accordionlangchainLlmTimeout">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#langchainLlmTimeout" onclick="anchorLink('langchainLlmTimeout')">langchainLlmTimeout</a></div><h4>LangChain timeout</h4><span class="badge badge-dark value-type">Type: number</span><br/>
+<span class="description"><p>Timeout in milliseconds applied to LangChain calls (maps to LANGCHAIN<em>LLM</em>TIMEOUT env var).</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionlangchainLlmBaseUrl">
+    <div class="card">
+        <div class="card-header" id="headinglangchainLlmBaseUrl">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#langchainLlmBaseUrl"
+                        aria-expanded="" aria-controls="langchainLlmBaseUrl" onclick="setAnchor('#langchainLlmBaseUrl')"><span class="property-name">langchainLlmBaseUrl</span></button>
+            </h2>
+        </div>
+
+        <div id="langchainLlmBaseUrl"
+             class="collapse property-definition-div" aria-labelledby="headinglangchainLlmBaseUrl"
+             data-parent="#accordionlangchainLlmBaseUrl">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#langchainLlmBaseUrl" onclick="anchorLink('langchainLlmBaseUrl')">langchainLlmBaseUrl</a></div><h4>LangChain base URL</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Custom base URL for LangChain HTTP-based providers (for example a local Ollama endpoint). Equivalent to LANGCHAIN<em>LLM</em>BASE_URL env var.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionuseOpenaiDirect">
+    <div class="card">
+        <div class="card-header" id="headinguseOpenaiDirect">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#useOpenaiDirect"
+                        aria-expanded="" aria-controls="useOpenaiDirect" onclick="setAnchor('#useOpenaiDirect')"><span class="property-name">useOpenaiDirect</span></button>
+            </h2>
+        </div>
+
+        <div id="useOpenaiDirect"
+             class="collapse property-definition-div" aria-labelledby="headinguseOpenaiDirect"
+             data-parent="#accordionuseOpenaiDirect">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#useOpenaiDirect" onclick="anchorLink('useOpenaiDirect')">useOpenaiDirect</a></div><h4>Enable OpenAI</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: true</span><br/>
+<span class="description"><p>Set to true to enable the direct OpenAI connector (mirrors USE<em>OPENAI</em>DIRECT env var).</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionopenaiModel">
+    <div class="card">
+        <div class="card-header" id="headingopenaiModel">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#openaiModel"
+                        aria-expanded="" aria-controls="openaiModel" onclick="setAnchor('#openaiModel')"><span class="property-name">openaiModel</span></button>
+            </h2>
+        </div>
+
+        <div id="openaiModel"
+             class="collapse property-definition-div" aria-labelledby="headingopenaiModel"
+             data-parent="#accordionopenaiModel">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#openaiModel" onclick="anchorLink('openaiModel')">openaiModel</a></div><h4>OpenAI model</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: "gpt-4o-mini"</span><br/>
+<span class="description"><p>Name of the OpenAI model to use by default (ex: gpt-4o, gpt-4o-mini). Equivalent to OPENAI_MODEL env var.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionuseAgentforce">
+    <div class="card">
+        <div class="card-header" id="headinguseAgentforce">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#useAgentforce"
+                        aria-expanded="" aria-controls="useAgentforce" onclick="setAnchor('#useAgentforce')"><span class="property-name">useAgentforce</span></button>
+            </h2>
+        </div>
+
+        <div id="useAgentforce"
+             class="collapse property-definition-div" aria-labelledby="headinguseAgentforce"
+             data-parent="#accordionuseAgentforce">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#useAgentforce" onclick="anchorLink('useAgentforce')">useAgentforce</a></div><h4>Enable Agentforce</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Set to true to enable Agentforce integration (mirrors USE_AGENTFORCE env var).</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordiongenericAgentforcePromptTemplate">
+    <div class="card">
+        <div class="card-header" id="headinggenericAgentforcePromptTemplate">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#genericAgentforcePromptTemplate"
+                        aria-expanded="" aria-controls="genericAgentforcePromptTemplate" onclick="setAnchor('#genericAgentforcePromptTemplate')"><span class="property-name">genericAgentforcePromptTemplate</span></button>
+            </h2>
+        </div>
+
+        <div id="genericAgentforcePromptTemplate"
+             class="collapse property-definition-div" aria-labelledby="headinggenericAgentforcePromptTemplate"
+             data-parent="#accordiongenericAgentforcePromptTemplate">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#genericAgentforcePromptTemplate" onclick="anchorLink('genericAgentforcePromptTemplate')">genericAgentforcePromptTemplate</a></div><h4>Agentforce prompt template</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: "SfdxHardisGenericPrompt"</span><br/>
+<span class="description"><p>Prompt template API name to use by default (ex: SfdxHardisGenericPrompt). Equivalent to GENERIC<em>AGENTFORCE</em>PROMPT_TEMPLATE env var.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordiongenericAgentforcePromptUrl">
+    <div class="card">
+        <div class="card-header" id="headinggenericAgentforcePromptUrl">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#genericAgentforcePromptUrl"
+                        aria-expanded="" aria-controls="genericAgentforcePromptUrl" onclick="setAnchor('#genericAgentforcePromptUrl')"><span class="property-name">genericAgentforcePromptUrl</span></button>
+            </h2>
+        </div>
+
+        <div id="genericAgentforcePromptUrl"
+             class="collapse property-definition-div" aria-labelledby="headinggenericAgentforcePromptUrl"
+             data-parent="#accordiongenericAgentforcePromptUrl">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#genericAgentforcePromptUrl" onclick="anchorLink('genericAgentforcePromptUrl')">genericAgentforcePromptUrl</a></div><h4>Agentforce prompt URL</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: "/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{PROMPT_TEMPLATE}}/generations"</span><br/>
+<span class="description"><p>Custom Agentforce template URL supporting placeholders {{API<em>VERSION}} and {{GENERIC</em>AGENTFORCE<em>PROMPT</em>TEMPLATE}} (mirrors GENERIC<em>AGENTFORCE</em>PROMPT_URL env var).</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionallowedOrgTypes">
     <div class="card">
         <div class="card-header" id="headingallowedOrgTypes">

@@ -205,6 +205,8 @@ These variables integrate sfdx-hardis with external tools and platforms.
 | **GENERIC_AGENTFORCE_PROMPT_URL**      | Override URL for the Agentforce prompt generation endpoint             | `/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{GENERIC_AGENTFORCE_PROMPT_TEMPLATE}}/generations` | URL string                          | Agentforce integration                                                                                                                               |
 | **SFDX_AUTH_URL_TECHNICAL_ORG**        | (Optional) Auth URL for a technical org to use when calling Agentforce | `undefined`                                                                                                    | Salesforce auth URL                 | Agentforce / auth flows                                                                                                                              |
 
+Non-sensitive defaults (prompt template, custom endpoint) can be placed directly at the root of `.sfdx-hardis.yml` using camelCase keys that mirror the environment variables (e.g., `useAgentforce`, `genericAgentforcePromptTemplate`). Authentication details such as auth URLs or technical org credentials must still be supplied via secure variables.
+
 ### LangChain integration (OpenAI, Anthropic, Gemini...)
 
 | Variable Name                   | Description                                                                       | Default                  | Possible Values                                                     | Usage Location                                                                                                                                     |
@@ -218,12 +220,16 @@ These variables integrate sfdx-hardis with external tools and platforms.
 | **LANGCHAIN_LLM_MAX_RETRIES**   | Number of retries for failed LangChain requests                                   |                          | Positive integer                                                    | LangChain configuration                                                                                                                            |
 | **LANGCHAIN_LLM_BASE_URL**      | Base URL for LangChain HTTP-based providers (e.g., Ollama)                        | `http://localhost:11434` | URL string                                                          | LangChain / Ollama examples                                                                                                                        |
 
+You can also define non-secret defaults (provider, model, temperature, etc.) in your project `.sfdx-hardis.yml` using camelCase versions of the LangChain environment variables (for example `langchainLlmProvider` and `langchainLlmModel`). API keys must still be provided via secure env vars.
+
 ### OpenAI (direct) variables
 
 | Variable Name      | Description                      | Default       | Possible Values                                                      | Usage Location                                                                                                             |
 |--------------------|----------------------------------|---------------|----------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
 | **OPENAI_API_KEY** | OpenAI API key for AI operations | `undefined`   | Valid OpenAI API keys                                                | [`src/common/aiProvider/index.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/index.ts) |
 | **OPENAI_MODEL**   | OpenAI model to use for prompts  | `gpt-4o-mini` | OpenAI model names (e.g., `gpt-4o-mini`, `gpt-4o`, `gpt-4o-mini-3b`) | OpenAI-specific configuration                                                                                              |
+
+Project-wide defaults (e.g., preferred model) can be stored directly at the root of `.sfdx-hardis.yml` using camelCase keys (for example `openaiModel`), but the `OPENAI_API_KEY` must remain in a secured environment variable.
 
 ### Email Notifications
 

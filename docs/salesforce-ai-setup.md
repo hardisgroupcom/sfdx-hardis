@@ -56,6 +56,16 @@ See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and ho
 
 ![](assets/images//screenshot-agentforce-config-2.jpg)
 
+#### Configure Agentforce via .sfdx-hardis.yml
+
+```yaml
+useAgentforce: true
+genericAgentforcePromptTemplate: SfdxHardisGenericPrompt
+genericAgentforcePromptUrl: /services/data/v{{API_VERSION}}/einstein/prompt-templates/{{PROMPT_TEMPLATE}}/generations
+```
+
+API keys or technical org auth URLs still have to be provided via secure environment variables; the config file only holds non-sensitive defaults.
+
 ### With LangChain
 
 [LangChainJs](https://js.langchain.com/docs/integrations/chat/) provides a unified interface to work with multiple LLM providers. This way to use AI provides better extensibility and future-proofing to extend support for more providers.
@@ -125,6 +135,21 @@ LANGCHAIN_LLM_MODEL=gemini-1.5-pro
 LANGCHAIN_LLM_MODEL_API_KEY=your-api-key
 ```
 
+#### Configure via .sfdx-hardis.yml
+
+You can store non-secret defaults for LangChain inside your project configuration so every contributor shares the same provider/model while API keys remain in CI/CD secrets:
+
+```yaml
+# .sfdx-hardis.yml
+useLangchainLlm: true
+langchainLlmProvider: google-genai
+langchainLlmModel: gemini-3-flash
+langchainLlmTemperature: 0.1
+langchainLlmMaxTokens: 1000
+```
+
+Only values that are safe to commit (model, provider, tuning) are loaded from the config file. Secrets such as `LANGCHAIN_LLM_MODEL_API_KEY` must always be provided through secure environment variables or your CI secret manager.
+
 ### With OpenAI Directly
 
 You need to define env variable OPENAI_API_KEY and make it available to your CI/CD workflow.
@@ -135,6 +160,15 @@ To get an OpenAi API key , register on [OpenAi Platform](https://platform.openai
 |----------------|-------------------------------------------------------------------------------------------|---------------|
 | OPENAI_API_KEY | Your openai account API key                                                               |               |
 | OPENAI_MODEL   | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/)) | `gpt-4o-mini` |
+
+#### Configure OpenAI via .sfdx-hardis.yml
+
+```yaml
+useOpenaiDirect: true
+openaiModel: gpt-4o-mini
+```
+
+Store only model and provider preferences in the config file; keep `OPENAI_API_KEY` in a secure environment variable.
 
 ## Templates
 

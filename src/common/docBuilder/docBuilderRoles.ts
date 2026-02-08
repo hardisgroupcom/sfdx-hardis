@@ -46,11 +46,11 @@ export class DocBuilderRoles {
       uxLog("success", this, c.green(`Using cached AI response for Roles`));
       return aiCache.cacheText || '';
     }
-    if (AiProvider.isAiAvailable()) {
+    if (await AiProvider.isAiAvailable()) {
       const variables = {
         ROLES_DESCRIPTION: rolesStrings
       };
-      const prompt = AiProvider.buildPrompt(promptKey, variables);
+      const prompt = await AiProvider.buildPrompt(promptKey, variables);
       const aiResponse = await AiProvider.promptAi(prompt, promptKey);
       if (aiResponse?.success) {
         let responseText = aiResponse.promptResponse || "No AI description available";

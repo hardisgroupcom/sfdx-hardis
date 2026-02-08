@@ -4,7 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.25.0] 2025-02-09
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
+  - Refactor to parallelize generation and LLMs invocation (default: 5, can be overridden with property promptsParallelCallNumber or variable PROMPTS_PARALLEL_CALL_NUMBER )
 - [hardis:org:diagnose:unusedusers](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/) Enhance unused users diagnosis with new license types and notification types
+- LLM Integration: allow to configure settings in .sfdx-hardis.yml.
 
 ## [6.24.1] 2025-02-03
 
@@ -24,9 +29,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [6.23.5] 2025-01-28
 
-- Authentication: When callback url post is busy, try to kill the ghost process then try again to run `sf org login web`
+- Authentication: When callback url port is busy, try to kill the ghost process then try again to run `sf org login web`
 - Display error in case of parsing issue in .sfdx-hardis.yml files
-- Switch MegaLinter LLM Advisor to Google Gemini 3
+- Switch MegaLinter LLM Advisor to Google Gemini 2.5 flash
 
 ## [6.23.4] 2025-01-27
 

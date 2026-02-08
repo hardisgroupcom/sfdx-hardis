@@ -58,6 +58,122 @@
   },
   "description": "Configuration file definition for sfdx-hardis Salesforce DX plugin",
   "properties": {
+    "promptsLanguage": {
+      "$id": "#/properties/promptsLanguage",
+      "description": "Language used for AI-generated prompts. If not set, the default language is English (en). Supported languages are defined in the code but not limited to: English (en), French (fr), Spanish (es), German (de), Italian (it), Portuguese (pt). If multiple languages, separate them with comma (ex: \"en,fr,de\") and the first one will be used as default language for prompts. (mirrors PROMPTS_LANGUAGE environment variable)",
+      "title": "Prompts language(s)",
+      "type": "string",
+      "default": "en"
+    },
+    "promptsParallelCallNumber": {
+      "$id": "#/properties/promptsParallelCallNumber",
+      "description": "Number of parallel AI prompt calls when generating project documentation. Higher values speed up documentation generation but may hit API rate limits. (mirrors PROMPTS_PARALLEL_CALL_NUMBER environment variable)",
+      "title": "Prompts parallel call number",
+      "type": "number",
+      "default": 5,
+      "minimum": 1,
+      "examples": [
+        1,
+        5,
+        10
+      ]
+    },
+    "useLangchainLlm": {
+      "$id": "#/properties/useLangchainLlm",
+      "description": "Set to true to enable LangChain integration (mirrors the USE_LANGCHAIN_LLM environment variable).",
+      "title": "Enable LangChain",
+      "type": "boolean",
+      "default": false
+    },
+    "langchainLlmProvider": {
+      "$id": "#/properties/langchainLlmProvider",
+      "description": "LLM provider identifier used with LangChain (ex: openai, anthropic, google-genai, ollama). Equivalent to LANGCHAIN_LLM_PROVIDER env var.",
+      "title": "LangChain provider",
+      "type": "string",
+      "enum": [
+        "openai",
+        "anthropic",
+        "google-genai",
+        "ollama"
+      ],
+      "enumNames": [
+        "OpenAI",
+        "Anthropic Claude",
+        "Google Gemini (GenAI)",
+        "Ollama"
+      ]
+    },
+    "langchainLlmModel": {
+      "$id": "#/properties/langchainLlmModel",
+      "description": "Model identifier to use with the configured LangChain provider. Latest models: OpenAI (gpt-5.2, gpt-5.2-mini, gpt-5, gpt-4.1, gpt-4o, gpt-4o-mini...), Anthropic (claude-opus-4-6, claude-3-5-sonnet, claude-3-5-haiku, claude-3-haiku...), Google Gemini (gemini-3-pro, gemini-3-pro-deep-think, gemini-3-flash, gemini-2.5-flash-lite...). Equivalent to LANGCHAIN_LLM_MODEL env var.",
+      "title": "LangChain model",
+      "type": "string"
+    },
+    "langchainLlmTemperature": {
+      "$id": "#/properties/langchainLlmTemperature",
+      "description": "Sampling temperature override for LangChain requests (maps to LANGCHAIN_LLM_TEMPERATURE env var).",
+      "title": "LangChain temperature",
+      "type": "number"
+    },
+    "langchainLlmMaxTokens": {
+      "$id": "#/properties/langchainLlmMaxTokens",
+      "description": "Maximum number of tokens generated per LangChain response (maps to LANGCHAIN_LLM_MAX_TOKENS env var).",
+      "title": "LangChain max tokens",
+      "type": "number"
+    },
+    "langchainLlmMaxRetries": {
+      "$id": "#/properties/langchainLlmMaxRetries",
+      "description": "Maximum number of retries for failed LangChain requests (maps to LANGCHAIN_LLM_MAX_RETRIES env var).",
+      "title": "LangChain max retries",
+      "type": "number"
+    },
+    "langchainLlmTimeout": {
+      "$id": "#/properties/langchainLlmTimeout",
+      "description": "Timeout in milliseconds applied to LangChain calls (maps to LANGCHAIN_LLM_TIMEOUT env var).",
+      "title": "LangChain timeout",
+      "type": "number"
+    },
+    "langchainLlmBaseUrl": {
+      "$id": "#/properties/langchainLlmBaseUrl",
+      "description": "Custom base URL for LangChain HTTP-based providers (for example a local Ollama endpoint). Equivalent to LANGCHAIN_LLM_BASE_URL env var.",
+      "title": "LangChain base URL",
+      "type": "string"
+    },
+    "useOpenaiDirect": {
+      "$id": "#/properties/useOpenaiDirect",
+      "description": "Set to true to enable the direct OpenAI connector (mirrors USE_OPENAI_DIRECT env var).",
+      "title": "Enable OpenAI",
+      "type": "boolean",
+      "default": true
+    },
+    "openaiModel": {
+      "$id": "#/properties/openaiModel",
+      "description": "Name of the OpenAI model to use by default (ex: gpt-4o, gpt-4o-mini). Equivalent to OPENAI_MODEL env var.",
+      "title": "OpenAI model",
+      "type": "string",
+      "default": "gpt-4o-mini"
+    },
+    "useAgentforce": {
+      "$id": "#/properties/useAgentforce",
+      "description": "Set to true to enable Agentforce integration (mirrors USE_AGENTFORCE env var).",
+      "title": "Enable Agentforce",
+      "type": "boolean",
+      "default": false
+    },
+    "genericAgentforcePromptTemplate": {
+      "$id": "#/properties/genericAgentforcePromptTemplate",
+      "description": "Prompt template API name to use by default (ex: SfdxHardisGenericPrompt). Equivalent to GENERIC_AGENTFORCE_PROMPT_TEMPLATE env var.",
+      "title": "Agentforce prompt template",
+      "type": "string",
+      "default": "SfdxHardisGenericPrompt"
+    },
+    "genericAgentforcePromptUrl": {
+      "$id": "#/properties/genericAgentforcePromptUrl",
+      "description": "Custom Agentforce template URL supporting placeholders {{API_VERSION}} and {{GENERIC_AGENTFORCE_PROMPT_TEMPLATE}} (mirrors GENERIC_AGENTFORCE_PROMPT_URL env var).",
+      "title": "Agentforce prompt URL",
+      "type": "string",
+      "default": "/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{PROMPT_TEMPLATE}}/generations"
+    },
     "allowedOrgTypes": {
       "$id": "#/properties/allowedOrgTypes",
       "description": "Types of Salesforce Orgs allowed for config & development. If not set, Sandbox Orgs and Scratch Orgs are allowed by default",

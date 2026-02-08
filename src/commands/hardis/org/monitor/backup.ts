@@ -318,14 +318,15 @@ If Flow history doc always display a single state, you probably need to update y
     // Run project documentation generation
     if (this.skipDoc !== true) {
       try {
-        const docLanguages = (getEnvVar('SFDX_DOC_LANGUAGES') || getEnvVar('PROMPTS_LANGUAGE') || 'en').split(",").reverse(); // Can be 'fr,en,de' for example
+        const config = await getConfig("user");
+        const docLanguages = (getEnvVar('SFDX_DOC_LANGUAGES') || getEnvVar('PROMPTS_LANGUAGE') || config.promptsLanguage || 'en').split(",").reverse(); // Can be 'fr,en,de' for example
         const prevPromptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
         for (const langKey of docLanguages) {
           uxLog("action", this, c.cyan("Generating doc in language " + c.bold(langKey)));
           process.env.PROMPTS_LANGUAGE = langKey;
           await Project2Markdown.run(["--diff-only", "--with-history"]);
           uxLog("action", this, c.cyan("Documentation generated from retrieved sources. If you want to skip it, use option --skip-doc"));
-          const config = await getConfig("user");
+
           if (config.docDeployToOrg || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_ORG === "true") {
             await MkDocsToSalesforce.run(["--type", "Monitoring"]);
           }
