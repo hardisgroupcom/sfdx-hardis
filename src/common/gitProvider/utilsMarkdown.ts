@@ -172,11 +172,12 @@ ${message.replace(/:\n-/gm, `:\n\n-`).trim()}
 }
 
 function getAiPromptTextMarkdown(title, message) {
+  const safeMessage = typeof message === "string" ? message : String(message ?? "");
   return `<details><summary><b>${title}</b></summary>
 
 _Request AI by copy-pasting the following text in ChatGPT or other AI prompt_
 
-${message.replace(/:\n-/gm, `:\n\n-`)}
+${safeMessage.replace(/:\n-/gm, `:\n\n-`)}
 </details>
 <br/>
 `;
