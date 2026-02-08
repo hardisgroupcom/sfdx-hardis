@@ -12,6 +12,7 @@ import { CONSTANTS, getEnvVar } from '../../../config/index.js';
 import which from 'which';
 import { generateMkDocsHTML } from '../../../common/docBuilder/docUtils.js';
 import { UtilsAi } from '../../../common/aiProvider/utils.js';
+import { WebSocketClient } from '../../../common/websocketClient.js';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -43,15 +44,15 @@ More information can be found in the [Documentation section](${CONSTANTS.DOC_URL
 
 **Environment Variables for Cloudflare Configuration:**
 
-| Variable                                  | Description                                                              | Default                               |\
-| :---------------------------------------- | :----------------------------------------------------------------------- | :------------------------------------: |\
-| \`CLOUDFLARE_EMAIL\`                        | Cloudflare account email                                                 | _Required_                            |\
-| \`CLOUDFLARE_API_TOKEN\`                    | Cloudflare API token                                                     | _Required_                            |\
-| \`CLOUDFLARE_ACCOUNT_ID\`                   | Cloudflare account ID                                                    | _Required_                            |\
-| \`CLOUDFLARE_PROJECT_NAME\`                 | Project name, also used for the site URL                                 | Built from Git branch name            |\
-| \`CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE\`    | Cloudflare default login method type                                     | \`onetimepin\`                          |\
-| \`CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN\`  | Cloudflare default access email domain                                   | \`@cloudity.com\`                       |\
-| \`CLOUDFLARE_EXTRA_ACCESS_POLICY_ID_LIST\`  | Comma-separated list of additional policy IDs to assign to the application | _Optional_                            |\
+| Variable                                  | Description                                                              | Default                               |
+| :---------------------------------------- | :----------------------------------------------------------------------- | :------------------------------------: |
+| \`CLOUDFLARE_EMAIL\`                        | Cloudflare account email                                                 | _Required_                            |
+| \`CLOUDFLARE_API_TOKEN\`                    | Cloudflare API token                                                     | _Required_                            |
+| \`CLOUDFLARE_ACCOUNT_ID\`                   | Cloudflare account ID                                                    | _Required_                            |
+| \`CLOUDFLARE_PROJECT_NAME\`                 | Project name, also used for the site URL                                 | Built from Git branch name            |
+| \`CLOUDFLARE_DEFAULT_LOGIN_METHOD_TYPE\`    | Cloudflare default login method type                                     | \`onetimepin\`                          |
+| \`CLOUDFLARE_DEFAULT_ACCESS_EMAIL_DOMAIN\`  | Cloudflare default access email domain                                   | \`@cloudity.com\`                       |
+| \`CLOUDFLARE_EXTRA_ACCESS_POLICY_ID_LIST\`  | Comma-separated list of additional policy IDs to assign to the application | _Optional_                            |
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -168,6 +169,8 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
     this.apiToken = process.env.CLOUDFLARE_API_TOKEN;
     this.accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
     if (!this.apiEmail || !this.accountId || !this.apiToken) {
+      WebSocketClient.sendReportFileMessage("https://sfdx-hardis.cloudity.com/salesforce-project-doc-cloudflare/", "Hosting on Cloudflare", 'docUrl');
+      uxLog("error", this, c.red('See https://sfdx-hardis.cloudity.com/salesforce-project-doc-cloudflare/ for instructions to set up environment variables and host your documentation on Cloudflare Pages for free.'));
       throw new Error('Missing CLOUDFLARE_EMAIL or CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID');
     }
     this.client = new Cloudflare({
