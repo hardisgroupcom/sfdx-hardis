@@ -1640,24 +1640,33 @@ ${Project2Markdown.htmlInstructions}
 
     // History
     if (this.withHistory) {
-      WebSocketClient.sendProgressStartMessage("Generating Flows History documentation...", flowFiles.length);
-      let counter1 = 0;
+      type HistoryWorkItem = { flowFile: string; flowName: string; diffMdFile: string; skip: boolean };
+      const historyWorkItems: HistoryWorkItem[] = [];
+
+      // Phase 1: Prepare work items
       for (const flowFile of flowFiles) {
         const flowName = path.basename(flowFile, ".flow-meta.xml");
         const diffMdFile = path.join("docs", "flows", path.basename(flowFile).replace(".flow-meta.xml", "-history.md"));
-        if (this.diffOnly && !updatedFlowNames.includes(flowName) && fs.existsSync(diffMdFile)) {
-          counter1++;
-          WebSocketClient.sendProgressStepMessage(counter1, flowFiles.length);
-          continue;
-        }
-        try {
-          await generateHistoryDiffMarkdown(flowFile, this.debugMode);
-        } catch (e: any) {
-          uxLog("warning", this, c.yellow(`Error generating history diff markdown: ${e.message}`));
-        }
-        counter1++;
-        WebSocketClient.sendProgressStepMessage(counter1, flowFiles.length);
+        const skip = this.diffOnly && !updatedFlowNames.includes(flowName) && fs.existsSync(diffMdFile);
+        historyWorkItems.push({ flowFile, flowName, diffMdFile, skip });
       }
+
+      // Phase 2: Generate history documentation with parallelization
+      WebSocketClient.sendProgressStartMessage("Generating Flows History documentation...", historyWorkItems.length);
+      let historyCounter = 0;
+      await PromisePool.withConcurrency(parallelism)
+        .for(historyWorkItems)
+        .process(async (item) => {
+          if (!item.skip) {
+            try {
+              await generateHistoryDiffMarkdown(item.flowFile, this.debugMode);
+            } catch (e: any) {
+              uxLog("warning", this, c.yellow(`Error generating history diff markdown for ${item.flowName}: ${e.message}`));
+            }
+          }
+          historyCounter++;
+          WebSocketClient.sendProgressStepMessage(historyCounter, historyWorkItems.length);
+        });
       WebSocketClient.sendProgressEndMessage();
     }
 
