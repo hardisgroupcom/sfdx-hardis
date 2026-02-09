@@ -43,6 +43,7 @@ import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../common/utils/gitUtils.js';
 import { PromisePool } from '@supercharge/promise-pool';
 import { UtilsAi } from '../../../common/aiProvider/utils.js';
+import ExcelJS from 'exceljs';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -140,7 +141,8 @@ ${this.htmlInstructions}
     '$ sf hardis:doc:project2markdown',
     '$ sf hardis:doc:project2markdown --with-history',
     '$ sf hardis:doc:project2markdown --with-history --pdf',
-    '$ sf hardis:doc:project2markdown --hide-apex-code'
+    '$ sf hardis:doc:project2markdown --hide-apex-code',
+    '$ sf hardis:doc:project2markdown --excel'
   ];
 
   public static flags: any = {
@@ -154,6 +156,9 @@ ${this.htmlInstructions}
     }),
     pdf: Flags.boolean({
       description: 'Also generate the documentation in PDF format',
+    }),
+    excel: Flags.boolean({
+      description: 'Also generate an Excel file with all metadata in separate tabs',
     }),
     "hide-apex-code": Flags.boolean({
       default: false,
@@ -186,6 +191,7 @@ ${this.htmlInstructions}
   protected mkDocsNavNodes: any[] = [{ "Home": "index.md" }];
   protected withHistory = false;
   protected withPdf = false;
+  protected withExcel = false;
   protected hideApexCode = false;
   protected debugMode = false;
   protected footer: string;
@@ -215,6 +221,7 @@ ${this.htmlInstructions}
     this.diffOnly = flags["diff-only"] === true ? true : false;
     this.withHistory = flags["with-history"] === true ? true : false;
     this.withPdf = flags.pdf === true ? true : false;
+    this.withExcel = flags.excel === true ? true : false;
     this.hideApexCode = flags["hide-apex-code"] === true || process?.env?.HIDE_APEX_CODE === 'true' ? true : false;
     this.debugMode = flags.debug || false;
     await setConnectionVariables(flags['target-org']?.getConnection(), true);// Required for some notifications providers like Email, or for Agentforce
@@ -371,6 +378,11 @@ ${Project2Markdown.htmlInstructions}
 
     await this.buildMkDocsYml();
 
+    // Generate Excel file if requested
+    if (this.withExcel) {
+      await this.generateExcelFile();
+    }
+
     // Delete files found in docs folder that contain characters not compliant with Windows file system
     // (e.g. /, \, :, *, ?, ", <, >, |)
     const filesToDelete = await glob("**/*", { cwd: this.outputMarkdownRoot, nodir: true });
@@ -514,6 +526,9 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePackagesDocumentation() {
+    uxLog("action", this, c.cyan("Preparing generation of Installed Packages documentation... " +
+      "(if you don't want it, define GENERATE_PACKAGES_DOC=false in your environment variables)"));
+
     const packagesForMenu: any = { "All Packages": "packages/index.md" }
     // List packages
     const packages = this.sfdxHardisConfig.installedPackages || [];     // CI/CD context
@@ -531,8 +546,15 @@ ${Project2Markdown.htmlInstructions}
       }
     }
 
+    if (packages.length === 0) {
+      uxLog("log", this, c.yellow("No installed package found in the project"));
+      return;
+    }
+
     // Phase 1: Collect data and prepare work items
+    WebSocketClient.sendProgressStartMessage("Collecting Installed Packages data and preparing work items...", packages.length);
     const workItems: { packageName: string; mdFile: string; pckg: any; packageMetadatas: string; tmpOutput: string; mdFileBad: string }[] = [];
+    let counter = 0;
     for (const pckg of packages) {
       const packageName = pckg.SubscriberPackageName;
       const mdFile = path.join(this.outputMarkdownRoot, "packages", makeFileNameGitCompliant(packageName) + ".md");
@@ -555,12 +577,15 @@ ${Project2Markdown.htmlInstructions}
       }
       const mdFileBad = path.join(this.outputMarkdownRoot, "packages", packageName + ".md");
       workItems.push({ packageName, mdFile, pckg, packageMetadatas, tmpOutput, mdFileBad });
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter, packages.length);
     }
+    WebSocketClient.sendProgressEndMessage();
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
     WebSocketClient.sendProgressStartMessage("Generating Installed Packages documentation...", workItems.length);
-    let counter = 0;
+    counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
       .process(async (item) => {
@@ -578,6 +603,7 @@ ${Project2Markdown.htmlInstructions}
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
+    WebSocketClient.sendProgressEndMessage();
     if (Object.keys(packagesForMenu).length > 1) {
       this.addNavNode("Packages", packagesForMenu);
     }
@@ -585,7 +611,6 @@ ${Project2Markdown.htmlInstructions}
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "packages"));
     const packagesIndexFile = path.join(this.outputMarkdownRoot, "packages", "index.md");
     await fs.writeFile(packagesIndexFile, getMetaHideLines() + DocBuilderPackage.buildIndexTable('', this.packageDescriptions).join("\n") + `\n\n${this.footer}\n`);
-    WebSocketClient.sendProgressEndMessage();
   }
 
   private async generatePagesDocumentation() {
@@ -1339,7 +1364,6 @@ ${Project2Markdown.htmlInstructions}
     for (const objectFile of this.objectFiles) {
       const objectName = path.basename(objectFile, ".object");
       if ((objectName.endsWith("__dlm") || objectName.endsWith("__dll")) && !(process.env?.INCLUDE_DATA_CLOUD_DOC === "true")) {
-        uxLog("log", this, c.grey(`Skip Data Cloud Object ${objectName}... (use INCLUDE_DATA_CLOUD_DOC=true to enforce it)`));
         workItems.push({ objectName, objectXml: "", objectMdFile: "", objectXmlParsed: null, skip: true });
         continue;
       }
@@ -1354,6 +1378,7 @@ ${Project2Markdown.htmlInstructions}
       });
       workItems.push({ objectName, objectXml, objectMdFile, objectXmlParsed, skip: false });
     }
+    uxLog("log", this, `Skipped ${workItems.filter(item => item.skip).length} Data Cloud objects from documentation generation (define variable INCLUDE_DATA_CLOUD_DOC=true to include them)`);
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
@@ -1504,6 +1529,7 @@ ${Project2Markdown.htmlInstructions}
         description: flowContent?.Flow?.description?.[0] || "",
         type: flowContent?.Flow?.processType?.[0] === "Flow" ? "ScreenFlow" : flowContent?.Flow?.start?.[0]?.triggerType?.[0] ?? (flowContent?.Flow?.processType?.[0] || "ERROR (Unknown)"),
         processType: flowContent?.Flow?.processType?.[0] || "",
+        status: flowContent?.Flow?.status?.[0] || "",
         object: flowContent?.Flow?.start?.[0]?.object?.[0] || flowContent?.Flow?.processMetadataValues?.filter(pmv => pmv.name[0] === "ObjectType")?.[0]?.value?.[0]?.stringValue?.[0] || "",
         impactedObjects: this.allObjectsNames.filter(objectName => flowXml.includes(`>${objectName}<`))
       });
@@ -1821,5 +1847,190 @@ ${Project2Markdown.htmlInstructions}
     );
 
     uxLog("success", this, c.green(`Successfully generated documentation for Lightning Web Components at ${lwcIndexFile}`));
+  }
+
+  private async generateExcelFile() {
+    uxLog("action", this, c.cyan("Generating Excel file with all metadata..."));
+
+    const workbook = new ExcelJS.Workbook();
+    const excelFilePath = path.join(this.outputMarkdownRoot, "project-documentation.xlsx");
+
+    // Collect metadata counts
+    const nonProcessBuilderFlows = this.flowDescriptions.filter(flow => flow.processType !== "Workflow");
+    const processBuilders = this.flowDescriptions.filter(flow => flow.processType === "Workflow");
+
+    const metadataCounts = [
+      { type: 'Objects', count: this.objectDescriptions.length },
+      { type: 'Apex', count: this.apexDescriptions.length },
+      { type: 'Flows', count: nonProcessBuilderFlows.length },
+      { type: 'Process Builders', count: processBuilders.length },
+      { type: 'Workflow Rules', count: this.workflowRulesDescriptions.length },
+      { type: 'Approval Processes', count: this.approvalProcessesDescriptions.length },
+      { type: 'Assignment Rules', count: this.assignmentRulesDescriptions.length },
+      { type: 'AutoResponse Rules', count: this.autoResponseRulesDescriptions.length },
+      { type: 'Escalation Rules', count: this.escalationRulesDescriptions.length },
+      { type: 'Profiles', count: this.profileDescriptions.length },
+      { type: 'Permission Sets', count: this.permissionSetsDescriptions.length },
+      { type: 'Permission Set Groups', count: this.permissionSetGroupsDescriptions.length },
+      { type: 'Roles', count: this.roleDescriptions.length },
+      { type: 'Lightning Pages', count: this.pageDescriptions.length },
+      { type: 'Packages', count: this.packageDescriptions.length },
+      { type: 'Lightning Web Components', count: this.lwcDescriptions.length }
+    ];
+
+    // Create summary worksheet
+    const summarySheet = workbook.addWorksheet('Summary');
+    summarySheet.columns = [
+      { header: 'Metadata Type', key: 'type', width: 30 },
+      { header: 'Count', key: 'count', width: 15 }
+    ];
+
+    // Style summary header
+    summarySheet.getRow(1).font = { bold: true, size: 12 };
+    summarySheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4472C4' }
+    };
+    summarySheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+    // Add summary data
+    let totalCount = 0;
+    metadataCounts.forEach(item => {
+      summarySheet.addRow(item);
+      totalCount += item.count;
+    });
+
+    // Add total row
+    const totalRow = summarySheet.addRow({ type: 'TOTAL', count: totalCount });
+    totalRow.font = { bold: true };
+    totalRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    // Helper function to create a worksheet with data
+    const addWorksheet = (name: string, data: any[], columns: string[]) => {
+      if (data.length === 0) return;
+
+      const worksheet = workbook.addWorksheet(name);
+
+      // Add header row
+      worksheet.columns = columns.map(col => ({
+        header: col.charAt(0).toUpperCase() + col.slice(1).replace(/([A-Z])/g, ' $1').trim(),
+        key: col,
+        width: 20
+      }));
+
+      // Style header row
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+      };
+
+      // Add data rows
+      data.forEach(item => {
+        const row: any = {};
+        columns.forEach(col => {
+          let value = item[col];
+          // Handle arrays
+          if (Array.isArray(value)) {
+            value = value.join(', ');
+          }
+          // Handle booleans
+          if (typeof value === 'boolean') {
+            value = value ? 'Yes' : 'No';
+          }
+          row[col] = value || '';
+        });
+        worksheet.addRow(row);
+      });
+
+      // Auto-filter
+      worksheet.autoFilter = {
+        from: 'A1',
+        to: String.fromCharCode(64 + columns.length) + '1'
+      };
+    };
+
+    // Add sheets for each metadata type
+    if (this.objectDescriptions.length > 0) {
+      addWorksheet('Objects', this.objectDescriptions, ['name', 'label', 'description']);
+    }
+
+    if (this.apexDescriptions.length > 0) {
+      addWorksheet('Apex', this.apexDescriptions, ['name', 'type']);
+    }
+
+    if (nonProcessBuilderFlows.length > 0) {
+      addWorksheet('Flows', nonProcessBuilderFlows, ['name', 'type', 'object', 'description', 'status']);
+    }
+
+    if (processBuilders.length > 0) {
+      addWorksheet('Process Builders', processBuilders, ['name', 'type', 'object', 'description', 'status']);
+    }
+
+    if (this.workflowRulesDescriptions.length > 0) {
+      addWorksheet('Workflow Rules', this.workflowRulesDescriptions, ['name', 'active', 'object']);
+    }
+
+    if (this.approvalProcessesDescriptions.length > 0) {
+      addWorksheet('Approval Processes', this.approvalProcessesDescriptions, ['name', 'active']);
+    }
+
+    if (this.assignmentRulesDescriptions.length > 0) {
+      addWorksheet('Assignment Rules', this.assignmentRulesDescriptions, ['name', 'active']);
+    }
+
+    if (this.autoResponseRulesDescriptions.length > 0) {
+      addWorksheet('AutoResponse Rules', this.autoResponseRulesDescriptions, ['name', 'active']);
+    }
+
+    if (this.escalationRulesDescriptions.length > 0) {
+      addWorksheet('Escalation Rules', this.escalationRulesDescriptions, ['name', 'active']);
+    }
+
+    if (this.profileDescriptions.length > 0) {
+      addWorksheet('Profiles', this.profileDescriptions, ['name', 'userLicense']);
+    }
+
+    if (this.permissionSetsDescriptions.length > 0) {
+      addWorksheet('Permission Sets', this.permissionSetsDescriptions, ['name', 'userLicense']);
+    }
+
+    if (this.permissionSetGroupsDescriptions.length > 0) {
+      addWorksheet('Permission Set Groups', this.permissionSetGroupsDescriptions, ['name', 'description']);
+    }
+
+    if (this.roleDescriptions.length > 0) {
+      addWorksheet('Roles', this.roleDescriptions, ['apiName', 'name', 'parentRole']);
+    }
+
+    if (this.pageDescriptions.length > 0) {
+      addWorksheet('Lightning Pages', this.pageDescriptions, ['name', 'type']);
+    }
+
+    if (this.packageDescriptions.length > 0) {
+      addWorksheet('Packages', this.packageDescriptions, ['name', 'namespace', 'versionNumber', 'versionName']);
+    }
+
+    if (this.lwcDescriptions.length > 0) {
+      addWorksheet('LWC', this.lwcDescriptions, ['name', 'description', 'targets', 'isExposed']);
+    }
+
+    // Save the workbook
+    await workbook.xlsx.writeFile(excelFilePath);
+    uxLog("success", this, c.green(`Successfully generated Excel file at ${excelFilePath}`));
+
+    // Open file in VS Code if available
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      WebSocketClient.sendReportFileMessage(excelFilePath, "Excel summary", 'report');
+    }
+    else {
+      WebSocketClient.requestOpenFile(excelFilePath);
+    }
   }
 }
