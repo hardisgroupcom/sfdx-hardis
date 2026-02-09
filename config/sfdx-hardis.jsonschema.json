@@ -1141,7 +1141,7 @@
     "docDeployToCloudflare": {
       "$id": "#/properties/docDeployToCloudflare",
       "default": false,
-      "description": "Automatically deploy MkDocs HTML documentation from CI/CD Workflows to Cloudflare",
+      "description": "Automatically deploy MkDocs HTML documentation from sfdx-hardis Monitoring Workflow (BackUp step) to Cloudflare, as a static web site",
       "examples": [
         true
       ],
@@ -1151,7 +1151,7 @@
     "docDeployToOrg": {
       "$id": "#/properties/docDeployToOrg",
       "default": false,
-      "description": "Automatically deploy MkDocs HTML documentation from CI/CD Workflows to Salesforce org as static resource",
+      "description": "Automatically deploy MkDocs HTML documentation from sfdx-hardis Monitoring Workflow (BackUp step) to Salesforce org, as static resource",
       "examples": [
         true
       ],

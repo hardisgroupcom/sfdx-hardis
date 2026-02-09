@@ -1796,8 +1796,8 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateLwcDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Lightning Web Components documentation... " +
-      "(if you don't want it, use --no-generate-lwc-doc or define GENERATE_LWC_DOC=false)"));
+    uxLog("action", this, c.cyan("Preparing generation of Lightning Web Components documentation... "));
+    uxLog("log", this, "If you don't want it, use --no-generate-lwc-doc or define GENERATE_LWC_DOC=false");
 
     const lwcForMenu: any = { "All Lightning Web Components": "lwc/index.md" };
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "lwc"));
