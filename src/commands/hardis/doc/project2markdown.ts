@@ -38,6 +38,7 @@ import { DocBuilderAutoResponseRules } from "../../../common/docBuilder/docBuild
 import { DocBuilderEscalationRules } from '../../../common/docBuilder/docBuilderEscalationRules.js';
 import { DocBuilderRoles } from '../../../common/docBuilder/docBuilderRoles.js';
 import { DocBuilderPackage } from '../../../common/docBuilder/docBuilderPackage.js';
+import { DocBuilderWorkflowRule } from '../../../common/docBuilder/docBuilderWorkflowRule.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../common/utils/gitUtils.js';
 import { PromisePool } from '@supercharge/promise-pool';
@@ -200,8 +201,10 @@ ${this.htmlInstructions}
   protected autoResponseRulesDescriptions: any[] = [];
   protected approvalProcessesDescriptions: any[] = [];
   protected escalationRulesDescriptions: any[] = [];
+  protected workflowRulesDescriptions: any[] = [];
   protected roleDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
+  protected processBuildersForMenu: any = { "All Process Builders": "processBuilders/index.md" };
   protected objectFiles: string[];
   protected allObjectsNames: string[];
   protected tempDir: string;
@@ -231,6 +234,8 @@ ${this.htmlInstructions}
       "  - [AutoResponse Rules](autoResponseRules/index.md)",
       "  - [Escalation Rules](escalationRules/index.md)",
       "  - [Flows](flows/index.md)",
+      "  - [Process Builders](processBuilders/index.md)",
+      "  - [Workflow Rules](workflowRules/index.md)",
       "- Authorizations",
       "  - [Profiles](profiles/index.md)",
       "  - [Permission Set Groups](permissionsetgroups/index.md)",
@@ -275,7 +280,9 @@ ${this.htmlInstructions}
     const instanceUrl = flags?.['target-org']?.getConnection()?.instanceUrl;
     await this.generatePackageXmlMarkdown(this.packageXmlCandidates, instanceUrl);
     const { packageLines, packagesForMenu } = await DocBuilderPackageXML.buildIndexTable(this.outputPackageXmlMarkdownFiles);
-    this.addNavNode("Manifests", packagesForMenu);
+    if (Object.keys(packagesForMenu).length > 0) {
+      this.addNavNode("Manifests", packagesForMenu);
+    }
     await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), getMetaHideLines() + packageLines.join("\n") + `\n${this.footer}\n`);
 
     this.tempDir = await createTempDir()
@@ -299,6 +306,7 @@ ${this.htmlInstructions}
     // List flows & generate doc
     if (!(process?.env?.GENERATE_FLOW_DOC === 'false')) {
       await this.generateFlowsDocumentation();
+      await this.generateProcessBuilderDocumentation();
     }
 
     // List pages & generate doc
@@ -328,6 +336,8 @@ ${this.htmlInstructions}
       await this.generateAutoResponseRulesDocumentation();
       // List escalation rules and generate doc
       await this.generateEscalationRulesDocumentation();
+      // List workflow rules and generate doc
+      await this.generateWorkflowRulesDocumentation();
     }
 
     // List LWC & generate doc
@@ -493,7 +503,9 @@ ${Project2Markdown.htmlInstructions}
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
     WebSocketClient.sendProgressEndMessage();
-    this.addNavNode("Apex", apexForMenu);
+    if (Object.keys(apexForMenu).length > 1) {
+      this.addNavNode("Apex", apexForMenu);
+    }
 
     // Write index file for apex folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "apex"));
@@ -566,7 +578,9 @@ ${Project2Markdown.htmlInstructions}
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
-    this.addNavNode("Packages", packagesForMenu);
+    if (Object.keys(packagesForMenu).length > 1) {
+      this.addNavNode("Packages", packagesForMenu);
+    }
     // Write index file for packages folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "packages"));
     const packagesIndexFile = path.join(this.outputMarkdownRoot, "packages", "index.md");
@@ -610,7 +624,9 @@ ${Project2Markdown.htmlInstructions}
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
     WebSocketClient.sendProgressEndMessage();
-    this.addNavNode("Lightning Pages", pagesForMenu);
+    if (Object.keys(pagesForMenu).length > 1) {
+      this.addNavNode("Lightning Pages", pagesForMenu);
+    }
 
     // Write index file for pages folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "pages"));
@@ -659,7 +675,9 @@ ${Project2Markdown.htmlInstructions}
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
     WebSocketClient.sendProgressEndMessage();
-    this.addNavNode("Profiles", profilesForMenu);
+    if (Object.keys(profilesForMenu).length > 1) {
+      this.addNavNode("Profiles", profilesForMenu);
+    }
     // Write index file for profiles folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "profiles"));
     const profilesIndexFile = path.join(this.outputMarkdownRoot, "profiles", "index.md");
@@ -710,7 +728,9 @@ ${Project2Markdown.htmlInstructions}
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
     WebSocketClient.sendProgressEndMessage();
-    this.addNavNode("Permission Sets", psForMenu);
+    if (Object.keys(psForMenu).length > 1) {
+      this.addNavNode("Permission Sets", psForMenu);
+    }
     // Write index file for permission sets folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "permissionsets"));
     const psIndexFile = path.join(this.outputMarkdownRoot, "permissionsets", "index.md");
@@ -762,7 +782,9 @@ ${Project2Markdown.htmlInstructions}
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
     WebSocketClient.sendProgressEndMessage();
-    this.addNavNode("Permission Set Groups", psgForMenu);
+    if (Object.keys(psgForMenu).length > 1) {
+      this.addNavNode("Permission Set Groups", psgForMenu);
+    }
 
     // Write index file for permission set groups folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "permissionsetgroups"));
@@ -790,7 +812,9 @@ ${Project2Markdown.htmlInstructions}
 
       this.roleDescriptions.push(roleInfo);
     }
-    this.addNavNode("Roles", "roles.md");
+    if (this.roleDescriptions.length > 0) {
+      this.addNavNode("Roles", "roles.md");
+    }
 
     // Add Roles documentation
     const rolesIndexFile = path.join(this.outputMarkdownRoot, "roles.md");
@@ -857,7 +881,9 @@ ${Project2Markdown.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
 
-    this.addNavNode("Assignment Rules", assignmentRulesForMenu);
+    if (Object.keys(assignmentRulesForMenu).length > 1) {
+      this.addNavNode("Assignment Rules", assignmentRulesForMenu);
+    }
 
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "assignmentRules"));
     const psgIndexFile = path.join(this.outputMarkdownRoot, "assignmentRules", "index.md");
@@ -912,7 +938,9 @@ ${Project2Markdown.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
 
-    this.addNavNode("Approval Processes", approvalProcessesForMenu);
+    if (Object.keys(approvalProcessesForMenu).length > 1) {
+      this.addNavNode("Approval Processes", approvalProcessesForMenu);
+    }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "approvalProcesses"));
     const approvalProcessesIndexFile = path.join(this.outputMarkdownRoot, "approvalProcesses", "index.md");
     await fs.writeFile(approvalProcessesIndexFile, getMetaHideLines() + DocBuilderApprovalProcess.buildIndexTable('', this.approvalProcessesDescriptions).join("\n") + `\n\n${this.footer}\n`);
@@ -973,7 +1001,9 @@ ${Project2Markdown.htmlInstructions}
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
     WebSocketClient.sendProgressEndMessage();
-    this.addNavNode("AutoResponse Rules", autoResponseRulesForMenu);
+    if (Object.keys(autoResponseRulesForMenu).length > 1) {
+      this.addNavNode("AutoResponse Rules", autoResponseRulesForMenu);
+    }
 
     // Write index file for permission set groups folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "autoResponseRules"));
@@ -1037,11 +1067,112 @@ ${Project2Markdown.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
 
-    this.addNavNode("Escalation Rules", escalationRulesForMenu);
+    if (Object.keys(escalationRulesForMenu).length > 1) {
+      this.addNavNode("Escalation Rules", escalationRulesForMenu);
+    }
 
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "escalationRules"));
     const psgIndexFile = path.join(this.outputMarkdownRoot, "escalationRules", "index.md");
     await fs.writeFile(psgIndexFile, getMetaHideLines() + DocBuilderEscalationRules.buildIndexTable('', this.escalationRulesDescriptions).join("\n") + `\n${this.footer}\n`);
+  }
+
+  private async generateWorkflowRulesDocumentation() {
+    uxLog("action", this, c.cyan("Preparing generation of Workflow Rules documentation... " +
+      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
+
+    const workflowRulesForMenu: any = { "All Workflow Rules": "workflowRules/index.md" };
+    const workflowRulesFiles = (await glob("**/workflows/**.workflow-meta.xml", {
+      cwd: process.cwd(),
+      ignore: GLOB_IGNORE_PATTERNS
+    }));
+    sortCrossPlatform(workflowRulesFiles);
+    const builder = new XMLBuilder();
+
+    if (workflowRulesFiles.length === 0) {
+      uxLog("log", this, c.yellow("No workflow rule found in the project"));
+      return;
+    }
+
+    const workItems: { ruleName: string; mdFile: string; ruleXml: string }[] = [];
+    for (const workflowFile of workflowRulesFiles) {
+      const workflowXml = await fs.readFile(workflowFile, "utf8");
+      const workflowXmlParsed = new XMLParser().parse(workflowXml);
+      const workflowObjectName = path.basename(workflowFile, ".workflow-meta.xml");
+      let rulesList = workflowXmlParsed?.Workflow?.rules || workflowXmlParsed?.Workflow?.workflowRule || [];
+      if (!Array.isArray(rulesList)) {
+        rulesList = [rulesList];
+      }
+
+      for (const rule of rulesList) {
+        const ruleName = rule?.fullName || rule?.name || "Unnamed";
+        const displayName = `${workflowObjectName}.${ruleName}`;
+        const fileName = makeFileNameGitCompliant(displayName);
+        const mdFile = path.join(this.outputMarkdownRoot, "workflowRules", fileName + ".md");
+        workflowRulesForMenu[displayName] = "workflowRules/" + fileName + ".md";
+        this.workflowRulesDescriptions.push({
+          name: displayName,
+          fileName,
+          active: rule?.active,
+          object: workflowObjectName,
+          impactedObjects: [workflowObjectName]
+        });
+        const ruleXml = builder.build({ workflowRule: rule });
+        workItems.push({ ruleName: displayName, mdFile, ruleXml });
+      }
+    }
+
+    if (workItems.length === 0) {
+      uxLog("log", this, c.yellow("No workflow rule found in the project"));
+      return;
+    }
+
+    const parallelism = await UtilsAi.getPromptsParallelCallNumber();
+    WebSocketClient.sendProgressStartMessage("Generating Workflow Rules documentation...", workItems.length);
+    let counter = 0;
+    await PromisePool.withConcurrency(parallelism)
+      .for(workItems)
+      .process(async (item) => {
+        await new DocBuilderWorkflowRule(item.ruleName, item.ruleXml, item.mdFile).generateMarkdownFileFromXml();
+        if (this.withPdf) {
+          await generatePdfFileFromMarkdown(item.mdFile);
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, workItems.length);
+      });
+    WebSocketClient.sendProgressEndMessage();
+
+    if (Object.keys(workflowRulesForMenu).length > 1) {
+      this.addNavNode("Workflow Rules", workflowRulesForMenu);
+    }
+
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "workflowRules"));
+    const workflowRulesIndexFile = path.join(this.outputMarkdownRoot, "workflowRules", "index.md");
+    await fs.writeFile(
+      workflowRulesIndexFile,
+      getMetaHideLines() + DocBuilderWorkflowRule.buildIndexTable('', this.workflowRulesDescriptions).join("\n") + `\n${this.footer}\n`
+    );
+  }
+
+  private async generateProcessBuilderDocumentation() {
+    const processBuilders = this.flowDescriptions.filter(flow => flow.processType === "Workflow");
+    if (processBuilders.length === 0) {
+      uxLog("log", this, c.yellow("No process builder found in the project"));
+      return;
+    }
+
+    uxLog("action", this, c.cyan("Generating Process Builder documentation..."));
+
+    if (Object.keys(this.processBuildersForMenu).length > 1) {
+      this.addNavNode("Process Builders", this.processBuildersForMenu);
+    }
+
+    await fs.ensureDir(path.join(this.outputMarkdownRoot, "processBuilders"));
+    const indexLines = DocBuilderFlow.buildIndexTable('../flows/', processBuilders, this.outputMarkdownRoot);
+    const processBuildersIndexFile = path.join(this.outputMarkdownRoot, "processBuilders", "index.md");
+    await fs.writeFile(processBuildersIndexFile, getMetaHideLines() + indexLines.join("\n") + `\n${this.footer}\n`);
+    if (this.withPdf) {
+      await generatePdfFileFromMarkdown(processBuildersIndexFile);
+    }
   }
 
   private async buildMkDocsYml() {
@@ -1133,7 +1264,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Add root menus
     const rootSections = [
-      { menu: "Automations", subMenus: ["Approval Processes", "Assignment Rules", "AutoResponse Rules", "Escalation Rules", "Flows"] },
+      { menu: "Automations", subMenus: ["Approval Processes", "Assignment Rules", "AutoResponse Rules", "Escalation Rules", "Flows", "Process Builders", "Workflow Rules"] },
       { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
       { menu: "Code", subMenus: ["Apex", "Lightning Web Components"] },
     ];
@@ -1255,8 +1386,13 @@ ${Project2Markdown.htmlInstructions}
           await generateMarkdownFileWithMermaid(item.objectMdFile, item.objectMdFile, null, true);
         }
         // Flows Table
-        const relatedObjectFlowsTable = DocBuilderFlow.buildIndexTable('../flows/', this.flowDescriptions, this.outputMarkdownRoot, item.objectName);
+        const nonProcessBuilderFlows = this.flowDescriptions.filter(flow => flow.processType !== "Workflow");
+        const relatedObjectFlowsTable = DocBuilderFlow.buildIndexTable('../flows/', nonProcessBuilderFlows, this.outputMarkdownRoot, item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- Flows table -->', relatedObjectFlowsTable.join("\n"));
+        // Process Builders Table
+        const processBuilderFlows = this.flowDescriptions.filter(flow => flow.processType === "Workflow");
+        const relatedProcessBuildersTable = DocBuilderFlow.buildIndexTable('../flows/', processBuilderFlows, this.outputMarkdownRoot, item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- Process Builders table -->', relatedProcessBuildersTable.join("\n"));
         // Apex Table
         const relatedApexTable = DocBuilderApex.buildIndexTable('../apex/', this.apexDescriptions, item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- Apex table -->', relatedApexTable.join("\n"));
@@ -1281,6 +1417,9 @@ ${Project2Markdown.htmlInstructions}
         // Escalation Rules table
         const relatedEscalationRulesTable = DocBuilderEscalationRules.buildIndexTable('../escalationRules/', this.escalationRulesDescriptions, item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- EscalationRules table -->', relatedEscalationRulesTable.join("\n"));
+        // Workflow Rules table
+        const relatedWorkflowRulesTable = DocBuilderWorkflowRule.buildIndexTable('../workflowRules/', this.workflowRulesDescriptions, item.objectName);
+        await replaceInFile(item.objectMdFile, '<!-- Workflow Rules table -->', relatedWorkflowRulesTable.join("\n"));
 
         if (this.withPdf) {
           await generatePdfFileFromMarkdown(item.objectMdFile);
@@ -1289,7 +1428,9 @@ ${Project2Markdown.htmlInstructions}
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
     WebSocketClient.sendProgressEndMessage();
-    this.addNavNode("Objects", objectsForMenu);
+    if (Object.keys(objectsForMenu).length > 1) {
+      this.addNavNode("Objects", objectsForMenu);
+    }
 
     // Write index file for objects folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
@@ -1362,10 +1503,15 @@ ${Project2Markdown.htmlInstructions}
         name: flowName,
         description: flowContent?.Flow?.description?.[0] || "",
         type: flowContent?.Flow?.processType?.[0] === "Flow" ? "ScreenFlow" : flowContent?.Flow?.start?.[0]?.triggerType?.[0] ?? (flowContent?.Flow?.processType?.[0] || "ERROR (Unknown)"),
+        processType: flowContent?.Flow?.processType?.[0] || "",
         object: flowContent?.Flow?.start?.[0]?.object?.[0] || flowContent?.Flow?.processMetadataValues?.filter(pmv => pmv.name[0] === "ObjectType")?.[0]?.value?.[0]?.stringValue?.[0] || "",
         impactedObjects: this.allObjectsNames.filter(objectName => flowXml.includes(`>${objectName}<`))
       });
-      flowsForMenu[flowName] = "flows/" + flowName + ".md";
+      if (flowContent?.Flow?.processType?.[0] !== "Workflow") {
+        flowsForMenu[flowName] = "flows/" + flowName + ".md";
+      } else {
+        this.processBuildersForMenu[flowName] = "flows/" + flowName + ".md";
+      }
       const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", flowName + ".md");
       if (this.diffOnly && !updatedFlowNames.includes(flowName) && fs.existsSync(outputFlowMdFile)) {
         flowSkips.push(flowFile);
@@ -1410,6 +1556,7 @@ ${Project2Markdown.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     this.flowDescriptions = sortArray(this.flowDescriptions, { by: ['object', 'name'], order: ['asc', 'asc'] }) as any[]
+    const nonProcessBuilderFlowsSorted = this.flowDescriptions.filter(flow => flow.processType !== "Workflow");
 
     // History
     if (this.withHistory) {
@@ -1448,7 +1595,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Write index file for flow folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
-    const flowTableLinesForIndex = DocBuilderFlow.buildIndexTable('', this.flowDescriptions, this.outputMarkdownRoot);
+    const flowTableLinesForIndex = DocBuilderFlow.buildIndexTable('', nonProcessBuilderFlowsSorted, this.outputMarkdownRoot);
     const flowIndexFile = path.join(this.outputMarkdownRoot, "flows", "index.md");
     await fs.writeFile(flowIndexFile, getMetaHideLines() + flowTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
 
@@ -1659,7 +1806,9 @@ ${Project2Markdown.htmlInstructions}
 
     WebSocketClient.sendProgressEndMessage();
 
-    this.addNavNode("Lightning Web Components", lwcForMenu);
+    if (Object.keys(lwcForMenu).length > 1) {
+      this.addNavNode("Lightning Web Components", lwcForMenu);
+    }
 
     // Write index file for LWC folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "lwc"));

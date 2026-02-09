@@ -85,6 +85,8 @@ export class DocBuilderObject extends DocBuilderRoot {
       '',
       '<!-- Flows table -->',
       '',
+      '<!-- Process Builders table -->',
+      '',
       '<!-- Apex table -->',
       '',
       '<!-- Pages table -->',
@@ -92,6 +94,8 @@ export class DocBuilderObject extends DocBuilderRoot {
       '<!-- Profiles table -->',
       '',
       '<!-- PermissionSets table -->',
+      '',
+      '<!-- Workflow Rules table -->',
     ];
   }
 
