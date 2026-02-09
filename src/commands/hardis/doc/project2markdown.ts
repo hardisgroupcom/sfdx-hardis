@@ -142,7 +142,9 @@ ${this.htmlInstructions}
     '$ sf hardis:doc:project2markdown --with-history',
     '$ sf hardis:doc:project2markdown --with-history --pdf',
     '$ sf hardis:doc:project2markdown --hide-apex-code',
-    '$ sf hardis:doc:project2markdown --excel'
+    '$ sf hardis:doc:project2markdown --excel',
+    '$ sf hardis:doc:project2markdown --no-generate-apex-doc --no-generate-lwc-doc',
+    '$ sf hardis:doc:project2markdown --no-generate-automations-doc'
   ];
 
   public static flags: any = {
@@ -163,6 +165,38 @@ ${this.htmlInstructions}
     "hide-apex-code": Flags.boolean({
       default: false,
       description: "Hide Apex code in the generated documentation for Apex classes.",
+    }),
+    "generate-packages-doc": Flags.boolean({
+      default: true,
+      description: "Generate Installed Packages documentation",
+    }),
+    "generate-apex-doc": Flags.boolean({
+      default: true,
+      description: "Generate Apex documentation",
+    }),
+    "generate-flow-doc": Flags.boolean({
+      default: true,
+      description: "Generate Flows, Process Builders and Workflow Rules documentation",
+    }),
+    "generate-pages-doc": Flags.boolean({
+      default: true,
+      description: "Generate Lightning Pages documentation",
+    }),
+    "generate-profiles-doc": Flags.boolean({
+      default: true,
+      description: "Generate Profiles, Permission Sets, Permission Set Groups and Roles documentation",
+    }),
+    "generate-objects-doc": Flags.boolean({
+      default: true,
+      description: "Generate Objects documentation",
+    }),
+    "generate-automations-doc": Flags.boolean({
+      default: true,
+      description: "Generate Automations documentation (Approval Processes, Assignment Rules, AutoResponse Rules, Escalation Rules)",
+    }),
+    "generate-lwc-doc": Flags.boolean({
+      default: true,
+      description: "Generate Lightning Web Components documentation",
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -194,6 +228,14 @@ ${this.htmlInstructions}
   protected withExcel = false;
   protected hideApexCode = false;
   protected debugMode = false;
+  protected generatePackagesDoc = true;
+  protected generateApexDoc = true;
+  protected generateFlowDoc = true;
+  protected generatePagesDoc = true;
+  protected generateProfilesDoc = true;
+  protected generateObjectsDoc = true;
+  protected generateAutomationsDoc = true;
+  protected generateLwcDoc = true;
   protected footer: string;
   protected apexDescriptions: any[] = [];
   protected flowDescriptions: any[] = [];
@@ -224,6 +266,14 @@ ${this.htmlInstructions}
     this.withExcel = flags.excel === true ? true : false;
     this.hideApexCode = flags["hide-apex-code"] === true || process?.env?.HIDE_APEX_CODE === 'true' ? true : false;
     this.debugMode = flags.debug || false;
+    this.generatePackagesDoc = flags["generate-packages-doc"] !== false && process?.env?.GENERATE_PACKAGES_DOC !== 'false';
+    this.generateApexDoc = flags["generate-apex-doc"] !== false && process?.env?.GENERATE_APEX_DOC !== 'false';
+    this.generateFlowDoc = flags["generate-flow-doc"] !== false && process?.env?.GENERATE_FLOW_DOC !== 'false';
+    this.generatePagesDoc = flags["generate-pages-doc"] !== false && process?.env?.GENERATE_PAGES_DOC !== 'false';
+    this.generateProfilesDoc = flags["generate-profiles-doc"] !== false && process?.env?.GENERATE_PROFILES_DOC !== 'false';
+    this.generateObjectsDoc = flags["generate-objects-doc"] !== false && process?.env?.GENERATE_OBJECTS_DOC !== 'false';
+    this.generateAutomationsDoc = flags["generate-automations-doc"] !== false && process?.env?.GENERATE_AUTOMATIONS_DOC !== 'false';
+    this.generateLwcDoc = flags["generate-lwc-doc"] !== false && process?.env?.GENERATE_LWC_DOC !== 'false';
     await setConnectionVariables(flags['target-org']?.getConnection(), true);// Required for some notifications providers like Email, or for Agentforce
 
     await fs.ensureDir(this.outputMarkdownRoot);
@@ -301,28 +351,29 @@ ${this.htmlInstructions}
     this.allObjectsNames = this.objectFiles.map(object => path.basename(object, ".object"));
 
     // Generate packages documentation
-    if (!(process?.env?.GENERATE_PACKAGES_DOC === 'false')) {
+    if (this.generatePackagesDoc) {
       await this.generatePackagesDocumentation();
     }
 
     // Generate Apex doc
-    if (!(process?.env?.GENERATE_APEX_DOC === 'false')) {
+    if (this.generateApexDoc) {
       await this.generateApexDocumentation();
     }
 
-    // List flows & generate doc
-    if (!(process?.env?.GENERATE_FLOW_DOC === 'false')) {
+    // List flows & generate doc (Flows, Process Builder & Workflow rules)
+    if (this.generateFlowDoc) {
       await this.generateFlowsDocumentation();
       await this.generateProcessBuilderDocumentation();
+      await this.generateWorkflowRulesDocumentation();
     }
 
     // List pages & generate doc
-    if (!(process?.env?.GENERATE_PAGES_DOC === 'false')) {
+    if (this.generatePagesDoc) {
       await this.generatePagesDocumentation();
     }
 
     // List profiles & generate doc
-    if (!(process?.env?.GENERATE_PROFILES_DOC === 'false')) {
+    if (this.generateProfilesDoc) {
       await this.generateProfilesDocumentation();
       await this.generatePermissionSetGroupsDocumentation();
       await this.generatePermissionSetsDocumentation();
@@ -330,11 +381,11 @@ ${this.htmlInstructions}
     }
 
     // List objects & generate doc
-    if (!(process?.env?.GENERATE_OBJECTS_DOC === 'false')) {
+    if (this.generateObjectsDoc) {
       await this.generateObjectsDocumentation();
     }
 
-    if (!(process?.env?.GENERATE_AUTOMATIONS_DOC === 'false')) {
+    if (this.generateAutomationsDoc) {
       // List approval processes & generate doc
       await this.generateApprovalProcessDocumentation();
       // List assignment rules and generate doc
@@ -343,12 +394,10 @@ ${this.htmlInstructions}
       await this.generateAutoResponseRulesDocumentation();
       // List escalation rules and generate doc
       await this.generateEscalationRulesDocumentation();
-      // List workflow rules and generate doc
-      await this.generateWorkflowRulesDocumentation();
     }
 
     // List LWC & generate doc
-    if (!(process?.env?.GENERATE_LWC_DOC === 'false')) {
+    if (this.generateLwcDoc) {
       await this.generateLwcDocumentation();
     }
 
@@ -408,7 +457,8 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateApexDocumentation() {
-    uxLog("action", this, c.cyan("Calling ApexDocGen to initialize Apex documentation... (if you don't want it, define GENERATE_APEX_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Calling ApexDocGen to initialize Apex documentation..."));
+    uxLog("log", this, "If you don't want it, use --no-generate-apex-doc or define GENERATE_APEX_DOC=false");
     const tempDir = await createTempDir();
     uxLog("log", this, c.grey(`Using temp directory ${tempDir}`));
     const packageDirs = this.project?.getPackageDirectories() || [];
@@ -526,8 +576,8 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePackagesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Installed Packages documentation... " +
-      "(if you don't want it, define GENERATE_PACKAGES_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of Installed Packages documentation..."));
+    uxLog("log", this, "If you don't want it, use --no-generate-packages-doc or define GENERATE_PACKAGES_DOC=false");
 
     const packagesForMenu: any = { "All Packages": "packages/index.md" }
     // List packages
@@ -660,7 +710,8 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateProfilesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Profiles documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of Profiles documentation..."));
+    uxLog("log", this, "If you don't want it, use --no-generate-profiles-doc or define GENERATE_PROFILES_DOC=false");
     const profilesForMenu: any = { "All Profiles": "profiles/index.md" };
     const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(profilesFiles);
@@ -710,7 +761,8 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePermissionSetsDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Permission Sets documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of Permission Sets documentation..."));
+    uxLog("log", this, "If you don't want it, use --no-generate-profiles-doc or define GENERATE_PROFILES_DOC=false");
     const psForMenu: any = { "All Permission Sets": "permissionsets/index.md" };
     const psFiles = (await glob("**/permissionsets/**.permissionset-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(psFiles);
@@ -818,7 +870,8 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateRolesDocumentation() {
-    uxLog("action", this, c.cyan("Generating Roles documentation... (if you don't want it, define GENERATE_PROFILES_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Generating Roles documentation..."));
+    uxLog("log", this, "If you don't want it, use --no-generate-profiles-doc or define GENERATE_PROFILES_DOC=false");
     const roleFiles = (await glob("**/roles/**.role-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(roleFiles);
     if (roleFiles.length === 0) {
@@ -851,8 +904,8 @@ ${Project2Markdown.htmlInstructions}
 
 
   private async generateAssignmentRulesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Assignment Rules documentation... " +
-      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of Assignment Rules documentation..."));
+    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
 
     const assignmentRulesForMenu: any = { "All Assignment Rules": "assignmentRules/index.md" };
     const assignmentRulesFiles = (await glob("**/assignmentRules/**.assignmentRules-meta.xml", {
@@ -916,8 +969,8 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateApprovalProcessDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Approval Processes documentation... " +
-      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of Approval Processes documentation..."));
+    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
 
     const approvalProcessesForMenu: any = { "All Approval Processes": "approvalProcesses/index.md" }
     const approvalProcessFiles = (await glob("**/approvalProcesses/**.approvalProcess-meta.xml", {
@@ -972,8 +1025,8 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateAutoResponseRulesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of AutoResponse Rules documentation... " +
-      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of AutoResponse Rules documentation..."));
+    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
 
     const autoResponseRulesForMenu: any = { "All AutoResponse Rules": "autoResponseRules/index.md" };
     const autoResponseRulesFiles = (await glob("**/autoResponseRules/**.autoResponseRules-meta.xml", {
@@ -1037,8 +1090,8 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateEscalationRulesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Escalation Rules documentation... " +
-      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of Escalation Rules documentation..."));
+    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
 
     const escalationRulesForMenu: any = { "All Escalation Rules": "escalationRules/index.md" };
     const escalationRulesFiles = (await glob("**/escalationRules/**.escalationRules-meta.xml", {
@@ -1102,8 +1155,8 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateWorkflowRulesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Workflow Rules documentation... " +
-      "(if you don't want it, define GENERATE_AUTOMATIONS_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of Workflow Rules documentation..."));
+    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
 
     const workflowRulesForMenu: any = { "All Workflow Rules": "workflowRules/index.md" };
     const workflowRulesFiles = (await glob("**/workflows/**.workflow-meta.xml", {
@@ -1352,7 +1405,8 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateObjectsDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Objects AI documentation... (if you don't want it, define GENERATE_OBJECTS_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of Objects AI documentation..."));
+    uxLog("log", this, "If you don't want it, use --no-generate-objects-doc or define GENERATE_OBJECTS_DOC=false");
 
     const objectLinksInfo = await this.generateLinksInfo();
     const objectsForMenu: any = { "All objects": "objects/index.md" }
@@ -1491,7 +1545,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateFlowsDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Flows Visual documentation... (if you don't want it, define GENERATE_FLOW_DOC=false in your environment variables)"));
+    uxLog("action", this, c.cyan("Preparing generation of Flows Visual documentation... (if you don't want it, use --no-generate-flow-doc or define GENERATE_FLOW_DOC=false)"));
     const flowsForMenu: any = { "All flows": "flows/index.md" }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const packageDirs = this.project?.getPackageDirectories();
@@ -1743,7 +1797,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generateLwcDocumentation() {
     uxLog("action", this, c.cyan("Preparing generation of Lightning Web Components documentation... " +
-      "(if you don't want it, define GENERATE_LWC_DOC=false in your environment variables)"));
+      "(if you don't want it, use --no-generate-lwc-doc or define GENERATE_LWC_DOC=false)"));
 
     const lwcForMenu: any = { "All Lightning Web Components": "lwc/index.md" };
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "lwc"));

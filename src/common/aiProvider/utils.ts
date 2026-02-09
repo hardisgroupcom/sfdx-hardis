@@ -99,6 +99,6 @@ export class UtilsAi {
         return configVal;
       }
     }
-    return 5;
+    return 10;
   }
 }

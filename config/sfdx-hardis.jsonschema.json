@@ -70,7 +70,7 @@
       "description": "Number of parallel AI prompt calls when generating project documentation. Higher values speed up documentation generation but may hit API rate limits. (mirrors PROMPTS_PARALLEL_CALL_NUMBER environment variable)",
       "title": "Prompts parallel call number",
       "type": "number",
-      "default": 5,
+      "default": 10,
       "minimum": 1,
       "examples": [
         1,
