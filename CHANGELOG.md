@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:project:clean:profiles-extract](https://sfdx-hardis.cloudity.com/hardis/project/clean/profiles-extract/):
+  - Added support for filtering SObjects with qualified names.
+  - Updated CSV generation functions to skip WebSocket notifications.
+  - Enhanced error handling and logging for bulk queries.
+  - Implemented concurrent processing for fetching object fields.
+  - Sort items in XLSX
+
 ## [6.25.1] 2025-02-10
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
