@@ -230,7 +230,7 @@ Key capabilities:
       uxLog('log', this, c.cyan('Fetching SObjects completed.'));
       uxLog('log', this, c.cyan(`Fetched ${sobjectsList.length} SObjects.`));
 
-      const sobjectsWithRecords: { Object_Label: string; API_Name: string; Object_Type: string }[] = [];
+      const sobjectsWithRecords: { API_Name: string; Object_Label: string; Object_Type: string }[] = [];
 
       WebSocketClient.sendProgressStartMessage('Checking SObjects for records...', sobjectsList.length);
       let counter = 0;
@@ -240,7 +240,7 @@ Key capabilities:
           try {
             const result = await conn.query(`SELECT COUNT() FROM ${sobject.name}`);
             if (result.totalSize > 0) {
-              sobjectsWithRecords.push({ Object_Label: sobject.label, API_Name: sobject.name, Object_Type: sobject.objectType });
+              sobjectsWithRecords.push({ API_Name: sobject.name, Object_Label: sobject.label, Object_Type: sobject.objectType });
             }
             uxLog('log', this, `Checked ${sobject.name}: ${result.totalSize} records.`);
           } catch (error) {
@@ -288,8 +288,10 @@ Key capabilities:
       uxLog("log", this, c.cyan('Generating Objects.csv report...'));
       const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, 'Objects.csv');
+      const objectsToWrite = sobjectsWithRecords.filter((sobj) => selectedObjects.includes(sobj.API_Name));
+      sortArray(objectsToWrite, { by: 'API_Name', order: 'asc' });
       // Without xlsx
-      await generateCsvFile(sobjectsWithRecords.filter((sobj) => selectedObjects.includes(sobj.API_Name)), this.outputFile, { fileTitle: 'profiles extract', noExcel: true, skipNotifyToWebSocket: true });
+      await generateCsvFile(objectsToWrite, this.outputFile, { fileTitle: 'profiles extract', noExcel: true, skipNotifyToWebSocket: true });
       // With xlsx
       // this.outputFilesRes = await generateCsvFile(sobjectsWithRecords.filter((sobj) => selectedObjects.includes(sobj.API_Name)), this.outputFile, { fileTitle: 'profiles extract' });
 
@@ -326,6 +328,7 @@ Key capabilities:
     uxLog('log', this, c.cyan(`Active profiles: ${Array.from(this.activeProfileNames).join(', ')}`));
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Users.csv');
+    sortArray(usersRecords, { by: 'User', order: 'asc' });
     await generateCsvFile(usersRecords, this.outputFile, { fileTitle: 'Users extract', noExcel: true, skipNotifyToWebSocket: true });
     this.csvFiles.push(this.outputFile);
     return;
@@ -388,6 +391,7 @@ Key capabilities:
     });
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Relation.csv');
+    sortArray(relationRecords, { by: 'Object', order: 'asc' });
     await generateCsvFile(relationRecords, this.outputFile, { fileTitle: 'Relation Object Persona', noExcel: true, skipNotifyToWebSocket: true });
     this.csvFiles.push(this.outputFile);
     return;
@@ -424,6 +428,7 @@ Key capabilities:
     }
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'RecordTypes.csv');
+    sortArray(recordTypesRecords, { by: 'Object', order: 'asc' });
     await generateCsvFile(recordTypesRecords, this.outputFile, { fileTitle: 'Record Types extract', noExcel: true, skipNotifyToWebSocket: true });
     this.csvFiles.push(this.outputFile);
     return;
@@ -458,6 +463,7 @@ Key capabilities:
     }
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Applications.csv');
+    sortArray(appsRecords, { by: 'Application', order: 'asc' });
     await generateCsvFile(appsRecords, this.outputFile, { fileTitle: 'Applications extract', noExcel: true, skipNotifyToWebSocket: true });
     this.csvFiles.push(this.outputFile);
     return;
@@ -494,6 +500,7 @@ Key capabilities:
     });
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Permissions.csv');
+    sortArray(permissionsRecords, { by: 'Permission_Label', order: 'asc' });
     await generateCsvFile(permissionsRecords, this.outputFile, { fileTitle: 'Permissions extract', noExcel: true, skipNotifyToWebSocket: true });
     this.csvFiles.push(this.outputFile);
     return;
@@ -523,6 +530,7 @@ Key capabilities:
       });
       const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, 'Tabs.csv');
+      sortArray(tabsRecords, { by: 'Tab_Label', order: 'asc' });
       await generateCsvFile(tabsRecords, this.outputFile, { fileTitle: 'Tabs extract', noExcel: true, skipNotifyToWebSocket: true });
       this.csvFiles.push(this.outputFile);
     } catch (error) {
@@ -609,6 +617,7 @@ Key capabilities:
           });
           const reportDir = await getReportDirectory();
           const outputFile = path.join(reportDir, `${objName} Fields.csv`);
+          sortArray(fieldsRecords, { by: 'API_Name', order: 'asc' });
           await generateCsvFile(fieldsRecords, outputFile, { fileTitle: `${objName} Fields extract`, noExcel: true, skipNotifyToWebSocket: true });
           outputFiles[index] = outputFile;
         } catch (error) {
@@ -655,6 +664,7 @@ Key capabilities:
 
       const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, 'PermissionSets.csv');
+      sortArray(permissionSetsRecords, { by: 'Name', order: 'asc' });
       await generateCsvFile(permissionSetsRecords, this.outputFile, {
         fileTitle: 'Permission Sets extract',
         noExcel: true,
