@@ -6,10 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_WORKFLOW_RULE
 # PROMPT_DESCRIBE_WORKFLOW_RULE
 
 ## Variables
-| Name | Description | Example |
-| :------|:-------------|:---------|
-| **WORKFLOWRULE_NAME** | The name of the Salesforce Workflow Rule to describe. | `Account.HighValue_Alert` |
-| **WORKFLOWRULE_XML** | The XML metadata for the Salesforce Workflow Rule. | `<workflowRule>...</workflowRule>` |
+| Name                  | Description                                           | Example                            |
+|:----------------------|:------------------------------------------------------|:-----------------------------------|
+| **WORKFLOWRULE_NAME** | The name of the Salesforce Workflow Rule to describe. | `Account.HighValue_Alert`          |
+| **WORKFLOWRULE_XML**  | The XML metadata for the Salesforce Workflow Rule.    | `<workflowRule>...</workflowRule>` |
 
 ## Prompt
 
