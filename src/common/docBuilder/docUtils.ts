@@ -122,7 +122,7 @@ export class SalesforceSetupUrlBuilder {
 
     if (!pathTemplate) {
       if (!alreadySaid.includes(metadataType)) {
-        uxLog("log", this, c.grey(`Unsupported metadata type for doc quick link: ${metadataType}`));
+        //        uxLog("log", this, c.grey(`Unsupported metadata type for doc quick link: ${metadataType}`));
         alreadySaid.push(metadataType);
       }
       return null;

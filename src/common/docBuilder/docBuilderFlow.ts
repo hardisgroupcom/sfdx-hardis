@@ -22,8 +22,8 @@ export class DocBuilderFlow extends DocBuilderRoot {
     lines.push(...[
       filterObject ? "## Related Flows" : "## Flows",
       "",
-      "| Object | Name      | Type | Description |",
-      "| :----  | :-------- | :--: | :---------- | "
+      "| Object | Name      | Type | Description | Status |",
+      "| :----  | :-------- | :--: | :---------- | :----- |"
     ]);
     for (const flow of filteredFlows) {
       const outputFlowHistoryMdFile = path.join(outputMarkdownRoot, "flows", flow.name + "-history.md");
@@ -31,7 +31,7 @@ export class DocBuilderFlow extends DocBuilderRoot {
         `[${flow.name}](${prefix}${flow.name}.md) [🕒](${prefix}${flow.name}-history.md)` :
         `[${flow.name}](${prefix}${flow.name}.md)`;
       lines.push(...[
-        `| ${flow.object || "💻"} | ${flowNameCell} | ${prettifyFieldName(flow.type)} | ${mdTableCell(flow.description)} |`
+        `| ${flow.object || "💻"} | ${flowNameCell} | ${prettifyFieldName(flow.type)} | ${mdTableCell(flow.description)} | ${flow.status || ""} |`
       ]);
     }
     lines.push("");

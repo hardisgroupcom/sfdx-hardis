@@ -70,7 +70,7 @@
       "description": "Number of parallel AI prompt calls when generating project documentation. Higher values speed up documentation generation but may hit API rate limits. (mirrors PROMPTS_PARALLEL_CALL_NUMBER environment variable)",
       "title": "Prompts parallel call number",
       "type": "number",
-      "default": 5,
+      "default": 10,
       "minimum": 1,
       "examples": [
         1,
@@ -1141,7 +1141,7 @@
     "docDeployToCloudflare": {
       "$id": "#/properties/docDeployToCloudflare",
       "default": false,
-      "description": "Automatically deploy MkDocs HTML documentation from CI/CD Workflows to Cloudflare",
+      "description": "Automatically deploy MkDocs HTML documentation from sfdx-hardis Monitoring Workflow (BackUp step) to Cloudflare, as a static web site",
       "examples": [
         true
       ],
@@ -1151,7 +1151,7 @@
     "docDeployToOrg": {
       "$id": "#/properties/docDeployToOrg",
       "default": false,
-      "description": "Automatically deploy MkDocs HTML documentation from CI/CD Workflows to Salesforce org as static resource",
+      "description": "Automatically deploy MkDocs HTML documentation from sfdx-hardis Monitoring Workflow (BackUp step) to Salesforce org, as static resource",
       "examples": [
         true
       ],
