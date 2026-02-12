@@ -139,7 +139,8 @@ export async function listPageFiles(packageDirs) {
 
 export function returnApexType(apexCode: string) {
   const apexContentlower = apexCode.toLowerCase();
-  return apexContentlower.includes("@istest(seealldata=true)") ? "Test (See All Data)" :
+  return apexContentlower.trimStart().startsWith("trigger ") ? "Trigger" :
+    apexContentlower.includes("@istest(seealldata=true)") ? "Test (See All Data)" :
     apexContentlower.includes("@istest") ? "Test" :
       apexContentlower.includes("@invocablemethod") ? "Invocable" :
         apexContentlower.includes("@restresource") ? "REST" :
