@@ -88,6 +88,7 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
     const recordStream = await conn.bulk2.query(soqlQuery);
     recordStream.on('error', (err) => {
       uxLog("warning", this, c.yellow('Bulk Query error: ' + err));
+      uxLog("log", this, c.yellow("Full Query was: " + soqlQuery));
       globalThis.sfdxHardisFatalError = true;
     });
     // Wait for all results

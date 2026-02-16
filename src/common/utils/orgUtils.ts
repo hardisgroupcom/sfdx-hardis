@@ -820,3 +820,10 @@ export async function listOrgSObjectsFiltered(connection: Connection): Promise<{
   }
   return sObjectsDict;
 }
+
+export async function listOrgSObjectsFilteredWithQualifiedNames(connection: Connection): Promise<any[]> {
+  const sObjectResults = await listOrgSObjects(connection);
+  return sObjectResults.records.filter((record) =>
+    !record.QualifiedApiName.endsWith("__Share") && !record.QualifiedApiName.endsWith("__ChangeEvent")
+  );
+}
