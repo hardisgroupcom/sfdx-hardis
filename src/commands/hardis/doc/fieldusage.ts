@@ -7,6 +7,8 @@ import sortArray from 'sort-array';
 import { generateReports, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../../../common/utils/apiUtils.js';
 
+const REF_METADATA_COMPONENT_BATCH_SIZE = 50;
+
 export default class HardisDocFieldusage extends SfCommand<any> {
 
   public static flags: any = {
@@ -98,14 +100,24 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
   }
 
   public async queryMetadataComponentDependency(connection: Connection, fieldIds: string[]) {
-    const metadataQuery = `
-      SELECT MetadataComponentId, MetadataComponentType, MetadataComponentName, RefMetadataComponentName, RefMetadataComponentId
-      FROM MetadataComponentDependency
-      WHERE RefMetadataComponentId IN (${fieldIds.join(',')})
-    `;
-    const dependencyResults = await soqlQueryTooling(metadataQuery, connection);
+    const allRecords: any[] = [];
 
-    return dependencyResults;
+    for (let i = 0; i < fieldIds.length; i += REF_METADATA_COMPONENT_BATCH_SIZE) {
+      const batch = fieldIds.slice(i, i + REF_METADATA_COMPONENT_BATCH_SIZE);
+
+      const metadataQuery = `
+        SELECT MetadataComponentId, MetadataComponentType, MetadataComponentName, RefMetadataComponentName, RefMetadataComponentId
+        FROM MetadataComponentDependency
+        WHERE RefMetadataComponentId IN (${batch.join(',')})
+      `;
+
+      const dependencyResults = await soqlQueryTooling(metadataQuery, connection);
+      allRecords.push(...dependencyResults.records);
+
+      uxLog("other", this, `Processed batch ${Math.floor(i / REF_METADATA_COMPONENT_BATCH_SIZE) + 1} of ${Math.ceil(fieldIds.length / REF_METADATA_COMPONENT_BATCH_SIZE)} (${batch.length} fields)`);
+    }
+
+    return { records: allRecords };
   }
 
   public async run(): Promise<AnyJson> {

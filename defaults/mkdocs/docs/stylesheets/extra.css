@@ -31,3 +31,10 @@
   --md-primary-fg-color: #1B1464;
   --md-footer-bg-color: #1B1464;
 }
+
+/* Wider content area for large screens (1920px and above)*/
+@media screen and (min-width: 75em) {
+  .md-grid {
+    max-width: 90rem; /* default is 61rem (~976px), now ~1440px */
+  }
+}
