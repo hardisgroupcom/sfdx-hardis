@@ -683,7 +683,7 @@ export function shortenLogLines(rawLog: string) {
     .replace(/(Status: In Progress \|.*\n)/gm, '');
   // Truncate JSON if huge log
   if (rawLogCleaned.split("\n").length > 1000 && !(process.env?.NO_TRUNCATE_LOGS === "true")) {
-    const msg = "Result truncated by sfdx-hardis. Define NO_TRUNCATE_LOGS=true tu have full JSON logs";
+    const msg = "Result truncated by sfdx-hardis. Define NO_TRUNCATE_LOGS=true to have full JSON logs";
     const jsonLog = findJsonInString(rawLogCleaned);
     if (jsonLog) {
       if (jsonLog?.result?.details?.componentSuccesses) {
