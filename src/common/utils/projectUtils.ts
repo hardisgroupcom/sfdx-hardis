@@ -137,25 +137,44 @@ export async function listPageFiles(packageDirs) {
   return pageFiles.sort();
 }
 
+// @apexdevtools/apex-parser may give more robust result, but if used, it worth starting from project2markdown.ts
+export function stripApexLeadingComments(code: string): string {
+  let s = code;
+  while (true) {
+    s = s.trimStart();
+    if (s.startsWith("//")) {
+      const newline = s.indexOf("\n");
+      s = newline === -1 ? "" : s.slice(newline + 1);
+    } else if (s.startsWith("/*")) {
+      const end = s.indexOf("*/");
+      s = end === -1 ? "" : s.slice(end + 2);
+    } else {
+      break;
+    }
+  }
+  return s;
+}
+
 export function returnApexType(apexCode: string) {
   const apexContentlower = apexCode.toLowerCase();
-  return apexContentlower.trimStart().startsWith("trigger ") ? "Trigger" :
+  const strippedLower = stripApexLeadingComments(apexContentlower);
+  return strippedLower.trimStart().startsWith("trigger ") ? "Trigger" :
     apexContentlower.includes("@istest(seealldata=true)") ? "Test (See All Data)" :
-    apexContentlower.includes("@istest") ? "Test" :
-      apexContentlower.includes("@invocablemethod") ? "Invocable" :
-        apexContentlower.includes("@restresource") ? "REST" :
-          apexContentlower.includes("implements database.batchable") ? "Batch" :
-            apexContentlower.includes("implements batchable") ? "Batch" :
-              apexContentlower.includes("implements database.schedulable") ? "Schedulable" :
-                apexContentlower.includes("implements schedulable") ? "Schedulable" :
-                  apexContentlower.includes("@auraenabled") ? "Lightning Controller" :
-                    apexContentlower.includes("apexpages.standardcontroller") ? "Visualforce Controller" :
-                      apexContentlower.includes("pagereference") ? "Visualforce Controller" :
-                        apexContentlower.includes("triggerhandler") ? "Trigger Handler" :
-                          apexContentlower.includes("new httprequest") ? "Callout" :
-                            apexContentlower.includes("jsonparser parser") ? "JSON" :
-                              apexContentlower.includes("public class soaprequest") ? "SOAP" :
-                                "Class";
+      apexContentlower.includes("@istest") ? "Test" :
+        apexContentlower.includes("@invocablemethod") ? "Invocable" :
+          apexContentlower.includes("@restresource") ? "REST" :
+            apexContentlower.includes("implements database.batchable") ? "Batch" :
+              apexContentlower.includes("implements batchable") ? "Batch" :
+                apexContentlower.includes("implements database.schedulable") ? "Schedulable" :
+                  apexContentlower.includes("implements schedulable") ? "Schedulable" :
+                    apexContentlower.includes("@auraenabled") ? "Lightning Controller" :
+                      apexContentlower.includes("apexpages.standardcontroller") ? "Visualforce Controller" :
+                        apexContentlower.includes("pagereference") ? "Visualforce Controller" :
+                          apexContentlower.includes("triggerhandler") ? "Trigger Handler" :
+                            apexContentlower.includes("new httprequest") ? "Callout" :
+                              apexContentlower.includes("jsonparser parser") ? "JSON" :
+                                apexContentlower.includes("public class soaprequest") ? "SOAP" :
+                                  "Class";
 }
 
 // Update only if found API version is inferior to the candidate API version (convert to number)
