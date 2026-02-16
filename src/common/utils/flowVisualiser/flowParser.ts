@@ -34,6 +34,14 @@ const FLOW_NODE_TYPES = [
 /**
  * Sanitizes a label for use in Mermaid diagrams by escaping special characters
  * that could break the Mermaid syntax (quotes, backticks, angle brackets, etc.)
+ * 
+ * Mermaid uses a specific escaping strategy:
+ * - For quotes, brackets, pipes, and braces: Uses numeric character references without ampersand (e.g., #quot;, #91;)
+ * - For angle brackets: Uses HTML entities (e.g., &lt;, &gt;) which are also supported by Mermaid
+ * 
+ * This mixed approach follows Mermaid's own documentation and ensures maximum compatibility.
+ * See: https://mermaid.js.org/config/escaping.html
+ * 
  * @param label The label to sanitize
  * @returns The sanitized label safe for use in Mermaid diagrams
  */
