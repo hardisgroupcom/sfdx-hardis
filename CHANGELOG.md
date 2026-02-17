@@ -4,10 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fix mkdocs layout to better utilize screen space on FHD+ monitors
+## [6.26.0] 2025-02-17
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
+  - Fix mkdocs layout to better utilize screen space on FHD+ monitors
+  - Fix flows parsing errors when they contain special characters in their labels
 - [hardis:doc:fieldusage](https://sfdx-hardis.cloudity.com/hardis/doc/fieldusage/): Add field usage documentation: Execute dependencies query in batches
 - [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): Fix active / unused users commands calls
-- doc: Fix small typo
+- Doc: Fix small typo
 - Upgrade npm dependencies
 
 ## [6.25.1] 2025-02-10
