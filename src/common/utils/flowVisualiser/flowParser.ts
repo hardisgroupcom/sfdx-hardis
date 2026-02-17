@@ -31,6 +31,38 @@ const FLOW_NODE_TYPES = [
     'transforms'
 ];
 
+/**
+ * Sanitizes a label for use in Mermaid diagrams by escaping special characters
+ * that could break the Mermaid syntax (quotes, backticks, angle brackets, etc.)
+ * 
+ * Mermaid uses a specific escaping strategy:
+ * - For quotes, brackets, pipes, and braces: Uses numeric character references without ampersand (e.g., #quot;, #91;)
+ * - For angle brackets: Uses HTML entities (e.g., &lt;, &gt;) which are also supported by Mermaid
+ * 
+ * This mixed approach follows Mermaid's own documentation and ensures maximum compatibility.
+ * See: https://mermaid.js.org/config/escaping.html
+ * 
+ * @param label The label to sanitize
+ * @returns The sanitized label safe for use in Mermaid diagrams
+ */
+function sanitizeMermaidLabel(label: string | undefined): string {
+    if (!label) {
+        return '';
+    }
+    // Replace special characters that could break Mermaid syntax
+    return label
+        .replace(/"/g, '#quot;')      // Replace double quotes with #quot;
+        .replace(/'/g, '#39;')         // Replace single quotes with #39;
+        .replace(/`/g, '#96;')         // Replace backticks with #96;
+        .replace(/</g, '&lt;')         // Replace < with &lt;
+        .replace(/>/g, '&gt;')         // Replace > with &gt;
+        .replace(/\|/g, '#124;')       // Replace pipe with #124;
+        .replace(/\[/g, '#91;')        // Replace [ with #91;
+        .replace(/]/g, '#93;')         // Replace ] with #93;
+        .replace(/{/g, '#123;')        // Replace { with #123;
+        .replace(/}/g, '#125;');       // Replace } with #125;
+}
+
 export async function parseFlow(xml: string, renderAs: "mermaid" | "plantuml" = "mermaid", options: any = {}): Promise<{ flowMap: FlowMap, uml: string }> {
     try {
         const flowObj = new XMLParser().parse(xml).Flow;
@@ -238,10 +270,10 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
                 for (const path of node.scheduledPaths) {
                     path.label = (path.label) ? path.label : 'Run Immediately';
                     if (path?.connector?.targetReference) {
-                        bodyStr += 'START --> |"' + path.label + '"| ' + path.connector.targetReference + "\n";
+                        bodyStr += 'START --> |"' + sanitizeMermaidLabel(path.label) + '"| ' + path.connector.targetReference + "\n";
                     }
                     else if (nextNode) {
-                        bodyStr += 'START --> |"' + path.label + '"| ' + nextNode + "\n";
+                        bodyStr += 'START --> |"' + sanitizeMermaidLabel(path.label) + '"| ' + nextNode + "\n";
                     }
                 }
 
@@ -250,12 +282,12 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
                 // rules
                 for (const rule of node.rules) {
                     if (rule.nextNode?.targetReference) {
-                        bodyStr += node.name + ' --> |"' + rule.label + '"| ' + rule.nextNode.targetReference + "\n";
+                        bodyStr += node.name + ' --> |"' + sanitizeMermaidLabel(rule.label) + '"| ' + rule.nextNode.targetReference + "\n";
                     }
                 }
 
                 // default
-                bodyStr += node.name + ' --> |"' + node.nextNodeLabel + '"| ' + nextNode + "\n";
+                bodyStr += node.name + ' --> |"' + sanitizeMermaidLabel(node.nextNodeLabel) + '"| ' + nextNode + "\n";
                 manageAddEndNode(nextNode, endNodeIds);
                 break;
             case 'loops':
@@ -317,7 +349,7 @@ async function getNodeDefStr(flowMap: FlowMap, flowType: string, startFingerPrin
         // Create Mermaid Lines
         if (FLOW_NODE_TYPES.includes(type)) {
             // Mermaid node
-            nodeDefStr += property + (<any>NODE_CONFIG)[type].mermaidOpen + '"' + icon + " <em>" + label + "</em><br/>" + flowMap[property].label + '"' + (<any>NODE_CONFIG)[type].mermaidClose + ':::' + type + "\n"
+            nodeDefStr += property + (<any>NODE_CONFIG)[type].mermaidOpen + '"' + icon + " <em>" + label + "</em><br/>" + sanitizeMermaidLabel(flowMap[property].label) + '"' + (<any>NODE_CONFIG)[type].mermaidClose + ':::' + type + "\n"
             // Remove not relevant properties from node display
             nodeSimplified = simplifyNode(flowMap[property]?.flowNodeDescription || flowMap[property]);
             // Mermaid compare node
