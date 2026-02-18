@@ -23,14 +23,9 @@ If you want to go for a **full init setup**, follow the steps below !
 
 ## Retrieve Metadatas
 
-- Run the following command that will retrieve locally all the metadatas of production org
-
-`sf hardis:org:retrieve:sources:dx --shape -u YOURSOURCEORGUSERNAME`
-
-- In case you get an error:
-  - Run the generate package xml command : [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/)
-  - Clean up the generated package created by removing the unnecessary metadatas
-  - Run retrieve metadata command : [sf project:retrieve:start](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_retrieve_start_unified)
+- Run the generate package xml command : [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/)
+- Clean up the generated package created by removing the unnecessary metadatas
+- Run retrieve metadata command : [sf project:retrieve:start](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_retrieve_start_unified)
 
 Example :
 
