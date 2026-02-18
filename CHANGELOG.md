@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.26.1] 2025-02-18
+
+- Fix issues related to langchain packages upgrade
+- Update CI/CD setup doc
+
 ## [6.26.0] 2025-02-17
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
