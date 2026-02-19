@@ -137,20 +137,18 @@ export async function listPageFiles(packageDirs) {
   return pageFiles.sort();
 }
 
-// @apexdevtools/apex-parser may give more robust result, but if used, it worth starting from project2markdown.ts
+// npmjs.com/package/@apexdevtools/apex-parser may give more robust result, but if use it, better to start from project2markdown.ts
 export function stripApexLeadingComments(code: string): string {
-  let s = code;
-  while (true) {
-    s = s.trimStart();
+  let s = code.trimStart();
+  while (s.startsWith("//") || s.startsWith("/*")) {
     if (s.startsWith("//")) {
       const newline = s.indexOf("\n");
       s = newline === -1 ? "" : s.slice(newline + 1);
-    } else if (s.startsWith("/*")) {
+    } else {
       const end = s.indexOf("*/");
       s = end === -1 ? "" : s.slice(end + 2);
-    } else {
-      break;
     }
+    s = s.trimStart();
   }
   return s;
 }
