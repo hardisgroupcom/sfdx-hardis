@@ -116,6 +116,8 @@ The command's technical implementation involves:
       fs.copySync(this.inputFolder, this.outputFolder);
     }
 
+    const fileFilters = new Map<string, any[]>();
+
     // Browse filters
     filterConfig.filters.forEach((filter) => {
       uxLog("log", this, c.grey(filter.name + ' (' + filter.description + ')...'));
@@ -127,12 +129,12 @@ The command's technical implementation involves:
       if (hasFiles) {
         filter.files.forEach((singleFile) => {
           if (path.isAbsolute(singleFile)) {
-            this.filterFilePath(filter, singleFile);
+            this.filterFilePath(filter, singleFile, fileFilters);
             return;
           }
           const normalized = singleFile.replace(/\\/g, '/');
           const fullFilePath = path.resolve(this.outputFolder, normalized);
-          this.filterFilePath(filter, fullFilePath);
+          this.filterFilePath(filter, fullFilePath, fileFilters);
         });
         return;
       }
@@ -149,11 +151,17 @@ The command's technical implementation involves:
             // Build file name
             const fpath = file.replace(/\\/g, '/');
             const fullFilePath = this.outputFolder + '/' + filterFolder + '/' + fpath;
-            this.filterFilePath(filter, fullFilePath);
+            this.filterFilePath(filter, fullFilePath, fileFilters);
           });
         });
       }
     });
+
+    fileFilters.forEach((filters, fullFilePath) => {
+      uxLog("log", this, c.grey('- ' + fullFilePath));
+      this.filterXmlFromFile(filters, fullFilePath);
+    });
+
     this.smmryResult.filterResults = this.smmryUpdatedFiles;
 
     // Display results as JSON
@@ -161,28 +169,36 @@ The command's technical implementation involves:
     return {};
   }
 
-  public filterFilePath(filter, fullFilePath: string) {
-    if (!fs.existsSync(fullFilePath)) {
+  public filterFilePath(filter, fullFilePath: string, fileFilters: Map<string, any[]>) {
+    const canonicalFilePath = path.resolve(fullFilePath);
+    if (!fs.existsSync(canonicalFilePath)) {
       return;
     }
-    const fpath = fullFilePath.replace(/\\/g, '/');
+    const fpath = canonicalFilePath.replace(/\\/g, '/');
     const browsedFileExtension = fpath.substring(fpath.lastIndexOf('.') + 1);
     filter.file_extensions.forEach((filterFileExt) => {
       if (browsedFileExtension === filterFileExt) {
-        uxLog("log", this, c.grey('- ' + fullFilePath));
-        this.filterXmlFromFile(filter, fullFilePath);
+        if (!fileFilters.has(canonicalFilePath)) {
+          fileFilters.set(canonicalFilePath, []);
+        }
+        const fileFilterDefinitions = fileFilters.get(canonicalFilePath);
+        if (fileFilterDefinitions != null && !fileFilterDefinitions.includes(filter)) {
+          fileFilterDefinitions.push(filter);
+        }
       }
     });
   }
 
   // Filter XML content of the file
-  public filterXmlFromFile(filter, file) {
+  public filterXmlFromFile(filters, file) {
     const parser = new xml2js.Parser();
     const data = fs.readFileSync(file);
     parser.parseString(data, (err2, fileXmlContent) => {
       uxLog("other", this, 'Parsed XML \n' + util.inspect(fileXmlContent, false, null));
-      Object.keys(fileXmlContent).forEach((eltKey) => {
-        fileXmlContent[eltKey] = this.filterElement(fileXmlContent[eltKey], filter, file);
+      filters.forEach((filter) => {
+        Object.keys(fileXmlContent).forEach((eltKey) => {
+          fileXmlContent[eltKey] = this.filterElement(fileXmlContent[eltKey], filter, file);
+        });
       });
       if (this.smmryUpdatedFiles[file] != null && this.smmryUpdatedFiles[file].updated === true) {
         writeXmlFile(file, fileXmlContent);
