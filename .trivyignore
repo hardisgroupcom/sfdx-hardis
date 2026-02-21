@@ -120,11 +120,18 @@ CVE-2026-26278
 # tar vulnerable to Arbitrary File Write, located in @salesforce/cli so they'll fix that soon
 CVE-2026-26960
 
+# https://avd.aquasec.com/nvd/cve-2026-26996 
+# minimatch DDOS risk, not risky for sfdx-hardis use as we don't use minimatch directly and the risk is only a DoS, not a security risk
+CVE-2026-26996
+
+# https://avd.aquasec.com/nvd/cve-2026-25896
+# fast-xml-parser issue, located in @salesforce/cli so they'll fix that soon
+CVE-2026-25896
+
 # Dockerfile https://avd.aquasec.com/misconfig/ds002
 # Image using root user, that's ok as we are using it in CI/CD jobs containers, so not risky for sfdx-hardis
 DS002
 DS-0002
-
 
 # Dockerfile https://avd.aquasec.com/misconfig/ds026
 # No HEALTHCHECK defined, that's ok as our container live only the time of the job, so not risky for sfdx-hardis
