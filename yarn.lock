@@ -8440,10 +8440,10 @@ ky@^1.2.0:
   resolved "https://registry.yarnpkg.com/ky/-/ky-1.8.2.tgz#161cba76e4a86b43829565b9a9c8d21d03e602db"
   integrity sha512-XybQJ3d4Ea1kI27DoelE5ZCT3bSJlibYTtQuMsyzKox3TMyayw1asgQdl54WroAm+fIA3ZCr8zXW2RpR7qWVpA==
 
-langchain@1.2.21:
-  version "1.2.21"
-  resolved "https://registry.yarnpkg.com/langchain/-/langchain-1.2.21.tgz#a37dcf5e406c67965b567b38c241fe0e3d7fe6aa"
-  integrity "sha1-o33PXkBsZ5ZbVns4wkH+Dj1/5qo= sha512-kw5Tm9R/v0hwQwMh+1ReHJoOqC8JFXtoSvA0n3QDBo+/S+aCyJng8lPp10lDjCYsfYlTRhDR4gvnmV+Jxfdm+A=="
+langchain@1.2.25:
+  version "1.2.25"
+  resolved "https://registry.yarnpkg.com/langchain/-/langchain-1.2.25.tgz#e733f964ac227c41ea6bd58e0600f02eea0d6ba1"
+  integrity sha512-29qay7nZxkmkH3PRp8cjBpZmGCmA3EW8JwEYqZa0a5CW38nvO2Tr1rbFd26cnlLcxtA5hBRH57/XSPoWLjHJSw==
   dependencies:
     "@langchain/langgraph" "^1.1.2"
     "@langchain/langgraph-checkpoint" "^1.0.0"
