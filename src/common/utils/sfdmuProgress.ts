@@ -6,9 +6,11 @@ import { uxLog } from './index.js';
 
 export interface SfdmuProgressStats {
   totalRecordsProcessed: number;
+  totalRecordsExpected?: number;
   objectsProcessed: number;
   currentObject?: string;
   currentRecordsInObject: number;
+  phase?: string;
   totalObjects?: number;
   errors: number;
   isCompleted: boolean;
@@ -36,6 +38,46 @@ export function parseSfdmuOutputLine(line: string): Partial<SfdmuProgressStats> 
   }
 
   const updates: Partial<SfdmuProgressStats> = {};
+  let hasUpdates = false;
+
+  // Pattern: Phase headers (e.g., "===== MIGRATION JOB STARTED =====")
+  const phaseMatch = line.match(/=====\s*(.*?)\s*=====/);
+  if (phaseMatch) {
+    updates.phase = phaseMatch[1].trim();
+    hasUpdates = true;
+  }
+
+  // Pattern: Object names in braces (e.g., "{Contact} Processing the object ...")
+  const braceObjectMatch = line.match(/\{([^}]+)\}\s*(.*)$/);
+  if (braceObjectMatch) {
+    const objectName = braceObjectMatch[1].trim();
+    const rest = braceObjectMatch[2] || '';
+    if (objectName) {
+      updates.currentObject = objectName;
+      hasUpdates = true;
+    }
+
+    // Pattern: Original query returns N records
+    const originalQueryMatch = rest.match(/returning\s+(\d+)\s+records?/i);
+    if (originalQueryMatch) {
+      updates.totalRecordsExpected = parseInt(originalQueryMatch[1], 10);
+      hasUpdates = true;
+    }
+
+    // Pattern: Data retrieval completed - got N records
+    const gotRecordsMatch = rest.match(/got\s+(\d+)\s+new\s+records?/i);
+    if (gotRecordsMatch) {
+      updates.totalRecordsProcessed = parseInt(gotRecordsMatch[1], 10);
+      hasUpdates = true;
+    }
+
+    // Pattern: Totally processed N records
+    const processedMatch = rest.match(/totally\s+processed\s+(\d+)\s+records?/i);
+    if (processedMatch) {
+      updates.totalRecordsProcessed = parseInt(processedMatch[1], 10);
+      hasUpdates = true;
+    }
+  }
 
   // Pattern: Object name with record count - "[HH:MM:SS] ObjectName (N records...)"
   const recordCountMatch = line.match(/\]\s*(\w+)\s*\((\d+)\s*records?/i);
@@ -44,38 +86,52 @@ export function parseSfdmuOutputLine(line: string): Partial<SfdmuProgressStats> 
     const recordCount = parseInt(recordCountMatch[2], 10);
     updates.currentObject = objectName;
     updates.currentRecordsInObject = recordCount;
-    updates.totalRecordsProcessed = (updates.totalRecordsProcessed || 0) + recordCount;
-    return updates;
+    updates.totalRecordsProcessed = recordCount;
+    hasUpdates = true;
   }
 
   // Pattern: Total records processed
   const totalMatch = line.match(/total.*?(\d+)\s*records?/i);
   if (totalMatch) {
     updates.totalRecordsProcessed = parseInt(totalMatch[1], 10);
-    return updates;
+    hasUpdates = true;
   }
 
   // Pattern: Processing specific object
   const objectMatch = line.match(/(?:processing|updating|inserting|upserting)[\s:]*(\w+)/i);
   if (objectMatch) {
     updates.currentObject = objectMatch[1];
-    return updates;
+    hasUpdates = true;
+  }
+
+  // Pattern: In progress... Completed N records
+  const inProgressMatch = line.match(/in\s+progress\.+\s*completed\s+(\d+)\s+records?/i);
+  if (inProgressMatch) {
+    updates.totalRecordsProcessed = parseInt(inProgressMatch[1], 10);
+    hasUpdates = true;
+  }
+
+  // Pattern: The total amount of the retrieved records ...: N
+  const totalRetrievedMatch = line.match(/total\s+amount\s+of\s+the\s+retrieved\s+records.*?\s(\d+)\./i);
+  if (totalRetrievedMatch) {
+    updates.totalRecordsExpected = parseInt(totalRetrievedMatch[1], 10);
+    hasUpdates = true;
   }
 
   // Pattern: Error/issue count
   const errorMatch = line.match(/(\d+)\s*(?:error|issue|failed|warning)/i);
   if (errorMatch) {
     updates.errors = parseInt(errorMatch[1], 10);
-    return updates;
+    hasUpdates = true;
   }
 
   // Pattern: Completion indicators
-  if (line.match(/(?:completed|finished|done|success)/i)) {
+  if (line.match(/(?:command\s+succeeded|migration\s+job\s+ended|completed|finished|done|success)/i)) {
     updates.isCompleted = true;
-    return updates;
+    hasUpdates = true;
   }
 
-  return null;
+  return hasUpdates ? updates : null;
 }
 
 /**
@@ -105,6 +161,9 @@ export async function executeSfdmuCommandWithProgress(
     let stdoutData = '';
     let stderrData = '';
     const objectsSet = new Set<string>();
+    let lastReportedRecords = -1;
+    let lastReportedObject = '';
+    let lastReportedPhase = '';
 
     if (commandThis) {
       uxLog("log", commandThis, c.grey(`Executing: ${command}`));
@@ -153,6 +212,12 @@ export async function executeSfdmuCommandWithProgress(
         if (parsed.totalRecordsProcessed) {
           stats.totalRecordsProcessed = parsed.totalRecordsProcessed;
         }
+        if (parsed.totalRecordsExpected) {
+          stats.totalRecordsExpected = parsed.totalRecordsExpected;
+        }
+        if (parsed.phase) {
+          stats.phase = parsed.phase;
+        }
         if (parsed.errors !== undefined) {
           stats.errors = parsed.errors;
         }
@@ -167,15 +232,29 @@ export async function executeSfdmuCommandWithProgress(
 
         // Send to WebSocket if active
         if (WebSocketClient.isAlive()) {
-          WebSocketClient.sendProgressStepMessage(stats.totalRecordsProcessed, stats.totalRecordsProcessed + 10);
+          const totalSteps = stats.totalRecordsExpected || (stats.totalRecordsProcessed + 10);
+          WebSocketClient.sendProgressStepMessage(stats.totalRecordsProcessed, totalSteps);
         }
 
         // Log progress to console
         if (commandThis) {
-          uxLog("other", commandThis, c.grey(
-            `Progress: ${stats.objectsProcessed} object(s), ` +
-            `${stats.totalRecordsProcessed} record(s) - ${stats.currentObject || 'Processing'}`
-          ));
+          const shouldLogRecords =
+            stats.totalRecordsProcessed >= lastReportedRecords + 1000 ||
+            stats.totalRecordsProcessed === stats.totalRecordsExpected;
+          const shouldLogObject = stats.currentObject !== lastReportedObject;
+          const shouldLogPhase = (stats.phase || '') !== lastReportedPhase;
+          const shouldLogErrors = parsed.errors !== undefined;
+
+          if (shouldLogRecords || shouldLogObject || shouldLogPhase || shouldLogErrors) {
+            const phaseLabel = stats.phase ? ` | ${stats.phase}` : '';
+            uxLog("other", commandThis, c.grey(
+              `Progress: ${stats.objectsProcessed} object(s), ` +
+              `${stats.totalRecordsProcessed} record(s) - ${stats.currentObject || 'Processing'}${phaseLabel}`
+            ));
+            lastReportedRecords = stats.totalRecordsProcessed;
+            lastReportedObject = stats.currentObject || '';
+            lastReportedPhase = stats.phase || '';
+          }
         }
       } else if (line.trim()) {
         // Log non-empty lines that don't contain progress info
