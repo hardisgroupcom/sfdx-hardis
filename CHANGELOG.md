@@ -4,6 +4,11 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.26.2] 2025-02-22
+
+- Improve sfdmu commands to send progress notifications
+- Enhance [hardis:project:clean:filter-xml-content](https://sfdx-hardis.cloudity.com/hardis/project/clean/filter-xml-content/) to support more precise filter targeting and matching
+
 ## [6.26.1] 2025-02-18
 
 - Fix issues related to langchain packages upgrade

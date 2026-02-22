@@ -2,10 +2,11 @@ import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { elapseEnd, elapseStart, execCommand, uxLog } from './index.js';
+import { elapseEnd, elapseStart, uxLog } from './index.js';
 import { getConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import { isProductionOrg } from './orgUtils.js';
+import { executeSfdmuCommand } from './sfdmuProgress.js';
 
 export const DATA_FOLDERS_ROOT = path.join(process.cwd(), 'scripts', 'data');
 
@@ -36,10 +37,11 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
     (config.sfdmuCanModify || process.env.SFDMU_CAN_MODIFY ? ` --canmodify ${config.sfdmuCanModify || process.env.SFDMU_CAN_MODIFY}` : '');
   /* jscpd:ignore-end */
   elapseStart(`import ${dtl?.full_label}`);
-  const res = await execCommand(dataImportCommand, commandThis, {
+  const res = await executeSfdmuCommand(dataImportCommand, commandThis, {
     fail: true,
     output: true,
     cwd: cwd,
+    operationType: 'import',
   });
   uxLog("success", commandThis, c.green(`Data imported successfully from ${c.green(dtl?.full_label)} into ${targetUsername}`));
   uxLog("log", commandThis, c.italic(c.grey(res.stdout || '')));
@@ -77,10 +79,11 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
     ' --noprompt' +
     (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : '');
   elapseStart(`delete ${dtl?.full_label}`);
-  const res = await execCommand(dataImportCommand, commandThis, {
+  const res = await executeSfdmuCommand(dataImportCommand, commandThis, {
     fail: true,
     output: true,
     cwd: cwd,
+    operationType: 'delete',
   });
   uxLog("success", commandThis, c.green(`Data deleted successfully from ${c.green(dtl?.full_label)}`));
   uxLog("log", commandThis, c.italic(c.grey(res.stdout || '')));
@@ -102,10 +105,11 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const dataImportCommand = `sf sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath} --noprompt`;
   elapseStart(`export ${dtl?.full_label}`);
-  const res = await execCommand(dataImportCommand, commandThis, {
+  const res = await executeSfdmuCommand(dataImportCommand, commandThis, {
     fail: true,
     output: true,
     cwd: cwd,
+    operationType: 'export',
   });
   uxLog("success", commandThis, c.green(`Data exported successfully from ${c.green(dtl?.full_label)}`));
   uxLog("log", commandThis, c.italic(c.grey(res.stdout || '')));
