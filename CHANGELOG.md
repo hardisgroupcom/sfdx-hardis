@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update sfdmu-based commands documentation
+
 ## [6.26.2] 2025-02-22
 
 - Improve sfdmu commands to send progress notifications
