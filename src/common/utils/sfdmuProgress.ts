@@ -328,12 +328,13 @@ export async function executeSfdmuCommand(
       commandThis,
       operationType: options.operationType,
     });
-
+    await sendRefreshEvent();
     return {
       stdout: result.stdout,
       stderr: result.stderr,
     };
   } catch (error) {
+    await sendRefreshEvent();
     if (options.fail !== false) {
       throw error;
     }
@@ -341,5 +342,11 @@ export async function executeSfdmuCommand(
       stdout: '',
       stderr: (error as Error).message,
     };
+  }
+}
+
+async function sendRefreshEvent() {
+  if (WebSocketClient.isAliveWithLwcUI()) {
+    WebSocketClient.sendRefreshDataWorkbenchMessage();
   }
 }
