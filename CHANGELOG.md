@@ -4,6 +4,30 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update sfdmu-based commands documentation
+- Add Jenkins config in menu
+- New refresh event for Data Workbench UI
+
+## [6.26.2] 2025-02-22
+
+- Improve sfdmu commands to send progress notifications
+- Enhance [hardis:project:clean:filter-xml-content](https://sfdx-hardis.cloudity.com/hardis/project/clean/filter-xml-content/) to support more precise filter targeting and matching
+
+## [6.26.1] 2025-02-18
+
+- Fix issues related to langchain packages upgrade
+- Update CI/CD setup doc
+
+## [6.26.0] 2025-02-17
+
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
+  - Fix mkdocs layout to better utilize screen space on FHD+ monitors
+  - Fix flows parsing errors when they contain special characters in their labels
+- [hardis:doc:fieldusage](https://sfdx-hardis.cloudity.com/hardis/doc/fieldusage/): Add field usage documentation: Execute dependencies query in batches
+- [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): Fix active / unused users commands calls
+- Doc: Fix small typo
+- Upgrade npm dependencies
+
 ## [6.25.1] 2025-02-10
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
