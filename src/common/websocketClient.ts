@@ -165,6 +165,10 @@ export class WebSocketClient {
     WebSocketClient.sendMessage({ event: 'refreshPipeline' });
   }
 
+  static sendRefreshDataWorkbenchMessage() {
+    WebSocketClient.sendMessage({ event: 'refreshDataWorkbench' });
+  }
+
   // Sends info about downloadable report file
   static sendReportFileMessage(
     file: string,
