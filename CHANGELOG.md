@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.26.3] 2025-02-24
+
 - Update sfdmu-based commands documentation
 - Add Jenkins config in menu
 - New refresh event for Data Workbench UI
