@@ -139,6 +139,33 @@
       "title": "LangChain base URL",
       "type": "string"
     },
+    "useCodexDirect": {
+      "$id": "#/properties/useCodexDirect",
+      "description": "Set to true to enable the direct Codex connector (mirrors USE_CODEX_DIRECT env var).",
+      "title": "Enable Codex",
+      "type": "boolean",
+      "default": false
+    },
+    "codexModel": {
+      "$id": "#/properties/codexModel",
+      "description": "Name of the Codex model to use by default (ex: gpt-5.1-codex). Equivalent to CODEX_MODEL env var.",
+      "title": "Codex model",
+      "type": "string",
+      "default": "gpt-5.1-codex"
+    },
+    "codexReasoningEffort": {
+      "$id": "#/properties/codexReasoningEffort",
+      "description": "Reasoning effort used for direct Codex prompts. Equivalent to CODEX_REASONING_EFFORT env var. Note: Not all values are supported by all models",
+      "title": "Codex reasoning effort",
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ],
+      "default": "high"
+    },
     "useOpenaiDirect": {
       "$id": "#/properties/useOpenaiDirect",
       "description": "Set to true to enable the direct OpenAI connector (mirrors USE_OPENAI_DIRECT env var).",
