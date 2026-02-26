@@ -1632,12 +1632,12 @@
     "@anthropic-ai/sdk" "^0.74.0"
     zod "^3.25.76 || ^4"
 
-"@langchain/classic@1.0.18":
-  version "1.0.18"
-  resolved "https://registry.yarnpkg.com/@langchain/classic/-/classic-1.0.18.tgz#7865e32bc068c384ae354c49bc7f07c4f7fcbcc5"
-  integrity sha512-4vS3HR2SkBUaeUwdyKwvVtzGFkCOKVcUjVYjhOafALnX3ZdKQfuzMpCbm1966QE523ROvPAXa2+1VFjDvhhkCg==
+"@langchain/classic@1.0.19":
+  version "1.0.19"
+  resolved "https://registry.yarnpkg.com/@langchain/classic/-/classic-1.0.19.tgz#b569d9011eca7e2494ab0ae5ea0957075658ef4f"
+  integrity sha512-aFx+xFhKnBF4yiSmzL/v2Xf6GMlDUEEwSj8+CaaFSHdR31reqCrpkF4eq1G0G7Q8j9LEpyOSKqoOi/fpSO5Hsg==
   dependencies:
-    "@langchain/openai" "1.2.8"
+    "@langchain/openai" "1.2.9"
     "@langchain/textsplitters" "1.0.1"
     handlebars "^4.7.8"
     js-yaml "^4.1.1"
@@ -1649,13 +1649,13 @@
   optionalDependencies:
     langsmith ">=0.4.0 <1.0.0"
 
-"@langchain/community@1.1.16":
-  version "1.1.16"
-  resolved "https://registry.yarnpkg.com/@langchain/community/-/community-1.1.16.tgz#4baacfad6a8b052138ae387fe81fbbb82e594564"
-  integrity sha512-pZLUaxtEd1K9PO+DxpTbNChsRexxIVlL95komxrorKmZdTmvOwodi20Xt3yaXYNPOjGdV1xGBewEorn6MMqHmg==
+"@langchain/community@1.1.18":
+  version "1.1.18"
+  resolved "https://registry.yarnpkg.com/@langchain/community/-/community-1.1.18.tgz#97745527aa51a35408613d25338e420fbb7755bc"
+  integrity sha512-F+grFLi2DtnFRQvdkRNiR8Ew6VAZ6ZP9VPmEHMTf5tOPPOR5IPPGA1USXxJMfVq6RbeOXEgNSElwDGgyg32FAQ==
   dependencies:
-    "@langchain/classic" "1.0.18"
-    "@langchain/openai" "1.2.8"
+    "@langchain/classic" "1.0.19"
+    "@langchain/openai" "1.2.9"
     binary-extensions "^2.2.0"
     flat "^5.0.2"
     js-yaml "^4.1.1"
@@ -1726,6 +1726,15 @@
   version "1.2.8"
   resolved "https://registry.yarnpkg.com/@langchain/openai/-/openai-1.2.8.tgz#3f37edb77ca68fc033e51a6924cf22f1cc5cbf3b"
   integrity sha512-qliwC7sb7/Kw0tsl/EiMchMThKt62rZbyofKXtxPwYBte3BMzMXo2HKaEFvAN2QHVOuDi4voqQ7ZlRXc/o2e8w==
+  dependencies:
+    js-tiktoken "^1.0.12"
+    openai "^6.18.0"
+    zod "^3.25.76 || ^4"
+
+"@langchain/openai@1.2.9":
+  version "1.2.9"
+  resolved "https://registry.yarnpkg.com/@langchain/openai/-/openai-1.2.9.tgz#664441ceb322abe9225ec5cd9482fd0f76e26200"
+  integrity sha512-hExRiUoKOg1vfkwBAI5J2C4tqNx5LLZ0CUelG8Ej6K8bS2LfFN9bL4ZNQYqNIwAJNSqpDaV9tknxP2fssZjp+Q==
   dependencies:
     js-tiktoken "^1.0.12"
     openai "^6.18.0"
