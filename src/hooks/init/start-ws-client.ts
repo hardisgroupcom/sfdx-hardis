@@ -18,8 +18,12 @@ const hook: Hook<'init'> = async (options) => {
 
   // Initialize WebSocketClient to communicate with VS Code SFDX Hardis extension
   const context: any = { command: commandId, id: process.pid };
-  const websocketArgIndex = options?.argv?.indexOf('--websocket');
-  if (websocketArgIndex || websocketArgIndex === 0) {
+  const websocketArgIndex = options?.argv?.indexOf('--websocket') ?? -1;
+  if (
+    websocketArgIndex > -1 &&
+    options?.argv &&
+    options.argv.length > websocketArgIndex + 1
+  ) {
     context.websocketHostPort = options.argv[websocketArgIndex + 1];
   }
   globalThis.webSocketClient = new WebSocketClient(context);
