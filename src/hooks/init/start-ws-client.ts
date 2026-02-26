@@ -7,20 +7,23 @@ const hook: Hook<'init'> = async (options) => {
     return;
   }
 
-  // Dynamically import libraries to avoid loading it if not needed
-  const { isCI } = await import('../../common/utils/index.js');
+  // Skip WebSocket initialization in CI environments
+  // Inlined isCI check avoids importing the heavy utils module (~2300 lines + transitive deps)
+  if (process.env.CI != null) {
+    return;
+  }
+
+  // Dynamically import only when actually needed (non-CI, hardis command)
   const { WebSocketClient } = await import('../../common/websocketClient.js');
 
   // Initialize WebSocketClient to communicate with VS Code SFDX Hardis extension
-  if (!isCI) {
-    const context: any = { command: commandId, id: process.pid };
-    const websocketArgIndex = options?.argv?.indexOf('--websocket');
-    if (websocketArgIndex || websocketArgIndex === 0) {
-      context.websocketHostPort = options.argv[websocketArgIndex + 1];
-    }
-    globalThis.webSocketClient = new WebSocketClient(context);
-    await WebSocketClient.isInitialized();
+  const context: any = { command: commandId, id: process.pid };
+  const websocketArgIndex = options?.argv?.indexOf('--websocket');
+  if (websocketArgIndex || websocketArgIndex === 0) {
+    context.websocketHostPort = options.argv[websocketArgIndex + 1];
   }
+  globalThis.webSocketClient = new WebSocketClient(context);
+  await WebSocketClient.isInitialized();
 };
 
 export default hook;

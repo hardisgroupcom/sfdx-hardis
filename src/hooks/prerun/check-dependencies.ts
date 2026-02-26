@@ -15,10 +15,16 @@ const hook: Hook<'prerun'> = async (options) => {
     return;
   }
 
-  // Dynamic imports to improve perfs
-  const os = await import('os');
-  const { checkSfdxPlugin, git, uxLog, isCI, checkAppDependency, isGitRepo } = await import('../../common/utils/index.js');
-  const { getConfig } = await import('../../config/index.js');
+  // Dynamic imports in parallel to improve perfs
+  const [
+    os,
+    { checkSfdxPlugin, git, uxLog, isCI, checkAppDependency, isGitRepo },
+    { getConfig },
+  ] = await Promise.all([
+    import('os'),
+    import('../../common/utils/index.js'),
+    import('../../config/index.js'),
+  ]);
 
   /* jscpd:ignore-end */
   // Check Git config and complete it if necessary (asynchronously so the script is not stopped)
@@ -90,11 +96,18 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
   ) {
     return;
   }
-  // Dynamic imports to improve performances when other CLI commands are called
-  const c = (await import('chalk')).default;
-  const fs = (await import('fs-extra')).default;
-  const { getConfig, setConfig } = await import('../../config/index.js');
-  const { prompts } = await import('../../common/utils/prompts.js');
+  // Dynamic imports in parallel to improve performances when other CLI commands are called
+  const [
+    { default: c },
+    { default: fs },
+    { getConfig, setConfig },
+    { prompts },
+  ] = await Promise.all([
+    import('chalk'),
+    import('fs-extra'),
+    import('../../config/index.js'),
+    import('../../common/utils/prompts.js'),
+  ]);
 
   const config = await getConfig('user');
   // Manage .gitignore
