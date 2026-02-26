@@ -1,0 +1,54 @@
+<template>
+    
+    <lightning-card title="Config Builder" icon-name="custom:custom14">
+        <div class="slds-p-around_medium">
+            <div class="slds-grid slds-wrap">
+                <div class="slds-col slds-size_2-of-12">
+                    <lightning-radio-group name="radioGroup"
+                    label="File Attachment"
+                    options={options}
+                    value={RadioValue}
+                    type="radio"
+                    onchange={openfileUpload}
+                    class="customRadioCls">
+                    
+                    </lightning-radio-group>
+                </div>
+                <div class="slds-col slds-size_10-of-12">
+                    <template if:true={importFileFieldValue}>
+                        <h3 class="slds-p-around_medium"><strong>Import File</strong></h3> 
+                        <div class="slds-m-around_medium">
+                            <lightning-input type="file" 
+                            accept=".txt"
+                            label="Import File" onchange={openfileUpload}></lightning-input>
+                        </div>
+
+                        <template if:true={fileData}>
+                            <p>{fileData.filename}</p>
+                        </template>
+                        <lightning-button variant="brand" label="submit" title="Submit" onclick={handleClick} class="slds-m-left_x-small">
+
+                        </lightning-button>
+            
+            
+                       
+            
+                    </template>
+                            
+                    <template if:true={exportFileFieldValue}>        
+                        <h3 class="slds-text-heading_medium slds-text-color--error"><strong>Export File</strong></h3> 
+                       <!-- <div class="slds-m-around_medium">
+                            
+                        </div>
+                        <template if:true={fileData}>
+                            <p>{fileData.filename}</p>
+                        </template>
+                        <lightning-button variant="brand" label="submit" title="Submit" onclick={handleClick} class="slds-m-left_x-small">
+
+                        </lightning-button>-->
+                    </template>
+                </div>
+            </div>
+        </div>
+    </lightning-card>
+</template>
