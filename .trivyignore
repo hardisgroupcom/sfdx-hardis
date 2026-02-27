@@ -128,6 +128,10 @@ CVE-2026-26996
 # fast-xml-parser issue, located in @salesforce/cli so they'll fix that soon
 CVE-2026-25896
 
+# https://avd.aquasec.com/nvd/cve-2026-27699
+# basic-ftp, embedded in @salesforce/cli , so they'll fix that soon
+CVE-2026-27699
+
 # Dockerfile https://avd.aquasec.com/misconfig/ds002
 # Image using root user, that's ok as we are using it in CI/CD jobs containers, so not risky for sfdx-hardis
 DS002

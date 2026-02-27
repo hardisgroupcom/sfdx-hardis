@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Improve hooks by parallelizing dynamic imports
+
 ## [6.26.3] 2025-02-24
 
 - Update sfdmu-based commands documentation
