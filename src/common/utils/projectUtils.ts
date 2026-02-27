@@ -137,24 +137,42 @@ export async function listPageFiles(packageDirs) {
   return pageFiles.sort();
 }
 
+// npmjs.com/package/@apexdevtools/apex-parser may give more robust result, but if use it, better to start from project2markdown.ts
+export function stripApexLeadingComments(code: string): string {
+  let s = code.trimStart();
+  while (s.startsWith("//") || s.startsWith("/*")) {
+    if (s.startsWith("//")) {
+      const newline = s.indexOf("\n");
+      s = newline === -1 ? "" : s.slice(newline + 1);
+    } else {
+      const end = s.indexOf("*/");
+      s = end === -1 ? "" : s.slice(end + 2);
+    }
+    s = s.trimStart();
+  }
+  return s;
+}
+
 export function returnApexType(apexCode: string) {
   const apexContentlower = apexCode.toLowerCase();
-  return apexContentlower.includes("@istest(seealldata=true)") ? "Test (See All Data)" :
-    apexContentlower.includes("@istest") ? "Test" :
-      apexContentlower.includes("@invocablemethod") ? "Invocable" :
-        apexContentlower.includes("@restresource") ? "REST" :
-          apexContentlower.includes("implements database.batchable") ? "Batch" :
-            apexContentlower.includes("implements batchable") ? "Batch" :
-              apexContentlower.includes("implements database.schedulable") ? "Schedulable" :
-                apexContentlower.includes("implements schedulable") ? "Schedulable" :
-                  apexContentlower.includes("@auraenabled") ? "Lightning Controller" :
-                    apexContentlower.includes("apexpages.standardcontroller") ? "Visualforce Controller" :
-                      apexContentlower.includes("pagereference") ? "Visualforce Controller" :
-                        apexContentlower.includes("triggerhandler") ? "Trigger Handler" :
-                          apexContentlower.includes("new httprequest") ? "Callout" :
-                            apexContentlower.includes("jsonparser parser") ? "JSON" :
-                              apexContentlower.includes("public class soaprequest") ? "SOAP" :
-                                "Class";
+  const strippedLower = stripApexLeadingComments(apexContentlower);
+  return strippedLower.trimStart().startsWith("trigger ") ? "Trigger" :
+    apexContentlower.includes("@istest(seealldata=true)") ? "Test (See All Data)" :
+      apexContentlower.includes("@istest") ? "Test" :
+        apexContentlower.includes("@invocablemethod") ? "Invocable" :
+          apexContentlower.includes("@restresource") ? "REST" :
+            apexContentlower.includes("implements database.batchable") ? "Batch" :
+              apexContentlower.includes("implements batchable") ? "Batch" :
+                apexContentlower.includes("implements database.schedulable") ? "Schedulable" :
+                  apexContentlower.includes("implements schedulable") ? "Schedulable" :
+                    apexContentlower.includes("@auraenabled") ? "Lightning Controller" :
+                      apexContentlower.includes("apexpages.standardcontroller") ? "Visualforce Controller" :
+                        apexContentlower.includes("pagereference") ? "Visualforce Controller" :
+                          apexContentlower.includes("triggerhandler") ? "Trigger Handler" :
+                            apexContentlower.includes("new httprequest") ? "Callout" :
+                              apexContentlower.includes("jsonparser parser") ? "JSON" :
+                                apexContentlower.includes("public class soaprequest") ? "SOAP" :
+                                  "Class";
 }
 
 // Update only if found API version is inferior to the candidate API version (convert to number)
