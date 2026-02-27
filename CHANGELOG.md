@@ -5,8 +5,11 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - Improve hooks by parallelizing dynamic imports
-- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fix issue with command parameters
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
+  - Display Triggers in generated documentation
+  - Fix issue with command parameters
 - AI Integration: Add [OpenAI Codex](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/#with-codex-directly) in AI providers
+- [hardis:doc:fieldusage](https://sfdx-hardis.cloudity.com/hardis/doc/fieldusage/): Fix crash when a custom object has hundreds of custom fieds.
 
 ## [6.26.3] 2025-02-24
 
