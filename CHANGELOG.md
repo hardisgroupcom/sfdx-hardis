@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [6.27.0] 2025-02-27
+
 - Improve hooks by parallelizing dynamic imports
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
   - Display Triggers in generated documentation
