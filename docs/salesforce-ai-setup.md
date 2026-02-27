@@ -179,12 +179,12 @@ Authentication is resolved in this order:
 1. `CODEX_API_KEY` environment variable (recommended for CI/CD).
 2. Existing Codex local auth cache file at `$CODEX_HOME/auth.json` (or `~/.codex/auth.json` when `CODEX_HOME` is not set).
 
-| Variable         | Description                                                                                               | Default         |
-|------------------|-----------------------------------------------------------------------------------------------------------|-----------------|
-| USE_CODEX_DIRECT | Set to true to activate direct Codex integration                                                          | `false`         |
-| CODEX_API_KEY    | Codex API key used by `@openai/codex-sdk` (optional if auth cache file exists)                            |                 |
-| CODEX_MODEL      | Codex model used to perform prompts                                                                       | `gpt-5.1-codex` |
-| CODEX_REASONING_EFFORT | Reasoning effort used for Codex calls (`low`, `medium`, `high`, `xhigh`)                            | `high`          |
+| Variable               | Description                                                                    | Default         |
+|------------------------|--------------------------------------------------------------------------------|-----------------|
+| USE_CODEX_DIRECT       | Set to true to activate direct Codex integration                               | `false`         |
+| CODEX_API_KEY          | Codex API key used by `@openai/codex-sdk` (optional if auth cache file exists) |                 |
+| CODEX_MODEL            | Codex model used to perform prompts                                            | `gpt-5.1-codex` |
+| CODEX_REASONING_EFFORT | Reasoning effort used for Codex calls (`low`, `medium`, `high`, `xhigh`)       | `high`          |
 
 If `CODEX_REASONING_EFFORT` is set to an unsupported value, sfdx-hardis falls back to `high`.
 
