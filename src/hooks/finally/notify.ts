@@ -9,9 +9,14 @@ const hook: Hook<"finally"> = async (options) => {
     return;
   }
 
-  // Dynamic import to save perfs when other CLI commands are called
-  const c = (await import('chalk')).default;
-  const { elapseEnd, uxLog } = await import('../../common/utils/index.js');
+  // Dynamic imports in parallel to save perfs when other CLI commands are called
+  const [
+    { default: c },
+    { elapseEnd, uxLog },
+  ] = await Promise.all([
+    import('chalk'),
+    import('../../common/utils/index.js'),
+  ]);
 
   if (globalThis.hardisLogFileStream) {
     globalThis.hardisLogFileStream.end();

@@ -4,6 +4,12 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Improve hooks by parallelizing dynamic imports
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fix issue with command parameters
+- AI Integration: Add [OpenAI Codex](https://sfdx-hardis.cloudity.com/salesforce-ai-setup/#with-codex-directly) in AI providers
+
+## [6.26.3] 2025-02-24
+
 - Update sfdmu-based commands documentation
 - Add Jenkins config in menu
 - New refresh event for Data Workbench UI

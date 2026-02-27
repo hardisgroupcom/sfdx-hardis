@@ -34,6 +34,7 @@ This list has been generated with GitHub Copilot so if you see any incoherence p
    - [MegaLinter LLM Advisor](#megalinter-llm-advisor)
    - [Agentforce (Salesforce) integration](#agentforce-salesforce-integration)
    - [LangChain integration (OpenAI, Anthropic, Gemini...)](#langchain-integration-openai-anthropic-gemini)
+   - [Codex (direct) variables](#codex-direct-variables)
    - [OpenAI (direct) variables](#openai-direct-variables)
    - [Email Notifications](#email-notifications)
    - [Browser Automation](#browser-automation)
@@ -221,6 +222,17 @@ Non-sensitive defaults (prompt template, custom endpoint) can be placed directly
 | **LANGCHAIN_LLM_BASE_URL**      | Base URL for LangChain HTTP-based providers (e.g., Ollama)                        | `http://localhost:11434` | URL string                                                          | LangChain / Ollama examples                                                                                                                        |
 
 You can also define non-secret defaults (provider, model, temperature, etc.) in your project `.sfdx-hardis.yml` using camelCase versions of the LangChain environment variables (for example `langchainLlmProvider` and `langchainLlmModel`). API keys must still be provided via secure env vars.
+
+### Codex (direct) variables
+
+| Variable Name              | Description                                                                             | Default         | Possible Values                                                | Usage Location                                                                                                                             |
+|----------------------------|-----------------------------------------------------------------------------------------|-----------------|----------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| **USE_CODEX_DIRECT**       | Enable direct Codex provider integration                                                | `false`         | `'true'`, `'false'`                                            | [`src/common/aiProvider/codexProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codexProvider.ts) |
+| **CODEX_API_KEY**          | Codex API key for direct Codex operations (optional when local auth cache is available) | `undefined`     | Valid Codex/OpenAI API keys                                    | [`src/common/aiProvider/codexProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codexProvider.ts) |
+| **CODEX_MODEL**            | Codex model to use for prompts                                                          | `gpt-5.1-codex` | Codex model names (e.g., `gpt-5.1-codex`, `gpt-5.1-codex-max`) | Codex-specific configuration                                                                                                               |
+| **CODEX_REASONING_EFFORT** | Reasoning effort used for direct Codex calls                                            | `high`          | `low`, `medium`, `high`, `xhigh`                               | [`src/common/aiProvider/codexProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codexProvider.ts) |
+
+When `CODEX_API_KEY` is not defined, sfdx-hardis will also accept existing local Codex authentication cache at `CODEX_HOME/auth.json` (or `~/.codex/auth.json` when `CODEX_HOME` is not set).
 
 ### OpenAI (direct) variables
 

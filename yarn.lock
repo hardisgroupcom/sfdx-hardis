@@ -1632,12 +1632,12 @@
     "@anthropic-ai/sdk" "^0.74.0"
     zod "^3.25.76 || ^4"
 
-"@langchain/classic@1.0.18":
-  version "1.0.18"
-  resolved "https://registry.yarnpkg.com/@langchain/classic/-/classic-1.0.18.tgz#7865e32bc068c384ae354c49bc7f07c4f7fcbcc5"
-  integrity sha512-4vS3HR2SkBUaeUwdyKwvVtzGFkCOKVcUjVYjhOafALnX3ZdKQfuzMpCbm1966QE523ROvPAXa2+1VFjDvhhkCg==
+"@langchain/classic@1.0.19":
+  version "1.0.19"
+  resolved "https://registry.yarnpkg.com/@langchain/classic/-/classic-1.0.19.tgz#b569d9011eca7e2494ab0ae5ea0957075658ef4f"
+  integrity sha512-aFx+xFhKnBF4yiSmzL/v2Xf6GMlDUEEwSj8+CaaFSHdR31reqCrpkF4eq1G0G7Q8j9LEpyOSKqoOi/fpSO5Hsg==
   dependencies:
-    "@langchain/openai" "1.2.8"
+    "@langchain/openai" "1.2.9"
     "@langchain/textsplitters" "1.0.1"
     handlebars "^4.7.8"
     js-yaml "^4.1.1"
@@ -1649,13 +1649,13 @@
   optionalDependencies:
     langsmith ">=0.4.0 <1.0.0"
 
-"@langchain/community@1.1.16":
-  version "1.1.16"
-  resolved "https://registry.yarnpkg.com/@langchain/community/-/community-1.1.16.tgz#4baacfad6a8b052138ae387fe81fbbb82e594564"
-  integrity sha512-pZLUaxtEd1K9PO+DxpTbNChsRexxIVlL95komxrorKmZdTmvOwodi20Xt3yaXYNPOjGdV1xGBewEorn6MMqHmg==
+"@langchain/community@1.1.18":
+  version "1.1.18"
+  resolved "https://registry.yarnpkg.com/@langchain/community/-/community-1.1.18.tgz#97745527aa51a35408613d25338e420fbb7755bc"
+  integrity sha512-F+grFLi2DtnFRQvdkRNiR8Ew6VAZ6ZP9VPmEHMTf5tOPPOR5IPPGA1USXxJMfVq6RbeOXEgNSElwDGgyg32FAQ==
   dependencies:
-    "@langchain/classic" "1.0.18"
-    "@langchain/openai" "1.2.8"
+    "@langchain/classic" "1.0.19"
+    "@langchain/openai" "1.2.9"
     binary-extensions "^2.2.0"
     flat "^5.0.2"
     js-yaml "^4.1.1"
@@ -1726,6 +1726,15 @@
   version "1.2.8"
   resolved "https://registry.yarnpkg.com/@langchain/openai/-/openai-1.2.8.tgz#3f37edb77ca68fc033e51a6924cf22f1cc5cbf3b"
   integrity sha512-qliwC7sb7/Kw0tsl/EiMchMThKt62rZbyofKXtxPwYBte3BMzMXo2HKaEFvAN2QHVOuDi4voqQ7ZlRXc/o2e8w==
+  dependencies:
+    js-tiktoken "^1.0.12"
+    openai "^6.18.0"
+    zod "^3.25.76 || ^4"
+
+"@langchain/openai@1.2.9":
+  version "1.2.9"
+  resolved "https://registry.yarnpkg.com/@langchain/openai/-/openai-1.2.9.tgz#664441ceb322abe9225ec5cd9482fd0f76e26200"
+  integrity sha512-hExRiUoKOg1vfkwBAI5J2C4tqNx5LLZ0CUelG8Ej6K8bS2LfFN9bL4ZNQYqNIwAJNSqpDaV9tknxP2fssZjp+Q==
   dependencies:
     js-tiktoken "^1.0.12"
     openai "^6.18.0"
@@ -2184,6 +2193,55 @@
   integrity sha512-1y6DgTy8Jomcpu33N+p5w58l6xyt55Ar2I91RPiIA0xCJBXyUAhXCcmZaDWSANiha7R9a6qJJ2CRomGPZ6f46g==
   dependencies:
     "@octokit/openapi-types" "^25.1.0"
+
+"@openai/codex-darwin-arm64@npm:@openai/codex@0.105.0-darwin-arm64":
+  version "0.105.0-darwin-arm64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0-darwin-arm64.tgz#cc75f2f64346fb602d9d7e99daa9a0400b5cad8f"
+  integrity sha512-9TD7pDIg8o7itmOhyEPcC2HeVnVIOxxrrbwTvnTibMj2rHPLnY8E0JaK8QOBRNiIUlqI4WKspTMUZQg5Fegndw==
+
+"@openai/codex-darwin-x64@npm:@openai/codex@0.105.0-darwin-x64":
+  version "0.105.0-darwin-x64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0-darwin-x64.tgz#d48df9018a5e3079dbb65a50ac1b4bfb1fe474b8"
+  integrity sha512-00xRV2X7RwKFRY8LB99/WmVSWqhHnMV6BB4gc5x4MMuDPDslaNrGTYWdp6KBukok1ayrg0JfwazUeAawNWU5Zw==
+
+"@openai/codex-linux-arm64@npm:@openai/codex@0.105.0-linux-arm64":
+  version "0.105.0-linux-arm64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0-linux-arm64.tgz#9f820f14479b3817280d9ac28a3d54b9591115bd"
+  integrity sha512-UFGyZhRB0Gtr31wFf0WDd//W3XGbZZ7mxYwf528i6rhlwabb3FIJKWrgv4DVXKQZCGiBujqAk0pr32PziElouA==
+
+"@openai/codex-linux-x64@npm:@openai/codex@0.105.0-linux-x64":
+  version "0.105.0-linux-x64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0-linux-x64.tgz#e0e1a51ce8540b121a40423c42af740a281c414e"
+  integrity sha512-cZgNzNjspqHmXNf/CraqqQrfotw5cXO7wvkSSYs2NZjZR7Ud10u5hFeumUW1sEvb5/F9tEKsjO+WCj+bVxdrYQ==
+
+"@openai/codex-sdk@0.105.0":
+  version "0.105.0"
+  resolved "https://registry.yarnpkg.com/@openai/codex-sdk/-/codex-sdk-0.105.0.tgz#2fe4bc6bdeb72a43cd65905ec94699f8412e27a8"
+  integrity sha512-sHq9JdcZftlybuWH5846h2bezKcMpTBX7m2AH8vpqV1+1ex7Q/Prwy64b81oMjrlWooiK+sVelZFED6ZPeLCZg==
+  dependencies:
+    "@openai/codex" "0.105.0"
+
+"@openai/codex-win32-arm64@npm:@openai/codex@0.105.0-win32-arm64":
+  version "0.105.0-win32-arm64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0-win32-arm64.tgz#c5333c8ea7734aa6b1496912469dd046dc13e123"
+  integrity sha512-OGvHTn/XAyY8889n0ZEcvUgiaPeT/rLFEFUEOzWgt5yhKiODV+zEzfruYmcvZUpzgFJ1kRQlDgKPMbW7u2r01Q==
+
+"@openai/codex-win32-x64@npm:@openai/codex@0.105.0-win32-x64":
+  version "0.105.0-win32-x64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0-win32-x64.tgz#874816e5a693d856db970609cbdb0ec9fc7ed354"
+  integrity sha512-8V26RjFeg06i4mrrhQTKLY6lcRXsm0s1cxT3lamApLccvBBAhhAOE0je6jHb5nkrncvf9x/lee+WmY0louvvGQ==
+
+"@openai/codex@0.105.0":
+  version "0.105.0"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.105.0.tgz#a9d7319a2cbbf22cbec4ad41aed6cbd0a33ef76d"
+  integrity sha512-enoNmQs3aOgUhsKYC6kfuKEG0AogS4q01pqcySPwf9zl2r8OcKuMUoLw1v5n4Y7sd3B6qGS7UtTABqbcT5FaMA==
+  optionalDependencies:
+    "@openai/codex-darwin-arm64" "npm:@openai/codex@0.105.0-darwin-arm64"
+    "@openai/codex-darwin-x64" "npm:@openai/codex@0.105.0-darwin-x64"
+    "@openai/codex-linux-arm64" "npm:@openai/codex@0.105.0-linux-arm64"
+    "@openai/codex-linux-x64" "npm:@openai/codex@0.105.0-linux-x64"
+    "@openai/codex-win32-arm64" "npm:@openai/codex@0.105.0-win32-arm64"
+    "@openai/codex-win32-x64" "npm:@openai/codex@0.105.0-win32-x64"
 
 "@pinojs/redact@^0.4.0":
   version "0.4.0"
@@ -4305,9 +4363,9 @@ base64url@^3.0.1:
   integrity sha512-ir1UPr3dkwexU7FdV8qBBbNDRUhMmIekYMFZfi+C/sLNnRESKPl23nB9b2pltqfOQNnGzsDdId90AEtG5tCx4A==
 
 basic-ftp@^5.0.2:
-  version "5.1.0"
-  resolved "https://registry.yarnpkg.com/basic-ftp/-/basic-ftp-5.1.0.tgz#00eb8128ce536aa697c45716c739bf38e8d890f5"
-  integrity sha512-RkaJzeJKDbaDWTIPiJwubyljaEPwpVWkm9Rt5h9Nd6h7tEXTJ3VB4qxdZBioV7JO5yLUaOKwz7vDOzlncUsegw==
+  version "5.2.0"
+  resolved "https://registry.yarnpkg.com/basic-ftp/-/basic-ftp-5.2.0.tgz#7c2dff63c918bde60e6bad1f2ff93dcf5137a40a"
+  integrity sha512-VoMINM2rqJwJgfdHq6RiUudKt2BV+FY5ZFezP/ypmwayk68+NzzAQy4XXLlqsGD4MCzq3DrmNFD/uUmBJuGoXw==
 
 before-after-hook@^2.1.0, before-after-hook@^2.2.0:
   version "2.2.3"
@@ -6397,10 +6455,10 @@ fast-uri@^3.0.1:
   resolved "https://registry.yarnpkg.com/fast-uri/-/fast-uri-3.1.0.tgz#66eecff6c764c0df9b762e62ca7edcfb53b4edfa"
   integrity sha512-iPeeDKJSWf4IEOasVVrknXpaBV0IApz/gp7S2bb7Z4Lljbl2MGJRqInZiUrQwV16cpzw/D3S5j5Julj/gT52AA==
 
-fast-xml-parser@5.3.4, fast-xml-parser@5.3.7, fast-xml-parser@^4.4.0, fast-xml-parser@^4.5.3, fast-xml-parser@^5.3.7:
-  version "5.3.7"
-  resolved "https://registry.yarnpkg.com/fast-xml-parser/-/fast-xml-parser-5.3.7.tgz#81694e71ff0e568cbb6befade342f2a7e58aa1d9"
-  integrity sha512-JzVLro9NQv92pOM/jTCR6mHlJh2FGwtomH8ZQjhFj/R29P2Fnj38OgPJVtcvYw6SuKClhgYuwUZf5b3rd8u2mA==
+fast-xml-parser@5.3.4, fast-xml-parser@5.3.8, fast-xml-parser@^4.4.0, fast-xml-parser@^4.5.3, fast-xml-parser@^5.3.8:
+  version "5.3.8"
+  resolved "https://registry.yarnpkg.com/fast-xml-parser/-/fast-xml-parser-5.3.8.tgz#b5bc2045620d1b9cf342a2aa4d72391ef0b36a9e"
+  integrity sha512-53jIF4N6u/pxvaL1eb/hEZts/cFLWZ92eCfLrNyCI0k38lettCG/Bs40W9pPwoPXyHQlKu2OUbQtiEIZK/J6Vw==
   dependencies:
     strnum "^2.1.2"
 

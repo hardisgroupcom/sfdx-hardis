@@ -66,9 +66,7 @@ export class AgentforceProvider extends AiProviderRoot {
   }
 
   public async promptAi(promptText: string, template: PromptTemplate): Promise<AiResponse | null> {
-    if (!this.checkMaxAiCallsNumber()) {
-      const maxCalls = this.getAiMaxCallsNumber();
-      uxLog("warning", this, c.yellow(`[Agentforce] Already performed maximum ${maxCalls} calls. Increase it by defining AI_MAXIMUM_CALL_NUMBER env variable`));
+    if (!this.checkAndWarnMaxAiCalls("Agentforce")) {
       return null;
     }
     if (process.env?.DEBUG_PROMPTS === "true") {

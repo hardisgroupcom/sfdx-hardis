@@ -169,34 +169,42 @@ ${this.htmlInstructions}
     "generate-packages-doc": Flags.boolean({
       default: true,
       description: "Generate Installed Packages documentation",
+      allowNo: true
     }),
     "generate-apex-doc": Flags.boolean({
       default: true,
       description: "Generate Apex documentation",
+      allowNo: true
     }),
     "generate-flow-doc": Flags.boolean({
       default: true,
       description: "Generate Flows, Process Builders and Workflow Rules documentation",
+      allowNo: true
     }),
     "generate-pages-doc": Flags.boolean({
       default: true,
       description: "Generate Lightning Pages documentation",
+      allowNo: true
     }),
     "generate-profiles-doc": Flags.boolean({
       default: true,
       description: "Generate Profiles, Permission Sets, Permission Set Groups and Roles documentation",
+      allowNo: true
     }),
     "generate-objects-doc": Flags.boolean({
       default: true,
       description: "Generate Objects documentation",
+      allowNo: true
     }),
     "generate-automations-doc": Flags.boolean({
       default: true,
       description: "Generate Automations documentation (Approval Processes, Assignment Rules, AutoResponse Rules, Escalation Rules)",
+      allowNo: true
     }),
     "generate-lwc-doc": Flags.boolean({
       default: true,
       description: "Generate Lightning Web Components documentation",
+      allowNo: true
     }),
     debug: Flags.boolean({
       char: 'd',

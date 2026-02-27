@@ -170,6 +170,34 @@ openaiModel: gpt-4o-mini
 
 Store only model and provider preferences in the config file; keep `OPENAI_API_KEY` in a secure environment variable.
 
+### With Codex Directly
+
+To use Codex directly, set `USE_CODEX_DIRECT=true`.
+
+Authentication is resolved in this order:
+
+1. `CODEX_API_KEY` environment variable (recommended for CI/CD).
+2. Existing Codex local auth cache file at `$CODEX_HOME/auth.json` (or `~/.codex/auth.json` when `CODEX_HOME` is not set).
+
+| Variable               | Description                                                                    | Default         |
+|------------------------|--------------------------------------------------------------------------------|-----------------|
+| USE_CODEX_DIRECT       | Set to true to activate direct Codex integration                               | `false`         |
+| CODEX_API_KEY          | Codex API key used by `@openai/codex-sdk` (optional if auth cache file exists) |                 |
+| CODEX_MODEL            | Codex model used to perform prompts                                            | `gpt-5.1-codex` |
+| CODEX_REASONING_EFFORT | Reasoning effort used for Codex calls (`low`, `medium`, `high`, `xhigh`)       | `high`          |
+
+If `CODEX_REASONING_EFFORT` is set to an unsupported value, sfdx-hardis falls back to `high`.
+
+#### Configure Codex via .sfdx-hardis.yml
+
+```yaml
+useCodexDirect: true
+codexModel: gpt-5.1-codex
+codexReasoningEffort: high
+```
+
+Store only model preferences in the config file; keep `CODEX_API_KEY` in a secure environment variable when running in CI/CD.
+
 ## Templates
 
 You can override default prompts by defining the following environment variables.

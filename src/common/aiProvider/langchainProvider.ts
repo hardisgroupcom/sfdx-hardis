@@ -120,10 +120,7 @@ export class LangChainProvider extends AiProviderRoot {
   }
 
   public async promptAi(promptText: string, template: PromptTemplate | null = null): Promise<AiResponse | null> {
-    // re-use the same check for max ai calls number as in the original openai provider implementation
-    if (!this.checkMaxAiCallsNumber()) {
-      const maxCalls = this.getAiMaxCallsNumber();
-      uxLog("warning", this, c.yellow(`[LangChain] Already performed maximum ${maxCalls} calls. Increase it by defining AI_MAXIMUM_CALL_NUMBER env variable`));
+    if (!this.checkAndWarnMaxAiCalls("LangChain")) {
       return null;
     }
 
