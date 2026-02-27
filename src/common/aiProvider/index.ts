@@ -8,10 +8,11 @@ import { prompts } from "../utils/prompts.js";
 import { AgentforceProvider } from "./agentforceProvider.js";
 import { LangChainProvider } from "./langchainProvider.js";
 import { formatMarkdownForMkDocs } from "../utils/markdownUtils.js";
+import { CodexProvider } from "./codexProvider.js";
 
 let IS_AI_AVAILABLE: boolean | null = null;
-type ProviderKey = "langchain" | "openai" | "agentforce";
-const DEFAULT_PROVIDER_ORDER: ProviderKey[] = ["langchain", "openai", "agentforce"];
+type ProviderKey = "langchain" | "codex" | "openai" | "agentforce";
+const DEFAULT_PROVIDER_ORDER: ProviderKey[] = ["langchain", "codex", "openai", "agentforce"];
 
 export abstract class AiProvider {
   static async isAiAvailable(): Promise<boolean> {
@@ -32,14 +33,26 @@ export abstract class AiProvider {
       return IS_AI_AVAILABLE;
     }
     if (!isCI) {
-      const promptRes = await prompts({
-        type: 'text',
-        name: 'token',
-        message: 'Input your OpenAi API token if you want to use it. Leave empty to skip.',
-        description: 'Provide your OpenAI API key to enable AI-powered features in sfdx-hardis',
-      });
-      if (promptRes.token) {
-        process.env.OPENAI_API_KEY = promptRes.token;
+      if (await CodexProvider.shouldPromptForApiKey()) {
+        const promptRes = await prompts({
+          type: 'text',
+          name: 'token',
+          message: 'Input your Codex API token if you want to use it. Leave empty to skip.',
+          description: 'Provide your CODEX_API_KEY to enable Codex-powered features in sfdx-hardis',
+        });
+        if (promptRes.token) {
+          process.env.CODEX_API_KEY = promptRes.token;
+        }
+      } else {
+        const promptRes = await prompts({
+          type: 'text',
+          name: 'token',
+          message: 'Input your OpenAi API token if you want to use it. Leave empty to skip.',
+          description: 'Provide your OpenAI API key to enable AI-powered features in sfdx-hardis',
+        });
+        if (promptRes.token) {
+          process.env.OPENAI_API_KEY = promptRes.token;
+        }
       }
     }
     IS_AI_AVAILABLE = await this.isAiAvailable();
@@ -54,6 +67,10 @@ export abstract class AiProvider {
         if (provider === "langchain") {
           if (await LangChainProvider.isConfigured()) {
             return await LangChainProvider.create();
+          }
+        } else if (provider === "codex") {
+          if (await CodexProvider.isConfigured()) {
+            return await CodexProvider.create();
           }
         } else if (provider === "openai") {
           if (await OpenAiProvider.isConfigured()) {
