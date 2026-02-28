@@ -16,7 +16,7 @@
     "@langchain/openai": "1.2.8",
     "@oclif/core": "4.8.0",
     "@openai/codex-sdk": "0.105.0",
-    "@salesforce/core": "8.25.1",
+    "@salesforce/core": "8.26.3",
     "@salesforce/sf-plugins-core": "11.3.12",
     "@slack/types": "2.20.0",
     "@slack/web-api": "7.13.0",

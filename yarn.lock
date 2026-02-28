@@ -2331,15 +2331,15 @@
     strip-ansi "6.0.1"
     ts-retry-promise "^0.8.1"
 
-"@salesforce/core@8.25.1", "@salesforce/core@^8.23.1", "@salesforce/core@^8.24.0", "@salesforce/core@^8.5.1", "@salesforce/core@^8.8.0":
-  version "8.25.1"
-  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-8.25.1.tgz#7646025598bb59b6f95b3656baf8eb0b63a43052"
-  integrity sha512-Jon0a9uZpp+mNa5PiY+y8dTjaPcsMaxXEkswdzWotrdrZ4g84MmPKSEv+Q/LtXw3uc9i4RmqBJBUXSIvZhgrjg==
+"@salesforce/core@8.26.3", "@salesforce/core@^8.23.1", "@salesforce/core@^8.24.0", "@salesforce/core@^8.5.1", "@salesforce/core@^8.8.0":
+  version "8.26.3"
+  resolved "https://registry.yarnpkg.com/@salesforce/core/-/core-8.26.3.tgz#0b2502cacca8977f2ae95283d944771040eb7869"
+  integrity sha512-lPNFHjHFeC4V3KuH88xuVLGhAqmtM8meUcvyejNh8bQ5w642APKRTGDZ0pOnWHJAe5SQy7cSQ1WqvO3V73ouQw==
   dependencies:
     "@jsforce/jsforce-node" "^3.10.13"
     "@salesforce/kit" "^3.2.4"
     "@salesforce/ts-types" "^2.0.12"
-    ajv "^8.17.1"
+    ajv "^8.18.0"
     change-case "^4.1.2"
     fast-levenshtein "^3.0.0"
     faye "^1.4.1"
@@ -3909,7 +3909,7 @@ ajv@^6.12.4:
     json-schema-traverse "^0.4.1"
     uri-js "^4.2.2"
 
-ajv@^8.11.0, ajv@^8.17.1:
+ajv@^8.11.0, ajv@^8.18.0:
   version "8.18.0"
   resolved "https://registry.yarnpkg.com/ajv/-/ajv-8.18.0.tgz#8864186b6738d003eb3a933172bb3833e10cefbc"
   integrity sha512-PlXPeEWMXMZ7sPYOHqmDyCJzcfNrUr3fGNKtezX14ykXOEIvyK81d+qydx89KY5O71FKMPaQ2vBfBFI5NHR63A==
