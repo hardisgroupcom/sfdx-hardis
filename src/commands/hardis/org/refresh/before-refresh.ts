@@ -20,6 +20,15 @@ import {
   createConnectedAppSuccessResponse,
   handleConnectedAppError
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
+import {
+  ExternalClientApp,
+  deleteExternalClientApps,
+  retrieveExternalClientApps,
+  validateExternalClientApps,
+  selectExternalClientAppsForProcessing,
+  createExternalClientAppSuccessResponse,
+  handleExternalClientAppError
+} from '../../../../common/utils/refresh/externalClientAppUtils.js';
 import { CONSTANTS, getConfig, setConfig } from '../../../../config/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -49,7 +58,7 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
   public static description = `
 ## Command Behavior
 
-**Backs up all Connected Apps (including Consumer Secrets), certificates, custom settings, records and other metadata from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
+**Backs up all Connected Apps, External Client Apps (including Consumer Secrets), certificates, custom settings, records and other metadata from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
 
 This command prepares a complete backup prior to a sandbox refresh. It creates a dedicated project under \`scripts/sandbox-refresh/<sandbox-folder>\`, retrieves metadata and data, attempts to capture Connected App consumer secrets, and can optionally delete the apps so they can be reuploaded after the refresh.
 
@@ -57,12 +66,13 @@ Key functionalities:
 
 - **Create a save project:** Generates a dedicated project folder to store all artifacts for the sandbox backup.
 - **Find and select Connected Apps:** Lists Connected Apps in the org and lets you pick specific apps, use a name filter, or process all apps.
+- **Find and select External Client Apps:** Lists External Client Apps in the org and lets you pick specific apps to backup.
 - **Save metadata for restore:** Builds a manifest and retrieves the metadata types you choose so they can be restored after the refresh.
 - **Capture Consumer Secrets:** Attempts to capture Connected App consumer secrets automatically (opens a browser session when possible) and falls back to a short manual prompt when needed.
 - **Collect certificates:** Saves certificate files and their definitions so they can be redeployed later.
 - **Export custom settings & records:** Lets you pick custom settings to export as JSON and optionally export records using configured data workspaces.
 - **Persist choices & report:** Stores your backup choices in project config and sends report files for traceability.
-- **Optional cleanup:** Can delete backed-up Connected Apps from the org so they can be re-uploaded cleanly after the refresh.
+- **Optional cleanup:** Can delete backed-up Connected Apps and External Client Apps from the org so they can be re-uploaded cleanly after the refresh.
 - **Interactive safety checks:** Prompts you to confirm package contents and other potentially destructive actions; sensible defaults are chosen where appropriate.
 
 This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is intended to be run before a sandbox refresh so that all credentials, certificates, metadata and data can be restored afterwards.
@@ -147,6 +157,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 - Custom Settings
 - Records (using SFDMU projects)
 - Connected Apps
+- External Client Apps
   `));
 
     // Check org is connected
@@ -165,6 +176,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     await this.saveRecords();
 
     await this.retrieveDeleteConnectedApps(accessToken);
+
+    await this.retrieveDeleteExternalClientApps();
 
     return this.result;
   }
@@ -1034,5 +1047,158 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
         cwd: this.saveProjectPath
       });
     }
+  }
+
+  // ============ EXTERNAL CLIENT APPS METHODS ============
+
+  private async retrieveDeleteExternalClientApps(): Promise<void> {
+    // If ECA folder is not empty, ask if we want to retrieve them again
+    let retrieveEcas = true;
+    const ecaFolder = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'externalClientApps');
+    if (fs.existsSync(ecaFolder) && fs.readdirSync(ecaFolder).length > 0) {
+      const confirmRetrieval = await prompts({
+        type: 'confirm',
+        name: 'retrieveAgain',
+        message: `External Client Apps folder is not empty. Do you want to retrieve External Client Apps again?`,
+        description: `If you do not retrieve them again, the External Client Apps will not be updated with the latest changes from the org.`,
+        initial: false
+      });
+
+      if (!confirmRetrieval.retrieveAgain) {
+        retrieveEcas = false;
+      }
+    }
+
+    if (retrieveEcas) {
+      try {
+        // Step 1: Get External Client Apps from org
+        const externalClientApps = await this.getExternalClientApps(this.orgUsername, this.nameFilter, this.processAll);
+
+        if (externalClientApps.length === 0) {
+          uxLog("warning", this, c.yellow('No External Client Apps found in the org'));
+          return;
+        }
+
+        // Step 2: Determine which apps to process (all, filtered, or user-selected)
+        const selectedApps = await this.selectExternalClientApps(externalClientApps, this.processAll, this.nameFilter);
+
+        if (selectedApps.length === 0) {
+          uxLog("warning", this, c.yellow('No External Client Apps selected'));
+          return;
+        }
+        this.refreshSandboxConfig.externalClientApps = selectedApps.map(app => app.fullName).sort();
+        await this.saveConfig();
+
+        // Step 3: Retrieve the External Client Apps from org
+        await retrieveExternalClientApps(this.orgUsername, selectedApps, this, this.saveProjectPath);
+
+        // Step 4: Delete External Client Apps from org if required
+        let deleteEcas = this.deleteApps;
+        if (!isCI && !this.deleteApps) {
+          const ecaNames = selectedApps.map(app => app.fullName).join(', ');
+          const deletePrompt = await prompts({
+            type: 'confirm',
+            name: 'delete',
+            message: `Do you want to delete the External Client Apps from the org after saving? ${ecaNames}`,
+            description: 'If you do not delete them, they will remain in the org and can be re-uploaded after refreshing the org.',
+            initial: false
+          });
+          deleteEcas = deletePrompt.delete;
+        }
+
+        if (deleteEcas) {
+          uxLog("action", this, c.cyan(`Deleting ${selectedApps.length} External Client Apps from ${this.conn.instanceUrl} ...`));
+          await deleteExternalClientApps(this.orgUsername, selectedApps, this, this.saveProjectPath);
+          uxLog("success", this, c.green('External Client Apps were successfully deleted from the org.'));
+        }
+
+        // Add a summary message at the end
+        if (selectedApps.length > 0) {
+          uxLog("success", this, c.green(`Successfully saved locally ${selectedApps.length} External Client App(s)`));
+        }
+
+        const ecaRes = createExternalClientAppSuccessResponse(
+          `Successfully processed ${selectedApps.length} External Client App(s)`,
+          selectedApps.map(app => app.fullName)
+        );
+        this.result = Object.assign(this.result || {}, ecaRes);
+
+      } catch (error: any) {
+        this.result = Object.assign(this.result || {}, handleExternalClientAppError(error, this));
+      }
+    }
+  }
+
+  private async getExternalClientApps(
+    orgUsername: string,
+    nameFilter: string | undefined,
+    processAll: boolean
+  ): Promise<ExternalClientApp[]> {
+    // Set appropriate log message based on flags
+    if (processAll) {
+      uxLog("action", this, c.cyan('Processing all External Client Apps from org (selection prompt bypassed)'));
+    } else if (nameFilter) {
+      uxLog("action", this, c.cyan(`Processing specified External Client App(s): ${nameFilter} (selection prompt bypassed)`));
+    } else {
+      uxLog("action", this, c.cyan(`Listing External Client Apps in org ${this.conn.instanceUrl} ...`));
+    }
+
+    const command = `sf org list metadata --metadata-type ExternalClientApplication --target-org ${orgUsername}`;
+    const result = await execSfdxJson(command, this, { output: true });
+
+    const availableApps: ExternalClientApp[] = result?.result && Array.isArray(result.result)
+      ? result.result.map((app: any) => ({
+        fullName: app.fullName,
+        fileName: app.fileName || app.fullName,
+        type: 'ExternalClientApplication'
+      }))
+      : [];
+
+    if (availableApps.length === 0) {
+      uxLog("warning", this, c.yellow('No External Client Apps were found in the org.'));
+      return [];
+    }
+    availableApps.sort((a, b) => a.fullName.localeCompare(b.fullName));
+
+    const availableAppNames = availableApps.map(app => app.fullName);
+    uxLog("log", this, c.grey(`Found ${availableApps.length} External Client App(s) in the org`));
+
+    // If name filter is provided, validate and filter the requested apps
+    if (nameFilter) {
+      const appNames = nameFilter.split(',').map(name => name.trim());
+      uxLog("action", this, c.cyan(`Validating specified External Client App(s): ${appNames.join(', ')}`));
+
+      validateExternalClientApps(appNames, availableAppNames, this, 'org');
+
+      // Filter available apps to only include the ones specified in the name filter (case-insensitive)
+      const filteredApps = availableApps.filter(app =>
+        appNames.some(name => name.toLowerCase() === app.fullName.toLowerCase())
+      );
+
+      uxLog("success", this, c.green(`Successfully validated ${filteredApps.length} External Client App(s) in the org`));
+      return filteredApps;
+    }
+
+    // If no name filter, return all available apps
+    return availableApps;
+  }
+
+  private async selectExternalClientApps(
+    externalClientApps: ExternalClientApp[],
+    processAll: boolean,
+    nameFilter: string | undefined
+  ): Promise<ExternalClientApp[]> {
+    const initialSelection: string[] = [];
+    if (this.refreshSandboxConfig.externalClientApps && this.refreshSandboxConfig.externalClientApps.length > 0) {
+      initialSelection.push(...this.refreshSandboxConfig.externalClientApps);
+    }
+    return selectExternalClientAppsForProcessing(
+      externalClientApps,
+      initialSelection,
+      processAll,
+      nameFilter,
+      'Select External Client Apps that you will want to restore after org refresh',
+      this
+    );
   }
 }

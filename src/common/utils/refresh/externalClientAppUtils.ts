@@ -9,20 +9,23 @@ import { SfCommand } from '@salesforce/sf-plugins-core';
 import { prompts } from '../prompts.js';
 import { GLOB_IGNORE_PATTERNS } from '../projectUtils.js';
 
-export interface RefreshSandboxConfig {
-  connectedApps?: string[];
-  externalClientApps?: string[];
-}
-// Define interface for Connected App metadata
-export interface ConnectedApp {
+// Define interface for External Client App metadata
+export interface ExternalClientApp {
   fullName: string;
   fileName: string;
   type: string;
-  consumerKey?: string;
-  consumerSecret?: string;
+  clientId?: string;
+  clientSecret?: string;
 }
 
-export function generateConnectedAppPackageXml(connectedApps: ConnectedApp[]): any {
+// External Client App metadata types
+export const ECA_METADATA_TYPES = [
+  'ExternalClientApplication',
+  'ExtlClntAppOauthSettings',
+  'ExtlClntAppGlobalOauthSettings'
+];
+
+export function generateExternalClientAppPackageXml(externalClientApps: ExternalClientApp[]): any {
   return {
     Package: {
       $: {
@@ -30,8 +33,16 @@ export function generateConnectedAppPackageXml(connectedApps: ConnectedApp[]): a
       },
       types: [
         {
-          members: connectedApps.map(app => app.fullName),
-          name: ['ConnectedApp']
+          members: externalClientApps.map(app => app.fullName),
+          name: ['ExternalClientApplication']
+        },
+        {
+          members: externalClientApps.map(app => `${app.fullName}OAuthSettings`),
+          name: ['ExtlClntAppOauthSettings']
+        },
+        {
+          members: externalClientApps.map(app => `${app.fullName}GlblOAuth`),
+          name: ['ExtlClntAppGlobalOauthSettings']
         }
       ],
       version: [getApiVersion()]
@@ -50,26 +61,26 @@ export function generateEmptyPackageXml(): any {
   };
 }
 
-export async function createConnectedAppManifest(
-  connectedApps: ConnectedApp[],
+export async function createExternalClientAppManifest(
+  externalClientApps: ExternalClientApp[],
   command: SfCommand<any>
 ): Promise<{ manifestPath: string; tmpDir: string }> {
   // Create a temporary directory for the manifest
   const tmpDir = await createTempDir();
-  const manifestPath = path.join(tmpDir, 'connected-apps-manifest.xml');
+  const manifestPath = path.join(tmpDir, 'external-client-apps-manifest.xml');
 
   // Generate and write the package.xml content
-  const packageXml = generateConnectedAppPackageXml(connectedApps);
+  const packageXml = generateExternalClientAppPackageXml(externalClientApps);
   await writeXmlFile(manifestPath, packageXml);
 
   // Display the XML content for the manifest
   const manifestContent = await fs.readFile(manifestPath, 'utf8');
-  uxLog("log", command, c.cyan(`package.xml manifest for ${connectedApps.length} connected app(s):\n${manifestContent}`));
+  uxLog("log", command, c.cyan(`package.xml manifest for ${externalClientApps.length} External Client App(s):\n${manifestContent}`));
 
   return { manifestPath, tmpDir };
 }
 
-export async function withConnectedAppIgnoreHandling<T>(
+export async function withExternalClientAppIgnoreHandling<T>(
   operationFn: (backupInfo: {
     forceignorePath: string;
     originalContent: string;
@@ -77,20 +88,20 @@ export async function withConnectedAppIgnoreHandling<T>(
   } | null) => Promise<T>,
   command: SfCommand<any>
 ): Promise<T> {
-  // Temporarily modify .forceignore to allow Connected App operations
-  const backupInfo = await disableConnectedAppIgnore(command);
+  // Temporarily modify .forceignore to allow External Client App operations
+  const backupInfo = await disableExternalClientAppIgnore(command);
 
   try {
     // Perform the operation
     return await operationFn(backupInfo);
   } finally {
     // Always restore .forceignore
-    await restoreConnectedAppIgnore(backupInfo, command);
+    await restoreExternalClientAppIgnore(backupInfo, command);
   }
 }
 
 export async function createDestructiveChangesManifest(
-  connectedApps: ConnectedApp[],
+  externalClientApps: ExternalClientApp[],
   command: SfCommand<any>
 ): Promise<{ destructiveChangesPath: string; packageXmlPath: string; tmpDir: string }> {
   // Create a temporary directory for the manifest
@@ -98,8 +109,8 @@ export async function createDestructiveChangesManifest(
   const destructiveChangesPath = path.join(tmpDir, 'destructiveChanges.xml');
   const packageXmlPath = path.join(tmpDir, 'package.xml');
 
-  // Generate destructiveChanges.xml using the Connected App Package XML generator
-  const destructiveChangesXml = generateConnectedAppPackageXml(connectedApps);
+  // Generate destructiveChanges.xml using the External Client App Package XML generator
+  const destructiveChangesXml = generateExternalClientAppPackageXml(externalClientApps);
 
   // Generate empty package.xml required for deployment
   const packageXml = generateEmptyPackageXml();
@@ -109,28 +120,28 @@ export async function createDestructiveChangesManifest(
 
   // Display the XML content for destructive changes
   const destructiveXmlContent = await fs.readFile(destructiveChangesPath, 'utf8');
-  uxLog("log", command, c.cyan(`Destructive changes XML for deleting ${connectedApps.length} connected app(s):\n${destructiveXmlContent}`));
+  uxLog("log", command, c.cyan(`Destructive changes XML for deleting ${externalClientApps.length} External Client App(s):\n${destructiveXmlContent}`));
 
   return { destructiveChangesPath, packageXmlPath, tmpDir };
 }
 
-export async function deleteConnectedApps(
+export async function deleteExternalClientApps(
   orgUsername: string | undefined,
-  connectedApps: ConnectedApp[],
+  externalClientApps: ExternalClientApp[],
   command: SfCommand<any>,
   saveProjectPath: string
 ): Promise<void> {
-  await withConnectedAppValidation(orgUsername, connectedApps, command, 'delete', async () => {
+  await withExternalClientAppValidation(orgUsername, externalClientApps, command, 'delete', async () => {
     if (!orgUsername) return; // This should never happen due to validation, but TypeScript needs it
 
-    // Use withConnectedAppIgnoreHandling to handle .forceignore modifications
-    await withConnectedAppIgnoreHandling(async () => {
+    // Use withExternalClientAppIgnoreHandling to handle .forceignore modifications
+    await withExternalClientAppIgnoreHandling(async () => {
       // Create destructive changes manifests
       const { destructiveChangesPath, packageXmlPath, tmpDir } =
-        await createDestructiveChangesManifest(connectedApps, command);
+        await createDestructiveChangesManifest(externalClientApps, command);
 
       // Deploy the destructive changes
-      uxLog("log", command, c.grey(`Deploying destructive changes to delete ${connectedApps.length} Connected App(s) from org...`));
+      uxLog("log", command, c.grey(`Deploying destructive changes to delete ${externalClientApps.length} External Client App(s) from org...`));
       try {
         await execCommand(
           `sf project deploy start --manifest ${packageXmlPath} --post-destructive-changes ${destructiveChangesPath} --target-org ${orgUsername} --ignore-warnings --ignore-conflicts --json`,
@@ -138,7 +149,7 @@ export async function deleteConnectedApps(
           { output: true, fail: true, cwd: saveProjectPath }
         );
       } catch (deleteError: any) {
-        throw new Error(`Failed to delete Connected Apps: ${deleteError.message || String(deleteError)}`);
+        throw new Error(`Failed to delete External Client Apps: ${deleteError.message || String(deleteError)}`);
       }
 
       // Clean up
@@ -148,7 +159,7 @@ export async function deleteConnectedApps(
   });
 }
 
-export async function disableConnectedAppIgnore(command: SfCommand<any>): Promise<{
+export async function disableExternalClientAppIgnore(command: SfCommand<any>): Promise<{
   forceignorePath: string;
   originalContent: string;
   tempBackupPath: string
@@ -162,35 +173,37 @@ export async function disableConnectedAppIgnore(command: SfCommand<any>): Promis
   }
 
   // Create backup
-  const tempBackupPath = path.join(process.cwd(), '.forceignore.backup');
+  const tempBackupPath = path.join(process.cwd(), '.forceignore.backup.eca');
   const originalContent = await fs.readFile(forceignorePath, 'utf8');
   await fs.writeFile(tempBackupPath, originalContent);
 
-  // Read content and remove lines that would ignore Connected Apps
+  // Read content and remove lines that would ignore External Client Apps
   const lines = originalContent.split('\n');
   const filteredLines = lines.filter(line => {
-    const trimmedLine = line.trim();
+    const trimmedLine = line.trim().toLowerCase();
     return !(
-      trimmedLine.includes('connectedApp') ||
-      trimmedLine.includes('ConnectedApp') ||
-      trimmedLine.includes('connectedApps')
+      trimmedLine.includes('externalclientapp') ||
+      trimmedLine.includes('extlclntapp') ||
+      trimmedLine.includes('externalclientapplication') ||
+      trimmedLine.includes('ecaoauth') ||
+      trimmedLine.includes('ecaglbloauth')
     );
   });
 
   // Check if any lines were filtered out
   if (lines.length === filteredLines.length) {
-    uxLog("log", command, c.grey('No Connected App ignore patterns found in .forceignore.'));
+    uxLog("log", command, c.grey('No External Client App ignore patterns found in .forceignore.'));
     return { forceignorePath, originalContent, tempBackupPath };
   }
 
   // Write modified .forceignore
   await fs.writeFile(forceignorePath, filteredLines.join('\n'));
-  uxLog("warning", command, c.cyan('Temporarily modified .forceignore to allow Connected App metadata operations.'));
+  uxLog("warning", command, c.cyan('Temporarily modified .forceignore to allow External Client App metadata operations.'));
 
   return { forceignorePath, originalContent, tempBackupPath };
 }
 
-export async function restoreConnectedAppIgnore(
+export async function restoreExternalClientAppIgnore(
   backupInfo: {
     forceignorePath: string;
     originalContent: string;
@@ -212,18 +225,18 @@ export async function restoreConnectedAppIgnore(
   }
 }
 
-export async function retrieveConnectedApps(
+export async function retrieveExternalClientApps(
   orgUsername: string | undefined,
-  connectedApps: ConnectedApp[],
+  externalClientApps: ExternalClientApp[],
   command: SfCommand<any>,
   saveProjectPath: string
 ): Promise<void> {
-  await withConnectedAppValidation(orgUsername, connectedApps, command, 'retrieve', async () => {
+  await withExternalClientAppValidation(orgUsername, externalClientApps, command, 'retrieve', async () => {
     if (!orgUsername) return; // This should never happen due to validation, but TypeScript needs it
 
-    await performConnectedAppOperationWithManifest(
+    await performExternalClientAppOperationWithManifest(
       orgUsername,
-      connectedApps,
+      externalClientApps,
       command,
       'retrieve',
       async (manifestPath, orgUsername, command) => {
@@ -237,18 +250,18 @@ export async function retrieveConnectedApps(
   });
 }
 
-export async function deployConnectedApps(
+export async function deployExternalClientApps(
   orgUsername: string | undefined,
-  connectedApps: ConnectedApp[],
+  externalClientApps: ExternalClientApp[],
   command: SfCommand<any>,
   saveProjectPath: string
 ): Promise<void> {
-  await withConnectedAppValidation(orgUsername, connectedApps, command, 'deploy', async () => {
+  await withExternalClientAppValidation(orgUsername, externalClientApps, command, 'deploy', async () => {
     if (!orgUsername) return; // This should never happen due to validation, but TypeScript needs it
 
-    await performConnectedAppOperationWithManifest(
+    await performExternalClientAppOperationWithManifest(
       orgUsername,
-      connectedApps,
+      externalClientApps,
       command,
       'deploy',
       async (manifestPath, orgUsername, command) => {
@@ -262,17 +275,17 @@ export async function deployConnectedApps(
   });
 }
 
-export function toConnectedAppFormat(apps: Array<{ fullName: string; fileName?: string; filePath?: string; }>): ConnectedApp[] {
+export function toExternalClientAppFormat(apps: Array<{ fullName: string; fileName?: string; filePath?: string; }>): ExternalClientApp[] {
   return apps.map(app => {
     return {
       fullName: app.fullName,
-      fileName: app.fileName || app.fullName || (app.filePath ? path.basename(app.filePath, '.connectedApp-meta.xml') : app.fullName),
-      type: 'ConnectedApp'
+      fileName: app.fileName || app.fullName || (app.filePath ? path.basename(app.filePath, '.eca-meta.xml') : app.fullName),
+      type: 'ExternalClientApplication'
     };
   });
 }
 
-export function validateConnectedApps(
+export function validateExternalClientApps(
   requestedApps: string[],
   availableApps: string[],
   command: SfCommand<any>,
@@ -286,11 +299,11 @@ export function validateConnectedApps(
   );
 
   if (missingApps.length > 0) {
-    const errorMsg = `The following Connected App(s) could not be found in the ${context}: ${missingApps.join(', ')}`;
+    const errorMsg = `The following External Client App(s) could not be found in the ${context}: ${missingApps.join(', ')}`;
     uxLog("error", command, c.red(errorMsg));
 
     if (availableApps.length > 0) {
-      uxLog("warning", command, c.yellow(`Available connected apps in the ${context}:`));
+      uxLog("warning", command, c.yellow(`Available External Client Apps in the ${context}:`));
       availableApps.forEach(name => {
         uxLog("log", command, c.grey(`  - ${name}`));
       });
@@ -312,7 +325,7 @@ export function validateConnectedApps(
         }
       });
     } else {
-      uxLog("warning", command, c.yellow(`No Connected Apps were found in the ${context}.`));
+      uxLog("warning", command, c.yellow(`No External Client Apps were found in the ${context}.`));
     }
 
     uxLog("warning", command, c.yellow('Please check the app name(s) and try again.'));
@@ -329,25 +342,25 @@ export function validateConnectedApps(
   return { missingApps, validApps };
 }
 
-export function validateConnectedAppParams(
+export function validateExternalClientAppParams(
   orgUsername: string | undefined,
-  connectedApps: Array<any>
+  externalClientApps: Array<any>
 ): void {
   if (!orgUsername) {
     throw new Error('Organization username is required');
   }
-  if (!connectedApps || connectedApps.length === 0) {
-    throw new Error('No Connected Apps specified');
+  if (!externalClientApps || externalClientApps.length === 0) {
+    throw new Error('No External Client Apps specified');
   }
 }
 
-export async function promptForConnectedAppSelection<T extends { fullName: string }>(
-  connectedApps: T[],
+export async function promptForExternalClientAppSelection<T extends { fullName: string }>(
+  externalClientApps: T[],
   initialSelection: string[] = [],
   promptMessage: string
 ): Promise<T[]> {
   // Create choices for the prompt
-  const choices = connectedApps.map(app => {
+  const choices = externalClientApps.map(app => {
     return { title: app.fullName, value: app.fullName };
   });
 
@@ -356,7 +369,7 @@ export async function promptForConnectedAppSelection<T extends { fullName: strin
     type: 'multiselect',
     name: 'selectedApps',
     message: promptMessage,
-    description: 'Select Connected Apps to process.',
+    description: 'Select External Client Apps to process.',
     choices: choices,
     initial: initialSelection,
   });
@@ -366,55 +379,55 @@ export async function promptForConnectedAppSelection<T extends { fullName: strin
   }
 
   // Filter apps based on selection
-  const selectedApps = connectedApps.filter(app =>
+  const selectedApps = externalClientApps.filter(app =>
     promptResponse.selectedApps.includes(app.fullName)
   );
 
   return selectedApps;
 }
 
-export async function findConnectedAppFile(
+export async function findExternalClientAppFile(
   appName: string,
   command: SfCommand<any>,
   saveProjectPath: string
 ): Promise<string | null> {
-  uxLog("other", command, c.cyan(`Searching for Connected App: ${appName}.`));
+  uxLog("other", command, c.cyan(`Searching for External Client App: ${appName}.`));
   try {
     // First, try an exact case-sensitive match
-    const exactPattern = `**/${appName}.connectedApp-meta.xml`;
+    const exactPattern = `**/${appName}.eca-meta.xml`;
     const exactMatches = await glob(exactPattern, { ignore: GLOB_IGNORE_PATTERNS, cwd: saveProjectPath });
 
     if (exactMatches.length > 0) {
-      uxLog("success", command, c.green(`✓ Found connected app: ${exactMatches[0]}`));
+      uxLog("success", command, c.green(`✓ Found External Client App: ${exactMatches[0]}`));
       return path.join(saveProjectPath, exactMatches[0]);
     }
 
     // Try standard locations with possible name variations
     const possiblePaths = [
-      path.join(saveProjectPath, `force-app/main/default/connectedApps/${appName}.connectedApp-meta.xml`),
-      path.join(saveProjectPath, `force-app/main/default/connectedApps/${appName.replace(/\s/g, '_')}.connectedApp-meta.xml`),
-      path.join(saveProjectPath, `force-app/main/default/connectedApps/${appName.replace(/\s/g, '')}.connectedApp-meta.xml`)
+      path.join(saveProjectPath, `force-app/main/default/externalClientApps/${appName}.eca-meta.xml`),
+      path.join(saveProjectPath, `force-app/main/default/externalClientApps/${appName.replace(/\s/g, '_')}.eca-meta.xml`),
+      path.join(saveProjectPath, `force-app/main/default/externalClientApps/${appName.replace(/\s/g, '')}.eca-meta.xml`)
     ];
 
     for (const potentialPath of possiblePaths) {
       if (fs.existsSync(potentialPath)) {
-        uxLog("success", command, c.green(`✓ Found connected app at standard path: ${potentialPath}`));
+        uxLog("success", command, c.green(`✓ Found External Client App at standard path: ${potentialPath}`));
         return potentialPath;
       }
     }
 
-    // If no exact match, try case-insensitive search by getting all ConnectedApp files
+    // If no exact match, try case-insensitive search by getting all ECA files
     uxLog("warning", command, c.yellow(`No exact match found; trying case-insensitive search...`));
-    const allConnectedAppFiles = await glob('**/*.connectedApp-meta.xml', { ignore: GLOB_IGNORE_PATTERNS, cwd: saveProjectPath });
+    const allEcaFiles = await glob('**/*.eca-meta.xml', { ignore: GLOB_IGNORE_PATTERNS, cwd: saveProjectPath });
 
-    if (allConnectedAppFiles.length === 0) {
-      uxLog("error", command, c.red(`No connected app files found in the project.`));
+    if (allEcaFiles.length === 0) {
+      uxLog("error", command, c.red(`No External Client App files found in the project.`));
       return null;
     }
 
     // Find a case-insensitive match
-    const caseInsensitiveMatch = allConnectedAppFiles.find(file => {
-      const baseName = path.basename(file, '.connectedApp-meta.xml');
+    const caseInsensitiveMatch = allEcaFiles.find(file => {
+      const baseName = path.basename(file, '.eca-meta.xml');
       return baseName.toLowerCase() === appName.toLowerCase() ||
         baseName.toLowerCase() === appName.toLowerCase().replace(/\s/g, '_') ||
         baseName.toLowerCase() === appName.toLowerCase().replace(/\s/g, '');
@@ -425,20 +438,20 @@ export async function findConnectedAppFile(
       return path.join(saveProjectPath, caseInsensitiveMatch);
     }
 
-    // If still not found, list available Connected Apps
-    uxLog("error", command, c.red(`✗ Could not find connected app "${appName}".`));
-    const allConnectedAppNames = allConnectedAppFiles.map(file => "- " + path.basename(file, '.connectedApp-meta.xml')).join('\n');
-    uxLog("warning", command, c.yellow(`Available connected apps:\n${allConnectedAppNames}`));
+    // If still not found, list available External Client Apps
+    uxLog("error", command, c.red(`✗ Could not find External Client App "${appName}".`));
+    const allEcaNames = allEcaFiles.map(file => "- " + path.basename(file, '.eca-meta.xml')).join('\n');
+    uxLog("warning", command, c.yellow(`Available External Client Apps:\n${allEcaNames}`));
 
     return null;
   } catch (error) {
-    uxLog("error", command, c.red(`Error searching for connected app: ${error}.`));
+    uxLog("error", command, c.red(`Error searching for External Client App: ${error}.`));
     return null;
   }
 }
 
-export async function selectConnectedAppsForProcessing<T extends { fullName: string }>(
-  connectedApps: T[],
+export async function selectExternalClientAppsForProcessing<T extends { fullName: string }>(
+  externalClientApps: T[],
   initialSelection: string[] = [],
   processAll: boolean,
   nameFilter: string | undefined,
@@ -446,30 +459,30 @@ export async function selectConnectedAppsForProcessing<T extends { fullName: str
   command: SfCommand<any>
 ): Promise<T[]> {
 
-  // If all flag or name is provided, use all connected apps from the list without prompting
+  // If all flag or name is provided, use all External Client Apps from the list without prompting
   if (processAll || nameFilter) {
     const selectionReason = processAll ? 'all flag' : 'name filter';
-    uxLog("action", command, c.cyan(`Processing ${connectedApps.length} connected app(s) based on ${selectionReason}.`));
-    return connectedApps;
+    uxLog("action", command, c.cyan(`Processing ${externalClientApps.length} External Client App(s) based on ${selectionReason}.`));
+    return externalClientApps;
   }
 
   // Otherwise, prompt for selection
-  return await promptForConnectedAppSelection(
-    connectedApps,
+  return await promptForExternalClientAppSelection(
+    externalClientApps,
     initialSelection,
     promptMessage
   );
 }
 
-export async function withConnectedAppValidation(
+export async function withExternalClientAppValidation(
   orgUsername: string | undefined,
-  connectedApps: ConnectedApp[],
+  externalClientApps: ExternalClientApp[],
   command: SfCommand<any>,
   operationName: string,
   operationFn: () => Promise<void>
 ): Promise<void> {
   try {
-    validateConnectedAppParams(orgUsername, connectedApps);
+    validateExternalClientAppParams(orgUsername, externalClientApps);
   } catch (error: any) {
     uxLog("log", command, c.yellow(`Skipping ${operationName} operation: ${error.message}`));
     return;
@@ -478,20 +491,20 @@ export async function withConnectedAppValidation(
   await operationFn();
 }
 
-export async function performConnectedAppOperationWithManifest(
+export async function performExternalClientAppOperationWithManifest(
   orgUsername: string,
-  connectedApps: ConnectedApp[],
+  externalClientApps: ExternalClientApp[],
   command: SfCommand<any>,
   operationName: 'retrieve' | 'deploy',
   commandFn: (manifestPath: string, orgUsername: string, command: SfCommand<any>) => Promise<void>
 ): Promise<void> {
-  // Use withConnectedAppIgnoreHandling to handle .forceignore modifications
-  await withConnectedAppIgnoreHandling(async () => {
-    // Create a manifest for the Connected Apps
-    const { manifestPath, tmpDir } = await createConnectedAppManifest(connectedApps, command);
+  // Use withExternalClientAppIgnoreHandling to handle .forceignore modifications
+  await withExternalClientAppIgnoreHandling(async () => {
+    // Create a manifest for the External Client Apps
+    const { manifestPath, tmpDir } = await createExternalClientAppManifest(externalClientApps, command);
 
     // Execute the operation using the manifest
-    uxLog("log", command, c.cyan(`${operationName === 'retrieve' ? 'Retrieving' : 'Deploying'} ${connectedApps.length} connected app(s) ${operationName === 'retrieve' ? 'from' : 'to'} org...`));
+    uxLog("log", command, c.cyan(`${operationName === 'retrieve' ? 'Retrieving' : 'Deploying'} ${externalClientApps.length} External Client App(s) ${operationName === 'retrieve' ? 'from' : 'to'} org...`));
 
     try {
       await commandFn(manifestPath, orgUsername, command);
@@ -502,7 +515,7 @@ export async function performConnectedAppOperationWithManifest(
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } catch (error: any) {
-      throw new Error(`Failed to ${operationName} Connected Apps: ${error.message || String(error)}`);
+      throw new Error(`Failed to ${operationName} External Client Apps: ${error.message || String(error)}`);
     }
 
     // Clean up
@@ -511,20 +524,20 @@ export async function performConnectedAppOperationWithManifest(
   }, command);
 }
 
-export function createConnectedAppSuccessResponse(
+export function createExternalClientAppSuccessResponse(
   message: string,
   processedApps: string[],
   additionalData: Record<string, any> = {}
-): { success: true; message: string; connectedAppsProcessed: string[] } & Record<string, any> {
+): { success: true; message: string; externalClientAppsProcessed: string[] } & Record<string, any> {
   return {
     success: true,
     message,
-    connectedAppsProcessed: processedApps,
+    externalClientAppsProcessed: processedApps,
     ...additionalData
   };
 }
 
-export function handleConnectedAppError(
+export function handleExternalClientAppError(
   error: any,
   command: SfCommand<any>
 ): { success: false; error: string } {
