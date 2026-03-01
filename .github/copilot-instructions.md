@@ -198,6 +198,14 @@ For every `sendReportFileMessage()` the second argument (message) must use `t()`
 WebSocketClient.sendReportFileMessage(slackIntegrationUrl, t('slackIntegration'), "docUrl");
 ```
 
+### WebSocketClient.sendProgressStartMessage() calls
+
+For every `WebSocketClient.sendProgressStartMessage()` call, the first argument (message) must use `t()` if it contains user-visible text:
+
+```typescript
+    WebSocketClient.sendProgressStartMessage(t('collectingInstalledPackagesData'), packages.length);
+```
+
 ## AI Integration Notes
 
 - Supports multiple AI providers (Anthropic, Google GenAI, Ollama)
