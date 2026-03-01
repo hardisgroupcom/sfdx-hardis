@@ -195,7 +195,7 @@ The command's technical implementation involves several steps:
           type: 'multiselect',
           name: 'value',
           message: c.cyanBright(t('whatReferencesDoYouWantToClean')),
-          description: 'Select which types of reference cleaning to perform on your project',
+          description: t('selectWhichTypesOfReferenceCleaning'),
           choices: this.allCleaningTypes,
         });
         this.cleaningTypes = typesResponse.value;
@@ -210,10 +210,8 @@ The command's technical implementation involves several steps:
         type: 'confirm',
         name: 'value',
         default: true,
-        message: c.cyanBright(
-          'Do you want to save this action in your project configuration, so it is executed at each Work Save ?'
-        ),
-        description: 'Choose whether to automatically apply these cleaning types during future work saves',
+        message: c.cyanBright(t('doYouWantToSaveCleaningAction')),
+        description: t('chooseSaveCleaningTypesFutureWorkSaves'),
       });
       if (saveResponse.value === true) {
         autoCleanTypes.push(...this.cleaningTypes);
@@ -279,7 +277,7 @@ The command's technical implementation involves several steps:
       })
     );
 
-    uxLog("success", this, c.green(`Cleaning complete`));
+    uxLog("success", this, c.green(t('cleaningComplete')));
     // Return an object to be displayed with --json
     return { outputString: 'Cleaned references from sfdx project' };
   }

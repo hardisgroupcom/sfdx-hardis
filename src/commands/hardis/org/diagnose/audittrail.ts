@@ -231,9 +231,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     await this.handleCustomSettingsAudit(conn);
 
     // Summarize
-    uxLog("action", this, c.cyan(`Results summary:`));
+    uxLog("action", this, c.cyan(t('resultsSummary')));
     let statusCode = 0;
-    let msg = 'No suspect Setup Audit Trail records has been found';
+    let msg = t('noSuspectAuditTrailFound');
     const suspectActionsWithCount: any[] = [];
     if (this.suspectRecords.length > 0) {
       statusCode = 1;
@@ -373,8 +373,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       return;
     }
     // Add custom settings tracking
-    uxLog("action", this, c.cyan(`List available custom settings...`));
-    uxLog("log", this, c.grey(`(Define SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS=true if you don't want them)`));
+    uxLog("action", this, c.cyan(t('listAvailableCustomSettings')));
+    uxLog("log", this, c.grey(t('defineSkipCustomSettingsEnvVar')));
     const customSettingsQuery = `SELECT QualifiedApiName, Label FROM EntityDefinition 
                            WHERE IsCustomSetting = true`;
     const customSettingsResult = await soqlQuery(customSettingsQuery, conn);
@@ -576,9 +576,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     uxLog(
       "log",
       this,
-      c.grey(
-        `Use argument --excludeusers or .sfdx-hardis.yml property monitoringExcludeUsernames to exclude more users`
-      )
+      c.grey(t('useExcludeUsersArgument'))
     );
     return whereConstraint;
   }

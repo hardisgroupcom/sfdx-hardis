@@ -231,7 +231,7 @@ The command's technical implementation involves extensive querying of Salesforce
   }
 
   private async listAllPermissionSetLicenseAssignments(conn: any) {
-    uxLog("action", this, c.cyan(`Extracting all active Permission Sets Licenses Assignments...`));
+    uxLog("action", this, c.cyan(t('extractAllActivePermissionSetsLicenses')));
     const pslaQueryRes = await bulkQuery(
       `
     SELECT Id,PermissionSetLicenseId, PermissionSetLicense.DeveloperName, PermissionSetLicense.MasterLabel, AssigneeId, Assignee.Username, Assignee.IsActive, Assignee.Profile.Name
@@ -258,7 +258,7 @@ The command's technical implementation involves extensive querying of Salesforce
       );
     const psLicensesIds = relatedPermissionSetLicenses.map((psl) => psl.Id);
     if (relatedPermissionSetLicenses.length > 0) {
-      uxLog("action", this, c.cyan(`Extracting related Permission Sets Licenses...`));
+      uxLog("action", this, c.cyan(t('extractingRelatedPermissionSetsLicenses')));
       const pslQueryRes = await bulkQueryChunksIn(
         `SELECT Id,DeveloperName,MasterLabel,UsedLicenses,TotalLicenses
          FROM PermissionSetLicense
@@ -272,7 +272,7 @@ The command's technical implementation involves extensive querying of Salesforce
   }
 
   private async listRelatedPermissionSets(psLicensesIds: string[], conn) {
-    uxLog("action", this, c.cyan(`Extracting related Permission Sets...`));
+    uxLog("action", this, c.cyan(t('extractingRelatedPermissionSets')));
     const psQueryRes = await bulkQueryChunksIn(
       `SELECT Id,Label,Name,LicenseId
        FROM PermissionSet
@@ -291,7 +291,7 @@ The command's technical implementation involves extensive querying of Salesforce
   }
 
   private async listRelatedPermissionSetGroupsComponents(permissionSetsIds: string[], conn) {
-    uxLog("action", this, c.cyan(`Extracting related Permission Sets Group Components...`));
+    uxLog("action", this, c.cyan(t('extractingRelatedPermissionSetsGroupComponents')));
     const psgcQueryRes = await bulkQueryChunksIn(
       `SELECT Id,PermissionSetId,PermissionSetGroupId,PermissionSet.LicenseId,PermissionSet.Name,PermissionSetGroup.DeveloperName
          FROM PermissionSetGroupComponent
@@ -307,7 +307,7 @@ The command's technical implementation involves extensive querying of Salesforce
       ...new Set(this.permissionSetsGroupMembers.map((psgc) => psgc.PermissionSetGroupId)),
     ];
     if (permissionSetsGroupIds.length > 0) {
-      uxLog("action", this, c.cyan(`Extracting related Permission Set Group Assignments...`));
+      uxLog("action", this, c.cyan(t('extractingRelatedPermissionSetsGroupAssignments')));
       const psgaQueryRes = await bulkQueryChunksIn(
         `SELECT Id,Assignee.Username,PermissionSetGroupId,PermissionSetGroup.DeveloperName
            FROM PermissionSetAssignment
@@ -333,7 +333,7 @@ The command's technical implementation involves extensive querying of Salesforce
   }
 
   private async listRelatedPermissionSetAssignmentsToPs(permissionSetsIds: string[], conn) {
-    uxLog("action", this, c.cyan(`Extracting related Permission Sets Assignments...`));
+    uxLog("action", this, c.cyan(t('extractingRelatedPermissionSetsAssignments')));
     const psaQueryRes = await bulkQueryChunksIn(
       `SELECT Id,Assignee.Username,PermissionSetId,PermissionSet.LicenseId,PermissionSet.Name
        FROM PermissionSetAssignment
@@ -392,14 +392,14 @@ The command's technical implementation involves extensive querying of Salesforce
       const confirmRes = await prompts({
         type: 'select',
         message: t('doYouWantToDeleteUnusedPermission'),
-        description: 'Remove permission set license assignments that are not being used, freeing up licenses for other users',
+        description: t('removeUnusedPermissionSetLicenseDescription'),
         placeholder: 'Select an option',
         choices: [
           {
-            title: `Yes, delete the ${this.unusedPermissionSetLicenseAssignments.length} useless Permission Set License Assignments !`,
+            title: t('deleteUnusedPslYes'),
             value: 'all',
           },
-          { title: 'No' },
+          { title: t('deleteUnusedPslNo') },
         ],
       });
       if (confirmRes.value === 'all') {
@@ -414,7 +414,7 @@ The command's technical implementation involves extensive querying of Salesforce
           uxLog(
             "warning",
             this,
-            c.yellow(`Warning: ${c.red(c.bold(deleteErrorNb))} assignments has not been deleted (bulk API errors)`)
+            c.yellow(t('assignmentsDeletionErrors', { count: c.red(c.bold(deleteErrorNb)) }))
           );
           uxLogTable(this, deleteRes.failedResults);
           this.outputFile = await generateReportPath('failed-delete-ps-license-assignments', this.outputFile);
@@ -424,7 +424,7 @@ The command's technical implementation involves extensive querying of Salesforce
           this.statusCode = 0;
         }
         // Build results summary
-        uxLog("success", this, c.green(`${c.bold(deleteSuccessNb)} assignments has been deleted.`));
+        uxLog("success", this, c.green(t('assignmentsDeletedSuccess', { count: c.bold(deleteSuccessNb) })));
         if (deleteSuccessNb) {
           uxLogTable(this, deleteRes.successfulResults);
           this.outputFile = await generateReportPath('deleted-ps-license-assignments', this.outputFile);

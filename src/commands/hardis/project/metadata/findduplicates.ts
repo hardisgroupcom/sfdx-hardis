@@ -100,7 +100,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Find);
-    uxLog("action", this, c.cyan(`Start finding duplicate values in XML metadata files.`));
+    uxLog("action", this, c.cyan(t('startFindingDuplicateValuesInXml')));
     await this.initConfig();
     const filesWithDuplicates = await this.findDuplicates(flags);
     uxLog("action", this, c.cyan(t('summary')));
@@ -114,7 +114,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
         "error",
         this,
         c.red(
-          `Found ${filesWithDuplicates.length} files with duplicate values\n${duplicatesString}`
+          t('foundFilesWithDuplicateValues', { count: filesWithDuplicates.length, duplicatesString })
         )
       );
       process.exitCode = 1;

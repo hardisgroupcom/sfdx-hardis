@@ -110,7 +110,7 @@ The command's technical implementation involves interacting with a Git provider'
     }
 
     // Startup
-    uxLog("action", this, c.cyan(`This command will extract pull requests from the Git server.`));
+    uxLog("action", this, c.cyan(t('extractPullRequestsFromGitServer')));
 
     const gitProvider = await GitProvider.getInstance(true);
     if (gitProvider == null) {
@@ -164,10 +164,10 @@ The command's technical implementation involves interacting with a Git provider'
         description: "Choose which pull request status to filter by.",
         placeholder: "Select status",
         choices: [
-          { title: "All status", value: "all" },
-          { title: "Merged", value: "merged" },
-          { title: "Open", value: "open" },
-          { title: "Abandoned", value: "abandoned" }
+          { title: t('prStatusAll'), value: "all" },
+          { title: t('prStatusMerged'), value: "merged" },
+          { title: t('prStatusOpen'), value: "open" },
+          { title: t('prStatusAbandoned'), value: "abandoned" }
         ]
       });
       if (statusRes && statusRes.value !== "all") {

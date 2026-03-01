@@ -136,7 +136,7 @@ The command's technical implementation involves:
       const defaultConfigRes = await prompts({
         type: 'confirm',
         message: c.cyanBright(t('doYouWantToUseDefaultConfiguration') + exportConfigInitial.label + ' ?'),
-        description: 'Use the saved configuration settings or customize them for this export operation',
+        description: t('useDefaultExportConfigDescription'),
       });
       if (defaultConfigRes.value !== true) {
         const exportConfig = await promptFilesExportConfiguration(exportConfigInitial, true);
@@ -151,7 +151,7 @@ The command's technical implementation involves:
       exportConfigFinal = Object.assign(exportConfigFinal, exportOptions.exportConfig);
     }
     const exportConfigHuman = humanizeObjectKeys(exportConfigFinal || {});
-    uxLog("action", this, c.cyan(`Export configuration has been defined (see details below).`));
+    uxLog("action", this, c.cyan(t('exportConfigurationDefined', { configFile: filesPath || '' })));
     uxLogTable(this, exportConfigHuman);
 
     // Check for existing files and prompt user if needed
@@ -200,7 +200,7 @@ The command's technical implementation involves:
     const message = `Successfully exported files from project ${c.green(filesPath)} from org ${c.green(
       flags['target-org'].getUsername()
     )}`;
-    uxLog("action", this, c.cyan(message));
+    uxLog("action", this, c.cyan(t('successfullyExportedFiles')));
 
     const statsTable = humanizeObjectKeys(exportResult.stats);
     uxLogTable(this, statsTable);

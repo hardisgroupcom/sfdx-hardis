@@ -111,13 +111,13 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
         type: 'select',
         name: 'before',
         message: t('pleaseSelectBeforeUpdateCommit'),
-        description: 'Choose the commit representing the state before your changes',
+        description: t('chooseCommitBeforeYourChanges'),
         placeholder: 'Select a commit',
         choices: [...allChoices, ...[
           {
-            title: "Calculate for all Flow states",
+            title: t('calculateForAllFlowStates'),
             value: "allStates",
-            description: "Requires mkdocs-material to be read correctly. If you do not have it, we advise to select 2 commits for comparison."
+            description: t('requiresMkdocsMaterialForAllStates')
           }
         ]]
       });
@@ -135,7 +135,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
           type: 'select',
           name: 'after',
           message: t('pleaseSelectAfterUpdateCommit'),
-          description: 'Choose the commit representing the state after your changes',
+          description: t('chooseCommitAfterYourChanges'),
           placeholder: 'Select a commit',
           choices: allChoices
         })
@@ -152,7 +152,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
 
     uxLog("action", this, c.green(t('markdownFlowDiffDocumentationGeneratedFor', { path: path.basename(diffMdFile).replace(".md", "") })));
     if (this.commitBefore === "allStates") {
-      uxLog("warning", this, c.yellow(`It is recommended to use mkdocs-material to read it correctly (see https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/#doc-html-pages)`));
+      uxLog("warning", this, c.yellow(t('recommendedToUseMkdocsMaterialToRead')));
     }
 
     // Return an object to be displayed with --json

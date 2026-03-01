@@ -90,7 +90,7 @@ autoCleanTypes:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Looking for certificates...`));
+    uxLog("action", this, c.cyan(t('lookingForCertificates')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.crt`;

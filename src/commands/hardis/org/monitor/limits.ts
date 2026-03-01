@@ -94,7 +94,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // List org limits
-    uxLog("action", this, c.cyan(`Run the org limits list command ...`));
+    uxLog("action", this, c.cyan(t('runningOrgLimitsListCommand')));
     const limitsCommandRes = await execSfdxJson(`sf org limits list`, this, {
       fail: true,
       output: true,

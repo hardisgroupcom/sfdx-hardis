@@ -245,14 +245,11 @@ The command's technical implementation involves:
         type: 'confirm',
         name: 'value',
         message: c.cyanBright(
-          `You are about to reuse scratch org ${c.green(
-            this.scratchOrgAlias
-          )}. Are you sure that's what you want to do ?\n${c.grey(
-            '(if not, run again hardis:work:new or use hardis:scratch:create --forcenew)'
-          )}`
+          t('aboutToReuseScratchOrgAreYouSure', { alias: c.green(this.scratchOrgAlias) }) +
+          '\n' + c.grey('(if not, run again hardis:work:new or use hardis:scratch:create --forcenew)')
         ),
         default: false,
-        description: 'Confirm that you want to reuse this existing scratch org instead of creating a new one',
+        description: t('confirmReuseExistingScratchOrg'),
       });
       if (checkRes.value === false) {
         process.exit(0);
@@ -429,7 +426,7 @@ The command's technical implementation involves:
             "warning",
             this,
             c.yellow(
-              `Unable to fetch sfdxAuthUrl for ${displayResult.result.username}. Only Scratch Orgs created from DevHub using authenticated using sf org login sfdx-url or sf org login web will have access token and enabled for autoLogin\nYou may need to define SFDX_AUTH_URL_DEV_HUB or SFDX_AUTH_URL_devHubAlias in your CI job running sf hardis:scratch:pool:refresh`
+              t('unableToFetchSfdxAuthUrlForScratch', { username: displayResult.result.username })
             )
           );
           this.scratchOrgSfdxAuthUrl = null;
@@ -459,7 +456,7 @@ The command's technical implementation involves:
     uxLog(
       "action",
       this,
-      c.cyan(`Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`)
+      c.cyan(t('createdScratchOrgWithUser', { alias: c.green(this.scratchOrgAlias), username: c.green(this.scratchOrgUsername) }))
     );
   }
 

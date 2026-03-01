@@ -146,7 +146,7 @@ The command's technical implementation involves:
         type: 'confirm',
         name: 'value',
         message: c.cyanBright(t('doYouConfirmYouWantToDelete2', { flowRecords: this.flowRecords.length })),
-        description: 'Permanently delete the selected flow versions from the Salesforce org',
+        description: t('deleteFlowVersionsDescription'),
       });
 
       if (confirmDelete.value === false) {
@@ -161,8 +161,8 @@ The command's technical implementation involves:
 
     const summary =
       this.deletedRecords.length > 0
-        ? `Deleted the following list of record(s)`
-        : 'No record(s) to delete';
+        ? t('deletedRecordsSummary', { count: this.deletedRecords.length })
+        : t('noRecordsToDelete');
     uxLog("action", this, c.cyan(summary));
     if (this.deletedRecords.length > 0) {
       uxLogTable(this, this.deletedRecords);
@@ -172,7 +172,7 @@ The command's technical implementation involves:
   }
 
   private async processDeleteFlowVersions(conn: any, tryDeleteInterviews: boolean) {
-    uxLog("action", this, c.cyan(`Deleting Flow versions...`));
+    uxLog("action", this, c.cyan(t('deletingFlowVersions')));
     const recordsIds = this.flowRecords.map((record) => record.Id);
     const deleteResults = await bulkDeleteTooling('Flow', recordsIds, conn);
     for (const deleteRes of deleteResults.results) {
@@ -228,7 +228,7 @@ The command's technical implementation involves:
         type: 'confirm',
         name: 'value',
         message: c.cyanBright(t('doYouConfirmYouWantToDelete', { flowInterviewsIds: flowInterviewsIds.length })),
-        description: 'Permanently delete the selected flow interview records from the Salesforce org',
+        description: t('deleteFlowInterviewsDescription'),
       });
       if (confirmDelete.value === false) {
         uxLog("error", this, c.red(t('actionCancelledByUser')));
@@ -240,7 +240,7 @@ The command's technical implementation involves:
     this.deletedRecords.push(deleteInterviewResults?.successfulResults || []);
     this.deletedErrors = deleteInterviewResults?.failedResults || [];
     // Try to delete flow versions again
-    uxLog("action", this, c.cyan(`Trying again to delete flow versions after deleting flow interviews...`));
+    uxLog("action", this, c.cyan(t('retryDeleteFlowVersionsAfterInterviews')));
     this.flowRecords = [...new Set(this.flowRecords)]; // Make list unique
     await this.processDeleteFlowVersions(conn, false);
   }

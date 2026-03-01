@@ -263,7 +263,7 @@ The command's technical implementation involves:
         type: "multiselect",
         name: "sobjects",
         message: t('selectSobjectsForBypass'),
-        description: "Choose which sObjects should have automation bypass functionality",
+        description: t('chooseWhichSobjectsForBypass'),
         choices: Object.entries(availableSObjects).map(([devName, label]) => ({
           title: label,
           value: devName,
@@ -276,11 +276,11 @@ The command's technical implementation involves:
         type: "multiselect",
         name: "automations",
         message: t('selectWhichAutomationsToBypass'),
-        description: "This will generate bypass custom permissions and permission sets for the selected automation types and sObjects",
+        description: t('generateBypassCustomPermissionsAndPermSets'),
         choices: [
-          { title: "Flows", value: "Flow" },
-          { title: "Triggers", value: "Trigger" },
-          { title: "Validation Rules", value: "VR" },
+          { title: t('bypassAutomationChoiceFlows'), value: "Flow" },
+          { title: t('bypassAutomationChoiceTriggers'), value: "Trigger" },
+          { title: t('bypassAutomationChoiceValidationRules'), value: "VR" },
         ],
       });
     }
@@ -290,11 +290,11 @@ The command's technical implementation involves:
         type: "multiselect",
         name: "applyTo",
         message: t('whereDoYouWishToHaveThe'),
-        description: "Choose which automation types should have the bypass logic applied automatically. The metadata files will be modified accordingly.",
+        description: t('chooseWhichAutomationTypesForBypass'),
         choices: [
-          { title: "Flows (as a decision node)", value: "applyToFlows" },
-          { title: "Triggers (within the .trigger file)", value: "applyToTriggers" },
-          { title: "Validation Rules (encapsulating the existing validation logic)", value: "applyToVrs" },
+          { title: t('bypassApplyChoiceFlows'), value: "applyToFlows" },
+          { title: t('bypassApplyChoiceTriggers'), value: "applyToTriggers" },
+          { title: t('bypassApplyChoiceVrs'), value: "applyToVrs" },
         ],
       });
     }
@@ -304,11 +304,11 @@ The command's technical implementation involves:
         type: "select",
         name: "elementSource",
         message: t('whereDoYouWantToGetThe'),
-        description: "Choose the source for retrieving automation elements",
+        description: t('chooseSourceForRetrievingAutomationElements'),
         placeholder: "Select source",
         choices: [
-          { title: "Retrieve from org (recommended)", value: "org" },
-          { title: "Use local elements in the project", value: "local" },
+          { title: t('bypassSourceChoiceOrg'), value: "org" },
+          { title: t('bypassSourceChoiceLocal'), value: "local" },
         ],
       });
     }
@@ -354,28 +354,28 @@ The command's technical implementation involves:
     this.generateFiles(targetSObjects, targetAutomations);
 
     if (applyToVrs) {
-      uxLog("action", this, c.cyan(`Implementing the bypass logic to Validation Rules...`));
+      uxLog("action", this, c.cyan(t('implementingBypassLogicToValidationRules')));
       await this.applyBypassToValidationRules(connection, targetSObjects);
     }
 
     if (applyToTriggers) {
-      uxLog("action", this, c.cyan(`Implementing the bypass logic to Triggers...`));
+      uxLog("action", this, c.cyan(t('implementingBypassLogicToTriggers')));
       await this.applyBypassToTriggers(connection, targetSObjects);
     }
 
     if (applyToFlows) {
-      uxLog("action", this, c.cyan(`Implementing the bypass logic to Flows...`));
+      uxLog("action", this, c.cyan(t('implementingBypassLogicToFlows')));
       await this.applyBypassToFlows(connection, targetSObjects);
     }
 
-    uxLog("action", this, c.cyan(`Bypass generation and implementation is completed.`));
+    uxLog("action", this, c.cyan(t('bypassGenerationAndImplementationCompleted')));
 
     if (applyToVrs || applyToTriggers || applyToFlows) {
-      uxLog("action", this, c.cyan(`Bypass implementation report:`));
+      uxLog("action", this, c.cyan(t('bypassImplementationReport')));
       uxLogTable(this, this.reports.implementation);
     }
 
-    uxLog("action", this, c.cyan(`Generating report files...`));
+    uxLog("action", this, c.cyan(t('generatingReportFiles')));
     await this.generateReports();
 
     return {

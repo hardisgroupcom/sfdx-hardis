@@ -185,7 +185,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       uxLog(
         "warning",
         this,
-        c.yellow(`There are more than ${limit} results, you may consider to increase limit using --limit argument`)
+        c.yellow(t('tooManyResultsIncreaseLimit'))
       );
     }
 
@@ -222,7 +222,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     uxLog("log", this, logLines.join('\n'));
 
     // Build command result
-    let msg = 'No deprecated API call has been found in ApiTotalUsage logs';
+    let msg = t('noDeprecatedApiCallFound');
     let statusCode = 0;
     const hasBlockingErrors = this.legacyApiDescriptors.some(
       (descriptor) => descriptor.severity === 'ERROR' && descriptor.totalErrors > 0
@@ -231,11 +231,11 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       (descriptor) => descriptor.severity === 'WARNING' && descriptor.totalErrors > 0
     );
     if (hasBlockingErrors) {
-      msg = 'Found legacy API versions calls in logs';
+      msg = t('foundLegacyApiCallsInLogs');
       statusCode = 1;
       uxLog("error", this, c.red(c.bold(msg)));
     } else if (hasWarningsOnly) {
-      msg = 'Found deprecated API versions calls in logs that will not be supported anymore in the future';
+      msg = t('foundDeprecatedApiCallsFuture');
       statusCode = 0;
       uxLog("warning", this, c.yellow(c.bold(msg)));
     } else {

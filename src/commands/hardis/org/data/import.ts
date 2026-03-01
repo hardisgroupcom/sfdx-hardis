@@ -121,7 +121,7 @@ The command is designed to work seamlessly in both interactive development scena
     // Identify sfdmu workspace if not defined
     if (sfdmuPath == null) {
       sfdmuPath = await selectDataWorkspace({
-        selectDataLabel: `Please select a data workspace to IMPORT in ${c.green(orgUsername)}`,
+        selectDataLabel: t('selectDataWorkspaceToImport'),
       });
     }
 
@@ -133,9 +133,7 @@ The command is designed to work seamlessly in both interactive development scena
     });
 
     // Output message
-    const message = `Successfully import data from sfdmu project ${c.green(sfdmuPath)} into org ${c.green(
-      orgUsername
-    )}`;
+    const message = t('successfullyImportedData');
     uxLog("action", this, c.cyan(message));
     return { outputString: message };
   }

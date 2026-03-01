@@ -97,6 +97,97 @@ docs/                 # Project documentation
 - Automated workflows for testing, building, and releasing
 - Mega-linter integration for code quality
 
+## Internationalization (i18n) / Translations
+
+sfdx-hardis uses **i18next** for runtime translations. The locale is selected via the `SFDX_HARDIS_LOCALE` environment variable (default: `en`; supported: `en`, `fr`).
+
+### Translation files
+
+- English: `src/i18n/en.json`
+- French: `src/i18n/fr.json`
+
+Both files are flat JSON objects with **camelCase** keys and **i18next interpolation** syntax for variables (`{{varName}}`).
+
+### Using translations in source code
+
+Always import `t` from the i18n utility:
+
+```typescript
+import { t } from '../../../common/utils/i18n.js'; // adjust relative path as needed
+```
+
+Use `t(key)` or `t(key, { varName: value })` wherever a user-visible string is needed:
+
+```typescript
+uxLog("action", this, c.cyan(t('processingFile', { file: fileName })));
+uxLog("warning", this, c.yellow(t('fileNotFound', { path: filePath })));
+```
+
+### Naming conventions for translation keys
+
+- Use `camelCase`, starting with a lowercase letter.
+- The key should be a compressed English summary of the message, e.g.:
+  - `"No apex logs to delete."` → `noApexLogsToDelete`
+  - `"Processing file {{file}}..."` → `processingFile`
+  - `"Error while deploying metadata: {{message}}"` → `errorWhileDeployingMetadata`
+- Keep keys unique across the whole file.
+- Always add the key to **both** `en.json` and `fr.json` simultaneously (French translation can mirror English when unsure, but should be translated).
+
+### Rules for translating strings
+
+- **Do NOT translate markers** surrounded by `[]` (e.g. `[sfdx-hardis]`, `[SKIP]`). Keep them as hardcoded string literals and concatenate with the translated string:
+  ```typescript
+  uxLog("action", this, c.cyan('[MyMarker] ' + t('someMessage')));
+  ```
+- **Do NOT translate technical terms** that are not user-facing words in French or English (e.g. `merge`, `commit`, `branch`, `sandbox`, `scratch org`, `package.xml`, `Apex`, `SOQL`, `LWC`, CLI flags, environment variable names). Keep such terms as-is inside the translation value.
+- **Salesforce-specific terms**: Use the official Salesforce French translation when translating to French (e.g. `Permission Set` → `Ensemble d'autorisations`, `Record Type` → `Type d'enregistrement`, `Flow` → `Flux`, `Object` → `Objet`, `Field` → `Champ`, `Profile` → `Profil`).
+- Strings that are **pure dynamic values** (only a variable, a JSON.stringify, a stack trace) do not need a translation key; leave them as-is.
+
+### uxLog calls
+
+Every `uxLog` call whose message contains user-visible text **must** use `t()`:
+
+```typescript
+// ✅ Correct
+uxLog("action", this, c.cyan(t('deployingMetadata', { metadata: name })));
+
+// ❌ Wrong – hardcoded English string
+uxLog("action", this, c.cyan(`Deploying metadata ${name}...`));
+```
+
+Exceptions (no `t()` needed):
+- The entire string is a variable or expression (e.g. `uxLog("other", this, JSON.stringify(result))`).
+- The string is a debug stack trace (e.g. `uxLog("log", this, c.grey(e.stack))`).
+- The string is a URL only.
+- The uxLog is "other" (e.g. `uxLog("other", this, "Some message")`)
+
+### prompts() calls
+
+For every `prompts()` call, the `description` and `choices[].title` / `choices[].description` properties must use `t()` where they contain user-visible text:
+
+```typescript
+// ✅ Correct
+const res = await prompts({
+  type: 'select',
+  name: 'value',
+  message: t('selectEnvironment'),
+  description: t('selectEnvironmentDescription'),
+  choices: [
+    { title: t('choiceProduction'), value: 'prod' },
+    { title: t('choiceSandbox'), value: 'sandbox' },
+  ],
+});
+
+// ❌ Wrong – hardcoded strings
+const res = await prompts({
+  type: 'select',
+  name: 'value',
+  message: 'Select environment',
+  description: 'Choose the target environment',
+  choices: [{ title: 'Production', value: 'prod' }],
+});
+```
+
 ## AI Integration Notes
 
 - Supports multiple AI providers (Anthropic, Google GenAI, Ollama)

@@ -252,12 +252,7 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
         uxLog("warning", this, c.yellow(t('ifYouReInterestedContactUsAt', { bold: c.green(c.bold(CONSTANTS.CONTACT_URL)) })));
       }
       else {
-        uxLog("warning", this, c.yellow(`You can manually deploy the Static Resource ${resName}, the Visualforce page ${resName}, and the Custom Tab ${resName} to your org:
-  - Static Resource: ${mkDocsResourcePath} (If you upload via the UI, zip the folder and ensure index.html is at the root of the zip.)
-  - Visualforce page: ${vfPageMetaFile}
-  - Custom Tab: ${tabMetaFile}
-  - Permission Set: ${permissionSetFile}
-You can also run the documentation locally using: "mkdocs serve -v" or "python -m mkdocs serve -v" or "py -m mkdocs serve -v".`));
+        uxLog("warning", this, c.yellow(t('manualDeployDocInstructions', { resName })));
       }
     }
     else {

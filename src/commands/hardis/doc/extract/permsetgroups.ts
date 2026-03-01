@@ -76,7 +76,7 @@ The command performs the following technical steps:
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Generating CSV and Markdown for Permission Set Groups and their related Permission Sets.`));
+    uxLog("action", this, c.cyan(t('generatingCsvAndMarkdownForPermission')));
     /* jscpd:ignore-end */
 
     const psgList: any[] = [];

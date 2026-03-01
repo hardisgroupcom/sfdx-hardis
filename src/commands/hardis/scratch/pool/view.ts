@@ -75,9 +75,7 @@ The command's technical implementation involves:
       uxLog(
         "warning",
         this,
-        c.yellow(
-          `There is not scratch orgs pool configured on this project. Please see with your tech lead about using command hardis:scratch:pool:configure`
-        )
+        c.yellow(t('noScratchOrgsPoolConfiguredLocalAuth'))
       );
       return { status: 1, outputString: 'Scratch org pool configuration to create' };
     }

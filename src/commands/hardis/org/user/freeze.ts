@@ -188,7 +188,7 @@ The command's technical implementation involves:
       this.debugMode ? usersToFreezeDisplay : usersToFreezeDisplay.slice(0, this.maxUsersDisplay)
     );
     if (!this.debugMode && usersToFreezeDisplay.length > this.maxUsersDisplay) {
-      uxLog("warning", this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
+      uxLog("warning", this, c.yellow(c.italic(t('listTruncatedToFirstUsers', { maxUsersDisplay: this.maxUsersDisplay }))));
     }
 
     // Generate csv + xls of users about to be frozen
@@ -203,12 +203,8 @@ The command's technical implementation involves:
         type: 'confirm',
         name: 'value',
         initial: true,
-        message: c.cyanBright(
-          `Are you sure you want to freeze these ${c.bold(userLoginsToFreeze.length)} users in org ${c.green(
-            flags['target-org'].getUsername()
-          )} ?`
-        ),
-        description: 'Confirm freezing selected users, which will deactivate their accounts in the Salesforce org',
+        message: c.cyanBright(t('areYouSureYouWantToFreezeUsers', { count: userLoginsToFreeze.length, orgUsername: flags['target-org'].getUsername() })),
+        description: t('confirmFreezingSelectedUsers'),
       });
       if (confirmfreeze.value !== true) {
         const outputString = 'Script cancelled by user.';
@@ -230,7 +226,7 @@ The command's technical implementation involves:
     }
 
     // Build results summary
-    uxLog("success", this, c.green(`${c.bold(freezeSuccessNb)} users has been be frozen.`));
+    uxLog("success", this, c.green(t('usersHaveBeenFrozen', { count: freezeSuccessNb })));
 
     // Return an object to be displayed with --json
     return {

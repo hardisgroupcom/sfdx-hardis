@@ -124,7 +124,7 @@ The command's technical implementation involves:
         "warning",
         this,
         c.yellow(
-          'You should probably update mkdocs.yml and build-deploy-docs.yml with your repository and plugin information.'
+          t('updateMkdocsAndBuildDeployDocs')
         )
       );
     }

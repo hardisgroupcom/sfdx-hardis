@@ -239,8 +239,7 @@ This command focuses on one or more sObjects and measures how many records popul
         "log",
         this,
         c.grey(
-          `Processing ${sObjectName}: batch ${Math.floor(i / batchSize) + 1}/${totalBatches} ` +
-          `(${i + 1}-${i + batch.length} / ${fields.length} fields)`
+          t('processingObjectBatch', { sObjectName, batchNumber: Math.floor(i / batchSize) + 1, totalBatches, from: i + 1, to: i + batch.length, total: fields.length })
         )
       );
 
@@ -278,13 +277,13 @@ This command focuses on one or more sObjects and measures how many records popul
               item.body?.[0]?.message ||
               (item.errors && item.errors[0]?.message) ||
               'Unknown error';
-            const warning = `Composite query failed for ${fieldName}: ${errorMessage}`;
+            const warning = t('compositeQueryFailed', { fieldName, errorMessage });
             uxLog("warning", this, c.yellow(warning));
             skippedFields.push({ sObjectName, fieldName, reason: warning });
           }
         });
       } catch (error: any) {
-        const warning = `Composite request batch starting at index ${i} failed: ${error.message}`;
+        const warning = t('compositeRequestBatchFailed', { i, message: error.message });
         uxLog("warning", this, c.yellow(warning));
         batch.forEach((field) => skippedFields.push({ sObjectName, fieldName: field.name, reason: warning }));
       }
@@ -415,7 +414,7 @@ This command focuses on one or more sObjects and measures how many records popul
     for (const field of eligibleFields) {
       const populatedRecords = fieldCounts[field.name];
       if (typeof populatedRecords !== 'number') {
-        const warning = `Skipping field ${field.name} on ${sObjectName} because composite response had no count.`;
+        const warning = t('skippingFieldNoCount', { fieldName: field.name, sObjectName });
         uxLog("warning", this, c.yellow(warning));
         skippedFields.push({ sObjectName, fieldName: field.name, reason: warning });
         continue;
@@ -586,11 +585,11 @@ This command focuses on one or more sObjects and measures how many records popul
       const selectedObjects = promptObjectsRes.value || [];
       if (!selectedObjects.length) {
         const outputString = 'No objects selected; aborting.';
-        uxLog("warning", this, c.yellow(outputString));
+        uxLog("warning", this, c.yellow(t('noObjectsSelectedAborting')));
         return { outputString, cancelled: true };
       }
       uniqueObjects = selectedObjects;
-      uxLog("log", this, `${uniqueObjects.length} SObjects selected for analysis.`);
+      uxLog("log", this, t('sObjectsSelectedForAnalysis', { count: uniqueObjects.length }));
     }
 
     const fieldsInput = flags.fields
@@ -665,7 +664,7 @@ This command focuses on one or more sObjects and measures how many records popul
         totalRecords = singleResult.totalRecords ?? totalRecords;
       }
 
-      uxLog("action", this, c.cyan(`Summary:`));
+      uxLog("action", this, c.cyan(t('summary')));
       const fieldSummaryRows = fieldsInput.map((fieldApiName) => {
         const distinctValues = aggregatedResults.filter((r: any) => r?.fieldApiName === fieldApiName).length;
         return {
@@ -716,7 +715,7 @@ This command focuses on one or more sObjects and measures how many records popul
     }
     WebSocketClient.sendProgressEndMessage(objectContexts.length);
 
-    uxLog("action", this, c.cyan(`Generating reports...`));
+    uxLog("action", this, c.cyan(t('generatingReports')));
     const reportFiles: any[] = [];
     const csvFilesForXlsx: string[] = [];
     for (const context of objectContexts) {
@@ -747,7 +746,7 @@ This command focuses on one or more sObjects and measures how many records popul
       uxLog(
         "warning",
         this,
-        c.yellow(`${aggregatedSkipped.length} fields were skipped across analyzed objects. See skipped-fields report.`)
+        c.yellow(t('fieldsSkippedAcrossObjects', { count: aggregatedSkipped.length }))
       );
       const skippedCsv = await generateReportPath('object-field-usage-skipped-fields', '', { withDate: true });
       await generateCsvFile(aggregatedSkipped, skippedCsv, {
@@ -760,7 +759,7 @@ This command focuses on one or more sObjects and measures how many records popul
 
     if (csvFilesForXlsx.length > 0) {
       const consolidatedBase = await generateReportPath('object-field-usage', '', { withDate: true });
-      uxLog("action", this, c.cyan(`Generating consolidated XLSX report...`));
+      uxLog("action", this, c.cyan(t('generatingConsolidatedXlsxReport')));
       await createXlsxFromCsvFiles(csvFilesForXlsx, consolidatedBase, { fileTitle: 'Object field usage (all)' });
       const consolidatedXlsx = path.join(
         path.dirname(consolidatedBase),
@@ -770,7 +769,7 @@ This command focuses on one or more sObjects and measures how many records popul
       reportFiles.push({ type: 'xlsx', file: consolidatedXlsx });
     }
 
-    uxLog("action", this, c.cyan(`Summary:`));
+    uxLog("action", this, c.cyan(t('summary')));
 
     const perObjectSummary = objectContexts.map((context) => {
       const rows = perObjectRows[context.sObjectName] || [];
@@ -804,8 +803,7 @@ This command focuses on one or more sObjects and measures how many records popul
       "log",
       this,
       c.grey(
-        `Analyzed ${objectContexts.length} object(s), ${totalFieldsAnalyzed} field(s) ` +
-        `(${aggregatedSkipped.length} skipped).`
+        t('analyzedObjectsAndFields', { objects: objectContexts.length, fields: totalFieldsAnalyzed, skipped: aggregatedSkipped.length })
       )
     );
     if (perObjectSummary.length > 0) {

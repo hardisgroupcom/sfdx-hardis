@@ -84,7 +84,7 @@ skipMinimizeProfiles:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Removing profile attributes that exist on Permission Sets`));
+    uxLog("action", this, c.cyan(t('removingProfileAttributesOnPermissionSets')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.profile-meta.xml`;

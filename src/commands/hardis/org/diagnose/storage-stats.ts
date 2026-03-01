@@ -135,7 +135,7 @@ The command's technical implementation involves:
     const conn: Connection = flags['target-org'].getConnection();
 
     // Querying storage limit
-    uxLog("action", this, `Retrieving storage limits from the org...`);
+    uxLog("action", this, t('retrievingStorageLimits'));
     const storageLimits = await conn.limits();
     const dataStorageLimit = storageLimits.DataStorageMB;
     const max = Number(dataStorageLimit.Max) || 0;
@@ -147,32 +147,30 @@ The command's technical implementation involves:
     const usedMB = max - remainingRaw; // if Remaining is negative this will be > max
     const percentUsed = max > 0 ? (usedMB / max) * 100 : 0;
 
-    uxLog("log", this, `Data Storage Limit: ${c.cyan(max)} MB`);
+    uxLog("log", this, t('dataStorageLimit', { limit: c.cyan(max) }));
     uxLog(
       "log",
       this,
-      `Data Storage Used: ${c.cyan(usedMB)} MB${overUsageMB > 0 ? c.red(` (Over by ${overUsageMB} MB)`) : ''}`
+      t('dataStorageUsed', { used: c.cyan(usedMB) }) + (overUsageMB > 0 ? ' ' + c.red(t('dataStorageOverBy', { overBy: overUsageMB })) : '')
     );
     uxLog(
       "log",
       this,
-      `Data Storage Remaining: ${c.cyan(remainingMB)} MB${overUsageMB > 0 ? c.red(` (Exceeded by ${overUsageMB} MB)`) : ''}`
+      t('dataStorageRemaining', { remaining: c.cyan(remainingMB) }) + (overUsageMB > 0 ? ' ' + c.red(t('dataStorageOverBy', { overBy: overUsageMB })) : '')
     );
-    uxLog("log", this, `Data Storage Usage Percent: ${c.cyan(percentUsed.toFixed(2))} %`);
+    uxLog("log", this, t('dataStorageUsagePercent', { percent: c.cyan(percentUsed.toFixed(2)) }));
 
     if (overUsageMB > 0) {
       uxLog(
         "action",
         this,
-        `Your org has exceeded the data storage limit by ${c.cyan(overUsageMB)} MB (${c.red(
-          `${(percentUsed - 100).toFixed(2)}%`
-        )} over the ${c.cyan(max)} MB limit).`
+        c.red(t('orgExceededStorageLimit'))
       );
     } else {
       uxLog(
         "action",
         this,
-        `You have used ${c.cyan(percentUsed.toFixed(2))}% of your ${c.cyan(max)} MB data storage limit.`
+        t('orgStorageUsageInfo', { used: c.cyan(usedMB.toFixed(2)), limit: c.cyan(max), percent: c.cyan(percentUsed.toFixed(2)) })
       );
     }
 
@@ -180,7 +178,7 @@ The command's technical implementation involves:
     uxLog("action", this, `Listing SObjects from the org...`);
     const customObjects = await conn.metadata.list([{ type: 'CustomObject' }]);
     const sObjects = await conn.describeGlobal();
-    uxLog("log", this, `${sObjects.sobjects.length} SObjects retrieved.`);
+    uxLog("log", this, t('sObjectsRetrieved', { count: sObjects.sobjects.length }));
     const emptyObjects = await this.getEmptyObjectsCache(conn);
     const sObjectsFiltered = sObjects.sobjects.filter((obj: any) => {
       return customObjects.find((customObj: any) => customObj.fullName === obj.name) &&
@@ -196,7 +194,7 @@ The command's technical implementation involves:
     sortArray(sObjectsFiltered, { by: "name" });
     uxLog("log", this, `${sObjectsFiltered.length} SObjects after filtering`);
     if (emptyObjects.length > 0) {
-      uxLog("log", this, `${emptyObjects.length} SObjects excluded based on empty objects cache. To remove it, delete file ${c.cyan(this.cacheFilePath)} in the reports directory.`);
+      uxLog("log", this, t('sObjectsExcludedFromCache', { count: emptyObjects.length }));
     }
 
     // Prompt user to select objects to analyze
@@ -297,7 +295,7 @@ The command's technical implementation involves:
     WebSocketClient.sendProgressEndMessage();
 
 
-    uxLog("action", this, `Compiling storage stats...`);
+    uxLog("action", this, t('compilingStorageStats'));
     // Sort by total records descending
     sortArray(objectStorageStats, { by: 'totalRecords', order: 'desc' });
     // Create one line by breakdown per object
@@ -536,7 +534,7 @@ The command's technical implementation involves:
   }
 
   private async calculateObjectStorageStats(obj: any, breakdownField: string, conn) {
-    uxLog("log", this, `Querying storage stats for object: ${c.cyan(obj.name)}...`);
+    uxLog("log", this, t('queryingStorageStatsForObject', { sObjectName: c.cyan(obj.name) }));
 
     // Check if field exists on object and determine its type
     const fieldCheck = await this.checkFieldExistenceAndType(obj, breakdownField, conn);

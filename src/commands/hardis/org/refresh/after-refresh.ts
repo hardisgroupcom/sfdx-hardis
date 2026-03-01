@@ -125,13 +125,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
     this.result = {}
     /* jscpd:ignore-end */
-    uxLog("action", this, c.cyan(`This command will restore information after the refresh of org ${this.instanceUrl}
-  Certificates
-  Other metadata
-  SAML SSO Config
-  Custom Settings
-  Records (using SFDMU projects)
-  Connected Apps`));
+    uxLog("action", this, c.cyan(t('thisCommandWillRestoreInformation', { instanceUrl: this.instanceUrl })));
     // Prompt user to select a save project path
     const saveProjectPathRoot = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
     // Only get immediate subfolders of saveProjectPathRoot (not recursive)
@@ -143,7 +137,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       type: 'select',
       name: 'path',
       message: t('selectTheProjectPathWhereTheSandbox'),
-      description: 'This is the path where the metadatas were saved before the org refresh',
+      description: t('pathWhereMetadatasSavedBeforeRefresh'),
       choices: subFolders.map(folder => ({
         title: folder,
         value: path.join(saveProjectPathRoot, folder)
@@ -207,7 +201,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       type: 'multiselect',
       name: 'certs',
       message: t('selectCertificatesToRestore'),
-      description: 'Select the certificates you want to restore from the backup. You can select multiple certificates.',
+      description: t('selectCertificatesToRestoreFromBackup'),
       choices: validCertsToRestoreNames.map(name => ({
         title: name,
         value: name
@@ -225,7 +219,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       type: 'confirm',
       name: 'restore',
       message: t('doYouConfirmYouWantToRestore', { selectedCerts: selectedCerts.length }),
-      description: 'This will deploy all certificate files and definitions saved before the refresh.',
+      description: t('deployAllCertFilesSavedBeforeRefresh'),
       initial: true
     });
     if (!prompt.restore) {
@@ -270,7 +264,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       type: 'confirm',
       name: 'restore',
       message: t('pleaseDoubleCheckPackageMetadataToRestore', { metadataSummary }),
-      description: `WARNING: Check and validate/update file ${restorePackageXml} BEFORE it is deployed !`,
+      description: t('warningCheckAndValidateFileBefore'),
       initial: true
     });
     if (!prompt.restore) {
@@ -309,7 +303,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       type: 'multiselect',
       name: 'samlFiles',
       message: t('selectSamlSsoConfigsToRestore'),
-      description: 'Select the SAML SSO Configs you want to restore from the backup. You can select multiple configs.',
+      description: t('selectSamlSsoConfigsToRestore'),
       choices: allSamlFiles.map(f => ({ title: f.replace('.samlssoconfig-meta.xml', ''), value: f })),
       initial: allSamlFiles // select all by default
     });
@@ -343,7 +337,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         type: 'select',
         name: 'certId',
         message: t('selectTheCertificateToUseForSaml', { samlName }),
-        description: `This will update <requestSigningCertId> in ${samlFile}.`,
+        description: t('willUpdateRequestSigningCertId'),
         choices: certs.map(cert => ({
           title: cert.MasterLabel,
           value: cert.Id.substring(0, 15)
@@ -372,7 +366,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         type: 'confirm',
         name: 'deploy',
         message: t('doYouConfirmYouWantToDeploy', { samlFile }),
-        description: 'This will deploy the selected SAML SSO Configs to the org using SFDX',
+        description: t('deploySelectedSamlSsoConfigs'),
         initial: true
       });
       if (!promptDeploy.deploy) {
@@ -397,7 +391,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
     }
     // 3. Summary of results
-    uxLog("action", this, c.cyan(`SAML SSO Config processing completed.`));
+    uxLog("action", this, c.cyan(t('samlSsoConfigProcessingCompleted')));
     if (updated.length > 0) {
       uxLog("success", this, c.green(t('successfullyUpdatedAndDeployedSamlSsoConfigs', { updated: updated.join(', ') })));
     }
@@ -433,7 +427,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       type: 'multiselect',
       name: 'settings',
       message: t('selectCustomSettingsToRestore'),
-      description: 'Select the custom settings you want to restore from the backup. You can select multiple settings.',
+      description: t('selectCustomSettingsToRestoreFromBackup'),
       choices: csToRestore.map(folder => ({
         title: folder,
         value: folder

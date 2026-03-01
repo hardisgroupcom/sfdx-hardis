@@ -223,7 +223,7 @@ ${this.getDefaultCommandsMarkdown()}
     uxLog(
       "action",
       this,
-      c.cyan('Running monitoring scripts for org ' + c.bold(flags['target-org'].getConnection().instanceUrl)) + ' ...'
+      c.cyan(t('runningMonitoringScriptsForOrg', { orgAlias: c.bold(flags['target-org'].getConnection().instanceUrl) }))
     );
 
     const config = await getConfig('user');
@@ -246,7 +246,7 @@ ${this.getDefaultCommandsMarkdown()}
         uxLog(
           "log",
           this,
-          c.grey(`Skipped command ${c.bold(command.key)} as its frequency is defined as weekly and we are not Saturday`)
+          c.grey(t('skippedCommandWeeklyFrequency', { command: c.bold(command.key) }))
         );
         continue;
       }
@@ -284,9 +284,7 @@ ${this.getDefaultCommandsMarkdown()}
     uxLog(
       "warning",
       this,
-      c.yellow(
-        `To know more about sfdx-hardis monitoring, please check ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/`
-      )
+      c.yellow(t('toKnowMoreAboutMonitoring'))
     );
 
     // Exit code is 1 if monitoring detected stuff

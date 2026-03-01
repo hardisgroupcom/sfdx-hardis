@@ -149,11 +149,7 @@ The command's technical implementation involves:
       } catch (e) {
         uxLog("warning", this, c.yellow(t('postActionsHaveFailed')));
       }
-      uxLog(
-        "warning",
-        this,
-        c.yellow(c.bold('This version of sfdx-hardis monitoring is deprecated and will not be maintained anymore'))
-      );
+      uxLog("warning", this, c.yellow(c.bold(t('thisVersionOfMonitoringIsDeprecated'))));
       uxLog("warning", this, c.yellow(c.bold(t('switchToNewSfdxHardisMonitoringThat'))));
       uxLog("warning", this, c.yellow(c.bold(t('infoSalesforceMonitoringHome', { CONSTANTS: CONSTANTS.DOC_URL_ROOT }))));
     }

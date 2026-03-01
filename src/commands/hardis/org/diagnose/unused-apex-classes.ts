@@ -133,7 +133,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   private displaySummaryOutput() {
     uxLog("action", this, c.cyan(t('foundAsyncApexClassesThatMightNot', { unusedNumber: this.unusedNumber })));
-    let summary = `All async apex classes have been called during the latest ${this.lastNdays} days.`;
+    let summary = t('allApexClassesCalledInLastDays', { days: this.lastNdays });
     if (this.unusedNumber > 0) {
       summary = `${this.unusedNumber} apex classes might not be used anymore.
 Note: Salesforce does not provide all info to be 100% sure that a class is not used, so double-check before deleting them 😊`
@@ -163,7 +163,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
   }
 
   private matchClassesWithJobs(latestJobsAll: any[], cronTriggers: any[]) {
-    uxLog("action", this, c.cyan(`Matching async Apex classes with latest jobs and cron triggers...`));
+    uxLog("action", this, c.cyan(t('matchingApexClassesWithJobs')));
     this.asyncClassList = this.asyncClassList.map(apexClass => {
       const futureJobs = cronTriggers.filter(cronJob => apexClass.Name === cronJob.CronJobDetail.Name);
       apexClass.nextJobDate = "";

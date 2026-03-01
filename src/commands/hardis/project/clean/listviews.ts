@@ -52,7 +52,7 @@ export default class CleanListViews extends SfCommand<any> {
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Replacing 'Mine' by 'Everything' in ListViews for deployments to pass`));
+    uxLog("action", this, c.cyan(t('replacingMineByEverythingInListViews')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.listView-meta.xml`;

@@ -78,7 +78,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Removing empty dx managed source files`));
+    uxLog("action", this, c.cyan(t('removingEmptyDxManagedSourceFiles')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const emptyConstraints = [

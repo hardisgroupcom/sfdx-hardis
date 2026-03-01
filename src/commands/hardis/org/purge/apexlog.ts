@@ -107,10 +107,8 @@ The command's technical implementation involves:
       const confirmRes = await prompts({
         type: 'confirm',
         name: 'value',
-        message: `Do you want to delete ${c.bold(apexLogsNumber)} Apex Logs of org ${c.green(
-          flags['target-org'].getUsername()
-        )} ?`,
-        description: 'Permanently delete all Apex debug logs from the Salesforce org to free up storage space',
+        message: t('confirmDeleteApexLogsPrompt'),
+        description: t('confirmDeleteApexLogsDescription'),
       });
       if (confirmRes.value === false) {
         return {};
@@ -128,9 +126,7 @@ The command's technical implementation involves:
     uxLog(
       "success",
       this,
-      c.green(
-        `Successfully deleted ${c.bold(apexLogsNumber)} Apex Logs in org ${c.bold(flags['target-org'].getUsername())}`
-      )
+      c.green(t('successfullyDeletedApexLogs'))
     );
 
     // Return an object to be displayed with --json

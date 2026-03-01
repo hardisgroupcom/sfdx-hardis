@@ -189,7 +189,7 @@ If Flow history doc always display a single state, you probably need to update y
     uxLog(
       "action",
       this,
-      c.cyan('Building full manifest for org ' + c.bold(flags['target-org'].getConnection().instanceUrl)) + ' ...'
+      c.cyan(t('buildingFullManifestForOrg', { orgAlias: c.bold(flags['target-org'].getConnection().instanceUrl) }))
     );
     const packageXmlFullFile = 'manifest/package-all-org-items.xml';
     await buildOrgManifest('', packageXmlFullFile, flags['target-org'].getConnection());
@@ -215,7 +215,7 @@ If Flow history doc always display a single state, you probably need to update y
     }
 
     // Write installed packages
-    uxLog("action", this, c.cyan(`Write installed packages ...`));
+    uxLog("action", this, c.cyan(t('writeInstalledPackages')));
     const installedPackagesLog: any[] = [];
     const packageFolder = path.join(process.cwd(), 'installedPackages');
     await fs.ensureDir(packageFolder);
@@ -293,7 +293,7 @@ If Flow history doc always display a single state, you probably need to update y
         },
       ];
     } else {
-      uxLog("log", this, c.grey("No updated metadata for today's backup 😊"));
+      uxLog("log", this, c.grey(t('noUpdatedMetadataForBackup')));
     }
 
     // Post notifications
@@ -472,9 +472,7 @@ If Flow history doc always display a single state, you probably need to update y
       uxLog(
         "log",
         this,
-        c.grey(
-          `${packageXmlSkipItemsFile} has been found and will be use to reduce the content of ${packageXmlFullFile} ...`
-        )
+        c.grey(t('packageSkipItemsFoundReducing'))
       );
       this.packageXmlToRemove = packageXmlSkipItemsFile;
     }
@@ -485,9 +483,7 @@ If Flow history doc always display a single state, you probably need to update y
       uxLog(
         "log",
         this,
-        c.grey(
-          `En var MONITORING_BACKUP_SKIP_METADATA_TYPES has been found and will also be used to reduce the content of ${packageXmlFullFile} ...`
-        )
+        c.grey(t('monitoringBackupSkipMetadataTypesFound', { types: additionalSkipMetadataTypes }))
       );
       let packageSkipItems = {};
       if (fs.existsSync(this.packageXmlToRemove || '')) {
@@ -529,7 +525,7 @@ If Flow history doc always display a single state, you probably need to update y
           this,
           c.red(
             c.bold(
-              'This should not happen: Please report the issue on sfdx-hardis repository: https://github.com/hardisgroupcom/sfdx-hardis/issues'
+              t('unexpectedBackupError')
             )
           )
         );
@@ -540,7 +536,7 @@ If Flow history doc always display a single state, you probably need to update y
           this,
           c.red(
             c.bold(
-              'Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it, or use variable MONITORING_BACKUP_SKIP_METADATA_TYPES'
+              t('crashDuringBackupExcludeMetadataTypes')
             )
           )
         );

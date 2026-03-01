@@ -189,11 +189,7 @@ The command's technical implementation involves:
     uxLog(
       "action",
       this,
-      c.cyan(
-        `Generating CSV files from ${c.green(tomlFile)} (encoding ${tomlFileEncoding}) into folder ${c.green(
-          this.outputDir
-        )}.`
-      )
+      c.cyan(t('generatingCsvFilesFromToml', { tomlFile, encoding: tomlFileEncoding, outputDir: this.outputDir }))
     );
 
     // Start spinner
@@ -362,7 +358,7 @@ The command's technical implementation involves:
     if (Object.keys(this.lineErrorMessages).length > 0) {
       uxLog("warning", this, c.yellow(t('thereHaveBeenParsingErrors')));
       for (const errMsg of Object.keys(this.lineErrorMessages)) {
-        uxLog("warning", this, c.yellow('- ' + this.lineErrorMessages[errMsg] + ' lines: ' + errMsg));
+        uxLog("warning", this, c.yellow(t('parsingErrorLineCount', { count: this.lineErrorMessages[errMsg], message: errMsg })));
       }
       uxLog("other", this, '');
     }
@@ -374,20 +370,16 @@ The command's technical implementation involves:
         uxLog(
           "log",
           this,
-          c.grey(`[${section}] kept ${sectionStats.dataSuccessLinesNb} entries on ${sectionStats.dataLinesNb}`)
+          c.grey('[' + section + '] ' + t('sectionKeptEntries', { successNb: sectionStats.dataSuccessLinesNb, totalNb: sectionStats.dataLinesNb }))
         );
       }
     }
-    uxLog("log", this, c.grey(`[TOTAL] kept ${this.stats.dataSuccessLinesNb} entries on ${this.stats.dataLinesNb}`));
+    uxLog("log", this, c.grey('[TOTAL] ' + t('totalKeptEntries', { successNb: this.stats.dataSuccessLinesNb, totalNb: this.stats.dataLinesNb })));
     const message = `TOML file ${tomlFile} has been split into ${this.csvFiles.length} CSV files in directory ${this.outputDir}`;
     uxLog(
       "action",
       this,
-      c.cyan(
-        `TOML file ${c.green(tomlFile)} has been split into ${c.green(
-          this.csvFiles.length
-        )} CSV files in directory ${c.green(this.outputDir)}`
-      )
+      c.cyan(t('tomlFileSplitIntoCsvFiles'))
     );
     return { outputString: message, csvfiles: this.csvFiles, stats: this.stats };
   }
@@ -406,7 +398,7 @@ The command's technical implementation involves:
       const outputFile = path.join(this.outputDir, `${section}.csv`);
       // Init writeStream
       const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: 'utf8' });
-      uxLog("action", this, c.cyan(`- Initialized output CSV file ${c.green(c.bold(outputFile))}`));
+      uxLog("action", this, c.cyan('- ' + t('initializedOutputCsvFile', { file: c.green(c.bold(outputFile)) })));
       this.csvFiles.push(outputFile);
       return fileWriteStream;
     }
@@ -429,7 +421,7 @@ The command's technical implementation involves:
       }
       // Initialize with header
       fileWriteStream.write(headerLine + '\n');
-      uxLog("action", this, c.cyan(`- Initialized ${errMode ? 'errors' : 'output'} CSV file ${c.green(c.bold(outputFile))}`));
+      uxLog("action", this, c.cyan('- ' + (errMode ? t('initializedCsvFile', { file: c.green(c.bold(outputFile)) }) : t('initializedOutputCsvFile', { file: c.green(c.bold(outputFile)) }))));
       this.csvFiles.push(outputFile);
       return fileWriteStream;
     } else if (errMode === false) {
@@ -438,7 +430,7 @@ The command's technical implementation involves:
       const outputFile = path.join(this.outputDir, 'errors', `noconfig__${section}.csv`);
       // Init writeStream
       const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: 'utf8' });
-      uxLog("action", this, c.cyan(`- Initialized default output CSV file ${c.green(c.bold(outputFile))}`));
+      uxLog("action", this, c.cyan('- ' + t('initializedOutputCsvFile', { file: c.green(c.bold(outputFile)) })));
       this.csvFiles.push(outputFile);
       return fileWriteStream;
     }

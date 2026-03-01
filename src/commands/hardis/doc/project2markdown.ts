@@ -431,7 +431,7 @@ ${this.htmlInstructions}
 ${Project2Markdown.htmlInstructions}
 `;
         await fs.writeFile(readmeFile, readme);
-        uxLog("success", this, c.green(`Updated README.md to add link to docs/index.md`));
+        uxLog("success", this, c.green(t('updatedReadmeToAddLink')));
       }
     }
 
@@ -468,7 +468,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generateApexDocumentation() {
     uxLog("action", this, c.cyan(t('callingApexdocgenToInitializeApexDocumentation')));
-    uxLog("log", this, "If you don't want it, use --no-generate-apex-doc or define GENERATE_APEX_DOC=false");
+    uxLog("log", this, t('ifYouDontWantApexDoc'));
     const tempDir = await createTempDir();
     uxLog("log", this, c.grey(t('usingTempDirectory', { tempDir })));
     const packageDirs = this.project?.getPackageDirectories() || [];
@@ -609,7 +609,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generatePackagesDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfInstalledPackagesDocumentation')));
-    uxLog("log", this, "If you don't want it, use --no-generate-packages-doc or define GENERATE_PACKAGES_DOC=false");
+    uxLog("log", this, t('ifYouDontWantPackagesDoc'));
 
     const packagesForMenu: any = { "All Packages": "packages/index.md" }
     // List packages
@@ -743,7 +743,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generateProfilesDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfProfilesDocumentation')));
-    uxLog("log", this, "If you don't want it, use --no-generate-profiles-doc or define GENERATE_PROFILES_DOC=false");
+    uxLog("log", this, t('ifYouDontWantProfilesDoc'));
     const profilesForMenu: any = { "All Profiles": "profiles/index.md" };
     const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(profilesFiles);
@@ -794,7 +794,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generatePermissionSetsDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfPermissionSetsDocumentation')));
-    uxLog("log", this, "If you don't want it, use --no-generate-profiles-doc or define GENERATE_PROFILES_DOC=false");
+    uxLog("log", this, t('ifYouDontWantProfilesDoc'));
     const psForMenu: any = { "All Permission Sets": "permissionsets/index.md" };
     const psFiles = (await glob("**/permissionsets/**.permissionset-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(psFiles);
@@ -903,7 +903,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generateRolesDocumentation() {
     uxLog("action", this, c.cyan(t('generatingRolesDocumentation')));
-    uxLog("log", this, "If you don't want it, use --no-generate-profiles-doc or define GENERATE_PROFILES_DOC=false");
+    uxLog("log", this, t('ifYouDontWantProfilesDoc'));
     const roleFiles = (await glob("**/roles/**.role-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(roleFiles);
     if (roleFiles.length === 0) {
@@ -937,7 +937,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generateAssignmentRulesDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfAssignmentRulesDocumentation')));
-    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
+    uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
     const assignmentRulesForMenu: any = { "All Assignment Rules": "assignmentRules/index.md" };
     const assignmentRulesFiles = (await glob("**/assignmentRules/**.assignmentRules-meta.xml", {
@@ -1002,7 +1002,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generateApprovalProcessDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfApprovalProcessesDocumentation')));
-    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
+    uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
     const approvalProcessesForMenu: any = { "All Approval Processes": "approvalProcesses/index.md" }
     const approvalProcessFiles = (await glob("**/approvalProcesses/**.approvalProcess-meta.xml", {
@@ -1058,7 +1058,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generateAutoResponseRulesDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfAutoresponseRulesDocumentation')));
-    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
+    uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
     const autoResponseRulesForMenu: any = { "All AutoResponse Rules": "autoResponseRules/index.md" };
     const autoResponseRulesFiles = (await glob("**/autoResponseRules/**.autoResponseRules-meta.xml", {
@@ -1123,7 +1123,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generateEscalationRulesDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfEscalationRulesDocumentation')));
-    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
+    uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
     const escalationRulesForMenu: any = { "All Escalation Rules": "escalationRules/index.md" };
     const escalationRulesFiles = (await glob("**/escalationRules/**.escalationRules-meta.xml", {
@@ -1188,7 +1188,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generateWorkflowRulesDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfWorkflowRulesDocumentation')));
-    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
+    uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
     const workflowRulesForMenu: any = { "All Workflow Rules": "workflowRules/index.md" };
     const workflowRulesFiles = (await glob("**/workflows/**.workflow-meta.xml", {
@@ -1296,7 +1296,7 @@ ${Project2Markdown.htmlInstructions}
         "warning",
         this,
         c.yellow(
-          'You should probably manually update mkdocs.yml to add your own configuration, like theme, site_name, etc.'
+          t('manuallyUpdateMkdocsYml')
         )
       );
     }
@@ -1438,7 +1438,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generateObjectsDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfObjectsAiDocumentation')));
-    uxLog("log", this, "If you don't want it, use --no-generate-objects-doc or define GENERATE_OBJECTS_DOC=false");
+    uxLog("log", this, t('ifYouDontWantObjectsDoc'));
 
     const objectLinksInfo = await this.generateLinksInfo();
     const objectsForMenu: any = { "All objects": "objects/index.md" }
@@ -1464,7 +1464,7 @@ ${Project2Markdown.htmlInstructions}
       });
       workItems.push({ objectName, objectXml, objectMdFile, objectXmlParsed, skip: false });
     }
-    uxLog("log", this, `Skipped ${workItems.filter(item => item.skip).length} Data Cloud objects from documentation generation (define variable INCLUDE_DATA_CLOUD_DOC=true to include them)`);
+    uxLog("log", this, t('skippedDataCloudObjects', { count: workItems.filter(item => item.skip).length }));
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
@@ -1577,7 +1577,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateFlowsDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Flows Visual documentation... (if you don't want it, use --no-generate-flow-doc or define GENERATE_FLOW_DOC=false)"));
+    uxLog("action", this, c.cyan(t('preparingGenerationOfFlowsVisualDocumentation')));
     const flowsForMenu: any = { "All flows": "flows/index.md" }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const packageDirs = this.project?.getPackageDirectories();

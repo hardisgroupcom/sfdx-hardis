@@ -201,7 +201,7 @@ The command's technical implementation involves:
     const unsecuredOAuthTokens = allOAuthTokensWithStatus.filter(app => app.Status === '❌ Unsecured');
 
     // Display results
-    uxLog("action", this, `${unsecuredOAuthTokens.length} unsecured OAuth Tokens found.`);
+    uxLog("action", this, t('unsecuredOAuthTokensFound', { count: unsecuredOAuthTokens.length }));
     uxLogTable(this, unsecuredOAuthTokens);
 
     const uniqueUnsecuredAppNamesAndTokenNumber: { [key: string]: number } = {};
@@ -239,16 +239,9 @@ The command's technical implementation involves:
     this.outputFileConnectedApps = await generateReportPath('unsecured-connected-apps', this.outputFileConnectedApps);
     this.outputFilesResConnectedApps = await generateCsvFile(uniqueUnsecureConnectedAppsWithTokens, this.outputFileConnectedApps, { fileTitle: "Unsecured Connected Apps" });
     if (uniqueUnsecuredAppNames.length > 0) {
-      uxLog("action", this, c.cyan(`${uniqueUnsecuredAppNames.length} unsecured Connected Apps found.`));
+      uxLog("action", this, c.cyan(t('unsecuredConnectedAppsFound', { count: uniqueUnsecuredAppNames.length })));
       uxLogTable(this, uniqueUnsecureConnectedAppsWithTokens);
-      uxLog("warning", this, `You need to either block or secure these Connected Apps.
-To block a connected app, click on "Block"
-To secure a connected app:
-  - Install it if not installed
-  - Click on "Manage Policies"
-  - Set "Admin Users are pre-approved" then save
-  - Select profiles/permission sets allowed to access the connected app
-  - Users will then need to authenticate again`);
+      uxLog("warning", this, t('howToSecureConnectedApps'));
     }
 
     // Build notification
@@ -298,14 +291,14 @@ To secure a connected app:
           type: 'confirm',
           message: t('thereAreUnsecuredConnectedAppsWithOauth', { uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps: uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.length }),
           initial: false,
-          description: 'You will be able to select which Apps to ignore in the next prompt.',
+          description: t('youWillSelectAppsToIgnoreDescription'),
         });
         if (confirmPromptRes.value === true) {
           const ignorePromptRes = await prompts({
             type: 'multiselect',
             message: 'Select the Apps for which you want to ignore future warnings (only for apps that you don\'t see in OAuth Token usage UI)',
             choices: uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.map(appName => ({ title: appName, value: appName })),
-            description: 'The selected Apps will be added to the ignore list in sfdx-hardis config file.',
+            description: t('appsAddedToIgnoreListDescription'),
           });
           if (ignorePromptRes?.value.length > 0) {
             const config = await getConfig("project");
@@ -313,12 +306,12 @@ To secure a connected app:
             for (const appName of ignorePromptRes.value) {
               if (!monitoringUnsecureConnectedAppsIgnore.includes(appName)) {
                 monitoringUnsecureConnectedAppsIgnore.push(appName);
-                uxLog("log", this, c.green(`• ${appName} added to ignore list.`));
+                uxLog("log", this, c.green(`• ${t('appAddedToIgnoreList', { appName })}`));
               }
             }
             config.monitoringUnsecureConnectedAppsIgnore = monitoringUnsecureConnectedAppsIgnore;
             await setConfig("project", config);
-            uxLog("log", this, c.green(`Ignore list updated in sfdx-hardis config file. You can also use ENV variable MONITORING_UNSECURE_CONNECTED_APPS_IGNORE to set it.`));
+            uxLog("log", this, c.green(t('ignoreListUpdated')));
           }
         }
       }
@@ -329,7 +322,7 @@ To secure a connected app:
       const confirmDeleteRes = await prompts({
         type: 'confirm',
         message: t('doYouWantToDeleteAuthTokens'),
-        description: 'These are connected apps that are not installed in your org and are not visible in OAuth Usage Setup page. Deleting their tokens will force users to re-authenticate if they need them.',
+        description: t('deletePhantomAppsTokensDescription'),
         initial: false,
       });
       if (confirmDeleteRes.value === true) {

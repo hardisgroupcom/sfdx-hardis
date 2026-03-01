@@ -76,7 +76,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Adding identifiers to componentInstance in flexipages`));
+    uxLog("action", this, c.cyan(t('addingIdentifiersToComponentInstanceFlexipages')));
     /* jscpd:ignore-end */
 
     const globPattern = this.pathToBrowse + `/**/*.flexipage-meta.xml`;

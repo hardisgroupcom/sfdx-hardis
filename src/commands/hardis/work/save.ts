@@ -236,7 +236,7 @@ The command's technical implementation involves a series of orchestrated steps:
       }
     }
     else {
-      uxLog("warning", this, c.yellow(`Define a manual actions file. Ask your release manager to create one and set its URL in .sfdx-hardis.yml under manualActionsFileUrl.`));
+      uxLog("warning", this, c.yellow(t('defineManualActionsFileAskReleaseMgr')));
     }
     if (!WebSocketClient.isAliveWithLwcUI()) {
       uxLog("log", this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(mergeRequestDoc)}`));
@@ -250,7 +250,7 @@ The command's technical implementation involves a series of orchestrated steps:
   private async cleanGitStatus() {
     // Skip git stuff if requested
     if (this.noGit) {
-      uxLog("action", this, c.cyan(`[Expert mode] Skipped git reset`));
+      uxLog("action", this, c.cyan(t('expertModeSkippedGitReset')));
       return;
     }
     let gitStatusInit = await git().status();
@@ -283,19 +283,17 @@ The command's technical implementation involves a series of orchestrated steps:
         {
           title: '😎 Yes, my commit(s) are ready! I staged my files and created one or multiple commits.',
           value: 'commitReady',
-          description:
-            "You have already pulled updates from your org (or locally updated the files if you're a nerd), staged your files, and created a commit",
+          description: t('commitsAreReadyDescription'),
         },
         {
           title: '😐 No, please pull my latest updates from my org so I can commit my metadata',
           value: 'pleasePull',
-          description: 'Pull latest updates from org so you can stage files and create your commit',
+          description: t('pullLatestUpdatesFromOrgToStageAndCommit'),
         },
         {
           title: '😱 What is a commit? What does pull mean? Help!',
           value: 'help',
-          description:
-            "Don't panic, just click on the link that will appear in the console (CTRL + Click) and you'll learn!",
+          description: t('dontPanicClickLinkInConsole'),
         },
       ],
     });
@@ -306,11 +304,7 @@ The command's technical implementation involves a series of orchestrated steps:
       uxLog(
         "action",
         this,
-        c.cyan(
-          `Sources have been pulled from ${flags[
-            'target-org'
-          ].getUsername()}, now you can stage and commit your updates!`
-        )
+        c.cyan(t('sourcesHaveBeenPulledNowStageAndCommit', { username: flags['target-org'].getUsername() }))
       );
       WebSocketClient.sendReportFileMessage("workbench.view.scm", "Commit your retrieved files", "actionCommand");
       WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, "Retrieve and Commit documentation", 'docUrl');
@@ -336,7 +330,7 @@ The command's technical implementation involves a series of orchestrated steps:
           type: 'confirm',
           name: 'value',
           message: c.cyan(t('didYouUpdateAndWantToExport', { dataSource: c.green(dataSource.label) })),
-          description: 'Confirm if you want to export data that may have been updated for this data source',
+          description: t('confirmExportDataUpdatedForDataSource'),
         });
         if (exportDataRes.value === true) {
           await exportData(dataSource.dataPath, this, {
@@ -671,7 +665,7 @@ The command's technical implementation involves a series of orchestrated steps:
             this.currentBranch
           )})`
         ),
-        description: 'Choose whether to push your commits to the remote git repository',
+        description: t('pushBranchToRemoteDescription'),
       });
       if (pushResponse.push === true) {
         uxLog("action", this, c.cyan(`Pushing commit(s) to remote branch ${c.green(`origin/${this.currentBranch}`)}...`));

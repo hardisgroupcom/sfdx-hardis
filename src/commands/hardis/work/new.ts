@@ -120,12 +120,12 @@ The command's logic orchestrates various underlying processes:
       {
         title: '🏗️ Feature',
         value: 'feature',
-        description: "New feature, evolution of an existing feature... If you don't know, just select Feature",
+        description: t('branchPrefixFeatureDescription'),
       },
       {
         title: '🛠️ Fix',
         value: 'fix',
-        description: 'A bug has been identified and you are the right person to solve it !',
+        description: t('branchPrefixFixDescription'),
       },
     ];
     const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
@@ -138,7 +138,7 @@ The command's logic orchestrates various underlying processes:
         type: 'select',
         name: 'project',
         message: c.cyanBright(t('pleaseSelectTheProjectYourUserStory')),
-        description: 'Choose which project this new work item belongs to',
+        description: t('chooseWhichProjectWorkItemBelongsTo'),
         placeholder: 'Select a project',
         choices: availableProjects.map((project: string) => {
           return {
@@ -156,7 +156,7 @@ The command's logic orchestrates various underlying processes:
         type: 'select',
         name: 'branch',
         message: c.cyanBright(t('whatTypeOfUserStoryDoYou')),
-        description: 'Select the category of work that best describes your User Story',
+        description: t('selectCategoryOfWorkForUserStory'),
         placeholder: 'Select User Story type',
         initial: 0,
         choices: branchPrefixChoices,
@@ -172,7 +172,7 @@ The command's logic orchestrates various underlying processes:
     uxLog(
       "action",
       this,
-      c.cyan(`Checking out latest version of branch ${c.bold(this.targetBranch)} from ${repoUrl}...`)
+      c.cyan(t('checkingOutLatestVersionOfBranch', { branch: c.bold(this.targetBranch), repoUrl }))
     );
     await gitCheckOutRemote(this.targetBranch);
     // Pull latest version of target branch
@@ -185,10 +185,8 @@ The command's logic orchestrates various underlying processes:
       const updateDefaultBranchRes = await prompts({
         type: 'confirm',
         name: 'value',
-        message: c.cyanBright(
-          `Do you want to update your default target branch to ${c.green(this.targetBranch)}?`
-        ),
-        description: 'Set this branch as your default target for future work items',
+        message: c.cyanBright(t('doYouWantToUpdateDefaultTargetBranch', { branch: c.green(this.targetBranch) })),
+        description: t('setAsDefaultTargetForFutureWorkItems'),
         default: false,
       });
       if (updateDefaultBranchRes.value === true) {
@@ -210,15 +208,14 @@ The command's logic orchestrates various underlying processes:
       orgTypeChoices.push({
         title: '🌎 Sandbox org with source tracking',
         value: 'sandbox',
-        description:
-          "Work in a developer sandbox provided by your Release Manager",
+        description: t('workInDeveloperSandboxDescription'),
       });
     }
     if (allowedOrgTypes.includes('scratch') || allowedOrgTypes.length === 0) {
       orgTypeChoices.push({
         title: '🪐 Scratch org',
         value: 'scratch',
-        description: 'Scratch orgs are configured on my project so I want to create or reuse one',
+        description: t('scratchOrgsConfiguredCreateOrReuse'),
       });
     }
     if (flags['target-org'] && flags['target-org']?.getConnection()) {
@@ -236,8 +233,8 @@ The command's logic orchestrates various underlying processes:
     const orgTypeResponse = await prompts({
       type: 'select',
       name: 'value',
-      message: c.cyanBright(`Which Salesforce org do you want to work in?`),
-      description: 'Choose the type of Salesforce org to use for your development work',
+      message: c.cyanBright(t('whichSalesforceOrgDoYouWantToWorkIn')),
+      description: t('chooseTypeOfSalesforceOrgForWork'),
       placeholder: 'Select org type',
       initial: 0,
       choices: orgTypeChoices,
@@ -252,7 +249,7 @@ The command's logic orchestrates various underlying processes:
       // source tracked sandbox
       await this.selectOrCreateSandbox(branchName, config, flags, selectedOrgType);
     } else {
-      uxLog("warning", this, c.yellow(`No org selected. Ensure you know what you're doing.`));
+      uxLog("warning", this, c.yellow(t('noOrgSelectedEnsureYouKnow')));
     }
 
     uxLog("action", this, c.cyan(t('readyToWorkInBranch', { branchName: c.green(branchName) })));
@@ -267,10 +264,8 @@ The command's logic orchestrates various underlying processes:
     const taskResponse = await prompts({
       type: 'text',
       name: 'taskName',
-      message: c.cyanBright(
-        `What is the name of your new User Story? Please avoid accents and special characters.`
-      ),
-      description: 'Enter a descriptive name for your User Story that will be used in the git branch name',
+      message: c.cyanBright(t('whatIsNameOfNewUserStory')),
+      description: t('enterDescriptiveNameForUserStoryBranch'),
       placeholder: `Ex: ${taskNameExample}`,
     });
     let taskName = taskResponse.taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-');
@@ -280,9 +275,7 @@ The command's logic orchestrates various underlying processes:
       uxLog(
         "warning",
         this,
-        c.yellow(
-          `The User Story name ${c.bold(taskName)} does not match the expected pattern ${c.bold(validationRegex)}. Please try again`
-        )
+        c.yellow(t('userStoryNameDoesNotMatchPattern', { taskName: c.bold(taskName), validationRegex: c.bold(validationRegex) }))
       );
       return this.promptTaskName(validationRegex, taskNameExample);
     }
@@ -298,21 +291,21 @@ The command's logic orchestrates various underlying processes:
       {
         title: c.yellow('🆕 Create new scratch org'),
         value: 'newScratchOrg',
-        description: "Generate a new scratch org; you'll be ready to work in a few minutes",
+        description: t('generateNewScratchOrgReady'),
       },
     ];
     if (currentOrg) {
       baseChoices.push({
         title: c.yellow(`♻️ Reuse current org`),
         value: currentOrg,
-        description: `Reuse current org ${currentOrg.instanceUrl}. Beware of conflicts if others have merged changes.`,
+        description: t('reuseCurrentOrgBewareConflicts', { instanceUrl: currentOrg.instanceUrl }),
       });
     }
     const scratchResponse = await prompts({
       type: 'select',
       name: 'value',
       message: c.cyanBright(t('selectScratchOrgForBranch', { branchName: c.green(branchName) })),
-      description: 'Choose whether to create a new scratch org or reuse an existing one',
+      description: t('chooseCreateOrReuseScratchOrg'),
       placeholder: 'Select scratch org option',
       initial: 0,
       choices: [
@@ -390,10 +383,8 @@ The command's logic orchestrates various underlying processes:
       const initSandboxResponse = await prompts({
         type: 'select',
         name: 'value',
-        message: c.cyanBright(
-          `Do you want to update the sandbox to match branch "${this.targetBranch}" current state?`
-        ),
-        description: 'Choose whether to sync your sandbox with the latest changes from the target branch (packages, sources, permission sets, apex scripts, initial data)',
+        message: c.cyanBright(t('doYouWantToUpdateSandboxToMatchBranch', { branch: this.targetBranch })),
+        description: t('chooseSyncSandboxWithLatestChanges'),
         placeholder: 'Select sync option',
         choices: [
           {
@@ -413,10 +404,8 @@ The command's logic orchestrates various underlying processes:
       if (initSandbox) {
         const promptConfirm = await prompts({
           type: 'confirm',
-          message: c.cyanBright(
-            `Confirm: Update dev sandbox with branch ${this.targetBranch} state? This will overwrite uncommitted changes by you or other users.`
-          ),
-          description: 'Confirm that you want to reset your sandbox to match the target branch state',
+          message: c.cyanBright(t('confirmUpdateDevSandboxWithBranchState', { branch: this.targetBranch })),
+          description: t('confirmResetSandboxToMatchTargetBranch'),
         });
         initSandbox = promptConfirm.value === true;
       }
@@ -510,19 +499,15 @@ The command's logic orchestrates various underlying processes:
     const sandboxResponse = await prompts({
       type: 'select',
       name: 'value',
-      message: c.cyanBright(
-        `Select a sandbox org to work in branch ${c.green(
-          branchName
-        )}`
-      ),
-      description: 'Choose an existing sandbox or connect to a new one for this branch',
+      message: c.cyanBright(t('selectSandboxOrgToWorkInBranch', { branchName: c.green(branchName) })),
+      description: t('chooseExistingSandboxOrConnectNew'),
       placeholder: 'Select sandbox',
       default: defaultSandbox ? defaultSandbox : undefined,
       choices: [
         ...[
           {
-            title: c.yellow('🌐 Connect to a sandbox not in this list'),
-            description: 'Login via web browser to your source-tracked sandbox',
+            title: c.yellow('🌐 ' + t('connectToSandboxNotInList')),
+            description: t('connectToSandboxNotInListDescription'),
             value: 'connectSandbox',
           },
           /* {

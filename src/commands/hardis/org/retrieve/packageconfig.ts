@@ -98,7 +98,7 @@ The command's technical implementation involves:
     }
 
     WebSocketClient.sendRefreshPipelineMessage();
-    const message = `Successfully retrieved installed packages configuration`;
+    const message = t('successfullyRetrievedInstalledPackagesConfig');
     uxLog("success", this, c.green(message));
     return { orgId: flags['target-org'].getOrgId(), outputString: message };
   }

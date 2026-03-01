@@ -183,7 +183,7 @@ The command's technical implementation involves:
       this.debugMode ? usersToUnfreezeDisplay : usersToUnfreezeDisplay.slice(0, this.maxUsersDisplay)
     );
     if (!this.debugMode && usersToUnfreezeDisplay.length > this.maxUsersDisplay) {
-      uxLog("warning", this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
+      uxLog("warning", this, c.yellow(c.italic(t('listTruncatedToFirstUsers', { maxUsersDisplay: this.maxUsersDisplay }))));
     }
 
     // Generate csv + xls of users about to be unfrozen
@@ -198,12 +198,8 @@ The command's technical implementation involves:
         type: 'confirm',
         name: 'value',
         initial: true,
-        message: c.cyanBright(
-          `Are you sure you want to unfreeze these ${c.bold(userLoginsToUnfreeze.length)} users in org ${c.green(
-            flags['target-org'].getUsername()
-          )} ?`
-        ),
-        description: 'Confirm unfreezing selected users, which will reactivate their accounts in the Salesforce org',
+        message: c.cyanBright(t('areYouSureYouWantToUnfreezeUsers', { count: userLoginsToUnfreeze.length, orgUsername: flags['target-org'].getUsername() })),
+        description: t('confirmUnfreezingSelectedUsers'),
       });
       if (confirmunfreeze.value !== true) {
         const outputString = 'Script cancelled by user.';
@@ -221,15 +217,11 @@ The command's technical implementation involves:
     const unfreezeSuccessNb = bulkUpdateRes.successfulResults.length;
     const unfreezeErrorsNb = bulkUpdateRes.failedResults.length;
     if (unfreezeErrorsNb > 0) {
-      uxLog(
-        "warning",
-        this,
-        c.yellow(`Warning: ${c.red(c.bold(unfreezeErrorsNb))} users has not been unfrozen (bulk API errors)`)
-      );
+      uxLog("warning", this, c.yellow(t('warningUsersNotUnfrozenBulkApiErrors', { count: unfreezeErrorsNb })));
     }
 
     // Build results summary
-    uxLog("success", this, c.green(`${c.bold(unfreezeSuccessNb)} users has been be unfrozen.`));
+    uxLog("success", this, c.green(t('usersHaveBeenUnfrozen', { count: unfreezeSuccessNb })));
 
     // Return an object to be displayed with --json
     return {

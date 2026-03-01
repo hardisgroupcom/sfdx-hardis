@@ -5,6 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { execSfdxJson, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -72,35 +73,33 @@ The command's technical implementation involves:
       {
         type: 'text',
         name: 'packageName',
-        message: c.cyanBright(`Please input the name of the package (ex: MyPackage)`),
-        description: 'Enter a clear name for your new Salesforce package',
+        message: c.cyanBright(t('pleaseInputPackageName')),
+        description: t('enterClearNameForNewPackage'),
         placeholder: 'Ex: MyPackage',
       },
       {
         type: 'text',
         name: 'packagePath',
-        message: c.cyanBright(`Please input the path of the package (ex: sfdx-source/apex-mocks)`),
-        description: 'Specify the directory path where the package source code is located',
+        message: c.cyanBright(t('pleaseInputPackagePath')),
+        description: t('specifyPackageSourceCodePath'),
         placeholder: 'Ex: sfdx-source/apex-mocks',
       },
       {
         type: 'select',
         name: 'packageType',
-        message: c.cyanBright(`Please select the type of the package`),
-        description: 'Choose whether this is an unlocked package or managed package',
+        message: c.cyanBright(t('pleaseSelectPackageName')),
+        description: t('chooseUnlockedOrManagedPackage'),
         placeholder: 'Select package type',
         choices: [
           {
-            title: 'Managed',
+            title: t('managedPackageTitle'),
             value: 'Managed',
-            description:
-              'Managed packages code is hidden in orgs where it is installed. Suited for AppExchanges packages',
+            description: t('managedPackageDescription'),
           },
           {
-            title: 'Unlocked',
+            title: t('unlockedPackageTitle'),
             value: 'Unlocked',
-            description:
-              'Unlocked packages code is readable and modifiable in orgs where it is installed. Use it for client project or shared tooling',
+            description: t('unlockedPackageDescription'),
           },
         ],
       },
@@ -117,15 +116,7 @@ The command's technical implementation involves:
       fail: true,
       debug: debugMode,
     });
-    uxLog(
-      "action",
-      this,
-      c.cyan(
-        `Created package Id: ${c.green(packageCreateResult.result.Id)} associated to DevHub ${c.green(
-          flags['target-dev-hub'].getUsername()
-        )}`
-      )
-    );
+    uxLog("action", this, c.cyan(t('createdPackageIdAssociatedToDevHub', { packageId: packageCreateResult.result.Id, devHub: flags['target-dev-hub'].getUsername() })));
 
     // Return an object to be displayed with --json
     return {

@@ -125,9 +125,7 @@ The command's technical implementation involves:
     await execCommand(retrieveCommand, this, { fail: false, debug: this.debugMode, output: true });
 
     // Set bac initial cwd
-    const message = `[sfdx-hardis] Successfully retrieved sfdx sources from ${c.bold(targetUsername)} using ${c.bold(
-      packageXml
-    )}`;
+    const message = '[sfdx-hardis] ' + t('successfullyRetrievedSfdxSources', { targetUsername: c.bold(targetUsername || ''), packageXml: c.bold(packageXml || '') });
     uxLog("success", this, c.green(message));
     return { outputString: message };
   }

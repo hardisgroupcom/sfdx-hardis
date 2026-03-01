@@ -128,12 +128,8 @@ The command's technical implementation involves:
     const promptProfilesToUpdate = await prompts({
       type: 'multiselect',
       name: 'profiles',
-      message:
-        'Please select the profiles you want to update to apply tabs [' +
-        tabsToUpdate.join(', ') +
-        '] with visibility ' +
-        visibility,
-      description: 'Choose which profiles should receive the tab visibility updates',
+      message: t('pleaseSelectProfilesToUpdateTabsVisibility', { tabs: tabsToUpdate.join(', '), visibility }),
+      description: t('chooseProfilesForTabVisibilityUpdates'),
       choices: profileSourceFiles.map((profileFile) => {
         return {
           title: (profileFile.replace(/\\/g, '/').split('/').pop() || '').replace('.profile-meta.xml', ''),

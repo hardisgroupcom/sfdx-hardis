@@ -144,16 +144,14 @@ prompts
       const branchResponse = await prompts({
         type: 'select',
         name: 'value',
-        message: c.cyanBright(
-          'What is the name of the git branch you want to configure Automated CI/CD deployments from ? (Ex: integration,uat,preprod,main)'
-        ),
+        message: c.cyanBright(t('whatIsNameOfGitBranchToConfigureCiCd')),
         choices: branchesFiltered.map((branch: string) => {
           return {
             title: branch,
             value: branch,
           };
         }),
-        description: 'Enter the git branch name for this org configuration',
+        description: t('enterGitBranchNameForOrgConfig'),
         placeholder: 'Select the git branch name',
       });
       branchName = branchResponse.value.replace(/\s/g, '-');
@@ -183,9 +181,7 @@ prompts
       const mergeTargetsResponse = await prompts({
         type: 'multiselect',
         name: 'value',
-        message: c.cyanBright(
-          `What are the target git branches that ${branchName} will be able to merge in ? (Ex: for integration, the target will be uat)`
-        ),
+        message: c.cyanBright(t('whatAreTargetGitBranchesToMergeIn', { branchName })),
         choices: branchesFiltered.map((branch: string) => {
           return {
             title: branch,
@@ -193,7 +189,7 @@ prompts
           };
         }),
         initial: initialMergeTargets,
-        description: 'Select the git branches that this branch will be able to merge in',
+        description: t('selectGitBranchesThisBranchCanMergeIn'),
         placeholder: 'Select the target git branches',
       });
       const mergeTargets = mergeTargetsResponse.value.map((branch: string) => branch.replace(/\s/g, '-'));
@@ -216,7 +212,7 @@ prompts
         `What is the Salesforce username that will be ${devHub ? 'used as Dev Hub' : 'used for deployments by CI server'
         } ? Example: admin.sfdx@myclient.com`
       ),
-      description: 'Enter the Salesforce username for this configuration',
+      description: t('enterSalesforceUsernameForConfig'),
       placeholder: 'Ex: admin.sfdx@myclient.com',
     });
     if (devHub) {
@@ -225,7 +221,7 @@ prompts
           type: 'text',
           name: 'value',
           message: c.cyanBright(t('whatIsTheAliasYouWantTo')),
-          description: 'Enter the alias for your Dev Hub',
+          description: t('enterAliasForDevHub'),
           initial: config.projectName ? 'DevHub_' + config.projectName : 'DevHub',
           placeholder: 'Ex: MyCompany_DevHub',
         });
@@ -266,7 +262,7 @@ prompts
 
     uxLog("action", this, c.green(t('branchSuccessfullyConfiguredForAuthentication', { devHub: devHub ? '(DevHub)' : branchName })));
     uxLog("warning", this, c.yellow(t('makeSureYouHaveSetTheEnvironment')));
-    uxLog("warning", this, c.yellow('Don\'t forget to commit the sfdx-hardis config file and the encrypted certificated key in git!'));
+    uxLog("warning", this, c.yellow(t('dontForgetToCommitConfigAndCertKey')));
 
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };

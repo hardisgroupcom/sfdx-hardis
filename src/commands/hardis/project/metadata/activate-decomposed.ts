@@ -137,7 +137,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
     try {
       // Start main action section
-      uxLog("action", this, c.cyan(`Checking for metadata types eligible for decomposition (Beta feature)`));
+      uxLog("action", this, c.cyan(t('checkingMetadataTypesEligibleForDecomposition')));
 
       // Preliminary check: identify already decomposed and remaining metadata types
       const decompositionStatus = this.checkDecompositionStatus();
@@ -164,7 +164,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       if (applicableTypes.length === 0) {
         if (alreadyDecomposedNames) {
-          uxLog("warning", this, c.yellow(`All supported metadata types are already decomposed in this project`));
+          uxLog("warning", this, c.yellow(t('allSupportedMetadataTypesAlreadyDecomposed')));
           uxLog("log", this, c.grey(t('alreadyDecomposed', { alreadyDecomposedNames })));
           return {
             success: true,
@@ -173,7 +173,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
             alreadyDecomposedTypes: results.alreadyDecomposedTypes
           };
         } else {
-          uxLog("warning", this, c.yellow(`No supported metadata types found in this project`));
+          uxLog("warning", this, c.yellow(t('noSupportedMetadataTypesFoundInProject')));
           return { success: false, message: t('noSupportedMetadataTypesFound') };
         }
       }
@@ -183,7 +183,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         type: 'multiselect',
         name: 'selectedTypes',
         message: c.cyan(t('selectMetadataTypesToDecompose')),
-        description: 'Use space to select/deselect, Enter to confirm',
+        description: t('useSpaceToSelectDeselectEnterToConfirm'),
         choices: applicableTypes.map(type => ({
           title: type.name,
           value: type.name,
@@ -220,7 +220,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       if (results.decomposedTypes.length > 0) {
         uxLog("action", this, c.green(t('successfullyDecomposed2', { results: results.decomposedTypes.join(', ') })));
       } else {
-        uxLog("action", this, c.yellow(`No metadata types were decomposed`));
+        uxLog("action", this, c.yellow(t('noMetadataTypesWereDecomposed')));
       }
 
       // Log errors if any
@@ -476,8 +476,8 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         const retryRes = await prompts({
           type: 'confirm',
           name: 'retry',
-          message: c.yellow(`You can not decompose metadata when default org has source tracking enabled. Do you want to unselect the default org and retry?`),
-          description: 'This will unset the default org for this project and try the command again',
+          message: c.yellow(t('cannotDecomposeMetadataSourceTrackingEnabled')),
+          description: t('unsetsDefaultOrgAndRetryDecomposition'),
           initial: true
         });
         if (retryRes.retry) {

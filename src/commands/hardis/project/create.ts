@@ -53,19 +53,19 @@ export default class ProjectCreate extends SfCommand<any> {
       name: 'orgType',
       type: 'select',
       message: t('toPerformImplementationWillYourProjectUse'),
-      description: 'Choose the type of development orgs your project will use',
+      description: t('chooseTypeOfDevelopmentOrgs'),
       placeholder: 'Select org type',
       choices: [
         {
-          title: 'Scratch orgs only',
+          title: t('scratchOrgsOnly'),
           value: 'scratch',
         },
         {
-          title: 'Source tracked sandboxes only',
+          title: t('sourceTrackedSandboxesOnly'),
           value: 'sandbox',
         },
         {
-          title: 'Source tracked sandboxes and scratch orgs',
+          title: t('sourceTrackedSandboxesAndScratchOrgs'),
           value: 'sandboxAndScratch',
         },
       ],
@@ -118,10 +118,9 @@ export default class ProjectCreate extends SfCommand<any> {
       const devBranchRes = await prompts({
         type: 'text',
         name: 'devBranch',
-        message:
-          'What is the name of your default development branch ? (Examples: if you manage RUN and BUILD, it can be integration. If you manage RUN only, it can be preprod)',
+        message: t('whatIsNameOfDefaultDevelopmentBranch'),
         initial: 'integration',
-        description: 'Enter the name of your main development branch',
+        description: t('enterNameOfMainDevelopmentBranch'),
         placeholder: 'Ex: integration',
       });
       await setConfig('project', { developmentBranch: devBranchRes.devBranch });
@@ -136,13 +135,13 @@ export default class ProjectCreate extends SfCommand<any> {
       autoCleanTypes: defaultAutoCleanTypes
     });
     uxLog("warning", this, c.yellow(t('autocleantypesHasBeenActivatedOnTheNew', { defaultAutoCleanTypes: defaultAutoCleanTypes.join(",") })));
-    uxLog("warning", this, c.bold(c.yellow(`If you install CI/CD on an existing org with many rights in Profiles, you might remove "minimizeProfiles" from .sfdx-hardis.yml autoCleanTypes property `)));
+    uxLog("warning", this, c.bold(c.yellow(t('ifInstallCiCdOnExistingOrgMinimizeProfiles'))));
     // Message instructions
     uxLog(
       "action",
       this,
       c.cyan(
-        `SFDX Project has been created. You can continue the steps in documentation at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-home/`
+        t('sfdxProjectCreatedContinueSteps', { docUrl: CONSTANTS.DOC_URL_ROOT + '/salesforce-ci-cd-setup-home/' })
       )
     );
 

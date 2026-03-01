@@ -142,13 +142,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
     this.result = { success: true, message: t('beforeRefreshCommandPerformedSuccessfully') };
 
-    uxLog("action", this, c.cyan(`This command will save information that must be restored after org refresh, in the following order:
-- Certificates
-- Other metadata
-- Custom Settings
-- Records (using SFDMU projects)
-- Connected Apps
-  `));
+    uxLog("action", this, c.cyan(t('thisCommandWillSaveInformationRefresh')));
 
     // Check org is connected
     if (!accessToken) {
@@ -201,7 +195,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         type: 'confirm',
         name: 'retrieveAgain',
         message: t('connectedAppsFolderIsNotEmptyDo'),
-        description: `If you do not retrieve them again, the Connected Apps will not be updated with the latest changes from the org.`,
+        description: t('ifNotRetrievedConnectedAppsNotUpdated'),
         initial: false
       });
 
@@ -243,7 +237,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
             type: 'confirm',
             name: 'delete',
             message: t('doYouWantToDeleteTheConnected', { connectedAppNames }),
-            description: 'If you do not delete them, they will remain in the org and can be re-uploaded after refreshing the org.',
+            description: t('ifNotDeletedTheyWillRemainInOrg'),
             initial: false
           });
           this.deleteApps = deletePrompt.delete;
@@ -256,8 +250,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         }
 
         const summaryMessage = this.deleteApps
-          ? `You are now ready to refresh your sandbox org, as you will be able to re-upload the Connected Apps after the refresh.`
-          : `Dry-run successful, run again the command with Connected Apps deletion to be able to refresh your org and re-upload the Connected Apps after the refresh.`;
+          ? t('readyToRefreshSandboxOrg')
+          : t('dryRunSuccessful');
         uxLog("action", this, c.cyan(summaryMessage));
         // Add a summary message at the end
         if (updatedApps.length > 0) {
@@ -374,8 +368,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       try {
         browserContext = await this.initializeBrowser(instanceUrl, accessToken);
       } catch (e: any) {
-        uxLog("error", this, c.red(`Error initializing browser for automated Consumer Secret extraction: ${e.message}.
-You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Chrome/Chromium path. example: /usr/bin/chromium-browser`));
+        uxLog("error", this, c.red(t('errorInitializingBrowserConsumerSecret', { message: e.message })));
         // Continue without browser automation - will fall back to manual entry
       }
 
@@ -508,7 +501,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
 
     // Log in once for the session
     const loginUrl = `${instanceUrl}/secur/frontdoor.jsp?sid=${accessToken}`;
-    uxLog("log", this, c.cyan(`Log in via browser using frontdoor.jsp...`));
+    uxLog("log", this, c.cyan(t('logInViaBrowserFrontdoor')));
     const page = await browser.newPage();
     await page.goto(loginUrl, { waitUntil: ['domcontentloaded', 'networkidle0'] });
     await page.close();
@@ -596,7 +589,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
           type: 'text',
           name: 'consumerSecret',
           message: t('enterTheConsumerSecretFor', { app: app.fullName }),
-          description: 'You can find this in the browser after clicking "Manage Consumer Details"',
+          description: t('youCanFindThisInTheBrowser'),
           validate: (value) => value && value.trim() !== '' ? true : 'Consumer Secret is required'
         });
 
@@ -675,7 +668,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       const consumerSecretSpanId = '#appsetup\\:setupForm\\:consumerDetails\\:oauthConsumerSection\\:consumerSecretSection\\:consumerSecret';
       await page.waitForSelector(consumerSecretSpanId, { timeout: 60000 });
       const consumerSecretValue = await page.$eval(consumerSecretSpanId, element => element.textContent);
-      uxLog("success", this, c.green(`Successfully extracted Consumer Secret`));
+      uxLog("success", this, c.green(t('successfullyExtractedConsumerSecret')));
 
       return consumerSecretValue || null;
     } catch (error) {
@@ -754,7 +747,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
 
     // Retrieve metadata from org using the package XML
     if (!savePackageXml) {
-      uxLog("log", this, c.grey(`Skipping metadata retrieval as per user choice`));
+      uxLog("log", this, c.grey(t('skippingMetadataRetrievalUserChoice')));
       return;
     }
 

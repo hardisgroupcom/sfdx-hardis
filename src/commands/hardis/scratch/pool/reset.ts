@@ -78,7 +78,7 @@ The command's technical implementation involves:
       uxLog(
         "warning",
         this,
-        c.yellow('Configuration file must contain a poolConfig property') +
+        c.yellow(t('configFileMustContainPoolConfigProperty')) +
         '\n' +
         c.grey(JSON.stringify(config, null, 2))
       );
@@ -113,8 +113,7 @@ The command's technical implementation involves:
         "action",
         this,
         c.cyan(
-          `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${scratchOrgToDelete?.authFileJson?.result?.instanceUrl
-          } has been deleted`
+          t('scratchOrgHasBeenDeleted', { username: c.green(scratchOrgToDelete.scratchOrgUsername), instanceUrl: scratchOrgToDelete?.authFileJson?.result?.instanceUrl })
         )
       );
     }

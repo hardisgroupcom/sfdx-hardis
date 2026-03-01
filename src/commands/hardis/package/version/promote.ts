@@ -105,10 +105,8 @@ The command's technical implementation involves:
         {
           type: 'select',
           name: 'packageSelected',
-          message: c.cyanBright(
-            `Please select a package (this is not a drill, it will create an official new version !)`
-          ),
-          description: 'Choose which package to promote - this will create a new official version that cannot be undone',
+          message: c.cyanBright(t('pleaseSelectPackageNotADrillPromote')),
+          description: t('choosePackageToPromote'),
           placeholder: 'Select a package',
           choices: Object.values(availablePackageAliases).map((packageAlias) => {
             return { title: packageAlias, value: packageAlias };
@@ -132,24 +130,10 @@ The command's technical implementation involves:
         debug: debugMode,
       });
       if (promoteResult.status === 0) {
-        uxLog(
-          "action",
-          this,
-          c.cyan(
-            `Promoted package version ${c.green(packageToPromote)} with id ${c.green(
-              promoteResult.result.id
-            )}. It is now installable on production orgs`
-          )
-        );
+        uxLog("action", this, c.cyan(t('promotedPackageVersionInstallable', { version: packageToPromote, id: promoteResult.result.id })));
         promotedPackageVersions.push({ package: packageToPromote, result: promoteResult });
       } else {
-        uxLog(
-          "warning",
-          this,
-          c.yellow(
-            `Error promoting package version ${c.red(packageToPromote)} (probably already promoted so it can be ok)`
-          )
-        );
+        uxLog("warning", this, c.yellow(t('errorPromotingPackageVersionAlreadyPromoted', { version: packageToPromote })));
         errorPromotedVersions.push({ package: packageToPromote, result: promoteResult });
       }
     }

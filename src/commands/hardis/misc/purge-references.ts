@@ -95,7 +95,7 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
       const refPromptResult = await prompts({
         type: 'text',
         message: t('pleaseInputCommaSeparatedListOfStrings'),
-        description: 'Enter the reference strings to purge from your metadata files.',
+        description: t('enterReferencesDescription'),
         placeholder: 'Ex: Affaire__c,MyField__c,CustomObject__c',
       });
       this.referenceStrings = refPromptResult.value.split(',');
@@ -113,14 +113,12 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
     // Retrieve metadatas if necessary
     const retrieveNeedRes = await prompts({
       type: 'select',
-      message: `Are your local sources up to date with target org ${flags[
-        'target-org'
-      ].getUsername()}, or do you need to retrieve some of them?`,
-      description: 'Confirm whether your local metadata is synchronized with the target org.',
+      message: t('localSourcesUpToDatePrompt'),
+      description: t('localSourcesSyncDescription'),
       placeholder: 'Select an option',
       choices: [
-        { value: true, title: 'My local sfdx sources are up to date with the target org' },
-        { value: false, title: 'I need to retrieve metadatas ' },
+        { value: true, title: t('localSourcesUpToDate') },
+        { value: false, title: t('needToRetrieveMetadatas') },
       ],
     });
     if (retrieveNeedRes.value === false) {

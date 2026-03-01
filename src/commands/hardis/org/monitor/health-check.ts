@@ -181,7 +181,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const uxSeverityLevel: UxLogLevel =
       scoreSeverity === 'error' ? 'error' : scoreSeverity === 'warning' ? 'warning' : scoreSeverity === 'success' ? 'success' : 'other';
     const severityColor = scoreSeverity === 'error' ? c.red : scoreSeverity === 'warning' ? c.yellow : scoreSeverity === 'success' ? c.green : c.cyan;
-    uxLog(uxSeverityLevel, this, severityColor(`Security Health Check score: ${scoreText}`));
+    uxLog(uxSeverityLevel, this, severityColor(t('securityHealthCheckScore', { score: scoreText })));
 
     if (riskCounts.high === 0 && riskCounts.medium === 0) {
       uxLog('success', this, c.green(t('noErrorOrWarningSeverityIndicatorsDetected')));

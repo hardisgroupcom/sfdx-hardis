@@ -77,7 +77,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Removing hidden dx managed source files`));
+    uxLog("action", this, c.cyan(t('removingHiddenDxManagedSourceFiles')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.{app,cmp,evt,tokens,html,css,js,xml}`;

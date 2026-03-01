@@ -96,17 +96,13 @@ See article below
         type: 'select',
         name: 'value',
         initial: true,
-        message: c.cyanBright(
-          `Do you want to replace invalid mails by valid mails for all ${c.bold(
-            usersToActivate.length
-          )} found users in org ${c.green(flags['target-org'].getUsername())} ?`
-        ),
-        description: 'Choose whether to update email addresses for all found users or select specific ones',
+        message: c.cyanBright(t('doYouWantToReplaceInvalidMails', { count: usersToActivate.length, orgUsername: flags['target-org'].getUsername() })),
+        description: t('chooseWhetherToUpdateEmailAddresses'),
         placeholder: 'Select an option',
         choices: [
           { title: `Yes, all ${c.bold(usersToActivate.length)} users`, value: 'all' },
-          { title: 'No, i want to manually select by profile(s)', value: 'selectProfiles' },
-          { title: 'No, i want to manually select user(s)', value: 'select' },
+          { title: t('noManuallySelectByProfiles'), value: 'selectProfiles' },
+          { title: t('noManuallySelectUsers'), value: 'select' },
         ],
       });
       // Let users select profiles to reactivate users
@@ -154,7 +150,7 @@ See article below
       this.debugMode ? userToActivateUpdated : userToActivateUpdated.slice(0, this.maxUsersDisplay)
     );
     if (!this.debugMode && userToActivateUpdated.length > this.maxUsersDisplay) {
-      uxLog("warning", this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
+      uxLog("warning", this, c.yellow(c.italic(t('listTruncatedToFirstUsers', { maxUsersDisplay: this.maxUsersDisplay }))));
     }
 
     const activateSuccessNb = bulkUpdateRes.successfulResults.length;
@@ -168,11 +164,7 @@ See article below
     }
 
     // Build results summary
-    uxLog(
-      "success",
-      this,
-      c.green(`${c.bold(activateSuccessNb)} users has been be reactivated by removing the .invalid of their email`)
-    );
+    uxLog("success", this, c.green(t('usersHaveBeenReactivatedByRemovingInvalid', { count: activateSuccessNb })));
 
     // Return an object to be displayed with --json
     return {

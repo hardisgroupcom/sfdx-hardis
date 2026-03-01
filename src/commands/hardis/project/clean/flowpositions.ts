@@ -78,7 +78,7 @@ autoCleanTypes:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Setting flows as Auto Layout and remove positions...`));
+    uxLog("action", this, c.cyan(t('settingFlowsAutoLayoutAndRemovePositions')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.flow-meta.xml`;

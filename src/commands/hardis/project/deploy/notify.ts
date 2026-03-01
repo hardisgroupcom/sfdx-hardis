@@ -166,7 +166,7 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
     // Fallback
     else {
       uxLog("warning", this, c.yellow(t('noNotificationHasBeenSent')));
-      uxLog("warning", this, c.yellow("- Slack / Teams / Email / JIRA messages are sent only if --check-only is false and --deploy-status is valid"));
+      uxLog("warning", this, c.yellow(t('slackTeamsEmailJiraMessagesSentOnlyIf')));
     }
 
     return { message: t('processedNotifications') }

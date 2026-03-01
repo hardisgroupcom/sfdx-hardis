@@ -71,7 +71,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Removing unwanted standard dx source files...`));
+    uxLog("action", this, c.cyan(t('removingUnwantedStandardDxSourceFiles')));
     /* jscpd:ignore-end */
     const sourceRootFolder = path.join(process.cwd() + '/force-app/main/default');
     const objectsFolder = path.join(sourceRootFolder + '/objects');
@@ -99,7 +99,7 @@ The command's technical implementation involves:
           for (const field of matchingAllFields) {
             if (!field.includes('__')) {
               await fs.remove(field);
-              uxLog("action", this, c.cyan(`  - removed standard field ${c.yellow(field)}`));
+              uxLog("action", this, c.cyan(t('removedStandardField', { field: c.yellow(field) })));
             }
           }
 

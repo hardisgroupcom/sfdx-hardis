@@ -102,11 +102,7 @@ The command's technical implementation involves:
       }
     }
     await writePackageXmlFile(packageXmlAnalyticsFile, analyticsPackageXml);
-    uxLog(
-      "action",
-      this,
-      c.cyan(`Filtered and completed analytics metadatas in analytics package XML: ${packageXmlAnalyticsFile}`)
-    );
+    uxLog("action", this, c.cyan(t('filteredAndCompletedAnalyticsMetadatas', { packageXmlAnalyticsFile })));
 
     // Retrieve locally Analytics sources
     const retrieveCommand = `sf project retrieve start -x "${packageXmlAnalyticsFile}" -o ${orgUsername}`;

@@ -235,7 +235,7 @@ The command's technical implementation involves:
       const baseQueryPromptRes = await prompts({
         type: "select",
         message: t('pleaseSelectPredefinedQueryOrCustomSoql'),
-        description: "Choose a ready-made SOQL query template or enter your own custom query",
+        description: t('selectPredefinedQueryDescription'),
         placeholder: "Select a query template",
         choices: [
           ...Object.keys(this.allQueryTemplates).map(templateId => {
@@ -246,8 +246,8 @@ The command's technical implementation involves:
             }
           }),
           {
-            title: "Custom SOQL Query",
-            description: "Enter a custom SOQL query to run",
+            title: t('customSoqlQueryTitle'),
+            description: t('customSoqlQueryDescription'),
             value: "custom"
           }
         ]

@@ -136,22 +136,22 @@ The command checks for uncommitted changes and will not run if the working tree 
         description: "It's recommended to commit, stash or discard your changes before proceeding.",
       });
       if (!confirmPromptRes.value === true) {
-        uxLog("error", this, c.blue(`Operation cancelled by user. Exiting without making changes.`));
+        uxLog("error", this, c.blue(t('operationCancelledExitingWithoutChanges')));
         return {};
       }
     }
 
-    uxLog("action", this, c.cyan(`Loading full org manifest for profile retrieval...`));
+    uxLog("action", this, c.cyan(t('loadingFullOrgManifest')));
     await this.loadFullOrgManifest(conn, orgUsername, packageFullOrgPath);
 
     await this.filterFullOrgPackageByNamespaces(packageFullOrgPath, packageFilteredPackagesPath);
 
     const selectedProfiles = await promptProfiles(flags['target-org'].getConnection(), { multiselect: true, returnApiName: true });
 
-    uxLog("action", this, c.cyan(`Filtering full org manifest to only keep relevant metadata types...`));
+    uxLog("action", this, c.cyan(t('filteringFullOrgManifest')));
     await this.filterFullOrgPackageByRelevantMetadataTypes(packageFilteredPackagesPath, packageFilteredProfilePath, selectedProfiles);
 
-    uxLog("action", this, c.cyan(`Retrieving metadatas required for profile purge (this will take some time)...`));
+    uxLog("action", this, c.cyan(t('retrievingMetadatasForProfilePurge')));
     await execCommand(
       `sf project retrieve start --manifest ${packageFilteredProfilePath} --target-org ${orgUsername} --ignore-conflicts --json`,
       this,
@@ -159,7 +159,7 @@ The command checks for uncommitted changes and will not run if the working tree 
     );
 
 
-    uxLog("action", this, c.cyan(`Muting unwanted profile attributes...`));
+    uxLog("action", this, c.cyan(t('mutingUnwantedProfileAttributes')));
     const profilesDir = path.join('force-app', 'main', 'default', 'profiles');
     for (const selectedProfile of selectedProfiles) {
       const profileFilePath = path.join(profilesDir, `${selectedProfile}.profile-meta.xml`);
@@ -181,11 +181,11 @@ The command checks for uncommitted changes and will not run if the working tree 
     const promptDeployRes = await prompts({
       type: "confirm",
       message: t('doYouWantToDeployProfilesBack', { selectedProfiles }),
-      description: "Deploying the profiles will overwrite the existing profiles in the target org with the muted versions. Profiles: " + selectedProfiles.join(", "),
+      description: t('confirmDeployProfilesDescription'),
       initial: true,
     });
     if (!promptDeployRes.value === true) {
-      uxLog("error", this, c.blue(`Deployment cancelled by user. Exiting without deploying profiles.`));
+      uxLog("error", this, c.blue(t('deploymentCancelledByUser')));
       return { orgId: flags['target-org'].getOrgId(), outputString: "Profile purge completed without deployment." };
     }
 
@@ -214,14 +214,14 @@ The command checks for uncommitted changes and will not run if the working tree 
         type: "select",
         name: "useExistingManifest",
         message: t('doYouWantToUseTheExisting'),
-        description: "A full org manifest file was found from a previous run. You can either use it or generate a new one to ensure it's up to date. It may take some time to generate a new one.",
+        description: t('existingManifestFoundDescription'),
         choices: [
           {
-            title: `Use the existing full org manifest`,
-            description: `Cache file is located at ${path.relative(process.cwd(), packageFullOrgPath)}`,
+            title: t('useExistingManifestTitle'),
+            description: t('existingManifestCacheLocation', { path: path.relative(process.cwd(), packageFullOrgPath) }),
             value: true
           },
-          { title: "Generate a new full org manifest", value: false },
+          { title: t('generateNewManifestTitle'), value: false },
         ],
       });
       useExistingManifest = promptResults.useExistingManifest;

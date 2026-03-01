@@ -97,23 +97,21 @@ The command's technical implementation involves:
     uxLog(
       "action",
       this,
-      c.cyan('This command will refresh your git branch and your org with the content of another git branch')
+      c.cyan(t('thisCommandWillRefreshGitBranchAndOrg'))
     );
     // Verify that the user saved his/her work before merging another branch
     const savePromptRes = await prompts({
       type: 'select',
-      message: c.cyanBright(
-        `This is a SENSITIVE OPERATION. Did you run ${c.green('hardis:work:save')} BEFORE running this command ?`
-      ),
+      message: c.cyanBright(t('sensitiveOperationDidYouRunWorkSave')),
       name: 'value',
-      description: 'Confirm that you have saved your current work before proceeding with this sensitive operation',
+      description: t('confirmSavedWorkBeforeSensitiveOperation'),
       placeholder: 'Select an option',
       choices: [
         {
-          title: 'Yes I did save my current updates before merging updates from others !',
+          title: t('yesSavedBeforeMerging'),
           value: true,
         },
-        { title: 'No, I did not, I will do that right now', value: false },
+        { title: t('noWillSaveRightNow'), value: false },
       ],
     });
     if (savePromptRes.value !== true) {
@@ -138,7 +136,7 @@ The command's technical implementation involves:
       type: 'select',
       message: t('pleaseSelectTheBranchThatYouWant', { localBranch: c.green(localBranch) }),
       name: 'value',
-      description: 'Choose which branch to merge into your current working branch',
+      description: t('chooseWhichBranchToMergeIntoCurrent'),
       placeholder: 'Select a branch to merge',
       choices: branchChoices,
     });
@@ -150,7 +148,7 @@ The command's technical implementation involves:
       uxLog(
         "warning",
         this,
-        c.yellow('There has been a merge conflict or a technical error, please contact a Developer for help !')
+        c.yellow(t('mergeConflictOrTechnicalErrorContactDeveloper'))
       );
       throw e;
     }
@@ -175,7 +173,7 @@ The command's technical implementation involves:
 
     // Pull from scratch org
     if (this.noPull) {
-      uxLog("action", this, c.cyan(`Skipped pull from scratch org`));
+      uxLog("action", this, c.cyan(t('skippedPullFromScratchOrg')));
     } else {
       uxLog("action", this, c.cyan(t('pullingSourcesFromScratchOrg', { flags: flags['target-org'].getUsername() })));
       await forceSourcePull(flags['target-org'].getUsername(), this.debugMode);
@@ -185,11 +183,7 @@ The command's technical implementation involves:
     uxLog(
       "action",
       this,
-      c.cyan(
-        `Stashing your uncommitted updates in ${c.green(localBranch)} before merging ${c.green(
-          this.mergeBranch
-        )} into your local branch ${c.green(localBranch)}...`
-      )
+      c.cyan(t('stashingUncommittedUpdatesBeforeMerging', { localBranch: c.green(localBranch), mergeBranch: c.green(this.mergeBranch) }))
     );
     const stashResult = await git({ output: true }).stash(['save', `[sfdx-hardis] Stash of ${localBranch}`]);
     const stashed = stashResult.includes('Saved working directory');
@@ -217,16 +211,14 @@ The command's technical implementation involves:
         const mergeResult = await prompts({
           type: 'select',
           name: 'value',
-          message: c.cyanBright(
-            'There are merge conflicts, please solve them, then select YES here. Otherwise, exit the script and call a developer for help 😊'
-          ),
-          description: 'Choose your next action after attempting to resolve merge conflicts',
+          message: c.cyanBright(t('mergeConflictsPleaseResolve')),
+          description: t('chooseActionAfterResolvingMergeConflicts'),
           placeholder: 'Select an option',
           choices: [
-            { value: true, title: 'If finished to merge conflicts' },
+            { value: true, title: t('finishedMergingConflicts') },
             {
               value: false,
-              title: "I can't merge conflicts, I give up for now",
+              title: t('cantMergeConflictsGiveUp'),
             },
           ],
         });

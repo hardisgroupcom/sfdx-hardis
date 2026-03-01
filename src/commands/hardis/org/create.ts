@@ -160,7 +160,7 @@ The command's technical implementation involves:
     if (fs.existsSync('./config/project-sandbox-def.json')) {
       this.projectSandboxDef = JSON.parse(fs.readFileSync('./config/project-sandbox-def.json', 'utf-8'));
     } else {
-      uxLog("warning", this, c.yellow(`Default values used: you may define a file ${c.bold(t('configProjectSandboxDefJson'))}`));
+      uxLog("warning", this, c.yellow(t('defaultSandboxValuesUsed')));
       this.projectSandboxDef = {
         sandboxName: '',
         description: 'SFDX Hardis developer sandbox',
@@ -210,7 +210,7 @@ The command's technical implementation involves:
     uxLog(
       "action",
       this,
-      c.cyan(`Created sandbox org ${c.green(this.sandboxOrgAlias)} with user ${c.green(this.sandboxOrgUsername)}`)
+      c.cyan(t('createdSandboxOrgWithUser', { sandboxOrgAlias: c.green(this.sandboxOrgAlias), sandboxOrgUsername: c.green(this.sandboxOrgUsername) }))
     );
   }
 

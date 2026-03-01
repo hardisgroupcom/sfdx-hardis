@@ -117,7 +117,7 @@ The command's technical implementation relies heavily on the SFDMU plugin:
     // Identify sfdmu workspace if not defined
     if (sfdmuPath == null) {
       sfdmuPath = await selectDataWorkspace({
-        selectDataLabel: `Please select a data workspace to EXPORT from ${c.green(orgUsername)}`,
+        selectDataLabel: t('selectDataWorkspaceToExport'),
       });
     }
 
@@ -127,9 +127,7 @@ The command's technical implementation relies heavily on the SFDMU plugin:
     });
 
     // Output message
-    const message = `Successfully exported data from sfdmu project ${c.green(sfdmuPath)} from org ${c.green(
-      orgUsername
-    )}`;
+    const message = t('successfullyExportedData');
     uxLog("action", this, c.cyan(message));
     return { outputString: message };
   }

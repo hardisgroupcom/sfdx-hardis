@@ -177,7 +177,7 @@ The command's technical implementation involves:
 
     this.customSettingsNames = (await this.listLocalCustomSettings()).map((cs) => cs.name);
 
-    uxLog("action", this, c.cyan(LintAccess.messages.header));
+    uxLog("action", this, c.cyan(t('lintAccessHeader')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
 
@@ -535,7 +535,7 @@ The command's technical implementation involves:
       const promptUpdate = await prompts({
         type: 'confirm',
         message: c.cyanBright(t('doYouWantToAddTheMissing')),
-        description: 'Confirm if you want to automatically fix missing access issues',
+        description: t('confirmFixMissingAccessDescription'),
       });
       if (promptUpdate.value === true) {
         const availablePermissionSets = await this.listLocalPermissionSets();
@@ -544,7 +544,7 @@ The command's technical implementation involves:
             type: 'multiselect',
             name: 'elements',
             message: t('pleaseSelectTheElementsYouWantTo'),
-            description: 'Choose which missing access elements to add to permission sets',
+            description: t('chooseMssingElementsToAddDescription'),
             choices: this.missingElements.map((elt) => {
               return { title: `${elt.type}: ${elt.element}`, value: elt };
             }),
@@ -553,7 +553,7 @@ The command's technical implementation involves:
             type: 'multiselect',
             name: 'permissionSets',
             message: t('pleaseSelectThePermissionSetsYouWant'),
-            description: 'Choose which permission sets should receive the selected access elements',
+            description: t('choosePermissionSetsDescription'),
             choices: availablePermissionSets.map((elt) => {
               return { title: elt.name, value: elt.filePath };
             }),
@@ -562,11 +562,11 @@ The command's technical implementation involves:
             type: 'select',
             name: 'access',
             message: t('pleaseSelectTheAccessesToSetFor'),
-            description: 'Choose the level of access to grant for custom fields',
+            description: t('chooseAccessLevelDescription'),
             placeholder: 'Select access level',
             choices: [
-              { title: 'Readable', value: 'readable' },
-              { title: 'Readable & Editable', value: 'editable' },
+              { title: t('accessReadable'), value: 'readable' },
+              { title: t('accessReadableEditable'), value: 'editable' },
             ],
           },
         ]);

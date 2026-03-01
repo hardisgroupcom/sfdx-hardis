@@ -81,7 +81,7 @@ The command's technical implementation involves:
       uxLog(
         "warning",
         this,
-        c.yellow('Configuration file must contain a poolConfig property') +
+        c.yellow(t('configFileMustContainPoolConfigProperty')) +
         '\n' +
         c.grey(JSON.stringify(config, null, 2))
       );
@@ -114,7 +114,7 @@ The command's technical implementation involves:
           "log",
           this,
           c.grey(
-            `Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be deleted as it has only ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`
+            t('scratchOrgWillBeDeletedDaysRemaining', { instanceUrl: scratchOrg?.authFileJson?.result?.instanceUrl, days: daysBeforeExpiration, expirationDate: scratchOrg?.authFileJson?.result?.expirationDate })
           )
         );
         return false;
@@ -123,7 +123,7 @@ The command's technical implementation involves:
         "log",
         this,
         c.grey(
-          `Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be kept as it still has ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`
+          t('scratchOrgWillBeKeptDaysRemaining', { instanceUrl: scratchOrg?.authFileJson?.result?.instanceUrl, days: daysBeforeExpiration, expirationDate: scratchOrg?.authFileJson?.result?.expirationDate })
         )
       );
       return true;
@@ -145,8 +145,7 @@ The command's technical implementation involves:
           "action",
           this,
           c.cyan(
-            `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${scratchOrgToDelete?.authFileJson?.result?.instanceUrl
-            } has been deleted because only ${scratchOrgToDelete.daysBeforeExpiration} days were remaining.`
+            t('scratchOrgDeletedDaysRemaining', { username: c.green(scratchOrgToDelete.scratchOrgUsername), instanceUrl: scratchOrgToDelete?.authFileJson?.result?.instanceUrl, days: scratchOrgToDelete.daysBeforeExpiration })
           )
         );
       }
@@ -215,7 +214,7 @@ The command's technical implementation involves:
       "action",
       this,
       '[pool] ' +
-      colorFunc(`Created ${c.bold(numberCreated)} scratch orgs (${c.bold(numberfailed)} creations(s) failed)`)
+      colorFunc(t('poolCreatedScratchOrgs', { numberCreated: c.bold(numberCreated), numberFailed: c.bold(numberfailed) }))
     );
     // Return an object to be displayed with --json
     return {

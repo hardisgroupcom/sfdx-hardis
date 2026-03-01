@@ -92,7 +92,7 @@ The command's technical implementation involves:
       type: 'multiselect',
       name: 'value',
       message: c.cyanBright(t('pleaseSelectTheListOfScratchOrgs')),
-      description: 'Choose which scratch orgs to permanently delete (this action cannot be undone)',
+      description: t('chooseWhichScratchOrgsToDelete'),
       choices: scratchOrgChoices,
     });
 
@@ -104,7 +104,7 @@ The command's technical implementation involves:
         "action",
         this,
         c.cyan(
-          `Scratch org ${c.green(scratchOrgToDelete.username)} at ${scratchOrgToDelete.instanceUrl} has been deleted`
+          t('scratchOrgHasBeenDeleted', { username: c.green(scratchOrgToDelete.username), instanceUrl: scratchOrgToDelete.instanceUrl })
         )
       );
     }

@@ -95,7 +95,7 @@ The command's technical implementation involves:
 
     // Retrieve the list of users who haven't logged in for a while
     const conn = flags['target-org'].getConnection();
-    uxLog("action", this, c.cyan(`Extracting Licenses from ${conn.instanceUrl} ...` + this.usedOnly ? '(used only)' : ''));
+    uxLog("action", this, c.cyan(t('extractingLicenses')));
 
     const licensesByKey = {};
     const usedLicenses: any[] = [];

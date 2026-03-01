@@ -107,9 +107,9 @@ The command's technical implementation involves a series of Git operations, file
           { title: 'Mmmmm no, let me create another repo with the word "monitoring" in its name !', value: 'no' },
         ],
         message: c.cyanBright(
-          "Are you sure you want to mix monitoring and deployment sources ?"
+          t('confirmMixMonitoringDeploymentSources')
         ),
-        description: 'It is recommended to separate monitoring configuration from deployment sources in different repositories',
+        description: t('separateMonitoringDeploymentDescription'),
         placeholder: 'Select an option',
       });
       if (confirmMix.value === 'no') {
@@ -147,8 +147,7 @@ The command's technical implementation involves a series of Git operations, file
         "action",
         this,
         c.cyan(
-          `Default org ${flags['target-org'].getConnection()?.instanceUrl
-          } is selected, let's configure its monitoring !`
+          t('defaultOrgSelectedForMonitoring', { instanceUrl: flags['target-org'].getConnection()?.instanceUrl })
         )
       );
     } else {
@@ -163,8 +162,7 @@ The command's technical implementation involves a series of Git operations, file
 
       // Restart command so the org is selected as default org (will help to select profiles)
       if (currentOrgId !== org.orgId) {
-        const infoMsg =
-          'Default org changed. Please restart the same command if VS Code does not do that automatically for you 😊';
+        const infoMsg = t('defaultOrgChangedRestartCommand');
         uxLog("warning", this, c.yellow(infoMsg));
         const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ') + ' --orginstanceurl ' + org.instanceUrl;
         WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);
@@ -229,9 +227,9 @@ The command's technical implementation involves a series of Git operations, file
         type: 'confirm',
         initial: true,
         message: c.cyanBright(
-          `Branch ${branchName} does not exist on server. Do you want to push it now? (it is harmless but required to configure Azure Pipelines for example)`
+          t('branchNotExistsOnServerPushPrompt', { branch: branchName })
         ),
-        description: 'This will create the branch on remote origin; if you don\'t understand this, just say yes 😊',
+        description: t('pushBranchToRemoteDescription'),
       });
       if (confirmPushToRemote.value === true) {
         uxLog("action", this, c.cyan(t('pushingBranchToGitRemoteServer', { branchName: c.bold(branchName) })));
@@ -250,9 +248,9 @@ The command's technical implementation involves a series of Git operations, file
       name: 'value',
       initial: true,
       message: c.cyanBright(
-        'Do you want sfdx-hardis to save your configuration on server ?'
+        t('saveConfigurationOnServerPrompt')
       ),
-      description: 'Automatically commit and push the monitoring configuration files to your git repository (recommended)',
+      description: t('saveConfigAutocommitDescription'),
     });
 
     if (confirmPush.value === true) {
@@ -268,20 +266,18 @@ The command's technical implementation involves a series of Git operations, file
       "warning",
       this,
       c.yellow(
-        `Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}😊`
+        t('scheduleMonitoringNightly')
       )
     );
     const scheduleMonitoringUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
-    const msg =
-      'Please follow the instructions to schedule sfdx-hardis monitoring on your Git server: ' +
-      c.bold(scheduleMonitoringUrl);
+    const msg = t('followScheduleInstructions') + ' ' + c.bold(scheduleMonitoringUrl);
     uxLog("warning", this, c.yellow(msg));
     WebSocketClient.sendReportFileMessage(scheduleMonitoringUrl, 'Schedule sfdx-hardis monitoring', "actionUrl");
     uxLog(
       "warning",
       this,
       c.yellow(
-        'You can also configure Slack/Teams notifications and Grafana integration to visualize monitoring results more easily.'
+        t('configureNotificationsAndGrafana')
       )
     );
     const slackIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-slack/`;
@@ -290,9 +286,9 @@ The command's technical implementation involves a series of Git operations, file
     WebSocketClient.sendReportFileMessage(teamsIntegrationUrl, 'Teams integration', "docUrl");
     const grafanaIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-api/`;
     WebSocketClient.sendReportFileMessage(grafanaIntegrationUrl, 'Grafana integration', "docUrl");
-    uxLog("log", this, 'Slack integration doc: ' + slackIntegrationUrl);
-    uxLog("log", this, 'Teams integration doc: ' + teamsIntegrationUrl);
-    uxLog("log", this, 'Grafana integration doc: ' + grafanaIntegrationUrl);
+    uxLog("log", this, t('slackIntegrationDoc') + ' ' + slackIntegrationUrl);
+    uxLog("log", this, t('teamsIntegrationDoc') + ' ' + teamsIntegrationUrl);
+    uxLog("log", this, t('grafanaIntegrationDoc') + ' ' + grafanaIntegrationUrl);
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };
   }

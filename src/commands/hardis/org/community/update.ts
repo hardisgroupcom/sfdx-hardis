@@ -86,7 +86,7 @@ The command's technical implementation involves:
     }
     // Check empty result
     if (networksQueryRes.length === 0) {
-      const outputString = `No matching network records were found with the given names.`;
+      const outputString = t('noMatchingNetworkRecordsFound');
       uxLog("warning", this, c.yellow(outputString));
       return { outputString };
     }
@@ -98,15 +98,11 @@ The command's technical implementation involves:
         type: 'confirm',
         name: 'value',
         initial: true,
-        message: c.cyanBright(
-          `Are you sure you want to update these ${c.bold(idToNameMap.size)} networks' status to '${status}' in org ${c.green(
-            flags['target-org'].getUsername()
-          )}?`
-        ),
-        description: 'Confirm that you want to change the status of the selected community networks',
+        message: t('confirmNetworkStatusUpdate'),
+        description: t('confirmNetworkStatusUpdateDescription'),
       });
       if (confirmUpdate.value !== true) {
-        const outputString = 'Script cancelled by user.';
+        const outputString = t('scriptCancelledByUser');
         uxLog("warning", this, c.yellow(outputString));
         return { outputString };
       }
@@ -123,7 +119,7 @@ The command's technical implementation involves:
     for (const ret of updateResults) {
       if (ret.success) {
         updateSuccessNb++;
-        uxLog("success", this, c.green(`'${c.bold(idToNameMap.get(ret.id))}' Network was updated.`));
+        uxLog("success", this, c.green(t('networkUpdatedSuccess', { networkName: c.bold(idToNameMap.get(ret.id)) })));
       } else {
         updateErrorsNb++;
         uxLog("error", this, c.red(t('errorNetworkFailedToUpdate', { updateErrorsNb, idToNameMap: idToNameMap.get(ret.id), ret: ret.errors[0].message })));

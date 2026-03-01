@@ -133,13 +133,13 @@ The command's technical implementation involves:
    * Extract original custom label values from CustomLabels.labels-meta.xml
    */
   private async extractOriginalLabels(labelNames: string[], debugMode: boolean): Promise<Map<string, any>> {
-    uxLog("log", this, c.grey(`Looking for original custom label definitions...`));
+    uxLog("log", this, c.grey(t('lookingForOriginalCustomLabelDefinitions')));
 
     const originalLabels = new Map<string, any>();
     const customLabelsFiles = await glob('**/labels/CustomLabels.labels-meta.xml', { ignore: GLOB_IGNORE_PATTERNS });
 
     if (customLabelsFiles.length === 0) {
-      uxLog("warning", this, c.yellow(`No CustomLabels.labels-meta.xml found.`));
+      uxLog("warning", this, c.yellow(t('noCustomLabelsMetaXmlFound')));
       return originalLabels;
     }
 
@@ -157,7 +157,7 @@ The command's technical implementation involves:
 
       for (const label of labels) {
         const labelName = label.fullName || label.name;
-        
+
         if (labelNames.includes(labelName)) {
           originalLabels.set(labelName, {
             name: labelName,
@@ -217,7 +217,7 @@ The command's technical implementation involves:
       const translationFiles = await glob('**/translations/*.translation-meta.xml');
 
       if (translationFiles.length === 0) {
-        uxLog("warning", this, c.yellow(`No translation files found in **/translations/.`));
+        uxLog("warning", this, c.yellow(t('noTranslationFilesFoundInFolder')));
         return { success: false, message: t('noTranslationFilesFound') };
       }
 
@@ -296,7 +296,7 @@ The command's technical implementation involves:
 
       if (originalLabels.size > 0) {
         const originalXmlLabels: any[] = [];
-        
+
         for (const labelName of labelNames) {
           const original = originalLabels.get(labelName);
           if (original) {
@@ -325,7 +325,7 @@ The command's technical implementation involves:
           const originalFile = path.join(outputDir, 'original.translation-meta.xml');
           await fs.writeFile(originalFile, outputXml);
 
-          uxLog("log", this, c.grey(`Generated original labels file: original.translation-meta.xml`));
+          uxLog("log", this, c.grey(t('generatedOriginalLabelsFile')));
         }
       }
 
@@ -468,13 +468,13 @@ The command's technical implementation involves:
         choices: [
           {
             value: 'labels',
-            title: 'Select specific custom labels',
-            description: 'Choose one or more custom labels from the full list'
+            title: t('extractMethodSelectLabels'),
+            description: t('extractMethodSelectLabelsDesc')
           },
           {
             value: 'lwc',
-            title: 'Extract from a Lightning Web Component',
-            description: 'Find all custom labels used in a specific LWC'
+            title: t('extractMethodLwc'),
+            description: t('extractMethodLwcDesc')
           }
         ]
       });
