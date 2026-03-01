@@ -5,6 +5,7 @@ import { MetadataUtils } from "../metadata-utils/index.js";
 import { uxLog } from "../utils/index.js";
 import { generateFlowVisualGitDiff } from "../utils/mermaidUtils.js";
 import { GitProvider } from "./index.js";
+import { t } from '../utils/i18n.js';
 
 export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
   let md = "## Deployment errors\n\n";
@@ -124,7 +125,7 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
         await generateDiffMarkdownWithPng(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }
     } catch (e: any) {
-      uxLog("warning", this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff for ${flowName}: ${e.message}`) + "\n" + c.grey(e.stack));
+      uxLog("warning", this, c.yellow(t('flowGitDiffUnableToGenerate', { flowName, message: e.message })) + "\n" + c.grey(e.stack));
     }
   }
   if (truncatedNb > 0) {
@@ -197,7 +198,7 @@ export function extractImagesFromMarkdown(markdown: string, sourceFile: string |
     else if (fs.existsSync(path.join(sourceFilePath, file))) {
       return true;
     }
-    uxLog("warning", this, c.yellow(`[Markdown] Image file not found: ${file} or ${path.join(sourceFilePath, file)}`));
+    uxLog("warning", this, c.yellow(t('markdownImageFileNotFound', { file, altPath: path.join(sourceFilePath, file) })));
     return false;
   }).map(file => {
     if (fs.existsSync(file)) {

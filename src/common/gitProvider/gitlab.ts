@@ -109,7 +109,7 @@ export class GitlabProvider extends GitProviderRoot {
         });
       }
     } catch (err) {
-      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error fetching merged MRs: ${String(err)}`));
+      uxLog("warning", this, c.yellow(t('gitlabErrorFetchingMergedMrs', { message: String(err) })));
       // as a last resort try a small unfiltered query to avoid huge responses
       try {
         allMergedMRs = await this.gitlabApi.MergeRequests.all({
@@ -121,7 +121,7 @@ export class GitlabProvider extends GitProviderRoot {
           sort: "desc",
         });
       } catch (innerErr) {
-        uxLog("warning", this, c.yellow(`[Gitlab Integration] Fallback query failed: ${String(innerErr)}`));
+        uxLog("warning", this, c.yellow(t('gitlabFallbackQueryFailed', { message: String(innerErr) })));
         allMergedMRs = [];
       }
     }
@@ -139,7 +139,7 @@ export class GitlabProvider extends GitProviderRoot {
         return this.completePullRequestInfo(candidateMergeRequests[0]);
       }
     }
-    uxLog("log", this, c.grey(`[Gitlab Integration] Unable to find related Merge Request Info`));
+    uxLog("log", this, c.grey(t('gitlabUnableToFindMrInfo')));
     return null;
   }
 
@@ -192,7 +192,7 @@ export class GitlabProvider extends GitProviderRoot {
     const mergeRequestIdRaw = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || prInfo?.idStr || null;
     const mergeRequestId = mergeRequestIdRaw ? parseInt(String(mergeRequestIdRaw), 10) : NaN;
     if (projectId == null || !Number.isFinite(mergeRequestId)) {
-      uxLog("log", this, c.grey("[Gitlab integration] No project and merge request, so no note posted..."));
+      uxLog("log", this, c.grey(t('gitlabNoProjectNoNote')));
       return { posted: false, providerResult: { info: "No related merge request" } };
     }
     const gitlabCiJobName = process.env.CI_JOB_NAME;
@@ -211,7 +211,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
     // Check for existing note from a previous run
-    uxLog("log", this, c.grey("[Gitlab integration] Listing Notes of Merge Request..."));
+    uxLog("log", this, c.grey(t('gitlabListingMrNotes')));
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
     let existingNoteId: number | null = null;
     for (const existingNote of existingNotes) {
@@ -223,7 +223,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
     // Create or update MR note
     if (existingNoteId) {
       // Update existing note
-      uxLog("log", this, c.grey("[Gitlab integration] Updating Merge Request Note on Gitlab..."));
+      uxLog("log", this, c.grey(t('gitlabUpdatingMrNote')));
       const gitlabEditNoteResult = await this.gitlabApi.MergeRequestNotes.edit(projectId, mergeRequestId, existingNoteId, { body: messageBody });
       const prResult: PullRequestMessageResult = {
         posted: gitlabEditNoteResult.id > 0,
@@ -232,7 +232,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       return prResult;
     } else {
       // Create new note if no existing not was found
-      uxLog("log", this, c.grey("[Gitlab integration] Adding Merge Request Note on Gitlab..."));
+      uxLog("log", this, c.grey(t('gitlabAddingMrNote')));
       const gitlabPostNoteResult = await this.gitlabApi.MergeRequestNotes.create(projectId, mergeRequestId, messageBody);
       const prResult: PullRequestMessageResult = {
         posted: gitlabPostNoteResult.id > 0,
@@ -255,12 +255,12 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       // Get project ID from the API configuration
       const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH;
       if (!projectId) {
-        uxLog("warning", this, c.yellow("[Gitlab Integration] CI_PROJECT_ID or CI_PROJECT_PATH environment variable is required"));
+        uxLog("warning", this, c.yellow(t('gitlabCiProjectIdRequired')));
         return [];
       }
 
       // Step 1: Find the last merged MR from currentBranch to targetBranch
-      uxLog("log", this, c.grey(`[Gitlab Integration] Finding last merged MR from ${currentBranchName} to ${targetBranchName}`));
+      uxLog("log", this, c.grey(t('gitlabFindingLastMergedMr', { sourceBranch: currentBranchName, targetBranch: targetBranchName })));
       const lastMergeToTarget = await this.findLastMergedMR(currentBranchName, targetBranchName, projectId);
 
       // Step 2: Get all commits in currentBranch since that merge (or all if no previous merge)
@@ -284,10 +284,10 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
             state: "merged",
             perPage: 100,
           });
-          uxLog("log", this, c.grey(`[Gitlab Integration] Fetching merged MRs for branch ${branchName}`));
+          uxLog("log", this, c.grey(t('gitlabFetchingMergedMrs', { branchName })));
           return mergedMRs;
         } catch (err) {
-          uxLog("warning", this, c.yellow(`[Gitlab Integration] Error fetching merged MRs for branch ${branchName}: ${String(err)}`));
+          uxLog("warning", this, c.yellow(t('gitlabErrorFetchingMergedMrsForBranch', { branchName, message: String(err) })));
           return [];
         }
       });
@@ -326,7 +326,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
         this.completePullRequestInfo(mr)
       );
     } catch (err) {
-      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}\n${err instanceof Error ? err.stack : ""}`));
+      uxLog("warning", this, c.yellow(t('gitlabErrorListingMrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })));
       return [];
     }
   }
@@ -350,7 +350,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
 
       return mergedMRs.length > 0 ? mergedMRs[0] : null;
     } catch (err) {
-      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error finding last merged MR from ${sourceBranch} to ${targetBranch}: ${String(err)}`));
+      uxLog("warning", this, c.yellow(t('gitlabErrorFindingLastMergedMr', { sourceBranch, targetBranch, message: String(err) })));
       return null;
     }
   }
@@ -378,7 +378,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       const commits = await this.gitlabApi!.Commits.all(projectId, options);
       return commits || [];
     } catch (err) {
-      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error fetching commits for branch ${branchName}: ${String(err)}`));
+      uxLog("warning", this, c.yellow(t('gitlabErrorFetchingCommits', { branchName, message: String(err) })));
       return [];
     }
   }

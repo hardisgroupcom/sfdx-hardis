@@ -9,6 +9,7 @@ import { resolveBooleanFlag } from "./providerConfigUtils.js";
 import { uxLog } from "../utils/index.js";
 import { AiProviderRoot } from "./aiProviderRoot.js";
 import { AiResponse } from "./index.js";
+import { t } from '../utils/i18n.js';
 
 export class CodexProvider extends AiProviderRoot {
   private static readonly DEFAULT_MODEL = "gpt-5.1-codex";
@@ -99,7 +100,7 @@ export class CodexProvider extends AiProviderRoot {
       return normalizedValue as CodexReasoningEffort;
     }
 
-    uxLog("warning", this, c.yellow(`[Codex] Unsupported reasoning effort "${rawValue}". Falling back to "${CodexProvider.DEFAULT_REASONING_EFFORT}".`));
+    uxLog("warning", this, c.yellow(t('codexUnsupportedReasoningEffort', { rawValue, defaultEffort: CodexProvider.DEFAULT_REASONING_EFFORT })));
     return CodexProvider.DEFAULT_REASONING_EFFORT;
   }
 
@@ -116,9 +117,9 @@ export class CodexProvider extends AiProviderRoot {
     }
 
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog("log", this, c.grey(`[Codex] Requesting the following prompt to ${this.modelName}${template ? " using template " + template : ""}:\n${promptText}`));
+      uxLog("log", this, c.grey(t('codexRequestingPromptDebug', { modelName: this.modelName, template: template ? " using template " + template : "", promptText })));
     } else {
-      uxLog("log", this, c.grey(`[Codex] Requesting prompt to ${this.modelName}${template ? " using template " + template : ""} (define DEBUG_PROMPTS=true to see details)`));
+      uxLog("log", this, c.grey(t('codexRequestingPrompt', { modelName: this.modelName, template: template ? " using template " + template : "" })));
     }
 
     this.incrementAiCallsNumber();
@@ -132,9 +133,9 @@ export class CodexProvider extends AiProviderRoot {
     const turn = await thread.run(promptText);
 
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog("log", this, c.grey("[Codex] Received prompt response from " + this.modelName + "\n" + JSON.stringify(turn, null, 2)));
+      uxLog("log", this, c.grey(t('codexReceivedResponseDebug', { modelName: this.modelName, response: JSON.stringify(turn, null, 2) })));
     } else {
-      uxLog("log", this, c.grey("[Codex] Received prompt response from " + this.modelName));
+      uxLog("log", this, c.grey(t('codexReceivedResponse', { modelName: this.modelName })));
     }
 
     const aiResponse: AiResponse = {

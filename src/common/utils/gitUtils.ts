@@ -186,7 +186,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
 
   // Unify and sort tickets
   const ticketsSorted: Ticket[] = sortArray(arrayUniqueByKey(tickets, 'id'), { by: ['id'], order: ['asc'] });
-  uxLog("log", this, c.grey(`[TicketProvider] Found ${ticketsSorted.length} tickets in commit bodies`));
+  uxLog("log", this, c.grey(t('ticketProviderFoundTickets', { count: ticketsSorted.length })));
   // Try to contact Ticketing servers to gather more info
   await TicketProvider.collectTicketsInfo(ticketsSorted);
 

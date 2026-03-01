@@ -18,7 +18,7 @@ const DEFAULT_PROVIDER_ORDER: ProviderKey[] = ["langchain", "codex", "openai", "
 export abstract class AiProvider {
   static async isAiAvailable(): Promise<boolean> {
     if (process.env?.DISABLE_AI === "true") {
-      uxLog("warning", this, c.yellow("[AI Provider] AI calls have been disabled using env var DISABLE_AI=true"))
+      uxLog("warning", this, c.yellow(t('aiProviderDisabled')))
       return false;
     }
     const instance = await this.getInstance();
@@ -83,7 +83,7 @@ export abstract class AiProvider {
           }
         }
       } catch (error) {
-        uxLog("warning", this, c.yellow(`[AI Provider] Unable to initialize ${provider} connector: ${(error as Error).message}`));
+        uxLog("warning", this, c.yellow(t('aiProviderUnableToInitialize', { provider, message: (error as Error).message })));
       }
     }
     return null;

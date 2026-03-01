@@ -8,6 +8,7 @@ import { extractRegexMatches, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";
 import { getConfig, getEnvVar } from "../../config/index.js";
 import { CommonPullRequestInfo } from "../gitProvider/index.js";
+import { t } from '../utils/i18n.js';
 
 export class JiraProvider extends TicketProviderRoot {
   private jiraClient: Version3Client | null = null;
@@ -30,7 +31,7 @@ export class JiraProvider extends TicketProviderRoot {
         },
       };
       this.isActive = true;
-      uxLog("log", this, c.grey("[JiraProvider] Using JIRA_EMAIL and JIRA_TOKEN for authentication"));
+      uxLog("log", this, c.grey(t('jiraProviderAuthEmailToken')));
     }
     // Personal access token
     else if (getEnvVar("JIRA_PAT")) {
@@ -40,7 +41,7 @@ export class JiraProvider extends TicketProviderRoot {
         },
       };
       this.isActive = true;
-      uxLog("log", this, c.grey("[JiraProvider] Using JIRA_PAT for authentication"));
+      uxLog("log", this, c.grey(t('jiraProviderAuthPat')));
     }
     if (this.isActive) {
       this.jiraClient = new Version3Client(jiraOptions);
@@ -121,7 +122,7 @@ export class JiraProvider extends TicketProviderRoot {
       uxLog(
         "action",
         this,
-        c.cyan(`[JiraProvider] Now trying to collect ${jiraTicketsNumber} tickets infos from JIRA server ` + this.jiraHost + " ..."),
+        c.cyan(t('jiraProviderCollectingTickets', { jiraTicketsNumber, jiraHost: this.jiraHost })),
       );
     }
     for (const ticket of tickets) {
@@ -130,7 +131,7 @@ export class JiraProvider extends TicketProviderRoot {
         try {
           ticketInfo = await this.jiraClient.issues.getIssue({ issueIdOrKey: ticket.id });
         } catch (e) {
-          uxLog("warning", this, c.yellow(`[JiraApi] Error while trying to get ${ticket.id} information: ${(e as Error).message}`));
+          uxLog("warning", this, c.yellow(t('jiraApiErrorGettingTicket', { ticketId: ticket.id, message: (e as Error).message })));
         }
         if (ticketInfo) {
           const body = this.getPlainTextFromDescription(ticketInfo?.fields?.description as Version3Models.Document | string | null | undefined);
@@ -155,17 +156,17 @@ export class JiraProvider extends TicketProviderRoot {
             ticket.authorLabel = preferredOwner.displayName || "";
           }
           if (ticket.subject === "") {
-            uxLog("warning", this, c.yellow("[JiraProvider] Unable to collect JIRA ticket info for " + ticket.id));
+            uxLog("warning", this, c.yellow(t('jiraProviderUnableToCollectTicket', { ticketId: ticket.id })));
             if (JSON.stringify(ticketInfo).includes("<!DOCTYPE html>")) {
-              uxLog("log", this, c.grey("[JiraProvider] This is probably a JIRA auth config issue, as HTML is returned"));
+              uxLog("log", this, c.grey(t('jiraProviderAuthConfigIssue')));
             } else {
               uxLog("log", this, c.grey(JSON.stringify(ticketInfo)));
             }
             ticket.foundOnServer = false;
           }
-          uxLog("log", this, c.grey("[JiraProvider] Collected data for ticket " + ticket.id));
+          uxLog("log", this, c.grey(t('jiraProviderCollectedTicket', { ticketId: ticket.id })));
         } else {
-          uxLog("warning", this, c.yellow("[JiraProvider] Unable to get JIRA issue " + ticket.id));
+          uxLog("warning", this, c.yellow(t('jiraProviderUnableToGetIssue', { ticketId: ticket.id })));
         }
       }
     }
@@ -176,7 +177,7 @@ export class JiraProvider extends TicketProviderRoot {
     if (!this.jiraClient) {
       return tickets;
     }
-    uxLog("action", this, c.cyan(`[JiraProvider] Try to post comments on ${tickets.length} tickets...`));
+    uxLog("action", this, c.cyan(t('jiraProviderPostingComments', { count: tickets.length })));
 
     const genericHtmlResponseError = "Probably config/access error since response is HTML";
     const orgMarkdown = JSON.parse(await getOrgMarkdown(org, "jira"));
@@ -214,7 +215,7 @@ export class JiraProvider extends TicketProviderRoot {
           }
           commentedTickets.push(ticket);
         } catch (e6) {
-          uxLog("warning", this, c.yellow(`[JiraProvider] Error while posting comment on ${ticket.id}: ${(e6 as any).message}`));
+          uxLog("warning", this, c.yellow(t('jiraProviderErrorPostingComment', { ticketId: ticket.id, message: (e6 as any).message })));
         }
 
         // Add deployment label to JIRA ticket
@@ -230,7 +231,7 @@ export class JiraProvider extends TicketProviderRoot {
           if ((e6 as any).message != null && (e6 as any).message.includes("<!doctype html>")) {
             (e6 as any).message = genericHtmlResponseError;
           }
-          uxLog("warning", this, c.yellow(`[JiraProvider] Error while adding label ${tag} on ${ticket.id}: ${(e6 as any).message}`));
+          uxLog("warning", this, c.yellow(t('jiraProviderErrorAddingLabel', { tag, ticketId: ticket.id, message: (e6 as any).message })));
         }
       }
     }
@@ -239,12 +240,12 @@ export class JiraProvider extends TicketProviderRoot {
       uxLog(
         "log",
         this,
-        c.grey(`[JiraProvider] Posted comments on ${commentedTickets.length} ticket(s): ` + commentedTickets.map((ticket) => ticket.id).join(", ")),
+        c.grey(t('jiraProviderPostedComments', { count: commentedTickets.length, tickets: commentedTickets.map((ticket) => ticket.id).join(", ") })),
       );
       uxLog(
         "log",
         this,
-        c.grey(`[JiraProvider] Added label ${tag} on ${taggedTickets.length} ticket(s): ` + taggedTickets.map((ticket) => ticket.id).join(", ")),
+        c.grey(t('jiraProviderAddedLabel', { tag, count: taggedTickets.length, tickets: taggedTickets.map((ticket) => ticket.id).join(", ") })),
       );
     }
     return tickets;

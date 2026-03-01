@@ -6,6 +6,7 @@ import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
 import { getEnvVar } from "../../config/index.js";
 import { resolveBooleanFlag } from "./providerConfigUtils.js";
+import { t } from '../utils/i18n.js';
 
 export class OpenAiProvider extends AiProviderRoot {
   protected openai: OpenAI;
@@ -59,10 +60,10 @@ export class OpenAiProvider extends AiProviderRoot {
     }
     const gptModel = this.modelName;
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog("log", this, c.grey(`[OpenAi] Requesting the following prompt to ${gptModel}${template ? ' using template ' + template : ''}:\n${promptText}`));
+      uxLog("log", this, c.grey(t('openaiRequestingPromptDebug', { modelName: gptModel, template: template ? ' using template ' + template : '', promptText })));
     }
     else {
-      uxLog("log", this, c.grey(`[OpenAi] Requesting prompt to ${gptModel}${template ? ' using template ' + template : ''} (define DEBUG_PROMPTS=true to see details)`));
+      uxLog("log", this, c.grey(t('openaiRequestingPrompt', { modelName: gptModel, template: template ? ' using template ' + template : '' })));
     }
     this.incrementAiCallsNumber();
     const completion = await this.openai.chat.completions.create({
@@ -70,10 +71,10 @@ export class OpenAiProvider extends AiProviderRoot {
       model: gptModel,
     });
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog("log", this, c.grey("[OpenAi] Received prompt response from " + gptModel + "\n" + JSON.stringify(completion, null, 2)));
+      uxLog("log", this, c.grey(t('openaiReceivedResponseDebug', { modelName: gptModel, response: JSON.stringify(completion, null, 2) })));
     }
     else {
-      uxLog("log", this, c.grey("[OpenAi] Received prompt response from " + gptModel));
+      uxLog("log", this, c.grey(t('openaiReceivedResponse', { modelName: gptModel })));
     }
     const aiResponse: AiResponse = {
       success: false,
