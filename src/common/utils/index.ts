@@ -23,6 +23,7 @@ import { LogType, WebSocketClient } from '../websocketClient.js';
 import moment from 'moment';
 import { writeXmlFile } from './xmlUtils.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
+import { t } from './i18n.js';
 
 let pluginsStdout: string | null = null;
 
@@ -1390,7 +1391,10 @@ export async function generateReports(
 }
 
 export function uxLog(logType: LogType, commandThis: any, textInit: string, sensitive = false) {
-  const text = textInit.includes('[sfdx-hardis]') ? textInit : '[sfdx-hardis]' + (textInit.startsWith('[') ? '' : ' ') + textInit;
+  const translatedTextInit = stripAnsi(textInit) === textInit ? t(textInit) : textInit;
+  const text = translatedTextInit.includes('[sfdx-hardis]')
+    ? translatedTextInit
+    : '[sfdx-hardis]' + (translatedTextInit.startsWith('[') ? '' : ' ') + translatedTextInit;
   // Console log
   if (commandThis?.ux) {
     commandThis.ux.log(text);
@@ -1413,10 +1417,10 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, sens
     }
     else {
       let isQuestion = false;
-      let textToSend = textInit;
-      if (textInit.includes("Look up in VS Code")) {
+      let textToSend = translatedTextInit;
+      if (translatedTextInit.includes("Look up in VS Code")) {
         // Remove "Look up in VS Code" and everything after
-        textToSend = textInit.split("Look up in VS Code")[0].trim();
+        textToSend = translatedTextInit.split("Look up in VS Code")[0].trim();
         isQuestion = true;
       }
 

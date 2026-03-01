@@ -60,6 +60,14 @@ docs/                 # Project documentation
 - Import statements should use `.js` extensions for compiled compatibility
 - Use `/* jscpd:ignore-start */` and `/* jscpd:ignore-end */` to ignore code duplication checks where appropriate
 
+### Translations and i18n
+
+- Strings displayed through `uxLog` must go through translation helpers.
+- For `prompts()` inputs, translate user-facing `description` and `choices` labels/titles.
+- Keep parser markers like `[marker]` hardcoded and concatenate them with translated text (do not translate marker tokens).
+- Keep technical terms (for example `merge`) untranslated.
+- For Salesforce vocabulary, use the official Salesforce translation.
+
 ### AI Features
 
 - Prompt templates are defined in `src/common/aiProvider/promptTemplates/`

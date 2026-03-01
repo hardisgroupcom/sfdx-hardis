@@ -4,6 +4,7 @@ import inquirer from "inquirer";
 import { SfError } from "@salesforce/core";
 import { isCI, uxLog } from "./index.js";
 import { WebSocketClient } from "../websocketClient.js";
+import { t } from "./i18n.js";
 
 export interface PromptsQuestion {
   message: string;
@@ -27,6 +28,24 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
   const questionsRaw = Array.isArray(options) ? options : [options];
   const questionsReformatted: any = [];
   for (const question of questionsRaw) {
+    if (typeof question.description === 'string') {
+      question.description = t(question.description);
+    }
+    if (Array.isArray(question.choices)) {
+      question.choices = question.choices.map((choice) => {
+        if (typeof choice === 'string') {
+          return t(choice);
+        }
+        if (choice && typeof choice === 'object') {
+          return {
+            ...choice,
+            title: typeof choice.title === 'string' ? t(choice.title) : choice.title,
+            description: typeof choice.description === 'string' ? t(choice.description) : choice.description,
+          };
+        }
+        return choice;
+      });
+    }
     if (!question.message.startsWith("🦙")) {
       question.message = "🦙 " + question.message;
     }
@@ -34,8 +53,8 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     if (question.type === "confirm") {
       question.type = "select";
       question.choices = [
-        { title: "✅ Yes", value: true },
-        { title: "❌ No", value: false },
+        { title: t("✅ Yes"), value: true },
+        { title: t("❌ No"), value: false },
       ];
       question.initial = question.initial === false ? 1 : 0;
     }
@@ -46,7 +65,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     // Add exit option when possible
     if (question.type === "select" && !WebSocketClient.isAliveWithLwcUI()) {
       question.choices = question.choices || [];
-      question.choices.push({ title: "⛔ Exit this script", value: "exitNow" });
+      question.choices.push({ title: t("⛔ Exit this script"), value: "exitNow" });
     }
     if (["select", "multiselect"].includes(question.type) && question.optionsPerPage == null) {
       question.optionsPerPage = 9999;
@@ -67,7 +86,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
       const answerValue = questionAnswer[answerKey];
       const answerLabel = getAnswerLabel(answerValue, question.choices);
       if (JSON.stringify(answerLabel).toLowerCase().includes("token")) {
-        uxLog("log", this, c.grey("Selection hidden because it contains sensitive information."));
+        uxLog("log", this, c.grey(t("Selection hidden because it contains sensitive information.")));
       } else {
         uxLog("log", this, c.grey(answerLabel));
       }
@@ -127,7 +146,7 @@ function checkStopPrompts(answers: any) {
 }
 
 function stopPrompt() {
-  uxLog("error", this, c.red("Script terminated at user request."));
+  uxLog("error", this, c.red(t("Script terminated at user request.")));
   // Send close client message with aborted status if WebSocket is alive
   if (WebSocketClient.isAlive()) {
     WebSocketClient.sendCloseClientMessage("aborted");
