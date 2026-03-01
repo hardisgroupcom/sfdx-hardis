@@ -1727,7 +1727,7 @@ export async function generateSSLCertificate(
   const targetKeyFile = path.join(folder, `${branchName}.key`);
   await fs.copy(path.join(tmpDir, 'server.key'), targetKeyFile);
   const encryptionKey = await encryptFile(targetKeyFile);
-  WebSocketClient.sendReportFileMessage(targetKeyFile, `Encrypted SSL certificate key for branch ${branchName}`, 'report');
+  WebSocketClient.sendReportFileMessage(targetKeyFile, t('encryptedSslCertificateKeyForBranch', { branchName }), 'report');
   // Copy certificate file in user home project
   const crtFile = path.join(os.homedir(), `${branchName}.crt`);
   await fs.copy(path.join(tmpDir, 'server.crt'), crtFile);
@@ -1792,7 +1792,7 @@ export async function generateSSLCertificate(
       c.grey(c.yellow(`Help to configure CI/CD variables: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`))
     );
     uxLog("warning", commandThis, c.yellow(t('ifYouAreUsingGithubOrAzure', { clientIdStringRaw, clientKeyStringRaw })));
-    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, "Help to configure CI variables", "docUrl");
+    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, t('helpToConfigureCiVariables'), "docUrl");
     await prompts({
       type: 'confirm',
       message: c.cyanBright(t('pleaseConfirmWhenVariablesHaveBeenSet')),

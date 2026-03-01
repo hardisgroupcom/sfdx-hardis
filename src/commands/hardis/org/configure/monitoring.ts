@@ -118,7 +118,7 @@ The command's technical implementation involves a series of Git operations, file
     }
     const preRequisitesUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
     uxLog("warning", this, c.yellow(t('monitoringPreRequisitesDocumentation') + c.bold(preRequisitesUrl)));
-    WebSocketClient.sendReportFileMessage(preRequisitesUrl, 'Monitoring pre-requisites', "docUrl");
+    WebSocketClient.sendReportFileMessage(preRequisitesUrl, t('monitoringPreRequisitesLabel'), "docUrl");
     // Confirm pre-requisites
     const confirmPreRequisites = await prompts({
       type: 'select',
@@ -266,13 +266,13 @@ The command's technical implementation involves a series of Git operations, file
       "warning",
       this,
       c.yellow(
-        t('scheduleMonitoringNightly')
+        t('scheduleMonitoringNightly', { branchName: branch })
       )
     );
     const scheduleMonitoringUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
     const msg = t('followScheduleInstructions') + ' ' + c.bold(scheduleMonitoringUrl);
     uxLog("warning", this, c.yellow(msg));
-    WebSocketClient.sendReportFileMessage(scheduleMonitoringUrl, 'Schedule sfdx-hardis monitoring', "actionUrl");
+    WebSocketClient.sendReportFileMessage(scheduleMonitoringUrl, t('scheduleMonitoringLabel'), "actionUrl");
     uxLog(
       "warning",
       this,
@@ -281,11 +281,11 @@ The command's technical implementation involves a series of Git operations, file
       )
     );
     const slackIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-slack/`;
-    WebSocketClient.sendReportFileMessage(slackIntegrationUrl, 'Slack integration', "docUrl");
+    WebSocketClient.sendReportFileMessage(slackIntegrationUrl, t('slackIntegrationLabel'), "docUrl");
     const teamsIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-ms-teams/`;
-    WebSocketClient.sendReportFileMessage(teamsIntegrationUrl, 'Teams integration', "docUrl");
+    WebSocketClient.sendReportFileMessage(teamsIntegrationUrl, t('teamsIntegrationLabel'), "docUrl");
     const grafanaIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-api/`;
-    WebSocketClient.sendReportFileMessage(grafanaIntegrationUrl, 'Grafana integration', "docUrl");
+    WebSocketClient.sendReportFileMessage(grafanaIntegrationUrl, t('grafanaIntegrationLabel'), "docUrl");
     uxLog("log", this, t('slackIntegrationDoc') + ' ' + slackIntegrationUrl);
     uxLog("log", this, t('teamsIntegrationDoc') + ' ' + teamsIntegrationUrl);
     uxLog("log", this, t('grafanaIntegrationDoc') + ' ' + grafanaIntegrationUrl);

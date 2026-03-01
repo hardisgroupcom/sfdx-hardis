@@ -111,7 +111,7 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
     if (deltaPackageXmlExists) {
       const deltaNumberOfItems = await countPackageXmlItems(deltaPackageXml);
       if (deltaNumberOfItems > 0) {
-        WebSocketClient.sendReportFileMessage(deltaPackageXml, `Git Delta package.xml (${deltaNumberOfItems})`, "report");
+        WebSocketClient.sendReportFileMessage(deltaPackageXml, t('gitDeltaPackageXmlCount', { count: deltaNumberOfItems }), "report");
       }
     }
     const deltaDestructiveChangesXml = path.join(outputDir, 'destructiveChanges', 'destructiveChanges.xml');
@@ -119,7 +119,7 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
     if (deltaDestructiveChangesXmlExists) {
       const deltaDestructiveChangesNumberOfItems = await countPackageXmlItems(deltaDestructiveChangesXml);
       if (deltaDestructiveChangesNumberOfItems > 0) {
-        WebSocketClient.sendReportFileMessage(deltaDestructiveChangesXml, `Git Delta destructiveChanges.xml (${deltaDestructiveChangesNumberOfItems})`, "report");
+        WebSocketClient.sendReportFileMessage(deltaDestructiveChangesXml, t('gitDeltaDestructiveChangesXmlCount', { count: deltaDestructiveChangesNumberOfItems }), "report");
       }
     }
   }

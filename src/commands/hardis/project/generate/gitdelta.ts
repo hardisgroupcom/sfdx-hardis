@@ -170,8 +170,8 @@ The command's technical implementation involves:
     uxLog("log", this, c.grey(t('generatedDiffDestructivechangesXmlAt', { diffDestructiveChangesXml: c.green(diffDestructiveChangesXml) })));
 
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(diffPackageXml, 'Git Delta package.xml', "report");
-      WebSocketClient.sendReportFileMessage(diffDestructiveChangesXml, 'Git Delta destructiveChanges.xml', "report");
+      WebSocketClient.sendReportFileMessage(diffPackageXml, t('gitDeltaPackageXmlLabel'), "report");
+      WebSocketClient.sendReportFileMessage(diffDestructiveChangesXml, t('gitDeltaDestructiveChangesXmlLabel'), "report");
     } else {
       WebSocketClient.requestOpenFile(diffPackageXml);
       WebSocketClient.requestOpenFile(diffDestructiveChangesXml);

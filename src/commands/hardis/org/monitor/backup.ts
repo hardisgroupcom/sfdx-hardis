@@ -472,7 +472,7 @@ If Flow history doc always display a single state, you probably need to update y
       uxLog(
         "log",
         this,
-        c.grey(t('packageSkipItemsFoundReducing'))
+        c.grey(t('packageSkipItemsFoundReducing', { packageXmlSkipItemsFile, packageXmlFullFile }))
       );
       this.packageXmlToRemove = packageXmlSkipItemsFile;
     }
@@ -483,7 +483,7 @@ If Flow history doc always display a single state, you probably need to update y
       uxLog(
         "log",
         this,
-        c.grey(t('monitoringBackupSkipMetadataTypesFound', { types: additionalSkipMetadataTypes }))
+        c.grey(t('monitoringBackupSkipMetadataTypesFound', { types: additionalSkipMetadataTypes, packageXmlFullFile }))
       );
       let packageSkipItems = {};
       if (fs.existsSync(this.packageXmlToRemove || '')) {

@@ -132,6 +132,8 @@ uxLog("warning", this, c.yellow(t('fileNotFound', { path: filePath })));
   - `"Error while deploying metadata: {{message}}"` → `errorWhileDeployingMetadata`
 - Keep keys unique across the whole file.
 - Always add the key to **both** `en.json` and `fr.json` simultaneously (French translation can mirror English when unsure, but should be translated).
+- Reuse existing translations when possible instead of creating new keys for similar messages.
+- Always keep translation json files well-formatted and sorted alphabetically by key for readability.
 
 ### Rules for translating strings
 
@@ -186,6 +188,14 @@ const res = await prompts({
   description: 'Choose the target environment',
   choices: [{ title: 'Production', value: 'prod' }],
 });
+```
+
+### sendReportFileMessage calls
+
+For every `sendReportFileMessage()` the second argument (message) must use `t()` if it contains user-visible text:
+
+```typescript
+WebSocketClient.sendReportFileMessage(slackIntegrationUrl, t('slackIntegration'), "docUrl");
 ```
 
 ## AI Integration Notes

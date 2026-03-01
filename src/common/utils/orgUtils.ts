@@ -532,7 +532,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
   if (updated) {
     uxLog("action", this, c.cyan(t('updatedPackageConfigurationInSfdxHardisYml')));
     const configFile = await setConfig('project', { installedPackages: projectPackages });
-    WebSocketClient.sendReportFileMessage(`${configFile!}#installedPackages`, "Package config in .sfdx-hardis.yml", "report");
+    WebSocketClient.sendReportFileMessage(`${configFile!}#installedPackages`, t('packageConfigInSfdxHardisYml'), "report");
   }
 }
 

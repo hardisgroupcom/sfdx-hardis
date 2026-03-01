@@ -1600,7 +1600,7 @@ export async function generateApexCoverageOutputFile(): Promise<void> {
       await fs.writeFile(coverageFileName, JSON.stringify(coverageObject, null, 2), 'utf8');
       uxLog("log", this, c.grey(t('writtenApexCoverageResultsInFile', { coverageFileName })));
       if (WebSocketClient.isAliveWithLwcUI()) {
-        WebSocketClient.sendReportFileMessage(coverageFileName, "Coverage Results JSON", "report")
+        WebSocketClient.sendReportFileMessage(coverageFileName, t('coverageResultsJson'), "report")
       }
     }
   } catch (e: any) {

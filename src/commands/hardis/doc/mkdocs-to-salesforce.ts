@@ -252,7 +252,7 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
         uxLog("warning", this, c.yellow(t('ifYouReInterestedContactUsAt', { bold: c.green(c.bold(CONSTANTS.CONTACT_URL)) })));
       }
       else {
-        uxLog("warning", this, c.yellow(t('manualDeployDocInstructions', { resName })));
+        uxLog("warning", this, c.yellow(t('manualDeployDocInstructions', { resName, mkDocsResourcePath, vfPageMetaFile, tabMetaFile, permissionSetFile })));
       }
     }
     else {

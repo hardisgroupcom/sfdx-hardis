@@ -214,7 +214,7 @@ The command's technical implementation involves a series of orchestrated steps:
     uxLog("action", this, c.cyan(`If your work is ${c.bold(t('completed'))}, create a ${c.bold(GitProvider.getMergeRequestName(this.gitUrl))}, otherwise push new commits to the ${c.green(this.currentBranch)} branch.`));
     let summaryMsg = c.grey("");
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(mergeRequestUrl, `Create ${GitProvider.getMergeRequestName(this.gitUrl)}`, 'actionUrl');
+      WebSocketClient.sendReportFileMessage(mergeRequestUrl, t('createMergeRequestLabel', { mergeRequestName: GitProvider.getMergeRequestName(this.gitUrl) }), 'actionUrl');
     }
     else {
       summaryMsg += c.grey(`- New ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}\n`);
@@ -232,7 +232,7 @@ The command's technical implementation involves a series of orchestrated steps:
     if (config.manualActionsFileUrl && config.manualActionsFileUrl !== '') {
       uxLog("warning", this, c.yellow(t('ifYouHavePreDeploymentOrPost', { config: c.green(config.manualActionsFileUrl) })));
       if (WebSocketClient.isAliveWithLwcUI()) {
-        WebSocketClient.sendReportFileMessage(config.manualActionsFileUrl, `Update Manual Actions file`, 'actionUrl');
+        WebSocketClient.sendReportFileMessage(config.manualActionsFileUrl, t('updateManualActionsFile'), 'actionUrl');
       }
     }
     else {
@@ -241,7 +241,7 @@ The command's technical implementation involves a series of orchestrated steps:
     if (!WebSocketClient.isAliveWithLwcUI()) {
       uxLog("log", this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(mergeRequestDoc)}`));
     }
-    WebSocketClient.sendReportFileMessage(mergeRequestDoc, `View ${GitProvider.getMergeRequestName(this.gitUrl)} documentation`, 'docUrl');
+    WebSocketClient.sendReportFileMessage(mergeRequestDoc, t('viewMergeRequestDocumentation', { mergeRequestName: GitProvider.getMergeRequestName(this.gitUrl) }), 'docUrl');
     // Return an object to be displayed with --json
     return { outputString: 'Saved the User Story' };
   }
@@ -306,8 +306,8 @@ The command's technical implementation involves a series of orchestrated steps:
         this,
         c.cyan(t('sourcesHaveBeenPulledNowStageAndCommit', { username: flags['target-org'].getUsername() }))
       );
-      WebSocketClient.sendReportFileMessage("workbench.view.scm", "Commit your retrieved files", "actionCommand");
-      WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, "Retrieve and Commit documentation", 'docUrl');
+      WebSocketClient.sendReportFileMessage("workbench.view.scm", t('commitYourRetrievedFiles'), "actionCommand");
+      WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, t('retrieveAndCommitDocumentation'), 'docUrl');
       return { outputString: 'Pull performed' };
     } else if (commitReadyRes.value === 'help') {
       // Show pull commit stage help

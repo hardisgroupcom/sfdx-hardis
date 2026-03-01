@@ -549,7 +549,7 @@ export class FilesExporter {
     const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentDocument Id,ContentVersion Id,Attachment Id,Validation Status,Download URL\n';
     await fs.writeFile(this.logFile, headers, 'utf8');
     uxLog("log", this, c.grey(t('csvLogFileInitialized', { logFile: this.logFile })));
-    WebSocketClient.sendReportFileMessage(this.logFile, "Exported files report (CSV)", 'report');
+    WebSocketClient.sendReportFileMessage(this.logFile, t('exportedFilesReportCsv'), 'report');
   }
 
   // Helper method to extract file information from output path
@@ -1003,7 +1003,7 @@ export class FilesImporter {
     const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentVersion Id\n';
     await fs.writeFile(this.logFile, headers, 'utf8');
     uxLog("log", this.commandThis, c.grey(t('csvLogFileInitialized', { logFile: this.logFile })));
-    WebSocketClient.sendReportFileMessage(this.logFile, "Imported files report (CSV)", 'report');
+    WebSocketClient.sendReportFileMessage(this.logFile, t('importedFilesReportCsv'), 'report');
   }
 
   // Helper method to extract file information from file path
