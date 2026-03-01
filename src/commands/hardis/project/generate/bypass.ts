@@ -532,7 +532,7 @@ The command's technical implementation involves:
   generateFiles(targetSObjects: { [key: string]: string }, targetAutomations: string[]): void {
     let counter = 0;
     const totalSteps = Object.keys(targetSObjects).length * targetAutomations.length;
-    WebSocketClient.sendProgressStartMessage("Generating bypass metadata files...", totalSteps);
+    WebSocketClient.sendProgressStartMessage(t('generatingBypassMetadataFiles'), totalSteps);
     for (const developerName of Object.keys(targetSObjects)) {
       counter++;
       WebSocketClient.sendProgressStepMessage(counter, totalSteps);

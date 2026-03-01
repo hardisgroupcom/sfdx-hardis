@@ -283,7 +283,7 @@ The command's technical implementation involves:
     }
 
     // Query objects to know the count of records, storage used and their year of created date
-    WebSocketClient.sendProgressStartMessage(`Calculating storage stats for ${selectedObjects.length} objects...`, selectedObjects.length);
+    WebSocketClient.sendProgressStartMessage(t('calculatingStorageStats', { count: selectedObjects.length }), selectedObjects.length);
     const objectStorageStats: any[] = [];
     let step = 0;
     for (const obj of selectedObjects) {

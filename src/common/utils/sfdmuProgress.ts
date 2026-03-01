@@ -172,12 +172,12 @@ export async function executeSfdmuCommandWithProgress(
 
     // Send progress start if WebSocket is active
     if (WebSocketClient.isAlive()) {
-      const operationLabel =
-        operationType === 'export' ? 'Exporting' :
-          operationType === 'import' ? 'Importing' :
-            operationType === 'delete' ? 'Deleting' :
-              'Processing';
-      WebSocketClient.sendProgressStartMessage(`${operationLabel} data...`, 0);
+      const msgKey =
+        operationType === 'export' ? 'sfdmuExportingData' :
+          operationType === 'import' ? 'sfdmuImportingData' :
+            operationType === 'delete' ? 'sfdmuDeletingData' :
+              'sfdmuProcessingData';
+      WebSocketClient.sendProgressStartMessage(t(msgKey), 0);
     }
 
     const proc = spawn(cmd, args, {

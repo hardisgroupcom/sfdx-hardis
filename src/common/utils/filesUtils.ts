@@ -201,7 +201,7 @@ export class FilesExporter {
     let actualTotalFiles = estimatedFilesCount; // Start with estimation, will be adjusted as we discover actual files
 
     // Start progress tracking with estimated total files count
-    WebSocketClient.sendProgressStartMessage('Exporting files', actualTotalFiles);
+    WebSocketClient.sendProgressStartMessage(t('exportingFiles'), actualTotalFiles);
 
     // Progress callback function with total adjustment capability
     const progressCallback = (filesCompleted: number, filesDiscoveredInChunk?: number) => {
@@ -1069,7 +1069,7 @@ export class FilesImporter {
     await this.initializeCsvLog();
 
     // Start progress tracking
-    WebSocketClient.sendProgressStartMessage("Importing files", this.totalFiles);
+    WebSocketClient.sendProgressStartMessage(t('importingFiles'), this.totalFiles);
     const soqlQueryWithLimit = await parseSoqlAndReapplyLimit(this.dtl.soqlQuery, undefined, this);
     // Query parent objects to find Ids corresponding to field value used as folder name
     const parentObjectsRes = await bulkQuery(soqlQueryWithLimit, this.conn);

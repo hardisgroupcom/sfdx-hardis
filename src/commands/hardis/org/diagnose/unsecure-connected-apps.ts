@@ -335,7 +335,7 @@ The command's technical implementation involves:
         });
         if (deleteTokensPromptRes?.value.length > 0) {
           const tokensToDelete = unsecuredOAuthTokens.filter(token => deleteTokensPromptRes.value.includes(token.AppName));
-          WebSocketClient.sendProgressStartMessage(`Deleting ${tokensToDelete.length} OAuth Tokens...`, tokensToDelete.length);
+          WebSocketClient.sendProgressStartMessage(t('deletingOAuthTokens', { count: tokensToDelete.length }), tokensToDelete.length);
           let counter = 0;
           for (const tokenToDelete of tokensToDelete) {
             const deleteTokenRecord = allOAuthTokens.find(t => t.Id === tokenToDelete["x-Token-Id"]);

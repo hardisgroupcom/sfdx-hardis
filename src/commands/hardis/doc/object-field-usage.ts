@@ -609,7 +609,7 @@ This command focuses on one or more sObjects and measures how many records popul
       }
     }
 
-    WebSocketClient.sendProgressStartMessage(`Describing ${uniqueObjects.length} objects...`);
+    WebSocketClient.sendProgressStartMessage(t('describingObjects', { count: uniqueObjects.length }));
     let counter = 0;
     for (const sObjectName of uniqueObjects) {
       uxLog("log", this, c.grey(t('describing', { sObjectName })));
@@ -697,7 +697,7 @@ This command focuses on one or more sObjects and measures how many records popul
     const aggregatedSkipped: SkippedFieldInfo[] = [];
     const totalRecordsMap: Record<string, number> = {};
 
-    WebSocketClient.sendProgressStartMessage(`Processing field usage for ${objectContexts.length} objects...`);
+    WebSocketClient.sendProgressStartMessage(t('processingFieldUsage', { count: objectContexts.length }));
     counter = 0;
     for (const context of objectContexts) {
       const { rows, totalRecords, skippedFields } = await this.processObjectFieldUsage(

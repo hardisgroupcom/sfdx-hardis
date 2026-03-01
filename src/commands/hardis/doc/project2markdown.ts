@@ -575,7 +575,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Apex documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingApexDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -634,7 +634,7 @@ ${Project2Markdown.htmlInstructions}
     }
 
     // Phase 1: Collect data and prepare work items
-    WebSocketClient.sendProgressStartMessage("Collecting Installed Packages data and preparing work items...", packages.length);
+    WebSocketClient.sendProgressStartMessage(t('collectingInstalledPackagesData'), packages.length);
     const workItems: { packageName: string; mdFile: string; pckg: any; packageMetadatas: string; tmpOutput: string; mdFileBad: string }[] = [];
     let counter = 0;
     for (const pckg of packages) {
@@ -666,7 +666,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Installed Packages documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingInstalledPackagesDocumentation'), workItems.length);
     counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -718,7 +718,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Lightning Pages documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingLightningPagesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -770,7 +770,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Profiles documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingProfilesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -821,7 +821,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Permission Sets documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingPermissionSetsDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -878,7 +878,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Permission Set Groups documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingPermissionSetGroupsDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -977,7 +977,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Assignment Rules documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingAssignmentRulesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -1034,7 +1034,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Approval Processes documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingApprovalProcessesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -1098,7 +1098,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating AutoResponse Rules documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingAutoResponseRulesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -1163,7 +1163,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Escalation Rules documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingEscalationRulesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -1237,7 +1237,7 @@ ${Project2Markdown.htmlInstructions}
     }
 
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Workflow Rules documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingWorkflowRulesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -1468,7 +1468,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Objects documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingObjectsDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -1635,7 +1635,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Flows documentation...", flowWorkItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingFlowsDocumentation'), flowWorkItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(flowWorkItems)
@@ -1684,7 +1684,7 @@ ${Project2Markdown.htmlInstructions}
       }
 
       // Phase 2: Generate history documentation with parallelization
-      WebSocketClient.sendProgressStartMessage("Generating Flows History documentation...", historyWorkItems.length);
+      WebSocketClient.sendProgressStartMessage(t('generatingFlowsHistoryDocumentation'), historyWorkItems.length);
       let historyCounter = 0;
       await PromisePool.withConcurrency(parallelism)
         .for(historyWorkItems)
@@ -1905,7 +1905,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Lightning Web Components documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingLightningWebComponentsDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)

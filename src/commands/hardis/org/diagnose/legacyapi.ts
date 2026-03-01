@@ -195,7 +195,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const eventLogRes: any = await soqlQuery(logCollectQuery, conn);
 
     // Collect legacy api calls from logs
-    WebSocketClient.sendProgressStartMessage("Downloading and analyzing log files...", eventLogRes.records.length);
+    WebSocketClient.sendProgressStartMessage(t('downloadingAndAnalyzingLogFiles'), eventLogRes.records.length);
     let counter = 0;
     for (const eventLogFile of eventLogRes.records) {
       await this.collectDeprecatedApiCalls(eventLogFile.LogFile, conn);
