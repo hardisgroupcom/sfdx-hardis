@@ -13,6 +13,7 @@ import moment from 'moment';
 import sortArray from 'sort-array';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -124,14 +125,14 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async findCronTriggers(conn: any) {
-    uxLog("action", this, c.cyan(`Retrieving CronTriggers from org ${conn.instanceUrl}...`));
+    uxLog("action", this, c.cyan(t('retrievingCrontriggersFromOrg', { conn: conn.instanceUrl })));
     const cronTriggersQuery = `SELECT Id, CronJobDetail.JobType, CronJobDetail.Name, State, NextFireTime FROM CronTrigger  WHERE State IN ('WAITING', 'ACQUIRED', 'EXECUTING', 'PAUSED', 'BLOCKED', 'PAUSED_BLOCKED')`;
     const cronTriggersResult = await soqlQuery(cronTriggersQuery, conn);
     return cronTriggersResult.records;
   }
 
   private displaySummaryOutput() {
-    uxLog("action", this, c.cyan(`Found ${this.unusedNumber} async Apex classes that might not be used anymore:`));
+    uxLog("action", this, c.cyan(t('foundAsyncApexClassesThatMightNot', { unusedNumber: this.unusedNumber })));
     let summary = `All async apex classes have been called during the latest ${this.lastNdays} days.`;
     if (this.unusedNumber > 0) {
       summary = `${this.unusedNumber} apex classes might not be used anymore.
@@ -206,7 +207,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
   }
 
   private async findLatestApexJobsForEachClass(conn: any) {
-    uxLog("action", this, c.cyan(`Retrieving latest Apex jobs from org ${conn.instanceUrl}...`));
+    uxLog("action", this, c.cyan(t('retrievingLatestApexJobsFromOrg', { conn: conn.instanceUrl })));
     const classIds = this.asyncClassList.map(apexClass => apexClass.Id);
     const query = `SELECT ApexClassId, Status, MAX(CreatedDate)` +
       ` FROM AsyncApexJob` +
@@ -217,7 +218,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
   }
 
   private async listAsyncApexClasses(conn: any) {
-    uxLog("action", this, c.cyan(`Retrieving async Apex classes from org ${conn.instanceUrl}...`));
+    uxLog("action", this, c.cyan(t('retrievingAsyncApexClassesFromOrg', { conn: conn.instanceUrl })));
     const classListRes = await soqlQueryTooling("SELECT Id, Name, Body FROM ApexClass WHERE ManageableState ='unmanaged' ORDER BY Name ASC", conn);
     const allClassList: any[] = classListRes.records || [];
     for (const classItem of allClassList) {

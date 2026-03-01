@@ -7,6 +7,7 @@ import { getPoolStorage, setPoolStorage } from '../../../../common/utils/poolUti
 import { getConfig } from '../../../../config/index.js';
 import { execCommand, uxLog } from '../../../../common/utils/index.js';
 import { authenticateWithSfdxUrlStore } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -83,8 +84,8 @@ The command's technical implementation involves:
       );
       return { outputString: 'Configuration file must contain a poolConfig property' };
     }
-    uxLog("action", this, c.cyan(`Reseting scratch org pool on org ${c.green(flags['target-dev-hub'].getUsername())}...`));
-    uxLog("log", this, c.grey('Pool config: ' + JSON.stringify(config.poolConfig)));
+    uxLog("action", this, c.cyan(t('resetingScratchOrgPoolOnOrg', { flags: c.green(flags['target-dev-hub'].getUsername()) })));
+    uxLog("log", this, c.grey(t('poolConfig') + JSON.stringify(config.poolConfig)));
 
     // Get pool storage
     const poolStorage = await getPoolStorage({

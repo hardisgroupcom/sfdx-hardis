@@ -6,6 +6,7 @@ import { execCommand, execSfdxJson, uxLog } from '../../../common/utils/index.js
 import { prompts } from '../../../common/utils/prompts.js';
 import c from 'chalk';
 import sortArray from 'sort-array';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -90,7 +91,7 @@ The command's technical implementation involves:
     const scratchToDeleteRes = await prompts({
       type: 'multiselect',
       name: 'value',
-      message: c.cyanBright('Please select the list of scratch orgs you want to delete'),
+      message: c.cyanBright(t('pleaseSelectTheListOfScratchOrgs')),
       description: 'Choose which scratch orgs to permanently delete (this action cannot be undone)',
       choices: scratchOrgChoices,
     });

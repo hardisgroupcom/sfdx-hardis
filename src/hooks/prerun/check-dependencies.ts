@@ -1,5 +1,6 @@
 /* jscpd:ignore-start */
 import { Hook } from '@oclif/core';
+import { t } from '../../common/utils/i18n.js';
 
 const hook: Hook<'prerun'> = async (options) => {
   // Skip hooks from other commands than hardis commands
@@ -55,13 +56,13 @@ const hook: Hook<'prerun'> = async (options) => {
         if (allConfigs['merge.tool'] == null) {
           await git({ output: true }).addConfig('merge.tool', 'vscode');
           await git({ output: true }).addConfig('mergetool.vscode.cmd', 'code --wait $MERGED');
-          uxLog("log", this, 'Defined VS Code as git merge tool.');
+          uxLog("log", this, t('definedVsCodeAsGitMergeTool'));
         }
         // Diff tool
         if (allConfigs['diff.tool'] == null) {
           await git({ output: true }).addConfig('diff.tool', 'vscode');
           await git({ output: true }).addConfig('difftool.vscode.cmd', 'code --wait --diff $LOCAL $REMOTE');
-          uxLog("log", this, 'Defined VS Code as git diff tool.');
+          uxLog("log", this, t('definedVsCodeAsGitDiffTool'));
         }
       });
   }
@@ -135,7 +136,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
           type: 'select',
           name: 'value',
           initial: true,
-          message: c.cyanBright('Your .gitignore is deprecated, do you agree to upgrade it ?'),
+          message: c.cyanBright(t('yourGitignoreIsDeprecatedDoYouAgree')),
           description: 'Updates your .gitignore file with latest sfdx-hardis best practices and removes duplicate entries',
           choices: [
             { title: 'Yes', value: 'true' },
@@ -180,7 +181,7 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
           type: 'select',
           name: 'value',
           initial: true,
-          message: c.cyanBright('Your .forceignore is deprecated, do you agree to upgrade it ?'),
+          message: c.cyanBright(t('yourForceignoreIsDeprecatedDoYouAgree')),
           description: 'Updates your .forceignore file with latest sfdx-hardis best practices and removes duplicate entries',
           choices: [
             { title: 'Yes', value: 'true' },

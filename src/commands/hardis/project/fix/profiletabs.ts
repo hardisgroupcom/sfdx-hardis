@@ -10,6 +10,7 @@ import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parseXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -95,14 +96,14 @@ The command's technical implementation involves:
       {
         type: 'multiselect',
         name: 'tabs',
-        message: 'Please select the tabs you want to display or hide in Profile(s)',
+        message: t('pleaseSelectTheTabsYouWantTo'),
         description: 'Choose which tabs should be configured for profiles',
         choices: choices,
       },
       {
         type: 'select',
         name: 'visibility',
-        message: 'Please select the flag you want the tabs to be applied on profiles you will select',
+        message: t('pleaseSelectTheFlagYouWantThe'),
         description: 'Choose the visibility setting for the selected tabs',
         placeholder: 'Select visibility',
         choices: [
@@ -178,7 +179,7 @@ The command's technical implementation involves:
       profile.Profile['tabVisibilities'] = sortedTabVisibility;
       // Update Profile XML File
       await writeXmlFile(profileFile, profile);
-      uxLog("log", this, c.grey('Updated ' + profileFile));
+      uxLog("log", this, c.grey(t('updated') + profileFile));
     }
 
     // Summary

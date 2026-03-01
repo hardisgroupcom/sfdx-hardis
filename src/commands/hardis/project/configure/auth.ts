@@ -14,6 +14,7 @@ import { getOrgAliasUsername, promptOrg } from '../../../../common/utils/orgUtil
 import { prompts } from '../../../../common/utils/prompts.js';
 import { checkConfig, getConfig, setConfig, setInConfigFile } from '../../../../config/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -99,7 +100,7 @@ prompts
     const { flags } = await this.parse(ConfigureAuth);
     const devHub = flags.devhub || false;
 
-    uxLog("action", this, c.cyan(`This command will configure the authentication between a git branch and ${devHub ? "Dev Hub" : "a Salesforce org"}.`));
+    uxLog("action", this, c.cyan(t('thisCommandWillConfigureTheAuthenticationBetween', { devHub: devHub ? "Dev Hub" : "a Salesforce org" })));
 
     // Ask user to login to org
     const prevUserName = devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername();
@@ -112,7 +113,7 @@ prompts
     await checkConfig(this);
 
     // Check if the user has changed. If yes, ask to run the command again
-    uxLog("action", this, c.cyan(`Checking if the org username has changed from ${c.bold(prevUserName)}...`));
+    uxLog("action", this, c.cyan(t('checkingIfTheOrgUsernameHasChanged', { prevUserName: c.bold(prevUserName) })));
     const configGetRes = await execSfdxJson('sf config get ' + (devHub ? 'target-dev-hub' : 'target-org'), this, {
       output: false,
       fail: false,
@@ -223,7 +224,7 @@ prompts
         const devHubAliasResponse = await prompts({
           type: 'text',
           name: 'value',
-          message: c.cyanBright('What is the alias you want to set for your Dev Hub ?'),
+          message: c.cyanBright(t('whatIsTheAliasYouWantTo')),
           description: 'Enter the alias for your Dev Hub',
           initial: config.projectName ? 'DevHub_' + config.projectName : 'DevHub',
           placeholder: 'Ex: MyCompany_DevHub',
@@ -263,8 +264,8 @@ prompts
     };
     await generateSSLCertificate(certName, certFolder, this, orgConn, sslGenOptions);
 
-    uxLog("action", this, c.green(`Branch ${devHub ? '(DevHub)' : branchName} successfully configured for authentication!`));
-    uxLog("warning", this, c.yellow('Make sure you have set the environment variables in your CI/CD platform'));
+    uxLog("action", this, c.green(t('branchSuccessfullyConfiguredForAuthentication', { devHub: devHub ? '(DevHub)' : branchName })));
+    uxLog("warning", this, c.yellow(t('makeSureYouHaveSetTheEnvironment')));
     uxLog("warning", this, c.yellow('Don\'t forget to commit the sfdx-hardis config file and the encrypted certificated key in git!'));
 
     // Return an object to be displayed with --json

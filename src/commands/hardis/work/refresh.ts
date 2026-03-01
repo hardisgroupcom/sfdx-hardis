@@ -7,6 +7,7 @@ import { execCommand, getCurrentGitBranch, git, gitFetch, gitPull, uxLog } from 
 import { forceSourcePull, forceSourcePush } from '../../../common/utils/deployUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { getConfig } from '../../../config/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -135,7 +136,7 @@ The command's technical implementation involves:
     }
     const branchRes = await prompts({
       type: 'select',
-      message: `Please select the branch that you want to merge in your current branch ${c.green(localBranch)}`,
+      message: t('pleaseSelectTheBranchThatYouWant', { localBranch: c.green(localBranch) }),
       name: 'value',
       description: 'Choose which branch to merge into your current working branch',
       placeholder: 'Select a branch to merge',
@@ -176,7 +177,7 @@ The command's technical implementation involves:
     if (this.noPull) {
       uxLog("action", this, c.cyan(`Skipped pull from scratch org`));
     } else {
-      uxLog("action", this, c.cyan(`Pulling sources from scratch org ${flags['target-org'].getUsername()}...`));
+      uxLog("action", this, c.cyan(t('pullingSourcesFromScratchOrg', { flags: flags['target-org'].getUsername() })));
       await forceSourcePull(flags['target-org'].getUsername(), this.debugMode);
     }
 
@@ -193,7 +194,7 @@ The command's technical implementation involves:
     const stashResult = await git({ output: true }).stash(['save', `[sfdx-hardis] Stash of ${localBranch}`]);
     const stashed = stashResult.includes('Saved working directory');
     // Pull most recent version of development branch
-    uxLog("action", this, c.cyan(`Pulling most recent version of remote branch ${c.green(this.mergeBranch)}...`));
+    uxLog("action", this, c.cyan(t('pullingMostRecentVersionOfRemoteBranch', { mergeBranch: c.green(this.mergeBranch) })));
     await gitFetch({ output: true });
     await git({ output: true }).checkout(this.mergeBranch || '');
     const pullRes = await gitPull({ output: true });
@@ -210,7 +211,7 @@ The command's technical implementation involves:
     // Merge into current branch if necessary
     if (pullRes.summary.changes > 0 || mergeRef !== localRef) {
       // Create new commit from merge
-      uxLog("action", this, c.cyan(`Creating a merge commit of ${c.green(this.mergeBranch)} within ${c.green(localBranch)}...`));
+      uxLog("action", this, c.cyan(t('creatingMergeCommitOfWithin', { mergeBranch: c.green(this.mergeBranch), localBranch: c.green(localBranch) })));
       let mergeSummary = await git({ output: true }).merge([this.mergeBranch || '']);
       while (mergeSummary.failed) {
         const mergeResult = await prompts({
@@ -230,7 +231,7 @@ The command's technical implementation involves:
           ],
         });
         if (mergeResult.value === false) {
-          uxLog("other", this, 'Refresh script stopped by user');
+          uxLog("other", this, t('refreshScriptStoppedByUser'));
           process.exit(0);
         }
         mergeSummary = await git({ output: true }).merge(['--continue']);
@@ -244,7 +245,7 @@ The command's technical implementation involves:
     }
     // Restoring stash
     if (stashed) {
-      uxLog("action", this, c.cyan(`Restoring stash into your local branch ${c.green(localBranch)}...`));
+      uxLog("action", this, c.cyan(t('restoringStashIntoYourLocalBranch', { localBranch: c.green(localBranch) })));
       await git({ output: true }).stash(['pop']);
     }
 

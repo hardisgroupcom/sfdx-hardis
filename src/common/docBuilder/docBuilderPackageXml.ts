@@ -7,6 +7,7 @@ import { countPackageXmlItems, parsePackageXmlFile } from '../utils/xmlUtils.js'
 import { SalesforceSetupUrlBuilder } from './docUtils.js';
 import { CONSTANTS } from '../../config/index.js';
 import { prettifyFieldName } from '../utils/flowVisualiser/nodeFormatUtils.js';
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderPackageXML {
 
@@ -111,7 +112,7 @@ export class DocBuilderPackageXML {
 
     // Write output file
     await fs.writeFile(outputFile, mdLines.join("\n") + "\n");
-    uxLog("success", this, c.green(`Successfully generated ${path.basename(inputFile)} documentation into ${outputFile}`));
+    uxLog("success", this, c.green(t('successfullyGeneratedDocumentationInto', { path: path.basename(inputFile), outputFile })));
 
     const jsonTree = await this.generateJsonTree(metadataTypes, packageXmlContent);
     if (jsonTree) {
@@ -119,7 +120,7 @@ export class DocBuilderPackageXML {
       const jsonFile = `./docs/json/root-${packageXmlFileName}.json`;
       await fs.ensureDir(path.dirname(jsonFile));
       await fs.writeFile(jsonFile, JSON.stringify(jsonTree, null, 2));
-      uxLog("success", this, c.green(`Successfully generated ${packageXmlFileName} JSON into ${jsonFile}`));
+      uxLog("success", this, c.green(t('successfullyGeneratedJsonInto', { packageXmlFileName, jsonFile })));
     }
 
     return outputFile;

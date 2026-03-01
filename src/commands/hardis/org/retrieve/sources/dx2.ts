@@ -10,6 +10,7 @@ import { execCommand, uxLog } from '../../../../../common/utils/index.js';
 import { promptOrg } from '../../../../../common/utils/orgUtils.js';
 import { prompts } from '../../../../../common/utils/prompts.js';
 import { PACKAGE_ROOT_DIR } from '../../../../../settings.js';
+import { t } from '../../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -97,7 +98,7 @@ The command's technical implementation involves:
     // Prompt for package.xml if not sent
     if (packageXml === null) {
       const packageXmlRes = await prompts({
-        message: c.cyanBright('Please input the path to the package.xml file'),
+        message: c.cyanBright(t('pleaseInputThePathToThePackage')),
         description: 'Specify the package.xml file that defines which metadata to retrieve from the org',
         placeholder: 'Ex: manifest/package.xml',
         type: 'text',
@@ -115,7 +116,7 @@ The command's technical implementation involves:
       const packageXmlTmp = path.join(process.cwd(), 'tmp', 'retrievePackage.xml');
       await fs.ensureDir(path.dirname(packageXmlTmp));
       await fs.copy(packageXml || '', packageXmlTmp);
-      uxLog("log", this, c.grey(`Copied ${packageXml} to ${packageXmlTmp}`));
+      uxLog("log", this, c.grey(t('copiedTo', { packageXml, packageXmlTmp })));
       packageXml = path.relative(process.cwd(), packageXmlTmp);
     }
 

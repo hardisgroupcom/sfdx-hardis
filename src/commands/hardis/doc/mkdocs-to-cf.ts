@@ -13,6 +13,7 @@ import which from 'which';
 import { generateMkDocsHTML } from '../../../common/docBuilder/docUtils.js';
 import { UtilsAi } from '../../../common/aiProvider/utils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
+import { t } from '../../../common/utils/i18n.js';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -177,14 +178,14 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
       apiEmail: this.apiEmail,
       apiToken: this.apiToken,
     });
-    uxLog("log", this, c.grey("Cloudflare client info found."));
+    uxLog("log", this, c.grey(t('cloudflareClientInfoFound')));
   }
 
   private async ensureCloudflarePagesProject() {
-    uxLog("action", this, c.cyan("Checking Cloudflare Pages project."));
+    uxLog("action", this, c.cyan(t('checkingCloudflarePagesProject')));
     try {
       this.pagesProject = await this.client.pages.projects.get(this.pagesProjectName, { account_id: this.accountId || "" });
-      uxLog("action", this, c.cyan("Cloudflare Pages project found: " + this.pagesProjectName));
+      uxLog("action", this, c.cyan(t('cloudflarePagesProjectFound') + this.pagesProjectName));
     } catch (e: any) {
       uxLog("log", this, c.grey(e.message));
       this.pagesProject = await this.client.pages.projects.create({
@@ -192,17 +193,17 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
         account_id: this.accountId || "",
         production_branch: this.currentGitBranch || "main",
       });
-      uxLog("success", this, c.green("Cloudflare Pages project created: " + this.pagesProjectName));
+      uxLog("success", this, c.green(t('cloudflarePagesProjectCreated') + this.pagesProjectName));
     }
     uxLog("log", this, c.grey(JSON.stringify(this.pagesProject, null, 2)));
   }
 
   private async ensureCloudflareAccessPolicy() {
-    uxLog("action", this, c.cyan("Checking Cloudflare Access policy."));
+    uxLog("action", this, c.cyan(t('checkingCloudflareAccessPolicy')));
     const accessPolicies = await this.client.zeroTrust.access.policies.list({ account_id: this.accountId || "" });
     this.accessPolicy = accessPolicies.result.find((p: Cloudflare.ZeroTrust.Access.Policies.PolicyGetResponse) => p.name === this.accessPolicyName) || null;
     if (this.accessPolicy) {
-      uxLog("action", this, c.cyan("Cloudflare policy found: " + this.accessPolicyName));
+      uxLog("action", this, c.cyan(t('cloudflarePolicyFound') + this.accessPolicyName));
     }
     else {
       const loginMethods = await this.client.zeroTrust.identityProviders.list({ account_id: this.accountId || "" });
@@ -221,17 +222,17 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
           { login_method: { id: defaultLoginMethod.id } }
         ],
       } as any);
-      uxLog("success", this, c.green("Cloudflare policy created: " + this.accessPolicyName + "."));
+      uxLog("success", this, c.green(t('cloudflarePolicyCreated') + this.accessPolicyName + "."));
     }
     uxLog("log", this, c.grey(JSON.stringify(this.accessPolicy, null, 2)));
   }
 
   private async ensureCloudflareAccessApplication() {
-    uxLog("action", this, c.cyan("Checking Cloudflare access application."));
+    uxLog("action", this, c.cyan(t('checkingCloudflareAccessApplication')));
     const accessApplications = await this.client.zeroTrust.access.applications.list({ account_id: this.accountId || "" });
     this.accessApp = (accessApplications.result.find((a: Cloudflare.ZeroTrust.Access.Applications.ApplicationListResponse) => a.name === this.pagesProject?.domains?.[0]) || null) as any;
     if (this.accessApp) {
-      uxLog("action", this, c.cyan("Cloudflare access application found: " + this.pagesProject?.domains?.[0]));
+      uxLog("action", this, c.cyan(t('cloudflareAccessApplicationFound') + this.pagesProject?.domains?.[0]));
     }
     else {
       this.accessApp = (await this.client.zeroTrust.access.applications.create({
@@ -250,15 +251,15 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
           }
         ]
       }) as Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication);
-      uxLog("success", this, c.green("Cloudflare access application created: " + this.pagesProject?.domains?.[0] + "."));
+      uxLog("success", this, c.green(t('cloudflareAccessApplicationCreated') + this.pagesProject?.domains?.[0] + "."));
     }
     uxLog("log", this, c.grey(JSON.stringify(this.accessApp, null, 2)));
   }
 
   private async ensureCloudflareAccessApplicationPolicy() {
-    uxLog("action", this, c.cyan("Checking Cloudflare access application policy."));
+    uxLog("action", this, c.cyan(t('checkingCloudflareAccessApplicationPolicy')));
     if (this.accessApp?.policies?.length && this.accessApp.policies.find(p => p.id === this.accessPolicy?.id)) {
-      uxLog("action", this, c.cyan(`Access Application ${this.accessApp.name} already has the policy ${this.accessPolicy?.name}.`));
+      uxLog("action", this, c.cyan(t('accessApplicationAlreadyHasThePolicy', { accessApp: this.accessApp.name, accessPolicy: this.accessPolicy?.name })));
     }
     else {
       const policiesWithExtra = this.extraPolicyIds.concat([this.accessPolicy?.id || ""]).filter(p => p);
@@ -269,13 +270,13 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
         type: this.accessApp?.type,
         policies: policiesWithExtra,
       } as Cloudflare.ZeroTrust.Access.ApplicationUpdateParams)) as Cloudflare.ZeroTrust.Access.Applications.ApplicationGetResponse.SelfHostedApplication;
-      uxLog("success", this, c.green(`Access Application ${this.accessApp?.name} updated with the policy ${this.accessPolicy?.name}.`));
+      uxLog("success", this, c.green(t('accessApplicationUpdatedWithThePolicy', { accessApp: this.accessApp?.name, accessPolicy: this.accessPolicy?.name })));
     }
     uxLog("log", this, c.grey(JSON.stringify(this.accessApp, null, 2)));
   }
 
   private async uploadHtmlPages() {
-    uxLog("action", this, c.cyan("Uploading HTML pages to Cloudflare Pages."));
+    uxLog("action", this, c.cyan(t('uploadingHtmlPagesToCloudflarePages')));
     let wranglerCommand = `wrangler pages deploy ./site --project-name="${this.pagesProjectName}" --branch=${this.currentGitBranch}`;
     const isWranglerAvailable = await which("wrangler", { nothrow: true });
     if (!isWranglerAvailable) {

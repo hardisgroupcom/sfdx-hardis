@@ -6,6 +6,7 @@ import c from 'chalk';
 import sortArray from 'sort-array';
 import { generateReports, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../../../common/utils/apiUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 const REF_METADATA_COMPONENT_BATCH_SIZE = Number(process.env.METADATA_COMPONENT_BATCH_SIZE ?? 20);
 
@@ -194,7 +195,7 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
       order: ['asc', 'asc', 'asc'],
     });
 
-    uxLog("action", this, c.cyan(`Found ${resultSorted.length} custom field usage records.`));
+    uxLog("action", this, c.cyan(t('foundCustomFieldUsageRecords', { resultSorted: resultSorted.length })));
     uxLogTable(this, rows);
 
     const reportFiles = await generateReports(resultSorted, columns, this, {

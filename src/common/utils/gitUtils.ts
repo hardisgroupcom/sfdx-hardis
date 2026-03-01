@@ -27,6 +27,7 @@ import { NotifProvider, UtilsNotifs } from '../notifProvider/index.js';
 import { setConnectionVariables } from './orgUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { countPackageXmlItems } from './xmlUtils.js';
+import { t } from './i18n.js';
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
   const gitUrl = await getGitRepoUrl() || '';
@@ -37,7 +38,7 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
   const availableTargetBranches = config.availableTargetBranches || null;
   // There is only once choice so return it
   if (availableTargetBranches === null && config.developmentBranch) {
-    uxLog("action", this, c.cyan(`Automatically selected target branch is ${c.green(config.developmentBranch)}`));
+    uxLog("action", this, c.cyan(t('automaticallySelectedTargetBranchIs', { config: c.green(config.developmentBranch) })));
     return config.developmentBranch;
   }
 
@@ -134,7 +135,7 @@ export function setPullRequestData(prData: any): void {
 }
 
 export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPullRequestInfo | null = null) {
-  uxLog("action", this, c.cyan('Computing commits summary...'));
+  uxLog("action", this, c.cyan(t('computingCommitsSummary')));
   const currentGitBranch = await getCurrentGitBranch();
   let logResults: (DefaultLogFields & ListLogLine)[] = [];
   let previousTargetBranchCommit = "";
@@ -282,7 +283,7 @@ export async function buildCheckDeployCommitSummary() {
     };
     setPullRequestData(prDataCommitsSummary);
   } catch (e3) {
-    uxLog("warning", this, c.yellow('Unable to compute git summary:\n' + e3));
+    uxLog("warning", this, c.yellow(t('unableToComputeGitSummary') + e3));
   }
 }
 
@@ -324,7 +325,7 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
   const notifButtons = await getNotificationButtons();
   if (pullRequestInfo) {
     if (debugMode) {
-      uxLog("error", this, c.grey('PR info:\n' + JSON.stringify(pullRequestInfo)));
+      uxLog("error", this, c.grey(t('prInfo') + JSON.stringify(pullRequestInfo)));
     }
     const prAuthor = pullRequestInfo?.authorName;
     notifMessage += `\nRelated: <${pullRequestInfo.webUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : '');

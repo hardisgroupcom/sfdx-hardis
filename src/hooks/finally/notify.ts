@@ -1,4 +1,5 @@
 import { Hook } from '@oclif/core';
+import { t } from '../../common/utils/i18n.js';
 
 // The use of this method is deprecated: use NotifProvider.sendNotification 😊
 
@@ -32,7 +33,7 @@ const hook: Hook<"finally"> = async (options) => {
       globalThis.webSocketClient.dispose(status, error);
     } catch (e) {
       if (options?.Command?.flags?.debug) {
-        uxLog("warning", this, c.yellow('Unable to close websocketClient.js. ') + '\n' + (e as Error).message);
+        uxLog("warning", this, c.yellow(t('unableToCloseWebsocketclientJs')) + '\n' + (e as Error).message);
       }
     }
     globalThis.webSocketClient = null;
@@ -40,7 +41,7 @@ const hook: Hook<"finally"> = async (options) => {
 
   const aiCounter = globalThis?.aiCallsNumber || 0;
   if (aiCounter > 0) {
-    uxLog("log", this, c.grey(c.italic(`AI prompts API calls: ${aiCounter}.`)));
+    uxLog("log", this, c.grey(c.italic(t('aiPromptsApiCalls', { aiCounter }))));
   }
   elapseEnd(`${options?.Command?.id} execution time`);
 };

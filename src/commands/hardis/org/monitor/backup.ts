@@ -20,6 +20,7 @@ import MkDocsToCloudflare from '../../doc/mkdocs-to-cf.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../../common/utils/gitUtils.js';
 import { updateSfdxProjectApiVersion } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -322,10 +323,10 @@ If Flow history doc always display a single state, you probably need to update y
         const docLanguages = (getEnvVar('SFDX_DOC_LANGUAGES') || getEnvVar('PROMPTS_LANGUAGE') || config.promptsLanguage || 'en').split(",").reverse(); // Can be 'fr,en,de' for example
         const prevPromptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
         for (const langKey of docLanguages) {
-          uxLog("action", this, c.cyan("Generating doc in language " + c.bold(langKey)));
+          uxLog("action", this, c.cyan(t('generatingDocInLanguage') + c.bold(langKey)));
           process.env.PROMPTS_LANGUAGE = langKey;
           await Project2Markdown.run(["--diff-only", "--with-history"]);
-          uxLog("action", this, c.cyan("Documentation generated from retrieved sources. If you want to skip it, use option --skip-doc"));
+          uxLog("action", this, c.cyan(t('documentationGeneratedFromRetrievedSourcesIfYou')));
 
           if (config.docDeployToOrg || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_ORG === "true") {
             await MkDocsToSalesforce.run(["--type", "Monitoring"]);
@@ -336,7 +337,7 @@ If Flow history doc always display a single state, you probably need to update y
         }
         process.env.PROMPTS_LANGUAGE = prevPromptsLanguage;
       } catch (e: any) {
-        uxLog("warning", this, c.yellow("Error while generating project documentation " + e.message));
+        uxLog("warning", this, c.yellow(t('errorWhileGeneratingProjectDocumentation') + e.message));
         uxLog("log", this, c.grey(e.stack));
       }
     }
@@ -414,13 +415,13 @@ If Flow history doc always display a single state, you probably need to update y
     const packageXmlChunkFiles: string[] = [];
     const chunksFolder = path.join("manifest", "chunks");
     await fs.ensureDir(chunksFolder);
-    uxLog("action", this, c.cyan(`Building package.xml files for ${this.extractPackageXmlChunks.length} chunks...`));
+    uxLog("action", this, c.cyan(t('buildingPackageXmlFilesForChunks', { extractPackageXmlChunks: this.extractPackageXmlChunks.length })));
     for (const packageChunk of this.extractPackageXmlChunks) {
       pos++;
       const packageChunkFileName = path.join(chunksFolder, "chunk-" + pos + ".xml");
       await writePackageXmlFile(packageChunkFileName, packageChunk);
       packageXmlChunkFiles.push(packageChunkFileName);
-      uxLog("log", this, c.grey(`Chunk ${pos} -> ${packageChunkFileName}:`))
+      uxLog("log", this, c.grey(t('chunk', { pos, packageChunkFileName })))
       for (const mdType of Object.keys(packageChunk)) {
         uxLog("log", this, c.grey(`- ${mdType} (${packageChunk?.[mdType]?.length || 0} elements)`));
       }
@@ -428,12 +429,12 @@ If Flow history doc always display a single state, you probably need to update y
     }
 
     // Retrieve metadatas for each chunk
-    uxLog("action", this, c.cyan(`Starting the retrieve of ${packageXmlChunkFiles.length} chunks...`));
+    uxLog("action", this, c.cyan(t('startingTheRetrieveOfChunks', { packageXmlChunkFiles: packageXmlChunkFiles.length })));
     let posChunk = 0;
     for (const packageXmlChunkFile of packageXmlChunkFiles) {
       posChunk++;
       if (this.startChunk > posChunk) {
-        uxLog("log", this, c.grey(`Skipping chunk ${posChunk} (${packageXmlChunkFile}) according to --start-chunk option`));
+        uxLog("log", this, c.grey(t('skippingChunkAccordingToStartChunkOption', { posChunk, packageXmlChunkFile })));
         continue;
       }
       await this.retrievePackageXml(packageXmlChunkFile, flags);
@@ -452,7 +453,7 @@ If Flow history doc always display a single state, you probably need to update y
     const packageXmlBackUpItemsFile = await this.buildFilteredManifestsForRetrieve(packageXmlFullFile);
 
     // Apply filters to package.xml
-    uxLog("action", this, c.cyan(`Reducing content of ${packageXmlFullFile} to generate ${packageXmlBackUpItemsFile} ...`));
+    uxLog("action", this, c.cyan(t('reducingContentOfToGenerate', { packageXmlFullFile, packageXmlBackUpItemsFile })));
     await filterPackageXml(packageXmlFullFile, packageXmlBackUpItemsFile, {
       removeNamespaces: this.namespaces,
       removeStandard: true,
@@ -504,7 +505,7 @@ If Flow history doc always display a single state, you probably need to update y
   private async retrievePackageXml(packageXmlBackUpItemsFile: string, flags: any) {
     const nbRetrievedItems = await countPackageXmlItems(packageXmlBackUpItemsFile);
     const packageXml = await parsePackageXmlFile(packageXmlBackUpItemsFile);
-    uxLog("action", this, c.cyan(`Run the retrieve command for ${path.basename(packageXmlBackUpItemsFile)}, containing ${nbRetrievedItems} items:`));
+    uxLog("action", this, c.cyan(t('runTheRetrieveCommandForContainingItems', { path: path.basename(packageXmlBackUpItemsFile), nbRetrievedItems })));
     const mdTypesString = Object.keys(packageXml).map((mdType) => {
       return `- ${mdType} (${packageXml?.[mdType]?.length || 0})`;
     }).join('\n');
@@ -521,7 +522,7 @@ If Flow history doc always display a single state, you probably need to update y
       );
     } catch (e) {
       const failedPackageXmlContent = await fs.readFile(packageXmlBackUpItemsFile, 'utf8');
-      uxLog("warning", this, c.yellow('BackUp package.xml that failed to be retrieved:\n' + c.grey(failedPackageXmlContent)));
+      uxLog("warning", this, c.yellow(t('backupPackageXmlThatFailedToBe') + c.grey(failedPackageXmlContent)));
       if (this.full) {
         uxLog(
           "error",

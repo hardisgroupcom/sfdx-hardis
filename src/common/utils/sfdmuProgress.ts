@@ -3,6 +3,7 @@ import * as readline from 'readline';
 import c from 'chalk';
 import { WebSocketClient } from '../websocketClient.js';
 import { uxLog } from './index.js';
+import { t } from './i18n.js';
 
 export interface SfdmuProgressStats {
   totalRecordsProcessed: number;
@@ -166,7 +167,7 @@ export async function executeSfdmuCommandWithProgress(
     let lastReportedPhase = '';
 
     if (commandThis) {
-      uxLog("log", commandThis, c.grey(`Executing: ${command}`));
+      uxLog("log", commandThis, c.grey(t('executing', { command })));
     }
 
     // Send progress start if WebSocket is active

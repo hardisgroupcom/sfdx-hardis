@@ -13,6 +13,7 @@ import { managePackageConfig } from '../../../common/utils/orgUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -156,7 +157,7 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
     // Install packages
     await MetadataUtils.installPackagesOnOrg(packagesToInstallCompleted, null, this, 'install');
     const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
-    uxLog("other", this, c.italic(c.grey('New package list on org:\n' + JSON.stringify(installedPackages, null, 2))));
+    uxLog("other", this, c.italic(c.grey(t('newPackageListOnOrg') + JSON.stringify(installedPackages, null, 2))));
 
     if (!isCI) {
       // Manage package install config storage

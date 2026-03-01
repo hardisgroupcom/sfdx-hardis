@@ -12,6 +12,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { Config } from '@oclif/core';
 import { readMkDocsFile, writeMkDocsFile } from '../../../../common/docBuilder/docUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -118,7 +119,7 @@ The command's technical implementation involves:
     const mkdocsYmlFileExists = fs.existsSync(mkdocsYmlFile);
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/mkdocs', '.'), process.cwd(), { overwrite: false });
     if (!mkdocsYmlFileExists) {
-      uxLog("log", this, c.grey('Base mkdocs files copied into your SF CLI plugin folder.'));
+      uxLog("log", this, c.grey(t('baseMkdocsFilesCopiedIntoYourSf')));
       uxLog(
         "warning",
         this,
@@ -270,6 +271,6 @@ The command's technical implementation involves:
     await fs.ensureDir(path.dirname(mdFileName));
     const yamlString = lines.join('\n') + '\n';
     await fs.writeFile(mdFileName, yamlString);
-    uxLog("log", this, c.grey('Generated file ' + c.bold(mdFileName) + '.'));
+    uxLog("log", this, c.grey(t('generatedFile') + c.bold(mdFileName) + '.'));
   }
 }

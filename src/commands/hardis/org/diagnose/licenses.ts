@@ -8,6 +8,7 @@ import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { NotifProvider } from '../../../../common/notifProvider/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -145,7 +146,7 @@ The command's technical implementation involves:
     this.licenses.push(...pslLicenses);
 
     sortCrossPlatform(usedLicenses);
-    uxLog("action", this, c.cyan('Used licenses: ' + usedLicenses.join(', ')));
+    uxLog("action", this, c.cyan(t('usedLicenses') + usedLicenses.join(', ')));
     uxLogTable(this, this.licenses);
 
 

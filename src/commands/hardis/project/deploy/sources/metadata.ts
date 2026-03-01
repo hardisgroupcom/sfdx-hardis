@@ -10,6 +10,7 @@ import { MetadataUtils } from '../../../../../common/metadata-utils/index.js';
 import { createTempDir, execCommand, uxLog } from '../../../../../common/utils/index.js';
 import { deployDestructiveChanges, deployMetadatas } from '../../../../../common/utils/deployUtils.js';
 import { getConfig } from '../../../../../config/index.js';
+import { t } from '../../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -78,8 +79,8 @@ export default class DxSources extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DxSources);
-    uxLog("error", this, c.red('This command is deprecated and will be removed in January 2025'));
-    uxLog("error", this, c.red('Nobody used Metadata format anymore 😊'));
+    uxLog("error", this, c.red(t('thisCommandIsDeprecatedAndWillBe')));
+    uxLog("error", this, c.red(t('nobodyUsedMetadataFormatAnymore')));
     uxLog(
       "error",
       this,
@@ -151,7 +152,7 @@ export default class DxSources extends SfCommand<any> {
         uxLog("error", this, c.red(deployRes.errorMessage));
       }
     } else {
-      uxLog("log", this, 'No package.xml found so no deployment has been performed');
+      uxLog("log", this, t('noPackageXmlFoundSoNoDeployment'));
     }
 
     // Deploy destructive changes
@@ -169,7 +170,7 @@ export default class DxSources extends SfCommand<any> {
     if (fs.existsSync(packageDeletedXmlFile)) {
       await deployDestructiveChanges(packageDeletedXmlFile, { debug: debugMode, check }, this);
     } else {
-      uxLog("log", this, 'No destructivePackage.Xml found so no destructive deployment has been performed');
+      uxLog("log", this, t('noDestructivepackageXmlFoundSoNoDestructive'));
     }
 
     return {

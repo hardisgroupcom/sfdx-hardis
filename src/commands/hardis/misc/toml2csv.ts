@@ -12,6 +12,7 @@ import * as readline from 'readline';
 import { stripAnsi, uxLog } from '../../../common/utils/index.js';
 import { countLinesInFile } from '../../../common/utils/filesUtils.js';
 import { getRecordTypeId } from '../../../common/utils/orgUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -312,7 +313,7 @@ The command's technical implementation involves:
           }
         }
       } else {
-        uxLog("warning", this, c.yellow(`Line without declared section before: skipped (${line})`));
+        uxLog("warning", this, c.yellow(t('lineWithoutDeclaredSectionBeforeSkipped', { line })));
       }
     }
 
@@ -355,11 +356,11 @@ The command's technical implementation involves:
     }
 
     // Display full stats
-    uxLog("log", this, c.grey('Stats: \n' + JSON.stringify(this.stats, null, 2)));
+    uxLog("log", this, c.grey(t('stats') + JSON.stringify(this.stats, null, 2)));
 
     // Display errors summary
     if (Object.keys(this.lineErrorMessages).length > 0) {
-      uxLog("warning", this, c.yellow('There have been parsing errors:'));
+      uxLog("warning", this, c.yellow(t('thereHaveBeenParsingErrors')));
       for (const errMsg of Object.keys(this.lineErrorMessages)) {
         uxLog("warning", this, c.yellow('- ' + this.lineErrorMessages[errMsg] + ' lines: ' + errMsg));
       }
@@ -433,7 +434,7 @@ The command's technical implementation involves:
       return fileWriteStream;
     } else if (errMode === false) {
       // Section has not been described in config file !!
-      uxLog("warning", this, c.yellow(`Section ${section} as entity is not described with columns in ${this.transfoConfigFile}`));
+      uxLog("warning", this, c.yellow(t('sectionAsEntityIsNotDescribedWith', { section, transfoConfigFile: this.transfoConfigFile })));
       const outputFile = path.join(this.outputDir, 'errors', `noconfig__${section}.csv`);
       // Init writeStream
       const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: 'utf8' });

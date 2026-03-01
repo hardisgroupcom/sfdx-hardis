@@ -35,6 +35,7 @@ import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -409,7 +410,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get target org
     let targetUsername = flags['target-org'].getUsername();
     if (!isCI) {
-      uxLog("warning", this, c.yellow("Just to be sure, please select the org you want to use for this command 😊"))
+      uxLog("warning", this, c.yellow(t('justToBeSurePleaseSelectThe')))
       targetUsername = await promptOrgUsernameDefault(this, targetUsername, { devHub: false, setDefault: false, scratch: false });
     }
 
@@ -797,7 +798,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       parentBranch = prInfo.targetBranch;
     }
     const majorOrgs = await listMajorOrgs();
-    uxLog("log", this, c.grey('Major orgs with auth configured:\n' + JSON.stringify(majorOrgs, null, 2)));
+    uxLog("log", this, c.grey(t('majorOrgsWithAuthConfigured') + JSON.stringify(majorOrgs, null, 2)));
     const currentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === currentBranch);
     const parentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === parentBranch);
     if (currentBranchIsMajor && (parentBranchIsMajor === true || parentBranch == null)) {

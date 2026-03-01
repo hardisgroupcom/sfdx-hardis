@@ -7,6 +7,7 @@ import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { getConfig, setConfig } from '../../../../config/index.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -150,7 +151,7 @@ The command's technical implementation involves:
       });
     }
     // Create package version
-    uxLog("action", this, c.cyan(`Generating new package version for ${c.green(pckgDirectory.package)}...`));
+    uxLog("action", this, c.cyan(t('generatingNewPackageVersionFor', { pckgDirectory: c.green(pckgDirectory.package) })));
     const createCommand =
       'sf package version create' +
       ` --package "${pckgDirectory.package}"` +

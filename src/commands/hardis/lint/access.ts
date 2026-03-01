@@ -24,6 +24,7 @@ import { CONSTANTS, getConfig } from '../../../config/index.js';
 import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from '../../../common/utils/notifUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -533,7 +534,7 @@ The command's technical implementation involves:
     if (!isCI && this.missingElements.length > 0 && this.argv.includes('--websocket')) {
       const promptUpdate = await prompts({
         type: 'confirm',
-        message: c.cyanBright('Do you want to add the missing accesses in permission sets ?'),
+        message: c.cyanBright(t('doYouWantToAddTheMissing')),
         description: 'Confirm if you want to automatically fix missing access issues',
       });
       if (promptUpdate.value === true) {
@@ -542,7 +543,7 @@ The command's technical implementation involves:
           {
             type: 'multiselect',
             name: 'elements',
-            message: 'Please select the elements you want to add in Permission Set(s)',
+            message: t('pleaseSelectTheElementsYouWantTo'),
             description: 'Choose which missing access elements to add to permission sets',
             choices: this.missingElements.map((elt) => {
               return { title: `${elt.type}: ${elt.element}`, value: elt };
@@ -551,7 +552,7 @@ The command's technical implementation involves:
           {
             type: 'multiselect',
             name: 'permissionSets',
-            message: 'Please select the permission sets you want to update with selected elements',
+            message: t('pleaseSelectThePermissionSetsYouWant'),
             description: 'Choose which permission sets should receive the selected access elements',
             choices: availablePermissionSets.map((elt) => {
               return { title: elt.name, value: elt.filePath };
@@ -560,7 +561,7 @@ The command's technical implementation involves:
           {
             type: 'select',
             name: 'access',
-            message: 'Please select the accesses to set for the custom fields',
+            message: t('pleaseSelectTheAccessesToSetFor'),
             description: 'Choose the level of access to grant for custom fields',
             placeholder: 'Select access level',
             choices: [
@@ -581,8 +582,8 @@ The command's technical implementation involves:
         }
       }
     } else if (this.missingElements.length > 0) {
-      uxLog("warning", this, c.yellow('Please add missing access on permission set(s)'));
-      uxLog("warning", this, c.yellow('You can do it by running VS Code SFDX Hardis command Audit -> Detect missing permissions.'));
+      uxLog("warning", this, c.yellow(t('pleaseAddMissingAccessOnPermissionSet')));
+      uxLog("warning", this, c.yellow(t('youCanDoItByRunningVs')));
     }
   }
 
@@ -664,8 +665,8 @@ The command's technical implementation involves:
       }
       await writeXmlFile(permissionSetFile, psFileXml);
     }
-    uxLog("action", this, c.cyan('Permission sets updated successfully!'));
-    uxLog("warning", this, c.yellow('Please commit and push your changes to the repository!'));
+    uxLog("action", this, c.cyan(t('permissionSetsUpdatedSuccessfully')));
+    uxLog("warning", this, c.yellow(t('pleaseCommitAndPushYourChangesTo')));
     throw new SfError(c.red('Your permission sets has been updated: please CHECK THE UPDATES then commit and push !'));
   }
 

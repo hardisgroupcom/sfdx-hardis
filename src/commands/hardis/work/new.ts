@@ -30,6 +30,7 @@ import { WebSocketClient } from '../../../common/websocketClient.js';
 import { CONSTANTS, getConfig, setConfig } from '../../../config/index.js';
 import SandboxCreate from '../org/create.js';
 import ScratchCreate from '../scratch/create.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -105,8 +106,8 @@ The command's logic orchestrates various underlying processes:
     const { flags } = await this.parse(NewTask);
     this.debugMode = flags.debug || false;
 
-    uxLog("action", this, c.cyan('Creating a new User Story (dev or config) with SFDX Hardis CI/CD'));
-    uxLog("log", this, c.grey("When unsure, press ENTER to use the default value"));
+    uxLog("action", this, c.cyan(t('creatingNewUserStoryDevOrConfig')));
+    uxLog("log", this, c.grey(t('whenUnsurePressEnterToUseThe')));
 
     // Make sure the git status is clean, to not delete uncommitted updates
     await checkGitClean({ allowStash: true });
@@ -136,7 +137,7 @@ The command's logic orchestrates various underlying processes:
       const projectResponse = await prompts({
         type: 'select',
         name: 'project',
-        message: c.cyanBright('Please select the project your User Story is for'),
+        message: c.cyanBright(t('pleaseSelectTheProjectYourUserStory')),
         description: 'Choose which project this new work item belongs to',
         placeholder: 'Select a project',
         choices: availableProjects.map((project: string) => {
@@ -154,7 +155,7 @@ The command's logic orchestrates various underlying processes:
       {
         type: 'select',
         name: 'branch',
-        message: c.cyanBright('What type of User Story do you want to create?'),
+        message: c.cyanBright(t('whatTypeOfUserStoryDoYou')),
         description: 'Select the category of work that best describes your User Story',
         placeholder: 'Select User Story type',
         initial: 0,
@@ -177,7 +178,7 @@ The command's logic orchestrates various underlying processes:
     // Pull latest version of target branch
     await gitPull();
     // Create new branch
-    uxLog("action", this, c.cyan(`Creating new branch ${c.green(branchName)}...`));
+    uxLog("action", this, c.cyan(t('creatingNewBranch', { branchName: c.green(branchName) })));
     await ensureGitBranch(branchName);
     // Update config if necessary
     if (config.developmentBranch !== this.targetBranch && (config.availableTargetBranches || null) == null) {
@@ -254,7 +255,7 @@ The command's logic orchestrates various underlying processes:
       uxLog("warning", this, c.yellow(`No org selected. Ensure you know what you're doing.`));
     }
 
-    uxLog("action", this, c.cyan(`Ready to work in branch ${c.green(branchName)}`));
+    uxLog("action", this, c.cyan(t('readyToWorkInBranch', { branchName: c.green(branchName) })));
     // Return an object to be displayed with --json
     return { outputString: 'Created new User Story' };
   }
@@ -310,7 +311,7 @@ The command's logic orchestrates various underlying processes:
     const scratchResponse = await prompts({
       type: 'select',
       name: 'value',
-      message: c.cyanBright(`Select a scratch org for branch ${c.green(branchName)}`),
+      message: c.cyanBright(t('selectScratchOrgForBranch', { branchName: c.green(branchName) })),
       description: 'Choose whether to create a new scratch org or reuse an existing one',
       placeholder: 'Select scratch org option',
       initial: 0,
@@ -358,7 +359,7 @@ The command's logic orchestrates various underlying processes:
         )
       );
       // Open selected org
-      uxLog("action", this, c.cyan('Opening scratch org in browser...'));
+      uxLog("action", this, c.cyan(t('openingScratchOrgInBrowser')));
       await execSfdxJson('sf org open', this, {
         fail: true,
         output: false,
@@ -428,7 +429,7 @@ The command's logic orchestrates various underlying processes:
           }
           try {
             // Continue initialization even if push did not work... it could work and be not such a problem 😊
-            uxLog("action", this, c.cyan('Resetting local SF Cli tracking...'));
+            uxLog("action", this, c.cyan(t('resettingLocalSfCliTracking')));
             await execCommand(`sf project delete tracking --no-prompt -o ${orgUsername}`, this, {
               fail: false,
               output: true,
@@ -482,12 +483,12 @@ The command's logic orchestrates various underlying processes:
       const openOrgRes = await prompts({
         type: 'confirm',
         name: 'value',
-        message: c.cyanBright(`Do you want to open org ${c.green(orgUsername)} in your browser?`),
+        message: c.cyanBright(t('doYouWantToOpenOrgIn', { orgUsername: c.green(orgUsername) })),
         description: 'Open the sandbox org in your web browser to start working on it',
         initial: true
       });
       if (openOrgRes.value === true) {
-        uxLog("action", this, c.cyan(`Opening org ${c.green(orgUsername)}...`));
+        uxLog("action", this, c.cyan(t('openingOrg', { orgUsername: c.green(orgUsername) })));
         await execSfdxJson('sf org open', this, {
           fail: true,
           output: false,
@@ -567,7 +568,7 @@ The command's logic orchestrates various underlying processes:
     // Selected sandbox from list
     else {
       await makeSureOrgIsConnected(sandboxResponse.value);
-      uxLog("action", this, c.cyan(`Setting ${c.green(sandboxResponse.value.instanceUrl)} (${sandboxResponse.value.username}) as default org...`));
+      uxLog("action", this, c.cyan(t('settingAsDefaultOrg', { sandboxResponse: c.green(sandboxResponse.value.instanceUrl), sandboxResponse1: sandboxResponse.value.username })));
       await execCommand(`sf config set target-org=${sandboxResponse.value.username}`, this, {
         output: true,
         fail: true,

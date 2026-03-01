@@ -26,6 +26,7 @@ import { parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { listMetadataTypes } from './metadataList.js';
 import { FileStatusResult } from 'simple-git';
 import { glob } from 'glob';
+import { t } from '../utils/i18n.js';
 
 class MetadataUtils {
   // Describe packageXml <=> metadata folder correspondance
@@ -297,7 +298,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     await fs.copyFile('package-full.xml', 'package.xml');
     // Filter managed items if requested
     if (options.filterManagedItems) {
-      uxLog("action", commandThis, c.cyan('Filtering managed items from package.Xml manifest...'));
+      uxLog("action", commandThis, c.cyan(t('filteringManagedItemsFromPackageXmlManifest')));
       // List installed packages & collect managed namespaces
       let namespaces: any[] = [];
       if (isSfdxProject()) {
@@ -355,7 +356,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
 
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
-      uxLog("action", commandThis, c.cyan(`Retrieving metadatas in ${c.green(metadataFolder)}...`));
+      uxLog("action", commandThis, c.cyan(t('retrievingMetadatasIn', { metadataFolder: c.green(metadataFolder) })));
       const retrieveCommand =
         'sf project retrieve start' +
         ` --target-metadata-dir ${metadataFolder}` +
@@ -371,7 +372,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         uxLog("other", commandThis, retrieveRes);
       }
       // Unzip metadatas
-      uxLog("action", commandThis, c.cyan('Unzipping metadatas...'));
+      uxLog("action", commandThis, c.cyan(t('unzippingMetadatas')));
       await extractZip(path.join(metadataFolder, 'unpackaged.zip'), {
         dir: metadataFolder,
       });
@@ -384,7 +385,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const metadataTypes = sortArray(listMetadataTypes(), { by: ['xmlName'], order: ['asc'] });
     const metadataResp = await prompts({
       type: 'multiselect',
-      message: c.cyanBright('Please select metadata types'),
+      message: c.cyanBright(t('pleaseSelectMetadataTypes')),
       description: 'Choose the Salesforce metadata types to include in this operation',
       choices: metadataTypes.map((metadataType: any) => {
         return {
@@ -497,7 +498,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     sortCrossPlatform(flowFiles);
     const flowSelectRes = await prompts({
       type: 'select',
-      message: 'Please select the Flow you want to visually compare',
+      message: t('pleaseSelectTheFlowYouWantTo'),
       description: 'Choose a Flow file to perform visual comparison operations on',
       choices: flowFiles.map(flowFile => {
         return { value: flowFile, title: path.basename(flowFile, ".flow-meta.xml") }
@@ -511,7 +512,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     sortCrossPlatform(flowFiles);
     const flowSelectRes = await prompts({
       type: 'multiselect',
-      message: 'Please select the Flows you want to create the documentation',
+      message: t('pleaseSelectTheFlowsYouWantTo'),
       description: 'Choose multiple Flow files to generate documentation for',
       choices: flowFiles.map(flowFile => {
         return { value: flowFile, title: path.basename(flowFile, ".flow-meta.xml") }

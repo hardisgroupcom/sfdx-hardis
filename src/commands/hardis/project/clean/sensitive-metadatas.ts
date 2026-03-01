@@ -8,6 +8,7 @@ import * as path from 'path';
 import fs from 'fs-extra';
 import { uxLog } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -107,7 +108,7 @@ Certificates are not supposed to be stored in Git Repositories, please:
 `;
         await fs.writeFile(cert, certText);
         certCounter++;
-        uxLog("warning", this, c.yellow(`Replaced certificate content of ${cert}`));
+        uxLog("warning", this, c.yellow(t('replacedCertificateContentOf', { cert })));
       }
     }
 
@@ -135,7 +136,7 @@ Certificates are not supposed to be stored in Git Repositories, please:
         if (updatedContent !== content) {
           await fs.writeFile(metaFile, updatedContent);
           metadataCounter++;
-          uxLog("warning", this, c.yellow(`Replaced sensitive fields in ${metaFile}`));
+          uxLog("warning", this, c.yellow(t('replacedSensitiveFieldsIn', { metaFile })));
         }
       }
     }

@@ -15,6 +15,7 @@ import moment from 'moment';
 import { generateFlowVisualGitDiff, generateHistoryDiffMarkdown } from '../../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -88,7 +89,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     // List states of flow file using git
     const fileHistory = await git().log({ file: this.flowFile });
     if (fileHistory.all.length === 1) {
-      uxLog("success", this, c.green(`There is only one state for Flow ${this.flowFile}`));
+      uxLog("success", this, c.green(t('thereIsOnlyOneStateForFlow', { flowFile: this.flowFile })));
       return {};
     }
 
@@ -109,7 +110,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       const commitBeforeSelectRes = await prompts({
         type: 'select',
         name: 'before',
-        message: 'Please select BEFORE UPDATE commit',
+        message: t('pleaseSelectBeforeUpdateCommit'),
         description: 'Choose the commit representing the state before your changes',
         placeholder: 'Select a commit',
         choices: [...allChoices, ...[
@@ -133,7 +134,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
         const commitAfterSelectRes = await prompts({
           type: 'select',
           name: 'after',
-          message: 'Please select AFTER UPDATE commit',
+          message: t('pleaseSelectAfterUpdateCommit'),
           description: 'Choose the commit representing the state after your changes',
           placeholder: 'Select a commit',
           choices: allChoices
@@ -149,7 +150,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     WebSocketClient.requestOpenFile(path.relative(process.cwd(), diffMdFile));
     WebSocketClient.sendReportFileMessage(diffMdFile, path.basename(diffMdFile).replace(".md", "") + " Documentation", 'report');
 
-    uxLog("action", this, c.green(`Markdown Flow diff documentation generated for ${path.basename(diffMdFile).replace(".md", "")}.`));
+    uxLog("action", this, c.green(t('markdownFlowDiffDocumentationGeneratedFor', { path: path.basename(diffMdFile).replace(".md", "") })));
     if (this.commitBefore === "allStates") {
       uxLog("warning", this, c.yellow(`It is recommended to use mkdocs-material to read it correctly (see https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/#doc-html-pages)`));
     }

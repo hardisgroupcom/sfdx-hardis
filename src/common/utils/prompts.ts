@@ -4,6 +4,7 @@ import inquirer from "inquirer";
 import { SfError } from "@salesforce/core";
 import { isCI, uxLog } from "./index.js";
 import { WebSocketClient } from "../websocketClient.js";
+import { t } from './i18n.js';
 
 export interface PromptsQuestion {
   message: string;
@@ -67,7 +68,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
       const answerValue = questionAnswer[answerKey];
       const answerLabel = getAnswerLabel(answerValue, question.choices);
       if (JSON.stringify(answerLabel).toLowerCase().includes("token")) {
-        uxLog("log", this, c.grey("Selection hidden because it contains sensitive information."));
+        uxLog("log", this, c.grey(t('selectionHiddenBecauseItContainsSensitiveInformation')));
       } else {
         uxLog("log", this, c.grey(answerLabel));
       }
@@ -127,7 +128,7 @@ function checkStopPrompts(answers: any) {
 }
 
 function stopPrompt() {
-  uxLog("error", this, c.red("Script terminated at user request."));
+  uxLog("error", this, c.red(t('scriptTerminatedAtUserRequest')));
   // Send close client message with aborted status if WebSocket is alive
   if (WebSocketClient.isAlive()) {
     WebSocketClient.sendCloseClientMessage("aborted");

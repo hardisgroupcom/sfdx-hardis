@@ -8,6 +8,7 @@ import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -84,12 +85,12 @@ The command's technical implementation involves:
         if (matchingCustomFiles.length === 0) {
           // Remove the whole folder
           await fs.remove(objectDir);
-          uxLog("action", this, c.cyan(`Removed folder ${c.yellow(objectDir)}`));
+          uxLog("action", this, c.cyan(t('removedFolder', { objectDir: c.yellow(objectDir) })));
           const sharingRuleFile = path.join(sourceRootFolder, 'sharingRules', objectDirName + '.sharingRules-meta.xml');
           if (fs.existsSync(sharingRuleFile)) {
             // Remove sharingRule if existing
             await fs.remove(sharingRuleFile);
-            uxLog("action", this, c.cyan(`Removed sharing rule ${c.yellow(sharingRuleFile)}`));
+            uxLog("action", this, c.cyan(t('removedSharingRule', { sharingRuleFile: c.yellow(sharingRuleFile) })));
           }
         } else {
           // Remove only standard fields
@@ -102,7 +103,7 @@ The command's technical implementation involves:
             }
           }
 
-          uxLog("action", this, c.cyan(`Keep folder ${c.green(objectDir)} because of custom fields found`));
+          uxLog("action", this, c.cyan(t('keepFolderBecauseOfCustomFieldsFound', { objectDir: c.green(objectDir) })));
         }
       }
     }

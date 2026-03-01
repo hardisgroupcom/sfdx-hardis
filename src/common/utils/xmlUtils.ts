@@ -7,6 +7,7 @@ import * as util from 'util';
 import * as xml2js from 'xml2js';
 import { sortCrossPlatform, uxLog } from './index.js';
 import { getApiVersion } from '../../config/index.js';
+import { t } from './i18n.js';
 
 export async function parseXmlFile(xmlFile: string) {
   const packageXmlString = await fs.readFile(xmlFile, 'utf8');
@@ -108,7 +109,7 @@ export async function isPackageXmlEmpty(
 
 // Read package.xml files and build concatenated list of items
 export async function appendPackageXmlFilesContent(packageXmlFileList: string[], outputXmlFile: string) {
-  uxLog("log", this, c.grey(`Appending ${packageXmlFileList.join(', ')} into ${outputXmlFile}...`));
+  uxLog("log", this, c.grey(t('appendingInto', { packageXmlFileList: packageXmlFileList.join(', '), outputXmlFile })));
   let firstPackageXmlContent: any = null;
   let allPackageXmlFilesTypes = {};
   // loop on packageXml files
@@ -202,7 +203,7 @@ export async function removePackageXmlFilesContent(
     // Manage * case contained in target
     if (removedOnly === true && typeMembers.includes('*')) {
       typeMembers = removeTypeMembers;
-      uxLog("log", this, c.grey(c.italic(`Found wildcard * on type ${c.bold(type.name)}; kept items: ${typeMembers.length}.`)));
+      uxLog("log", this, c.grey(c.italic(t('foundWildcardOnTypeKeptItems', { type: c.bold(type.name), typeMembers: typeMembers.length }))));
     }
     // Manage * case contained in source
     else if (removeTypeMembers[0] && removeTypeMembers[0] === '*') {
@@ -288,7 +289,7 @@ export async function applyAllReplacementsDefinitions(
   referenceStrings: string[],
   replacementDefinitions: any[]
 ) {
-  uxLog("action", this, c.cyan(`Initializing replacements in files for ${referenceStrings.join(', ')}...`));
+  uxLog("action", this, c.cyan(t('initializingReplacementsInFilesFor', { referenceStrings: referenceStrings.join(', ') })));
   for (const ref of referenceStrings) {
     for (const replacementDefinition of replacementDefinitions) {
       replacementDefinition.refRegexes = replacementDefinition.refRegexes.map((refRegex) => {

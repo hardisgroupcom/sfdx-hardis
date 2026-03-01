@@ -5,6 +5,7 @@ import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GitHub } from "@actions/github/lib/utils.js";
 import { CONSTANTS } from "../../config/index.js";
+import { t } from '../utils/i18n.js';
 
 export class GithubProvider extends GitProviderRoot {
   private octokit: InstanceType<typeof GitHub>;
@@ -85,7 +86,7 @@ export class GithubProvider extends GitProviderRoot {
         const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingComment.body || "");
         if (matches) {
           deploymentCheckId = matches[1];
-          uxLog("error", this, c.grey(`Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`));
+          uxLog("error", this, c.grey(t('foundDeploymentIdOnPr', { deploymentCheckId, latestPullRequestId, latestPullRequest: latestPullRequest.title })));
           break;
         }
       }

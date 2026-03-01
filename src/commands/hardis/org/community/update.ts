@@ -5,6 +5,7 @@ import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -81,7 +82,7 @@ The command's technical implementation involves:
     const networksQuery = `SELECT Id, Name, Status FROM Network WHERE Name IN (${networksConstraintIn})`;
     const networksQueryRes = await soqlQuery(networksQuery, conn);
     if (debugMode) {
-      uxLog("log", this, c.grey(`Query result:\n${JSON.stringify(networksQueryRes, null, 2)}`));
+      uxLog("log", this, c.grey(t('queryResult', { JSON: JSON.stringify(networksQueryRes, null, 2) })));
     }
     // Check empty result
     if (networksQueryRes.length === 0) {
@@ -125,7 +126,7 @@ The command's technical implementation involves:
         uxLog("success", this, c.green(`'${c.bold(idToNameMap.get(ret.id))}' Network was updated.`));
       } else {
         updateErrorsNb++;
-        uxLog("error", this, c.red(`Error ${updateErrorsNb}: Network '${idToNameMap.get(ret.id)}' failed to update: [${ret.errors[0].message}]`));
+        uxLog("error", this, c.red(t('errorNetworkFailedToUpdate', { updateErrorsNb, idToNameMap: idToNameMap.get(ret.id), ret: ret.errors[0].message })));
       }
     }
     // Return an object to be displayed with --json

@@ -5,6 +5,7 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import { createTempDir, uxLog } from './index.js';
 import c from 'chalk';
+import { t } from './i18n.js';
 
 type PackageType = {
   members: string[];
@@ -208,7 +209,7 @@ export async function appendPackageModifications(
   const packageTo = (await getFileAtCommit(toCommit, sourcePackageFilename)).toString();
 
   if (packageFrom == packageTo) {
-    uxLog("log", this, c.grey(c.italic(`Found no changes in ${sourcePackageFilename}`)));
+    uxLog("log", this, c.grey(c.italic(t('foundNoChangesIn', { sourcePackageFilename }))));
     return;
   }
   uxLog("action", this, c.cyan('[DeltaDeployment] Extending package.xml with manifest changes ...'));
@@ -225,10 +226,10 @@ export async function appendPackageModifications(
   const diffTypes = await removePackageXmlFilesContent(tempToFile, tempFromFile, { removedOnly: false, outputXmlFile: tempDiffFile });
 
   if (diffTypes.length > 0) {
-    uxLog("log", this, c.grey(c.italic(`Found some added types in ${sourcePackageFilename}, adding them to final delta manifest.`)));
+    uxLog("log", this, c.grey(c.italic(t('foundSomeAddedTypesInAddingThem', { sourcePackageFilename }))));
     await appendPackageXmlFilesContent([tempDiffFile, targetPackageFilename], targetPackageFilename);
   } else {
-    uxLog("log", this, c.grey(c.italic(`Found no added types in ${sourcePackageFilename}`)));
+    uxLog("log", this, c.grey(c.italic(t('foundNoAddedTypesIn', { sourcePackageFilename }))));
   }
 
   fs.removeSync(tmpDir);

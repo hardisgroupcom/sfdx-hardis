@@ -44,6 +44,7 @@ import { makeFileNameGitCompliant } from '../../../common/utils/gitUtils.js';
 import { PromisePool } from '@supercharge/promise-pool';
 import { UtilsAi } from '../../../common/aiProvider/utils.js';
 import ExcelJS from 'exceljs';
+import { t } from '../../../common/utils/i18n.js';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -353,7 +354,7 @@ ${this.htmlInstructions}
 
     this.tempDir = await createTempDir()
     // Convert source to metadata API format to build prompts
-    uxLog("action", this, c.cyan("Converting source to metadata API format to ease the build of LLM prompts."));
+    uxLog("action", this, c.cyan(t('convertingSourceToMetadataApiFormatTo')));
     await execCommand(`sf project convert source --metadata CustomObject --output-dir ${this.tempDir}`, this, { fail: true, output: true, debug: this.debugMode });
     this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(this.objectFiles);
@@ -414,7 +415,7 @@ ${this.htmlInstructions}
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
     if (process.env.DO_NOT_OVERWRITE_INDEX_MD !== 'true' || !fs.existsSync(this.outputMarkdownIndexFile)) {
       await fs.writeFile(this.outputMarkdownIndexFile, getMetaHideLines() + this.mdLines.join("\n") + `\n\n${this.footer}\n`);
-      uxLog("success", this, c.green(`Successfully generated doc index at ${this.outputMarkdownIndexFile}`));
+      uxLog("success", this, c.green(t('successfullyGeneratedDocIndexAt', { outputMarkdownIndexFile: this.outputMarkdownIndexFile })));
     }
 
     const readmeFile = path.join(process.cwd(), "README.md");
@@ -448,7 +449,7 @@ ${Project2Markdown.htmlInstructions}
       const fileName = path.basename(file);
       if (fileName.includes("/") || fileName.includes("\\") || fileName.includes(":") || fileName.includes("*") || fileName.includes("?") || fileName.includes('"') || fileName.includes("<") || fileName.includes(">") || fileName.includes("|")) {
         const filePath = path.join(this.outputMarkdownRoot, file);
-        uxLog("warning", this, c.yellow(`Deleting file ${filePath} because it contains characters not compliant with Windows file system`));
+        uxLog("warning", this, c.yellow(t('deletingFileBecauseItContainsCharactersNot', { filePath })));
         await fs.remove(filePath);
       }
     }
@@ -466,10 +467,10 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateApexDocumentation() {
-    uxLog("action", this, c.cyan("Calling ApexDocGen to initialize Apex documentation..."));
+    uxLog("action", this, c.cyan(t('callingApexdocgenToInitializeApexDocumentation')));
     uxLog("log", this, "If you don't want it, use --no-generate-apex-doc or define GENERATE_APEX_DOC=false");
     const tempDir = await createTempDir();
-    uxLog("log", this, c.grey(`Using temp directory ${tempDir}`));
+    uxLog("log", this, c.grey(t('usingTempDirectory', { tempDir })));
     const packageDirs = this.project?.getPackageDirectories() || [];
     for (const packageDir of packageDirs) {
       try {
@@ -492,10 +493,10 @@ ${Project2Markdown.htmlInstructions}
         if (fs.existsSync(triggersDir)) {
           await fs.copy(triggersDir, apexDocFolder, { overwrite: true });
         }
-        uxLog("log", this, c.grey(`Generated markdown for Apex classes in ${apexDocFolder}`));
+        uxLog("log", this, c.grey(t('generatedMarkdownForApexClassesIn', { apexDocFolder })));
       }
       catch (e: any) {
-        uxLog("warning", this, c.yellow(`Error generating Apex documentation: ${JSON.stringify(e, null, 2)}`));
+        uxLog("warning", this, c.yellow(t('errorGeneratingApexDocumentation', { JSON: JSON.stringify(e, null, 2) })));
         uxLog("log", this, c.grey(e.stack));
       }
       /*
@@ -523,7 +524,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Complete generated documentation
     if (apexFiles.length === 0) {
-      uxLog("log", this, c.yellow("No Apex class found in the project"));
+      uxLog("log", this, c.yellow(t('noApexClassFoundInTheProject')));
       return;
     }
     const apexForMenu: any = { "All Apex Classes": "apex/index.md" }
@@ -588,7 +589,7 @@ ${Project2Markdown.htmlInstructions}
           const updatedContent = await apexDocBuilder.completeDocWithAiDescription();
           await fs.writeFile(item.mdFile, getMetaHideLines() + updatedContent);
         }
-        uxLog("log", this, c.grey(`Generated markdown for Apex class ${item.apexName}`));
+        uxLog("log", this, c.grey(t('generatedMarkdownForApexClass', { item: item.apexName })));
         if (this.withPdf) {
           await generatePdfFileFromMarkdown(item.mdFile);
         }
@@ -607,7 +608,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePackagesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Installed Packages documentation..."));
+    uxLog("action", this, c.cyan(t('preparingGenerationOfInstalledPackagesDocumentation')));
     uxLog("log", this, "If you don't want it, use --no-generate-packages-doc or define GENERATE_PACKAGES_DOC=false");
 
     const packagesForMenu: any = { "All Packages": "packages/index.md" }
@@ -628,7 +629,7 @@ ${Project2Markdown.htmlInstructions}
     }
 
     if (packages.length === 0) {
-      uxLog("log", this, c.yellow("No installed package found in the project"));
+      uxLog("log", this, c.yellow(t('noInstalledPackageFoundInTheProject')));
       return;
     }
 
@@ -741,13 +742,13 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateProfilesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Profiles documentation..."));
+    uxLog("action", this, c.cyan(t('preparingGenerationOfProfilesDocumentation')));
     uxLog("log", this, "If you don't want it, use --no-generate-profiles-doc or define GENERATE_PROFILES_DOC=false");
     const profilesForMenu: any = { "All Profiles": "profiles/index.md" };
     const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(profilesFiles);
     if (profilesFiles.length === 0) {
-      uxLog("log", this, c.yellow("No profile found in the project"));
+      uxLog("log", this, c.yellow(t('noProfileFoundInTheProject')));
       return;
     }
 
@@ -792,13 +793,13 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePermissionSetsDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Permission Sets documentation..."));
+    uxLog("action", this, c.cyan(t('preparingGenerationOfPermissionSetsDocumentation')));
     uxLog("log", this, "If you don't want it, use --no-generate-profiles-doc or define GENERATE_PROFILES_DOC=false");
     const psForMenu: any = { "All Permission Sets": "permissionsets/index.md" };
     const psFiles = (await glob("**/permissionsets/**.permissionset-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(psFiles);
     if (psFiles.length === 0) {
-      uxLog("log", this, c.yellow("No permission set found in the project"));
+      uxLog("log", this, c.yellow(t('noPermissionSetFoundInTheProject')));
       return;
     }
 
@@ -846,12 +847,12 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePermissionSetGroupsDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Permission Set Groups documentation..."));
+    uxLog("action", this, c.cyan(t('preparingGenerationOfPermissionSetGroupsDocumentation')));
     const psgForMenu: any = { "All Permission Set Groups": "permissionsetgroups/index.md" };
     const psgFiles = (await glob("**/permissionsetgroups/**.permissionsetgroup-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }))
     sortCrossPlatform(psgFiles);
     if (psgFiles.length === 0) {
-      uxLog("log", this, c.yellow("No permission set group found in the project"));
+      uxLog("log", this, c.yellow(t('noPermissionSetGroupFoundInThe')));
       return;
     }
 
@@ -901,12 +902,12 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateRolesDocumentation() {
-    uxLog("action", this, c.cyan("Generating Roles documentation..."));
+    uxLog("action", this, c.cyan(t('generatingRolesDocumentation')));
     uxLog("log", this, "If you don't want it, use --no-generate-profiles-doc or define GENERATE_PROFILES_DOC=false");
     const roleFiles = (await glob("**/roles/**.role-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(roleFiles);
     if (roleFiles.length === 0) {
-      uxLog("log", this, c.yellow("No role found in the project"));
+      uxLog("log", this, c.yellow(t('noRoleFoundInTheProject')));
       return;
     }
     for (const roleFile of roleFiles) {
@@ -935,7 +936,7 @@ ${Project2Markdown.htmlInstructions}
 
 
   private async generateAssignmentRulesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Assignment Rules documentation..."));
+    uxLog("action", this, c.cyan(t('preparingGenerationOfAssignmentRulesDocumentation')));
     uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
 
     const assignmentRulesForMenu: any = { "All Assignment Rules": "assignmentRules/index.md" };
@@ -970,7 +971,7 @@ ${Project2Markdown.htmlInstructions}
     }
 
     if (workItems.length === 0) {
-      uxLog("log", this, c.yellow("No assignment rule found in the project"));
+      uxLog("log", this, c.yellow(t('noAssignmentRuleFoundInTheProject')));
       return;
     }
 
@@ -1000,7 +1001,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateApprovalProcessDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Approval Processes documentation..."));
+    uxLog("action", this, c.cyan(t('preparingGenerationOfApprovalProcessesDocumentation')));
     uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
 
     const approvalProcessesForMenu: any = { "All Approval Processes": "approvalProcesses/index.md" }
@@ -1011,7 +1012,7 @@ ${Project2Markdown.htmlInstructions}
     sortCrossPlatform(approvalProcessFiles);
 
     if (approvalProcessFiles.length === 0) {
-      uxLog("log", this, c.yellow("No approval process found in the project"));
+      uxLog("log", this, c.yellow(t('noApprovalProcessFoundInTheProject')));
       return;
     }
 
@@ -1056,7 +1057,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateAutoResponseRulesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of AutoResponse Rules documentation..."));
+    uxLog("action", this, c.cyan(t('preparingGenerationOfAutoresponseRulesDocumentation')));
     uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
 
     const autoResponseRulesForMenu: any = { "All AutoResponse Rules": "autoResponseRules/index.md" };
@@ -1091,7 +1092,7 @@ ${Project2Markdown.htmlInstructions}
     }
 
     if (workItems.length === 0) {
-      uxLog("log", this, c.yellow("No auto-response rules found in the project"));
+      uxLog("log", this, c.yellow(t('noAutoResponseRulesFoundInThe')));
       return;
     }
 
@@ -1121,7 +1122,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateEscalationRulesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Escalation Rules documentation..."));
+    uxLog("action", this, c.cyan(t('preparingGenerationOfEscalationRulesDocumentation')));
     uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
 
     const escalationRulesForMenu: any = { "All Escalation Rules": "escalationRules/index.md" };
@@ -1156,7 +1157,7 @@ ${Project2Markdown.htmlInstructions}
     }
 
     if (workItems.length === 0) {
-      uxLog("log", this, c.yellow("No escalation rules found in the project"));
+      uxLog("log", this, c.yellow(t('noEscalationRulesFoundInTheProject')));
       return;
     }
 
@@ -1186,7 +1187,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateWorkflowRulesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Workflow Rules documentation..."));
+    uxLog("action", this, c.cyan(t('preparingGenerationOfWorkflowRulesDocumentation')));
     uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
 
     const workflowRulesForMenu: any = { "All Workflow Rules": "workflowRules/index.md" };
@@ -1198,7 +1199,7 @@ ${Project2Markdown.htmlInstructions}
     const builder = new XMLBuilder();
 
     if (workflowRulesFiles.length === 0) {
-      uxLog("log", this, c.yellow("No workflow rule found in the project"));
+      uxLog("log", this, c.yellow(t('noWorkflowRuleFoundInTheProject')));
       return;
     }
 
@@ -1231,7 +1232,7 @@ ${Project2Markdown.htmlInstructions}
     }
 
     if (workItems.length === 0) {
-      uxLog("log", this, c.yellow("No workflow rule found in the project"));
+      uxLog("log", this, c.yellow(t('noWorkflowRuleFoundInTheProject')));
       return;
     }
 
@@ -1265,11 +1266,11 @@ ${Project2Markdown.htmlInstructions}
   private async generateProcessBuilderDocumentation() {
     const processBuilders = this.flowDescriptions.filter(flow => flow.processType === "Workflow");
     if (processBuilders.length === 0) {
-      uxLog("log", this, c.yellow("No process builder found in the project"));
+      uxLog("log", this, c.yellow(t('noProcessBuilderFoundInTheProject')));
       return;
     }
 
-    uxLog("action", this, c.cyan("Generating Process Builder documentation..."));
+    uxLog("action", this, c.cyan(t('generatingProcessBuilderDocumentation')));
 
     if (Object.keys(this.processBuildersForMenu).length > 1) {
       this.addNavNode("Process Builders", this.processBuildersForMenu);
@@ -1290,7 +1291,7 @@ ${Project2Markdown.htmlInstructions}
     const mkdocsYmlFileExists = fs.existsSync(mkdocsYmlFile);
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/mkdocs-project-doc', '.'), process.cwd(), { overwrite: false });
     if (!mkdocsYmlFileExists) {
-      uxLog("log", this, c.grey('Base mkdocs files copied in your Salesforce project repo'));
+      uxLog("log", this, c.grey(t('baseMkdocsFilesCopiedInYourSalesforce')));
       uxLog(
         "warning",
         this,
@@ -1432,11 +1433,11 @@ ${Project2Markdown.htmlInstructions}
 
     // Update mkdocs file
     await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
-    uxLog("action", this, c.cyan(`To generate a HTML WebSite with this documentation with a single command, see instructions at ${CONSTANTS.DOC_URL_ROOT}/hardis/doc/project2markdown/`));
+    uxLog("action", this, c.cyan(t('toGenerateHtmlWebsiteWithThisDocumentation', { CONSTANTS: CONSTANTS.DOC_URL_ROOT })));
   }
 
   private async generateObjectsDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Objects AI documentation..."));
+    uxLog("action", this, c.cyan(t('preparingGenerationOfObjectsAiDocumentation')));
     uxLog("log", this, "If you don't want it, use --no-generate-objects-doc or define GENERATE_OBJECTS_DOC=false");
 
     const objectLinksInfo = await this.generateLinksInfo();
@@ -1477,7 +1478,7 @@ ${Project2Markdown.htmlInstructions}
           WebSocketClient.sendProgressStepMessage(counter, workItems.length);
           return;
         }
-        uxLog("log", this, c.grey(`Generating markdown for Object ${item.objectName}...`));
+        uxLog("log", this, c.grey(t('generatingMarkdownForObject', { item: item.objectName })));
         // Main AI markdown
         await new DocBuilderObject(
           item.objectName,
@@ -1558,7 +1559,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateLinksInfo(): Promise<string> {
-    uxLog("log", this, c.cyan("Generate MasterDetail and Lookup infos to provide context to AI prompt"));
+    uxLog("log", this, c.cyan(t('generateMasterdetailAndLookupInfosToProvide')));
     const findFieldsPattern = `**/objects/**/fields/**.field-meta.xml`;
     const matchingFieldFiles = (await glob(findFieldsPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).map(file => file.replace(/\\/g, '/'));
     const customFieldsLinks: string[] = [];
@@ -1599,7 +1600,7 @@ ${Project2Markdown.htmlInstructions}
       flowDeps[flowName] = extractedNames;
     }
     if (flowFiles.length === 0) {
-      uxLog("log", this, c.yellow("No flow found in the project"));
+      uxLog("log", this, c.yellow(t('noFlowFoundInTheProject')));
       return;
     }
     // Generate Flows documentation
@@ -1644,7 +1645,7 @@ ${Project2Markdown.htmlInstructions}
           WebSocketClient.sendProgressStepMessage(counter, flowWorkItems.length);
           return;
         }
-        uxLog("log", this, c.grey(`Generating markdown for Flow ${item.flowFile}...`));
+        uxLog("log", this, c.grey(t('generatingMarkdownForFlow2', { item: item.flowFile })));
         const genRes = await generateFlowMarkdownFile(item.flowName, item.flowXml, item.outputFlowMdFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: flowDeps });
         if (!genRes) {
           flowErrors.push(item.flowFile);
@@ -1692,7 +1693,7 @@ ${Project2Markdown.htmlInstructions}
             try {
               await generateHistoryDiffMarkdown(item.flowFile, this.debugMode);
             } catch (e: any) {
-              uxLog("warning", this, c.yellow(`Error generating history diff markdown for ${item.flowName}: ${e.message}`));
+              uxLog("warning", this, c.yellow(t('errorGeneratingHistoryDiffMarkdownFor', { item: item.flowName, message: e.message })));
             }
           }
           historyCounter++;
@@ -1703,14 +1704,14 @@ ${Project2Markdown.htmlInstructions}
 
     // Summary
     if (flowSkips.length > 0) {
-      uxLog("warning", this, c.yellow(`Skipped generation for ${flowSkips.length} Flows that have not been updated: ${this.humanDisplay(flowSkips)}`));
+      uxLog("warning", this, c.yellow(t('skippedGenerationForFlowsThatHaveNot', { flowSkips: flowSkips.length, humanDisplay: this.humanDisplay(flowSkips) })));
     }
-    uxLog("success", this, c.green(`Successfully generated ${flowFiles.length - flowSkips.length - flowWarnings.length - flowErrors.length} Flows documentation`));
+    uxLog("success", this, c.green(t('successfullyGeneratedFlowsDocumentation', { flowFiles: flowFiles.length - flowSkips.length - flowWarnings.length - flowErrors.length })));
     if (flowWarnings.length > 0) {
-      uxLog("warning", this, c.yellow(`Partially generated documentation (Markdown with MermaidJS but without SVG) for ${flowWarnings.length} Flows: ${this.humanDisplay(flowWarnings)}`));
+      uxLog("warning", this, c.yellow(t('partiallyGeneratedDocumentationMarkdownWithMermaidjsBut', { flowWarnings: flowWarnings.length, humanDisplay: this.humanDisplay(flowWarnings) })));
     }
     if (flowErrors.length > 0) {
-      uxLog("warning", this, c.yellow(`Error generating documentation for ${flowErrors.length} Flows: ${this.humanDisplay(flowErrors)}`));
+      uxLog("warning", this, c.yellow(t('errorGeneratingDocumentationForFlows', { flowErrors: flowErrors.length, humanDisplay: this.humanDisplay(flowErrors) })));
     }
 
     // Write index file for flow folder
@@ -1720,7 +1721,7 @@ ${Project2Markdown.htmlInstructions}
     await fs.writeFile(flowIndexFile, getMetaHideLines() + flowTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
 
     this.addNavNode("Flows", flowsForMenu);
-    uxLog("success", this, c.green(`Successfully generated doc index for Flows at ${flowIndexFile}`));
+    uxLog("success", this, c.green(t('successfullyGeneratedDocIndexForFlowsAt', { flowIndexFile })));
   }
 
   private humanDisplay(flows) {
@@ -1777,7 +1778,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async manageLocalPackages() {
-    uxLog("action", this, c.cyan("Generating package.xml files for local packages..."));
+    uxLog("action", this, c.cyan(t('generatingPackageXmlFilesForLocalPackages')));
     const packageDirs = this.project?.getPackageDirectories();
     if (!(packageDirs?.length === 1 && packageDirs[0].name === "force-app" && fs.existsSync("manifest/package.xml"))) {
       for (const packageDir of packageDirs || []) {
@@ -1802,7 +1803,7 @@ ${Project2Markdown.htmlInstructions}
           });
         }
         catch (e: any) {
-          uxLog("error", this, c.red(`Unable to generate manifest from ${packageDir.path}: it won't appear in the documentation\n${e.message}`))
+          uxLog("error", this, c.red(t('unableToGenerateManifestFromItWon', { packageDir: packageDir.path, message: e.message })))
         }
       }
     }
@@ -1821,7 +1822,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePackageXmlMarkdown(packageXmlCandidates, instanceUrl) {
-    uxLog("action", this, c.cyan("Generating package.xml documentation..."));
+    uxLog("action", this, c.cyan(t('generatingPackageXmlDocumentation')));
     // Generate packageXml doc when found
     for (const packageXmlCandidate of packageXmlCandidates) {
       if (fs.existsSync(packageXmlCandidate.path)) {
@@ -1836,7 +1837,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateLwcDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Lightning Web Components documentation... "));
+    uxLog("action", this, c.cyan(t('preparingGenerationOfLightningWebComponentsDocumentation')));
     uxLog("log", this, "If you don't want it, use --no-generate-lwc-doc or define GENERATE_LWC_DOC=false");
 
     const lwcForMenu: any = { "All Lightning Web Components": "lwc/index.md" };
@@ -1898,7 +1899,7 @@ ${Project2Markdown.htmlInstructions}
     }
 
     if (workItems.length === 0) {
-      uxLog("log", this, c.yellow("No Lightning Web Component found in the project"));
+      uxLog("log", this, c.yellow(t('noLightningWebComponentFoundInThe')));
       return;
     }
 
@@ -1940,11 +1941,11 @@ ${Project2Markdown.htmlInstructions}
       `\n\n${this.footer}\n`
     );
 
-    uxLog("success", this, c.green(`Successfully generated documentation for Lightning Web Components at ${lwcIndexFile}`));
+    uxLog("success", this, c.green(t('successfullyGeneratedDocumentationForLightningWebComponents', { lwcIndexFile })));
   }
 
   private async generateExcelFile() {
-    uxLog("action", this, c.cyan("Generating Excel file with all metadata..."));
+    uxLog("action", this, c.cyan(t('generatingExcelFileWithAllMetadata')));
 
     const workbook = new ExcelJS.Workbook();
     const excelFilePath = path.join(this.outputMarkdownRoot, "project-documentation.xlsx");
@@ -2117,7 +2118,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Save the workbook
     await workbook.xlsx.writeFile(excelFilePath);
-    uxLog("success", this, c.green(`Successfully generated Excel file at ${excelFilePath}`));
+    uxLog("success", this, c.green(t('successfullyGeneratedExcelFileAt', { excelFilePath })));
 
     // Open file in VS Code if available
     if (WebSocketClient.isAliveWithLwcUI()) {

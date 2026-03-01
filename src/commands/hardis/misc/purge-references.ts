@@ -13,6 +13,7 @@ import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { glob } from 'glob';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { applyAllReplacementsDefinitions } from '../../../common/utils/xmlUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -93,7 +94,7 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
     if (this.referenceStrings.length == 1 && this.referenceStrings[0] === '') {
       const refPromptResult = await prompts({
         type: 'text',
-        message: 'Please input a comma-separated list of strings you want to purge (example: Affaire__c)',
+        message: t('pleaseInputCommaSeparatedListOfStrings'),
         description: 'Enter the reference strings to purge from your metadata files.',
         placeholder: 'Ex: Affaire__c,MyField__c,CustomObject__c',
       });
@@ -160,7 +161,7 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
       this.getAllReplacements()
     );
 
-    return { message: 'Command completed' };
+    return { message: t('commandCompleted') };
   }
 
   private getAllReplacements() {

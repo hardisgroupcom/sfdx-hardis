@@ -7,6 +7,7 @@ import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageRes
 import { git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { CONSTANTS } from '../../config/index.js';
+import { t } from '../utils/i18n.js';
 const { Bitbucket } = bbPkg;
 
 export class BitbucketProvider extends GitProviderRoot {
@@ -321,7 +322,7 @@ export class BitbucketProvider extends GitProviderRoot {
         this.completePullRequestInfo(pr)
       );
     } catch (err) {
-      uxLog("warning", this, c.yellow(`Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`));
+      uxLog("warning", this, c.yellow(t('errorInListpullrequestsinbranchsincelastmerge', { String: String(err) })));
       return [];
     }
   }

@@ -8,6 +8,7 @@ import { glob } from 'glob';
 import sortArray from 'sort-array';
 import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -147,7 +148,7 @@ The command's technical implementation involves:
 
     // Display as table
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
-    uxLog("action", this, c.cyan(`Found ${c.bold(resultsLight.length)} call-ins and call-outs.`));
+    uxLog("action", this, c.cyan(t('foundCallInsAndCallOuts', { resultsLight: c.bold(resultsLight.length) })));
     uxLogTable(this,
       resultsLight.map((item: any) => {
         delete item.detail;

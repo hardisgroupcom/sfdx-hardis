@@ -10,6 +10,7 @@ import { CONSTANTS, getEnvVar } from "../../config/index.js";
 import { prompts } from "../utils/prompts.js";
 import { removeMermaidLinks } from "../utils/mermaidUtils.js";
 import { getPullRequestData } from "../utils/gitUtils.js";
+import { t } from '../utils/i18n.js';
 const debug = Debug("sfdxhardis");
 
 export abstract class GitProvider {
@@ -88,7 +89,7 @@ export abstract class GitProvider {
 
   private static async handleManualGitServerAuth() {
     const promptRes = await prompts({
-      message: "Please select your Git Service Provider",
+      message: t('pleaseSelectYourGitServiceProvider'),
       description: "Choose your git hosting service to enable CI/CD integration features",
       type: "select",
       choices: [
@@ -184,7 +185,7 @@ export abstract class GitProvider {
       const currentGitBranch = await getCurrentGitBranch() || "";
       return gitProvider.getBranchDeploymentCheckId(currentGitBranch);
     } catch (e) {
-      uxLog("warning", this, c.yellow(`Error while trying to retrieve deployment check id:\n${(e as Error).message}`));
+      uxLog("warning", this, c.yellow(t('errorWhileTryingToRetrieveDeploymentCheck', { as: (e as Error).message })));
       return null;
     }
   }

@@ -9,6 +9,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { minimizeProfile } from '../../../../common/utils/profileUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -94,7 +95,7 @@ skipMinimizeProfiles:
     for (const profileFile of matchingProfileFiles) {
       const profileName = path.basename(profileFile).replace('.profile-meta.xml', '');
       if (skipMinimizeProfiles.includes(profileName)) {
-        uxLog("log", this, c.grey(`Skipped ${profileName} as found in skipMinimizeProfiles property`));
+        uxLog("log", this, c.grey(t('skippedAsFoundInSkipminimizeprofilesProperty', { profileName })));
         continue;
       }
       const res = await minimizeProfile(profileFile);
@@ -105,7 +106,7 @@ skipMinimizeProfiles:
 
     // Summary
     if (counter > 0) {
-      uxLog("warning", this, c.yellow('Please make sure the attributes removed from Profiles are defined on Permission Sets'));
+      uxLog("warning", this, c.yellow(t('pleaseMakeSureTheAttributesRemovedFrom')));
       globalThis.displayProfilesWarning = true;
     }
     const msg = `Cleaned ${c.green(c.bold(counter))} profiles from attributes existing on Permission Sets`;

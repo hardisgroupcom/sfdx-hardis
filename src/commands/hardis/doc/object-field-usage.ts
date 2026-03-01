@@ -11,6 +11,7 @@ import { createXlsxFromCsvFiles, generateCsvFile, generateReportPath } from '../
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { listOrgSObjects } from '../../../common/utils/orgUtils.js';
 import { isManagedApiName } from '../../../common/utils/projectUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 type FieldUsageRow = {
   sObjectName: string;
@@ -325,7 +326,7 @@ This command focuses on one or more sObjects and measures how many records popul
       if (!this.isInvalidTypeError(error)) {
         throw error;
       }
-      uxLog("warning", this, c.yellow(`Standard API describe failed for ${sObjectName}. Retrying with Tooling API...`));
+      uxLog("warning", this, c.yellow(t('standardApiDescribeFailedForRetryingWith', { sObjectName })));
       const describeResult = await connection.tooling.describe(sObjectName);
       return { describeResult, useTooling: true };
     }
@@ -338,7 +339,7 @@ This command focuses on one or more sObjects and measures how many records popul
     useTooling: boolean
   ): Promise<FieldDistributionResult> {
     const fieldName = fieldDescribe.name;
-    uxLog("action", this, c.cyan(`Computing distribution for ${sObjectName}.${fieldName}...`));
+    uxLog("action", this, c.cyan(t('computingDistributionFor', { sObjectName, fieldName })));
     const totalRecords = await this.countRecords(connection, sObjectName, useTooling);
     const distributionResult = await this.queryFieldDistribution(connection, sObjectName, fieldName, useTooling);
 
@@ -363,8 +364,8 @@ This command focuses on one or more sObjects and measures how many records popul
       { key: 'percentage', header: 'Percentage' },
     ];
 
-    uxLog("log", this, c.cyan(`Found ${rows.length} distinct values for ${fieldName}.`));
-    uxLog("log", this, c.cyan(`Total ${sObjectName} records: ${totalRecords}.`));
+    uxLog("log", this, c.cyan(t('foundDistinctValuesFor', { rows: rows.length, fieldName })));
+    uxLog("log", this, c.cyan(t('totalRecords', { sObjectName, totalRecords })));
     // uxLogTable(this, rows, columns.map((col) => col.key));
 
     const reportFiles = await generateReports(rows, columns, this, {
@@ -387,11 +388,11 @@ This command focuses on one or more sObjects and measures how many records popul
     useTooling: boolean
   ): Promise<{ rows: FieldUsageRow[]; totalRecords: number; skippedFields: SkippedFieldInfo[] }> {
     if (eligibleFields.length === 0) {
-      uxLog("warning", this, c.yellow(`No eligible fields found on ${sObjectName}; skipping.`));
+      uxLog("warning", this, c.yellow(t('noEligibleFieldsFoundOnSkipping', { sObjectName })));
       return { rows: [], totalRecords: 0, skippedFields: [] };
     }
 
-    uxLog("log", this, c.cyan(`Counting total ${sObjectName} records...`));
+    uxLog("log", this, c.cyan(t('countingTotalRecords', { sObjectName })));
     const totalRecords = await this.countRecords(connection, sObjectName, useTooling);
 
     const skippedFields: SkippedFieldInfo[] = [];
@@ -444,8 +445,8 @@ This command focuses on one or more sObjects and measures how many records popul
       order: ['desc'],
     });
 
-    uxLog("log", this, c.grey(`Computed population metrics for ${resultSorted.length} fields on ${sObjectName}.`));
-    uxLog("log", this, c.grey(`Total records for ${sObjectName}: ${totalRecords}.`));
+    uxLog("log", this, c.grey(t('computedPopulationMetricsForFieldsOn', { resultSorted: resultSorted.length, sObjectName })));
+    uxLog("log", this, c.grey(t('totalRecordsFor', { sObjectName, totalRecords })));
     //uxLogTable(this, resultSorted, columns.map((col) => col.key));
 
     return { rows: resultSorted, totalRecords, skippedFields };
@@ -577,7 +578,7 @@ This command focuses on one or more sObjects and measures how many records popul
       const promptObjectsRes = await prompts({
         type: 'multiselect',
         name: 'value',
-        message: 'Select the SObjects to analyze:',
+        message: t('selectTheSobjectsToAnalyze'),
         description: "Exclude objects you don't want to analyze.",
         choices: sObjectApiNames.map((apiName: string) => ({ title: apiName, value: apiName })),
         initial: sObjectApiNames,
@@ -612,9 +613,9 @@ This command focuses on one or more sObjects and measures how many records popul
     WebSocketClient.sendProgressStartMessage(`Describing ${uniqueObjects.length} objects...`);
     let counter = 0;
     for (const sObjectName of uniqueObjects) {
-      uxLog("log", this, c.grey(`Describing ${sObjectName}...`));
+      uxLog("log", this, c.grey(t('describing', { sObjectName })));
       const context = await this.describeTarget(connection, sObjectName);
-      uxLog("log", this, c.grey(`Using ${context.useTooling ? 'Tooling' : 'standard'} API for ${sObjectName}.`));
+      uxLog("log", this, c.grey(t('usingApiFor', { context: context.useTooling ? 'Tooling' : 'standard', sObjectName })));
       const eligibleFields = this.filterDescribeFields(context.describeResult?.fields || []);
       // Filter eligible fields to remove those with namespaces
       const eligibleFieldsFiltered = eligibleFields.filter((field) => {
@@ -678,7 +679,7 @@ This command focuses on one or more sObjects and measures how many records popul
         uxLogTable(this, fieldSummaryRows, ['sObjectName', 'fieldApiName', 'distinctValues', 'totalRecords']);
       }
       if (aggregatedReportFiles.length > 0) {
-        uxLog("log", this, c.grey('Report files:'));
+        uxLog("log", this, c.grey(t('reportFiles')));
         for (const rf of aggregatedReportFiles) {
           uxLog("log", this, c.grey(`- ${rf?.type || 'file'}: ${rf?.file || ''}`));
         }

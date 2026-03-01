@@ -8,6 +8,7 @@ import { promptProfiles } from '../../../../common/utils/orgUtils.js';
 //import { executeApex } from "../../../../common/utils/deployUtils.js";
 import { prompts } from '../../../../common/utils/prompts.js';
 import { soqlQuery, bulkQuery, bulkUpdate } from '../../../../common/utils/apiUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -111,7 +112,7 @@ The command's technical implementation involves:
       // Manual user selection
       const profilesRes = await promptProfiles(conn, {
         multiselect: true,
-        message: 'Please select profiles that you do you want to unfreeze users that are assigned to them ?',
+        message: t('pleaseSelectProfilesThatYouDoYou2'),
         returnField: 'record',
       });
       profileIds = profilesRes.map((profile) => profile.Id);
@@ -124,7 +125,7 @@ The command's technical implementation involves:
       const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name IN (${profilesConstraintIn})`;
       const profilesQueryRes = await soqlQuery(profilesQuery, conn);
       if (this.debugMode) {
-        uxLog("log", this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
+        uxLog("log", this, c.grey(t('queryResult2', { JSON: JSON.stringify(profilesQueryRes, null, 2) })));
       }
       profileIds = profilesQueryRes.records.map((profile) => profile.Id);
       profileNames = profilesQueryRes.records.map((profile) => {
@@ -136,7 +137,7 @@ The command's technical implementation involves:
       const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name NOT IN (${profilesConstraintIn})`;
       const profilesQueryRes = await soqlQuery(profilesQuery, conn);
       if (this.debugMode) {
-        uxLog("log", this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
+        uxLog("log", this, c.grey(t('queryResult2', { JSON: JSON.stringify(profilesQueryRes, null, 2) })));
       }
       profileIds = profilesQueryRes.records.map((profile) => profile.Id);
       profileNames = profilesQueryRes.records.map((profile) => {
@@ -148,7 +149,7 @@ The command's technical implementation involves:
     const profileIdsStr = profileIds.map((profileId) => `'${profileId}'`).join(',');
 
     // Query users that we want to unfreeze
-    uxLog("action", this, c.cyan(`Querying User records matching ${c.bold(profileIds.length)} profiles...`));
+    uxLog("action", this, c.cyan(t('queryingUserRecordsMatchingProfiles', { profileIds: c.bold(profileIds.length) })));
     const userQuery = `SELECT Id,Name,Username,ProfileId FROM User WHERE ProfileId IN (${profileIdsStr}) and IsActive=true`;
     const userQueryRes = await bulkQuery(userQuery, conn);
     const usersToUnfreeze = userQueryRes.records;
@@ -162,7 +163,7 @@ The command's technical implementation involves:
     }
 
     // Query related UserLogin records
-    uxLog("action", this, c.cyan(`Querying UserLogin records matching ${c.bold(usersToUnfreeze.length)} users...`));
+    uxLog("action", this, c.cyan(t('queryingUserloginRecordsMatchingUsers2', { usersToUnfreeze: c.bold(usersToUnfreeze.length) })));
     const userLoginQuery = `SELECT Id,UserId,IsFrozen FROM UserLogin WHERE UserId IN (${userIdsStr}) and IsFrozen=true`;
     const userLoginQueryRes = await bulkQuery(userLoginQuery, conn);
     const userLoginsToUnfreeze = userLoginQueryRes.records;
@@ -176,7 +177,7 @@ The command's technical implementation involves:
         Profile: profileNames.filter((profile) => profile[0] === matchingUser.ProfileId)[1],
       };
     });
-    uxLog("action", this, c.cyan(`List of users to unfreeze (${userLoginsToUnfreeze.length}):`));
+    uxLog("action", this, c.cyan(t('listOfUsersToUnfreeze', { userLoginsToUnfreeze: userLoginsToUnfreeze.length })));
     uxLogTable(
       this,
       this.debugMode ? usersToUnfreezeDisplay : usersToUnfreezeDisplay.slice(0, this.maxUsersDisplay)

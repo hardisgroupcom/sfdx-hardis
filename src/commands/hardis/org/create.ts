@@ -18,6 +18,7 @@ import {
 } from '../../../common/utils/orgUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { getConfig } from '../../../config/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -113,7 +114,7 @@ The command's technical implementation involves:
       await initOrgData(path.join('.', 'scripts', 'data', 'SandboxInit'), this.sandboxOrgUsername);
     } catch (e) {
       elapseEnd(`Create and initialize sandbox org`);
-      uxLog("log", this, c.grey('Error: ' + (e as Error).message + '\n' + (e as Error).stack));
+      uxLog("log", this, c.grey(t('error2') + (e as Error).message + '\n' + (e as Error).stack));
       throw e;
     }
     elapseEnd(`Create and initialize sandbox org`);
@@ -155,11 +156,11 @@ The command's technical implementation involves:
   // Create a new sandbox org or reuse existing one
   public async createSandboxOrg() {
     // Build project-sandbox-def-branch-user.json
-    uxLog("action", this, c.cyan('Building custom project-sandbox-def.json...'));
+    uxLog("action", this, c.cyan(t('buildingCustomProjectSandboxDefJson')));
     if (fs.existsSync('./config/project-sandbox-def.json')) {
       this.projectSandboxDef = JSON.parse(fs.readFileSync('./config/project-sandbox-def.json', 'utf-8'));
     } else {
-      uxLog("warning", this, c.yellow(`Default values used: you may define a file ${c.bold('config/project-sandbox-def.json')}`));
+      uxLog("warning", this, c.yellow(`Default values used: you may define a file ${c.bold(t('configProjectSandboxDefJson'))}`));
       this.projectSandboxDef = {
         sandboxName: '',
         description: 'SFDX Hardis developer sandbox',
@@ -176,11 +177,11 @@ The command's technical implementation involves:
     const tmpShapeFolder = path.join(os.tmpdir(), 'shape');
     if (fs.existsSync(tmpShapeFolder)) {
       await fs.remove(tmpShapeFolder);
-      uxLog("log", this, c.grey('Deleted ' + tmpShapeFolder));
+      uxLog("log", this, c.grey(t('deleted') + tmpShapeFolder));
     }
 
     // Create new sandbox org
-    uxLog("action", this, c.cyan('Creating new sandbox org...'));
+    uxLog("action", this, c.cyan(t('creatingNewSandboxOrg')));
     const waitTime = process.env.SANDBOX_ORG_WAIT || '60';
     const createCommand =
       'sf org create sandbox --set-default ' +
@@ -237,7 +238,7 @@ The command's technical implementation involves:
   public async updateSandboxOrgUser() {
     const config = await getConfig('user');
     // Update sandbox org main user
-    uxLog("action", this, c.cyan('Update / fix sandbox org user ' + this.sandboxOrgUsername));
+    uxLog("action", this, c.cyan(t('updateFixSandboxOrgUser') + this.sandboxOrgUsername));
     const userQueryCommand = `sf data get record --sobject User --where "Username=${this.sandboxOrgUsername}" --target-org ${this.sandboxOrgAlias}`;
     const userQueryRes = await execSfdxJson(userQueryCommand, this, {
       fail: true,

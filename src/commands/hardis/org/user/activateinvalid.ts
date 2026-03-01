@@ -8,6 +8,7 @@ import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkQuery, bulkUpdate, soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { promptProfiles } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -113,7 +114,7 @@ See article below
         const selectedProfileIds = await promptProfiles(flags['target-org'].getConnection(), {
           multiselect: true,
           returnField: 'Id',
-          message: 'Please select profiles that you want to reactivate users with .invalid emails',
+          message: t('pleaseSelectProfilesThatYouWantTo'),
         });
         usersToActivateFinal = usersToActivateFinal.filter((user) => selectedProfileIds.includes(user.ProfileId));
       }
@@ -126,7 +127,7 @@ See article below
         const selectUsers = await prompts({
           type: 'multiselect',
           name: 'value',
-          message: 'Please select users that you want to remove the .invalid from emails',
+          message: t('pleaseSelectUsersThatYouWantTo'),
           description: 'Choose specific users to reactivate by removing .invalid suffix from their email addresses',
           choices: usersSorted.map((user: any) => {
             return { title: `${user.Name} - ${user.Email}`, value: user };
@@ -147,7 +148,7 @@ See article below
     });
     const bulkUpdateRes = await bulkUpdate('User', 'update', userToActivateUpdated, conn);
 
-    uxLog("action", this, c.cyan(`Results of the reactivation of ${userToActivateUpdated.length} users by removing the .invalid from their email`));
+    uxLog("action", this, c.cyan(t('resultsOfTheReactivationOfUsersBy', { userToActivateUpdated: userToActivateUpdated.length })));
     uxLogTable(
       this,
       this.debugMode ? userToActivateUpdated : userToActivateUpdated.slice(0, this.maxUsersDisplay)

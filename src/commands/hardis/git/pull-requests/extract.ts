@@ -8,6 +8,7 @@ import { generateCsvFile, generateReportPath } from '../../../../common/utils/fi
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import moment from 'moment';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -149,7 +150,7 @@ The command's technical implementation involves interacting with a Git provider'
         remote: true,
         checkOutPull: false,
         allowAll: true,
-        message: "Please select the target branch of Pull Requests"
+        message: t('pleaseSelectTheTargetBranchOfPull')
       });
       if (gitBranch && gitBranch !== "ALL BRANCHES") {
         this.targetBranch = gitBranch;
@@ -158,7 +159,7 @@ The command's technical implementation involves interacting with a Git provider'
 
     if (!isCI && !this.prStatus) {
       const statusRes = await prompts({
-        message: "Please select a status criterion, or All.",
+        message: t('pleaseSelectStatusCriterionOrAll'),
         type: "select",
         description: "Choose which pull request status to filter by.",
         placeholder: "Select status",

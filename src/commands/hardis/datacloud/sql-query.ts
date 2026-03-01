@@ -6,6 +6,7 @@ import { generateCsvFile, generateReportPath } from "../../../common/utils/files
 import { uxLog } from "../../../common/utils/index.js";
 import { prompts } from "../../../common/utils/prompts.js";
 import c from "chalk";
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -118,21 +119,21 @@ LIMIT 5000;
     if (this.queryString === '' || this.queryString == null) {
       const customQueryPromptRes = await prompts({
         type: 'text',
-        message: 'Please enter your Data Cloud SQL query:',
+        message: t('pleaseEnterYourDataCloudSqlQuery'),
         description: 'Custom Data Cloud SQL query',
       });
       this.queryString = customQueryPromptRes.value;
       // Prompt user if he wants to save the query
       const saveQueryPromptRes = await prompts({
         type: 'confirm',
-        message: 'Do you want to save this query for future use?',
+        message: t('doYouWantToSaveThisQuery'),
         description: 'Save Data Cloud SQL query in local files',
         initial: false,
       });
       if (saveQueryPromptRes.value) {
         const saveQueryNamePromptRes = await prompts({
           type: 'text',
-          message: 'Enter a name for the saved query:',
+          message: t('enterNameForTheSavedQuery'),
           description: 'Name of the Data Cloud SQL query to save',
         });
         if (saveQueryNamePromptRes.value) {
@@ -141,7 +142,7 @@ LIMIT 5000;
       }
     }
 
-    uxLog("action", this, c.cyan('Executing Data Cloud SQL query...'));
+    uxLog("action", this, c.cyan(t('executingDataCloudSqlQuery')));
 
     const result = await dataCloudSqlQuery(this.queryString, conn, {});
     this.logJson(result);

@@ -22,6 +22,7 @@ import { CONSTANTS, setInConfigFile } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { promptOrg } from '../../../../common/utils/orgUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -116,7 +117,7 @@ The command's technical implementation involves a series of Git operations, file
       }
     }
     const preRequisitesUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
-    uxLog("warning", this, c.yellow('Monitoring pre-requisites documentation: ' + c.bold(preRequisitesUrl)));
+    uxLog("warning", this, c.yellow(t('monitoringPreRequisitesDocumentation') + c.bold(preRequisitesUrl)));
     WebSocketClient.sendReportFileMessage(preRequisitesUrl, 'Monitoring pre-requisites', "docUrl");
     // Confirm pre-requisites
     const confirmPreRequisites = await prompts({
@@ -126,7 +127,7 @@ The command's technical implementation involves a series of Git operations, file
         { title: '😎 Yes', value: 'yes' },
         { title: 'ℹ️ No, bring me to the documentation!', value: 'no' },
       ],
-      message: c.cyanBright('Did you configure the sfdx-hardis monitoring pre-requisites on your Git server ?'),
+      message: c.cyanBright(t('didYouConfigureTheSfdxHardisMonitoring')),
       description: 'Confirm that you have set up the required CI/CD variables and permissions for monitoring',
       placeholder: 'Select an option',
     });
@@ -182,7 +183,7 @@ The command's technical implementation involves a series of Git operations, file
         .replace(/--/gm, '__')
         .replace(/-/gm, '_');
 
-    uxLog("action", this, c.cyan(`Handling monitoring git branch ${c.bold(branchName)}...`));
+    uxLog("action", this, c.cyan(t('handlingMonitoringGitBranch', { branchName: c.bold(branchName) })));
 
     // Checkout branch, or create it if not existing (stash before if necessary)
     await execCommand('git add --all', this, { output: true, fail: false });
@@ -192,17 +193,17 @@ The command's technical implementation involves a series of Git operations, file
     // Create sfdx project if not existing yet
     if (!fs.existsSync('sfdx-project.json')) {
       const createCommand = 'sf project generate' + ` --name "sfdx-hardis-monitoring"`;
-      uxLog("action", this, c.cyan('Creating sfdx-project...'));
+      uxLog("action", this, c.cyan(t('creatingSfdxProject2')));
       await execCommand(createCommand, this, {
         output: true,
         fail: true,
       });
-      uxLog("action", this, c.cyan('Moving sfdx-project to root...'));
+      uxLog("action", this, c.cyan(t('movingSfdxProjectToRoot')));
       await fs.copy('sfdx-hardis-monitoring', process.cwd(), { overwrite: true });
       await fs.remove('sfdx-hardis-monitoring');
 
       // Copying monitoring folder structure
-      uxLog("other", this, 'Copying default monitoring files...');
+      uxLog("other", this, t('copyingDefaultMonitoringFiles'));
       if (fs.existsSync('README.md') && fs.readFileSync('README.md', 'utf8').toString().split('\n').length < 5) {
         // Remove default README if necessary
         await fs.remove('README.md');
@@ -233,7 +234,7 @@ The command's technical implementation involves a series of Git operations, file
         description: 'This will create the branch on remote origin; if you don\'t understand this, just say yes 😊',
       });
       if (confirmPushToRemote.value === true) {
-        uxLog("action", this, c.cyan(`Pushing branch ${c.bold(branchName)} to git remote server...`));
+        uxLog("action", this, c.cyan(t('pushingBranchToGitRemoteServer', { branchName: c.bold(branchName) })));
         await gitAddCommitPush({
           message: '[sfdx-hardis] Update monitoring configuration',
         });
@@ -258,9 +259,9 @@ The command's technical implementation involves a series of Git operations, file
       await gitAddCommitPush({
         message: '[sfdx-hardis] Update monitoring configuration',
       });
-      uxLog("success", this, c.green('Your configuration for org monitoring is now ready 😊'));
+      uxLog("success", this, c.green(t('yourConfigurationForOrgMonitoringIsNow')));
     } else {
-      uxLog("warning", this, c.yellow('Please manually git add, commit and push to the remote repository 😊'));
+      uxLog("warning", this, c.yellow(t('pleaseManuallyGitAddCommitAndPush')));
     }
     const branch = await getCurrentGitBranch();
     uxLog(

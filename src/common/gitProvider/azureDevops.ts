@@ -9,6 +9,7 @@ import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPu
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
+import { t } from '../utils/i18n.js';
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -49,10 +50,10 @@ export class AzureDevopsProvider extends GitProviderRoot {
     }
     if (!process.env.SYSTEM_ACCESSTOKEN) {
       uxLog("warning", this, c.yellow("If you need an Azure Personal Access Token, create one following this documentation: https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows"));
-      uxLog("warning", this, c.yellow("Then please save it in a secured password tracker !"));
+      uxLog("warning", this, c.yellow(t('thenPleaseSaveItInSecuredPassword')));
       const accessTokenResp = await prompts({
         name: "token",
-        message: "Please input an Azure Personal Access Token",
+        message: t('pleaseInputAnAzurePersonalAccessToken'),
         description: "Enter your Azure DevOps Personal Access Token for API authentication (will not be stored permanently)",
         type: "text"
       });
@@ -250,8 +251,8 @@ ${this.getPipelineVariablesConfig()}
       queryConstraint.minTime = filters.minDate
     }
     // Process request
-    uxLog("action", this, c.cyan("Calling Azure API to list Pull Requests..."));
-    uxLog("log", this, c.grey(`Constraint:\n${JSON.stringify(queryConstraint, null, 2)}`));
+    uxLog("action", this, c.cyan(t('callingAzureApiToListPullRequests')));
+    uxLog("log", this, c.grey(t('constraint', { JSON: JSON.stringify(queryConstraint, null, 2) })));
 
     // List pull requests
     const pullRequests = await azureGitApi.getPullRequests(repositoryId, queryConstraint, teamProject);
@@ -259,7 +260,7 @@ ${this.getPipelineVariablesConfig()}
     const pullRequestsWithComments: Array<GitPullRequest & { threads?: any[] }> = [];
     for (const pullRequest of pullRequests) {
       const pr: GitPullRequest & { threads?: any[] } = Object.assign({}, pullRequest);
-      uxLog("log", this, c.grey(`Getting threads for PR ${pullRequest.pullRequestId}...`));
+      uxLog("log", this, c.grey(t('gettingThreadsForPr', { pullRequest: pullRequest.pullRequestId })));
       const existingThreads = await azureGitApi.getThreads(pullRequest.repository?.id || "", pullRequest.pullRequestId || 0, teamProject);
       pr.threads = existingThreads.filter(thread => !thread.isDeleted);
       pullRequestsWithComments.push(pr);
@@ -267,7 +268,7 @@ ${this.getPipelineVariablesConfig()}
 
     // Format if requested
     if (options.formatted) {
-      uxLog("action", this, c.cyan(`Formatting ${pullRequestsWithComments.length} results...`));
+      uxLog("action", this, c.cyan(t('formattingResults', { pullRequestsWithComments: pullRequestsWithComments.length })));
       const pullRequestsFormatted = pullRequestsWithComments.map(pr => {
         const prFormatted: any = {};
         // Find sfdx-hardis deployment simulation status comment and extract tickets part
@@ -311,7 +312,7 @@ ${this.getPipelineVariablesConfig()}
     const azureGitApi = await this.azureApi.getGitApi();
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     if (repositoryId == null) {
-      uxLog("warning", this, c.yellow("BUILD_REPOSITORY_ID must be defined"));
+      uxLog("warning", this, c.yellow(t('buildrepositoryidMustBeDefined')));
       return null;
     }
     const latestPullRequestsOnBranch = await azureGitApi.getPullRequests(repositoryId, {
@@ -339,7 +340,7 @@ ${this.getPipelineVariablesConfig()}
       const azureGitApi = await this.azureApi.getGitApi();
       const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
       if (repositoryId == null) {
-        uxLog("warning", this, c.yellow("BUILD_REPOSITORY_ID must be defined"));
+        uxLog("warning", this, c.yellow(t('buildrepositoryidMustBeDefined')));
         return null;
       }
       return await this.getDeploymentIdFromPullRequest(azureGitApi, repositoryId, pullRequestInfo.idNumber || 0, null, pullRequestInfo);
@@ -363,7 +364,7 @@ ${this.getPipelineVariablesConfig()}
           const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment.content);
           if (matches) {
             deploymentCheckId = matches[1];
-            uxLog("error", this, c.grey(`Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`));
+            uxLog("error", this, c.grey(t('foundDeploymentIdOnPr', { deploymentCheckId, latestPullRequestId, latestPullRequest: latestPullRequest.title })));
             break;
           }
         }

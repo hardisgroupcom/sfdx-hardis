@@ -8,6 +8,7 @@ import { GitProvider, PullRequestData } from '../../../../common/gitProvider/ind
 import c from "chalk"
 import { uxLog } from '../../../../common/utils/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -139,7 +140,7 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
     await setConnectionVariables(flags?.['target-org']?.getConnection(), true);
 
 
-    uxLog("action", this, c.cyan("Handling Pull Request comments for a deployment check job..."));
+    uxLog("action", this, c.cyan(t('handlingPullRequestCommentsForDeploymentCheck')));
     // Add deployment info
     await buildCheckDeployCommitSummary();
     const prData: Partial<PullRequestData> = {
@@ -164,10 +165,10 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONS
     }
     // Fallback
     else {
-      uxLog("warning", this, c.yellow("No notification has been sent"));
+      uxLog("warning", this, c.yellow(t('noNotificationHasBeenSent')));
       uxLog("warning", this, c.yellow("- Slack / Teams / Email / JIRA messages are sent only if --check-only is false and --deploy-status is valid"));
     }
 
-    return { message: "Processed notifications" }
+    return { message: t('processedNotifications') }
   }
 }

@@ -8,6 +8,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { managePackageConfig, promptOrg } from '../../../../common/utils/orgUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -71,7 +72,7 @@ The command's technical implementation involves:
     }
 
     // Retrieve list of installed packages
-    uxLog("action", this, c.cyan('Retrieving installed packages from org ' + targetUsername + '...'));
+    uxLog("action", this, c.cyan(t('retrievingInstalledPackagesFromOrg') + targetUsername + '...'));
     const installedPackages = await MetadataUtils.listInstalledPackages(targetUsername || '', this);
 
     const packageNames = installedPackages
@@ -80,16 +81,16 @@ The command's technical implementation involves:
       .join('\n');
 
     if (installedPackages.length === 0) {
-      uxLog("warning", this, c.yellow(`No installed packages found in org ${targetUsername}.`));
+      uxLog("warning", this, c.yellow(t('noInstalledPackagesFoundInOrg', { targetUsername })));
       throw new SfError('No installed packages found in the target org. Maybe an auth issue ?');
     }
-    uxLog("action", this, c.cyan(`Successfully retrieved ${installedPackages.length} installed packages from org ${targetUsername}.\n${packageNames}`));
+    uxLog("action", this, c.cyan(t('successfullyRetrievedInstalledPackagesFromOrg', { installedPackages: installedPackages.length, targetUsername, packageNames })));
 
     // Store list in config
     const updateConfigRes = await prompts({
       type: 'confirm',
       name: 'value',
-      message: c.cyanBright('Do you want to update your project configuration with this list of packages ?'),
+      message: c.cyanBright(t('doYouWantToUpdateYourProject')),
       description: 'Update your local project files with the list of installed packages for deployment automation',
     });
     if (updateConfigRes.value === true) {

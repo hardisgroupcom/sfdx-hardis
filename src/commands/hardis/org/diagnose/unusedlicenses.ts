@@ -11,6 +11,7 @@ import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../.
 import { prompts } from '../../../../common/utils/prompts.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -390,7 +391,7 @@ The command's technical implementation involves extensive querying of Salesforce
     if (!isCI && this.unusedPermissionSetLicenseAssignments.length) {
       const confirmRes = await prompts({
         type: 'select',
-        message: 'Do you want to delete unused Permission Set License Assignments ?',
+        message: t('doYouWantToDeleteUnusedPermission'),
         description: 'Remove permission set license assignments that are not being used, freeing up licenses for other users',
         placeholder: 'Select an option',
         choices: [
@@ -408,7 +409,7 @@ The command's technical implementation involves extensive querying of Salesforce
         const deleteRes = await bulkUpdate('PermissionSetLicenseAssign', 'delete', pslaToDelete, conn);
         const deleteSuccessNb = deleteRes.successfulResults.length;
         const deleteErrorNb = deleteRes.failedResults.length;
-        uxLog("action", this, "Deletions Summary");
+        uxLog("action", this, t('deletionsSummary'));
         if (deleteErrorNb > 0) {
           uxLog(
             "warning",

@@ -15,6 +15,7 @@ import {
 import { callSfdxGitDelta } from '../../../../common/utils/gitUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -124,7 +125,7 @@ The command's technical implementation involves:
       const commitFromResp = await prompts({
         type: 'select',
         name: 'value',
-        message: 'Please select the commit that you want to start from',
+        message: t('pleaseSelectTheCommitThatYouWant'),
         description: 'Choose the starting commit for the delta generation',
         placeholder: 'Select a commit',
         choices: [headItem, ...branchCommitsChoices],
@@ -149,7 +150,7 @@ The command's technical implementation involves:
       const commitToResp = await prompts({
         type: 'select',
         name: 'value',
-        message: 'Please select the commit hash that you want to go to',
+        message: t('pleaseSelectTheCommitHashThatYou'),
         description: 'Choose the ending commit for the delta generation',
         placeholder: 'Select a commit',
         choices: [currentItem, singleCommitChoice, ...branchCommitsChoices],
@@ -158,15 +159,15 @@ The command's technical implementation involves:
     }
 
     // Generate package.xml & destructiveChanges.xml using sfdx-git-delta
-    uxLog("action", this, c.cyan(`Generating delta from commit ${c.bold(fromCommit)} to commit ${c.bold(toCommit)} on branch ${c.bold(gitBranch)}`));
+    uxLog("action", this, c.cyan(t('generatingDeltaFromCommitToCommitOn', { fromCommit: c.bold(fromCommit), toCommit: c.bold(toCommit), gitBranch: c.bold(gitBranch) })));
     const tmpDir = await createTempDir();
     await callSfdxGitDelta(fromCommit || '', toCommit || '', tmpDir, { debug: this.debugMode });
 
     const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
     const diffDestructiveChangesXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
 
-    uxLog("log", this, c.grey(`Generated diff package.xml at ${c.green(diffPackageXml)}`));
-    uxLog("log", this, c.grey(`Generated diff destructiveChanges.xml at ${c.green(diffDestructiveChangesXml)}`));
+    uxLog("log", this, c.grey(t('generatedDiffPackageXmlAt', { diffPackageXml: c.green(diffPackageXml) })));
+    uxLog("log", this, c.grey(t('generatedDiffDestructivechangesXmlAt', { diffDestructiveChangesXml: c.green(diffDestructiveChangesXml) })));
 
     if (WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.sendReportFileMessage(diffPackageXml, 'Git Delta package.xml', "report");

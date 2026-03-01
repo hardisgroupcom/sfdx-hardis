@@ -5,6 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -123,7 +124,7 @@ The command's technical implementation involves:
 
     // Promote packages
     for (const packageToPromote of packagesToPromote) {
-      uxLog("action", this, c.cyan(`Promoting version of package ${c.green(packageToPromote)}`));
+      uxLog("action", this, c.cyan(t('promotingVersionOfPackage', { packageToPromote: c.green(packageToPromote) })));
       const promoteCommand = 'sf package version promote' + ` --package "${packageToPromote}"` + ' --no-prompt';
       const promoteResult = await execSfdxJson(promoteCommand, this, {
         fail: false,

@@ -5,6 +5,7 @@ import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageRes
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { GitProviderRoot } from "./gitProviderRoot.js";
 import { CONSTANTS } from "../../config/index.js";
+import { t } from '../utils/i18n.js';
 
 export class GitlabProvider extends GitProviderRoot {
   private gitlabApi: InstanceType<typeof Gitlab>;
@@ -175,7 +176,7 @@ export class GitlabProvider extends GitProviderRoot {
         const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingNote.body);
         if (matches) {
           deploymentCheckId = matches[1];
-          uxLog("error", this, c.grey(`Found deployment id ${deploymentCheckId} on MR #${latestMergeRequestId} ${latestMergeRequest.title}`));
+          uxLog("error", this, c.grey(t('foundDeploymentIdOnMr', { deploymentCheckId, latestMergeRequestId, latestMergeRequest: latestMergeRequest.title })));
           break;
         }
       }

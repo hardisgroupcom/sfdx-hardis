@@ -30,6 +30,7 @@ import { addScratchOrgToPool, fetchScratchOrg } from '../../../common/utils/pool
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { getConfig, setConfig } from '../../../config/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -170,7 +171,7 @@ The command's technical implementation involves:
       }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
-      uxLog("log", this, c.grey('Error: ' + (e as Error).message + '\n' + (e as Error).stack));
+      uxLog("log", this, c.grey(t('error2') + (e as Error).message + '\n' + (e as Error).stack));
       if (isCI && this.scratchOrgFromPool) {
         this.scratchOrgFromPool.failures = this.scratchOrgFromPool.failures || [];
         this.scratchOrgFromPool.failures.push(JSON.stringify(e, null, 2));
@@ -187,7 +188,7 @@ The command's technical implementation involves:
           fail: false,
           output: true,
         });
-        uxLog("error", this, c.red('Deleted scratch org as we are in CI and its creation has failed'));
+        uxLog("error", this, c.red(t('deletedScratchOrgAsWeAreIn')));
       }
       throw e;
     }
@@ -282,7 +283,7 @@ The command's technical implementation involves:
   // Create a new scratch org or reuse existing one
   public async createScratchOrg(flags) {
     // Build project-scratch-def-branch-user.json
-    uxLog("action", this, c.cyan('Building custom project-scratch-def.json...'));
+    uxLog("action", this, c.cyan(t('buildingCustomProjectScratchDefJson')));
     this.projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json', 'utf-8'));
     this.projectScratchDef.orgName = this.scratchOrgAlias;
     this.projectScratchDef.adminEmail = this.userEmail;
@@ -292,7 +293,7 @@ The command's technical implementation involves:
     if (process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape) {
       this.projectScratchDef.sourceOrg = process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape;
     }
-    uxLog("log", this, c.grey("Project scratch def: \n" + JSON.stringify(this.projectScratchDef, null, 2)));
+    uxLog("log", this, c.grey(t('projectScratchDef') + JSON.stringify(this.projectScratchDef, null, 2)));
     const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
     await fs.ensureDir(path.dirname(projectScratchDefLocal));
     await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
@@ -309,7 +310,7 @@ The command's technical implementation involves:
     if (matchingScratchOrgs?.length > 0 && !this.forceNew && this.pool == false) {
       this.scratchOrgInfo = matchingScratchOrgs[0];
       this.scratchOrgUsername = this.scratchOrgInfo.username;
-      uxLog("action", this, c.cyan(`Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
+      uxLog("action", this, c.cyan(t('reusingOrgWithUser', { scratchOrgAlias: c.green(this.scratchOrgAlias), scratchOrgUsername: c.green(this.scratchOrgUsername) })));
       return;
     }
     // Try to fetch a scratch org from the pool
@@ -356,11 +357,11 @@ The command's technical implementation involves:
     const tmpShapeFolder = path.join(os.tmpdir(), 'shape');
     if (fs.existsSync(tmpShapeFolder) && this.pool === false) {
       await fs.remove(tmpShapeFolder);
-      uxLog("log", this, c.grey('Deleted ' + tmpShapeFolder));
+      uxLog("log", this, c.grey(t('deleted') + tmpShapeFolder));
     }
 
     // Create new scratch org
-    uxLog("action", this, c.cyan('Creating new scratch org...'));
+    uxLog("action", this, c.cyan(t('creatingNewScratchOrg')));
     const waitTime = process.env.SCRATCH_ORG_WAIT || '15';
     const createCommand =
       'sf org create scratch --set-default ' +
@@ -446,7 +447,7 @@ The command's technical implementation involves:
         output: false,
         debug: this.debugMode,
       });
-      uxLog("action", this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
+      uxLog("action", this, c.cyan(t('openScratchOrgWithUrl2', { openRes: c.green(openRes?.result?.url) })));
     } else {
       // Open scratch org for user if not in CI
       await execSfdxJson('sf org open', this, {
@@ -492,7 +493,7 @@ The command's technical implementation involves:
   public async updateScratchOrgUser() {
     const config = await getConfig('user');
     // Update scratch org main user
-    uxLog("action", this, c.cyan('Update / fix scratch org user ' + this.scratchOrgUsername));
+    uxLog("action", this, c.cyan(t('updateFixScratchOrgUser') + this.scratchOrgUsername));
     const userQueryCommand = `sf data get record --sobject User --where "Username=${this.scratchOrgUsername}" --target-org ${this.scratchOrgAlias}`;
     const userQueryRes = await execSfdxJson(userQueryCommand, this, {
       fail: true,

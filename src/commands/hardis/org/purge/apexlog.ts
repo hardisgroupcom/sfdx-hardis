@@ -7,6 +7,7 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import { execCommand, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -97,7 +98,7 @@ The command's technical implementation involves:
     const apexLogsNumber = extractFile.split('\n').filter((line) => line.length > 0).length;
 
     if (apexLogsNumber === 0) {
-      uxLog("action", this, c.cyan(`There are no Apex Logs to delete in org ${c.green(flags['target-org'].getUsername())}`));
+      uxLog("action", this, c.cyan(t('thereAreNoApexLogsToDelete', { flags: c.green(flags['target-org'].getUsername()) })));
       return {};
     }
 

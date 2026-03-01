@@ -22,6 +22,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { soqlQuery, soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { importData, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -141,7 +142,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const saveProjectPath = await prompts({
       type: 'select',
       name: 'path',
-      message: 'Select the project path where the sandbox info has been saved',
+      message: t('selectTheProjectPathWhereTheSandbox'),
       description: 'This is the path where the metadatas were saved before the org refresh',
       choices: subFolders.map(folder => ({
         title: folder,
@@ -177,7 +178,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const manifestDir = path.join(this.saveProjectPath, 'manifest');
     const certsPackageXml = path.join(manifestDir, 'package-certificates-to-save.xml');
     if (!fs.existsSync(certsDir) || !fs.existsSync(certsPackageXml)) {
-      uxLog("log", this, c.yellow('No certificates backup found, skipping certificate restore.'));
+      uxLog("log", this, c.yellow(t('noCertificatesBackupFoundSkippingCertificateRestore')));
       return;
     }
     // Copy certs to a temporary folder for deployment
@@ -188,7 +189,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // List certificates in the restore folder
     const certsFiles = fs.readdirSync(certsDir);
     if (certsFiles.length === 0) {
-      uxLog("log", this, c.yellow('No certificates found in the backup folder, skipping certificate restore.'));
+      uxLog("log", this, c.yellow(t('noCertificatesFoundInTheBackupFolder')));
       return;
     }
     // List .crt files and get their name, then check that each cert must have a .crt and a .crt-meta.xml file
@@ -197,7 +198,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       return fs.existsSync(path.join(certsDir, `${name}.crt-meta.xml`));
     });
     if (validCertsToRestoreNames.length === 0) {
-      uxLog("log", this, c.yellow('No valid certificates found in the backup folder (with .crt + .crt-meta.xml), skipping certificate restore.'));
+      uxLog("log", this, c.yellow(t('noValidCertificatesFoundInTheBackup')));
       return;
     }
 
@@ -205,7 +206,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const promptCerts = await prompts({
       type: 'multiselect',
       name: 'certs',
-      message: `Select certificates to restore`,
+      message: t('selectCertificatesToRestore'),
       description: 'Select the certificates you want to restore from the backup. You can select multiple certificates.',
       choices: validCertsToRestoreNames.map(name => ({
         title: name,
@@ -215,7 +216,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     const selectedCerts = promptCerts.certs;
     if (selectedCerts.length === 0) {
-      uxLog("log", this, c.yellow('No certificates selected for restore, skipping certificate restore.'));
+      uxLog("log", this, c.yellow(t('noCertificatesSelectedForRestoreSkippingCertificate')));
       return;
     }
 
@@ -223,7 +224,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const prompt = await prompts({
       type: 'confirm',
       name: 'restore',
-      message: `Do you confirm you want to restore ${selectedCerts.length} certificate(s) ?`,
+      message: t('doYouConfirmYouWantToRestore', { selectedCerts: selectedCerts.length }),
       description: 'This will deploy all certificate files and definitions saved before the refresh.',
       initial: true
     });
@@ -238,13 +239,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     await writePackageXmlFile(path.join(mdApiCertsRestoreFolder, 'package.xml'), packageXmlCerts);
 
     // Deploy using metadata API
-    uxLog("log", this, c.grey(`Deploying certificates in org ${this.instanceUrl} using Metadata API (Source Api does not support it)...`));
+    uxLog("log", this, c.grey(t('deployingCertificatesInOrgUsingMetadataApi', { instanceUrl: this.instanceUrl })));
     await execSfdxJson(
       `sf project deploy start --metadata-dir ${mdApiCertsRestoreFolder} --target-org ${this.orgUsername}`,
       this,
       { output: true, fail: true, cwd: this.saveProjectPath }
     );
-    uxLog("success", this, c.green(`Certificates restored successfully in org ${this.instanceUrl}`));
+    uxLog("success", this, c.green(t('certificatesRestoredSuccessfullyInOrg', { instanceUrl: this.instanceUrl })));
   }
 
   private async restoreOtherMetadata(): Promise<void> {
@@ -252,41 +253,41 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const restorePackageXml = path.join(manifestDir, 'package-metadata-to-restore.xml');
     // Check if the restore package.xml exists
     if (!fs.existsSync(restorePackageXml)) {
-      uxLog("log", this, c.yellow('No package-metadata-to-restore.xml found, skipping metadata restore.'));
+      uxLog("log", this, c.yellow(t('noPackageMetadataToRestoreXmlFound')));
       return;
     }
     // Warn user about the restore package.xml that needs to be manually checked
     WebSocketClient.sendReportFileMessage(restorePackageXml, "Restore Metadatas package.xml", "report");
-    uxLog("action", this, c.cyan(`Now handling the restore of other metadata from ${restorePackageXml}...`));
+    uxLog("action", this, c.cyan(t('nowHandlingTheRestoreOfOtherMetadata', { restorePackageXml })));
     const metadataRestore = await parsePackageXmlFile(restorePackageXml);
     const metadataSummary = Object.keys(metadataRestore).map(key => {
       return `${key}(${Array.isArray(metadataRestore[key]) ? metadataRestore[key].length : 0})`;
     }).join(', ');
-    uxLog("warning", this, c.yellow(`Look at the package-metadata-to-restore.xml file in ${c.bold(this.saveProjectPath)} to see what will be restored.`));
-    uxLog("warning", this, c.yellow(`Confirm it's content, or remove/comment part of it if you don't want some metadata to be restored\n${metadataSummary}`));
+    uxLog("warning", this, c.yellow(t('lookAtThePackageMetadataToRestore', { saveProjectPath: c.bold(this.saveProjectPath) })));
+    uxLog("warning", this, c.yellow(t('confirmItContentOrRemoveCommentPart', { metadataSummary })));
 
     const prompt = await prompts({
       type: 'confirm',
       name: 'restore',
-      message: `Please double check package-metadata-to-restore.xml. Do you confirm you want to restore all these metadatas ?\n${metadataSummary}`,
+      message: t('pleaseDoubleCheckPackageMetadataToRestore', { metadataSummary }),
       description: `WARNING: Check and validate/update file ${restorePackageXml} BEFORE it is deployed !`,
       initial: true
     });
     if (!prompt.restore) {
-      uxLog("warning", this, c.yellow('Metadata restore cancelled by user.'));
-      this.result = Object.assign(this.result, { success: false, message: 'Metadata restore cancelled by user.' });
+      uxLog("warning", this, c.yellow(t('metadataRestoreCancelledByUser')));
+      this.result = Object.assign(this.result, { success: false, message: t('metadataRestoreCancelledByUser') });
       return;
     }
     // Deploy the metadata using the package.xml
-    uxLog("action", this, c.cyan('Deploying other metadatas to org...'));
+    uxLog("action", this, c.cyan(t('deployingOtherMetadatasToOrg')));
     const deployCmd = `sf project deploy start --manifest ${restorePackageXml} --target-org ${this.orgUsername} --json`;
     const deployResult = await execSfdxJson(deployCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
     if (deployResult.status === 0) {
-      uxLog("success", this, c.green(`Other metadata restored successfully in org ${this.instanceUrl}`));
+      uxLog("success", this, c.green(t('otherMetadataRestoredSuccessfullyInOrg', { instanceUrl: this.instanceUrl })));
     }
     else {
-      uxLog("error", this, c.red(`Failed to restore other metadata in org ${this.instanceUrl}: ${deployResult.error}`));
-      this.result = Object.assign(this.result, { success: false, message: `Failed to restore other metadata: ${deployResult.error}` });
+      uxLog("error", this, c.red(t('failedToRestoreOtherMetadataInOrg', { instanceUrl: this.instanceUrl, deployResult: deployResult.error })));
+      this.result = Object.assign(this.result, { success: false, message: t('failedToRestoreOtherMetadata', { deployResult: deployResult.error }) });
       throw new Error(`Failed to restore other metadata:\n${JSON.stringify(deployResult, null, 2)}`);
     }
   }
@@ -295,26 +296,26 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // 0. List all samlssoconfigs in the project, prompt user to select which to restore
     const samlDir = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'samlssoconfigs');
     if (!fs.existsSync(samlDir)) {
-      uxLog("action", this, c.cyan('No SAML SSO Configs found, skipping SAML SSO config restore.'));
+      uxLog("action", this, c.cyan(t('noSamlSsoConfigsFoundSkippingSaml')));
       return;
     }
     const allSamlFiles = fs.readdirSync(samlDir).filter(f => f.endsWith('.samlssoconfig-meta.xml'));
     if (allSamlFiles.length === 0) {
-      uxLog("action", this, c.yellow('No SAML SSO Config XML files found., skipping SAML SSO config restore.'));
+      uxLog("action", this, c.yellow(t('noSamlSsoConfigXmlFilesFound')));
       return;
     }
     // Prompt user to select which SAML SSO configs to restore
     const promptSaml = await prompts({
       type: 'multiselect',
       name: 'samlFiles',
-      message: 'Select SAML SSO Configs to restore',
+      message: t('selectSamlSsoConfigsToRestore'),
       description: 'Select the SAML SSO Configs you want to restore from the backup. You can select multiple configs.',
       choices: allSamlFiles.map(f => ({ title: f.replace('.samlssoconfig-meta.xml', ''), value: f })),
       initial: allSamlFiles // select all by default
     });
     const selectedSamlFiles: string[] = promptSaml.samlFiles;
     if (!selectedSamlFiles || selectedSamlFiles.length === 0) {
-      uxLog("log", this, c.yellow('No SAML SSO Configs selected for restore, skipping.'));
+      uxLog("log", this, c.yellow(t('noSamlSsoConfigsSelectedForRestore')));
       return;
     }
 
@@ -326,7 +327,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       const res = await soqlQueryTooling(soql, this.conn);
       certs = res.records as any;
     } catch (e) {
-      uxLog("error", this, c.red(`Failed to query active certificates: ${e}`));
+      uxLog("error", this, c.red(t('failedToQueryActiveCertificates', { val: e })));
       return;
     }
     if (!certs.length) {
@@ -341,7 +342,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       const certPrompt = await prompts({
         type: 'select',
         name: 'certId',
-        message: `Select the certificate to use for SAML SSO config ${samlName}`,
+        message: t('selectTheCertificateToUseForSaml', { samlName }),
         description: `This will update <requestSigningCertId> in ${samlFile}.`,
         choices: certs.map(cert => ({
           title: cert.MasterLabel,
@@ -350,7 +351,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       });
       const selectedCertId = certPrompt.certId;
       if (!selectedCertId) {
-        uxLog("warning", this, c.yellow('No certificate selected. Skipping SAML SSO config update.'));
+        uxLog("warning", this, c.yellow(t('noCertificateSelectedSkippingSamlSsoConfig')));
         errors.push(`No certificate selected for ${samlName}`);
         continue;
       }
@@ -365,44 +366,44 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         xml = xml.replace(/<requestSigningCertId>.*?<\/requestSigningCertId>/s, `<requestSigningCertId>${selectedCertId}</requestSigningCertId>`);
       }
       await fs.writeFile(filePath, xml, 'utf8');
-      uxLog("log", this, c.grey(`Updated SAML SSO config ${samlFile} with certificate ${selectedCertId} and removed readonly tags oauthTokenEndpoint & salesforceLoginUrl`));
+      uxLog("log", this, c.grey(t('updatedSamlSsoConfigWithCertificateAnd', { samlFile, selectedCertId })));
       // 2. Prompt user to confirm deployment
       const promptDeploy = await prompts({
         type: 'confirm',
         name: 'deploy',
-        message: `Do you confirm you want to deploy ${samlFile} SAML SSO Config to the org?`,
+        message: t('doYouConfirmYouWantToDeploy', { samlFile }),
         description: 'This will deploy the selected SAML SSO Configs to the org using SFDX',
         initial: true
       });
       if (!promptDeploy.deploy) {
-        uxLog("warning", this, c.yellow(`SAML SSO Config ${samlFile} deployment cancelled by user.`));
+        uxLog("warning", this, c.yellow(t('samlSsoConfigDeploymentCancelledByUser', { samlFile })));
         errors.push(`Deployment cancelled for ${samlFile}`);
         continue;
       }
       const deployCommand = `sf project deploy start -m SamlSsoConfig:${samlName} --target-org ${this.orgUsername}`;
       try {
-        uxLog("action", this, c.cyan(`Deploying SAML SSO Config ${samlName} to org ${this.instanceUrl}...`));
+        uxLog("action", this, c.cyan(t('deployingSamlSsoConfigToOrg', { samlName, instanceUrl: this.instanceUrl })));
         const deployResult = await execSfdxJson(deployCommand, this, { output: true, fail: true, cwd: this.saveProjectPath });
         if (deployResult.status === 0) {
-          uxLog("success", this, c.green(`SAML SSO Config ${samlName} deployed successfully in org ${this.instanceUrl}`));
+          uxLog("success", this, c.green(t('samlSsoConfigDeployedSuccessfullyInOrg', { samlName, instanceUrl: this.instanceUrl })));
           updated.push(samlName);
         } else {
-          uxLog("error", this, c.red(`Failed to deploy SAML SSO Config ${samlName}: ${deployResult.error}`));
+          uxLog("error", this, c.red(t('failedToDeploySamlSsoConfig', { samlName, deployResult: deployResult.error })));
           errors.push(`Failed to deploy ${samlName}: ${deployResult.error}`);
         }
       } catch (e: any) {
-        uxLog("error", this, c.red(`Error deploying SAML SSO Config ${samlName}: ${e.message}`));
+        uxLog("error", this, c.red(t('errorDeployingSamlSsoConfig', { samlName, message: e.message })));
         errors.push(`Error deploying ${samlName}: ${e.message}`);
       }
     }
     // 3. Summary of results
     uxLog("action", this, c.cyan(`SAML SSO Config processing completed.`));
     if (updated.length > 0) {
-      uxLog("success", this, c.green(`Successfully updated and deployed SAML SSO Configs: ${updated.join(', ')}`));
+      uxLog("success", this, c.green(t('successfullyUpdatedAndDeployedSamlSsoConfigs', { updated: updated.join(', ') })));
     }
     if (errors.length > 0) {
-      uxLog("error", this, c.red(`Errors occurred during SAML SSO Config processing:\n${errors.join('\n')}`));
-      this.result = Object.assign(this.result, { success: false, message: `SAML SSO Config processing errors:\n${errors.join('\n')}` });
+      uxLog("error", this, c.red(t('errorsOccurredDuringSamlSsoConfigProcessing', { errors: errors.join('\n') })));
+      this.result = Object.assign(this.result, { success: false, message: t('samlSsoConfigProcessingErrors', { errors: errors.join('\n') }) });
     }
   }
 
@@ -410,12 +411,12 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // Check there are custom settings to restore
     const csDir = path.join(this.saveProjectPath, 'savedCustomSettings');
     if (!fs.existsSync(csDir)) {
-      uxLog("log", this, c.yellow('No savedCustomSettings folder found, skipping custom settings restore.'));
+      uxLog("log", this, c.yellow(t('noSavedcustomsettingsFolderFoundSkippingCustomSettings')));
       return;
     }
     const csFolders = fs.readdirSync(csDir).filter(f => fs.statSync(path.join(csDir, f)).isDirectory());
     if (csFolders.length === 0) {
-      uxLog("log", this, c.yellow('No custom settings data found, skipping custom settings restore.'));
+      uxLog("log", this, c.yellow(t('noCustomSettingsDataFoundSkippingCustom')));
       return;
     }
     // List custom settings to restore so users can select them. Keep only folders that have a .json file
@@ -424,14 +425,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       return fs.existsSync(jsonFile);
     });
     if (csToRestore.length === 0) {
-      uxLog("log", this, c.yellow('No custom settings data found to restore, skipping custom settings restore.'));
+      uxLog("log", this, c.yellow(t('noCustomSettingsDataFoundToRestore')));
       return;
     }
     // Prompt custom settings to restore: All by default
     const promptRestore = await prompts({
       type: 'multiselect',
       name: 'settings',
-      message: `Select custom settings to restore`,
+      message: t('selectCustomSettingsToRestore'),
       description: 'Select the custom settings you want to restore from the backup. You can select multiple settings.',
       choices: csToRestore.map(folder => ({
         title: folder,
@@ -441,7 +442,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     const selectedSettings = promptRestore.settings;
     if (selectedSettings.length === 0) {
-      uxLog("log", this, c.yellow('No custom settings selected for restore, skipping custom settings restore.'));
+      uxLog("log", this, c.yellow(t('noCustomSettingsSelectedForRestoreSkipping')));
       return;
     }
 
@@ -449,21 +450,21 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const prompt = await prompts({
       type: 'confirm',
       name: 'restore',
-      message: `Do you confirm you want to restore ${selectedSettings.length} Custom Settings values from backup?`,
+      message: t('doYouConfirmYouWantToRestore2', { selectedSettings: selectedSettings.length }),
       description: 'This will import all custom settings data saved before the refresh.',
       initial: true
     });
     if (!prompt.restore) {
-      uxLog("warning", this, c.yellow('Custom settings restore cancelled by user.'));
+      uxLog("warning", this, c.yellow(t('customSettingsRestoreCancelledByUser')));
       return;
     }
-    uxLog("action", this, c.cyan(`Restoring ${selectedSettings.length} Custom Settings...`));
+    uxLog("action", this, c.cyan(t('restoringCustomSettings', { selectedSettings: selectedSettings.length })));
     const successSettings: string[] = []
     const failedSettings: string[] = []
     for (const folder of selectedSettings) {
       const jsonFile = path.join(csDir, folder, `${folder}.json`);
       if (!fs.existsSync(jsonFile)) {
-        uxLog("warning", this, c.yellow(`No data file for custom setting ${folder}`));
+        uxLog("warning", this, c.yellow(t('noDataFileForCustomSetting', { folder })));
         failedSettings.push(folder);
         continue;
       }
@@ -492,23 +493,23 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
       // Delete existing custom settings before import if needed
       if (deleteExistingCsBefore) {
-        uxLog("log", this, c.grey(`Deleting existing custom settings for ${folder} in org ${this.orgUsername} before import...`));
+        uxLog("log", this, c.grey(t('deletingExistingCustomSettingsForInOrg', { folder, orgUsername: this.orgUsername })));
         // Query existing custom settings to delete
         const query = `SELECT Id FROM ${folder} WHERE SetupOwnerId = '${this.orgId}'`;
         const queryRes = await soqlQuery(query, this.conn);
         if (queryRes.records.length > 0) {
           const idsToDelete = (queryRes?.records.map(record => record.Id) || []).filter((id): id is string => typeof id === 'string');
-          uxLog("log", this, c.grey(`Found ${idsToDelete.length} existing custom settings to delete for ${folder} in org ${this.orgUsername}`));
+          uxLog("log", this, c.grey(t('foundExistingCustomSettingsToDeleteFor', { idsToDelete: idsToDelete.length, folder, orgUsername: this.orgUsername })));
           const deleteResults = await this.conn.sobject(folder).destroy(idsToDelete, { allOrNone: true });
           const deletedSuccessFullyIds = deleteResults.filter(result => result.success).map(result => "- " + result.id).join('\n');
-          uxLog("log", this, c.grey(`Deleted ${deletedSuccessFullyIds.length} existing custom settings for ${folder} in org ${this.orgUsername}\n${deletedSuccessFullyIds}`));
+          uxLog("log", this, c.grey(t('deletedExistingCustomSettingsForInOrg', { deletedSuccessFullyIds: deletedSuccessFullyIds.length, folder, orgUsername: this.orgUsername, deletedSuccessFullyIds1: deletedSuccessFullyIds })));
           const deletedErrorIds = deleteResults.filter(result => !result.success).map(result => "- " + result.id).join('\n');
           if (deletedErrorIds.length > 0) {
-            uxLog("warning", this, c.yellow(`Failed to delete existing custom settings for ${folder} in org ${this.orgUsername}\n${deletedErrorIds}`));
+            uxLog("warning", this, c.yellow(t('failedToDeleteExistingCustomSettingsFor', { folder, orgUsername: this.orgUsername, deletedErrorIds })));
             continue; // Skip to next setting if deletion failed
           }
         } else {
-          uxLog("log", this, c.grey(`No existing custom settings found for ${folder} in org ${this.orgUsername}.`));
+          uxLog("log", this, c.grey(t('noExistingCustomSettingsFoundForIn', { folder, orgUsername: this.orgUsername })));
         }
       }
       // Import the custom setting using sf data tree import
@@ -516,27 +517,27 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       try {
         const importRes = await execSfdxJson(importCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
         if (importRes.status === 0) {
-          uxLog("success", this, c.green(`Custom setting ${folder} restored.`));
+          uxLog("success", this, c.green(t('customSettingRestored', { folder })));
           successSettings.push(folder);
         }
         else {
-          uxLog("error", this, c.red(`Failed to restore custom setting ${folder}:\n${JSON.stringify(importRes, null, 2)}`));
+          uxLog("error", this, c.red(t('failedToRestoreCustomSetting2', { folder, JSON: JSON.stringify(importRes, null, 2) })));
           failedSettings.push(folder);
         }
       } catch (e) {
-        uxLog("error", this, c.red(`Custom setting ${folder} restore failed:\n${JSON.stringify(e)}`));
+        uxLog("error", this, c.red(t('customSettingRestoreFailed', { folder, JSON: JSON.stringify(e) })));
         failedSettings.push(folder);
         continue;
       }
     }
-    uxLog("action", this, c.cyan(`Custom settings restore complete (${successSettings.length} successful, ${failedSettings.length} failed)`));
+    uxLog("action", this, c.cyan(t('customSettingsRestoreCompleteSuccessfulFailed', { successSettings: successSettings.length, failedSettings: failedSettings.length })));
     if (successSettings.length > 0) {
       const successSettingsNames = successSettings.map(name => "- " + name).join('\n');
-      uxLog("success", this, c.green(`Successfully restored ${successSettings.length} Custom Setting(s):\n ${successSettingsNames}`));
+      uxLog("success", this, c.green(t('successfullyRestoredCustomSetting', { successSettings: successSettings.length, successSettingsNames })));
     }
     if (failedSettings.length > 0) {
       const failedSettingsNames = failedSettings.map(name => "- " + name).join('\n');
-      uxLog("error", this, c.red(`Failed to restore ${failedSettings.length} Custom Setting(s): ${failedSettingsNames}`));
+      uxLog("error", this, c.red(t('failedToRestoreCustomSetting', { failedSettings: failedSettings.length, failedSettingsNames })));
     }
   }
 
@@ -548,19 +549,19 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       cwd: this.saveProjectPath
     });
     if (!(Array.isArray(sfdmuWorkspaces) && sfdmuWorkspaces.length > 0)) {
-      uxLog("warning", this, c.yellow('No data workspace found, skipping record restore'));
+      uxLog("warning", this, c.yellow(t('noDataWorkspaceFoundSkippingRecordRestore')));
       return;
     }
 
     const confirmRestore = await prompts({
       type: 'confirm',
       name: 'confirm',
-      message: `Before launching the data loading, please make sure your user ${this.orgUsername} has the appropriate ByPasses / Activation Settings / Custom Permissions / Whatever you need to do before starting the data load.`,
+      message: t('beforeLaunchingTheDataLoadingPleaseMake', { orgUsername: this.orgUsername }),
       initial: true,
       description: 'Once confirmed, the data loading will start'
     });
     if (!confirmRestore.confirm) {
-      uxLog("warning", this, c.yellow('Record restore cancelled by user.'));
+      uxLog("warning", this, c.yellow(t('recordRestoreCancelledByUser')));
       return;
     }
 
@@ -577,7 +578,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const promptRestoreConnectedApps = await prompts({
       type: 'confirm',
       name: 'confirmRestore',
-      message: `Do you want to restore Connected Apps from the backup in ${c.bold(this.saveProjectPath)}?`,
+      message: t('doYouWantToRestoreConnectedApps', { saveProjectPath: c.bold(this.saveProjectPath) }),
       initial: true,
       description: 'This will restore all Connected Apps (including Consumer Secrets) from the backup created before the org refresh.'
     });
@@ -592,8 +593,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         const connectedApps = await this.findConnectedAppsInProject(this.nameFilter, this.processAll);
 
         if (connectedApps.length === 0) {
-          uxLog("warning", this, c.yellow('No Connected Apps found in the project'));
-          this.result = Object.assign(this.result, { success: false, message: 'No Connected Apps found in the project' });
+          uxLog("warning", this, c.yellow(t('noConnectedAppsFoundInTheProject')));
+          this.result = Object.assign(this.result, { success: false, message: t('noConnectedAppsFoundInTheProject') });
           return;
         }
 
@@ -602,8 +603,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         const selectedApps = await this.selectConnectedApps(connectedApps, this.processAll, this.nameFilter);
 
         if (selectedApps.length === 0) {
-          uxLog("warning", this, c.yellow('No Connected Apps selected'));
-          this.result = Object.assign(this.result, { success: false, message: 'No Connected Apps selected' });
+          uxLog("warning", this, c.yellow(t('noConnectedAppsSelected')));
+          this.result = Object.assign(this.result, { success: false, message: t('noConnectedAppsSelected') });
           return;
         }
         /* jscpd:ignore-end */
@@ -615,9 +616,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         await this.deployConnectedApps(this.orgUsername, selectedApps);
 
         // Return the result
-        uxLog("action", this, c.cyan(`Summary`));
+        uxLog("action", this, c.cyan(t('summary')));
         const appNames = selectedApps.map(app => `- ${app.fullName}`).join('\n');
-        uxLog("success", this, c.green(`Successfully restored ${selectedApps.length} Connected App(s) to ${this.conn.instanceUrl}\n${appNames}`));
+        uxLog("success", this, c.green(t('successfullyRestoredConnectedAppTo', { selectedApps: selectedApps.length, conn: this.conn.instanceUrl, appNames })));
         const restoreResult = createConnectedAppSuccessResponse(
           `Successfully restored ${selectedApps.length} Connected App(s) to the org`,
           selectedApps.map(app => app.fullName)
@@ -635,11 +636,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     processAll?: boolean
   ): Promise<ProjectConnectedApp[]> {
     if (processAll) {
-      uxLog("action", this, c.cyan('Processing all Connected Apps from local repository (selection prompt bypassed)'));
+      uxLog("action", this, c.cyan(t('processingAllConnectedAppsFromLocalRepository')));
     } else if (nameFilter) {
-      uxLog("action", this, c.cyan(`Processing specified Connected App(s): ${nameFilter} (selection prompt bypassed)`));
+      uxLog("action", this, c.cyan(t('processingSpecifiedConnectedAppSelectionPromptBypassed', { nameFilter })));
     } else {
-      uxLog("action", this, c.cyan('Scanning project for Connected Apps...'));
+      uxLog("action", this, c.cyan(t('scanningProjectForConnectedApps')));
     }
 
     try {
@@ -652,7 +653,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       const connectedAppFiles = connectedAppFilesRaw.map(file => path.join(this.saveProjectPath, file));
 
       if (connectedAppFiles.length === 0) {
-        uxLog("warning", this, c.yellow('No Connected App files found in the project'));
+        uxLog("warning", this, c.yellow(t('noConnectedAppFilesFoundInThe')));
         return [];
       }
 
@@ -669,13 +670,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
             allFoundApps.push({ fullName, filePath });
           }
         } catch (error) {
-          uxLog("warning", this, c.yellow(`Error parsing ${filePath}: ${error}`));
+          uxLog("warning", this, c.yellow(t('errorParsing', { filePath, error })));
           // Continue with the next file
         }
       }
 
       if (allFoundApps.length === 0) {
-        uxLog("warning", this, c.yellow('No valid Connected Apps found in the project'));
+        uxLog("warning", this, c.yellow(t('noValidConnectedAppsFoundInThe')));
         return [];
       }
 
@@ -715,14 +716,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       // Display results
       if (connectedApps.length > 0) {
         const appNamesAndPaths = connectedApps.map(app => `- ${app.fullName} (${app.filePath})`).join('\n');
-        uxLog("log", this, c.cyan(`Found ${connectedApps.length} Connected App(s) in project\n${appNamesAndPaths}`));
+        uxLog("log", this, c.cyan(t('foundConnectedAppInProject', { connectedApps: connectedApps.length, appNamesAndPaths })));
       } else if (nameFilter) {
-        uxLog("warning", this, c.yellow(`No Connected Apps matching the filter "${nameFilter}" found in the project`));
+        uxLog("warning", this, c.yellow(t('noConnectedAppsMatchingTheFilterFound', { nameFilter })));
       }
 
       return connectedApps;
     } catch (error) {
-      uxLog("error", this, c.red(`Error searching for Connected App files: ${error}`));
+      uxLog("error", this, c.red(t('errorSearchingForConnectedAppFiles', { error })));
       return [];
     }
   }
@@ -757,7 +758,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const promptResponse = await prompts({
       type: 'confirm',
       name: 'confirmDelete',
-      message: `Now we need to delete ${connectedApps.length} Connected App(s) from the refreshed sandbox, to be able to reupload them with saved credentials. Proceed ?`,
+      message: t('nowWeNeedToDeleteConnectedApp', { connectedApps: connectedApps.length }),
       description: 'This step is necessary to ensure that the Connected Apps can be re-deployed with their saved credentials.',
       initial: true
     });
@@ -770,7 +771,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     // Delete the apps without prompting
     await deleteConnectedApps(orgUsername, appsToDelete, this, this.saveProjectPath);
-    uxLog("success", this, c.green('Connected Apps were successfully deleted from the org.'));
+    uxLog("success", this, c.green(t('connectedAppsWereSuccessfullyDeletedFromThe')));
   }
 
   private async deployConnectedApps(
@@ -782,7 +783,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const promptResponse = await prompts({
       type: 'confirm',
       name: 'confirmDeploy',
-      message: `Now we will deploy ${connectedApps.length} Connected App(s) to the org to restore the original credentials. Proceed ?`,
+      message: t('nowWeWillDeployConnectedAppTo', { connectedApps: connectedApps.length }),
       description: 'This step will deploy the Connected Apps with their saved credentials.',
       initial: true
     });
@@ -795,6 +796,6 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const connectedAppsList = toConnectedAppFormat(connectedApps);
     await deployConnectedApps(orgUsername, connectedAppsList, this, this.saveProjectPath);
 
-    uxLog("success", this, c.green(`Deployment of ${connectedApps.length} Connected App(s) completed successfully`));
+    uxLog("success", this, c.green(t('deploymentOfConnectedAppCompletedSuccessfully', { connectedApps: connectedApps.length })));
   }
 }

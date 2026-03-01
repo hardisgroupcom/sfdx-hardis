@@ -11,6 +11,7 @@ import { getConfig } from '../../../../config/index.js';
 import { execCommand, stripAnsi, uxLog } from '../../../../common/utils/index.js';
 import moment from 'moment';
 import { authenticateWithSfdxUrlStore } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -89,7 +90,7 @@ The command's technical implementation involves:
 
     const maxScratchOrgsNumber = config.poolConfig.maxScratchOrgsNumber || 5;
     const maxScratchOrgsNumberToCreateOnce = config.poolConfig.maxScratchOrgsNumberToCreateOnce || 10;
-    uxLog("log", this, c.grey('Pool config: ' + JSON.stringify(config.poolConfig)));
+    uxLog("log", this, c.grey(t('poolConfig') + JSON.stringify(config.poolConfig)));
 
     // Get pool storage
     const poolStorage = await getPoolStorage({
@@ -153,7 +154,7 @@ The command's technical implementation involves:
 
     // Create new scratch orgs
     const numberOfOrgsToCreate = Math.min(maxScratchOrgsNumber - scratchOrgs.length, maxScratchOrgsNumberToCreateOnce);
-    uxLog("action", this, c.cyan('Creating ' + numberOfOrgsToCreate + ' scratch orgs...'));
+    uxLog("action", this, c.cyan(t('creating') + numberOfOrgsToCreate + ' scratch orgs...'));
     let numberCreated = 0;
     let numberfailed = 0;
     const subProcesses: any[] = [];
@@ -164,7 +165,7 @@ The command's technical implementation involves:
         const commandArgs = ['hardis:scratch:create', '--pool', '--json'];
         const sfdxPath = await which('sf');
         const child = spawn(sfdxPath || 'sf', commandArgs, { cwd: process.cwd(), env: process.env });
-        uxLog("log", this, '[pool] ' + c.grey(`hardis:scratch:create (${i}) started`));
+        uxLog("log", this, '[pool] ' + c.grey(t('hardisScratchCreateStarted', { val: i })));
         // handle errors
         child.on('error', (err) => {
           resolve({ code: 1, result: { error: err } });
@@ -206,7 +207,7 @@ The command's technical implementation involves:
     // Await parallel scratch org creations are completed
     const createResults = await Promise.all(subProcesses);
     if (this.debugMode) {
-      uxLog("log", this, c.grey('Create results: \n' + JSON.stringify(createResults, null, 2)));
+      uxLog("log", this, c.grey(t('createResults') + JSON.stringify(createResults, null, 2)));
     }
 
     const colorFunc = numberCreated === numberOfOrgsToCreate ? c.green : numberCreated === 0 ? c.red : c.yellow;

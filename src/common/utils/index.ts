@@ -23,6 +23,7 @@ import { LogType, WebSocketClient } from '../websocketClient.js';
 import moment from 'moment';
 import { writeXmlFile } from './xmlUtils.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
+import { t } from './i18n.js';
 
 let pluginsStdout: string | null = null;
 
@@ -248,7 +249,7 @@ export async function promptInstanceUrl(
   const orgTypeResponse = await prompts({
     type: 'select',
     name: 'value',
-    message: c.cyanBright(`What is the base URL or domain or the org you want to connect to, as ${alias} ?`),
+    message: c.cyanBright(t('whatIsTheBaseUrlOrDomain', { alias })),
     description: 'Select the Salesforce environment type or specify a custom URL for authentication',
     choices: choices,
     initial: 1,
@@ -312,7 +313,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
           resolve(null);
         });
       });
-      uxLog("other", this, `Git repository cloned. ${c.yellow('Please run the same command again 😊')}`);
+      uxLog("other", this, `Git repository cloned. ${c.yellow(t('pleaseRunTheSameCommandAgain'))}`);
       process.exit(0);
     } else {
       throw new SfError('You need to be at the root of a git repository to run this command');
@@ -411,36 +412,36 @@ function isGitAuthError(error: any): boolean {
 // Helper function to prompt for git credentials and update remote URL
 async function handleGitAuthError(operation: string): Promise<boolean> {
   if (isCI) {
-    uxLog("error", this, c.red(`Git ${operation} failed due to authentication error in CI environment`));
+    uxLog("error", this, c.red(t('gitFailedDueToAuthenticationErrorIn', { operation })));
     return false;
   }
 
-  uxLog("warning", this, c.yellow(`Git ${operation} failed due to authentication error.`));
-  uxLog("action", this, c.cyan('Please provide your Git credentials to continue.'));
+  uxLog("warning", this, c.yellow(t('gitFailedDueToAuthenticationError', { operation })));
+  uxLog("action", this, c.cyan(t('pleaseProvideYourGitCredentialsToContinue')));
 
   const usernamePrompt = await prompts({
     type: 'text',
     name: 'username',
-    message: c.cyanBright('Enter your Git username'),
+    message: c.cyanBright(t('enterYourGitUsername')),
     description: 'Your Git service username',
     validate: (value: string) => (value && value.trim().length > 0) || 'Username is required',
   });
 
   if (!usernamePrompt.username) {
-    uxLog("error", this, c.red('Git username is required to continue'));
+    uxLog("error", this, c.red(t('gitUsernameIsRequiredToContinue')));
     return false;
   }
 
   const passwordPrompt = await prompts({
     type: 'text',
     name: 'password',
-    message: c.cyanBright('Enter your Git password or Personal Access Token (PAT)'),
+    message: c.cyanBright(t('enterYourGitPasswordOrPersonalAccess')),
     description: 'Your Git service password or PAT (input will be visible)',
     validate: (value: string) => (value && value.trim().length > 0) || 'Password/PAT is required',
   });
 
   if (!passwordPrompt.password) {
-    uxLog("error", this, c.red('Git password/PAT is required to continue'));
+    uxLog("error", this, c.red(t('gitPasswordPatIsRequiredToContinue')));
     return false;
   }
 
@@ -451,7 +452,7 @@ async function handleGitAuthError(operation: string): Promise<boolean> {
     // Get current remote URL
     const origin = await git().getConfig('remote.origin.url');
     if (!origin || !origin.value) {
-      uxLog("error", this, c.red('Could not retrieve remote origin URL'));
+      uxLog("error", this, c.red(t('couldNotRetrieveRemoteOriginUrl')));
       return false;
     }
 
@@ -471,16 +472,16 @@ async function handleGitAuthError(operation: string): Promise<boolean> {
       // Add new credentials
       remoteUrl = remoteUrl.replace('http://', `http://${encodedUsername}:${encodedPassword}@`);
     } else {
-      uxLog("error", this, c.red('Only HTTP(S) remote URLs are supported for credential injection'));
+      uxLog("error", this, c.red(t('onlyHttpRemoteUrlsAreSupportedFor')));
       return false;
     }
 
     // Update the remote URL
     await git().remote(['set-url', 'origin', remoteUrl]);
-    uxLog("action", this, c.green('Remote URL updated with credentials successfully'));
+    uxLog("action", this, c.green(t('remoteUrlUpdatedWithCredentialsSuccessfully')));
     return true;
   } catch (e: any) {
-    uxLog("error", this, c.red(`Failed to update remote URL: ${e?.message || e}`));
+    uxLog("error", this, c.red(t('failedToUpdateRemoteUrl', { message: e?.message || e })));
     return false;
   }
 }
@@ -508,7 +509,7 @@ export async function gitFetch(argsOrOptions?: string[] | any, argsIfOptionsFirs
       const credentialsUpdated = await handleGitAuthError('fetch');
       if (credentialsUpdated) {
         // Retry the operation
-        uxLog("action", this, c.cyan('Retrying git fetch with updated credentials.'));
+        uxLog("action", this, c.cyan(t('retryingGitFetchWithUpdatedCredentials')));
         if (options.output !== undefined || options.displayCommand !== undefined) {
           return await git(options).fetch(args);
         }
@@ -542,7 +543,7 @@ export async function gitPull(argsOrOptions?: string[] | any, argsIfOptionsFirst
       const credentialsUpdated = await handleGitAuthError('pull');
       if (credentialsUpdated) {
         // Retry the operation
-        uxLog("action", this, c.cyan('Retrying git pull with updated credentials...'));
+        uxLog("action", this, c.cyan(t('retryingGitPullWithUpdatedCredentials')));
         if (options.output !== undefined || options.displayCommand !== undefined) {
           return await git(options).pull(args);
         }
@@ -576,7 +577,7 @@ export async function gitPush(argsOrOptions?: string[] | any, argsIfOptionsFirst
       const credentialsUpdated = await handleGitAuthError('push');
       if (credentialsUpdated) {
         // Retry the operation
-        uxLog("action", this, c.cyan('Retrying git push with updated credentials...'));
+        uxLog("action", this, c.cyan(t('retryingGitPushWithUpdatedCredentials')));
         if (options.output !== undefined || options.displayCommand !== undefined) {
           return await git(options).push(args);
         }
@@ -605,7 +606,7 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
       // Existing branch: checkout & pull
       await git().checkout(branchName);
       if (options.logAsAction) {
-        uxLog("action", this, c.green(`Checked out git branch ${c.bold(branchName)}`));
+        uxLog("action", this, c.green(t('checkedOutGitBranch', { branchName: c.bold(branchName) })));
       }
       // await git().pull()
     } else {
@@ -625,7 +626,7 @@ export async function ensureGitBranch(branchName: string, options: any = { init:
         await git().checkoutBranch(branchName, localBranches.current);
       }
       if (options.logAsAction) {
-        uxLog("action", this, c.green(`Created and checked out git branch ${c.bold(branchName)}`));
+        uxLog("action", this, c.green(t('createdAndCheckedOutGitBranch', { branchName: c.bold(branchName) })));
       }
     }
   }
@@ -649,8 +650,8 @@ export async function checkGitClean(options: any) {
         await execCommand('git add --all', this, { output: true, fail: true });
         await execCommand('git stash', this, { output: true, fail: true });
       } catch (e) {
-        uxLog("warning", this, c.yellow(c.bold("You might need to run the following command in Powershell launched as Administrator")));
-        uxLog("warning", this, c.yellow(c.bold("git config --system core.longpaths true")));
+        uxLog("warning", this, c.yellow(c.bold(t('youMightNeedToRunTheFollowing'))));
+        uxLog("warning", this, c.yellow(c.bold(t('gitConfigSystemCoreLongpathsTrue'))));
         throw e;
       }
     } else {
@@ -774,7 +775,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
     const addFilesResponse = await prompts({
       type: 'select',
       name: 'addFiles',
-      message: c.cyanBright(`Do you confirm that you want to add the following list of files ?\n${confirmationText}`),
+      message: c.cyanBright(t('doYouConfirmThatYouWantTo', { confirmationText })),
       description: 'Confirm your file selection for the git commit',
       choices: [
         { title: 'Yes, my selection is complete !', value: 'yes' },
@@ -798,11 +799,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
     }
     // exit
     else {
-      uxLog("other", this, 'Cancelled by user.');
+      uxLog("other", this, t('cancelledByUser'));
       process.exit(0);
     }
   } else {
-    uxLog("action", this, c.cyan('There is no new file to commit'));
+    uxLog("action", this, c.cyan(t('thereIsNoNewFileToCommit')));
   }
   return result;
 }
@@ -1096,7 +1097,7 @@ export async function filterPackageXml(
 
   // Keep only namespaces
   if ((options.keepOnlyNamespaces || []).length > 0) {
-    uxLog("log", this, c.grey(`Keeping items from namespaces ${options.keepOnlyNamespaces.join(',')} ...`));
+    uxLog("log", this, c.grey(t('keepingItemsFromNamespaces', { options: options.keepOnlyNamespaces.join(',') })));
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       type.members = type.members.filter((member: string) => {
         const containsNamespace = options.keepOnlyNamespaces.filter((ns: string) => member.startsWith(ns) || member.includes(`${ns}__`)).length > 0;
@@ -1111,7 +1112,7 @@ export async function filterPackageXml(
 
   // Remove namespaces
   if ((options.removeNamespaces || []).length > 0) {
-    uxLog("log", this, c.grey(`Removing items from namespaces ${options.removeNamespaces.join(',')} ...`));
+    uxLog("log", this, c.grey(t('removingItemsFromNamespaces', { options: options.removeNamespaces.join(',') })));
     manifest.Package.types = manifest.Package.types.map((type: any) => {
       type.members = type.members.filter((member: string) => {
         const startsWithNamespace = options.removeNamespaces.filter((ns: string) => member.startsWith(ns + '__')).length > 0;
@@ -1159,7 +1160,7 @@ export async function filterPackageXml(
           );
         });
         if (wildcardDestructiveTypes.length > 0) {
-          uxLog("log", this, c.grey(`Removed ${type.name[0]} type`));
+          uxLog("log", this, c.grey(t('removedType', { type: type.name[0] })));
         }
         return wildcardDestructiveTypes.length === 0;
       });
@@ -1195,7 +1196,7 @@ export async function filterPackageXml(
         uxLog("log", this, c.grey('kept ' + type.name[0]));
         return true;
       }
-      uxLog("log", this, c.grey('removed ' + type.name[0]));
+      uxLog("log", this, c.grey(t('removed') + type.name[0]));
       return false;
     });
   }
@@ -1699,7 +1700,7 @@ export async function generateSSLCertificate(
   conn: any,
   options: any
 ) {
-  uxLog("action", commandThis, c.cyan('Generating SSL certificate...'));
+  uxLog("action", commandThis, c.cyan(t('generatingSslCertificate')));
   const tmpDir = await createTempDir();
   const prevDir = process.cwd();
   process.chdir(tmpDir);
@@ -1761,7 +1762,7 @@ export async function generateSSLCertificate(
       }
     }
 
-    uxLog("action", commandThis, c.cyan('Please configure both below variables in your CI/CD platform.'));
+    uxLog("action", commandThis, c.cyan(t('pleaseConfigureBothBelowVariablesInYour')));
     uxLog(
       "log",
       commandThis,
@@ -1790,11 +1791,11 @@ export async function generateSSLCertificate(
       commandThis,
       c.grey(c.yellow(`Help to configure CI/CD variables: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`))
     );
-    uxLog("warning", commandThis, c.yellow(`If you are using GitHub or Azure, you also need to manually add references to ${clientIdStringRaw} and ${clientKeyStringRaw} in your pipeline YAML definition file (.github/workflows/*.yml or azure-pipelines-*.yml).`));
+    uxLog("warning", commandThis, c.yellow(t('ifYouAreUsingGithubOrAzure', { clientIdStringRaw, clientKeyStringRaw })));
     WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, "Help to configure CI variables", "docUrl");
     await prompts({
       type: 'confirm',
-      message: c.cyanBright('Please confirm when variables have been set (copy the variable names and values in the section above)'),
+      message: c.cyanBright(t('pleaseConfirmWhenVariablesHaveBeenSet')),
       description: 'Confirm when you have configured the required CI/CD environment variables in your deployment platform',
     });
 
@@ -1802,7 +1803,7 @@ export async function generateSSLCertificate(
     const appTypeResponse = await prompts({
       type: 'select',
       name: 'value',
-      message: c.cyanBright('Which type of app do you want to create for CI/CD authentication?'),
+      message: c.cyanBright(t('whichTypeOfAppDoYouWant')),
       description: 'Select the type of OAuth app to create for CI/CD authentication',
       choices: [
         {
@@ -1946,7 +1947,7 @@ export async function generateSSLCertificate(
       if (deployRes?.status !== 0) {
         throw new Error('[sfdx-hardis] Failed to deploy metadatas');
       }
-      uxLog("action", commandThis, c.cyan(`Successfully deployed ${c.green(successLabel)}`));
+      uxLog("action", commandThis, c.cyan(t('successfullyDeployed', { successLabel: c.green(successLabel) })));
       // Cleanup temporary metadata directory and local certificate after successful deployment
       await fs.remove(deployDir);
       await fs.remove(crtFile);
@@ -1960,7 +1961,7 @@ export async function generateSSLCertificate(
           type: 'text',
           name: 'appName',
           initial: 'sfdxhardis' + appNameDflt,
-          message: c.cyanBright('How would you like to name the External Client App?'),
+          message: c.cyanBright(t('howWouldYouLikeToNameThe2')),
           description: 'Name for the External Client App that will be created in your Salesforce org',
           placeholder: 'Ex: sfdx_hardis',
         },
@@ -1971,7 +1972,7 @@ export async function generateSSLCertificate(
 
       const profileSelection = await promptProfiles(conn, {
         multiselect: false,
-        message: 'What profile will be pre-authorized for the External Client App ? (ex: System Administrator)',
+        message: t('whatProfileWillBePreAuthorizedFor'),
         initialSelection: ['System Administrator', 'Administrateur Système'],
       });
 
@@ -2062,7 +2063,7 @@ If deployment fails, create the External Client App manually:
           type: 'text',
           name: 'appName',
           initial: 'sfdxhardis' + appNameDflt,
-          message: c.cyanBright('How would you like to name the Connected App ?'),
+          message: c.cyanBright(t('howWouldYouLikeToNameThe')),
           description: 'Name for the Connected App that will be created in your Salesforce org',
           placeholder: 'Ex: sfdx_hardis',
         },
@@ -2072,7 +2073,7 @@ If deployment fails, create the External Client App manually:
       );
       const profile = await promptProfiles(conn, {
         multiselect: false,
-        message: 'What profile will be used for the connected app ? (ex: System Administrator)',
+        message: t('whatProfileWillBeUsedForThe'),
         initialSelection: ['System Administrator', 'Administrateur Système'],
       });
       // Build ConnectedApp metadata
@@ -2130,7 +2131,7 @@ If deployment fails, create the External Client App manually:
           .replace(consumerKey, '***CONSUMERKEY_HIDDEN_FROM_LOGS***')
           .replace(crtContent, '***CERTIFICATE_HIDDEN_FROM_LOGS***');
 
-        uxLog("log", commandThis, c.grey(`Connected App metadatas XML:\n${connectedAppMetadataForLog}`));
+        uxLog("log", commandThis, c.grey(t('connectedAppMetadatasXml', { connectedAppMetadataForLog })));
         uxLog(
           "log",
           commandThis,
@@ -2176,7 +2177,7 @@ If this is a Test class issue (production env), you may have to create manually 
     }
   } else {
     // Tell infos to install manually
-    uxLog("action", commandThis, c.cyan('Now you can configure the SF CLI connected app'));
+    uxLog("action", commandThis, c.cyan(t('nowYouCanConfigureTheSfCli')));
     uxLog(
       "log",
       commandThis,
@@ -2242,7 +2243,7 @@ const ansiRegex = new RegExp(ansiPattern, 'g');
 
 export function stripAnsi(str: string) {
   if (typeof str !== 'string') {
-    uxLog("warning", this, c.yellow('Warning: stripAnsi expects a string'));
+    uxLog("warning", this, c.yellow(t('warningStripansiExpectsString')));
     return '';
   }
   return str.replace(ansiRegex, '');
@@ -2271,11 +2272,11 @@ export function replaceJsonInString(inputString: string, jsonObject: any): strin
       const jsonString = JSON.stringify(jsonObject, null, 2);
       return stripAnsi(inputString).replace(jsonMatch[0], jsonString);
     } catch (err: any) {
-      uxLog("warning", this, c.yellow('Warning: unable to replace JSON in string:' + err.message));
+      uxLog("warning", this, c.yellow(t('warningUnableToReplaceJsonInString') + err.message));
       return inputString;
     }
   }
-  uxLog("warning", this, c.yellow('Warning: unable to find json to replace in string'));
+  uxLog("warning", this, c.yellow(t('warningUnableToFindJsonToReplace')));
   return inputString;
 }
 

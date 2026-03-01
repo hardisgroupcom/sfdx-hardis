@@ -9,6 +9,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { parseXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getConfig, setConfig } from '../../../../config/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -63,7 +64,7 @@ export default class CleanListViews extends SfCommand<any> {
       const listViewXml = await parseXmlFile(listViewfile);
       if (listViewXml.ListView?.filterScope[0] === 'Mine') {
         listViewXml.ListView.filterScope[0] = 'Everything';
-        uxLog("log", this, c.grey(`replaced Mine by Everything in ListView ${listViewXml}`));
+        uxLog("log", this, c.grey(t('replacedMineByEverythingInListview', { listViewXml })));
         await writeXmlFile(listViewfile, listViewXml);
         listViewsMine.push(path.relative(process.cwd(), listViewfile).replace(/\\/g, '/'));
         counter++;

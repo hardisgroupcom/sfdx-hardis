@@ -6,6 +6,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { getConfig } from '../../../../config/index.js';
 import { uxLog } from '../../../../common/utils/index.js';
 import { getPoolStorage } from '../../../../common/utils/poolUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -67,7 +68,7 @@ The command's technical implementation involves:
     // Get pool configuration
     const config = await getConfig('project');
     const poolConfig = config.poolConfig || {};
-    uxLog("log", this, 'Pool config: ' + c.grey(JSON.stringify(poolConfig, null, 2)));
+    uxLog("log", this, t('poolConfig') + c.grey(JSON.stringify(poolConfig, null, 2)));
 
     // Missing scratch orgs pool configuration
     if (!poolConfig.storageService) {
@@ -92,7 +93,7 @@ The command's technical implementation involves:
     const availableNumber = scratchOrgs.length;
 
     // Display logs
-    uxLog("action", this, c.cyan(`There are ${c.bold(availableNumber)} available scratch orgs`));
+    uxLog("action", this, c.cyan(t('thereAreAvailableScratchOrgs', { availableNumber: c.bold(availableNumber) })));
 
     // Return an object to be displayed with --json
     return {

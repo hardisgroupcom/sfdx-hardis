@@ -5,6 +5,7 @@ import { uxLog } from "../utils/index.js";
 import c from "chalk";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderRoles {
 
@@ -69,7 +70,7 @@ export class DocBuilderRoles {
     const jsonFile = `./docs/json/root-roles.json`;
     await fs.ensureDir(path.dirname(jsonFile));
     await fs.writeFile(jsonFile, JSON.stringify(jsonTree, null, 2));
-    uxLog("success", this, c.green(`Successfully generated Roles JSON into ${jsonFile}`));
+    uxLog("success", this, c.green(t('successfullyGeneratedRolesJsonInto', { jsonFile })));
   }
 
   public static buildHierarchyTree(roleDescriptions: any[]): any[] {

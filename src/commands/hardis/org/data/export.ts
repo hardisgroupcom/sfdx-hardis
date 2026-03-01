@@ -6,6 +6,7 @@ import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { exportData, findDataWorkspaceByName, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
 import { promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -100,7 +101,7 @@ The command's technical implementation relies heavily on the SFDMU plugin:
     //const debugMode = flags.debug || false;
 
 
-    uxLog("action", this, c.cyan('This command will launch data EXPORT (download from org) using SFDX Data Loader (sfdmu)'));
+    uxLog("action", this, c.cyan(t('thisCommandWillLaunchDataExportDownload')));
 
     // Select org that will be used to export records
     let orgUsername = flags['target-org'].getUsername();

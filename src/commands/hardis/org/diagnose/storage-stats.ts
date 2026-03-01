@@ -12,6 +12,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { CONSTANTS, getReportDirectory } from '../../../../config/index.js';
 import path from 'path';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -201,7 +202,7 @@ The command's technical implementation involves:
     // Prompt user to select objects to analyze
     const promptObjectsRes = await prompts({
       type: 'multiselect',
-      message: 'Select the SObjects to analyze for storage usage:',
+      message: t('selectTheSobjectsToAnalyzeForStorage'),
       description: "Exclude objects you don't want to analyze.",
       choices: sObjectsFiltered.map((obj: any) => ({ title: obj.name, value: obj.name })),
       initial: sObjectsFiltered.map((obj: any) => obj), // all selected by default
@@ -218,7 +219,7 @@ The command's technical implementation involves:
       // Prompt user for stats on CreatedDate or LastModifiedDate
       const promptDateFieldRes = await prompts({
         type: 'select',
-        message: 'Select the date field to use for storage stats breakdown',
+        message: t('selectTheDateFieldToUseFor'),
         description: "Choose between CreatedDate or LastModifiedDate.",
         choices: [
           { title: 'Created Date', value: 'CreatedDate' },
@@ -231,7 +232,7 @@ The command's technical implementation involves:
       if (breakdownField === 'custom') {
         const promptFieldRes = await prompts({
           type: 'text',
-          message: 'Enter the API name of the custom date field to use for storage stats breakdown',
+          message: t('enterTheApiNameOfTheCustom'),
           description: "Objects without this field will be excluded from the analysis.",
           placeholder: 'My_Date_Field__c, RecordType.Name, SBQQ_Quote__r.Status__c or SBQQ__Quote__r.RecordType.Name',
         });
@@ -256,7 +257,7 @@ The command's technical implementation involves:
     if (isDateFieldForGranularity) {
       const promptGranularityRes = await prompts({
         type: 'select',
-        message: 'Select the breakdown granularity for the date field',
+        message: t('selectTheBreakdownGranularityForTheDate'),
         description: "Choose how you want to group the storage statistics.",
         choices: [
           { title: 'By Year (CALENDAR_YEAR)', value: 'year' },
@@ -272,7 +273,7 @@ The command's technical implementation involves:
     if (!this.whereCondition) {
       const promptWhereCondRes = await prompts({
         type: 'text',
-        message: 'Enter an optional WHERE condition to filter records (SOQL syntax)',
+        message: t('enterAnOptionalWhereConditionToFilter'),
         description: 'You can provide an optional WHERE clause to filter records for the storage stats calculation. Leave empty for no filter.',
         placeholder: "Ex: CreatedDate = LAST_N_DAYS:365 or Status__c = 'Active'"
       });
@@ -420,7 +421,7 @@ The command's technical implementation involves:
 
       const field = describe.fields.find((f: any) => f.name === fieldToCheck);
       if (!field) {
-        uxLog("warning", this, c.yellow(`Skipping object ${c.cyan(obj.name)}: field ${c.cyan(breakdownField)} not found`));
+        uxLog("warning", this, c.yellow(t('skippingObjectFieldNotFound', { name: c.cyan(obj.name), breakdownField: c.cyan(breakdownField) })));
         return {
           isValid: false,
           isDateField: false,
@@ -488,7 +489,7 @@ The command's technical implementation involves:
 
       if (!relatedField) {
         const relationshipPath = relationshipChain.join(' -> ');
-        uxLog("warning", this, c.yellow(`Skipping object ${c.cyan(originalObj.name)}: field ${c.cyan(nextFieldName)} not found on ${c.cyan(relatedObjectName)} (path: ${relationshipPath})`));
+        uxLog("warning", this, c.yellow(t('skippingObjectFieldNotFoundOnPath', { originalObj: c.cyan(originalObj.name), nextFieldName: c.cyan(nextFieldName), relatedObjectName: c.cyan(relatedObjectName), relationshipPath })));
         return {
           isValid: false,
           isDateField: false,

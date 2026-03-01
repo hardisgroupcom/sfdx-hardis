@@ -6,6 +6,7 @@ import c from 'chalk';
 import { execSfdxJson, extractRegexMatches, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkDelete, bulkDeleteTooling, bulkQuery } from '../../../../common/utils/apiUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -144,12 +145,12 @@ The command's technical implementation involves:
       const confirmDelete = await prompts({
         type: 'confirm',
         name: 'value',
-        message: c.cyanBright(`Do you confirm you want to delete these ${this.flowRecords.length} flow versions ?`),
+        message: c.cyanBright(t('doYouConfirmYouWantToDelete2', { flowRecords: this.flowRecords.length })),
         description: 'Permanently delete the selected flow versions from the Salesforce org',
       });
 
       if (confirmDelete.value === false) {
-        uxLog("error", this, c.red('Action cancelled by user.'));
+        uxLog("error", this, c.red(t('actionCancelledByUser')));
         return { outputString: 'Action cancelled by user.' };
       }
     }
@@ -226,11 +227,11 @@ The command's technical implementation involves:
       const confirmDelete = await prompts({
         type: 'confirm',
         name: 'value',
-        message: c.cyanBright(`Do you confirm you want to delete ${flowInterviewsIds.length} Flow Interviews ?`),
+        message: c.cyanBright(t('doYouConfirmYouWantToDelete', { flowInterviewsIds: flowInterviewsIds.length })),
         description: 'Permanently delete the selected flow interview records from the Salesforce org',
       });
       if (confirmDelete.value === false) {
-        uxLog("error", this, c.red('Action cancelled by user.'));
+        uxLog("error", this, c.red(t('actionCancelledByUser')));
         return { outputString: 'Action cancelled by user.' };
       }
     }
@@ -255,7 +256,7 @@ The command's technical implementation involves:
     }));
 
     if (this.flowRecords.length === 0) {
-      uxLog("warning", this, c.yellow('No Flow versions found to delete.'));
+      uxLog("warning", this, c.yellow(t('noFlowVersionsFoundToDelete')));
       return;
     }
 
@@ -276,7 +277,7 @@ The command's technical implementation involves:
   }
 
   private async listFlowVersionsToDelete(manageableConstraint: string) {
-    uxLog("action", this, c.cyan('Querying Flow versions to delete...'));
+    uxLog("action", this, c.cyan(t('queryingFlowVersionsToDelete')));
     let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description,Definition.DeveloperName FROM Flow WHERE ${manageableConstraint} AND Status IN ('${this.statusFilter.join(
       "','"
     )}')`;
@@ -305,7 +306,7 @@ The command's technical implementation involves:
       this.statusFilter = ['Obsolete'];
     } else {
       // Query all flows definitions
-      uxLog("action", this, c.cyan('Querying all Flow definitions to select from...'));
+      uxLog("action", this, c.cyan(t('queryingAllFlowDefinitionsToSelectFrom')));
       const allFlowQueryCommand =
         'sf data query ' +
         ` --query "SELECT Id,DeveloperName,MasterLabel,ManageableState FROM FlowDefinition WHERE ${manageableConstraint} ORDER BY DeveloperName"` +
@@ -328,7 +329,7 @@ The command's technical implementation involves:
         {
           type: 'select',
           name: 'name',
-          message: 'Please select the flow you want to clean',
+          message: t('pleaseSelectTheFlowYouWantTo2'),
           description: 'Choose a specific flow to clean or select all flows',
           placeholder: 'Select a flow',
           choices: flowNamesChoice,
@@ -336,7 +337,7 @@ The command's technical implementation involves:
         {
           type: 'multiselect',
           name: 'status',
-          message: 'Please select the status(es) you want to delete',
+          message: t('pleaseSelectTheStatusEsYouWant'),
           description: 'Choose which flow version statuses should be deleted',
           choices: [
             { title: `Draft`, value: 'Draft' },
@@ -358,7 +359,7 @@ The command's technical implementation involves:
       ' ORDER BY Name';
     const flowsInterviewsToDelete = (await bulkQuery(query, conn)).records;
     if (flowsInterviewsToDelete.length === 0) {
-      uxLog("warning", this, c.yellow('No Flow Interviews found to delete.'));
+      uxLog("warning", this, c.yellow(t('noFlowInterviewsFoundToDelete')));
       return;
     }
     // Display Flow Interviews to delete
@@ -368,6 +369,6 @@ The command's technical implementation involves:
           `- ${c.bold(flow.Name)} (${c.green(flow.InterviewLabel)}) - ${c.yellow(flow.InterviewStatus)}`
       )
       .join('\n');
-    uxLog("action", this, c.cyan(`Found ${flowsInterviewsToDelete.length} Flow Interviews to delete:\n${flowList}`));
+    uxLog("action", this, c.cyan(t('foundFlowInterviewsToDelete', { flowsInterviewsToDelete: flowsInterviewsToDelete.length, flowList })));
   }
 }

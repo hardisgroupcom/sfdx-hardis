@@ -7,6 +7,7 @@ import { execCommand, getCurrentGitBranch, git, uxLog } from '../../../common/ut
 import { selectTargetBranch } from '../../../common/utils/gitUtils.js';
 import { setConfig } from '../../../config/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -74,10 +75,10 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     const targetBranch = await selectTargetBranch({
-      message: 'Please select the target branch of your current or future merge request',
+      message: t('pleaseSelectTheTargetBranchOfYour'),
     });
 
-    uxLog("action", this, c.cyan(`This script will rebuild selection that you will want to merge into ${c.green(targetBranch)}`));
+    uxLog("action", this, c.cyan(t('thisScriptWillRebuildSelectionThatYou', { targetBranch: c.green(targetBranch) })));
 
     const currentGitBranch = await getCurrentGitBranch();
     if (currentGitBranch === targetBranch) {
@@ -87,7 +88,7 @@ The command's technical implementation involves:
     // Ask user to confirm
     const confirm = await prompts({
       type: 'confirm',
-      message: `This command will git reset (soft) your branch ${currentGitBranch}. You will need to select and commit again your files. Are you sure ?`,
+      message: t('thisCommandWillGitResetSoftYour', { currentGitBranch }),
       description: 'Confirm that you want to perform a soft git reset on your current branch',
     });
     if (confirm.value === false) {
@@ -110,8 +111,8 @@ The command's technical implementation involves:
     await git({ output: true }).checkout(['--', 'manifest/package.xml']);
     await git({ output: true }).checkout(['--', 'manifest/destructiveChanges.xml']);
     await git({ output: true }).status();
-    uxLog("action", this, c.cyan('The following items are now available for selection'));
-    uxLog("action", this, c.cyan('Selection has been reset'));
+    uxLog("action", this, c.cyan(t('theFollowingItemsAreNowAvailableFor')));
+    uxLog("action", this, c.cyan(t('selectionHasBeenReset')));
     // Return an object to be displayed with --json
     return { outputString: 'Reset selection pocessed' };
   }

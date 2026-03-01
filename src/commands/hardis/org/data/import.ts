@@ -6,6 +6,7 @@ import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { findDataWorkspaceByName, importData, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
 import { promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -104,7 +105,7 @@ The command is designed to work seamlessly in both interactive development scena
     const projectName = flags["project-name"] || null;
     const noPrompts = flags["no-prompt"] || false;
 
-    uxLog("action", this, c.cyan('This command will launch data IMPORT (upload to org) using SFDX Data Loader (sfdmu)'));
+    uxLog("action", this, c.cyan(t('thisCommandWillLaunchDataImportUpload')));
 
     // Select org that where records will be imported
     let orgUsername = flags['target-org'].getUsername();

@@ -11,6 +11,7 @@ import { CONSTANTS, getConfig, promptForProjectName, setConfig } from '../../../
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { isSfdxProject } from '../../../common/utils/projectUtils.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -51,7 +52,7 @@ export default class ProjectCreate extends SfCommand<any> {
     const devHubPrompt = await prompts({
       name: 'orgType',
       type: 'select',
-      message: 'To perform implementation, will your project use scratch org or source tracked sandboxes only ?',
+      message: t('toPerformImplementationWillYourProjectUse'),
       description: 'Choose the type of development orgs your project will use',
       placeholder: 'Select org type',
       choices: [
@@ -104,7 +105,7 @@ export default class ProjectCreate extends SfCommand<any> {
       await fs.rm(path.join(process.cwd(), projectName), { recursive: true });
     }
     // Copy default project files
-    uxLog("action", this, 'Copying default files...');
+    uxLog("action", this, t('copyingDefaultFiles'));
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/ci', '.'), process.cwd(), { overwrite: false });
 
     if (setProjectName) {
@@ -134,7 +135,7 @@ export default class ProjectCreate extends SfCommand<any> {
     await setConfig('project', {
       autoCleanTypes: defaultAutoCleanTypes
     });
-    uxLog("warning", this, c.yellow(`autoCleanTypes ${defaultAutoCleanTypes.join(",")} has been activated on the new project.`));
+    uxLog("warning", this, c.yellow(t('autocleantypesHasBeenActivatedOnTheNew', { defaultAutoCleanTypes: defaultAutoCleanTypes.join(",") })));
     uxLog("warning", this, c.bold(c.yellow(`If you install CI/CD on an existing org with many rights in Profiles, you might remove "minimizeProfiles" from .sfdx-hardis.yml autoCleanTypes property `)));
     // Message instructions
     uxLog(

@@ -12,6 +12,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { getConfig, setConfig } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -104,8 +105,8 @@ The command's technical implementation involves:
       'export.json'
     )} file.`);
     uxLog("other", this, message);
-    uxLog("log", this, c.grey(`You can now configure it using SFDMU documentation: ${c.yellow(sfdmuBaseDoc)}.`));
-    uxLog("log", this, c.grey(`If you don't have a unique field to identify an object, use composite external ids: ${c.yellow(sfdmuExternalIdsDoc)}.`));
+    uxLog("log", this, c.grey(t('youCanNowConfigureItUsingSfdmu', { sfdmuBaseDoc: c.yellow(sfdmuBaseDoc) })));
+    uxLog("log", this, c.grey(t('ifYouDonHaveUniqueFieldTo', { sfdmuExternalIdsDoc: c.yellow(sfdmuExternalIdsDoc) })));
 
     // Trigger command to open SFDMU config file in VS Code extension
     if (WebSocketClient.isAliveWithLwcUI()) {
@@ -130,7 +131,7 @@ The command's technical implementation involves:
     await fs.ensureDir(sfdmuProjectFolder);
     const exportJsonFile = path.join(sfdmuProjectFolder, 'export.json');
     await fs.writeFile(exportJsonFile, JSON.stringify(this.sfdmuConfig, null, 2));
-    uxLog("action", this, c.cyan('Generated SFDMU config file ' + exportJsonFile));
+    uxLog("action", this, c.cyan(t('generatedSfdmuConfigFile') + exportJsonFile));
 
     for (const additionalFile of this.additionalFiles) {
       const additionalFileFull = path.join(sfdmuProjectFolder, additionalFile.path);
@@ -198,7 +199,7 @@ The command's technical implementation involves:
         this.additionalFiles.push({
           path: badwordsFileName,
           text: JSON.stringify(badwordsSample, null, 2),
-          message: 'Sample badwords file has been generated and needs to be updated',
+          message: t('sampleBadwordsFileHasBeenGeneratedAnd'),
         });
       }
     }
@@ -209,14 +210,14 @@ The command's technical implementation involves:
       {
         type: 'text',
         name: 'dataPath',
-        message: c.cyanBright('Please input the SFDMU folder name (PascalCase format)'),
+        message: c.cyanBright(t('pleaseInputTheSfdmuFolderNamePascalcase')),
         description: 'The folder name that will contain the SFDMU data configuration files',
         placeholder: 'Ex: ProductsActive',
       },
       {
         type: 'text',
         name: 'sfdxHardisLabel',
-        message: c.cyanBright('Please input the SFDMU config label'),
+        message: c.cyanBright(t('pleaseInputTheSfdmuConfigLabel')),
         description: 'A human-readable label for this data configuration',
         placeholder: 'Ex: Active Products',
       },
@@ -269,7 +270,7 @@ The command's technical implementation involves:
     const templateResp = await prompts({
       type: 'select',
       name: 'template',
-      message: c.cyanBright('Please select a SFDMU template, or the blank one'),
+      message: c.cyanBright(t('pleaseSelectSfdmuTemplateOrTheBlank')),
       description: 'Choose a pre-configured SFDMU template for data operations or start with a blank configuration',
       placeholder: 'Select a template',
       choices: [...[defaultTemplateChoice], ...templateChoices],

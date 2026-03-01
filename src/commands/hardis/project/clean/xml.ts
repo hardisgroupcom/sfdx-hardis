@@ -14,6 +14,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { writeXmlFileFormatted } from '../../../../common/utils/xmlUtils.js';
 import { getConfig, setConfig } from '../../../../config/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -113,7 +114,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
           const nodes = xpathSelect(xpathItem, doc as any);
           for (const node of nodes as Node[]) {
             await this.removeXPath(xpathItem, doc, node);
-            uxLog("log", this, c.grey(`Removed xpath ${xpathItem} from ${xmlFile}`));
+            uxLog("log", this, c.grey(t('removedXpathFrom', { xpathItem, xmlFile })));
             updated = true;
             counter++;
           }
@@ -139,7 +140,7 @@ Note: If globpattern and xpath are not sent, elements defined in property **clea
   public async buildCleanXmlPatterns() {
     // Input parameters
     if (this.globPattern && this.xpath) {
-      uxLog("log", this, c.grey('Using configuration from input arguments...'));
+      uxLog("log", this, c.grey(t('usingConfigurationFromInputArguments')));
       return [
         {
           globPattern: this.globPattern,
