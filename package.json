@@ -45,7 +45,7 @@
     "glob": "13.0.6",
     "he": "1.2.0",
     "inquirer": "10.2.2",
-    "isomorphic-dompurify": "2.26.0",
+    "isomorphic-dompurify": "2.36.0",
     "jira.js": "5.3.1",
     "js-yaml": "4.1.1",
     "jsdoc-to-markdown": "9.1.3",
