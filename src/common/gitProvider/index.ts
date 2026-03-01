@@ -82,7 +82,7 @@ export abstract class GitProvider {
         );
       }
     } catch (e) {
-      uxLog("warning", this, c.yellow(t('gitProviderErrorGettingInstance', { message: (e as Error).message })));
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderErrorGettingInstance', { message: (e as Error).message })));
     }
     return null;
   }
@@ -90,7 +90,7 @@ export abstract class GitProvider {
   private static async handleManualGitServerAuth() {
     const promptRes = await prompts({
       message: t('pleaseSelectYourGitServiceProvider'),
-      description: "Choose your git hosting service to enable CI/CD integration features",
+      description: t('descChooseGitProvider'),
       type: "select",
       choices: [
         { title: "Azure DevOps", value: "azure" },
@@ -103,25 +103,25 @@ export abstract class GitProvider {
       await AzureDevopsProvider.handleLocalIdentification();
     }
     else {
-      uxLog("warning", this, c.yellow(t('gitProviderLocalAuthNotImplemented', { provider: promptRes.value })));
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderLocalAuthNotImplemented', { provider: promptRes.value })));
     }
   }
 
   static async managePostPullRequestComment(checkOnly: boolean): Promise<void> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
-      uxLog("warning", this, c.yellow(t('gitProviderNotConfigured')));
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderNotConfigured')));
       uxLog(
         "warning",
         this,
-        c.yellow(t('gitProviderSeeDocumentation', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#git-providers` })),
+        c.yellow('[GitProvider] ' + t('gitProviderSeeDocumentation', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#git-providers` })),
       );
       return;
     }
     const prData = getPullRequestData();
     const prCommentSent = globalThis.pullRequestCommentSent || false;
     if (prData && gitProvider && prCommentSent === false) {
-      uxLog("warning", this, c.yellow(t('gitProviderPostingPrComment')));
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPostingPrComment')));
       let markdownBody = "";
       if (prData.deployErrorsMarkdownBody) {
         markdownBody += prData.deployErrorsMarkdownBody;
@@ -167,7 +167,7 @@ export abstract class GitProvider {
       }
     } else {
       uxLog("error", this, c.grey(`${JSON.stringify(prData || { noPrData: "" })} && ${gitProvider} && ${prCommentSent}`));
-      uxLog("warning", this, c.yellow(t('gitProviderSkipPrComment')));
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderSkipPrComment')));
     }
   }
 
@@ -242,9 +242,9 @@ export abstract class GitProvider {
       debug("[GitProvider][PR Info] " + JSON.stringify(prInfo, null, 2));
       GitProvider.prInfoCache = prInfo;
     } catch (e) {
-      uxLog("warning", this, c.yellow(t('gitProviderUnableToGetPrInfo', { message: (e as Error).message })));
-      uxLog("warning", this, c.yellow(t('gitProviderMayBeMisconfigured', { provider: gitProvider.getLabel() })));
-      uxLog("warning", this, c.yellow(t('gitProviderSeeDocumentation', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#git-providers` })));
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderUnableToGetPrInfo', { message: (e as Error).message })));
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderMayBeMisconfigured', { provider: gitProvider.getLabel() })));
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderSeeDocumentation', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#git-providers` })));
       prInfo = null;
     }
     return prInfo;

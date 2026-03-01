@@ -356,7 +356,7 @@ export async function promptForConnectedAppSelection<T extends { fullName: strin
     type: 'multiselect',
     name: 'selectedApps',
     message: promptMessage,
-    description: 'Select Connected Apps to process.',
+    description: t('descChooseConnectedApps'),
     choices: choices,
     initial: initialSelection,
   });

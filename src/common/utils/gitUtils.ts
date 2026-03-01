@@ -48,7 +48,7 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       type: availableTargetBranches ? 'select' : 'text',
       name: 'targetBranch',
       message: c.cyanBright(message),
-      description: availableTargetBranches ? 'Choose the target branch for this operation' : 'Enter the name of the target branch',
+      description: t('descChooseTargetBranch'),
       placeholder: availableTargetBranches ? undefined : 'Ex: integration',
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
@@ -186,7 +186,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
 
   // Unify and sort tickets
   const ticketsSorted: Ticket[] = sortArray(arrayUniqueByKey(tickets, 'id'), { by: ['id'], order: ['asc'] });
-  uxLog("log", this, c.grey(t('ticketProviderFoundTickets', { count: ticketsSorted.length })));
+  uxLog("log", this, c.grey('[TicketProvider] ' + t('ticketProviderFoundTickets', { count: ticketsSorted.length })));
   // Try to contact Ticketing servers to gather more info
   await TicketProvider.collectTicketsInfo(ticketsSorted);
 

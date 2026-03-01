@@ -73,7 +73,7 @@ export async function promptProfiles(
     const profilesSelection = await prompts({
       type: options.multiselect ? 'multiselect' : 'select',
       message: options.message || 'Please select profile(s)',
-      description: 'Select one or more Salesforce profiles for the operation',
+      description: t('descChooseProfiles'),
       name: 'value',
       choices: profiles.map((profile: any) => {
         return {
@@ -110,7 +110,7 @@ export async function promptProfiles(
     const profilesSelection = await prompts({
       type: 'text',
       message: options.message || 'Please input profile name',
-      description: 'Enter the Salesforce profile name manually',
+      description: t('descEnterProfileName'),
       placeholder: 'Ex: System Administrator',
       name: 'value',
       initial: options?.initialSelection[0] || null,
@@ -195,7 +195,7 @@ export async function promptOrg(
     type: 'select',
     name: 'org',
     message: c.cyanBright(options.promptMessage || 'Please select an org'),
-    description: 'Choose a Salesforce org from the list of authenticated orgs',
+    description: t('descChooseOrg'),
     default: defaultOrg || '',
     choices: orgList.map((org: any) => {
       let title = org.instanceUrl || org.username || org.alias || "ERROR";
@@ -304,7 +304,7 @@ export async function promptOrgList(options: { promptMessage?: string } = {}) {
     type: 'multiselect',
     name: 'orgs',
     message: c.cyanBright(options.promptMessage || 'Please select orgs'),
-    description: 'Choose multiple Salesforce orgs from the list of authenticated orgs',
+    description: t('descChooseMultipleOrgs'),
     choices: orgListSorted.map((org: any) => {
       const title = org.instanceUrl || org.username || org.alias || "ERROR";
       const description = `Connected with ${org.username || org.alias || 'unknown user'} ` +
@@ -392,7 +392,7 @@ export async function promptUserEmail(promptMessage: string | null = null) {
     name: 'value',
     initial: userConfig.userEmail || '',
     message: c.cyanBright(promptMessage || 'Please input your email address'),
-    description: 'Your email address will be stored locally and used for CI/CD operations',
+    description: t('descEnterEmail'),
     placeholder: 'Ex: john.doe@company.com',
     validate: (value: string) => EmailValidator.validate(value),
   });
@@ -481,7 +481,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
     type: "multiselect",
     name: 'value',
     message: c.cyanBright(t('pleaseSelectPackagesToAddToYour')),
-    description: 'Select packages to add to your project configuration for automatic installation during scratch org creation and/or deployments',
+    description: t('descChoosePackages'),
     choices: promptPackagesToInstall.map((pckg) => {
       return {
         title: `${pckg.SubscriberPackageName} (${pckg.SubscriberPackageVersionNumber})`,
@@ -499,7 +499,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
       message: c.cyanBright(
         `Please select the install configuration for ${c.bold(installedPackage.SubscriberPackageName)}`
       ),
-      description: 'Configure how this package should be automatically installed during CI/CD operations',
+      description: t('descConfigurePackageInstall'),
       choices: [
         {
           title: `Deploy automatically ${c.bold(

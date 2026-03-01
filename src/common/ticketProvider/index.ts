@@ -38,7 +38,7 @@ export abstract class TicketProvider {
     const config = await getConfig("project");
     const ticketProviders = this.getInstances(config);
     if (ticketProviders.length === 0) {
-      uxLog("error", this, c.grey(t('ticketProviderNotConfigured')));
+      uxLog("error", this, c.grey('[TicketProvider] ' + t('ticketProviderNotConfigured')));
     }
     for (const ticketProvider of ticketProviders) {
       if (ticketProvider.isActive) {

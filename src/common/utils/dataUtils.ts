@@ -177,7 +177,7 @@ export async function selectDataWorkspace(opts: { selectDataLabel: string, multi
     type: opts.multiple ? 'multiselect' : 'select',
     name: 'value',
     message: c.cyanBright(opts.selectDataLabel),
-    description: 'Select the SFDMU data configuration to use for this operation',
+    description: t('descChooseSfdmuConfig'),
     choices: choices,
     initial: opts?.initial === "all" ? sfdmuFolders : opts?.initial ?? null
   });

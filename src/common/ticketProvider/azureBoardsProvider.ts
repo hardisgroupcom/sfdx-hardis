@@ -124,7 +124,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       uxLog(
         "action",
         this,
-        c.cyan(
+        c.cyan('[AzureBoardsProvider]' + 
           t('azureBoardsProviderCollectingTickets', { azureTicketsNumber, serverUrl: process.env.SYSTEM_COLLECTIONURI || "" }),
         ),
       );
@@ -141,9 +141,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
           if (ticketInfo?._links && ticketInfo._links["html"] && ticketInfo._links["html"]["href"]) {
             ticket.url = ticketInfo?._links["html"]["href"];
           }
-          uxLog("log", this, c.grey(t('azureBoardsProviderCollectedWorkItem', { ticketId: ticket.id })));
+          uxLog("log", this, c.grey('[AzureBoardsProvider] ' + t('azureBoardsProviderCollectedWorkItem', { ticketId: ticket.id })));
         } else {
-          uxLog("warning", this, c.yellow(t('azureBoardsProviderUnableToGetWorkItem', { ticketId: ticket.id, ticketInfo: JSON.stringify(ticketInfo) })));
+          uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderUnableToGetWorkItem', { ticketId: ticket.id, ticketInfo: JSON.stringify(ticketInfo) })));
         }
       }
     }
@@ -151,7 +151,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   }
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
-    uxLog("action", this, c.cyan(t('azureBoardsProviderPostingComments', { count: tickets.length })));
+    uxLog("action", this, c.cyan('[AzureBoardsProvider] ' + t('azureBoardsProviderPostingComments', { count: tickets.length })));
     const orgMarkdown = await getOrgMarkdown(org, "html");
     const branchMarkdown = await getBranchMarkdown("html");
     const tag = await this.getDeploymentTag();
@@ -178,7 +178,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             throw new SfError("commentPostRes: " + commentPostRes);
           }
         } catch (e6) {
-          uxLog("warning", this, c.yellow(t('azureBoardsProviderErrorPostingComment', { ticketId: ticket.id, message: (e6 as any).message })));
+          uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderErrorPostingComment', { ticketId: ticket.id, message: (e6 as any).message })));
         }
 
         // Add tag
@@ -197,21 +197,21 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             throw new SfError("tag workItem: " + workItem);
           }
         } catch (e6) {
-          uxLog("warning", this, c.yellow(t('azureBoardsProviderErrorAddingTag', { tag, ticketId: ticket.id, message: (e6 as any).message })));
+          uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderErrorAddingTag', { tag, ticketId: ticket.id, message: (e6 as any).message })));
         }
       }
     }
     uxLog(
       "log",
       this,
-      c.grey(
+      c.grey('[AzureBoardsProvider]' + 
         t('azureBoardsProviderPostedComments', { count: commentedTickets.length, tickets: commentedTickets.map((ticket) => ticket.id).join(", ") }),
       ),
     );
     uxLog(
       "log",
       this,
-      c.grey(
+      c.grey('[AzureBoardsProvider]' + 
         t('azureBoardsProviderAddedTag', { tag, count: taggedTickets.length, tickets: taggedTickets.map((ticket) => ticket.id).join(", ") }),
       ),
     );

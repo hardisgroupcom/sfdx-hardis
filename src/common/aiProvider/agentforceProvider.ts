@@ -71,10 +71,10 @@ export class AgentforceProvider extends AiProviderRoot {
       return null;
     }
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog("log", this, c.grey(t('agentforceRequestingPromptDebug', { template: template ? (' using template ' + template) : '', promptText })));
+      uxLog("log", this, c.grey('[Agentforce] ' + t('agentforceRequestingPromptDebug', { template: template ? (' using template ' + template) : '', promptText })));
     }
     else {
-      uxLog("log", this, c.grey(t('agentforceRequestingPrompt', { template: template ? (' using template ' + template) : '' })));
+      uxLog("log", this, c.grey('[Agentforce] ' + t('agentforceRequestingPrompt', { template: template ? (' using template ' + template) : '' })));
     }
     this.incrementAiCallsNumber();
     const promptUrl = this.interpolatePromptUrl(this.promptUrlTemplate, this.promptTemplate);
@@ -99,10 +99,10 @@ export class AgentforceProvider extends AiProviderRoot {
     }
     const agentforceResponse: any = await this.conn.requestPost(promptUrl, payload);
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog("log", this, c.grey(t('agentforceReceivedResponseDebug', { response: JSON.stringify(agentforceResponse, null, 2) })));
+      uxLog("log", this, c.grey('[Agentforce] ' + t('agentforceReceivedResponseDebug', { response: JSON.stringify(agentforceResponse, null, 2) })));
     }
     else {
-      uxLog("log", this, c.grey(t('agentforceReceivedResponse')));
+      uxLog("log", this, c.grey('[Agentforce] ' + t('agentforceReceivedResponse')));
     }
     const aiResponse: AiResponse = {
       success: false,

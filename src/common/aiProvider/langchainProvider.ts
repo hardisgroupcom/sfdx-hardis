@@ -126,9 +126,9 @@ export class LangChainProvider extends AiProviderRoot {
     }
 
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog("log", this, c.grey(t('langchainRequestingPromptDebug', { modelName: this.modelName, template: template ? ' using template ' + template : '', promptText })));
+      uxLog("log", this, c.grey('[LangChain] ' + t('langchainRequestingPromptDebug', { modelName: this.modelName, template: template ? ' using template ' + template : '', promptText })));
     } else {
-      uxLog("log", this, c.grey(t('langchainRequestingPrompt', { modelName: this.modelName, template: template ? ' using template ' + template : '' })));
+      uxLog("log", this, c.grey('[LangChain] ' + t('langchainRequestingPrompt', { modelName: this.modelName, template: template ? ' using template ' + template : '' })));
     }
 
     this.incrementAiCallsNumber();
@@ -142,9 +142,9 @@ export class LangChainProvider extends AiProviderRoot {
       ]);
 
       if (process.env?.DEBUG_PROMPTS === "true") {
-        uxLog("log", this, c.grey(t('langchainReceivedResponseDebug', { response: JSON.stringify(response, null, 2) })));
+        uxLog("log", this, c.grey('[LangChain] ' + t('langchainReceivedResponseDebug', { response: JSON.stringify(response, null, 2) })));
       } else {
-        uxLog("log", this, c.grey(t('langchainReceivedResponse')));
+        uxLog("log", this, c.grey('[LangChain] ' + t('langchainReceivedResponse')));
       }
 
       const aiResponse: AiResponse = {
@@ -160,9 +160,9 @@ export class LangChainProvider extends AiProviderRoot {
       return aiResponse;
     } catch (error: unknown) {
       if (error instanceof Error) {
-        uxLog("error", this, c.red(t('langchainErrorCallingLLM', { message: error.message })));
+        uxLog("error", this, c.red('[LangChain] ' + t('langchainErrorCallingLLM', { message: error.message })));
       } else {
-        uxLog("error", this, c.red(t('langchainUnexpectedError')));
+        uxLog("error", this, c.red('[LangChain] ' + t('langchainUnexpectedError')));
       }
       return null;
     }

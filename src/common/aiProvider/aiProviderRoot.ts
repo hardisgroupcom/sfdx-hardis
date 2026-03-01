@@ -38,7 +38,7 @@ export abstract class AiProviderRoot {
   protected checkAndWarnMaxAiCalls(providerName: string): boolean {
     if (!this.checkMaxAiCallsNumber()) {
       const maxCalls = this.getAiMaxCallsNumber();
-      uxLog("warning", this, c.yellow(t('aiProviderMaxCallsReached', { providerName, maxCalls })));
+      uxLog("warning", this, c.yellow('[' + providerName + '] ' + t('aiProviderMaxCallsReached', { maxCalls })));
       return false;
     }
     return true;

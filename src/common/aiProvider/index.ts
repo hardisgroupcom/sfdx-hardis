@@ -18,7 +18,7 @@ const DEFAULT_PROVIDER_ORDER: ProviderKey[] = ["langchain", "codex", "openai", "
 export abstract class AiProvider {
   static async isAiAvailable(): Promise<boolean> {
     if (process.env?.DISABLE_AI === "true") {
-      uxLog("warning", this, c.yellow(t('aiProviderDisabled')))
+      uxLog("warning", this, c.yellow('[AI Provider] ' + t('aiProviderDisabled')))
       return false;
     }
     const instance = await this.getInstance();
@@ -39,7 +39,7 @@ export abstract class AiProvider {
           type: 'text',
           name: 'token',
           message: t('inputYourCodexApiTokenIfYou'),
-          description: 'Provide your CODEX_API_KEY to enable Codex-powered features in sfdx-hardis',
+          description: t('descProvideCodexApiKey'),
         });
         if (promptRes.token) {
           process.env.CODEX_API_KEY = promptRes.token;
@@ -49,7 +49,7 @@ export abstract class AiProvider {
           type: 'text',
           name: 'token',
           message: t('inputYourOpenaiApiTokenIfYou'),
-          description: 'Provide your OpenAI API key to enable AI-powered features in sfdx-hardis',
+          description: t('descProvideOpenaiApiKey'),
         });
         if (promptRes.token) {
           process.env.OPENAI_API_KEY = promptRes.token;
@@ -83,7 +83,7 @@ export abstract class AiProvider {
           }
         }
       } catch (error) {
-        uxLog("warning", this, c.yellow(t('aiProviderUnableToInitialize', { provider, message: (error as Error).message })));
+        uxLog("warning", this, c.yellow('[AI Provider] ' + t('aiProviderUnableToInitialize', { provider, message: (error as Error).message })));
       }
     }
     return null;

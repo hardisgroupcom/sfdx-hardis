@@ -215,18 +215,18 @@ export async function promptInstanceUrl(
       : 'https://myclient--preprod.sandbox.lightning.force.com/';
   const allChoices = [
     {
-      title: '📝 Custom login URL (Sandbox, DevHub or Production Org)',
-      description: `Recommended option 😊 Example: ${customLoginUrlExample}`,
+      title: t('titleCustomLoginUrl'),
+      description: t('descRecommendedOption', { example: customLoginUrlExample }),
       value: 'custom',
     },
     {
-      title: '🧪 Sandbox or Scratch org (test.salesforce.com)',
-      description: 'The org I want to connect is a sandbox or a scratch org',
+      title: t('titleSandboxScratchOrg'),
+      description: t('descConnectSandboxOrScratch'),
       value: 'https://test.salesforce.com',
     },
     {
-      title: '☢️ Other: Dev org, Production org or DevHub org (login.salesforce.com)',
-      description: 'The org I want to connect is NOT a sandbox',
+      title: t('titleOtherOrgType'),
+      description: t('descConnectNonSandbox'),
       value: 'https://login.salesforce.com',
     },
   ];
@@ -242,7 +242,7 @@ export async function promptInstanceUrl(
   if (defaultOrgChoice != null) {
     choices.unshift({
       title: `♻️ ${defaultOrgChoice.instanceUrl}`,
-      description: 'Your current default org',
+      description: t('descYourCurrentDefaultOrg'),
       value: defaultOrgChoice.instanceUrl,
     });
   }
@@ -250,7 +250,7 @@ export async function promptInstanceUrl(
     type: 'select',
     name: 'value',
     message: c.cyanBright(t('whatIsTheBaseUrlOrDomain', { alias })),
-    description: 'Select the Salesforce environment type or specify a custom URL for authentication',
+    description: t('descSelectOrgTypeOrUrl'),
     choices: choices,
     initial: 1,
   });
@@ -302,7 +302,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
           message: c.cyanBright(
             'What is the URL of your git repository ?'
           ),
-          description: 'Enter the full URL of the git repository to clone',
+          description: t('descEnterGitRepoUrl'),
           placeholder: 'Ex: https://gitlab.hardis-group.com/busalesforce/monclient/monclient-org-monitoring.git',
         });
         cloneUrl = cloneUrlPrompt.value;
@@ -369,7 +369,7 @@ export async function selectGitBranch(
     type: 'select',
     name: 'value',
     message: options.message || 'Please select a Git branch',
-    description: 'Choose a git branch to work with',
+    description: t('descChooseGitBranch'),
     choices: branches.all.map((branchName) => {
       return { title: branchName.replace('origin/', ''), value: branchName.replace('origin/', '') };
     }),
@@ -423,7 +423,7 @@ async function handleGitAuthError(operation: string): Promise<boolean> {
     type: 'text',
     name: 'username',
     message: c.cyanBright(t('enterYourGitUsername')),
-    description: 'Your Git service username',
+    description: t('descGitUsername'),
     validate: (value: string) => (value && value.trim().length > 0) || 'Username is required',
   });
 
@@ -436,7 +436,7 @@ async function handleGitAuthError(operation: string): Promise<boolean> {
     type: 'text',
     name: 'password',
     message: c.cyanBright(t('enterYourGitPasswordOrPersonalAccess')),
-    description: 'Your Git service password or PAT (input will be visible)',
+    description: t('descGitPassword'),
     validate: (value: string) => (value && value.trim().length > 0) || 'Password/PAT is required',
   });
 
@@ -718,7 +718,7 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
             c.red(c.bold(group.label.toUpperCase()))
           )} files you want to commit (save)}`
         ),
-        description: 'Choose files to include in the git commit. Be careful with your selection.',
+        description: t('descChooseFilesToCommit'),
         choices: matchingFiles.map((fileStatus: FileStatusResult) => {
           return {
             title: `(${getGitWorkingDirLabel(fileStatus.working_dir)}) ${getSfdxFileLabel(fileStatus.path)}`,
@@ -776,11 +776,11 @@ export async function interactiveGitAdd(options: any = { filter: [], groups: [] 
       type: 'select',
       name: 'addFiles',
       message: c.cyanBright(t('doYouConfirmThatYouWantTo', { confirmationText })),
-      description: 'Confirm your file selection for the git commit',
+      description: t('descConfirmFileSelection'),
       choices: [
-        { title: 'Yes, my selection is complete !', value: 'yes' },
-        { title: 'No, I want to select again', value: 'no' },
-        { title: 'Let me out of here !', value: 'bye' },
+        { title: t('titleYesSelectionComplete'), value: 'yes' },
+        { title: t('titleNoSelectAgain'), value: 'no' },
+        { title: t('titleLetMeOut'), value: 'bye' },
       ],
       initial: 0,
     });
@@ -1744,7 +1744,7 @@ export async function generateSSLCertificate(
     message: c.cyanBright(
       "Do you want sfdx-hardis to configure the SF CLI External Client App or Connected App on your org ?"
     ),
-    description: 'Creates a Connected App required for CI/CD authentication. Choose yes if you are unsure.',
+    description: t('descCreateConnectedApp'),
   });
   if (confirmResponse.value === true) {
     const clientIdStringRaw = `SFDX_CLIENT_ID_${branchName.toUpperCase()}`;
@@ -1796,7 +1796,7 @@ export async function generateSSLCertificate(
     await prompts({
       type: 'confirm',
       message: c.cyanBright(t('pleaseConfirmWhenVariablesHaveBeenSet')),
-      description: 'Confirm when you have configured the required CI/CD environment variables in your deployment platform',
+      description: t('descConfirmCiCdVariables'),
     });
 
     // Ask user which type of app to create
@@ -1804,17 +1804,17 @@ export async function generateSSLCertificate(
       type: 'select',
       name: 'value',
       message: c.cyanBright(t('whichTypeOfAppDoYouWant')),
-      description: 'Select the type of OAuth app to create for CI/CD authentication',
+      description: t('descSelectAppType'),
       choices: [
         {
-          title: 'External Client App (Recommended by the mothership)',
+          title: t('titleExternalClientApp'),
           value: 'externalClientApp',
-          description: 'External Client App are the replacement of Connected Apps'
+          description: t('descExternalClientApp')
         },
         {
-          title: 'Connected App (Legacy)',
+          title: t('titleConnectedAppLegacy'),
           value: 'connectedApp',
-          description: 'Does not work starting Spring 26 except if you post a case to SF to request activation of Connected Apps creation'
+          description: t('descConnectedAppLegacy')
         },
       ],
       initial: 0,
@@ -1922,7 +1922,7 @@ export async function generateSSLCertificate(
           name: 'value',
           initial: true,
           message: c.cyanBright(promptMessage),
-          description: 'Select yes once the record is deleted from Setup > App Manager. Choose no to cancel deployment.',
+          description: t('descSelectAfterDeletion'),
         });
         if (!confirmation.value) {
           throw new SfError(`[sfdx-hardis] Deployment canceled: ${label} ${metadataInfo.fullName} still exists.`);
@@ -1962,7 +1962,7 @@ export async function generateSSLCertificate(
           name: 'appName',
           initial: 'sfdxhardis' + appNameDflt,
           message: c.cyanBright(t('howWouldYouLikeToNameThe2')),
-          description: 'Name for the External Client App that will be created in your Salesforce org',
+          description: t('descExternalClientAppName'),
           placeholder: 'Ex: sfdx_hardis',
         },
       ]);
@@ -2053,7 +2053,7 @@ If deployment fails, create the External Client App manually:
           message: c.cyanBright(
             'You need to manually configure the External Client App. Follow the MANUAL INSTRUCTIONS above, then continue here'
           ),
-          description: 'Confirm when you have completed the manual External Client App configuration steps',
+          description: t('descConfirmExternalClientApp'),
         });
       }
     } else {
@@ -2064,7 +2064,7 @@ If deployment fails, create the External Client App manually:
           name: 'appName',
           initial: 'sfdxhardis' + appNameDflt,
           message: c.cyanBright(t('howWouldYouLikeToNameThe')),
-          description: 'Name for the Connected App that will be created in your Salesforce org',
+          description: t('descConnectedAppName'),
           placeholder: 'Ex: sfdx_hardis',
         },
       ]);
@@ -2171,7 +2171,7 @@ If this is a Test class issue (production env), you may have to create manually 
           message: c.cyanBright(
             'You need to manually configure the connected app. Follow the MANUAL INSTRUCTIONS above, then continue here'
           ),
-          description: 'Confirm when you have completed the manual Connected App configuration steps',
+          description: t('descConfirmConnectedApp'),
         });
       }
     }
