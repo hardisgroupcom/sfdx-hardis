@@ -14,14 +14,14 @@ export class DocBuilderLwc extends DocBuilderRoot {
   public docsSection = "lwc";
 
   public static buildIndexTable(prefix: string, lwcDescriptions: any, filterObject: string | null = null) {
-    const filteredLwcs = filterObject 
-      ? lwcDescriptions.filter(lwc => lwc.impactedObjects.includes(filterObject)) 
+    const filteredLwcs = filterObject
+      ? lwcDescriptions.filter(lwc => lwc.impactedObjects.includes(filterObject))
       : lwcDescriptions;
-    
+
     if (filteredLwcs.length === 0) {
       return [];
     }
-    
+
     const lines: string[] = [];
     lines.push(...[
       filterObject ? `## ${t('docMdRelatedLightningWebComponents')}` : `## ${t('docMdLightningWebComponents')}`,
@@ -63,7 +63,7 @@ export class DocBuilderLwc extends DocBuilderRoot {
     try {
       const lwcPath = this.additionalVariables.LWC_PATH;
       const jsFile = path.join(lwcPath, `${this.metadataName}.js`);
-      
+
       if (fs.existsSync(jsFile)) {
         const jsdocOutput = await jsdoc2md.render({ files: jsFile });
         return jsdocOutput || t('docMdNoJsDocAvailable');
@@ -79,7 +79,7 @@ export class DocBuilderLwc extends DocBuilderRoot {
     try {
       const lwcPath = this.additionalVariables.LWC_PATH;
       const files = await fs.readdir(lwcPath);
-      
+
       let fileList = "";
       for (const file of files) {
         const stats = await fs.stat(path.join(lwcPath, file));
@@ -87,7 +87,7 @@ export class DocBuilderLwc extends DocBuilderRoot {
           fileList += `- \`${file}\`\n`;
         }
       }
-      
+
       return fileList || t('docMdNoFilesFoundForComponent');
     } catch (error) {
       return t('docMdErrorListingComponentFiles', { message: (error as any).message });
@@ -97,23 +97,23 @@ export class DocBuilderLwc extends DocBuilderRoot {
   public async stripXmlForAi(): Promise<string> {
     const lwcPath = this.additionalVariables.LWC_PATH;
     const files = await fs.readdir(lwcPath);
-    
+
     let componentCode = "";
     for (const file of files) {
       const filePath = path.join(lwcPath, file);
       const stats = await fs.stat(filePath);
-      
+
       if (stats.isFile()) {
         // Skip CSS files
         if (file.endsWith('.css')) {
           continue;
         }
-        
+
         const fileContent = await fs.readFile(filePath, 'utf-8');
         componentCode += `// File: ${file}\n${fileContent}\n\n`;
       }
     }
-    
+
     return componentCode;
   }
 }

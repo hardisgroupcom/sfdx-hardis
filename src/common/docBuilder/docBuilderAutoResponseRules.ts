@@ -1,6 +1,6 @@
-import {DocBuilderRoot} from "./docBuilderRoot.js";
-import {PromptTemplate} from "../aiProvider/promptTemplates.js";
-import {RulesBuilderUtil} from "../utils/rulesBuilderUtil.js";
+import { DocBuilderRoot } from "./docBuilderRoot.js";
+import { PromptTemplate } from "../aiProvider/promptTemplates.js";
+import { RulesBuilderUtil } from "../utils/rulesBuilderUtil.js";
 import { t } from '../utils/i18n.js';
 
 export class DocBuilderAutoResponseRules extends DocBuilderRoot {
@@ -38,7 +38,7 @@ export class DocBuilderAutoResponseRules extends DocBuilderRoot {
 
     const ruleBuilderUtil = new RulesBuilderUtil();
     await ruleBuilderUtil.buildInitialMarkDownLinesFoAutoResponseRules(this.parsedXmlObject);
-    const autoResponseRuleTableLines: string [] = [...ruleBuilderUtil.globalRuleTableLines];
+    const autoResponseRuleTableLines: string[] = [...ruleBuilderUtil.globalRuleTableLines];
 
     return [
       `## ${this.metadataName}`,
