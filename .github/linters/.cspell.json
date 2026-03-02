@@ -15,7 +15,7 @@
   "language": "en",
   "version": "0.2",
   "ignoreRegExpList": [
-    "t\\([^)]*\\)"
+    "(?<![a-zA-Z])t\\([^)]*\\)"
   ],
   "words": [
     "AAAS",
