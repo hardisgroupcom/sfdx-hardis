@@ -8,6 +8,7 @@ import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import fs from 'fs-extra';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -79,7 +80,7 @@ The command's technical implementation involves:
     this.del = flags.delete || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Comment or delete System.debug line in apex classes and triggers`));
+    uxLog("action", this, c.cyan(t('commentOrDeleteSystemDebugLine')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.{cls,trigger}`;

@@ -11,6 +11,7 @@ import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -130,7 +131,7 @@ The command leverages several internal utilities and external libraries to achie
       }
       const flowName = path.basename(inputFile, ".flow-meta.xml");
 
-      uxLog("log", this, c.grey(`Generating Markdown for Flow ${inputFile}.`));
+      uxLog("log", this, c.grey(t('generatingMarkdownForFlow', { inputFile })));
       const flowXml = (await fs.readFile(inputFile, "utf8")).toString();
       const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: {} });
       if (!genRes) {
@@ -148,7 +149,7 @@ The command leverages several internal utilities and external libraries to achie
         try {
           await generateHistoryDiffMarkdown(inputFile, this.debugMode);
         } catch (e: any) {
-          uxLog("warning", this, c.yellow(`Error generating history-diff Markdown: ${e.message}.`));
+          uxLog("warning", this, c.yellow(t('errorGeneratingHistoryDiffMarkdown', { message: e.message })));
         }
       }
 
@@ -157,7 +158,7 @@ The command leverages several internal utilities and external libraries to achie
       WebSocketClient.sendReportFileMessage(outputFile, path.basename(outputFile).replace(".md", "") + " Documentation", 'report');
       outputFiles.push(outputFile);
     }
-    uxLog("action", this, c.green(`Markdown documentation generated for ${this.inputFiles.length} Flow(s).`));
+    uxLog("action", this, c.green(t('markdownDocumentationGeneratedForFlow', { inputFiles: this.inputFiles.length })));
     for (const outputFile of outputFiles) {
       uxLog("log", this, c.grey(`- ${outputFile}`));
     }

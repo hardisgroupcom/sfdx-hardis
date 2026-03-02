@@ -11,6 +11,7 @@ import { getConfig } from '../../../../config/index.js';
 import { execCommand, stripAnsi, uxLog } from '../../../../common/utils/index.js';
 import moment from 'moment';
 import { authenticateWithSfdxUrlStore } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -80,7 +81,7 @@ The command's technical implementation involves:
       uxLog(
         "warning",
         this,
-        c.yellow('Configuration file must contain a poolConfig property') +
+        c.yellow(t('configFileMustContainPoolConfigProperty')) +
         '\n' +
         c.grey(JSON.stringify(config, null, 2))
       );
@@ -89,7 +90,7 @@ The command's technical implementation involves:
 
     const maxScratchOrgsNumber = config.poolConfig.maxScratchOrgsNumber || 5;
     const maxScratchOrgsNumberToCreateOnce = config.poolConfig.maxScratchOrgsNumberToCreateOnce || 10;
-    uxLog("log", this, c.grey('Pool config: ' + JSON.stringify(config.poolConfig)));
+    uxLog("log", this, c.grey(t('poolConfig') + JSON.stringify(config.poolConfig)));
 
     // Get pool storage
     const poolStorage = await getPoolStorage({
@@ -113,7 +114,7 @@ The command's technical implementation involves:
           "log",
           this,
           c.grey(
-            `Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be deleted as it has only ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`
+            t('scratchOrgWillBeDeletedDaysRemaining', { instanceUrl: scratchOrg?.authFileJson?.result?.instanceUrl, days: daysBeforeExpiration, expirationDate: scratchOrg?.authFileJson?.result?.expirationDate })
           )
         );
         return false;
@@ -122,7 +123,7 @@ The command's technical implementation involves:
         "log",
         this,
         c.grey(
-          `Scratch org ${scratchOrg?.authFileJson?.result?.instanceUrl} will be kept as it still has ${daysBeforeExpiration} remaining days (expiration on ${scratchOrg?.authFileJson?.result?.expirationDate})`
+          t('scratchOrgWillBeKeptDaysRemaining', { instanceUrl: scratchOrg?.authFileJson?.result?.instanceUrl, days: daysBeforeExpiration, expirationDate: scratchOrg?.authFileJson?.result?.expirationDate })
         )
       );
       return true;
@@ -144,8 +145,7 @@ The command's technical implementation involves:
           "action",
           this,
           c.cyan(
-            `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${scratchOrgToDelete?.authFileJson?.result?.instanceUrl
-            } has been deleted because only ${scratchOrgToDelete.daysBeforeExpiration} days were remaining.`
+            t('scratchOrgDeletedDaysRemaining', { username: c.green(scratchOrgToDelete.scratchOrgUsername), instanceUrl: scratchOrgToDelete?.authFileJson?.result?.instanceUrl, days: scratchOrgToDelete.daysBeforeExpiration })
           )
         );
       }
@@ -153,7 +153,7 @@ The command's technical implementation involves:
 
     // Create new scratch orgs
     const numberOfOrgsToCreate = Math.min(maxScratchOrgsNumber - scratchOrgs.length, maxScratchOrgsNumberToCreateOnce);
-    uxLog("action", this, c.cyan('Creating ' + numberOfOrgsToCreate + ' scratch orgs...'));
+    uxLog("action", this, c.cyan(t('creating') + numberOfOrgsToCreate + ' scratch orgs...'));
     let numberCreated = 0;
     let numberfailed = 0;
     const subProcesses: any[] = [];
@@ -164,7 +164,7 @@ The command's technical implementation involves:
         const commandArgs = ['hardis:scratch:create', '--pool', '--json'];
         const sfdxPath = await which('sf');
         const child = spawn(sfdxPath || 'sf', commandArgs, { cwd: process.cwd(), env: process.env });
-        uxLog("log", this, '[pool] ' + c.grey(`hardis:scratch:create (${i}) started`));
+        uxLog("log", this, '[pool] ' + c.grey(t('hardisScratchCreateStarted', { val: i })));
         // handle errors
         child.on('error', (err) => {
           resolve({ code: 1, result: { error: err } });
@@ -206,7 +206,7 @@ The command's technical implementation involves:
     // Await parallel scratch org creations are completed
     const createResults = await Promise.all(subProcesses);
     if (this.debugMode) {
-      uxLog("log", this, c.grey('Create results: \n' + JSON.stringify(createResults, null, 2)));
+      uxLog("log", this, c.grey(t('createResults') + JSON.stringify(createResults, null, 2)));
     }
 
     const colorFunc = numberCreated === numberOfOrgsToCreate ? c.green : numberCreated === 0 ? c.red : c.yellow;
@@ -214,7 +214,7 @@ The command's technical implementation involves:
       "action",
       this,
       '[pool] ' +
-      colorFunc(`Created ${c.bold(numberCreated)} scratch orgs (${c.bold(numberfailed)} creations(s) failed)`)
+      colorFunc(t('poolCreatedScratchOrgs', { numberCreated: c.bold(numberCreated), numberFailed: c.bold(numberfailed) }))
     );
     // Return an object to be displayed with --json
     return {

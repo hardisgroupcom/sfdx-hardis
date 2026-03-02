@@ -3,6 +3,7 @@ import c from "chalk";
 import { Ticket } from "./index.js";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
+import { t } from '../utils/i18n.js';
 
 export abstract class TicketProviderRoot {
   public isActive = false;
@@ -13,13 +14,13 @@ export abstract class TicketProviderRoot {
   }
 
   public async collectTicketsInfo(tickets: Ticket[]) {
-    uxLog("warning", this, c.yellow("collectTicketsInfo is not implemented on " + this.getLabel()));
+    uxLog("warning", this, c.yellow(t('collectticketsinfoIsNotImplementedOn') + this.getLabel()));
     return tickets;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postDeploymentComments(tickets: Ticket[], _org: string, _pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
-    uxLog("warning", this, c.yellow("postDeploymentComments is not implemented on " + this.getLabel()));
+    uxLog("warning", this, c.yellow(t('postdeploymentcommentsIsNotImplementedOn') + this.getLabel()));
     return tickets;
   }
 

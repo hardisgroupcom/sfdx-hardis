@@ -7,6 +7,7 @@ import { execCommand, getCurrentGitBranch, git, gitFetch, gitPull, uxLog } from 
 import { forceSourcePull, forceSourcePush } from '../../../common/utils/deployUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { getConfig } from '../../../config/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -96,23 +97,21 @@ The command's technical implementation involves:
     uxLog(
       "action",
       this,
-      c.cyan('This command will refresh your git branch and your org with the content of another git branch')
+      c.cyan(t('thisCommandWillRefreshGitBranchAndOrg'))
     );
     // Verify that the user saved his/her work before merging another branch
     const savePromptRes = await prompts({
       type: 'select',
-      message: c.cyanBright(
-        `This is a SENSITIVE OPERATION. Did you run ${c.green('hardis:work:save')} BEFORE running this command ?`
-      ),
+      message: c.cyanBright(t('sensitiveOperationDidYouRunWorkSave')),
       name: 'value',
-      description: 'Confirm that you have saved your current work before proceeding with this sensitive operation',
+      description: t('confirmSavedWorkBeforeSensitiveOperation'),
       placeholder: 'Select an option',
       choices: [
         {
-          title: 'Yes I did save my current updates before merging updates from others !',
+          title: t('yesSavedBeforeMerging'),
           value: true,
         },
-        { title: 'No, I did not, I will do that right now', value: false },
+        { title: t('noWillSaveRightNow'), value: false },
       ],
     });
     if (savePromptRes.value !== true) {
@@ -135,9 +134,9 @@ The command's technical implementation involves:
     }
     const branchRes = await prompts({
       type: 'select',
-      message: `Please select the branch that you want to merge in your current branch ${c.green(localBranch)}`,
+      message: t('pleaseSelectTheBranchThatYouWant', { localBranch: c.green(localBranch) }),
       name: 'value',
-      description: 'Choose which branch to merge into your current working branch',
+      description: t('chooseWhichBranchToMergeIntoCurrent'),
       placeholder: 'Select a branch to merge',
       choices: branchChoices,
     });
@@ -149,7 +148,7 @@ The command's technical implementation involves:
       uxLog(
         "warning",
         this,
-        c.yellow('There has been a merge conflict or a technical error, please contact a Developer for help !')
+        c.yellow(t('mergeConflictOrTechnicalErrorContactDeveloper'))
       );
       throw e;
     }
@@ -174,9 +173,9 @@ The command's technical implementation involves:
 
     // Pull from scratch org
     if (this.noPull) {
-      uxLog("action", this, c.cyan(`Skipped pull from scratch org`));
+      uxLog("action", this, c.cyan(t('skippedPullFromScratchOrg')));
     } else {
-      uxLog("action", this, c.cyan(`Pulling sources from scratch org ${flags['target-org'].getUsername()}...`));
+      uxLog("action", this, c.cyan(t('pullingSourcesFromScratchOrg', { flags: flags['target-org'].getUsername() })));
       await forceSourcePull(flags['target-org'].getUsername(), this.debugMode);
     }
 
@@ -184,16 +183,12 @@ The command's technical implementation involves:
     uxLog(
       "action",
       this,
-      c.cyan(
-        `Stashing your uncommitted updates in ${c.green(localBranch)} before merging ${c.green(
-          this.mergeBranch
-        )} into your local branch ${c.green(localBranch)}...`
-      )
+      c.cyan(t('stashingUncommittedUpdatesBeforeMerging', { localBranch: c.green(localBranch), mergeBranch: c.green(this.mergeBranch) }))
     );
     const stashResult = await git({ output: true }).stash(['save', `[sfdx-hardis] Stash of ${localBranch}`]);
     const stashed = stashResult.includes('Saved working directory');
     // Pull most recent version of development branch
-    uxLog("action", this, c.cyan(`Pulling most recent version of remote branch ${c.green(this.mergeBranch)}...`));
+    uxLog("action", this, c.cyan(t('pullingMostRecentVersionOfRemoteBranch', { mergeBranch: c.green(this.mergeBranch) })));
     await gitFetch({ output: true });
     await git({ output: true }).checkout(this.mergeBranch || '');
     const pullRes = await gitPull({ output: true });
@@ -210,27 +205,25 @@ The command's technical implementation involves:
     // Merge into current branch if necessary
     if (pullRes.summary.changes > 0 || mergeRef !== localRef) {
       // Create new commit from merge
-      uxLog("action", this, c.cyan(`Creating a merge commit of ${c.green(this.mergeBranch)} within ${c.green(localBranch)}...`));
+      uxLog("action", this, c.cyan(t('creatingMergeCommitOfWithin', { mergeBranch: c.green(this.mergeBranch), localBranch: c.green(localBranch) })));
       let mergeSummary = await git({ output: true }).merge([this.mergeBranch || '']);
       while (mergeSummary.failed) {
         const mergeResult = await prompts({
           type: 'select',
           name: 'value',
-          message: c.cyanBright(
-            'There are merge conflicts, please solve them, then select YES here. Otherwise, exit the script and call a developer for help 😊'
-          ),
-          description: 'Choose your next action after attempting to resolve merge conflicts',
+          message: c.cyanBright(t('mergeConflictsPleaseResolve')),
+          description: t('chooseActionAfterResolvingMergeConflicts'),
           placeholder: 'Select an option',
           choices: [
-            { value: true, title: 'If finished to merge conflicts' },
+            { value: true, title: t('finishedMergingConflicts') },
             {
               value: false,
-              title: "I can't merge conflicts, I give up for now",
+              title: t('cantMergeConflictsGiveUp'),
             },
           ],
         });
         if (mergeResult.value === false) {
-          uxLog("other", this, 'Refresh script stopped by user');
+          uxLog("other", this, t('refreshScriptStoppedByUser'));
           process.exit(0);
         }
         mergeSummary = await git({ output: true }).merge(['--continue']);
@@ -244,7 +237,7 @@ The command's technical implementation involves:
     }
     // Restoring stash
     if (stashed) {
-      uxLog("action", this, c.cyan(`Restoring stash into your local branch ${c.green(localBranch)}...`));
+      uxLog("action", this, c.cyan(t('restoringStashIntoYourLocalBranch', { localBranch: c.green(localBranch) })));
       await git({ output: true }).stash(['pop']);
     }
 

@@ -9,6 +9,7 @@ import { AgentforceProvider } from "./agentforceProvider.js";
 import { LangChainProvider } from "./langchainProvider.js";
 import { formatMarkdownForMkDocs } from "../utils/markdownUtils.js";
 import { CodexProvider } from "./codexProvider.js";
+import { t } from '../utils/i18n.js';
 
 let IS_AI_AVAILABLE: boolean | null = null;
 type ProviderKey = "langchain" | "codex" | "openai" | "agentforce";
@@ -17,7 +18,7 @@ const DEFAULT_PROVIDER_ORDER: ProviderKey[] = ["langchain", "codex", "openai", "
 export abstract class AiProvider {
   static async isAiAvailable(): Promise<boolean> {
     if (process.env?.DISABLE_AI === "true") {
-      uxLog("warning", this, c.yellow("[AI Provider] AI calls have been disabled using env var DISABLE_AI=true"))
+      uxLog("warning", this, c.yellow('[AI Provider] ' + t('aiProviderDisabled')))
       return false;
     }
     const instance = await this.getInstance();
@@ -37,8 +38,8 @@ export abstract class AiProvider {
         const promptRes = await prompts({
           type: 'text',
           name: 'token',
-          message: 'Input your Codex API token if you want to use it. Leave empty to skip.',
-          description: 'Provide your CODEX_API_KEY to enable Codex-powered features in sfdx-hardis',
+          message: t('inputYourCodexApiTokenIfYou'),
+          description: t('descProvideCodexApiKey'),
         });
         if (promptRes.token) {
           process.env.CODEX_API_KEY = promptRes.token;
@@ -47,8 +48,8 @@ export abstract class AiProvider {
         const promptRes = await prompts({
           type: 'text',
           name: 'token',
-          message: 'Input your OpenAi API token if you want to use it. Leave empty to skip.',
-          description: 'Provide your OpenAI API key to enable AI-powered features in sfdx-hardis',
+          message: t('inputYourOpenaiApiTokenIfYou'),
+          description: t('descProvideOpenaiApiKey'),
         });
         if (promptRes.token) {
           process.env.OPENAI_API_KEY = promptRes.token;
@@ -82,7 +83,7 @@ export abstract class AiProvider {
           }
         }
       } catch (error) {
-        uxLog("warning", this, c.yellow(`[AI Provider] Unable to initialize ${provider} connector: ${(error as Error).message}`));
+        uxLog("warning", this, c.yellow('[AI Provider] ' + t('aiProviderUnableToInitialize', { provider, message: (error as Error).message })));
       }
     }
     return null;
@@ -115,16 +116,16 @@ export abstract class AiProvider {
     } catch (e: any) {
       if (e.message.includes("on tokens per min (TPM)")) {
         try {
-          uxLog("warning", this, c.yellow(`Error while calling AI provider: ${e.message}`));
+          uxLog("warning", this, c.yellow(t('errorWhileCallingAiProvider', { message: e.message })));
           uxLog("warning", this, c.yellow(`Trying again in 60 seconds...`));
           await new Promise((resolve) => setTimeout(resolve, 60000));
           return await aiInstance.promptAi(prompt, template);
         } catch (e2: any) {
-          uxLog("error", this, c.red(`Error while calling AI provider: ${e2.message}`));
+          uxLog("error", this, c.red(t('errorWhileCallingAiProvider2', { e2: e2.message })));
           return null;
         }
       }
-      uxLog("error", this, c.red(`Error while calling AI provider: ${e.message}`));
+      uxLog("error", this, c.red(t('errorWhileCallingAiProvider', { message: e.message })));
       return null;
     }
   }

@@ -22,6 +22,7 @@ import { CONSTANTS, setInConfigFile } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { promptOrg } from '../../../../common/utils/orgUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -106,9 +107,9 @@ The command's technical implementation involves a series of Git operations, file
           { title: 'Mmmmm no, let me create another repo with the word "monitoring" in its name !', value: 'no' },
         ],
         message: c.cyanBright(
-          "Are you sure you want to mix monitoring and deployment sources ?"
+          t('confirmMixMonitoringDeploymentSources')
         ),
-        description: 'It is recommended to separate monitoring configuration from deployment sources in different repositories',
+        description: t('separateMonitoringDeploymentDescription'),
         placeholder: 'Select an option',
       });
       if (confirmMix.value === 'no') {
@@ -116,8 +117,8 @@ The command's technical implementation involves a series of Git operations, file
       }
     }
     const preRequisitesUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
-    uxLog("warning", this, c.yellow('Monitoring pre-requisites documentation: ' + c.bold(preRequisitesUrl)));
-    WebSocketClient.sendReportFileMessage(preRequisitesUrl, 'Monitoring pre-requisites', "docUrl");
+    uxLog("warning", this, c.yellow(t('monitoringPreRequisitesDocumentation') + c.bold(preRequisitesUrl)));
+    WebSocketClient.sendReportFileMessage(preRequisitesUrl, t('monitoringPreRequisitesLabel'), "docUrl");
     // Confirm pre-requisites
     const confirmPreRequisites = await prompts({
       type: 'select',
@@ -126,7 +127,7 @@ The command's technical implementation involves a series of Git operations, file
         { title: '😎 Yes', value: 'yes' },
         { title: 'ℹ️ No, bring me to the documentation!', value: 'no' },
       ],
-      message: c.cyanBright('Did you configure the sfdx-hardis monitoring pre-requisites on your Git server ?'),
+      message: c.cyanBright(t('didYouConfigureTheSfdxHardisMonitoring')),
       description: 'Confirm that you have set up the required CI/CD variables and permissions for monitoring',
       placeholder: 'Select an option',
     });
@@ -146,8 +147,7 @@ The command's technical implementation involves a series of Git operations, file
         "action",
         this,
         c.cyan(
-          `Default org ${flags['target-org'].getConnection()?.instanceUrl
-          } is selected, let's configure its monitoring !`
+          t('defaultOrgSelectedForMonitoring', { instanceUrl: flags['target-org'].getConnection()?.instanceUrl })
         )
       );
     } else {
@@ -162,8 +162,7 @@ The command's technical implementation involves a series of Git operations, file
 
       // Restart command so the org is selected as default org (will help to select profiles)
       if (currentOrgId !== org.orgId) {
-        const infoMsg =
-          'Default org changed. Please restart the same command if VS Code does not do that automatically for you 😊';
+        const infoMsg = t('defaultOrgChangedRestartCommand');
         uxLog("warning", this, c.yellow(infoMsg));
         const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ') + ' --orginstanceurl ' + org.instanceUrl;
         WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);
@@ -182,7 +181,7 @@ The command's technical implementation involves a series of Git operations, file
         .replace(/--/gm, '__')
         .replace(/-/gm, '_');
 
-    uxLog("action", this, c.cyan(`Handling monitoring git branch ${c.bold(branchName)}...`));
+    uxLog("action", this, c.cyan(t('handlingMonitoringGitBranch', { branchName: c.bold(branchName) })));
 
     // Checkout branch, or create it if not existing (stash before if necessary)
     await execCommand('git add --all', this, { output: true, fail: false });
@@ -192,17 +191,17 @@ The command's technical implementation involves a series of Git operations, file
     // Create sfdx project if not existing yet
     if (!fs.existsSync('sfdx-project.json')) {
       const createCommand = 'sf project generate' + ` --name "sfdx-hardis-monitoring"`;
-      uxLog("action", this, c.cyan('Creating sfdx-project...'));
+      uxLog("action", this, c.cyan(t('creatingSfdxProject2')));
       await execCommand(createCommand, this, {
         output: true,
         fail: true,
       });
-      uxLog("action", this, c.cyan('Moving sfdx-project to root...'));
+      uxLog("action", this, c.cyan(t('movingSfdxProjectToRoot')));
       await fs.copy('sfdx-hardis-monitoring', process.cwd(), { overwrite: true });
       await fs.remove('sfdx-hardis-monitoring');
 
       // Copying monitoring folder structure
-      uxLog("other", this, 'Copying default monitoring files...');
+      uxLog("other", this, t('copyingDefaultMonitoringFiles'));
       if (fs.existsSync('README.md') && fs.readFileSync('README.md', 'utf8').toString().split('\n').length < 5) {
         // Remove default README if necessary
         await fs.remove('README.md');
@@ -228,12 +227,12 @@ The command's technical implementation involves a series of Git operations, file
         type: 'confirm',
         initial: true,
         message: c.cyanBright(
-          `Branch ${branchName} does not exist on server. Do you want to push it now? (it is harmless but required to configure Azure Pipelines for example)`
+          t('branchNotExistsOnServerPushPrompt', { branch: branchName })
         ),
-        description: 'This will create the branch on remote origin; if you don\'t understand this, just say yes 😊',
+        description: t('pushBranchToRemoteDescription'),
       });
       if (confirmPushToRemote.value === true) {
-        uxLog("action", this, c.cyan(`Pushing branch ${c.bold(branchName)} to git remote server...`));
+        uxLog("action", this, c.cyan(t('pushingBranchToGitRemoteServer', { branchName: c.bold(branchName) })));
         await gitAddCommitPush({
           message: '[sfdx-hardis] Update monitoring configuration',
         });
@@ -249,49 +248,47 @@ The command's technical implementation involves a series of Git operations, file
       name: 'value',
       initial: true,
       message: c.cyanBright(
-        'Do you want sfdx-hardis to save your configuration on server ?'
+        t('saveConfigurationOnServerPrompt')
       ),
-      description: 'Automatically commit and push the monitoring configuration files to your git repository (recommended)',
+      description: t('saveConfigAutocommitDescription'),
     });
 
     if (confirmPush.value === true) {
       await gitAddCommitPush({
         message: '[sfdx-hardis] Update monitoring configuration',
       });
-      uxLog("success", this, c.green('Your configuration for org monitoring is now ready 😊'));
+      uxLog("success", this, c.green(t('yourConfigurationForOrgMonitoringIsNow')));
     } else {
-      uxLog("warning", this, c.yellow('Please manually git add, commit and push to the remote repository 😊'));
+      uxLog("warning", this, c.yellow(t('pleaseManuallyGitAddCommitAndPush')));
     }
     const branch = await getCurrentGitBranch();
     uxLog(
       "warning",
       this,
       c.yellow(
-        `Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}😊`
+        t('scheduleMonitoringNightly', { branchName: branch })
       )
     );
     const scheduleMonitoringUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
-    const msg =
-      'Please follow the instructions to schedule sfdx-hardis monitoring on your Git server: ' +
-      c.bold(scheduleMonitoringUrl);
+    const msg = t('followScheduleInstructions') + ' ' + c.bold(scheduleMonitoringUrl);
     uxLog("warning", this, c.yellow(msg));
-    WebSocketClient.sendReportFileMessage(scheduleMonitoringUrl, 'Schedule sfdx-hardis monitoring', "actionUrl");
+    WebSocketClient.sendReportFileMessage(scheduleMonitoringUrl, t('scheduleMonitoringLabel'), "actionUrl");
     uxLog(
       "warning",
       this,
       c.yellow(
-        'You can also configure Slack/Teams notifications and Grafana integration to visualize monitoring results more easily.'
+        t('configureNotificationsAndGrafana')
       )
     );
     const slackIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-slack/`;
-    WebSocketClient.sendReportFileMessage(slackIntegrationUrl, 'Slack integration', "docUrl");
+    WebSocketClient.sendReportFileMessage(slackIntegrationUrl, t('slackIntegrationLabel'), "docUrl");
     const teamsIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-ms-teams/`;
-    WebSocketClient.sendReportFileMessage(teamsIntegrationUrl, 'Teams integration', "docUrl");
+    WebSocketClient.sendReportFileMessage(teamsIntegrationUrl, t('teamsIntegrationLabel'), "docUrl");
     const grafanaIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-api/`;
-    WebSocketClient.sendReportFileMessage(grafanaIntegrationUrl, 'Grafana integration', "docUrl");
-    uxLog("log", this, 'Slack integration doc: ' + slackIntegrationUrl);
-    uxLog("log", this, 'Teams integration doc: ' + teamsIntegrationUrl);
-    uxLog("log", this, 'Grafana integration doc: ' + grafanaIntegrationUrl);
+    WebSocketClient.sendReportFileMessage(grafanaIntegrationUrl, t('grafanaIntegrationLabel'), "docUrl");
+    uxLog("log", this, t('slackIntegrationDoc') + ' ' + slackIntegrationUrl);
+    uxLog("log", this, t('teamsIntegrationDoc') + ' ' + teamsIntegrationUrl);
+    uxLog("log", this, t('grafanaIntegrationDoc') + ' ' + grafanaIntegrationUrl);
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };
   }

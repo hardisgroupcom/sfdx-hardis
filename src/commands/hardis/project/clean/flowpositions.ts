@@ -8,6 +8,7 @@ import * as path from 'path';
 import fs from 'fs-extra';
 import { uxLog } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -77,7 +78,7 @@ autoCleanTypes:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Setting flows as Auto Layout and remove positions...`));
+    uxLog("action", this, c.cyan(t('settingFlowsAutoLayoutAndRemovePositions')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.flow-meta.xml`;
@@ -91,7 +92,7 @@ autoCleanTypes:
         if (updatedFlowXml !== flowXml) {
           await fs.writeFile(flowMetadataFile, updatedFlowXml);
           counter++;
-          uxLog("log", this, c.grey(`Removed positions from Flow ${flowMetadataFile}`));
+          uxLog("log", this, c.grey(t('removedPositionsFromFlow', { flowMetadataFile })));
         }
       }
     }

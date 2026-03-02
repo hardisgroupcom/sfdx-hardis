@@ -18,6 +18,7 @@ import { generateCsvFile, generateReportPath } from '../../../common/utils/files
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -177,7 +178,7 @@ The command's technical implementation involves:
       // Build result file
       await this.buildCsvFile();
     } else {
-      uxLog("other", this, 'No draft flow or validation rule files detected.');
+      uxLog("other", this, t('noDraftFlowOrValidationRuleFiles'));
     }
     // Post notifications
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email

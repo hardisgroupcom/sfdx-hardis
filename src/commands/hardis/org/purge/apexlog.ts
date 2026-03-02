@@ -7,6 +7,7 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import { execCommand, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -97,7 +98,7 @@ The command's technical implementation involves:
     const apexLogsNumber = extractFile.split('\n').filter((line) => line.length > 0).length;
 
     if (apexLogsNumber === 0) {
-      uxLog("action", this, c.cyan(`There are no Apex Logs to delete in org ${c.green(flags['target-org'].getUsername())}`));
+      uxLog("action", this, c.cyan(t('thereAreNoApexLogsToDelete', { flags: c.green(flags['target-org'].getUsername()) })));
       return {};
     }
 
@@ -106,10 +107,8 @@ The command's technical implementation involves:
       const confirmRes = await prompts({
         type: 'confirm',
         name: 'value',
-        message: `Do you want to delete ${c.bold(apexLogsNumber)} Apex Logs of org ${c.green(
-          flags['target-org'].getUsername()
-        )} ?`,
-        description: 'Permanently delete all Apex debug logs from the Salesforce org to free up storage space',
+        message: t('confirmDeleteApexLogsPrompt'),
+        description: t('confirmDeleteApexLogsDescription'),
       });
       if (confirmRes.value === false) {
         return {};
@@ -127,9 +126,7 @@ The command's technical implementation involves:
     uxLog(
       "success",
       this,
-      c.green(
-        `Successfully deleted ${c.bold(apexLogsNumber)} Apex Logs in org ${c.bold(flags['target-org'].getUsername())}`
-      )
+      c.green(t('successfullyDeletedApexLogs'))
     );
 
     // Return an object to be displayed with --json

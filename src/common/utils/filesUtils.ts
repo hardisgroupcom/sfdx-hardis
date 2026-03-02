@@ -21,6 +21,7 @@ import { WebSocketClient } from '../websocketClient.js';
 import { FileDownloader } from './fileDownloader.js';
 import { ApiLimitsManager } from './limitUtils.js';
 import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
+import { t } from './i18n.js';
 
 export const filesFolderRoot = path.join('.', 'scripts', 'files');
 
@@ -92,7 +93,7 @@ export class FilesExporter {
     if (this.dtl === null) {
       this.dtl = await getFilesWorkspaceDetail(this.filesPath);
     }
-    uxLog("action", this.commandThis, c.cyan(`Initializing files export for workspace ${c.green(this.dtl.full_label)}.`));
+    uxLog("action", this.commandThis, c.cyan(t('initializingFilesExportForWorkspace', { dtl: c.green(this.dtl.full_label) })));
     uxLog("log", this.commandThis, c.italic(c.grey(this.dtl.description)));
 
     // Make sure export folder for files is existing
@@ -103,7 +104,7 @@ export class FilesExporter {
     if (!this.resumeExport) {
       if (this.hasExistingFiles) {
         // Restart mode: clear the output folder
-        uxLog("action", this.commandThis, c.yellow(`Restart mode: clearing output folder ${this.exportedFilesFolder}.`));
+        uxLog("action", this.commandThis, c.yellow(t('restartModeClearingOutputFolder', { exportedFilesFolder: this.exportedFilesFolder })));
         await fs.emptyDir(this.exportedFilesFolder);
       }
     } else {
@@ -122,9 +123,9 @@ export class FilesExporter {
     await this.initializeCsvLog();
 
     // Phase 1: Calculate total files count for accurate progress tracking
-    uxLog("action", this.commandThis, c.cyan("Estimating total files to download."));
+    uxLog("action", this.commandThis, c.cyan(t('estimatingTotalFilesToDownload')));
     const totalFilesCount = await this.calculateTotalFilesCount();
-    uxLog("log", this.commandThis, c.grey(`Estimated ${totalFilesCount} files to download.`));
+    uxLog("log", this.commandThis, c.grey(t('estimatedFilesToDownload', { totalFilesCount })));
 
     // Phase 2: Process downloads with accurate progress tracking
     await this.processDownloadsWithProgress(totalFilesCount);
@@ -200,7 +201,7 @@ export class FilesExporter {
     let actualTotalFiles = estimatedFilesCount; // Start with estimation, will be adjusted as we discover actual files
 
     // Start progress tracking with estimated total files count
-    WebSocketClient.sendProgressStartMessage('Exporting files', actualTotalFiles);
+    WebSocketClient.sendProgressStartMessage(t('exportingFiles'), actualTotalFiles);
 
     // Progress callback function with total adjustment capability
     const progressCallback = (filesCompleted: number, filesDiscoveredInChunk?: number) => {
@@ -226,9 +227,9 @@ export class FilesExporter {
 
         // Get API usage for display (non-blocking)
         this.getApiUsageStatus().then(apiUsage => {
-          uxLog("other", this, c.grey(`Discovered ${filesDiscoveredInChunk} files in chunk, updated total estimate to ${actualTotalFiles} ${apiUsage.message}`));
+          uxLog("other", this, c.grey(t('discoveredFilesInChunkUpdatedTotalEstimate2', { filesDiscoveredInChunk, actualTotalFiles, apiUsage: apiUsage.message })));
         }).catch(() => {
-          uxLog("other", this, c.grey(`Discovered ${filesDiscoveredInChunk} files in chunk, updated total estimate to ${actualTotalFiles}`));
+          uxLog("other", this, c.grey(t('discoveredFilesInChunkUpdatedTotalEstimate', { filesDiscoveredInChunk, actualTotalFiles })));
         });
       }
 
@@ -360,7 +361,7 @@ export class FilesExporter {
           resolve(true);
         }
         if (globalThis.sfdxHardisFatalError === true) {
-          uxLog("error", this, c.red('Fatal error while processing chunks queue'));
+          uxLog("error", this, c.red(t('fatalErrorWhileProcessingChunksQueue')));
           process.exit(1);
         }
       }, 1000);
@@ -456,11 +457,11 @@ export class FilesExporter {
               }
             } catch (e) {
               this.filesErrors++;
-              uxLog("warning", this, c.red('Download file error: ' + attachment.Name + '\n' + e));
+              uxLog("warning", this, c.red(t('downloadFileError') + attachment.Name + '\n' + e));
             }
           });
       } else {
-        uxLog("log", this, c.grey(`No Attachments found for the ${batch.length} parent records in this batch`));
+        uxLog("log", this, c.grey(t('noAttachmentsFoundForTheParentRecords', { batch: batch.length })));
       }
     }
     for (let i = 0; i < records.length; i += contentVersionBatchSize) {
@@ -470,7 +471,7 @@ export class FilesExporter {
       const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
       await this.waitIfApiLimitApproached('BULK');
       this.totalBulkApiCalls++;
-      uxLog("log", this, c.grey(`Querying ContentDocumentLinks for ${linkedEntityInQuery.length} parent records in this batch...`));
+      uxLog("log", this, c.grey(t('queryingContentdocumentlinksForParentRecordsInThis', { linkedEntityInQuery: linkedEntityInQuery.length })));
       const contentDocumentLinks = await bulkQueryByChunks(linkedEntityInQuery, this.conn, this.parentRecordsChunkSize);
       if (contentDocumentLinks.records.length > 0) {
         // Retrieve all ContentVersion related to ContentDocumentLink
@@ -509,7 +510,7 @@ export class FilesExporter {
             });
           });
           actualFilesInChunk += versionsAndLinks.length; // Count actual ContentVersion files discovered
-          uxLog("log", this, c.grey(`Downloading ${versionsAndLinks.length} found files...`))
+          uxLog("log", this, c.grey(t('downloadingFoundFiles', { versionsAndLinks: versionsAndLinks.length })))
           // Download files
           await PromisePool.withConcurrency(5)
             .for(versionsAndLinks)
@@ -526,12 +527,12 @@ export class FilesExporter {
                 }
               } catch (e) {
                 this.filesErrors++;
-                uxLog("warning", this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
+                uxLog("warning", this, c.red(t('downloadFileError') + versionAndLink.contentVersion.Title + '\n' + e));
               }
             });
         }
       } else {
-        uxLog("log", this, c.grey('No ContentDocumentLinks found for the parent records in this batch'));
+        uxLog("log", this, c.grey(t('noContentdocumentlinksFoundForTheParentRecords')));
       }
     }
 
@@ -547,8 +548,8 @@ export class FilesExporter {
     await fs.ensureDir(path.dirname(this.logFile));
     const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentDocument Id,ContentVersion Id,Attachment Id,Validation Status,Download URL\n';
     await fs.writeFile(this.logFile, headers, 'utf8');
-    uxLog("log", this, c.grey(`CSV log file initialized: ${this.logFile}`));
-    WebSocketClient.sendReportFileMessage(this.logFile, "Exported files report (CSV)", 'report');
+    uxLog("log", this, c.grey(t('csvLogFileInitialized', { logFile: this.logFile })));
+    WebSocketClient.sendReportFileMessage(this.logFile, t('exportedFilesReportCsv'), 'report');
   }
 
   // Helper method to extract file information from output path
@@ -678,7 +679,7 @@ export class FilesExporter {
 
       await fs.appendFile(this.logFile, csvLine, 'utf8');
     } catch (e) {
-      uxLog("warning", this, c.yellow(`Error writing to CSV log: ${(e as Error).message}`));
+      uxLog("warning", this, c.yellow(t('errorWritingToCsvLog', { as: (e as Error).message })));
     }
   }
 
@@ -707,7 +708,7 @@ export class FilesExporter {
           this.filesValidated++; // Count only valid files
           // File exists and is valid - skip download
           const fileDisplay = path.join(folderPath, fileName).replace(/\\/g, '/');
-          uxLog("success", this, c.grey(`Skipped (valid existing file) ${fileDisplay}`));
+          uxLog("success", this, c.grey(t('skippedValidExistingFile', { fileDisplay })));
           this.filesIgnoredExisting++;
 
           // Write success entry to CSV log
@@ -715,10 +716,10 @@ export class FilesExporter {
           return;
         } else {
           // File exists but is invalid - will re-download
-          uxLog("log", this, c.yellow(`Existing file ${fileName} is invalid (${validation.error}) - re-downloading`));
+          uxLog("log", this, c.yellow(t('existingFileIsInvalidReDownloading', { fileName, validation: validation.error })));
         }
       } catch (e) {
-        uxLog("warning", this, c.yellow(`Could not validate existing file ${fileName}: ${(e as Error).message}`));
+        uxLog("warning", this, c.yellow(t('couldNotValidateExistingFile', { fileName, as: (e as Error).message })));
         // Continue with download if we can't validate existing file
       }
     }
@@ -756,7 +757,7 @@ export class FilesExporter {
           uxLog("warning", this, c.yellow(`⚠ Validation failed for ${fileName}: ${validation.error}`));
         }
       } catch (e) {
-        uxLog("warning", this, c.yellow(`Could not get file size for ${fileName}: ${(e as Error).message}`));
+        uxLog("warning", this, c.yellow(t('couldNotGetFileSizeFor', { fileName, as: (e as Error).message })));
         validationStatus = 'Invalid';
         validationError = (e as Error).message;
         isValidFile = false;
@@ -772,21 +773,21 @@ export class FilesExporter {
 
     // Log based on download success AND validation success
     if (downloadResult.success && isValidFile) {
-      uxLog("success", this, c.grey(`Downloaded ${fileDisplay}`));
+      uxLog("success", this, c.grey(t('downloaded', { fileDisplay })));
       this.filesDownloaded++;
 
       // Write success entry to CSV log with Salesforce IDs and validation status
       await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, '', contentDocumentId, contentVersionId, attachmentId, validationStatus, fetchUrl);
     } else if (downloadResult.success && !isValidFile) {
       // File was downloaded but validation failed
-      uxLog("warning", this, c.red(`Invalid ${fileDisplay} - validation failed`));
+      uxLog("warning", this, c.red(t('invalidValidationFailed', { fileDisplay })));
       this.filesErrors++;
 
       // Write invalid entry to CSV log with validation error details
       await this.writeCsvLogEntry('invalid', folderPath, fileName, extension, fileSizeKB, validationError, contentDocumentId, contentVersionId, attachmentId, validationStatus, fetchUrl);
     } else {
       // Download failed
-      uxLog("warning", this, c.red(`Error ${fileDisplay}`));
+      uxLog("warning", this, c.red(t('error', { fileDisplay })));
       this.filesErrors++;
 
       // Write failed entry to CSV log with Salesforce IDs and validation status
@@ -798,7 +799,7 @@ export class FilesExporter {
     // Check file size filter (BodyLength is in bytes)
     const fileSizeKB = attachment.BodyLength ? Math.round(attachment.BodyLength / 1024) : 0;
     if (this.dtl.fileSizeMin && this.dtl.fileSizeMin > 0 && fileSizeKB < this.dtl.fileSizeMin) {
-      uxLog("log", this, c.grey(`Skipped - ${attachment.Name} - File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`));
+      uxLog("log", this, c.grey(t('skippedFileSizeKbBelowMinimumKb', { attachment: attachment.Name, fileSizeKB, dtl: this.dtl.fileSizeMin })));
       this.filesIgnoredSize++;
 
       // Log skipped file to CSV
@@ -835,7 +836,7 @@ export class FilesExporter {
     // Check file size filter (ContentSize is in bytes)
     const fileSizeKB = contentVersion.ContentSize ? Math.round(contentVersion.ContentSize / 1024) : 0;
     if (this.dtl.fileSizeMin && this.dtl.fileSizeMin > 0 && fileSizeKB < this.dtl.fileSizeMin) {
-      uxLog("log", this, c.grey(`Skipped - ${contentVersion.Title} - File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`));
+      uxLog("log", this, c.grey(t('skippedFileSizeKbBelowMinimumKb2', { contentVersion: contentVersion.Title, fileSizeKB, dtl: this.dtl.fileSizeMin })));
       this.filesIgnoredSize++;
 
       // Log skipped file to CSV
@@ -885,7 +886,7 @@ export class FilesExporter {
     }
     // Check file extension
     if (this.dtl.fileTypes !== 'all' && !this.dtl.fileTypes.includes(contentVersion.FileType)) {
-      uxLog("log", this, c.grey(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File type ignored`));
+      uxLog("log", this, c.grey(t('skippedFileTypeIgnored', { outputFile: outputFile.replace(this.exportedFilesFolder, '') })));
       this.filesIgnoredType++;
 
       // Log skipped file to CSV
@@ -895,7 +896,7 @@ export class FilesExporter {
     }
     // Check file overwrite (unless in resume mode where downloadFile handles existing files)
     if (this.dtl.overwriteFiles !== true && !this.resumeExport && fs.existsSync(outputFile)) {
-      uxLog("warning", this, c.yellow(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File already existing`));
+      uxLog("warning", this, c.yellow(t('skippedFileAlreadyExisting', { outputFile: outputFile.replace(this.exportedFilesFolder, '') })));
       this.filesIgnoredExisting++;
 
       // Log skipped file to CSV
@@ -917,9 +918,9 @@ export class FilesExporter {
     // Display final API usage summary
     try {
       const finalApiUsage = await this.getApiUsageStatus();
-      uxLog("success", this, c.green(`Export completed! Final API usage: ${finalApiUsage.message}`));
+      uxLog("success", this, c.green(t('exportCompletedFinalApiUsage', { finalApiUsage: finalApiUsage.message })));
     } catch (error) {
-      uxLog("warning", this, c.yellow(`Could not retrieve final API usage: ${(error as Error).message}`));
+      uxLog("warning", this, c.yellow(t('couldNotRetrieveFinalApiUsage', { error: (error as Error).message })));
     }
 
     const result = {
@@ -1001,8 +1002,8 @@ export class FilesImporter {
     await fs.ensureDir(path.dirname(this.logFile));
     const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentVersion Id\n';
     await fs.writeFile(this.logFile, headers, 'utf8');
-    uxLog("log", this.commandThis, c.grey(`CSV log file initialized: ${this.logFile}`));
-    WebSocketClient.sendReportFileMessage(this.logFile, "Imported files report (CSV)", 'report');
+    uxLog("log", this.commandThis, c.grey(t('csvLogFileInitialized', { logFile: this.logFile })));
+    WebSocketClient.sendReportFileMessage(this.logFile, t('importedFilesReportCsv'), 'report');
   }
 
   // Helper method to extract file information from file path
@@ -1037,7 +1038,7 @@ export class FilesImporter {
 
       await fs.appendFile(this.logFile, csvLine, 'utf8');
     } catch (e) {
-      uxLog("warning", this.commandThis, c.yellow(`Error writing to CSV log: ${(e as Error).message}`));
+      uxLog("warning", this.commandThis, c.yellow(t('errorWritingToCsvLog', { as: (e as Error).message })));
     }
   }
 
@@ -1046,7 +1047,7 @@ export class FilesImporter {
     if (this.dtl === null) {
       this.dtl = await getFilesWorkspaceDetail(this.filesPath);
     }
-    uxLog("action", this.commandThis, c.cyan(`Importing files from ${c.green(this.dtl.full_label)} ...`));
+    uxLog("action", this.commandThis, c.cyan(t('importingFilesFrom', { dtl: c.green(this.dtl.full_label) })));
     uxLog("log", this.commandThis, c.italic(c.grey(this.dtl.description)));
 
     // Get folders and files
@@ -1068,7 +1069,7 @@ export class FilesImporter {
     await this.initializeCsvLog();
 
     // Start progress tracking
-    WebSocketClient.sendProgressStartMessage("Importing files", this.totalFiles);
+    WebSocketClient.sendProgressStartMessage(t('importingFiles'), this.totalFiles);
     const soqlQueryWithLimit = await parseSoqlAndReapplyLimit(this.dtl.soqlQuery, undefined, this);
     // Query parent objects to find Ids corresponding to field value used as folder name
     const parentObjectsRes = await bulkQuery(soqlQueryWithLimit, this.conn);
@@ -1077,7 +1078,7 @@ export class FilesImporter {
     let processedFiles = 0;
 
     for (const recordFolder of allRecordFolders) {
-      uxLog("log", this.commandThis, c.grey(`Processing record ${recordFolder} ...`));
+      uxLog("log", this.commandThis, c.grey(t('processingRecord', { recordFolder })));
       const recordFolderPath = path.join(this.exportedFilesFolder, recordFolder);
 
       // List files in folder
@@ -1091,7 +1092,7 @@ export class FilesImporter {
       );
 
       if (parentRecordIds.length === 0) {
-        uxLog("error", this.commandThis, c.red(`Unable to find Id for ${this.dtl.outputFolderNameField}=${recordFolder}`));
+        uxLog("error", this.commandThis, c.red(t('unableToFindIdFor', { dtl: this.dtl.outputFolderNameField, recordFolder })));
 
         // Log all files in this folder as skipped
         for (const file of files) {
@@ -1137,21 +1138,21 @@ export class FilesImporter {
 
           if (matchingExistingDocs.length > 0) {
             contentVersionParams.ContentDocumentId = matchingExistingDocs[0].ContentDocumentId;
-            uxLog("log", this.commandThis, c.grey(`Overwriting file ${file} ...`));
+            uxLog("log", this.commandThis, c.grey(t('overwritingFile', { file })));
             isOverwrite = true;
           } else {
             contentVersionParams.FirstPublishLocationId = parentRecordId;
-            uxLog("log", this.commandThis, c.grey(`Uploading file ${file} ...`));
+            uxLog("log", this.commandThis, c.grey(t('uploadingFile', { file })));
           }
 
           const insertResult = await this.conn.sobject('ContentVersion').create(contentVersionParams);
 
           if (Array.isArray(insertResult) && insertResult.length === 0) {
-            uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}`));
+            uxLog("error", this.commandThis, c.red(t('unableToUploadFile', { file })));
             await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, 'Upload failed', '');
             this.filesErrors++;
           } else if (Array.isArray(insertResult) && !insertResult[0].success) {
-            uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}`));
+            uxLog("error", this.commandThis, c.red(t('unableToUploadFile', { file })));
             await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, insertResult[0].errors?.join(', ') || 'Upload failed', '');
             this.filesErrors++;
           } else {
@@ -1161,18 +1162,18 @@ export class FilesImporter {
               : (insertResult as any).id || '';
 
             if (isOverwrite) {
-              uxLog("success", this.commandThis, c.grey(`Overwritten ${file}`));
+              uxLog("success", this.commandThis, c.grey(t('overwritten', { file })));
               await this.writeCsvLogEntry('overwritten', recordFolder, fileName, extension, fileSizeKB, '', contentVersionId);
               this.filesOverwritten++;
             } else {
-              uxLog("success", this.commandThis, c.grey(`Uploaded ${file}`));
+              uxLog("success", this.commandThis, c.grey(t('uploaded', { file })));
               await this.writeCsvLogEntry('success', recordFolder, fileName, extension, fileSizeKB, '', contentVersionId);
               this.filesUploaded++;
             }
           }
         } catch (e) {
           const errorDetail = (e as Error).message;
-          uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}: ${errorDetail}`));
+          uxLog("error", this.commandThis, c.red(t('unableToUploadFile2', { file, errorDetail })));
           await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, errorDetail, '');
           this.filesErrors++;
         }
@@ -1338,14 +1339,14 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         {
           type: 'text',
           name: 'sfdxHardisLabel',
-          message: c.cyanBright('Please input a label for the files export configuration'),
+          message: c.cyanBright(t('pleaseInputLabelForTheFilesExport')),
           description: 'A human-readable label that will identify this export configuration',
           initial: filesExportConfig.sfdxHardisLabel,
         },
         {
           type: 'text',
           name: 'sfdxHardisDescription',
-          message: c.cyanBright('Please input a description of the files export configuration'),
+          message: c.cyanBright(t('pleaseInputDescriptionOfTheFilesExport')),
           description: 'A detailed description explaining what this export configuration does',
           initial: filesExportConfig.sfdxHardisDescription,
         },
@@ -1366,7 +1367,7 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
       {
         type: 'text',
         name: 'outputFolderNameField',
-        message: 'Please input the field to use to build the name of the folder containing downloaded files',
+        message: t('pleaseInputTheFieldToUseTo'),
         description: 'Field name from the SOQL query result that will be used as folder name for organizing files',
         placeholder: 'Ex: Name',
         initial: filesExportConfig.outputFolderNameField,
@@ -1380,7 +1381,7 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
           { value: 'id_title', title: 'id_title (ex: "006bR00000Bet7WQAR_Cloudity New Project")' },
           { value: 'id', title: 'id (ex: "006bR00000Bet7WQAR")' },
         ],
-        message: 'Please select the format of output files names',
+        message: t('pleaseSelectTheFormatOfOutputFiles'),
         description: 'Choose how downloaded file names should be formatted',
         initial: filesExportConfig.outputFileNameFormat,
       },
@@ -1395,14 +1396,14 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
       {
         type: 'confirm',
         name: 'overwriteFiles',
-        message: 'Do you want to overwrite file that has already been previously downloaded ?',
+        message: t('doYouWantToOverwriteFileThat'),
         description: 'Replace existing local files with newly downloaded versions',
         initial: filesExportConfig.overwriteFiles,
       },
       {
         type: 'number',
         name: 'fileSizeMin',
-        message: 'Please input the minimum file size in KB (0 = no minimum)',
+        message: t('pleaseInputTheMinimumFileSizeIn'),
         description: 'Only files with size greater than or equal to this value will be downloaded (in kilobytes)',
         placeholder: 'Ex: 10',
         initial: filesExportConfig.fileSizeMin || 0,
@@ -1516,7 +1517,7 @@ export async function generateCsvFile(
   try {
     const csvContent = Papa.unparse(data);
     await fs.writeFile(outputPath, csvContent, 'utf8');
-    uxLog("action", this, c.cyan(c.italic(`Please see detailed CSV log in ${c.bold(outputPath)}`)));
+    uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn', { outputPath: c.bold(outputPath) }))));
     result.csvFile = outputPath;
     if (!WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket) {
       WebSocketClient.requestOpenFile(outputPath);
@@ -1528,10 +1529,10 @@ export async function generateCsvFile(
     if (data.length > 0 && !options?.noExcel) {
       await createXlsxFromCsv(outputPath, options, result);
     } else {
-      uxLog("other", this, c.grey(`No XLS file generated as ${outputPath} is empty`));
+      uxLog("other", this, c.grey(t('noXlsFileGeneratedAsIsEmpty', { outputPath })));
     }
   } catch (e) {
-    uxLog("warning", this, c.yellow('Error while generating CSV log file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+    uxLog("warning", this, c.yellow(t('errorWhileGeneratingCsvLogFile') + (e as Error).message + '\n' + (e as Error).stack));
   }
   return result;
 }
@@ -1545,16 +1546,16 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
     // Delete existing file if any
     await fs.remove(xslxFile);
     await csvToXls(outputPath, xslxFile, options);
-    uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
+    uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
     WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
     result.xlsxFile = xslxFile;
     if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
       try {
-        uxLog("other", this, c.italic(c.grey(`Opening XLSX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
+        uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));
         await open(xslxFile, { wait: false });
       } catch (e) {
-        uxLog("warning", this, c.yellow('Error while opening XLSX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+        uxLog("warning", this, c.yellow(t('errorWhileOpeningXlsxFile') + (e as Error).message + '\n' + (e as Error).stack));
       }
     }
   } catch (e2) {
@@ -1582,16 +1583,16 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
     // Delete existing file if any
     await fs.remove(xslxFile);
     await csvFilesToXls(csvFilesPath, xslxFile, options);
-    uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
+    uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
     WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
     // result.xlsxFile = xslxFile;
     if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
       try {
-        uxLog("other", this, c.italic(c.grey(`Opening XLSX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
+        uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));
         await open(xslxFile, { wait: false });
       } catch (e) {
-        uxLog("warning", this, c.yellow('Error while opening XLSX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+        uxLog("warning", this, c.yellow(t('errorWhileOpeningXlsxFile') + (e as Error).message + '\n' + (e as Error).stack));
       }
     }
   } catch (e2) {

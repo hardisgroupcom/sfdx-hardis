@@ -8,6 +8,7 @@ import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -76,7 +77,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Removing hidden dx managed source files`));
+    uxLog("action", this, c.cyan(t('removingHiddenDxManagedSourceFiles')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.{app,cmp,evt,tokens,html,css,js,xml}`;
@@ -93,7 +94,7 @@ The command's technical implementation involves:
         const toRemove =
           folderSplit.includes('lwc') || folderSplit.includes('aura') ? componentFolder : matchingCustomFile;
         await fs.remove(toRemove);
-        uxLog("action", this, c.cyan(`Removed hidden item ${c.yellow(toRemove)}`));
+        uxLog("action", this, c.cyan(t('removedHiddenItem', { toRemove: c.yellow(toRemove) })));
         counter++;
       }
     }

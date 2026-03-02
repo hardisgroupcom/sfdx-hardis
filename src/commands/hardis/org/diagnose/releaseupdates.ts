@@ -11,6 +11,7 @@ import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../.
 import moment from 'moment';
 import { CONSTANTS } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -65,7 +66,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
     const conn = flags['target-org'].getConnection();
-    uxLog("action", this, c.cyan(`Extracting Release Updates and checks to perform in ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(t('extractingReleaseUpdatesAndChecksToPerform', { conn: conn.instanceUrl })));
 
     // Fetch ReleaseUpdate records
     const releaseUpdatesQuery =
@@ -130,7 +131,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       uxLogTable(this, releaseUpdatesLight);
     }
     else {
-      uxLog("success", this, c.green("No release updates has been found"));
+      uxLog("success", this, c.green(t('noReleaseUpdatesHasBeenFound')));
     }
 
     // Return an object to be displayed with --json

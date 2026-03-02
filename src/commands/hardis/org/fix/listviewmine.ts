@@ -6,6 +6,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { restoreListViewMine } from '../../../../common/utils/orgConfigUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import c from 'chalk';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -100,7 +101,7 @@ ENV PUPPETEER_EXECUTABLE_PATH="$\\{CHROMIUM_PATH}" // remove \\ before {
     const { flags } = await this.parse(FixListViewMine);
     this.debugMode = flags.debug || false;
 
-    uxLog("action", this, c.cyan('Setting back listviews to Mine instead of Everything...'));
+    uxLog("action", this, c.cyan(t('settingBackListviewsToMineInsteadOf')));
 
     // Identify listviews to process
     if (flags.listviews) {

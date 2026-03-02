@@ -8,6 +8,7 @@ import { CONSTANTS, getConfig } from "../../config/index.js";
 import { EmailProvider } from "./emailProvider.js";
 import { ApiProvider } from "./apiProvider.js";
 import type { NotifMessage } from "./types.js";
+import { t } from '../utils/i18n.js';
 
 export abstract class NotifProvider {
   static getInstances(): NotifProviderRoot[] {
@@ -75,7 +76,7 @@ export abstract class NotifProvider {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: string, buttons: any[] = [], attachments: any[] = []): Promise<void> {
-    uxLog("log", this, c.grey("method postNotification is not implemented on " + this.getLabel()));
+    uxLog("log", this, c.grey(t('methodPostnotificationIsNotImplementedOn') + this.getLabel()));
   }
 }
 

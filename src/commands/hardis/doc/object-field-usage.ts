@@ -11,6 +11,7 @@ import { createXlsxFromCsvFiles, generateCsvFile, generateReportPath } from '../
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { listOrgSObjects } from '../../../common/utils/orgUtils.js';
 import { isManagedApiName } from '../../../common/utils/projectUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 type FieldUsageRow = {
   sObjectName: string;
@@ -238,8 +239,7 @@ This command focuses on one or more sObjects and measures how many records popul
         "log",
         this,
         c.grey(
-          `Processing ${sObjectName}: batch ${Math.floor(i / batchSize) + 1}/${totalBatches} ` +
-          `(${i + 1}-${i + batch.length} / ${fields.length} fields)`
+          t('processingObjectBatch', { sObjectName, batchNumber: Math.floor(i / batchSize) + 1, totalBatches, from: i + 1, to: i + batch.length, total: fields.length })
         )
       );
 
@@ -277,13 +277,13 @@ This command focuses on one or more sObjects and measures how many records popul
               item.body?.[0]?.message ||
               (item.errors && item.errors[0]?.message) ||
               'Unknown error';
-            const warning = `Composite query failed for ${fieldName}: ${errorMessage}`;
+            const warning = t('compositeQueryFailed', { fieldName, errorMessage });
             uxLog("warning", this, c.yellow(warning));
             skippedFields.push({ sObjectName, fieldName, reason: warning });
           }
         });
       } catch (error: any) {
-        const warning = `Composite request batch starting at index ${i} failed: ${error.message}`;
+        const warning = t('compositeRequestBatchFailed', { i, message: error.message });
         uxLog("warning", this, c.yellow(warning));
         batch.forEach((field) => skippedFields.push({ sObjectName, fieldName: field.name, reason: warning }));
       }
@@ -325,7 +325,7 @@ This command focuses on one or more sObjects and measures how many records popul
       if (!this.isInvalidTypeError(error)) {
         throw error;
       }
-      uxLog("warning", this, c.yellow(`Standard API describe failed for ${sObjectName}. Retrying with Tooling API...`));
+      uxLog("warning", this, c.yellow(t('standardApiDescribeFailedForRetryingWith', { sObjectName })));
       const describeResult = await connection.tooling.describe(sObjectName);
       return { describeResult, useTooling: true };
     }
@@ -338,7 +338,7 @@ This command focuses on one or more sObjects and measures how many records popul
     useTooling: boolean
   ): Promise<FieldDistributionResult> {
     const fieldName = fieldDescribe.name;
-    uxLog("action", this, c.cyan(`Computing distribution for ${sObjectName}.${fieldName}...`));
+    uxLog("action", this, c.cyan(t('computingDistributionFor', { sObjectName, fieldName })));
     const totalRecords = await this.countRecords(connection, sObjectName, useTooling);
     const distributionResult = await this.queryFieldDistribution(connection, sObjectName, fieldName, useTooling);
 
@@ -363,8 +363,8 @@ This command focuses on one or more sObjects and measures how many records popul
       { key: 'percentage', header: 'Percentage' },
     ];
 
-    uxLog("log", this, c.cyan(`Found ${rows.length} distinct values for ${fieldName}.`));
-    uxLog("log", this, c.cyan(`Total ${sObjectName} records: ${totalRecords}.`));
+    uxLog("log", this, c.cyan(t('foundDistinctValuesFor', { rows: rows.length, fieldName })));
+    uxLog("log", this, c.cyan(t('totalRecords', { sObjectName, totalRecords })));
     // uxLogTable(this, rows, columns.map((col) => col.key));
 
     const reportFiles = await generateReports(rows, columns, this, {
@@ -387,11 +387,11 @@ This command focuses on one or more sObjects and measures how many records popul
     useTooling: boolean
   ): Promise<{ rows: FieldUsageRow[]; totalRecords: number; skippedFields: SkippedFieldInfo[] }> {
     if (eligibleFields.length === 0) {
-      uxLog("warning", this, c.yellow(`No eligible fields found on ${sObjectName}; skipping.`));
+      uxLog("warning", this, c.yellow(t('noEligibleFieldsFoundOnSkipping', { sObjectName })));
       return { rows: [], totalRecords: 0, skippedFields: [] };
     }
 
-    uxLog("log", this, c.cyan(`Counting total ${sObjectName} records...`));
+    uxLog("log", this, c.cyan(t('countingTotalRecords', { sObjectName })));
     const totalRecords = await this.countRecords(connection, sObjectName, useTooling);
 
     const skippedFields: SkippedFieldInfo[] = [];
@@ -414,7 +414,7 @@ This command focuses on one or more sObjects and measures how many records popul
     for (const field of eligibleFields) {
       const populatedRecords = fieldCounts[field.name];
       if (typeof populatedRecords !== 'number') {
-        const warning = `Skipping field ${field.name} on ${sObjectName} because composite response had no count.`;
+        const warning = t('skippingFieldNoCount', { fieldName: field.name, sObjectName });
         uxLog("warning", this, c.yellow(warning));
         skippedFields.push({ sObjectName, fieldName: field.name, reason: warning });
         continue;
@@ -444,8 +444,8 @@ This command focuses on one or more sObjects and measures how many records popul
       order: ['desc'],
     });
 
-    uxLog("log", this, c.grey(`Computed population metrics for ${resultSorted.length} fields on ${sObjectName}.`));
-    uxLog("log", this, c.grey(`Total records for ${sObjectName}: ${totalRecords}.`));
+    uxLog("log", this, c.grey(t('computedPopulationMetricsForFieldsOn', { resultSorted: resultSorted.length, sObjectName })));
+    uxLog("log", this, c.grey(t('totalRecordsFor', { sObjectName, totalRecords })));
     //uxLogTable(this, resultSorted, columns.map((col) => col.key));
 
     return { rows: resultSorted, totalRecords, skippedFields };
@@ -577,7 +577,7 @@ This command focuses on one or more sObjects and measures how many records popul
       const promptObjectsRes = await prompts({
         type: 'multiselect',
         name: 'value',
-        message: 'Select the SObjects to analyze:',
+        message: t('selectTheSobjectsToAnalyze'),
         description: "Exclude objects you don't want to analyze.",
         choices: sObjectApiNames.map((apiName: string) => ({ title: apiName, value: apiName })),
         initial: sObjectApiNames,
@@ -585,11 +585,11 @@ This command focuses on one or more sObjects and measures how many records popul
       const selectedObjects = promptObjectsRes.value || [];
       if (!selectedObjects.length) {
         const outputString = 'No objects selected; aborting.';
-        uxLog("warning", this, c.yellow(outputString));
+        uxLog("warning", this, c.yellow(t('noObjectsSelectedAborting')));
         return { outputString, cancelled: true };
       }
       uniqueObjects = selectedObjects;
-      uxLog("log", this, `${uniqueObjects.length} SObjects selected for analysis.`);
+      uxLog("log", this, t('sObjectsSelectedForAnalysis', { count: uniqueObjects.length }));
     }
 
     const fieldsInput = flags.fields
@@ -609,12 +609,12 @@ This command focuses on one or more sObjects and measures how many records popul
       }
     }
 
-    WebSocketClient.sendProgressStartMessage(`Describing ${uniqueObjects.length} objects...`);
+    WebSocketClient.sendProgressStartMessage(t('describingObjects', { count: uniqueObjects.length }));
     let counter = 0;
     for (const sObjectName of uniqueObjects) {
-      uxLog("log", this, c.grey(`Describing ${sObjectName}...`));
+      uxLog("log", this, c.grey(t('describing', { sObjectName })));
       const context = await this.describeTarget(connection, sObjectName);
-      uxLog("log", this, c.grey(`Using ${context.useTooling ? 'Tooling' : 'standard'} API for ${sObjectName}.`));
+      uxLog("log", this, c.grey(t('usingApiFor', { context: context.useTooling ? 'Tooling' : 'standard', sObjectName })));
       const eligibleFields = this.filterDescribeFields(context.describeResult?.fields || []);
       // Filter eligible fields to remove those with namespaces
       const eligibleFieldsFiltered = eligibleFields.filter((field) => {
@@ -664,7 +664,7 @@ This command focuses on one or more sObjects and measures how many records popul
         totalRecords = singleResult.totalRecords ?? totalRecords;
       }
 
-      uxLog("action", this, c.cyan(`Summary:`));
+      uxLog("action", this, c.cyan(t('summary')));
       const fieldSummaryRows = fieldsInput.map((fieldApiName) => {
         const distinctValues = aggregatedResults.filter((r: any) => r?.fieldApiName === fieldApiName).length;
         return {
@@ -678,7 +678,7 @@ This command focuses on one or more sObjects and measures how many records popul
         uxLogTable(this, fieldSummaryRows, ['sObjectName', 'fieldApiName', 'distinctValues', 'totalRecords']);
       }
       if (aggregatedReportFiles.length > 0) {
-        uxLog("log", this, c.grey('Report files:'));
+        uxLog("log", this, c.grey(t('reportFiles')));
         for (const rf of aggregatedReportFiles) {
           uxLog("log", this, c.grey(`- ${rf?.type || 'file'}: ${rf?.file || ''}`));
         }
@@ -697,7 +697,7 @@ This command focuses on one or more sObjects and measures how many records popul
     const aggregatedSkipped: SkippedFieldInfo[] = [];
     const totalRecordsMap: Record<string, number> = {};
 
-    WebSocketClient.sendProgressStartMessage(`Processing field usage for ${objectContexts.length} objects...`);
+    WebSocketClient.sendProgressStartMessage(t('processingFieldUsage', { count: objectContexts.length }));
     counter = 0;
     for (const context of objectContexts) {
       const { rows, totalRecords, skippedFields } = await this.processObjectFieldUsage(
@@ -715,7 +715,7 @@ This command focuses on one or more sObjects and measures how many records popul
     }
     WebSocketClient.sendProgressEndMessage(objectContexts.length);
 
-    uxLog("action", this, c.cyan(`Generating reports...`));
+    uxLog("action", this, c.cyan(t('generatingReports')));
     const reportFiles: any[] = [];
     const csvFilesForXlsx: string[] = [];
     for (const context of objectContexts) {
@@ -746,7 +746,7 @@ This command focuses on one or more sObjects and measures how many records popul
       uxLog(
         "warning",
         this,
-        c.yellow(`${aggregatedSkipped.length} fields were skipped across analyzed objects. See skipped-fields report.`)
+        c.yellow(t('fieldsSkippedAcrossObjects', { count: aggregatedSkipped.length }))
       );
       const skippedCsv = await generateReportPath('object-field-usage-skipped-fields', '', { withDate: true });
       await generateCsvFile(aggregatedSkipped, skippedCsv, {
@@ -759,7 +759,7 @@ This command focuses on one or more sObjects and measures how many records popul
 
     if (csvFilesForXlsx.length > 0) {
       const consolidatedBase = await generateReportPath('object-field-usage', '', { withDate: true });
-      uxLog("action", this, c.cyan(`Generating consolidated XLSX report...`));
+      uxLog("action", this, c.cyan(t('generatingConsolidatedXlsxReport')));
       await createXlsxFromCsvFiles(csvFilesForXlsx, consolidatedBase, { fileTitle: 'Object field usage (all)' });
       const consolidatedXlsx = path.join(
         path.dirname(consolidatedBase),
@@ -769,7 +769,7 @@ This command focuses on one or more sObjects and measures how many records popul
       reportFiles.push({ type: 'xlsx', file: consolidatedXlsx });
     }
 
-    uxLog("action", this, c.cyan(`Summary:`));
+    uxLog("action", this, c.cyan(t('summary')));
 
     const perObjectSummary = objectContexts.map((context) => {
       const rows = perObjectRows[context.sObjectName] || [];
@@ -803,8 +803,7 @@ This command focuses on one or more sObjects and measures how many records popul
       "log",
       this,
       c.grey(
-        `Analyzed ${objectContexts.length} object(s), ${totalFieldsAnalyzed} field(s) ` +
-        `(${aggregatedSkipped.length} skipped).`
+        t('analyzedObjectsAndFields', { objects: objectContexts.length, fields: totalFieldsAnalyzed, skipped: aggregatedSkipped.length })
       )
     );
     if (perObjectSummary.length > 0) {

@@ -11,6 +11,7 @@ import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { executePrePostCommands } from '../../../common/utils/prePostCommandUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 // Wrapper for sfdx force:source:deploy
 export class Deploy extends SfCommand<any> {
@@ -185,8 +186,8 @@ Notes:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Deploy);
-    uxLog("error", this, c.red('This command will be removed by Salesforce in November 2024.'));
-    uxLog("error", this, c.red('Please migrate to command sf hardis project deploy start'));
+    uxLog("error", this, c.red(t('thisCommandWillBeRemovedBySalesforce')));
+    uxLog("error", this, c.red(t('pleaseMigrateToCommandSfHardisProject')));
     uxLog(
       "error",
       this,

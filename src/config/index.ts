@@ -20,6 +20,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from '../common/utils/index.js';
 import { prompts } from '../common/utils/prompts.js';
+import { t } from '../common/utils/i18n.js';
 
 const moduleName = 'sfdx-hardis';
 const projectConfigFiles = [
@@ -139,7 +140,7 @@ export const getConfig = async (layer: "project" | "branch" | "user" = 'user', o
 export const setConfig = async (layer: string, propValues: any): Promise<string | void> => {
   if (layer === 'user' && (fs.readdirSync(process.cwd()).length === 0 || !isGitRepo())) {
     if (process?.argv?.includes('--debug')) {
-      uxLog("log", this, c.grey('Skipping update of user config file because the current directory is not a Salesforce project.'));
+      uxLog("log", this, c.grey(t('skippingUpdateOfUserConfigFileBecause')));
     }
     return;
   }
@@ -289,7 +290,7 @@ export async function promptForProjectName() {
   const projectRes = await prompts({
     type: 'text',
     name: 'projectName',
-    message: 'What is the name of your project ?',
+    message: t('whatIsTheNameOfYourProject'),
     description: 'Used to generate environment variables and configuration files for your Salesforce project',
     placeholder: 'Ex: MyClient',
   });
@@ -307,7 +308,7 @@ export async function promptForProjectName() {
     );
     const promptResp = await prompts({
       type: 'confirm',
-      message: `Are you ok with updated project name "${projectName}" ?`,
+      message: t('areYouOkWithUpdatedProjectName', { projectName }),
       description: 'Confirms the use of the sanitized project name which must be compliant with environment variable format',
     });
     if (promptResp.value === true) {

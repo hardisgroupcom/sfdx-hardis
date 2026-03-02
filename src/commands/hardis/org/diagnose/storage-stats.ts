@@ -12,6 +12,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { CONSTANTS, getReportDirectory } from '../../../../config/index.js';
 import path from 'path';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -134,7 +135,7 @@ The command's technical implementation involves:
     const conn: Connection = flags['target-org'].getConnection();
 
     // Querying storage limit
-    uxLog("action", this, `Retrieving storage limits from the org...`);
+    uxLog("action", this, t('retrievingStorageLimits'));
     const storageLimits = await conn.limits();
     const dataStorageLimit = storageLimits.DataStorageMB;
     const max = Number(dataStorageLimit.Max) || 0;
@@ -146,32 +147,30 @@ The command's technical implementation involves:
     const usedMB = max - remainingRaw; // if Remaining is negative this will be > max
     const percentUsed = max > 0 ? (usedMB / max) * 100 : 0;
 
-    uxLog("log", this, `Data Storage Limit: ${c.cyan(max)} MB`);
+    uxLog("log", this, t('dataStorageLimit', { limit: c.cyan(max) }));
     uxLog(
       "log",
       this,
-      `Data Storage Used: ${c.cyan(usedMB)} MB${overUsageMB > 0 ? c.red(` (Over by ${overUsageMB} MB)`) : ''}`
+      t('dataStorageUsed', { used: c.cyan(usedMB) }) + (overUsageMB > 0 ? ' ' + c.red(t('dataStorageOverBy', { overBy: overUsageMB })) : '')
     );
     uxLog(
       "log",
       this,
-      `Data Storage Remaining: ${c.cyan(remainingMB)} MB${overUsageMB > 0 ? c.red(` (Exceeded by ${overUsageMB} MB)`) : ''}`
+      t('dataStorageRemaining', { remaining: c.cyan(remainingMB) }) + (overUsageMB > 0 ? ' ' + c.red(t('dataStorageOverBy', { overBy: overUsageMB })) : '')
     );
-    uxLog("log", this, `Data Storage Usage Percent: ${c.cyan(percentUsed.toFixed(2))} %`);
+    uxLog("log", this, t('dataStorageUsagePercent', { percent: c.cyan(percentUsed.toFixed(2)) }));
 
     if (overUsageMB > 0) {
       uxLog(
         "action",
         this,
-        `Your org has exceeded the data storage limit by ${c.cyan(overUsageMB)} MB (${c.red(
-          `${(percentUsed - 100).toFixed(2)}%`
-        )} over the ${c.cyan(max)} MB limit).`
+        c.red(t('orgExceededStorageLimit'))
       );
     } else {
       uxLog(
         "action",
         this,
-        `You have used ${c.cyan(percentUsed.toFixed(2))}% of your ${c.cyan(max)} MB data storage limit.`
+        t('orgStorageUsageInfo', { used: c.cyan(usedMB.toFixed(2)), limit: c.cyan(max), percent: c.cyan(percentUsed.toFixed(2)) })
       );
     }
 
@@ -179,7 +178,7 @@ The command's technical implementation involves:
     uxLog("action", this, `Listing SObjects from the org...`);
     const customObjects = await conn.metadata.list([{ type: 'CustomObject' }]);
     const sObjects = await conn.describeGlobal();
-    uxLog("log", this, `${sObjects.sobjects.length} SObjects retrieved.`);
+    uxLog("log", this, t('sObjectsRetrieved', { count: sObjects.sobjects.length }));
     const emptyObjects = await this.getEmptyObjectsCache(conn);
     const sObjectsFiltered = sObjects.sobjects.filter((obj: any) => {
       return customObjects.find((customObj: any) => customObj.fullName === obj.name) &&
@@ -195,13 +194,13 @@ The command's technical implementation involves:
     sortArray(sObjectsFiltered, { by: "name" });
     uxLog("log", this, `${sObjectsFiltered.length} SObjects after filtering`);
     if (emptyObjects.length > 0) {
-      uxLog("log", this, `${emptyObjects.length} SObjects excluded based on empty objects cache. To remove it, delete file ${c.cyan(this.cacheFilePath)} in the reports directory.`);
+      uxLog("log", this, t('sObjectsExcludedFromCache', { count: emptyObjects.length }));
     }
 
     // Prompt user to select objects to analyze
     const promptObjectsRes = await prompts({
       type: 'multiselect',
-      message: 'Select the SObjects to analyze for storage usage:',
+      message: t('selectTheSobjectsToAnalyzeForStorage'),
       description: "Exclude objects you don't want to analyze.",
       choices: sObjectsFiltered.map((obj: any) => ({ title: obj.name, value: obj.name })),
       initial: sObjectsFiltered.map((obj: any) => obj), // all selected by default
@@ -218,7 +217,7 @@ The command's technical implementation involves:
       // Prompt user for stats on CreatedDate or LastModifiedDate
       const promptDateFieldRes = await prompts({
         type: 'select',
-        message: 'Select the date field to use for storage stats breakdown',
+        message: t('selectTheDateFieldToUseFor'),
         description: "Choose between CreatedDate or LastModifiedDate.",
         choices: [
           { title: 'Created Date', value: 'CreatedDate' },
@@ -231,7 +230,7 @@ The command's technical implementation involves:
       if (breakdownField === 'custom') {
         const promptFieldRes = await prompts({
           type: 'text',
-          message: 'Enter the API name of the custom date field to use for storage stats breakdown',
+          message: t('enterTheApiNameOfTheCustom'),
           description: "Objects without this field will be excluded from the analysis.",
           placeholder: 'My_Date_Field__c, RecordType.Name, SBQQ_Quote__r.Status__c or SBQQ__Quote__r.RecordType.Name',
         });
@@ -256,7 +255,7 @@ The command's technical implementation involves:
     if (isDateFieldForGranularity) {
       const promptGranularityRes = await prompts({
         type: 'select',
-        message: 'Select the breakdown granularity for the date field',
+        message: t('selectTheBreakdownGranularityForTheDate'),
         description: "Choose how you want to group the storage statistics.",
         choices: [
           { title: 'By Year (CALENDAR_YEAR)', value: 'year' },
@@ -272,7 +271,7 @@ The command's technical implementation involves:
     if (!this.whereCondition) {
       const promptWhereCondRes = await prompts({
         type: 'text',
-        message: 'Enter an optional WHERE condition to filter records (SOQL syntax)',
+        message: t('enterAnOptionalWhereConditionToFilter'),
         description: 'You can provide an optional WHERE clause to filter records for the storage stats calculation. Leave empty for no filter.',
         placeholder: "Ex: CreatedDate = LAST_N_DAYS:365 or Status__c = 'Active'"
       });
@@ -284,7 +283,7 @@ The command's technical implementation involves:
     }
 
     // Query objects to know the count of records, storage used and their year of created date
-    WebSocketClient.sendProgressStartMessage(`Calculating storage stats for ${selectedObjects.length} objects...`, selectedObjects.length);
+    WebSocketClient.sendProgressStartMessage(t('calculatingStorageStats', { count: selectedObjects.length }), selectedObjects.length);
     const objectStorageStats: any[] = [];
     let step = 0;
     for (const obj of selectedObjects) {
@@ -296,7 +295,7 @@ The command's technical implementation involves:
     WebSocketClient.sendProgressEndMessage();
 
 
-    uxLog("action", this, `Compiling storage stats...`);
+    uxLog("action", this, t('compilingStorageStats'));
     // Sort by total records descending
     sortArray(objectStorageStats, { by: 'totalRecords', order: 'desc' });
     // Create one line by breakdown per object
@@ -420,7 +419,7 @@ The command's technical implementation involves:
 
       const field = describe.fields.find((f: any) => f.name === fieldToCheck);
       if (!field) {
-        uxLog("warning", this, c.yellow(`Skipping object ${c.cyan(obj.name)}: field ${c.cyan(breakdownField)} not found`));
+        uxLog("warning", this, c.yellow(t('skippingObjectFieldNotFound', { name: c.cyan(obj.name), breakdownField: c.cyan(breakdownField) })));
         return {
           isValid: false,
           isDateField: false,
@@ -488,7 +487,7 @@ The command's technical implementation involves:
 
       if (!relatedField) {
         const relationshipPath = relationshipChain.join(' -> ');
-        uxLog("warning", this, c.yellow(`Skipping object ${c.cyan(originalObj.name)}: field ${c.cyan(nextFieldName)} not found on ${c.cyan(relatedObjectName)} (path: ${relationshipPath})`));
+        uxLog("warning", this, c.yellow(t('skippingObjectFieldNotFoundOnPath', { originalObj: c.cyan(originalObj.name), nextFieldName: c.cyan(nextFieldName), relatedObjectName: c.cyan(relatedObjectName), relationshipPath })));
         return {
           isValid: false,
           isDateField: false,
@@ -535,7 +534,7 @@ The command's technical implementation involves:
   }
 
   private async calculateObjectStorageStats(obj: any, breakdownField: string, conn) {
-    uxLog("log", this, `Querying storage stats for object: ${c.cyan(obj.name)}...`);
+    uxLog("log", this, t('queryingStorageStatsForObject', { sObjectName: c.cyan(obj.name) }));
 
     // Check if field exists on object and determine its type
     const fieldCheck = await this.checkFieldExistenceAndType(obj, breakdownField, conn);

@@ -12,6 +12,7 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 export default class CallInCallOut extends SfCommand<any> {
   public static title = 'Audit Metadatas API Version';
@@ -177,9 +178,9 @@ export default class CallInCallOut extends SfCommand<any> {
         }
       } catch (error) {
         if (error instanceof Error) {
-          uxLog("warning", this, c.yellow(`Error processing file ${file}: ${error.message}`));
+          uxLog("warning", this, c.yellow(t('errorProcessingFile2', { file, error: error.message })));
         } else {
-          uxLog("warning", this, c.yellow(`Error processing file ${file}: ${String(error)}`));
+          uxLog("warning", this, c.yellow(t('errorProcessingFile', { file, String: String(error) })));
         }
       }
     }
@@ -201,7 +202,7 @@ export default class CallInCallOut extends SfCommand<any> {
     });
 
     // Display as table
-    uxLog("action", this, c.cyan(`Found ${c.bold(resultSorted.length)} metadata files with API Version.`));
+    uxLog("action", this, c.cyan(t('foundMetadataFilesWithApiVersion', { resultSorted: c.bold(resultSorted.length) })));
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
     uxLogTable(this,
       resultsLight.map((item: any) => {

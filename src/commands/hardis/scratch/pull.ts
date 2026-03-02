@@ -7,6 +7,7 @@ import { uxLog } from '../../../common/utils/index.js';
 import c from "chalk";
 import { CONSTANTS } from '../../../config/index.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -80,14 +81,14 @@ The command's technical implementation focuses on robust metadata synchronizatio
     const { flags } = await this.parse(SourcePull);
     const debugMode = flags.debug || false;
     const targetUsername = flags['target-org'].getUsername() || '';
-    uxLog("action", this, c.cyan(`Pulling all latest metadata changes from dev org to local project files (including changes by other users)`));
-    uxLog("action", this, c.cyan(`Pulling metadata changes from org: ${c.bold(targetUsername)}`));
+    uxLog("action", this, c.cyan(t('pullingAllLatestMetadataChangesFromDevOrg')));
+    uxLog("action", this, c.cyan(t('pullingMetadataChangesFromOrg', { targetUsername: c.bold(targetUsername) })));
     await forceSourcePull(targetUsername, debugMode);
 
-    uxLog("warning", this, c.yellow(`Updated items not visible? Check documentation: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas`));
+    uxLog("warning", this, c.yellow(t('updatedItemsNotVisibleCheckDocumentation') + `: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas`));
 
-    WebSocketClient.sendReportFileMessage("workbench.view.scm", "Commit your retrieved files", "actionCommand");
-    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, "Retrieve and Commit documentation", 'docUrl');
+    WebSocketClient.sendReportFileMessage("workbench.view.scm", t('commitYourRetrievedFiles'), "actionCommand");
+    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, t('retrieveAndCommitDocumentation'), 'docUrl');
     // Return an object to be displayed with --json
     return { outputString: 'Pulled scratch org / source-tracked sandbox updates' };
   }

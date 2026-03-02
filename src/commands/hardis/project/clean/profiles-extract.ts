@@ -11,6 +11,7 @@ import { bulkQuery } from '../../../../common/utils/apiUtils.js';
 import * as path from 'path';
 import { getReportDirectory } from '../../../../config/index.js';
 import { Messages } from '@salesforce/core';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -86,10 +87,10 @@ Key capabilities:
     let numberOfPersonas = 1;
     try {
       selectedObjects = await this.generateObjectsList(conn);
-      uxLog("action", this, c.green('Handling extract of Users...'));
+      uxLog("action", this, c.green(t('handlingExtractOfUsers')));
       await this.generateUsersExtract(conn);
       numberOfPersonas = await this.generatePersonaExtract();
-      uxLog("action", this, c.green(`Generating extracts for ${numberOfPersonas} personas...`));
+      uxLog("action", this, c.green(t('generatingExtractsForPersonas', { numberOfPersonas })));
       await this.generateRelationExtract(selectedObjects, numberOfPersonas);
       await this.generateRTExtract(conn, selectedObjects, numberOfPersonas);
       await this.generateAppsExtract(conn, numberOfPersonas);
@@ -98,7 +99,7 @@ Key capabilities:
       await this.generatePermissionSetsExtract(conn, numberOfPersonas);
 
       // 1. Extract profile field access and get all profiles
-      uxLog("action", this, c.green('Extracting profile field access...'));
+      uxLog("action", this, c.green(t('extractingProfileFieldAccess')));
       const profileFieldAccess = await this.getProfileFieldAccessData(conn, selectedObjects);
       const profileNames = Array.from(new Set(profileFieldAccess.map(r => r.Profile).filter(Boolean)));
 
@@ -112,15 +113,15 @@ Key capabilities:
         await generateCsvFile(profileFieldAccess, this.outputFile, { fileTitle: 'Profile Field Access', noExcel: true });
         this.csvFiles.push(this.outputFile);
       } else {
-        uxLog('log', this, c.yellow('No profile field access records found, skipping ProfileFieldAccess.csv.'));
+        uxLog('log', this, c.yellow(t('noProfileFieldAccessRecordsFoundSkipping')));
       }
 
       this.outputFile = '';
       this.outputFile = await generateReportPath('profiles-extract', this.outputFile);
-      uxLog("action", this, c.green('Generating final XLSX report...'));
+      uxLog("action", this, c.green(t('generatingFinalXlsxReport')));
       await createXlsxFromCsvFiles(this.csvFiles, this.outputFile, { fileTitle: 'profiles extract' });
     } catch (error) {
-      uxLog('log', this, c.red('Failed to fetch SObjects.'));
+      uxLog('log', this, c.red(t('failedToFetchSobjects')));
       throw error;
     }
   }
@@ -155,9 +156,9 @@ Key capabilities:
           PermissionsEdit: rec['PermissionsEdit'] === true || rec['PermissionsEdit'] === 'true' ? 'Yes' : 'No',
         });
       });
-      uxLog('log', this, c.green(`Fetched ${fieldAccessRecords.length} profile field access records.`));
+      uxLog('log', this, c.green(t('fetchedProfileFieldAccessRecords', { fieldAccessRecords: fieldAccessRecords.length })));
     } catch (error) {
-      uxLog('warning', this, c.yellow(`Failed to query FieldPermissions: ${(error as Error).message}`));
+      uxLog('warning', this, c.yellow(t('failedToQueryFieldpermissions', { error: (error as Error).message })));
     }
     return fieldAccessRecords;
   }
@@ -171,7 +172,7 @@ Key capabilities:
   private async generateObjectsList(conn: any): Promise<string[]> {
 
     let selectedObjects: string[] = [];
-    uxLog('action', this, c.green('Fetching SObjects list...'));
+    uxLog('action', this, c.green(t('fetchingSobjectsList')));
     let sobjectsList: { label: string; name: string; masterObject: string; objectType: string }[] = [];
     try {
       // Exclude objects whose API names start with any of these prefixes
@@ -224,12 +225,12 @@ Key capabilities:
           objectType: sobject.name.endsWith('__c') ? 'Custom' : 'Standard',
         }));
 
-      uxLog('log', this, c.green('Fetching SObjects completed.'));
-      uxLog('log', this, c.green(`Fetched ${sobjectsList.length} SObjects.`));
+      uxLog('log', this, c.green(t('fetchingSobjectsCompleted')));
+      uxLog('log', this, c.green(t('fetchedSobjects', { sobjectsList: sobjectsList.length })));
 
       const sobjectsWithRecords: { Object_Label: string; API_Name: string; Object_Type: string }[] = [];
 
-      uxLog('action', this, 'Checking SObjects for records...');
+      uxLog('action', this, t('checkingSobjectsForRecords'));
       for (const sobject of sobjectsList) {
         try {
           const result = await conn.query(`SELECT COUNT() FROM ${sobject.name}`);
@@ -238,13 +239,13 @@ Key capabilities:
           }
           uxLog('log', this, `Checked ${sobject.name}: ${result.totalSize} records.`);
         } catch (error) {
-          uxLog('warning', this, c.yellow(`Failed to query ${sobject.name}: ${(error as Error).message}`));
+          uxLog('warning', this, c.yellow(t('failedToQuery', { sobject: sobject.name, error: (error as Error).message })));
         }
       }
       this.spinner.stop();
 
       if (sobjectsWithRecords.length === 0) {
-        uxLog('warning', this, c.red('No SObjects with records found.'));
+        uxLog('warning', this, c.red(t('noSobjectsWithRecordsFound')));
         return [];
       }
 
@@ -257,7 +258,7 @@ Key capabilities:
       }
 
       const statusRes = await prompts({
-        message: "Please select SObjects to add in the output Excel file",
+        message: t('pleaseSelectSobjectsToAddInThe'),
         type: "multiselect",
         description: "Be careful, you can't update the selection later without re-running the command :)",
         choices: choices,
@@ -268,7 +269,7 @@ Key capabilities:
         uxLog('log', this, `You selected ${selectedObjects.length} objects.`);
       }
 
-      uxLog("log", this, c.green('Generating Objects.csv report...'));
+      uxLog("log", this, c.green(t('generatingObjectsCsvReport')));
       const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, 'Objects.csv');
       // Without xlsx
@@ -279,7 +280,7 @@ Key capabilities:
       this.csvFiles.push(this.outputFile);
 
     } catch (error) {
-      uxLog('log', this, c.red('Failed to fetch SObjects.'));
+      uxLog('log', this, c.red(t('failedToFetchSobjects')));
       throw error;
     }
 
@@ -305,8 +306,8 @@ Key capabilities:
     })));
     // Build set of active profile names (filter out empty/null)
     this.activeProfileNames = new Set(userResult.records.map((user) => user['Profile.Name']).filter((n) => !!n));
-    uxLog('log', this, c.green(`Fetched ${userResult.records.length} active users.`));
-    uxLog('log', this, c.cyan(`Active profiles: ${Array.from(this.activeProfileNames).join(', ')}`));
+    uxLog('log', this, c.green(t('fetchedActiveUsers', { userResult: userResult.records.length })));
+    uxLog('log', this, c.cyan(t('activeProfiles', { Array: Array.from(this.activeProfileNames).join(', ') })));
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Users.csv');
     await generateCsvFile(usersRecords, this.outputFile, { fileTitle: 'Users extract', noExcel: true });
@@ -322,7 +323,7 @@ Key capabilities:
   private async generatePersonaExtract() {
     let numberOfPersonas = 1;
     const statusRes = await prompts({
-      message: "Please enter the number of personas to create",
+      message: t('pleaseEnterTheNumberOfPersonasTo'),
       type: "number",
       description: "One tab by personal will be created in the final Excel file",
       placeholder: "Input a number of personas (better too much than too few!)",
@@ -402,7 +403,7 @@ Key capabilities:
           });
         });
       } catch (error) {
-        uxLog('warning', this, c.yellow(`Failed to query RecordTypes for ${objName}: ${(error as Error).message}`));
+        uxLog('warning', this, c.yellow(t('failedToQueryRecordtypesFor', { objName, error: (error as Error).message })));
       }
     }
     const reportDir = await getReportDirectory();
@@ -437,7 +438,7 @@ Key capabilities:
         });
       });
     } catch (error) {
-      uxLog('warning', this, c.yellow(`Failed to query Applications : ${(error as Error).message}`));
+      uxLog('warning', this, c.yellow(t('failedToQueryApplications', { error: (error as Error).message })));
     }
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Applications.csv');
@@ -509,7 +510,7 @@ Key capabilities:
       await generateCsvFile(tabsRecords, this.outputFile, { fileTitle: 'Tabs extract', noExcel: true });
       this.csvFiles.push(this.outputFile);
     } catch (error) {
-      uxLog('warning', this, c.yellow(`Failed to query Tabs : ${(error as Error).message}`));
+      uxLog('warning', this, c.yellow(t('failedToQueryTabs', { error: (error as Error).message })));
     }
     return;
   }
@@ -583,7 +584,7 @@ Key capabilities:
           });
         });
       } catch (error) {
-        uxLog('warning', this, c.yellow(`Failed to describe fields for ${objName}: ${(error as Error).message}`));
+        uxLog('warning', this, c.yellow(t('failedToDescribeFieldsFor', { objName, error: (error as Error).message })));
       }
       const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, `${objName} Fields.csv`);
@@ -631,7 +632,7 @@ Key capabilities:
       });
       this.csvFiles.push(this.outputFile);
     } catch (error) {
-      uxLog('warning', this, c.yellow(`Failed to query PermissionSets: ${(error as Error).message}`));
+      uxLog('warning', this, c.yellow(t('failedToQueryPermissionsets', { error: (error as Error).message })));
     }
   }
 

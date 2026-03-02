@@ -8,6 +8,7 @@ import { isCI, uxLog } from '../../../common/utils/index.js';
 import { bulkQuery } from '../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -145,15 +146,15 @@ The command's technical implementation involves:
   }
 
   private displayResults() {
-    uxLog("action", this, c.cyan(`Query results from ${this.targetOrgsIds.length} orgs`));
+    uxLog("action", this, c.cyan(t('queryResultsFromOrgs', { targetOrgsIds: this.targetOrgsIds.length })));
     if (this.successOrgs.length > 0) {
-      uxLog("success", this, c.green(`Successfully performed query on ${this.successOrgs.length} orgs`));
+      uxLog("success", this, c.green(t('successfullyPerformedQueryOnOrgs', { successOrgs: this.successOrgs.length })));
       for (const org of this.successOrgs) {
         uxLog("log", this, c.grey(`-  ${org.instanceUrl}`));
       }
     }
     if (this.errorOrgs.length > 0) {
-      uxLog("success", this, c.green(`Error while performing query on ${this.errorOrgs.length} orgs`));
+      uxLog("success", this, c.green(t('errorWhilePerformingQueryOnOrgs', { errorOrgs: this.errorOrgs.length })));
       for (const org of this.successOrgs) {
         uxLog("log", this, c.grey(`-  ${org.instanceUrl}: ${org?.error?.message}`));
       }
@@ -164,14 +165,14 @@ The command's technical implementation involves:
     for (const orgId of this.targetOrgsIds) {
       const matchOrgs = this.targetOrgs.filter(org => (org.username === orgId || org.alias === orgId) && org.accessToken);
       if (matchOrgs.length === 0) {
-        uxLog("warning", this, c.yellow(`Skipped ${orgId}: Unable to find authentication. Run "sf org login web" to authenticate.`));
+        uxLog("warning", this, c.yellow(t('skippedUnableToFindAuthenticationRunSf', { orgId })));
         continue;
       }
       const accessToken = matchOrgs[0].accessToken;
       const username = matchOrgs[0].username;
       const instanceUrl = matchOrgs[0].instanceUrl;
       const loginUrl = matchOrgs[0].loginUrl || instanceUrl;
-      uxLog("action", this, c.cyan(`Performing query on ${c.bold(orgId)}...`));
+      uxLog("action", this, c.cyan(t('performingQueryOn', { orgId: c.bold(orgId) })));
       try {
         const authInfo = await AuthInfo.create({
           username: username
@@ -193,7 +194,7 @@ The command's technical implementation involves:
         this.allRecords.push(...records);
         this.successOrgs.push({ orgId: orgId, instanceUrl: instanceUrl, username: username })
       } catch (e: any) {
-        uxLog("error", this, c.red(`Error while querying ${orgId}: ${e.message}`));
+        uxLog("error", this, c.red(t('errorWhileQuerying', { orgId, message: e.message })));
         this.errorOrgs.push({ org: orgId, error: e })
       }
 
@@ -233,8 +234,8 @@ The command's technical implementation involves:
       }
       const baseQueryPromptRes = await prompts({
         type: "select",
-        message: "Please select a predefined query, or custom SOQL option",
-        description: "Choose a ready-made SOQL query template or enter your own custom query",
+        message: t('pleaseSelectPredefinedQueryOrCustomSoql'),
+        description: t('selectPredefinedQueryDescription'),
         placeholder: "Select a query template",
         choices: [
           ...Object.keys(this.allQueryTemplates).map(templateId => {
@@ -245,8 +246,8 @@ The command's technical implementation involves:
             }
           }),
           {
-            title: "Custom SOQL Query",
-            description: "Enter a custom SOQL query to run",
+            title: t('customSoqlQueryTitle'),
+            description: t('customSoqlQueryDescription'),
             value: "custom"
           }
         ]
@@ -254,7 +255,7 @@ The command's technical implementation involves:
       if (baseQueryPromptRes.value === "custom") {
         const queryPromptRes = await prompts({
           type: 'text',
-          message: 'Please input the SOQL Query to run in multiple orgs',
+          message: t('pleaseInputTheSoqlQueryToRun'),
           description: 'Enter a custom SOQL query that will be executed across all selected Salesforce orgs',
           placeholder: 'Ex: SELECT Id, Name FROM Account LIMIT 10',
         });

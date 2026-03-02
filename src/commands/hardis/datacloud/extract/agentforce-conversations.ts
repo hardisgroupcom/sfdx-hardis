@@ -24,6 +24,7 @@ import {
   sanitizePlaceholderValue,
   stringValue,
 } from "../../../../common/utils/agentforceQueryUtils.js";
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -120,15 +121,15 @@ The command's technical implementation involves:
     });
     this.queryString = buildConversationQuery(dateFilterOptions).trim();
 
-    uxLog("action", this, c.cyan("Querying Agentforce conversations..."));
+    uxLog("action", this, c.cyan(t('queryingAgentforceConversations')));
     const rawResult = await dataCloudSqlQuery(this.queryString, conn, {});
     const sessionIds = extractSessionIds(rawResult.records, { sanitizer: sanitizePlaceholderValue });
-    uxLog("action", this, c.cyan("Fetching conversation transcripts..."));
+    uxLog("action", this, c.cyan(t('fetchingConversationTranscripts')));
     const transcriptsBySession = await fetchConversationTranscripts(sessionIds, conn, {
       chunkSize: 50,
       sanitizeSessionId: sanitizePlaceholderValue,
     });
-    uxLog("action", this, c.cyan("Building export records..."));
+    uxLog("action", this, c.cyan(t('buildingExportRecords')));
     const exportRecords = buildConversationRecords(rawResult.records, {
       conversationLinkDomain,
       transcriptsBySession,

@@ -7,6 +7,7 @@ import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { getConfig, setConfig } from '../../../../config/index.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -114,10 +115,8 @@ The command's technical implementation involves:
         {
           type: 'select',
           name: 'packageSelected',
-          message: c.cyanBright(
-            `Please select a package (this is not a drill, it will create an official new version !)`
-          ),
-          description: 'Choose which package to create a new version for - this action creates a permanent version',
+          message: c.cyanBright(t('pleaseSelectPackageNotADrillCreate')),
+          description: t('choosePackageToCreateNewVersionFor'),
           placeholder: 'Select a package',
           choices: packageDirectories.map((packageDirectory) => {
             return {
@@ -129,10 +128,8 @@ The command's technical implementation involves:
         {
           type: 'text',
           name: 'packageInstallationKey',
-          message: c.cyanBright(
-            'Do you want to password protect your package ? (blank means no)'
-          ),
-          description: 'Optionally set a password to protect the package installation',
+          message: c.cyanBright(t('doYouWantToPasswordProtectPackage')),
+          description: t('optionallySetPasswordForPackage'),
           placeholder: 'Ex: mySecretPassword123',
           initial: config.defaultPackageInstallationKey || '',
         },
@@ -150,7 +147,7 @@ The command's technical implementation involves:
       });
     }
     // Create package version
-    uxLog("action", this, c.cyan(`Generating new package version for ${c.green(pckgDirectory.package)}...`));
+    uxLog("action", this, c.cyan(t('generatingNewPackageVersionFor', { pckgDirectory: c.green(pckgDirectory.package) })));
     const createCommand =
       'sf package version create' +
       ` --package "${pckgDirectory.package}"` +

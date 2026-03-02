@@ -7,6 +7,7 @@ import { makeSureOrgIsConnected, promptOrg } from '../../../common/utils/orgUtil
 import { execSfdxJson, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -98,7 +99,7 @@ The command's technical implementation involves:
       const promptDefaultRes = await prompts({
         type: 'confirm',
         name: 'setDefault',
-        message: 'Do you want to set the selected org as your default org?',
+        message: t('doYouWantToSetTheSelected'),
         description: "If you choose 'No', the org will be connected but not set as default.",
         default: true,
       });
@@ -109,7 +110,7 @@ The command's technical implementation involves:
 
     let org: any = {};
     if (username) {
-      uxLog("action", this, c.cyan(`Getting info about ${username} ...`));
+      uxLog("action", this, c.cyan(t('gettingInfoAbout', { username })));
       const displayOrgCommand = `sf org display --target-org ${username}`;
       const displayResult = await execSfdxJson(displayOrgCommand, this, {
         fail: false,
@@ -122,17 +123,17 @@ The command's technical implementation involves:
       org = await promptOrg(this, { devHub: devHub, setDefault: setDefault, scratch: scratch, useCache: false });
     }
     // If the org is not connected, ask the user to authenticate again
-    uxLog("action", this, c.cyan(`Checking that user ${org.username} is connected to org ${org.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(t('checkingThatUserIsConnectedToOrg', { org: org.username, org1: org.instanceUrl })));
     await makeSureOrgIsConnected(org.username);
     if (setDefault) {
       const setDefaultCommand = `sf config set target-org ${org.username}`;
       await execSfdxJson(setDefaultCommand, this, { output: false });
-      uxLog("action", this, c.cyan(`Your default org is now ${org.instanceUrl} (${org.username})`));
+      uxLog("action", this, c.cyan(t('yourDefaultOrgIsNow', { org: org.instanceUrl, org1: org.username })));
       WebSocketClient.sendRefreshStatusMessage();
       return { outputString: `Selected org ${org.username}` };
     }
     else {
-      uxLog("action", this, c.cyan(`Org ${org.instanceUrl} (${org.username}) connected`));
+      uxLog("action", this, c.cyan(t('orgConnected', { org: org.instanceUrl, org1: org.username })));
       WebSocketClient.sendRefreshStatusMessage();
       return { outputString: `Connected org ${org.username}` };
     }

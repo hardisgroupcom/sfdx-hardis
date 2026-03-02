@@ -12,6 +12,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -219,7 +220,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     }
 
     const conn = flags['target-org'].getConnection();
-    uxLog("action", this, c.cyan(`Extracting Setup Audit Trail and detect suspect actions in ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(t('extractingSetupAuditTrailAndDetectSuspect', { conn: conn.instanceUrl })));
 
     // Manage exclude users list
     const whereConstraint = this.manageExcludedUsers(config);
@@ -230,9 +231,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     await this.handleCustomSettingsAudit(conn);
 
     // Summarize
-    uxLog("action", this, c.cyan(`Results summary:`));
+    uxLog("action", this, c.cyan(t('resultsSummary')));
     let statusCode = 0;
-    let msg = 'No suspect Setup Audit Trail records has been found';
+    let msg = t('noSuspectAuditTrailFound');
     const suspectActionsWithCount: any[] = [];
     if (this.suspectRecords.length > 0) {
       statusCode = 1;
@@ -248,7 +249,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       }
       sortCrossPlatform(suspectActionsWithCount);
 
-      uxLog("other", this, 'Suspect records list');
+      uxLog("other", this, t('suspectRecordsList'));
       uxLog("other", this, JSON.stringify(this.suspectRecords, null, 2));
 
       let logMsg = '';
@@ -372,12 +373,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       return;
     }
     // Add custom settings tracking
-    uxLog("action", this, c.cyan(`List available custom settings...`));
-    uxLog("log", this, c.grey(`(Define SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS=true if you don't want them)`));
+    uxLog("action", this, c.cyan(t('listAvailableCustomSettings')));
+    uxLog("log", this, c.grey(t('defineSkipCustomSettingsEnvVar')));
     const customSettingsQuery = `SELECT QualifiedApiName, Label FROM EntityDefinition 
                            WHERE IsCustomSetting = true`;
     const customSettingsResult = await soqlQuery(customSettingsQuery, conn);
-    uxLog("action", this, c.cyan(`Analyze updates in ${customSettingsResult.records.length} Custom Settings...`));
+    uxLog("action", this, c.cyan(t('analyzeUpdatesInCustomSettings', { customSettingsResult: customSettingsResult.records.length })));
 
     let whereConstraintCustomSetting = `WHERE LastModifiedDate = LAST_N_DAYS:${this.lastNdays}` + ` AND LastModifiedBy.Username != NULL `;
     if (this.excludeUsers.length > 0) {
@@ -415,13 +416,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           }
         }
       } catch (error) {
-        uxLog("error", this, c.red(`Error querying Custom Setting ${cs.Label}: ${error}`));
+        uxLog("error", this, c.red(t('errorQueryingCustomSetting', { cs: cs.Label, error })));
         continue;
       }
     }
     // Add custom setting updates to audit trail records
     if (customSettingModifications.length > 0) {
-      uxLog("warning", this, c.yellow(`Found ${customSettingModifications.length} Custom Setting updates`));
+      uxLog("warning", this, c.yellow(t('foundCustomSettingUpdates', { customSettingModifications: customSettingModifications.length })));
       this.auditTrailRecords.push(...customSettingModifications);
 
       // Add to suspect records
@@ -534,7 +535,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       const lastNdaysResponse = await prompts({
         type: 'select',
         name: 'lastndays',
-        message: 'Please select the number of days in the past from today you want to detect suspiscious setup activities',
+        message: t('pleaseSelectTheNumberOfDaysIn'),
         description: 'Choose the timeframe for analyzing audit trail records to detect suspicious administrative activities',
         placeholder: 'Select number of days',
         choices: [
@@ -571,13 +572,11 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     if (this.excludeUsers.length > 0) {
       whereConstraint += `AND CreatedBy.Username NOT IN ('${this.excludeUsers.join("','")}') `;
     }
-    uxLog("log", this, c.grey(`Excluded users are ${this.excludeUsers.join(',') || 'None'}`));
+    uxLog("log", this, c.grey(t('excludedUsersAre', { excludeUsers: this.excludeUsers.join(',') || 'None' })));
     uxLog(
       "log",
       this,
-      c.grey(
-        `Use argument --excludeusers or .sfdx-hardis.yml property monitoringExcludeUsernames to exclude more users`
-      )
+      c.grey(t('useExcludeUsersArgument'))
     );
     return whereConstraint;
   }

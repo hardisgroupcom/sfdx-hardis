@@ -17,6 +17,7 @@ import { generateCsvFile, generateReportPath, createXlsxFromCsv } from '../../..
 import { CONSTANTS } from '../../../../config/index.js';
 import { FileDownloader } from '../../../../common/utils/fileDownloader.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 const dnsPromises = dns.promises;
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -170,21 +171,21 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.tempDir = await createTempDir();
 
     // Get EventLogFile records with EventType = 'ApiTotalUsage'
-    uxLog("action", this, c.cyan(`Querying org for EventLogFile entries of type ${eventType} to detect Legacy API calls...`));
+    uxLog("action", this, c.cyan(t('queryingOrgForEventlogfileEntriesOfType', { eventType })));
     const logCountQuery = `SELECT COUNT() FROM EventLogFile WHERE EventType = '${eventType}'`;
     const logCountRes = await soqlQuery(logCountQuery, conn);
     if (logCountRes.totalSize === 0) {
-      uxLog("success", this, c.green(`Found no EventLogFile entry of type ${eventType}.`));
-      uxLog("success", this, c.green('This indicates that no legacy APIs were called during the log retention window.'));
+      uxLog("success", this, c.green(t('foundNoEventlogfileEntryOfType', { eventType })));
+      uxLog("success", this, c.green(t('thisIndicatesThatNoLegacyApisWere')));
     } else {
-      uxLog("log", this, c.grey('Found ' + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
+      uxLog("log", this, c.grey(t('found') + c.bold(logCountRes.totalSize) + ` ${eventType} EventLogFile entries.`));
     }
 
     if (logCountRes.totalSize > limit) {
       uxLog(
         "warning",
         this,
-        c.yellow(`There are more than ${limit} results, you may consider to increase limit using --limit argument`)
+        c.yellow(t('tooManyResultsIncreaseLimit'))
       );
     }
 
@@ -194,7 +195,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const eventLogRes: any = await soqlQuery(logCollectQuery, conn);
 
     // Collect legacy api calls from logs
-    WebSocketClient.sendProgressStartMessage("Downloading and analyzing log files...", eventLogRes.records.length);
+    WebSocketClient.sendProgressStartMessage(t('downloadingAndAnalyzingLogFiles'), eventLogRes.records.length);
     let counter = 0;
     for (const eventLogFile of eventLogRes.records) {
       await this.collectDeprecatedApiCalls(eventLogFile.LogFile, conn);
@@ -205,7 +206,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     await this.flushDescriptorErrors();
 
     // Display summary
-    uxLog("action", this, c.cyan('Results of Legacy API calls analysis:'));
+    uxLog("action", this, c.cyan(t('resultsOfLegacyApiCallsAnalysis')));
     const logLines: string[] = [];
     for (const descriptor of this.legacyApiDescriptors) {
       const errorCount = descriptor.totalErrors;
@@ -221,7 +222,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     uxLog("log", this, logLines.join('\n'));
 
     // Build command result
-    let msg = 'No deprecated API call has been found in ApiTotalUsage logs';
+    let msg = t('noDeprecatedApiCallFound');
     let statusCode = 0;
     const hasBlockingErrors = this.legacyApiDescriptors.some(
       (descriptor) => descriptor.severity === 'ERROR' && descriptor.totalErrors > 0
@@ -230,11 +231,11 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       (descriptor) => descriptor.severity === 'WARNING' && descriptor.totalErrors > 0
     );
     if (hasBlockingErrors) {
-      msg = 'Found legacy API versions calls in logs';
+      msg = t('foundLegacyApiCallsInLogs');
       statusCode = 1;
       uxLog("error", this, c.red(c.bold(msg)));
     } else if (hasWarningsOnly) {
-      msg = 'Found deprecated API versions calls in logs that will not be supported anymore in the future';
+      msg = t('foundDeprecatedApiCallsFuture');
       statusCode = 0;
       uxLog("warning", this, c.yellow(c.bold(msg)));
     } else {
@@ -275,8 +276,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     notifDetailText += "\n" + this.articleTextLegacyApi;
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage("https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238", "Article (EN)", 'docUrl');
-      WebSocketClient.sendReportFileMessage("https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/", "Article (FR)", 'docUrl');
+      WebSocketClient.sendReportFileMessage("https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238", t('articleEn'), 'docUrl');
+      WebSocketClient.sendReportFileMessage("https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/", t('articleFr'), 'docUrl');
     }
     if (this.notificationSampleTruncated) {
       notifDetailText += `
@@ -435,7 +436,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       await fs.ensureDir(path.dirname(this.outputFile));
       await fs.writeFile(this.outputFile, '', 'utf8');
     }
-    uxLog("action", this, c.cyan(c.italic(`Please see detailed CSV log in ${c.bold(this.outputFile)}`)));
+    uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn2', { outputFile: c.bold(this.outputFile) }))));
     this.outputFilesRes.csvFile = this.outputFile;
     if (!WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.requestOpenFile(this.outputFile);
@@ -448,7 +449,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         this.outputFilesRes.xlsxFile = result.xlsxFile;
       }
     } else {
-      uxLog("other", this, c.grey(`No XLS file generated as ${this.outputFile} is empty`));
+      uxLog("other", this, c.grey(t('noXlsFileGeneratedAsIsEmpty2', { outputFile: this.outputFile })));
     }
   }
 
@@ -460,12 +461,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const severityIconInfo = getSeverityIcon('info');
 
     // Download file as stream, and process chuck by chuck
-    uxLog("log", this, c.grey(`Downloading ${logFileUrl}...`));
+    uxLog("log", this, c.grey(t('downloading', { logFileUrl })));
     const fetchUrl = `${conn.instanceUrl}${logFileUrl}`;
     const outputFile = path.join(this.tempDir, Math.random().toString(36).substring(7) + ".csv");
     const downloadResult = await new FileDownloader(fetchUrl, { conn: conn, outputFile: outputFile }).download();
     if (downloadResult.success) {
-      uxLog("log", this, c.grey(`Parsing downloaded CSV from ${outputFile} and check for deprecated calls...`));
+      uxLog("log", this, c.grey(t('parsingDownloadedCsvFromAndCheckFor', { outputFile })));
       const outputFileStream = fs.createReadStream(outputFile, { encoding: 'utf8' });
       await new Promise((resolve, reject) => {
         Papa.parse(outputFileStream, {
@@ -515,7 +516,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       await fs.remove(outputFile).catch(() => undefined);
     }
     else {
-      uxLog("warning", this, c.yellow(`Warning: Unable to process logs of ${logFileUrl}`));
+      uxLog("warning", this, c.yellow(t('warningUnableToProcessLogsOf', { logFileUrl })));
     }
   }
 
@@ -532,7 +533,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         hostname = await dnsPromises.reverse(ip);
       } catch (e) {
         hostname = 'unknown';
-        uxLog("other", this, c.grey(`Unable to resolve hostname for IP ${ip}: ${e}`));
+        uxLog("other", this, c.grey(t('unableToResolveHostnameForIp', { ip, val: e })));
       }
       const formattedHostname = Array.isArray(hostname) ? hostname.join(', ') : hostname;
       const ipResult = { CLIENT_IP: ip, CLIENT_HOSTNAME: formattedHostname, SFDX_HARDIS_COUNT: count };
@@ -556,7 +557,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     if (outputFileIpsRes.xlsxFile) {
       this.outputFilesRes.xlsxFile2 = outputFileIpsRes.xlsxFile;
     }
-    uxLog("log", this, c.italic(c.cyan(`Please see info about ${severity} API callers in ${c.bold(outputFileIps)}`)));
+    uxLog("log", this, c.italic(c.cyan(t('pleaseSeeInfoAboutApiCallersIn', { severity, outputFileIps: c.bold(outputFileIps) }))));
     return outputFileIps;
   }
 

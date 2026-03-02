@@ -33,6 +33,7 @@ import { CONSTANTS, getApiVersion, getConfig, setConfig } from '../../../config/
 import CleanReferences from '../project/clean/references.js';
 import CleanXml from '../project/clean/xml.js';
 import { GitProvider } from '../../../common/gitProvider/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -175,7 +176,7 @@ The command's technical implementation involves a series of orchestrated steps:
     }
     if (this.targetBranch == null) {
       this.targetBranch = await selectTargetBranch({
-        message: `Please select the target branch of your future ${GitProvider.getMergeRequestName(this.gitUrl)}`,
+        message: t('pleaseSelectTheTargetBranchOfYour2', { GitProvider: GitProvider.getMergeRequestName(this.gitUrl) }),
       });
     }
     // User log info
@@ -210,10 +211,10 @@ The command's technical implementation involves a series of orchestrated steps:
     mergeRequestUrl = mergeRequestUrl || this.gitUrl.replace('.git', '');
 
     // Merge request
-    uxLog("action", this, c.cyan(`If your work is ${c.bold('completed')}, create a ${c.bold(GitProvider.getMergeRequestName(this.gitUrl))}, otherwise push new commits to the ${c.green(this.currentBranch)} branch.`));
+    uxLog("action", this, c.cyan(`If your work is ${c.bold(t('completed'))}, create a ${c.bold(GitProvider.getMergeRequestName(this.gitUrl))}, otherwise push new commits to the ${c.green(this.currentBranch)} branch.`));
     let summaryMsg = c.grey("");
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(mergeRequestUrl, `Create ${GitProvider.getMergeRequestName(this.gitUrl)}`, 'actionUrl');
+      WebSocketClient.sendReportFileMessage(mergeRequestUrl, t('createMergeRequestLabel', { mergeRequestName: GitProvider.getMergeRequestName(this.gitUrl) }), 'actionUrl');
     }
     else {
       summaryMsg += c.grey(`- New ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}\n`);
@@ -223,24 +224,24 @@ The command's technical implementation involves a series of orchestrated steps:
     summaryMsg += c.grey(`- Source branch: ${c.green(this.currentBranch)}\n`);
     summaryMsg += c.grey(`- Target branch: ${c.green(this.targetBranch)}`);
     uxLog("log", this, summaryMsg);
-    uxLog("log", this, `${c.yellow(`When your ${GitProvider.getMergeRequestName(this.gitUrl)} has been merged:`)}
+    uxLog("log", this, `${c.yellow(t('whenYourHasBeenMerged', { GitProvider: GitProvider.getMergeRequestName(this.gitUrl) }))}
 - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
 - Use New User Story menu (sf hardis:work:new), even if you work in the same sandbox or scratch org 😊`);
     // Manual actions file
     const config = await getConfig('project');
     if (config.manualActionsFileUrl && config.manualActionsFileUrl !== '') {
-      uxLog("warning", this, c.yellow(`If you have pre-deployment or post-deployment manual actions, record them in ${c.green(config.manualActionsFileUrl)}`));
+      uxLog("warning", this, c.yellow(t('ifYouHavePreDeploymentOrPost', { config: c.green(config.manualActionsFileUrl) })));
       if (WebSocketClient.isAliveWithLwcUI()) {
-        WebSocketClient.sendReportFileMessage(config.manualActionsFileUrl, `Update Manual Actions file`, 'actionUrl');
+        WebSocketClient.sendReportFileMessage(config.manualActionsFileUrl, t('updateManualActionsFile'), 'actionUrl');
       }
     }
     else {
-      uxLog("warning", this, c.yellow(`Define a manual actions file. Ask your release manager to create one and set its URL in .sfdx-hardis.yml under manualActionsFileUrl.`));
+      uxLog("warning", this, c.yellow(t('defineManualActionsFileAskReleaseMgr')));
     }
     if (!WebSocketClient.isAliveWithLwcUI()) {
       uxLog("log", this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(mergeRequestDoc)}`));
     }
-    WebSocketClient.sendReportFileMessage(mergeRequestDoc, `View ${GitProvider.getMergeRequestName(this.gitUrl)} documentation`, 'docUrl');
+    WebSocketClient.sendReportFileMessage(mergeRequestDoc, t('viewMergeRequestDocumentation', { mergeRequestName: GitProvider.getMergeRequestName(this.gitUrl) }), 'docUrl');
     // Return an object to be displayed with --json
     return { outputString: 'Saved the User Story' };
   }
@@ -249,7 +250,7 @@ The command's technical implementation involves a series of orchestrated steps:
   private async cleanGitStatus() {
     // Skip git stuff if requested
     if (this.noGit) {
-      uxLog("action", this, c.cyan(`[Expert mode] Skipped git reset`));
+      uxLog("action", this, c.cyan(t('expertModeSkippedGitReset')));
       return;
     }
     let gitStatusInit = await git().status();
@@ -275,49 +276,43 @@ The command's technical implementation involves a series of orchestrated steps:
     const commitReadyRes = await prompts({
       type: 'select',
       name: 'value',
-      message: c.cyanBright('Have you already committed the updated metadata you want to deploy?'),
+      message: c.cyanBright(t('haveYouAlreadyCommittedTheUpdatedMetadata')),
       description: 'Select your current state regarding git commits and metadata updates',
       placeholder: 'Select commit status',
       choices: [
         {
           title: '😎 Yes, my commit(s) are ready! I staged my files and created one or multiple commits.',
           value: 'commitReady',
-          description:
-            "You have already pulled updates from your org (or locally updated the files if you're a nerd), staged your files, and created a commit",
+          description: t('commitsAreReadyDescription'),
         },
         {
           title: '😐 No, please pull my latest updates from my org so I can commit my metadata',
           value: 'pleasePull',
-          description: 'Pull latest updates from org so you can stage files and create your commit',
+          description: t('pullLatestUpdatesFromOrgToStageAndCommit'),
         },
         {
           title: '😱 What is a commit? What does pull mean? Help!',
           value: 'help',
-          description:
-            "Don't panic, just click on the link that will appear in the console (CTRL + Click) and you'll learn!",
+          description: t('dontPanicClickLinkInConsole'),
         },
       ],
     });
     if (commitReadyRes.value === 'pleasePull') {
       // Process sf project retrieve start
-      uxLog("action", this, c.cyan(`Pulling sources from scratch org ${flags['target-org'].getUsername()}...`));
+      uxLog("action", this, c.cyan(t('pullingSourcesFromScratchOrg', { flags: flags['target-org'].getUsername() })));
       await forceSourcePull(flags['target-org'].getUsername(), this.debugMode);
       uxLog(
         "action",
         this,
-        c.cyan(
-          `Sources have been pulled from ${flags[
-            'target-org'
-          ].getUsername()}, now you can stage and commit your updates!`
-        )
+        c.cyan(t('sourcesHaveBeenPulledNowStageAndCommit', { username: flags['target-org'].getUsername() }))
       );
-      WebSocketClient.sendReportFileMessage("workbench.view.scm", "Commit your retrieved files", "actionCommand");
-      WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, "Retrieve and Commit documentation", 'docUrl');
+      WebSocketClient.sendReportFileMessage("workbench.view.scm", t('commitYourRetrievedFiles'), "actionCommand");
+      WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, t('retrieveAndCommitDocumentation'), 'docUrl');
       return { outputString: 'Pull performed' };
     } else if (commitReadyRes.value === 'help') {
       // Show pull commit stage help
       const commitHelpUrl = `${CONSTANTS.DOC_URL_ROOT}/hardis/scratch/pull/`;
-      uxLog("action", this, c.cyan(`Opening help at ${commitHelpUrl} ...`));
+      uxLog("action", this, c.cyan(t('openingHelpAt', { commitHelpUrl })));
       await open(commitHelpUrl, { wait: true });
       return { outputString: 'Help displayed at ' };
     }
@@ -334,8 +329,8 @@ The command's technical implementation involves a series of orchestrated steps:
         const exportDataRes = await prompts({
           type: 'confirm',
           name: 'value',
-          message: c.cyan(`Did you update ${c.green(dataSource.label)} and want to export related data ?`),
-          description: 'Confirm if you want to export data that may have been updated for this data source',
+          message: c.cyan(t('didYouUpdateAndWantToExport', { dataSource: c.green(dataSource.label) })),
+          description: t('confirmExportDataUpdatedForDataSource'),
         });
         if (exportDataRes.value === true) {
           await exportData(dataSource.dataPath, this, {
@@ -347,7 +342,7 @@ The command's technical implementation involves a series of orchestrated steps:
   }
 
   private async upgradePackageXmlFilesWithDelta() {
-    uxLog("action", this, c.cyan('Updating manifest/package.xml and manifest/destructiveChanges.xml using sfdx-git-delta...'));
+    uxLog("action", this, c.cyan(t('updatingManifestPackageXmlAndManifestDestructivechanges')));
     // Retrieving info about current branch latest commit and master branch latest commit
     const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch || '');
 
@@ -479,7 +474,7 @@ The command's technical implementation involves a series of orchestrated steps:
 
       // Xml cleaning
       if (config.cleanXmlPatterns && config.cleanXmlPatterns.length > 0) {
-        uxLog("action", this, c.cyan('Cleaning project using patterns defined in cleanXmlPatterns...'));
+        uxLog("action", this, c.cyan(t('cleaningProjectUsingPatternsDefinedInCleanxmlpatterns')));
         await CleanXml.run([]);
       }
 
@@ -524,7 +519,7 @@ The command's technical implementation involves a series of orchestrated steps:
   private async buildDeploymentPlan() {
     const configProject = await getConfig('project');
     if (!(configProject?.enableDeprecatedDeploymentPlan === true)) {
-      uxLog("log", this, c.cyan('Deployment plan generation is disabled in project configuration. Enable it with enableDeprecatedDeploymentPlan: true in .sfdx-hardis.yml'));
+      uxLog("log", this, c.cyan(t('deploymentPlanGenerationIsDisabledInProject')));
       return await git().status();
     }
     // Build deployment plan splits
@@ -670,7 +665,7 @@ The command's technical implementation involves a series of orchestrated steps:
             this.currentBranch
           )})`
         ),
-        description: 'Choose whether to push your commits to the remote git repository',
+        description: t('pushBranchToRemoteDescription'),
       });
       if (pushResponse.push === true) {
         uxLog("action", this, c.cyan(`Pushing commit(s) to remote branch ${c.green(`origin/${this.currentBranch}`)}...`));

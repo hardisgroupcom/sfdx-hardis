@@ -13,6 +13,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -120,7 +121,7 @@ The command checks for uncommitted changes and will not run if the working tree 
     const conn = flags['target-org'].getConnection();
     const instanceUrlKey = conn.instanceUrl.replace(/https?:\/\//, '').replace(/\./g, '_').toUpperCase();
 
-    uxLog("action", this, c.cyan(`Starting profile attributes purge process on org: ${conn.instanceUrl}`));
+    uxLog("action", this, c.cyan(t('startingProfileAttributesPurgeProcessOnOrg', { conn: conn.instanceUrl })));
 
     const reportDir = await getReportDirectory();
     const packageFullOrgPath = path.join(reportDir, `org-package-xml-full_${instanceUrlKey}.xml`);
@@ -131,26 +132,26 @@ The command checks for uncommitted changes and will not run if the working tree 
     if (!await this.checkUncommittedChanges()) {
       const confirmPromptRes = await prompts({
         type: "confirm",
-        message: `You have uncommitted changes in your git repository, do you want to continue anyway? This may lead to overwrite your uncommitted changes.`,
+        message: t('youHaveUncommittedChangesInYourGit'),
         description: "It's recommended to commit, stash or discard your changes before proceeding.",
       });
       if (!confirmPromptRes.value === true) {
-        uxLog("error", this, c.blue(`Operation cancelled by user. Exiting without making changes.`));
+        uxLog("error", this, c.blue(t('operationCancelledExitingWithoutChanges')));
         return {};
       }
     }
 
-    uxLog("action", this, c.cyan(`Loading full org manifest for profile retrieval...`));
+    uxLog("action", this, c.cyan(t('loadingFullOrgManifest')));
     await this.loadFullOrgManifest(conn, orgUsername, packageFullOrgPath);
 
     await this.filterFullOrgPackageByNamespaces(packageFullOrgPath, packageFilteredPackagesPath);
 
     const selectedProfiles = await promptProfiles(flags['target-org'].getConnection(), { multiselect: true, returnApiName: true });
 
-    uxLog("action", this, c.cyan(`Filtering full org manifest to only keep relevant metadata types...`));
+    uxLog("action", this, c.cyan(t('filteringFullOrgManifest')));
     await this.filterFullOrgPackageByRelevantMetadataTypes(packageFilteredPackagesPath, packageFilteredProfilePath, selectedProfiles);
 
-    uxLog("action", this, c.cyan(`Retrieving metadatas required for profile purge (this will take some time)...`));
+    uxLog("action", this, c.cyan(t('retrievingMetadatasForProfilePurge')));
     await execCommand(
       `sf project retrieve start --manifest ${packageFilteredProfilePath} --target-org ${orgUsername} --ignore-conflicts --json`,
       this,
@@ -158,18 +159,18 @@ The command checks for uncommitted changes and will not run if the working tree 
     );
 
 
-    uxLog("action", this, c.cyan(`Muting unwanted profile attributes...`));
+    uxLog("action", this, c.cyan(t('mutingUnwantedProfileAttributes')));
     const profilesDir = path.join('force-app', 'main', 'default', 'profiles');
     for (const selectedProfile of selectedProfiles) {
       const profileFilePath = path.join(profilesDir, `${selectedProfile}.profile-meta.xml`);
       if (!fs.existsSync(profileFilePath)) {
-        uxLog("warning", this, c.yellow(`Profile file ${profileFilePath} does not exist. Skipping.`));
+        uxLog("warning", this, c.yellow(t('profileFileDoesNotExistSkipping', { profileFilePath })));
         continue;
       }
 
       const profileWithMutedAttributes = await this.muteProfileAttributes(profileFilePath);
       await writeXmlFile(profileFilePath, profileWithMutedAttributes);
-      uxLog("success", this, c.green(`Profile ${selectedProfile} processed and unwanted attributes muted.`));
+      uxLog("success", this, c.green(t('profileProcessedAndUnwantedAttributesMuted', { selectedProfile })));
       WebSocketClient.sendReportFileMessage(profileFilePath, `See updated ${path.basename(profileFilePath, ".profile-meta.xml")} profile `, 'report');
     }
 
@@ -179,12 +180,12 @@ The command checks for uncommitted changes and will not run if the working tree 
 
     const promptDeployRes = await prompts({
       type: "confirm",
-      message: `Do you want to deploy ${selectedProfiles} profiles back to the org now?`,
-      description: "Deploying the profiles will overwrite the existing profiles in the target org with the muted versions. Profiles: " + selectedProfiles.join(", "),
+      message: t('doYouWantToDeployProfilesBack', { selectedProfiles }),
+      description: t('confirmDeployProfilesDescription'),
       initial: true,
     });
     if (!promptDeployRes.value === true) {
-      uxLog("error", this, c.blue(`Deployment cancelled by user. Exiting without deploying profiles.`));
+      uxLog("error", this, c.blue(t('deploymentCancelledByUser')));
       return { orgId: flags['target-org'].getOrgId(), outputString: "Profile purge completed without deployment." };
     }
 
@@ -212,15 +213,15 @@ The command checks for uncommitted changes and will not run if the working tree 
       const promptResults = await prompts({
         type: "select",
         name: "useExistingManifest",
-        message: "Do you want to use the existing full org manifest or generate a new one?",
-        description: "A full org manifest file was found from a previous run. You can either use it or generate a new one to ensure it's up to date. It may take some time to generate a new one.",
+        message: t('doYouWantToUseTheExisting'),
+        description: t('existingManifestFoundDescription'),
         choices: [
           {
-            title: `Use the existing full org manifest`,
-            description: `Cache file is located at ${path.relative(process.cwd(), packageFullOrgPath)}`,
+            title: t('useExistingManifestTitle'),
+            description: t('existingManifestCacheLocation', { path: path.relative(process.cwd(), packageFullOrgPath) }),
             value: true
           },
-          { title: "Generate a new full org manifest", value: false },
+          { title: t('generateNewManifestTitle'), value: false },
         ],
       });
       useExistingManifest = promptResults.useExistingManifest;
@@ -233,7 +234,7 @@ The command checks for uncommitted changes and will not run if the working tree 
 
   private async muteProfileAttributes(profileFilePath: string): Promise<any> {
     const profileName = path.basename(profileFilePath, '.profile-meta.xml');
-    uxLog("action", this, c.cyan(`Processing profile: ${profileName}`));
+    uxLog("action", this, c.cyan(t('processingProfile', { profileName })));
     const profileParsedXml: any = await parseXmlFile(profileFilePath);
     const filename = path.basename(profileFilePath);
     const changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[] = [];
@@ -378,7 +379,7 @@ The command checks for uncommitted changes and will not run if the working tree 
     const selectedNamespacesPrompt = await prompts({
       type: 'multiselect',
       name: "namespaces",
-      message: "Select the namespaces you want to ignore in the selected profiles that will be processed.",
+      message: t('selectTheNamespacesYouWantToIgnore'),
       description: "You will NOT disable access to elements related to namespaces that you will select.",
       choices: namespaceOptions
     });
@@ -419,8 +420,8 @@ The command checks for uncommitted changes and will not run if the working tree 
         this,
         { output: true, fail: true }
       );
-      uxLog("action", this, c.cyan(`Successfully deployed ${selectedProfiles.length}`));
-      uxLog("success", this, c.green(`Profiles deployed successfully:\n${selectedProfiles.join(', ')}`));
+      uxLog("action", this, c.cyan(t('successfullyDeployed2', { selectedProfiles: selectedProfiles.length })));
+      uxLog("success", this, c.green(t('profilesDeployedSuccessfully', { selectedProfiles: selectedProfiles.join(', ') })));
     } catch (error) {
       uxLog("action", this, c.red(`Failed to deploy profiles.`));
       uxLog("error", this, c.red(JSON.stringify(error, null, 2)));

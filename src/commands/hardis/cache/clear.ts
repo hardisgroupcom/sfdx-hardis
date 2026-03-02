@@ -6,6 +6,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from "chalk";
 import { clearCache } from '../../../common/cache/index.js';
 import { uxLog } from '../../../common/utils/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -55,9 +56,9 @@ The command's technical implementation is straightforward:
 
   public async run(): Promise<AnyJson> {
     await clearCache();
-    uxLog("action", this, c.cyan('sfdx-hardis cache cleared.'));
+    uxLog("action", this, c.cyan(t('sfdxHardisCacheCleared')));
     return {
-      message: 'sfdx-hardis cache cleared.',
+      message: t('sfdxHardisCacheCleared'),
     };
   }
 }

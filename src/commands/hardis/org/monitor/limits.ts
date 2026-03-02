@@ -10,6 +10,7 @@ import { MessageAttachment } from '@slack/web-api';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -93,7 +94,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // List org limits
-    uxLog("action", this, c.cyan(`Run the org limits list command ...`));
+    uxLog("action", this, c.cyan(t('runningOrgLimitsListCommand')));
     const limitsCommandRes = await execSfdxJson(`sf org limits list`, this, {
       fail: true,
       output: true,
@@ -165,7 +166,7 @@ The command's technical implementation involves:
       });
       uxLog("warning", this, c.yellow(notifText + '\n' + warningText));
     } else {
-      uxLog("success", this, c.green('No limit issue has been found'));
+      uxLog("success", this, c.green(t('noLimitIssueHasBeenFound')));
     }
 
     const limitEntriesMap = {};

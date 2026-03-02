@@ -6,6 +6,7 @@ import { SfError } from '@salesforce/core';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { CONSTANTS } from '../config/index.js';
+import { t } from './utils/i18n.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -253,7 +254,7 @@ export class WebSocketClient {
             message.uiConfig = CommandClass.uiConfig;
           }
         } catch (e) {
-          uxLog("warning", this, c.yellow(`Unable to import command class for ${this.wsContext.command}: ${e instanceof Error ? e.message : String(e)}`));
+          uxLog("warning", this, c.yellow(t('unableToImportCommandClassFor', { wsContext: this.wsContext.command, instanceof: e instanceof Error ? e.message : String(e) })));
         }
       }
       // Add link to command log file
@@ -297,7 +298,7 @@ export class WebSocketClient {
     }
     else if (data.event === 'cancelCommand') {
       if (this.wsContext?.command === data?.context?.command && this.wsContext.id === data?.context?.id) {
-        uxLog("error", this, c.red('Command cancelled by user.'));
+        uxLog("error", this, c.red(t('commandCancelledByUser')));
         process.exit(1);
       }
     }

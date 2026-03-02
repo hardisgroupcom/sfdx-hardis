@@ -11,6 +11,7 @@ import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { appendPackageXmlFilesContent } from '../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -111,7 +112,7 @@ The command's technical implementation involves:
       const filesSelectRes = await prompts({
         type: 'multiselect',
         name: 'files',
-        message: 'Please select the package.xml files you want to merge',
+        message: t('pleaseSelectThePackageXmlFilesYou'),
         description: 'Choose which package.xml files to combine into a single merged file',
         choices: matchingFiles.map((file) => {
           const relativeFile = path.relative(process.cwd(), file);

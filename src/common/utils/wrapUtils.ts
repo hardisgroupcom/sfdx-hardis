@@ -3,6 +3,7 @@ import c from "chalk";
 import { execCommand, uxLog } from "./index.js";
 import { analyzeDeployErrorLogs } from "./deployTips.js";
 import { generateApexCoverageOutputFile } from "./deployUtils.js";
+import { t } from './i18n.js';
 
 export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], commandThis: SfCommand<any>, debug = false): Promise<any> {
   const endArgs = [...argv].map((arg) => {
@@ -50,7 +51,7 @@ export async function wrapSfdxCoreCommand(commandBase: string, argv: string[], c
     await generateApexCoverageOutputFile();
     // Add deployment tips in error logs
     const { errLog } = await analyzeDeployErrorLogs((e as any).stdout + (e as any).stderr, true, { check: endArgs.includes("--checkonly") });
-    uxLog("error", commandThis, c.red(c.bold("Unfortunately, there were errors.")));
+    uxLog("error", commandThis, c.red(c.bold(t('unfortunatelyThereWereErrors'))));
     if (process.env?.SFDX_HARDIS_DEPLOY_ERR_COLORS === "false") {
       uxLog("other", this, "\n" + errLog);
     } else {

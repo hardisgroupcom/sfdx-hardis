@@ -18,6 +18,7 @@ import { getConfig, setConfig } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { FilterXmlContent } from './filter-xml-content.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -193,8 +194,8 @@ The command's technical implementation involves several steps:
         const typesResponse = await prompts({
           type: 'multiselect',
           name: 'value',
-          message: c.cyanBright('What references do you want to clean from your SFDX project sources ?'),
-          description: 'Select which types of reference cleaning to perform on your project',
+          message: c.cyanBright(t('whatReferencesDoYouWantToClean')),
+          description: t('selectWhichTypesOfReferenceCleaning'),
           choices: this.allCleaningTypes,
         });
         this.cleaningTypes = typesResponse.value;
@@ -209,10 +210,8 @@ The command's technical implementation involves several steps:
         type: 'confirm',
         name: 'value',
         default: true,
-        message: c.cyanBright(
-          'Do you want to save this action in your project configuration, so it is executed at each Work Save ?'
-        ),
-        description: 'Choose whether to automatically apply these cleaning types during future work saves',
+        message: c.cyanBright(t('doYouWantToSaveCleaningAction')),
+        description: t('chooseSaveCleaningTypesFutureWorkSaves'),
       });
       if (saveResponse.value === true) {
         autoCleanTypes.push(...this.cleaningTypes);
@@ -232,7 +231,7 @@ The command's technical implementation involves several steps:
         if (this.argv.indexOf('--websocket') > -1) {
           command += ` --websocket ${this.argv[this.argv.indexOf('--websocket') + 1]}`;
         }
-        uxLog("action", this, c.cyan(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
+        uxLog("action", this, c.cyan(t('runCleaningCommand', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));
         // Command based cleaning
         await execCommand(command, this, {
           fail: true,
@@ -241,7 +240,7 @@ The command's technical implementation involves several steps:
         });
       } else {
         // Template based cleaning
-        uxLog("action", this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
+        uxLog("action", this, c.cyan(t('applyCleaningOfReferencesTo', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));
         const filterConfigFile = await this.getFilterConfigFile(cleaningType);
         const packageDirectories = this.project?.getPackageDirectories() || [];
         for (const packageDirectory of packageDirectories) {
@@ -278,7 +277,7 @@ The command's technical implementation involves several steps:
       })
     );
 
-    uxLog("success", this, c.green(`Cleaning complete`));
+    uxLog("success", this, c.green(t('cleaningComplete')));
     // Return an object to be displayed with --json
     return { outputString: 'Cleaned references from sfdx project' };
   }
@@ -340,7 +339,7 @@ The command's technical implementation involves several steps:
       const matchFiles = await glob(pattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
       for (const removeFile of matchFiles) {
         await fs.remove(removeFile);
-        uxLog("log", this, c.grey(`Removed file ${removeFile}`));
+        uxLog("log", this, c.grey(t('removedFile', { removeFile })));
       }
     }
     // Remove field in recordTypes
@@ -358,7 +357,7 @@ The command's technical implementation involves several steps:
         if (updatedPicklistValues.length !== recordType.RecordType.picklistValues.length) {
           recordType.RecordType.picklistValues = updatedPicklistValues;
           await writeXmlFile(recordTypeFile, recordType);
-          uxLog("log", this, c.grey(`Cleaned file ${recordTypeFile} from ${obj}.${fld}`));
+          uxLog("log", this, c.grey(t('cleanedFileFrom', { recordTypeFile, obj, fld })));
         }
       }
     }

@@ -8,6 +8,7 @@ import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkQuery, bulkUpdate, soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { promptProfiles } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -95,17 +96,13 @@ See article below
         type: 'select',
         name: 'value',
         initial: true,
-        message: c.cyanBright(
-          `Do you want to replace invalid mails by valid mails for all ${c.bold(
-            usersToActivate.length
-          )} found users in org ${c.green(flags['target-org'].getUsername())} ?`
-        ),
-        description: 'Choose whether to update email addresses for all found users or select specific ones',
+        message: c.cyanBright(t('doYouWantToReplaceInvalidMails', { count: usersToActivate.length, orgUsername: flags['target-org'].getUsername() })),
+        description: t('chooseWhetherToUpdateEmailAddresses'),
         placeholder: 'Select an option',
         choices: [
           { title: `Yes, all ${c.bold(usersToActivate.length)} users`, value: 'all' },
-          { title: 'No, i want to manually select by profile(s)', value: 'selectProfiles' },
-          { title: 'No, i want to manually select user(s)', value: 'select' },
+          { title: t('noManuallySelectByProfiles'), value: 'selectProfiles' },
+          { title: t('noManuallySelectUsers'), value: 'select' },
         ],
       });
       // Let users select profiles to reactivate users
@@ -113,7 +110,7 @@ See article below
         const selectedProfileIds = await promptProfiles(flags['target-org'].getConnection(), {
           multiselect: true,
           returnField: 'Id',
-          message: 'Please select profiles that you want to reactivate users with .invalid emails',
+          message: t('pleaseSelectProfilesThatYouWantTo'),
         });
         usersToActivateFinal = usersToActivateFinal.filter((user) => selectedProfileIds.includes(user.ProfileId));
       }
@@ -126,7 +123,7 @@ See article below
         const selectUsers = await prompts({
           type: 'multiselect',
           name: 'value',
-          message: 'Please select users that you want to remove the .invalid from emails',
+          message: t('pleaseSelectUsersThatYouWantTo'),
           description: 'Choose specific users to reactivate by removing .invalid suffix from their email addresses',
           choices: usersSorted.map((user: any) => {
             return { title: `${user.Name} - ${user.Email}`, value: user };
@@ -147,13 +144,13 @@ See article below
     });
     const bulkUpdateRes = await bulkUpdate('User', 'update', userToActivateUpdated, conn);
 
-    uxLog("action", this, c.cyan(`Results of the reactivation of ${userToActivateUpdated.length} users by removing the .invalid from their email`));
+    uxLog("action", this, c.cyan(t('resultsOfTheReactivationOfUsersBy', { userToActivateUpdated: userToActivateUpdated.length })));
     uxLogTable(
       this,
       this.debugMode ? userToActivateUpdated : userToActivateUpdated.slice(0, this.maxUsersDisplay)
     );
     if (!this.debugMode && userToActivateUpdated.length > this.maxUsersDisplay) {
-      uxLog("warning", this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
+      uxLog("warning", this, c.yellow(c.italic(t('listTruncatedToFirstUsers', { maxUsersDisplay: this.maxUsersDisplay }))));
     }
 
     const activateSuccessNb = bulkUpdateRes.successfulResults.length;
@@ -167,11 +164,7 @@ See article below
     }
 
     // Build results summary
-    uxLog(
-      "success",
-      this,
-      c.green(`${c.bold(activateSuccessNb)} users has been be reactivated by removing the .invalid of their email`)
-    );
+    uxLog("success", this, c.green(t('usersHaveBeenReactivatedByRemovingInvalid', { count: activateSuccessNb })));
 
     // Return an object to be displayed with --json
     return {

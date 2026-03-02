@@ -5,6 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -104,10 +105,8 @@ The command's technical implementation involves:
         {
           type: 'select',
           name: 'packageSelected',
-          message: c.cyanBright(
-            `Please select a package (this is not a drill, it will create an official new version !)`
-          ),
-          description: 'Choose which package to promote - this will create a new official version that cannot be undone',
+          message: c.cyanBright(t('pleaseSelectPackageNotADrillPromote')),
+          description: t('choosePackageToPromote'),
           placeholder: 'Select a package',
           choices: Object.values(availablePackageAliases).map((packageAlias) => {
             return { title: packageAlias, value: packageAlias };
@@ -123,7 +122,7 @@ The command's technical implementation involves:
 
     // Promote packages
     for (const packageToPromote of packagesToPromote) {
-      uxLog("action", this, c.cyan(`Promoting version of package ${c.green(packageToPromote)}`));
+      uxLog("action", this, c.cyan(t('promotingVersionOfPackage', { packageToPromote: c.green(packageToPromote) })));
       const promoteCommand = 'sf package version promote' + ` --package "${packageToPromote}"` + ' --no-prompt';
       const promoteResult = await execSfdxJson(promoteCommand, this, {
         fail: false,
@@ -131,24 +130,10 @@ The command's technical implementation involves:
         debug: debugMode,
       });
       if (promoteResult.status === 0) {
-        uxLog(
-          "action",
-          this,
-          c.cyan(
-            `Promoted package version ${c.green(packageToPromote)} with id ${c.green(
-              promoteResult.result.id
-            )}. It is now installable on production orgs`
-          )
-        );
+        uxLog("action", this, c.cyan(t('promotedPackageVersionInstallable', { version: packageToPromote, id: promoteResult.result.id })));
         promotedPackageVersions.push({ package: packageToPromote, result: promoteResult });
       } else {
-        uxLog(
-          "warning",
-          this,
-          c.yellow(
-            `Error promoting package version ${c.red(packageToPromote)} (probably already promoted so it can be ok)`
-          )
-        );
+        uxLog("warning", this, c.yellow(t('errorPromotingPackageVersionAlreadyPromoted', { version: packageToPromote })));
         errorPromotedVersions.push({ package: packageToPromote, result: promoteResult });
       }
     }

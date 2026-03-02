@@ -13,6 +13,7 @@ import { CONSTANTS, getConfig, getEnvVarList, setConfig } from '../../../../conf
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import sortArray from 'sort-array';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -119,14 +120,14 @@ The command's technical implementation involves:
     }
 
     // List available connected apps
-    uxLog("action", this, c.cyan(`Listing all installed Connected Apps from ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(t('listingAllInstalledConnectedAppsFrom', { conn: conn.instanceUrl })));
     const connectedAppQuery = `SELECT Id, Name FROM ConnectedApplication ORDER BY Name ASC`;
     const connectedAppQueryRes = await bulkQuery(connectedAppQuery, conn);
     const allConnectedApps = connectedAppQueryRes.records;
     uxLog("log", this, `${allConnectedApps.length} Connected Apps found.`);
 
     // Collect all OAuth Tokens
-    uxLog("action", this, c.cyan(`Extracting all OAuth Tokens from ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(t('extractingAllOauthTokensFrom', { conn: conn.instanceUrl })));
     const tokensCountQuery = `SELECT count() FROM OauthToken`;
     const tokensCountQueryRes = await soqlQuery(tokensCountQuery, conn);
     const totalTokens = tokensCountQueryRes.totalSize;
@@ -200,7 +201,7 @@ The command's technical implementation involves:
     const unsecuredOAuthTokens = allOAuthTokensWithStatus.filter(app => app.Status === '❌ Unsecured');
 
     // Display results
-    uxLog("action", this, `${unsecuredOAuthTokens.length} unsecured OAuth Tokens found.`);
+    uxLog("action", this, t('unsecuredOAuthTokensFound', { count: unsecuredOAuthTokens.length }));
     uxLogTable(this, unsecuredOAuthTokens);
 
     const uniqueUnsecuredAppNamesAndTokenNumber: { [key: string]: number } = {};
@@ -238,16 +239,9 @@ The command's technical implementation involves:
     this.outputFileConnectedApps = await generateReportPath('unsecured-connected-apps', this.outputFileConnectedApps);
     this.outputFilesResConnectedApps = await generateCsvFile(uniqueUnsecureConnectedAppsWithTokens, this.outputFileConnectedApps, { fileTitle: "Unsecured Connected Apps" });
     if (uniqueUnsecuredAppNames.length > 0) {
-      uxLog("action", this, c.cyan(`${uniqueUnsecuredAppNames.length} unsecured Connected Apps found.`));
+      uxLog("action", this, c.cyan(t('unsecuredConnectedAppsFound', { count: uniqueUnsecuredAppNames.length })));
       uxLogTable(this, uniqueUnsecureConnectedAppsWithTokens);
-      uxLog("warning", this, `You need to either block or secure these Connected Apps.
-To block a connected app, click on "Block"
-To secure a connected app:
-  - Install it if not installed
-  - Click on "Manage Policies"
-  - Set "Admin Users are pre-approved" then save
-  - Select profiles/permission sets allowed to access the connected app
-  - Users will then need to authenticate again`);
+      uxLog("warning", this, t('howToSecureConnectedApps'));
     }
 
     // Build notification
@@ -280,7 +274,7 @@ To secure a connected app:
     // Display link to Setup UI if there are issues
     if (numberWarnings > 0) {
       const OAuthUsageSetupUrl = `${conn.instanceUrl}/lightning/setup/ConnectedAppsUsage/home`;
-      WebSocketClient.sendReportFileMessage(OAuthUsageSetupUrl, 'Review OAuth Connected Apps', "actionUrl");
+      WebSocketClient.sendReportFileMessage(OAuthUsageSetupUrl, t('reviewOAuthConnectedApps'), "actionUrl");
     }
 
     // Suggest to ignore connected apps that we are not able to find in either Connected Apps, either in OAuthUsage setup page
@@ -295,16 +289,16 @@ To secure a connected app:
       if (uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.length > 0) {
         const confirmPromptRes = await prompts({
           type: 'confirm',
-          message: `There are ${uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.length} unsecured Connected Apps with OAuth Tokens that are not found among installed Connected Apps. Do you want to ignore some of them in future scans ?`,
+          message: t('thereAreUnsecuredConnectedAppsWithOauth', { uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps: uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.length }),
           initial: false,
-          description: 'You will be able to select which Apps to ignore in the next prompt.',
+          description: t('youWillSelectAppsToIgnoreDescription'),
         });
         if (confirmPromptRes.value === true) {
           const ignorePromptRes = await prompts({
             type: 'multiselect',
             message: 'Select the Apps for which you want to ignore future warnings (only for apps that you don\'t see in OAuth Token usage UI)',
             choices: uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.map(appName => ({ title: appName, value: appName })),
-            description: 'The selected Apps will be added to the ignore list in sfdx-hardis config file.',
+            description: t('appsAddedToIgnoreListDescription'),
           });
           if (ignorePromptRes?.value.length > 0) {
             const config = await getConfig("project");
@@ -312,12 +306,12 @@ To secure a connected app:
             for (const appName of ignorePromptRes.value) {
               if (!monitoringUnsecureConnectedAppsIgnore.includes(appName)) {
                 monitoringUnsecureConnectedAppsIgnore.push(appName);
-                uxLog("log", this, c.green(`• ${appName} added to ignore list.`));
+                uxLog("log", this, c.green(`• ${t('appAddedToIgnoreList', { appName })}`));
               }
             }
             config.monitoringUnsecureConnectedAppsIgnore = monitoringUnsecureConnectedAppsIgnore;
             await setConfig("project", config);
-            uxLog("log", this, c.green(`Ignore list updated in sfdx-hardis config file. You can also use ENV variable MONITORING_UNSECURE_CONNECTED_APPS_IGNORE to set it.`));
+            uxLog("log", this, c.green(t('ignoreListUpdated')));
           }
         }
       }
@@ -327,21 +321,21 @@ To secure a connected app:
     if (!isCI && unsecuredOAuthTokens.length > 0) {
       const confirmDeleteRes = await prompts({
         type: 'confirm',
-        message: `Do you want to delete auth tokens related to "Phantom" Connected Apps that you don't see in Salesforce Setup ?`,
-        description: 'These are connected apps that are not installed in your org and are not visible in OAuth Usage Setup page. Deleting their tokens will force users to re-authenticate if they need them.',
+        message: t('doYouWantToDeleteAuthTokens'),
+        description: t('deletePhantomAppsTokensDescription'),
         initial: false,
       });
       if (confirmDeleteRes.value === true) {
         // Prompt user to select the apps
         const deleteTokensPromptRes = await prompts({
           type: 'multiselect',
-          message: 'Select the Apps for which you want to delete OAuth Tokens',
+          message: t('selectTheAppsForWhichYouWant'),
           choices: uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.map(appName => ({ title: appName, value: appName })),
           description: 'The OAuth Tokens for the selected Apps will be deleted.',
         });
         if (deleteTokensPromptRes?.value.length > 0) {
           const tokensToDelete = unsecuredOAuthTokens.filter(token => deleteTokensPromptRes.value.includes(token.AppName));
-          WebSocketClient.sendProgressStartMessage(`Deleting ${tokensToDelete.length} OAuth Tokens...`, tokensToDelete.length);
+          WebSocketClient.sendProgressStartMessage(t('deletingOAuthTokens', { count: tokensToDelete.length }), tokensToDelete.length);
           let counter = 0;
           for (const tokenToDelete of tokensToDelete) {
             const deleteTokenRecord = allOAuthTokens.find(t => t.Id === tokenToDelete["x-Token-Id"]);

@@ -9,6 +9,7 @@ import { uxLog } from './index.js';
 import { Connection, SfError } from '@salesforce/core';
 import { DescribeSObjectResult } from '@jsforce/jsforce-node';
 import { GLOB_IGNORE_PATTERNS } from './projectUtils.js';
+import { t } from './i18n.js';
 
 const listViewRegex = /objects\/(.*)\/listViews\/(.*)\.listView-meta\.xml/gi;
 
@@ -57,7 +58,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   } catch (e: any) {
     uxLog("error", this, c.red("List view 'Mine' has not been restored: error while trying to launch Puppeteer (browser simulator)."));
     uxLog("error", this, c.red(e.message));
-    uxLog("error", this, c.red("You might need to set the PUPPETEER_EXECUTABLE_PATH environment variable to a Chrome/Chromium executable path. Example: /usr/bin/chromium-browser."));
+    uxLog("error", this, c.red(t('youMightNeedToSetThePuppeteerexecutablepath')));
     return { error: e };
   }
   const page = await browser.newPage();
@@ -142,11 +143,11 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       // Confirmed saved toast
       await page.waitForSelector("xpath///span[contains(text(), 'List view updated.')]");
       success.push(`${objectName}:${listViewName}`);
-      uxLog("success", this, c.green(`Successfully set ${objectName}.${listViewName} as "Mine"`));
+      uxLog("success", this, c.green(t('successfullySetAsMine', { objectName, listViewName })));
     } catch (e) {
       // Unexpected puppeteer error
       failed.push(`${objectName}:${listViewName}`);
-      uxLog("error", this, c.red(`Puppeteer error while processing ${objectName}:${listViewName}: ${(e as Error).message}`));
+      uxLog("error", this, c.red(t('puppeteerErrorWhileProcessing', { objectName, listViewName, as: (e as Error).message })));
     }
   }
   // Close puppeteer browser
@@ -240,7 +241,7 @@ function guessMatchingMergeTargets(branchName: string, majorOrgs: any[]): string
     return majorOrgs.filter(org => isUat(org.branchName)).map(org => org.branchName);
   }
   if (branchName.toLowerCase().includes('training')) {
-    uxLog('log', this, c.grey(`Branch ${branchName} appears to be a training branch, that's probably ok to have no merge targets.`));
+    uxLog('log', this, c.grey(t('branchAppearsToBeTrainingBranchThat', { branchName })));
     return [];
   }
   uxLog("warning", this, c.yellow(`Unable to guess merge targets for ${branchName}.

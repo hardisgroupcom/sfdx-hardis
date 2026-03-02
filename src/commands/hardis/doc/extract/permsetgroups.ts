@@ -11,6 +11,7 @@ import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getReportDirectory } from '../../../../config/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -75,13 +76,13 @@ The command performs the following technical steps:
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Generating CSV and Markdown for Permission Set Groups and their related Permission Sets.`));
+    uxLog("action", this, c.cyan(t('generatingCsvAndMarkdownForPermission')));
     /* jscpd:ignore-end */
 
     const psgList: any[] = [];
     const globPatternPSG = process.cwd() + `/**/*.permissionsetgroup-meta.xml`;
     const psgFiles = await glob(globPatternPSG, { ignore: GLOB_IGNORE_PATTERNS });
-    uxLog("log", this, c.grey(`Found ${psgFiles.length} permission set groups.`));
+    uxLog("log", this, c.grey(t('foundPermissionSetGroups', { psgFiles: psgFiles.length })));
     for (const psgFile of psgFiles) {
       const psgName = (psgFile.replace(/\\/g, '/').split('/').pop() || '').replace('.permissionsetgroup-meta.xml', '');
       const psg = await parseXmlFile(psgFile);
@@ -116,11 +117,11 @@ The command performs the following technical steps:
     try {
       const csvText = csvLines.map((e) => e.join(',')).join('\n');
       await fs.writeFile(this.outputFile, csvText, 'utf8');
-      uxLog("action", this, c.cyan(`Permission set groups CSV file generated at ${c.bold(c.green(this.outputFile))}.`));
+      uxLog("action", this, c.cyan(t('permissionSetGroupsCsvFileGeneratedAt', { green: c.bold(c.green(this.outputFile)) })));
       // Trigger command to open CSV file in VS Code extension
       WebSocketClient.requestOpenFile(this.outputFile);
     } catch (e: any) {
-      uxLog("warning", this, c.yellow('Error while generating CSV file:\n' + (e as Error).message + '\n' + e.stack));
+      uxLog("warning", this, c.yellow(t('errorWhileGeneratingCsvFile') + (e as Error).message + '\n' + e.stack));
       this.outputFile = null;
     }
 
@@ -138,7 +139,7 @@ The command performs the following technical steps:
     const mdPsgText = mdPsg.join('\n');
     // mdPsgText = toc.insert(mdPsgText);
     await fs.writeFile(docFile, mdPsgText, 'utf8');
-    uxLog("action", this, c.cyan(`Permission set groups Markdown file generated at ${c.bold(c.green(docFile))}.`));
+    uxLog("action", this, c.cyan(t('permissionSetGroupsMarkdownFileGeneratedAt', { green: c.bold(c.green(docFile)) })));
     // Trigger command to open CSV file in VS Code extension
     WebSocketClient.requestOpenFile(docFile);
 

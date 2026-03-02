@@ -12,6 +12,7 @@ import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils
 import { prompts } from '../../../../common/utils/prompts.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -210,7 +211,7 @@ The command's technical implementation involves:
         const licenseTypesResponse = await prompts({
           type: 'select',
           name: 'licensetypes',
-          message: 'Please select the type of licenses you want to detect ',
+          message: t('pleaseSelectTheTypeOfLicensesYou'),
           description: 'Choose which categories of user licenses to analyze for unused accounts',
           placeholder: 'Select license type',
           choices: [
@@ -236,7 +237,7 @@ The command's technical implementation involves:
         const lastNdaysResponse = await prompts({
           type: 'select',
           name: 'days',
-          message: 'Please select the period to detect users.',
+          message: t('pleaseSelectThePeriodToDetectUsers'),
           description: 'Choose how far back to look for user activity when determining if users are inactive',
           placeholder: 'Select time period',
           choices: [

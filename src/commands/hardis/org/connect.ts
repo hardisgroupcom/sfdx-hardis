@@ -5,6 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { execCommand, isCI } from '../../../common/utils/index.js';
 import { promptOrg } from '../../../common/utils/orgUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -74,7 +75,7 @@ The command's technical implementation involves:
       const openRes = await prompts({
         type: 'confirm',
         name: 'value',
-        message: 'Do you want to open this org in your web browser?',
+        message: t('doYouWantToOpenThisOrg'),
         description: 'Launch the Salesforce org in your default web browser for immediate access.',
       });
       if (openRes.value === true) {

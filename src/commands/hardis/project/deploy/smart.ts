@@ -35,6 +35,7 @@ import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -409,7 +410,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get target org
     let targetUsername = flags['target-org'].getUsername();
     if (!isCI) {
-      uxLog("warning", this, c.yellow("Just to be sure, please select the org you want to use for this command 😊"))
+      uxLog("warning", this, c.yellow(t('justToBeSurePleaseSelectThe')))
       targetUsername = await promptOrgUsernameDefault(this, targetUsername, { devHub: false, setDefault: false, scratch: false });
     }
 
@@ -555,7 +556,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       });
 
       const deltaContent = await fs.readFile(this.packageXmlFile, 'utf8');
-      uxLog("action", this, c.cyan('[DeltaDeployment] Final Delta package.xml to deploy:\n' + c.green(deltaContent)));
+      uxLog("action", this, c.cyan('[DeltaDeployment] ' + t('deltaDeploymentFinalDeltaPackageXml', { deltaContent: c.green(deltaContent) })));
 
       const smartDeploymentTestsAllowed = await this.isSmartDeploymentTestsAllowed()
       if (smartDeploymentTestsAllowed) {
@@ -569,13 +570,13 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           }
         }
         if (impactingMetadataTypesInDelta.length === 0 && !(await isProductionOrg(targetUsername, {}))) {
-          uxLog("success", this, c.green("[SmartDeploymentTests] No Impacting metadata in delta package.xml: Skip test classes as the deployed items seem safe 😊"));
+          uxLog("success", this, c.green('[SmartDeploymentTests] ' + t('smartDeploymentNoImpactingMetadataSkipTests')));
           this.testLevel = "NoTestRun";
           this.testClasses = "";
         }
         else {
           if (impactingMetadataTypesInDelta.length > 0) {
-            uxLog("warning", this, c.yellow(`[SmartDeploymentTests] Impacting metadata in delta package.xml (${impactingMetadataTypesInDelta.join(",")}): do not skip test classes.`));
+            uxLog("warning", this, c.yellow('[SmartDeploymentTests] ' + t('smartDeploymentImpactingMetadataDoNotSkipTests', { types: impactingMetadataTypesInDelta.join(",") })));
           } else {
             uxLog("warning", this, c.yellow("[SmartDeploymentTests] Production org as deployment target: do not skip test classes"));
           }
@@ -662,9 +663,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           "warning",
           this,
           c.yellow(
-            `You may need to install package ${c.bold(package1.SubscriberPackageName)} ${c.bold(
-              package1.SubscriberPackageVersionId
-            )} in target org to validate the deployment check`
+            t('youMayNeedToInstallPackageInTargetOrg', {
+              packageName: c.bold(package1.SubscriberPackageName),
+              packageVersionId: c.bold(package1.SubscriberPackageVersionId)
+            })
           )
         );
       }
@@ -674,9 +676,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         this,
         c.yellow(
           c.italic(
-            `If you want deployment checks to automatically install packages, please define ${c.bold(
-              'INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true'
-            )} in ENV vars, or property ${c.bold('installPackagesDuringCheckDeploy: true')} in .sfdx-hardis.yml`
+            t('ifWantDeploymentChecksInstallPackagesDefine', {
+              installPackagesEnvVar: c.bold('INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true'),
+              installPackagesProperty: c.bold('installPackagesDuringCheckDeploy: true')
+            })
           )
         )
       );
@@ -797,7 +800,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       parentBranch = prInfo.targetBranch;
     }
     const majorOrgs = await listMajorOrgs();
-    uxLog("log", this, c.grey('Major orgs with auth configured:\n' + JSON.stringify(majorOrgs, null, 2)));
+    uxLog("log", this, c.grey(t('majorOrgsWithAuthConfigured') + JSON.stringify(majorOrgs, null, 2)));
     const currentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === currentBranch);
     const parentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === parentBranch);
     if (currentBranchIsMajor && (parentBranchIsMajor === true || parentBranch == null)) {

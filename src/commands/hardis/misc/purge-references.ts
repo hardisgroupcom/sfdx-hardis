@@ -13,6 +13,7 @@ import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { glob } from 'glob';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { applyAllReplacementsDefinitions } from '../../../common/utils/xmlUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -93,8 +94,8 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
     if (this.referenceStrings.length == 1 && this.referenceStrings[0] === '') {
       const refPromptResult = await prompts({
         type: 'text',
-        message: 'Please input a comma-separated list of strings you want to purge (example: Affaire__c)',
-        description: 'Enter the reference strings to purge from your metadata files.',
+        message: t('pleaseInputCommaSeparatedListOfStrings'),
+        description: t('enterReferencesDescription'),
         placeholder: 'Ex: Affaire__c,MyField__c,CustomObject__c',
       });
       this.referenceStrings = refPromptResult.value.split(',');
@@ -112,14 +113,12 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
     // Retrieve metadatas if necessary
     const retrieveNeedRes = await prompts({
       type: 'select',
-      message: `Are your local sources up to date with target org ${flags[
-        'target-org'
-      ].getUsername()}, or do you need to retrieve some of them?`,
-      description: 'Confirm whether your local metadata is synchronized with the target org.',
+      message: t('localSourcesUpToDatePrompt'),
+      description: t('localSourcesSyncDescription'),
       placeholder: 'Select an option',
       choices: [
-        { value: true, title: 'My local sfdx sources are up to date with the target org' },
-        { value: false, title: 'I need to retrieve metadatas ' },
+        { value: true, title: t('localSourcesUpToDate') },
+        { value: false, title: t('needToRetrieveMetadatas') },
       ],
     });
     if (retrieveNeedRes.value === false) {
@@ -160,7 +159,7 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
       this.getAllReplacements()
     );
 
-    return { message: 'Command completed' };
+    return { message: t('commandCompleted') };
   }
 
   private getAllReplacements() {

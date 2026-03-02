@@ -4,6 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { humanizeObjectKeys, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { t } from '../../../../common/utils/i18n.js';
 import { FilesImporter, selectFilesWorkspace } from '../../../../common/utils/filesUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 
@@ -86,9 +87,8 @@ The command's technical implementation involves:
       const handleOverwriteRes = await prompts({
         type: 'confirm',
         name: 'value',
-        message:
-          'Do you want to overwrite the existing files with the same name?',
-        description: 'Replace existing files in Salesforce with local versions (doubles the number of API calls used).',
+        message: t('overwriteExistingFilesPrompt'),
+        description: t('overwriteFilesDescription'),
       });
       this.handleOverwrite = handleOverwriteRes.value;
     }
@@ -107,7 +107,7 @@ The command's technical implementation involves:
     const message = `Successfully imported files from project ${c.green(filesPath)} to org ${c.green(
       flags['target-org'].getUsername()
     )}`;
-    uxLog("action", this, c.cyan(message));
+    uxLog("action", this, c.cyan(t('successfullyImportedFiles')));
 
     const statsTable = humanizeObjectKeys(importResult.stats);
     uxLogTable(this, statsTable);

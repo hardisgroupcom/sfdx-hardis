@@ -8,6 +8,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import { uxLog } from '../../../common/utils/index.js';
 import { PROMPT_TEMPLATES } from '../../../common/aiProvider/promptTemplates/index.js';
 import { PROMPT_VARIABLES } from '../../../common/aiProvider/promptTemplates/variablesIndex.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -86,14 +87,14 @@ The command's technical implementation involves:
     // Create config/prompt-templates folder
     const configDir = path.join(process.cwd(), 'config');
     const promptTemplatesDir = path.join(configDir, 'prompt-templates');
-    uxLog("action", this, c.cyan('Creating prompt templates directory.'));
+    uxLog("action", this, c.cyan(t('creatingPromptTemplatesDirectory')));
     fs.ensureDirSync(promptTemplatesDir);
 
     let createdCount = 0;
     let overwrittenCount = 0;
     let skippedCount = 0;
 
-    uxLog("action", this, c.cyan('Creating prompt templates and variables.'));
+    uxLog("action", this, c.cyan(t('creatingPromptTemplatesAndVariables')));
     // Copy all prompt templates as .txt files
     for (const [templateName, templateDefinition] of Object.entries(PROMPT_TEMPLATES)) {
       const targetFile = path.join(promptTemplatesDir, `${templateName}.txt`);
@@ -105,10 +106,10 @@ The command's technical implementation involves:
 
           // Overwrite the existing file
           fs.writeFileSync(targetFile, promptText);
-          uxLog("log", this, c.grey(`Overwritten: ${templateName}.txt`));
+          uxLog("log", this, c.grey(t('overwrittenTxt', { templateName })));
           overwrittenCount++;
         } else {
-          uxLog("warning", this, c.yellow(`Template already exists: ${templateName}.txt`));
+          uxLog("warning", this, c.yellow(t('templateAlreadyExistsTxt', { templateName })));
           skippedCount++;
         }
         continue;
@@ -119,7 +120,7 @@ The command's technical implementation involves:
 
       // Write the prompt text to the .txt file
       fs.writeFileSync(targetFile, promptText);
-      uxLog("success", this, c.green(`Created: ${templateName}.txt`));
+      uxLog("success", this, c.green(t('createdTxt', { templateName })));
       createdCount++;
     }
 
@@ -134,10 +135,10 @@ The command's technical implementation involves:
 
           // Overwrite the existing file
           fs.writeFileSync(targetFile, variableText);
-          uxLog("log", this, c.grey(`Overwritten: ${variableName}.txt`));
+          uxLog("log", this, c.grey(t('overwrittenTxt2', { variableName })));
           overwrittenCount++;
         } else {
-          uxLog("warning", this, c.yellow(`Variable already exists: ${variableName}.txt`));
+          uxLog("warning", this, c.yellow(t('variableAlreadyExistsTxt', { variableName })));
           skippedCount++;
         }
         continue;
@@ -148,7 +149,7 @@ The command's technical implementation involves:
 
       // Write the variable text to the .txt file
       fs.writeFileSync(targetFile, variableText);
-      uxLog("success", this, c.green(`Created: ${variableName}.txt`));
+      uxLog("success", this, c.green(t('createdTxt2', { variableName })));
       createdCount++;
     }    // Summary
     uxLog("other", this, '');
@@ -158,11 +159,11 @@ The command's technical implementation involves:
     uxLog("action", this, c.cyan(actionMessage));
 
     if (overwrittenCount > 0) {
-      uxLog("warning", this, c.yellow(`Overwritten ${overwrittenCount} existing files.`));
+      uxLog("warning", this, c.yellow(t('overwrittenExistingFiles', { overwrittenCount })));
     }
 
     if (skippedCount > 0) {
-      uxLog("warning", this, c.yellow(`Skipped ${skippedCount} existing files.`));
+      uxLog("warning", this, c.yellow(t('skippedExistingFiles', { skippedCount })));
     }
 
     const usageMessage = [

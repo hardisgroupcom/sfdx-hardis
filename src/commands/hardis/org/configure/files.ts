@@ -12,6 +12,7 @@ import { promptFilesExportConfiguration } from '../../../../common/utils/filesUt
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -144,7 +145,7 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
     const templateResp = await prompts({
       type: 'select',
       name: 'template',
-      message: c.cyanBright('Please select a Files import/export template, or the blank one'),
+      message: c.cyanBright(t('pleaseSelectFilesImportExportTemplateOr')),
       description: 'Choose a pre-configured template for file operations or start with a blank configuration',
       placeholder: 'Select a template',
       choices: [...[defaultTemplateChoice], ...templateFileChoices],
