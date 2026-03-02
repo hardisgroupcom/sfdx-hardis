@@ -9,7 +9,8 @@
     "report",
     ".cspell.json",
     "**/metadataList.ts",
-    "**/actionsProvider/**"
+    "**/actionsProvider/**",
+    "**/i18n/**"
   ],
   "language": "en",
   "version": "0.2",

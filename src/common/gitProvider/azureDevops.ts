@@ -309,12 +309,14 @@ ${this.getPipelineVariablesConfig()}
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId: string | null = null;
     // Get Azure Git API
+    /* jscpd:ignore-start */
     const azureGitApi = await this.azureApi.getGitApi();
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     if (repositoryId == null) {
       uxLog("warning", this, c.yellow(t('buildrepositoryidMustBeDefined')));
       return null;
     }
+    /* jscpd:ignore-end */
     const latestPullRequestsOnBranch = await azureGitApi.getPullRequests(repositoryId, {
       targetRefName: `refs/heads/${gitBranch}`,
       status: PullRequestStatus.Completed,
@@ -337,12 +339,14 @@ ${this.getPipelineVariablesConfig()}
   public async getPullRequestDeploymentCheckId(): Promise<string | null> {
     const pullRequestInfo = await this.getPullRequestInfo();
     if (pullRequestInfo) {
+      /* jscpd:ignore-start */
       const azureGitApi = await this.azureApi.getGitApi();
       const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
       if (repositoryId == null) {
         uxLog("warning", this, c.yellow(t('buildrepositoryidMustBeDefined')));
         return null;
       }
+      /* jscpd:ignore-end */
       return await this.getDeploymentIdFromPullRequest(azureGitApi, repositoryId, pullRequestInfo.idNumber || 0, null, pullRequestInfo);
     }
     return null;

@@ -391,16 +391,20 @@ The command's technical implementation involves:
       ` errors: ${this.stats.dataErrorLinesNb}, filtered: ${this.stats.dataFilteredLinesNb})`;
   }
 
+  // Create and register a write stream for the given output file path
+  private initWriteStream(outputFile: string) {
+    const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: 'utf8' });
+    uxLog("action", this, c.cyan('- ' + t('initializedOutputCsvFile', { file: c.green(c.bold(outputFile)) })));
+    this.csvFiles.push(outputFile);
+    return fileWriteStream;
+  }
+
   // Create output write stream for section
   async createSectionWriteStream(section: string, errMode = false) {
     // Case when transformation is skipped
     if (this.skipTransfo) {
       const outputFile = path.join(this.outputDir, `${section}.csv`);
-      // Init writeStream
-      const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: 'utf8' });
-      uxLog("action", this, c.cyan('- ' + t('initializedOutputCsvFile', { file: c.green(c.bold(outputFile)) })));
-      this.csvFiles.push(outputFile);
-      return fileWriteStream;
+      return this.initWriteStream(outputFile);
     }
     // Create writeStream managing transformation
     else if (this.transfoConfig?.entities[section]?.outputFile?.cols) {
@@ -428,11 +432,7 @@ The command's technical implementation involves:
       // Section has not been described in config file !!
       uxLog("warning", this, c.yellow(t('sectionAsEntityIsNotDescribedWith', { section, transfoConfigFile: this.transfoConfigFile })));
       const outputFile = path.join(this.outputDir, 'errors', `noconfig__${section}.csv`);
-      // Init writeStream
-      const fileWriteStream = fs.createWriteStream(path.resolve(outputFile), { encoding: 'utf8' });
-      uxLog("action", this, c.cyan('- ' + t('initializedOutputCsvFile', { file: c.green(c.bold(outputFile)) })));
-      this.csvFiles.push(outputFile);
-      return fileWriteStream;
+      return this.initWriteStream(outputFile);
     }
   }
 
