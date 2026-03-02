@@ -1370,7 +1370,7 @@ export async function generateReports(
     if (!WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.requestOpenFile(reportFile);
     }
-    WebSocketClient.sendReportFileMessage(reportFile, `${logLabel} (CSV)`, "report");
+    WebSocketClient.sendReportFileMessage(reportFile, t('labelCsvReport', { label: logLabel }), "report");
   } catch (e: any) {
     uxLog("warning", commandThis, c.yellow(`[sfdx-hardis] Error opening file in VS Code: ${e.message}`));
   }
@@ -1380,7 +1380,7 @@ export async function generateReports(
     columns,
   });
   await fs.writeFile(reportFileExcel, excel, 'utf8');
-  WebSocketClient.sendReportFileMessage(reportFileExcel, `${logLabel} (CSV)`, "report");
+  WebSocketClient.sendReportFileMessage(reportFileExcel, t('labelCsvReport', { label: logLabel }), "report");
   uxLog("action", commandThis, c.cyan(logLabel));
   uxLog("log", commandThis, c.grey(c.cyan(`- CSV: ${reportFile}`)));
   uxLog("log", commandThis, c.grey(c.cyan(`- XLS: ${reportFileExcel}`)));

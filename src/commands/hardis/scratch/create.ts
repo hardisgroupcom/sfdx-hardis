@@ -294,7 +294,7 @@ The command's technical implementation involves:
     const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
     await fs.ensureDir(path.dirname(projectScratchDefLocal));
     await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
-    WebSocketClient.sendReportFileMessage(projectScratchDefLocal, "Scratch Org definition", "report");
+    WebSocketClient.sendReportFileMessage(projectScratchDefLocal, t('scratchOrgDefinition'), "report");
 
     // Check current scratch org
     const orgListResult = await execSfdxJson('sf org list', this);

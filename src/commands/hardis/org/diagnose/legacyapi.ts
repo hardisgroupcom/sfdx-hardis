@@ -276,8 +276,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     notifDetailText += "\n" + this.articleTextLegacyApi;
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage("https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238", "Article (EN)", 'docUrl');
-      WebSocketClient.sendReportFileMessage("https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/", "Article (FR)", 'docUrl');
+      WebSocketClient.sendReportFileMessage("https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238", t('articleEn'), 'docUrl');
+      WebSocketClient.sendReportFileMessage("https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/", t('articleFr'), 'docUrl');
     }
     if (this.notificationSampleTruncated) {
       notifDetailText += `

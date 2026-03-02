@@ -87,8 +87,8 @@ The command's technical implementation focuses on robust metadata synchronizatio
 
     uxLog("warning", this, c.yellow(t('updatedItemsNotVisibleCheckDocumentation') + `: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas`));
 
-    WebSocketClient.sendReportFileMessage("workbench.view.scm", "Commit your retrieved files", "actionCommand");
-    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, "Retrieve and Commit documentation", 'docUrl');
+    WebSocketClient.sendReportFileMessage("workbench.view.scm", t('commitYourRetrievedFiles'), "actionCommand");
+    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, t('retrieveAndCommitDocumentation'), 'docUrl');
     // Return an object to be displayed with --json
     return { outputString: 'Pulled scratch org / source-tracked sandbox updates' };
   }

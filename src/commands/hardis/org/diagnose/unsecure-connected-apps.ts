@@ -274,7 +274,7 @@ The command's technical implementation involves:
     // Display link to Setup UI if there are issues
     if (numberWarnings > 0) {
       const OAuthUsageSetupUrl = `${conn.instanceUrl}/lightning/setup/ConnectedAppsUsage/home`;
-      WebSocketClient.sendReportFileMessage(OAuthUsageSetupUrl, 'Review OAuth Connected Apps', "actionUrl");
+      WebSocketClient.sendReportFileMessage(OAuthUsageSetupUrl, t('reviewOAuthConnectedApps'), "actionUrl");
     }
 
     // Suggest to ignore connected apps that we are not able to find in either Connected Apps, either in OAuthUsage setup page

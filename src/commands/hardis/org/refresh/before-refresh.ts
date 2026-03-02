@@ -259,7 +259,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         }
 
         uxLog("success", this, c.cyan(t('savedRefreshSandboxConfigurationInConfigSfdx')));
-        WebSocketClient.sendReportFileMessage(path.join(process.cwd(), 'config', '.sfdx-hardis.yml#refreshSandboxConfig'), "Sandbox refresh configuration", 'report');
+        WebSocketClient.sendReportFileMessage(path.join(process.cwd(), 'config', '.sfdx-hardis.yml#refreshSandboxConfig'), t('sandboxRefreshConfiguration'), 'report');
 
         const connectedAppRes = createConnectedAppSuccessResponse(
           `Successfully processed ${updatedApps.length} Connected App(s)`,
@@ -782,7 +782,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       await fs.copy(sourceFile, targetFile, { overwrite: true });
     }
     uxLog("log", this, c.grey(t('savePackageXmlIsLocatedAt', { targetFile })));
-    WebSocketClient.sendReportFileMessage(targetFile, "Save package XML", 'report');
+    WebSocketClient.sendReportFileMessage(targetFile, t('savePackageXml'), 'report');
     // Prompt user to check packageXml content and update it if necessary
     const promptRes = await prompts({
       type: 'confirm',

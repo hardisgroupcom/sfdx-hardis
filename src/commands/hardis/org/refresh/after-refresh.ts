@@ -251,7 +251,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       return;
     }
     // Warn user about the restore package.xml that needs to be manually checked
-    WebSocketClient.sendReportFileMessage(restorePackageXml, "Restore Metadatas package.xml", "report");
+    WebSocketClient.sendReportFileMessage(restorePackageXml, t('restoreMetadatasPackageXml'), "report");
     uxLog("action", this, c.cyan(t('nowHandlingTheRestoreOfOtherMetadata', { restorePackageXml })));
     const metadataRestore = await parsePackageXmlFile(restorePackageXml);
     const metadataSummary = Object.keys(metadataRestore).map(key => {

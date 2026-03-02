@@ -457,7 +457,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Open file in a new VS Code tab if available
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(this.outputMarkdownIndexFile, "Project documentation Index", "report");
+      WebSocketClient.sendReportFileMessage(this.outputMarkdownIndexFile, t('projectDocumentationIndex'), "report");
     }
     else {
       WebSocketClient.requestOpenFile(this.outputMarkdownIndexFile);
@@ -2122,7 +2122,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Open file in VS Code if available
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(excelFilePath, "Excel summary", 'report');
+      WebSocketClient.sendReportFileMessage(excelFilePath, t('excelSummary'), 'report');
     }
     else {
       WebSocketClient.requestOpenFile(excelFilePath);

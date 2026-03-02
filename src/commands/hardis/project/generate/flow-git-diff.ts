@@ -148,7 +148,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
 
     // Open file in a new VS Code tab if available
     WebSocketClient.requestOpenFile(path.relative(process.cwd(), diffMdFile));
-    WebSocketClient.sendReportFileMessage(diffMdFile, path.basename(diffMdFile).replace(".md", "") + " Documentation", 'report');
+    WebSocketClient.sendReportFileMessage(diffMdFile, t('fileDocumentation', { name: path.basename(diffMdFile).replace(".md", "") }), 'report');
 
     uxLog("action", this, c.green(t('markdownFlowDiffDocumentationGeneratedFor', { path: path.basename(diffMdFile).replace(".md", "") })));
     if (this.commitBefore === "allStates") {
