@@ -27,6 +27,7 @@ export default class OrgPurgeProfile extends SfCommand<any> {
 **Removes or "mutes" Permission Sets attributes from selected Salesforce Profile metadata files and redeploys the cleaned profiles to the target org.**
 
 This command is intended to safely remove PS attributes from Profiles after a migration from Profile-based to PS-based permission management. It:
+
 - Builds or reuses a full org manifest to determine metadata present in the org.
 - Filters the manifest to remove selected managed package namespaces and keep only relevant metadata types required for profile processing.
 - Retrieves the necessary metadata (profiles, objects, fields, classes) into the local project.

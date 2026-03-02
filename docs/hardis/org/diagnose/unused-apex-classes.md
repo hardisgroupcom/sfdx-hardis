@@ -5,7 +5,7 @@
 
 List all async Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days.
   
-The result class list probably can be removed from the project, and that will improve your test classes performances :)
+The result class list probably can be removed from the project, and that will improve your test classes performances 😊
 
 The number of unused day is overridable using --days option. 
 

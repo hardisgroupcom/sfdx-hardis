@@ -25,6 +25,8 @@ See this article for a practical example:
 
 [![How to detect bad words in Salesforce records using SFDX Data Loader and sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-badwords.jpg)](https://nicolas.vuillamy.fr/how-to-detect-bad-words-in-salesforce-records-using-sfdx-data-loader-and-sfdx-hardis-171db40a9bac)
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/p4E2DUGZ3bs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -40,20 +42,30 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| path<br/>-p       | option  | Path to the sfdmu workspace folder                            |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name                |  Type   | Description                                                                           | Default | Required | Options |
+|:--------------------|:-------:|:--------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| debug<br/>-d        | boolean | Activate debug mode (more logs)                                                       |         |          |         |
+| flags-dir           | option  | undefined                                                                             |         |          |         |
+| json                | boolean | Format output as json.                                                                |         |          |         |
+| no-prompt<br/>-r    | boolean | Do not prompt for Org, use default org                                                |         |          |         |
+| path<br/>-p         | option  | Path to the sfdmu workspace folder                                                    |         |          |         |
+| project-name<br/>-n | option  | Name of the sfdmu project to use (if not defined, you will be prompted to select one) |         |          |         |
+| skipauth            | boolean | Skip authentication check when a default username is required                         |         |          |         |
+| target-org<br/>-o   | option  | undefined                                                                             |         |          |         |
+| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                             |         |          |         |
 
 ## Examples
 
 ```shell
 $ sf hardis:org:data:export
+```
+
+```shell
+$ sf hardis:org:data:export --project-name MyDataProject --target-org my-org@example.com
+```
+
+```shell
+$ sf hardis:org:data:export --path ./scripts/data/MyDataProject --no-prompt --target-org my-org@example.com
 ```
 
 
