@@ -10,7 +10,7 @@
     ".cspell.json",
     "**/metadataList.ts",
     "**/actionsProvider/**",
-    "**/i18n/fr.json"
+    "**/i18n/*.json"
   ],
   "language": "en",
   "version": "0.2",
