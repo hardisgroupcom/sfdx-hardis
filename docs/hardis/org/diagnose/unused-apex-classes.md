@@ -5,7 +5,7 @@
 
 List all async Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days.
   
-The result class list probably can be removed from the project, and that will improve your test classes performances :)
+The result class list probably can be removed from the project, and that will improve your test classes performances 😊
 
 The number of unused day is overridable using --days option. 
 
@@ -20,16 +20,16 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                             | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| days<br/>-t       | option  | Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                         |         |          |         |
-| flags-dir         | option  | undefined                                                                                               |         |          |         |
-| json              | boolean | Format output as json.                                                                                  |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                       |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                           |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                               |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                               |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|days<br/>-t|option|Extracts the users that have been inactive for the amount of days specified. In CI, default is 180 days||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.afterftd|||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 

@@ -25,17 +25,18 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
 - **Dependency Lookup:** The core of the command involves querying `MetadataComponentDependency` using the IDs of the custom fields. This API provides information about which other metadata components depend on the specified fields.
 - **Data Aggregation & Reporting:** The retrieved data is then processed and formatted into a tabular output, showing the sObject name, field name, field type, dependency type, and dependency name. The results are also generated into various report formats (e.g., CSV, JSON) for further analysis.
 - **SOQL Queries:** It uses `soqlQuery` and `soqlQueryTooling` utilities to execute SOQL queries against the Salesforce org.
+- **Batching:** MetadataComponentDependency queries are processed in batches (default: 20 fields per batch, configurable via `METADATA_COMPONENT_BATCH_SIZE` environment variable) to avoid HTTP 431 errors with large numbers of fields.
 </details>
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                | Default | Required | Options |
-|:------------------|:-------:|:-------------------------------------------|:-------:|:--------:|:-------:|
-| flags-dir         | option  | undefined                                  |         |          |         |
-| json              | boolean | Format output as json.                     |         |          |         |
-| sObjects<br/>-s   | option  | Comma-separated list of sObjects to filter |         |          |         |
-| target-org<br/>-o | option  | undefined                                  |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|sObjects<br/>-s|option|Comma-separated list of sObjects to filter||||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com.afterftd|||
 
 ## Examples
 

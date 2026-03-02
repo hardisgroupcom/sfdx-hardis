@@ -41,5 +41,9 @@
   "megalinter.run.flavor": "javascript",
   "megalinter.run.version": "beta",
   "megalinter.debug": false,
-  "megalinter.run.applyFixes": false
+  "megalinter.run.applyFixes": false,
+  "i18n-ally.localesPaths": [
+    "messages",
+    "lib/i18n"
+  ]
 }

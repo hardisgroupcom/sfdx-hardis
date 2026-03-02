@@ -17,6 +17,7 @@ Key functionalities:
 - **`export.json` Generation:** Creates an `export.json` file within the designated project folder. This file contains the configuration for the file export operation, including:
   - **SOQL Query:** A SOQL query to select the parent records from which files will be exported.
   - **File Types:** Specifies which types of files (e.g., `ContentVersion`, `Attachment`) to include.
+  - **File Size Filtering:** Minimum file size in KB to filter files during export (files smaller than this will be skipped).
   - **Output Folder/File Naming:** Defines how the exported files and their containing folders will be named based on record fields.
   - **Overwrite Options:** Controls whether existing files or parent records should be overwritten during the export.
 
@@ -40,13 +41,13 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
-| json         | boolean | Format output as json.                                        |         |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
