@@ -380,7 +380,7 @@ The command checks for uncommitted changes and will not run if the working tree 
       type: 'multiselect',
       name: "namespaces",
       message: t('selectTheNamespacesYouWantToIgnore'),
-      description: "You will NOT disable access to elements related to namespaces that you will select.",
+      description: t('youWillNotDisableAccessToElementsRelatedToNamespaces'),
       choices: namespaceOptions
     });
 

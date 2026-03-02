@@ -152,7 +152,7 @@ prompts
           };
         }),
         description: t('enterGitBranchNameForOrgConfig'),
-        placeholder: 'Select the git branch name',
+        placeholder: t('selectTheGitBranchName'),
       });
       branchName = branchResponse.value.replace(/\s/g, '-');
       /* if (["main", "master"].includes(branchName)) {
@@ -190,7 +190,7 @@ prompts
         }),
         initial: initialMergeTargets,
         description: t('selectGitBranchesThisBranchCanMergeIn'),
-        placeholder: 'Select the target git branches',
+        placeholder: t('selectTheTargetGitBranches'),
       });
       const mergeTargets = mergeTargetsResponse.value.map((branch: string) => branch.replace(/\s/g, '-'));
       // Update config file
@@ -213,7 +213,7 @@ prompts
         } ? Example: admin.sfdx@myclient.com`
       ),
       description: t('enterSalesforceUsernameForConfig'),
-      placeholder: 'Ex: admin.sfdx@myclient.com',
+      placeholder: t('exAdminSfdxAtMyclient'),
     });
     if (devHub) {
       if (!config.devHubAlias || config.devHubAlias === '') {
@@ -223,7 +223,7 @@ prompts
           message: c.cyanBright(t('whatIsTheAliasYouWantTo')),
           description: t('enterAliasForDevHub'),
           initial: config.projectName ? 'DevHub_' + config.projectName : 'DevHub',
-          placeholder: 'Ex: MyCompany_DevHub',
+          placeholder: t('exMyCompanyDevHub'),
         });
         config.devHubAlias = devHubAliasResponse.value;
         await setConfig('project', {
@@ -234,7 +234,7 @@ prompts
         devHubInstanceUrl: instanceUrl,
         devHubUsername: usernameResponse.value,
       });
-      WebSocketClient.sendReportFileMessage(configFile!, 'Updated project config file', 'report');
+      WebSocketClient.sendReportFileMessage(configFile!, t('updatedProjectConfigFile'), 'report');
     } else {
       // Update config file
       const branchConfigFile = `./config/branches/.sfdx-hardis.${branchName}.yml`;
@@ -246,7 +246,7 @@ prompts
         },
         branchConfigFile
       );
-      WebSocketClient.sendReportFileMessage(branchConfigFile, `Updated ${branchName} config file`, 'report');
+      WebSocketClient.sendReportFileMessage(branchConfigFile, t('updatedBranchConfigFile', { branchName }), 'report');
     }
 
     WebSocketClient.sendRefreshPipelineMessage();

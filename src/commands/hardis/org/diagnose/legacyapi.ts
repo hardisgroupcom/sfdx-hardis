@@ -441,7 +441,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     if (!WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.requestOpenFile(this.outputFile);
     }
-    WebSocketClient.sendReportFileMessage(this.outputFile, 'Legacy API Calls (CSV)', 'report');
+    WebSocketClient.sendReportFileMessage(this.outputFile, t('legacyApiCallsCsv'), 'report');
     if (this.totalCsvRows > 0) {
       const result: any = {};
       await createXlsxFromCsv(this.outputFile, { fileTitle: 'Legacy API Calls' }, result);

@@ -201,7 +201,7 @@ The command's technical implementation involves:
     }
 
     if (!labelNames || labelNames.length === 0) {
-      const errorMsg = 'No custom labels specified. Use --label or --lwc flag.';
+      const errorMsg = t('noCustomLabelsSpecifiedUseFlagOrLwc');
       uxLog("error", this, c.red(errorMsg));
       return { success: false, message: errorMsg };
     }
@@ -386,7 +386,7 @@ The command's technical implementation involves:
       const labelSelectRes = await prompts({
         type: 'multiselect',
         message: t('pleaseSelectTheCustomLabelsYouWant'),
-        description: 'Choose which custom labels to include in the translation extraction',
+        description: t('chooseWhichCustomLabelsToIncludeInTranslationExtraction'),
         choices: choices
       });
 
@@ -445,8 +445,8 @@ The command's technical implementation involves:
         type: 'select',
         name: 'value',
         message: t('selectLightningWebComponentToExtractCustom'),
-        description: 'Choose which LWC component to analyze for custom label usage',
-        placeholder: 'Select a component',
+        description: t('chooseWhichLwcComponentToAnalyzeForCustomLabelUsage'),
+        placeholder: t('selectAComponent'),
         choices: choices
       });
 
@@ -463,8 +463,8 @@ The command's technical implementation involves:
         type: 'select',
         name: 'method',
         message: t('howWouldYouLikeToExtractCustom'),
-        description: 'Choose your preferred method for extracting custom label translations',
-        placeholder: 'Select extraction method',
+        description: t('chooseYourPreferredMethodForExtractingCustomLabelTranslations'),
+        placeholder: t('selectExtractionMethod'),
         choices: [
           {
             value: 'labels',

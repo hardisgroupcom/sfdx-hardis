@@ -536,8 +536,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         type: 'select',
         name: 'lastndays',
         message: t('pleaseSelectTheNumberOfDaysIn'),
-        description: 'Choose the timeframe for analyzing audit trail records to detect suspicious administrative activities',
-        placeholder: 'Select number of days',
+        description: t('chooseTimeframeForAnalyzingAuditTrailRecords'),
+        placeholder: t('selectNumberOfDays'),
         choices: [
           { title: `1`, value: 1 },
           { title: `2`, value: 2 },

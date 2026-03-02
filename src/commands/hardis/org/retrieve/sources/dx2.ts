@@ -99,8 +99,8 @@ The command's technical implementation involves:
     if (packageXml === null) {
       const packageXmlRes = await prompts({
         message: c.cyanBright(t('pleaseInputThePathToThePackage')),
-        description: 'Specify the package.xml file that defines which metadata to retrieve from the org',
-        placeholder: 'Ex: manifest/package.xml',
+        description: t('specifyPackageXmlFileForMetadataRetrieval'),
+        placeholder: t('exManifestPackageXml'),
         type: 'text',
         name: 'value',
       });

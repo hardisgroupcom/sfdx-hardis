@@ -89,7 +89,7 @@ The command's technical implementation involves:
     const confirm = await prompts({
       type: 'confirm',
       message: t('thisCommandWillGitResetSoftYour', { currentGitBranch }),
-      description: 'Confirm that you want to perform a soft git reset on your current branch',
+      description: t('confirmThatYouWantToPerformSoftGitReset'),
     });
     if (confirm.value === false) {
       throw new SfError(c.red('[sfdx-hardis] Cancelled by user.'));

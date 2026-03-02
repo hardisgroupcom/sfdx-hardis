@@ -201,7 +201,7 @@ The command's technical implementation involves:
     const promptObjectsRes = await prompts({
       type: 'multiselect',
       message: t('selectTheSobjectsToAnalyzeForStorage'),
-      description: "Exclude objects you don't want to analyze.",
+      description: t('excludeObjectsYouDontWantToAnalyze'),
       choices: sObjectsFiltered.map((obj: any) => ({ title: obj.name, value: obj.name })),
       initial: sObjectsFiltered.map((obj: any) => obj), // all selected by default
     });
@@ -218,12 +218,12 @@ The command's technical implementation involves:
       const promptDateFieldRes = await prompts({
         type: 'select',
         message: t('selectTheDateFieldToUseFor'),
-        description: "Choose between CreatedDate or LastModifiedDate.",
+        description: t('chooseBetweenCreatedDateOrLastModifiedDate'),
         choices: [
-          { title: 'Created Date', value: 'CreatedDate' },
-          { title: 'Last Modified Date', value: 'LastModifiedDate' },
-          { title: 'Record Type (if applicable)', value: 'RecordType.Name' },
-          { title: "Custom (will exclude objects who doesn't have the field)", value: 'custom' }
+          { title: t('createdDate'), value: 'CreatedDate' },
+          { title: t('lastModifiedDate'), value: 'LastModifiedDate' },
+          { title: t('recordTypeIfApplicable'), value: 'RecordType.Name' },
+          { title: t('customWillExcludeObjectsWithoutField'), value: 'custom' }
         ],
       });
       breakdownField = promptDateFieldRes.value;
@@ -231,8 +231,8 @@ The command's technical implementation involves:
         const promptFieldRes = await prompts({
           type: 'text',
           message: t('enterTheApiNameOfTheCustom'),
-          description: "Objects without this field will be excluded from the analysis.",
-          placeholder: 'My_Date_Field__c, RecordType.Name, SBQQ_Quote__r.Status__c or SBQQ__Quote__r.RecordType.Name',
+          description: t('objectsWithoutThisFieldWillBeExcluded'),
+          placeholder: t('exDateField'),
         });
         breakdownField = promptFieldRes.value;
       }
@@ -256,11 +256,11 @@ The command's technical implementation involves:
       const promptGranularityRes = await prompts({
         type: 'select',
         message: t('selectTheBreakdownGranularityForTheDate'),
-        description: "Choose how you want to group the storage statistics.",
+        description: t('chooseHowToGroupStorageStatistics'),
         choices: [
-          { title: 'By Year (CALENDAR_YEAR)', value: 'year' },
-          { title: 'By Month (CALENDAR_MONTH)', value: 'month' },
-          { title: 'By Day (exact date)', value: 'day' }
+          { title: t('byYear'), value: 'year' },
+          { title: t('byMonth'), value: 'month' },
+          { title: t('byDay'), value: 'day' }
         ],
       });
       this.dateGranularity = promptGranularityRes.value;
@@ -272,8 +272,8 @@ The command's technical implementation involves:
       const promptWhereCondRes = await prompts({
         type: 'text',
         message: t('enterAnOptionalWhereConditionToFilter'),
-        description: 'You can provide an optional WHERE clause to filter records for the storage stats calculation. Leave empty for no filter.',
-        placeholder: "Ex: CreatedDate = LAST_N_DAYS:365 or Status__c = 'Active'"
+        description: t('youCanProvideOptionalWhereClauseForStorageStats'),
+        placeholder: t('exWhereConditionForStorageStats')
       });
       this.whereCondition = promptWhereCondRes.value || '';
     }

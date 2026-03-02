@@ -98,7 +98,7 @@ See article below
         initial: true,
         message: c.cyanBright(t('doYouWantToReplaceInvalidMails', { count: usersToActivate.length, orgUsername: flags['target-org'].getUsername() })),
         description: t('chooseWhetherToUpdateEmailAddresses'),
-        placeholder: 'Select an option',
+        placeholder: t('selectAnOption'),
         choices: [
           { title: `Yes, all ${c.bold(usersToActivate.length)} users`, value: 'all' },
           { title: t('noManuallySelectByProfiles'), value: 'selectProfiles' },
@@ -124,7 +124,7 @@ See article below
           type: 'multiselect',
           name: 'value',
           message: t('pleaseSelectUsersThatYouWantTo'),
-          description: 'Choose specific users to reactivate by removing .invalid suffix from their email addresses',
+          description: t('chooseSpecificUsersToReactivateByRemovingInvalidSuffix'),
           choices: usersSorted.map((user: any) => {
             return { title: `${user.Name} - ${user.Email}`, value: user };
           }),

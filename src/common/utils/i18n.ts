@@ -24,7 +24,7 @@ export function initI18n(): void {
   if (initialized) {
     return;
   }
-  const locale = (process.env.SFDX_HARDIS_LOCALE || 'en').substring(0, 2).toLowerCase();
+  const locale = (process.env.SFDX_HARDIS_LANG || 'en').substring(0, 2).toLowerCase();
   const supportedLocales = ['en', 'fr'];
   const lng = supportedLocales.includes(locale) ? locale : 'en';
 

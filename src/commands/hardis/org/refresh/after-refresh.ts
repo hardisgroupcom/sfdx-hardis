@@ -445,7 +445,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       type: 'confirm',
       name: 'restore',
       message: t('doYouConfirmYouWantToRestore2', { selectedSettings: selectedSettings.length }),
-      description: 'This will import all custom settings data saved before the refresh.',
+      description: t('thisWillImportAllCustomSettingsDataSavedBeforeRefresh'),
       initial: true
     });
     if (!prompt.restore) {
@@ -552,7 +552,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       name: 'confirm',
       message: t('beforeLaunchingTheDataLoadingPleaseMake', { orgUsername: this.orgUsername }),
       initial: true,
-      description: 'Once confirmed, the data loading will start'
+      description: t('onceConfirmedTheDataLoadingWillStart')
     });
     if (!confirmRestore.confirm) {
       uxLog("warning", this, c.yellow(t('recordRestoreCancelledByUser')));
@@ -574,7 +574,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       name: 'confirmRestore',
       message: t('doYouWantToRestoreConnectedApps', { saveProjectPath: c.bold(this.saveProjectPath) }),
       initial: true,
-      description: 'This will restore all Connected Apps (including Consumer Secrets) from the backup created before the org refresh.'
+      description: t('thisWillRestoreAllConnectedAppsFromBackup')
     });
     if (promptRestoreConnectedApps.confirmRestore) {
       restoreConnectedApps = true;
@@ -753,7 +753,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       type: 'confirm',
       name: 'confirmDelete',
       message: t('nowWeNeedToDeleteConnectedApp', { connectedApps: connectedApps.length }),
-      description: 'This step is necessary to ensure that the Connected Apps can be re-deployed with their saved credentials.',
+      description: t('thisStepIsNecessaryToEnsureConnectedAppsCanBeRedeployed'),
       initial: true
     });
     if (!promptResponse.confirmDelete) {
@@ -778,7 +778,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       type: 'confirm',
       name: 'confirmDeploy',
       message: t('nowWeWillDeployConnectedAppTo', { connectedApps: connectedApps.length }),
-      description: 'This step will deploy the Connected Apps with their saved credentials.',
+      description: t('thisStepWillDeployConnectedAppsWithSavedCredentials'),
       initial: true
     });
 

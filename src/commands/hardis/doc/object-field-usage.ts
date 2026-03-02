@@ -533,7 +533,7 @@ This command focuses on one or more sObjects and measures how many records popul
       message: c.cyanBright(
         `About to execute approximately ${plannedCalls} API call(s) for ${objectNames.length} object(s). Continue?`
       ),
-      description: 'Confirm API usage',
+      description: t('confirmApiUsage'),
     });
     return confirm.value === true;
   }
@@ -578,7 +578,7 @@ This command focuses on one or more sObjects and measures how many records popul
         type: 'multiselect',
         name: 'value',
         message: t('selectTheSobjectsToAnalyze'),
-        description: "Exclude objects you don't want to analyze.",
+        description: t('excludeObjectsYouDontWantToAnalyze'),
         choices: sObjectApiNames.map((apiName: string) => ({ title: apiName, value: apiName })),
         initial: sObjectApiNames,
       });

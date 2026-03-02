@@ -305,7 +305,7 @@ The command's technical implementation involves:
         name: "elementSource",
         message: t('whereDoYouWantToGetThe'),
         description: t('chooseSourceForRetrievingAutomationElements'),
-        placeholder: "Select source",
+        placeholder: t('selectSource'),
         choices: [
           { title: t('bypassSourceChoiceOrg'), value: "org" },
           { title: t('bypassSourceChoiceLocal'), value: "local" },

@@ -118,7 +118,7 @@ The command's technical implementation involves:
     let selectedFirstCommitPos = 0;
     if (fromCommit === null) {
       const headItem = {
-        title: 'HEAD',
+        title: t('choiceHead'),
         description: `Current git HEAD`,
         value: { hash: 'HEAD' },
       };
@@ -126,8 +126,8 @@ The command's technical implementation involves:
         type: 'select',
         name: 'value',
         message: t('pleaseSelectTheCommitThatYouWant'),
-        description: 'Choose the starting commit for the delta generation',
-        placeholder: 'Select a commit',
+        description: t('chooseStartingCommitForDeltaGeneration'),
+        placeholder: t('selectACommit'),
         choices: [headItem, ...branchCommitsChoices],
       });
       fromCommit = commitFromResp.value.hash;
@@ -138,12 +138,12 @@ The command's technical implementation involves:
     // Prompt toCommit
     if (toCommit === null) {
       const currentItem = {
-        title: 'current',
+        title: t('choiceCurrent'),
         description: `Local files not committed yet`,
         value: { hash: '*' },
       };
       const singleCommitChoice = {
-        title: 'Single commit',
+        title: t('choiceSingleCommit'),
         description: `Only for ${selectedFirstCommitLabel}`,
         value: branchCommitsChoices[selectedFirstCommitPos + 1].value
       };
@@ -151,8 +151,8 @@ The command's technical implementation involves:
         type: 'select',
         name: 'value',
         message: t('pleaseSelectTheCommitHashThatYou'),
-        description: 'Choose the ending commit for the delta generation',
-        placeholder: 'Select a commit',
+        description: t('chooseEndingCommitForDeltaGeneration'),
+        placeholder: t('selectACommit'),
         choices: [currentItem, singleCommitChoice, ...branchCommitsChoices],
       });
       toCommit = commitToResp.value.hash;

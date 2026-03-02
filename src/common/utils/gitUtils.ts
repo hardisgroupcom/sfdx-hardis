@@ -33,7 +33,7 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
   const gitUrl = await getGitRepoUrl() || '';
   const message =
     options.message ||
-    `What will be the target branch of your new User Story ? (the branch where you will make your ${GitProvider.getMergeRequestName(gitUrl)} after the User Story is completed)`;
+    t('whatWillBeTheTargetBranch', { mergeRequestName: GitProvider.getMergeRequestName(gitUrl) });
   const config = await getConfig('user');
   const availableTargetBranches = config.availableTargetBranches || null;
   // There is only once choice so return it
@@ -49,7 +49,7 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       name: 'targetBranch',
       message: c.cyanBright(message),
       description: t('descChooseTargetBranch'),
-      placeholder: availableTargetBranches ? undefined : 'Ex: integration',
+      placeholder: availableTargetBranches ? undefined : t('exIntegration'),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
           return {

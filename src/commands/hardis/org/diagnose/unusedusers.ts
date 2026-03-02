@@ -212,13 +212,13 @@ The command's technical implementation involves:
           type: 'select',
           name: 'licensetypes',
           message: t('pleaseSelectTheTypeOfLicensesYou'),
-          description: 'Choose which categories of user licenses to analyze for unused accounts',
-          placeholder: 'Select license type',
+          description: t('chooseWhichCategoriesOfUserLicensesToAnalyze'),
+          placeholder: t('selectLicenseType'),
           choices: [
-            { value: 'all', title: 'All licenses types' },
-            { value: `all-crm`, title: 'Salesforce Licenses' },
-            { value: `all-paying`, title: 'Salesforce Licences + Experience + Other paying' },
-            { value: `experience`, title: 'Experience licenses only' },
+            { value: 'all', title: t('allLicensesTypes') },
+            { value: `all-crm`, title: t('salesforceLicences') },
+            { value: `all-paying`, title: t('salesforceLicencesExperienceOtherPaying') },
+            { value: `experience`, title: t('experienceLicensesOnly') },
           ],
         });
         this.licenseTypes = licenseTypesResponse.licensetypes;
@@ -238,8 +238,8 @@ The command's technical implementation involves:
           type: 'select',
           name: 'days',
           message: t('pleaseSelectThePeriodToDetectUsers'),
-          description: 'Choose how far back to look for user activity when determining if users are inactive',
-          placeholder: 'Select time period',
+          description: t('chooseHowFarBackToLookForUserActivity'),
+          placeholder: t('selectTimePeriod'),
           choices: [
             { title: `1 day`, value: 1 },
             { title: `2 days`, value: 2 },

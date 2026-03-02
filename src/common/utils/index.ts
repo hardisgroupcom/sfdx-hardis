@@ -263,9 +263,9 @@ export async function promptInstanceUrl(
   const customUrlResponse = await prompts({
     type: 'text',
     name: 'value',
-    message: c.cyanBright('Please input the base URL of the salesforce org (just copy paste any full URL of your org,i\'ll clean it 🙃):'),
-    description: 'Copy paste the full URL of your currently open Salesforce org 😊',
-    placeholder: 'Ex: https://myclient.my.salesforce.com , or myclient',
+    message: c.cyanBright(t('pleaseInputTheBaseUrlOfThe')),
+    description: t('copyPasteTheFullUrlOfYourCurrentlyOpenSalesforceOrg'),
+    placeholder: t('exSalesforceOrgUrl'),
   });
   let urlCustom = (customUrlResponse?.value || "")
     .replace('.lightning.force.com', '.my.salesforce.com')
@@ -303,7 +303,7 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
             'What is the URL of your git repository ?'
           ),
           description: t('descEnterGitRepoUrl'),
-          placeholder: 'Ex: https://gitlab.hardis-group.com/busalesforce/monclient/monclient-org-monitoring.git',
+          placeholder: t('exGitlabMonitoringRepoUrl'),
         });
         cloneUrl = cloneUrlPrompt.value;
       }
@@ -1963,7 +1963,7 @@ export async function generateSSLCertificate(
           initial: 'sfdxhardis' + appNameDflt,
           message: c.cyanBright(t('howWouldYouLikeToNameThe2')),
           description: t('descExternalClientAppName'),
-          placeholder: 'Ex: sfdx_hardis',
+          placeholder: t('exSfdxHardis'),
         },
       ]);
       const contactEmail = await promptUserEmail(
@@ -2051,7 +2051,7 @@ If deployment fails, create the External Client App manually:
         await prompts({
           type: 'confirm',
           message: c.cyanBright(
-            'You need to manually configure the External Client App. Follow the MANUAL INSTRUCTIONS above, then continue here'
+            t('youNeedToManuallyConfigureTheExternalClientApp')
           ),
           description: t('descConfirmExternalClientApp'),
         });
@@ -2065,7 +2065,7 @@ If deployment fails, create the External Client App manually:
           initial: 'sfdxhardis' + appNameDflt,
           message: c.cyanBright(t('howWouldYouLikeToNameThe')),
           description: t('descConnectedAppName'),
-          placeholder: 'Ex: sfdx_hardis',
+          placeholder: t('exSfdxHardis'),
         },
       ]);
       const contactEmail = await promptUserEmail(
@@ -2169,7 +2169,7 @@ If this is a Test class issue (production env), you may have to create manually 
         await prompts({
           type: 'confirm',
           message: c.cyanBright(
-            'You need to manually configure the connected app. Follow the MANUAL INSTRUCTIONS above, then continue here'
+            t('youNeedToManuallyConfigureTheConnectedApp')
           ),
           description: t('descConfirmConnectedApp'),
         });

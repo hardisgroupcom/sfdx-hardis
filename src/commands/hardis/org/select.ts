@@ -100,7 +100,7 @@ The command's technical implementation involves:
         type: 'confirm',
         name: 'setDefault',
         message: t('doYouWantToSetTheSelected'),
-        description: "If you choose 'No', the org will be connected but not set as default.",
+        description: t('ifYouChooseNoTheOrgWillBeConnectedButNotSetAsDefault'),
         default: true,
       });
       if (!promptDefaultRes.setDefault) {

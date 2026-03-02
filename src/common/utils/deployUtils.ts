@@ -131,8 +131,7 @@ export async function forceSourcePull(scratchOrgAlias: string, debug = false) {
       // Propose user to ignore elements
       const forceIgnoreRes = await prompts({
         type: 'multiselect',
-        message:
-          'If you want to try again with updated .forceignore file, please select elements you want to add, else escape',
+        message: t('tryAgainWithUpdatedForceignore'),
         description: t('descChooseForceIgnoreElements'),
         name: 'value',
         choices: forceIgnoreElements.map((forceIgnoreElt) => {

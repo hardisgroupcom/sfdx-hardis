@@ -170,7 +170,7 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
     this.apiToken = process.env.CLOUDFLARE_API_TOKEN;
     this.accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
     if (!this.apiEmail || !this.accountId || !this.apiToken) {
-      WebSocketClient.sendReportFileMessage("https://sfdx-hardis.cloudity.com/salesforce-project-doc-cloudflare/", "Hosting on Cloudflare", 'docUrl');
+      WebSocketClient.sendReportFileMessage("https://sfdx-hardis.cloudity.com/salesforce-project-doc-cloudflare/", t('hostingOnCloudflare'), 'docUrl');
       uxLog("error", this, c.red(t('cloudflareSetupInstructions')));
       throw new Error('Missing CLOUDFLARE_EMAIL or CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID');
     }

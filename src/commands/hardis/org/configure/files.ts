@@ -94,7 +94,7 @@ The command's technical implementation involves:
 
     // Trigger command to open SFDMU config file in VS Code extension
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(exportJsonFile, 'Edit your Files export configuration', 'report');
+      WebSocketClient.sendReportFileMessage(exportJsonFile, t('editYourFilesExportConfiguration'), 'report');
     }
     else {
       WebSocketClient.requestOpenFile(exportJsonFile);
@@ -137,7 +137,7 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
     }
 
     const defaultTemplateChoice = {
-      title: '📄 Blank template',
+      title: t('blankTemplateTitle'),
       value: 'blank',
       description: 'Configure your files import/export from scratch 😊',
     };
@@ -146,8 +146,8 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
       type: 'select',
       name: 'template',
       message: c.cyanBright(t('pleaseSelectFilesImportExportTemplateOr')),
-      description: 'Choose a pre-configured template for file operations or start with a blank configuration',
-      placeholder: 'Select a template',
+      description: t('choosePreConfiguredTemplateForFileOperations'),
+      placeholder: t('selectATemplate'),
       choices: [...[defaultTemplateChoice], ...templateFileChoices],
     });
     return templateResp.template;

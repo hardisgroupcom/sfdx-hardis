@@ -161,8 +161,8 @@ The command's technical implementation involves interacting with a Git provider'
       const statusRes = await prompts({
         message: t('pleaseSelectStatusCriterionOrAll'),
         type: "select",
-        description: "Choose which pull request status to filter by.",
-        placeholder: "Select status",
+        description: t('chooseWhichPullRequestStatusToFilterBy'),
+        placeholder: t('selectStatus'),
         choices: [
           { title: t('prStatusAll'), value: "all" },
           { title: t('prStatusMerged'), value: "merged" },

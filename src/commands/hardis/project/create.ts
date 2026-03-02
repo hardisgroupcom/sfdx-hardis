@@ -54,7 +54,7 @@ export default class ProjectCreate extends SfCommand<any> {
       type: 'select',
       message: t('toPerformImplementationWillYourProjectUse'),
       description: t('chooseTypeOfDevelopmentOrgs'),
-      placeholder: 'Select org type',
+      placeholder: t('selectOrgType'),
       choices: [
         {
           title: t('scratchOrgsOnly'),
@@ -121,7 +121,7 @@ export default class ProjectCreate extends SfCommand<any> {
         message: t('whatIsNameOfDefaultDevelopmentBranch'),
         initial: 'integration',
         description: t('enterNameOfMainDevelopmentBranch'),
-        placeholder: 'Ex: integration',
+        placeholder: t('exIntegration'),
       });
       await setConfig('project', { developmentBranch: devBranchRes.devBranch });
     }

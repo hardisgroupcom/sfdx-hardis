@@ -296,7 +296,7 @@ export class FilesExporter {
       const promptRes = await prompts({
         type: 'confirm',
         message: warningMessage,
-        description: 'Proceed with the operation despite API usage warnings'
+        description: t('proceedWithOperationDespiteApiUsageWarnings')
       });
       if (promptRes.value !== true) {
         throw new SfError('Command cancelled by user.');
@@ -1239,7 +1239,7 @@ export class FilesImporter {
       const promptRes = await prompts({
         type: 'confirm',
         message: warningMessage,
-        description: 'Confirm file import operation which will consume API calls'
+        description: t('confirmFileImportOperationWhichWillConsumeApiCalls')
       });
       if (promptRes.value !== true) {
         throw new SfError('Command cancelled by user');
@@ -1277,7 +1277,7 @@ export async function selectFilesWorkspace(opts = { selectFilesLabel: 'Please se
     type: 'select',
     name: 'value',
     message: c.cyanBright(opts.selectFilesLabel),
-    description: 'Select the files workspace configuration to use for this operation',
+    description: t('chooseFilesDataWorkspaceToUseForExport'),
     choices: choices,
   });
   return filesDirResult.value;
@@ -1333,21 +1333,21 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
           message: c.cyanBright(
             'Please input the files export config folder name (PascalCase format)'
           ),
-          description: 'The folder name that will be created to store the export configuration and downloaded files',
-          placeholder: 'Ex: OpportunitiesPDF',
+          description: t('theFolderNameThatWillBeCreatedForExportConfig'),
+          placeholder: t('exOpportunitiesPdf'),
         },
         {
           type: 'text',
           name: 'sfdxHardisLabel',
           message: c.cyanBright(t('pleaseInputLabelForTheFilesExport')),
-          description: 'A human-readable label that will identify this export configuration',
+          description: t('aHumanReadableLabelForExportConfig'),
           initial: filesExportConfig.sfdxHardisLabel,
         },
         {
           type: 'text',
           name: 'sfdxHardisDescription',
           message: c.cyanBright(t('pleaseInputDescriptionOfTheFilesExport')),
-          description: 'A detailed description explaining what this export configuration does',
+          description: t('aDetailedDescriptionForExportConfig'),
           initial: filesExportConfig.sfdxHardisDescription,
         },
       ]
@@ -1360,29 +1360,29 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         name: 'soqlQuery',
         message:
           'Please input the main SOQL Query to fetch the parent records of files (ContentVersions)',
-        description: 'SOQL query that retrieves the parent records to which files are attached',
-        placeholder: 'Ex: SELECT Id,Name from Opportunity',
+        description: t('soqlQueryThatRetrievesParentRecords'),
+        placeholder: t('exSelectIdNameFromOpportunity'),
         initial: filesExportConfig.soqlQuery,
       },
       {
         type: 'text',
         name: 'outputFolderNameField',
         message: t('pleaseInputTheFieldToUseTo'),
-        description: 'Field name from the SOQL query result that will be used as folder name for organizing files',
-        placeholder: 'Ex: Name',
+        description: t('fieldNameFromSoqlQueryForFolderName'),
+        placeholder: t('exName'),
         initial: filesExportConfig.outputFolderNameField,
       },
       {
         type: 'select',
         name: 'outputFileNameFormat',
         choices: [
-          { value: 'title', title: 'title (ex: "Cloudity New Project")' },
-          { value: 'title_id', title: 'title_id (ex: "Cloudity New Project_006bR00000Bet7WQAR")' },
-          { value: 'id_title', title: 'id_title (ex: "006bR00000Bet7WQAR_Cloudity New Project")' },
-          { value: 'id', title: 'id (ex: "006bR00000Bet7WQAR")' },
+          { value: 'title', title: t('choiceOutputFileNameFormatTitle') },
+          { value: 'title_id', title: t('choiceOutputFileNameFormatTitleId') },
+          { value: 'id_title', title: t('choiceOutputFileNameFormatIdTitle') },
+          { value: 'id', title: t('choiceOutputFileNameFormatId') },
         ],
         message: t('pleaseSelectTheFormatOfOutputFiles'),
-        description: 'Choose how downloaded file names should be formatted',
+        description: t('chooseHowDownloadedFileNamesShouldBeFormatted'),
         initial: filesExportConfig.outputFileNameFormat,
       },
       {
@@ -1390,22 +1390,22 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         name: 'overwriteParentRecords',
         message:
           'Do you want to try to download files attached to a parent records whose folder is already existing in local folders ?',
-        description: 'Allow downloading files for records that already have a local folder',
+        description: t('allowDownloadingFilesForRecordsWithExistingFolder'),
         initial: filesExportConfig.overwriteParentRecords,
       },
       {
         type: 'confirm',
         name: 'overwriteFiles',
         message: t('doYouWantToOverwriteFileThat'),
-        description: 'Replace existing local files with newly downloaded versions',
+        description: t('replaceExistingLocalFilesWithNewVersions'),
         initial: filesExportConfig.overwriteFiles,
       },
       {
         type: 'number',
         name: 'fileSizeMin',
         message: t('pleaseInputTheMinimumFileSizeIn'),
-        description: 'Only files with size greater than or equal to this value will be downloaded (in kilobytes)',
-        placeholder: 'Ex: 10',
+        description: t('onlyFilesWithSizeGreaterThanValueDownloaded'),
+        placeholder: t('exTen'),
         initial: filesExportConfig.fileSizeMin || 0,
         min: 0,
       },

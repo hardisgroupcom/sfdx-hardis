@@ -260,7 +260,7 @@ Key capabilities:
       const statusRes = await prompts({
         message: t('pleaseSelectSobjectsToAddInThe'),
         type: "multiselect",
-        description: "Be careful, you can't update the selection later without re-running the command :)",
+        description: t('beCarefulAboutProfileChanges'),
         choices: choices,
       });
 
@@ -326,7 +326,7 @@ Key capabilities:
       message: t('pleaseEnterTheNumberOfPersonasTo'),
       type: "number",
       description: "One tab by personal will be created in the final Excel file",
-      placeholder: "Input a number of personas (better too much than too few!)",
+      placeholder: t('inputNumberOfPersonas'),
     });
     if (statusRes && statusRes.value !== 0) {
       numberOfPersonas = statusRes.value;

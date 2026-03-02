@@ -165,7 +165,7 @@ Exceptions (no `t()` needed):
 
 ### prompts() calls
 
-For every `prompts()` call, the `description` and `choices[].title` / `choices[].description` properties must use `t()` where they contain user-visible text:
+For every `prompts()` call, the `message`, `description`, `placeholder` and `choices[].title`  properties must use `t()` where they contain user-visible text:
 
 ```typescript
 // ✅ Correct

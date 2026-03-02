@@ -107,66 +107,65 @@ The command's technical implementation involves several steps:
   protected allCleaningTypes = [
     {
       value: 'checkPermissions',
-      title: 'Check custom items are existing it at least one Permission Set',
+      title: t('cleaningTypeCheckPermissions'),
       command: 'sf hardis:lint:access',
     },
     {
       value: 'dashboards',
-      title: 'Dashboards: Remove reference to hardcoded users',
+      title: t('cleaningTypeDashboards'),
     },
     {
       value: 'destructivechanges',
-      title: 'DestructiveChanges.xml: Remove source files mentioned in destructiveChanges.xml',
+      title: t('cleaningTypeDestructiveChanges'),
     },
     {
       value: 'flowPositions',
-      title: `Flows: Replace all positions in AutoLayout Flows by 0 to simplify conflicts management`,
+      title: t('cleaningTypeFlowPositions'),
       command: 'sf hardis:project:clean:flowpositions',
     },
     {
       value: 'sensitiveMetadatas',
-      title: `Remove sensitive metadata content from sources (ex: Certificates)`,
+      title: t('cleaningTypeSensitiveMetadatas'),
       command: 'sf hardis:project:clean:sensitive-metadatas',
     },
     {
       value: 'listViewsMine',
-      title: `ListViews: Convert scope "Everything" into scope "Mine" on ListViews`,
+      title: t('cleaningTypeListViewsMine'),
       command: 'sf hardis:project:clean:listviews',
     },
     {
       value: 'minimizeProfiles',
-      title: 'Profiles: Remove profile attributes that exists on permission sets',
+      title: t('cleaningTypeMinimizeProfiles'),
       command: 'sf hardis:project:clean:minimizeprofiles',
     },
     {
       value: 'caseentitlement',
-      title: 'References to Entitlement Management items',
+      title: t('cleaningTypeCaseEntitlement'),
     },
     {
       value: 'datadotcom',
-      title: 'References to Data.com items. https://help.salesforce.com/articleView?id=000320795&type=1&mode=1',
+      title: t('cleaningTypeDataDotCom'),
     },
     {
       value: 'entitlement',
-      title: 'References to Entitlement object',
+      title: t('cleaningTypeEntitlement'),
     },
     {
       value: 'localfields',
-      title:
-        'References to Local Fields items. https://help.salesforce.com/articleView?id=sf.admin_local_name_fields.htm&type=5',
+      title: t('cleaningTypeLocalFields'),
     },
     {
       value: 'productrequest',
-      title: 'References to ProductRequest object',
+      title: t('cleaningTypeProductRequest'),
     },
     {
       value: 'systemDebug',
-      title: 'Remove System.debug from sources',
+      title: t('cleaningTypeSystemDebug'),
       command: 'sf hardis:project:clean:systemdebug',
     },
     {
       value: 'v60',
-      title: 'Make metadata compliant with v60',
+      title: t('cleaningTypeV60'),
     },
   ];
 

@@ -103,14 +103,14 @@ The command's technical implementation involves a series of Git operations, file
         type: 'select',
         name: 'value',
         choices: [
-          { title: "Yes, I'm sure because I know what I'm doing, like Roman 😊", value: 'yes' },
-          { title: 'Mmmmm no, let me create another repo with the word "monitoring" in its name !', value: 'no' },
+          { title: t('yesApproveSeparateMonitoringRepo'), value: 'yes' },
+          { title: t('noLetMeCreateAnotherRepo'), value: 'no' },
         ],
         message: c.cyanBright(
           t('confirmMixMonitoringDeploymentSources')
         ),
         description: t('separateMonitoringDeploymentDescription'),
-        placeholder: 'Select an option',
+        placeholder: t('selectAnOption'),
       });
       if (confirmMix.value === 'no') {
         throw new SfError('Your git repository name must contain the expression "monitoring"');
@@ -124,12 +124,12 @@ The command's technical implementation involves a series of Git operations, file
       type: 'select',
       name: 'value',
       choices: [
-        { title: '😎 Yes', value: 'yes' },
-        { title: 'ℹ️ No, bring me to the documentation!', value: 'no' },
+        { title: t('promptChoiceYes'), value: 'yes' },
+        { title: t('promptChoiceNoBringToDocumentation'), value: 'no' },
       ],
       message: c.cyanBright(t('didYouConfigureTheSfdxHardisMonitoring')),
-      description: 'Confirm that you have set up the required CI/CD variables and permissions for monitoring',
-      placeholder: 'Select an option',
+      description: t('confirmCiCdVariablesAndPermissionsForMonitoring'),
+      placeholder: t('selectAnOption'),
     });
     if (confirmPreRequisites.value === 'no') {
       const msg =

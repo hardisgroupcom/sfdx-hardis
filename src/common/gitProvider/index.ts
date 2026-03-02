@@ -93,10 +93,10 @@ export abstract class GitProvider {
       description: t('descChooseGitProvider'),
       type: "select",
       choices: [
-        { title: "Azure DevOps", value: "azure" },
-        { title: "GitHub", value: "github" },
-        { title: "Gitlab", value: "gitlab" },
-        { title: "Bitbucket", value: "bitbucket" },
+        { title: t('choiceAzureDevOps'), value: "azure" },
+        { title: t('choiceGitHub'), value: "github" },
+        { title: t('choiceGitlab'), value: "gitlab" },
+        { title: t('choiceBitbucket'), value: "bitbucket" },
       ]
     });
     if (promptRes.value === "azure") {

@@ -96,7 +96,7 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
         type: 'text',
         message: t('pleaseInputCommaSeparatedListOfStrings'),
         description: t('enterReferencesDescription'),
-        placeholder: 'Ex: Affaire__c,MyField__c,CustomObject__c',
+        placeholder: t('exAffaireCustomObject'),
       });
       this.referenceStrings = refPromptResult.value.split(',');
     }
@@ -115,7 +115,7 @@ The core utility function for replacements is called \`applyAllReplacementsDefin
       type: 'select',
       message: t('localSourcesUpToDatePrompt'),
       description: t('localSourcesSyncDescription'),
-      placeholder: 'Select an option',
+      placeholder: t('selectAnOption'),
       choices: [
         { value: true, title: t('localSourcesUpToDate') },
         { value: false, title: t('needToRetrieveMetadatas') },

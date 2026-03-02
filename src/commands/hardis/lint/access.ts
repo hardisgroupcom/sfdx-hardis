@@ -563,7 +563,7 @@ The command's technical implementation involves:
             name: 'access',
             message: t('pleaseSelectTheAccessesToSetFor'),
             description: t('chooseAccessLevelDescription'),
-            placeholder: 'Select access level',
+            placeholder: t('selectAccessLevel'),
             choices: [
               { title: t('accessReadable'), value: 'readable' },
               { title: t('accessReadableEditable'), value: 'editable' },

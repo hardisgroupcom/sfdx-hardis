@@ -107,7 +107,7 @@ The command's technical implementation involves:
           name: 'packageSelected',
           message: c.cyanBright(t('pleaseSelectPackageNotADrillPromote')),
           description: t('choosePackageToPromote'),
-          placeholder: 'Select a package',
+          placeholder: t('selectAPackage'),
           choices: Object.values(availablePackageAliases).map((packageAlias) => {
             return { title: packageAlias, value: packageAlias };
           }),

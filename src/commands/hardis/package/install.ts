@@ -71,15 +71,15 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
         title: `${c.yellow(pack.name)} - ${pack.repoUrl || 'Bundle'}`,
         value: pack,
       }));
-      allPackages.push({ title: 'Other', value: 'other' });
+      allPackages.push({ title: t('choiceOther'), value: 'other' });
       const packageResponse = await prompts({
         type: 'select',
         name: 'value',
         message: c.cyanBright(
           `Please select the package you want to install on org  ${c.green(flags['target-org'].getUsername())}`
         ),
-        description: 'Choose which package to install from the available list',
-        placeholder: 'Select a package',
+        description: t('chooseWhichPackageToInstall'),
+        placeholder: t('selectAPackage'),
         choices: allPackages,
         initial: 0,
       });
@@ -92,17 +92,15 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
               'What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request ' +
               c.bold('Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage')
             ),
-            description: 'Enter the package version ID for the package you want to install',
-            placeholder: 'Ex: 04t2p000000XXXXXX',
+            description: t('enterThePackageVersionId'),
+            placeholder: t('exPackageVersionId'),
           },
           {
             type: 'text',
             name: 'installationkey',
-            message: c.cyanBright(
-              'Enter the password for this package (leave empty if package is not protected by a password)'
-            ),
-            description: 'Provide the installation password if the package is protected',
-            placeholder: 'Ex: mypassword123',
+            message: c.cyanBright(t('enterPackagePasswordOrLeaveEmpty')),
+            description: t('provideInstallationPasswordIfProtected'),
+            placeholder: t('exMypassword123'),
           },
         ]);
         const pckg: { SubscriberPackageVersionId?: string; installationkey?: string } = {

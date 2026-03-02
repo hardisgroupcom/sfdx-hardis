@@ -118,12 +118,12 @@ The command's logic orchestrates various underlying processes:
 
     const defaultBranchPrefixChoices = [
       {
-        title: '🏗️ Feature',
+        title: t('choiceBranchFeature'),
         value: 'feature',
         description: t('branchPrefixFeatureDescription'),
       },
       {
-        title: '🛠️ Fix',
+        title: t('choiceBranchFix'),
         value: 'fix',
         description: t('branchPrefixFixDescription'),
       },
@@ -139,7 +139,7 @@ The command's logic orchestrates various underlying processes:
         name: 'project',
         message: c.cyanBright(t('pleaseSelectTheProjectYourUserStory')),
         description: t('chooseWhichProjectWorkItemBelongsTo'),
-        placeholder: 'Select a project',
+        placeholder: t('selectAProject'),
         choices: availableProjects.map((project: string) => {
           return {
             title: project.includes(',') ? project.split(',').join(' - ') : project,
@@ -157,7 +157,7 @@ The command's logic orchestrates various underlying processes:
         name: 'branch',
         message: c.cyanBright(t('whatTypeOfUserStoryDoYou')),
         description: t('selectCategoryOfWorkForUserStory'),
-        placeholder: 'Select User Story type',
+        placeholder: t('selectUserStoryType'),
         initial: 0,
         choices: branchPrefixChoices,
       },
@@ -206,14 +206,14 @@ The command's logic orchestrates various underlying processes:
     const orgTypeChoices: any[] = [];
     if (allowedOrgTypes.includes('sandbox') || allowedOrgTypes.length === 0) {
       orgTypeChoices.push({
-        title: '🌎 Sandbox org with source tracking',
+        title: t('choiceSandboxOrgWithSourceTracking'),
         value: 'sandbox',
         description: t('workInDeveloperSandboxDescription'),
       });
     }
     if (allowedOrgTypes.includes('scratch') || allowedOrgTypes.length === 0) {
       orgTypeChoices.push({
-        title: '🪐 Scratch org',
+        title: t('choiceScratchOrg'),
         value: 'scratch',
         description: t('scratchOrgsConfiguredCreateOrReuse'),
       });
@@ -226,7 +226,7 @@ The command's logic orchestrates various underlying processes:
       });
     }
     orgTypeChoices.push({
-      title: "🤠 I'm hardcore, I don't need an org !",
+      title: t('choiceHardcoreNoOrg'),
       value: 'noOrg',
       description: 'Work with XML and sfdx-hardis configuration only, without a connected org',
     });
@@ -235,7 +235,7 @@ The command's logic orchestrates various underlying processes:
       name: 'value',
       message: c.cyanBright(t('whichSalesforceOrgDoYouWantToWorkIn')),
       description: t('chooseTypeOfSalesforceOrgForWork'),
-      placeholder: 'Select org type',
+      placeholder: t('selectOrgType'),
       initial: 0,
       choices: orgTypeChoices,
     });
@@ -289,14 +289,14 @@ The command's logic orchestrates various underlying processes:
     const currentOrg = await MetadataUtils.getCurrentOrg();
     const baseChoices = [
       {
-        title: c.yellow('🆕 Create new scratch org'),
+        title: c.yellow(t('createNewScratchOrg')),
         value: 'newScratchOrg',
         description: t('generateNewScratchOrgReady'),
       },
     ];
     if (currentOrg) {
       baseChoices.push({
-        title: c.yellow(`♻️ Reuse current org`),
+        title: c.yellow(t('reuseCurrentOrg')),
         value: currentOrg,
         description: t('reuseCurrentOrgBewareConflicts', { instanceUrl: currentOrg.instanceUrl }),
       });
@@ -306,13 +306,13 @@ The command's logic orchestrates various underlying processes:
       name: 'value',
       message: c.cyanBright(t('selectScratchOrgForBranch', { branchName: c.green(branchName) })),
       description: t('chooseCreateOrReuseScratchOrg'),
-      placeholder: 'Select scratch org option',
+      placeholder: t('selectScratchOrgOption'),
       initial: 0,
       choices: [
         ...baseChoices,
         ...scratchOrgList.map((scratchOrg: any) => {
           return {
-            title: `☁️ Reuse scratch org ${c.yellow(scratchOrg.alias)}`,
+            title: t('reuseScratchOrgAlias', { alias: c.yellow(scratchOrg.alias) }),
             description: scratchOrg.instanceUrl,
             value: scratchOrg,
           };
@@ -385,17 +385,17 @@ The command's logic orchestrates various underlying processes:
         name: 'value',
         message: c.cyanBright(t('doYouWantToUpdateSandboxToMatchBranch', { branch: this.targetBranch })),
         description: t('chooseSyncSandboxWithLatestChanges'),
-        placeholder: 'Select sync option',
+        placeholder: t('selectSyncOption'),
         choices: [
           {
-            title: '🧑‍🤝‍🧑 No, continue working on my current sandbox state',
+            title: t('continueWorkingOnCurrentSandboxState'),
             value: 'no',
-            description: 'Use if multiple users share the same sandbox, or if you have uncommitted changes',
+            description: t('useIfMultipleUsersShareSandbox'),
           },
           {
-            title: '☢️ Yes, please try to update my sandbox !',
+            title: t('yesUpdateMySandbox'),
             value: 'init',
-            description: `Integrate new updates from the parent branch "${this.targetBranch}" before working on your new User Story. WARNING: Will overwrite uncommitted changes in your org !`,
+            description: t('integrateNewUpdatesFromParentBranch', { targetBranch: this.targetBranch }),
           },
         ],
       });
@@ -473,7 +473,7 @@ The command's logic orchestrates various underlying processes:
         type: 'confirm',
         name: 'value',
         message: c.cyanBright(t('doYouWantToOpenOrgIn', { orgUsername: c.green(orgUsername) })),
-        description: 'Open the sandbox org in your web browser to start working on it',
+        description: t('openTheSandboxOrgInYourWebBrowser'),
         initial: true
       });
       if (openOrgRes.value === true) {
@@ -501,7 +501,7 @@ The command's logic orchestrates various underlying processes:
       name: 'value',
       message: c.cyanBright(t('selectSandboxOrgToWorkInBranch', { branchName: c.green(branchName) })),
       description: t('chooseExistingSandboxOrConnectNew'),
-      placeholder: 'Select sandbox',
+      placeholder: t('selectSandbox'),
       default: defaultSandbox ? defaultSandbox : undefined,
       choices: [
         ...[

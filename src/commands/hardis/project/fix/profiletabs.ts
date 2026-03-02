@@ -97,22 +97,22 @@ The command's technical implementation involves:
         type: 'multiselect',
         name: 'tabs',
         message: t('pleaseSelectTheTabsYouWantTo'),
-        description: 'Choose which tabs should be configured for profiles',
+        description: t('chooseWhichTabsShouldBeConfiguredForProfiles'),
         choices: choices,
       },
       {
         type: 'select',
         name: 'visibility',
         message: t('pleaseSelectTheFlagYouWantThe'),
-        description: 'Choose the visibility setting for the selected tabs',
-        placeholder: 'Select visibility',
+        description: t('chooseVisibilitySettingForTabs'),
+        placeholder: t('selectVisibilityPlaceholder'),
         choices: [
           {
-            title: 'Visible (DefaultOn)',
+            title: t('tabVisibilityVisibleDefaultOn'),
             value: 'DefaultOn',
           },
           {
-            title: 'Hidden',
+            title: t('tabVisibilityHidden'),
             value: 'Hidden',
           },
         ],

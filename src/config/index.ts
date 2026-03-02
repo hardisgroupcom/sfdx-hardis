@@ -291,8 +291,8 @@ export async function promptForProjectName() {
     type: 'text',
     name: 'projectName',
     message: t('whatIsTheNameOfYourProject'),
-    description: 'Used to generate environment variables and configuration files for your Salesforce project',
-    placeholder: 'Ex: MyClient',
+    description: t('usedToGenerateEnvironmentVariablesAndConfig'),
+    placeholder: t('exMyClient'),
   });
   const userProjectName = projectRes.projectName + '';
   let projectName = projectRes.projectName.toLowerCase().replace(' ', '_');
@@ -303,13 +303,13 @@ export async function promptForProjectName() {
       "warning",
       this,
       c.yellow(
-        `Project name has been changed to ${projectName} because it must be compliant with the format of an environment variable.`
+        t('projectNameHasBeenChanged', { projectName })
       )
     );
     const promptResp = await prompts({
       type: 'confirm',
       message: t('areYouOkWithUpdatedProjectName', { projectName }),
-      description: 'Confirms the use of the sanitized project name which must be compliant with environment variable format',
+      description: t('confirmsUseOfSanitizedProjectName'),
     });
     if (promptResp.value === true) {
       return projectName;

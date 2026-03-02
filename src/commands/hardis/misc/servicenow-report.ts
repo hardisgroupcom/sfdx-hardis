@@ -207,8 +207,8 @@ Example:
         const whereChoiceRes = await prompts({
           type: 'select',
           message: t('selectWhereConditionForUserStories'),
-          description: 'Choose a predefined WHERE condition to filter user stories',
-          placeholder: 'Select a condition',
+          description: t('choosePredefinedWhereConditionToFilterUserStories'),
+          placeholder: t('selectACondition'),
           choices: whereChoices,
         });
         this.whereChoice = whereChoiceRes.value;
@@ -431,7 +431,7 @@ Example:
           type: 'select',
           message: t('multipleConfigurationFilesFoundPleaseSelectOne'),
           description: t('chooseServiceNowConfigFileDescription'),
-          placeholder: 'Select a config file',
+          placeholder: t('selectAConfigFile'),
           choices: configFiles.map((file) => ({ title: file, value: file })),
         });
         this.configFile = configFileRes.value;

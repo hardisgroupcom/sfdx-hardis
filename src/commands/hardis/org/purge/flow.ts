@@ -322,7 +322,7 @@ The command's technical implementation involves:
       const flowNamesChoice = flowNamesUnique.map((flowName) => {
         return { title: flowName, value: flowName };
       });
-      flowNamesChoice.unshift({ title: 'All flows', value: 'all' });
+      flowNamesChoice.unshift({ title: t('allFlows'), value: 'all' });
 
       // Manually select status
       const selectStatus = await prompts([
@@ -330,8 +330,8 @@ The command's technical implementation involves:
           type: 'select',
           name: 'name',
           message: t('pleaseSelectTheFlowYouWantTo2'),
-          description: 'Choose a specific flow to clean or select all flows',
-          placeholder: 'Select a flow',
+          description: t('chooseASpecificFlowToCleanOrSelectAll'),
+          placeholder: t('selectAFlow'),
           choices: flowNamesChoice,
         },
         {

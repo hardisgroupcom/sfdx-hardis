@@ -393,7 +393,7 @@ The command's technical implementation involves extensive querying of Salesforce
         type: 'select',
         message: t('doYouWantToDeleteUnusedPermission'),
         description: t('removeUnusedPermissionSetLicenseDescription'),
-        placeholder: 'Select an option',
+        placeholder: t('selectAnOption'),
         choices: [
           {
             title: t('deleteUnusedPslYes'),

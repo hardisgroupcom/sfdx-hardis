@@ -113,7 +113,7 @@ The command's technical implementation involves:
         type: 'multiselect',
         name: 'files',
         message: t('pleaseSelectThePackageXmlFilesYou'),
-        description: 'Choose which package.xml files to combine into a single merged file',
+        description: t('chooseWhichPackageXmlFilesToCombine'),
         choices: matchingFiles.map((file) => {
           const relativeFile = path.relative(process.cwd(), file);
           return { title: relativeFile, value: relativeFile };

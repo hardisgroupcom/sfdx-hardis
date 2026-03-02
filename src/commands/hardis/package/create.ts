@@ -75,21 +75,21 @@ The command's technical implementation involves:
         name: 'packageName',
         message: c.cyanBright(t('pleaseInputPackageName')),
         description: t('enterClearNameForNewPackage'),
-        placeholder: 'Ex: MyPackage',
+        placeholder: t('exMyPackage'),
       },
       {
         type: 'text',
         name: 'packagePath',
         message: c.cyanBright(t('pleaseInputPackagePath')),
         description: t('specifyPackageSourceCodePath'),
-        placeholder: 'Ex: sfdx-source/apex-mocks',
+        placeholder: t('exSfdxSourceApexMocks'),
       },
       {
         type: 'select',
         name: 'packageType',
         message: c.cyanBright(t('pleaseSelectPackageName')),
         description: t('chooseUnlockedOrManagedPackage'),
-        placeholder: 'Select package type',
+        placeholder: t('selectPackageTypePlaceholder'),
         choices: [
           {
             title: t('managedPackageTitle'),

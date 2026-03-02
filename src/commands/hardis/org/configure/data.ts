@@ -110,9 +110,9 @@ The command's technical implementation involves:
 
     // Trigger command to open SFDMU config file in VS Code extension
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(exportJsonFile, 'Edit your SFDMU export.json file', 'report');
-      WebSocketClient.sendReportFileMessage(sfdmuBaseDoc, 'SFDMU documentation (Basic)', 'docUrl');
-      WebSocketClient.sendReportFileMessage(sfdmuExternalIdsDoc, 'SFDMU documentation (External Ids)', 'docUrl');
+      WebSocketClient.sendReportFileMessage(exportJsonFile, t('editYourSfdmuExportJsonFile'), 'report');
+      WebSocketClient.sendReportFileMessage(sfdmuBaseDoc, t('sfdmuDocumentationBasic'), 'docUrl');
+      WebSocketClient.sendReportFileMessage(sfdmuExternalIdsDoc, t('sfdmuDocumentationExternalIds'), 'docUrl');
     }
     else {
       WebSocketClient.requestOpenFile(exportJsonFile);
@@ -211,36 +211,32 @@ The command's technical implementation involves:
         type: 'text',
         name: 'dataPath',
         message: c.cyanBright(t('pleaseInputTheSfdmuFolderNamePascalcase')),
-        description: 'The folder name that will contain the SFDMU data configuration files',
-        placeholder: 'Ex: ProductsActive',
+        description: t('theFolderNameThatWillContainSfdmuDataConfigurationFiles'),
+        placeholder: t('exProductsActive'),
       },
       {
         type: 'text',
         name: 'sfdxHardisLabel',
         message: c.cyanBright(t('pleaseInputTheSfdmuConfigLabel')),
-        description: 'A human-readable label for this data configuration',
-        placeholder: 'Ex: Active Products',
+        description: t('humanReadableLabelForDataConfig'),
+        placeholder: t('exActiveProducts'),
       },
       {
         type: 'text',
         name: 'sfdxHardisDescription',
-        message: c.cyanBright(
-          'Please input the SFDMU config description'
-        ),
-        description: 'A detailed description explaining what this data configuration does',
-        placeholder: 'Ex: Active products are used for scratch org initialization and in deployments',
+        message: c.cyanBright(t('pleaseInputTheSfdmuConfigDescription')),
+        description: t('detailedDescriptionForDataConfig'),
+        placeholder: t('exActiveProductsFullDescription'),
       },
       {
         type: 'multiselect',
         name: 'additional',
-        message: c.cyanBright(
-          'Please select additional options if you need them'
-        ),
-        description: 'Choose optional features to include in the data configuration (select nothing to skip)',
+        message: c.cyanBright(t('pleaseSelectAdditionalOptionsIfNeeded')),
+        description: t('chooseOptionalFeaturesForDataConfig'),
         choices: [
           {
-            title: 'Bad words detector',
-            description: 'Can detect a list of bad words in records',
+            title: t('badWordsDetectorTitle'),
+            description: t('badWordsDetectorDescription'),
             value: 'badwordsFilter',
           },
         ],
@@ -257,22 +253,22 @@ The command's technical implementation involves:
       templateChoices.push({
         title: `📝 ${templateName}`,
         value: path.join(templatesFolder, templateFile),
-        description: `sfdx-hardis template for ${templateName}`,
+        description: t('sfdxHardisTemplateFor', { templateName }),
       });
     }
 
     const defaultTemplateChoice = {
-      title: '📄 Blank template',
+      title: t('blankTemplateTitle'),
       value: 'blank',
-      description: 'Configure your data import/export from scratch 😊',
+      description: t('configureDataImportExportFromScratch'),
     };
 
     const templateResp = await prompts({
       type: 'select',
       name: 'template',
       message: c.cyanBright(t('pleaseSelectSfdmuTemplateOrTheBlank')),
-      description: 'Choose a pre-configured SFDMU template for data operations or start with a blank configuration',
-      placeholder: 'Select a template',
+      description: t('choosePreConfiguredSfdmuTemplate'),
+      placeholder: t('selectATemplate'),
       choices: [...[defaultTemplateChoice], ...templateChoices],
     });
     return templateResp.template;
@@ -288,10 +284,8 @@ The command's technical implementation involves:
     const importResp = await prompts({
       type: 'confirm',
       name: 'importInScratchOrgs',
-      message: c.cyanBright(
-        'Do you want this SFDMU config to be used to import data when initializing a new scratch org ?'
-      ),
-      description: 'Automatically import this data set when creating new scratch orgs for development and testing',
+      message: c.cyanBright(t('doYouWantThisSfdmuConfigForScratchOrgs')),
+      description: t('automaticallyImportDataSetForScratchOrgs'),
       default: false,
     });
     this.importInScratchOrgs = importResp.importInScratchOrgs === true;

@@ -732,7 +732,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         type: 'confirm',
         name: 'retrieveAgain',
         message: t('itSeemsYouAlreadyHaveMetadatasSaved'),
-        description: 'This will overwrite the existing package-metadatas-to-save.xml file and related certificates and metadatas.',
+        description: t('thisWillOverwriteExistingPackageMetadatasFile'),
         initial: false
       });
       if (!promptResponse.retrieveAgain) {
@@ -769,7 +769,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         type: 'confirm',
         name: 'overwrite',
         message: t('theFileAlreadyExistsDoYouWant', { targetFile }),
-        description: 'This file is used to save the metadata that will be restored after org refresh.',
+        description: t('thisFileIsUsedToSaveMetadataForOrgRefresh'),
         initial: false
       });
       if (promptResponse.overwrite) {
@@ -788,7 +788,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       type: 'confirm',
       name: 'checkPackageXml',
       message: t('pleaseCheckPackageXmlFileBeforeRetrieving', { targetFile }),
-      description: 'You can add or remove metadata types to save before proceeding.',
+      description: t('youCanAddOrRemoveMetadataTypesToSave'),
       initial: true
     });
     if (!promptRes.checkPackageXml) {
@@ -840,7 +840,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       type: 'confirm',
       name: 'retrieveCerts',
       message: t('doYouWantToRetrieveCertificatesFrom', { instanceUrl: this.instanceUrl }),
-      description: 'Certificates cannot be retrieved using Source API, so we will use Metadata API for that.',
+      description: t('certificatesCannotBeRetrievedUsingSourceApi'),
       initial: true
     });
     if (!promptCerts.retrieveCerts) {
@@ -885,7 +885,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         type: 'confirm',
         name: 'retrieveAgain',
         message: t('customSettingsFolderIsNotEmptyDo'),
-        description: `If you do not retrieve them again, the Custom Settings will not be updated with the latest changes from the org.`,
+        description: t('ifYouDoNotRetrieveThemAgainCustomSettingsWillNotBeUpdated'),
         initial: false
       });
 
@@ -910,7 +910,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       type: 'multiselect',
       name: 'settings',
       message: t('selectCustomSettingsToRetrieve'),
-      description: 'You can select multiple Custom Settings to retrieve.',
+      description: t('youCanSelectMultipleCustomSettingsToRetrieve'),
       choices: customSettings.map(cs => ({ title: cs.name, value: cs.name })),
       initial: initialCs,
     });

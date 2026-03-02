@@ -105,7 +105,7 @@ The command's technical implementation involves:
       message: c.cyanBright(t('sensitiveOperationDidYouRunWorkSave')),
       name: 'value',
       description: t('confirmSavedWorkBeforeSensitiveOperation'),
-      placeholder: 'Select an option',
+      placeholder: t('selectAnOption'),
       choices: [
         {
           title: t('yesSavedBeforeMerging'),
@@ -137,7 +137,7 @@ The command's technical implementation involves:
       message: t('pleaseSelectTheBranchThatYouWant', { localBranch: c.green(localBranch) }),
       name: 'value',
       description: t('chooseWhichBranchToMergeIntoCurrent'),
-      placeholder: 'Select a branch to merge',
+      placeholder: t('selectABranchToMerge'),
       choices: branchChoices,
     });
     this.mergeBranch = branchRes.value;
@@ -213,7 +213,7 @@ The command's technical implementation involves:
           name: 'value',
           message: c.cyanBright(t('mergeConflictsPleaseResolve')),
           description: t('chooseActionAfterResolvingMergeConflicts'),
-          placeholder: 'Select an option',
+          placeholder: t('selectAnOption'),
           choices: [
             { value: true, title: t('finishedMergingConflicts') },
             {

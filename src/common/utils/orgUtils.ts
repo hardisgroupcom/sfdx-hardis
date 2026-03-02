@@ -72,7 +72,7 @@ export async function promptProfiles(
   if (profiles.length > 0) {
     const profilesSelection = await prompts({
       type: options.multiselect ? 'multiselect' : 'select',
-      message: options.message || 'Please select profile(s)',
+      message: options.message || t('pleaseSelectProfile'),
       description: t('descChooseProfiles'),
       name: 'value',
       choices: profiles.map((profile: any) => {
@@ -109,9 +109,9 @@ export async function promptProfiles(
     // Manual input of comma separated profiles
     const profilesSelection = await prompts({
       type: 'text',
-      message: options.message || 'Please input profile name',
+      message: options.message || t('pleaseInputProfileName'),
       description: t('descEnterProfileName'),
-      placeholder: 'Ex: System Administrator',
+      placeholder: t('exSystemAdministrator'),
       name: 'value',
       initial: options?.initialSelection[0] || null,
     });
@@ -194,7 +194,7 @@ export async function promptOrg(
   const orgResponse = await prompts({
     type: 'select',
     name: 'org',
-    message: c.cyanBright(options.promptMessage || 'Please select an org'),
+    message: c.cyanBright(options.promptMessage || t('pleaseSelectAnOrg')),
     description: t('descChooseOrg'),
     default: defaultOrg || '',
     choices: orgList.map((org: any) => {
@@ -303,7 +303,7 @@ export async function promptOrgList(options: { promptMessage?: string } = {}) {
   const orgResponse = await prompts({
     type: 'multiselect',
     name: 'orgs',
-    message: c.cyanBright(options.promptMessage || 'Please select orgs'),
+    message: c.cyanBright(options.promptMessage || t('pleaseSelectOrgs')),
     description: t('descChooseMultipleOrgs'),
     choices: orgListSorted.map((org: any) => {
       const title = org.instanceUrl || org.username || org.alias || "ERROR";
@@ -375,7 +375,7 @@ export async function promptOrgUsernameDefault(
   const defaultOrgRes = await prompts({
     type: 'confirm',
     message: options.message || `Do you want to use org ${defaultOrg} ?`,
-    description: 'Confirms whether to use the currently configured default org or select a different one',
+    description: t('confirmsWhetherToUseCurrentDefaultOrg'),
   });
   if (defaultOrgRes.value === true) {
     return defaultOrg;
@@ -391,9 +391,9 @@ export async function promptUserEmail(promptMessage: string | null = null) {
     type: 'text',
     name: 'value',
     initial: userConfig.userEmail || '',
-    message: c.cyanBright(promptMessage || 'Please input your email address'),
+    message: c.cyanBright(promptMessage || t('pleaseInputYourEmailAddress')),
     description: t('descEnterEmail'),
-    placeholder: 'Ex: john.doe@company.com',
+    placeholder: t('exJohnDoeAtCompany'),
     validate: (value: string) => EmailValidator.validate(value),
   });
   const userEmail = promptResponse.value;
@@ -496,27 +496,23 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
     const installResponse = await prompts({
       type: 'select',
       name: 'value',
-      message: c.cyanBright(
-        `Please select the install configuration for ${c.bold(installedPackage.SubscriberPackageName)}`
-      ),
+      message: c.cyanBright(t('selectInstallConfigurationFor', { packageName: c.bold(installedPackage.SubscriberPackageName) })),
       description: t('descConfigurePackageInstall'),
       choices: [
         {
-          title: `Deploy automatically ${c.bold(
-            installedPackage.SubscriberPackageName
-          )} on integration/production orgs only`,
+          title: t('packageDeployAutomaticallyOnIntegration', { packageName: c.bold(installedPackage.SubscriberPackageName) }),
           value: 'deploy',
         },
         {
-          title: `Install automatically ${c.bold(installedPackage.SubscriberPackageName)} on scratch orgs only`,
+          title: t('packageInstallAutomaticallyOnScratch', { packageName: c.bold(installedPackage.SubscriberPackageName) }),
           value: 'scratch',
         },
         {
-          title: `Both: Install & deploy automatically ${c.bold(installedPackage.SubscriberPackageName)}`,
+          title: t('packageBothInstallAndDeploy', { packageName: c.bold(installedPackage.SubscriberPackageName) }),
           value: 'scratch-deploy',
         },
         {
-          title: `Do not configure ${c.bold(installedPackage.SubscriberPackageName)} installation / deployment`,
+          title: t('packageDoNotConfigureInstall', { packageName: c.bold(installedPackage.SubscriberPackageName) }),
           value: 'none',
         },
       ],

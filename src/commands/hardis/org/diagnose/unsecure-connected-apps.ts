@@ -113,7 +113,7 @@ The command's technical implementation involves:
     this.unsecuredConnectedAppsToIgnore = getEnvVarList("MONITORING_UNSECURE_CONNECTED_APPS_IGNORE") || config.monitoringUnsecureConnectedAppsIgnore || [];
     const unsecuredConnectedAppsToIgnoreSet = new Set(this.unsecuredConnectedAppsToIgnore.map(normalizeAppName));
     if (this.unsecuredConnectedAppsToIgnore.length > 0) {
-      uxLog("action", this, c.yellow(`${this.unsecuredConnectedAppsToIgnore.length} Connected Apps will be ignored based on sfdx-hardis config file or MONITORING_UNSECURE_CONNECTED_APPS_IGNORE ENV variable:`));
+      uxLog("action", this, c.yellow(t('connectedAppsWillBeIgnored', { count: this.unsecuredConnectedAppsToIgnore.length })));
       this.unsecuredConnectedAppsToIgnore.forEach(appName => {
         uxLog("log", this, `• ${appName}`);
       });
@@ -124,14 +124,14 @@ The command's technical implementation involves:
     const connectedAppQuery = `SELECT Id, Name FROM ConnectedApplication ORDER BY Name ASC`;
     const connectedAppQueryRes = await bulkQuery(connectedAppQuery, conn);
     const allConnectedApps = connectedAppQueryRes.records;
-    uxLog("log", this, `${allConnectedApps.length} Connected Apps found.`);
+    uxLog("log", this, t('connectedAppsFound', { count: allConnectedApps.length }));
 
     // Collect all OAuth Tokens
     uxLog("action", this, c.cyan(t('extractingAllOauthTokensFrom', { conn: conn.instanceUrl })));
     const tokensCountQuery = `SELECT count() FROM OauthToken`;
     const tokensCountQueryRes = await soqlQuery(tokensCountQuery, conn);
     const totalTokens = tokensCountQueryRes.totalSize;
-    uxLog("log", this, `${totalTokens} OAuth Tokens found.`);
+    uxLog("log", this, t('oauthTokensFound', { count: totalTokens }));
 
     const baseOAuthTokenQuery = "SELECT AppName, AppMenuItem.IsUsingAdminAuthorization, LastUsedDate, CreatedDate, User.Name , User.Profile.Name, UseCount, AppMenuItem.Id, AppMenuItem.Label, AppMenuItem.Name, AppMenuItem.ApplicationId, Id, DeleteToken FROM OAuthToken";
     const allOAuthTokenQuery = baseOAuthTokenQuery + " ORDER BY CreatedDate ASC";
@@ -141,7 +141,7 @@ The command's technical implementation involves:
     // If not all OAuth token has been found, it means SF hard limit of 2500 OAuth Tokens has been reached
     // Recursively get remaining tokens using latest found Id as constraint
     if (allOAuthTokens.length < totalTokens) {
-      uxLog("warning", this, c.yellow(`Salesforce API limit of 2500 OAuth Tokens reached. We will need to re-query to get all tokens...`));
+      uxLog("warning", this, c.yellow(t('salesforceApiLimitOAuthTokensReached')));
       let lastCreatedDate = allOAuthTokens.length > 0 ? allOAuthTokens[allOAuthTokens.length - 1].CreatedDate : null;
       while (lastCreatedDate != null) {
         const remainingTokensQuery = `${baseOAuthTokenQuery} WHERE CreatedDate > ${lastCreatedDate} ORDER BY CreatedDate ASC`;
@@ -150,7 +150,7 @@ The command's technical implementation involves:
         if (remainingTokens.length > 0) {
           allOAuthTokens.push(...remainingTokens);
           lastCreatedDate = remainingTokens[remainingTokens.length - 1].CreatedDate;
-          uxLog("log", this, `${allOAuthTokens.length} / ${totalTokens} OAuth Tokens retrieved...`);
+          uxLog("log", this, t('oauthTokensRetrievedProgress', { count: allOAuthTokens.length, total: totalTokens }));
           if (allOAuthTokens.length >= totalTokens) {
             lastCreatedDate = null;
           }
@@ -159,7 +159,7 @@ The command's technical implementation involves:
         }
       }
     }
-    uxLog("log", this, `${allOAuthTokens.length} OAuth Tokens retrieved.`);
+    uxLog("log", this, t('oauthTokensRetrieved', { count: allOAuthTokens.length }));
     sortArray(allOAuthTokens, { by: 'AppName' });
 
     const allOAuthTokensWithStatus = allOAuthTokens.map(oAuthToken => {
@@ -296,7 +296,7 @@ The command's technical implementation involves:
         if (confirmPromptRes.value === true) {
           const ignorePromptRes = await prompts({
             type: 'multiselect',
-            message: 'Select the Apps for which you want to ignore future warnings (only for apps that you don\'t see in OAuth Token usage UI)',
+            message: t('selectTheAppsForWhichYouWant2'),
             choices: uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.map(appName => ({ title: appName, value: appName })),
             description: t('appsAddedToIgnoreListDescription'),
           });
@@ -331,7 +331,7 @@ The command's technical implementation involves:
           type: 'multiselect',
           message: t('selectTheAppsForWhichYouWant'),
           choices: uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.map(appName => ({ title: appName, value: appName })),
-          description: 'The OAuth Tokens for the selected Apps will be deleted.',
+          description: t('oauthTokensForSelectedAppsWillBeDeleted'),
         });
         if (deleteTokensPromptRes?.value.length > 0) {
           const tokensToDelete = unsecuredOAuthTokens.filter(token => deleteTokensPromptRes.value.includes(token.AppName));
@@ -340,24 +340,24 @@ The command's technical implementation involves:
           for (const tokenToDelete of tokensToDelete) {
             const deleteTokenRecord = allOAuthTokens.find(t => t.Id === tokenToDelete["x-Token-Id"]);
             if (!deleteTokenRecord) {
-              uxLog("error", this, c.red(`• OAuth Token Id ${tokenToDelete["x-Token-Id"]} for App ${tokenToDelete.AppName} not found. Skipping...`));
+              uxLog("error", this, c.red(t('oauthTokenNotFoundSkipping', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName })));
               counter++;
               continue;
             }
             const deleteTokenUrl = `${conn.instanceUrl}/services/oauth2/revoke?token=${encodeURIComponent(deleteTokenRecord.DeleteToken)}`;
-            uxLog("log", this, `• Deleting OAuth Token Id ${tokenToDelete["x-Token-Id"]} for App ${tokenToDelete.AppName} ...`);
+            uxLog("log", this, t('deletingOAuthTokenForApp', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName }));
             try {
               await conn.requestPost(deleteTokenUrl, {});
-              uxLog("success", this, c.green(`• OAuth Token Id ${tokenToDelete["x-Token-Id"]} for App ${tokenToDelete.AppName} deleted.`));
+              uxLog("success", this, c.green(t('oauthTokenDeleted', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName })));
             }
             catch (error) {
-              uxLog("error", this, c.red(`• Failed to delete OAuth Token Id ${tokenToDelete["x-Token-Id"]} for App ${tokenToDelete.AppName}. Error: ${error}`));
+              uxLog("error", this, c.red(t('failedToDeleteOAuthToken', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName, error: error })));
             }
             counter++;
             WebSocketClient.sendProgressStepMessage(counter, tokensToDelete.length);
           }
           WebSocketClient.sendProgressEndMessage(tokensToDelete.length);
-          uxLog("action", this, c.green(`OAuth Token deletion process completed.`));
+          uxLog("action", this, c.green(t('oauthTokenDeletionCompleted')));
         }
       }
     }

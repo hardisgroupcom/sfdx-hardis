@@ -117,7 +117,7 @@ The command's technical implementation involves:
           name: 'packageSelected',
           message: c.cyanBright(t('pleaseSelectPackageNotADrillCreate')),
           description: t('choosePackageToCreateNewVersionFor'),
-          placeholder: 'Select a package',
+          placeholder: t('selectAPackage'),
           choices: packageDirectories.map((packageDirectory) => {
             return {
               title: packageDirectory?.package || packageDirectory?.path || packageDirectory?.fullPath || packageDirectory?.name,
@@ -130,7 +130,7 @@ The command's technical implementation involves:
           name: 'packageInstallationKey',
           message: c.cyanBright(t('doYouWantToPasswordProtectPackage')),
           description: t('optionallySetPasswordForPackage'),
-          placeholder: 'Ex: mySecretPassword123',
+          placeholder: t('exMySecretPassword123'),
           initial: config.defaultPackageInstallationKey || '',
         },
       ]);

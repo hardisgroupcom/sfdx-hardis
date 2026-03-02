@@ -236,7 +236,7 @@ The command's technical implementation involves:
         type: "select",
         message: t('pleaseSelectPredefinedQueryOrCustomSoql'),
         description: t('selectPredefinedQueryDescription'),
-        placeholder: "Select a query template",
+        placeholder: t('selectAQueryTemplate'),
         choices: [
           ...Object.keys(this.allQueryTemplates).map(templateId => {
             return {
@@ -256,8 +256,8 @@ The command's technical implementation involves:
         const queryPromptRes = await prompts({
           type: 'text',
           message: t('pleaseInputTheSoqlQueryToRun'),
-          description: 'Enter a custom SOQL query that will be executed across all selected Salesforce orgs',
-          placeholder: 'Ex: SELECT Id, Name FROM Account LIMIT 10',
+          description: t('enterCustomSoqlQueryForMultiOrg'),
+          placeholder: t('exSelectIdNameFromAccountLimit'),
         });
         this.query = queryPromptRes.value;
       }

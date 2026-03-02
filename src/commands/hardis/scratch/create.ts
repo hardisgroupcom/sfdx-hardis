@@ -246,7 +246,7 @@ The command's technical implementation involves:
         name: 'value',
         message: c.cyanBright(
           t('aboutToReuseScratchOrgAreYouSure', { alias: c.green(this.scratchOrgAlias) }) +
-          '\n' + c.grey('(if not, run again hardis:work:new or use hardis:scratch:create --forcenew)')
+          '\n' + c.grey(t('ifNotRunAgainHardisWorkNew'))
         ),
         default: false,
         description: t('confirmReuseExistingScratchOrg'),

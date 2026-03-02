@@ -76,7 +76,7 @@ The command's technical implementation involves:
         type: 'confirm',
         name: 'value',
         message: t('doYouWantToOpenThisOrg'),
-        description: 'Launch the Salesforce org in your default web browser for immediate access.',
+        description: t('launchSalesforceOrgInYourDefaultWebBrowser'),
       });
       if (openRes.value === true) {
         const openCommand = `sf org open --target-org ${org.username}`;

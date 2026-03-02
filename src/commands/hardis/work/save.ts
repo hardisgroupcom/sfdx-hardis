@@ -277,21 +277,21 @@ The command's technical implementation involves a series of orchestrated steps:
       type: 'select',
       name: 'value',
       message: c.cyanBright(t('haveYouAlreadyCommittedTheUpdatedMetadata')),
-      description: 'Select your current state regarding git commits and metadata updates',
-      placeholder: 'Select commit status',
+      description: t('selectYourCurrentStateRegardingGitCommits'),
+      placeholder: t('selectCommitStatus'),
       choices: [
         {
-          title: '😎 Yes, my commit(s) are ready! I staged my files and created one or multiple commits.',
+          title: t('commitsAreReady'),
           value: 'commitReady',
           description: t('commitsAreReadyDescription'),
         },
         {
-          title: '😐 No, please pull my latest updates from my org so I can commit my metadata',
+          title: t('pleasePullLatestUpdatesFromOrgForCommit'),
           value: 'pleasePull',
           description: t('pullLatestUpdatesFromOrgToStageAndCommit'),
         },
         {
-          title: '😱 What is a commit? What does pull mean? Help!',
+          title: t('whatIsACommitHelp'),
           value: 'help',
           description: t('dontPanicClickLinkInConsole'),
         },
@@ -660,11 +660,7 @@ The command's technical implementation involves a series of orchestrated steps:
         type: 'confirm',
         name: 'push',
         default: true,
-        message: c.cyanBright(
-          `Do you want to push your commit(s) on git server ? (git push in remote git branch ${c.green(
-            this.currentBranch
-          )})`
-        ),
+        message: c.cyanBright(t('doYouWantToPushCommitsToGitBranch', { branch: c.green(this.currentBranch) })),
         description: t('pushBranchToRemoteDescription'),
       });
       if (pushResponse.push === true) {

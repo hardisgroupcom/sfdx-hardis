@@ -112,7 +112,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
         name: 'before',
         message: t('pleaseSelectBeforeUpdateCommit'),
         description: t('chooseCommitBeforeYourChanges'),
-        placeholder: 'Select a commit',
+        placeholder: t('selectACommit'),
         choices: [...allChoices, ...[
           {
             title: t('calculateForAllFlowStates'),
@@ -136,7 +136,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
           name: 'after',
           message: t('pleaseSelectAfterUpdateCommit'),
           description: t('chooseCommitAfterYourChanges'),
-          placeholder: 'Select a commit',
+          placeholder: t('selectACommit'),
           choices: allChoices
         })
         this.commitAfter = commitAfterSelectRes.after;

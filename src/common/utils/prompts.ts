@@ -35,8 +35,8 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     if (question.type === "confirm") {
       question.type = "select";
       question.choices = [
-        { title: "✅ Yes", value: true },
-        { title: "❌ No", value: false },
+        { title: t('promptChoiceYes'), value: true },
+        { title: t('promptChoiceNo'), value: false },
       ];
       question.initial = question.initial === false ? 1 : 0;
     }
@@ -47,7 +47,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     // Add exit option when possible
     if (question.type === "select" && !WebSocketClient.isAliveWithLwcUI()) {
       question.choices = question.choices || [];
-      question.choices.push({ title: "⛔ Exit this script", value: "exitNow" });
+      question.choices.push({ title: t('promptChoiceExit'), value: "exitNow" });
     }
     if (["select", "multiselect"].includes(question.type) && question.optionsPerPage == null) {
       question.optionsPerPage = 9999;

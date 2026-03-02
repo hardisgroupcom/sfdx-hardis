@@ -91,7 +91,7 @@ The command's technical implementation involves:
       type: 'confirm',
       name: 'value',
       message: c.cyanBright(t('doYouWantToUpdateYourProject')),
-      description: 'Update your local project files with the list of installed packages for deployment automation',
+      description: t('updateLocalProjectFilesWithInstalledPackages'),
     });
     if (updateConfigRes.value === true) {
       await managePackageConfig(installedPackages, installedPackages, true);

@@ -113,7 +113,7 @@ The command's technical implementation involves:
     uxLog("log", this, c.grey(t('outputFile', { outputFile: c.green(this.outputFile) })));
 
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(this.outputFile, 'Full Org package.xml', "report");
+      WebSocketClient.sendReportFileMessage(this.outputFile, t('fullOrgPackageXml'), "report");
     } else {
       WebSocketClient.requestOpenFile(this.outputFile);
     }

@@ -108,8 +108,8 @@ LIMIT 5000;
         const queryChoicePromptRes = await prompts({
           type: 'select',
           message: 'Please select a predefined Data Cloud SQL query or choose "Custom Query" to enter your own:',
-          description: 'Available predefined queries',
-          choices: [...availableQueries.map(q => ({ title: q, value: q })), { title: 'Custom Query', value: 'custom' }],
+          description: t('availablePredefinedQueries'),
+          choices: [...availableQueries.map(q => ({ title: q, value: q })), { title: t('customQuery'), value: 'custom' }],
         });
         if (queryChoicePromptRes.value !== 'custom') {
           this.queryString = await loadDataCloudQueryFromFile(queryChoicePromptRes.value);
@@ -120,21 +120,21 @@ LIMIT 5000;
       const customQueryPromptRes = await prompts({
         type: 'text',
         message: t('pleaseEnterYourDataCloudSqlQuery'),
-        description: 'Custom Data Cloud SQL query',
+        description: t('customDataCloudSqlQuery'),
       });
       this.queryString = customQueryPromptRes.value;
       // Prompt user if he wants to save the query
       const saveQueryPromptRes = await prompts({
         type: 'confirm',
         message: t('doYouWantToSaveThisQuery'),
-        description: 'Save Data Cloud SQL query in local files',
+        description: t('saveDataCloudSqlQueryInLocalFiles'),
         initial: false,
       });
       if (saveQueryPromptRes.value) {
         const saveQueryNamePromptRes = await prompts({
           type: 'text',
           message: t('enterNameForTheSavedQuery'),
-          description: 'Name of the Data Cloud SQL query to save',
+          description: t('nameOfDataCloudSqlQueryToSave'),
         });
         if (saveQueryNamePromptRes.value) {
           await saveDataCloudQueryToFile(saveQueryNamePromptRes.value.trim(), this.queryString);
