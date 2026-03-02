@@ -1,6 +1,7 @@
 import {DocBuilderRoot} from "./docBuilderRoot.js";
 import {PromptTemplate} from "../aiProvider/promptTemplates.js";
 import {RulesBuilderUtil} from "../utils/rulesBuilderUtil.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderAutoResponseRules extends DocBuilderRoot {
 
@@ -16,9 +17,9 @@ export class DocBuilderAutoResponseRules extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related AutoResponse Rules" : "## AutoResponse Rules",
+      filterObject ? `## ${t('docMdRelatedAutoResponseRules')}` : `## ${t('docMdAutoResponseRules')}`,
       "",
-      "| AutoResponse Rule | Is Active |",
+      `| ${t('docMdColAutoResponseRule')} | ${t('docMdColIsActive')} |`,
       "|     :----       |  :--: | "
     ]);
 
@@ -43,7 +44,7 @@ export class DocBuilderAutoResponseRules extends DocBuilderRoot {
       `## ${this.metadataName}`,
       '',
       '<!-- AutoResponse Rules description -->',
-      '## AutoResponse Rules list',
+      `## ${t('docMdAutoResponseRulesList')}`,
       ...autoResponseRuleTableLines
     ];
   }

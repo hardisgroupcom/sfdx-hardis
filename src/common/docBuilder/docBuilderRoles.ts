@@ -17,7 +17,7 @@ export class DocBuilderRoles {
       '<!-- This file is auto-generated. if you do not want it to be overwritten, set TRUE in the line below -->',
       '<!-- DO_NOT_OVERWRITE_DOC=FALSE -->',
       '',
-      '# Organization roles',
+      `# ${t('docMdOrganizationRoles')}`,
       '',
       '<div id="jstree-container"></div>',
       '',
@@ -25,7 +25,7 @@ export class DocBuilderRoles {
     const aiDescription = await DocBuilderRoles.getDescriptionWithAI(roleDescriptions);
     if (aiDescription) {
       mdLines.push("");
-      mdLines.push("## AI-Generated Description", "");
+      mdLines.push(t('docMdAiGeneratedDescription'), "");
       mdLines.push(...aiDescription.split("\n"));
       mdLines.push("");
     }
@@ -44,7 +44,7 @@ export class DocBuilderRoles {
     }).join("\n");
     const aiCache = await UtilsAi.findAiCache(promptKey, [rolesStrings], metadataName);
     if (aiCache.success) {
-      uxLog("success", this, c.green(`Using cached AI response for Roles`));
+      uxLog("success", this, c.green(t('usedCachedAiResponseForRoles')));
       return aiCache.cacheText || '';
     }
     if (await AiProvider.isAiAvailable()) {
@@ -54,7 +54,7 @@ export class DocBuilderRoles {
       const prompt = await AiProvider.buildPrompt(promptKey, variables);
       const aiResponse = await AiProvider.promptAi(prompt, promptKey);
       if (aiResponse?.success) {
-        let responseText = aiResponse.promptResponse || "No AI description available";
+        let responseText = aiResponse.promptResponse || t('docMdNoAiDescriptionAvailable');
         if (responseText.startsWith("##")) {
           responseText = responseText.split("\n").slice(1).join("\n");
         }

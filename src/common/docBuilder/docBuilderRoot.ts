@@ -96,7 +96,7 @@ export abstract class DocBuilderRoot {
 
     if (aiCache.success === true) {
       uxLog("log", this, c.grey(t('usedAiCacheForDescriptionSetIgnoreaicache', { docType: this.docType.toLowerCase() })));
-      const replaceText = `## AI-Generated Description\n\n${includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText || "")}`;
+      const replaceText = `## ${t('docMdAiGeneratedDescription')}\n\n${includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText || "")}`;
       this.markdownDoc = this.markdownDoc.replace(this.placeholder, replaceText);
       return this.markdownDoc;
     }
@@ -108,22 +108,19 @@ export abstract class DocBuilderRoot {
       /* jscpd:ignore-start */
       const aiResponse = await AiProvider.promptAi(prompt, this.promptKey);
       if (aiResponse?.success) {
-        let responseText = aiResponse.promptResponse || "No AI description available";
+        let responseText = aiResponse.promptResponse || t('docMdNoAiDescriptionAvailable');
         if (responseText.startsWith("##")) {
           responseText = responseText.split("\n").slice(1).join("\n");
         }
         await UtilsAi.writeAiCache(this.promptKey, [xmlStripped], this.metadataName, responseText);
-        const replaceText = `## AI-Generated Description\n\n${includeFromFile(aiCache.aiCacheDirFile, responseText)}`;
+        const replaceText = `## ${t('docMdAiGeneratedDescription')}\n\n${includeFromFile(aiCache.aiCacheDirFile, responseText)}`;
         this.markdownDoc = this.markdownDoc.replace(this.placeholder, replaceText);
         return this.markdownDoc;
       }
       /* jscpd:ignore-end */
       else if (aiResponse?.forcedTimeout) {
-        const forcedTimeoutText = `CI job reached maximum time allowed for allowed calls to AI. You can either:
-
-    - Run command locally then commit + push
-    - Increase using variable \`AI_MAX_TIMEOUT_MINUTES\` in your CI config (ex: AI_MAX_TIMEOUT_MINUTES=120) after making sure than your CI job timeout can handle it 😊`;
-        const replaceText = `## AI-Generated Description\n\n${includeFromFile(aiCache.aiCacheDirFile, forcedTimeoutText)}`;
+        const forcedTimeoutText = t('docMdCiJobReachedMaxTime');
+        const replaceText = `## ${t('docMdAiGeneratedDescription')}\n\n${includeFromFile(aiCache.aiCacheDirFile, forcedTimeoutText)}`;
         this.markdownDoc = this.markdownDoc.replace(this.placeholder, replaceText);
       }
     }

@@ -261,7 +261,7 @@ ${this.htmlInstructions}
   protected workflowRulesDescriptions: any[] = [];
   protected roleDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
-  protected processBuildersForMenu: any = { "All Process Builders": "processBuilders/index.md" };
+  protected processBuildersForMenu: any = { [t('docMdAllProcessBuilders')]: "processBuilders/index.md" };
   protected objectFiles: string[];
   protected allObjectsNames: string[];
   protected tempDir: string;
@@ -329,16 +329,16 @@ ${this.htmlInstructions}
       branchesAndOrgsLines = await this.buildMajorBranchesAndOrgs();
     }
     await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-params.md"), getMetaHideLines() + sfdxHardisParamsLines.join("\n") + `\n${this.footer}\n`);
-    this.addNavNode("SFDX-Hardis Config", "sfdx-hardis-params.md");
+    this.addNavNode(t('docMdMenuSfdxHardisConfig'), "sfdx-hardis-params.md");
     await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-branches-and-orgs.md"), getMetaHideLines() + branchesAndOrgsLines.join("\n") + `\n${this.footer}\n`);
-    this.addNavNode("Branches & Orgs", "sfdx-hardis-branches-and-orgs.md");
+    this.addNavNode(t('docMdMenuBranchesAndOrgs'), "sfdx-hardis-branches-and-orgs.md");
 
     // Object model Mermaid schema
     /* Disabled: too messy to read
     let mermaidSchema = await new ObjectModelBuilder().buildObjectsMermaidSchema();
     mermaidSchema = "```mermaid\n" + mermaidSchema + "\n```";
     await fs.writeFile(path.join(this.outputMarkdownRoot, "object-model.md"), getMetaHideLines() + mermaidSchema + `\n${this.footer}\n`);
-    this.addNavNode("Object Model", "object-model.md");
+    this.addNavNode(t('docMdMenuObjectModel'), "object-model.md");
     */
 
     // List SFDX packages and generate a manifest for each of them, except if there is only force-app with a package.xml
@@ -348,7 +348,7 @@ ${this.htmlInstructions}
     await this.generatePackageXmlMarkdown(this.packageXmlCandidates, instanceUrl);
     const { packageLines, packagesForMenu } = await DocBuilderPackageXML.buildIndexTable(this.outputPackageXmlMarkdownFiles);
     if (Object.keys(packagesForMenu).length > 0) {
-      this.addNavNode("Manifests", packagesForMenu);
+      this.addNavNode(t('docMdMenuManifests'), packagesForMenu);
     }
     await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), getMetaHideLines() + packageLines.join("\n") + `\n${this.footer}\n`);
 
@@ -520,7 +520,7 @@ ${this.htmlInstructions}
       uxLog("log", this, c.yellow(t('noApexClassFoundInTheProject')));
       return;
     }
-    const apexForMenu: any = { "All Apex Classes": "apex/index.md" }
+    const apexForMenu: any = { [t('docMdAllApexClasses')]: "apex/index.md" }
 
     // Phase 1: Collect data and prepare work items
     type ApexWorkItem = { apexName: string; apexContent: string; mdFile: string; needsAi: boolean; apexMdContent: string; mermaidClassDiagram: string };
@@ -541,7 +541,7 @@ ${this.htmlInstructions}
           const mermaidClassDiagram = DocBuilderApex.buildMermaidClassDiagram(apexName, this.apexDescriptions);
           let insertion = `${mermaidClassDiagram}\n\n<!-- Apex description -->\n\n`;
           if (!this.hideApexCode) {
-            insertion += `## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`;
+            insertion += `## ${t('docMdApexCode')}\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`;
           }
           const firstHeading = apexMdContent.indexOf("## ");
           apexMdContent = apexMdContent.substring(0, firstHeading) + insertion + apexMdContent.substring(firstHeading);
@@ -560,7 +560,7 @@ ${this.htmlInstructions}
         }
         apexMdContent += `<!-- Apex description -->\n\n`;
         if (!this.hideApexCode) {
-          apexMdContent += `## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`;
+          apexMdContent += `## ${t('docMdApexCode')}\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`;
         }
         workItems.push({ apexName, apexContent, mdFile, needsAi: true, apexMdContent, mermaidClassDiagram });
       }
@@ -591,7 +591,7 @@ ${this.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(apexForMenu).length > 1) {
-      this.addNavNode("Apex", apexForMenu);
+      this.addNavNode(t('docMdMenuApex'), apexForMenu);
     }
 
     // Write index file for apex folder
@@ -604,7 +604,7 @@ ${this.htmlInstructions}
     uxLog("action", this, c.cyan(t('preparingGenerationOfInstalledPackagesDocumentation')));
     uxLog("log", this, t('ifYouDontWantPackagesDoc'));
 
-    const packagesForMenu: any = { "All Packages": "packages/index.md" }
+    const packagesForMenu: any = { [t('docMdAllPackages')]: "packages/index.md" }
     // List packages
     const packages = this.sfdxHardisConfig.installedPackages || [];     // CI/CD context
     const packageFolder = path.join(process.cwd(), 'installedPackages');     // Monitoring context
@@ -680,7 +680,7 @@ ${this.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(packagesForMenu).length > 1) {
-      this.addNavNode("Packages", packagesForMenu);
+      this.addNavNode(t('docMdMenuPackages'), packagesForMenu);
     }
     // Write index file for packages folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "packages"));
@@ -697,7 +697,7 @@ ${this.htmlInstructions}
       uxLog("log", this, c.yellow(t('noLightningPageFoundInTheProject')));
       return;
     }
-    const pagesForMenu: any = { "All Lightning pages": "pages/index.md" }
+    const pagesForMenu: any = { [t('docMdAllLightningPages')]: "pages/index.md" }
 
     // Phase 1: Collect data and prepare work items
     const workItems: { pageName: string; mdFile: string; pageXml: string }[] = [];
@@ -731,7 +731,7 @@ ${this.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(pagesForMenu).length > 1) {
-      this.addNavNode("Lightning Pages", pagesForMenu);
+      this.addNavNode(t('docMdMenuLightningPages'), pagesForMenu);
     }
 
     // Write index file for pages folder
@@ -743,7 +743,7 @@ ${this.htmlInstructions}
   private async generateProfilesDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfProfilesDocumentation')));
     uxLog("log", this, t('ifYouDontWantProfilesDoc'));
-    const profilesForMenu: any = { "All Profiles": "profiles/index.md" };
+    const profilesForMenu: any = { [t('docMdAllProfiles')]: "profiles/index.md" };
     const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(profilesFiles);
     if (profilesFiles.length === 0) {
@@ -783,7 +783,7 @@ ${this.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(profilesForMenu).length > 1) {
-      this.addNavNode("Profiles", profilesForMenu);
+      this.addNavNode(t('docMdMenuProfiles'), profilesForMenu);
     }
     // Write index file for profiles folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "profiles"));
@@ -794,7 +794,7 @@ ${this.htmlInstructions}
   private async generatePermissionSetsDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfPermissionSetsDocumentation')));
     uxLog("log", this, t('ifYouDontWantProfilesDoc'));
-    const psForMenu: any = { "All Permission Sets": "permissionsets/index.md" };
+    const psForMenu: any = { [t('docMdAllPermissionSets')]: "permissionsets/index.md" };
     const psFiles = (await glob("**/permissionsets/**.permissionset-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(psFiles);
     if (psFiles.length === 0) {
@@ -837,7 +837,7 @@ ${this.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(psForMenu).length > 1) {
-      this.addNavNode("Permission Sets", psForMenu);
+      this.addNavNode(t('docMdMenuPermissionSets'), psForMenu);
     }
     // Write index file for permission sets folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "permissionsets"));
@@ -847,7 +847,7 @@ ${this.htmlInstructions}
 
   private async generatePermissionSetGroupsDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfPermissionSetGroupsDocumentation')));
-    const psgForMenu: any = { "All Permission Set Groups": "permissionsetgroups/index.md" };
+    const psgForMenu: any = { [t('docMdAllPermissionSetGroups')]: "permissionsetgroups/index.md" };
     const psgFiles = (await glob("**/permissionsetgroups/**.permissionsetgroup-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }))
     sortCrossPlatform(psgFiles);
     if (psgFiles.length === 0) {
@@ -891,7 +891,7 @@ ${this.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(psgForMenu).length > 1) {
-      this.addNavNode("Permission Set Groups", psgForMenu);
+      this.addNavNode(t('docMdMenuPermissionSetGroups'), psgForMenu);
     }
 
     // Write index file for permission set groups folder
@@ -922,7 +922,7 @@ ${this.htmlInstructions}
       this.roleDescriptions.push(roleInfo);
     }
     if (this.roleDescriptions.length > 0) {
-      this.addNavNode("Roles", "roles.md");
+      this.addNavNode(t('docMdMenuRoles'), "roles.md");
     }
 
     // Add Roles documentation
@@ -938,7 +938,7 @@ ${this.htmlInstructions}
     uxLog("action", this, c.cyan(t('preparingGenerationOfAssignmentRulesDocumentation')));
     uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
-    const assignmentRulesForMenu: any = { "All Assignment Rules": "assignmentRules/index.md" };
+    const assignmentRulesForMenu: any = { [t('docMdAllAssignmentRules')]: "assignmentRules/index.md" };
     const assignmentRulesFiles = (await glob("**/assignmentRules/**.assignmentRules-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -991,7 +991,7 @@ ${this.htmlInstructions}
     WebSocketClient.sendProgressEndMessage();
 
     if (Object.keys(assignmentRulesForMenu).length > 1) {
-      this.addNavNode("Assignment Rules", assignmentRulesForMenu);
+      this.addNavNode(t('docMdMenuAssignmentRules'), assignmentRulesForMenu);
     }
 
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "assignmentRules"));
@@ -1003,7 +1003,7 @@ ${this.htmlInstructions}
     uxLog("action", this, c.cyan(t('preparingGenerationOfApprovalProcessesDocumentation')));
     uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
-    const approvalProcessesForMenu: any = { "All Approval Processes": "approvalProcesses/index.md" }
+    const approvalProcessesForMenu: any = { [t('docMdAllApprovalProcesses')]: "approvalProcesses/index.md" }
     const approvalProcessFiles = (await glob("**/approvalProcesses/**.approvalProcess-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -1048,7 +1048,7 @@ ${this.htmlInstructions}
     WebSocketClient.sendProgressEndMessage();
 
     if (Object.keys(approvalProcessesForMenu).length > 1) {
-      this.addNavNode("Approval Processes", approvalProcessesForMenu);
+      this.addNavNode(t('docMdMenuApprovalProcesses'), approvalProcessesForMenu);
     }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "approvalProcesses"));
     const approvalProcessesIndexFile = path.join(this.outputMarkdownRoot, "approvalProcesses", "index.md");
@@ -1059,7 +1059,7 @@ ${this.htmlInstructions}
     uxLog("action", this, c.cyan(t('preparingGenerationOfAutoresponseRulesDocumentation')));
     uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
-    const autoResponseRulesForMenu: any = { "All AutoResponse Rules": "autoResponseRules/index.md" };
+    const autoResponseRulesForMenu: any = { [t('docMdAllAutoResponseRules')]: "autoResponseRules/index.md" };
     const autoResponseRulesFiles = (await glob("**/autoResponseRules/**.autoResponseRules-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -1111,7 +1111,7 @@ ${this.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(autoResponseRulesForMenu).length > 1) {
-      this.addNavNode("AutoResponse Rules", autoResponseRulesForMenu);
+      this.addNavNode(t('docMdMenuAutoResponseRules'), autoResponseRulesForMenu);
     }
 
     // Write index file for permission set groups folder
@@ -1124,7 +1124,7 @@ ${this.htmlInstructions}
     uxLog("action", this, c.cyan(t('preparingGenerationOfEscalationRulesDocumentation')));
     uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
-    const escalationRulesForMenu: any = { "All Escalation Rules": "escalationRules/index.md" };
+    const escalationRulesForMenu: any = { [t('docMdAllEscalationRules')]: "escalationRules/index.md" };
     const escalationRulesFiles = (await glob("**/escalationRules/**.escalationRules-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -1177,7 +1177,7 @@ ${this.htmlInstructions}
     WebSocketClient.sendProgressEndMessage();
 
     if (Object.keys(escalationRulesForMenu).length > 1) {
-      this.addNavNode("Escalation Rules", escalationRulesForMenu);
+      this.addNavNode(t('docMdMenuEscalationRules'), escalationRulesForMenu);
     }
 
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "escalationRules"));
@@ -1189,7 +1189,7 @@ ${this.htmlInstructions}
     uxLog("action", this, c.cyan(t('preparingGenerationOfWorkflowRulesDocumentation')));
     uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
-    const workflowRulesForMenu: any = { "All Workflow Rules": "workflowRules/index.md" };
+    const workflowRulesForMenu: any = { [t('docMdAllWorkflowRules')]: "workflowRules/index.md" };
     const workflowRulesFiles = (await glob("**/workflows/**.workflow-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -1251,7 +1251,7 @@ ${this.htmlInstructions}
     WebSocketClient.sendProgressEndMessage();
 
     if (Object.keys(workflowRulesForMenu).length > 1) {
-      this.addNavNode("Workflow Rules", workflowRulesForMenu);
+      this.addNavNode(t('docMdMenuWorkflowRules'), workflowRulesForMenu);
     }
 
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "workflowRules"));
@@ -1272,7 +1272,7 @@ ${this.htmlInstructions}
     uxLog("action", this, c.cyan(t('generatingProcessBuilderDocumentation')));
 
     if (Object.keys(this.processBuildersForMenu).length > 1) {
-      this.addNavNode("Process Builders", this.processBuildersForMenu);
+      this.addNavNode(t('docMdMenuProcessBuilders'), this.processBuildersForMenu);
     }
 
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "processBuilders"));
@@ -1373,9 +1373,9 @@ ${this.htmlInstructions}
 
     // Add root menus
     const rootSections = [
-      { menu: "Automations", subMenus: ["Approval Processes", "Assignment Rules", "AutoResponse Rules", "Escalation Rules", "Flows", "Process Builders", "Workflow Rules"] },
-      { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
-      { menu: "Code", subMenus: ["Apex", "Lightning Web Components"] },
+      { menu: t('docMdMenuAutomations'), subMenus: [t('docMdMenuApprovalProcesses'), t('docMdMenuAssignmentRules'), t('docMdMenuAutoResponseRules'), t('docMdMenuEscalationRules'), t('docMdMenuFlows'), t('docMdMenuProcessBuilders'), t('docMdMenuWorkflowRules')] },
+      { menu: t('docMdMenuAuthorizations'), subMenus: [t('docMdMenuProfiles'), t('docMdMenuPermissionSetGroups'), t('docMdMenuPermissionSets')] },
+      { menu: t('docMdMenuCode'), subMenus: [t('docMdMenuApex'), t('docMdMenuLightningWebComponents')] },
     ];
     for (const rootSection of rootSections) {
       const navSubmenus: any[] = [];
@@ -1414,18 +1414,18 @@ ${this.htmlInstructions}
 
     // Order nav items with this elements in first
     const firstItemsInOrder = [
-      "Home",
-      // "Object Model",
-      "Objects",
-      "Automations",
-      "Authorizations",
-      "Code",
-      "Lightning Pages",
-      "Packages",
-      "Roles",
-      "SFDX-Hardis Config",
-      "Branches & Orgs",
-      "Manifests"
+      t('docMdMenuHome'),
+      // t('docMdMenuObjectModel'),
+      t('docMdMenuObjects'),
+      t('docMdMenuAutomations'),
+      t('docMdMenuAuthorizations'),
+      t('docMdMenuCode'),
+      t('docMdMenuLightningPages'),
+      t('docMdMenuPackages'),
+      t('docMdMenuRoles'),
+      t('docMdMenuSfdxHardisConfig'),
+      t('docMdMenuBranchesAndOrgs'),
+      t('docMdMenuManifests')
     ];
     mkdocsYml.nav = firstItemsInOrder.map(item => mkdocsYml.nav.find(navItem => Object.keys(navItem)[0] === item)).filter(item => item).concat(mkdocsYml.nav.filter(navItem => !firstItemsInOrder.includes(Object.keys(navItem)[0])));
 
@@ -1440,7 +1440,7 @@ ${this.htmlInstructions}
     uxLog("log", this, t('ifYouDontWantObjectsDoc'));
 
     const objectLinksInfo = await this.generateLinksInfo();
-    const objectsForMenu: any = { "All objects": "objects/index.md" }
+    const objectsForMenu: any = { [t('docMdAllObjects')]: "objects/index.md" }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
 
     // Phase 1: Collect data and prepare work items
@@ -1539,7 +1539,7 @@ ${this.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(objectsForMenu).length > 1) {
-      this.addNavNode("Objects", objectsForMenu);
+      this.addNavNode(t('docMdMenuObjects'), objectsForMenu);
     }
 
     // Write index file for objects folder
@@ -1577,7 +1577,7 @@ ${this.htmlInstructions}
 
   private async generateFlowsDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfFlowsVisualDocumentation')));
-    const flowsForMenu: any = { "All flows": "flows/index.md" }
+    const flowsForMenu: any = { [t('docMdAllFlows')]: "flows/index.md" }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const packageDirs = this.project?.getPackageDirectories();
     const updatedFlowNames = !this.diffOnly ?
@@ -1719,7 +1719,7 @@ ${this.htmlInstructions}
     const flowIndexFile = path.join(this.outputMarkdownRoot, "flows", "index.md");
     await fs.writeFile(flowIndexFile, getMetaHideLines() + flowTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
 
-    this.addNavNode("Flows", flowsForMenu);
+    this.addNavNode(t('docMdMenuFlows'), flowsForMenu);
     uxLog("success", this, c.green(t('successfullyGeneratedDocIndexForFlowsAt', { flowIndexFile })));
   }
 
@@ -1839,7 +1839,7 @@ ${this.htmlInstructions}
     uxLog("action", this, c.cyan(t('preparingGenerationOfLightningWebComponentsDocumentation')));
     uxLog("log", this, t('ifYouDontWantLwcDoc'));
 
-    const lwcForMenu: any = { "All Lightning Web Components": "lwc/index.md" };
+    const lwcForMenu: any = { [t('docMdAllLightningWebComponents')]: "lwc/index.md" };
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "lwc"));
 
     const packageDirs = this.project?.getPackageDirectories() || [];
@@ -1927,7 +1927,7 @@ ${this.htmlInstructions}
     WebSocketClient.sendProgressEndMessage();
 
     if (Object.keys(lwcForMenu).length > 1) {
-      this.addNavNode("Lightning Web Components", lwcForMenu);
+      this.addNavNode(t('docMdMenuLightningWebComponents'), lwcForMenu);
     }
 
     // Write index file for LWC folder

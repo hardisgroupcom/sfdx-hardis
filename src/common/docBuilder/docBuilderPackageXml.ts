@@ -13,18 +13,18 @@ export class DocBuilderPackageXML {
 
   public static async buildIndexTable(outputPackageXmlMarkdownFiles: any[]) {
     const packageLines: string[] = [];
-    const packagesForMenu: any = { "All manifests": "manifests.md" }
+    const packagesForMenu: any = { [t('docMdAllManifests')]: "manifests.md" }
     packageLines.push(...[
-      "## Package XML files",
+      `## ${t('docMdPackageXmlFiles')}`,
       "",
-      "| Package name | Description |",
+      `| ${t('docMdColPackageName')} | ${t('docMdColDescription')} |`,
       "| :----------- | :---------- |"
     ]);
 
     for (const outputPackageXmlDef of outputPackageXmlMarkdownFiles) {
       const metadataNb = await countPackageXmlItems(outputPackageXmlDef.path);
       const packageMdFile = path.basename(outputPackageXmlDef.path) + ".md";
-      const label = outputPackageXmlDef.name ? `Package folder: ${outputPackageXmlDef.name}` : path.basename(outputPackageXmlDef.path);
+      const label = outputPackageXmlDef.name ? t('docMdPackageFolder', { name: outputPackageXmlDef.name }) : path.basename(outputPackageXmlDef.path);
       const packageTableLine = `| [${label}](${packageMdFile}) (${metadataNb}) | ${outputPackageXmlDef.description} |`;
       packageLines.push(packageTableLine);
       packagesForMenu[label] = packageMdFile;
@@ -63,24 +63,24 @@ export class DocBuilderPackageXML {
     if (packageXmlDefinition && packageXmlDefinition.description) {
       // Header
       mdLines.push(...[
-        `## Content of ${path.basename(inputFile)}`,
+        `## ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
         '',
         packageXmlDefinition.description,
         '',
         '<div id="jstree-container"></div>',
         '',
-        `Metadatas: ${nbItems}`,
+        t('docMdMetadatas', { nbItems }),
         ''
       ]);
     }
     else {
       // Header
       mdLines.push(...[
-        `## Content of ${path.basename(inputFile)}`,
+        `## ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
         '',
         '<div id="jstree-container"></div>',
         '',
-        `Metadatas: ${nbItems}`,
+        t('docMdMetadatas', { nbItems }),
         ''
       ]);
     }
@@ -92,7 +92,7 @@ export class DocBuilderPackageXML {
       const memberLengthLabel = members.length === 1 && members[0] === "*" ? "*" : members.length;
       mdLines.push(`<details><summary>${metadataType} (${memberLengthLabel})</summary>\n\n`);
       for (const member of members) {
-        const memberLabel = member === "*" ? "ALL (wildcard *)" : member;
+        const memberLabel = member === "*" ? t('docMdWildcardAll') : member;
         const setupUrl = SalesforceSetupUrlBuilder.getSetupUrl(metadataType, member);
         if (setupUrl && rootSalesforceUrl) {
           mdLines.push(`  • <a href="${rootSalesforceUrl}${setupUrl}" target="_blank">${memberLabel}</a><br/>`);

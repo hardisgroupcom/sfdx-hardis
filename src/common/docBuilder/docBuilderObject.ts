@@ -2,6 +2,7 @@ import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
 import { mdTableCell } from "../gitProvider/utilsMarkdown.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderObject extends DocBuilderRoot {
 
@@ -13,9 +14,9 @@ export class DocBuilderObject extends DocBuilderRoot {
   public static buildIndexTable(prefix: string, objectDescriptions: any[]) {
     const lines: string[] = [];
     lines.push(...[
-      "## Objects",
+      `## ${t('docMdObjects')}`,
       "",
-      "| Name      | Label | Description |",
+      `| ${t('docMdColName')} | ${t('docMdColLabel')} | ${t('docMdColDescription')} |`,
       "| :-------- | :---- | :---------- | "
     ]);
     for (const objectDescription of objectDescriptions) {
@@ -37,9 +38,9 @@ export class DocBuilderObject extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      "## Fields",
+      `## ${t('docMdFields')}`,
       "",
-      "| Name      | Label | Type | Description |",
+      `| ${t('docMdColName')} | ${t('docMdColLabel')} | ${t('docMdColType')} | ${t('docMdColDescription')} |`,
       "| :-------- | :---- | :--: | :---------- | "
     ]);
     for (const field of fields) {
@@ -60,14 +61,14 @@ export class DocBuilderObject extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      "## Validation Rules",
+      `## ${t('docMdValidationRules')}`,
       "",
-      "| Rule      | Active | Description | Formula |",
+      `| ${t('docMdColRule')} | ${t('docMdColActive')} | ${t('docMdColDescription')} | ${t('docMdColFormula')} |`,
       "| :-------- | :---- | :---------- | :------ |"
     ]);
     for (const rule of validationRules) {
       lines.push(...[
-        `| ${rule.fullName} | ${rule.active ? "Yes" : "No ⚠️"} | ${rule.description || ""} | ${mdTableCell(rule.errorConditionFormula)} |`
+        `| ${rule.fullName} | ${rule.active ? t('docMdYes') : t('docMdNo')} | ${rule.description || ""} | ${mdTableCell(rule.errorConditionFormula)} |`
       ]);
     }
     lines.push("");

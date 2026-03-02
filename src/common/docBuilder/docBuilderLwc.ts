@@ -3,6 +3,7 @@ import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import jsdoc2md from "jsdoc-to-markdown";
 import fs from "fs-extra";
 import path from "path";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderLwc extends DocBuilderRoot {
 
@@ -23,9 +24,9 @@ export class DocBuilderLwc extends DocBuilderRoot {
     
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Lightning Web Components" : "## Lightning Web Components",
+      filterObject ? `## ${t('docMdRelatedLightningWebComponents')}` : `## ${t('docMdLightningWebComponents')}`,
       "",
-      "| Component | Description | Exposed | Targets |",
+      `| ${t('docMdColComponent')} | ${t('docMdColDescription')} | ${t('docMdColExposed')} | ${t('docMdColTargets')} |`,
       "| :-------- | :---------- | :-----: | :------------- |"
     ]);
 
@@ -47,11 +48,11 @@ export class DocBuilderLwc extends DocBuilderRoot {
       '',
       '<!-- LWC description -->',
       '',
-      '## JS Documentation',
+      `## ${t('docMdJsDocumentation')}`,
       '',
       await this.generateJsDocumentation(),
       '',
-      '## Files',
+      `## ${t('docMdFilesSection')}`,
       '',
       await this.listComponentFiles(),
       ''
@@ -65,12 +66,12 @@ export class DocBuilderLwc extends DocBuilderRoot {
       
       if (fs.existsSync(jsFile)) {
         const jsdocOutput = await jsdoc2md.render({ files: jsFile });
-        return jsdocOutput || "No JSDoc documentation available for this component.";
+        return jsdocOutput || t('docMdNoJsDocAvailable');
       } else {
-        return "No JavaScript file found for this component.";
+        return t('docMdNoJsFileFound');
       }
     } catch (error) {
-      return `Error generating JS documentation: ${(error as any).message}`;
+      return t('docMdErrorGeneratingJsDoc', { message: (error as any).message });
     }
   }
 
@@ -87,9 +88,9 @@ export class DocBuilderLwc extends DocBuilderRoot {
         }
       }
       
-      return fileList || "No files found for this component.";
+      return fileList || t('docMdNoFilesFoundForComponent');
     } catch (error) {
-      return `Error listing component files: ${(error as any).message}`;
+      return t('docMdErrorListingComponentFiles', { message: (error as any).message });
     }
   }
 
