@@ -206,6 +206,14 @@ For every `WebSocketClient.sendProgressStartMessage()` call, the first argument 
     WebSocketClient.sendProgressStartMessage(t('collectingInstalledPackagesData'), packages.length);
 ```
 
+### Markdown table headers
+
+Do not put the whole markdown table header in a translation key. Instead, only translate the column names and concatenate them in the code:
+
+```typescript
+const header = `| ${t('name')} | ${t('type')} | ${t('description')} |`;
+```
+
 ## AI Integration Notes
 
 - Supports multiple AI providers (Anthropic, Google GenAI, Ollama)

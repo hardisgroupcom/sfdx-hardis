@@ -287,40 +287,40 @@ ${this.htmlInstructions}
 
     await fs.ensureDir(this.outputMarkdownRoot);
     const currentBranch = await getCurrentGitBranch()
-    this.footer = `_Documentation generated from branch ${currentBranch} with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) by [Cloudity](${CONSTANTS.WEBSITE_URL}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`;
+    this.footer = t('documentationGeneratedFromBranch', { currentBranch, docUrl: CONSTANTS.DOC_URL_ROOT, websiteUrl: CONSTANTS.WEBSITE_URL });
 
     this.mdLines.push(...[
-      "Welcome to the documentation of your Salesforce project.",
+      t('welcomeToDocumentation'),
       "",
       "![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner-doc.png)",
       "",
-      "- [Objects](objects/index.md)",
-      "- Automations",
-      "  - [Approval Processes](approvalProcesses/index.md)",
-      "  - [Assignment Rules](assignmentRules/index.md)",
-      "  - [AutoResponse Rules](autoResponseRules/index.md)",
-      "  - [Escalation Rules](escalationRules/index.md)",
-      "  - [Flows](flows/index.md)",
-      "  - [Process Builders](processBuilders/index.md)",
-      "  - [Workflow Rules](workflowRules/index.md)",
-      "- Authorizations",
-      "  - [Profiles](profiles/index.md)",
-      "  - [Permission Set Groups](permissionsetgroups/index.md)",
-      "  - [Permission Sets](permissionsets/index.md)",
-      "- Code",
+      `- [${t('docNavObjects')}](objects/index.md)`,
+      `- ${t('docNavAutomations')}`,
+      `  - [${t('docNavApprovalProcesses')}](approvalProcesses/index.md)`,
+      `  - [${t('docNavAssignmentRules')}](assignmentRules/index.md)`,
+      `  - [${t('docNavAutoResponseRules')}](autoResponseRules/index.md)`,
+      `  - [${t('docNavEscalationRules')}](escalationRules/index.md)`,
+      `  - [${t('docNavFlows')}](flows/index.md)`,
+      `  - [${t('docNavProcessBuilders')}](processBuilders/index.md)`,
+      `  - [${t('docNavWorkflowRules')}](workflowRules/index.md)`,
+      `- ${t('docNavAuthorizations')}`,
+      `  - [${t('docNavProfiles')}](profiles/index.md)`,
+      `  - [${t('docNavPermissionSetGroups')}](permissionsetgroups/index.md)`,
+      `  - [${t('docNavPermissionSets')}](permissionsets/index.md)`,
+      `- ${t('docNavCode')}`,
       "  - [Apex](apex/index.md)",
-      "  - [Lightning Web Components](lwc/index.md)",
-      "- [Lightning Pages](pages/index.md)",
-      "- [Packages](packages/index.md)",
-      "- [Roles](roles.md)",
+      `  - [${t('docNavLightningWebComponents')}](lwc/index.md)`,
+      `- [${t('docNavLightningPages')}](pages/index.md)`,
+      `- [${t('docNavPackages')}](packages/index.md)`,
+      `- [${t('docNavRoles')}](roles.md)`,
       "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
-      "- [Branches & Orgs](sfdx-hardis-branches-and-orgs.md)",
-      "- [Manifests](manifests.md)",
+      `- [${t('docNavBranchesAndOrgs')}](sfdx-hardis-branches-and-orgs.md)`,
+      `- [${t('docNavManifests')}](manifests.md)`,
       ""
     ]);
 
-    let sfdxHardisParamsLines = ["Available only in a [sfdx-hardis CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)"];
-    let branchesAndOrgsLines = ["Available only in a [sfdx-hardis CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)"];
+    let sfdxHardisParamsLines = [t('availableOnlyInSfdxHardisCiCdProject')];
+    let branchesAndOrgsLines = [t('availableOnlyInSfdxHardisCiCdProject')];
     if (fs.existsSync("config/.sfdx-hardis.yml")) {
       this.sfdxHardisConfig = await getConfig("project");
       // General sfdx-hardis config
@@ -422,14 +422,7 @@ ${this.htmlInstructions}
     if (fs.existsSync(readmeFile)) {
       let readme = await fs.readFile(readmeFile, "utf8");
       if (!readme.includes("docs/index.md")) {
-        readme += `
-
-## Documentation
-
-[Read auto-generated documentation of the SFDX project](docs/index.md)
-
-${Project2Markdown.htmlInstructions}
-`;
+        readme += `\n\n## ${t('readmeDocumentationHeading')}\n\n[${t('readmeDocumentationLink')}](docs/index.md)\n\n${Project2Markdown.htmlInstructions}\n`;
         await fs.writeFile(readmeFile, readme);
         uxLog("success", this, c.green(t('updatedReadmeToAddLink')));
       }
@@ -696,8 +689,14 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePagesDocumentation() {
+    uxLog("action", this, c.cyan(t('preparingGenerationOfLightningPagesDocumentation')));
+    uxLog("log", this, t('ifYouDontWantPagesDoc'));
     const packageDirs = this.project?.getPackageDirectories() || [];
     const pageFiles = await listPageFiles(packageDirs);
+    if (pageFiles.length === 0) {
+      uxLog("log", this, c.yellow(t('noLightningPageFoundInTheProject')));
+      return;
+    }
     const pagesForMenu: any = { "All Lightning pages": "pages/index.md" }
 
     // Phase 1: Collect data and prepare work items
@@ -1731,18 +1730,18 @@ ${Project2Markdown.htmlInstructions}
   private buildSfdxHardisParams(): string[] {
     const sfdxParamsTableLines: string[] = [];
     sfdxParamsTableLines.push(...[
-      `## ${this.sfdxHardisConfig?.projectName?.toUpperCase() || "SFDX Project"} CI/CD configuration`,
+      `## ${this.sfdxHardisConfig?.projectName?.toUpperCase() || "SFDX Project"} ${t('ciCdConfiguration')}`,
       ""]);
     sfdxParamsTableLines.push(...[
-      "| Sfdx-hardis Parameter | Value | Description & doc link |",
+      `| ${t('colSfdxHardisParameter')} | ${t('colValue')} | ${t('colDescriptionDocLink')} |`,
       "| :--------- | :---- | :---------- |"
     ]);
     const installPackagesDuringCheckDeploy = this.sfdxHardisConfig?.installPackagesDuringCheckDeploy ?? false;
-    sfdxParamsTableLines.push(`| Install Packages During Check Deploy | ${bool2emoji(installPackagesDuringCheckDeploy)} | [Install 1GP & 2GP packages during deployment check CI/CD job](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#packages-installation) |`);
+    sfdxParamsTableLines.push(t('installPackagesDuringCheckDeployRow', { emoji: bool2emoji(installPackagesDuringCheckDeploy) }));
     const useDeltaDeployment = this.sfdxHardisConfig?.useDeltaDeployment ?? false;
-    sfdxParamsTableLines.push(`| Use Delta Deployment | ${bool2emoji(useDeltaDeployment)} | [Deploys only updated metadatas , only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-mode) |`);
+    sfdxParamsTableLines.push(t('useDeltaDeploymentRow', { emoji: bool2emoji(useDeltaDeployment) }));
     const useSmartDeploymentTests = this.sfdxHardisConfig?.useSmartDeploymentTests ?? false;
-    sfdxParamsTableLines.push(`| Use Smart Deployment Tests | ${bool2emoji(useSmartDeploymentTests)} | [Skip Apex test cases if delta metadatas can not impact them, only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests) |`);
+    sfdxParamsTableLines.push(t('useSmartDeploymentTestsRow', { emoji: bool2emoji(useSmartDeploymentTests) }));
     sfdxParamsTableLines.push("");
     sfdxParamsTableLines.push("___");
     sfdxParamsTableLines.push("");
@@ -1755,7 +1754,7 @@ ${Project2Markdown.htmlInstructions}
     if (majorOrgs.length > 0) {
 
       branchesOrgsLines.push(...[
-        "## Branches & Orgs strategy",
+        t('branchesAndOrgsStrategyHeading'),
         "",
       ]);
       const mermaidLines = new BranchStrategyMermaidBuilder(majorOrgs).build({ withMermaidTag: true, format: "list" });
@@ -1763,7 +1762,7 @@ ${Project2Markdown.htmlInstructions}
 
       branchesOrgsLines.push(...[
         "",
-        "| Git branch | Salesforce Org | Deployment Username |",
+        `| ${t('colGitBranch')} | ${t('colSalesforceOrg')} | ${t('colDeploymentUsername')} |`,
         "| :--------- | :------------- | :------------------ |"
       ]);
       for (const majorOrg of majorOrgs) {
@@ -1838,7 +1837,7 @@ ${Project2Markdown.htmlInstructions}
 
   private async generateLwcDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfLightningWebComponentsDocumentation')));
-    uxLog("log", this, "If you don't want it, use --no-generate-lwc-doc or define GENERATE_LWC_DOC=false");
+    uxLog("log", this, t('ifYouDontWantLwcDoc'));
 
     const lwcForMenu: any = { "All Lightning Web Components": "lwc/index.md" };
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "lwc"));
