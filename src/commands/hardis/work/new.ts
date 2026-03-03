@@ -222,13 +222,13 @@ The command's logic orchestrates various underlying processes:
       orgTypeChoices.push({
         title: `😎 Current org ${flags['target-org']?.getConnection().instanceUrl.replace("https://", "")}`,
         value: 'currentOrg',
-        description: `Use your default org with username ${flags['target-org']?.getUsername()}`,
+        description: t('useYourDefaultOrgWithUsername', { username: flags['target-org']?.getUsername() }),
       });
     }
     orgTypeChoices.push({
       title: t('choiceHardcoreNoOrg'),
       value: 'noOrg',
-      description: 'Work with XML and sfdx-hardis configuration only, without a connected org',
+      description: t('workWithXmlAndSfdxHardisConfigOnly'),
     });
     const orgTypeResponse = await prompts({
       type: 'select',
@@ -518,7 +518,7 @@ The command's logic orchestrates various underlying processes:
         ...sandboxOrgList.map((sandboxOrg: any) => {
           return {
             title: sandboxOrg.instanceUrl,
-            description: `☁️ Use sandbox org ${c.yellow(sandboxOrg.username || sandboxOrg.alias)}`,
+            description: `☁️ ${t('useSandboxOrg', { sandbox: c.yellow(sandboxOrg.username || sandboxOrg.alias) })}`,
             value: sandboxOrg,
           };
         }),

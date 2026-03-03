@@ -60,9 +60,9 @@ export async function promptProfiles(
     returnField: 'Name',
     message: t('pleaseSelectProfile'),
     allowSelectAll: true,
-    allowSelectAllErrorMessage: 'You can not select all profiles',
+    allowSelectAllErrorMessage: t('youCanNotSelectAllProfiles'),
     allowSelectMine: true,
-    allowSelectMineErrorMessage: 'You can not select the profile your user is assigned to',
+    allowSelectMineErrorMessage: t('youCanNotSelectTheProfileYourUserIsAssignedTo'),
     returnApiName: false
   }
 ) {
@@ -157,9 +157,9 @@ export async function promptOrg(
   const orgListResult = await MetadataUtils.listLocalOrgs(options.devSandbox === true ? 'sandbox' : 'any', { quickOrgList: options.quickOrgList, useCache: options.useCache });
   let orgList = [
     {
-      username: '🌍 Login to another org',
+      username: `🌍 ${t('loginToAnotherOrg')}`,
       otherOrg: true,
-      descriptionForUi: 'Connect in Web Browser to a Sandbox, a Production Org, a Dev Org or a Scratch Org',
+      descriptionForUi: t('connectInWebBrowserToSandbox'),
     },
     ...sortArray(orgListResult?.scratchOrgs || [], {
       by: ['instanceUrl', 'devHubUsername', 'username', 'alias'],
@@ -170,11 +170,11 @@ export async function promptOrg(
       order: ['asc', 'asc', 'asc'],
     }),
     {
-      username: "😱 I already authenticated my org but I don't see it !",
+      username: `😱 ${t('iAlreadyAuthenticatedMyOrgButDontSeeIt')}`,
       clearCache: true,
-      descriptionForUi: 'It might be a sfdx-hardis cache issue, reset it and try again !',
+      descriptionForUi: t('itMightBeASfdxHardisCacheIssue'),
     },
-    { username: '❌ Cancel', cancel: true, descriptionForUi: 'Get out of here 😊' },
+    { username: `❌ ${t('cancelOption')}`, cancel: true, descriptionForUi: t('getOutOfHere') + ' 😊' },
   ];
 
   // Filter if we want to list only the scratch attached to current devhub
@@ -202,7 +202,7 @@ export async function promptOrg(
       if (org.alias && title !== org.alias) {
         title += ` (${org.alias})`;
       }
-      const description = `Connected with ${org.username || org.alias || 'unknown user'} ` +
+      const description = t('connectedWithOrgUser', { user: org.username || org.alias || t('unknownUser') }) +
         (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '');
       return {
         title: title.replace("https://", ""),
@@ -244,7 +244,7 @@ export async function promptOrg(
 
   // Token is expired: login again to refresh it
   if (org?.connectedStatus === 'RefreshTokenAuthError' || org?.connectedStatus?.includes('expired')) {
-    uxLog("action", this, c.yellow(`⚠️ Your authentication has expired. Please log in again using the web browser.`));
+    uxLog("action", this, c.yellow('⚠️ ' + t('authenticationHasExpiredPleaseLogIn')));
     const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}`;
     const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
     org = loginResult.result;
@@ -307,7 +307,7 @@ export async function promptOrgList(options: { promptMessage?: string } = {}) {
     description: t('descChooseMultipleOrgs'),
     choices: orgListSorted.map((org: any) => {
       const title = org.instanceUrl || org.username || org.alias || "ERROR";
-      const description = `Connected with ${org.username || org.alias || 'unknown user'} ` +
+      const description = t('connectedWithOrgUser', { user: org.username || org.alias || t('unknownUser') }) +
         (org.devHubUsername ? ` (Hub: ${org.devHubUsername})` : '');
       return {
         title: title,
@@ -374,7 +374,7 @@ export async function promptOrgUsernameDefault(
 ) {
   const defaultOrgRes = await prompts({
     type: 'confirm',
-    message: options.message || `Do you want to use org ${defaultOrg} ?`,
+    message: options.message || t('doYouWantToUseOrg', { org: defaultOrg }),
     description: t('confirmsWhetherToUseCurrentDefaultOrg'),
   });
   if (defaultOrgRes.value === true) {
@@ -445,11 +445,7 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
       uxLog(
         "action",
         this,
-        c.cyan(
-          `Updated package ${c.green(installedPackage.SubscriberPackageName)} with version id ${c.green(
-            installedPackage.SubscriberPackageVersionId
-          )}`
-        )
+        c.cyan(t('updatedPackageWithVersionId', { packageName: c.green(installedPackage.SubscriberPackageName), versionId: c.green(installedPackage.SubscriberPackageVersionId) }))
       );
       updated = true;
     } else if (matchInstalled.length > 0 && matchLocal.length === 0) {
@@ -565,11 +561,7 @@ export async function initOrgMetadatas(
     uxLog(
       "action",
       this,
-      c.cyan(
-        `Pushing project sources to org ${c.green(
-          orgAlias
-        )}... (You can see progress in Setup -> Deployment Status)`
-      )
+      c.cyan(t('pushingProjectSourcesToOrg', { orgAlias: c.green(orgAlias) }))
     );
     // Suspend sharing calc if necessary
     const deferSharingCalc = (projectScratchDef.features || []).includes('DeferSharingCalc');
@@ -596,9 +588,7 @@ export async function initOrgMetadatas(
         uxLog(
           "warning",
           this,
-          c.yellow(
-            "Issue while assigning SfdxHardisDeferSharingRecalc PS and suspending Sharing Calc, but it's probably ok anyway"
-          )
+          c.yellow(t('issueWhileAssigningSharingRecalc'))
         );
         uxLog("log", this, c.grey((e as Error).message));
       }
@@ -632,7 +622,7 @@ export async function initPermissionSetAssignments(permSets: Array<any>, orgUser
       uxLog(
         "error",
         this,
-        c.red(`Error assigning to ${c.bold(permSet.name || permSet)}\n${assignResult?.result?.failures[0].message}`)
+        c.red(t('errorAssigningPermSetToUser', { permSet: c.bold(permSet.name || permSet), message: assignResult?.result?.failures[0].message }))
       );
     }
   }
@@ -670,9 +660,7 @@ export async function initOrgData(initDataFolder: string, orgUsername: string) {
     uxLog(
       "action",
       this,
-      c.cyan(
-        `No initialization data: Define a sfdmu workspace in ${initDataFolder} if you need data in your new sandbox orgs`
-      )
+      c.cyan(t('noInitializationData', { initDataFolder }))
     );
   }
   // Import data packages
