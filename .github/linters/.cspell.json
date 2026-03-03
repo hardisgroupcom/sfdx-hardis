@@ -10,7 +10,8 @@
     ".cspell.json",
     "**/metadataList.ts",
     "**/actionsProvider/**",
-    "**/i18n/*.json"
+    "**/i18n/*.json",
+    "**/copilot-instructions.md"
   ],
   "language": "en",
   "version": "0.2",
