@@ -249,7 +249,7 @@ export async function promptInstanceUrl(
   const orgTypeResponse = await prompts({
     type: 'select',
     name: 'value',
-    message: c.cyanBright(t('whatIsTheBaseUrlOrDomain', { alias })),
+    message: c.cyanBright(t('whatIsTheBaseUrlOrDomain', { alias: alias || t('defaultOrg') })),
     description: t('descSelectOrgTypeOrUrl'),
     choices: choices,
     initial: 1,
