@@ -217,14 +217,14 @@ The command's logic orchestrates various underlying processes:
       orgTypeChoices.push({
         title: '🪐 Scratch org',
         value: 'scratch',
-        description: 'Scratch orgs are configured on my project so I want to create or reuse one',
+        description: 'Los scratch orgs están configurados en mi proyecto, quiero crear o reutilizar uno',
       });
     }
     if (flags['target-org'] && flags['target-org']?.getConnection()) {
       orgTypeChoices.push({
         title: `😎 Current org ${flags['target-org']?.getConnection().instanceUrl.replace("https://", "")}`,
         value: 'currentOrg',
-        description: `Use your default org with username ${flags['target-org']?.getUsername()}`,
+        description: `Usar tu organización por defecto con el nombre de usuario ${flags['target-org']?.getUsername()}`,
       });
     }
     orgTypeChoices.push({
