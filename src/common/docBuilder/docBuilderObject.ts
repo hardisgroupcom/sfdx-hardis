@@ -67,8 +67,9 @@ export class DocBuilderObject extends DocBuilderRoot {
       "| :-------- | :---- | :---------- | :------ |"
     ]);
     for (const rule of validationRules) {
+      const escapedFormula = (rule.errorConditionFormula || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       lines.push(...[
-        `| ${rule.fullName} | ${rule.active ? t('docMdYes') : t('docMdNo')} | ${rule.description || ""} | ${mdTableCell(rule.errorConditionFormula)} |`
+        `| ${rule.fullName} | ${rule.active ? t('docMdYes') : t('docMdNo')} | ${rule.description || ""} | ${mdTableCell(escapedFormula)} |`
       ]);
     }
     lines.push("");

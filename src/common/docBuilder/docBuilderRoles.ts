@@ -25,7 +25,7 @@ export class DocBuilderRoles {
     const aiDescription = await DocBuilderRoles.getDescriptionWithAI(roleDescriptions);
     if (aiDescription) {
       mdLines.push("");
-      mdLines.push(t('docMdAiGeneratedDescription'), "");
+      mdLines.push("## " + t('docMdAiGeneratedDescription'), "");
       mdLines.push(...aiDescription.split("\n"));
       mdLines.push("");
     }

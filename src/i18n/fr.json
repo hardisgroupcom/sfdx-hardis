@@ -526,7 +526,7 @@
   "discoveredFilesInChunkUpdatedTotalEstimate": "{{filesDiscoveredInChunk}} fichiers découverts dans le chunk, estimation totale mise à jour : {{actualTotalFiles}}",
   "discoveredFilesInChunkUpdatedTotalEstimate2": "{{filesDiscoveredInChunk}} fichiers découverts dans le chunk, estimation totale mise à jour : {{actualTotalFiles}} {{apiUsage}}",
   "dockerDaemonIsNotAvailableIfYou": "Le daemon Docker n'est pas disponible. Si vous avez des problèmes avec le package npm @mermaid-js/mermaid-cli, ",
-  "docMdAiGeneratedDescription": "## Description générée par IA",
+  "docMdAiGeneratedDescription": "Description générée par IA",
   "docMdAiGeneratedPartComment": "La partie suivante a été générée par IA.",
   "docMdAiGeneratedThenManuallyUpdated": "La partie suivante a été générée par IA puis modifiée manuellement",
   "docMdAiRecalculateHint": "Si vous souhaitez que l'IA la recalcule, vous pouvez supprimer le fichier {{cacheFilePath}}",

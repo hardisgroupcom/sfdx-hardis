@@ -559,7 +559,7 @@
   "doYouWantToUseOrg": "組織 {{org}} を使用しますか？",
   "doYouWantToUseOrgTo": "組織{{flags}}を使用してメタデータ{{sourceDirOrFile}}のデプロイをシミュレーションしますか？",
   "doYouWantToUseTheExisting": "既存の完全な組織マニフェストを使用しますか、それとも新しいものを生成しますか？",
-  "docMdAiGeneratedDescription": "## AI生成の説明",
+  "docMdAiGeneratedDescription": "AI生成の説明",
   "docMdAiGeneratedPartComment": "以下の部分はAIによって生成されました。",
   "docMdAiGeneratedThenManuallyUpdated": "以下の部分はAIによって生成され、その後手動で更新されました",
   "docMdAiRecalculateHint": "AIに再計算させたい場合は、ファイル{{cacheFilePath}}を削除してください",
