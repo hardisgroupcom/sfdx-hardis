@@ -4,6 +4,14 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add translation support
+  - English (en) is the default language
+  - French
+  - Spanish
+  - Japanese
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add support for translations in generated documentation
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): If set, use prompts language to generate documentation
+
 ## [6.27.0] 2025-02-27
 
 - Improve hooks by parallelizing dynamic imports

@@ -45,6 +45,11 @@ export function initI18n(): void {
   initialized = true;
 }
 
+export function reinitI18n(): void {
+  initialized = false;
+  initI18n();
+}
+
 /**
  * Translate a message key with optional interpolation variables.
  * Falls back to the key itself if no translation is found.

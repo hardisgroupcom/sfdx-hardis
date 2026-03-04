@@ -99,13 +99,13 @@ docs/                 # Project documentation
 
 ## Internationalization (i18n) / Translations
 
-sfdx-hardis uses **i18next** for runtime translations. The locale is selected via the `SFDX_HARDIS_LOCALE` environment variable (default: `en`; supported: `en`, `es`, `fr`, `ja`).
+sfdx-hardis uses **i18next** for runtime translations. The locale is selected via the `SFDX_HARDIS_LOCALE` environment variable (default: `en`; supported: `en`, `fr`, `es`, `ja`).
 
 ### Translation files
 
 - English: `src/i18n/en.json`
-- Spanish: `src/i18n/es.json`
 - French: `src/i18n/fr.json`
+- Spanish: `src/i18n/es.json`
 - Japanese: `src/i18n/ja.json`
 
 All files are flat JSON objects with **camelCase** keys and **i18next interpolation** syntax for variables (`{{varName}}`).

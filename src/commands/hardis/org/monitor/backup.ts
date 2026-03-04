@@ -20,7 +20,7 @@ import MkDocsToCloudflare from '../../doc/mkdocs-to-cf.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../../common/utils/gitUtils.js';
 import { updateSfdxProjectApiVersion } from '../../../../common/utils/projectUtils.js';
-import { t } from '../../../../common/utils/i18n.js';
+import { reinitI18n, t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -318,13 +318,17 @@ If Flow history doc always display a single state, you probably need to update y
 
     // Run project documentation generation
     if (this.skipDoc !== true) {
+      const prevPromptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
+      const prevSfdxHardisLang = getEnvVar('SFDX_HARDIS_LANG') || 'en';
       try {
         const config = await getConfig("user");
         const docLanguages = (getEnvVar('SFDX_DOC_LANGUAGES') || getEnvVar('PROMPTS_LANGUAGE') || config.promptsLanguage || 'en').split(",").reverse(); // Can be 'fr,en,de' for example
-        const prevPromptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
         for (const langKey of docLanguages) {
           uxLog("action", this, c.cyan(t('generatingDocInLanguage') + c.bold(langKey)));
           process.env.PROMPTS_LANGUAGE = langKey;
+          process.env.SFDX_HARDIS_LANG = langKey;
+          reinitI18n();
+
           await Project2Markdown.run(["--diff-only", "--with-history"]);
           uxLog("action", this, c.cyan(t('documentationGeneratedFromRetrievedSourcesIfYou')));
 
@@ -335,15 +339,19 @@ If Flow history doc always display a single state, you probably need to update y
             await MkDocsToCloudflare.run([]);
           }
         }
-        process.env.PROMPTS_LANGUAGE = prevPromptsLanguage;
       } catch (e: any) {
         uxLog("warning", this, c.yellow(t('errorWhileGeneratingProjectDocumentation') + e.message));
         uxLog("log", this, c.grey(e.stack));
+      } finally {
+        process.env.PROMPTS_LANGUAGE = prevPromptsLanguage;
+        process.env.SFDX_HARDIS_LANG = prevSfdxHardisLang;
+        reinitI18n();
       }
     }
 
     return { outputString: 'BackUp processed on org ' + flags['target-org'].getConnection().instanceUrl };
   }
+
 
   private async extractMetadatasFull(packageXmlFullFile: string, flags) {
     let packageXmlToExtract = packageXmlFullFile;
