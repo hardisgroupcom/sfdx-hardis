@@ -100,14 +100,14 @@ prompts
     const { flags } = await this.parse(ConfigureAuth);
     const devHub = flags.devhub || false;
 
-    uxLog("action", this, c.cyan(t('thisCommandWillConfigureTheAuthenticationBetween', { devHub: devHub ? "Dev Hub" : "a Salesforce org" })));
+    uxLog("action", this, c.cyan(t('thisCommandWillConfigureTheAuthenticationBetween', { devHub: devHub ? t('devHubLabel') : t('aSalesforceOrgLabel') })));
 
     // Ask user to login to org
     const prevUserName = devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername();
     await promptOrg(this, {
       setDefault: true,
       devHub: devHub,
-      promptMessage: `Please select or login into ${devHub ? "your Dev Hub org" : "the org you want to configure the SF CLI Authentication"}`,
+      promptMessage: devHub ? t('pleaseSelectOrLoginIntoDevHub') : t('pleaseSelectOrLoginIntoOrg'),
       defaultOrgUsername: devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername(),
     });
     await checkConfig(this);
@@ -123,8 +123,7 @@ prompts
 
     if (prevUserName !== newUsername) {
       // Restart command so the org is selected as default org (will help to select profiles)
-      const infoMsg =
-        'Default org changed. Please restart the same command if VS Code does not do that automatically for you 😊';
+      const infoMsg = t('defaultOrgChangedRestartVsCode');
       uxLog("warning", this, c.yellow(infoMsg));
       const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ');
       WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);
@@ -162,7 +161,7 @@ prompts
 
     instanceUrl = await promptInstanceUrl(
       devHub ? ["login"] : ['login', "test"],
-      devHub ? "Dev Hub  org" : `${branchName} related org`, {
+      devHub ? t('devHubOrgLabel') : t('branchRelatedOrg', { branchName }), {
       instanceUrl: devHub
         ? flags['target-dev-hub']?.getConnection()?.instanceUrl || ""
         : flags['target-org']?.getConnection()?.instanceUrl || "",
@@ -209,8 +208,7 @@ prompts
       name: 'value',
       initial: (devHub ? flags['target-dev-hub']?.getUsername() || "" : flags['target-org'].getUsername() || "") || '',
       message: c.cyanBright(
-        `What is the Salesforce username that will be ${devHub ? 'used as Dev Hub' : 'used for deployments by CI server'
-        } ? Example: admin.sfdx@myclient.com`
+        devHub ? t('whatIsSalesforceUsernameDevHub') : t('whatIsSalesforceUsernameForDeployments')
       ),
       description: t('enterSalesforceUsernameForConfig'),
       placeholder: t('exAdminSfdxAtMyclient'),

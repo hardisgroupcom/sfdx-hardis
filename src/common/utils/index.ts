@@ -164,11 +164,7 @@ export async function checkSfdxPlugin(pluginName: string) {
     uxLog(
       "warning",
       this,
-      c.yellow(
-        `[dependencies] Installing SF CLI plugin ${c.green(
-          pluginName
-        )}... \nIf it stays stuck for too long, please run ${c.green(`sf plugins install ${pluginName}`)}`
-      )
+      c.yellow(t('installingsfCliPlugin', { pluginName }))
     );
     const installCommand = `echo y|sf plugins install ${pluginName}`;
     await execCommand(installCommand, this, { fail: true, output: false });
@@ -176,8 +172,8 @@ export async function checkSfdxPlugin(pluginName: string) {
 }
 
 const dependenciesInstallLink = {
-  git: 'Download installer at https://git-scm.com/downloads',
-  openssl: 'Run "choco install openssl" in Windows Powershell, or use Git Bash as command line tool',
+  git: t('gitDownloadInstaller'),
+  openssl: t('opensslInstallInstruction'),
 };
 
 export async function checkAppDependency(appName) {
@@ -195,10 +191,7 @@ export async function checkAppDependency(appName) {
       uxLog(
         "error",
         this,
-        c.red(
-          `You need ${c.bold(appName)} to be locally installed to run this command.\n${dependenciesInstallLink[appName] || ''
-          }`
-        )
+        c.red(t('youNeedAppInstalledLocally', { appName: c.bold(appName) }) + `\n${dependenciesInstallLink[appName] || ''}`)
       );
       process.exit();
     });
@@ -299,15 +292,13 @@ export async function ensureGitRepository(options: any = { init: false, clone: f
         const cloneUrlPrompt = await prompts({
           type: 'text',
           name: 'value',
-          message: c.cyanBright(
-            'What is the URL of your git repository ?'
-          ),
+          message: c.cyanBright(t('whatIsTheUrlOfYourGitRepository')),
           description: t('descEnterGitRepoUrl'),
           placeholder: t('exGitlabMonitoringRepoUrl'),
         });
         cloneUrl = cloneUrlPrompt.value;
       }
-      // Git lcone
+      // Git clone
       await new Promise((resolve) => {
         crossSpawn('git', ['clone', cloneUrl, '.'], { stdio: 'inherit' }).on('close', () => {
           resolve(null);
@@ -368,7 +359,7 @@ export async function selectGitBranch(
   const branchResp = await prompts({
     type: 'select',
     name: 'value',
-    message: options.message || 'Please select a Git branch',
+    message: options.message || t('pleaseSelectGitBranch'),
     description: t('descChooseGitBranch'),
     choices: branches.all.map((branchName) => {
       return { title: branchName.replace('origin/', ''), value: branchName.replace('origin/', '') };
@@ -1485,7 +1476,7 @@ export function uxLogTable(commandThis: any, tableData: any[], columnsOrder: str
     if (displayData.length > maxLen) {
       sendRows = displayData.slice(0, maxLen);
       sendRows.push({
-        sfdxHardisTruncatedMessage: `Truncated to the first ${maxLen} lines on ${displayData.length} total lines, see full report for more details.`,
+        sfdxHardisTruncatedMessage: t('sfdxHardisTruncatedMessage', { maxLen, total: displayData.length }),
         returnedNumber: maxLen,
         totalNumber: displayData.length
       });
@@ -1713,12 +1704,7 @@ export async function generateSSLCertificate(
       fail: true,
     });
   } catch (e) {
-    uxLog("error", commandThis, c.red(`Error generating SSL certificate, please ensure you have openssl installed
-- It is included in Git Bash for Windows
-- You can also install it using "choco install openssl" if you have chocolatey installed
-- If it is installed, make sure that paths to bash and openssl are available in PATH
-- If you still have issues, run sfdx-hardis command in Git Bash terminal
-`));
+    uxLog("error", commandThis, c.red(t('errorGeneratingSslCertificate')));
     throw e;
   }
   process.chdir(prevDir);
@@ -1741,9 +1727,7 @@ export async function generateSSLCertificate(
     type: 'confirm',
     name: 'value',
     initial: true,
-    message: c.cyanBright(
-      "Do you want sfdx-hardis to configure the SF CLI External Client App or Connected App on your org ?"
-    ),
+    message: c.cyanBright(t('doYouWantSfdxHardisToConfigureApp')),
     description: t('descCreateConnectedApp'),
   });
   if (confirmResponse.value === true) {
@@ -1789,7 +1773,7 @@ export async function generateSSLCertificate(
     uxLog(
       "log",
       commandThis,
-      c.grey(c.yellow(`Help to configure CI/CD variables: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`))
+      c.grey(c.yellow(t('helpToConfigureCiCdVariablesUrl', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/` })))
     );
     uxLog("warning", commandThis, c.yellow(t('ifYouAreUsingGithubOrAzure', { clientIdStringRaw, clientKeyStringRaw })));
     WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, t('helpToConfigureCiVariables'), "docUrl");
@@ -1861,9 +1845,7 @@ export async function generateSSLCertificate(
         uxLog(
           "log",
           commandThis,
-          c.grey(
-            `Production org detected, will run test class found ${uniqueTestClass} on deployment.\nIf you want to specify a specific test class, set SFDX_HARDIS_TECH_DEPLOY_TEST_CLASS variable`
-          )
+          c.grey(t('productionOrgDetectedWillRunTestClass', { testClass: uniqueTestClass }))
         );
       }
 
@@ -1896,7 +1878,7 @@ export async function generateSSLCertificate(
         uxLog(
           "warning",
           commandThis,
-          c.yellow(`Unable to verify existing ${metadataTypeLabels[metadataType] || metadataType}: ${error.message}`)
+          c.yellow(t('unableToVerifyExistingMetadata', { metadataType: metadataTypeLabels[metadataType] || metadataType, message: error.message }))
         );
         return false;
       }
@@ -1914,8 +1896,7 @@ export async function generateSSLCertificate(
       }
       const orgLabel = options.targetUsername || 'target org';
       const setupLocation = metadataInfo.type === "ExternalClientApplication" ? "External Client App Manager" : "App Manager";
-      const basePromptMessage = `${label} named ${metadataInfo.fullName} already exists in ${orgLabel}. Delete it in Setup > ${setupLocation} before continuing.`;
-      let promptMessage = `${basePromptMessage} Have you deleted it?`;
+      let promptMessage = t('metadataAlreadyExistsHaveYouDeleted', { label, fullName: metadataInfo.fullName, orgLabel, setupLocation });
       while (alreadyExists) {
         const confirmation = await prompts({
           type: 'confirm',
@@ -1929,7 +1910,7 @@ export async function generateSSLCertificate(
         }
         alreadyExists = await metadataItemExists(metadataInfo.type, metadataInfo.fullName);
         if (alreadyExists) {
-          promptMessage = `${label} ${metadataInfo.fullName} is still detected in ${orgLabel}. Salesforce may need a few seconds to purge deleted apps. Retry once it disappears. Have you deleted it now?`;
+          promptMessage = t('metadataStillDetectedInOrg', { label, fullName: metadataInfo.fullName, orgLabel });
         }
       }
     };
@@ -1967,7 +1948,7 @@ export async function generateSSLCertificate(
         },
       ]);
       const contactEmail = await promptUserEmail(
-        'Enter a contact email for the External Client App (ex: teoman.sertcelik@gmail.com)'
+        t('enterContactEmailExternalClientApp')
       );
 
       const profileSelection = await promptProfiles(conn, {
@@ -2000,25 +1981,16 @@ export async function generateSSLCertificate(
         uxLog(
           "action",
           commandThis,
-          c.cyan(
-            `Deploying External Client App ${c.bold(sanitizedAppName)} into target org ${options.targetUsername || ''} ...`
-          )
+          c.cyan(t('deployingExternalClientApp', { appName: c.bold(sanitizedAppName), targetUsername: options.targetUsername || '' }))
         );
 
         // Log metadata info (hide sensitive data)
-        uxLog("log", commandThis, c.grey(`External Client App metadata files:
-- externalClientApps/${sanitizedAppName}.eca-meta.xml
-- extlClntAppOauthSettings/${sanitizedAppName}OAuthSettings.ecaOauth-meta.xml
-- extlClntAppGlobalOauthSets/${sanitizedAppName}GlblOAuth.ecaGlblOauth-meta.xml (certificate and consumer key hidden)
-- extlClntAppPolicies/${sanitizedAppName}_defaultPolicy.ecaPlcy-meta.xml
-- extlClntAppOauthPolicies/${sanitizedAppName}OAuthSettings_defaultPolicy.ecaOauthPlcy-meta.xml`));
+        uxLog("log", commandThis, c.grey(t('externalClientAppMetadataFiles', { appName: sanitizedAppName })));
 
         uxLog(
           "log",
           commandThis,
-          c.grey(c.yellow(
-            `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the External Client App 😊`
-          ))
+          c.grey(c.yellow(t('ifUploadErrorReadMessageAfterExternal')))
         );
 
         await deployAuthMetadataAndCleanup(tmpDirMd, `${sanitizedAppName} External Client App`, {
@@ -2031,23 +2003,12 @@ export async function generateSSLCertificate(
         uxLog(
           "error",
           commandThis,
-          c.red(
-            'Error pushing External Client App metadata. Maybe the app name is already taken?\nYou may try again with another app name'
-          )
+          c.red(t('errorPushingExternalClientAppMetadata'))
         );
         uxLog(
           "warning",
           commandThis,
-          c.yellow(`
-${c.bold('MANUAL INSTRUCTIONS')}
-If deployment fails, create the External Client App manually:
-1. Go to Setup > App Manager > New External Client App
-2. Set App Name: ${sanitizedAppName}
-3. Contact Email: ${contactEmail}
-4. Enable OAuth Settings with scopes: Api, Web, RefreshToken
-5. Upload the certificate file: ${c.bold(crtFile)} (delete from your computer after!)
-6. Copy Consumer Key to CI/CD variable ${c.green(c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`))}`)
-        );
+          c.yellow(t('manualInstructionsExternalClientApp', { appName: sanitizedAppName, contactEmail, crtFile: c.bold(crtFile), branchNameUpper: branchName.toUpperCase() })));
         await prompts({
           type: 'confirm',
           message: c.cyanBright(
@@ -2069,7 +2030,7 @@ If deployment fails, create the External Client App manually:
         },
       ]);
       const contactEmail = await promptUserEmail(
-        'Enter a contact email for the Connect App (ex: nicolas.vuillamy@cloudity.com)'
+        t('enterContactEmailConnectedApp')
       );
       const profile = await promptProfiles(conn, {
         multiselect: false,
@@ -2121,10 +2082,7 @@ If deployment fails, create the External Client App manually:
         uxLog(
           "action",
           commandThis,
-          c.cyan(
-            `Deploying Connected App ${c.bold(promptResponses.appName)} into target org ${options.targetUsername || ''
-            } ...`
-          )
+          c.cyan(t('deployingConnectedApp', { appName: c.bold(promptResponses.appName), targetUsername: options.targetUsername || '' }))
         );
         // Replace sensitive info in connectedAppMetadata for logging
         const connectedAppMetadataForLog = connectedAppMetadata
@@ -2135,9 +2093,7 @@ If deployment fails, create the External Client App manually:
         uxLog(
           "log",
           commandThis,
-          c.grey(c.yellow(
-            `If you have an upload error, PLEASE READ THE MESSAGE AFTER, that will explain how to manually create the connected app, and don't forget the CERTIFICATE file 😊`
-          ))
+          c.grey(c.yellow(t('ifUploadErrorReadMessageAfterConnected')))
         );
         await deployAuthMetadataAndCleanup(tmpDirMd, `${promptResponses.appName} Connected App`, {
           type: 'ConnectedApp',
@@ -2149,22 +2105,12 @@ If deployment fails, create the External Client App manually:
         uxLog(
           "error",
           commandThis,
-          c.red(
-            'Error pushing ConnectedApp metadata. Maybe the app name is already taken ?\nYou may try again with another connected app name'
-          )
+          c.red(t('errorPushingConnectedAppMetadata'))
         );
         uxLog(
           "warning",
           commandThis,
-          c.yellow(`
-${c.bold('MANUAL INSTRUCTIONS')}
-If this is a Test class issue (production env), you may have to create manually connected app ${promptResponses.appName
-            }:
-- Follow instructions here: https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm
-  - Use certificate ${c.bold(crtFile)} in "Use Digital Signature section" (delete the file from your computer after !)
-- Once created, update CI/CD variable ${c.green(
-              c.bold(`SFDX_CLIENT_ID_${branchName.toUpperCase()}`)
-            )} with the ConsumerKey of the newly created connected app`)
+          c.yellow(t('manualInstructionsConnectedApp', { appName: promptResponses.appName, crtFile: c.bold(crtFile), branchNameUpper: branchName.toUpperCase() }))
         );
         await prompts({
           type: 'confirm',
@@ -2181,38 +2127,22 @@ If this is a Test class issue (production env), you may have to create manually 
     uxLog(
       "log",
       commandThis,
-      c.grey(
-        `Follow instructions here: ${c.bold(
-          'https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_auth_connected_app.htm'
-        )}`
-      )
+      c.grey(t('followInstructionsConnectedApp'))
     );
     uxLog(
       "log",
       commandThis,
-      c.grey(
-        `Use ${c.green(crtFile)} as certificate on Connected App configuration page, ${c.bold(
-          `then delete ${crtFile} for security`
-        )}`
-      )
+      c.grey(t('useCertificateOnConnectedApp', { crtFile: c.green(crtFile) }))
     );
     uxLog(
       "log",
       commandThis,
-      c.grey(
-        `- configure CI variable ${c.green(
-          `SFDX_CLIENT_ID_${branchName.toUpperCase()}`
-        )} with value of ConsumerKey on Connected App configuration page`
-      )
+      c.grey(t('configureCiVariableClientId', { branchNameUpper: branchName.toUpperCase() }))
     );
     uxLog(
       "log",
       commandThis,
-      c.grey(
-        `- configure CI variable ${c.green(`SFDX_CLIENT_KEY_${branchName.toUpperCase()}`)} with value ${c.green(
-          encryptionKey
-        )} key`
-      )
+      c.grey(t('configureCiVariableClientKey', { branchNameUpper: branchName.toUpperCase(), encryptionKey: c.green(encryptionKey) }))
     );
   }
 }
