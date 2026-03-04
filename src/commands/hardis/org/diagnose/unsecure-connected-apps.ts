@@ -196,7 +196,7 @@ The command's technical implementation involves:
 
     // Generate output CSV file
     this.outputFile = await generateReportPath('unsecured-oauth-tokens', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(allOAuthTokensWithStatus, this.outputFile, { fileTitle: "Unsecured OAuth Tokens" });
+    this.outputFilesRes = await generateCsvFile(allOAuthTokensWithStatus, this.outputFile, { fileTitle: t('unsecuredOAuthTokensFiletitle') });
 
     const unsecuredOAuthTokens = allOAuthTokensWithStatus.filter(app => app.Status === '❌ Unsecured');
 
@@ -237,7 +237,7 @@ The command's technical implementation involves:
       }
     });
     this.outputFileConnectedApps = await generateReportPath('unsecured-connected-apps', this.outputFileConnectedApps);
-    this.outputFilesResConnectedApps = await generateCsvFile(uniqueUnsecureConnectedAppsWithTokens, this.outputFileConnectedApps, { fileTitle: "Unsecured Connected Apps" });
+    this.outputFilesResConnectedApps = await generateCsvFile(uniqueUnsecureConnectedAppsWithTokens, this.outputFileConnectedApps, { fileTitle: t('unsecuredConnectedAppsFiletitle') });
     if (uniqueUnsecuredAppNames.length > 0) {
       uxLog("action", this, c.cyan(t('unsecuredConnectedAppsFound', { count: uniqueUnsecuredAppNames.length })));
       uxLogTable(this, uniqueUnsecureConnectedAppsWithTokens);
@@ -249,7 +249,7 @@ The command's technical implementation involves:
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     const notifSeverity: NotifSeverity = numberWarnings > 0 ? 'warning' : 'log';
-    const notifText = `${numberWarnings} Unsecured connected Apps have been found in ${orgMarkdown}`
+    const notifText = t('unsecuredConnectedAppsFoundInOrg', { count: numberWarnings, orgMarkdown })
     let notifDetailText = '';
     for (const connectedApp of uniqueUnsecureConnectedAppsWithTokens) {
       notifDetailText += `• *${connectedApp.AppName}* (${connectedApp.NumberOfUnsecuredOAuthTokens} OAuth Tokens)\n`;
