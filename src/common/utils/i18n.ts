@@ -25,7 +25,7 @@ export function initI18n(): void {
     return;
   }
   const locale = (process.env.SFDX_HARDIS_LANG || 'en').substring(0, 2).toLowerCase();
-  const supportedLocales = ['en', 'fr', 'ja'];
+  const supportedLocales = ['en', 'es', 'fr', 'ja'];
   const lng = supportedLocales.includes(locale) ? locale : 'en';
 
   i18next.init({
@@ -33,6 +33,7 @@ export function initI18n(): void {
     fallbackLng: 'en',
     resources: {
       en: { translation: loadTranslations('en') },
+      es: { translation: loadTranslations('es') },
       fr: { translation: loadTranslations('fr') },
       ja: { translation: loadTranslations('ja') },
     },

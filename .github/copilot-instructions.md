@@ -99,11 +99,12 @@ docs/                 # Project documentation
 
 ## Internationalization (i18n) / Translations
 
-sfdx-hardis uses **i18next** for runtime translations. The locale is selected via the `SFDX_HARDIS_LOCALE` environment variable (default: `en`; supported: `en`, `fr`, `ja`).
+sfdx-hardis uses **i18next** for runtime translations. The locale is selected via the `SFDX_HARDIS_LOCALE` environment variable (default: `en`; supported: `en`, `es`, `fr`, `ja`).
 
 ### Translation files
 
 - English: `src/i18n/en.json`
+- Spanish: `src/i18n/es.json`
 - French: `src/i18n/fr.json`
 - Japanese: `src/i18n/ja.json`
 
@@ -143,6 +144,7 @@ uxLog("warning", this, c.yellow(t('fileNotFound', { path: filePath })));
   uxLog("action", this, c.cyan('[MyMarker] ' + t('someMessage')));
   ```
 - **Do NOT translate technical terms** that are not user-facing words in French or English (e.g. `merge`, `commit`, `branch`, `sandbox`, `scratch org`, `package.xml`, `Apex`, `SOQL`, `LWC`, CLI flags, environment variable names). Keep such terms as-is inside the translation value.
+- **Salesforce-specific terms (Spanish)**: Use the official Salesforce Spanish translation when translating to Spanish (e.g. `Permission Set` → `Conjunto de permisos`, `Record Type` → `Tipo de registro`, `Flow` → `Flujo`, `Object` → `Objeto`, `Field` → `Campo`, `Profile` → `Perfil`, `Sandbox` → `Sandbox`, `Scratch Org` → `Scratch Org`, `Approval Process` → `Proceso de aprobación`, `Assignment Rule` → `Regla de asignación`, `Escalation Rule` → `Regla de escalada`, `Validation Rule` → `Regla de validación`, `Workflow Rule` → `Regla de flujo de trabajo`, `Custom Label` → `Etiqueta personalizada`, `Custom Setting` → `Configuración personalizada`, `Custom Permission` → `Permiso personalizado`, `Connected App` → `Aplicación conectada`, `External Client App` → `Aplicación de cliente externo`, `Lightning Page` → `Página Lightning`, `Dashboard` → `Panel`, `Permission Set Group` → `Grupo de conjuntos de permisos`, `Deployment` → `Implementación`, `Production (Org)` → `Producción`, `Lightning Web Component` → `Lightning Web Component`, `Developer Console` → `Consola de desarrollador`).
 - **Salesforce-specific terms (French)**: Use the official Salesforce French translation when translating to French (e.g. `Permission Set` → `Ensemble d'autorisations`, `Record Type` → `Type d'enregistrement`, `Flow` → `Flux`, `Object` → `Objet`, `Field` → `Champ`, `Profile` → `Profil`).
 - **Salesforce-specific terms (Japanese)**: Use the official Salesforce Japanese translation when translating to Japanese. Use polite professional Japanese (Desu/Masu form - です/ます調) (e.g. `Account` → `取引先`, `Contact` → `取引先責任者`, `Opportunity` → `商談`, `Lead` → `リード`, `Case` → `ケース`, `Campaign` → `キャンペーン`, `Task` → `ToDo`, `Event` → `行動`, `Activity` → `活動`, `Object` → `オブジェクト`, `Custom Object` → `カスタムオブジェクト`, `Record Type` → `レコードタイプ`, `Permission Set` → `権限セット`, `Permission Set Group` → `権限セットグループ`, `Profile` → `プロファイル`, `Role` → `ロール`, `Flow` → `フロー`, `Trigger` → `トリガー`, `Validation Rule` → `入力規則`, `Workflow Rule` → `ワークフロールール`, `Process Builder` → `プロセスビルダー`, `Approval Process` → `承認プロセス`, `Assignment Rule` → `割り当てルール`, `Escalation Rule` → `エスカレーションルール`, `Connected App` → `接続アプリケーション`, `External Client App` → `外部クライアントアプリケーション`, `Custom Setting` → `カスタム設定`, `Custom Label` → `カスタム表示ラベル`, `Custom Permission` → `カスタム権限`, `Field` → `項目`, `Deployment` → `デプロイ`, `Production (Org)` → `本番環境`, `Sandbox` → `Sandbox`, `Scratch Org` → `スクラッチ組織`, `Lightning Page` → `Lightningページ`, `Lightning Web Component` → `Lightning Webコンポーネント`, `Developer Console` → `開発者コンソール`, `Dashboard` → `ダッシュボード`).
 - Strings that are **pure dynamic values** (only a variable, a JSON.stringify, a stack trace) do not need a translation key; leave them as-is.
