@@ -20,5 +20,9 @@ export type { LogType } from './common/websocketClient.js';
 export { prompts } from './common/utils/prompts.js';
 export type { PromptsQuestion } from './common/utils/prompts.js';
 
+// Notification provider for sending notifications to Slack, MS Teams, Email, etc.
+export { NotifProvider, UtilsNotifs } from './common/notifProvider/index.js';
+export type { NotifMessage, NotifButton, NotifSeverity } from './common/notifProvider/types.js';
+
 // Logging utilities
 export { uxLog } from './common/utils/index.js';

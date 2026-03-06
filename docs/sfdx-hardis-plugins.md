@@ -65,9 +65,9 @@ npm install sfdx-hardis
 In your command files, import the utilities you need:
 
 ```typescript
-import { uxLog, prompts, WebSocketClient } from 'sfdx-hardis/plugin-api';
+import { uxLog, prompts, WebSocketClient, NotifProvider } from 'sfdx-hardis/plugin-api';
 // Types are also available
-import type { LogType, PromptsQuestion } from 'sfdx-hardis/plugin-api';
+import type { LogType, PromptsQuestion, NotifMessage } from 'sfdx-hardis/plugin-api';
 ```
 
 You can also import from the main package entry point:
@@ -223,7 +223,9 @@ WebSocketClient.requestOpenFile("/path/to/file.cls");
 
 #### `WebSocketClient.sendReportFileMessage(file, title, type)`
 
-Sends a downloadable report file notification to VS Code.
+Sends a downloadable report file or url notification to VS Code.
+
+This will make appear clickable buttons at the bottom of command execution ui.
 
 ```typescript
 WebSocketClient.sendReportFileMessage(
@@ -240,17 +242,6 @@ WebSocketClient.sendReportFileMessage(
 | `"actionUrl"` | An action URL |
 | `"actionCommand"` | A command to run |
 
-#### `WebSocketClient.sendMessage(data)`
-
-Sends a raw message to the VS Code extension. Use this for advanced scenarios.
-
-```typescript
-WebSocketClient.sendMessage({
-  event: 'customEvent',
-  data: { key: 'value' }
-});
-```
-
 #### Other available methods
 
 | Method | Description |
@@ -259,13 +250,139 @@ WebSocketClient.sendMessage({
 | `sendRefreshCommandsMessage()` | Triggers a commands list refresh |
 | `sendCommandLogLineMessage(message, logType?, isQuestion?)` | Sends a log line to the command output panel |
 
-### `LogType`
+### `NotifProvider`
 
-Type alias for allowed log types: `'log' | 'action' | 'warning' | 'error' | 'success' | 'table' | 'other'`
+Static class for posting notifications to all configured channels (Slack, MS Teams, Email, custom API). The channels are configured by the end user via environment variables or `.sfdx-hardis.yml`.
 
-### `LOG_TYPES`
+#### `NotifProvider.postNotifications(notifMessage)`
 
-Constant array of all valid log types: `['log', 'action', 'warning', 'error', 'success', 'table', 'other']`
+Posts a notification to all configured channels.
+
+**Basic example — simple success notification:**
+
+```typescript
+import { NotifProvider } from 'sfdx-hardis/plugin-api';
+
+await NotifProvider.postNotifications({
+  text: "My plugin completed successfully",
+  type: "MY_PLUGIN_TYPE",  // use a unique ALL_CAPS identifier for your plugin
+  severity: "success",
+  logElements: [],
+  data: {},
+  metrics: {},
+});
+```
+
+**Example with action buttons and attachment text:**
+
+```typescript
+import { NotifProvider } from 'sfdx-hardis/plugin-api';
+import type { NotifMessage } from 'sfdx-hardis/plugin-api';
+
+const notif: NotifMessage = {
+  text: `Deployment completed to *Production*\n- Components deployed: 42\n- Tests passed: 156`,
+  type: "MY_DEPLOYMENT",
+  severity: "success",
+  attachments: [
+    { text: "• MyClass: OK\n• MyFlow: OK\n• MyPermissionSet: OK" }
+  ],
+  buttons: [
+    { text: "View Job", url: "https://ci.example.com/job/123", style: "primary" },
+    { text: "View Org", url: "https://myorg.my.salesforce.com" },
+  ],
+  logElements: [],
+  data: {},
+  metrics: {},
+};
+await NotifProvider.postNotifications(notif);
+```
+
+**Advanced example — sending numeric metrics to Grafana/InfluxDB/Prometheus:**
+
+The `metrics` property is used to send time-series data to a metrics API (InfluxDB line protocol or Prometheus format), configured by the end user via `NOTIF_API_METRICS_URL`.
+
+Each key in `metrics` becomes a separate metric series. Values can be:
+- A **plain number** (simple gauge: `metric=<value>`)
+- An **object** with `value` (required), and optionally `min`, `max`, `percent`
+
+```typescript
+import { NotifProvider } from 'sfdx-hardis/plugin-api';
+
+const failingItems = [
+  { name: "MyClass", error: "Assertion failed" },
+  { name: "OtherClass", error: "DML exception" },
+];
+
+await NotifProvider.postNotifications({
+  text: `Metadata analysis complete\n- Issues found: ${failingItems.length}\n- Coverage: 82%`,
+  type: "MY_PLUGIN_ANALYSIS",
+  severity: failingItems.length > 0 ? "warning" : "success",
+  attachments: [
+    {
+      text: failingItems
+        .map(item => `• *${item.name}*: ${item.error}`)
+        .join("\n"),
+    },
+  ],
+  buttons: [
+    { text: "View Report", url: "https://example.com/report", style: "primary" },
+  ],
+  // logElements: structured list sent as _logElements in the API payload
+  // Useful for dashboards that render tabular data
+  logElements: failingItems,
+  // data: arbitrary key-value pairs merged into the API payload
+  // Available as top-level fields in Grafana/Loki queries
+  data: {
+    orgUrl: "https://myorg.my.salesforce.com",
+    branchName: "main",
+    totalComponents: 120,
+  },
+  // metrics: numeric values pushed to NOTIF_API_METRICS_URL (InfluxDB / Prometheus)
+  // Simple number → MetricName,... metric=<value>
+  // Object with value/min/max/percent → multiple fields per series
+  metrics: {
+    // Simple gauge: one data point named "MyPluginIssues"
+    MyPluginIssues: failingItems.length,
+    // Simple gauge: code coverage percentage
+    MyPluginCoverage: 82.0,
+    // Complex gauge: sends metric=, min=, max=, percent= fields
+    MyPluginLimitUsage: {
+      value: 4200,
+      min: 0,
+      max: 5000,
+      percent: 84.0,
+    },
+  },
+});
+```
+
+The resulting InfluxDB line protocol for the metrics above would be:
+
+```
+MyPluginIssues,source=sfdx-hardis,type=MY_PLUGIN_ANALYSIS,orgIdentifier=myorg,gitIdentifier=repo/main metric=2.00
+MyPluginCoverage,source=sfdx-hardis,type=MY_PLUGIN_ANALYSIS,orgIdentifier=myorg,gitIdentifier=repo/main metric=82.00
+MyPluginLimitUsage,source=sfdx-hardis,type=MY_PLUGIN_ANALYSIS,orgIdentifier=myorg,gitIdentifier=repo/main min=0.00,max=5000.00,percent=84.00,metric=4200.00
+```
+
+See [`NotifMessage`](#notifmessage) for all available fields.
+
+### `NotifMessage`
+
+Interface describing a notification to send.
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `text` | `string` | ✓ | Main notification text (supports Slack markdown: `*bold*`, `_italic_`) |
+| `type` | `string` | ✓ | Notification type identifier — use a unique ALL_CAPS string for your plugin (e.g. `"MY_PLUGIN_RESULT"`) |
+| `severity` | `NotifSeverity` | ✓ | One of: `"critical"`, `"error"`, `"warning"`, `"info"`, `"success"`, `"log"` |
+| `logElements` | `any[]` | ✓ | Array of structured items (e.g. failing tests, issues). Sent as `_logElements` in the API payload. |
+| `data` | `any` | ✓ | Arbitrary key-value pairs merged into the API payload (available in Grafana/Loki queries) |
+| `metrics` | `any` | ✓ | Numeric metrics pushed to `NOTIF_API_METRICS_URL`. Keys become metric names. Values are a number or `{ value, min?, max?, percent? }` |
+| `attachments` | `{ text: string }[]` | | Extra detail blocks appended to the notification body |
+| `buttons` | `NotifButton[]` | | Action buttons shown in Slack/Teams (requires `text` + optional `url` and `style`) |
+| `attachedFiles` | `string[]` | | Absolute paths to files uploaded as attachments (e.g. CSV reports) |
+| `alwaysSend` | `boolean` | | If `true`, send even when the severity would normally be filtered out |
+| `sideImage` | `string` | | URL of a side image shown in some providers |
 
 ## Complete plugin example
 
