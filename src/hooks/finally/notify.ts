@@ -1,12 +1,10 @@
 import { Hook } from '@oclif/core';
-import { t } from '../../common/utils/i18n.js';
 
 // The use of this method is deprecated: use NotifProvider.sendNotification 😊
 
 const hook: Hook<"finally"> = async (options) => {
-  // Skip hooks from other commands than hardis commands
-  const commandId = options?.Command?.id || '';
-  if (!commandId.startsWith('hardis')) {
+  // Skip hooks from commands that are not in sfdx-hardis or a sfdx-hardis plugin context
+  if (!globalThis.hardisCommandActivated) {
     return;
   }
 
@@ -14,11 +12,14 @@ const hook: Hook<"finally"> = async (options) => {
   const [
     { default: c },
     { elapseEnd, uxLog },
+    { t },
   ] = await Promise.all([
     import('chalk'),
     import('../../common/utils/index.js'),
+    import('../../common/utils/i18n.js'),
   ]);
 
+  // Always close log file stream if open, regardless of command origin
   if (globalThis.hardisLogFileStream) {
     globalThis.hardisLogFileStream.end();
     globalThis.hardisLogFileStream = null;
@@ -44,6 +45,7 @@ const hook: Hook<"finally"> = async (options) => {
     uxLog("log", this, c.grey(c.italic(t('aiPromptsApiCalls', { aiCounter }))));
   }
   elapseEnd(`${options?.Command?.id} execution time`);
+  globalThis.hardisCommandActivated = false;
 };
 
 export default hook;

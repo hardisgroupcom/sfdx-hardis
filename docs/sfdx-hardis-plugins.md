@@ -13,6 +13,8 @@ Your plugin commands will automatically communicate with the VS Code extension u
 
 When sfdx-hardis runs inside VS Code (via the extension), it initializes a WebSocket connection during its `init` hook. This connection lives in the Node.js process globals, so any plugin loaded into the same CLI process can reuse it.
 
+The WebSocket connection is **automatically activated** for your plugin commands if your plugin lists `sfdx-hardis` in its `dependencies` or `peerDependencies` in `package.json`. The sfdx-hardis init hook detects this at runtime by inspecting the loaded plugins — no extra configuration needed.
+
 Your plugin simply imports the exposed utilities from `sfdx-hardis` and calls them. The WebSocket routing happens automatically:
 
 - **`uxLog`** sends log messages to both the terminal and the VS Code extension UI
@@ -26,6 +28,14 @@ graph LR
     C -->|communicates with| D[VS Code Extension]
     E[sfdx-hardis CLI] -->|initializes| C
 ```
+
+### WebSocket activation rules
+
+The sfdx-hardis `init` hook decides whether to start the WebSocket connection based on these rules (checked in order):
+
+1. **Command prefix `hardis`**: Always activated for native sfdx-hardis commands.
+2. **`SFDX_HARDIS_PLUGIN_PREFIXES` env var**: If set, the WebSocket activates for commands whose ID starts with any of the comma-separated prefixes (e.g., `SFDX_HARDIS_PLUGIN_PREFIXES=myplugin,otherplugin`).
+3. **Automatic dependency detection**: If the command belongs to a plugin whose `package.json` lists `sfdx-hardis` in `dependencies` or `peerDependencies`, the WebSocket activates automatically.
 
 ## Getting started
 
@@ -309,6 +319,8 @@ export default class MyCustomCommand extends SfCommand<AnyJson> {
 ## Important notes
 
 - **The WebSocket connection is managed by sfdx-hardis.** Your plugin should never create its own `WebSocketClient` instance. Just call the static methods.
+- **Automatic WebSocket activation.** As long as your plugin lists `sfdx-hardis` in `dependencies` or `peerDependencies`, the WebSocket connection is automatically initialized for your commands — no extra configuration required.
+- **Manual prefix override.** If automatic detection does not work for your setup, set the `SFDX_HARDIS_PLUGIN_PREFIXES` environment variable to a comma-separated list of command prefixes (e.g., `SFDX_HARDIS_PLUGIN_PREFIXES=myplugin,otherplugin`).
 - **Prompts throw in CI mode.** When `process.env.CI` is set, calling `prompts()` throws an error. Design your commands to accept flags for CI usage.
 - **Graceful fallback.** When the VS Code extension is not connected, `uxLog` still outputs to the terminal, and `prompts` falls back to terminal-based inquirer prompts. Your plugin works everywhere.
 - **sfdx-hardis must be installed.** Users need both sfdx-hardis and your plugin installed for the integration to work.
