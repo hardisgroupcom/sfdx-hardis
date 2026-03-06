@@ -115,14 +115,14 @@ All files are flat JSON objects with **camelCase** keys and **i18next interpolat
 Always import `t` from the i18n utility:
 
 ```typescript
-import { t } from '../../../common/utils/i18n.js'; // adjust relative path as needed
+import { t } from "../../../common/utils/i18n.js"; // adjust relative path as needed
 ```
 
 Use `t(key)` or `t(key, { varName: value })` wherever a user-visible string is needed:
 
 ```typescript
-uxLog("action", this, c.cyan(t('processingFile', { file: fileName })));
-uxLog("warning", this, c.yellow(t('fileNotFound', { path: filePath })));
+uxLog("action", this, c.cyan(t("processingFile", { file: fileName })));
+uxLog("warning", this, c.yellow(t("fileNotFound", { path: filePath })));
 ```
 
 ### Naming conventions for translation keys
@@ -141,10 +141,13 @@ uxLog("warning", this, c.yellow(t('fileNotFound', { path: filePath })));
 
 - **Do NOT translate markers** surrounded by `[]` (e.g. `[sfdx-hardis]`, `[SKIP]`). Keep them as hardcoded string literals and concatenate with the translated string:
   ```typescript
-  uxLog("action", this, c.cyan('[MyMarker] ' + t('someMessage')));
+  uxLog("action", this, c.cyan("[MyMarker] " + t("someMessage")));
   ```
 - **Do NOT translate technical terms** that are not user-facing words in French or English (e.g. `merge`, `commit`, `branch`, `sandbox`, `scratch org`, `package.xml`, `Apex`, `SOQL`, `LWC`, CLI flags, environment variable names). Keep such terms as-is inside the translation value.
-- **Salesforce-specific terms (Spanish)**: Use the official Salesforce Spanish translation when translating to Spanish (e.g. `Permission Set` → `Conjunto de permisos`, `Record Type` → `Tipo de registro`, `Flow` → `Flujo`, `Object` → `Objeto`, `Field` → `Campo`, `Profile` → `Perfil`, `Sandbox` → `Sandbox`, `Scratch Org` → `Scratch Org`, `Approval Process` → `Proceso de aprobación`, `Assignment Rule` → `Regla de asignación`, `Escalation Rule` → `Regla de escalada`, `Validation Rule` → `Regla de validación`, `Workflow Rule` → `Regla de flujo de trabajo`, `Custom Label` → `Etiqueta personalizada`, `Custom Setting` → `Configuración personalizada`, `Custom Permission` → `Permiso personalizado`, `Connected App` → `Aplicación conectada`, `External Client App` → `Aplicación de cliente externo`, `Lightning Page` → `Página Lightning`, `Dashboard` → `Panel`, `Permission Set Group` → `Grupo de conjuntos de permisos`, `Deployment` → `Implementación`, `Production (Org)` → `Producción`, `Lightning Web Component` → `Lightning Web Component`, `Developer Console` → `Consola de desarrollador`).
+- **Salesforce-specific terms (Spanish)**: Avoid literal translations and use the terminology commonly used by Salesforce developers in Spain. Keep the official Salesforce term in English when it is the standard used in tooling, CLI messages, and DevOps contexts (e.g. `Flow` → `Flow`, `Object` → `objeto`, `Field` → `campo`, `Profile` → `Profile`, `Permission Set` → `Permission Set`, `Permission Set Group` → `Permission Set Group`, `Record Type` → `Record Type`, `Validation Rule` → `Validation Rule`, `Workflow Rule` → `Workflow Rule`, `Approval Process` → `Approval Process`, `Assignment Rule` → `Assignment Rule`, `Escalation Rule` → `Escalation Rule`, `Custom Label` → `Custom Label`, `Custom Setting` → `Custom Setting`, `Custom Permission` → `Custom Permission`, `Connected App` → `Connected App`, `External Client App` → `External Client App`, `Lightning Page` → `Lightning Page`, `Lightning Web Component` → `Lightning Web Component`, `Dashboard` → `dashboard`, `Sandbox` → `Sandbox`, `Scratch Org` → `Scratch Org`, `org` → `org`, `Deployment` → `despliegue`, `Production (Org)` → `Producción`, `Developer Console` → `Developer Console`). When translating to Spanish, do not assume that the official Salesforce UI translation is always the best choice. Prefer the terminology commonly used by Salesforce developers in Spain. Translate generic functional wording into natural Spanish, but keep metadata names, CLI terms, and developer-facing concepts in English when that is the common real-world usage (for example: Flow, Permission Set, Custom Setting, Connected App, Scratch Org, etc.). The goal is to keep terminology consistent with Salesforce CLI, DevOps tooling, and typical Spanish developer vocabulary, rather than translating every Salesforce concept literally. Use terminology commonly used by Salesforce developers in Spain rather than strictly following the official Salesforce UI translations (e.g. keep developer-facing terms like Flow, Permission Set, Custom Setting, Connected App when appropriate, while translating generic wording such as "metadatos", "despliegue", etc.)
+  Keep English technical terms untranslated when they belong to Git, CLI tooling or metadata names: merge, commit, branch, Scratch Org, package.xml, DevHub
+  Use clear and natural Spanish for technical users, avoiding literal translations that sound unnatural in developer tools
+  Use neutral European Spanish (Spain) rather than forcing Latin American variants.
 - **Salesforce-specific terms (French)**: Use the official Salesforce French translation when translating to French (e.g. `Permission Set` → `Ensemble d'autorisations`, `Record Type` → `Type d'enregistrement`, `Flow` → `Flux`, `Object` → `Objet`, `Field` → `Champ`, `Profile` → `Profil`).
 - **Salesforce-specific terms (Japanese)**: Use the official Salesforce Japanese translation when translating to Japanese. Use polite professional Japanese (Desu/Masu form - です/ます調) (e.g. `Account` → `取引先`, `Contact` → `取引先責任者`, `Opportunity` → `商談`, `Lead` → `リード`, `Case` → `ケース`, `Campaign` → `キャンペーン`, `Task` → `ToDo`, `Event` → `行動`, `Activity` → `活動`, `Object` → `オブジェクト`, `Custom Object` → `カスタムオブジェクト`, `Record Type` → `レコードタイプ`, `Permission Set` → `権限セット`, `Permission Set Group` → `権限セットグループ`, `Profile` → `プロファイル`, `Role` → `ロール`, `Flow` → `フロー`, `Trigger` → `トリガー`, `Validation Rule` → `入力規則`, `Workflow Rule` → `ワークフロールール`, `Process Builder` → `プロセスビルダー`, `Approval Process` → `承認プロセス`, `Assignment Rule` → `割り当てルール`, `Escalation Rule` → `エスカレーションルール`, `Connected App` → `接続アプリケーション`, `External Client App` → `外部クライアントアプリケーション`, `Custom Setting` → `カスタム設定`, `Custom Label` → `カスタム表示ラベル`, `Custom Permission` → `カスタム権限`, `Field` → `項目`, `Deployment` → `デプロイ`, `Production (Org)` → `本番環境`, `Sandbox` → `Sandbox`, `Scratch Org` → `スクラッチ組織`, `Lightning Page` → `Lightningページ`, `Lightning Web Component` → `Lightning Webコンポーネント`, `Developer Console` → `開発者コンソール`, `Dashboard` → `ダッシュボード`).
 - Strings that are **pure dynamic values** (only a variable, a JSON.stringify, a stack trace) do not need a translation key; leave them as-is.
@@ -155,13 +158,14 @@ Every `uxLog` call whose message contains user-visible text **must** use `t()`:
 
 ```typescript
 // ✅ Correct
-uxLog("action", this, c.cyan(t('deployingMetadata', { metadata: name })));
+uxLog("action", this, c.cyan(t("deployingMetadata", { metadata: name })));
 
 // ❌ Wrong – hardcoded English string
 uxLog("action", this, c.cyan(`Deploying metadata ${name}...`));
 ```
 
 Exceptions (no `t()` needed):
+
 - The entire string is a variable or expression (e.g. `uxLog("other", this, JSON.stringify(result))`).
 - The string is a debug stack trace (e.g. `uxLog("log", this, c.grey(e.stack))`).
 - The string is a URL only.
@@ -169,28 +173,28 @@ Exceptions (no `t()` needed):
 
 ### prompts() calls
 
-For every `prompts()` call, the `message`, `description`, `placeholder` and `choices[].title`  properties must use `t()` where they contain user-visible text:
+For every `prompts()` call, the `message`, `description`, `placeholder` and `choices[].title` properties must use `t()` where they contain user-visible text:
 
 ```typescript
 // ✅ Correct
 const res = await prompts({
-  type: 'select',
-  name: 'value',
-  message: t('selectEnvironment'),
-  description: t('selectEnvironmentDescription'),
+  type: "select",
+  name: "value",
+  message: t("selectEnvironment"),
+  description: t("selectEnvironmentDescription"),
   choices: [
-    { title: t('choiceProduction'), value: 'prod' },
-    { title: t('choiceSandbox'), value: 'sandbox' },
+    { title: t("choiceProduction"), value: "prod" },
+    { title: t("choiceSandbox"), value: "sandbox" },
   ],
 });
 
 // ❌ Wrong – hardcoded strings
 const res = await prompts({
-  type: 'select',
-  name: 'value',
-  message: 'Select environment',
-  description: 'Choose the target environment',
-  choices: [{ title: 'Production', value: 'prod' }],
+  type: "select",
+  name: "value",
+  message: "Select environment",
+  description: "Choose the target environment",
+  choices: [{ title: "Production", value: "prod" }],
 });
 ```
 
@@ -199,7 +203,11 @@ const res = await prompts({
 For every `sendReportFileMessage()` the second argument (message) must use `t()` if it contains user-visible text:
 
 ```typescript
-WebSocketClient.sendReportFileMessage(slackIntegrationUrl, t('slackIntegration'), "docUrl");
+WebSocketClient.sendReportFileMessage(
+  slackIntegrationUrl,
+  t("slackIntegration"),
+  "docUrl"
+);
 ```
 
 ### WebSocketClient.sendProgressStartMessage() calls
@@ -207,7 +215,10 @@ WebSocketClient.sendReportFileMessage(slackIntegrationUrl, t('slackIntegration')
 For every `WebSocketClient.sendProgressStartMessage()` call, the first argument (message) must use `t()` if it contains user-visible text:
 
 ```typescript
-    WebSocketClient.sendProgressStartMessage(t('collectingInstalledPackagesData'), packages.length);
+WebSocketClient.sendProgressStartMessage(
+  t("collectingInstalledPackagesData"),
+  packages.length
+);
 ```
 
 ### Markdown table headers
@@ -215,7 +226,7 @@ For every `WebSocketClient.sendProgressStartMessage()` call, the first argument 
 Do not put the whole markdown table header in a translation key. Instead, only translate the column names and concatenate them in the code:
 
 ```typescript
-const header = `| ${t('name')} | ${t('type')} | ${t('description')} |`;
+const header = `| ${t("name")} | ${t("type")} | ${t("description")} |`;
 ```
 
 ## AI Integration Notes
