@@ -25,4 +25,4 @@ export { NotifProvider, UtilsNotifs } from './common/notifProvider/index.js';
 export type { NotifMessage, NotifButton, NotifSeverity } from './common/notifProvider/types.js';
 
 // Logging utilities
-export { uxLog } from './common/utils/index.js';
+export { uxLog, uxLogTable } from './common/utils/index.js';

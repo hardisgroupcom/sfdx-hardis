@@ -18,6 +18,7 @@ The WebSocket connection is **automatically activated** for your plugin commands
 Your plugin simply imports the exposed utilities from `sfdx-hardis` and calls them. The WebSocket routing happens automatically:
 
 - **`uxLog`** sends log messages to both the terminal and the VS Code extension UI
+- **`uxLogTable`** formats and sends tabular data to both the terminal and the VS Code extension UI
 - **`prompts`** displays interactive prompts in VS Code (or falls back to terminal prompts)
 - **`WebSocketClient`** provides direct access to send messages, progress updates, and more
 
@@ -65,15 +66,24 @@ npm install sfdx-hardis
 In your command files, import the utilities you need:
 
 ```typescript
-import { uxLog, prompts, WebSocketClient, NotifProvider } from 'sfdx-hardis/plugin-api';
+import {
+  uxLog,
+  prompts,
+  WebSocketClient,
+  NotifProvider,
+} from "sfdx-hardis/plugin-api";
 // Types are also available
-import type { LogType, PromptsQuestion, NotifMessage } from 'sfdx-hardis/plugin-api';
+import type {
+  LogType,
+  PromptsQuestion,
+  NotifMessage,
+} from "sfdx-hardis/plugin-api";
 ```
 
 You can also import from the main package entry point:
 
 ```typescript
-import { uxLog, prompts, WebSocketClient } from 'sfdx-hardis';
+import { uxLog, prompts, WebSocketClient } from "sfdx-hardis";
 ```
 
 ### 4. Install both plugins
@@ -93,18 +103,18 @@ Sends a log message to the terminal and to the VS Code extension (when connected
 
 **Parameters:**
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `logType` | `LogType` | One of: `'log'`, `'action'`, `'warning'`, `'error'`, `'success'`, `'table'`, `'other'` |
-| `commandThis` | `any` | The current command instance (`this` in a command's `run()` method) |
-| `message` | `string` | The message to display (supports chalk formatting) |
-| `sensitive` | `boolean` | Optional. If `true`, the message is obfuscated in log files |
+| Parameter     | Type      | Description                                                                            |
+| ------------- | --------- | -------------------------------------------------------------------------------------- |
+| `logType`     | `LogType` | One of: `'log'`, `'action'`, `'warning'`, `'error'`, `'success'`, `'table'`, `'other'` |
+| `commandThis` | `any`     | The current command instance (`this` in a command's `run()` method)                    |
+| `message`     | `string`  | The message to display (supports chalk formatting)                                     |
+| `sensitive`   | `boolean` | Optional. If `true`, the message is obfuscated in log files                            |
 
 **Example:**
 
 ```typescript
-import { uxLog } from 'sfdx-hardis/plugin-api';
-import c from 'chalk';
+import { uxLog } from "sfdx-hardis/plugin-api";
+import c from "chalk";
 
 // In your command's run() method:
 uxLog("action", this, c.cyan("Processing metadata..."));
@@ -113,62 +123,96 @@ uxLog("warning", this, c.yellow("Some items were skipped."));
 uxLog("error", this, c.red("Failed to connect to org."));
 ```
 
+### `uxLogTable(commandThis, tableData, columnsOrder?)`
+
+Renders a user-facing table in the terminal and in the VS Code extension.
+
+**Parameters:**
+
+| Parameter      | Type       | Description                                                         |
+| -------------- | ---------- | ------------------------------------------------------------------- |
+| `commandThis`  | `any`      | The current command instance (`this` in a command's `run()` method) |
+| `tableData`    | `any[]`    | Array of row objects to render                                      |
+| `columnsOrder` | `string[]` | Optional. Column keys to keep and the order to display them         |
+
+**Behavior:**
+
+- If `columnsOrder` is omitted, headers come from `Object.keys(tableData[0])`.
+- Boolean values are rendered as emoji (`✅` / `⬜`) in the terminal table.
+- When the VS Code UI is active, the table payload is capped to 20 rows and a truncation row is appended.
+
+**Example:**
+
+```typescript
+import { uxLogTable } from "sfdx-hardis/plugin-api";
+
+// In your command's run() method:
+uxLogTable(
+  this,
+  [
+    { name: "My Flow", type: "Flow", status: "Active" },
+    { name: "My Object", type: "Custom Object", status: "Inactive" },
+  ],
+  ["name", "type", "status"]
+);
+```
+
 ### `prompts(options)`
 
 Displays interactive prompts. When the VS Code extension is connected, prompts are shown in the VS Code UI. Otherwise, they fall back to terminal-based prompts (using inquirer).
 
 **Parameters:**
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
+| Parameter | Type                                   | Description                             |
+| --------- | -------------------------------------- | --------------------------------------- |
 | `options` | `PromptsQuestion \| PromptsQuestion[]` | A single question or array of questions |
 
 **`PromptsQuestion` interface:**
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `message` | `string` | The question text |
-| `description` | `string` | Additional description |
-| `placeholder` | `string` | Optional placeholder text |
-| `type` | `'select' \| 'multiselect' \| 'confirm' \| 'text' \| 'number'` | Input type |
-| `name` | `string` | Optional. Property name for the answer (defaults to `'value'`) |
-| `choices` | `Array<{title: string, value: any}>` | Options for select/multiselect |
-| `default` | `any` | Optional default value |
-| `initial` | `any` | Optional initial value |
+| Property      | Type                                                           | Description                                                    |
+| ------------- | -------------------------------------------------------------- | -------------------------------------------------------------- |
+| `message`     | `string`                                                       | The question text                                              |
+| `description` | `string`                                                       | Additional description                                         |
+| `placeholder` | `string`                                                       | Optional placeholder text                                      |
+| `type`        | `'select' \| 'multiselect' \| 'confirm' \| 'text' \| 'number'` | Input type                                                     |
+| `name`        | `string`                                                       | Optional. Property name for the answer (defaults to `'value'`) |
+| `choices`     | `Array<{title: string, value: any}>`                           | Options for select/multiselect                                 |
+| `default`     | `any`                                                          | Optional default value                                         |
+| `initial`     | `any`                                                          | Optional initial value                                         |
 
 **Example:**
 
 ```typescript
-import { uxLog, prompts } from 'sfdx-hardis/plugin-api';
-import c from 'chalk';
+import { uxLog, prompts } from "sfdx-hardis/plugin-api";
+import c from "chalk";
 
 // Single select prompt
 const envResponse = await prompts({
-  type: 'select',
-  name: 'environment',
-  message: 'Select target environment',
-  description: 'Choose where to deploy',
+  type: "select",
+  name: "environment",
+  message: "Select target environment",
+  description: "Choose where to deploy",
   choices: [
-    { title: 'Sandbox', value: 'sandbox' },
-    { title: 'Production', value: 'production' },
+    { title: "Sandbox", value: "sandbox" },
+    { title: "Production", value: "production" },
   ],
 });
 uxLog("action", this, c.cyan(`Selected: ${envResponse.environment}`));
 
 // Text input
 const nameResponse = await prompts({
-  type: 'text',
-  name: 'projectName',
-  message: 'Enter project name',
-  description: 'The name for your new project',
+  type: "text",
+  name: "projectName",
+  message: "Enter project name",
+  description: "The name for your new project",
 });
 
 // Confirm prompt (automatically converted to select Yes/No)
 const confirmResponse = await prompts({
-  type: 'confirm',
-  name: 'proceed',
-  message: 'Do you want to continue?',
-  description: 'This will start the deployment',
+  type: "confirm",
+  name: "proceed",
+  message: "Do you want to continue?",
+  description: "This will start the deployment",
 });
 ```
 
@@ -235,19 +279,19 @@ WebSocketClient.sendReportFileMessage(
 );
 ```
 
-| `type` value | Description |
-|-------------|-------------|
-| `"report"` | A report file to download |
-| `"docUrl"` | A documentation URL |
-| `"actionUrl"` | An action URL |
-| `"actionCommand"` | A command to run |
+| `type` value      | Description               |
+| ----------------- | ------------------------- |
+| `"report"`        | A report file to download |
+| `"docUrl"`        | A documentation URL       |
+| `"actionUrl"`     | An action URL             |
+| `"actionCommand"` | A command to run          |
 
 #### Other available methods
 
-| Method | Description |
-|--------|-------------|
-| `sendRefreshStatusMessage()` | Triggers a status refresh in VS Code |
-| `sendRefreshCommandsMessage()` | Triggers a commands list refresh |
+| Method                                                      | Description                                  |
+| ----------------------------------------------------------- | -------------------------------------------- |
+| `sendRefreshStatusMessage()`                                | Triggers a status refresh in VS Code         |
+| `sendRefreshCommandsMessage()`                              | Triggers a commands list refresh             |
 | `sendCommandLogLineMessage(message, logType?, isQuestion?)` | Sends a log line to the command output panel |
 
 ### `NotifProvider`
@@ -261,11 +305,11 @@ Posts a notification to all configured channels.
 **Basic example — simple success notification:**
 
 ```typescript
-import { NotifProvider } from 'sfdx-hardis/plugin-api';
+import { NotifProvider } from "sfdx-hardis/plugin-api";
 
 await NotifProvider.postNotifications({
   text: "My plugin completed successfully",
-  type: "MY_PLUGIN_TYPE",  // use a unique ALL_CAPS identifier for your plugin
+  type: "MY_PLUGIN_TYPE", // use a unique ALL_CAPS identifier for your plugin
   severity: "success",
   logElements: [],
   data: {},
@@ -276,18 +320,20 @@ await NotifProvider.postNotifications({
 **Example with action buttons and attachment text:**
 
 ```typescript
-import { NotifProvider } from 'sfdx-hardis/plugin-api';
-import type { NotifMessage } from 'sfdx-hardis/plugin-api';
+import { NotifProvider } from "sfdx-hardis/plugin-api";
+import type { NotifMessage } from "sfdx-hardis/plugin-api";
 
 const notif: NotifMessage = {
   text: `Deployment completed to *Production*\n- Components deployed: 42\n- Tests passed: 156`,
   type: "MY_DEPLOYMENT",
   severity: "success",
-  attachments: [
-    { text: "• MyClass: OK\n• MyFlow: OK\n• MyPermissionSet: OK" }
-  ],
+  attachments: [{ text: "• MyClass: OK\n• MyFlow: OK\n• MyPermissionSet: OK" }],
   buttons: [
-    { text: "View Job", url: "https://ci.example.com/job/123", style: "primary" },
+    {
+      text: "View Job",
+      url: "https://ci.example.com/job/123",
+      style: "primary",
+    },
     { text: "View Org", url: "https://myorg.my.salesforce.com" },
   ],
   logElements: [],
@@ -302,11 +348,12 @@ await NotifProvider.postNotifications(notif);
 The `metrics` property is used to send time-series data to a metrics API (InfluxDB line protocol or Prometheus format), configured by the end user via `NOTIF_API_METRICS_URL`.
 
 Each key in `metrics` becomes a separate metric series. Values can be:
+
 - A **plain number** (simple gauge: `metric=<value>`)
 - An **object** with `value` (required), and optionally `min`, `max`, `percent`
 
 ```typescript
-import { NotifProvider } from 'sfdx-hardis/plugin-api';
+import { NotifProvider } from "sfdx-hardis/plugin-api";
 
 const failingItems = [
   { name: "MyClass", error: "Assertion failed" },
@@ -320,12 +367,16 @@ await NotifProvider.postNotifications({
   attachments: [
     {
       text: failingItems
-        .map(item => `• *${item.name}*: ${item.error}`)
+        .map((item) => `• *${item.name}*: ${item.error}`)
         .join("\n"),
     },
   ],
   buttons: [
-    { text: "View Report", url: "https://example.com/report", style: "primary" },
+    {
+      text: "View Report",
+      url: "https://example.com/report",
+      style: "primary",
+    },
   ],
   // logElements: structured list sent as _logElements in the API payload
   // Useful for dashboards that render tabular data
@@ -370,34 +421,35 @@ See [`NotifMessage`](#notifmessage) for all available fields.
 
 Interface describing a notification to send.
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `text` | `string` | ✓ | Main notification text (supports Slack markdown: `*bold*`, `_italic_`) |
-| `type` | `string` | ✓ | Notification type identifier — use a unique ALL_CAPS string for your plugin (e.g. `"MY_PLUGIN_RESULT"`) |
-| `severity` | `NotifSeverity` | ✓ | One of: `"critical"`, `"error"`, `"warning"`, `"info"`, `"success"`, `"log"` |
-| `logElements` | `any[]` | ✓ | Array of structured items (e.g. failing tests, issues). Sent as `_logElements` in the API payload. |
-| `data` | `any` | ✓ | Arbitrary key-value pairs merged into the API payload (available in Grafana/Loki queries) |
-| `metrics` | `any` | ✓ | Numeric metrics pushed to `NOTIF_API_METRICS_URL`. Keys become metric names. Values are a number or `{ value, min?, max?, percent? }` |
-| `attachments` | `{ text: string }[]` | | Extra detail blocks appended to the notification body |
-| `buttons` | `NotifButton[]` | | Action buttons shown in Slack/Teams (requires `text` + optional `url` and `style`) |
-| `attachedFiles` | `string[]` | | Absolute paths to files uploaded as attachments (e.g. CSV reports) |
-| `alwaysSend` | `boolean` | | If `true`, send even when the severity would normally be filtered out |
-| `sideImage` | `string` | | URL of a side image shown in some providers |
+| Property        | Type                 | Required | Description                                                                                                                           |
+| --------------- | -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `text`          | `string`             | ✓        | Main notification text (supports Slack markdown: `*bold*`, `_italic_`)                                                                |
+| `type`          | `string`             | ✓        | Notification type identifier — use a unique ALL_CAPS string for your plugin (e.g. `"MY_PLUGIN_RESULT"`)                               |
+| `severity`      | `NotifSeverity`      | ✓        | One of: `"critical"`, `"error"`, `"warning"`, `"info"`, `"success"`, `"log"`                                                          |
+| `logElements`   | `any[]`              | ✓        | Array of structured items (e.g. failing tests, issues). Sent as `_logElements` in the API payload.                                    |
+| `data`          | `any`                | ✓        | Arbitrary key-value pairs merged into the API payload (available in Grafana/Loki queries)                                             |
+| `metrics`       | `any`                | ✓        | Numeric metrics pushed to `NOTIF_API_METRICS_URL`. Keys become metric names. Values are a number or `{ value, min?, max?, percent? }` |
+| `attachments`   | `{ text: string }[]` |          | Extra detail blocks appended to the notification body                                                                                 |
+| `buttons`       | `NotifButton[]`      |          | Action buttons shown in Slack/Teams (requires `text` + optional `url` and `style`)                                                    |
+| `attachedFiles` | `string[]`           |          | Absolute paths to files uploaded as attachments (e.g. CSV reports)                                                                    |
+| `alwaysSend`    | `boolean`            |          | If `true`, send even when the severity would normally be filtered out                                                                 |
+| `sideImage`     | `string`             |          | URL of a side image shown in some providers                                                                                           |
 
 ## Complete plugin example
 
 Here is a complete example of an sfdx-hardis plugin command:
 
 ```typescript
-import { SfCommand } from '@salesforce/sf-plugins-core';
-import { type AnyJson } from '@salesforce/ts-types';
-import { uxLog, prompts, WebSocketClient } from 'sfdx-hardis/plugin-api';
-import type { PromptsQuestion } from 'sfdx-hardis/plugin-api';
-import c from 'chalk';
+import { SfCommand } from "@salesforce/sf-plugins-core";
+import { type AnyJson } from "@salesforce/ts-types";
+import { uxLog, prompts, WebSocketClient } from "sfdx-hardis/plugin-api";
+import type { PromptsQuestion } from "sfdx-hardis/plugin-api";
+import c from "chalk";
 
 export default class MyCustomCommand extends SfCommand<AnyJson> {
-  public static readonly summary = 'My custom sfdx-hardis plugin command';
-  public static readonly description = 'Does something awesome with VS Code integration';
+  public static readonly summary = "My custom sfdx-hardis plugin command";
+  public static readonly description =
+    "Does something awesome with VS Code integration";
 
   public async run(): Promise<AnyJson> {
     // Log messages appear in both terminal and VS Code
@@ -405,18 +457,18 @@ export default class MyCustomCommand extends SfCommand<AnyJson> {
 
     // Prompt user (VS Code UI or terminal fallback)
     const response = await prompts({
-      type: 'select',
-      name: 'action',
-      message: 'What would you like to do?',
-      description: 'Select an action',
+      type: "select",
+      name: "action",
+      message: "What would you like to do?",
+      description: "Select an action",
       choices: [
-        { title: 'Analyze metadata', value: 'analyze' },
-        { title: 'Generate report', value: 'report' },
+        { title: "Analyze metadata", value: "analyze" },
+        { title: "Generate report", value: "report" },
       ],
     });
 
     // Show progress in VS Code
-    const items = ['Item1', 'Item2', 'Item3'];
+    const items = ["Item1", "Item2", "Item3"];
     WebSocketClient.sendProgressStartMessage("Processing items", items.length);
 
     for (let i = 0; i < items.length; i++) {
