@@ -179,8 +179,8 @@ export async function bulkUpdate(
       `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on ${c.bold(records.length)} records of object ${c.bold(objectName)}`
     )
   );
-  conn.bulk2.pollInterval = 5000; // 5 sec
-  conn.bulk2.pollTimeout = 60000; // 60 sec
+  conn.bulk2.pollInterval = process.env.BULKAPIV2_POLL_INTERVAL ? Number(process.env.BULKAPIV2_POLL_INTERVAL) : 5000; // 5 sec
+  conn.bulk2.pollTimeout = process.env.BULKAPIV2_POLL_TIMEOUT ? Number(process.env.BULKAPIV2_POLL_TIMEOUT) : 60000; // 60 sec
   // Initialize Job
   spinner = ora({ text: `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on ${c.bold(records.length)} records of object ${c.bold(objectName)}`, spinner: 'moon' }).start();
   const job = conn.bulk2.createJob({
