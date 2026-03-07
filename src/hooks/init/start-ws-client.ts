@@ -23,6 +23,19 @@ const hook: Hook<'init'> = async (options) => {
 
   // Initialize WebSocketClient to communicate with VS Code SFDX Hardis extension
   const context: any = { command: commandId, id: process.pid };
+
+  // Resolve the plugin root so websocketClient can import the command class
+  // even when the command comes from a third-party plugin.
+  try {
+    const cmd = options?.config?.findCommand(commandId);
+    const pluginRoot = (cmd as any)?.plugin?.root;
+    if (pluginRoot) {
+      context.commandPluginRoot = pluginRoot;
+    }
+  } catch {
+    // Silently ignore – commandPluginRoot is optional
+  }
+
   const websocketArgIndex = options?.argv?.indexOf('--websocket') ?? -1;
   if (
     websocketArgIndex > -1 &&
@@ -55,17 +68,21 @@ function shouldInitWebSocket(commandId: string, config: any): boolean {
   if (config) {
     try {
       const command = config.findCommand(commandId);
+      if (command.pluginType === 'core') {
+        return false; // Core commands are not from plugins, so we can skip
+      }
       const pluginName = command?.pluginName ?? command?.plugin?.name;
-      if (pluginName && pluginName !== 'sfdx-hardis') {
-        for (const plugin of config.plugins?.values?.() ?? []) {
-          if (plugin.name === pluginName) {
-            const deps = plugin.pjson?.dependencies ?? {};
-            const peerDeps = plugin.pjson?.peerDependencies ?? {};
-            if (deps['sfdx-hardis'] || peerDeps['sfdx-hardis']) {
-              return true;
-            }
-            break;
+      if (!pluginName || ["sfdx-git-delta", "sfdmu"].includes(pluginName)) {
+        return false; // If we can't determine the plugin, we can't assume it depends on sfdx-hardis
+      }
+      for (const plugin of config.plugins?.values?.() ?? []) {
+        if (plugin.name === pluginName) {
+          const deps = plugin.pjson?.dependencies ?? {};
+          const peerDeps = plugin.pjson?.peerDependencies ?? {};
+          if (deps['sfdx-hardis'] || peerDeps['sfdx-hardis']) {
+            return true;
           }
+          break;
         }
       }
     } catch {

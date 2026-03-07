@@ -268,9 +268,14 @@ export class WebSocketClient {
       // Dynamically import command class and send static uiConfig if present
       if (this.wsContext?.command) {
         try {
-          // Convert command string to file path, e.g. hardis:cache:clear -> lib/commands/hardis/cache/clear.js
           const commandParts = this.wsContext.command.split(':');
-          const commandPath = path.resolve(__dirname, '../../lib/commands', ...commandParts) + '.js';
+          // Use the plugin root provided by the init hook when available (works for
+          // third-party plugins), otherwise fall back to sfdx-hardis's own lib/commands.
+          const pluginRoot = (this.wsContext as any).commandPluginRoot as string | undefined;
+          const commandsBase = pluginRoot
+            ? path.resolve(pluginRoot, 'lib/commands')
+            : path.resolve(__dirname, '../../lib/commands');
+          const commandPath = path.resolve(commandsBase, ...commandParts) + '.js';
           const fileUrl = 'file://' + commandPath.replace(/\\/g, '/');
           const imported = await import(fileUrl);
           const CommandClass = imported.default;
@@ -281,7 +286,11 @@ export class WebSocketClient {
             message.uiConfig = CommandClass.uiConfig;
           }
         } catch (e) {
-          uxLog("warning", this, c.yellow(t('unableToImportCommandClassFor', { wsContext: this.wsContext.command, instanceof: e instanceof Error ? e.message : String(e) })));
+          // Only warn for sfdx-hardis own commands – external plugins are not
+          // expected to expose a command class file at the resolved path.
+          if (this.wsContext.command.startsWith('hardis:')) {
+            uxLog("warning", this, c.yellow(t('unableToImportCommandClassFor', { wsContext: this.wsContext.command, instanceof: e instanceof Error ? e.message : String(e) })));
+          }
         }
       }
       // Add link to command log file
