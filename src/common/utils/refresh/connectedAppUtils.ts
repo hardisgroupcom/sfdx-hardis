@@ -8,6 +8,7 @@ import { getApiVersion } from '../../../config/index.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
 import { prompts } from '../prompts.js';
 import { GLOB_IGNORE_PATTERNS } from '../projectUtils.js';
+import { t } from '../i18n.js';
 
 export interface RefreshSandboxConfig {
   connectedApps?: string[];
@@ -63,7 +64,7 @@ export async function createConnectedAppManifest(
 
   // Display the XML content for the manifest
   const manifestContent = await fs.readFile(manifestPath, 'utf8');
-  uxLog("log", command, c.cyan(`package.xml manifest for ${connectedApps.length} connected app(s):\n${manifestContent}`));
+  uxLog("log", command, c.cyan(t('packageXmlManifestForConnectedApp', { connectedApps: connectedApps.length, manifestContent })));
 
   return { manifestPath, tmpDir };
 }
@@ -108,7 +109,7 @@ export async function createDestructiveChangesManifest(
 
   // Display the XML content for destructive changes
   const destructiveXmlContent = await fs.readFile(destructiveChangesPath, 'utf8');
-  uxLog("log", command, c.cyan(`Destructive changes XML for deleting ${connectedApps.length} connected app(s):\n${destructiveXmlContent}`));
+  uxLog("log", command, c.cyan(t('destructiveChangesXmlForDeletingConnectedApp', { connectedApps: connectedApps.length, destructiveXmlContent })));
 
   return { destructiveChangesPath, packageXmlPath, tmpDir };
 }
@@ -129,7 +130,7 @@ export async function deleteConnectedApps(
         await createDestructiveChangesManifest(connectedApps, command);
 
       // Deploy the destructive changes
-      uxLog("log", command, c.grey(`Deploying destructive changes to delete ${connectedApps.length} Connected App(s) from org...`));
+      uxLog("log", command, c.grey(t('deployingDestructiveChangesToDeleteConnectedApp', { connectedApps: connectedApps.length })));
       try {
         await execCommand(
           `sf project deploy start --manifest ${packageXmlPath} --post-destructive-changes ${destructiveChangesPath} --target-org ${orgUsername} --ignore-warnings --ignore-conflicts --json`,
@@ -142,7 +143,7 @@ export async function deleteConnectedApps(
 
       // Clean up
       await fs.remove(tmpDir);
-      uxLog("log", command, c.grey('Removed temporary deployment files.'));
+      uxLog("log", command, c.grey(t('removedTemporaryDeploymentFiles')));
     }, command);
   });
 }
@@ -156,7 +157,7 @@ export async function disableConnectedAppIgnore(command: SfCommand<any>): Promis
 
   // Check if .forceignore exists
   if (!await fs.pathExists(forceignorePath)) {
-    uxLog("log", command, c.grey('No .forceignore file found; no modification needed.'));
+    uxLog("log", command, c.grey(t('noForceignoreFileFoundNoModificationNeeded')));
     return null;
   }
 
@@ -178,13 +179,13 @@ export async function disableConnectedAppIgnore(command: SfCommand<any>): Promis
 
   // Check if any lines were filtered out
   if (lines.length === filteredLines.length) {
-    uxLog("log", command, c.grey('No Connected App ignore patterns found in .forceignore.'));
+    uxLog("log", command, c.grey(t('noConnectedAppIgnorePatternsFoundIn')));
     return { forceignorePath, originalContent, tempBackupPath };
   }
 
   // Write modified .forceignore
   await fs.writeFile(forceignorePath, filteredLines.join('\n'));
-  uxLog("warning", command, c.cyan('Temporarily modified .forceignore to allow Connected App metadata operations.'));
+  uxLog("warning", command, c.cyan(t('temporarilyModifiedForceignoreToAllowConnectedApp')));
 
   return { forceignorePath, originalContent, tempBackupPath };
 }
@@ -204,10 +205,10 @@ export async function restoreConnectedAppIgnore(
     if (await fs.pathExists(backupInfo.tempBackupPath)) {
       await fs.writeFile(backupInfo.forceignorePath, backupInfo.originalContent);
       await fs.remove(backupInfo.tempBackupPath);
-      uxLog("log", command, c.grey('Restored original .forceignore file.'));
+      uxLog("log", command, c.grey(t('restoredOriginalForceignoreFile')));
     }
   } catch (error) {
-    uxLog("warning", command, c.yellow(`Error restoring .forceignore: ${error}`));
+    uxLog("warning", command, c.yellow(t('errorRestoringForceignore', { error })));
   }
 }
 
@@ -289,7 +290,7 @@ export function validateConnectedApps(
     uxLog("error", command, c.red(errorMsg));
 
     if (availableApps.length > 0) {
-      uxLog("warning", command, c.yellow(`Available connected apps in the ${context}:`));
+      uxLog("warning", command, c.yellow(t('availableConnectedAppsInThe', { context })));
       availableApps.forEach(name => {
         uxLog("log", command, c.grey(`  - ${name}`));
       });
@@ -304,17 +305,17 @@ export function validateConnectedApps(
           .slice(0, 3);
 
         if (similarNames.length > 0) {
-          uxLog("warning", command, c.yellow(`Did you mean one of these instead of "${missingApp}"?`));
+          uxLog("warning", command, c.yellow(t('didYouMeanOneOfTheseInstead', { missingApp })));
           similarNames.forEach(name => {
             uxLog("log", command, c.grey(`  - ${name}`));
           });
         }
       });
     } else {
-      uxLog("warning", command, c.yellow(`No Connected Apps were found in the ${context}.`));
+      uxLog("warning", command, c.yellow(t('noConnectedAppsWereFoundInThe', { context })));
     }
 
-    uxLog("warning", command, c.yellow('Please check the app name(s) and try again.'));
+    uxLog("warning", command, c.yellow(t('pleaseCheckTheAppNameAndTry')));
     throw new Error(errorMsg);
   }
 
@@ -355,7 +356,7 @@ export async function promptForConnectedAppSelection<T extends { fullName: strin
     type: 'multiselect',
     name: 'selectedApps',
     message: promptMessage,
-    description: 'Select Connected Apps to process.',
+    description: t('descChooseConnectedApps'),
     choices: choices,
     initial: initialSelection,
   });
@@ -377,7 +378,7 @@ export async function findConnectedAppFile(
   command: SfCommand<any>,
   saveProjectPath: string
 ): Promise<string | null> {
-  uxLog("other", command, c.cyan(`Searching for Connected App: ${appName}.`));
+  uxLog("other", command, c.cyan(t('searchingForConnectedApp', { appName })));
   try {
     // First, try an exact case-sensitive match
     const exactPattern = `**/${appName}.connectedApp-meta.xml`;
@@ -427,11 +428,11 @@ export async function findConnectedAppFile(
     // If still not found, list available Connected Apps
     uxLog("error", command, c.red(`✗ Could not find connected app "${appName}".`));
     const allConnectedAppNames = allConnectedAppFiles.map(file => "- " + path.basename(file, '.connectedApp-meta.xml')).join('\n');
-    uxLog("warning", command, c.yellow(`Available connected apps:\n${allConnectedAppNames}`));
+    uxLog("warning", command, c.yellow(t('availableConnectedApps', { allConnectedAppNames })));
 
     return null;
   } catch (error) {
-    uxLog("error", command, c.red(`Error searching for connected app: ${error}.`));
+    uxLog("error", command, c.red(t('errorSearchingForConnectedApp', { error })));
     return null;
   }
 }
@@ -448,7 +449,7 @@ export async function selectConnectedAppsForProcessing<T extends { fullName: str
   // If all flag or name is provided, use all connected apps from the list without prompting
   if (processAll || nameFilter) {
     const selectionReason = processAll ? 'all flag' : 'name filter';
-    uxLog("action", command, c.cyan(`Processing ${connectedApps.length} connected app(s) based on ${selectionReason}.`));
+    uxLog("action", command, c.cyan(t('processingConnectedAppBasedOn', { connectedApps: connectedApps.length, selectionReason })));
     return connectedApps;
   }
 
@@ -470,7 +471,7 @@ export async function withConnectedAppValidation(
   try {
     validateConnectedAppParams(orgUsername, connectedApps);
   } catch (error: any) {
-    uxLog("log", command, c.yellow(`Skipping ${operationName} operation: ${error.message}`));
+    uxLog("log", command, c.yellow(t('skippingOperation', { operationName, error: error.message })));
     return;
   }
 
@@ -497,7 +498,7 @@ export async function performConnectedAppOperationWithManifest(
 
       // Wait a moment to ensure files are written to disk (especially for retrieve operations)
       if (operationName === 'retrieve') {
-        uxLog("log", command, c.grey('Waiting for files to be written to disk...'));
+        uxLog("log", command, c.grey(t('waitingForFilesToBeWrittenTo')));
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } catch (error: any) {
@@ -506,7 +507,7 @@ export async function performConnectedAppOperationWithManifest(
 
     // Clean up
     await fs.remove(tmpDir);
-    uxLog("log", command, c.grey('Removed temporary manifest file.'));
+    uxLog("log", command, c.grey(t('removedTemporaryManifestFile')));
   }, command);
 }
 
@@ -528,6 +529,6 @@ export function handleConnectedAppError(
   command: SfCommand<any>
 ): { success: false; error: string } {
   const errorMessage = error.message || JSON.stringify(error);
-  uxLog("error", command, c.red(`Error: ${errorMessage}`));
+  uxLog("error", command, c.red(t('error3', { errorMessage })));
   return { success: false, error: errorMessage };
 }

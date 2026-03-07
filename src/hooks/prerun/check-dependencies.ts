@@ -1,5 +1,6 @@
 /* jscpd:ignore-start */
 import { Hook } from '@oclif/core';
+import { t } from '../../common/utils/i18n.js';
 
 const hook: Hook<'prerun'> = async (options) => {
   // Skip hooks from other commands than hardis commands
@@ -37,31 +38,31 @@ const hook: Hook<'prerun'> = async (options) => {
         if (allConfigs['user.name'] == null) {
           const username = os.userInfo().username;
           await git({ output: true }).addConfig('user.name', username);
-          uxLog("log", this, `Defined ${username} as git user.name.`);
+          uxLog("log", this, t('definedAsGitUserName', { username }));
         }
         // Email
         if (allConfigs['user.email'] == null) {
           const config = await getConfig('user');
           const email = config.userEmail || 'default@cloudity.com';
           await git({ output: true }).addConfig('user.email', email);
-          uxLog("log", this, `Defined ${email} as git user.email` + (email === 'default@cloudity.com') ? ' (temporary)' : '');
+          uxLog("log", this, t('definedAsGitUserEmail', { email }));
         }
         // Manage special characters in git file / folder names
         if (allConfigs['core.quotepath'] == null || allConfigs['core.quotepath'] == 'true') {
           await git({ output: true }).addConfig('core.quotepath', 'false');
-          uxLog("log", this, `Defined "false" as git core.quotepath.`);
+          uxLog("log", this, t('definedFalseAsGitCoreQuotepath'));
         }
         // Merge tool
         if (allConfigs['merge.tool'] == null) {
           await git({ output: true }).addConfig('merge.tool', 'vscode');
           await git({ output: true }).addConfig('mergetool.vscode.cmd', 'code --wait $MERGED');
-          uxLog("log", this, 'Defined VS Code as git merge tool.');
+          uxLog("log", this, t('definedVsCodeAsGitMergeTool'));
         }
         // Diff tool
         if (allConfigs['diff.tool'] == null) {
           await git({ output: true }).addConfig('diff.tool', 'vscode');
           await git({ output: true }).addConfig('difftool.vscode.cmd', 'code --wait --diff $LOCAL $REMOTE');
-          uxLog("log", this, 'Defined VS Code as git diff tool.');
+          uxLog("log", this, t('definedVsCodeAsGitDiffTool'));
         }
       });
   }
@@ -135,17 +136,17 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
           type: 'select',
           name: 'value',
           initial: true,
-          message: c.cyanBright('Your .gitignore is deprecated, do you agree to upgrade it ?'),
-          description: 'Updates your .gitignore file with latest sfdx-hardis best practices and removes duplicate entries',
+          message: c.cyanBright(t('yourGitignoreIsDeprecatedDoYouAgree')),
+          description: t('updatesGitignore'),
           choices: [
-            { title: 'Yes', value: 'true' },
-            { title: 'No  ', value: 'false' },
-            { title: 'Never ask again  ', value: 'never' },
+            { title: t('choiceYes'), value: 'true' },
+            { title: t('choiceNo'), value: 'false' },
+            { title: t('neverAskAgain'), value: 'never' },
           ],
         });
         if (confirm.value === 'true' || isCI) {
           await fs.writeFile(gitIgnoreFile, gitIgnoreLinesUnique.join('\n') + '\n', 'utf-8');
-          uxLog("action", this, c.cyan('[sfdx-hardis] Updated .gitignore.'));
+          uxLog("action", this, c.cyan('[sfdx-hardis] ' + t('updatedGitignoreFile')));
         }
         if (confirm.value === 'never') {
           await setConfig('project', { skipUpdateGitIgnore: true });
@@ -180,18 +181,18 @@ async function manageGitIgnoreForceIgnore(commandId: string) {
           type: 'select',
           name: 'value',
           initial: true,
-          message: c.cyanBright('Your .forceignore is deprecated, do you agree to upgrade it ?'),
-          description: 'Updates your .forceignore file with latest sfdx-hardis best practices and removes duplicate entries',
+          message: c.cyanBright(t('yourForceignoreIsDeprecatedDoYouAgree')),
+          description: t('updatesForceIgnore'),
           choices: [
-            { title: 'Yes', value: 'true' },
-            { title: 'No  ', value: 'false' },
-            { title: 'Never ask again  ', value: 'never' },
+            { title: t('choiceYes'), value: 'true' },
+            { title: t('choiceNo'), value: 'false' },
+            { title: t('neverAskAgain'), value: 'never' },
           ],
         });
         /* jscpd:ignore-end */
         if (confirm.value === 'true' || isCI) {
           await fs.writeFile(forceIgnoreFile, forceIgnoreLinesUnique.join('\n') + '\n', 'utf-8');
-          uxLog("action", this, c.cyan('[sfdx-hardis] Updated .forceignore.'));
+          uxLog("action", this, c.cyan('[sfdx-hardis] ' + t('updatedForceignoreFile')));
         }
         if (confirm.value === 'never') {
           await setConfig('project', { skipUpdateForceIgnore: true });

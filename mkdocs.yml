@@ -21,28 +21,28 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-      background: '#F5F7FA'
-      foreground: '#1B1464'
+      background: "#F5F7FA"
+      foreground: "#1B1464"
       colors:
-        primary: '#0057B8'
-        accent: '#FFB81C'
-        link: '#0057B8'
-        header: '#1B1464'
-        nav: '#F5F7FA'
+        primary: "#0057B8"
+        accent: "#FFB81C"
+        link: "#0057B8"
+        header: "#1B1464"
+        nav: "#F5F7FA"
     - scheme: slate
       primary: custom
       accent: custom
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-      background: '#181B2A'
-      foreground: '#FFB81C'
+      background: "#181B2A"
+      foreground: "#FFB81C"
       colors:
-        primary: '#0057B8'
-        accent: '#FFB81C'
-        link: '#FFB81C'
-        header: '#181B2A'
-        nav: '#23263A'
+        primary: "#0057B8"
+        accent: "#FFB81C"
+        link: "#FFB81C"
+        header: "#181B2A"
+        nav: "#23263A"
 plugins:
   - glightbox
   - search
@@ -418,6 +418,7 @@ nav:
   - Configuration reference: sfdx-hardis-config-file.md
   - Frequently Asked Questions: https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476
   - Contributing: contributing.md
+  - Plugins: sfdx-hardis-plugins.md
   - License: license.md
   - Security: SECURITY.md
   - Changelog: CHANGELOG.md

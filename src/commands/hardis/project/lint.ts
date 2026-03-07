@@ -4,6 +4,7 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { isCI, uxLog } from '../../../common/utils/index.js';
 import c from 'chalk';
+import { t } from '../../../common/utils/i18n.js';
 import fs from 'fs-extra';
 import { MegaLinterRunner } from 'mega-linter-runner/lib/index.js';
 
@@ -86,7 +87,7 @@ The command's technical implementation involves:
         uxLog(
           "action",
           this,
-          c.cyan('Mega-Linter needs to be configured. Please select Salesforce flavor in the following wizard')
+          c.cyan(t('megaLinterNeedsToBeConfigured'))
         );
         const megaLinter = new MegaLinterRunner();
         const installRes = megaLinter.run({ install: true });
@@ -101,9 +102,9 @@ The command's technical implementation involves:
     process.exitCode = res.status;
 
     if (res.status === 0) {
-      uxLog("success", this, c.green(`Mega-Linter has been successful`));
+      uxLog("success", this, c.green(t('megaLinterHasBeenSuccessful')));
     } else {
-      uxLog("error", this, c.red(`Mega-Linter found error(s)`));
+      uxLog("error", this, c.red(t('megaLinterFoundErrors')));
     }
 
     // Return an object to be displayed with --json

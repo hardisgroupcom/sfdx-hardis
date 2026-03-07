@@ -4,6 +4,7 @@ import { getCurrentGitBranch, uxLog } from '../utils/index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { authOrg } from '../utils/authUtils.js';
 import { findUserByUsernameLike } from '../utils/orgUtils.js';
+import { t } from '../utils/i18n.js';
 
 export interface PrePostCommand {
   id: string;
@@ -95,13 +96,13 @@ export abstract class ActionsProvider {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async checkParameters(_cmd: PrePostCommand): Promise<ActionResult | null> {
-    uxLog('warning', this, c.yellow(`checkParameters is not implemented on ${this.getLabel()}`));
+    uxLog('warning', this, c.yellow(t('checkparametersIsNotImplementedOn', { getLabel: this.getLabel() })));
     return null;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
-    uxLog('warning', this, c.yellow(`run is not implemented on ${this.getLabel()}`));
+    uxLog('warning', this, c.yellow(t('runIsNotImplementedOn', { getLabel: this.getLabel() })));
     return { statusCode: 'skipped', skippedReason: 'Not implemented' };
   }
 

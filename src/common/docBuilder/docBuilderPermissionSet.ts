@@ -2,6 +2,7 @@ import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { buildGenericMarkdownTable, prettifyFieldName } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderProfile } from "./docBuilderProfile.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderPermissionSet extends DocBuilderProfile {
 
@@ -18,15 +19,15 @@ export class DocBuilderPermissionSet extends DocBuilderProfile {
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Permission Sets" : "## Permission Sets",
+      filterObject ? `## ${t('docMdRelatedPermissionSets')}` : `## ${t('docMdPermissionSets')}`,
       "",
-      "| Permission Set | User License |",
+      `| ${t('docMdColPermissionSet')} | ${t('docMdColUserLicense')} |`,
       "| :----      | :--: | "
     ]);
     for (const pSet of filteredPsets) {
       const pSetNameCell = `[${pSet.name}](${prefix}${encodeURIComponent(pSet.name)}.md)`;
       lines.push(...[
-        `| ${pSetNameCell} | ${pSet.license || "None"} |`
+        `| ${pSetNameCell} | ${pSet.license || t('docMdNone')} |`
       ]);
     }
     lines.push("");
@@ -39,7 +40,7 @@ export class DocBuilderPermissionSet extends DocBuilderProfile {
       '',
       '<div id="jstree-container"></div>',
       '',
-      buildGenericMarkdownTable(this.parsedXmlObject, ["label", "description", "license", "hasActivationRequired"], "## Permission Set attributes", []),
+      buildGenericMarkdownTable(this.parsedXmlObject, ["label", "description", "license", "hasActivationRequired"], `## ${t('docMdPermissionSetAttributes')}`, []),
       '',
       '<!-- Permission Set Groups table -->',
       '',

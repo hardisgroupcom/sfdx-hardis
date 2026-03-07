@@ -13,6 +13,7 @@ import { MetadataUtils } from '../../../../../common/metadata-utils/index.js';
 import { uxLog } from '../../../../../common/utils/index.js';
 import { WebSocketClient } from '../../../../../common/websocketClient.js';
 import { setConfig } from '../../../../../config/index.js';
+import { t } from '../../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -146,7 +147,7 @@ The command's technical implementation involves:
 
     // Create sfdx project
     if (fs.readdirSync(sfdxFolder).length === 0) {
-      uxLog("action", this, c.cyan('Creating SFDX project...'));
+      uxLog("action", this, c.cyan(t('creatingSfdxProject')));
       const projectCreateCommand = 'sf project generate --name "sfdx-project"';
       uxLog("other", this, `[command] ${c.bold(c.grey(projectCreateCommand))}`);
       const createProjectRes = await exec(projectCreateCommand, { maxBuffer: 1024 * 2000 });
@@ -156,7 +157,7 @@ The command's technical implementation involves:
     }
 
     // Converting metadatas to sfdx
-    uxLog("action", this, c.cyan(`Converting metadatas into SFDX sources in ${c.green(sfdxFolder)}...`));
+    uxLog("action", this, c.cyan(t('convertingMetadatasIntoSfdxSourcesIn', { sfdxFolder: c.green(sfdxFolder) })));
     process.chdir(sfdxFolder);
     const mdapiConvertCommand = `sf project convert mdapi --root-dir ${path.join(metadataFolder, 'unpackaged')} ${debug ? '--verbose' : ''
       }`;
@@ -210,7 +211,7 @@ The command's technical implementation involves:
       await fs.rm(tempFolder, { recursive: true });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      uxLog("warning", this, c.yellow(`Unable to remove folder ${tempFolder}, please delete it manually`));
+      uxLog("warning", this, c.yellow(t('unableToRemoveFolderPleaseDeleteIt', { tempFolder })));
     }
 
     // Trigger commands refresh on VS Code WebSocket Client

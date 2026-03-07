@@ -10,6 +10,7 @@ import { createBlankSfdxProject } from '../../../common/utils/projectUtils.js';
 import { initPermissionSetAssignments, isProductionOrg } from '../../../common/utils/orgUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { generateMkDocsHTML, readMkDocsFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -135,8 +136,8 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
       }
 
       if (success && !isCI) {
-        uxLog("action", this, c.cyan(`Opening the Custom Tab ${c.green(resName)} in your default browser.`));
-        uxLog("warning", this, c.yellow(`If you have an access issue, make sure the tab ${resName} is not hidden on your profile.`));
+        uxLog("action", this, c.cyan(t('openingTheCustomTabInYourDefault', { resName: c.green(resName) })));
+        uxLog("warning", this, c.yellow(t('ifYouHaveAnAccessIssueMake', { resName })));
         const sfPath = `lightning/n/${resName}`;
         await execCommand(`sf org open --path ${sfPath} --target-org ${targetUsername}`, this, { fail: false, output: true, debug: this.debugMode });
       }
@@ -151,14 +152,14 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
   }
 
   private async createDocMetadatas(resName: string, defaultProjectPath: string, type: any) {
-    uxLog("action", this, c.cyan(`Creating Static Resource ${resName} metadata.`));
+    uxLog("action", this, c.cyan(t('creatingStaticResourceMetadata', { resName })));
     const staticResourcePath = path.join(defaultProjectPath, "staticresources");
     const mkDocsResourcePath = path.join(staticResourcePath, resName);
     await ensureDir(mkDocsResourcePath);
     await fs.move(path.join(process.cwd(), "site"), mkDocsResourcePath, { overwrite: true });
 
     // Create Static resource metadata
-    uxLog("action", this, c.cyan(`Creating Static Resource ${resName} metadata.`));
+    uxLog("action", this, c.cyan(t('creatingStaticResourceMetadata', { resName })));
     const mkDocsResourceFileName = path.join(staticResourcePath, `${resName}.resource-meta.xml`);
     const mkDocsResourceMeta = `<?xml version="1.0" encoding="UTF-8"?>
 <StaticResource xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -169,7 +170,7 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
     await fs.writeFile(mkDocsResourceFileName, mkDocsResourceMeta);
 
     // Create visual force page
-    uxLog("action", this, c.cyan(`Creating Visualforce page ${resName} metadata.`));
+    uxLog("action", this, c.cyan(t('creatingVisualforcePageMetadata', { resName })));
     const vfPagesPath = path.join(defaultProjectPath, "pages");
     await ensureDir(vfPagesPath);
     const vfPageFileName = path.join(vfPagesPath, `${resName}.page`);
@@ -225,7 +226,7 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
   }
 
   private async uploadDocMetadatas(resName: string, targetUsername: any, conn: any, tmpProjectPath: string, mkDocsResourcePath: string, vfPageMetaFile: string, tabMetaFile: string, permissionSetFile: string) {
-    uxLog("action", this, c.cyan(`Deploying Static Resource ${resName}, Visualforce page ${resName}, Custom Tab ${resName}, and Permission Set ${resName} to org ${targetUsername}.`));
+    uxLog("action", this, c.cyan(t('deployingStaticResourceVisualforcePageCustomTab', { resName, resName1: resName, resName2: resName, resName3: resName, targetUsername })));
     let deployCommand = `sf project deploy start -m StaticResource:${resName} -m ApexPage:${resName} -m CustomTab:${resName} -m PermissionSet:${resName} --ignore-conflicts --ignore-warnings --target-org ${targetUsername}`;
     const isProdOrg = await isProductionOrg(targetUsername, { conn: conn });
     if (isProdOrg) {
@@ -244,23 +245,18 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
       deployRes.stdout = e.stdout;
     }
     if (deployRes.status !== 0) {
-      uxLog("error", this, c.red(`Deployment failed:\n${deployRes.stderr + "\n" + deployRes.stdout}`));
+      uxLog("error", this, c.red(t('deploymentFailed', { deployRes: deployRes.stderr + "\n" + deployRes.stdout })));
       if ((deployRes.stderr + deployRes.stdout).includes("static resource cannot exceed")) {
-        uxLog("error", this, c.red('Documentation is too big to be hosted in a static resource.'));
-        uxLog("warning", this, c.yellow('Cloudity Professional Services can help you host it elsewhere.'));
-        uxLog("warning", this, c.yellow(`If you're interested, contact us at ${c.green(c.bold(CONSTANTS.CONTACT_URL))}.`));
+        uxLog("error", this, c.red(t('documentationIsTooBigToBeHosted')));
+        uxLog("warning", this, c.yellow(t('cloudityProfessionalServicesCanHelpYouHost')));
+        uxLog("warning", this, c.yellow(t('ifYouReInterestedContactUsAt', { bold: c.green(c.bold(CONSTANTS.CONTACT_URL)) })));
       }
       else {
-        uxLog("warning", this, c.yellow(`You can manually deploy the Static Resource ${resName}, the Visualforce page ${resName}, and the Custom Tab ${resName} to your org:
-  - Static Resource: ${mkDocsResourcePath} (If you upload via the UI, zip the folder and ensure index.html is at the root of the zip.)
-  - Visualforce page: ${vfPageMetaFile}
-  - Custom Tab: ${tabMetaFile}
-  - Permission Set: ${permissionSetFile}
-You can also run the documentation locally using: "mkdocs serve -v" or "python -m mkdocs serve -v" or "py -m mkdocs serve -v".`));
+        uxLog("warning", this, c.yellow(t('manualDeployDocInstructions', { resName, mkDocsResourcePath, vfPageMetaFile, tabMetaFile, permissionSetFile })));
       }
     }
     else {
-      uxLog("success", this, c.green(`SFDX project documentation uploaded to Salesforce and is available in the Custom Tab ${resName}.`));
+      uxLog("success", this, c.green(t('sfdxProjectDocumentationUploadedToSalesforceAnd', { resName })));
     }
     return deployRes;
   }

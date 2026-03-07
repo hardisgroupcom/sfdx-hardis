@@ -10,6 +10,7 @@ import { CONSTANTS, getConfig, getEnvVar, getReportDirectory } from '../../../..
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateApexCoverageOutputFile } from '../../../../common/utils/deployUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -80,9 +81,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.orgMarkdown = await getOrgMarkdown(orgInstanceUrl);
     this.notifButtons = await getNotificationButtons();
     /* jscpd:ignore-end */
-    uxLog("action", this, c.cyan(`Running Apex tests in org ${orgInstanceUrl} with test level: ${testlevel}`));
+    uxLog("action", this, c.cyan(t('runningApexTestsInOrgWithTest', { orgInstanceUrl, testlevel })));
     await this.runApexTests(testlevel, debugMode, flags['target-org']?.getUsername());
-    uxLog("action", this, c.cyan(`Apex tests completed with outcome: ${this.testRunOutcome}`));
+    uxLog("action", this, c.cyan(t('apexTestsCompletedWithOutcome', { testRunOutcome: this.testRunOutcome })));
     // No Apex
     if (this.testRunOutcome === 'NoApex') {
       this.notifSeverity = 'log';
@@ -95,7 +96,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       await this.processApexTestsFailure();
     }
     else if (this.testRunOutcome === 'Passed') {
-      uxLog("success", this, c.green(`Apex tests passed (${this.testRunOutcome})`));
+      uxLog("success", this, c.green(t('apexTestsPassed', { testRunOutcome: this.testRunOutcome })));
     }
     // Get test coverage (and fail if not reached)
     await this.checkOrgWideCoverage();
@@ -208,7 +209,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         return `- ${failingTestClass.name}: ${failingTestClass.error}`;
       })
       .join('\n');
-    uxLog("warning", this, c.yellow("Failing Apex tests:\n" + failedTestsString));
+    uxLog("warning", this, c.yellow(t('failingApexTests') + failedTestsString));
   }
 
   private async checkOrgWideCoverage() {
@@ -223,7 +224,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         : 0.0;
     if (coverageOrgWide === 0.0) {
       this.notifSeverity = 'error';
-      uxLog("warning", this, c.yellow('Warning: Unable to extract org wide coverage from test run output.\n' + this.testRunOutputString));
+      uxLog("warning", this, c.yellow(t('warningUnableToExtractOrgWideCoverage') + this.testRunOutputString));
     }
     const minCoverageOrgWide = parseFloat(
       process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
@@ -269,7 +270,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       const coverageTestRun = parseFloat(coverageTestRunRaw) || 0.0;
       if (coverageTestRun === 0.0) {
         this.notifSeverity = 'error';
-        uxLog("warning", this, c.yellow('Warning: Unable to extract test run coverage from test run output.\n' + this.testRunOutputString));
+        uxLog("warning", this, c.yellow(t('warningUnableToExtractTestRunCoverage') + this.testRunOutputString));
       }
       const minCoverageTestRun = parseFloat(
         process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||

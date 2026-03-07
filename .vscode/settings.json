@@ -44,6 +44,8 @@
   "megalinter.run.applyFixes": false,
   "i18n-ally.localesPaths": [
     "messages",
-    "lib/i18n"
-  ]
+    "lib/i18n",
+    "src/i18n"
+  ],
+  "i18n-ally.keystyle": "nested"
 }

@@ -4,6 +4,7 @@ import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageRes
 import { uxLog } from "../utils/index.js";
 import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
 import { getEnvVar } from "../../config/index.js";
+import { t } from '../utils/i18n.js';
 
 export abstract class GitProviderRoot {
   public serverUrl: string | null;
@@ -80,7 +81,7 @@ export abstract class GitProviderRoot {
   }
 
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
-    uxLog("warning", this, c.yellow("Method postPullRequestMessage is not yet implemented on " + this.getLabel() + " to post " + JSON.stringify(prMessage)));
+    uxLog("warning", this, c.yellow(t('methodPostpullrequestmessageIsNotYetImplementedOn') + this.getLabel() + " to post " + JSON.stringify(prMessage)));
     return { posted: false, providerResult: { error: "Not implemented in sfdx-hardis" } };
   }
   /* jscpd:ignore-start */

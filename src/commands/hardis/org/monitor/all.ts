@@ -5,6 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { execCommand, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -222,7 +223,7 @@ ${this.getDefaultCommandsMarkdown()}
     uxLog(
       "action",
       this,
-      c.cyan('Running monitoring scripts for org ' + c.bold(flags['target-org'].getConnection().instanceUrl)) + ' ...'
+      c.cyan(t('runningMonitoringScriptsForOrg', { orgAlias: c.bold(flags['target-org'].getConnection().instanceUrl) }))
     );
 
     const config = await getConfig('user');
@@ -234,7 +235,7 @@ ${this.getDefaultCommandsMarkdown()}
     const commandsSummary: any[] = [];
     for (const command of commands) {
       if (monitoringDisable.includes(command.key)) {
-        uxLog("log", this, c.grey(`Skipped command ${c.bold(command.key)} according to custom configuration`));
+        uxLog("log", this, c.grey(t('skippedCommandAccordingToCustomConfiguration', { command: c.bold(command.key) })));
         continue;
       }
       if (
@@ -245,19 +246,19 @@ ${this.getDefaultCommandsMarkdown()}
         uxLog(
           "log",
           this,
-          c.grey(`Skipped command ${c.bold(command.key)} as its frequency is defined as weekly and we are not Saturday`)
+          c.grey(t('skippedCommandWeeklyFrequency', { command: c.bold(command.key) }))
         );
         continue;
       }
       // Run command
-      uxLog("action", this, c.cyan(`Running monitoring command ${c.bold(command.title)} (key: ${c.bold(command.key)})`));
+      uxLog("action", this, c.cyan(t('runningMonitoringCommandKey', { command: c.bold(command.title), command1: c.bold(command.key) })));
       try {
         const execCommandResult = await execCommand(command.command, this, { fail: false, output: true });
         if (execCommandResult.status === 0) {
-          uxLog("success", this, c.green(`Command ${c.bold(command.title)} has been run successfully`));
+          uxLog("success", this, c.green(t('commandHasBeenRunSuccessfully', { command: c.bold(command.title) })));
         } else {
           success = false;
-          uxLog("warning", this, c.yellow(`Command ${c.bold(command.title)} has failed`));
+          uxLog("warning", this, c.yellow(t('commandHasFailed', { command: c.bold(command.title) })));
         }
         commandsSummary.push({
           title: command.title,
@@ -267,7 +268,7 @@ ${this.getDefaultCommandsMarkdown()}
       } catch (e) {
         // Handle unexpected failure
         success = false;
-        uxLog("warning", this, c.yellow(`Command ${c.bold(command.title)} has failed !\n${(e as Error).message}`));
+        uxLog("warning", this, c.yellow(t('commandHasFailed2', { command: c.bold(command.title), as: (e as Error).message })));
         commandsSummary.push({
           title: command.title,
           status: 'error',
@@ -276,16 +277,14 @@ ${this.getDefaultCommandsMarkdown()}
       }
     }
 
-    uxLog("action", this, c.cyan('Summary of monitoring scripts'));
+    uxLog("action", this, c.cyan(t('summaryOfMonitoringScripts')));
     uxLogTable(this, commandsSummary);
-    uxLog("log", this, c.grey('You can check details in reports in Job Artifacts'));
+    uxLog("log", this, c.grey(t('youCanCheckDetailsInReportsIn')));
 
     uxLog(
       "warning",
       this,
-      c.yellow(
-        `To know more about sfdx-hardis monitoring, please check ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/`
-      )
+      c.yellow(t('toKnowMoreAboutMonitoring'))
     );
 
     // Exit code is 1 if monitoring detected stuff

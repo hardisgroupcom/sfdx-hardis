@@ -14,6 +14,7 @@ import { UtilsAi } from "../aiProvider/utils.js";
 import { generatePdfFileFromMarkdown } from "../utils/markdownUtils.js";
 import { DocBuilderFlow } from "../docBuilder/docBuilderFlow.js";
 import { includeFromFile } from "../docBuilder/docUtils.js";
+import { t } from './i18n.js';
 
 let IS_MERMAID_AVAILABLE: boolean | null = null;
 export async function isMermaidAvailable() {
@@ -23,7 +24,7 @@ export async function isMermaidAvailable() {
   const isMmdAvailable = await which("mmdc", { nothrow: true });
   IS_MERMAID_AVAILABLE = isMmdAvailable !== null
   if (IS_MERMAID_AVAILABLE === false) {
-    uxLog("warning", this, c.yellow("MermaidJS is not available. To improve performance, please install it by running `npm install @mermaid-js/mermaid-cli --global`."));
+    uxLog("warning", this, c.yellow(t('mermaidjsIsNotAvailableToImprovePerformance')));
   }
   return IS_MERMAID_AVAILABLE;
 }
@@ -35,7 +36,7 @@ export async function isDockerAvailable() {
   }
   IS_DOCKER_AVAILABLE = await isDockerRunning();
   if (!IS_DOCKER_AVAILABLE) {
-    uxLog("warning", this, c.yellow("Docker daemon is not available. If you have issues running the @mermaid-js/mermaid-cli npm package, please install and start Docker."));
+    uxLog("warning", this, c.yellow(t('dockerDaemonIsNotAvailableIfYou')));
   }
   return IS_DOCKER_AVAILABLE;
 }
@@ -71,10 +72,10 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
     }
 
     await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
-    uxLog("log", this, c.grey(`Written ${flowName} documentation to ${outputFlowMdFile}.`));
+    uxLog("log", this, c.grey(t('writtenDocumentationTo', { flowName, outputFlowMdFile })));
     return true;
   } catch (e: any) {
-    uxLog("warning", this, c.yellow(`Error generating Flow ${flowName} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
+    uxLog("warning", this, c.yellow(t('errorGeneratingFlowDocumentation', { flowName, message: e.message })) + "\n" + c.grey(e.stack));
     return false;
   }
 }
@@ -109,13 +110,13 @@ export async function generateMarkdownFileWithMermaid(outputFlowMdFileIn: string
         if (!pdfGenerated) { return false; }
 
         const fileName = path.basename(pdfGenerated).replace(".pdf", "");
-        uxLog("log", this, c.grey(`Written ${fileName} PDF documentation in ${pdfGenerated}`));
+        uxLog("log", this, c.grey(t('writtenPdfDocumentationIn', { fileName, pdfGenerated })));
       }
       return true;
     }
   }
   if ((globalThis.mermaidUnavailableTools || []).includes("cli") && (globalThis.mermaidUnavailableTools || []).includes("docker")) {
-    uxLog("warning", this, c.yellow("Either mermaid-cli or Docker is required to generate MermaidJS graphs. Please install or fix one of them if you want to generate SVG diagrams."));
+    uxLog("warning", this, c.yellow(t('eitherMermaidCliOrDockerIsRequired')));
   }
   return false;
 }
@@ -129,7 +130,7 @@ export async function generateMarkdownFileWithMermaidDocker(outputFlowMdFileIn: 
     await execCommand(dockerCommand, this, { output: false, fail: true, debug: false });
     return true;
   } catch (e: any) {
-    uxLog("warning", this, c.yellow(`Error generating MermaidJS graphs from ${outputFlowMdFileIn} documentation with Docker: ${e.message}`) + "\n" + c.grey(e.stack));
+    uxLog("warning", this, c.yellow(t('errorGeneratingMermaidjsGraphsFromDocumentationWith2', { outputFlowMdFileIn, message: e.message })) + "\n" + c.grey(e.stack));
     if (JSON.stringify(e).includes("Cannot connect to the Docker daemon") || JSON.stringify(e).includes("daemon is not running")) {
       globalThis.mermaidUnavailableTools = (globalThis.mermaidUnavailableTools || []).concat("docker");
       uxLog("warning", this, c.yellow("[Mermaid] Docker unavailable: do not try again"));
@@ -147,7 +148,7 @@ export async function generateMarkdownFileWithMermaidCli(outputFlowMdFileIn: str
     await execCommand(mermaidCmd, this, { output: false, fail: true, debug: false });
     return true;
   } catch (e: any) {
-    uxLog("warning", this, c.yellow(`Error generating MermaidJS graphs from ${outputFlowMdFileIn} documentation with CLI: ${e.message}`) + "\n" + c.grey(e.stack));
+    uxLog("warning", this, c.yellow(t('errorGeneratingMermaidjsGraphsFromDocumentationWith', { outputFlowMdFileIn, message: e.message })) + "\n" + c.grey(e.stack));
     if (JSON.stringify(e).includes("timed out")) {
       globalThis.mermaidUnavailableTools = (globalThis.mermaidUnavailableTools || []).concat("cli");
       uxLog("warning", this, c.yellow("[Mermaid] CLI unavailable: do not try again"));
@@ -243,9 +244,9 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   const diffMdFile = path.join(reportDir, 'flow-diff', `${flowLabel}_${moment().format("YYYYMMDD-hhmmss")}.md`);
 
   if (options.debug) {
-    uxLog("log", this, c.grey("FLOW DOC BEFORE:\n" + mermaidMdBefore) + "\n");
+    uxLog("log", this, c.grey(t('flowDocBefore') + mermaidMdBefore) + "\n");
     await fs.writeFile(diffMdFile.replace(".md", ".mermaid-before.md"), mermaidMdBefore);
-    uxLog("log", this, c.grey("FLOW DOC AFTER:\n" + mermaidMdAfter) + "\n");
+    uxLog("log", this, c.grey(t('flowDocAfter') + mermaidMdAfter) + "\n");
     await fs.writeFile(diffMdFile.replace(".md", ".mermaid-after.md"), mermaidMdAfter);
   }
 
@@ -290,7 +291,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
     // Generate final markdown with mermaid SVG
     const finalRes = await generateMarkdownFileWithMermaid(diffMdFile, diffMdFile, ["cli", "docker"]);
     if (finalRes) {
-      uxLog("success", this, c.green(`Successfully generated visual git diff for flow: ${diffMdFile}`));
+      uxLog("success", this, c.green(t('successfullyGeneratedVisualGitDiffForFlow', { diffMdFile })));
     }
   }
   else if (options.pngMd) {
@@ -610,7 +611,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
   // Compute for all states
   const fileHistory = await git().log({ file: flowFile });
   const flowLabel = path.basename(flowFile, ".flow-meta.xml");
-  uxLog("log", this, c.grey(`Generating ${flowLabel} markdown diff between ${fileHistory.all.length} Flow states...`));
+  uxLog("log", this, c.grey(t('generatingMarkdownDiffBetweenFlowStates', { flowLabel, fileHistory: fileHistory.all.length })));
   const diffMdFiles: any[] = [];
   for (let i = 0; i < fileHistory.all.length; i++) {
     const commitAfter = fileHistory.all[i];
@@ -641,12 +642,12 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
         });
       }
       else {
-        uxLog("warning", this, c.yellow(`No real flow diff has been found between ${commitBefore.hash} and ${commitAfter.hash}`));
+        uxLog("warning", this, c.yellow(t('noRealFlowDiffHasBeenFound', { commitBefore: commitBefore.hash, commitAfter: commitAfter.hash })));
       }
     }
   }
   // Set all the results in a single tabbed markdown
-  uxLog("log", this, c.grey(`Aggregating results in summary tabbed file ${diffMdFile}...`));
+  uxLog("log", this, c.grey(t('aggregatingResultsInSummaryTabbedFile', { diffMdFile })));
   let finalMd = `# ${flowLabel} history\n\n`;
   finalMd += "<!-- This page has been generated to be viewed with mkdocs-material, you can not view it just as markdown . Activate tab plugin following the doc at https://squidfunk.github.io/mkdocs-material/reference/content-tabs/ -->\n\n"
   for (const diffMdFile of diffMdFiles) {
@@ -686,7 +687,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
     }
   }
 
-  uxLog("success", this, c.green(`Markdown diff between ${fileHistory.all.length} Flow states generated in ${diffMdFile}`));
+  uxLog("success", this, c.green(t('markdownDiffBetweenFlowStatesGeneratedIn', { fileHistory: fileHistory.all.length, diffMdFile })));
   return diffMdFile;
 }
 
@@ -721,7 +722,7 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
   const flowXmlPreviousStripped = await new DocBuilderFlow("", flowXmlPrevious, "").stripXmlForAi();
   const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNewStripped, flowXmlPreviousStripped], diffKey);
   if (aiCache.success) {
-    uxLog("log", this, c.grey("Used AI cache for diff description (set IGNORE_AI_CACHE=true to force call to AI)"));
+    uxLog("log", this, c.grey(t('usedAiCacheForDiffDescriptionSet')));
     const replaceText = `## AI-Generated Differences Summary\n\n${includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText || "")}`;
     return flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
   }

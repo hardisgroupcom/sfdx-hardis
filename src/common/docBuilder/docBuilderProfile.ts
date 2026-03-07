@@ -2,6 +2,7 @@ import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { buildGenericMarkdownTable, prettifyFieldName } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
+import { t } from '../utils/i18n.js';
 /* jscpd:ignore-start */
 export class DocBuilderProfile extends DocBuilderRoot {
 
@@ -18,9 +19,9 @@ export class DocBuilderProfile extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Profiles" : "## Profiles",
+      filterObject ? `## ${t('docMdRelatedProfiles')}` : `## ${t('docMdProfiles')}`,
       "",
-      "| Profile | User License |",
+      `| ${t('docMdColProfile')} | ${t('docMdColUserLicense')} |`,
       "| :----      | :--: | "
     ]);
     for (const profile of filteredProfiles) {
@@ -39,7 +40,7 @@ export class DocBuilderProfile extends DocBuilderRoot {
       '',
       '<div id="jstree-container"></div>',
       '',
-      buildGenericMarkdownTable(this.parsedXmlObject, ["userLicense", "custom"], "## Profile attributes", []),
+      buildGenericMarkdownTable(this.parsedXmlObject, ["userLicense", "custom"], `## ${t('docMdProfileAttributes')}`, []),
       '',
       '<!-- Profile description -->',
       '',

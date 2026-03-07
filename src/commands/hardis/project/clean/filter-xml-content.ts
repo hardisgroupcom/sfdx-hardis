@@ -7,6 +7,7 @@ import * as xml2js from 'xml2js';
 import { AnyJson } from '@salesforce/ts-types';
 import { uxLog } from '../../../../common/utils/index.js';
 import { writeXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 // The code of this method is awful... it's migrated from sfdx-essentials, written when async / await were not existing ^^
 export class FilterXmlContent extends SfCommand<any> {
@@ -98,15 +99,15 @@ The command's technical implementation involves:
     // Read json config file
     const filterConfig = fs.readJsonSync(this.configFile);
     if (flags.debug) {
-      uxLog("log", this, c.grey('Filtering config file content:\n' + JSON.stringify(filterConfig, null, 2)));
+      uxLog("log", this, c.grey(t('filteringConfigFileContent') + JSON.stringify(filterConfig, null, 2)));
     }
 
     // Create output folder/empty it if existing
     if (fs.existsSync(this.outputFolder) && this.outputFolder !== this.inputFolder) {
-      uxLog("log", this, c.grey('Empty output folder ' + this.outputFolder));
+      uxLog("log", this, c.grey(t('emptyOutputFolder') + this.outputFolder));
       fs.emptyDirSync(this.outputFolder);
     } else if (!fs.existsSync(this.outputFolder)) {
-      uxLog("log", this, c.grey('Create output folder ' + this.outputFolder));
+      uxLog("log", this, c.grey(t('createOutputFolder') + this.outputFolder));
       fs.mkdirSync(this.outputFolder);
     }
 
@@ -165,7 +166,7 @@ The command's technical implementation involves:
     this.smmryResult.filterResults = this.smmryUpdatedFiles;
 
     // Display results as JSON
-    uxLog("log", this, c.grey('Filtering results:' + JSON.stringify(this.smmryResult)));
+    uxLog("log", this, c.grey(t('filteringResults') + JSON.stringify(this.smmryResult)));
     return {};
   }
 
@@ -202,7 +203,7 @@ The command's technical implementation involves:
       });
       if (this.smmryUpdatedFiles[file] != null && this.smmryUpdatedFiles[file].updated === true) {
         writeXmlFile(file, fileXmlContent);
-        uxLog("log", this, 'Updated ' + file);
+        uxLog("log", this, t('updated') + file);
       }
     });
   }

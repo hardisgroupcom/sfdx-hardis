@@ -12,6 +12,7 @@ import { promptFilesExportConfiguration } from '../../../../common/utils/filesUt
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -93,7 +94,7 @@ The command's technical implementation involves:
 
     // Trigger command to open SFDMU config file in VS Code extension
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(exportJsonFile, 'Edit your Files export configuration', 'report');
+      WebSocketClient.sendReportFileMessage(exportJsonFile, t('editYourFilesExportConfiguration'), 'report');
     }
     else {
       WebSocketClient.requestOpenFile(exportJsonFile);
@@ -136,7 +137,7 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
     }
 
     const defaultTemplateChoice = {
-      title: '📄 Blank template',
+      title: t('blankTemplateTitle'),
       value: 'blank',
       description: 'Configure your files import/export from scratch 😊',
     };
@@ -144,9 +145,9 @@ You can now call it using ${c.white('sf hardis:org:files:export')}
     const templateResp = await prompts({
       type: 'select',
       name: 'template',
-      message: c.cyanBright('Please select a Files import/export template, or the blank one'),
-      description: 'Choose a pre-configured template for file operations or start with a blank configuration',
-      placeholder: 'Select a template',
+      message: c.cyanBright(t('pleaseSelectFilesImportExportTemplateOr')),
+      description: t('choosePreConfiguredTemplateForFileOperations'),
+      placeholder: t('selectATemplate'),
       choices: [...[defaultTemplateChoice], ...templateFileChoices],
     });
     return templateResp.template;

@@ -9,10 +9,15 @@
     "report",
     ".cspell.json",
     "**/metadataList.ts",
-    "**/actionsProvider/**"
+    "**/actionsProvider/**",
+    "**/i18n/*.json",
+    "**/copilot-instructions.md"
   ],
   "language": "en",
   "version": "0.2",
+  "ignoreRegExpList": [
+    "(?<![a-zA-Z])t\\([^)]*\\)"
+  ],
   "words": [
     "AAAS",
     "AAAU",
@@ -972,6 +977,7 @@
     "redislabs",
     "refactorization",
     "regexes",
+    "reinit",
     "relatedentitytype",
     "relatednotifications",
     "releaseupdates",

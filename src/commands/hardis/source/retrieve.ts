@@ -6,6 +6,7 @@ import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { isCI, uxLog } from '../../../common/utils/index.js';
 import { promptOrgUsernameDefault } from '../../../common/utils/orgUtils.js';
 import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 export class SourceRetrieve extends SfCommand<any> {
   public static readonly description = `
@@ -99,8 +100,8 @@ This command acts as an intelligent wrapper around the Salesforce CLI's source r
 
   public async run(): Promise<any> {
     const { flags } = await this.parse(SourceRetrieve);
-    uxLog("error", this, c.red('This command will be removed by Salesforce in November 2024.'));
-    uxLog("error", this, c.red('Please migrate to command sf hardis project retrieve start'));
+    uxLog("error", this, c.red(t('thisCommandWillBeRemovedBySalesforce')));
+    uxLog("error", this, c.red(t('pleaseMigrateToCommandSfHardisProject2')));
     uxLog(
       "error",
       this,

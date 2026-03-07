@@ -44,6 +44,7 @@ import { makeFileNameGitCompliant } from '../../../common/utils/gitUtils.js';
 import { PromisePool } from '@supercharge/promise-pool';
 import { UtilsAi } from '../../../common/aiProvider/utils.js';
 import ExcelJS from 'exceljs';
+import { t } from '../../../common/utils/i18n.js';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -260,7 +261,7 @@ ${this.htmlInstructions}
   protected workflowRulesDescriptions: any[] = [];
   protected roleDescriptions: any[] = [];
   protected objectDescriptions: any[] = [];
-  protected processBuildersForMenu: any = { "All Process Builders": "processBuilders/index.md" };
+  protected processBuildersForMenu: any = { [t('docMdAllProcessBuilders')]: "processBuilders/index.md" };
   protected objectFiles: string[];
   protected allObjectsNames: string[];
   protected tempDir: string;
@@ -286,40 +287,40 @@ ${this.htmlInstructions}
 
     await fs.ensureDir(this.outputMarkdownRoot);
     const currentBranch = await getCurrentGitBranch()
-    this.footer = `_Documentation generated from branch ${currentBranch} with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) by [Cloudity](${CONSTANTS.WEBSITE_URL}) command [\`sf hardis:doc:project2markdown\`](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)_`;
+    this.footer = t('documentationGeneratedFromBranch', { currentBranch, docUrl: CONSTANTS.DOC_URL_ROOT, websiteUrl: CONSTANTS.WEBSITE_URL });
 
     this.mdLines.push(...[
-      "Welcome to the documentation of your Salesforce project.",
+      t('welcomeToDocumentation'),
       "",
       "![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner-doc.png)",
       "",
-      "- [Objects](objects/index.md)",
-      "- Automations",
-      "  - [Approval Processes](approvalProcesses/index.md)",
-      "  - [Assignment Rules](assignmentRules/index.md)",
-      "  - [AutoResponse Rules](autoResponseRules/index.md)",
-      "  - [Escalation Rules](escalationRules/index.md)",
-      "  - [Flows](flows/index.md)",
-      "  - [Process Builders](processBuilders/index.md)",
-      "  - [Workflow Rules](workflowRules/index.md)",
-      "- Authorizations",
-      "  - [Profiles](profiles/index.md)",
-      "  - [Permission Set Groups](permissionsetgroups/index.md)",
-      "  - [Permission Sets](permissionsets/index.md)",
-      "- Code",
+      `- [${t('docNavObjects')}](objects/index.md)`,
+      `- ${t('docNavAutomations')}`,
+      `  - [${t('docNavApprovalProcesses')}](approvalProcesses/index.md)`,
+      `  - [${t('docNavAssignmentRules')}](assignmentRules/index.md)`,
+      `  - [${t('docNavAutoResponseRules')}](autoResponseRules/index.md)`,
+      `  - [${t('docNavEscalationRules')}](escalationRules/index.md)`,
+      `  - [${t('docNavFlows')}](flows/index.md)`,
+      `  - [${t('docNavProcessBuilders')}](processBuilders/index.md)`,
+      `  - [${t('docNavWorkflowRules')}](workflowRules/index.md)`,
+      `- ${t('docNavAuthorizations')}`,
+      `  - [${t('docNavProfiles')}](profiles/index.md)`,
+      `  - [${t('docNavPermissionSetGroups')}](permissionsetgroups/index.md)`,
+      `  - [${t('docNavPermissionSets')}](permissionsets/index.md)`,
+      `- ${t('docNavCode')}`,
       "  - [Apex](apex/index.md)",
-      "  - [Lightning Web Components](lwc/index.md)",
-      "- [Lightning Pages](pages/index.md)",
-      "- [Packages](packages/index.md)",
-      "- [Roles](roles.md)",
+      `  - [${t('docNavLightningWebComponents')}](lwc/index.md)`,
+      `- [${t('docNavLightningPages')}](pages/index.md)`,
+      `- [${t('docNavPackages')}](packages/index.md)`,
+      `- [${t('docNavRoles')}](roles.md)`,
       "- [SFDX-Hardis Config](sfdx-hardis-params.md)",
-      "- [Branches & Orgs](sfdx-hardis-branches-and-orgs.md)",
-      "- [Manifests](manifests.md)",
+      `- [${t('docNavBranchesAndOrgs')}](sfdx-hardis-branches-and-orgs.md)`,
+      `- [${t('docNavManifests')}](manifests.md)`,
       ""
     ]);
 
-    let sfdxHardisParamsLines = ["Available only in a [sfdx-hardis CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)"];
-    let branchesAndOrgsLines = ["Available only in a [sfdx-hardis CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)"];
+    let sfdxHardisParamsLines = [t('availableOnlyInSfdxHardisCiCdProject')];
+    let branchesAndOrgsLines = [t('availableOnlyInSfdxHardisCiCdProject')];
     if (fs.existsSync("config/.sfdx-hardis.yml")) {
       this.sfdxHardisConfig = await getConfig("project");
       // General sfdx-hardis config
@@ -328,16 +329,16 @@ ${this.htmlInstructions}
       branchesAndOrgsLines = await this.buildMajorBranchesAndOrgs();
     }
     await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-params.md"), getMetaHideLines() + sfdxHardisParamsLines.join("\n") + `\n${this.footer}\n`);
-    this.addNavNode("SFDX-Hardis Config", "sfdx-hardis-params.md");
+    this.addNavNode(t('docMdMenuSfdxHardisConfig'), "sfdx-hardis-params.md");
     await fs.writeFile(path.join(this.outputMarkdownRoot, "sfdx-hardis-branches-and-orgs.md"), getMetaHideLines() + branchesAndOrgsLines.join("\n") + `\n${this.footer}\n`);
-    this.addNavNode("Branches & Orgs", "sfdx-hardis-branches-and-orgs.md");
+    this.addNavNode(t('docMdMenuBranchesAndOrgs'), "sfdx-hardis-branches-and-orgs.md");
 
     // Object model Mermaid schema
     /* Disabled: too messy to read
     let mermaidSchema = await new ObjectModelBuilder().buildObjectsMermaidSchema();
     mermaidSchema = "```mermaid\n" + mermaidSchema + "\n```";
     await fs.writeFile(path.join(this.outputMarkdownRoot, "object-model.md"), getMetaHideLines() + mermaidSchema + `\n${this.footer}\n`);
-    this.addNavNode("Object Model", "object-model.md");
+    this.addNavNode(t('docMdMenuObjectModel'), "object-model.md");
     */
 
     // List SFDX packages and generate a manifest for each of them, except if there is only force-app with a package.xml
@@ -347,13 +348,13 @@ ${this.htmlInstructions}
     await this.generatePackageXmlMarkdown(this.packageXmlCandidates, instanceUrl);
     const { packageLines, packagesForMenu } = await DocBuilderPackageXML.buildIndexTable(this.outputPackageXmlMarkdownFiles);
     if (Object.keys(packagesForMenu).length > 0) {
-      this.addNavNode("Manifests", packagesForMenu);
+      this.addNavNode(t('docMdMenuManifests'), packagesForMenu);
     }
     await fs.writeFile(path.join(this.outputMarkdownRoot, "manifests.md"), getMetaHideLines() + packageLines.join("\n") + `\n${this.footer}\n`);
 
     this.tempDir = await createTempDir()
     // Convert source to metadata API format to build prompts
-    uxLog("action", this, c.cyan("Converting source to metadata API format to ease the build of LLM prompts."));
+    uxLog("action", this, c.cyan(t('convertingSourceToMetadataApiFormatTo')));
     await execCommand(`sf project convert source --metadata CustomObject --output-dir ${this.tempDir}`, this, { fail: true, output: true, debug: this.debugMode });
     this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(this.objectFiles);
@@ -414,23 +415,16 @@ ${this.htmlInstructions}
     await fs.ensureDir(path.dirname(this.outputMarkdownIndexFile));
     if (process.env.DO_NOT_OVERWRITE_INDEX_MD !== 'true' || !fs.existsSync(this.outputMarkdownIndexFile)) {
       await fs.writeFile(this.outputMarkdownIndexFile, getMetaHideLines() + this.mdLines.join("\n") + `\n\n${this.footer}\n`);
-      uxLog("success", this, c.green(`Successfully generated doc index at ${this.outputMarkdownIndexFile}`));
+      uxLog("success", this, c.green(t('successfullyGeneratedDocIndexAt', { outputMarkdownIndexFile: this.outputMarkdownIndexFile })));
     }
 
     const readmeFile = path.join(process.cwd(), "README.md");
     if (fs.existsSync(readmeFile)) {
       let readme = await fs.readFile(readmeFile, "utf8");
       if (!readme.includes("docs/index.md")) {
-        readme += `
-
-## Documentation
-
-[Read auto-generated documentation of the SFDX project](docs/index.md)
-
-${Project2Markdown.htmlInstructions}
-`;
+        readme += `\n\n## ${t('readmeDocumentationHeading')}\n\n[${t('readmeDocumentationLink')}](docs/index.md)\n\n${Project2Markdown.htmlInstructions}\n`;
         await fs.writeFile(readmeFile, readme);
-        uxLog("success", this, c.green(`Updated README.md to add link to docs/index.md`));
+        uxLog("success", this, c.green(t('updatedReadmeToAddLink')));
       }
     }
 
@@ -448,7 +442,7 @@ ${Project2Markdown.htmlInstructions}
       const fileName = path.basename(file);
       if (fileName.includes("/") || fileName.includes("\\") || fileName.includes(":") || fileName.includes("*") || fileName.includes("?") || fileName.includes('"') || fileName.includes("<") || fileName.includes(">") || fileName.includes("|")) {
         const filePath = path.join(this.outputMarkdownRoot, file);
-        uxLog("warning", this, c.yellow(`Deleting file ${filePath} because it contains characters not compliant with Windows file system`));
+        uxLog("warning", this, c.yellow(t('deletingFileBecauseItContainsCharactersNot', { filePath })));
         await fs.remove(filePath);
       }
     }
@@ -456,7 +450,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Open file in a new VS Code tab if available
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(this.outputMarkdownIndexFile, "Project documentation Index", "report");
+      WebSocketClient.sendReportFileMessage(this.outputMarkdownIndexFile, t('projectDocumentationIndex'), "report");
     }
     else {
       WebSocketClient.requestOpenFile(this.outputMarkdownIndexFile);
@@ -466,10 +460,10 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateApexDocumentation() {
-    uxLog("action", this, c.cyan("Calling ApexDocGen to initialize Apex documentation..."));
-    uxLog("log", this, "If you don't want it, use --no-generate-apex-doc or define GENERATE_APEX_DOC=false");
+    uxLog("action", this, c.cyan(t('callingApexdocgenToInitializeApexDocumentation')));
+    uxLog("log", this, t('ifYouDontWantApexDoc'));
     const tempDir = await createTempDir();
-    uxLog("log", this, c.grey(`Using temp directory ${tempDir}`));
+    uxLog("log", this, c.grey(t('usingTempDirectory', { tempDir })));
     const packageDirs = this.project?.getPackageDirectories() || [];
     for (const packageDir of packageDirs) {
       try {
@@ -492,10 +486,10 @@ ${Project2Markdown.htmlInstructions}
         if (fs.existsSync(triggersDir)) {
           await fs.copy(triggersDir, apexDocFolder, { overwrite: true });
         }
-        uxLog("log", this, c.grey(`Generated markdown for Apex classes in ${apexDocFolder}`));
+        uxLog("log", this, c.grey(t('generatedMarkdownForApexClassesIn', { apexDocFolder })));
       }
       catch (e: any) {
-        uxLog("warning", this, c.yellow(`Error generating Apex documentation: ${JSON.stringify(e, null, 2)}`));
+        uxLog("warning", this, c.yellow(t('errorGeneratingApexDocumentation', { JSON: JSON.stringify(e, null, 2) })));
         uxLog("log", this, c.grey(e.stack));
       }
       /*
@@ -523,10 +517,10 @@ ${Project2Markdown.htmlInstructions}
 
     // Complete generated documentation
     if (apexFiles.length === 0) {
-      uxLog("log", this, c.yellow("No Apex class found in the project"));
+      uxLog("log", this, c.yellow(t('noApexClassFoundInTheProject')));
       return;
     }
-    const apexForMenu: any = { "All Apex Classes": "apex/index.md" }
+    const apexForMenu: any = { [t('docMdAllApexClasses')]: "apex/index.md" }
 
     // Phase 1: Collect data and prepare work items
     type ApexWorkItem = { apexName: string; apexContent: string; mdFile: string; needsAi: boolean; apexMdContent: string; mermaidClassDiagram: string };
@@ -547,7 +541,7 @@ ${Project2Markdown.htmlInstructions}
           const mermaidClassDiagram = DocBuilderApex.buildMermaidClassDiagram(apexName, this.apexDescriptions);
           let insertion = `${mermaidClassDiagram}\n\n<!-- Apex description -->\n\n`;
           if (!this.hideApexCode) {
-            insertion += `## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`;
+            insertion += `## ${t('docMdApexCode')}\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`;
           }
           const firstHeading = apexMdContent.indexOf("## ");
           apexMdContent = apexMdContent.substring(0, firstHeading) + insertion + apexMdContent.substring(firstHeading);
@@ -566,7 +560,7 @@ ${Project2Markdown.htmlInstructions}
         }
         apexMdContent += `<!-- Apex description -->\n\n`;
         if (!this.hideApexCode) {
-          apexMdContent += `## Apex Code\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`;
+          apexMdContent += `## ${t('docMdApexCode')}\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`;
         }
         workItems.push({ apexName, apexContent, mdFile, needsAi: true, apexMdContent, mermaidClassDiagram });
       }
@@ -574,7 +568,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Apex documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingApexDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -588,7 +582,7 @@ ${Project2Markdown.htmlInstructions}
           const updatedContent = await apexDocBuilder.completeDocWithAiDescription();
           await fs.writeFile(item.mdFile, getMetaHideLines() + updatedContent);
         }
-        uxLog("log", this, c.grey(`Generated markdown for Apex class ${item.apexName}`));
+        uxLog("log", this, c.grey(t('generatedMarkdownForApexClass', { item: item.apexName })));
         if (this.withPdf) {
           await generatePdfFileFromMarkdown(item.mdFile);
         }
@@ -597,7 +591,7 @@ ${Project2Markdown.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(apexForMenu).length > 1) {
-      this.addNavNode("Apex", apexForMenu);
+      this.addNavNode(t('docMdMenuApex'), apexForMenu);
     }
 
     // Write index file for apex folder
@@ -607,10 +601,10 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePackagesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Installed Packages documentation..."));
-    uxLog("log", this, "If you don't want it, use --no-generate-packages-doc or define GENERATE_PACKAGES_DOC=false");
+    uxLog("action", this, c.cyan(t('preparingGenerationOfInstalledPackagesDocumentation')));
+    uxLog("log", this, t('ifYouDontWantPackagesDoc'));
 
-    const packagesForMenu: any = { "All Packages": "packages/index.md" }
+    const packagesForMenu: any = { [t('docMdAllPackages')]: "packages/index.md" }
     // List packages
     const packages = this.sfdxHardisConfig.installedPackages || [];     // CI/CD context
     const packageFolder = path.join(process.cwd(), 'installedPackages');     // Monitoring context
@@ -628,12 +622,12 @@ ${Project2Markdown.htmlInstructions}
     }
 
     if (packages.length === 0) {
-      uxLog("log", this, c.yellow("No installed package found in the project"));
+      uxLog("log", this, c.yellow(t('noInstalledPackageFoundInTheProject')));
       return;
     }
 
     // Phase 1: Collect data and prepare work items
-    WebSocketClient.sendProgressStartMessage("Collecting Installed Packages data and preparing work items...", packages.length);
+    WebSocketClient.sendProgressStartMessage(t('collectingInstalledPackagesData'), packages.length);
     const workItems: { packageName: string; mdFile: string; pckg: any; packageMetadatas: string; tmpOutput: string; mdFileBad: string }[] = [];
     let counter = 0;
     for (const pckg of packages) {
@@ -665,7 +659,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Installed Packages documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingInstalledPackagesDocumentation'), workItems.length);
     counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -686,7 +680,7 @@ ${Project2Markdown.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(packagesForMenu).length > 1) {
-      this.addNavNode("Packages", packagesForMenu);
+      this.addNavNode(t('docMdMenuPackages'), packagesForMenu);
     }
     // Write index file for packages folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "packages"));
@@ -695,9 +689,15 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePagesDocumentation() {
+    uxLog("action", this, c.cyan(t('preparingGenerationOfLightningPagesDocumentation')));
+    uxLog("log", this, t('ifYouDontWantPagesDoc'));
     const packageDirs = this.project?.getPackageDirectories() || [];
     const pageFiles = await listPageFiles(packageDirs);
-    const pagesForMenu: any = { "All Lightning pages": "pages/index.md" }
+    if (pageFiles.length === 0) {
+      uxLog("log", this, c.yellow(t('noLightningPageFoundInTheProject')));
+      return;
+    }
+    const pagesForMenu: any = { [t('docMdAllLightningPages')]: "pages/index.md" }
 
     // Phase 1: Collect data and prepare work items
     const workItems: { pageName: string; mdFile: string; pageXml: string }[] = [];
@@ -717,7 +717,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Lightning Pages documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingLightningPagesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -731,7 +731,7 @@ ${Project2Markdown.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(pagesForMenu).length > 1) {
-      this.addNavNode("Lightning Pages", pagesForMenu);
+      this.addNavNode(t('docMdMenuLightningPages'), pagesForMenu);
     }
 
     // Write index file for pages folder
@@ -741,13 +741,13 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateProfilesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Profiles documentation..."));
-    uxLog("log", this, "If you don't want it, use --no-generate-profiles-doc or define GENERATE_PROFILES_DOC=false");
-    const profilesForMenu: any = { "All Profiles": "profiles/index.md" };
+    uxLog("action", this, c.cyan(t('preparingGenerationOfProfilesDocumentation')));
+    uxLog("log", this, t('ifYouDontWantProfilesDoc'));
+    const profilesForMenu: any = { [t('docMdAllProfiles')]: "profiles/index.md" };
     const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(profilesFiles);
     if (profilesFiles.length === 0) {
-      uxLog("log", this, c.yellow("No profile found in the project"));
+      uxLog("log", this, c.yellow(t('noProfileFoundInTheProject')));
       return;
     }
 
@@ -769,7 +769,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Profiles documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingProfilesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -783,7 +783,7 @@ ${Project2Markdown.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(profilesForMenu).length > 1) {
-      this.addNavNode("Profiles", profilesForMenu);
+      this.addNavNode(t('docMdMenuProfiles'), profilesForMenu);
     }
     // Write index file for profiles folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "profiles"));
@@ -792,13 +792,13 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePermissionSetsDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Permission Sets documentation..."));
-    uxLog("log", this, "If you don't want it, use --no-generate-profiles-doc or define GENERATE_PROFILES_DOC=false");
-    const psForMenu: any = { "All Permission Sets": "permissionsets/index.md" };
+    uxLog("action", this, c.cyan(t('preparingGenerationOfPermissionSetsDocumentation')));
+    uxLog("log", this, t('ifYouDontWantProfilesDoc'));
+    const psForMenu: any = { [t('docMdAllPermissionSets')]: "permissionsets/index.md" };
     const psFiles = (await glob("**/permissionsets/**.permissionset-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(psFiles);
     if (psFiles.length === 0) {
-      uxLog("log", this, c.yellow("No permission set found in the project"));
+      uxLog("log", this, c.yellow(t('noPermissionSetFoundInTheProject')));
       return;
     }
 
@@ -820,7 +820,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Permission Sets documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingPermissionSetsDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -837,7 +837,7 @@ ${Project2Markdown.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(psForMenu).length > 1) {
-      this.addNavNode("Permission Sets", psForMenu);
+      this.addNavNode(t('docMdMenuPermissionSets'), psForMenu);
     }
     // Write index file for permission sets folder
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "permissionsets"));
@@ -846,12 +846,12 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePermissionSetGroupsDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Permission Set Groups documentation..."));
-    const psgForMenu: any = { "All Permission Set Groups": "permissionsetgroups/index.md" };
+    uxLog("action", this, c.cyan(t('preparingGenerationOfPermissionSetGroupsDocumentation')));
+    const psgForMenu: any = { [t('docMdAllPermissionSetGroups')]: "permissionsetgroups/index.md" };
     const psgFiles = (await glob("**/permissionsetgroups/**.permissionsetgroup-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }))
     sortCrossPlatform(psgFiles);
     if (psgFiles.length === 0) {
-      uxLog("log", this, c.yellow("No permission set group found in the project"));
+      uxLog("log", this, c.yellow(t('noPermissionSetGroupFoundInThe')));
       return;
     }
 
@@ -877,7 +877,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Permission Set Groups documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingPermissionSetGroupsDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -891,7 +891,7 @@ ${Project2Markdown.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(psgForMenu).length > 1) {
-      this.addNavNode("Permission Set Groups", psgForMenu);
+      this.addNavNode(t('docMdMenuPermissionSetGroups'), psgForMenu);
     }
 
     // Write index file for permission set groups folder
@@ -901,12 +901,12 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateRolesDocumentation() {
-    uxLog("action", this, c.cyan("Generating Roles documentation..."));
-    uxLog("log", this, "If you don't want it, use --no-generate-profiles-doc or define GENERATE_PROFILES_DOC=false");
+    uxLog("action", this, c.cyan(t('generatingRolesDocumentation')));
+    uxLog("log", this, t('ifYouDontWantProfilesDoc'));
     const roleFiles = (await glob("**/roles/**.role-meta.xml", { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(roleFiles);
     if (roleFiles.length === 0) {
-      uxLog("log", this, c.yellow("No role found in the project"));
+      uxLog("log", this, c.yellow(t('noRoleFoundInTheProject')));
       return;
     }
     for (const roleFile of roleFiles) {
@@ -922,7 +922,7 @@ ${Project2Markdown.htmlInstructions}
       this.roleDescriptions.push(roleInfo);
     }
     if (this.roleDescriptions.length > 0) {
-      this.addNavNode("Roles", "roles.md");
+      this.addNavNode(t('docMdMenuRoles'), "roles.md");
     }
 
     // Add Roles documentation
@@ -935,10 +935,10 @@ ${Project2Markdown.htmlInstructions}
 
 
   private async generateAssignmentRulesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Assignment Rules documentation..."));
-    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
+    uxLog("action", this, c.cyan(t('preparingGenerationOfAssignmentRulesDocumentation')));
+    uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
-    const assignmentRulesForMenu: any = { "All Assignment Rules": "assignmentRules/index.md" };
+    const assignmentRulesForMenu: any = { [t('docMdAllAssignmentRules')]: "assignmentRules/index.md" };
     const assignmentRulesFiles = (await glob("**/assignmentRules/**.assignmentRules-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -970,13 +970,13 @@ ${Project2Markdown.htmlInstructions}
     }
 
     if (workItems.length === 0) {
-      uxLog("log", this, c.yellow("No assignment rule found in the project"));
+      uxLog("log", this, c.yellow(t('noAssignmentRuleFoundInTheProject')));
       return;
     }
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Assignment Rules documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingAssignmentRulesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -991,7 +991,7 @@ ${Project2Markdown.htmlInstructions}
     WebSocketClient.sendProgressEndMessage();
 
     if (Object.keys(assignmentRulesForMenu).length > 1) {
-      this.addNavNode("Assignment Rules", assignmentRulesForMenu);
+      this.addNavNode(t('docMdMenuAssignmentRules'), assignmentRulesForMenu);
     }
 
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "assignmentRules"));
@@ -1000,10 +1000,10 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateApprovalProcessDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Approval Processes documentation..."));
-    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
+    uxLog("action", this, c.cyan(t('preparingGenerationOfApprovalProcessesDocumentation')));
+    uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
-    const approvalProcessesForMenu: any = { "All Approval Processes": "approvalProcesses/index.md" }
+    const approvalProcessesForMenu: any = { [t('docMdAllApprovalProcesses')]: "approvalProcesses/index.md" }
     const approvalProcessFiles = (await glob("**/approvalProcesses/**.approvalProcess-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -1011,7 +1011,7 @@ ${Project2Markdown.htmlInstructions}
     sortCrossPlatform(approvalProcessFiles);
 
     if (approvalProcessFiles.length === 0) {
-      uxLog("log", this, c.yellow("No approval process found in the project"));
+      uxLog("log", this, c.yellow(t('noApprovalProcessFoundInTheProject')));
       return;
     }
 
@@ -1033,7 +1033,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Approval Processes documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingApprovalProcessesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -1048,7 +1048,7 @@ ${Project2Markdown.htmlInstructions}
     WebSocketClient.sendProgressEndMessage();
 
     if (Object.keys(approvalProcessesForMenu).length > 1) {
-      this.addNavNode("Approval Processes", approvalProcessesForMenu);
+      this.addNavNode(t('docMdMenuApprovalProcesses'), approvalProcessesForMenu);
     }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "approvalProcesses"));
     const approvalProcessesIndexFile = path.join(this.outputMarkdownRoot, "approvalProcesses", "index.md");
@@ -1056,10 +1056,10 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateAutoResponseRulesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of AutoResponse Rules documentation..."));
-    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
+    uxLog("action", this, c.cyan(t('preparingGenerationOfAutoresponseRulesDocumentation')));
+    uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
-    const autoResponseRulesForMenu: any = { "All AutoResponse Rules": "autoResponseRules/index.md" };
+    const autoResponseRulesForMenu: any = { [t('docMdAllAutoResponseRules')]: "autoResponseRules/index.md" };
     const autoResponseRulesFiles = (await glob("**/autoResponseRules/**.autoResponseRules-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -1091,13 +1091,13 @@ ${Project2Markdown.htmlInstructions}
     }
 
     if (workItems.length === 0) {
-      uxLog("log", this, c.yellow("No auto-response rules found in the project"));
+      uxLog("log", this, c.yellow(t('noAutoResponseRulesFoundInThe')));
       return;
     }
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating AutoResponse Rules documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingAutoResponseRulesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -1111,7 +1111,7 @@ ${Project2Markdown.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(autoResponseRulesForMenu).length > 1) {
-      this.addNavNode("AutoResponse Rules", autoResponseRulesForMenu);
+      this.addNavNode(t('docMdMenuAutoResponseRules'), autoResponseRulesForMenu);
     }
 
     // Write index file for permission set groups folder
@@ -1121,10 +1121,10 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateEscalationRulesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Escalation Rules documentation..."));
-    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
+    uxLog("action", this, c.cyan(t('preparingGenerationOfEscalationRulesDocumentation')));
+    uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
-    const escalationRulesForMenu: any = { "All Escalation Rules": "escalationRules/index.md" };
+    const escalationRulesForMenu: any = { [t('docMdAllEscalationRules')]: "escalationRules/index.md" };
     const escalationRulesFiles = (await glob("**/escalationRules/**.escalationRules-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -1156,13 +1156,13 @@ ${Project2Markdown.htmlInstructions}
     }
 
     if (workItems.length === 0) {
-      uxLog("log", this, c.yellow("No escalation rules found in the project"));
+      uxLog("log", this, c.yellow(t('noEscalationRulesFoundInTheProject')));
       return;
     }
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Escalation Rules documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingEscalationRulesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -1177,7 +1177,7 @@ ${Project2Markdown.htmlInstructions}
     WebSocketClient.sendProgressEndMessage();
 
     if (Object.keys(escalationRulesForMenu).length > 1) {
-      this.addNavNode("Escalation Rules", escalationRulesForMenu);
+      this.addNavNode(t('docMdMenuEscalationRules'), escalationRulesForMenu);
     }
 
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "escalationRules"));
@@ -1186,10 +1186,10 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateWorkflowRulesDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Workflow Rules documentation..."));
-    uxLog("log", this, "If you don't want it, use --no-generate-automations-doc or define GENERATE_AUTOMATIONS_DOC=false");
+    uxLog("action", this, c.cyan(t('preparingGenerationOfWorkflowRulesDocumentation')));
+    uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
-    const workflowRulesForMenu: any = { "All Workflow Rules": "workflowRules/index.md" };
+    const workflowRulesForMenu: any = { [t('docMdAllWorkflowRules')]: "workflowRules/index.md" };
     const workflowRulesFiles = (await glob("**/workflows/**.workflow-meta.xml", {
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
@@ -1198,7 +1198,7 @@ ${Project2Markdown.htmlInstructions}
     const builder = new XMLBuilder();
 
     if (workflowRulesFiles.length === 0) {
-      uxLog("log", this, c.yellow("No workflow rule found in the project"));
+      uxLog("log", this, c.yellow(t('noWorkflowRuleFoundInTheProject')));
       return;
     }
 
@@ -1231,12 +1231,12 @@ ${Project2Markdown.htmlInstructions}
     }
 
     if (workItems.length === 0) {
-      uxLog("log", this, c.yellow("No workflow rule found in the project"));
+      uxLog("log", this, c.yellow(t('noWorkflowRuleFoundInTheProject')));
       return;
     }
 
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Workflow Rules documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingWorkflowRulesDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -1251,7 +1251,7 @@ ${Project2Markdown.htmlInstructions}
     WebSocketClient.sendProgressEndMessage();
 
     if (Object.keys(workflowRulesForMenu).length > 1) {
-      this.addNavNode("Workflow Rules", workflowRulesForMenu);
+      this.addNavNode(t('docMdMenuWorkflowRules'), workflowRulesForMenu);
     }
 
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "workflowRules"));
@@ -1265,14 +1265,14 @@ ${Project2Markdown.htmlInstructions}
   private async generateProcessBuilderDocumentation() {
     const processBuilders = this.flowDescriptions.filter(flow => flow.processType === "Workflow");
     if (processBuilders.length === 0) {
-      uxLog("log", this, c.yellow("No process builder found in the project"));
+      uxLog("log", this, c.yellow(t('noProcessBuilderFoundInTheProject')));
       return;
     }
 
-    uxLog("action", this, c.cyan("Generating Process Builder documentation..."));
+    uxLog("action", this, c.cyan(t('generatingProcessBuilderDocumentation')));
 
     if (Object.keys(this.processBuildersForMenu).length > 1) {
-      this.addNavNode("Process Builders", this.processBuildersForMenu);
+      this.addNavNode(t('docMdMenuProcessBuilders'), this.processBuildersForMenu);
     }
 
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "processBuilders"));
@@ -1290,12 +1290,12 @@ ${Project2Markdown.htmlInstructions}
     const mkdocsYmlFileExists = fs.existsSync(mkdocsYmlFile);
     await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/mkdocs-project-doc', '.'), process.cwd(), { overwrite: false });
     if (!mkdocsYmlFileExists) {
-      uxLog("log", this, c.grey('Base mkdocs files copied in your Salesforce project repo'));
+      uxLog("log", this, c.grey(t('baseMkdocsFilesCopiedInYourSalesforce')));
       uxLog(
         "warning",
         this,
         c.yellow(
-          'You should probably manually update mkdocs.yml to add your own configuration, like theme, site_name, etc.'
+          t('manuallyUpdateMkdocsYml')
         )
       );
     }
@@ -1373,9 +1373,9 @@ ${Project2Markdown.htmlInstructions}
 
     // Add root menus
     const rootSections = [
-      { menu: "Automations", subMenus: ["Approval Processes", "Assignment Rules", "AutoResponse Rules", "Escalation Rules", "Flows", "Process Builders", "Workflow Rules"] },
-      { menu: "Authorizations", subMenus: ["Profiles", "Permission Set Groups", "Permission Sets"] },
-      { menu: "Code", subMenus: ["Apex", "Lightning Web Components"] },
+      { menu: t('docMdMenuAutomations'), subMenus: [t('docMdMenuApprovalProcesses'), t('docMdMenuAssignmentRules'), t('docMdMenuAutoResponseRules'), t('docMdMenuEscalationRules'), t('docMdMenuFlows'), t('docMdMenuProcessBuilders'), t('docMdMenuWorkflowRules')] },
+      { menu: t('docMdMenuAuthorizations'), subMenus: [t('docMdMenuProfiles'), t('docMdMenuPermissionSetGroups'), t('docMdMenuPermissionSets')] },
+      { menu: t('docMdMenuCode'), subMenus: [t('docMdMenuApex'), t('docMdMenuLightningWebComponents')] },
     ];
     for (const rootSection of rootSections) {
       const navSubmenus: any[] = [];
@@ -1414,33 +1414,33 @@ ${Project2Markdown.htmlInstructions}
 
     // Order nav items with this elements in first
     const firstItemsInOrder = [
-      "Home",
-      // "Object Model",
-      "Objects",
-      "Automations",
-      "Authorizations",
-      "Code",
-      "Lightning Pages",
-      "Packages",
-      "Roles",
-      "SFDX-Hardis Config",
-      "Branches & Orgs",
-      "Manifests"
+      t('docMdMenuHome'),
+      // t('docMdMenuObjectModel'),
+      t('docMdMenuObjects'),
+      t('docMdMenuAutomations'),
+      t('docMdMenuAuthorizations'),
+      t('docMdMenuCode'),
+      t('docMdMenuLightningPages'),
+      t('docMdMenuPackages'),
+      t('docMdMenuRoles'),
+      t('docMdMenuSfdxHardisConfig'),
+      t('docMdMenuBranchesAndOrgs'),
+      t('docMdMenuManifests')
     ];
     mkdocsYml.nav = firstItemsInOrder.map(item => mkdocsYml.nav.find(navItem => Object.keys(navItem)[0] === item)).filter(item => item).concat(mkdocsYml.nav.filter(navItem => !firstItemsInOrder.includes(Object.keys(navItem)[0])));
 
 
     // Update mkdocs file
     await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
-    uxLog("action", this, c.cyan(`To generate a HTML WebSite with this documentation with a single command, see instructions at ${CONSTANTS.DOC_URL_ROOT}/hardis/doc/project2markdown/`));
+    uxLog("action", this, c.cyan(t('toGenerateHtmlWebsiteWithThisDocumentation', { CONSTANTS: CONSTANTS.DOC_URL_ROOT })));
   }
 
   private async generateObjectsDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Objects AI documentation..."));
-    uxLog("log", this, "If you don't want it, use --no-generate-objects-doc or define GENERATE_OBJECTS_DOC=false");
+    uxLog("action", this, c.cyan(t('preparingGenerationOfObjectsAiDocumentation')));
+    uxLog("log", this, t('ifYouDontWantObjectsDoc'));
 
     const objectLinksInfo = await this.generateLinksInfo();
-    const objectsForMenu: any = { "All objects": "objects/index.md" }
+    const objectsForMenu: any = { [t('docMdAllObjects')]: "objects/index.md" }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "objects"));
 
     // Phase 1: Collect data and prepare work items
@@ -1463,11 +1463,11 @@ ${Project2Markdown.htmlInstructions}
       });
       workItems.push({ objectName, objectXml, objectMdFile, objectXmlParsed, skip: false });
     }
-    uxLog("log", this, `Skipped ${workItems.filter(item => item.skip).length} Data Cloud objects from documentation generation (define variable INCLUDE_DATA_CLOUD_DOC=true to include them)`);
+    uxLog("log", this, t('skippedDataCloudObjects', { count: workItems.filter(item => item.skip).length }));
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Objects documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingObjectsDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -1477,7 +1477,7 @@ ${Project2Markdown.htmlInstructions}
           WebSocketClient.sendProgressStepMessage(counter, workItems.length);
           return;
         }
-        uxLog("log", this, c.grey(`Generating markdown for Object ${item.objectName}...`));
+        uxLog("log", this, c.grey(t('generatingMarkdownForObject', { item: item.objectName })));
         // Main AI markdown
         await new DocBuilderObject(
           item.objectName,
@@ -1539,7 +1539,7 @@ ${Project2Markdown.htmlInstructions}
       });
     WebSocketClient.sendProgressEndMessage();
     if (Object.keys(objectsForMenu).length > 1) {
-      this.addNavNode("Objects", objectsForMenu);
+      this.addNavNode(t('docMdMenuObjects'), objectsForMenu);
     }
 
     // Write index file for objects folder
@@ -1558,7 +1558,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateLinksInfo(): Promise<string> {
-    uxLog("log", this, c.cyan("Generate MasterDetail and Lookup infos to provide context to AI prompt"));
+    uxLog("log", this, c.cyan(t('generateMasterdetailAndLookupInfosToProvide')));
     const findFieldsPattern = `**/objects/**/fields/**.field-meta.xml`;
     const matchingFieldFiles = (await glob(findFieldsPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS })).map(file => file.replace(/\\/g, '/'));
     const customFieldsLinks: string[] = [];
@@ -1576,8 +1576,8 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateFlowsDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Flows Visual documentation... (if you don't want it, use --no-generate-flow-doc or define GENERATE_FLOW_DOC=false)"));
-    const flowsForMenu: any = { "All flows": "flows/index.md" }
+    uxLog("action", this, c.cyan(t('preparingGenerationOfFlowsVisualDocumentation')));
+    const flowsForMenu: any = { [t('docMdAllFlows')]: "flows/index.md" }
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "flows"));
     const packageDirs = this.project?.getPackageDirectories();
     const updatedFlowNames = !this.diffOnly ?
@@ -1599,7 +1599,7 @@ ${Project2Markdown.htmlInstructions}
       flowDeps[flowName] = extractedNames;
     }
     if (flowFiles.length === 0) {
-      uxLog("log", this, c.yellow("No flow found in the project"));
+      uxLog("log", this, c.yellow(t('noFlowFoundInTheProject')));
       return;
     }
     // Generate Flows documentation
@@ -1634,7 +1634,7 @@ ${Project2Markdown.htmlInstructions}
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Flows documentation...", flowWorkItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingFlowsDocumentation'), flowWorkItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(flowWorkItems)
@@ -1644,7 +1644,7 @@ ${Project2Markdown.htmlInstructions}
           WebSocketClient.sendProgressStepMessage(counter, flowWorkItems.length);
           return;
         }
-        uxLog("log", this, c.grey(`Generating markdown for Flow ${item.flowFile}...`));
+        uxLog("log", this, c.grey(t('generatingMarkdownForFlow2', { item: item.flowFile })));
         const genRes = await generateFlowMarkdownFile(item.flowName, item.flowXml, item.outputFlowMdFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: flowDeps });
         if (!genRes) {
           flowErrors.push(item.flowFile);
@@ -1683,7 +1683,7 @@ ${Project2Markdown.htmlInstructions}
       }
 
       // Phase 2: Generate history documentation with parallelization
-      WebSocketClient.sendProgressStartMessage("Generating Flows History documentation...", historyWorkItems.length);
+      WebSocketClient.sendProgressStartMessage(t('generatingFlowsHistoryDocumentation'), historyWorkItems.length);
       let historyCounter = 0;
       await PromisePool.withConcurrency(parallelism)
         .for(historyWorkItems)
@@ -1692,7 +1692,7 @@ ${Project2Markdown.htmlInstructions}
             try {
               await generateHistoryDiffMarkdown(item.flowFile, this.debugMode);
             } catch (e: any) {
-              uxLog("warning", this, c.yellow(`Error generating history diff markdown for ${item.flowName}: ${e.message}`));
+              uxLog("warning", this, c.yellow(t('errorGeneratingHistoryDiffMarkdownFor', { item: item.flowName, message: e.message })));
             }
           }
           historyCounter++;
@@ -1703,14 +1703,14 @@ ${Project2Markdown.htmlInstructions}
 
     // Summary
     if (flowSkips.length > 0) {
-      uxLog("warning", this, c.yellow(`Skipped generation for ${flowSkips.length} Flows that have not been updated: ${this.humanDisplay(flowSkips)}`));
+      uxLog("warning", this, c.yellow(t('skippedGenerationForFlowsThatHaveNot', { flowSkips: flowSkips.length, humanDisplay: this.humanDisplay(flowSkips) })));
     }
-    uxLog("success", this, c.green(`Successfully generated ${flowFiles.length - flowSkips.length - flowWarnings.length - flowErrors.length} Flows documentation`));
+    uxLog("success", this, c.green(t('successfullyGeneratedFlowsDocumentation', { flowFiles: flowFiles.length - flowSkips.length - flowWarnings.length - flowErrors.length })));
     if (flowWarnings.length > 0) {
-      uxLog("warning", this, c.yellow(`Partially generated documentation (Markdown with MermaidJS but without SVG) for ${flowWarnings.length} Flows: ${this.humanDisplay(flowWarnings)}`));
+      uxLog("warning", this, c.yellow(t('partiallyGeneratedDocumentationMarkdownWithMermaidjsBut', { flowWarnings: flowWarnings.length, humanDisplay: this.humanDisplay(flowWarnings) })));
     }
     if (flowErrors.length > 0) {
-      uxLog("warning", this, c.yellow(`Error generating documentation for ${flowErrors.length} Flows: ${this.humanDisplay(flowErrors)}`));
+      uxLog("warning", this, c.yellow(t('errorGeneratingDocumentationForFlows', { flowErrors: flowErrors.length, humanDisplay: this.humanDisplay(flowErrors) })));
     }
 
     // Write index file for flow folder
@@ -1719,8 +1719,8 @@ ${Project2Markdown.htmlInstructions}
     const flowIndexFile = path.join(this.outputMarkdownRoot, "flows", "index.md");
     await fs.writeFile(flowIndexFile, getMetaHideLines() + flowTableLinesForIndex.join("\n") + `\n${this.footer}\n`);
 
-    this.addNavNode("Flows", flowsForMenu);
-    uxLog("success", this, c.green(`Successfully generated doc index for Flows at ${flowIndexFile}`));
+    this.addNavNode(t('docMdMenuFlows'), flowsForMenu);
+    uxLog("success", this, c.green(t('successfullyGeneratedDocIndexForFlowsAt', { flowIndexFile })));
   }
 
   private humanDisplay(flows) {
@@ -1730,18 +1730,18 @@ ${Project2Markdown.htmlInstructions}
   private buildSfdxHardisParams(): string[] {
     const sfdxParamsTableLines: string[] = [];
     sfdxParamsTableLines.push(...[
-      `## ${this.sfdxHardisConfig?.projectName?.toUpperCase() || "SFDX Project"} CI/CD configuration`,
+      `## ${this.sfdxHardisConfig?.projectName?.toUpperCase() || "SFDX Project"} ${t('ciCdConfiguration')}`,
       ""]);
     sfdxParamsTableLines.push(...[
-      "| Sfdx-hardis Parameter | Value | Description & doc link |",
+      `| ${t('colSfdxHardisParameter')} | ${t('colValue')} | ${t('colDescriptionDocLink')} |`,
       "| :--------- | :---- | :---------- |"
     ]);
     const installPackagesDuringCheckDeploy = this.sfdxHardisConfig?.installPackagesDuringCheckDeploy ?? false;
-    sfdxParamsTableLines.push(`| Install Packages During Check Deploy | ${bool2emoji(installPackagesDuringCheckDeploy)} | [Install 1GP & 2GP packages during deployment check CI/CD job](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#packages-installation) |`);
+    sfdxParamsTableLines.push(t('installPackagesDuringCheckDeployRow', { emoji: bool2emoji(installPackagesDuringCheckDeploy) }));
     const useDeltaDeployment = this.sfdxHardisConfig?.useDeltaDeployment ?? false;
-    sfdxParamsTableLines.push(`| Use Delta Deployment | ${bool2emoji(useDeltaDeployment)} | [Deploys only updated metadatas , only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-mode) |`);
+    sfdxParamsTableLines.push(t('useDeltaDeploymentRow', { emoji: bool2emoji(useDeltaDeployment) }));
     const useSmartDeploymentTests = this.sfdxHardisConfig?.useSmartDeploymentTests ?? false;
-    sfdxParamsTableLines.push(`| Use Smart Deployment Tests | ${bool2emoji(useSmartDeploymentTests)} | [Skip Apex test cases if delta metadatas can not impact them, only when a MR/PR is from a minor branch to a major branch](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#smart-deployments-tests) |`);
+    sfdxParamsTableLines.push(t('useSmartDeploymentTestsRow', { emoji: bool2emoji(useSmartDeploymentTests) }));
     sfdxParamsTableLines.push("");
     sfdxParamsTableLines.push("___");
     sfdxParamsTableLines.push("");
@@ -1754,7 +1754,7 @@ ${Project2Markdown.htmlInstructions}
     if (majorOrgs.length > 0) {
 
       branchesOrgsLines.push(...[
-        "## Branches & Orgs strategy",
+        t('branchesAndOrgsStrategyHeading'),
         "",
       ]);
       const mermaidLines = new BranchStrategyMermaidBuilder(majorOrgs).build({ withMermaidTag: true, format: "list" });
@@ -1762,7 +1762,7 @@ ${Project2Markdown.htmlInstructions}
 
       branchesOrgsLines.push(...[
         "",
-        "| Git branch | Salesforce Org | Deployment Username |",
+        `| ${t('colGitBranch')} | ${t('colSalesforceOrg')} | ${t('colDeploymentUsername')} |`,
         "| :--------- | :------------- | :------------------ |"
       ]);
       for (const majorOrg of majorOrgs) {
@@ -1777,7 +1777,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async manageLocalPackages() {
-    uxLog("action", this, c.cyan("Generating package.xml files for local packages..."));
+    uxLog("action", this, c.cyan(t('generatingPackageXmlFilesForLocalPackages')));
     const packageDirs = this.project?.getPackageDirectories();
     if (!(packageDirs?.length === 1 && packageDirs[0].name === "force-app" && fs.existsSync("manifest/package.xml"))) {
       for (const packageDir of packageDirs || []) {
@@ -1802,7 +1802,7 @@ ${Project2Markdown.htmlInstructions}
           });
         }
         catch (e: any) {
-          uxLog("error", this, c.red(`Unable to generate manifest from ${packageDir.path}: it won't appear in the documentation\n${e.message}`))
+          uxLog("error", this, c.red(t('unableToGenerateManifestFromItWon', { packageDir: packageDir.path, message: e.message })))
         }
       }
     }
@@ -1821,7 +1821,7 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generatePackageXmlMarkdown(packageXmlCandidates, instanceUrl) {
-    uxLog("action", this, c.cyan("Generating package.xml documentation..."));
+    uxLog("action", this, c.cyan(t('generatingPackageXmlDocumentation')));
     // Generate packageXml doc when found
     for (const packageXmlCandidate of packageXmlCandidates) {
       if (fs.existsSync(packageXmlCandidate.path)) {
@@ -1836,10 +1836,10 @@ ${Project2Markdown.htmlInstructions}
   }
 
   private async generateLwcDocumentation() {
-    uxLog("action", this, c.cyan("Preparing generation of Lightning Web Components documentation... "));
-    uxLog("log", this, "If you don't want it, use --no-generate-lwc-doc or define GENERATE_LWC_DOC=false");
+    uxLog("action", this, c.cyan(t('preparingGenerationOfLightningWebComponentsDocumentation')));
+    uxLog("log", this, t('ifYouDontWantLwcDoc'));
 
-    const lwcForMenu: any = { "All Lightning Web Components": "lwc/index.md" };
+    const lwcForMenu: any = { [t('docMdAllLightningWebComponents')]: "lwc/index.md" };
     await fs.ensureDir(path.join(this.outputMarkdownRoot, "lwc"));
 
     const packageDirs = this.project?.getPackageDirectories() || [];
@@ -1898,13 +1898,13 @@ ${Project2Markdown.htmlInstructions}
     }
 
     if (workItems.length === 0) {
-      uxLog("log", this, c.yellow("No Lightning Web Component found in the project"));
+      uxLog("log", this, c.yellow(t('noLightningWebComponentFoundInThe')));
       return;
     }
 
     // Phase 2: Generate documentation with parallel AI calls
     const parallelism = await UtilsAi.getPromptsParallelCallNumber();
-    WebSocketClient.sendProgressStartMessage("Generating Lightning Web Components documentation...", workItems.length);
+    WebSocketClient.sendProgressStartMessage(t('generatingLightningWebComponentsDocumentation'), workItems.length);
     let counter = 0;
     await PromisePool.withConcurrency(parallelism)
       .for(workItems)
@@ -1927,7 +1927,7 @@ ${Project2Markdown.htmlInstructions}
     WebSocketClient.sendProgressEndMessage();
 
     if (Object.keys(lwcForMenu).length > 1) {
-      this.addNavNode("Lightning Web Components", lwcForMenu);
+      this.addNavNode(t('docMdMenuLightningWebComponents'), lwcForMenu);
     }
 
     // Write index file for LWC folder
@@ -1940,11 +1940,11 @@ ${Project2Markdown.htmlInstructions}
       `\n\n${this.footer}\n`
     );
 
-    uxLog("success", this, c.green(`Successfully generated documentation for Lightning Web Components at ${lwcIndexFile}`));
+    uxLog("success", this, c.green(t('successfullyGeneratedDocumentationForLightningWebComponents', { lwcIndexFile })));
   }
 
   private async generateExcelFile() {
-    uxLog("action", this, c.cyan("Generating Excel file with all metadata..."));
+    uxLog("action", this, c.cyan(t('generatingExcelFileWithAllMetadata')));
 
     const workbook = new ExcelJS.Workbook();
     const excelFilePath = path.join(this.outputMarkdownRoot, "project-documentation.xlsx");
@@ -2117,11 +2117,11 @@ ${Project2Markdown.htmlInstructions}
 
     // Save the workbook
     await workbook.xlsx.writeFile(excelFilePath);
-    uxLog("success", this, c.green(`Successfully generated Excel file at ${excelFilePath}`));
+    uxLog("success", this, c.green(t('successfullyGeneratedExcelFileAt', { excelFilePath })));
 
     // Open file in VS Code if available
     if (WebSocketClient.isAliveWithLwcUI()) {
-      WebSocketClient.sendReportFileMessage(excelFilePath, "Excel summary", 'report');
+      WebSocketClient.sendReportFileMessage(excelFilePath, t('excelSummary'), 'report');
     }
     else {
       WebSocketClient.requestOpenFile(excelFilePath);

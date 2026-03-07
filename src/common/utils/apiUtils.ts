@@ -5,6 +5,7 @@ import ora, { Ora } from 'ora';
 import { WebSocketClient } from '../websocketClient.js';
 import { generateCsvFile, generateReportPath } from './filesUtils.js';
 import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
+import { t } from './i18n.js';
 
 // Constants for record limits
 const MAX_CHUNKS = Number(process.env.SOQL_MAX_BATCHES ?? 50);
@@ -28,13 +29,13 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
 
   // Get all page results
   while (pageRes.done === false && pageRes.nextRecordsUrl && batchCount < MAX_CHUNKS) {
-    uxLog("log", this, c.grey(`Fetching batch ${batchCount + 1}/${MAX_CHUNKS}...`));
+    uxLog("log", this, c.grey(t('fetchingBatch', { batchCount: batchCount + 1, MAX_CHUNKS })));
     pageRes = await conn.queryMore(pageRes.nextRecordsUrl);
     res.records.push(...pageRes.records);
     batchCount++;
   }
   if (!pageRes.done) {
-    uxLog("warning", this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
+    uxLog("warning", this, c.yellow(t('warningQueryLimitOfRecordsReachedSome', { MAX_RECORDS })));
     uxLog("warning", this, c.yellow(`Consider using bulkQuery for larger datasets.`));
   }
   if (batchCount > 1) {
@@ -87,7 +88,7 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
     spinnerQ = ora({ text: `[BulkApiV2] Bulk Query: ${queryLabel}`, spinner: 'moon' }).start();
     const recordStream = await conn.bulk2.query(soqlQuery);
     recordStream.on('error', (err) => {
-      uxLog("warning", this, c.yellow('Bulk Query error: ' + err));
+      uxLog("warning", this, c.yellow(t('bulkQueryError') + err));
       globalThis.sfdxHardisFatalError = true;
     });
     // Wait for all results
