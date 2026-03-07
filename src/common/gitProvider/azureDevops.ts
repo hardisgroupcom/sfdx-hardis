@@ -126,11 +126,15 @@ ${this.getPipelineVariablesConfig()}
       // - "Merged PR #123: Title"
       // - "Merge PR #123"
       // - "Merged pull request #123"
+      // - "Merge pull request 123 from branch-name"
+      // - "Merged PR 123: Title"
+      // - "Merge PR 123"
+      // - "Merged pull request 123"
       const prIdPatterns = [
-        /(?:Merge|Merged)\s+(?:pull\s+request|PR)\s+#(\d+)/i,
-        /(?:Merge|Merged)\s+PR\s+#(\d+)/i,
-        /pull\s+request\s+#(\d+)/i,
-        /PR\s+#(\d+)/i,
+        /(?:Merge|Merged)\s+(?:pull\s+request|PR)\s+#?(\d+)/i,
+        /(?:Merge|Merged)\s+PR\s+#?(\d+)/i,
+        /pull\s+request\s+#?(\d+)/i,
+        /PR\s+#?(\d+)/i,
       ];
       for (const pattern of prIdPatterns) {
         const match = commitMessage.match(pattern);
