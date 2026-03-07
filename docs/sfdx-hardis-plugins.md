@@ -9,6 +9,10 @@ sfdx-hardis exposes a **Plugin API** that allows community developers to build t
 
 Your plugin commands will automatically communicate with the VS Code extension using the same WebSocket connection initialized by the main sfdx-hardis CLI — no additional setup required.
 
+![](assets/images/sfdx-hardis-plugin-demo.gif)
+
+See demo repository: <https://github.com/hardisgroupcom/sf-plugin-hardis-demo>
+
 ## How it works
 
 When sfdx-hardis runs inside VS Code (via the extension), it initializes a WebSocket connection during its `init` hook. This connection lives in the Node.js process globals, so any plugin loaded into the same CLI process can reuse it.

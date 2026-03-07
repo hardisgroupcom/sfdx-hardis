@@ -418,7 +418,7 @@ nav:
   - Configuration reference: sfdx-hardis-config-file.md
   - Frequently Asked Questions: https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476
   - Contributing: contributing.md
-  - Creating Plugins: sfdx-hardis-plugins.md
+  - Plugins: sfdx-hardis-plugins.md
   - License: license.md
   - Security: SECURITY.md
   - Changelog: CHANGELOG.md
