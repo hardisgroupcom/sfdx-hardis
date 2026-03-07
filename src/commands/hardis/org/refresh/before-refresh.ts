@@ -20,6 +20,12 @@ import {
   createConnectedAppSuccessResponse,
   handleConnectedAppError
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
+import {
+  getEcaNames,
+  retrieveExternalClientApps,
+  verifyEcaCredentials,
+  deleteExternalClientApps,
+} from '../../../../common/utils/refresh/externalClientAppUtils.js';
 import { CONSTANTS, getConfig, setConfig } from '../../../../config/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -50,20 +56,21 @@ export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
   public static description = `
 ## Command Behavior
 
-**Backs up all Connected Apps (including Consumer Secrets), certificates, custom settings, records and other metadata from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
+**Backs up all Connected Apps (including Consumer Secrets), External Client Apps (including credentials), certificates, custom settings, records and other metadata from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
 
-This command prepares a complete backup prior to a sandbox refresh. It creates a dedicated project under \`scripts/sandbox-refresh/<sandbox-folder>\`, retrieves metadata and data, attempts to capture Connected App consumer secrets, and can optionally delete the apps so they can be reuploaded after the refresh.
+This command prepares a complete backup prior to a sandbox refresh. It creates a dedicated project under \`scripts/sandbox-refresh/<sandbox-folder>\`, retrieves metadata and data, attempts to capture Connected App and External Client App consumer secrets, and can optionally delete the apps so they can be reuploaded after the refresh.
 
 Key functionalities:
 
 - **Create a save project:** Generates a dedicated project folder to store all artifacts for the sandbox backup.
+- **Save External Client Apps:** Retrieves all External Client App metadata (ExternalClientApplication, ExtlClntAppOauthSettings, ExtlClntAppGlobalOauthSettings, ExtlClntAppOauthConfigurablePolicies, ExtlClntAppConfigurablePolicies), verifies that credentials (Consumer Key & Consumer Secret) are present in the retrieved Global OAuth settings, attempts to extract missing Consumer Secrets automatically via browser automation (Puppeteer) or prompts for manual entry, and optionally deletes External Client Apps from the org so they can be recreated with the same credentials after the refresh.
 - **Find and select Connected Apps:** Lists Connected Apps in the org and lets you pick specific apps, use a name filter, or process all apps.
 - **Save metadata for restore:** Builds a manifest and retrieves the metadata types you choose so they can be restored after the refresh.
 - **Capture Consumer Secrets:** Attempts to capture Connected App consumer secrets automatically (opens a browser session when possible) and falls back to a short manual prompt when needed.
 - **Collect certificates:** Saves certificate files and their definitions so they can be redeployed later.
 - **Export custom settings & records:** Lets you pick custom settings to export as JSON and optionally export records using configured data workspaces.
 - **Persist choices & report:** Stores your backup choices in project config and sends report files for traceability.
-- **Optional cleanup:** Can delete backed-up Connected Apps from the org so they can be re-uploaded cleanly after the refresh.
+- **Optional cleanup:** Can delete backed-up Connected Apps and External Client Apps from the org so they can be re-uploaded cleanly after the refresh.
 - **Interactive safety checks:** Prompts you to confirm package contents and other potentially destructive actions; sensible defaults are chosen where appropriate.
 
 This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is intended to be run before a sandbox refresh so that all credentials, certificates, metadata and data can be restored afterwards.
@@ -73,6 +80,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
 - **Salesforce CLI Integration:** Uses \`sf org list metadata\`, \`sf project retrieve start\`, \`sf project generate\`, \`sf project deploy start\`, and \`sf data tree export\`/\`import\` where applicable.
 - **Metadata Handling:** Writes and reads package XML files under the generated project (\`manifest/\`), copies MDAPI certificate artifacts into \`force-app/main/default/certs\`, and produces \`package-metadata-to-restore.xml\` for post-refresh deployment.
+- **External Client App Handling:** Retrieves all 5 ECA metadata types, scans \`extlClntAppGlobalOauthSets/\` files for credentials (\`consumerKey\`, \`consumerSecret\`), extracts missing secrets via Puppeteer or manual input, writes them back into the XML files, and deletes ECAs from the org using destructive changes so they can be recreated after refresh.
 - **Consumer Secret Handling:** Uses \`puppeteer-core\` with an executable path from \`getChromeExecutablePath()\` (env var \`PUPPETEER_EXECUTABLE_PATH\` may be required). Falls back to manual prompt when browser automation cannot be used.
 - **Data & Records:** Exports custom settings to JSON and supports exporting records through SFDMU workspaces chosen interactively.
 - **Config & Reporting:** Updates project/user config under \`config/.sfdx-hardis.yml#refreshSandboxConfig\` and reports artifacts to the WebSocket client.
@@ -159,6 +167,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     await this.saveRecords();
 
+    await this.saveExternalClientApps(accessToken);
+
     await this.retrieveDeleteConnectedApps(accessToken);
 
     return this.result;
@@ -186,7 +196,64 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     return projectPath;
   }
 
+  private async saveExternalClientApps(accessToken: string): Promise<void> {
+    uxLog("action", this, c.cyan(t('savingExternalClientAppsBeforeSandboxRefresh')));
+
+    // Check if ECA folder already has content
+    const ecaFolder = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'externalClientApps');
+    if (fs.existsSync(ecaFolder) && fs.readdirSync(ecaFolder).length > 0) {
+      const confirmRetrieval = await prompts({
+        type: 'confirm',
+        name: 'retrieveAgain',
+        message: t('externalClientAppsFolderIsNotEmptyDo'),
+        description: t('externalClientAppsWillBeHandledSeparately'),
+        initial: false
+      });
+      if (!confirmRetrieval.retrieveAgain) {
+        return;
+      }
+    }
+
+    try {
+      const ecaCount = await retrieveExternalClientApps(this.orgUsername, this.saveProjectPath, this);
+
+      if (ecaCount > 0) {
+        uxLog("success", this, c.green(t('externalClientAppsSavedSuccessfully', { count: ecaCount })));
+        uxLog("log", this, c.grey(t('externalClientAppsWillBeHandledSeparately')));
+
+        // Verify and capture credentials in Global OAuth settings files
+        let browserContext: BrowserContext | null = null;
+        try {
+          uxLog("action", this, c.cyan(t('initializingBrowserForAutomatedConnectedAppSecrets')));
+          browserContext = await this.initializeBrowser(this.instanceUrl, accessToken);
+        } catch (e: any) {
+          uxLog("error", this, c.red(t('errorInitializingBrowserConsumerSecret', { message: e.message })));
+        }
+        try {
+          await verifyEcaCredentials(this.saveProjectPath, this.instanceUrl, browserContext, this);
+        } finally {
+          if (browserContext?.browser) {
+            uxLog("log", this, c.cyan(t('closingBrowser')));
+            await browserContext.browser.close();
+          }
+        }
+
+        // Delete ECAs from org so they can be recreated with same credentials after refresh
+        const ecaNames = getEcaNames(this.saveProjectPath);
+        await deleteExternalClientApps(this.orgUsername, ecaNames, this.saveProjectPath, this, !this.deleteApps);
+      } else {
+        uxLog("log", this, c.grey(t('noExternalClientAppsFoundInTheOrg')));
+      }
+    } catch (error: any) {
+      uxLog("warning", this, c.yellow(t('noExternalClientAppsFoundInTheOrg')));
+    }
+  }
+
   private async retrieveDeleteConnectedApps(accessToken: string): Promise<void> {
+    // Warn about Connected Apps deprecation since Spring '26
+    uxLog("warning", this, c.yellow(t('connectedAppsDeprecatedWarning')));
+    uxLog("action", this, c.cyan(t('convertConnectedAppsToExternalClientApps')));
+
     // If metadatas folder is not empty, ask if we want to retrieve them again
     let retrieveConnectedApps = true;
     const connectedAppsFolder = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'connectedApps');
@@ -832,6 +899,25 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       delete restorePackage["SamlSsoConfig"];
       await writePackageXmlFile(restorePackageXmlFile, restorePackage);
       uxLog("log", this, c.grey(t('removedSamlssoconfigFromAsTheyWillBe', { restorePackageXmlFileName })));
+    }
+    // Remove External Client App metadata types (handled separately)
+    const ecaMetadataTypes = [
+      "ExternalClientApplication",
+      "ExtlClntAppOauthSettings",
+      "ExtlClntAppGlobalOauthSettings",
+      "ExtlClntAppOauthConfigurablePolicies",
+      "ExtlClntAppConfigurablePolicies",
+    ];
+    let ecaRemoved = false;
+    for (const ecaType of ecaMetadataTypes) {
+      if (restorePackage?.[ecaType]) {
+        delete restorePackage[ecaType];
+        ecaRemoved = true;
+      }
+    }
+    if (ecaRemoved) {
+      await writePackageXmlFile(restorePackageXmlFile, restorePackage);
+      uxLog("log", this, c.grey(t('removedExternalClientAppsFromRestorePackage', { restorePackageXmlFileName })));
     }
   }
 

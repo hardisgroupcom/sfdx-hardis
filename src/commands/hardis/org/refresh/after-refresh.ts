@@ -17,6 +17,11 @@ import {
   createConnectedAppSuccessResponse,
   handleConnectedAppError
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
+import {
+  getEcaNames,
+  deployExternalClientApps,
+  deleteConflictingConnectedApps,
+} from '../../../../common/utils/refresh/externalClientAppUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -40,13 +45,14 @@ export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
   public static description = `
 ## Command Behavior
 
-**Restores all previously backed-up Connected Apps (including Consumer Secrets), certificates, custom settings, records and other metadata to a Salesforce org after a sandbox refresh.**
+**Restores all previously backed-up Connected Apps (including Consumer Secrets), External Client Apps (including credentials), certificates, custom settings, records and other metadata to a Salesforce org after a sandbox refresh.**
 
 This command is the second step in the sandbox refresh process. It scans the backup folder created before the refresh, allows interactive or flag-driven selection of items to restore, and automates cleanup and redeployment to the refreshed org while preserving credentials and configuration.
 
 Key functionalities:
 
 - **Choose a backup to restore:** Lets you pick the saved sandbox project that contains the artifacts to restore.
+- **Restore External Client Apps:** Detects saved External Client App metadata (ExternalClientApplication, ExtlClntAppOauthSettings, ExtlClntAppGlobalOauthSettings, ExtlClntAppOauthConfigurablePolicies, ExtlClntAppConfigurablePolicies) and deploys them back to the org, including their saved OAuth credentials (Consumer Key and Consumer Secret).
 - **Select which items to restore:** Finds Connected App XMLs, certificates, custom settings and other artifacts and lets you pick what to restore (or restore all).
 - **Safety checks and validation:** Confirms files exist and prompts before making changes to the target org.
 - **Prepare org for restore:** Optionally cleans up existing Connected Apps so saved apps can be re-deployed without conflict.
@@ -61,6 +67,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 <summary>Technical explanations</summary>
 
 - **Backup Folder Handling:** Reads the immediate subfolders of \`scripts/sandbox-refresh/\` and validates the chosen project contains the expected \`manifest/\` and \`force-app\` layout.
+- **External Client App Handling:** Checks for saved ECA metadata in \`force-app/main/default/externalClientApps/\` and related folders, builds a package manifest for all 5 ECA metadata types, and deploys them using \`sf project deploy start --manifest\` to recreate the apps with their original credentials in the refreshed org.
 - **Metadata & Deployment APIs:** Uses \`sf project deploy start --manifest\` for package-based deploys, \`sf project deploy start --metadata-dir\` for MDAPI artifacts (certificates), and utility functions for Connected App deployment that preserve consumer secrets.
 - **SAML Handling:** Queries active certificates via tooling API, updates SAML XML files, and deploys using \`sf project deploy start -m SamlSsoConfig\`.
 - **Records Handling:** Uses interactive selection of SFDMU workspaces and runs data import utilities to restore records.
@@ -161,7 +168,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // 5. Restore saved records
     await this.restoreRecords();
 
-    // 6. Restore Connected Apps
+    // 6. Restore External Client Apps
+    await this.restoreExternalClientApps();
+
+    // 7. Restore Connected Apps
     await this.restoreConnectedApps();
 
     return this.result;
@@ -567,7 +577,43 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
   }
 
+  private async restoreExternalClientApps(): Promise<void> {
+    // Check if there are External Client Apps in the backup
+    const ecaNames = getEcaNames(this.saveProjectPath);
+    if (ecaNames.length === 0) {
+      uxLog("log", this, c.grey(t('noExternalClientAppsFoundInBackup')));
+      return;
+    }
+
+    uxLog("log", this, c.cyan(t('foundExternalClientAppsInTheOrg', { count: ecaNames.length })));
+
+    const promptRestore = await prompts({
+      type: 'confirm',
+      name: 'confirmRestore',
+      message: t('doYouWantToRestoreExternalClientApps', { saveProjectPath: c.bold(this.saveProjectPath) }),
+      initial: true,
+      description: t('thisWillRestoreAllExternalClientAppsFromBackup')
+    });
+
+    if (!promptRestore.confirmRestore) {
+      return;
+    }
+
+    // Delete Connected Apps that conflict with External Client Apps before deploying
+    await deleteConflictingConnectedApps(this.orgUsername, ecaNames, this.saveProjectPath, this);
+
+    try {
+      await deployExternalClientApps(this.orgUsername, this.instanceUrl, this.saveProjectPath, this);
+    } catch (error: any) {
+      uxLog("error", this, c.red(t('errorProcessing', { app: 'External Client Apps', error: error.message || error })));
+    }
+  }
+
   private async restoreConnectedApps(): Promise<void> {
+    // Warn about Connected Apps deprecation since Spring '26
+    uxLog("warning", this, c.yellow(t('connectedAppsDeprecatedRestoreWarning')));
+    uxLog("action", this, c.cyan(t('noConnectedAppsCreationRestricted')));
+
     let restoreConnectedApps = false;
     const promptRestoreConnectedApps = await prompts({
       type: 'confirm',
