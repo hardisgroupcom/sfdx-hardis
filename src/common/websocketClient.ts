@@ -20,14 +20,25 @@ const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
 export const LOG_TYPES = ['log', 'action', 'warning', 'error', 'success', 'table', "other"] as const;
 export type LogType = typeof LOG_TYPES[number];
 
+/** Context passed to the WebSocketClient constructor, identifying the running command and connection endpoint. */
+export interface WebSocketClientContext {
+  /** The command identifier, e.g. `"hardis:doc:flow2markdown"`. */
+  command?: string;
+  /** The process ID (or any unique identifier) for this client instance. */
+  id?: number | string;
+  /** Optional `host:port` override for the WebSocket server (e.g. `"localhost:2702"`). */
+  websocketHostPort?: string;
+  [key: string]: unknown;
+}
+
 export class WebSocketClient {
   private ws: any;
-  private wsContext: any;
+  private wsContext: WebSocketClientContext;
   private promptResponse: any;
   private isDead = false;
   private isInitialized = false;
 
-  constructor(context: any) {
+  constructor(context: WebSocketClientContext) {
     this.wsContext = context;
     const wsHostPort = context.websocketHostPort ? `ws://${context.websocketHostPort}` : `ws://localhost:${PORT}`;
     try {

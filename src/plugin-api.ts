@@ -14,11 +14,11 @@
 
 // WebSocket client for VS Code extension communication
 export { WebSocketClient, LOG_TYPES } from './common/websocketClient.js';
-export type { LogType } from './common/websocketClient.js';
+export type { LogType, WebSocketClientContext } from './common/websocketClient.js';
 
 // Prompt utilities (automatically routes through WebSocket when available)
 export { prompts } from './common/utils/prompts.js';
-export type { PromptsQuestion } from './common/utils/prompts.js';
+export type { PromptsQuestion, PromptChoice } from './common/utils/prompts.js';
 
 // Notification provider for sending notifications to Slack, MS Teams, Email, etc.
 export { NotifProvider, UtilsNotifs } from './common/notifProvider/index.js';
