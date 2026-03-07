@@ -11,8 +11,8 @@ import { t } from './utils/i18n.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let globalWs: WebSocketClient | null;
-let isWsOpen = false;
-let userInput = null;
+// isWsOpen and userInput are now stored on the instance to avoid module-instance isolation issues.
+// See activeInstance getter below.
 
 const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
 
@@ -37,6 +37,17 @@ export class WebSocketClient {
   private promptResponse: any;
   private isDead = false;
   private isInitialized = false;
+  private userInput: string | null = null;
+
+  /**
+   * Returns the active WebSocketClient instance.
+   * Falls back to globalThis.webSocketClient so that plugins importing this
+   * module from a different package path (separate ES module cache entry) still
+   * reach the instance created by sfdx-hardis's init hook.
+   */
+  private static get activeInstance(): WebSocketClient | null {
+    return globalWs ?? ((globalThis as any).webSocketClient as WebSocketClient) ?? null;
+  }
 
   constructor(context: WebSocketClientContext) {
     this.wsContext = context;
@@ -57,28 +68,32 @@ export class WebSocketClient {
   }
 
   static async isInitialized(): Promise<boolean> {
-    if (globalWs) {
+    const instance = WebSocketClient.activeInstance;
+    if (instance) {
       let retries = 40; // Wait up to 10 seconds
-      while (!globalWs.isInitialized && retries > 0 && !globalWs.isDead) {
+      while (!instance.isInitialized && retries > 0 && !instance.isDead) {
         await new Promise((resolve) => setTimeout(resolve, 250));
         retries--;
       }
-      return globalWs.isInitialized;
+      return instance.isInitialized;
     }
     return false;
   }
 
   static isAlive(): boolean {
-    return !isCI && globalWs != null && isWsOpen === true;
+    const instance = WebSocketClient.activeInstance;
+    // readyState 1 === WebSocket.OPEN
+    return !isCI && instance != null && instance.ws?.readyState === 1;
   }
 
   static isAliveWithLwcUI(): boolean {
-    return this.isAlive() && userInput === 'ui-lwc';
+    return WebSocketClient.isAlive() && WebSocketClient.activeInstance?.userInput === 'ui-lwc';
   }
 
   static sendMessage(data: any) {
-    if (globalWs) {
-      globalWs.sendMessageToServer(data);
+    const instance = WebSocketClient.activeInstance;
+    if (instance) {
+      instance.sendMessageToServer(data);
     }
   }
 
@@ -196,8 +211,9 @@ export class WebSocketClient {
   }
 
   static sendPrompts(prompts: any): Promise<any> {
-    if (globalWs) {
-      return globalWs.promptServer(prompts);
+    const instance = WebSocketClient.activeInstance;
+    if (instance) {
+      return instance.promptServer(prompts);
     }
     throw new SfError('globalWs should be set in sendPrompts');
   }
@@ -221,8 +237,9 @@ export class WebSocketClient {
 
   // Close the WebSocket connection externally
   static closeClient(status?: string) {
-    if (globalWs) {
-      globalWs.dispose(status);
+    const instance = WebSocketClient.activeInstance;
+    if (instance) {
+      instance.dispose(status);
     }
   }
 
@@ -240,7 +257,6 @@ export class WebSocketClient {
 
   async start() {
     this.ws.on('open', async () => {
-      isWsOpen = true;
       const commandDocUrl = this.getCommandDocUrl();
       const message = {
         event: 'initClient',
@@ -284,7 +300,9 @@ export class WebSocketClient {
     this.ws.on('error', (err) => {
       this.ws.terminate();
       globalWs = null;
-      isWsOpen = false;
+      if ((globalThis as any).webSocketClient === this) {
+        (globalThis as any).webSocketClient = null;
+      }
       this.isDead = true;
       if (process.env.DEBUG) {
         console.error(err);
@@ -304,7 +322,7 @@ export class WebSocketClient {
       this.promptResponse = data.promptsResponse;
     }
     else if (data.event === 'userInput') {
-      userInput = data.userInput;
+      this.userInput = data.userInput;
       this.isInitialized = true;
     }
     else if (data.event === 'cancelCommand') {
@@ -348,8 +366,10 @@ export class WebSocketClient {
     WebSocketClient.sendCloseClientMessage(status, error);
     this.ws.terminate();
     this.isDead = true;
-    isWsOpen = false;
     globalWs = null;
+    if ((globalThis as any).webSocketClient === this) {
+      (globalThis as any).webSocketClient = null;
+    }
     // uxLog("other", this,c.grey('Closed WebSocket connection with VS Code SFDX Hardis'));
   }
 }
