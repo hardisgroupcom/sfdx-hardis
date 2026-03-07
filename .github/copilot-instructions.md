@@ -171,6 +171,28 @@ Exceptions (no `t()` needed):
 - The string is a URL only.
 - The uxLog is "other" (e.g. `uxLog("other", this, "Some message")`)
 
+### uxLogTable usage
+
+Use `uxLogTable` for user-facing tables so formatting stays consistent across plugins:
+
+```typescript
+import { uxLogTable } from "../../../common/utils/uxLog.js";
+import { t } from "../../../common/utils/i18n.js";
+
+uxLogTable(
+  this,
+  [
+    { name: "My Flow", type: "Flow", status: "Active" },
+    { name: "My Object", type: "Custom Object", status: "Inactive" },
+  ],
+  [
+    { key: "name", label: t("name") },
+    { key: "type", label: t("type") },
+    { key: "status", label: t("status") },
+  ]
+);
+```
+
 ### prompts() calls
 
 For every `prompts()` call, the `message`, `description`, `placeholder` and `choices[].title` properties must use `t()` where they contain user-visible text:

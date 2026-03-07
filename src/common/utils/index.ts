@@ -1381,7 +1381,7 @@ export async function generateReports(
   ];
 }
 
-export function uxLog(logType: LogType, commandThis: any, textInit: string, sensitive = false) {
+export function uxLog(logType: LogType, commandThis: any, textInit: string, sensitive = false): void {
   const text = textInit.includes('[sfdx-hardis]') ? textInit : '[sfdx-hardis]' + (textInit.startsWith('[') ? '' : ' ') + textInit;
   // Console log
   if (commandThis?.ux) {

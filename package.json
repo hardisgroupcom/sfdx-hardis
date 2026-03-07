@@ -331,6 +331,9 @@
       "output": []
     }
   },
-  "exports": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./plugin-api": "./lib/plugin-api.js"
+  },
   "type": "module"
 }

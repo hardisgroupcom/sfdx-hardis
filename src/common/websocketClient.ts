@@ -11,8 +11,8 @@ import { t } from './utils/i18n.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let globalWs: WebSocketClient | null;
-let isWsOpen = false;
-let userInput = null;
+// isWsOpen and userInput are now stored on the instance to avoid module-instance isolation issues.
+// See activeInstance getter below.
 
 const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
 
@@ -20,14 +20,36 @@ const PORT = process.env.SFDX_HARDIS_WEBSOCKET_PORT || 2702;
 export const LOG_TYPES = ['log', 'action', 'warning', 'error', 'success', 'table', "other"] as const;
 export type LogType = typeof LOG_TYPES[number];
 
+/** Context passed to the WebSocketClient constructor, identifying the running command and connection endpoint. */
+export interface WebSocketClientContext {
+  /** The command identifier, e.g. `"hardis:doc:flow2markdown"`. */
+  command?: string;
+  /** The process ID (or any unique identifier) for this client instance. */
+  id?: number | string;
+  /** Optional `host:port` override for the WebSocket server (e.g. `"localhost:2702"`). */
+  websocketHostPort?: string;
+  [key: string]: unknown;
+}
+
 export class WebSocketClient {
   private ws: any;
-  private wsContext: any;
+  private wsContext: WebSocketClientContext;
   private promptResponse: any;
   private isDead = false;
   private isInitialized = false;
+  private userInput: string | null = null;
 
-  constructor(context: any) {
+  /**
+   * Returns the active WebSocketClient instance.
+   * Falls back to globalThis.webSocketClient so that plugins importing this
+   * module from a different package path (separate ES module cache entry) still
+   * reach the instance created by sfdx-hardis's init hook.
+   */
+  private static get activeInstance(): WebSocketClient | null {
+    return globalWs ?? ((globalThis as any).webSocketClient as WebSocketClient) ?? null;
+  }
+
+  constructor(context: WebSocketClientContext) {
     this.wsContext = context;
     const wsHostPort = context.websocketHostPort ? `ws://${context.websocketHostPort}` : `ws://localhost:${PORT}`;
     try {
@@ -46,28 +68,32 @@ export class WebSocketClient {
   }
 
   static async isInitialized(): Promise<boolean> {
-    if (globalWs) {
+    const instance = WebSocketClient.activeInstance;
+    if (instance) {
       let retries = 40; // Wait up to 10 seconds
-      while (!globalWs.isInitialized && retries > 0 && !globalWs.isDead) {
+      while (!instance.isInitialized && retries > 0 && !instance.isDead) {
         await new Promise((resolve) => setTimeout(resolve, 250));
         retries--;
       }
-      return globalWs.isInitialized;
+      return instance.isInitialized;
     }
     return false;
   }
 
   static isAlive(): boolean {
-    return !isCI && globalWs != null && isWsOpen === true;
+    const instance = WebSocketClient.activeInstance;
+    // readyState 1 === WebSocket.OPEN
+    return !isCI && instance != null && instance.ws?.readyState === 1;
   }
 
   static isAliveWithLwcUI(): boolean {
-    return this.isAlive() && userInput === 'ui-lwc';
+    return WebSocketClient.isAlive() && WebSocketClient.activeInstance?.userInput === 'ui-lwc';
   }
 
   static sendMessage(data: any) {
-    if (globalWs) {
-      globalWs.sendMessageToServer(data);
+    const instance = WebSocketClient.activeInstance;
+    if (instance) {
+      instance.sendMessageToServer(data);
     }
   }
 
@@ -185,8 +211,9 @@ export class WebSocketClient {
   }
 
   static sendPrompts(prompts: any): Promise<any> {
-    if (globalWs) {
-      return globalWs.promptServer(prompts);
+    const instance = WebSocketClient.activeInstance;
+    if (instance) {
+      return instance.promptServer(prompts);
     }
     throw new SfError('globalWs should be set in sendPrompts');
   }
@@ -210,8 +237,9 @@ export class WebSocketClient {
 
   // Close the WebSocket connection externally
   static closeClient(status?: string) {
-    if (globalWs) {
-      globalWs.dispose(status);
+    const instance = WebSocketClient.activeInstance;
+    if (instance) {
+      instance.dispose(status);
     }
   }
 
@@ -229,7 +257,6 @@ export class WebSocketClient {
 
   async start() {
     this.ws.on('open', async () => {
-      isWsOpen = true;
       const commandDocUrl = this.getCommandDocUrl();
       const message = {
         event: 'initClient',
@@ -241,9 +268,14 @@ export class WebSocketClient {
       // Dynamically import command class and send static uiConfig if present
       if (this.wsContext?.command) {
         try {
-          // Convert command string to file path, e.g. hardis:cache:clear -> lib/commands/hardis/cache/clear.js
           const commandParts = this.wsContext.command.split(':');
-          const commandPath = path.resolve(__dirname, '../../lib/commands', ...commandParts) + '.js';
+          // Use the plugin root provided by the init hook when available (works for
+          // third-party plugins), otherwise fall back to sfdx-hardis's own lib/commands.
+          const pluginRoot = (this.wsContext as any).commandPluginRoot as string | undefined;
+          const commandsBase = pluginRoot
+            ? path.resolve(pluginRoot, 'lib/commands')
+            : path.resolve(__dirname, '../../lib/commands');
+          const commandPath = path.resolve(commandsBase, ...commandParts) + '.js';
           const fileUrl = 'file://' + commandPath.replace(/\\/g, '/');
           const imported = await import(fileUrl);
           const CommandClass = imported.default;
@@ -254,7 +286,11 @@ export class WebSocketClient {
             message.uiConfig = CommandClass.uiConfig;
           }
         } catch (e) {
-          uxLog("warning", this, c.yellow(t('unableToImportCommandClassFor', { wsContext: this.wsContext.command, instanceof: e instanceof Error ? e.message : String(e) })));
+          // Only warn for sfdx-hardis own commands – external plugins are not
+          // expected to expose a command class file at the resolved path.
+          if (this.wsContext.command.startsWith('hardis:')) {
+            uxLog("warning", this, c.yellow(t('unableToImportCommandClassFor', { wsContext: this.wsContext.command, instanceof: e instanceof Error ? e.message : String(e) })));
+          }
         }
       }
       // Add link to command log file
@@ -273,7 +309,9 @@ export class WebSocketClient {
     this.ws.on('error', (err) => {
       this.ws.terminate();
       globalWs = null;
-      isWsOpen = false;
+      if ((globalThis as any).webSocketClient === this) {
+        (globalThis as any).webSocketClient = null;
+      }
       this.isDead = true;
       if (process.env.DEBUG) {
         console.error(err);
@@ -293,7 +331,7 @@ export class WebSocketClient {
       this.promptResponse = data.promptsResponse;
     }
     else if (data.event === 'userInput') {
-      userInput = data.userInput;
+      this.userInput = data.userInput;
       this.isInitialized = true;
     }
     else if (data.event === 'cancelCommand') {
@@ -337,8 +375,10 @@ export class WebSocketClient {
     WebSocketClient.sendCloseClientMessage(status, error);
     this.ws.terminate();
     this.isDead = true;
-    isWsOpen = false;
     globalWs = null;
+    if ((globalThis as any).webSocketClient === this) {
+      (globalThis as any).webSocketClient = null;
+    }
     // uxLog("other", this,c.grey('Closed WebSocket connection with VS Code SFDX Hardis'));
   }
 }

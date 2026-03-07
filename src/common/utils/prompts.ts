@@ -6,21 +6,28 @@ import { isCI, uxLog } from "./index.js";
 import { WebSocketClient } from "../websocketClient.js";
 import { t } from './i18n.js';
 
+export interface PromptChoice<T = unknown> {
+  title: string;
+  value?: T;
+  description?: string;
+}
+
 export interface PromptsQuestion {
   message: string;
   description: string;
   placeholder?: string;
   type: "select" | "multiselect" | "confirm" | "text" | "number";
   name?: string;
+  /** Array of choices. Use `PromptChoice` for proper typing. */
   choices?: Array<any>;
-  default?: any;
-  validate?: any;
-  initial?: any;
+  default?: unknown;
+  validate?: (value: any) => boolean | string | Promise<boolean | string>;
+  initial?: unknown;
   optionsPerPage?: number;
 }
 
 // Centralized prompts function
-export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
+export async function prompts(options: PromptsQuestion | PromptsQuestion[]): Promise<Record<string, any>> {
   if (isCI) {
     uxLog("log", this, c.grey(JSON.stringify(options, null, 2)));
     throw new SfError("Nothing should be prompted during CI!");
