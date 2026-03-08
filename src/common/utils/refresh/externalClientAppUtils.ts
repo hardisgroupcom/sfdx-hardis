@@ -2,7 +2,7 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import c from 'chalk';
 import open from 'open';
-import { Browser, Page } from 'puppeteer-core';
+import { Connection } from '@salesforce/core';
 import { execCommand, execSfdxJson, isCI, createTempDir, uxLog } from '../index.js';
 import { parseXmlFile, writePackageXmlFile, writeXmlFile } from '../xmlUtils.js';
 import { getApiVersion } from '../../../config/index.js';
@@ -20,7 +20,30 @@ export const ECA_METADATA_TYPES = [
   'ExtlClntAppConfigurablePolicies',
 ];
 
-export function getEcaPackageContent(): Record<string, string[]> {
+// Suffix appended to the app name to form the member name for each satellite type.
+// ExternalClientApplication uses no suffix (member == appName).
+export const ECA_SATELLITE_SUFFIXES: Record<string, string> = {
+  'ExternalClientApplication': '',
+  'ExtlClntAppOauthSettings': '_defOauthSet',
+  'ExtlClntAppGlobalOauthSettings': '_defGlblOauthSet',
+  'ExtlClntAppOauthConfigurablePolicies': '_defOauthPlcy',
+  'ExtlClntAppConfigurablePolicies': '_defPlcy',
+};
+
+/**
+ * Build the package content for the 5 ECA metadata types.
+ * When appNames is provided, member names are constructed as `{appName}{suffix}`
+ * using ECA_SATELLITE_SUFFIXES. Otherwise wildcards are used.
+ */
+export function getEcaPackageContent(appNames?: string[]): Record<string, string[]> {
+  if (appNames && appNames.length > 0) {
+    return Object.fromEntries(
+      ECA_METADATA_TYPES.map(type => [
+        type,
+        appNames.map(name => name + (ECA_SATELLITE_SUFFIXES[type] ?? '')),
+      ])
+    );
+  }
   return Object.fromEntries(ECA_METADATA_TYPES.map(t => [t, ['*']]));
 }
 
@@ -38,15 +61,34 @@ export function getEcaNames(saveProjectPath: string): string[] {
 }
 
 /**
+ * List External Client App names available in the org.
+ */
+export async function listExternalClientAppNames(
+  orgUsername: string,
+  command: SfCommand<any>
+): Promise<string[]> {
+  const result = await execSfdxJson(
+    `sf org list metadata --metadata-type ExternalClientApplication --target-org ${orgUsername}`,
+    command,
+    { output: false }
+  );
+  const apps = result?.result && Array.isArray(result.result) ? result.result : [];
+  return apps.map((a: any) => a.fullName).sort();
+}
+
+/**
  * Retrieve External Client App metadata from org into the save project.
+ * If selectedNames is provided, only those apps are retrieved; otherwise all apps are retrieved.
  */
 export async function retrieveExternalClientApps(
   orgUsername: string,
   saveProjectPath: string,
-  command: SfCommand<any>
+  command: SfCommand<any>,
+  selectedNames?: string[]
 ): Promise<number> {
+  const packageContent = getEcaPackageContent(selectedNames && selectedNames.length > 0 ? selectedNames : undefined);
   const ecaPackageXml = path.join(saveProjectPath, 'manifest', 'package-eca-to-save.xml');
-  await writePackageXmlFile(ecaPackageXml, getEcaPackageContent());
+  await writePackageXmlFile(ecaPackageXml, packageContent);
 
   uxLog("action", command, c.cyan(t('retrievingExternalClientAppsFromOrg')));
   await execCommand(
@@ -61,12 +103,12 @@ export async function retrieveExternalClientApps(
 
 /**
  * Verify credentials in ECA Global OAuth settings files.
- * If consumerSecret is missing, attempts browser extraction or manual entry.
+ * If consumerSecret is missing, attempts Connect REST API extraction or manual entry.
  */
 export async function verifyEcaCredentials(
   saveProjectPath: string,
   instanceUrl: string,
-  browserContext: { browser: Browser; instanceUrl: string; accessToken: string } | null,
+  conn: Connection | null,
   command: SfCommand<any>
 ): Promise<void> {
   uxLog("action", command, c.cyan(t('checkingEcaCredentials')));
@@ -111,20 +153,20 @@ export async function verifyEcaCredentials(
 
     let extractedSecret: string | null = null;
 
-    // Try browser automation first
-    if (browserContext?.browser) {
-      uxLog("log", command, c.cyan(t('attemptingToExtractEcaConsumerSecret', { appName })));
+    // Try Connect REST API first
+    if (conn) {
+      uxLog("log", command, c.cyan(t('ecaFetchingCredentialsViaApi', { appName })));
       try {
-        extractedSecret = await extractEcaConsumerSecret(browserContext.browser, instanceUrl, appName, command);
+        extractedSecret = await fetchEcaCredentialsViaApi(conn, appName, consumerKey, command);
       } catch (e: any) {
-        uxLog("warning", command, c.yellow(t('errorExtractingEcaConsumerSecret', { appName })));
+        uxLog("warning", command, c.yellow(t('ecaCredentialsApiError', { appName, message: e.message || String(e) })));
       }
     }
 
-    // If browser automation failed, prompt for manual entry
+    // If API extraction failed, prompt for manual entry
     if (!extractedSecret) {
       uxLog("action", command, c.cyan(t('ecaSetupUrlForConsumerSecret', { appName })));
-      await open(`${instanceUrl}/lightning/setup/ExternalClientAppList/home`);
+      await open(`${instanceUrl}/lightning/setup/ManageExternalClientApplication/home`);
 
       const secretPromptResponse = await prompts({
         type: 'text',
@@ -168,48 +210,72 @@ export async function verifyEcaCredentials(
 }
 
 /**
- * Attempt to extract the External Client App consumer secret using Puppeteer.
+ * Fetch External Client App consumer secret via the OAuth Credentials REST API.
+ *
+ * The flow requires three calls:
+ * 1. GET /apps/oauth/usage → find the app identifier by developerName
+ * 2. GET /apps/oauth/credentials/{appId} → list consumers
+ * 3. GET /apps/oauth/credentials/{appId}/{consumerId}?part=keyandsecret → get the secret
+ *
+ * Requires "Allow access to External Client App consumer secrets via REST API" enabled in Setup.
  */
-export async function extractEcaConsumerSecret(
-  browser: Browser,
-  instanceUrl: string,
+export async function fetchEcaCredentialsViaApi(
+  conn: Connection,
   appName: string,
+  consumerKey: string,
   command: SfCommand<any>
 ): Promise<string | null> {
-  let page: Page | undefined;
-  try {
-    page = await browser.newPage();
-    // Navigate to External Client App list page
-    const ecaListUrl = `${instanceUrl}/lightning/setup/ExternalClientAppList/home`;
-    await page.goto(ecaListUrl, { waitUntil: ['domcontentloaded', 'networkidle0'] });
+  const apiVersion = `v${conn.version}`;
 
-    // Wait for the page to load and try to find the app link
-    await new Promise(resolve => setTimeout(resolve, 3000));
+  // Step 1: List all OAuth apps to find the app identifier
+  const usageUrl = `/services/data/${apiVersion}/apps/oauth/usage`;
+  uxLog("log", command, c.grey(`GET ${usageUrl}`));
+  const usageResponse = await conn.request<{ apps: Array<{ developerName: string; identifier: string }> }>({
+    method: 'GET',
+    url: usageUrl,
+  });
 
-    // Look for the app link and click it
-    const appLink = await page.$(`a[title="${appName}"]`);
-    if (appLink) {
-      await appLink.click();
-      await page.waitForNavigation({ waitUntil: 'networkidle0' });
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Try to find and extract the consumer secret from the detail page
-      const consumerSecretEl = await page.$('span[data-consumer-secret]');
-      if (consumerSecretEl) {
-        const secret = await page.evaluate(el => el.getAttribute('data-consumer-secret'), consumerSecretEl);
-        if (secret) {
-          uxLog("success", command, c.green(t('ecaConsumerSecretFound', { appName })));
-          return secret;
-        }
-      }
-    }
-
+  const app = usageResponse?.apps?.find(a => a.developerName === appName);
+  if (!app) {
+    uxLog("warning", command, c.yellow(t('ecaAppNotFoundInUsageApi', { appName })));
     return null;
-  } catch (error) {
-    return null;
-  } finally {
-    if (page) await page.close();
   }
+
+  const appId = app.identifier;
+
+  // Step 2: Get consumers for this app
+  const credentialsUrl = `/services/data/${apiVersion}/apps/oauth/credentials/${appId}`;
+  uxLog("log", command, c.grey(`GET ${credentialsUrl}`));
+  const credentialsResponse = await conn.request<{ consumers: Array<{ id: string; key: string; name: string }> }>({
+    method: 'GET',
+    url: credentialsUrl,
+  });
+
+  const consumers = credentialsResponse?.consumers || [];
+  if (consumers.length === 0) {
+    uxLog("warning", command, c.yellow(t('ecaNoConsumersFound', { appName })));
+    return null;
+  }
+
+  // Match consumer by known consumerKey, or fall back to the first one
+  const consumer = consumerKey
+    ? consumers.find(co => co.key === consumerKey) || consumers[0]
+    : consumers[0];
+
+  // Step 3: Get key and secret for this consumer
+  const secretUrl = `/services/data/${apiVersion}/apps/oauth/credentials/${appId}/${consumer.id}?part=keyandsecret`;
+  uxLog("log", command, c.grey(`GET ${secretUrl}`));
+  const secretResponse = await conn.request<{ key: string; secret: string }>({
+    method: 'GET',
+    url: secretUrl,
+  });
+
+  if (secretResponse?.secret) {
+    uxLog("success", command, c.green(t('ecaCredentialsRetrievedViaApi', { appName })));
+    return secretResponse.secret;
+  }
+
+  return null;
 }
 
 /**
@@ -300,15 +366,49 @@ export async function deployExternalClientApps(
   saveProjectPath: string,
   command: SfCommand<any>
 ): Promise<void> {
-  const ecaPackageXml = path.join(saveProjectPath, 'manifest', 'package-eca-to-restore.xml');
-  await writePackageXmlFile(ecaPackageXml, getEcaPackageContent());
+  const ecaNames = getEcaNames(saveProjectPath);
+  const ecaContent = getEcaPackageContent(ecaNames.length > 0 ? ecaNames : undefined);
 
-  uxLog("action", command, c.cyan(t('restoringExternalClientAppsToOrg', { instanceUrl })));
+  // Phase 1: Deploy ExternalClientApplication parent type only.
+  // Satellite types (OAuth settings, policies) require the parent to exist first.
+  const ecaPackageXmlPhase1 = path.join(saveProjectPath, 'manifest', 'package-eca-to-restore-phase1.xml');
+  await writePackageXmlFile(ecaPackageXmlPhase1, { ExternalClientApplication: ecaContent['ExternalClientApplication'] });
+  uxLog("action", command, c.cyan(t('restoringExternalClientAppsStep1')));
   await execCommand(
-    `sf project deploy start --manifest ${ecaPackageXml} --target-org ${orgUsername} --json`,
+    `sf project deploy start --manifest ${ecaPackageXmlPhase1} --target-org ${orgUsername} --ignore-conflicts --json`,
     command,
     { output: true, fail: true, cwd: saveProjectPath }
   );
+
+  // Between phases: strip <oauthLink> from ExtlClntAppOauthSettings files.
+  // The oauthLink is an org-specific reference that breaks deployment on fresh orgs.
+  const ecaOauthSettingsFolder = path.join(saveProjectPath, 'force-app', 'main', 'default', 'extlClntAppOauthSettings');
+  if (fs.existsSync(ecaOauthSettingsFolder)) {
+    const oauthSettingsFiles = fs.readdirSync(ecaOauthSettingsFolder).filter(f => f.endsWith('.ecaOauth-meta.xml'));
+    for (const oauthFile of oauthSettingsFiles) {
+      const filePath = path.join(ecaOauthSettingsFolder, oauthFile);
+      const xmlContent = await fs.readFile(filePath, 'utf8');
+      if (xmlContent.includes('<oauthLink>')) {
+        const updated = xmlContent.replace(/<oauthLink>.*?<\/oauthLink>\s*/gs, '');
+        await fs.writeFile(filePath, updated);
+        uxLog("log", command, c.grey(t('removingOauthLinkFromEcaOauthSettings', { file: oauthFile })));
+      }
+    }
+  }
+
+  // Phase 2: Deploy all satellite types now that the parent ECAs exist in the org.
+  const satelliteContent = Object.fromEntries(
+    Object.entries(ecaContent).filter(([type]) => type !== 'ExternalClientApplication')
+  );
+  const ecaPackageXmlPhase2 = path.join(saveProjectPath, 'manifest', 'package-eca-to-restore-phase2.xml');
+  await writePackageXmlFile(ecaPackageXmlPhase2, satelliteContent);
+  uxLog("action", command, c.cyan(t('restoringExternalClientAppsStep2')));
+  await execCommand(
+    `sf project deploy start --manifest ${ecaPackageXmlPhase2} --target-org ${orgUsername} --ignore-conflicts --json`,
+    command,
+    { output: true, fail: true, cwd: saveProjectPath }
+  );
+
   uxLog("success", command, c.green(t('externalClientAppsRestoredSuccessfully', { instanceUrl })));
 }
 
@@ -325,7 +425,7 @@ export async function deleteConflictingConnectedApps(
   if (ecaNames.length === 0) {
     return;
   }
-
+  uxLog("action", command, c.cyan(t('checkingForConflictingConnectedAppsAndExtClientAppToDelete')));
   // Query for Connected Apps with the same names as External Client Apps
   const listCommand = `sf org list metadata --metadata-type ConnectedApp --target-org ${orgUsername}`;
   const result = await execSfdxJson(listCommand, command, { output: false });

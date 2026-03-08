@@ -19,7 +19,9 @@ import {
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
 import {
   getEcaNames,
+  listExternalClientAppNames,
   deployExternalClientApps,
+  deleteExternalClientApps,
   deleteConflictingConnectedApps,
 } from '../../../../common/utils/refresh/externalClientAppUtils.js';
 import { getConfig } from '../../../../config/index.js';
@@ -601,6 +603,16 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     // Delete Connected Apps that conflict with External Client Apps before deploying
     await deleteConflictingConnectedApps(this.orgUsername, ecaNames, this.saveProjectPath, this);
+
+    // Delete ECAs that already exist in the org with the same name to avoid conflicts
+    const existingEcaNamesInOrg = await listExternalClientAppNames(this.orgUsername, this);
+    const ecasToDelete = ecaNames.filter(name =>
+      existingEcaNamesInOrg.some(orgName => orgName.toLowerCase() === name.toLowerCase())
+    );
+    if (ecasToDelete.length > 0) {
+      uxLog("warning", this, c.yellow(t('existingEcasFoundInOrgWillBeDeleted', { count: ecasToDelete.length, names: ecasToDelete.join(', ') })));
+      await deleteExternalClientApps(this.orgUsername, ecasToDelete, this.saveProjectPath, this, true);
+    }
 
     try {
       await deployExternalClientApps(this.orgUsername, this.instanceUrl, this.saveProjectPath, this);

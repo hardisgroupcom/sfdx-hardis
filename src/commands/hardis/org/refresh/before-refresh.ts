@@ -23,9 +23,11 @@ import {
 import {
   ECA_METADATA_TYPES,
   getEcaNames,
+  listExternalClientAppNames,
   retrieveExternalClientApps,
   verifyEcaCredentials,
   deleteExternalClientApps,
+  deleteConflictingConnectedApps,
 } from '../../../../common/utils/refresh/externalClientAppUtils.js';
 import { CONSTANTS, getConfig, setConfig } from '../../../../config/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
@@ -64,7 +66,7 @@ This command prepares a complete backup prior to a sandbox refresh. It creates a
 Key functionalities:
 
 - **Create a save project:** Generates a dedicated project folder to store all artifacts for the sandbox backup.
-- **Save External Client Apps:** Retrieves all External Client App metadata (ExternalClientApplication, ExtlClntAppOauthSettings, ExtlClntAppGlobalOauthSettings, ExtlClntAppOauthConfigurablePolicies, ExtlClntAppConfigurablePolicies), verifies that credentials (Consumer Key & Consumer Secret) are present in the retrieved Global OAuth settings, attempts to extract missing Consumer Secrets automatically via browser automation (Puppeteer) or prompts for manual entry, and optionally deletes External Client Apps from the org so they can be recreated with the same credentials after the refresh.
+- **Save External Client Apps:** Retrieves all External Client App metadata (ExternalClientApplication, ExtlClntAppOauthSettings, ExtlClntAppGlobalOauthSettings, ExtlClntAppOauthConfigurablePolicies, ExtlClntAppConfigurablePolicies), verifies that credentials (Consumer Key & Consumer Secret) are present in the retrieved Global OAuth settings, attempts to extract missing Consumer Secrets automatically via OAuth Credentials REST API or prompts for manual entry, and optionally deletes External Client Apps from the org so they can be recreated with the same credentials after the refresh.
 - **Find and select Connected Apps:** Lists Connected Apps in the org and lets you pick specific apps, use a name filter, or process all apps.
 - **Save metadata for restore:** Builds a manifest and retrieves the metadata types you choose so they can be restored after the refresh.
 - **Capture Consumer Secrets:** Attempts to capture Connected App consumer secrets automatically (opens a browser session when possible) and falls back to a short manual prompt when needed.
@@ -81,8 +83,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
 - **Salesforce CLI Integration:** Uses \`sf org list metadata\`, \`sf project retrieve start\`, \`sf project generate\`, \`sf project deploy start\`, and \`sf data tree export\`/\`import\` where applicable.
 - **Metadata Handling:** Writes and reads package XML files under the generated project (\`manifest/\`), copies MDAPI certificate artifacts into \`force-app/main/default/certs\`, and produces \`package-metadata-to-restore.xml\` for post-refresh deployment.
-- **External Client App Handling:** Retrieves all 5 ECA metadata types, scans \`extlClntAppGlobalOauthSets/\` files for credentials (\`consumerKey\`, \`consumerSecret\`), extracts missing secrets via Puppeteer or manual input, writes them back into the XML files, and deletes ECAs from the org using destructive changes so they can be recreated after refresh.
-- **Consumer Secret Handling:** Uses \`puppeteer-core\` with an executable path from \`getChromeExecutablePath()\` (env var \`PUPPETEER_EXECUTABLE_PATH\` may be required). Falls back to manual prompt when browser automation cannot be used.
+- **External Client App Handling:** Retrieves all 5 ECA metadata types, scans \`extlClntAppGlobalOauthSets/\` files for credentials (\`consumerKey\`, \`consumerSecret\`), extracts missing secrets via OAuth Credentials REST API or manual input, writes them back into the XML files, and deletes ECAs from the org using destructive changes so they can be recreated after refresh.
+- **Consumer Secret Handling:** Uses \`puppeteer-core\` with an executable path from \`getChromeExecutablePath()\` (env var \`PUPPETEER_EXECUTABLE_PATH\` may be required) for Connected Apps. Falls back to manual prompt when browser automation cannot be used.
 - **Data & Records:** Exports custom settings to JSON and supports exporting records through SFDMU workspaces chosen interactively.
 - **Config & Reporting:** Updates project/user config under \`config/.sfdx-hardis.yml#refreshSandboxConfig\` and reports artifacts to the WebSocket client.
 - **Error Handling:** Provides clear error messages and a summary response object indicating success/failure and which secrets were captured.
@@ -168,7 +170,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     await this.saveRecords();
 
-    await this.saveExternalClientApps(accessToken);
+    await this.saveExternalClientApps();
 
     await this.retrieveDeleteConnectedApps(accessToken);
 
@@ -180,8 +182,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const sandboxRefreshRootFolder = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
     const projectPath = path.join(sandboxRefreshRootFolder, folderName);
     if (fs.existsSync(projectPath)) {
-      uxLog("log", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
-      return projectPath;
+      if (fs.existsSync(path.join(projectPath, "sfdx-project.json"))) {
+        uxLog("log", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
+        return projectPath;
+      }
+      else {
+        fs.removeSync(projectPath);
+      }
     }
     await fs.ensureDir(projectPath);
     uxLog("action", this, c.cyan(`Creating sfdx-project for sandbox info storage`));
@@ -197,8 +204,50 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     return projectPath;
   }
 
-  private async saveExternalClientApps(accessToken: string): Promise<void> {
+  private async saveExternalClientApps(): Promise<void> {
     uxLog("action", this, c.cyan(t('savingExternalClientAppsBeforeSandboxRefresh')));
+
+    // List available ECAs in the org
+    uxLog("action", this, c.cyan(t('listingExternalClientAppsInOrg')));
+    let availableEcaNames: string[] = [];
+    try {
+      availableEcaNames = await listExternalClientAppNames(this.orgUsername, this);
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('noExternalClientAppsFoundInTheOrg')));
+      return;
+    }
+
+    if (availableEcaNames.length === 0) {
+      uxLog("log", this, c.grey(t('noExternalClientAppsFoundInTheOrg')));
+      return;
+    }
+
+    uxLog("log", this, c.grey(t('foundExternalClientAppsInTheOrg', { count: availableEcaNames.length })));
+
+    // Multiselect which ECAs to save (pre-select previously chosen ones)
+    const initialSelection: string[] =
+      this.refreshSandboxConfig.externalClientApps && this.refreshSandboxConfig.externalClientApps.length > 0
+        ? this.refreshSandboxConfig.externalClientApps
+        : availableEcaNames;
+
+    const selectPrompt = await prompts({
+      type: 'multiselect',
+      name: 'selectedApps',
+      message: t('selectExternalClientAppsToSave'),
+      description: t('selectExternalClientAppsToSaveDescription'),
+      choices: availableEcaNames.map(name => ({ title: name, value: name })),
+      initial: initialSelection,
+    });
+
+    const selectedEcaNames: string[] = selectPrompt.selectedApps || [];
+    if (selectedEcaNames.length === 0) {
+      uxLog("warning", this, c.yellow(t('noExternalClientAppsSelected')));
+      return;
+    }
+
+    // Persist selection
+    this.refreshSandboxConfig.externalClientApps = selectedEcaNames.sort();
+    await this.saveConfig();
 
     // Check if ECA folder already has content
     const ecaFolder = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'externalClientApps');
@@ -216,32 +265,34 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
 
     try {
-      const ecaCount = await retrieveExternalClientApps(this.orgUsername, this.saveProjectPath, this);
+      const ecaCount = await retrieveExternalClientApps(this.orgUsername, this.saveProjectPath, this, selectedEcaNames);
 
       if (ecaCount > 0) {
         uxLog("success", this, c.green(t('externalClientAppsSavedSuccessfully', { count: ecaCount })));
         uxLog("log", this, c.grey(t('externalClientAppsWillBeHandledSeparately')));
 
-        // Verify and capture credentials in Global OAuth settings files
-        let browserContext: BrowserContext | null = null;
-        try {
-          uxLog("action", this, c.cyan(t('initializingBrowserForAutomatedConnectedAppSecrets')));
-          browserContext = await this.initializeBrowser(this.instanceUrl, accessToken);
-        } catch (e: any) {
-          uxLog("error", this, c.red(t('errorInitializingBrowserConsumerSecret', { message: e.message })));
-        }
-        try {
-          await verifyEcaCredentials(this.saveProjectPath, this.instanceUrl, browserContext, this);
-        } finally {
-          if (browserContext?.browser) {
-            uxLog("log", this, c.cyan(t('closingBrowser')));
-            await browserContext.browser.close();
-          }
-        }
+        // Verify and capture credentials in Global OAuth settings files using OAuth Credentials REST API
+        await verifyEcaCredentials(this.saveProjectPath, this.instanceUrl, this.conn, this);
 
         // Delete ECAs from org so they can be recreated with same credentials after refresh
         const ecaNames = getEcaNames(this.saveProjectPath);
-        await deleteExternalClientApps(this.orgUsername, ecaNames, this.saveProjectPath, this, !this.deleteApps);
+        let deleteEcas = this.deleteApps;
+        if (!isCI && !this.deleteApps) {
+          const ecaNamesStr = ecaNames.join(', ');
+          const deletePrompt = await prompts({
+            type: 'confirm',
+            name: 'delete',
+            message: t('doYouWantToDeleteExternalClientApps', { ecaNames: ecaNamesStr }),
+            description: t('ifNotDeletedEcasWillRemainInOrg'),
+            initial: false
+          });
+          deleteEcas = deletePrompt.delete;
+        }
+        if (deleteEcas) {
+          await deleteExternalClientApps(this.orgUsername, ecaNames, this.saveProjectPath, this, true);
+          // Also delete Connected Apps with the same name as deleted ECAs
+          await deleteConflictingConnectedApps(this.orgUsername, ecaNames, this.saveProjectPath, this);
+        }
       } else {
         uxLog("log", this, c.grey(t('noExternalClientAppsFoundInTheOrg')));
       }
@@ -406,7 +457,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       initialSelection,
       processAll,
       nameFilter,
-      'Select Connected Apps that you will want to restore after org refresh',
+      'Select Connected Apps that you will want to restore after org refresh (SPOILERS: you probably can not since Spring 26!)',
       this
     );
   }
@@ -1000,58 +1051,65 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
     this.refreshSandboxConfig.customSettings = selectedSettings.settings.sort();
     await this.saveConfig();
-    uxLog("log", this, c.cyan(t('retrievingSelectedCustomSettings', { selectedSettings: selectedSettings.settings.length })));
     const successCs: any = [];
     const emptyCs: any = [];
     const errorCs: any = [];
+    WebSocketClient.sendProgressStartMessage(t('retrievingSelectedCustomSettings', { selectedSettings: selectedSettings.settings.length }), selectedSettings.settings.length);
+    let csCounter = 0;
     // Retrieve each selected Custom Setting
-    for (const settingName of selectedSettings.settings) {
-      try {
-        uxLog("action", this, c.cyan(t('retrievingValuesOfCustomSetting', { settingName })));
+    try {
+      for (const settingName of selectedSettings.settings) {
+        try {
+          uxLog("log", this, c.cyan(t('retrievingValuesOfCustomSetting', { settingName })));
 
-        // List all fields of the Custom Setting using globalDesc
-        const customSettingDesc = globalDesc.sobjects.find(sobject => sobject.name === settingName);
-        if (!customSettingDesc) {
-          uxLog("error", this, c.red(t('customSettingNotFoundInTheOrg', { settingName })));
-          errorCs.push(settingName);
-          continue;
-        }
-        const csDescribe = await this.conn.sobject(settingName).describe();
-        const fieldList = csDescribe.fields.map(field => field.name).join(', ');
-        uxLog("log", this, c.grey(t('fieldsInCustomSetting', { settingName, fieldList })));
+          // List all fields of the Custom Setting using globalDesc
+          const customSettingDesc = globalDesc.sobjects.find(sobject => sobject.name === settingName);
+          if (!customSettingDesc) {
+            uxLog("error", this, c.red(t('customSettingNotFoundInTheOrg', { settingName })));
+            errorCs.push(settingName);
+            continue;
+          }
+          const csDescribe = await this.conn.sobject(settingName).describe();
+          const fieldList = csDescribe.fields.map(field => field.name).join(', ');
+          uxLog("log", this, c.grey(t('fieldsInCustomSetting', { settingName, fieldList })));
 
-        // Use data tree export to retrieve the Custom Setting
-        uxLog("log", this, c.cyan(t('runningTreeExportForCustomSetting', { settingName })));
-        const retrieveCommand = `sf data tree export --query "SELECT ${fieldList} FROM ${settingName}" --target-org ${this.orgUsername} --json`;
-        const csFolder = path.join(customSettingsFolder, settingName);
-        await fs.ensureDir(csFolder);
-        const result = await execSfdxJson(retrieveCommand, this, {
-          output: true,
-          fail: true,
-          cwd: csFolder
-        });
-        if (!(result?.status === 0)) {
-          uxLog("error", this, c.red(t('failedToRetrieveCustomSetting', { settingName, JSON: JSON.stringify(result) })));
-          continue;
-        }
-        const resultFile = path.join(csFolder, `${settingName}.json`);
-        if (fs.existsSync(resultFile)) {
-          uxLog("log", this, c.grey(t('customSettingHasBeenDownloadedTo', { settingName, resultFile })));
-          successCs.push(settingName);
-        }
-        else if (result?.result?.records && result.result.records?.length === 0) {
-          uxLog("warning", this, c.yellow(t('customSettingHasNoRecordsInThe', { settingName })));
-          emptyCs.push(settingName);
-        }
-        else {
-          uxLog("error", this, c.red(t('customSettingWasNotRetrievedCorrectlyNo', { settingName, resultFile })));
+          // Use data tree export to retrieve the Custom Setting
+          uxLog("log", this, c.cyan(t('runningTreeExportForCustomSetting', { settingName })));
+          const retrieveCommand = `sf data tree export --query "SELECT ${fieldList} FROM ${settingName}" --target-org ${this.orgUsername} --json`;
+          const csFolder = path.join(customSettingsFolder, settingName);
+          await fs.ensureDir(csFolder);
+          const result = await execSfdxJson(retrieveCommand, this, {
+            output: true,
+            fail: true,
+            cwd: csFolder
+          });
+          if (!(result?.status === 0)) {
+            uxLog("error", this, c.red(t('failedToRetrieveCustomSetting', { settingName, JSON: JSON.stringify(result) })));
+            continue;
+          }
+          const resultFile = path.join(csFolder, `${settingName}.json`);
+          if (fs.existsSync(resultFile)) {
+            uxLog("log", this, c.grey(t('customSettingHasBeenDownloadedTo', { settingName, resultFile })));
+            successCs.push(settingName);
+          }
+          else if (result?.result?.records && result.result.records?.length === 0) {
+            uxLog("warning", this, c.yellow(t('customSettingHasNoRecordsInThe', { settingName })));
+            emptyCs.push(settingName);
+          }
+          else {
+            uxLog("error", this, c.red(t('customSettingWasNotRetrievedCorrectlyNo', { settingName, resultFile })));
+            errorCs.push(settingName);
+            continue;
+          }
+        } catch (error: any) {
           errorCs.push(settingName);
-          continue;
+          uxLog("error", this, c.red(t('errorRetrievingCustomSetting', { settingName, error: error.message || error })));
         }
-      } catch (error: any) {
-        errorCs.push(settingName);
-        uxLog("error", this, c.red(t('errorRetrievingCustomSetting', { settingName, error: error.message || error })));
+        csCounter++;
+        WebSocketClient.sendProgressStepMessage(csCounter, selectedSettings.settings.length);
       }
+    } finally {
+      WebSocketClient.sendProgressEndMessage();
     }
     uxLog("action", this, c.cyan(t('customSettingsRetrievalCompletedSuccessfulEmptyFailed', { successCs: successCs.length, emptyCs: emptyCs.length, errorCs: errorCs.length })));
     if (successCs.length > 0) {
