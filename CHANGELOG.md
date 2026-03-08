@@ -11,6 +11,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Japanese
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add support for translations in generated documentation
 - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): If set, use prompts language to generate documentation
+- [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/) and [hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/): Handle External Client App save then restore with identical credentials
 
 ## [6.27.0] 2025-02-27
 
