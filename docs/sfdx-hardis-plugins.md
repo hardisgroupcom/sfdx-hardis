@@ -108,7 +108,7 @@ Sends a log message to the terminal and to the VS Code extension (when connected
 **Parameters:**
 
 | Parameter     | Type      | Description                                                                            |
-| ------------- | --------- | -------------------------------------------------------------------------------------- |
+|---------------|-----------|----------------------------------------------------------------------------------------|
 | `logType`     | `LogType` | One of: `'log'`, `'action'`, `'warning'`, `'error'`, `'success'`, `'table'`, `'other'` |
 | `commandThis` | `any`     | The current command instance (`this` in a command's `run()` method)                    |
 | `message`     | `string`  | The message to display (supports chalk formatting)                                     |
@@ -134,7 +134,7 @@ Renders a user-facing table in the terminal and in the VS Code extension.
 **Parameters:**
 
 | Parameter      | Type       | Description                                                         |
-| -------------- | ---------- | ------------------------------------------------------------------- |
+|----------------|------------|---------------------------------------------------------------------|
 | `commandThis`  | `any`      | The current command instance (`this` in a command's `run()` method) |
 | `tableData`    | `any[]`    | Array of row objects to render                                      |
 | `columnsOrder` | `string[]` | Optional. Column keys to keep and the order to display them         |
@@ -168,13 +168,13 @@ Displays interactive prompts. When the VS Code extension is connected, prompts a
 **Parameters:**
 
 | Parameter | Type                                   | Description                             |
-| --------- | -------------------------------------- | --------------------------------------- |
+|-----------|----------------------------------------|-----------------------------------------|
 | `options` | `PromptsQuestion \| PromptsQuestion[]` | A single question or array of questions |
 
 **`PromptsQuestion` interface:**
 
 | Property      | Type                                                           | Description                                                    |
-| ------------- | -------------------------------------------------------------- | -------------------------------------------------------------- |
+|---------------|----------------------------------------------------------------|----------------------------------------------------------------|
 | `message`     | `string`                                                       | The question text                                              |
 | `description` | `string`                                                       | Additional description                                         |
 | `placeholder` | `string`                                                       | Optional placeholder text                                      |
@@ -284,7 +284,7 @@ WebSocketClient.sendReportFileMessage(
 ```
 
 | `type` value      | Description               |
-| ----------------- | ------------------------- |
+|-------------------|---------------------------|
 | `"report"`        | A report file to download |
 | `"docUrl"`        | A documentation URL       |
 | `"actionUrl"`     | An action URL             |
@@ -293,7 +293,7 @@ WebSocketClient.sendReportFileMessage(
 #### Other available methods
 
 | Method                                                      | Description                                  |
-| ----------------------------------------------------------- | -------------------------------------------- |
+|-------------------------------------------------------------|----------------------------------------------|
 | `sendRefreshStatusMessage()`                                | Triggers a status refresh in VS Code         |
 | `sendRefreshCommandsMessage()`                              | Triggers a commands list refresh             |
 | `sendCommandLogLineMessage(message, logType?, isQuestion?)` | Sends a log line to the command output panel |
@@ -426,7 +426,7 @@ See [`NotifMessage`](#notifmessage) for all available fields.
 Interface describing a notification to send.
 
 | Property        | Type                 | Required | Description                                                                                                                           |
-| --------------- | -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+|-----------------|----------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------|
 | `text`          | `string`             | ✓        | Main notification text (supports Slack markdown: `*bold*`, `_italic_`)                                                                |
 | `type`          | `string`             | ✓        | Notification type identifier — use a unique ALL_CAPS string for your plugin (e.g. `"MY_PLUGIN_RESULT"`)                               |
 | `severity`      | `NotifSeverity`      | ✓        | One of: `"critical"`, `"error"`, `"warning"`, `"info"`, `"success"`, `"log"`                                                          |
