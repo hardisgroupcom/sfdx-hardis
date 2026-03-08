@@ -248,7 +248,10 @@ export async function bulkDeleteTooling(
     uxLog("warning", this, c.yellow(`[ToolingApi] jsforce error while calling Tooling API. Fallback to to unitary delete (longer but should work !)`));
     uxLog("log", this, c.grey(e.message));
     const deleteJobResults: any = [];
+    WebSocketClient.sendProgressStartMessage(`Deleting ${recordsIds.length} ${objectName} record(s)...`, recordsIds.length);
+    let step = 0;
     for (const record of recordsIds) {
+      step++;
       const deleteCommand =
         `sf data:delete:record --sobject ${objectName} --record-id ${record} --target-org ${conn.getUsername()} --use-tooling-api`;
       const deleteCommandRes = await execSfdxJson(deleteCommand, this, {
@@ -261,7 +264,9 @@ export async function bulkDeleteTooling(
         deleteResult.error = JSON.stringify(deleteCommandRes);
       }
       deleteJobResults.push(deleteResult);
+      WebSocketClient.sendProgressStepMessage(step, recordsIds.length);
     }
+    WebSocketClient.sendProgressEndMessage(recordsIds.length);
     return { results: deleteJobResults };
   }
 }

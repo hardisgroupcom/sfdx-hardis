@@ -6,6 +6,7 @@ import c from 'chalk';
 import { execSfdxJson, extractRegexMatches, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkDelete, bulkDeleteTooling, bulkQuery } from '../../../../common/utils/apiUtils.js';
+import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -108,6 +109,9 @@ The command's technical implementation involves:
   protected flowRecords: any[];
   protected deletedRecords: any[] = [];
   protected deletedErrors: any[] = [];
+  protected outputFilesToDelete: any = {};
+  protected outputFilesDeleted: any = {};
+  protected conn: any;
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
@@ -140,6 +144,9 @@ The command's technical implementation involves:
     // Simplify results format & display them
     this.formatFlowRecords();
 
+    // Generate CSV report of flows to delete
+    await this.generateFlowsToDeleteReport();
+
     // Confirm deletion
     if (this.promptUser && !isCI) {
       const confirmDelete = await prompts({
@@ -157,6 +164,7 @@ The command's technical implementation involves:
 
     // Perform deletion
     const conn = flags['target-org'].getConnection();
+    this.conn = conn;
     await this.processDeleteFlowVersions(conn, true);
 
     const summary =
@@ -165,10 +173,33 @@ The command's technical implementation involves:
         : t('noRecordsToDelete');
     uxLog("action", this, c.cyan(summary));
     if (this.deletedRecords.length > 0) {
-      uxLogTable(this, this.deletedRecords);
+      const enrichedDeletedRecords = this.deletedRecords.flat().map((r: any) => {
+        const id = r.Id ?? r.id ?? '';
+        const flowDetail = this.flowRecords.find((f: any) => f.Id === id) ?? {};
+        return {
+          'Id': id,
+          'API Name': flowDetail.DefinitionDevName ?? '',
+          'Version': flowDetail.VersionNumber ?? '',
+          'Label': flowDetail.MasterLabel ?? '',
+          'Flow Status': flowDetail.Status ?? '',
+          'Deletion Status': r.success ? 'Deleted' : 'Error',
+          'Error': r.error ?? '',
+        };
+      });
+      uxLogTable(this, enrichedDeletedRecords);
+      const deletionReportPath = await generateReportPath('org-purge-flow-deleted', '');
+      this.outputFilesDeleted = await generateCsvFile(enrichedDeletedRecords, deletionReportPath, {
+        fileTitle: t('flowVersionsDeletionResultsReportTitle'),
+      });
     }
+
     // Return an object to be displayed with --json
-    return { orgId: flags['target-org'].getOrgId(), outputString: summary };
+    return {
+      orgId: flags['target-org'].getOrgId(),
+      outputString: summary,
+      csvLogFile: this.outputFilesToDelete?.csvFile,
+      xlsxLogFile: this.outputFilesToDelete?.xlsxFile,
+    };
   }
 
   private async processDeleteFlowVersions(conn: any, tryDeleteInterviews: boolean) {
@@ -260,20 +291,24 @@ The command's technical implementation involves:
       return;
     }
 
-    const flowList = this.flowRecords
-      .map(
-        (flow) =>
-          `- ${c.bold(flow.DefinitionDevName)} v${c.green(flow.VersionNumber)} (${c.yellow(flow.Status)})${flow.Description ? ` - ${c.gray(flow.Description)}` : ''}`
-      )
-      .join('\n');
+    uxLog("action", this, c.cyan(t('foundFlowVersionsToDelete', { count: this.flowRecords.length })));
+    uxLogTable(this, this.flowRecords.map((flow: any) => ({
+      'API Name': flow.DefinitionDevName,
+      'Version': flow.VersionNumber,
+      'Label': flow.MasterLabel,
+      'Status': flow.Status,
+      'Description': flow.Description ?? '',
+    })));
+  }
 
-    uxLog(
-      "action",
-      this,
-      c.cyan(
-        `Found ${this.flowRecords.length} Flow version(s) to delete:\n${flowList}`
-      )
-    );
+  private async generateFlowsToDeleteReport(): Promise<void> {
+    if (this.flowRecords.length === 0) {
+      return;
+    }
+    const reportPath = await generateReportPath('org-purge-flow-to-delete', '');
+    this.outputFilesToDelete = await generateCsvFile(this.flowRecords, reportPath, {
+      fileTitle: t('flowVersionsToDeleteReportTitle'),
+    });
   }
 
   private async listFlowVersionsToDelete(manageableConstraint: string) {
@@ -339,6 +374,7 @@ The command's technical implementation involves:
           name: 'status',
           message: t('pleaseSelectTheStatusEsYouWant'),
           description: 'Choose which flow version statuses should be deleted',
+          initial: ['Draft', 'Inactive', 'Obsolete'],
           choices: [
             { title: `Draft`, value: 'Draft' },
             { title: `Inactive`, value: 'Inactive' },
@@ -362,13 +398,14 @@ The command's technical implementation involves:
       uxLog("warning", this, c.yellow(t('noFlowInterviewsFoundToDelete')));
       return;
     }
-    // Display Flow Interviews to delete
-    const flowList = flowsInterviewsToDelete
-      .map(
-        (flow) =>
-          `- ${c.bold(flow.Name)} (${c.green(flow.InterviewLabel)}) - ${c.yellow(flow.InterviewStatus)}`
-      )
-      .join('\n');
-    uxLog("action", this, c.cyan(t('foundFlowInterviewsToDelete', { flowsInterviewsToDelete: flowsInterviewsToDelete.length, flowList })));
+    // Display Flow Interviews to delete using uxLogTable
+    uxLog("action", this, c.cyan(t('foundFlowInterviewsToDeleteCount', { count: flowsInterviewsToDelete.length })));
+    uxLogTable(this, flowsInterviewsToDelete.map((flow: any) => ({
+      'Name': flow.Name,
+      'Label': flow.InterviewLabel,
+      'Status': flow.InterviewStatus,
+      'Created By': flow.CreatedBy?.Username ?? '',
+    })));
   }
+
 }
