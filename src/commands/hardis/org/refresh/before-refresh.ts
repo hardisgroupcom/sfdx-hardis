@@ -225,7 +225,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     let availableEcaNames: string[] = [];
     try {
       availableEcaNames = await listExternalClientAppNames(this.orgUsername, this);
-    } catch (e: any) {
+    } catch (_e: any) {
       uxLog("warning", this, c.yellow(t('noExternalClientAppsFoundInTheOrg')));
       return;
     }
@@ -324,7 +324,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         uxLog("log", this, c.grey(t('noExternalClientAppsFoundInTheOrg')));
         this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Warning", details: "No External Client Apps retrieved from org" });
       }
-    } catch (error: any) {
+    } catch (_error: any) {
       uxLog("warning", this, c.yellow(t('noExternalClientAppsFoundInTheOrg')));
       for (const ecaName of selectedEcaNames) {
         this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Error", details: "Retrieval failed" });
