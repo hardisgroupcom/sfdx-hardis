@@ -21,6 +21,7 @@ import {
   handleConnectedAppError
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
 import {
+  ECA_METADATA_TYPES,
   getEcaNames,
   retrieveExternalClientApps,
   verifyEcaCredentials,
@@ -901,15 +902,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       uxLog("log", this, c.grey(t('removedSamlssoconfigFromAsTheyWillBe', { restorePackageXmlFileName })));
     }
     // Remove External Client App metadata types (handled separately)
-    const ecaMetadataTypes = [
-      "ExternalClientApplication",
-      "ExtlClntAppOauthSettings",
-      "ExtlClntAppGlobalOauthSettings",
-      "ExtlClntAppOauthConfigurablePolicies",
-      "ExtlClntAppConfigurablePolicies",
-    ];
     let ecaRemoved = false;
-    for (const ecaType of ecaMetadataTypes) {
+    for (const ecaType of ECA_METADATA_TYPES) {
       if (restorePackage?.[ecaType]) {
         delete restorePackage[ecaType];
         ecaRemoved = true;
