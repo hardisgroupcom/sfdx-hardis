@@ -6,6 +6,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
 import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
+import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
 import {
@@ -39,6 +40,14 @@ interface ProjectConnectedApp {
   fullName: string;
   filePath: string;
   type: string;
+}
+
+interface RefreshActionRow {
+  step: string;
+  type: string;
+  name: string;
+  status: string;
+  details: string;
 }
 
 export default class OrgRefreshAfterRefresh extends SfCommand<AnyJson> {
@@ -120,6 +129,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected conn: Connection;
   protected instanceUrl: any;
   protected orgId: string;
+  protected refreshActions: RefreshActionRow[] = [];
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgRefreshAfterRefresh);
@@ -176,6 +186,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // 7. Restore Connected Apps
     await this.restoreConnectedApps();
 
+    await this.generateActionsReport();
+
     return this.result;
   }
 
@@ -185,6 +197,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const certsPackageXml = path.join(manifestDir, 'package-certificates-to-save.xml');
     if (!fs.existsSync(certsDir) || !fs.existsSync(certsPackageXml)) {
       uxLog("log", this, c.yellow(t('noCertificatesBackupFoundSkippingCertificateRestore')));
+      this.refreshActions.push({ step: "Restore Certificates", type: "Certificate", name: "N/A", status: "Skipped", details: "No backup found" });
       return;
     }
     // Copy certs to a temporary folder for deployment
@@ -223,6 +236,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const selectedCerts = promptCerts.certs;
     if (selectedCerts.length === 0) {
       uxLog("log", this, c.yellow(t('noCertificatesSelectedForRestoreSkippingCertificate')));
+      this.refreshActions.push({ step: "Restore Certificates", type: "Certificate", name: "N/A", status: "Skipped", details: "No certificates selected" });
       return;
     }
 
@@ -235,10 +249,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       initial: true
     });
     if (!prompt.restore) {
+      for (const cert of selectedCerts) {
+        this.refreshActions.push({ step: "Restore Certificates", type: "Certificate", name: cert, status: "Skipped", details: "User cancelled" });
+      }
       return;
     }
-
-    // Create manifest/package.xml within mdApiCertsRestoreFolder
     const packageXmlCerts = {
       "Certificate": selectedCerts
     }
@@ -252,6 +267,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       { output: true, fail: true, cwd: this.saveProjectPath }
     );
     uxLog("success", this, c.green(t('certificatesRestoredSuccessfullyInOrg', { instanceUrl: this.instanceUrl })));
+    for (const cert of selectedCerts) {
+      this.refreshActions.push({ step: "Restore Certificates", type: "Certificate", name: cert, status: "Success", details: "" });
+    }
   }
 
   private async restoreOtherMetadata(): Promise<void> {
@@ -260,6 +278,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // Check if the restore package.xml exists
     if (!fs.existsSync(restorePackageXml)) {
       uxLog("log", this, c.yellow(t('noPackageMetadataToRestoreXmlFound')));
+      this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Skipped", details: "No backup found" });
       return;
     }
     // Warn user about the restore package.xml that needs to be manually checked
@@ -282,6 +301,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     if (!prompt.restore) {
       uxLog("warning", this, c.yellow(t('metadataRestoreCancelledByUser')));
       this.result = Object.assign(this.result, { success: false, message: t('metadataRestoreCancelledByUser') });
+      this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Skipped", details: "User cancelled" });
       return;
     }
     // Deploy the metadata using the package.xml
@@ -290,10 +310,12 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const deployResult = await execSfdxJson(deployCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
     if (deployResult.status === 0) {
       uxLog("success", this, c.green(t('otherMetadataRestoredSuccessfullyInOrg', { instanceUrl: this.instanceUrl })));
+      this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Success", details: metadataSummary });
     }
     else {
       uxLog("error", this, c.red(t('failedToRestoreOtherMetadataInOrg', { instanceUrl: this.instanceUrl, deployResult: deployResult.error })));
       this.result = Object.assign(this.result, { success: false, message: t('failedToRestoreOtherMetadata', { deployResult: deployResult.error }) });
+      this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Error", details: deployResult.error || "Deployment failed" });
       throw new Error(`Failed to restore other metadata:\n${JSON.stringify(deployResult, null, 2)}`);
     }
   }
@@ -411,6 +433,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       uxLog("error", this, c.red(t('errorsOccurredDuringSamlSsoConfigProcessing', { errors: errors.join('\n') })));
       this.result = Object.assign(this.result, { success: false, message: t('samlSsoConfigProcessingErrors', { errors: errors.join('\n') }) });
     }
+    for (const name of updated) {
+      this.refreshActions.push({ step: "Restore SAML SSO Configs", type: "SamlSsoConfig", name, status: "Success", details: "" });
+    }
+    for (const errMsg of errors) {
+      const name = errMsg.split(':')[0].replace('No certificate selected for ', '').replace('Deployment cancelled for ', '').trim();
+      this.refreshActions.push({ step: "Restore SAML SSO Configs", type: "SamlSsoConfig", name, status: "Error", details: errMsg });
+    }
   }
 
   private async restoreCustomSettings(): Promise<void> {
@@ -449,6 +478,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const selectedSettings = promptRestore.settings;
     if (selectedSettings.length === 0) {
       uxLog("log", this, c.yellow(t('noCustomSettingsSelectedForRestoreSkipping')));
+      this.refreshActions.push({ step: "Restore Custom Settings", type: "CustomSetting", name: "N/A", status: "Skipped", details: "No custom settings selected" });
       return;
     }
 
@@ -462,6 +492,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     if (!prompt.restore) {
       uxLog("warning", this, c.yellow(t('customSettingsRestoreCancelledByUser')));
+      this.refreshActions.push({ step: "Restore Custom Settings", type: "CustomSetting", name: "N/A", status: "Skipped", details: "User cancelled" });
       return;
     }
     uxLog("action", this, c.cyan(t('restoringCustomSettings', { selectedSettings: selectedSettings.length })));
@@ -545,6 +576,12 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       const failedSettingsNames = failedSettings.map(name => "- " + name).join('\n');
       uxLog("error", this, c.red(t('failedToRestoreCustomSetting', { failedSettings: failedSettings.length, failedSettingsNames })));
     }
+    for (const cs of successSettings) {
+      this.refreshActions.push({ step: "Restore Custom Settings", type: "CustomSetting", name: cs, status: "Success", details: "" });
+    }
+    for (const cs of failedSettings) {
+      this.refreshActions.push({ step: "Restore Custom Settings", type: "CustomSetting", name: cs, status: "Error", details: "Restore failed" });
+    }
   }
 
   private async restoreRecords(): Promise<void> {
@@ -556,6 +593,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     if (!(Array.isArray(sfdmuWorkspaces) && sfdmuWorkspaces.length > 0)) {
       uxLog("warning", this, c.yellow(t('noDataWorkspaceFoundSkippingRecordRestore')));
+      this.refreshActions.push({ step: "Restore Records", type: "Records", name: "N/A", status: "Skipped", details: "No data workspace found" });
       return;
     }
 
@@ -568,6 +606,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     if (!confirmRestore.confirm) {
       uxLog("warning", this, c.yellow(t('recordRestoreCancelledByUser')));
+      this.refreshActions.push({ step: "Restore Records", type: "Records", name: "N/A", status: "Skipped", details: "User cancelled" });
       return;
     }
 
@@ -576,6 +615,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         targetUsername: this.orgUsername,
         cwd: this.saveProjectPath,
       });
+      this.refreshActions.push({ step: "Restore Records", type: "Records", name: sfdmuPath, status: "Success", details: "" });
     }
   }
 
@@ -584,6 +624,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const ecaNames = getEcaNames(this.saveProjectPath);
     if (ecaNames.length === 0) {
       uxLog("log", this, c.grey(t('noExternalClientAppsFoundInBackup')));
+      this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Skipped", details: "No backup found" });
       return;
     }
 
@@ -598,6 +639,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
 
     if (!promptRestore.confirmRestore) {
+      this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Skipped", details: "User cancelled" });
       return;
     }
 
@@ -616,8 +658,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     try {
       await deployExternalClientApps(this.orgUsername, this.instanceUrl, this.saveProjectPath, this);
+      for (const ecaName of ecaNames) {
+        this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Success", details: "" });
+      }
     } catch (error: any) {
       uxLog("error", this, c.red(t('errorProcessing', { app: 'External Client Apps', error: error.message || error })));
+      for (const ecaName of ecaNames) {
+        this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Error", details: error.message || String(error) });
+      }
     }
   }
 
@@ -676,6 +724,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           selectedApps.map(app => app.fullName)
         );
         this.result = Object.assign(this.result, restoreResult);
+        for (const app of selectedApps) {
+          this.refreshActions.push({ step: "Restore Connected Apps", type: "ConnectedApp", name: app.fullName, status: "Success", details: "" });
+        }
       } catch (error: any) {
         const restoreResult = handleConnectedAppError(error, this);
         this.result = Object.assign(this.result, restoreResult);
@@ -849,5 +900,16 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     await deployConnectedApps(orgUsername, connectedAppsList, this, this.saveProjectPath);
 
     uxLog("success", this, c.green(t('deploymentOfConnectedAppCompletedSuccessfully', { connectedApps: connectedApps.length })));
+  }
+
+  private async generateActionsReport(): Promise<void> {
+    if (this.refreshActions.length === 0) {
+      return;
+    }
+    uxLog("action", this, c.cyan(t('generatingSandboxRefreshActionsReport')));
+    const reportPath = await generateReportPath('sandbox-refresh-after-actions', '');
+    await generateCsvFile(this.refreshActions, reportPath, {
+      fileTitle: t('sandboxRefreshActionsReport')
+    });
   }
 }

@@ -20,6 +20,14 @@ export const ECA_METADATA_TYPES = [
   'ExtlClntAppConfigurablePolicies',
 ];
 
+// Folder and file extension for each satellite metadata type.
+export const ECA_SATELLITE_META: Record<string, { dir: string; fileSuffix: string }> = {
+  'ExtlClntAppOauthSettings':             { dir: 'extlClntAppOauthSettings',   fileSuffix: 'ecaOauth-meta.xml' },
+  'ExtlClntAppGlobalOauthSettings':       { dir: 'extlClntAppGlobalOauthSets', fileSuffix: 'ecaGlblOauth-meta.xml' },
+  'ExtlClntAppOauthConfigurablePolicies': { dir: 'extlClntAppOauthPolicies',   fileSuffix: 'ecaOauthPlcy-meta.xml' },
+  'ExtlClntAppConfigurablePolicies':      { dir: 'extlClntAppPolicies',        fileSuffix: 'ecaPlcy-meta.xml' },
+};
+
 // Suffix appended to the app name to form the member name for each satellite type.
 // ExternalClientApplication uses no suffix (member == appName).
 export const ECA_SATELLITE_SUFFIXES: Record<string, string> = {
@@ -371,6 +379,22 @@ export async function deployExternalClientApps(
 
   // Phase 1: Deploy ExternalClientApplication parent type only.
   // Satellite types (OAuth settings, policies) require the parent to exist first.
+  // Before Phase 1: strip <orgScopedExternalApp> from ExternalClientApplication files.
+  // This tag is org-specific and breaks deployment on fresh/refreshed orgs.
+  const ecaFolder = path.join(saveProjectPath, 'force-app', 'main', 'default', 'externalClientApps');
+  if (fs.existsSync(ecaFolder)) {
+    const ecaFiles = fs.readdirSync(ecaFolder).filter(f => f.endsWith('.externalClientApp-meta.xml'));
+    for (const ecaFile of ecaFiles) {
+      const filePath = path.join(ecaFolder, ecaFile);
+      const xmlContent = await fs.readFile(filePath, 'utf8');
+      if (xmlContent.includes('<orgScopedExternalApp>')) {
+        const updated = xmlContent.replace(/<orgScopedExternalApp>.*?<\/orgScopedExternalApp>\s*/gs, '');
+        await fs.writeFile(filePath, updated);
+        uxLog("log", command, c.grey(t('removingOrgScopedExternalAppFromEca', { file: ecaFile })));
+      }
+    }
+  }
+
   const ecaPackageXmlPhase1 = path.join(saveProjectPath, 'manifest', 'package-eca-to-restore-phase1.xml');
   await writePackageXmlFile(ecaPackageXmlPhase1, { ExternalClientApplication: ecaContent['ExternalClientApplication'] });
   uxLog("action", command, c.cyan(t('restoringExternalClientAppsStep1')));
@@ -397,9 +421,24 @@ export async function deployExternalClientApps(
   }
 
   // Phase 2: Deploy all satellite types now that the parent ECAs exist in the org.
-  const satelliteContent = Object.fromEntries(
-    Object.entries(ecaContent).filter(([type]) => type !== 'ExternalClientApplication')
-  );
+  // Only include members for which a metadata file actually exists in the backup.
+  const forceAppDefault = path.join(saveProjectPath, 'force-app', 'main', 'default');
+  const satelliteContent: Record<string, string[]> = {};
+  for (const [type, members] of Object.entries(ecaContent)) {
+    if (type === 'ExternalClientApplication') continue;
+    const meta = ECA_SATELLITE_META[type];
+    if (!meta) continue;
+    const presentMembers = members.filter(member => {
+      const filePath = path.join(forceAppDefault, meta.dir, `${member}.${meta.fileSuffix}`);
+      return fs.existsSync(filePath);
+    });
+    if (presentMembers.length > 0) {
+      satelliteContent[type] = presentMembers;
+      uxLog("log", command, c.grey(t('ecaSatelliteTypeFilesFound', { type, count: presentMembers.length })));
+    } else {
+      uxLog("log", command, c.grey(t('ecaSatelliteTypeNoFilesFound', { type })));
+    }
+  }
   const ecaPackageXmlPhase2 = path.join(saveProjectPath, 'manifest', 'package-eca-to-restore-phase2.xml');
   await writePackageXmlFile(ecaPackageXmlPhase2, satelliteContent);
   uxLog("action", command, c.cyan(t('restoringExternalClientAppsStep2')));

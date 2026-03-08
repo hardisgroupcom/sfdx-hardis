@@ -8,6 +8,7 @@ import axios from 'axios';
 import path from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
 import { execCommand, execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
+import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getChromeExecutablePath } from '../../../../common/utils/orgConfigUtils.js';
@@ -53,6 +54,14 @@ interface BrowserContext {
   browser: Browser;
   instanceUrl: string;
   accessToken: string;
+}
+
+interface RefreshActionRow {
+  step: string;
+  type: string;
+  name: string;
+  status: string;
+  details: string;
 }
 
 export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
@@ -138,6 +147,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected processAll: boolean;
   protected nameFilter: string | undefined;
   protected deleteApps: boolean;
+  protected refreshActions: RefreshActionRow[] = [];
 
 
   public async run(): Promise<AnyJson> {
@@ -161,6 +171,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
 
     this.saveProjectPath = await this.createSaveProject();
+    this.refreshActions.push({ step: "Create Save Project", type: "Project", name: path.basename(this.saveProjectPath), status: "Success", details: this.saveProjectPath });
 
     await this.retrieveCertificates();
 
@@ -173,6 +184,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     await this.saveExternalClientApps();
 
     await this.retrieveDeleteConnectedApps(accessToken);
+
+    await this.generateActionsReport();
 
     return this.result;
   }
@@ -242,6 +255,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const selectedEcaNames: string[] = selectPrompt.selectedApps || [];
     if (selectedEcaNames.length === 0) {
       uxLog("warning", this, c.yellow(t('noExternalClientAppsSelected')));
+      this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Skipped", details: "No External Client Apps selected" });
       return;
     }
 
@@ -293,11 +307,18 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           // Also delete Connected Apps with the same name as deleted ECAs
           await deleteConflictingConnectedApps(this.orgUsername, ecaNames, this.saveProjectPath, this);
         }
+        for (const ecaName of selectedEcaNames) {
+          this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Success", details: deleteEcas ? "Saved and deleted from org" : "Saved" });
+        }
       } else {
         uxLog("log", this, c.grey(t('noExternalClientAppsFoundInTheOrg')));
+        this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Warning", details: "No External Client Apps retrieved from org" });
       }
     } catch (error: any) {
       uxLog("warning", this, c.yellow(t('noExternalClientAppsFoundInTheOrg')));
+      for (const ecaName of selectedEcaNames) {
+        this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Error", details: "Retrieval failed" });
+      }
     }
   }
 
@@ -375,6 +396,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         // Add a summary message at the end
         if (updatedApps.length > 0) {
           uxLog("success", this, c.green(t('successfullySavedLocallyConnectedAppWithTheir', { updatedApps: updatedApps.length })));
+        }
+
+        for (const app of updatedApps) {
+          this.refreshActions.push({ step: "Save Connected Apps", type: "ConnectedApp", name: app.fullName, status: "Success", details: app.consumerSecret ? "Consumer Secret captured" : "No Consumer Secret" });
+        }
+        const appsWithoutSecret = selectedApps.filter((a: ConnectedApp) => !updatedApps.some((u: ConnectedApp) => u.fullName === a.fullName));
+        for (const app of appsWithoutSecret) {
+          this.refreshActions.push({ step: "Save Connected Apps", type: "ConnectedApp", name: app.fullName, status: "Warning", details: "Saved but Consumer Secret not captured" });
         }
 
         uxLog("success", this, c.cyan(t('savedRefreshSandboxConfigurationInConfigSfdx')));
@@ -856,6 +885,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       });
       if (!promptResponse.retrieveAgain) {
         uxLog("log", this, c.grey(t('skippingMetadataRetrievalAsItAlreadyExists', { saveProjectPath: this.saveProjectPath })));
+        this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Skipped", details: "Already exists - user skipped" });
         return;
       }
     }
@@ -867,6 +897,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // Retrieve metadata from org using the package XML
     if (!savePackageXml) {
       uxLog("log", this, c.grey(t('skippingMetadataRetrievalUserChoice')));
+      this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Skipped", details: "User choice" });
       return;
     }
 
@@ -875,6 +906,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     // Generate new package.xml from saveProjectPath, and remove ConnectedApps from it
     await this.generatePackageXmlToRestore();
+    this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Success", details: "" });
   }
 
   private async createSavePackageXml(): Promise<string | null> {
@@ -976,6 +1008,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     if (!promptCerts.retrieveCerts) {
       uxLog("log", this, c.grey(`Skipping Certificates retrieval as per user choice`));
+      this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Skipped", details: "User choice" });
       return;
     }
 
@@ -1006,6 +1039,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       this,
       { output: true, fail: true, cwd: this.saveProjectPath }
     );
+    this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Success", details: "" });
   }
 
   private async saveCustomSettings(): Promise<void> {
@@ -1047,6 +1081,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     if (selectedSettings.settings.length === 0) {
       uxLog("warning", this, c.yellow(t('noCustomSettingsSelectedForRetrieval')));
+      this.refreshActions.push({ step: "Save Custom Settings", type: "CustomSetting", name: "N/A", status: "Skipped", details: "No custom settings selected" });
       return;
     }
     this.refreshSandboxConfig.customSettings = selectedSettings.settings.sort();
@@ -1124,6 +1159,15 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       const errorCsNames = errorCs.map(cs => "- " + cs).join('\n');
       uxLog("error", this, c.red(t('failedToRetrieveCustomSettings', { errorCsNames })));
     }
+    for (const cs of successCs) {
+      this.refreshActions.push({ step: "Save Custom Settings", type: "CustomSetting", name: cs, status: "Success", details: "" });
+    }
+    for (const cs of emptyCs) {
+      this.refreshActions.push({ step: "Save Custom Settings", type: "CustomSetting", name: cs, status: "Warning", details: "No records in org" });
+    }
+    for (const cs of errorCs) {
+      this.refreshActions.push({ step: "Save Custom Settings", type: "CustomSetting", name: cs, status: "Error", details: "Retrieval failed" });
+    }
   }
 
   private async saveRecords(): Promise<void> {
@@ -1131,6 +1175,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     if (!hasDataWs) {
       uxLog("action", this, c.yellow(t('noDataWorkspacesFoundInTheProject')));
       uxLog("log", this, c.grey(t('youCanCreateDataWorkspacesUsingHardis', { CONSTANTS: CONSTANTS.DOC_URL_ROOT })));
+      this.refreshActions.push({ step: "Save Records", type: "Records", name: "N/A", status: "Skipped", details: "No data workspaces in project" });
       return;
     }
 
@@ -1141,6 +1186,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     });
     if (!(Array.isArray(sfdmuWorkspaces) && sfdmuWorkspaces.length > 0)) {
       uxLog("warning", this, c.yellow(t('noDataWorkspaceSelectedSkippingRecordSaving')));
+      this.refreshActions.push({ step: "Save Records", type: "Records", name: "N/A", status: "Skipped", details: "No data workspace selected" });
       return;
     }
     this.refreshSandboxConfig.dataWorkspaces = sfdmuWorkspaces.sort();
@@ -1165,6 +1211,18 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         sourceUsername: this.orgUsername,
         cwd: this.saveProjectPath
       });
+      this.refreshActions.push({ step: "Save Records", type: "Records", name: sfdmuPath, status: "Success", details: "" });
     }
+  }
+
+  private async generateActionsReport(): Promise<void> {
+    if (this.refreshActions.length === 0) {
+      return;
+    }
+    uxLog("action", this, c.cyan(t('generatingSandboxRefreshActionsReport')));
+    const reportPath = await generateReportPath('sandbox-refresh-before-actions', '');
+    await generateCsvFile(this.refreshActions, reportPath, {
+      fileTitle: t('sandboxRefreshActionsReport')
+    });
   }
 }
