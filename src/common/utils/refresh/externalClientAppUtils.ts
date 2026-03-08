@@ -22,10 +22,10 @@ export const ECA_METADATA_TYPES = [
 
 // Folder and file extension for each satellite metadata type.
 export const ECA_SATELLITE_META: Record<string, { dir: string; fileSuffix: string }> = {
-  'ExtlClntAppOauthSettings':             { dir: 'extlClntAppOauthSettings',   fileSuffix: 'ecaOauth-meta.xml' },
-  'ExtlClntAppGlobalOauthSettings':       { dir: 'extlClntAppGlobalOauthSets', fileSuffix: 'ecaGlblOauth-meta.xml' },
-  'ExtlClntAppOauthConfigurablePolicies': { dir: 'extlClntAppOauthPolicies',   fileSuffix: 'ecaOauthPlcy-meta.xml' },
-  'ExtlClntAppConfigurablePolicies':      { dir: 'extlClntAppPolicies',        fileSuffix: 'ecaPlcy-meta.xml' },
+  'ExtlClntAppOauthSettings': { dir: 'extlClntAppOauthSettings', fileSuffix: 'ecaOauth-meta.xml' },
+  'ExtlClntAppGlobalOauthSettings': { dir: 'extlClntAppGlobalOauthSets', fileSuffix: 'ecaGlblOauth-meta.xml' },
+  'ExtlClntAppOauthConfigurablePolicies': { dir: 'extlClntAppOauthPolicies', fileSuffix: 'ecaOauthPlcy-meta.xml' },
+  'ExtlClntAppConfigurablePolicies': { dir: 'extlClntAppPolicies', fileSuffix: 'ecaPlcy-meta.xml' },
 };
 
 // Suffix appended to the app name to form the member name for each satellite type.
@@ -295,16 +295,16 @@ export async function deleteExternalClientApps(
   saveProjectPath: string,
   command: SfCommand<any>,
   skipPrompt = false
-): Promise<void> {
+): Promise<string[]> {
   if (ecaNames.length === 0) {
-    return;
+    return [];
   }
 
   // Only check for global OAuth files - those are the ones with credentials
   const globalOauthFolder = path.join(saveProjectPath, 'force-app', 'main', 'default', 'extlClntAppGlobalOauthSets');
   if (!fs.existsSync(globalOauthFolder) || fs.readdirSync(globalOauthFolder).filter(f => f.endsWith('.ecaGlblOauth-meta.xml')).length === 0) {
     // No global OAuth settings means no credentials to protect - skip deletion
-    return;
+    return [];
   }
 
   if (!skipPrompt && !isCI) {
@@ -317,7 +317,7 @@ export async function deleteExternalClientApps(
       initial: false
     });
     if (!deletePrompt.delete) {
-      return;
+      return [];
     }
   }
 
@@ -357,23 +357,28 @@ export async function deleteExternalClientApps(
       { output: true, fail: true, cwd: saveProjectPath }
     );
     uxLog("success", command, c.green(t('externalClientAppsDeletedSuccessfully')));
+    // Clean up
+    await fs.remove(tmpDir);
+    return ecaNames;
   } catch (deleteError: any) {
     uxLog("error", command, c.red(t('errorProcessing', { app: 'External Client Apps', error: deleteError.message || String(deleteError) })));
   }
 
   // Clean up
   await fs.remove(tmpDir);
+  return [];
 }
 
 /**
  * Deploy External Client Apps metadata to an org.
+ * Returns a map of metadataType -> deployed member names.
  */
 export async function deployExternalClientApps(
   orgUsername: string,
   instanceUrl: string,
   saveProjectPath: string,
   command: SfCommand<any>
-): Promise<void> {
+): Promise<Record<string, string[]>> {
   const ecaNames = getEcaNames(saveProjectPath);
   const ecaContent = getEcaPackageContent(ecaNames.length > 0 ? ecaNames : undefined);
 
@@ -449,6 +454,11 @@ export async function deployExternalClientApps(
   );
 
   uxLog("success", command, c.green(t('externalClientAppsRestoredSuccessfully', { instanceUrl })));
+
+  return {
+    ExternalClientApplication: ecaContent['ExternalClientApplication'] ?? [],
+    ...satelliteContent,
+  };
 }
 
 /**
@@ -460,9 +470,9 @@ export async function deleteConflictingConnectedApps(
   ecaNames: string[],
   saveProjectPath: string,
   command: SfCommand<any>
-): Promise<void> {
+): Promise<string[]> {
   if (ecaNames.length === 0) {
-    return;
+    return [];
   }
   uxLog("action", command, c.cyan(t('checkingForConflictingConnectedAppsAndExtClientAppToDelete')));
   // Query for Connected Apps with the same names as External Client Apps
@@ -476,7 +486,7 @@ export async function deleteConflictingConnectedApps(
   );
 
   if (conflicting.length === 0) {
-    return;
+    return [];
   }
 
   const names = conflicting.map(ca => ca.fullName).join(', ');
@@ -491,11 +501,12 @@ export async function deleteConflictingConnectedApps(
       initial: true
     });
     if (!deletePrompt.delete) {
-      return;
+      return [];
     }
   }
 
   uxLog("action", command, c.cyan(t('deletingConflictingConnectedApps')));
   await deleteConnectedApps(orgUsername, conflicting, command, saveProjectPath);
   uxLog("success", command, c.green(t('conflictingConnectedAppsDeleted')));
+  return conflicting.map(ca => ca.fullName);
 }

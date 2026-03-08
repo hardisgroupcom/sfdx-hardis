@@ -310,12 +310,24 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const deployResult = await execSfdxJson(deployCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
     if (deployResult.status === 0) {
       uxLog("success", this, c.green(t('otherMetadataRestoredSuccessfullyInOrg', { instanceUrl: this.instanceUrl })));
-      this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Success", details: metadataSummary });
+      for (const [metadataType, items] of Object.entries(metadataRestore)) {
+        const itemNames = Array.isArray(items) ? items.join(', ') : String(items);
+        this.refreshActions.push({ step: "Restore Other Metadata", type: metadataType, name: itemNames, status: "Success", details: "" });
+      }
+      if (Object.keys(metadataRestore).length === 0) {
+        this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Success", details: metadataSummary });
+      }
     }
     else {
       uxLog("error", this, c.red(t('failedToRestoreOtherMetadataInOrg', { instanceUrl: this.instanceUrl, deployResult: deployResult.error })));
       this.result = Object.assign(this.result, { success: false, message: t('failedToRestoreOtherMetadata', { deployResult: deployResult.error }) });
-      this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Error", details: deployResult.error || "Deployment failed" });
+      for (const [metadataType, items] of Object.entries(metadataRestore)) {
+        const itemNames = Array.isArray(items) ? items.join(', ') : String(items);
+        this.refreshActions.push({ step: "Restore Other Metadata", type: metadataType, name: itemNames, status: "Error", details: deployResult.error || "Deployment failed" });
+      }
+      if (Object.keys(metadataRestore).length === 0) {
+        this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Error", details: deployResult.error || "Deployment failed" });
+      }
       throw new Error(`Failed to restore other metadata:\n${JSON.stringify(deployResult, null, 2)}`);
     }
   }
@@ -644,7 +656,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
 
     // Delete Connected Apps that conflict with External Client Apps before deploying
-    await deleteConflictingConnectedApps(this.orgUsername, ecaNames, this.saveProjectPath, this);
+    const deletedConflictingApps = await deleteConflictingConnectedApps(this.orgUsername, ecaNames, this.saveProjectPath, this);
+    for (const name of deletedConflictingApps) {
+      this.refreshActions.push({ step: "Delete Conflicting Connected Apps", type: "ConnectedApp", name, status: "Success", details: "Deleted before ECA restore" });
+    }
 
     // Delete ECAs that already exist in the org with the same name to avoid conflicts
     const existingEcaNamesInOrg = await listExternalClientAppNames(this.orgUsername, this);
@@ -653,13 +668,22 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     );
     if (ecasToDelete.length > 0) {
       uxLog("warning", this, c.yellow(t('existingEcasFoundInOrgWillBeDeleted', { count: ecasToDelete.length, names: ecasToDelete.join(', ') })));
-      await deleteExternalClientApps(this.orgUsername, ecasToDelete, this.saveProjectPath, this, true);
+      const deletedEcaNames = await deleteExternalClientApps(this.orgUsername, ecasToDelete, this.saveProjectPath, this, true);
+      for (const name of deletedEcaNames) {
+        this.refreshActions.push({ step: "Delete Existing ECAs", type: "ExternalClientApp", name, status: "Success", details: "Deleted before ECA restore" });
+      }
+      const notDeletedEcas = ecasToDelete.filter(n => !deletedEcaNames.includes(n));
+      for (const name of notDeletedEcas) {
+        this.refreshActions.push({ step: "Delete Existing ECAs", type: "ExternalClientApp", name, status: "Error", details: "Deletion failed" });
+      }
     }
 
     try {
-      await deployExternalClientApps(this.orgUsername, this.instanceUrl, this.saveProjectPath, this);
-      for (const ecaName of ecaNames) {
-        this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Success", details: "" });
+      const deployedItems = await deployExternalClientApps(this.orgUsername, this.instanceUrl, this.saveProjectPath, this);
+      for (const [metadataType, members] of Object.entries(deployedItems)) {
+        for (const memberName of members) {
+          this.refreshActions.push({ step: "Restore External Client Apps", type: metadataType, name: memberName, status: "Success", details: "" });
+        }
       }
     } catch (error: any) {
       uxLog("error", this, c.red(t('errorProcessing', { app: 'External Client Apps', error: error.message || error })));

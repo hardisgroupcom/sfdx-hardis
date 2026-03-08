@@ -303,9 +303,19 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           deleteEcas = deletePrompt.delete;
         }
         if (deleteEcas) {
-          await deleteExternalClientApps(this.orgUsername, ecaNames, this.saveProjectPath, this, true);
+          const deletedEcaNames = await deleteExternalClientApps(this.orgUsername, ecaNames, this.saveProjectPath, this, true);
+          for (const name of deletedEcaNames) {
+            this.refreshActions.push({ step: "Delete External Client Apps", type: "ExternalClientApp", name, status: "Success", details: "Deleted from org before refresh" });
+          }
+          const notDeletedEcas = ecaNames.filter(n => !deletedEcaNames.includes(n));
+          for (const name of notDeletedEcas) {
+            this.refreshActions.push({ step: "Delete External Client Apps", type: "ExternalClientApp", name, status: "Error", details: "Deletion failed" });
+          }
           // Also delete Connected Apps with the same name as deleted ECAs
-          await deleteConflictingConnectedApps(this.orgUsername, ecaNames, this.saveProjectPath, this);
+          const deletedConflictingApps = await deleteConflictingConnectedApps(this.orgUsername, ecaNames, this.saveProjectPath, this);
+          for (const name of deletedConflictingApps) {
+            this.refreshActions.push({ step: "Delete Conflicting Connected Apps", type: "ConnectedApp", name, status: "Success", details: "Deleted from org before refresh" });
+          }
         }
         for (const ecaName of selectedEcaNames) {
           this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Success", details: deleteEcas ? "Saved and deleted from org" : "Saved" });
@@ -905,8 +915,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     await this.retrieveMetadatasToSave(savePackageXml);
 
     // Generate new package.xml from saveProjectPath, and remove ConnectedApps from it
-    await this.generatePackageXmlToRestore();
-    this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Success", details: "" });
+    const restoredPackage = await this.generatePackageXmlToRestore();
+    for (const [metadataType, items] of Object.entries(restoredPackage)) {
+      const itemNames = Array.isArray(items) ? items.join(', ') : String(items);
+      this.refreshActions.push({ step: "Save Metadata", type: metadataType, name: itemNames, status: "Success", details: "" });
+    }
+    if (Object.keys(restoredPackage).length === 0) {
+      this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Success", details: "" });
+    }
   }
 
   private async createSavePackageXml(): Promise<string | null> {
@@ -958,7 +974,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     );
   }
 
-  private async generatePackageXmlToRestore() {
+  private async generatePackageXmlToRestore(): Promise<Record<string, string[]>> {
     uxLog("action", this, c.cyan(t('generatingNewPackageXmlFromSavedProject', { saveProjectPath: this.saveProjectPath })));
     const restorePackageXmlFileName = 'package-metadata-to-restore.xml';
     const restorePackageXmlFile = path.join(this.saveProjectPath, 'manifest', restorePackageXmlFileName);
@@ -996,6 +1012,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       await writePackageXmlFile(restorePackageXmlFile, restorePackage);
       uxLog("log", this, c.grey(t('removedExternalClientAppsFromRestorePackage', { restorePackageXmlFileName })));
     }
+    return restorePackage;
   }
 
   private async retrieveCertificates() {
@@ -1039,7 +1056,16 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       this,
       { output: true, fail: true, cwd: this.saveProjectPath }
     );
-    this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Success", details: "" });
+    const savedCertNames = fs.readdirSync(certsDir)
+      .filter(f => f.endsWith('.crt'))
+      .map(f => path.basename(f, '.crt'));
+    if (savedCertNames.length > 0) {
+      for (const certName of savedCertNames) {
+        this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: certName, status: "Success", details: "" });
+      }
+    } else {
+      this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Success", details: "" });
+    }
   }
 
   private async saveCustomSettings(): Promise<void> {
