@@ -1676,8 +1676,6 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
 }
 
 function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelExportOptions) {
-  worksheet.autoFilter = 'A1:Z1';
-
   if (!worksheet.columns) {
     return;
   }
@@ -1708,6 +1706,57 @@ function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelEx
   });
 
   const shouldAutoFit = worksheet.rowCount < 5000;
+
+  // Add an Excel table (Insert > Table equivalent) for small-to-medium datasets
+  if (shouldAutoFit && worksheet.rowCount > 1 && worksheet.columnCount > 0) {
+    const lastCol = worksheet.columnCount;
+    const lastRow = worksheet.rowCount;
+
+    // Build unique column names — Excel tables require all column names to be distinct
+    const usedColumnNames = new Set<string>();
+    const tableColumns: { name: string; filterButton: boolean }[] = [];
+    for (let colNum = 1; colNum <= lastCol; colNum++) {
+      let colName = (headerByColumn.get(colNum) ?? '').trim() || `Column${colNum}`;
+      if (usedColumnNames.has(colName)) {
+        colName = `${colName}_${colNum}`;
+      }
+      usedColumnNames.add(colName);
+      tableColumns.push({ name: colName, filterButton: true });
+    }
+
+    // Snapshot existing cell values so addTable can rewrite them into the table range
+    const tableRows: any[][] = [];
+    for (let rowNum = 2; rowNum <= lastRow; rowNum++) {
+      const row = worksheet.getRow(rowNum);
+      const rowData: any[] = [];
+      for (let colNum = 1; colNum <= lastCol; colNum++) {
+        rowData.push(row.getCell(colNum).value ?? '');
+      }
+      tableRows.push(rowData);
+    }
+
+    const safeTableName = `Table_${(worksheet.name || 'Sheet').replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 25)}`;
+
+    try {
+      worksheet.addTable({
+        name: safeTableName,
+        ref: 'A1',
+        headerRow: true,
+        totalsRow: false,
+        style: {
+          theme: 'TableStyleMedium2',
+          showRowStripes: true,
+        },
+        columns: tableColumns,
+        rows: tableRows,
+      });
+    } catch (_e) {
+      // Table creation failed — fall back to a plain auto-filter
+      worksheet.autoFilter = 'A1:Z1';
+    }
+  } else {
+    worksheet.autoFilter = 'A1:Z1';
+  }
 
   worksheet.columns.forEach((column, idx) => {
     if (!column) {
