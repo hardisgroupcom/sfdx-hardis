@@ -359,8 +359,8 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
       uxLog("action", commandThis, c.cyan(t('retrievingMetadatasIn', { metadataFolder: c.green(metadataFolder) })));
       const retrieveCommand =
         'sf project retrieve start' +
-        ` --target-metadata-dir ${metadataFolder}` +
-        ` --manifest ${packageXml}` +
+        ` --target-metadata-dir "${metadataFolder}"` +
+        ` --manifest "${packageXml}"` +
         ` --wait ${process.env.SFDX_RETRIEVE_WAIT_MINUTES || '60'}` +
         (debug ? ' --verbose' : '');
       const retrieveRes = await execSfdxJson(retrieveCommand, this, {

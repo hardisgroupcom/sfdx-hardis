@@ -133,7 +133,7 @@ export async function deleteConnectedApps(
       uxLog("log", command, c.grey(t('deployingDestructiveChangesToDeleteConnectedApp', { connectedApps: connectedApps.length })));
       try {
         await execCommand(
-          `sf project deploy start --manifest ${packageXmlPath} --post-destructive-changes ${destructiveChangesPath} --target-org ${orgUsername} --ignore-warnings --ignore-conflicts --json`,
+          `sf project deploy start --manifest "${packageXmlPath}" --post-destructive-changes "${destructiveChangesPath}" --target-org ${orgUsername} --ignore-warnings --ignore-conflicts --json`,
           command,
           { output: true, fail: true, cwd: saveProjectPath }
         );
@@ -228,7 +228,7 @@ export async function retrieveConnectedApps(
       'retrieve',
       async (manifestPath, orgUsername, command) => {
         await execCommand(
-          `sf project retrieve start --manifest ${manifestPath} --target-org ${orgUsername} --ignore-conflicts --json`,
+          `sf project retrieve start --manifest "${manifestPath}" --target-org ${orgUsername} --ignore-conflicts --json`,
           command,
           { output: true, fail: true, cwd: saveProjectPath }
         );
@@ -253,7 +253,7 @@ export async function deployConnectedApps(
       'deploy',
       async (manifestPath, orgUsername, command) => {
         await execCommand(
-          `sf project deploy start --manifest ${manifestPath} --target-org ${orgUsername} --ignore-warnings --json`,
+          `sf project deploy start --manifest "${manifestPath}" --target-org ${orgUsername} --ignore-warnings --json`,
           command,
           { output: true, fail: true, cwd: saveProjectPath }
         );

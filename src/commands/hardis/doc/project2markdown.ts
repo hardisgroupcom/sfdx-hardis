@@ -355,7 +355,7 @@ ${this.htmlInstructions}
     this.tempDir = await createTempDir()
     // Convert source to metadata API format to build prompts
     uxLog("action", this, c.cyan(t('convertingSourceToMetadataApiFormatTo')));
-    await execCommand(`sf project convert source --metadata CustomObject --output-dir ${this.tempDir}`, this, { fail: true, output: true, debug: this.debugMode });
+    await execCommand(`sf project convert source --metadata CustomObject --output-dir "${this.tempDir}"`, this, { fail: true, output: true, debug: this.debugMode });
     this.objectFiles = (await glob("**/*.object", { cwd: this.tempDir, ignore: GLOB_IGNORE_PATTERNS }));
     sortCrossPlatform(this.objectFiles);
     this.allObjectsNames = this.objectFiles.map(object => path.basename(object, ".object"));
@@ -1786,7 +1786,7 @@ ${this.htmlInstructions}
         await fs.ensureDir(path.dirname(packageManifestFile));
         try {
           await execSfdxJson("sf project generate manifest" +
-            ` --source-dir ${packageDir.path}` +
+            ` --source-dir "${packageDir.path}"` +
             ` --name ${packageManifestFile}`, this,
             {
               fail: true,

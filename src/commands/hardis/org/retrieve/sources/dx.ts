@@ -159,7 +159,7 @@ The command's technical implementation involves:
     // Converting metadatas to sfdx
     uxLog("action", this, c.cyan(t('convertingMetadatasIntoSfdxSourcesIn', { sfdxFolder: c.green(sfdxFolder) })));
     process.chdir(sfdxFolder);
-    const mdapiConvertCommand = `sf project convert mdapi --root-dir ${path.join(metadataFolder, 'unpackaged')} ${debug ? '--verbose' : ''
+    const mdapiConvertCommand = `sf project convert mdapi --root-dir "${path.join(metadataFolder, 'unpackaged')}" ${debug ? '--verbose' : ''
       }`;
     uxLog("other", this, `[command] ${c.bold(c.grey(mdapiConvertCommand))}`);
     try {

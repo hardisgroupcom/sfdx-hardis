@@ -144,7 +144,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       'sf apex run test' +
       ' --code-coverage' +
       ' --result-format human' +
-      ` --output-dir ${reportDir}` +
+      ` --output-dir "${reportDir}"` +
       ` --wait ${getEnvVar("SFDX_TEST_WAIT_MINUTES") || '60'}` +
       ` --test-level ${testlevel}` +
       (orgUsername ? ` --target-org ${orgUsername}` : '') +

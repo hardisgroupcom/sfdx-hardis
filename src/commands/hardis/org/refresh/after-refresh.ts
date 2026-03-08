@@ -262,7 +262,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // Deploy using metadata API
     uxLog("log", this, c.grey(t('deployingCertificatesInOrgUsingMetadataApi', { instanceUrl: this.instanceUrl })));
     await execSfdxJson(
-      `sf project deploy start --metadata-dir ${mdApiCertsRestoreFolder} --target-org ${this.orgUsername}`,
+      `sf project deploy start --metadata-dir "${mdApiCertsRestoreFolder}" --target-org ${this.orgUsername}`,
       this,
       { output: true, fail: true, cwd: this.saveProjectPath }
     );
@@ -306,7 +306,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
     // Deploy the metadata using the package.xml
     uxLog("action", this, c.cyan(t('deployingOtherMetadatasToOrg')));
-    const deployCmd = `sf project deploy start --manifest ${restorePackageXml} --target-org ${this.orgUsername} --json`;
+    const deployCmd = `sf project deploy start --manifest "${restorePackageXml}" --target-org ${this.orgUsername} --json`;
     const deployResult = await execSfdxJson(deployCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
     if (deployResult.status === 0) {
       uxLog("success", this, c.green(t('otherMetadataRestoredSuccessfullyInOrg', { instanceUrl: this.instanceUrl })));
@@ -566,7 +566,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         }
       }
       // Import the custom setting using sf data tree import
-      const importCmd = `sf data tree import --files ${jsonFileForImport} --target-org ${this.orgUsername} --json`;
+      const importCmd = `sf data tree import --files "${jsonFileForImport}" --target-org ${this.orgUsername} --json`;
       try {
         const importRes = await execSfdxJson(importCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
         if (importRes.status === 0) {

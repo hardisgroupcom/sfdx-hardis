@@ -124,9 +124,9 @@ export default class DxSources extends SfCommand<any> {
         // sfdx-essentials still here but deprecated and will be removed
         const filterCommand =
           'sfdx essentials:metadata:filter-from-packagexml' +
-          ` -i ${this.deployDir}` +
-          ` -p ${packageXmlFile}` +
-          ` -o ${tmpDir}`;
+          ` -i "${this.deployDir}"` +
+          ` -p "${packageXmlFile}"` +
+          ` -o "${tmpDir}"`;
         this.deployDir = tmpDir;
         await execCommand(filterCommand, this, {
           output: true,

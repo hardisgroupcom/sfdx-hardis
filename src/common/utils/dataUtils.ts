@@ -32,7 +32,7 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
     'sf sfdmu:run' +
     ` --sourceusername csvfile` +
     ` --targetusername ${targetUsername}` + // Keep targetusername until sfdmu switches to target-org
-    ` -p ${sfdmuPath}` +
+    ` -p "${sfdmuPath}"` +
     ' --noprompt' +
     // Needed for production orgs
     (config.sfdmuCanModify || process.env.SFDMU_CAN_MODIFY ? ` --canmodify ${config.sfdmuCanModify || process.env.SFDMU_CAN_MODIFY}` : '');
@@ -76,7 +76,7 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
   const dataImportCommand =
     'sf sfdmu:run' +
     ` --sourceusername ${targetUsername}` +
-    ` -p ${sfdmuPath}` +
+    ` -p "${sfdmuPath}"` +
     ' --noprompt' +
     (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : '');
   elapseStart(`delete ${dtl?.full_label}`);
@@ -104,7 +104,7 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
   uxLog("log", commandThis, c.italic(c.grey(t('dataWorkspace') + JSON.stringify(dtl?.exportJson, null, 2))));
   const sourceUsername = options.sourceUsername || commandThis?.org?.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
-  const dataImportCommand = `sf sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath} --noprompt`;
+  const dataImportCommand = `sf sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p "${sfdmuPath}" --noprompt`;
   elapseStart(`export ${dtl?.full_label}`);
   const res = await executeSfdmuCommand(dataImportCommand, commandThis, {
     fail: true,

@@ -154,7 +154,7 @@ The command checks for uncommitted changes and will not run if the working tree 
 
     uxLog("action", this, c.cyan(t('retrievingMetadatasForProfilePurge')));
     await execCommand(
-      `sf project retrieve start --manifest ${packageFilteredProfilePath} --target-org ${orgUsername} --ignore-conflicts --json`,
+      `sf project retrieve start --manifest "${packageFilteredProfilePath}" --target-org ${orgUsername} --ignore-conflicts --json`,
       this,
       { output: false, fail: true }
     );

@@ -970,7 +970,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   private async retrieveMetadatasToSave(savePackageXml: string) {
     uxLog("action", this, c.cyan(`Retrieving metadatas to save...`));
     await execCommand(
-      `sf project retrieve start --manifest ${savePackageXml} --target-org ${this.orgUsername} --ignore-conflicts --json`,
+      `sf project retrieve start --manifest "${savePackageXml}" --target-org ${this.orgUsername} --ignore-conflicts --json`,
       this,
       { output: true, fail: true, cwd: this.saveProjectPath }
     );
@@ -1039,7 +1039,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     await fs.copy(certificatesPackageXml, packageCertsXml, { overwrite: true });
     uxLog("log", this, c.grey(t('retrievingCertificatesFromOrgUsingMetadataApi', { instanceUrl: this.instanceUrl })));
     await execSfdxJson(
-      `sf project retrieve start --manifest ${packageCertsXml} --target-org ${this.orgUsername} --target-metadata-dir ./mdapi_certs --unzip`,
+      `sf project retrieve start --manifest "${packageCertsXml}" --target-org ${this.orgUsername} --target-metadata-dir ./mdapi_certs --unzip`,
       this,
       { output: true, fail: true, cwd: this.saveProjectPath }
     );

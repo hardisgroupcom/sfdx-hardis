@@ -155,7 +155,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
       const authFile = path.join(await createTempDir(), 'sfdxScratchAuth.txt');
       await fs.writeFile(authFile, authUrl, 'utf8');
       const authCommand =
-        `sf org login sfdx-url -f ${authFile}` +
+        `sf org login sfdx-url -f "${authFile}"` +
         (isDevHub ? ` --set-default-dev-hub` : (setDefaultOrg ? ` --set-default` : '')) +
         (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
       await execCommand(authCommand, this, { fail: true, output: false });
@@ -210,7 +210,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         'sf org login jwt' +
         ` ${usernameArg}` +
         ` --client-id ${sfdxClientId}` +
-        ` --jwt-key-file ${crtKeyfile}` +
+        ` --jwt-key-file "${crtKeyfile}"` +
         ` --username ${username}` +
         ` --instance-url ${instanceUrl}` +
         (orgAlias && !options.forceUsername ? ` --alias ${orgAlias}` : '');

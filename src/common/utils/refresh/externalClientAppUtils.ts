@@ -100,7 +100,7 @@ export async function retrieveExternalClientApps(
 
   uxLog("action", command, c.cyan(t('retrievingExternalClientAppsFromOrg')));
   await execCommand(
-    `sf project retrieve start --manifest ${ecaPackageXml} --target-org ${orgUsername} --ignore-conflicts --json`,
+    `sf project retrieve start --manifest "${ecaPackageXml}" --target-org ${orgUsername} --ignore-conflicts --json`,
     command,
     { output: true, fail: false, cwd: saveProjectPath }
   );
@@ -352,7 +352,7 @@ export async function deleteExternalClientApps(
 
   try {
     await execCommand(
-      `sf project deploy start --manifest ${packageXmlPath} --post-destructive-changes ${destructiveChangesPath} --target-org ${orgUsername} --ignore-warnings --ignore-conflicts --json`,
+      `sf project deploy start --manifest "${packageXmlPath}" --post-destructive-changes "${destructiveChangesPath}" --target-org ${orgUsername} --ignore-warnings --ignore-conflicts --json`,
       command,
       { output: true, fail: true, cwd: saveProjectPath }
     );
@@ -404,7 +404,7 @@ export async function deployExternalClientApps(
   await writePackageXmlFile(ecaPackageXmlPhase1, { ExternalClientApplication: ecaContent['ExternalClientApplication'] });
   uxLog("action", command, c.cyan(t('restoringExternalClientAppsStep1')));
   await execCommand(
-    `sf project deploy start --manifest ${ecaPackageXmlPhase1} --target-org ${orgUsername} --ignore-conflicts --json`,
+    `sf project deploy start --manifest "${ecaPackageXmlPhase1}" --target-org ${orgUsername} --ignore-conflicts --json`,
     command,
     { output: true, fail: true, cwd: saveProjectPath }
   );
@@ -448,7 +448,7 @@ export async function deployExternalClientApps(
   await writePackageXmlFile(ecaPackageXmlPhase2, satelliteContent);
   uxLog("action", command, c.cyan(t('restoringExternalClientAppsStep2')));
   await execCommand(
-    `sf project deploy start --manifest ${ecaPackageXmlPhase2} --target-org ${orgUsername} --ignore-conflicts --json`,
+    `sf project deploy start --manifest "${ecaPackageXmlPhase2}" --target-org ${orgUsername} --ignore-conflicts --json`,
     command,
     { output: true, fail: true, cwd: saveProjectPath }
   );

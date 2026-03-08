@@ -411,11 +411,11 @@ export async function smartDeploy(
         ` --manifest "${deployment.packageXmlFile}"` +
         ' --ignore-warnings' + // So it does not fail in for objectTranslations stuff for example
         ' --ignore-conflicts' + // With CICD we are supposed to ignore them
-        ((hasCoverageFormatterJson || hasCoverageFormatterJsonSummary) ? ` --results-dir ${reportDir}` : '') +
+        ((hasCoverageFormatterJson || hasCoverageFormatterJsonSummary) ? ` --results-dir "${reportDir}"` : '') +
         ` --test-level ${testlevel}` +
         (options.testClasses && testlevel !== 'NoTestRun' ? ` --tests ${options.testClasses}` : '') +
-        (options.preDestructiveChanges ? ` --pre-destructive-changes ${options.preDestructiveChanges}` : '') +
-        (options.postDestructiveChanges && !(options.destructiveChangesAfterDeployment === true) ? ` --post-destructive-changes ${options.postDestructiveChanges}` : '') +
+        (options.preDestructiveChanges ? ` --pre-destructive-changes "${options.preDestructiveChanges}"` : '') +
+        (options.postDestructiveChanges && !(options.destructiveChangesAfterDeployment === true) ? ` --post-destructive-changes "${options.postDestructiveChanges}"` : '') +
         (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
         (hasCoverageFormatterJsonSummary ? ' --coverage-formatters json-summary' : '') +
         (hasCoverageFormatterJson ? ' --coverage-formatters json' : '') +
@@ -947,7 +947,7 @@ export async function buildDeployOnChangePackageXml(debugMode: boolean, options:
 
   // Retrieve sfdx sources in local git repo
   await execCommand(
-    `sf project retrieve start --manifest ${packageDeployOnChangePath}` +
+    `sf project retrieve start --manifest "${packageDeployOnChangePath}"` +
     (options.targetUsername ? ` --target-org ${options.targetUsername}` : ''),
     this,
     {
@@ -1058,7 +1058,7 @@ export async function deployDestructiveChanges(
   );
   await fs.copy(packageDeletedXmlFile, path.join(tmpDir, 'destructiveChanges.xml'));
   const deployDelete =
-    `sf project deploy ${options.check ? 'validate' : 'start'} --metadata-dir ${tmpDir}` +
+    `sf project deploy ${options.check ? 'validate' : 'start'} --metadata-dir "${tmpDir}"` +
     ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
     ` --test-level ${options.testLevel || 'NoTestRun'}` +
     ' --ignore-warnings' + // So it does not fail in case metadata is already deleted
@@ -1115,7 +1115,7 @@ export async function deployMetadatas(
   // Perform deployment
   let deployCommand =
     `sf project deploy ${options.check ? 'validate' : 'start'}` +
-    ` --metadata-dir ${options.deployDir || '.'}` +
+    ` --metadata-dir "${options.deployDir || '.'}"` +
     ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
     ` --test-level ${options.testlevel || 'RunLocalTests'}` +
     ` --api-version ${options.apiVersion || getApiVersion()}` +
@@ -1252,7 +1252,7 @@ export async function buildOrgManifest(
     await execCommand(
       `sf project generate manifest` +
       ` --name ${manifestName}` +
-      ` --output-dir ${path.resolve(manifestDir)}` +
+      ` --output-dir "${path.resolve(manifestDir)}"` +
       ` --include-packages managed,unlocked` +
       ` --from-org ${targetOrgUsernameAlias}`,
       this,
@@ -1269,7 +1269,7 @@ export async function buildOrgManifest(
     await execCommand(
       `sf project generate manifest` +
       ` --name ${manifestName}` +
-      ` --output-dir ${path.resolve(manifestDir)}` +
+      ` --output-dir "${path.resolve(manifestDir)}"` +
       ` --include-packages managed,unlocked` +
       ` --from-org ${targetOrgUsernameAlias}`,
       this,

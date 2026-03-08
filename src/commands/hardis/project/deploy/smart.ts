@@ -487,7 +487,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
             ` --manifest "${emptyPackageXml}"` +
             ' --ignore-warnings' +
             ' --ignore-conflicts' +
-            ` --post-destructive-changes ${this.smartDeployOptions.postDestructiveChanges}` +
+            ` --post-destructive-changes "${this.smartDeployOptions.postDestructiveChanges}"` +
             ` --target-org ${targetUsername}` +
             ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
             (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
