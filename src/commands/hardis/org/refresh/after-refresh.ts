@@ -311,8 +311,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     if (deployResult.status === 0) {
       uxLog("success", this, c.green(t('otherMetadataRestoredSuccessfullyInOrg', { instanceUrl: this.instanceUrl })));
       for (const [metadataType, items] of Object.entries(metadataRestore)) {
-        const itemNames = Array.isArray(items) ? items.join(', ') : String(items);
-        this.refreshActions.push({ step: "Restore Other Metadata", type: metadataType, name: itemNames, status: "Success", details: "" });
+        const itemList = Array.isArray(items) ? items : [String(items)];
+        for (const itemName of itemList) {
+          this.refreshActions.push({ step: "Restore Other Metadata", type: metadataType, name: itemName, status: "Success", details: "" });
+        }
       }
       if (Object.keys(metadataRestore).length === 0) {
         this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Success", details: metadataSummary });
@@ -322,8 +324,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       uxLog("error", this, c.red(t('failedToRestoreOtherMetadataInOrg', { instanceUrl: this.instanceUrl, deployResult: deployResult.error })));
       this.result = Object.assign(this.result, { success: false, message: t('failedToRestoreOtherMetadata', { deployResult: deployResult.error }) });
       for (const [metadataType, items] of Object.entries(metadataRestore)) {
-        const itemNames = Array.isArray(items) ? items.join(', ') : String(items);
-        this.refreshActions.push({ step: "Restore Other Metadata", type: metadataType, name: itemNames, status: "Error", details: deployResult.error || "Deployment failed" });
+        const itemList = Array.isArray(items) ? items : [String(items)];
+        for (const itemName of itemList) {
+          this.refreshActions.push({ step: "Restore Other Metadata", type: metadataType, name: itemName, status: "Error", details: deployResult.error || "Deployment failed" });
+        }
       }
       if (Object.keys(metadataRestore).length === 0) {
         this.refreshActions.push({ step: "Restore Other Metadata", type: "Metadata", name: "package-metadata-to-restore.xml", status: "Error", details: deployResult.error || "Deployment failed" });

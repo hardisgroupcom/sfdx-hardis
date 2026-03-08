@@ -917,8 +917,10 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     // Generate new package.xml from saveProjectPath, and remove ConnectedApps from it
     const restoredPackage = await this.generatePackageXmlToRestore();
     for (const [metadataType, items] of Object.entries(restoredPackage)) {
-      const itemNames = Array.isArray(items) ? items.join(', ') : String(items);
-      this.refreshActions.push({ step: "Save Metadata", type: metadataType, name: itemNames, status: "Success", details: "" });
+      const itemList = Array.isArray(items) ? items : [String(items)];
+      for (const itemName of itemList) {
+        this.refreshActions.push({ step: "Save Metadata", type: metadataType, name: itemName, status: "Success", details: "" });
+      }
     }
     if (Object.keys(restoredPackage).length === 0) {
       this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Success", details: "" });
