@@ -6,7 +6,7 @@ import * as path from "path";
 import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
 import { git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
-import { CONSTANTS } from '../../config/index.js';
+import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
 const { Bitbucket } = bbPkg;
 
@@ -344,11 +344,14 @@ export class BitbucketProvider extends GitProviderRoot {
     const messageKey = `${prMessage.messageKey}-${pullRequestId}`;
     let messageBody = `## ${prMessage.title || ''}
 
-        ${prMessage.message}
-        
-        \n_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${bitbucketBuildNumber}](${bitbucketJobUrl})_
-        \n<!-- sfdx-hardis message-key ${messageKey} -->
-        `;
+${prMessage.message}
+
+_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${bitbucketBuildNumber}](${bitbucketJobUrl})_
+
+${getBannerMarkdownAndLink()}
+
+<!-- sfdx-hardis message-key ${messageKey} -->
+`;
 
     // Add deployment id if present
     if (globalThis.pullRequestDeploymentId) {

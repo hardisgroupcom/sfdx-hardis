@@ -5,7 +5,7 @@ import { SfError } from '@salesforce/core';
 import { sortCrossPlatform, uxLog } from '../utils/index.js';
 import { countPackageXmlItems, parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { SalesforceSetupUrlBuilder } from './docUtils.js';
-import { CONSTANTS } from '../../config/index.js';
+import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { prettifyFieldName } from '../utils/flowVisualiser/nodeFormatUtils.js';
 import { t } from '../utils/i18n.js';
 
@@ -106,7 +106,8 @@ export class DocBuilderPackageXML {
       mdLines.push("");
     }
     mdLines.push("");
-
+    mdLines.push(getBannerMarkdownAndLink());
+    mdLines.push("");
     // Footer
     mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT})_`);
 

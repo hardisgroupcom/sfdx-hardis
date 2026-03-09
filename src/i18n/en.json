@@ -93,6 +93,7 @@
   "beCarefulAboutProfileChanges": "Be careful, you can impact other profiles if you modify access to shared objects",
   "beforeLaunchingTheDataLoadingPleaseMake": "Before launching the data loading, please make sure your user {{orgUsername}} has the appropriate ByPasses / Activation Settings / Custom Permissions / Whatever you need to do before starting the data load.",
   "beforeRefreshCommandPerformedSuccessfully": "before-refresh command performed successfully",
+  "bannerImageAltText": "SFDX-Hardis is provided by Cloudity",
   "bitbucketAddingPrComment": "Adding Pull Request Comment on Bitbucket...",
   "bitbucketErrorFetchingMergedPrs": "Error fetching merged PRs for branch {{branchName}}: {{message}}",
   "bitbucketFetchingMergedPrs": "Fetching merged PRs for branches: {{branches}}",

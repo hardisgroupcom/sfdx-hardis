@@ -7,7 +7,7 @@ import { XMLParser } from 'fast-xml-parser';
 import fs from 'fs-extra';
 import path from 'path';
 import { getMetaHideLines, includeFromFile } from './docUtils.js';
-import { CONSTANTS } from '../../config/index.js';
+import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
 
 export abstract class DocBuilderRoot {
@@ -53,6 +53,8 @@ export abstract class DocBuilderRoot {
     const initialMdLines = await this.buildInitialMarkdownLines();
     mdLines.push(...initialMdLines);
     // Footer
+    mdLines.push("");
+    mdLines.push(getBannerMarkdownAndLink());
     mdLines.push("");
     mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}), by [Cloudity](https://www.cloudity.com/) & [friends](https://github.com/hardisgroupcom/sfdx-hardis/graphs/contributors)_`);
 

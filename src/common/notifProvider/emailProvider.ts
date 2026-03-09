@@ -5,7 +5,7 @@ import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 import type { NotifMessage } from "./types.js";
 import { UtilsNotifs } from "./utils.js";
-import { CONSTANTS, getEnvVar } from "../../config/index.js";
+import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { marked } from "marked";
 import { EmailMessage, sendEmail } from "../utils/emailUtils.js";
 import { removeMarkdown } from "../utils/notifUtils.js";
@@ -70,6 +70,8 @@ export class EmailProvider extends NotifProviderRoot {
 
     // Add sfdx-hardis ref
     emailBody += `_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT})_`;
+
+    emailBody += "\n\n" + getBannerMarkdownAndLink() + "\n\n";
 
     // Send email
     const emailBodyHtml1 = marked.parse(emailBody);

@@ -39,6 +39,7 @@ export const CONSTANTS = {
   DOC_URL_ROOT: "https://sfdx-hardis.cloudity.com",
   WEBSITE_URL: "https://cloudity.com",
   CONTACT_URL: "https://cloudity.com/#form",
+  BANNER_IMAGE_URL: "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/alpha/docs/assets/images/cloudity-banner.png",
   NOT_IMPACTING_METADATA_TYPES: process.env.NOT_IMPACTING_METADATA_TYPES
     ?.split(",")
     .map((item) => item.trim())
@@ -99,6 +100,10 @@ export const getApiVersion = (conn: Connection | null = null) => {
 export const getApiVersionNumber = (conn: Connection | null = null) => {
   const apiVersion = getApiVersion(conn);
   return parseFloat(apiVersion);
+}
+
+export const getBannerMarkdownAndLink = () => {
+  return `[![${t('bannerImageAltText')}](${CONSTANTS.BANNER_IMAGE_URL})](${CONSTANTS.WEBSITE_URL})`;
 }
 
 async function getBranchConfigFiles() {

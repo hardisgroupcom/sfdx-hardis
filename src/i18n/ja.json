@@ -93,6 +93,7 @@
   "beCarefulAboutProfileChanges": "注意してください。共有オブジェクトへのアクセスを変更すると、他のプロファイルに影響を与える可能性があります",
   "beforeLaunchingTheDataLoadingPleaseMake": "データのロードを開始する前に、ユーザー {{orgUsername}} がデータロード開始に必要な適切なバイパス/有効化設定/カスタム権限/その他の設定を持っていることを確認してください。",
   "beforeRefreshCommandPerformedSuccessfully": "before-refresh コマンドが正常に実行されました",
+  "bannerImageAltText": "SFDX-HardisはCloudityによって提供されています",
   "bitbucketAddingPrComment": "Bitbucket に Pull Request コメントを追加しています...",
   "bitbucketErrorFetchingMergedPrs": "branch {{branchName}} の merge 済み PR の取得中にエラーが発生しました: {{message}}",
   "bitbucketFetchingMergedPrs": "branch {{branches}} の merge 済み PR を取得しています",
