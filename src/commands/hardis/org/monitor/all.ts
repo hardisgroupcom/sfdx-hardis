@@ -33,6 +33,12 @@ export default class MonitorAll extends SfCommand<any> {
       frequency: 'daily',
     },
     {
+      key: 'APEX_FLOW_ERRORS',
+      title: 'Detect Apex and Flow errors',
+      command: 'sf hardis:org:monitor:errors',
+      frequency: 'daily',
+    },
+    {
       key: 'UNSECURED_CONNECTED_APPS',
       title: 'Detect unsecured Connected Apps in an org',
       command: 'sf hardis:org:diagnose:unsecure-connected-apps',

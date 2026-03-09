@@ -35,7 +35,9 @@ export interface NotifMessage {
   | "ORG_LIMITS"
   | "RELEASE_UPDATES"
   | "AGENTFORCE_CONVERSATIONS"
-  | "AGENTFORCE_FEEDBACK";
+  | "AGENTFORCE_FEEDBACK"
+  | "APEX_ERROR"
+  | "FLOW_ERROR";
   buttons?: NotifButton[];
   attachments?: any[];
   severity: NotifSeverity;
