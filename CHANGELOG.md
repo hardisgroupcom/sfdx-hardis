@@ -16,6 +16,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Fix: add quotes around arguments that can contain spaces (folders, paths, etc.) to avoid issues when running commands from CLI or CI/CD
 - [hardis:org:purge:flow](https://sfdx-hardis.cloudity.com/hardis/org/purge/flow/): Generate report files of flows to delete then of deletion results.
 - New command [hardis:monitor:errors](https://sfdx-hardis.cloudity.com/hardis/monitor/errors/) to collect and generate reports about Apex and Flow errors, then post notifications. (also added in daily task of sfdx-hardis monitoring)
+- Internal: Build internal Metadata List from https://raw.githubusercontent.com/forcedotcom/source-deploy-retrieve/refs/heads/main/src/registry/metadataRegistry.json (use `yarn run build`)
 
 ## [6.27.0] 2025-02-27
 
