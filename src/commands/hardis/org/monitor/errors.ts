@@ -8,9 +8,10 @@ import * as path from 'path';
 import Papa from 'papaparse';
 import { createTempDir, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 import type { NotifMessage } from '../../../../common/notifProvider/index.js';
 import { MessageAttachment } from '@slack/web-api';
-import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
+import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { soqlQuery, soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
@@ -22,6 +23,21 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class MonitorErrors extends SfCommand<any> {
+  private static readonly maxProcessedErrors = 10000;
+  private static readonly unifiedErrorColumns = [
+    'Source',
+    'Status',
+    'JobType',
+    'Operation',
+    'Exception',
+    'StackTrace',
+    'ErrorStep',
+    'StartTime',
+    'RecordId',
+    'UserName',
+    'UserEmail',
+  ];
+
   public static title = 'Monitor Apex and Flow errors';
 
   public static description = `
@@ -68,6 +84,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
   protected apexErrors: any[] = [];
   protected flowErrors: any[] = [];
+  protected apexErrorsTotalCount = 0;
+  protected flowErrorsTotalCount = 0;
 
   protected apexOutputFilesRes: any = {};
   protected flowOutputFilesRes: any = {};
@@ -84,6 +102,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     await this.collectApexErrors(conn);
     await this.collectFlowErrors(conn);
+    this.unifyErrorOutputs();
 
     await this.generateReports();
 
@@ -99,10 +118,12 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     );
 
     uxLog('action', this, c.cyan(t('monitorErrorsSummaryTitle')));
-    const totalErrors = this.apexErrors.length + this.flowErrors.length;
+    const totalErrors = this.apexErrorsTotalCount + this.flowErrorsTotalCount;
+    const apexSummaryCount = `${this.apexErrorsTotalCount}${this.apexErrorsTotalCount > this.apexErrors.length ? t('monitorErrorsTruncatedSuffix', { max: MonitorErrors.maxProcessedErrors }) : ''}`;
+    const flowSummaryCount = `${this.flowErrorsTotalCount}${this.flowErrorsTotalCount > this.flowErrors.length ? t('monitorErrorsTruncatedSuffix', { max: MonitorErrors.maxProcessedErrors }) : ''}`;
     const summaryMsg = t('monitorErrorsSummaryMessage', {
-      apexCount: this.apexErrors.length,
-      flowCount: this.flowErrors.length,
+      apexCount: apexSummaryCount,
+      flowCount: flowSummaryCount,
     });
     if (totalErrors > 0) {
       uxLog('warning', this, c.yellow(summaryMsg));
@@ -110,7 +131,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       uxLog('success', this, c.green(summaryMsg));
     }
 
-    if (this.apexErrors.length > 0 || this.flowErrors.length > 0) {
+    if (this.apexErrorsTotalCount > 0 || this.flowErrorsTotalCount > 0) {
       process.exitCode = 1;
     }
 
@@ -152,42 +173,45 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       `ORDER BY StartTime DESC`;
     const apexLogResult = await soqlQueryTooling(apexLogQuery, conn);
     const apexUnexpectedExceptionResult = await this.collectApexUnexpectedExceptionsFromEventLogs(conn);
-    const errorIcon = getSeverityIcon('error');
     const apexLogErrors = (apexLogResult.records || []).map((record: any) => {
       return {
         Source: 'ApexLog',
         Status: record.Status,
         JobType: null,
         Operation: record.Operation,
-        Request: record.Request,
-        SeverityIcon: errorIcon,
-        Severity: 'error',
-        Id: record.Id,
+        Exception: record.Request,
+        StackTrace: null,
+        ErrorStep: null,
         StartTime: record.StartTime,
-        DurationMs: record.DurationMilliseconds,
-        LogLength: record.LogLength,
-        LogUserName: record.LogUser?.Name,
-        LogUserEmail: record.LogUser?.Email,
+        RecordId: record.Id,
+        UserName: record.LogUser?.Name,
+        UserEmail: record.LogUser?.Email,
       };
     });
 
     let asyncApexErrors: any[] = [];
     if (!apexUnexpectedExceptionResult.isAvailable) {
-      asyncApexErrors = await this.collectAsyncApexJobErrors(conn, errorIcon);
+      asyncApexErrors = await this.collectAsyncApexJobErrors(conn);
     }
 
-    this.apexErrors = [...apexLogErrors, ...apexUnexpectedExceptionResult.records, ...asyncApexErrors].sort((a, b) => {
+    this.apexErrors = apexLogErrors.concat(apexUnexpectedExceptionResult.records, asyncApexErrors).sort((a, b) => {
       const dateA = Date.parse(a.StartTime || '');
       const dateB = Date.parse(b.StartTime || '');
       const safeA = Number.isNaN(dateA) ? 0 : dateA;
       const safeB = Number.isNaN(dateB) ? 0 : dateB;
       return safeB - safeA;
     });
+    await this.resolveEventLogUsernames(conn);
+    this.apexErrors = this.deduplicateByRecordId(this.apexErrors);
+    this.apexErrorsTotalCount = this.apexErrors.length;
+    if (this.apexErrors.length > MonitorErrors.maxProcessedErrors) {
+      this.apexErrors = this.apexErrors.slice(0, MonitorErrors.maxProcessedErrors);
+    }
 
-    if (this.apexErrors.length === 0) {
+    if (this.apexErrorsTotalCount === 0) {
       uxLog('success', this, c.green(t('noApexErrorsFoundInLastDays', { days: this.days })));
     } else {
-      uxLog('warning', this, c.yellow(t('apexErrorsFound', { count: this.apexErrors.length, days: this.days })));
+      uxLog('warning', this, c.yellow(t('apexErrorsFound', { count: this.apexErrorsTotalCount, days: this.days })));
       uxLogTable(this, this.apexErrors);
     }
   }
@@ -209,10 +233,17 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
       const records: any[] = [];
       this.tempDir = this.tempDir || await createTempDir();
+      WebSocketClient.sendProgressStartMessage(t('monitorErrorsParsingEventLogFiles'), eventLogRes.records.length);
+      let counter = 0;
       for (const eventLogFile of eventLogRes.records) {
         const parsedRows = await this.parseEventLogFile(eventLogFile, conn);
-        records.push(...parsedRows);
+        for (const row of parsedRows) {
+          records.push(row);
+        }
+        counter++;
+        WebSocketClient.sendProgressStepMessage(counter, eventLogRes.records.length);
       }
+      WebSocketClient.sendProgressEndMessage();
       return { isAvailable: true, records };
     } catch (e) {
       uxLog('log', this, c.grey(String(e)));
@@ -235,7 +266,9 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
         header: true,
         worker: true,
         chunk: (results) => {
-          rows.push(...(results.data as any[]));
+          for (const row of results.data as any[]) {
+            rows.push(row);
+          }
         },
         complete: function () {
           resolve(true);
@@ -247,38 +280,33 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     });
     await fs.remove(outputFile).catch(() => undefined);
 
-    const errorIcon = getSeverityIcon('error');
     return rows
       .filter((row) => row && Object.keys(row).length > 0)
       .map((row, index) => {
-        const timestamp =
-          row.TIMESTAMP || row.REQUEST_TIMESTAMP || row.EVENT_TIMESTAMP || row.LOGIN_TIMESTAMP || `${eventLogFile.LogDate}T00:00:00.000Z`;
-        const operation =
-          row.ENTRY_POINT || row.REQUEST_URI || row.URI || row.OPERATION || row.EVENT_TYPE || t('monitorErrorsUnknown');
-        const request =
-          row.EXCEPTION_MESSAGE || row.ERROR_MESSAGE || row.STATUS || row.REQUEST_ID || t('monitorErrorsErrorFallback');
+        const timestamp = row.TIMESTAMP || row.TIMESTAMP_DERIVED || `${eventLogFile.LogDate}T00:00:00.000Z`;
+        const operation = row.APEX_ENTITY_NAME || t('monitorErrorsUnknown');
+        const request = row.EXCEPTION_MESSAGE || row.EXCEPTION_TYPE || t('monitorErrorsErrorFallback');
         return {
           Source: 'EventLogFile:ApexUnexpectedException',
-          Status: row.STATUS || 'Failed',
+          Status: 'Failed',
           JobType: null,
           Operation: operation,
-          Request: request,
-          SeverityIcon: errorIcon,
-          Severity: 'error',
-          Id: row.REQUEST_ID || `${eventLogFile.Id}-${index}`,
+          Exception: request,
+          StackTrace: row.STACK_TRACE || null,
+          ErrorStep: null,
           StartTime: timestamp,
-          DurationMs: row.RUN_TIME || null,
-          LogLength: null,
-          LogUserName: row.USER_NAME || row.USER_ID || null,
-          LogUserEmail: row.USER_EMAIL || null,
+          RecordId: row.REQUEST_ID || `${eventLogFile.Id}-${index}`,
+          UserName: null,
+          UserEmail: null,
+          UserId: row.USER_ID || row.USER_ID_DERIVED || null,
         };
       });
   }
 
-  protected async collectAsyncApexJobErrors(conn, errorIcon: string): Promise<any[]> {
+  protected async collectAsyncApexJobErrors(conn): Promise<any[]> {
     const asyncApexJobQuery =
       `SELECT Id, CreatedDate, CompletedDate, Status, JobType, NumberOfErrors, ExtendedStatus, ` +
-      `ApexClass.Name, MethodName FROM AsyncApexJob ` +
+      `ApexClass.Name, MethodName, CreatedBy.Username, CreatedBy.Email FROM AsyncApexJob ` +
       `WHERE Status IN ('Failed', 'Aborted') AND CreatedDate = LAST_N_DAYS:${this.days} ` +
       `ORDER BY CreatedDate DESC`;
     const asyncApexJobResult = await soqlQuery(asyncApexJobQuery, conn);
@@ -294,16 +322,13 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
         Status: record.Status,
         JobType: record.JobType,
         Operation: operation,
-        Request: record.ExtendedStatus,
-        SeverityIcon: errorIcon,
-        Severity: 'error',
-        Id: record.Id,
+        Exception: record.ExtendedStatus,
+        StackTrace: null,
+        ErrorStep: null,
         StartTime: record.CompletedDate || record.CreatedDate,
-        DurationMs: null,
-        LogLength: null,
-        LogUserName: null,
-        LogUserEmail: null,
-        NumberOfErrors: record.NumberOfErrors,
+        RecordId: record.Id,
+        UserName: record.CreatedBy?.Username,
+        UserEmail: record.CreatedBy?.Email,
       };
     });
   }
@@ -318,33 +343,39 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
       `ORDER BY CreatedDate DESC`;
     const flowResult = await soqlQuery(flowQuery, conn);
 
-    const errorIcon = getSeverityIcon('error');
     this.flowErrors = (flowResult.records || []).map((record: any) => {
       return {
+        Source: 'FlowInterview',
         InterviewStatus: record.InterviewStatus,
-        InterviewLabel: record.InterviewLabel,
+        Status: record.InterviewStatus,
+        JobType: null,
+        Operation: record.InterviewLabel,
+        Exception: record.Error,
+        StackTrace: null,
         ErrorStep: record.CurrentElement,
-        ErrorMessage: record.Error,
-        CreatedByUsername: record.CreatedBy?.Username,
-        SeverityIcon: errorIcon,
-        Severity: 'error',
-        Id: record.Id,
-        CreatedDate: record.CreatedDate,
-        CreatedById: record.CreatedById,
-        CreatedByName: record.CreatedBy?.Name,
-        CreatedByEmail: record.CreatedBy?.Email,
+        StartTime: record.CreatedDate,
+        RecordId: record.Id,
+        UserName: record.CreatedBy?.Username,
+        UserEmail: record.CreatedBy?.Email,
       };
     });
+    this.flowErrors = this.deduplicateByRecordId(this.flowErrors);
+    this.flowErrorsTotalCount = this.flowErrors.length;
+    if (this.flowErrors.length > MonitorErrors.maxProcessedErrors) {
+      this.flowErrors = this.flowErrors.slice(0, MonitorErrors.maxProcessedErrors);
+    }
 
-    if (this.flowErrors.length === 0) {
+    if (this.flowErrorsTotalCount === 0) {
       uxLog('success', this, c.green(t('noFlowErrorsFoundInLastDays', { days: this.days })));
     } else {
-      uxLog('warning', this, c.yellow(t('flowErrorsFound', { count: this.flowErrors.length, days: this.days })));
+      uxLog('warning', this, c.yellow(t('flowErrorsFound', { count: this.flowErrorsTotalCount, days: this.days })));
       uxLogTable(this, this.flowErrors);
     }
   }
 
   protected async generateReports(): Promise<void> {
+    uxLog('action', this, c.cyan(t('generatingErrorReports')));
+
     const apexReportPath = await generateReportPath('monitor-apex-errors', '');
     this.apexOutputFilesRes = await generateCsvFile(this.apexErrors, apexReportPath, {
       fileTitle: t('monitorErrorsApexReportTitle'),
@@ -356,8 +387,135 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     });
   }
 
+  protected removeAlwaysNullColumns(records: any[]): any[] {
+    if (!records || records.length === 0) {
+      return records;
+    }
+
+    const keys = Object.keys(records[0] || {});
+    const keysToKeep = keys.filter((key) => {
+      return records.some((record) => record?.[key] !== null && record?.[key] !== undefined);
+    });
+
+    return records.map((record) => {
+      const trimmedRecord: any = {};
+      for (const key of keysToKeep) {
+        trimmedRecord[key] = record[key];
+      }
+      return trimmedRecord;
+    });
+  }
+
+  protected unifyErrorOutputs(): void {
+    if (this.apexErrors.length === 0 && this.flowErrors.length === 0) {
+      return;
+    }
+
+    // Collect all keys and check which ones have values in a single pass
+    const keySet = new Set<string>();
+    const nonEmptyKeys = new Set<string>();
+
+    for (const record of this.apexErrors) {
+      for (const key of Object.keys(record || {})) {
+        keySet.add(key);
+        if (record?.[key] !== null && record?.[key] !== undefined) {
+          nonEmptyKeys.add(key);
+        }
+      }
+    }
+
+    for (const record of this.flowErrors) {
+      for (const key of Object.keys(record || {})) {
+        keySet.add(key);
+        if (record?.[key] !== null && record?.[key] !== undefined) {
+          nonEmptyKeys.add(key);
+        }
+      }
+    }
+
+    const nonEmptyKeysArray = Array.from(nonEmptyKeys);
+    const orderedKeys = [
+      ...MonitorErrors.unifiedErrorColumns,
+      ...nonEmptyKeysArray.filter((key) => !MonitorErrors.unifiedErrorColumns.includes(key)),
+    ];
+
+    this.apexErrors = this.projectColumns(this.apexErrors, orderedKeys);
+    this.flowErrors = this.projectColumns(this.flowErrors, orderedKeys);
+  }
+
+  protected projectColumns(records: any[], orderedKeys: string[]): any[] {
+    return records.map((record) => {
+      const projected: any = {};
+      for (const key of orderedKeys) {
+        projected[key] = record[key] ?? null;
+      }
+      return projected;
+    });
+  }
+
+  protected deduplicateByRecordId(records: any[]): any[] {
+    if (!records || records.length === 0) {
+      return records;
+    }
+
+    const deduplicated: any[] = [];
+    const seenRecordIds = new Set<string>();
+    for (const record of records) {
+      const recordId = record?.RecordId;
+      if (typeof recordId === 'string' && recordId.length > 0) {
+        if (seenRecordIds.has(recordId)) {
+          continue;
+        }
+        seenRecordIds.add(recordId);
+      }
+      deduplicated.push(record);
+    }
+    return deduplicated;
+  }
+
+  protected async resolveEventLogUsernames(conn): Promise<void> {
+    // Collect unique user IDs from EventLogFile records
+    const userIdSet = new Set<string>();
+    const eventLogRowIndices: number[] = [];
+
+    for (let i = 0; i < this.apexErrors.length; i++) {
+      const row = this.apexErrors[i];
+      if (row?.Source === 'EventLogFile:ApexUnexpectedException') {
+        eventLogRowIndices.push(i);
+        const userId = row?.UserId;
+        if (typeof userId === 'string' && userId.length >= 15) {
+          userIdSet.add(userId);
+        }
+      }
+    }
+
+    if (userIdSet.size === 0) {
+      return;
+    }
+
+    // Query usernames
+    const userIds = Array.from(userIdSet);
+    const usernamesById = new Map<string, string>();
+    const userQuery = `SELECT Id, Username FROM User WHERE Id IN ('${userIds.join("','")}')`;
+    const usersRes = await soqlQuery(userQuery, conn);
+    for (const user of usersRes.records || []) {
+      if (user?.Id && user?.Username) {
+        usernamesById.set(user.Id, user.Username);
+      }
+    }
+
+    // Update records with usernames
+    for (const idx of eventLogRowIndices) {
+      const row = this.apexErrors[idx];
+      if (row.UserId && usernamesById.has(row.UserId)) {
+        row.UserName = usernamesById.get(row.UserId);
+      }
+      delete row.UserId;
+    }
+  }
+
   protected buildApexNotification(orgMarkdown: string, notifButtons: any[]): NotifMessage {
-    const count = this.apexErrors.length;
+    const count = this.apexErrorsTotalCount;
     const notifSeverity: NotifSeverity = count > 0 ? 'error' : 'success';
     const notifText =
       count > 0
@@ -383,7 +541,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   }
 
   protected buildFlowNotification(orgMarkdown: string, notifButtons: any[]): NotifMessage {
-    const count = this.flowErrors.length;
+    const count = this.flowErrorsTotalCount;
     const notifSeverity: NotifSeverity = count > 0 ? 'error' : 'success';
     const notifText =
       count > 0
@@ -414,8 +572,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     }
     const maxItems = 10;
     const lines = this.apexErrors.slice(0, maxItems).map((entry) => {
-      const userName = entry.LogUserName ? ` (${entry.LogUserName})` : '';
-      return `• ${entry.StartTime} - ${entry.Operation || entry.Request || t('monitorErrorsUnknown')}${userName}`;
+      const userName = entry.UserName ? ` (${entry.UserName})` : '';
+      return `• ${entry.StartTime} - ${entry.Operation || entry.Exception || t('monitorErrorsUnknown')}${userName}`;
     });
     const remaining = this.apexErrors.length - maxItems;
     if (remaining > 0) {
@@ -435,8 +593,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     }
     const maxItems = 10;
     const lines = this.flowErrors.slice(0, maxItems).map((entry) => {
-      const label = entry.InterviewLabel ? ` ${entry.InterviewLabel}` : '';
-      return `• ${entry.CreatedDate} - ${label || entry.FlowVersionId || t('monitorErrorsUnknown')} - ${entry.ErrorStep || t('monitorErrorsErrorFallback')
+      const label = entry.Operation ? ` ${entry.Operation}` : '';
+      return `• ${entry.StartTime} - ${label || t('monitorErrorsUnknown')} - ${entry.ErrorStep || t('monitorErrorsErrorFallback')
         }`;
     });
     const remaining = this.flowErrors.length - maxItems;
