@@ -38,7 +38,7 @@ export const CONSTANTS = {
   DEFAULT_API_VERSION: '65.0',
   DOC_URL_ROOT: "https://sfdx-hardis.cloudity.com",
   WEBSITE_URL: "https://cloudity.com?ref=sfdxhardis",
-  CONTACT_URL: "https://cloudity.com/#form",
+  CONTACT_URL: "https://cloudity.com/contact-us/",
   BANNER_IMAGE_URL: "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/alpha/docs/assets/images/cloudity-banner.png",
   NOT_IMPACTING_METADATA_TYPES: process.env.NOT_IMPACTING_METADATA_TYPES
     ?.split(",")
