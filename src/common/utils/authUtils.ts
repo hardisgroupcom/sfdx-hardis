@@ -171,9 +171,11 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         options.forceUsername :
         typeof cmdFlags.targetusername === 'string'
           ? cmdFlags.targetusername
-          : process.env.TARGET_USERNAME || isDevHub
+          : isDevHub
             ? config.devHubUsername
-            : config.targetUsername || null;
+            : process.env.TARGET_USERNAME
+              ? process.env.TARGET_USERNAME
+              : config.targetUsername || null;
     if (username == null && isCI) {
       const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
       console.error(

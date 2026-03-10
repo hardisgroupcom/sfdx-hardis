@@ -20,6 +20,15 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Add quotes around arguments that can contain spaces (folders, paths, etc.) to avoid issues when running commands from CLI or CI/CD
   - Deployment actions: fix issue that made a successful data import appear as failed
 
+## [6.27.1] 2025-03-10
+
+- Authentication: Ensure that target username is not lost to devhub
+- Azure integration: Make # optional in PR message
+- Update package description
+- Fix doc formatting
+- Configurable pollTimeout for bulk update
+- Make glob search OS agnostic
+
 ## [6.27.0] 2025-02-27
 
 - Improve hooks by parallelizing dynamic imports

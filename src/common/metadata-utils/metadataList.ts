@@ -3237,7 +3237,7 @@ export function listMetadataTypes() {
         directoryName: 'SchedulingObjectives',
         inFolder: false,
         metaFile: false,
-        suffix: 'schedulingObjective',
+        suffix: 'SchedulingObjective',
         xmlName: 'SchedulingObjective',
       },
       {

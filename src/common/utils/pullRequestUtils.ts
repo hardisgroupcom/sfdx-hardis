@@ -86,6 +86,7 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
     targetBranchToUse = pullRequestInfo.targetBranch;
   }
   else {
+    // Find major org config related to the branch of the PR just merged (ex: integration)
     const prTargetOrgDef = majorOrgs.find(o => o.branchName === pullRequestInfo.targetBranch);
     if (prTargetOrgDef) {
       if (!prTargetOrgDef.mergeTargets || prTargetOrgDef.mergeTargets.length === 0) {
@@ -102,7 +103,8 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
       return [];
     }
   }
-
+  // Recursively find all child branches of the target branch
+  // Ex: if targetbranchToUse is uat, we'll retrieve [integration]
   const childBranchesNames = recursiveGetChildBranches(
     targetBranchToUse,
     majorOrgs,
