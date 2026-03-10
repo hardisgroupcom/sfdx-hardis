@@ -1819,6 +1819,7 @@
   "scheduleBatchClassNotFound": "La clase Apex '{{className}}' no se encontró en la org.",
   "scheduleBatchClassNotSchedulable": "La clase Apex '{{className}}' no implementa la interfaz Schedulable.",
   "scheduleBatchConflict": "Ya existe un job programado '{{jobName}}' con una expresión cron diferente (existente: '{{existingCron}}', solicitada: '{{newCron}}'). Cancele primero el job existente.",
+  "scheduleBatchConstructorNotVisible": "La clase Apex '{{className}}' no tiene un constructor público sin argumentos. Use una acción de tipo 'apex' para programarla con un script personalizado.",
   "scheduleBatchNoClassName": "No se proporcionó el parámetro className para la acción [{{id}}]: {{label}}",
   "scheduleBatchNoCronExpression": "No se proporcionó el parámetro cronExpression para la acción [{{id}}]: {{label}}",
   "scheduleBatchScheduling": "Programando el job '{{jobName}}' con la expresión cron '{{cronExpression}}'...",

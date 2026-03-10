@@ -52,6 +52,15 @@ export class ScheduleBatchAction extends ActionsProvider {
       return { statusCode: 'failed', output: t('scheduleBatchClassNotSchedulable', { className }) };
     }
 
+    // Check that the class has a public no-arg constructor
+    const noArgCtorPattern = new RegExp(`(private|protected)\\s+${className}\\s*\\(\\s*\\)`, 'i');
+    const paramCtorPattern = new RegExp(`(public|private|protected|global)\\s+${className}\\s*\\([^)]+\\)`, 'i');
+    const hasExplicitNoArgCtor = new RegExp(`(public|global)\\s+${className}\\s*\\(\\s*\\)`, 'i').test(apexClass.Body);
+    if (noArgCtorPattern.test(apexClass.Body) || (paramCtorPattern.test(apexClass.Body) && !hasExplicitNoArgCtor)) {
+      uxLog('error', this, c.red(`[DeploymentActions] ${t('scheduleBatchConstructorNotVisible', { className })}`));
+      return { statusCode: 'failed', output: t('scheduleBatchConstructorNotVisible', { className }) };
+    }
+
     // 2. Check for existing scheduled jobs with the same name
     uxLog('log', this, c.grey(`[DeploymentActions] ${t('scheduleBatchCheckingExisting', { jobName })}`));
     const cronQuery = `SELECT Id, CronExpression, CronJobDetail.Name, State FROM CronTrigger WHERE CronJobDetail.Name = '${jobName.replace(/'/g, "\\'")}' AND State IN ('WAITING','ACQUIRED','EXECUTING','PAUSED','BLOCKED','PAUSED_BLOCKED')`;

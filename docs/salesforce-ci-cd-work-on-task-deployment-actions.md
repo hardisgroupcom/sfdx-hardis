@@ -164,15 +164,15 @@ Example:
 
 #### Schedule batch
 
-Schedules an Apex batch class using `System.schedule()`. The action verifies that the specified Apex class exists in the org and implements the `Schedulable` interface before attempting to schedule it.
+Schedules an Apex batch class using `System.schedule()`. The action verifies that the specified Apex class exists in the org, implements the `Schedulable` interface, and has a public no-arg constructor. If the class does not meet these requirements, the action fails with a recommendation to use an [`apex`](#run-apex-script) action instead.
 
 If a scheduled job with the same name and cron expression already exists, the action is skipped (idempotent). If a job with the same name but a **different** cron expression exists, the action fails so you can resolve the conflict manually.
 
-| Custom parameter            | Required? | Description                                                                                       | Example                  |
-|-----------------------------|:---------:|---------------------------------------------------------------------------------------------------|---------------------------|
-| `parameters.className`      |    Yes    | Name of the Apex class that implements `Schedulable`.                                             | `MyBatchScheduler`       |
-| `parameters.cronExpression` |    Yes    | Cron expression for the schedule (Salesforce format).                                             | `0 0 0 * * ?`            |
-| `parameters.jobName`        |    No     | Name of the scheduled job. Defaults to `<className>_Schedule` if omitted.                         | `MyBatch_Nightly`        |
+| Custom parameter              | Required? | Description                                                                                       | Example                  |
+|-------------------------------|:---------:|---------------------------------------------------------------------------------------------------|---------------------------|
+| `parameters.className`        |    Yes    | Name of the Apex class that implements `Schedulable` with a public no-arg constructor.            | `MyBatchScheduler`       |
+| `parameters.cronExpression`   |    Yes    | Cron expression for the schedule (Salesforce format).                                             | `0 0 0 * * ?`            |
+| `parameters.jobName`          |    No     | Name of the scheduled job. Defaults to `<className>_Schedule` if omitted.                         | `MyBatch_Nightly`        |
 
 Example:
 
@@ -186,6 +186,8 @@ Example:
     jobName: MyBatch_Nightly
   context: process-deployment-only
 ```
+
+> **Note:** If your Schedulable class requires constructor arguments or has a non-public constructor, use an [`apex`](#run-apex-script) action with a custom `.apex` script instead.
 
 #### Manual step
 

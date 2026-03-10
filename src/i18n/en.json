@@ -1811,6 +1811,7 @@
   "scheduleBatchClassNotFound": "Apex class '{{className}}' not found in the org.",
   "scheduleBatchClassNotSchedulable": "Apex class '{{className}}' does not implement the Schedulable interface.",
   "scheduleBatchConflict": "A scheduled job '{{jobName}}' already exists with a different cron expression (existing: '{{existingCron}}', requested: '{{newCron}}'). Please abort the existing job first.",
+  "scheduleBatchConstructorNotVisible": "Apex class '{{className}}' does not have a public no-arg constructor. Use an 'apex' action type instead to schedule it with a custom script.",
   "scheduleBatchNoClassName": "No className parameter provided for action [{{id}}]: {{label}}",
   "scheduleBatchNoCronExpression": "No cronExpression parameter provided for action [{{id}}]: {{label}}",
   "scheduleBatchScheduling": "Scheduling job '{{jobName}}' with cron expression '{{cronExpression}}'...",
