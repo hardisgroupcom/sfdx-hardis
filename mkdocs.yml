@@ -12,7 +12,7 @@ theme:
     - content.code.copy
     - navigation.instant
     - navigation.footer
-  logo: assets/images/cloudity-text-logo.svg
+  logo: assets/images/cloudity-text-logo-white.svg
   favicon: assets/images/cloudity-logo.svg
   palette:
     - scheme: default
@@ -24,9 +24,9 @@ theme:
       background: "#F5F7FA"
       foreground: "#1B1464"
       colors:
-        primary: "#0057B8"
+        primary: "#0053FF"
         accent: "#FFB81C"
-        link: "#0057B8"
+        link: "#0053FF"
         header: "#1B1464"
         nav: "#F5F7FA"
     - scheme: slate
@@ -38,7 +38,7 @@ theme:
       background: "#181B2A"
       foreground: "#FFB81C"
       colors:
-        primary: "#0057B8"
+        primary: "#0053FF"
         accent: "#FFB81C"
         link: "#FFB81C"
         header: "#181B2A"
