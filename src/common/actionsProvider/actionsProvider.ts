@@ -9,13 +9,16 @@ import { t } from '../utils/i18n.js';
 export interface PrePostCommand {
   id: string;
   label: string;
-  type: 'command' | 'data' | 'apex' | 'publish-community' | 'manual';
+  type: 'command' | 'data' | 'apex' | 'publish-community' | 'manual' | 'schedule-batch';
   // Known parameters used by action implementations. Additional keys allowed.
   parameters?: {
     apexScript?: string;     // for 'apex' actions
     sfdmuProject?: string;   // for 'data' actions
     communityName?: string;  // for 'publish-community' actions
     instructions?: string;   // for 'manual' actions
+    className?: string;      // for 'schedule-batch' actions
+    cronExpression?: string;  // for 'schedule-batch' actions
+    jobName?: string;        // for 'schedule-batch' actions (optional, defaults to <className>_Schedule)
     [key: string]: any;
   };
   command: string;
@@ -61,6 +64,10 @@ export abstract class ActionsProvider {
     else if (type === 'manual') {
       const ManualAction = await import('./manualAction.js');
       actionInstance = new ManualAction.ManualAction();
+    }
+    else if (type === 'schedule-batch') {
+      const ScheduleBatchAction = await import('./scheduleBatchAction.js');
+      actionInstance = new ScheduleBatchAction.ScheduleBatchAction();
     }
     else {
       uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));

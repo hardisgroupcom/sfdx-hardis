@@ -10,6 +10,7 @@ Salesforce Deployments are mainly Metadata, but can also be other actions that w
 - [Upsert records (Import SFDMU project)](#import-sfdmu-project)
 - [Run command lines](#run-command)
 - [Publish Experience Cloud sites](#publish-experience-site)
+- [Schedule Apex batch jobs](#schedule-batch)
 - [Manual actions that cannot be automated](#manual-step)
 
 You can define them at two levels:
@@ -65,7 +66,7 @@ Each action is an object with the following required and optional properties.
 |--------------------|---------|:---------:|---------------------------------------------------------------------------------------------------------------------------------|
 | `id`               | string  |    Yes    | Unique identifier for the action.                                                                                               |
 | `label`            | string  |    Yes    | Human-readable description of the action.                                                                                       |
-| `type`             | string  |    Yes    | One of `command`, `data`, `apex`, `publish-community`, `manual`.                                                                |
+| `type`             | string  |    Yes    | One of `command`, `data`, `apex`, `publish-community`, `schedule-batch`, `manual`.                                              |
 | `context`          | string  |    Yes    | When the action should run. Allowed values: `all` (default), `check-deployment-only`, `process-deployment-only`.                |
 | `command`          | string  |    No     | Shell command to run (used by `command` type).                                                                                  |
 | `parameters`       | object  |    No     | Parameters of the action (see action details)                                                                                   |
@@ -82,6 +83,7 @@ Each action is an object with the following required and optional properties.
 | [`data`](#import-sfdmu-project)                 | Import a SFDMU project.                                          |
 | [`apex`](#run-apex-script)                      | Run an Apex script file through the local `sf apex` integration. |
 | [`publish-community`](#publish-experience-site) | Publish an Experience Cloud (community) site.                    |
+| [`schedule-batch`](#schedule-batch)             | Schedule an Apex batch job with a cron expression.               |
 | [`manual`](#manual-step)                        | Represent a manual step (no CLI execution).                      |
 
 #### Run command
@@ -157,6 +159,31 @@ Example:
   type: publish-community
   parameters:
     communityName: "My Experience Site"
+  context: process-deployment-only
+```
+
+#### Schedule batch
+
+Schedules an Apex batch class using `System.schedule()`. The action verifies that the specified Apex class exists in the org and implements the `Schedulable` interface before attempting to schedule it.
+
+If a scheduled job with the same name and cron expression already exists, the action is skipped (idempotent). If a job with the same name but a **different** cron expression exists, the action fails so you can resolve the conflict manually.
+
+| Custom parameter            | Required? | Description                                                                                       | Example                  |
+|-----------------------------|:---------:|---------------------------------------------------------------------------------------------------|---------------------------|
+| `parameters.className`      |    Yes    | Name of the Apex class that implements `Schedulable`.                                             | `MyBatchScheduler`       |
+| `parameters.cronExpression` |    Yes    | Cron expression for the schedule (Salesforce format).                                             | `0 0 0 * * ?`            |
+| `parameters.jobName`        |    No     | Name of the scheduled job. Defaults to `<className>_Schedule` if omitted.                         | `MyBatch_Nightly`        |
+
+Example:
+
+```yaml
+- id: scheduleNightlyBatch
+  label: Schedule nightly batch
+  type: schedule-batch
+  parameters:
+    className: MyBatchScheduler
+    cronExpression: "0 0 0 * * ?"
+    jobName: MyBatch_Nightly
   context: process-deployment-only
 ```
 
