@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:monitor:limits](https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/): Add Apex character limit monitoring (custom classes + triggers, excludes @isTest)
+
 ## [6.27.2] 2025-03-10
 
 - Fix fatal error in 6.27.1 (fast-xml-parser dependency wrongly managed)
