@@ -24,7 +24,7 @@ export default class DiagnoseUnderusedPermsets extends SfCommand<any> {
 
 **Detects Permission Sets that are assigned to zero users or to a configurable low number of users (excluding those in Permission Set Groups).**
 
-This command helps identify permission sets that may be candidates for cleanup or consolidation. It focuses on custom permission sets (NamespacePrefix = null) that are not owned by profiles and not part of Permission Set Groups.
+This command helps identify permission sets that may be candidates for cleanup or consolidation. It focuses on custom permission sets (NamespacePrefix = null, LicenseId = null) that are not owned by profiles and not part of Permission Set Groups. Permission sets linked to Permission Set Licenses and managed package permission sets are excluded.
 
 Key functionalities:
 
@@ -101,6 +101,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       )
       AND NamespacePrefix = null
       AND IsOwnedByProfile = false
+      AND LicenseId = null
     `;
     const zeroUserRes = await soqlQuery(zeroUserQuery.trim(), conn);
     this.zeroUserPermSets = (zeroUserRes.records || []).map((r: any) => ({
@@ -121,6 +122,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         FROM PermissionSetGroupComponent
       )
       AND PermissionSet.NamespacePrefix = null
+      AND PermissionSet.LicenseId = null
       GROUP BY PermissionSet.Id, PermissionSet.Name
       HAVING COUNT(Id) <= ${this.threshold}
     `;
