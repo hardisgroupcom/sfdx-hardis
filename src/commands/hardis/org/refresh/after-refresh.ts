@@ -264,6 +264,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }).join(', ');
     uxLog("warning", this, c.yellow(`Look at the package-metadata-to-restore.xml file in ${c.bold(this.saveProjectPath)} to see what will be restored.`));
     uxLog("warning", this, c.yellow(`Confirm it's content, or remove/comment part of it if you don't want some metadata to be restored\n${metadataSummary}`));
+    uxLog("warning", this, c.yellow(`If restoring External Client Apps remove/comment <orgScopedExternalApp> in externalClientApps and <oauthLink> in extlClntAppOauthSettings`));
 
     const prompt = await prompts({
       type: 'confirm',
