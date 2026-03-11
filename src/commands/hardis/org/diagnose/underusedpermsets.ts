@@ -227,7 +227,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       statusCode = 1;
       const zeroTotal = this.zeroUserPermSets.length + this.zeroUserPermSetGroups.length;
       const limitedTotal = this.limitedUserPermSets.length + this.limitedUserPermSetGroups.length;
-      msg = `Found ${totalCount} underused permission sets/groups (${zeroTotal} with 0 users, ${limitedTotal} with 1–${this.threshold} users)`;
+      msg = `Found ${totalCount} underused permission sets/groups (${zeroTotal} with 0 users, ${limitedTotal} with 1-${this.threshold} users)`;
     }
 
     if (totalCount > 0) {
@@ -304,7 +304,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           ? `*0 users:*\n${zeroItems.map((ps) => `• ${ps.Name} (${ps.Type})`).join('\n')}` : '';
       const limitedText =
         limitedItems.length > 0
-          ? `*1–${this.threshold} users:*\n${limitedItems.map((ps) => `• ${ps.Name} (${ps.Type}): ${ps.UserCount} users`).join('\n')}`
+          ? `*1-${this.threshold} users:*\n${limitedItems.map((ps) => `• ${ps.Name} (${ps.Type}): ${ps.UserCount} users`).join('\n')}`
           : '';
       attachments.push({
         text: [zeroText, limitedText].filter(Boolean).join('\n\n'),
