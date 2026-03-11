@@ -10,6 +10,7 @@ import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../.
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { CONSTANTS, getEnvVar, getEnvVarList } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -42,8 +43,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- **SOQL Queries:** Uses four SOQL queries—permission sets (zero + limited) and permission set groups (zero + limited).
-- **Exclusions:** Permission sets in groups are excluded (counted via group); PSL-linked and managed package items excluded.
+- **SOQL Queries:** Uses four SOQL queries, for permission sets (zero + limited) and permission set groups (zero + limited).
+- **Exclusions:** Permission sets in groups are excluded (counted via group); PSL-linked and managed package items are excluded.
 - **Ignore list:** \`UNDERUSED_PERMISSION_SETS_IGNORE\` env var (comma-separated names) excludes matching permission sets and groups.
 - **Report Generation:** Uses \`generateCsvFile\` to create the CSV report.
 - **Notification Integration:** Integrates with \`NotifProvider\` for notifications.
@@ -97,7 +98,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const isIgnored = (name: string) => ignoreSet.size > 0 && ignoreSet.has((name || '').trim().toLowerCase());
 
     // Query 1: Permission sets with 0 users
-    uxLog("action", this, c.cyan('Querying permission sets with zero assignments...'));
+    uxLog("action", this, c.cyan(t('underusedPermsetsQueryPermissionSetsZero')));
     const zeroUserQuery = `
       SELECT Id, Name
       FROM PermissionSet
@@ -126,7 +127,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       .filter((r) => !isIgnored(r.Name));
 
     // Query 2: Permission Set Groups with 0 users
-    uxLog("action", this, c.cyan('Querying permission set groups with zero assignments...'));
+    uxLog("action", this, c.cyan(t('underusedPermsetsQueryPermissionSetGroupsZero')));
     const zeroUserGroupQuery = `
       SELECT Id, DeveloperName, MasterLabel
       FROM PermissionSetGroup
@@ -150,7 +151,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       .filter((r) => !isIgnored(r.Name));
 
     // Query 3: Permission sets with <= threshold users (exclude those in groups)
-    uxLog("action", this, c.cyan(`Querying permission sets with ${this.threshold} or fewer users...`));
+    uxLog("action", this, c.cyan(t('underusedPermsetsQueryPermissionSetsLimited', { threshold: this.threshold })));
     const limitedUserQuery = `
       SELECT PermissionSet.Id, PermissionSet.Name, COUNT(Id) userCount
       FROM PermissionSetAssignment
@@ -185,7 +186,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       .filter((r) => !isIgnored(r.Name));
 
     // Query 4: Permission Set Groups with <= threshold users
-    uxLog("action", this, c.cyan(`Querying permission set groups with ${this.threshold} or fewer users...`));
+    uxLog("action", this, c.cyan(t('underusedPermsetsQueryPermissionSetGroupsLimited', { threshold: this.threshold })));
     const limitedUserGroupQuery = `
       SELECT PermissionSetGroup.Id, PermissionSetGroup.DeveloperName, PermissionSetGroup.MasterLabel, COUNT(Id) userCount
       FROM PermissionSetAssignment
@@ -221,45 +222,49 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     ];
     const totalCount = allResults.length;
 
-    let msg = 'No underused permission sets found';
+    let msg = t('underusedPermsetsNoResults');
     let statusCode = 0;
     if (totalCount > 0) {
       statusCode = 1;
       const zeroTotal = this.zeroUserPermSets.length + this.zeroUserPermSetGroups.length;
       const limitedTotal = this.limitedUserPermSets.length + this.limitedUserPermSetGroups.length;
-      msg = `Found ${totalCount} underused permission sets/groups (${zeroTotal} with 0 users, ${limitedTotal} with 1-${this.threshold} users)`;
+      msg = t('underusedPermsetsFoundSummary', { totalCount, zeroTotal, limitedTotal, threshold: this.threshold });
     }
 
     if (totalCount > 0) {
       uxLogTable(this, allResults);
       this.outputFile = await generateReportPath('underused-permission-sets', this.outputFile);
       this.outputFilesRes = await generateCsvFile(allResults, this.outputFile, {
-        fileTitle: 'Underused Permission Sets',
+        fileTitle: t('underusedPermsetsFileTitle'),
       });
     }
 
     await this.manageNotifications(allResults, flags);
 
     // Summary
-    uxLog("action", this, c.bold(c.cyan('Underused Permission Sets Summary')));
+    uxLog("action", this, c.bold(c.cyan(t('underusedPermsetsSummary'))));
+    const typeColumnLabel = t('underusedPermsetsTypeColumnLabel');
+    const zeroUsersLabel = t('underusedPermsetsZeroUsersLabel');
+    const limitedUsersLabel = t('underusedPermsetsLimitedUsersLabel', { threshold: this.threshold });
+    const totalColumnLabel = t('underusedPermsetsTotalColumnLabel');
     const summaryRows = [
       {
-        Type: 'Permission Sets',
-        'Zero users (error)': this.zeroUserPermSets.length,
-        [`≤${this.threshold} users (warning)`]: this.limitedUserPermSets.length,
-        Total: this.zeroUserPermSets.length + this.limitedUserPermSets.length,
+        [typeColumnLabel]: t('underusedPermsetsPermissionSetsRowLabel'),
+        [zeroUsersLabel]: this.zeroUserPermSets.length,
+        [limitedUsersLabel]: this.limitedUserPermSets.length,
+        [totalColumnLabel]: this.zeroUserPermSets.length + this.limitedUserPermSets.length,
       },
       {
-        Type: 'Permission Set Groups',
-        'Zero users (error)': this.zeroUserPermSetGroups.length,
-        [`≤${this.threshold} users (warning)`]: this.limitedUserPermSetGroups.length,
-        Total: this.zeroUserPermSetGroups.length + this.limitedUserPermSetGroups.length,
+        [typeColumnLabel]: t('underusedPermsetsPermissionSetGroupsRowLabel'),
+        [zeroUsersLabel]: this.zeroUserPermSetGroups.length,
+        [limitedUsersLabel]: this.limitedUserPermSetGroups.length,
+        [totalColumnLabel]: this.zeroUserPermSetGroups.length + this.limitedUserPermSetGroups.length,
       },
       {
-        Type: 'TOTAL',
-        'Zero users (error)': this.zeroUserPermSets.length + this.zeroUserPermSetGroups.length,
-        [`≤${this.threshold} users (warning)`]: this.limitedUserPermSets.length + this.limitedUserPermSetGroups.length,
-        Total: totalCount,
+        [typeColumnLabel]: t('underusedPermsetsTotalRowLabel'),
+        [zeroUsersLabel]: this.zeroUserPermSets.length + this.zeroUserPermSetGroups.length,
+        [limitedUsersLabel]: this.limitedUserPermSets.length + this.limitedUserPermSetGroups.length,
+        [totalColumnLabel]: totalCount,
       },
     ];
     uxLogTable(this, summaryRows);
@@ -291,20 +296,20 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = 'log';
-    let notifText = `No underused permission sets found in ${orgMarkdown}`;
+    let notifText = t('underusedPermsetsNoResultsInOrg', { orgMarkdown });
     const attachments: any[] = [];
 
     if (allResults.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${allResults.length} underused permission sets/groups found in ${orgMarkdown}`;
+      notifText = t('underusedPermsetsFoundInOrg', { count: allResults.length, orgMarkdown });
       const zeroItems = [...this.zeroUserPermSets, ...this.zeroUserPermSetGroups];
       const limitedItems = [...this.limitedUserPermSets, ...this.limitedUserPermSetGroups];
       const zeroText =
         zeroItems.length > 0
-          ? `*0 users:*\n${zeroItems.map((ps) => `• ${ps.Name} (${ps.Type})`).join('\n')}` : '';
+          ? `${t('underusedPermsetsZeroUsersSection')}\n${zeroItems.map((ps) => `• ${ps.Name} (${ps.Type})`).join('\n')}` : '';
       const limitedText =
         limitedItems.length > 0
-          ? `*1-${this.threshold} users:*\n${limitedItems.map((ps) => `• ${ps.Name} (${ps.Type}): ${ps.UserCount} users`).join('\n')}`
+          ? `${t('underusedPermsetsLimitedUsersSection', { threshold: this.threshold })}\n${limitedItems.map((ps) => t('underusedPermsetsLimitedUsersEntry', { name: ps.Name, type: ps.Type, userCount: ps.UserCount })).join('\n')}`
           : '';
       attachments.push({
         text: [zeroText, limitedText].filter(Boolean).join('\n\n'),
