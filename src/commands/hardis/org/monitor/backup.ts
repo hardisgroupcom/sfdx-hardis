@@ -520,7 +520,7 @@ If Flow history doc always display a single state, you probably need to update y
         this,
         {
           fail: true,
-          output: true,
+          output: this.debugMode ? true : false,
           debug: this.debugMode,
         }
       );
