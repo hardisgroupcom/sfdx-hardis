@@ -165,6 +165,7 @@ nav:
           - Unused Custom Labels: salesforce-monitoring-unused-metadata.md
           - Inactive metadata: salesforce-monitoring-inactive-metadata.md
           - Missing metadata attributes: salesforce-monitoring-missing-metadata-attributes.md
+          - Underused Permission Sets: salesforce-monitoring-underused-permsets.md
       - Configuration:
           - Configuration guide: salesforce-monitoring-config-home.md
           - GitHub: salesforce-monitoring-config-github.md
@@ -291,6 +292,7 @@ nav:
             unused-connected-apps: hardis/org/diagnose/unused-connected-apps.md
             unusedlicenses: hardis/org/diagnose/unusedlicenses.md
             unusedusers: hardis/org/diagnose/unusedusers.md
+            underusedpermsets: hardis/org/diagnose/underusedpermsets.md
           files:
             export: hardis/org/files/export.md
             import: hardis/org/files/import.md

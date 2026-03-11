@@ -140,6 +140,12 @@ export default class MonitorAll extends SfCommand<any> {
       command: 'sf hardis:lint:missingattributes',
       frequency: 'weekly',
     },
+    {
+      key: 'UNDERUSED_PERMSETS',
+      title: 'Detect underused permission sets',
+      command: 'sf hardis:org:diagnose:underusedpermsets',
+      frequency: 'weekly',
+    },
   ];
 
   public static description = `Monitor org, generate reports and sends notifications
