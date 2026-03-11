@@ -103,5 +103,5 @@ You can force the daily run of all commands by defining env var `MONITORING_IGNO
 | [Detect custom labels and custom permissions that are not in use](salesforce-monitoring-unused-metadata.md)        | Weekly    |
 | [Detect inactive metadata](salesforce-monitoring-inactive-metadata.md)                                             | Weekly    |
 | [Detect missing attributes](salesforce-monitoring-missing-metadata-attributes.md)                                  | Weekly    |
-
+| [Detect underused permission sets](salesforce-monitoring-underused-permsets.md) | Weekly |
 

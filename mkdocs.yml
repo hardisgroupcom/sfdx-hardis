@@ -291,6 +291,7 @@ nav:
             unused-connected-apps: hardis/org/diagnose/unused-connected-apps.md
             unusedlicenses: hardis/org/diagnose/unusedlicenses.md
             unusedusers: hardis/org/diagnose/unusedusers.md
+            underusedpermsets: hardis/org/diagnose/underusedpermsets.md
           files:
             export: hardis/org/files/export.md
             import: hardis/org/files/import.md
