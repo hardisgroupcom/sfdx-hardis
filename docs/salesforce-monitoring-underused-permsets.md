@@ -17,6 +17,8 @@ Permission sets with zero or few users may be candidates for cleanup or consolid
 
 **Permission Set Groups:** Custom only (NamespacePrefix = null). Managed package groups are excluded.
 
+**Ignore list:** Set `UNDERUSED_PERMISSION_SETS_IGNORE` to a comma-separated list of names to exclude (e.g., `My_PS,Sales_Admin_Group`). Matching is case-insensitive.
+
 Sfdx-hardis command: [sf hardis:org:diagnose:underusedpermsets](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/underusedpermsets/)
 
 Key: **UNDERUSED_PERMSETS**
