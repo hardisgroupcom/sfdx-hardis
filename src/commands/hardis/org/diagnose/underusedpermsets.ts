@@ -228,9 +228,6 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       const zeroTotal = this.zeroUserPermSets.length + this.zeroUserPermSetGroups.length;
       const limitedTotal = this.limitedUserPermSets.length + this.limitedUserPermSetGroups.length;
       msg = `Found ${totalCount} underused permission sets/groups (${zeroTotal} with 0 users, ${limitedTotal} with 1–${this.threshold} users)`;
-      uxLog("warning", this, c.yellow(msg));
-    } else {
-      uxLog("success", this, c.green(msg));
     }
 
     if (totalCount > 0) {
@@ -242,6 +239,35 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     }
 
     await this.manageNotifications(allResults, flags);
+
+    // Summary
+    uxLog("action", this, c.bold(c.cyan('Underused Permission Sets Summary')));
+    const summaryRows = [
+      {
+        Type: 'Permission Sets',
+        'Zero users (error)': this.zeroUserPermSets.length,
+        [`≤${this.threshold} users (warning)`]: this.limitedUserPermSets.length,
+        Total: this.zeroUserPermSets.length + this.limitedUserPermSets.length,
+      },
+      {
+        Type: 'Permission Set Groups',
+        'Zero users (error)': this.zeroUserPermSetGroups.length,
+        [`≤${this.threshold} users (warning)`]: this.limitedUserPermSetGroups.length,
+        Total: this.zeroUserPermSetGroups.length + this.limitedUserPermSetGroups.length,
+      },
+      {
+        Type: 'TOTAL',
+        'Zero users (error)': this.zeroUserPermSets.length + this.zeroUserPermSetGroups.length,
+        [`≤${this.threshold} users (warning)`]: this.limitedUserPermSets.length + this.limitedUserPermSetGroups.length,
+        Total: totalCount,
+      },
+    ];
+    uxLogTable(this, summaryRows);
+    if (totalCount > 0) {
+      uxLog("warning", this, c.yellow(msg));
+    } else {
+      uxLog("success", this, c.green(msg));
+    }
 
     if ((this.argv || []).includes('underusedpermsets')) {
       process.exitCode = statusCode;
