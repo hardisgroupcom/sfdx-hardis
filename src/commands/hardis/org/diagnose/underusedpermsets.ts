@@ -22,14 +22,16 @@ export default class DiagnoseUnderusedPermsets extends SfCommand<any> {
   public static description = `
 ## Command Behavior
 
-**Detects Permission Sets that are assigned to zero users or to a configurable low number of users (excluding those in Permission Set Groups).**
+**Detects Permission Sets and Permission Set Groups that are assigned to zero users or to a configurable low number of users.**
 
-This command helps identify permission sets that may be candidates for cleanup or consolidation. It focuses on custom permission sets (NamespacePrefix = null, LicenseId = null) that are not owned by profiles and not part of Permission Set Groups. Permission sets linked to Permission Set Licenses and managed package permission sets are excluded.
+This command helps identify permission sets and permission set groups that may be candidates for cleanup or consolidation. It includes:
+- **Permission Sets:** Custom permission sets (NamespacePrefix = null, LicenseId = null) not owned by profiles and not in groups. Excludes PSL-linked and managed package permission sets.
+- **Permission Set Groups:** Custom groups (NamespacePrefix = null). Excludes managed package groups.
 
 Key functionalities:
 
-- **Zero-assignment detection:** Finds permission sets with no direct assignments and not in any Permission Set Group.
-- **Low-usage detection:** Finds permission sets assigned to \`PERMSET_LIMITED_USERS_THRESHOLD\` or fewer users (default: 5).
+- **Zero-assignment detection:** Finds permission sets and groups with no assignments.
+- **Low-usage detection:** Finds permission sets and groups assigned to \`PERMSET_LIMITED_USERS_THRESHOLD\` or fewer users (default: 5).
 - **Configurable threshold:** Set \`PERMSET_LIMITED_USERS_THRESHOLD\` environment variable to override the default (e.g., \`10\`).
 - **CSV Report Generation:** Generates a CSV file with all identified permission sets.
 - **Notifications:** Sends notifications to configured channels (Grafana, Slack, MS Teams).
@@ -39,8 +41,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- **SOQL Queries:** Uses two SOQL queries—one for zero-assignment permission sets, one for low-usage (aggregate with HAVING).
-- **Exclusions:** Excludes permission sets in PermissionSetGroupComponent (users get those via group assignment).
+- **SOQL Queries:** Uses four SOQL queries—permission sets (zero + limited) and permission set groups (zero + limited).
+- **Exclusions:** Permission sets in groups are excluded (counted via group); PSL-linked and managed package items excluded.
 - **Report Generation:** Uses \`generateCsvFile\` to create the CSV report.
 - **Notification Integration:** Integrates with \`NotifProvider\` for notifications.
 </details>
@@ -74,6 +76,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   protected outputFilesRes: any = {};
   protected zeroUserPermSets: any[] = [];
   protected limitedUserPermSets: any[] = [];
+  protected zeroUserPermSetGroups: any[] = [];
+  protected limitedUserPermSetGroups: any[] = [];
   protected threshold: number;
 
   /* jscpd:ignore-end */
@@ -107,12 +111,35 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.zeroUserPermSets = (zeroUserRes.records || []).map((r: any) => ({
       Id: r.Id,
       Name: r.Name,
+      Type: 'PermissionSet',
       UserCount: 0,
       Severity: 'error',
       SeverityIcon: getSeverityIcon('error'),
     }));
 
-    // Query 2: Permission sets with <= threshold users (exclude those in groups)
+    // Query 2: Permission Set Groups with 0 users
+    uxLog("action", this, c.cyan('Querying permission set groups with zero assignments...'));
+    const zeroUserGroupQuery = `
+      SELECT Id, DeveloperName, MasterLabel
+      FROM PermissionSetGroup
+      WHERE Id NOT IN (
+        SELECT PermissionSetGroupId
+        FROM PermissionSetAssignment
+        WHERE PermissionSetGroupId != null
+      )
+      AND NamespacePrefix = null
+    `;
+    const zeroUserGroupRes = await soqlQuery(zeroUserGroupQuery.trim(), conn);
+    this.zeroUserPermSetGroups = (zeroUserGroupRes.records || []).map((r: any) => ({
+      Id: r.Id,
+      Name: r.MasterLabel ?? r.DeveloperName ?? r.Id,
+      Type: 'PermissionSetGroup',
+      UserCount: 0,
+      Severity: 'error',
+      SeverityIcon: getSeverityIcon('error'),
+    }));
+
+    // Query 3: Permission sets with <= threshold users (exclude those in groups)
     uxLog("action", this, c.cyan(`Querying permission sets with ${this.threshold} or fewer users...`));
     const limitedUserQuery = `
       SELECT PermissionSet.Id, PermissionSet.Name, COUNT(Id) userCount
@@ -139,20 +166,56 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         return {
           Id: id,
           Name: name,
+          Type: 'PermissionSet',
           UserCount: userCount,
           Severity: 'warning',
           SeverityIcon: getSeverityIcon('warning'),
         };
       });
 
-    const allResults = [...this.zeroUserPermSets, ...this.limitedUserPermSets];
+    // Query 4: Permission Set Groups with <= threshold users
+    uxLog("action", this, c.cyan(`Querying permission set groups with ${this.threshold} or fewer users...`));
+    const limitedUserGroupQuery = `
+      SELECT PermissionSetGroup.Id, PermissionSetGroup.DeveloperName, PermissionSetGroup.MasterLabel, COUNT(Id) userCount
+      FROM PermissionSetAssignment
+      WHERE PermissionSetGroupId != null
+      AND PermissionSetGroup.NamespacePrefix = null
+      GROUP BY PermissionSetGroup.Id, PermissionSetGroup.DeveloperName, PermissionSetGroup.MasterLabel
+      HAVING COUNT(Id) <= ${this.threshold}
+    `;
+    const limitedUserGroupRes = await soqlQuery(limitedUserGroupQuery.trim(), conn);
+    const limitedGroupRecords = limitedUserGroupRes.records || [];
+    this.limitedUserPermSetGroups = limitedGroupRecords
+      .filter((r: any) => (r.userCount ?? r.expr0 ?? 0) > 0)
+      .map((r: any) => {
+        const id = r.Id ?? r['PermissionSetGroup.Id'];
+        const name = r.MasterLabel ?? r['PermissionSetGroup.MasterLabel'] ?? r.DeveloperName ?? r['PermissionSetGroup.DeveloperName'] ?? id;
+        const userCount = r.userCount ?? r.expr0 ?? 0;
+        return {
+          Id: id,
+          Name: name,
+          Type: 'PermissionSetGroup',
+          UserCount: userCount,
+          Severity: 'warning',
+          SeverityIcon: getSeverityIcon('warning'),
+        };
+      });
+
+    const allResults = [
+      ...this.zeroUserPermSets,
+      ...this.limitedUserPermSets,
+      ...this.zeroUserPermSetGroups,
+      ...this.limitedUserPermSetGroups,
+    ];
     const totalCount = allResults.length;
 
     let msg = 'No underused permission sets found';
     let statusCode = 0;
     if (totalCount > 0) {
       statusCode = 1;
-      msg = `Found ${totalCount} underused permission sets (${this.zeroUserPermSets.length} with 0 users, ${this.limitedUserPermSets.length} with 1–${this.threshold} users)`;
+      const zeroTotal = this.zeroUserPermSets.length + this.zeroUserPermSetGroups.length;
+      const limitedTotal = this.limitedUserPermSets.length + this.limitedUserPermSetGroups.length;
+      msg = `Found ${totalCount} underused permission sets/groups (${zeroTotal} with 0 users, ${limitedTotal} with 1–${this.threshold} users)`;
       uxLog("warning", this, c.yellow(msg));
     } else {
       uxLog("success", this, c.green(msg));
@@ -175,11 +238,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     return {
       status: statusCode,
       message: msg,
-      zeroUserCount: this.zeroUserPermSets.length,
-      limitedUserCount: this.limitedUserPermSets.length,
+      zeroUserCount: this.zeroUserPermSets.length + this.zeroUserPermSetGroups.length,
+      limitedUserCount: this.limitedUserPermSets.length + this.limitedUserPermSetGroups.length,
       totalCount,
       zeroUserPermSets: this.zeroUserPermSets,
       limitedUserPermSets: this.limitedUserPermSets,
+      zeroUserPermSetGroups: this.zeroUserPermSetGroups,
+      limitedUserPermSetGroups: this.limitedUserPermSetGroups,
       csvLogFile: this.outputFile,
     };
   }
@@ -193,13 +258,15 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     if (allResults.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${allResults.length} underused permission sets found in ${orgMarkdown}`;
+      notifText = `${allResults.length} underused permission sets/groups found in ${orgMarkdown}`;
+      const zeroItems = [...this.zeroUserPermSets, ...this.zeroUserPermSetGroups];
+      const limitedItems = [...this.limitedUserPermSets, ...this.limitedUserPermSetGroups];
       const zeroText =
-        this.zeroUserPermSets.length > 0
-          ? `*0 users:*\n${this.zeroUserPermSets.map((ps) => `• ${ps.Name}`).join('\n')}` : '';
+        zeroItems.length > 0
+          ? `*0 users:*\n${zeroItems.map((ps) => `• ${ps.Name} (${ps.Type})`).join('\n')}` : '';
       const limitedText =
-        this.limitedUserPermSets.length > 0
-          ? `*1–${this.threshold} users:*\n${this.limitedUserPermSets.map((ps) => `• ${ps.Name}: ${ps.UserCount} users`).join('\n')}`
+        limitedItems.length > 0
+          ? `*1–${this.threshold} users:*\n${limitedItems.map((ps) => `• ${ps.Name} (${ps.Type}): ${ps.UserCount} users`).join('\n')}`
           : '';
       attachments.push({
         text: [zeroText, limitedText].filter(Boolean).join('\n\n'),
@@ -220,6 +287,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         UnderusedPermissionSets: allResults.length,
         ZeroUserPermissionSets: this.zeroUserPermSets.length,
         LimitedUserPermissionSets: this.limitedUserPermSets.length,
+        ZeroUserPermissionSetGroups: this.zeroUserPermSetGroups.length,
+        LimitedUserPermissionSetGroups: this.limitedUserPermSetGroups.length,
       },
     });
   }

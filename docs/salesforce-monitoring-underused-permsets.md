@@ -10,10 +10,12 @@ Permission sets with zero or few users may be candidates for cleanup or consolid
 
 **What it detects:**
 
-- **0 users:** Permission sets with no direct assignments and not in any Permission Set Group
-- **Low usage:** Permission sets assigned to 5 or fewer users (configurable via `PERMSET_LIMITED_USERS_THRESHOLD`)
+- **0 users:** Permission sets and Permission Set Groups with no assignments
+- **Low usage:** Permission sets and groups assigned to 5 or fewer users (configurable via `PERMSET_LIMITED_USERS_THRESHOLD`)
 
-Only custom permission sets (NamespacePrefix = null, LicenseId = null) that are not owned by profiles are included. Permission sets linked to Permission Set Licenses, managed package permission sets, and those in Permission Set Groups are excluded.
+**Permission Sets:** Custom only (NamespacePrefix = null, LicenseId = null), not profile-owned, not in groups. PSL-linked and managed package permission sets are excluded.
+
+**Permission Set Groups:** Custom only (NamespacePrefix = null). Managed package groups are excluded.
 
 Sfdx-hardis command: [sf hardis:org:diagnose:underusedpermsets](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/underusedpermsets/)
 
