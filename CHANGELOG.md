@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - [hardis:org:monitor:limits](https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/): Add Apex character limit monitoring (custom classes + triggers, excludes @isTest)
+- New command [hardis:org:diagnose:underusedpermsets](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/underusedpermsets/) to identify underused Permission Sets and Permission Set Groups in a Salesforce org, with details and notifications (available in sfdx-hardis monitoring)
 
 ## [6.27.2] 2025-03-10
 
