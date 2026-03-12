@@ -99,7 +99,7 @@ docs/                 # Project documentation
 
 ## Internationalization (i18n) / Translations
 
-sfdx-hardis uses **i18next** for runtime translations. The locale is selected via the `SFDX_HARDIS_LOCALE` environment variable (default: `en`; supported: `en`, `fr`, `es`, `ja`).
+sfdx-hardis uses **i18next** for runtime translations. The locale is selected via the `SFDX_HARDIS_LOCALE` environment variable (default: `en`; supported: `en`, `de`, `fr`, `es`, `ja`).
 
 ### Translation files
 
@@ -107,6 +107,7 @@ sfdx-hardis uses **i18next** for runtime translations. The locale is selected vi
 - French: `src/i18n/fr.json`
 - Spanish: `src/i18n/es.json`
 - Japanese: `src/i18n/ja.json`
+- German: `src/i18n/de.json`
 
 All files are flat JSON objects with **camelCase** keys and **i18next interpolation** syntax for variables (`{{varName}}`).
 
@@ -133,11 +134,13 @@ uxLog("warning", this, c.yellow(t("fileNotFound", { path: filePath })));
   - `"Processing file {{file}}..."` → `processingFile`
   - `"Error while deploying metadata: {{message}}"` → `errorWhileDeployingMetadata`
 - Keep keys unique across the whole file.
-- Always add the key to **all** translation files (`en.json`, `fr.json`, and `ja.json`) simultaneously. French and Japanese translations can mirror English when unsure, but should be translated.
+- Always add the key to **all** translation files (`en.json`, `fr.json`, `es.json`, `ja.json`, and `de.json`) simultaneously. Non-English translations can mirror English when unsure, but should be translated.
 - Reuse existing translations when possible instead of creating new keys for similar messages.
 - Always keep translation json files well-formatted and sorted alphabetically by key for readability.
 
 ### Rules for translating strings
+
+- When you are asked for a new translation, look at other translations in the same language (i18n json file) to use the same terminology and style for consistency.
 
 - **Do NOT translate markers** surrounded by `[]` (e.g. `[sfdx-hardis]`, `[SKIP]`). Keep them as hardcoded string literals and concatenate with the translated string:
   ```typescript
@@ -150,7 +153,11 @@ uxLog("warning", this, c.yellow(t("fileNotFound", { path: filePath })));
   Use neutral European Spanish (Spain) rather than forcing Latin American variants.
 - **Salesforce-specific terms (French)**: Use the official Salesforce French translation when translating to French (e.g. `Permission Set` → `Ensemble d'autorisations`, `Record Type` → `Type d'enregistrement`, `Flow` → `Flux`, `Object` → `Objet`, `Field` → `Champ`, `Profile` → `Profil`).
 - **Salesforce-specific terms (Japanese)**: Use the official Salesforce Japanese translation when translating to Japanese. Use polite professional Japanese (Desu/Masu form - です/ます調) (e.g. `Account` → `取引先`, `Contact` → `取引先責任者`, `Opportunity` → `商談`, `Lead` → `リード`, `Case` → `ケース`, `Campaign` → `キャンペーン`, `Task` → `ToDo`, `Event` → `行動`, `Activity` → `活動`, `Object` → `オブジェクト`, `Custom Object` → `カスタムオブジェクト`, `Record Type` → `レコードタイプ`, `Permission Set` → `権限セット`, `Permission Set Group` → `権限セットグループ`, `Profile` → `プロファイル`, `Role` → `ロール`, `Flow` → `フロー`, `Trigger` → `トリガー`, `Validation Rule` → `入力規則`, `Workflow Rule` → `ワークフロールール`, `Process Builder` → `プロセスビルダー`, `Approval Process` → `承認プロセス`, `Assignment Rule` → `割り当てルール`, `Escalation Rule` → `エスカレーションルール`, `Connected App` → `接続アプリケーション`, `External Client App` → `外部クライアントアプリケーション`, `Custom Setting` → `カスタム設定`, `Custom Label` → `カスタム表示ラベル`, `Custom Permission` → `カスタム権限`, `Field` → `項目`, `Deployment` → `デプロイ`, `Production (Org)` → `本番環境`, `Sandbox` → `Sandbox`, `Scratch Org` → `スクラッチ組織`, `Lightning Page` → `Lightningページ`, `Lightning Web Component` → `Lightning Webコンポーネント`, `Developer Console` → `開発者コンソール`, `Dashboard` → `ダッシュボード`).
-- Strings that are **pure dynamic values** (only a variable, a JSON.stringify, a stack trace) do not need a translation key; leave them as-is.
+- **German-specific terms**: Use the official Salesforce German translation when translating to German.
+  - Use formal German ("Sie" not "du") for all user facing text.
+  - Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub, SOQL, DML, CSV, REST, Bulk API, upsert, mock data.
+  - Use standard German software/IT terminology (e.g. "Datensatz" for record, "Org" stays as "Org", "Workspace" stays as "Workspace").
+  - Keep brand names untranslated: Salesforce, SFDMU, Git, GitHub, GitLab, JIRA, VS Code.
 
 ### uxLog calls
 
