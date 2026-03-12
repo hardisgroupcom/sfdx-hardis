@@ -34,12 +34,17 @@ const username = os.userInfo().username;
 const userConfigFiles = [`config/user/.${moduleName}.${username}.yaml`, `config/user/.${moduleName}.${username}.yml`];
 const REMOTE_CONFIGS: any = {};
 
+const showBanner = false;
+
 export const CONSTANTS = {
   DEFAULT_API_VERSION: '65.0',
   DOC_URL_ROOT: "https://sfdx-hardis.cloudity.com",
   WEBSITE_URL: "https://cloudity.com?ref=sfdxhardis",
   CONTACT_URL: "https://cloudity.com/contact-us/",
-  BANNER_IMAGE_URL: "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/alpha/docs/assets/images/cloudity-banner.png",
+  BANNER_IMAGE_URL:
+    showBanner
+      ? "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/alpha/docs/assets/images/cloudity-banner.png"
+      : false,
   NOT_IMPACTING_METADATA_TYPES: process.env.NOT_IMPACTING_METADATA_TYPES
     ?.split(",")
     .map((item) => item.trim())
@@ -103,6 +108,9 @@ export const getApiVersionNumber = (conn: Connection | null = null) => {
 }
 
 export const getBannerMarkdownAndLink = () => {
+  if (CONSTANTS.BANNER_IMAGE_URL === false) {
+    return '';
+  }
   return `[![${t('bannerImageAltText')}](${CONSTANTS.BANNER_IMAGE_URL})](${CONSTANTS.WEBSITE_URL})`;
 }
 
