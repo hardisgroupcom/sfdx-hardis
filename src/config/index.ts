@@ -271,7 +271,9 @@ export async function getReportDirectory() {
 export function getEnvVar(envVarName: string): string | null {
   const varValue = process.env[envVarName] || null;
   // Avoid Azure cases that sends the expression as string if variable not defined
-  if (varValue && varValue.includes(`(${envVarName}`)) {
+  // RegEx will match on strings beginning with '$(' some text, then ')' 
+  // It will match unresolved environment vars e.g. $(System.PullRequest.PullRequestId) or $(JIRA_TICKET_REGEX)
+  if (varValue && /^\$\([^)]+\)$/.test(varValue)) {
     return null;
   }
   return varValue;
