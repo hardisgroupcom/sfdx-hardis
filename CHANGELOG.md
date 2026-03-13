@@ -12,6 +12,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - French (by [Nicolas Vuillamy](https://www.linkedin.com/in/nicolas-vuillamy/))
   - Spanish (by [Yamilet Oliva](https://www.linkedin.com/in/yamiletoliva/)
   - German (by [Roman Hentschke](https://www.linkedin.com/in/derroman/))
+  - Polish (by [Dagmara Ryborz](https://www.linkedin.com/in/dagmara-ryborz-7618b991/))
   - Japanese (by [Shinnosuke Takakura](https://www.linkedin.com/in/shinnosuke-takakura-9041ba217/))
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add support for translations in generated documentation
 - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): If set, use prompts language to generate documentation

@@ -126,8 +126,8 @@ _See [Dockerfile](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/Docker
 
 - Linux **Ubuntu** based images (works on GitHub, Azure & Bitbucket)
 
-    - [**hardisgroupcom/sfdx-hardis-ubuntu:latest**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis-ubuntu) (with latest @salesforce/cli version)
-    - [**hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis-ubuntu) (with recommended @salesforce/cli version, in case the latest version of @salesforce/cli is buggy)
+  - [**hardisgroupcom/sfdx-hardis-ubuntu:latest**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis-ubuntu) (with latest @salesforce/cli version)
+  - [**hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis-ubuntu) (with recommended @salesforce/cli version, in case the latest version of @salesforce/cli is buggy)
 
   - GitHub Packages (ghcr.io)
 
@@ -370,6 +370,7 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 ## Contributing
 
 <!-- contributing.md start -->
+
 Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you !)
 
 ### Salesforce CLI Plugin: sfdx-hardis
@@ -456,6 +457,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Fernando Fernandez](https://www.linkedin.com/in/fernandofernandez1/), for the great command that [detects objects fields usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/)
 - [Yamilet Oliva](https://www.linkedin.com/in/yamiletoliva/), for sfdx-hardis spanish translation
 - [Shinnosuke Takakura](https://www.linkedin.com/in/shinnosuke-takakura-9041ba217/), for sfdx-hardis japanese translation
+- [Dagmara Ryborz](https://www.linkedin.com/in/dagmara-ryborz-7618b991/), for Polish translation
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 
@@ -463,6 +465,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - French: [Nicolas Vuillamy](https://www.linkedin.com/in/nicolas-vuillamy/)
 - Spanish: [Yamilet Oliva](https://www.linkedin.com/in/yamiletoliva/)
 - German: [Roman Hentschke](https://www.linkedin.com/in/derroman/)
+- Polish: [Dagmara Ryborz](https://www.linkedin.com/in/dagmara-ryborz-7618b991/)
 - Japanese: [Shinnosuke Takakura](https://www.linkedin.com/in/shinnosuke-takakura-9041ba217/)
 
 <!-- contributors.md end -->
