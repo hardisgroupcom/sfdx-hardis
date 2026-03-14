@@ -18,10 +18,10 @@ Refreshing a sandbox in Salesforce **wipes all configuration and credentials** t
 
 sfdx-hardis provides two commands that together make sandbox refreshes painless:
 
-| Step | Command | What it does |
-|------|---------|-------------|
+| Step               | Command                                | What it does                           |
+|--------------------|----------------------------------------|----------------------------------------|
 | **Before refresh** | `sf hardis:org:refresh:before-refresh` | Backs up everything that would be lost |
-| **After refresh** | `sf hardis:org:refresh:after-refresh` | Restores everything from the backup |
+| **After refresh**  | `sf hardis:org:refresh:after-refresh`  | Restores everything from the backup    |
 
 Both commands are available in the contextual actions in VsCode extension feature **Orgs Manager**.
 
@@ -49,15 +49,15 @@ The command is **fully interactive** - it will guide you through each section an
 
 ### What gets saved
 
-| Item | Where it is stored |
-|------|--------------------|
-| External Client Apps (+ OAuth credentials) | `scripts/sandbox-refresh/<sandbox>/force-app/…/externalClientApps/` |
-| Connected Apps (+ Consumer Secrets) | `scripts/sandbox-refresh/<sandbox>/force-app/…/connectedApps/` |
-| Certificates | `scripts/sandbox-refresh/<sandbox>/force-app/…/certs/` |
-| SAML SSO configs | `scripts/sandbox-refresh/<sandbox>/force-app/…/samlssoconfigs/` |
-| Custom Settings (as JSON) | `scripts/sandbox-refresh/<sandbox>/savedCustomSettings/` |
-| Records (via SFDMU) | `scripts/sandbox-refresh/<sandbox>/data/` |
-| Other metadata | `scripts/sandbox-refresh/<sandbox>/manifest/package-metadata-to-restore.xml` |
+| Item                                       | Where it is stored                                                           |
+|--------------------------------------------|------------------------------------------------------------------------------|
+| External Client Apps (+ OAuth credentials) | `scripts/sandbox-refresh/<sandbox>/force-app/…/externalClientApps/`          |
+| Connected Apps (+ Consumer Secrets)        | `scripts/sandbox-refresh/<sandbox>/force-app/…/connectedApps/`               |
+| Certificates                               | `scripts/sandbox-refresh/<sandbox>/force-app/…/certs/`                       |
+| SAML SSO configs                           | `scripts/sandbox-refresh/<sandbox>/force-app/…/samlssoconfigs/`              |
+| Custom Settings (as JSON)                  | `scripts/sandbox-refresh/<sandbox>/savedCustomSettings/`                     |
+| Records (via SFDMU)                        | `scripts/sandbox-refresh/<sandbox>/data/`                                    |
+| Other metadata                             | `scripts/sandbox-refresh/<sandbox>/manifest/package-metadata-to-restore.xml` |
 
 ### Connected Apps and External Client Apps deletion
 
