@@ -6,6 +6,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
 import { execCommand, uxLog } from '../../../../common/utils/index.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -63,7 +64,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Retrieve dashboards, documents and report folders in DX sources`));
+    uxLog("action", this, c.cyan(t('retrieveDashboardsDocumentsAndReportFolders')));
 
     const rootSourcesFolder = path.join(process.cwd() + '/force-app/main/default');
     const folderTypes = [

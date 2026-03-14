@@ -28,23 +28,16 @@ export class DataAction extends ActionsProvider {
     if (validity) return validity;
     const sfdmuProject = (cmd.parameters?.sfdmuProject as string) || '';
     const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject);
-    const importOptions: any = {
-      fail: false,
-      output: true
-    }
+    const importOptions: any = {}
     if (this.customUsernameToUse) {
       importOptions.targetUsername = this.customUsernameToUse;
     }
-    let res: any;
     try {
-      res = await importData(sfdmuProjectPath!, null, importOptions);
-      if (res.status === 0) {
-        return { statusCode: 'success', output: (res.stdout || '') + '\n' + (res.stderr || '') };
-      }
+      const res = await importData(sfdmuProjectPath!, null, importOptions);
+      return { statusCode: 'success', output: (res.stdout || '') + '\n' + (res.stderr || '') };
     } catch (error) {
       uxLog('error', this, c.red(`[DeploymentActions] Error during data import for action ${cmd.label}: ${error}`));
       return { statusCode: 'failed', output: `Error during data import: ${error}` };
     }
-    return { statusCode: 'failed', output: (res.stdout || '') + '\n' + (res.stderr || '') };
   }
 }

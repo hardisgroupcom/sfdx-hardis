@@ -2,6 +2,7 @@ import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUti
 import { DocBuilderRoot } from "./docBuilderRoot.js";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { XMLBuilder, XMLParser } from "fast-xml-parser";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderApprovalProcess extends DocBuilderRoot {
 
@@ -17,9 +18,9 @@ export class DocBuilderApprovalProcess extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Approval Processes" : "## Approval Processes",
+      filterObject ? `## ${t('docMdRelatedApprovalProcesses')}` : `## ${t('docMdApprovalProcesses')}`,
       "",
-      "| Approval Process | Is Active |",
+      `| ${t('docMdColApprovalProcess')} | ${t('docMdColIsActive')} |`,
       "| :----            |    :--:   |"
     ]);
 
@@ -42,7 +43,7 @@ export class DocBuilderApprovalProcess extends DocBuilderRoot {
         "label",
         "active",
         "description",
-      ], "## Approval Process attributes", []),
+      ], `## ${t('docMdApprovalProcessAttributes')}`, []),
       '',
       '<!-- ApprovalProcess description -->',
       '',

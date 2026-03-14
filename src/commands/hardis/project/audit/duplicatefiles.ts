@@ -6,6 +6,7 @@ import c from 'chalk';
 import readFilesRecursive from 'fs-readdir-recursive';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -105,10 +106,10 @@ The command's technical implementation involves:
         this,
         c.cyan(`Found ${c.bold(duplicateCount)} duplicate file names in ${c.bold(pathToBrowser)}.`)
       );
-      uxLog("warning", this, c.yellow(`Duplicate files:\n${duplicateList}`));
+      uxLog("warning", this, c.yellow(t('duplicateFiles', { duplicateList })));
     }
     else {
-      uxLog("action", this, c.cyan(`No duplicate file names found in ${c.bold(pathToBrowser)}.`));
+      uxLog("action", this, c.cyan(t('noDuplicateFileNamesFoundIn', { pathToBrowser: c.bold(pathToBrowser) })));
     }
     return { duplicates: duplicates };
   }

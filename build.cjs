@@ -1,17 +1,170 @@
 #!/usr/bin/node
 /* eslint-disable */
 const fs = require("fs-extra");
+const https = require("https");
 const yaml = require("js-yaml");
+
+const SDR_METADATA_REGISTRY_URL =
+  "https://raw.githubusercontent.com/forcedotcom/source-deploy-retrieve/refs/heads/main/src/registry/metadataRegistry.json";
+const METADATA_LIST_FILE = "./src/common/metadata-utils/metadataList.ts";
 
 class SfdxHardisBuilder {
   async run() {
     console.log("Start additional building of sfdx-hardis repository...");
+    await this.updateMetadataListFromRegistry();
     await this.generatePagesFromReadme();
     await this.buildDeployTipsDoc();
     await this.buildPromptTemplatesDocs();
     this.truncateReadme();
     // this.fixOnlineIndex();
     console.log("All done.");
+  }
+
+  async updateMetadataListFromRegistry() {
+    console.log("Updating metadata list from source-deploy-retrieve registry...");
+    const metadataRegistry = await this.fetchJson(SDR_METADATA_REGISTRY_URL);
+    const metadataTypes = this.buildMetadataTypesList(metadataRegistry);
+    const metadataListContent = this.buildMetadataListFileContent(metadataTypes);
+    this.writeFileIfChanged(METADATA_LIST_FILE, metadataListContent);
+    console.log(`Updated ${METADATA_LIST_FILE} from remote metadata registry`);
+  }
+
+  fetchJson(url) {
+    return new Promise((resolve, reject) => {
+      https
+        .get(url, (response) => {
+          if (response.statusCode !== 200) {
+            reject(new Error(`Unable to download ${url} (status: ${response.statusCode})`));
+            return;
+          }
+
+          let data = "";
+          response.on("data", (chunk) => {
+            data += chunk;
+          });
+
+          response.on("end", () => {
+            try {
+              resolve(JSON.parse(data));
+            } catch (e) {
+              reject(new Error(`Invalid JSON response from ${url}: ${(e).message}`));
+            }
+          });
+        })
+        .on("error", (error) => {
+          reject(new Error(`Unable to download ${url}: ${error.message}`));
+        });
+    });
+  }
+
+  buildMetadataTypesList(metadataRegistry) {
+    const metadataTypesById = metadataRegistry?.types || {};
+    const sortedTypeIds = Object.keys(metadataTypesById).sort();
+    const metadataTypes = [];
+    const generatedChildTypeIds = new Set();
+
+    for (const typeId of sortedTypeIds) {
+      const type = metadataTypesById[typeId];
+      if (!type || !type.name || !type.directoryName) {
+        continue;
+      }
+
+      const childrenById = type?.children?.types || {};
+      const childNames = Object.values(childrenById)
+        .map((childType) => childType?.name)
+        .filter(Boolean);
+      const metadataType = this.mapRegistryTypeToMetadataType(type, {
+        childXmlNames: childNames.length > 0 ? childNames : undefined,
+      });
+      metadataTypes.push(metadataType);
+
+      for (const childTypeId of Object.keys(childrenById).sort()) {
+        if (metadataTypesById[childTypeId] || generatedChildTypeIds.has(childTypeId)) {
+          continue;
+        }
+        const childType = childrenById[childTypeId];
+        if (!childType || !childType.name || !childType.directoryName) {
+          continue;
+        }
+
+        generatedChildTypeIds.add(childTypeId);
+        metadataTypes.push(
+          this.mapRegistryTypeToMetadataType(childType, {
+            parentXmlName: type.name,
+            xmlTag: childType.xmlElementName,
+            key: childType.uniqueIdElement,
+          })
+        );
+      }
+    }
+
+    return metadataTypes;
+  }
+
+  mapRegistryTypeToMetadataType(type, additionalFields = {}) {
+    const metadataType = {
+      directoryName: type.directoryName,
+      inFolder: Boolean(type.inFolder),
+      metaFile: this.isMetaFileType(type),
+      ...(type.suffix ? { suffix: type.suffix } : {}),
+      xmlName: type.name,
+      ...additionalFields,
+    };
+
+    // Keep only defined fields so output stays clean.
+    return Object.fromEntries(Object.entries(metadataType).filter(([, value]) => value !== undefined));
+  }
+
+  isMetaFileType(type) {
+    const adapter = type?.strategies?.adapter;
+    return ["matchingContentFile", "mixedContent", "digitalExperience", "webApplications"].includes(adapter);
+  }
+
+  buildMetadataListFileContent(metadataTypes) {
+    const metadataTypesAsTs = this.toTsLiteral(metadataTypes, 2);
+    return `export function listMetadataTypes() {\n  // Generated from ${SDR_METADATA_REGISTRY_URL}\n  return ${metadataTypesAsTs};\n}\n`;
+  }
+
+  toTsLiteral(value, indentLevel = 0) {
+    const indent = "  ".repeat(indentLevel);
+    const childIndent = "  ".repeat(indentLevel + 1);
+
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return "[]";
+      }
+      const items = value.map((item) => `${childIndent}${this.toTsLiteral(item, indentLevel + 1)},`);
+      return `[\n${items.join("\n")}\n${indent}]`;
+    }
+
+    if (value != null && typeof value === "object") {
+      const keys = Object.keys(value);
+      if (keys.length === 0) {
+        return "{}";
+      }
+
+      const entries = keys.map((key) => {
+        const keyLiteral = /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key) ? key : this.toTsString(key);
+        return `${childIndent}${keyLiteral}: ${this.toTsLiteral(value[key], indentLevel + 1)},`;
+      });
+      return `{\n${entries.join("\n")}\n${indent}}`;
+    }
+
+    if (typeof value === "string") {
+      return this.toTsString(value);
+    }
+
+    return String(value);
+  }
+
+  toTsString(value) {
+    const escapedValue = value
+      .replace(/\\/g, "\\\\")
+      .replace(/'/g, "\\'")
+      .replace(/\r/g, "\\r")
+      .replace(/\n/g, "\\n")
+      .replace(/\t/g, "\\t");
+    return `'${escapedValue}'`;
   }
 
   async buildDeployTipsDoc() {

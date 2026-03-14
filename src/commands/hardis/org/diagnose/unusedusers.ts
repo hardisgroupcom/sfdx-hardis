@@ -12,6 +12,7 @@ import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils
 import { prompts } from '../../../../common/utils/prompts.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -210,14 +211,14 @@ The command's technical implementation involves:
         const licenseTypesResponse = await prompts({
           type: 'select',
           name: 'licensetypes',
-          message: 'Please select the type of licenses you want to detect ',
-          description: 'Choose which categories of user licenses to analyze for unused accounts',
-          placeholder: 'Select license type',
+          message: t('pleaseSelectTheTypeOfLicensesYou'),
+          description: t('chooseWhichCategoriesOfUserLicensesToAnalyze'),
+          placeholder: t('selectLicenseType'),
           choices: [
-            { value: 'all', title: 'All licenses types' },
-            { value: `all-crm`, title: 'Salesforce Licenses' },
-            { value: `all-paying`, title: 'Salesforce Licences + Experience + Other paying' },
-            { value: `experience`, title: 'Experience licenses only' },
+            { value: 'all', title: t('allLicensesTypes') },
+            { value: `all-crm`, title: t('salesforceLicences') },
+            { value: `all-paying`, title: t('salesforceLicencesExperienceOtherPaying') },
+            { value: `experience`, title: t('experienceLicensesOnly') },
           ],
         });
         this.licenseTypes = licenseTypesResponse.licensetypes;
@@ -236,9 +237,9 @@ The command's technical implementation involves:
         const lastNdaysResponse = await prompts({
           type: 'select',
           name: 'days',
-          message: 'Please select the period to detect users.',
-          description: 'Choose how far back to look for user activity when determining if users are inactive',
-          placeholder: 'Select time period',
+          message: t('pleaseSelectThePeriodToDetectUsers'),
+          description: t('chooseHowFarBackToLookForUserActivity'),
+          placeholder: t('selectTimePeriod'),
           choices: [
             { title: `1 day`, value: 1 },
             { title: `2 days`, value: 2 },

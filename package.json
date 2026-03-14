@@ -13,7 +13,7 @@
     "@langchain/core": "1.1.31",
     "@langchain/google-genai": "2.1.19",
     "@langchain/ollama": "1.2.3",
-    "@langchain/openai": "1.2.8",
+    "@langchain/openai": "1.2.9",
     "@oclif/core": "4.8.0",
     "@openai/codex-sdk": "0.105.0",
     "@salesforce/core": "8.26.3",
@@ -44,6 +44,7 @@
     "fs-readdir-recursive": "1.1.0",
     "glob": "13.0.6",
     "he": "1.2.0",
+    "i18next": "^25.8.13",
     "inquirer": "10.2.2",
     "isomorphic-dompurify": "2.26.0",
     "jira.js": "5.3.1",
@@ -80,7 +81,8 @@
     "qs": "6.14.2",
     "tar": "7.5.11",
     "tmp": "0.2.5",
-    "undici": "6.23.0",
+    "undici": "6.24.1",
+    "yauzl": "3.2.1",
     "prebuild-install/tar-fs": "2.1.4",
     "@puppeteer/browsers/tar-fs": "3.1.1",
     "parse5": "6.0.1"
@@ -329,6 +331,9 @@
       "output": []
     }
   },
-  "exports": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./plugin-api": "./lib/plugin-api.js"
+  },
   "type": "module"
 }

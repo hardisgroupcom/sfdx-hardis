@@ -17,6 +17,7 @@ import { SfError } from '@salesforce/core';
 import { clearCache } from '../cache/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { decryptFile } from '../cryptoUtils.js';
+import { t } from './i18n.js';
 
 const execAsync = promisify(childExec);
 
@@ -154,11 +155,11 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
       const authFile = path.join(await createTempDir(), 'sfdxScratchAuth.txt');
       await fs.writeFile(authFile, authUrl, 'utf8');
       const authCommand =
-        `sf org login sfdx-url -f ${authFile}` +
+        `sf org login sfdx-url -f "${authFile}"` +
         (isDevHub ? ` --set-default-dev-hub` : (setDefaultOrg ? ` --set-default` : '')) +
         (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
       await execCommand(authCommand, this, { fail: true, output: false });
-      uxLog("action", this, c.cyan('Successfully logged using sfdxAuthUrl'));
+      uxLog("action", this, c.cyan(t('successfullyLoggedUsingSfdxauthurl')));
       await fs.remove(authFile);
       return true;
     }
@@ -211,7 +212,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         'sf org login jwt' +
         ` ${usernameArg}` +
         ` --client-id ${sfdxClientId}` +
-        ` --jwt-key-file ${crtKeyfile}` +
+        ` --jwt-key-file "${crtKeyfile}"` +
         ` --username ${username}` +
         ` --instance-url ${instanceUrl}` +
         (orgAlias && !options.forceUsername ? ` --alias ${orgAlias}` : '');
@@ -253,7 +254,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
 
       const configInfoUsr = await getConfig('user');
       let loginResult: any = null;
-      uxLog("action", this, c.cyan("Authenticating using web login..."));
+      uxLog("action", this, c.cyan(t('authenticatingUsingWebLogin')));
       const loginCommand =
         'sf org login web' +
         (alias ? ` --alias ${alias}` : options.setDefault === false ? '' : isDevHub ? ' --set-default-dev-hub' : ' --set-default') +
@@ -488,7 +489,7 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
         )}`
       )
     );
-    uxLog("error", this, c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
+    uxLog("error", this, c.red(t('seeCiAuthenticationDocAtSalesforceCi', { CONSTANTS: CONSTANTS.DOC_URL_ROOT })));
   }
   return null;
 }

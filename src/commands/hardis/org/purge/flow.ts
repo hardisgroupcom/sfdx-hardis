@@ -6,6 +6,8 @@ import c from 'chalk';
 import { execSfdxJson, extractRegexMatches, isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkDelete, bulkDeleteTooling, bulkQuery } from '../../../../common/utils/apiUtils.js';
+import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -107,6 +109,9 @@ The command's technical implementation involves:
   protected flowRecords: any[];
   protected deletedRecords: any[] = [];
   protected deletedErrors: any[] = [];
+  protected outputFilesToDelete: any = {};
+  protected outputFilesDeleted: any = {};
+  protected conn: any;
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
@@ -139,39 +144,66 @@ The command's technical implementation involves:
     // Simplify results format & display them
     this.formatFlowRecords();
 
+    // Generate CSV report of flows to delete
+    await this.generateFlowsToDeleteReport();
+
     // Confirm deletion
     if (this.promptUser && !isCI) {
       const confirmDelete = await prompts({
         type: 'confirm',
         name: 'value',
-        message: c.cyanBright(`Do you confirm you want to delete these ${this.flowRecords.length} flow versions ?`),
-        description: 'Permanently delete the selected flow versions from the Salesforce org',
+        message: c.cyanBright(t('doYouConfirmYouWantToDelete2', { flowRecords: this.flowRecords.length })),
+        description: t('deleteFlowVersionsDescription'),
       });
 
       if (confirmDelete.value === false) {
-        uxLog("error", this, c.red('Action cancelled by user.'));
+        uxLog("error", this, c.red(t('actionCancelledByUser')));
         return { outputString: 'Action cancelled by user.' };
       }
     }
 
     // Perform deletion
     const conn = flags['target-org'].getConnection();
+    this.conn = conn;
     await this.processDeleteFlowVersions(conn, true);
 
     const summary =
       this.deletedRecords.length > 0
-        ? `Deleted the following list of record(s)`
-        : 'No record(s) to delete';
+        ? t('deletedRecordsSummary', { count: this.deletedRecords.length })
+        : t('noRecordsToDelete');
     uxLog("action", this, c.cyan(summary));
     if (this.deletedRecords.length > 0) {
-      uxLogTable(this, this.deletedRecords);
+      const enrichedDeletedRecords = this.deletedRecords.flat().map((r: any) => {
+        const id = r.Id ?? r.id ?? '';
+        const flowDetail = this.flowRecords.find((f: any) => f.Id === id) ?? {};
+        return {
+          'Id': id,
+          'API Name': flowDetail.DefinitionDevName ?? '',
+          'Version': flowDetail.VersionNumber ?? '',
+          'Label': flowDetail.MasterLabel ?? '',
+          'Flow Status': flowDetail.Status ?? '',
+          'Deletion Status': r.success ? 'Deleted' : 'Error',
+          'Error': r.error ?? '',
+        };
+      });
+      uxLogTable(this, enrichedDeletedRecords);
+      const deletionReportPath = await generateReportPath('org-purge-flow-deleted', '');
+      this.outputFilesDeleted = await generateCsvFile(enrichedDeletedRecords, deletionReportPath, {
+        fileTitle: t('flowVersionsDeletionResultsReportTitle'),
+      });
     }
+
     // Return an object to be displayed with --json
-    return { orgId: flags['target-org'].getOrgId(), outputString: summary };
+    return {
+      orgId: flags['target-org'].getOrgId(),
+      outputString: summary,
+      csvLogFile: this.outputFilesToDelete?.csvFile,
+      xlsxLogFile: this.outputFilesToDelete?.xlsxFile,
+    };
   }
 
   private async processDeleteFlowVersions(conn: any, tryDeleteInterviews: boolean) {
-    uxLog("action", this, c.cyan(`Deleting Flow versions...`));
+    uxLog("action", this, c.cyan(t('deletingFlowVersions')));
     const recordsIds = this.flowRecords.map((record) => record.Id);
     const deleteResults = await bulkDeleteTooling('Flow', recordsIds, conn);
     for (const deleteRes of deleteResults.results) {
@@ -226,11 +258,11 @@ The command's technical implementation involves:
       const confirmDelete = await prompts({
         type: 'confirm',
         name: 'value',
-        message: c.cyanBright(`Do you confirm you want to delete ${flowInterviewsIds.length} Flow Interviews ?`),
-        description: 'Permanently delete the selected flow interview records from the Salesforce org',
+        message: c.cyanBright(t('doYouConfirmYouWantToDelete', { flowInterviewsIds: flowInterviewsIds.length })),
+        description: t('deleteFlowInterviewsDescription'),
       });
       if (confirmDelete.value === false) {
-        uxLog("error", this, c.red('Action cancelled by user.'));
+        uxLog("error", this, c.red(t('actionCancelledByUser')));
         return { outputString: 'Action cancelled by user.' };
       }
     }
@@ -239,7 +271,7 @@ The command's technical implementation involves:
     this.deletedRecords.push(deleteInterviewResults?.successfulResults || []);
     this.deletedErrors = deleteInterviewResults?.failedResults || [];
     // Try to delete flow versions again
-    uxLog("action", this, c.cyan(`Trying again to delete flow versions after deleting flow interviews...`));
+    uxLog("action", this, c.cyan(t('retryDeleteFlowVersionsAfterInterviews')));
     this.flowRecords = [...new Set(this.flowRecords)]; // Make list unique
     await this.processDeleteFlowVersions(conn, false);
   }
@@ -255,28 +287,32 @@ The command's technical implementation involves:
     }));
 
     if (this.flowRecords.length === 0) {
-      uxLog("warning", this, c.yellow('No Flow versions found to delete.'));
+      uxLog("warning", this, c.yellow(t('noFlowVersionsFoundToDelete')));
       return;
     }
 
-    const flowList = this.flowRecords
-      .map(
-        (flow) =>
-          `- ${c.bold(flow.DefinitionDevName)} v${c.green(flow.VersionNumber)} (${c.yellow(flow.Status)})${flow.Description ? ` - ${c.gray(flow.Description)}` : ''}`
-      )
-      .join('\n');
+    uxLog("action", this, c.cyan(t('foundFlowVersionsToDelete', { count: this.flowRecords.length })));
+    uxLogTable(this, this.flowRecords.map((flow: any) => ({
+      'API Name': flow.DefinitionDevName,
+      'Version': flow.VersionNumber,
+      'Label': flow.MasterLabel,
+      'Status': flow.Status,
+      'Description': flow.Description ?? '',
+    })));
+  }
 
-    uxLog(
-      "action",
-      this,
-      c.cyan(
-        `Found ${this.flowRecords.length} Flow version(s) to delete:\n${flowList}`
-      )
-    );
+  private async generateFlowsToDeleteReport(): Promise<void> {
+    if (this.flowRecords.length === 0) {
+      return;
+    }
+    const reportPath = await generateReportPath('org-purge-flow-to-delete', '');
+    this.outputFilesToDelete = await generateCsvFile(this.flowRecords, reportPath, {
+      fileTitle: t('flowVersionsToDeleteReportTitle'),
+    });
   }
 
   private async listFlowVersionsToDelete(manageableConstraint: string) {
-    uxLog("action", this, c.cyan('Querying Flow versions to delete...'));
+    uxLog("action", this, c.cyan(t('queryingFlowVersionsToDelete')));
     let query = `SELECT Id,MasterLabel,VersionNumber,Status,Description,Definition.DeveloperName FROM Flow WHERE ${manageableConstraint} AND Status IN ('${this.statusFilter.join(
       "','"
     )}')`;
@@ -305,7 +341,7 @@ The command's technical implementation involves:
       this.statusFilter = ['Obsolete'];
     } else {
       // Query all flows definitions
-      uxLog("action", this, c.cyan('Querying all Flow definitions to select from...'));
+      uxLog("action", this, c.cyan(t('queryingAllFlowDefinitionsToSelectFrom')));
       const allFlowQueryCommand =
         'sf data query ' +
         ` --query "SELECT Id,DeveloperName,MasterLabel,ManageableState FROM FlowDefinition WHERE ${manageableConstraint} ORDER BY DeveloperName"` +
@@ -321,23 +357,24 @@ The command's technical implementation involves:
       const flowNamesChoice = flowNamesUnique.map((flowName) => {
         return { title: flowName, value: flowName };
       });
-      flowNamesChoice.unshift({ title: 'All flows', value: 'all' });
+      flowNamesChoice.unshift({ title: t('allFlows'), value: 'all' });
 
       // Manually select status
       const selectStatus = await prompts([
         {
           type: 'select',
           name: 'name',
-          message: 'Please select the flow you want to clean',
-          description: 'Choose a specific flow to clean or select all flows',
-          placeholder: 'Select a flow',
+          message: t('pleaseSelectTheFlowYouWantTo2'),
+          description: t('chooseASpecificFlowToCleanOrSelectAll'),
+          placeholder: t('selectAFlow'),
           choices: flowNamesChoice,
         },
         {
           type: 'multiselect',
           name: 'status',
-          message: 'Please select the status(es) you want to delete',
+          message: t('pleaseSelectTheStatusEsYouWant'),
           description: 'Choose which flow version statuses should be deleted',
+          initial: ['Draft', 'Inactive', 'Obsolete'],
           choices: [
             { title: `Draft`, value: 'Draft' },
             { title: `Inactive`, value: 'Inactive' },
@@ -358,16 +395,17 @@ The command's technical implementation involves:
       ' ORDER BY Name';
     const flowsInterviewsToDelete = (await bulkQuery(query, conn)).records;
     if (flowsInterviewsToDelete.length === 0) {
-      uxLog("warning", this, c.yellow('No Flow Interviews found to delete.'));
+      uxLog("warning", this, c.yellow(t('noFlowInterviewsFoundToDelete')));
       return;
     }
-    // Display Flow Interviews to delete
-    const flowList = flowsInterviewsToDelete
-      .map(
-        (flow) =>
-          `- ${c.bold(flow.Name)} (${c.green(flow.InterviewLabel)}) - ${c.yellow(flow.InterviewStatus)}`
-      )
-      .join('\n');
-    uxLog("action", this, c.cyan(`Found ${flowsInterviewsToDelete.length} Flow Interviews to delete:\n${flowList}`));
+    // Display Flow Interviews to delete using uxLogTable
+    uxLog("action", this, c.cyan(t('foundFlowInterviewsToDeleteCount', { count: flowsInterviewsToDelete.length })));
+    uxLogTable(this, flowsInterviewsToDelete.map((flow: any) => ({
+      'Name': flow.Name,
+      'Label': flow.InterviewLabel,
+      'Status': flow.InterviewStatus,
+      'Created By': flow.CreatedBy?.Username ?? '',
+    })));
   }
+
 }

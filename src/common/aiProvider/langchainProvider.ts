@@ -7,6 +7,7 @@ import { PromptTemplate } from "./promptTemplates.js";
 import { LangChainProviderFactory } from "./langChainProviders/langChainProviderFactory.js";
 import { ModelConfig, ProviderType } from "./langChainProviders/langChainBaseProvider.js";
 import { getConfig, getEnvVar } from "../../config/index.js";
+import { t } from '../utils/i18n.js';
 
 export class LangChainProvider extends AiProviderRoot {
   private model: BaseChatModel;
@@ -125,9 +126,9 @@ export class LangChainProvider extends AiProviderRoot {
     }
 
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog("log", this, c.grey(`[LangChain] Requesting the following prompt to ${this.modelName}${template ? ' using template ' + template : ''}:\n${promptText}`));
+      uxLog("log", this, c.grey('[LangChain] ' + t('langchainRequestingPromptDebug', { modelName: this.modelName, template: template ? ' using template ' + template : '', promptText })));
     } else {
-      uxLog("log", this, c.grey(`[LangChain] Requesting prompt to ${this.modelName}${template ? ' using template ' + template : ''} (define DEBUG_PROMPTS=true to see details)`));
+      uxLog("log", this, c.grey('[LangChain] ' + t('langchainRequestingPrompt', { modelName: this.modelName, template: template ? ' using template ' + template : '' })));
     }
 
     this.incrementAiCallsNumber();
@@ -141,9 +142,9 @@ export class LangChainProvider extends AiProviderRoot {
       ]);
 
       if (process.env?.DEBUG_PROMPTS === "true") {
-        uxLog("log", this, c.grey("[LangChain] Received prompt response\n" + JSON.stringify(response, null, 2)));
+        uxLog("log", this, c.grey('[LangChain] ' + t('langchainReceivedResponseDebug', { response: JSON.stringify(response, null, 2) })));
       } else {
-        uxLog("log", this, c.grey("[LangChain] Received prompt response"));
+        uxLog("log", this, c.grey('[LangChain] ' + t('langchainReceivedResponse')));
       }
 
       const aiResponse: AiResponse = {
@@ -159,9 +160,9 @@ export class LangChainProvider extends AiProviderRoot {
       return aiResponse;
     } catch (error: unknown) {
       if (error instanceof Error) {
-        uxLog("error", this, c.red(`[LangChain] Error while calling LLM API: ${error.message}`));
+        uxLog("error", this, c.red('[LangChain] ' + t('langchainErrorCallingLLM', { message: error.message })));
       } else {
-        uxLog("error", this, c.red(`[LangChain] Unexpected error occurred`));
+        uxLog("error", this, c.red('[LangChain] ' + t('langchainUnexpectedError')));
       }
       return null;
     }

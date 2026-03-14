@@ -10,6 +10,7 @@ import { uxLog, isCI, createTempDir, execCommand } from '../../../../../common/u
 import { promptOrgUsernameDefault } from '../../../../../common/utils/orgUtils.js';
 import { buildOrgManifest } from '../../../../../common/utils/deployUtils.js';
 import { parsePackageXmlFile, writePackageXmlFile } from '../../../../../common/utils/xmlUtils.js';
+import { t } from '../../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -89,7 +90,7 @@ The command's technical implementation involves:
     const tmpDir = await createTempDir();
     const packageXmlAllFile = path.join(tmpDir, 'packageXmlAll.xml');
     await buildOrgManifest(orgUsername, packageXmlAllFile, flags['target-org'].getConnection());
-    uxLog("action", this, c.cyan(`Retrieved full package XML from org ${orgUsername}: ${packageXmlAllFile}`));
+    uxLog("action", this, c.cyan(t('retrievedFullPackageXmlFromOrg', { orgUsername, packageXmlAllFile })));
 
     // Filter to keep only analytics metadatas
     const parsedPackageXmlAll = await parsePackageXmlFile(packageXmlAllFile);
@@ -101,16 +102,12 @@ The command's technical implementation involves:
       }
     }
     await writePackageXmlFile(packageXmlAnalyticsFile, analyticsPackageXml);
-    uxLog(
-      "action",
-      this,
-      c.cyan(`Filtered and completed analytics metadatas in analytics package XML: ${packageXmlAnalyticsFile}`)
-    );
+    uxLog("action", this, c.cyan(t('filteredAndCompletedAnalyticsMetadatas', { packageXmlAnalyticsFile })));
 
     // Retrieve locally Analytics sources
     const retrieveCommand = `sf project retrieve start -x "${packageXmlAnalyticsFile}" -o ${orgUsername}`;
     await execCommand(retrieveCommand, this, { fail: true, debug: this.debugMode, output: true });
-    uxLog("action", this, c.cyan(`Retrieved all analytics source items using package XML: ${packageXmlAnalyticsFile}`));
+    uxLog("action", this, c.cyan(t('retrievedAllAnalyticsSourceItemsUsingPackage', { packageXmlAnalyticsFile })));
 
     return { outputString: `Retrieved analytics sources from org ${orgUsername}` };
   }

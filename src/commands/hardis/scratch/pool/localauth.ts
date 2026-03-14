@@ -7,6 +7,7 @@ import { getConfig } from '../../../../config/index.js';
 import { uxLog } from '../../../../common/utils/index.js';
 import { instantiateProvider } from '../../../../common/utils/poolUtils.js';
 import { KeyValueProviderInterface } from '../../../../common/utils/keyValueUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -73,9 +74,7 @@ The command's technical implementation involves:
       uxLog(
         "warning",
         this,
-        c.yellow(
-          `There is not scratch orgs pool configured on this project. Please see with your tech lead about using command hardis:scratch:pool:configure`
-        )
+        c.yellow(t('noScratchOrgsPoolConfiguredLocalAuth'))
       );
       return { outputString: 'Scratch org pool configuration to create' };
     }

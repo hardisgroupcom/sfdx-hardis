@@ -5,25 +5,26 @@ import { SfError } from '@salesforce/core';
 import { sortCrossPlatform, uxLog } from '../utils/index.js';
 import { countPackageXmlItems, parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { SalesforceSetupUrlBuilder } from './docUtils.js';
-import { CONSTANTS } from '../../config/index.js';
+import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { prettifyFieldName } from '../utils/flowVisualiser/nodeFormatUtils.js';
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderPackageXML {
 
   public static async buildIndexTable(outputPackageXmlMarkdownFiles: any[]) {
     const packageLines: string[] = [];
-    const packagesForMenu: any = { "All manifests": "manifests.md" }
+    const packagesForMenu: any = { [t('docMdAllManifests')]: "manifests.md" }
     packageLines.push(...[
-      "## Package XML files",
+      `## ${t('docMdPackageXmlFiles')}`,
       "",
-      "| Package name | Description |",
+      `| ${t('docMdColPackageName')} | ${t('docMdColDescription')} |`,
       "| :----------- | :---------- |"
     ]);
 
     for (const outputPackageXmlDef of outputPackageXmlMarkdownFiles) {
       const metadataNb = await countPackageXmlItems(outputPackageXmlDef.path);
       const packageMdFile = path.basename(outputPackageXmlDef.path) + ".md";
-      const label = outputPackageXmlDef.name ? `Package folder: ${outputPackageXmlDef.name}` : path.basename(outputPackageXmlDef.path);
+      const label = outputPackageXmlDef.name ? t('docMdPackageFolder', { name: outputPackageXmlDef.name }) : path.basename(outputPackageXmlDef.path);
       const packageTableLine = `| [${label}](${packageMdFile}) (${metadataNb}) | ${outputPackageXmlDef.description} |`;
       packageLines.push(packageTableLine);
       packagesForMenu[label] = packageMdFile;
@@ -62,24 +63,24 @@ export class DocBuilderPackageXML {
     if (packageXmlDefinition && packageXmlDefinition.description) {
       // Header
       mdLines.push(...[
-        `## Content of ${path.basename(inputFile)}`,
+        `## ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
         '',
         packageXmlDefinition.description,
         '',
         '<div id="jstree-container"></div>',
         '',
-        `Metadatas: ${nbItems}`,
+        t('docMdMetadatas', { nbItems }),
         ''
       ]);
     }
     else {
       // Header
       mdLines.push(...[
-        `## Content of ${path.basename(inputFile)}`,
+        `## ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
         '',
         '<div id="jstree-container"></div>',
         '',
-        `Metadatas: ${nbItems}`,
+        t('docMdMetadatas', { nbItems }),
         ''
       ]);
     }
@@ -91,7 +92,7 @@ export class DocBuilderPackageXML {
       const memberLengthLabel = members.length === 1 && members[0] === "*" ? "*" : members.length;
       mdLines.push(`<details><summary>${metadataType} (${memberLengthLabel})</summary>\n\n`);
       for (const member of members) {
-        const memberLabel = member === "*" ? "ALL (wildcard *)" : member;
+        const memberLabel = member === "*" ? t('docMdWildcardAll') : member;
         const setupUrl = SalesforceSetupUrlBuilder.getSetupUrl(metadataType, member);
         if (setupUrl && rootSalesforceUrl) {
           mdLines.push(`  • <a href="${rootSalesforceUrl}${setupUrl}" target="_blank">${memberLabel}</a><br/>`);
@@ -105,13 +106,14 @@ export class DocBuilderPackageXML {
       mdLines.push("");
     }
     mdLines.push("");
-
+    mdLines.push(getBannerMarkdownAndLink());
+    mdLines.push("");
     // Footer
     mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT})_`);
 
     // Write output file
     await fs.writeFile(outputFile, mdLines.join("\n") + "\n");
-    uxLog("success", this, c.green(`Successfully generated ${path.basename(inputFile)} documentation into ${outputFile}`));
+    uxLog("success", this, c.green(t('successfullyGeneratedDocumentationInto', { path: path.basename(inputFile), outputFile })));
 
     const jsonTree = await this.generateJsonTree(metadataTypes, packageXmlContent);
     if (jsonTree) {
@@ -119,7 +121,7 @@ export class DocBuilderPackageXML {
       const jsonFile = `./docs/json/root-${packageXmlFileName}.json`;
       await fs.ensureDir(path.dirname(jsonFile));
       await fs.writeFile(jsonFile, JSON.stringify(jsonTree, null, 2));
-      uxLog("success", this, c.green(`Successfully generated ${packageXmlFileName} JSON into ${jsonFile}`));
+      uxLog("success", this, c.green(t('successfullyGeneratedJsonInto', { packageXmlFileName, jsonFile })));
     }
 
     return outputFile;

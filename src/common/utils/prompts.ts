@@ -4,6 +4,13 @@ import inquirer from "inquirer";
 import { SfError } from "@salesforce/core";
 import { isCI, uxLog } from "./index.js";
 import { WebSocketClient } from "../websocketClient.js";
+import { t } from './i18n.js';
+
+export interface PromptChoice<T = unknown> {
+  title: string;
+  value?: T;
+  description?: string;
+}
 
 export interface PromptsQuestion {
   message: string;
@@ -11,15 +18,16 @@ export interface PromptsQuestion {
   placeholder?: string;
   type: "select" | "multiselect" | "confirm" | "text" | "number";
   name?: string;
+  /** Array of choices. Use `PromptChoice` for proper typing. */
   choices?: Array<any>;
-  default?: any;
-  validate?: any;
-  initial?: any;
+  default?: unknown;
+  validate?: (value: any) => boolean | string | Promise<boolean | string>;
+  initial?: unknown;
   optionsPerPage?: number;
 }
 
 // Centralized prompts function
-export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
+export async function prompts(options: PromptsQuestion | PromptsQuestion[]): Promise<Record<string, any>> {
   if (isCI) {
     uxLog("log", this, c.grey(JSON.stringify(options, null, 2)));
     throw new SfError("Nothing should be prompted during CI!");
@@ -34,8 +42,8 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     if (question.type === "confirm") {
       question.type = "select";
       question.choices = [
-        { title: "✅ Yes", value: true },
-        { title: "❌ No", value: false },
+        { title: t('promptChoiceYes'), value: true },
+        { title: t('promptChoiceNo'), value: false },
       ];
       question.initial = question.initial === false ? 1 : 0;
     }
@@ -46,7 +54,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     // Add exit option when possible
     if (question.type === "select" && !WebSocketClient.isAliveWithLwcUI()) {
       question.choices = question.choices || [];
-      question.choices.push({ title: "⛔ Exit this script", value: "exitNow" });
+      question.choices.push({ title: t('promptChoiceExit'), value: "exitNow" });
     }
     if (["select", "multiselect"].includes(question.type) && question.optionsPerPage == null) {
       question.optionsPerPage = 9999;
@@ -67,7 +75,7 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
       const answerValue = questionAnswer[answerKey];
       const answerLabel = getAnswerLabel(answerValue, question.choices);
       if (JSON.stringify(answerLabel).toLowerCase().includes("token")) {
-        uxLog("log", this, c.grey("Selection hidden because it contains sensitive information."));
+        uxLog("log", this, c.grey(t('selectionHiddenBecauseItContainsSensitiveInformation')));
       } else {
         uxLog("log", this, c.grey(answerLabel));
       }
@@ -127,7 +135,7 @@ function checkStopPrompts(answers: any) {
 }
 
 function stopPrompt() {
-  uxLog("error", this, c.red("Script terminated at user request."));
+  uxLog("error", this, c.red(t('scriptTerminatedAtUserRequest')));
   // Send close client message with aborted status if WebSocket is alive
   if (WebSocketClient.isAlive()) {
     WebSocketClient.sendCloseClientMessage("aborted");

@@ -10,6 +10,7 @@ import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parseXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -95,23 +96,23 @@ The command's technical implementation involves:
       {
         type: 'multiselect',
         name: 'tabs',
-        message: 'Please select the tabs you want to display or hide in Profile(s)',
-        description: 'Choose which tabs should be configured for profiles',
+        message: t('pleaseSelectTheTabsYouWantTo'),
+        description: t('chooseWhichTabsShouldBeConfiguredForProfiles'),
         choices: choices,
       },
       {
         type: 'select',
         name: 'visibility',
-        message: 'Please select the flag you want the tabs to be applied on profiles you will select',
-        description: 'Choose the visibility setting for the selected tabs',
-        placeholder: 'Select visibility',
+        message: t('pleaseSelectTheFlagYouWantThe'),
+        description: t('chooseVisibilitySettingForTabs'),
+        placeholder: t('selectVisibilityPlaceholder'),
         choices: [
           {
-            title: 'Visible (DefaultOn)',
+            title: t('tabVisibilityVisibleDefaultOn'),
             value: 'DefaultOn',
           },
           {
-            title: 'Hidden',
+            title: t('tabVisibilityHidden'),
             value: 'Hidden',
           },
         ],
@@ -127,12 +128,8 @@ The command's technical implementation involves:
     const promptProfilesToUpdate = await prompts({
       type: 'multiselect',
       name: 'profiles',
-      message:
-        'Please select the profiles you want to update to apply tabs [' +
-        tabsToUpdate.join(', ') +
-        '] with visibility ' +
-        visibility,
-      description: 'Choose which profiles should receive the tab visibility updates',
+      message: t('pleaseSelectProfilesToUpdateTabsVisibility', { tabs: tabsToUpdate.join(', '), visibility }),
+      description: t('chooseProfilesForTabVisibilityUpdates'),
       choices: profileSourceFiles.map((profileFile) => {
         return {
           title: (profileFile.replace(/\\/g, '/').split('/').pop() || '').replace('.profile-meta.xml', ''),
@@ -178,7 +175,7 @@ The command's technical implementation involves:
       profile.Profile['tabVisibilities'] = sortedTabVisibility;
       // Update Profile XML File
       await writeXmlFile(profileFile, profile);
-      uxLog("log", this, c.grey('Updated ' + profileFile));
+      uxLog("log", this, c.grey(t('updated') + profileFile));
     }
 
     // Summary

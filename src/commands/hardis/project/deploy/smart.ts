@@ -35,6 +35,7 @@ import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -409,7 +410,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get target org
     let targetUsername = flags['target-org'].getUsername();
     if (!isCI) {
-      uxLog("warning", this, c.yellow("Just to be sure, please select the org you want to use for this command 😊"))
+      uxLog("warning", this, c.yellow(t('justToBeSurePleaseSelectThe')))
       targetUsername = await promptOrgUsernameDefault(this, targetUsername, { devHub: false, setDefault: false, scratch: false });
     }
 
@@ -474,7 +475,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           context: 'process-deployment-only',
           preOrPost: 'commandsPreDeploy',
         })
-        uxLog("action", this, c.cyan('[SmartDeploy] Purge Flow Versions command added to deployment options (from PR config)'));
+        uxLog("action", this, c.cyan('[SmartDeploy] ' + t('smartDeployPurgeFlowVersionsAdded')));
       }
       if (prInfo.customBehaviors?.destructiveChangesAfterDeployment === true) {
         if (this.smartDeployOptions.postDestructiveChanges) {
@@ -486,7 +487,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
             ` --manifest "${emptyPackageXml}"` +
             ' --ignore-warnings' +
             ' --ignore-conflicts' +
-            ` --post-destructive-changes ${this.smartDeployOptions.postDestructiveChanges}` +
+            ` --post-destructive-changes "${this.smartDeployOptions.postDestructiveChanges}"` +
             ` --target-org ${targetUsername}` +
             ` --wait ${process.env.SFDX_DEPLOY_WAIT_MINUTES || '120'}` +
             (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
@@ -499,10 +500,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
             context: 'process-deployment-only',
             preOrPost: 'commandsPostDeploy',
           });
-          uxLog("action", this, c.cyan('[SmartDeploy] Destructive Changes After Deployment command added to deployment options (from PR config)'));
+          uxLog("action", this, c.cyan('[SmartDeploy] ' + t('smartDeployDestructiveChangesAdded')));
         }
         else {
-          uxLog("warning", this, c.yellow('[SmartDeploy] Destructive Changes After Deployment is set to true in PR config, but no postDestructiveChanges file found. Skipping this step.'));
+          uxLog("warning", this, c.yellow('[SmartDeploy] ' + t('smartDeployDestructiveChangesNoPostFile')));
         }
       }
     }
@@ -530,7 +531,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         toCommit = deltaScope?.toCommit?.hash || '';
       }
       // call delta
-      uxLog("action", this, c.cyan('[DeltaDeployment] Generating git delta package.xml and destructiveChanges.xml ...'));
+      uxLog("action", this, c.cyan('[DeltaDeployment] ' + t('deltaDeploymentGeneratingGitDelta')));
       const tmpDir = await createTempDir();
       await callSfdxGitDelta(fromCommit, toCommit, tmpDir, { debug: this.debugMode });
       const packageXmlFileDeltaDeploy = path.join(tmpDir, 'package', 'packageDelta.xml');
@@ -544,7 +545,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
       // Extend delta with dependencies if required
       if (process.env.USE_DELTA_DEPLOYMENT_WITH_DEPENDENCIES === 'true' || this.configInfo.useDeltaDeploymentWithDependencies === true) {
-        uxLog("action", this, c.cyan('[DeltaDeployment] Extending package.xml with dependencies ...'));
+        uxLog("action", this, c.cyan('[DeltaDeployment] ' + t('deltaDeploymentExtendingPackageXml')));
         await extendPackageFileWithDependencies(diffPackageXml, this.packageXmlFile, diffDestructiveChangesXml);
         await appendPackageModifications(fromCommit, toCommit, originalPackageXml, diffPackageXml);
       }
@@ -555,11 +556,11 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       });
 
       const deltaContent = await fs.readFile(this.packageXmlFile, 'utf8');
-      uxLog("action", this, c.cyan('[DeltaDeployment] Final Delta package.xml to deploy:\n' + c.green(deltaContent)));
+      uxLog("action", this, c.cyan('[DeltaDeployment] ' + t('deltaDeploymentFinalDeltaPackageXml', { deltaContent: c.green(deltaContent) })));
 
       const smartDeploymentTestsAllowed = await this.isSmartDeploymentTestsAllowed()
       if (smartDeploymentTestsAllowed) {
-        uxLog("action", this, c.cyan("[SmartDeploymentTests] Smart Deployment tests activated: analyzing delta package content..."));
+        uxLog("action", this, c.cyan('[SmartDeploymentTests] ' + t('smartDeploymentTestsActivated')));
         const deltaPackageContent = await parsePackageXmlFile(this.packageXmlFile);
         const metadataTypesInDelta = Object.keys(deltaPackageContent);
         const impactingMetadataTypesInDelta: string[] = []
@@ -569,15 +570,15 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           }
         }
         if (impactingMetadataTypesInDelta.length === 0 && !(await isProductionOrg(targetUsername, {}))) {
-          uxLog("success", this, c.green("[SmartDeploymentTests] No Impacting metadata in delta package.xml: Skip test classes as the deployed items seem safe 😊"));
+          uxLog("success", this, c.green('[SmartDeploymentTests] ' + t('smartDeploymentNoImpactingMetadataSkipTests')));
           this.testLevel = "NoTestRun";
           this.testClasses = "";
         }
         else {
           if (impactingMetadataTypesInDelta.length > 0) {
-            uxLog("warning", this, c.yellow(`[SmartDeploymentTests] Impacting metadata in delta package.xml (${impactingMetadataTypesInDelta.join(",")}): do not skip test classes.`));
+            uxLog("warning", this, c.yellow('[SmartDeploymentTests] ' + t('smartDeploymentImpactingMetadataDoNotSkipTests', { types: impactingMetadataTypesInDelta.join(",") })));
           } else {
-            uxLog("warning", this, c.yellow("[SmartDeploymentTests] Production org as deployment target: do not skip test classes"));
+            uxLog("warning", this, c.yellow('[SmartDeploymentTests] ' + t('productionOrgDeploymentTargetNoSkipTests')));
           }
         }
 
@@ -593,7 +594,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         });
         this.smartDeployOptions.postDestructiveChanges = destructiveXmlFileDeploy;
         const deltaContentDelete = await fs.readFile(destructiveXmlFileDeploy, 'utf8');
-        uxLog("action", this, c.cyan('[DeltaDeployment] Final Delta destructiveChanges.xml to delete:\n' + c.yellow(deltaContentDelete)));
+        uxLog("action", this, c.cyan('[DeltaDeployment] ' + t('deltaDeploymentFinalDestructiveChanges', { deltaContentDelete: c.yellow(deltaContentDelete) })));
       }
     }
   }
@@ -662,9 +663,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           "warning",
           this,
           c.yellow(
-            `You may need to install package ${c.bold(package1.SubscriberPackageName)} ${c.bold(
-              package1.SubscriberPackageVersionId
-            )} in target org to validate the deployment check`
+            t('youMayNeedToInstallPackageInTargetOrg', {
+              packageName: c.bold(package1.SubscriberPackageName),
+              packageVersionId: c.bold(package1.SubscriberPackageVersionId)
+            })
           )
         );
       }
@@ -674,9 +676,10 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         this,
         c.yellow(
           c.italic(
-            `If you want deployment checks to automatically install packages, please define ${c.bold(
-              'INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true'
-            )} in ENV vars, or property ${c.bold('installPackagesDuringCheckDeploy: true')} in .sfdx-hardis.yml`
+            t('ifWantDeploymentChecksInstallPackagesDefine', {
+              installPackagesEnvVar: c.bold('INSTALL_PACKAGES_DURING_CHECK_DEPLOY=true'),
+              installPackagesProperty: c.bold('installPackagesDuringCheckDeploy: true')
+            })
           )
         )
       );
@@ -684,7 +687,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   }
 
   private async initTestLevelAndTestClasses(testLevelFlag?: string, runTestsFlag?: string) {
-    uxLog("action", this, c.cyan('[SmartDeploy] Initializing test level and test classes to run...'));
+    uxLog("action", this, c.cyan('[SmartDeploy] ' + t('smartDeployInitializingTestLevel')));
     let givenTestlevel = testLevelFlag || this.configInfo.testLevel || 'RunLocalTests';
     this.testClasses = runTestsFlag || this.configInfo.runtests || '';
 
@@ -707,13 +710,13 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     const enableDeploymentApexTestClasses = this.configInfo.enableDeploymentApexTestClasses || false;
     // Select test classes from PRs if allowed
     if (enableDeploymentApexTestClasses === true) {
-      uxLog("log", this, c.cyan('[SmartDeploy] enableDeploymentApexTestClasses is activated (not recommended by default): identifying test classes from Config file and Pull Requests...'));
+      uxLog("log", this, c.cyan('[SmartDeploy] ' + t('smartDeployEnableDeploymentApexTestClassesActivated')));
       if (!this.configInfo.enableDeltaDeploymentBetweenMajorBranches) {
         throw new SfError('[SmartDeploy] It is mandatory to set enableDeltaDeploymentBetweenMajorBranches to true when using enableDeploymentApexTestClasses to avoid missing test classes in delta deployments between major branches.');
       }
       const selectedTestClassesForAllPrs = this.configInfo.deploymentApexTestClasses || [];
       if (selectedTestClassesForAllPrs.length > 0) {
-        uxLog("log", this, c.grey(`[SmartDeploy] Test classes selected from config file: ${selectedTestClassesForAllPrs.join(" ")}`));
+        uxLog("log", this, c.grey('[SmartDeploy] ' + t('smartDeployTestClassesFromConfig', { classes: selectedTestClassesForAllPrs.join(" ") })));
       }
       const pullRequests = await listAllPullRequestsForCurrentScope(this.checkOnly);
       const selectedTestClassesFromPrs = await selectTestClassesFromPullRequests(pullRequests, this.testClasses !== '' ? this.testClasses.split(" ") : []);
@@ -721,14 +724,14 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       if (allSelectedTestClasses.length > 0) {
         givenTestlevel = 'RunSpecifiedTests';
         this.testClasses = allSelectedTestClasses.join(" ");
-        uxLog("log", this, c.green(`[SmartDeploy] Test classes selected from PRs:\n - ${this.testClasses.split(" ").join("\n - ")}`));
+        uxLog("log", this, c.green('[SmartDeploy] ' + t('smartDeployTestClassesFromPrs', { testClasses: this.testClasses.split(" ").join("\n - ") })));
       } else {
-        uxLog("warning", this, c.yellow(`[SmartDeploy] No test class selected from PRs, keeping previous test level and classes.`));
+        uxLog("warning", this, c.yellow('[SmartDeploy] ' + t('smartDeployNoTestClassFromPrs')));
       }
     }
 
     this.testLevel = givenTestlevel || this.configInfo.testLevel || 'RunLocalTests';
-    uxLog("log", this, c.green(`[SmartDeploy] Final test level: ${c.bold(this.testLevel)}.`));
+    uxLog("log", this, c.green('[SmartDeploy] ' + t('smartDeployFinalTestLevel', { testLevel: c.bold(this.testLevel) })));
     // Test classes are only valid for RunSpecifiedTests
     if (this.testLevel != 'RunSpecifiedTests') {
       this.testClasses = '';
@@ -797,7 +800,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       parentBranch = prInfo.targetBranch;
     }
     const majorOrgs = await listMajorOrgs();
-    uxLog("log", this, c.grey('Major orgs with auth configured:\n' + JSON.stringify(majorOrgs, null, 2)));
+    uxLog("log", this, c.grey(t('majorOrgsWithAuthConfigured') + JSON.stringify(majorOrgs, null, 2)));
     const currentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === currentBranch);
     const parentBranchIsMajor = majorOrgs.some((majorOrg) => majorOrg.branchName === parentBranch);
     if (currentBranchIsMajor && (parentBranchIsMajor === true || parentBranch == null)) {

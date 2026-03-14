@@ -6,6 +6,7 @@ import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { deleteData, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
 import { promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -97,9 +98,7 @@ The command's technical implementation relies heavily on the SFDMU plugin:
     });
 
     // Output message
-    const message = `Successfully deleted data from org ${c.green(orgUsername)} using SFDMU project ${c.green(
-      sfdmuPath
-    )}`;
+    const message = t('successfullyDeletedData');
     uxLog("action", this, c.cyan(message));
     return { outputString: message };
   }

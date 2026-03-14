@@ -5,3 +5,6 @@ skip-check:
   - CKV_DOCKER_3
   - CKV_DOCKER_7
   - CKV2_GHA_1
+  # You can see all available properties here: https://github.com/bridgecrewio/checkov#configuration-using-a-config-file
+skip-path:
+  - src/i18n

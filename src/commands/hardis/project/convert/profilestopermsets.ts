@@ -7,6 +7,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
 import { execCommand, uxLog } from '../../../../common/utils/index.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -70,7 +71,7 @@ The command's technical implementation involves:
     const { flags } = await this.parse(ConvertProfilesToPermSets);
     const except = flags.except || [];
 
-    uxLog("action", this, c.cyan('This command will convert profiles into permission sets'));
+    uxLog("action", this, c.cyan(t('thisCommandWillConvertProfilesIntoPermission')));
 
     const sourceRootFolder = path.join(process.cwd() + '/force-app/main/default');
     const profilesFolder = path.join(sourceRootFolder, 'profiles');
@@ -82,7 +83,7 @@ The command's technical implementation involves:
           continue;
         }
         const psName = 'PS_' + profileName.split(' ').join('_');
-        uxLog("action", this, c.cyan(`Generating Permission set ${c.green(psName)} from profile ${c.green(profileName)}`));
+        uxLog("action", this, c.cyan(t('generatingPermissionSetFromProfile', { psName: c.green(psName), profileName: c.green(profileName) })));
         const convertCommand = 'sf shane:profile:convert' + ` -p "${profileName}"` + ` -n "${psName}"` + ' -e';
         await execCommand(convertCommand, this, { fail: true, output: true });
       }

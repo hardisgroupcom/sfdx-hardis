@@ -20,9 +20,9 @@ Permission sets and Permission Set Groups with zero or few assigned users may be
 
 **Configuration:**
 
-| Environment variable | Description | Default |
-|---|---|---|
-| `PERMSET_LIMITED_USERS_THRESHOLD` | Maximum number of users to consider a permission set "low usage" | `5` |
+| Environment variable               | Description                                                                                     | Default  |
+|------------------------------------|-------------------------------------------------------------------------------------------------|----------|
+| `PERMSET_LIMITED_USERS_THRESHOLD`  | Maximum number of users to consider a permission set "low usage"                                | `5`      |
 | `UNDERUSED_PERMISSION_SETS_IGNORE` | Comma-separated list of permission set / group names to exclude from results (case-insensitive) | _(none)_ |
 
 Sfdx-hardis command: [sf hardis:org:diagnose:underusedpermsets](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/underusedpermsets/)

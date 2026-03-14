@@ -5,6 +5,7 @@ import * as path from "path";
 import { XMLParser } from "fast-xml-parser";
 import { GLOB_IGNORE_PATTERNS } from "../utils/projectUtils.js";
 import { uxLog } from "../utils/index.js";
+import { t } from '../utils/i18n.js';
 
 let ALL_LINKS_CACHE: any[] = [];
 let ALL_OBJECTS_CACHE: any[] = [];
@@ -113,7 +114,7 @@ classDef mainObject fill:#FFB3B3,stroke:#A94442,stroke-width:4px,rx:14px,ry:14px
           this.allLinks.push(link);
         }
         else {
-          uxLog("warning", this, c.yellow(`Warning: ${objectName}.${fieldName} has no referenceTo value so has been ignored.`));
+          uxLog("warning", this, c.yellow(t('warningHasNoReferencetoValueSoHas', { objectName, fieldName })));
         }
       }
     }

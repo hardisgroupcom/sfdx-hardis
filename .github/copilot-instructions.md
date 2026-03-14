@@ -97,6 +97,175 @@ docs/                 # Project documentation
 - Automated workflows for testing, building, and releasing
 - Mega-linter integration for code quality
 
+## Internationalization (i18n) / Translations
+
+sfdx-hardis uses **i18next** for runtime translations. The locale is selected via the `SFDX_HARDIS_LOCALE` environment variable (default: `en`; supported: `en`, `de`, `fr`, `es`, `ja`, `pl`).
+
+### Translation files
+
+- English: `src/i18n/en.json`
+- French: `src/i18n/fr.json`
+- Spanish: `src/i18n/es.json`
+- Japanese: `src/i18n/ja.json`
+- German: `src/i18n/de.json`
+- Polish: `src/i18n/pl.json`
+
+All files are flat JSON objects with **camelCase** keys and **i18next interpolation** syntax for variables (`{{varName}}`).
+
+### Using translations in source code
+
+Always import `t` from the i18n utility:
+
+```typescript
+import { t } from "../../../common/utils/i18n.js"; // adjust relative path as needed
+```
+
+Use `t(key)` or `t(key, { varName: value })` wherever a user-visible string is needed:
+
+```typescript
+uxLog("action", this, c.cyan(t("processingFile", { file: fileName })));
+uxLog("warning", this, c.yellow(t("fileNotFound", { path: filePath })));
+```
+
+### Naming conventions for translation keys
+
+- Use `camelCase`, starting with a lowercase letter.
+- The key should be a compressed English summary of the message, e.g.:
+  - `"No apex logs to delete."` → `noApexLogsToDelete`
+  - `"Processing file {{file}}..."` → `processingFile`
+  - `"Error while deploying metadata: {{message}}"` → `errorWhileDeployingMetadata`
+- Keep keys unique across the whole file.
+- Always add the key to **all** translation files (`en.json`, `fr.json`, `es.json`, `ja.json`, and `de.json`) simultaneously. Non-English translations can mirror English when unsure, but should be translated.
+- Reuse existing translations when possible instead of creating new keys for similar messages.
+- Always keep translation json files well-formatted and sorted alphabetically by key for readability.
+
+### Rules for translating strings
+
+- When you are asked for a new translation, look at other translations in the same language (i18n json file) to use the same terminology and style for consistency.
+
+- **Do NOT translate markers** surrounded by `[]` (e.g. `[sfdx-hardis]`, `[SKIP]`). Keep them as hardcoded string literals and concatenate with the translated string:
+  ```typescript
+  uxLog("action", this, c.cyan("[MyMarker] " + t("someMessage")));
+  ```
+- **Do NOT translate technical terms** that are not user-facing words in French or English (e.g. `merge`, `commit`, `branch`, `sandbox`, `scratch org`, `package.xml`, `Apex`, `SOQL`, `LWC`, CLI flags, environment variable names). Keep such terms as-is inside the translation value.
+- **Salesforce-specific terms (Spanish)**: Avoid literal translations and use the terminology commonly used by Salesforce developers in Spain. Keep the official Salesforce term in English when it is the standard used in tooling, CLI messages, and DevOps contexts (e.g. `Flow` → `Flow`, `Object` → `objeto`, `Field` → `campo`, `Profile` → `Profile`, `Permission Set` → `Permission Set`, `Permission Set Group` → `Permission Set Group`, `Record Type` → `Record Type`, `Validation Rule` → `Validation Rule`, `Workflow Rule` → `Workflow Rule`, `Approval Process` → `Approval Process`, `Assignment Rule` → `Assignment Rule`, `Escalation Rule` → `Escalation Rule`, `Custom Label` → `Custom Label`, `Custom Setting` → `Custom Setting`, `Custom Permission` → `Custom Permission`, `Connected App` → `Connected App`, `External Client App` → `External Client App`, `Lightning Page` → `Lightning Page`, `Lightning Web Component` → `Lightning Web Component`, `Dashboard` → `dashboard`, `Sandbox` → `Sandbox`, `Scratch Org` → `Scratch Org`, `org` → `org`, `Deployment` → `despliegue`, `Production (Org)` → `Producción`, `Developer Console` → `Developer Console`). When translating to Spanish, do not assume that the official Salesforce UI translation is always the best choice. Prefer the terminology commonly used by Salesforce developers in Spain. Translate generic functional wording into natural Spanish, but keep metadata names, CLI terms, and developer-facing concepts in English when that is the common real-world usage (for example: Flow, Permission Set, Custom Setting, Connected App, Scratch Org, etc.). The goal is to keep terminology consistent with Salesforce CLI, DevOps tooling, and typical Spanish developer vocabulary, rather than translating every Salesforce concept literally. Use terminology commonly used by Salesforce developers in Spain rather than strictly following the official Salesforce UI translations (e.g. keep developer-facing terms like Flow, Permission Set, Custom Setting, Connected App when appropriate, while translating generic wording such as "metadatos", "despliegue", etc.)
+  Keep English technical terms untranslated when they belong to Git, CLI tooling or metadata names: merge, commit, branch, Scratch Org, package.xml, DevHub
+  Use clear and natural Spanish for technical users, avoiding literal translations that sound unnatural in developer tools
+  Use neutral European Spanish (Spain) rather than forcing Latin American variants.
+- **Salesforce-specific terms (French)**: Use the official Salesforce French translation when translating to French (e.g. `Permission Set` → `Ensemble d'autorisations`, `Record Type` → `Type d'enregistrement`, `Flow` → `Flux`, `Object` → `Objet`, `Field` → `Champ`, `Profile` → `Profil`).
+- **Salesforce-specific terms (Japanese)**: Use the official Salesforce Japanese translation when translating to Japanese. Use polite professional Japanese (Desu/Masu form - です/ます調) (e.g. `Account` → `取引先`, `Contact` → `取引先責任者`, `Opportunity` → `商談`, `Lead` → `リード`, `Case` → `ケース`, `Campaign` → `キャンペーン`, `Task` → `ToDo`, `Event` → `行動`, `Activity` → `活動`, `Object` → `オブジェクト`, `Custom Object` → `カスタムオブジェクト`, `Record Type` → `レコードタイプ`, `Permission Set` → `権限セット`, `Permission Set Group` → `権限セットグループ`, `Profile` → `プロファイル`, `Role` → `ロール`, `Flow` → `フロー`, `Trigger` → `トリガー`, `Validation Rule` → `入力規則`, `Workflow Rule` → `ワークフロールール`, `Process Builder` → `プロセスビルダー`, `Approval Process` → `承認プロセス`, `Assignment Rule` → `割り当てルール`, `Escalation Rule` → `エスカレーションルール`, `Connected App` → `接続アプリケーション`, `External Client App` → `外部クライアントアプリケーション`, `Custom Setting` → `カスタム設定`, `Custom Label` → `カスタム表示ラベル`, `Custom Permission` → `カスタム権限`, `Field` → `項目`, `Deployment` → `デプロイ`, `Production (Org)` → `本番環境`, `Sandbox` → `Sandbox`, `Scratch Org` → `スクラッチ組織`, `Lightning Page` → `Lightningページ`, `Lightning Web Component` → `Lightning Webコンポーネント`, `Developer Console` → `開発者コンソール`, `Dashboard` → `ダッシュボード`).
+- **German-specific terms**: Use the official Salesforce German translation when translating to German.
+  - Use formal German ("Sie" not "du") for all user facing text.
+  - Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub, SOQL, DML, CSV, REST, Bulk API, upsert, mock data.
+  - Use standard German software/IT terminology (e.g. "Datensatz" for record, "Org" stays as "Org", "Workspace" stays as "Workspace").
+  - Keep brand names untranslated: Salesforce, SFDMU, Git, GitHub, GitLab, JIRA, VS Code.
+- **Polish-specific terms**: Use natural, professional Polish for Salesforce developers.
+  - Use neutral formal Polish — avoid personal address forms ("ty", "Pan", "Pani"). Use impersonal constructs or verbs in third person when possible (e.g. "Czy chcesz..." instead of "Chcesz...").
+  - Keep English technical terms untranslated: merge, commit, branch, Scratch Org, package.xml, DevHub, SOQL, DML, CSV, REST, Bulk API, upsert, mock data, org, sandbox.
+  - Keep Salesforce metadata names in English: Flow, Permission Set, Permission Set Group, Profile, Custom Setting, Custom Label, Custom Permission, Connected App, External Client App, Validation Rule, Workflow Rule, Approval Process, Assignment Rule, Escalation Rule, Record Type, Lightning Page, Lightning Web Component, Static Resource, Visualforce, sObject, Flexipage.
+  - Keep brand names untranslated: Salesforce, SFDMU, Git, GitHub, GitLab, JIRA, VS Code, Azure DevOps, Bitbucket, Docker, Cloudflare, ServiceNow, MermaidJS.
+  - Translate key terms consistently: "deployment" → "wdrożenie", "deploy" → "wdrożyć", "retrieve" → "pobrać"/"pobieranie", "scratch org" → stays as "Scratch Org", "metadata" → "metadane", "org" → stays as "org".
+  - Use Polish-specific software vocabulary: "błąd" for error, "ostrzeżenie" for warning, "repozytorium" for repository, "gałąź" for branch (but keep "branch" as-is when referring to git commands), "wdrożenie" for deployment.
+
+### uxLog calls
+
+Every `uxLog` call whose message contains user-visible text **must** use `t()`:
+
+```typescript
+// ✅ Correct
+uxLog("action", this, c.cyan(t("deployingMetadata", { metadata: name })));
+
+// ❌ Wrong – hardcoded English string
+uxLog("action", this, c.cyan(`Deploying metadata ${name}...`));
+```
+
+Exceptions (no `t()` needed):
+
+- The entire string is a variable or expression (e.g. `uxLog("other", this, JSON.stringify(result))`).
+- The string is a debug stack trace (e.g. `uxLog("log", this, c.grey(e.stack))`).
+- The string is a URL only.
+- The uxLog is "other" (e.g. `uxLog("other", this, "Some message")`)
+
+### uxLogTable usage
+
+Use `uxLogTable` for user-facing tables so formatting stays consistent across plugins:
+
+```typescript
+import { uxLogTable } from "../../../common/utils/uxLog.js";
+import { t } from "../../../common/utils/i18n.js";
+
+uxLogTable(
+  this,
+  [
+    { name: "My Flow", type: "Flow", status: "Active" },
+    { name: "My Object", type: "Custom Object", status: "Inactive" },
+  ],
+  [
+    { key: "name", label: t("name") },
+    { key: "type", label: t("type") },
+    { key: "status", label: t("status") },
+  ]
+);
+```
+
+### prompts() calls
+
+For every `prompts()` call, the `message`, `description`, `placeholder` and `choices[].title` properties must use `t()` where they contain user-visible text:
+
+```typescript
+// ✅ Correct
+const res = await prompts({
+  type: "select",
+  name: "value",
+  message: t("selectEnvironment"),
+  description: t("selectEnvironmentDescription"),
+  choices: [
+    { title: t("choiceProduction"), value: "prod" },
+    { title: t("choiceSandbox"), value: "sandbox" },
+  ],
+});
+
+// ❌ Wrong – hardcoded strings
+const res = await prompts({
+  type: "select",
+  name: "value",
+  message: "Select environment",
+  description: "Choose the target environment",
+  choices: [{ title: "Production", value: "prod" }],
+});
+```
+
+### sendReportFileMessage calls
+
+For every `sendReportFileMessage()` the second argument (message) must use `t()` if it contains user-visible text:
+
+```typescript
+WebSocketClient.sendReportFileMessage(
+  slackIntegrationUrl,
+  t("slackIntegration"),
+  "docUrl"
+);
+```
+
+### WebSocketClient.sendProgressStartMessage() calls
+
+For every `WebSocketClient.sendProgressStartMessage()` call, the first argument (message) must use `t()` if it contains user-visible text:
+
+```typescript
+WebSocketClient.sendProgressStartMessage(
+  t("collectingInstalledPackagesData"),
+  packages.length
+);
+```
+
+### Markdown table headers
+
+Do not put the whole markdown table header in a translation key. Instead, only translate the column names and concatenate them in the code:
+
+```typescript
+const header = `| ${t("name")} | ${t("type")} | ${t("description")} |`;
+```
+
 ## AI Integration Notes
 
 - Supports multiple AI providers (Anthropic, Google GenAI, Ollama)

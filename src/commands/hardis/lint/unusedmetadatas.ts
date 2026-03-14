@@ -20,6 +20,7 @@ import { uxLog } from '../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -93,9 +94,9 @@ The command's technical implementation involves:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(UnusedMetadatas);
     await this.setProjectFiles();
-    uxLog("action", this, c.cyan('Checking for unused labels...'));
+    uxLog("action", this, c.cyan(t('checkingForUnusedLabels')));
     const unusedLabels = await this.verifyLabels();
-    uxLog("action", this, c.cyan('Checking for unused custom permissions...'));
+    uxLog("action", this, c.cyan(t('checkingForUnusedCustomPermissions')));
     const unusedCustomPermissions = await this.verifyCustomPermissions();
 
     // Build notification
@@ -116,19 +117,19 @@ The command's technical implementation involves:
           .join('\n')}`,
       });
     }
-    uxLog("action", this, c.cyan("Summary"));
+    uxLog("action", this, c.cyan(t('summary')));
     if (unusedLabels.length > 0 || unusedCustomPermissions.length > 0) {
       notifSeverity = 'warning';
       notifText = `${this.unusedData.length} unused metadata were detected in ${branchMd}`;
       if (unusedLabels.length > 0) {
-        uxLog("warning", this, c.yellow(`Unused Labels: ${unusedLabels.length}`));
+        uxLog("warning", this, c.yellow(t('unusedLabels', { unusedLabels: unusedLabels.length })));
       }
       if (unusedCustomPermissions.length > 0) {
-        uxLog("warning", this, c.yellow(`Unused Custom Permissions: ${unusedCustomPermissions.length}`));
+        uxLog("warning", this, c.yellow(t('unusedCustomPermissions', { unusedCustomPermissions: unusedCustomPermissions.length })));
       }
       await this.buildCsvFile(unusedLabels, unusedCustomPermissions);
     } else {
-      uxLog("success", this, c.green('No unused labels or custom permissions detected.'));
+      uxLog("success", this, c.green(t('noUnusedLabelsOrCustomPermissionsDetected')));
     }
     // Post notification
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
@@ -158,7 +159,7 @@ The command's technical implementation involves:
     const labelFilePath = labelFiles[0];
 
     if (!labelFilePath) {
-      uxLog("warning", this, c.yellow('No label file found.'));
+      uxLog("warning", this, c.yellow(t('noLabelFileFound')));
       return [];
     }
 
@@ -184,7 +185,7 @@ The command's technical implementation involves:
                 const auraPattern = `{!$Label.c.${label.toLowerCase()}}`;
                 return !this.projectFiles.some((filePath) => {
                   if (!fs.existsSync(filePath)) {
-                    uxLog("warning", this, c.yellow(`File not found: ${filePath}`));
+                    uxLog("warning", this, c.yellow(t('fileNotFound', { filePath })));
                     return false;
                   }
                   try {
@@ -193,7 +194,7 @@ The command's technical implementation involves:
                       fileContent.includes(labelLower) || fileContent.includes(cLower) || fileContent.includes(auraPattern)
                     );
                   } catch (error) {
-                    uxLog("warning", this, c.yellow(`Error reading file ${filePath}: ${error}`));
+                    uxLog("warning", this, c.yellow(t('errorReadingFile', { filePath, error })));
                     return false;
                   }
                 });
@@ -210,7 +211,7 @@ The command's technical implementation involves:
           });
         });
       } catch (error) {
-        uxLog("warning", this, c.yellow(`Error processing label file: ${error}`));
+        uxLog("warning", this, c.yellow(t('errorProcessingLabelFile', { error })));
         reject(error);
       }
     });
@@ -227,7 +228,7 @@ The command's technical implementation involves:
     });
 
     if (!customPermissionFiles) {
-      uxLog("warning", this, c.yellow('No custom permission file found.'));
+      uxLog("warning", this, c.yellow(t('noCustomPermissionFileFound')));
       return [];
     }
 
@@ -239,7 +240,7 @@ The command's technical implementation involves:
 
         xml2js.parseString(fileData, (error, result) => {
           if (error) {
-            uxLog("warning", this, c.yellow(`Error parsing XML: ${error}`));
+            uxLog("warning", this, c.yellow(t('errorParsingXml', { error })));
             return;
           }
           label = result.CustomPermission.label[0];
@@ -252,7 +253,7 @@ The command's technical implementation involves:
           }
         }
       } catch (error) {
-        uxLog("warning", this, c.yellow(`Error processing custom permission file ${file}: ${error}`));
+        uxLog("warning", this, c.yellow(t('errorProcessingCustomPermissionFile', { file, error })));
       }
     }
     const severityIconInfo = getSeverityIcon('info');

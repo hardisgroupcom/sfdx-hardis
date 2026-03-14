@@ -4,17 +4,21 @@ import { getCurrentGitBranch, uxLog } from '../utils/index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { authOrg } from '../utils/authUtils.js';
 import { findUserByUsernameLike } from '../utils/orgUtils.js';
+import { t } from '../utils/i18n.js';
 
 export interface PrePostCommand {
   id: string;
   label: string;
-  type: 'command' | 'data' | 'apex' | 'publish-community' | 'manual';
+  type: 'command' | 'data' | 'apex' | 'publish-community' | 'manual' | 'schedule-batch';
   // Known parameters used by action implementations. Additional keys allowed.
   parameters?: {
     apexScript?: string;     // for 'apex' actions
     sfdmuProject?: string;   // for 'data' actions
     communityName?: string;  // for 'publish-community' actions
     instructions?: string;   // for 'manual' actions
+    className?: string;      // for 'schedule-batch' actions
+    cronExpression?: string;  // for 'schedule-batch' actions
+    jobName?: string;        // for 'schedule-batch' actions (optional, defaults to <className>_Schedule)
     [key: string]: any;
   };
   command: string;
@@ -61,6 +65,10 @@ export abstract class ActionsProvider {
       const ManualAction = await import('./manualAction.js');
       actionInstance = new ManualAction.ManualAction();
     }
+    else if (type === 'schedule-batch') {
+      const ScheduleBatchAction = await import('./scheduleBatchAction.js');
+      actionInstance = new ScheduleBatchAction.ScheduleBatchAction();
+    }
     else {
       uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
       cmd.result = {
@@ -95,13 +103,13 @@ export abstract class ActionsProvider {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async checkParameters(_cmd: PrePostCommand): Promise<ActionResult | null> {
-    uxLog('warning', this, c.yellow(`checkParameters is not implemented on ${this.getLabel()}`));
+    uxLog('warning', this, c.yellow(t('checkparametersIsNotImplementedOn', { getLabel: this.getLabel() })));
     return null;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
-    uxLog('warning', this, c.yellow(`run is not implemented on ${this.getLabel()}`));
+    uxLog('warning', this, c.yellow(t('runIsNotImplementedOn', { getLabel: this.getLabel() })));
     return { statusCode: 'skipped', skippedReason: 'Not implemented' };
   }
 

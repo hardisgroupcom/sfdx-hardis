@@ -7,6 +7,7 @@ import { getConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import { isProductionOrg } from './orgUtils.js';
 import { executeSfdmuCommand } from './sfdmuProgress.js';
+import { t } from './i18n.js';
 
 export const DATA_FOLDERS_ROOT = path.join(process.cwd(), 'scripts', 'data');
 
@@ -22,16 +23,16 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
     const conn: Connection = globalThis.jsForceConn;
     targetUsername = conn.getUsername();
   }
-  uxLog("action", commandThis, c.cyan(`Importing data from ${c.green(dtl?.full_label)} into ${targetUsername}...`));
+  uxLog("action", commandThis, c.cyan(t('importingDataFromInto', { dtl: c.green(dtl?.full_label), targetUsername })));
   /* jscpd:ignore-start */
-  uxLog("log", commandThis, c.italic(c.grey("Data Workspace:\n" + JSON.stringify(dtl?.exportJson, null, 2))));
+  uxLog("log", commandThis, c.italic(c.grey(t('dataWorkspace') + JSON.stringify(dtl?.exportJson, null, 2))));
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const config = await getConfig('branch');
   const dataImportCommand =
     'sf sfdmu:run' +
     ` --sourceusername csvfile` +
     ` --targetusername ${targetUsername}` + // Keep targetusername until sfdmu switches to target-org
-    ` -p ${sfdmuPath}` +
+    ` -p "${sfdmuPath}"` +
     ' --noprompt' +
     // Needed for production orgs
     (config.sfdmuCanModify || process.env.SFDMU_CAN_MODIFY ? ` --canmodify ${config.sfdmuCanModify || process.env.SFDMU_CAN_MODIFY}` : '');
@@ -43,7 +44,7 @@ export async function importData(sfdmuPath: string, commandThis: any, options: a
     cwd: cwd,
     operationType: 'import',
   });
-  uxLog("success", commandThis, c.green(`Data imported successfully from ${c.green(dtl?.full_label)} into ${targetUsername}`));
+  uxLog("success", commandThis, c.green(t('dataImportedSuccessfullyFromInto', { dtl: c.green(dtl?.full_label), targetUsername })));
   uxLog("log", commandThis, c.italic(c.grey(res.stdout || '')));
   elapseEnd(`import ${dtl?.full_label}`);
   return res;
@@ -67,15 +68,15 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
   if (isProdOrg === true && !config.sfdmuCanModify) {
     uxLog("warning", commandThis, c.yellow(`If you see a sfdmu error, you probably need to add a property sfdmuCanModify: YOUR_ORG_INSTANCE_URL in the related config/branches/.sfdx-hardis.YOUR_BRANCH.yml config file.`));
   }
-  uxLog("action", commandThis, c.cyan(`Deleting data from ${c.green(dtl?.full_label)} ...`));
-  uxLog("log", commandThis, c.italic(c.grey("Data Workspace:\n" + JSON.stringify(dtl?.exportJson, null, 2))));
+  uxLog("action", commandThis, c.cyan(t('deletingDataFrom', { dtl: c.green(dtl?.full_label) })));
+  uxLog("log", commandThis, c.italic(c.grey(t('dataWorkspace') + JSON.stringify(dtl?.exportJson, null, 2))));
 
   const targetUsername = options.targetUsername || options.conn.username;
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
   const dataImportCommand =
     'sf sfdmu:run' +
     ` --sourceusername ${targetUsername}` +
-    ` -p ${sfdmuPath}` +
+    ` -p "${sfdmuPath}"` +
     ' --noprompt' +
     (config.sfdmuCanModify ? ` --canmodify ${config.sfdmuCanModify}` : '');
   elapseStart(`delete ${dtl?.full_label}`);
@@ -85,7 +86,7 @@ export async function deleteData(sfdmuPath: string, commandThis: any, options: a
     cwd: cwd,
     operationType: 'delete',
   });
-  uxLog("success", commandThis, c.green(`Data deleted successfully from ${c.green(dtl?.full_label)}`));
+  uxLog("success", commandThis, c.green(t('dataDeletedSuccessfullyFrom', { dtl: c.green(dtl?.full_label) })));
   uxLog("log", commandThis, c.italic(c.grey(res.stdout || '')));
   elapseEnd(`delete ${dtl?.full_label}`);
 }
@@ -99,11 +100,11 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
     throw new SfError('Your export.json contains deletion info, please use appropriate delete command');
   }
   /* jscpd:ignore-end */
-  uxLog("action", commandThis, c.cyan(`Exporting data from ${c.green(dtl?.full_label)} ...`));
-  uxLog("log", commandThis, c.italic(c.grey("Data Workspace:\n" + JSON.stringify(dtl?.exportJson, null, 2))));
+  uxLog("action", commandThis, c.cyan(t('exportingDataFrom', { dtl: c.green(dtl?.full_label) })));
+  uxLog("log", commandThis, c.italic(c.grey(t('dataWorkspace') + JSON.stringify(dtl?.exportJson, null, 2))));
   const sourceUsername = options.sourceUsername || commandThis?.org?.getConnection().username;
   await fs.ensureDir(path.join(sfdmuPath, 'logs'));
-  const dataImportCommand = `sf sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p ${sfdmuPath} --noprompt`;
+  const dataImportCommand = `sf sfdmu:run --sourceusername ${sourceUsername} --targetusername csvfile -p "${sfdmuPath}" --noprompt`;
   elapseStart(`export ${dtl?.full_label}`);
   const res = await executeSfdmuCommand(dataImportCommand, commandThis, {
     fail: true,
@@ -111,7 +112,7 @@ export async function exportData(sfdmuPath: string, commandThis: any, options: a
     cwd: cwd,
     operationType: 'export',
   });
-  uxLog("success", commandThis, c.green(`Data exported successfully from ${c.green(dtl?.full_label)}`));
+  uxLog("success", commandThis, c.green(t('dataExportedSuccessfullyFrom', { dtl: c.green(dtl?.full_label) })));
   uxLog("log", commandThis, c.italic(c.grey(res.stdout || '')));
   elapseEnd(`export ${dtl?.full_label}`);
 }
@@ -176,7 +177,7 @@ export async function selectDataWorkspace(opts: { selectDataLabel: string, multi
     type: opts.multiple ? 'multiselect' : 'select',
     name: 'value',
     message: c.cyanBright(opts.selectDataLabel),
-    description: 'Select the SFDMU data configuration to use for this operation',
+    description: t('descChooseSfdmuConfig'),
     choices: choices,
     initial: opts?.initial === "all" ? sfdmuFolders : opts?.initial ?? null
   });

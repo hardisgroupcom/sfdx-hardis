@@ -18,6 +18,7 @@ import { getConfig, setConfig } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { FilterXmlContent } from './filter-xml-content.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -106,66 +107,65 @@ The command's technical implementation involves several steps:
   protected allCleaningTypes = [
     {
       value: 'checkPermissions',
-      title: 'Check custom items are existing it at least one Permission Set',
+      title: t('cleaningTypeCheckPermissions'),
       command: 'sf hardis:lint:access',
     },
     {
       value: 'dashboards',
-      title: 'Dashboards: Remove reference to hardcoded users',
+      title: t('cleaningTypeDashboards'),
     },
     {
       value: 'destructivechanges',
-      title: 'DestructiveChanges.xml: Remove source files mentioned in destructiveChanges.xml',
+      title: t('cleaningTypeDestructiveChanges'),
     },
     {
       value: 'flowPositions',
-      title: `Flows: Replace all positions in AutoLayout Flows by 0 to simplify conflicts management`,
+      title: t('cleaningTypeFlowPositions'),
       command: 'sf hardis:project:clean:flowpositions',
     },
     {
       value: 'sensitiveMetadatas',
-      title: `Remove sensitive metadata content from sources (ex: Certificates)`,
+      title: t('cleaningTypeSensitiveMetadatas'),
       command: 'sf hardis:project:clean:sensitive-metadatas',
     },
     {
       value: 'listViewsMine',
-      title: `ListViews: Convert scope "Everything" into scope "Mine" on ListViews`,
+      title: t('cleaningTypeListViewsMine'),
       command: 'sf hardis:project:clean:listviews',
     },
     {
       value: 'minimizeProfiles',
-      title: 'Profiles: Remove profile attributes that exists on permission sets',
+      title: t('cleaningTypeMinimizeProfiles'),
       command: 'sf hardis:project:clean:minimizeprofiles',
     },
     {
       value: 'caseentitlement',
-      title: 'References to Entitlement Management items',
+      title: t('cleaningTypeCaseEntitlement'),
     },
     {
       value: 'datadotcom',
-      title: 'References to Data.com items. https://help.salesforce.com/articleView?id=000320795&type=1&mode=1',
+      title: t('cleaningTypeDataDotCom'),
     },
     {
       value: 'entitlement',
-      title: 'References to Entitlement object',
+      title: t('cleaningTypeEntitlement'),
     },
     {
       value: 'localfields',
-      title:
-        'References to Local Fields items. https://help.salesforce.com/articleView?id=sf.admin_local_name_fields.htm&type=5',
+      title: t('cleaningTypeLocalFields'),
     },
     {
       value: 'productrequest',
-      title: 'References to ProductRequest object',
+      title: t('cleaningTypeProductRequest'),
     },
     {
       value: 'systemDebug',
-      title: 'Remove System.debug from sources',
+      title: t('cleaningTypeSystemDebug'),
       command: 'sf hardis:project:clean:systemdebug',
     },
     {
       value: 'v60',
-      title: 'Make metadata compliant with v60',
+      title: t('cleaningTypeV60'),
     },
   ];
 
@@ -193,8 +193,8 @@ The command's technical implementation involves several steps:
         const typesResponse = await prompts({
           type: 'multiselect',
           name: 'value',
-          message: c.cyanBright('What references do you want to clean from your SFDX project sources ?'),
-          description: 'Select which types of reference cleaning to perform on your project',
+          message: c.cyanBright(t('whatReferencesDoYouWantToClean')),
+          description: t('selectWhichTypesOfReferenceCleaning'),
           choices: this.allCleaningTypes,
         });
         this.cleaningTypes = typesResponse.value;
@@ -209,10 +209,8 @@ The command's technical implementation involves several steps:
         type: 'confirm',
         name: 'value',
         default: true,
-        message: c.cyanBright(
-          'Do you want to save this action in your project configuration, so it is executed at each Work Save ?'
-        ),
-        description: 'Choose whether to automatically apply these cleaning types during future work saves',
+        message: c.cyanBright(t('doYouWantToSaveCleaningAction')),
+        description: t('chooseSaveCleaningTypesFutureWorkSaves'),
       });
       if (saveResponse.value === true) {
         autoCleanTypes.push(...this.cleaningTypes);
@@ -232,7 +230,7 @@ The command's technical implementation involves several steps:
         if (this.argv.indexOf('--websocket') > -1) {
           command += ` --websocket ${this.argv[this.argv.indexOf('--websocket') + 1]}`;
         }
-        uxLog("action", this, c.cyan(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
+        uxLog("action", this, c.cyan(t('runCleaningCommand', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));
         // Command based cleaning
         await execCommand(command, this, {
           fail: true,
@@ -241,7 +239,7 @@ The command's technical implementation involves several steps:
         });
       } else {
         // Template based cleaning
-        uxLog("action", this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
+        uxLog("action", this, c.cyan(t('applyCleaningOfReferencesTo', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));
         const filterConfigFile = await this.getFilterConfigFile(cleaningType);
         const packageDirectories = this.project?.getPackageDirectories() || [];
         for (const packageDirectory of packageDirectories) {
@@ -278,7 +276,7 @@ The command's technical implementation involves several steps:
       })
     );
 
-    uxLog("success", this, c.green(`Cleaning complete`));
+    uxLog("success", this, c.green(t('cleaningComplete')));
     // Return an object to be displayed with --json
     return { outputString: 'Cleaned references from sfdx project' };
   }
@@ -340,7 +338,7 @@ The command's technical implementation involves several steps:
       const matchFiles = await glob(pattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
       for (const removeFile of matchFiles) {
         await fs.remove(removeFile);
-        uxLog("log", this, c.grey(`Removed file ${removeFile}`));
+        uxLog("log", this, c.grey(t('removedFile', { removeFile })));
       }
     }
     // Remove field in recordTypes
@@ -358,7 +356,7 @@ The command's technical implementation involves several steps:
         if (updatedPicklistValues.length !== recordType.RecordType.picklistValues.length) {
           recordType.RecordType.picklistValues = updatedPicklistValues;
           await writeXmlFile(recordTypeFile, recordType);
-          uxLog("log", this, c.grey(`Cleaned file ${recordTypeFile} from ${obj}.${fld}`));
+          uxLog("log", this, c.grey(t('cleanedFileFrom', { recordTypeFile, obj, fld })));
         }
       }
     }

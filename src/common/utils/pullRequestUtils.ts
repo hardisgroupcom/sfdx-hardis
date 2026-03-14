@@ -67,36 +67,44 @@ export async function listAllPullRequestsForCurrentScope(checkOnly: boolean): Pr
     uxLog("warning", this, c.yellow('[GitProvider] No git provider configured, skipping retrieval of pull requests'));
     return [];
   }
+  // Get either the current PR info (if in checkOnly mode) or the PR info of the last merged PR in the current branch (if in deployment mode)
   const pullRequestInfo = await gitProvider.getPullRequestInfo();
   if (!pullRequestInfo) {
     uxLog("warning", this, c.yellow('[GitProvider] No pull request info available, skipping retrieval of pull requests'));
     return [];
   }
+  // List all major orgs and branches whose authentication has been configured with sfdx-hardis
   const majorOrgs = await listMajorOrgs();
 
   // Source & target are not the same if we are in checkOnly mode or deployment mode
   let sourceBranchToUse = '';
   let targetBranchToUse = '';
   if (checkOnly) {
+    // ex: feature/my-feature
     sourceBranchToUse = pullRequestInfo.sourceBranch;
+    // ex: integration
     targetBranchToUse = pullRequestInfo.targetBranch;
   }
   else {
+    // Find major org config related to the branch of the PR just merged (ex: integration)
     const prTargetOrgDef = majorOrgs.find(o => o.branchName === pullRequestInfo.targetBranch);
     if (prTargetOrgDef) {
       if (!prTargetOrgDef.mergeTargets || prTargetOrgDef.mergeTargets.length === 0) {
         uxLog("warning", this, c.yellow(`[GitProvider] No merge targets defined for target branch ${prTargetOrgDef.branchName}, cannot retrieve pull requests.`));
         return [];
       }
+      // ex: integration
       sourceBranchToUse = prTargetOrgDef.branchName;
-      targetBranchToUse = prTargetOrgDef.mergeTargets[0]; // Use first merge target as target branch
+      // ex: uat (multiple merge targets is not used yet so there should always be only one)
+      targetBranchToUse = prTargetOrgDef.mergeTargets[0];
     }
     else {
       uxLog("warning", this, c.yellow(`[GitProvider] Target branch ${pullRequestInfo.targetBranch} not found in major orgs list, cannot retrieve pull requests.\nPR: ${JSON.stringify(pullRequestInfo, null, 2)}`));
       return [];
     }
   }
-
+  // Recursively find all child branches of the target branch
+  // Ex: if targetbranchToUse is uat, we'll retrieve [integration]
   const childBranchesNames = recursiveGetChildBranches(
     targetBranchToUse,
     majorOrgs,

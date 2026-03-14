@@ -11,6 +11,7 @@ import { GitProvider } from "../gitProvider/index.js";
 import axios, { AxiosRequestConfig } from "axios";
 import fs from "fs-extra";
 import * as path from "path";
+import { t } from '../utils/i18n.js';
 
 const MAX_LOKI_LOG_LENGTH = Number(process.env.MAX_LOKI_LOG_LENGTH || 200000);
 const TRUNCATE_LOKI_ELEMENTS_LENGTH = Number(process.env.TRUNCATE_LOKI_ELEMENTS_LENGTH || 500);
@@ -245,8 +246,8 @@ export class ApiProvider extends NotifProviderRoot {
       }
     } catch (e) {
       uxLog("warning", this, c.yellow(`[ApiProvider] Error while sending message to API ${this.apiUrl}: ${(e as Error).message}`));
-      uxLog("log", this, c.grey("Request body: \n" + JSON.stringify(this.payloadFormatted)));
-      uxLog("log", this, c.grey("Response body: \n" + JSON.stringify((e as any)?.response?.data || {})));
+      uxLog("log", this, c.grey(t('requestBody') + JSON.stringify(this.payloadFormatted)));
+      uxLog("log", this, c.grey(t('responseBody2') + JSON.stringify((e as any)?.response?.data || {})));
     }
   }
 
@@ -286,8 +287,8 @@ export class ApiProvider extends NotifProviderRoot {
       );
 
       if (getEnvVar("NOTIF_API_DEBUG") === "true") {
-        uxLog("log", this, c.grey(`Log elements count: ${elementCount}`));
-        uxLog("log", this, c.grey(`Metric value: ${metricValue}`));
+        uxLog("log", this, c.grey(t('logElementsCount', { elementCount })));
+        uxLog("log", this, c.grey(t('metricValue', { metricValue })));
       }
     } catch (e) {
       uxLog("warning", this, c.yellow(`[ApiProvider] Error writing logs: ${(e as Error).message}`));
@@ -435,13 +436,13 @@ export class ApiProvider extends NotifProviderRoot {
       if (httpStatus >= 200 && httpStatus < 300) {
         uxLog("log", this, c.cyan(`[ApiMetricProvider] Posted metrics to API ${this.metricsApiUrl} (${httpStatus}) [format: ${this.metricsFormat}]`));
         if (getEnvVar("NOTIF_API_DEBUG") === "true") {
-          uxLog("log", this, c.cyan("Metrics payload:\n" + this.metricsPayload));
+          uxLog("log", this, c.cyan(t('metricsPayload') + this.metricsPayload));
         }
       }
     } catch (e) {
       uxLog("warning", this, c.yellow(`[ApiMetricProvider] Error while sending metrics to API ${this.metricsApiUrl}: ${(e as Error).message}`));
-      uxLog("log", this, c.grey("Request body:\n" + this.metricsPayload));
-      uxLog("log", this, c.grey("Response body: " + JSON.stringify((e as any)?.response?.data || {})));
+      uxLog("log", this, c.grey(t('requestBody2') + this.metricsPayload));
+      uxLog("log", this, c.grey(t('responseBody') + JSON.stringify((e as any)?.response?.data || {})));
     }
   }
 }
