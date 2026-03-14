@@ -460,6 +460,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Dagmara Ryborz](https://www.linkedin.com/in/dagmara-ryborz-7618b991/), for Polish translation
 - [Matt Carvin](https://www.linkedin.com/in/matthew-carvin/), for underused permission sets command
 - [Salik Lennert Pedersen](https://www.linkedin.com/in/saliklp/), for his numerous bug fixes
+- [Ryad Meguimi](https://www.linkedin.com/in/ryad-meguimi/), for the Light & Dark modes and the whole refactoring of CSS
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 

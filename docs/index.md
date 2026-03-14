@@ -127,8 +127,8 @@ _See [Dockerfile](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/Docker
 
 - Linux **Ubuntu** based images (works on GitHub, Azure & Bitbucket)
 
-    - [**hardisgroupcom/sfdx-hardis-ubuntu:latest**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis-ubuntu) (with latest @salesforce/cli version)
-    - [**hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis-ubuntu) (with recommended @salesforce/cli version, in case the latest version of @salesforce/cli is buggy)
+  - [**hardisgroupcom/sfdx-hardis-ubuntu:latest**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis-ubuntu) (with latest @salesforce/cli version)
+  - [**hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis-ubuntu) (with recommended @salesforce/cli version, in case the latest version of @salesforce/cli is buggy)
 
   - GitHub Packages (ghcr.io)
 
@@ -371,6 +371,7 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 ## Contributing
 
 <!-- contributing.md start -->
+
 Everyone is welcome to contribute to sfdx-hardis (even juniors: we'll assist you !)
 
 ### Salesforce CLI Plugin: sfdx-hardis
@@ -443,7 +444,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 
 ### Special Thanks
 
-- [Roman Hentschke](https://www.linkedin.com/in/derroman/), for building the BitBucket CI/CD integration
+- [Roman Hentschke](https://www.linkedin.com/in/derroman/), for building the BitBucket CI/CD integration and german translation
 - [Leo Jokinen](https://www.linkedin.com/in/leojokinen/), for building the GitHub CI/CD integration
 - [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/), for her work about generating automations documentation
 - [Matheus Delazeri](https://www.linkedin.com/in/matheus-delazeri-souza/), for the PDF output of documentation
@@ -454,6 +455,22 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Shamina Mossodeean](https://www.linkedin.com/in/shaminam/), for automating SF decomposed metadata
 - [Michael Havrilla](https://www.linkedin.com/in/%F0%9F%92%BB-michael-havrilla-69063036/), for the integration with Vector.dev allowing to provide monitoring logs to external systems like DataDog
 - [Teoman Sertcelik](https://www.linkedin.com/in/teoman-sertcelik/), for allowing to configure authentication using External Client App
+- [Fernando Fernandez](https://www.linkedin.com/in/fernandofernandez1/), for the great command that [detects objects fields usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/)
+- [Yamilet Oliva](https://www.linkedin.com/in/yamiletoliva/), for sfdx-hardis spanish translation
+- [Shinnosuke Takakura](https://www.linkedin.com/in/shinnosuke-takakura-9041ba217/), for sfdx-hardis japanese translation
+- [Dagmara Ryborz](https://www.linkedin.com/in/dagmara-ryborz-7618b991/), for Polish translation
+- [Matt Carvin](https://www.linkedin.com/in/matthew-carvin/), for underused permission sets command
+- [Salik Lennert Pedersen](https://www.linkedin.com/in/saliklp/), for his numerous bug fixes
+- [Ryad Meguimi](https://www.linkedin.com/in/ryad-meguimi/), for the Light & Dark modes and the whole refactoring of CSS
+
+> Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
+
+- English: [Nicolas Vuillamy](https://www.linkedin.com/in/nicolas-vuillamy/) (if someone is interested to make better english, please contact me !)
+- French: [Nicolas Vuillamy](https://www.linkedin.com/in/nicolas-vuillamy/)
+- Spanish: [Yamilet Oliva](https://www.linkedin.com/in/yamiletoliva/)
+- German: [Roman Hentschke](https://www.linkedin.com/in/derroman/)
+- Polish: [Dagmara Ryborz](https://www.linkedin.com/in/dagmara-ryborz-7618b991/)
+- Japanese: [Shinnosuke Takakura](https://www.linkedin.com/in/shinnosuke-takakura-9041ba217/)
 
 <!-- contributors.md end -->
 
@@ -559,6 +576,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:org:diagnose:licenses**](hardis/org/diagnose/licenses.md)                               |       |
 | [**hardis:org:diagnose:releaseupdates**](hardis/org/diagnose/releaseupdates.md)                   |       |
 | [**hardis:org:diagnose:storage-stats**](hardis/org/diagnose/storage-stats.md)                     |       |
+| [**hardis:org:diagnose:underusedpermsets**](hardis/org/diagnose/underusedpermsets.md)             |       |
 | [**hardis:org:diagnose:unsecure-connected-apps**](hardis/org/diagnose/unsecure-connected-apps.md) |       |
 | [**hardis:org:diagnose:unused-apex-classes**](hardis/org/diagnose/unused-apex-classes.md)         |       |
 | [**hardis:org:diagnose:unused-connected-apps**](hardis/org/diagnose/unused-connected-apps.md)     |       |
@@ -570,6 +588,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:org:generate:packagexmlfull**](hardis/org/generate/packagexmlfull.md)                   |       |
 | [**hardis:org:monitor:all**](hardis/org/monitor/all.md)                                           |       |
 | [**hardis:org:monitor:backup**](hardis/org/monitor/backup.md)                                     |       |
+| [**hardis:org:monitor:errors**](hardis/org/monitor/errors.md)                                     |       |
 | [**hardis:org:monitor:health-check**](hardis/org/monitor/health-check.md)                         |       |
 | [**hardis:org:monitor:limits**](hardis/org/monitor/limits.md)                                     |       |
 | [**hardis:org:multi-org-query**](hardis/org/multi-org-query.md)                                   |       |

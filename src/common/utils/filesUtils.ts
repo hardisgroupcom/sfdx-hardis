@@ -1517,7 +1517,9 @@ export async function generateCsvFile(
   try {
     const csvContent = Papa.unparse(data);
     await fs.writeFile(outputPath, csvContent, 'utf8');
-    uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn', { outputPath: c.bold(outputPath) }))));
+    if (!WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn', { outputPath: c.bold(outputPath) }))));
+    }
     result.csvFile = outputPath;
     if (!WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket) {
       WebSocketClient.requestOpenFile(outputPath);
@@ -1546,7 +1548,9 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
     // Delete existing file if any
     await fs.remove(xslxFile);
     await csvToXls(outputPath, xslxFile, options);
-    uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
+    if (!WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
+    }
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
     WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
     result.xlsxFile = xslxFile;
@@ -1583,7 +1587,9 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
     // Delete existing file if any
     await fs.remove(xslxFile);
     await csvFilesToXls(csvFilesPath, xslxFile, options);
-    uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
+    if (!WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
+    }
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
     WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
     // result.xlsxFile = xslxFile;

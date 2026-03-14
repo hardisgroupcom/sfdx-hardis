@@ -31,6 +31,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Fixes
   - Add quotes around arguments that can contain spaces (folders, paths, etc.) to avoid issues when running commands from CLI or CI/CD
   - Deployment actions: fix issue that made a successful data import appear as failed
+  - Removed invalid Env Var already handled in getPullRequestInfo()
 
 ## [6.27.2] 2025-03-10
 
