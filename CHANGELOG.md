@@ -4,9 +4,6 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
-- [hardis:org:monitor:limits](https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/): Add Apex character limit monitoring (custom classes + triggers, excludes @isTest)
-- New command [hardis:org:diagnose:underusedpermsets](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/underusedpermsets/) to identify underused Permission Sets and Permission Set Groups in a Salesforce org, with details and notifications (available in sfdx-hardis monitoring)
-
 - Add translation support
   - English (en) is the default language
   - French (by [Nicolas Vuillamy](https://www.linkedin.com/in/nicolas-vuillamy/))
@@ -14,17 +11,26 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - German (by [Roman Hentschke](https://www.linkedin.com/in/derroman/))
   - Polish (by [Dagmara Ryborz](https://www.linkedin.com/in/dagmara-ryborz-7618b991/))
   - Japanese (by [Shinnosuke Takakura](https://www.linkedin.com/in/shinnosuke-takakura-9041ba217/))
-- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add support for translations in generated documentation
-- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): If set, use prompts language to generate documentation
-- [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/) and [hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/): Handle External Client App save then restore with identical credentials
-- Generate XSLX reports with tables for better readability in Excel and other spreadsheet software
-- [hardis:org:purge:flow](https://sfdx-hardis.cloudity.com/hardis/org/purge/flow/): Generate report files of flows to delete then of deletion results.
-- New command [hardis:monitor:errors](https://sfdx-hardis.cloudity.com/hardis/monitor/errors/) to collect and generate reports about Apex and Flow errors, then post notifications. (also added in daily task of sfdx-hardis monitoring)
-- Internal: Build internal Metadata List from https://raw.githubusercontent.com/forcedotcom/source-deploy-retrieve/refs/heads/main/src/registry/metadataRegistry.json (use `yarn run build`)
+  - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add support for translations in generated documentation
+  - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/): If set, use prompts language to generate documentation
+
+- New commands
+  - [hardis:org:diagnose:underusedpermsets](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/underusedpermsets/) to identify underused Permission Sets and Permission Set Groups in a Salesforce org, with details and notifications (available in sfdx-hardis monitoring)
+  - [hardis:monitor:errors](https://sfdx-hardis.cloudity.com/hardis/monitor/errors/) to collect and generate reports about Apex and Flow errors, then post notifications. (also added in daily task of sfdx-hardis monitoring)
+
+- Updated commands
+  - [hardis:org:refresh:before-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/) and [hardis:org:refresh:after-refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/): Handle External Client App save then restore with identical credentials
+  - [hardis:org:monitor:limits](https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/): Add Apex character limit monitoring (custom classes + triggers, excludes @isTest)
+  - [hardis:org:purge:flow](https://sfdx-hardis.cloudity.com/hardis/org/purge/flow/): Generate report files of flows to delete then of deletion results.
+  - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): New deployment action type 'schedule-batch' to schedule an Apex batch class.
+
+- Core improvements
+  - Generate XSLX reports with tables for better readability in Excel and other spreadsheet software
+  - Internal: Build internal Metadata List from https://raw.githubusercontent.com/forcedotcom/source-deploy-retrieve/refs/heads/main/src/registry/metadataRegistry.json (use `yarn run build`)
+
 - Fixes
   - Add quotes around arguments that can contain spaces (folders, paths, etc.) to avoid issues when running commands from CLI or CI/CD
   - Deployment actions: fix issue that made a successful data import appear as failed
-- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): New deployment action type 'schedule-batch' to schedule an Apex batch class.
 
 ## [6.27.2] 2025-03-10
 
