@@ -102,7 +102,7 @@ Each step asks for confirmation before making changes to the org.
 
 **Can I run the commands in CI/CD pipelines?**
 
-No, this is a sensitive operation that requires supervison from a human.
+No, this is a sensitive operation that requires supervision from a human.
 
 **What if I refreshed without running the before-refresh command first?**
 
