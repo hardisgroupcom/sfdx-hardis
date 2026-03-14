@@ -144,6 +144,22 @@ CVE-2026-27904
 # tar vulnerable to Arbitrary File Write, located in @salesforce/cli so they'll fix
 CVE-2026-29786
 
+# https://avd.aquasec.com/nvd/cve-2026-28292
+# simple-git issue from sfdx-git-delta, not risky for sfdx-hardis use as we don't use sfdx-git-delta in a way that could be vulnerable to this CVE
+CVE-2026-28292
+
+# https://avd.aquasec.com/nvd/cve-2026-31802
+# tar vulnerable to Arbitrary File Write, located in @salesforce/cli so they'll fix that soon
+CVE-2026-31802
+
+# https://avd.aquasec.com/nvd/cve-2026-1526
+# undici DDOS risk, harmless for sfdx-hardis usage
+CVE-2026-1526
+
+# https://avd.aquasec.com/nvd/cve-2026-2229
+# undici DDOS risk, harmless for sfdx-hardis usage
+CVE-2026-2229
+
 # Dockerfile https://avd.aquasec.com/misconfig/ds002
 # Image using root user, that's ok as we are using it in CI/CD jobs containers, so not risky for sfdx-hardis
 DS002
