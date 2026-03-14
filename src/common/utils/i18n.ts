@@ -28,17 +28,17 @@ export function initI18n(): void {
   const supportedLocales = ['de', 'en', 'es', 'fr', 'ja', 'pl'];
   const lng = supportedLocales.includes(locale) ? locale : 'en';
 
+  const resources: Record<string, { translation: Record<string, string> }> = {
+    en: { translation: loadTranslations('en') },
+  };
+  if (lng !== 'en') {
+    resources[lng] = { translation: loadTranslations(lng) };
+  }
+
   i18next.init({
     lng,
     fallbackLng: 'en',
-    resources: {
-      de: { translation: loadTranslations('de') },
-      en: { translation: loadTranslations('en') },
-      es: { translation: loadTranslations('es') },
-      fr: { translation: loadTranslations('fr') },
-      ja: { translation: loadTranslations('ja') },
-      pl: { translation: loadTranslations('pl') },
-    },
+    resources,
     interpolation: {
       escapeValue: false,
     },
