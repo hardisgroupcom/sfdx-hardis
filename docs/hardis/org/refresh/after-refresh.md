@@ -24,6 +24,8 @@ Key functionalities:
 
 This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is intended to be run after a sandbox refresh to re-apply saved metadata, credentials and data.
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/cMzzWDIARbo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -39,15 +41,15 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                                                 | Default | Required | Options |
-|:------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| all<br/>-a        | boolean | If set, all Connected Apps from the local repository will be processed. Takes precedence over --name if both are specified. |         |          |         |
-| flags-dir         | option  | undefined                                                                                                                   |         |          |         |
-| json              | boolean | Format output as json.                                                                                                      |         |          |         |
-| name<br/>-n       | option  | Connected App name(s) to process (bypasses selection prompt). For multiple apps, separate with commas (e.g., "App1,App2")   |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                                               |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                                                   |         |          |         |
-| websocket         | option  | WebSocket host:port for VS Code SFDX Hardis UI integration                                                                  |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|all<br/>-a|boolean|If set, all Connected Apps from the local repository will be processed. Takes precedence over --name if both are specified.||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|name<br/>-n|option|Connected App name(s) to process (bypasses selection prompt). For multiple apps, separate with commas (e.g., "App1,App2")||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|WebSocket host:port for VS Code SFDX Hardis UI integration||||
 
 ## Examples
 
