@@ -377,9 +377,10 @@ export async function deployExternalClientApps(
   orgUsername: string,
   instanceUrl: string,
   saveProjectPath: string,
-  command: SfCommand<any>
+  command: SfCommand<any>,
+  selectedNames?: string[]
 ): Promise<Record<string, string[]>> {
-  const ecaNames = getEcaNames(saveProjectPath);
+  const ecaNames = selectedNames && selectedNames.length > 0 ? selectedNames : getEcaNames(saveProjectPath);
   const ecaContent = getEcaPackageContent(ecaNames.length > 0 ? ecaNames : undefined);
 
   // Phase 1: Deploy ExternalClientApplication parent type only.

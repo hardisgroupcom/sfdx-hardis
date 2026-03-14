@@ -655,22 +655,25 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     uxLog("log", this, c.cyan(t('foundExternalClientAppsInTheOrg', { count: ecaNames.length })));
 
-    const promptRestore = await prompts({
-      type: 'confirm',
-      name: 'confirmRestore',
-      message: t('doYouWantToRestoreExternalClientApps', { saveProjectPath: c.bold(this.saveProjectPath) }),
-      initial: true,
-      description: t('thisWillRestoreAllExternalClientAppsFromBackup')
+    // Multiselect which ECAs to restore (all selected by default)
+    const promptSelect = await prompts({
+      type: 'multiselect',
+      name: 'selectedApps',
+      message: t('selectExternalClientAppsToRestore'),
+      description: t('selectExternalClientAppsToRestoreDescription'),
+      choices: ecaNames.map(name => ({ title: name, value: name })),
+      initial: ecaNames,
     });
-
-    if (!promptRestore.confirmRestore) {
-      this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Skipped", details: "User cancelled" });
+    const selectedEcaNames: string[] = promptSelect.selectedApps || [];
+    if (selectedEcaNames.length === 0) {
+      uxLog("warning", this, c.yellow(t('noExternalClientAppsSelected')));
+      this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Skipped", details: "No External Client Apps selected" });
       return;
     }
 
     // Delete ECAs that already exist in the org with the same name to avoid conflicts
     const existingEcaNamesInOrg = await listExternalClientAppNames(this.orgUsername, this);
-    const ecasToDelete = ecaNames.filter(name =>
+    const ecasToDelete = selectedEcaNames.filter(name =>
       existingEcaNamesInOrg.some(orgName => orgName.toLowerCase() === name.toLowerCase())
     );
     if (ecasToDelete.length > 0) {
@@ -686,13 +689,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
 
     // Delete Connected Apps that conflict with External Client Apps before deploying
-    const deletedConflictingApps = await deleteConflictingConnectedApps(this.orgUsername, ecaNames, this.saveProjectPath, this);
+    const deletedConflictingApps = await deleteConflictingConnectedApps(this.orgUsername, selectedEcaNames, this.saveProjectPath, this);
     for (const name of deletedConflictingApps) {
       this.refreshActions.push({ step: "Delete Conflicting Connected Apps", type: "ConnectedApp", name, status: "Success", details: "Deleted before ECA restore" });
     }
 
     try {
-      const deployedItems = await deployExternalClientApps(this.orgUsername, this.instanceUrl, this.saveProjectPath, this);
+      const deployedItems = await deployExternalClientApps(this.orgUsername, this.instanceUrl, this.saveProjectPath, this, selectedEcaNames);
       for (const [metadataType, members] of Object.entries(deployedItems)) {
         for (const memberName of members) {
           this.refreshActions.push({ step: "Restore External Client Apps", type: metadataType, name: memberName, status: "Success", details: "" });
@@ -700,13 +703,21 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
     } catch (error: any) {
       uxLog("error", this, c.red(t('errorProcessing', { app: 'External Client Apps', error: error.message || error })));
-      for (const ecaName of ecaNames) {
+      for (const ecaName of selectedEcaNames) {
         this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Error", details: error.message || String(error) });
       }
     }
   }
 
   private async restoreConnectedApps(): Promise<void> {
+    // Check early if there are any Connected Apps in the backup before prompting
+    const connectedAppsFolder = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'connectedApps');
+    if (!fs.existsSync(connectedAppsFolder) || fs.readdirSync(connectedAppsFolder).length === 0) {
+      uxLog("log", this, c.grey(t('noConnectedAppsFoundInBackupSkipping')));
+      this.refreshActions.push({ step: "Restore Connected Apps", type: "ConnectedApp", name: "N/A", status: "Skipped", details: "No backup found" });
+      return;
+    }
+
     // Warn about Connected Apps deprecation since Spring '26
     uxLog("warning", this, c.yellow(t('connectedAppsDeprecatedRestoreWarning')));
     uxLog("action", this, c.cyan(t('noConnectedAppsCreationRestricted')));
