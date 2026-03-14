@@ -406,6 +406,19 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     });
   }
 
+  /* jscpd:ignore-start */
+  private collectKeys(records: any[], keySet: Set<string>, nonEmptyKeys: Set<string>): void {
+    for (const record of records) {
+      for (const key of Object.keys(record || {})) {
+        keySet.add(key);
+        if (record?.[key] !== null && record?.[key] !== undefined) {
+          nonEmptyKeys.add(key);
+        }
+      }
+    }
+  }
+  /* jscpd:ignore-end */
+
   protected unifyErrorOutputs(): void {
     if (this.apexErrors.length === 0 && this.flowErrors.length === 0) {
       return;
@@ -415,23 +428,8 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     const keySet = new Set<string>();
     const nonEmptyKeys = new Set<string>();
 
-    for (const record of this.apexErrors) {
-      for (const key of Object.keys(record || {})) {
-        keySet.add(key);
-        if (record?.[key] !== null && record?.[key] !== undefined) {
-          nonEmptyKeys.add(key);
-        }
-      }
-    }
-
-    for (const record of this.flowErrors) {
-      for (const key of Object.keys(record || {})) {
-        keySet.add(key);
-        if (record?.[key] !== null && record?.[key] !== undefined) {
-          nonEmptyKeys.add(key);
-        }
-      }
-    }
+    this.collectKeys(this.apexErrors, keySet, nonEmptyKeys);
+    this.collectKeys(this.flowErrors, keySet, nonEmptyKeys);
 
     const nonEmptyKeysArray = Array.from(nonEmptyKeys);
     const orderedKeys = [
