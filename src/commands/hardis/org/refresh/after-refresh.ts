@@ -74,6 +74,8 @@ Key functionalities:
 
 This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is intended to be run after a sandbox refresh to re-apply saved metadata, credentials and data.
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/cMzzWDIARbo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -514,74 +516,81 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     uxLog("action", this, c.cyan(t('restoringCustomSettings', { selectedSettings: selectedSettings.length })));
     const successSettings: string[] = []
     const failedSettings: string[] = []
-    for (const folder of selectedSettings) {
-      const jsonFile = path.join(csDir, folder, `${folder}.json`);
-      if (!fs.existsSync(jsonFile)) {
-        uxLog("warning", this, c.yellow(t('noDataFileForCustomSetting', { folder })));
-        failedSettings.push(folder);
-        continue;
-      }
-      // Remove standard fields from the JSON file and create a new file without them, and replace Org Id with the current org one
-      const jsonFileForImport = path.join(csDir, folder, `${folder}-without-standard-fields.json`);
-      const jsonData = await fs.readJson(jsonFile);
-      const standardFields = ['LastModifiedDate', 'IsDeleted', 'CreatedById', 'CreatedDate', 'LastModifiedById', 'SystemModstamp'];
-      let deleteExistingCsBefore = false;
-      jsonData.records = (jsonData?.records || []).map((record: any) => {
-        const newRecord: any = {};
-        for (const key in record) {
-          // Remove standard fields
-          if (!standardFields.includes(key)) {
-            newRecord[key] = record[key];
-          }
-          // Replace Org Id with the current org one
-          if (key === 'SetupOwnerId') {
-            newRecord[key] = this.orgId; // Replace with current org Id
-            deleteExistingCsBefore = true; // Use upsert if SetupOwnerId is present
-          }
+    WebSocketClient.sendProgressStartMessage(t('restoringCustomSettings', { selectedSettings: selectedSettings.length }), selectedSettings.length);
+    let csCounter = 0;
+    try {
+      for (const folder of selectedSettings) {
+        const jsonFile = path.join(csDir, folder, `${folder}.json`);
+        if (!fs.existsSync(jsonFile)) {
+          uxLog("warning", this, c.yellow(t('noDataFileForCustomSetting', { folder })));
+          failedSettings.push(folder);
+          continue;
         }
-        return newRecord;
-      });
-      // Write the new JSON file without standard fields
-      await fs.writeJson(jsonFileForImport, jsonData, { spaces: 2 });
+        // Remove standard fields from the JSON file and create a new file without them, and replace Org Id with the current org one
+        const jsonFileForImport = path.join(csDir, folder, `${folder}-without-standard-fields.json`);
+        const jsonData = await fs.readJson(jsonFile);
+        const standardFields = ['LastModifiedDate', 'IsDeleted', 'CreatedById', 'CreatedDate', 'LastModifiedById', 'SystemModstamp'];
+        let deleteExistingCsBefore = false;
+        jsonData.records = (jsonData?.records || []).map((record: any) => {
+          const newRecord: any = {};
+          for (const key in record) {
+            // Remove standard fields
+            if (!standardFields.includes(key)) {
+              newRecord[key] = record[key];
+            }
+            // Replace Org Id with the current org one
+            if (key === 'SetupOwnerId') {
+              newRecord[key] = this.orgId; // Replace with current org Id
+              deleteExistingCsBefore = true; // Use upsert if SetupOwnerId is present
+            }
+          }
+          return newRecord;
+        });
+        // Write the new JSON file without standard fields
+        await fs.writeJson(jsonFileForImport, jsonData, { spaces: 2 });
 
-      // Delete existing custom settings before import if needed
-      if (deleteExistingCsBefore) {
-        uxLog("log", this, c.grey(t('deletingExistingCustomSettingsForInOrg', { folder, orgUsername: this.orgUsername })));
-        // Query existing custom settings to delete
-        const query = `SELECT Id FROM ${folder} WHERE SetupOwnerId = '${this.orgId}'`;
-        const queryRes = await soqlQuery(query, this.conn);
-        if (queryRes.records.length > 0) {
-          const idsToDelete = (queryRes?.records.map(record => record.Id) || []).filter((id): id is string => typeof id === 'string');
-          uxLog("log", this, c.grey(t('foundExistingCustomSettingsToDeleteFor', { idsToDelete: idsToDelete.length, folder, orgUsername: this.orgUsername })));
-          const deleteResults = await this.conn.sobject(folder).destroy(idsToDelete, { allOrNone: true });
-          const deletedSuccessFullyIds = deleteResults.filter(result => result.success).map(result => "- " + result.id).join('\n');
-          uxLog("log", this, c.grey(t('deletedExistingCustomSettingsForInOrg', { deletedSuccessFullyIds: deletedSuccessFullyIds.length, folder, orgUsername: this.orgUsername, deletedSuccessFullyIds1: deletedSuccessFullyIds })));
-          const deletedErrorIds = deleteResults.filter(result => !result.success).map(result => "- " + result.id).join('\n');
-          if (deletedErrorIds.length > 0) {
-            uxLog("warning", this, c.yellow(t('failedToDeleteExistingCustomSettingsFor', { folder, orgUsername: this.orgUsername, deletedErrorIds })));
-            continue; // Skip to next setting if deletion failed
+        // Delete existing custom settings before import if needed
+        if (deleteExistingCsBefore) {
+          uxLog("log", this, c.grey(t('deletingExistingCustomSettingsForInOrg', { folder, orgUsername: this.orgUsername })));
+          // Query existing custom settings to delete
+          const query = `SELECT Id FROM ${folder} WHERE SetupOwnerId = '${this.orgId}'`;
+          const queryRes = await soqlQuery(query, this.conn);
+          if (queryRes.records.length > 0) {
+            const idsToDelete = (queryRes?.records.map(record => record.Id) || []).filter((id): id is string => typeof id === 'string');
+            uxLog("log", this, c.grey(t('foundExistingCustomSettingsToDeleteFor', { idsToDelete: idsToDelete.length, folder, orgUsername: this.orgUsername })));
+            const deleteResults = await this.conn.sobject(folder).destroy(idsToDelete, { allOrNone: true });
+            const deletedSuccessFullyIds = deleteResults.filter(result => result.success).map(result => "- " + result.id).join('\n');
+            uxLog("log", this, c.grey(t('deletedExistingCustomSettingsForInOrg', { deletedSuccessFullyIds: deletedSuccessFullyIds.length, folder, orgUsername: this.orgUsername, deletedSuccessFullyIds1: deletedSuccessFullyIds })));
+            const deletedErrorIds = deleteResults.filter(result => !result.success).map(result => "- " + result.id).join('\n');
+            if (deletedErrorIds.length > 0) {
+              uxLog("warning", this, c.yellow(t('failedToDeleteExistingCustomSettingsFor', { folder, orgUsername: this.orgUsername, deletedErrorIds })));
+              continue; // Skip to next setting if deletion failed
+            }
+          } else {
+            uxLog("log", this, c.grey(t('noExistingCustomSettingsFoundForIn', { folder, orgUsername: this.orgUsername })));
           }
-        } else {
-          uxLog("log", this, c.grey(t('noExistingCustomSettingsFoundForIn', { folder, orgUsername: this.orgUsername })));
         }
-      }
-      // Import the custom setting using sf data tree import
-      const importCmd = `sf data tree import --files "${jsonFileForImport}" --target-org ${this.orgUsername} --json`;
-      try {
-        const importRes = await execSfdxJson(importCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
-        if (importRes.status === 0) {
-          uxLog("success", this, c.green(t('customSettingRestored', { folder })));
-          successSettings.push(folder);
-        }
-        else {
-          uxLog("error", this, c.red(t('failedToRestoreCustomSetting2', { folder, JSON: JSON.stringify(importRes, null, 2) })));
+        // Import the custom setting using sf data tree import
+        const importCmd = `sf data tree import --files "${jsonFileForImport}" --target-org ${this.orgUsername} --json`;
+        try {
+          const importRes = await execSfdxJson(importCmd, this, { output: true, fail: true, cwd: this.saveProjectPath });
+          if (importRes.status === 0) {
+            uxLog("success", this, c.green(t('customSettingRestored', { folder })));
+            successSettings.push(folder);
+          }
+          else {
+            uxLog("error", this, c.red(t('failedToRestoreCustomSetting2', { folder, JSON: JSON.stringify(importRes, null, 2) })));
+            failedSettings.push(folder);
+          }
+        } catch (e) {
+          uxLog("error", this, c.red(t('customSettingRestoreFailed', { folder, JSON: JSON.stringify(e) })));
           failedSettings.push(folder);
         }
-      } catch (e) {
-        uxLog("error", this, c.red(t('customSettingRestoreFailed', { folder, JSON: JSON.stringify(e) })));
-        failedSettings.push(folder);
-        continue;
+        csCounter++;
+        WebSocketClient.sendProgressStepMessage(csCounter, selectedSettings.length);
       }
+    } finally {
+      WebSocketClient.sendProgressEndMessage();
     }
     uxLog("action", this, c.cyan(t('customSettingsRestoreCompleteSuccessfulFailed', { successSettings: successSettings.length, failedSettings: failedSettings.length })));
     if (successSettings.length > 0) {
@@ -646,28 +655,25 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     uxLog("log", this, c.cyan(t('foundExternalClientAppsInTheOrg', { count: ecaNames.length })));
 
-    const promptRestore = await prompts({
-      type: 'confirm',
-      name: 'confirmRestore',
-      message: t('doYouWantToRestoreExternalClientApps', { saveProjectPath: c.bold(this.saveProjectPath) }),
-      initial: true,
-      description: t('thisWillRestoreAllExternalClientAppsFromBackup')
+    // Multiselect which ECAs to restore (all selected by default)
+    const promptSelect = await prompts({
+      type: 'multiselect',
+      name: 'selectedApps',
+      message: t('selectExternalClientAppsToRestore'),
+      description: t('selectExternalClientAppsToRestoreDescription'),
+      choices: ecaNames.map(name => ({ title: name, value: name })),
+      initial: ecaNames,
     });
-
-    if (!promptRestore.confirmRestore) {
-      this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Skipped", details: "User cancelled" });
+    const selectedEcaNames: string[] = promptSelect.selectedApps || [];
+    if (selectedEcaNames.length === 0) {
+      uxLog("warning", this, c.yellow(t('noExternalClientAppsSelected')));
+      this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Skipped", details: "No External Client Apps selected" });
       return;
-    }
-
-    // Delete Connected Apps that conflict with External Client Apps before deploying
-    const deletedConflictingApps = await deleteConflictingConnectedApps(this.orgUsername, ecaNames, this.saveProjectPath, this);
-    for (const name of deletedConflictingApps) {
-      this.refreshActions.push({ step: "Delete Conflicting Connected Apps", type: "ConnectedApp", name, status: "Success", details: "Deleted before ECA restore" });
     }
 
     // Delete ECAs that already exist in the org with the same name to avoid conflicts
     const existingEcaNamesInOrg = await listExternalClientAppNames(this.orgUsername, this);
-    const ecasToDelete = ecaNames.filter(name =>
+    const ecasToDelete = selectedEcaNames.filter(name =>
       existingEcaNamesInOrg.some(orgName => orgName.toLowerCase() === name.toLowerCase())
     );
     if (ecasToDelete.length > 0) {
@@ -682,8 +688,14 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
     }
 
+    // Delete Connected Apps that conflict with External Client Apps before deploying
+    const deletedConflictingApps = await deleteConflictingConnectedApps(this.orgUsername, selectedEcaNames, this.saveProjectPath, this);
+    for (const name of deletedConflictingApps) {
+      this.refreshActions.push({ step: "Delete Conflicting Connected Apps", type: "ConnectedApp", name, status: "Success", details: "Deleted before ECA restore" });
+    }
+
     try {
-      const deployedItems = await deployExternalClientApps(this.orgUsername, this.instanceUrl, this.saveProjectPath, this);
+      const deployedItems = await deployExternalClientApps(this.orgUsername, this.instanceUrl, this.saveProjectPath, this, selectedEcaNames);
       for (const [metadataType, members] of Object.entries(deployedItems)) {
         for (const memberName of members) {
           this.refreshActions.push({ step: "Restore External Client Apps", type: metadataType, name: memberName, status: "Success", details: "" });
@@ -691,13 +703,21 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       }
     } catch (error: any) {
       uxLog("error", this, c.red(t('errorProcessing', { app: 'External Client Apps', error: error.message || error })));
-      for (const ecaName of ecaNames) {
+      for (const ecaName of selectedEcaNames) {
         this.refreshActions.push({ step: "Restore External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Error", details: error.message || String(error) });
       }
     }
   }
 
   private async restoreConnectedApps(): Promise<void> {
+    // Check early if there are any Connected Apps in the backup before prompting
+    const connectedAppsFolder = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'connectedApps');
+    if (!fs.existsSync(connectedAppsFolder) || fs.readdirSync(connectedAppsFolder).length === 0) {
+      uxLog("log", this, c.grey(t('noConnectedAppsFoundInBackupSkipping')));
+      this.refreshActions.push({ step: "Restore Connected Apps", type: "ConnectedApp", name: "N/A", status: "Skipped", details: "No backup found" });
+      return;
+    }
+
     // Warn about Connected Apps deprecation since Spring '26
     uxLog("warning", this, c.yellow(t('connectedAppsDeprecatedRestoreWarning')));
     uxLog("action", this, c.cyan(t('noConnectedAppsCreationRestricted')));

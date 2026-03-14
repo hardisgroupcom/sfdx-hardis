@@ -21,28 +21,28 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-      background: '#F3F3F3'
-      foreground: '#001135'
+      background: "#F3F3F3"
+      foreground: "#001135"
       colors:
-        primary: '#0053FF'
-        accent: '#660FF2'
-        link: '#0053FF'
-        header: '#001135'
-        nav: '#F3F3F3'
+        primary: "#0053FF"
+        accent: "#660FF2"
+        link: "#0053FF"
+        header: "#001135"
+        nav: "#F3F3F3"
     - scheme: slate
       primary: custom
       accent: custom
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-      background: '#121212'
-      foreground: '#FFFFFF'
+      background: "#121212"
+      foreground: "#FFFFFF"
       colors:
-        primary: '#0053FF'
-        accent: '#660FF2'
-        link: '#0053FF'
-        header: '#121212'
-        nav: '#1A1A2E'
+        primary: "#0053FF"
+        accent: "#660FF2"
+        link: "#0053FF"
+        header: "#121212"
+        nav: "#1A1A2E"
 plugins:
   - glightbox
   - search
@@ -225,6 +225,7 @@ nav:
                   - Additional Instructions: prompt-templates/VARIABLE_ADDITIONAL_INSTRUCTIONS.md
                   - Formatting Requirements: prompt-templates/VARIABLE_FORMATTING_REQUIREMENTS.md
                   - Output Format Markdown Doc: prompt-templates/VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC.md
+  - Sandbox Refresh: salesforce-sandbox-refresh.md
   - Commands:
       All commands: commands.md
       hardis:
