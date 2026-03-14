@@ -99,7 +99,7 @@ docs/                 # Project documentation
 
 ## Internationalization (i18n) / Translations
 
-sfdx-hardis uses **i18next** for runtime translations. The locale is selected via the `SFDX_HARDIS_LOCALE` environment variable (default: `en`; supported: `en`, `de`, `fr`, `es`, `ja`).
+sfdx-hardis uses **i18next** for runtime translations. The locale is selected via the `SFDX_HARDIS_LOCALE` environment variable (default: `en`; supported: `en`, `de`, `fr`, `es`, `ja`, `pl`).
 
 ### Translation files
 
@@ -108,6 +108,7 @@ sfdx-hardis uses **i18next** for runtime translations. The locale is selected vi
 - Spanish: `src/i18n/es.json`
 - Japanese: `src/i18n/ja.json`
 - German: `src/i18n/de.json`
+- Polish: `src/i18n/pl.json`
 
 All files are flat JSON objects with **camelCase** keys and **i18next interpolation** syntax for variables (`{{varName}}`).
 
@@ -158,6 +159,13 @@ uxLog("warning", this, c.yellow(t("fileNotFound", { path: filePath })));
   - Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub, SOQL, DML, CSV, REST, Bulk API, upsert, mock data.
   - Use standard German software/IT terminology (e.g. "Datensatz" for record, "Org" stays as "Org", "Workspace" stays as "Workspace").
   - Keep brand names untranslated: Salesforce, SFDMU, Git, GitHub, GitLab, JIRA, VS Code.
+- **Polish-specific terms**: Use natural, professional Polish for Salesforce developers.
+  - Use neutral formal Polish — avoid personal address forms ("ty", "Pan", "Pani"). Use impersonal constructs or verbs in third person when possible (e.g. "Czy chcesz..." instead of "Chcesz...").
+  - Keep English technical terms untranslated: merge, commit, branch, Scratch Org, package.xml, DevHub, SOQL, DML, CSV, REST, Bulk API, upsert, mock data, org, sandbox.
+  - Keep Salesforce metadata names in English: Flow, Permission Set, Permission Set Group, Profile, Custom Setting, Custom Label, Custom Permission, Connected App, External Client App, Validation Rule, Workflow Rule, Approval Process, Assignment Rule, Escalation Rule, Record Type, Lightning Page, Lightning Web Component, Static Resource, Visualforce, sObject, Flexipage.
+  - Keep brand names untranslated: Salesforce, SFDMU, Git, GitHub, GitLab, JIRA, VS Code, Azure DevOps, Bitbucket, Docker, Cloudflare, ServiceNow, MermaidJS.
+  - Translate key terms consistently: "deployment" → "wdrożenie", "deploy" → "wdrożyć", "retrieve" → "pobrać"/"pobieranie", "scratch org" → stays as "Scratch Org", "metadata" → "metadane", "org" → stays as "org".
+  - Use Polish-specific software vocabulary: "błąd" for error, "ostrzeżenie" for warning, "repozytorium" for repository, "gałąź" for branch (but keep "branch" as-is when referring to git commands), "wdrożenie" for deployment.
 
 ### uxLog calls
 
