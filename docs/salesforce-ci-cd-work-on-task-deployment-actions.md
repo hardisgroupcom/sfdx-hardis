@@ -168,11 +168,11 @@ Schedules an Apex batch class using `System.schedule()`. The action verifies tha
 
 If a scheduled job with the same name and cron expression already exists, the action is skipped (idempotent). If a job with the same name but a **different** cron expression exists, the action fails so you can resolve the conflict manually.
 
-| Custom parameter              | Required? | Description                                                                                       | Example                  |
-|-------------------------------|:---------:|---------------------------------------------------------------------------------------------------|---------------------------|
-| `parameters.className`        |    Yes    | Name of the Apex class that implements `Schedulable` with a public no-arg constructor.            | `MyBatchScheduler`       |
-| `parameters.cronExpression`   |    Yes    | Cron expression for the schedule (Salesforce format).                                             | `0 0 0 * * ?`            |
-| `parameters.jobName`          |    No     | Name of the scheduled job. Defaults to `<className>_Schedule` if omitted.                         | `MyBatch_Nightly`        |
+| Custom parameter            | Required? | Description                                                                            | Example            |
+|-----------------------------|:---------:|----------------------------------------------------------------------------------------|--------------------|
+| `parameters.className`      |    Yes    | Name of the Apex class that implements `Schedulable` with a public no-arg constructor. | `MyBatchScheduler` |
+| `parameters.cronExpression` |    Yes    | Cron expression for the schedule (Salesforce format).                                  | `0 0 0 * * ?`      |
+| `parameters.jobName`        |    No     | Name of the scheduled job. Defaults to `<className>_Schedule` if omitted.              | `MyBatch_Nightly`  |
 
 Example:
 
