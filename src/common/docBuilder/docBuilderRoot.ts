@@ -7,7 +7,8 @@ import { XMLParser } from 'fast-xml-parser';
 import fs from 'fs-extra';
 import path from 'path';
 import { getMetaHideLines, includeFromFile } from './docUtils.js';
-import { CONSTANTS } from '../../config/index.js';
+import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
+import { t } from '../utils/i18n.js';
 
 export abstract class DocBuilderRoot {
   public docType: string;
@@ -53,6 +54,8 @@ export abstract class DocBuilderRoot {
     mdLines.push(...initialMdLines);
     // Footer
     mdLines.push("");
+    mdLines.push(getBannerMarkdownAndLink());
+    mdLines.push("");
     mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}), by [Cloudity](https://www.cloudity.com/) & [friends](https://github.com/hardisgroupcom/sfdx-hardis/graphs/contributors)_`);
 
     this.markdownDoc = mdLines.join("\n") + "\n";
@@ -63,13 +66,13 @@ export abstract class DocBuilderRoot {
     if (fs.existsSync(this.outputFile)) {
       const fileContent = await fs.readFile(this.outputFile, "utf8");
       if (fileContent.includes("DO_NOT_OVERWRITE_DOC=TRUE")) {
-        uxLog("warning", this, c.yellow(`The file ${this.outputFile} is marked as DO_NOT_OVERWRITE_DOC=TRUE. Skipping generation.`));
+        uxLog("warning", this, c.yellow(t('theFileIsMarkedAsDonotoverwritedocTrue', { outputFile: this.outputFile })));
         overwriteDoc = false;
       }
     }
     if (overwriteDoc) {
       await fs.writeFile(this.outputFile, getMetaHideLines() + this.markdownDoc);
-      uxLog("success", this, c.green(`Successfully generated ${this.metadataName} documentation into ${this.outputFile}`));
+      uxLog("success", this, c.green(t('successfullyGeneratedDocumentationInto2', { metadataName: this.metadataName, outputFile: this.outputFile })));
     }
 
     const jsonTree = await this.generateJsonTree();
@@ -77,7 +80,7 @@ export abstract class DocBuilderRoot {
       const jsonFile = `./docs/json/${this.docsSection}-${this.metadataName}.json`;
       await fs.ensureDir(path.dirname(jsonFile));
       await fs.writeFile(jsonFile, JSON.stringify(jsonTree, null, 2));
-      uxLog("success", this, c.green(`Successfully generated ${this.metadataName} JSON into ${jsonFile}`));
+      uxLog("success", this, c.green(t('successfullyGeneratedJsonInto2', { metadataName: this.metadataName, jsonFile })));
       // Recovery to save git repos: Kill existing file if it has been created with forbidden characters
       if (this.docsSection === "packages") {
         const jsonFileBad = `./docs/json/${this.docsSection}-${this.metadataName}.json`;
@@ -94,8 +97,8 @@ export abstract class DocBuilderRoot {
     const aiCache = await UtilsAi.findAiCache(this.promptKey, [xmlStripped], this.metadataName);
 
     if (aiCache.success === true) {
-      uxLog("log", this, c.grey(`Used AI cache for ${this.docType.toLowerCase()} description (set IGNORE_AI_CACHE=true to force call to AI)`));
-      const replaceText = `## AI-Generated Description\n\n${includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText || "")}`;
+      uxLog("log", this, c.grey(t('usedAiCacheForDescriptionSetIgnoreaicache', { docType: this.docType.toLowerCase() })));
+      const replaceText = `## ${t('docMdAiGeneratedDescription')}\n\n${includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText || "")}`;
       this.markdownDoc = this.markdownDoc.replace(this.placeholder, replaceText);
       return this.markdownDoc;
     }
@@ -107,22 +110,19 @@ export abstract class DocBuilderRoot {
       /* jscpd:ignore-start */
       const aiResponse = await AiProvider.promptAi(prompt, this.promptKey);
       if (aiResponse?.success) {
-        let responseText = aiResponse.promptResponse || "No AI description available";
+        let responseText = aiResponse.promptResponse || t('docMdNoAiDescriptionAvailable');
         if (responseText.startsWith("##")) {
           responseText = responseText.split("\n").slice(1).join("\n");
         }
         await UtilsAi.writeAiCache(this.promptKey, [xmlStripped], this.metadataName, responseText);
-        const replaceText = `## AI-Generated Description\n\n${includeFromFile(aiCache.aiCacheDirFile, responseText)}`;
+        const replaceText = `## ${t('docMdAiGeneratedDescription')}\n\n${includeFromFile(aiCache.aiCacheDirFile, responseText)}`;
         this.markdownDoc = this.markdownDoc.replace(this.placeholder, replaceText);
         return this.markdownDoc;
       }
       /* jscpd:ignore-end */
       else if (aiResponse?.forcedTimeout) {
-        const forcedTimeoutText = `CI job reached maximum time allowed for allowed calls to AI. You can either:
-
-    - Run command locally then commit + push
-    - Increase using variable \`AI_MAX_TIMEOUT_MINUTES\` in your CI config (ex: AI_MAX_TIMEOUT_MINUTES=120) after making sure than your CI job timeout can handle it 😊`;
-        const replaceText = `## AI-Generated Description\n\n${includeFromFile(aiCache.aiCacheDirFile, forcedTimeoutText)}`;
+        const forcedTimeoutText = t('docMdCiJobReachedMaxTime');
+        const replaceText = `## ${t('docMdAiGeneratedDescription')}\n\n${includeFromFile(aiCache.aiCacheDirFile, forcedTimeoutText)}`;
         this.markdownDoc = this.markdownDoc.replace(this.placeholder, replaceText);
       }
     }

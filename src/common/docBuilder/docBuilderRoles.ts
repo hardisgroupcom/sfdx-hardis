@@ -5,6 +5,7 @@ import { uxLog } from "../utils/index.js";
 import c from "chalk";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderRoles {
 
@@ -16,7 +17,7 @@ export class DocBuilderRoles {
       '<!-- This file is auto-generated. if you do not want it to be overwritten, set TRUE in the line below -->',
       '<!-- DO_NOT_OVERWRITE_DOC=FALSE -->',
       '',
-      '# Organization roles',
+      `# ${t('docMdOrganizationRoles')}`,
       '',
       '<div id="jstree-container"></div>',
       '',
@@ -24,7 +25,7 @@ export class DocBuilderRoles {
     const aiDescription = await DocBuilderRoles.getDescriptionWithAI(roleDescriptions);
     if (aiDescription) {
       mdLines.push("");
-      mdLines.push("## AI-Generated Description", "");
+      mdLines.push("## " + t('docMdAiGeneratedDescription'), "");
       mdLines.push(...aiDescription.split("\n"));
       mdLines.push("");
     }
@@ -43,7 +44,7 @@ export class DocBuilderRoles {
     }).join("\n");
     const aiCache = await UtilsAi.findAiCache(promptKey, [rolesStrings], metadataName);
     if (aiCache.success) {
-      uxLog("success", this, c.green(`Using cached AI response for Roles`));
+      uxLog("success", this, c.green(t('usedCachedAiResponseForRoles')));
       return aiCache.cacheText || '';
     }
     if (await AiProvider.isAiAvailable()) {
@@ -53,7 +54,7 @@ export class DocBuilderRoles {
       const prompt = await AiProvider.buildPrompt(promptKey, variables);
       const aiResponse = await AiProvider.promptAi(prompt, promptKey);
       if (aiResponse?.success) {
-        let responseText = aiResponse.promptResponse || "No AI description available";
+        let responseText = aiResponse.promptResponse || t('docMdNoAiDescriptionAvailable');
         if (responseText.startsWith("##")) {
           responseText = responseText.split("\n").slice(1).join("\n");
         }
@@ -69,7 +70,7 @@ export class DocBuilderRoles {
     const jsonFile = `./docs/json/root-roles.json`;
     await fs.ensureDir(path.dirname(jsonFile));
     await fs.writeFile(jsonFile, JSON.stringify(jsonTree, null, 2));
-    uxLog("success", this, c.green(`Successfully generated Roles JSON into ${jsonFile}`));
+    uxLog("success", this, c.green(t('successfullyGeneratedRolesJsonInto', { jsonFile })));
   }
 
   public static buildHierarchyTree(roleDescriptions: any[]): any[] {

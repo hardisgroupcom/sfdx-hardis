@@ -4,6 +4,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { wrapSfdxCoreCommand } from '../../../../common/utils/wrapUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -84,7 +85,7 @@ The command's technical implementation involves:
     // Prompt target org to user
     const orgUsername = await promptOrgUsernameDefault(this,
       flags['target-org'].getUsername(),
-      { devHub: false, setDefault: false, message: `Do you want to use org ${flags['target-org'].getConnection().instanceUrl} to simulate deployment of metadata ${sourceDirOrFile} ?`, quickOrgList: true });
+      { devHub: false, setDefault: false, message: t('doYouWantToUseOrgTo', { flags: flags['target-org'].getConnection().instanceUrl, sourceDirOrFile }), quickOrgList: true });
 
     await setConnectionVariables(flags['target-org']?.getConnection(), true);
 

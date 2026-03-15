@@ -377,6 +377,111 @@
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionuseCodexDirect">
+    <div class="card">
+        <div class="card-header" id="headinguseCodexDirect">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#useCodexDirect"
+                        aria-expanded="" aria-controls="useCodexDirect" onclick="setAnchor('#useCodexDirect')"><span class="property-name">useCodexDirect</span></button>
+            </h2>
+        </div>
+
+        <div id="useCodexDirect"
+             class="collapse property-definition-div" aria-labelledby="headinguseCodexDirect"
+             data-parent="#accordionuseCodexDirect">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#useCodexDirect" onclick="anchorLink('useCodexDirect')">useCodexDirect</a></div><h4>Enable Codex</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Set to true to enable the direct Codex connector (mirrors USE<em>CODEX</em>DIRECT env var).</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncodexModel">
+    <div class="card">
+        <div class="card-header" id="headingcodexModel">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#codexModel"
+                        aria-expanded="" aria-controls="codexModel" onclick="setAnchor('#codexModel')"><span class="property-name">codexModel</span></button>
+            </h2>
+        </div>
+
+        <div id="codexModel"
+             class="collapse property-definition-div" aria-labelledby="headingcodexModel"
+             data-parent="#accordioncodexModel">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#codexModel" onclick="anchorLink('codexModel')">codexModel</a></div><h4>Codex model</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: "gpt-5.1-codex"</span><br/>
+<span class="description"><p>Name of the Codex model to use by default (ex: gpt-5.1-codex). Equivalent to CODEX_MODEL env var.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncodexReasoningEffort">
+    <div class="card">
+        <div class="card-header" id="headingcodexReasoningEffort">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#codexReasoningEffort"
+                        aria-expanded="" aria-controls="codexReasoningEffort" onclick="setAnchor('#codexReasoningEffort')"><span class="property-name">codexReasoningEffort</span></button>
+            </h2>
+        </div>
+
+        <div id="codexReasoningEffort"
+             class="collapse property-definition-div" aria-labelledby="headingcodexReasoningEffort"
+             data-parent="#accordioncodexReasoningEffort">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#codexReasoningEffort" onclick="anchorLink('codexReasoningEffort')">codexReasoningEffort</a></div><h4>Codex reasoning effort</h4><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "high"</span><br/>
+<span class="description"><p>Reasoning effort used for direct Codex prompts. Equivalent to CODEX<em>REASONING</em>EFFORT env var. Note: Not all values are supported by all models</p>
+</span><div class="enum-value" id="codexReasoningEffort_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"low"</li><li class="list-group-item enum-item">"medium"</li><li class="list-group-item enum-item">"high"</li><li class="list-group-item enum-item">"xhigh"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionuseOpenaiDirect">
     <div class="card">
         <div class="card-header" id="headinguseOpenaiDirect">

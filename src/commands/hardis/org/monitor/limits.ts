@@ -10,6 +10,8 @@ import { MessageAttachment } from '@slack/web-api';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { getApexCharacterLimitUsage } from '../../../../common/utils/apexLimitUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -93,7 +95,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // List org limits
-    uxLog("action", this, c.cyan(`Run the org limits list command ...`));
+    uxLog("action", this, c.cyan(t('runningOrgLimitsListCommand')));
     const limitsCommandRes = await execSfdxJson(`sf org limits list`, this, {
       fail: true,
       output: true,
@@ -118,6 +120,46 @@ The command's technical implementation involves:
         limit.label = limit.name.replace(/([A-Z])/g, ' $1');
         return limit;
       });
+
+    // Add Apex character limit (custom classes + triggers, excludes @isTest)
+    if (flags['target-org'] && getEnvVar('MONITORING_SKIP_APEX_LIMIT') !== 'true') {
+      try {
+        uxLog("log", this, c.grey("Querying custom Apex classes and triggers for character limit monitoring..."));
+        const conn = flags['target-org'].getConnection();
+        const apexUsage = await getApexCharacterLimitUsage(conn);
+        const apexLimitEntry = {
+          name: 'ApexCodeCharacters',
+          used: apexUsage.used,
+          max: apexUsage.max,
+          remaining: apexUsage.max - apexUsage.used,
+          percentUsed: apexUsage.percentUsed,
+          severity:
+            apexUsage.percentUsed > this.limitThresholdError
+              ? 'error'
+              : apexUsage.percentUsed > this.limitThresholdWarning
+                ? 'warning'
+                : 'success',
+          severityIcon: getSeverityIcon(
+            apexUsage.percentUsed > this.limitThresholdError
+              ? 'error'
+              : apexUsage.percentUsed > this.limitThresholdWarning
+                ? 'warning'
+                : 'success'
+          ),
+          label: 'Apex Code Characters',
+        };
+        this.limitEntries.push(apexLimitEntry);
+        uxLog(
+          "log",
+          this,
+          c.grey(
+            `Apex Used Limits: ${apexUsage.totalChars.toLocaleString()} chars (${apexUsage.percentUsed}% of ${apexUsage.max.toLocaleString()}), ${apexUsage.totalClasses} classes + ${apexUsage.totalTriggers} triggers`
+          )
+        );
+      } catch (e: any) {
+        uxLog("warning", this, c.yellow(`Error monitoring Apex character limit: ${e?.message || e}`));
+      }
+    }
 
     uxLogTable(this, this.limitEntries);
 
@@ -165,7 +207,7 @@ The command's technical implementation involves:
       });
       uxLog("warning", this, c.yellow(notifText + '\n' + warningText));
     } else {
-      uxLog("success", this, c.green('No limit issue has been found'));
+      uxLog("success", this, c.green(t('noLimitIssueHasBeenFound')));
     }
 
     const limitEntriesMap = {};

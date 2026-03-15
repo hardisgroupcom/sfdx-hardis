@@ -10,6 +10,7 @@ import sortArray from 'sort-array';
 import * as url from 'url';
 import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -123,7 +124,7 @@ The command's technical implementation involves:
     });
 
     // Display as table
-    uxLog("action", this, c.cyan(`Found ${c.bold(resultSorted.length)} remote sites.`));
+    uxLog("action", this, c.cyan(t('foundRemoteSites', { resultSorted: c.bold(resultSorted.length) })));
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
     uxLogTable(this,
       resultsLight.map((item: any) => {

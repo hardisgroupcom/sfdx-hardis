@@ -25,8 +25,6 @@ This will activate delta deployments only between minor and major branches (majo
 
 If you want to force the delta deployment into major orgs (ex: preprod to prod), this is not recommended but you can use env variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true
 
-Delta deployment can optionally include some related metadata types even if they were not changed, but deploying them can improve the deployment itself or make validation more robust. For example, it would add CustomObjectTranslation to the delta package if you have changed a Layout. Set `useDeltaDeploymentWithDependencies: true` or use the environment variable `USE_DELTA_DEPLOYMENT_WITH_DEPENDENCIES=true` to activate this feature.
-
 ### Smart Deployments Tests
 
 Not all metadata updates can break test classes, use Smart Deployment Tests to skip running test classes if ALL the following conditions are met:
@@ -42,27 +40,51 @@ Activate Smart Deployment tests with:
 
 Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-separated list on env var NOT_IMPACTING_METADATA_TYPES)
 
+- ActionLinkGroupTemplate
+- AnalyticSnapshot
+- AppMenu
 - Audience
 - AuraDefinitionBundle
 - Bot
 - BotVersion
+- BrandingSet
 - ContentAsset
+- CustomApplication
+- CustomApplicationComponent
+- CustomLabel
+- CustomFeedFilter
+- CustomHelpMenuSection
 - CustomObjectTranslation
+- CustomPageWebLink
 - CustomSite
 - CustomTab
+- CustomValueSetTranslation
 - Dashboard
+- DashboardFolder
+- Document
+- EmailTemplate
 - ExperienceBundle
-- Flexipage
+- FlexiPage
 - GlobalValueSetTranslation
+- HomePageComponent
+- HomePageLayout
 - Layout
+- Letterhead
+- LightningExperienceTheme
 - LightningComponentBundle
+- LightningMessageChannel
+- ListView
 - NavigationMenu
+- PathAssistant
+- QuickAction
 - ReportType
 - Report
+- ReportFolder
 - SiteDotCom
 - StandardValueSetTranslation
 - StaticResource
 - Translations
+- WebLink
 
 Note: if you want to disable Smart test classes for a PR, add **nosmart** in the text of the latest commit.
 
@@ -191,6 +213,8 @@ Note: it is also possible to define these behaviors as ENV variables:
 
 ### Deployment plan (deprecated)
 
+> **This feature is deactivated by default (enable with `enableDeprecatedDeploymentPlan` in project configuration). Use preCommands and postCommands instead.** 
+
 If you need to deploy in multiple steps, you can define a property `deploymentPlan` in `.sfdx-hardis.yml`.
 
 - If a file `manifest/package.xml` is found, it will be placed with order 0 in the deployment plan
@@ -262,7 +286,7 @@ If you want to disable the calculation and display of Flow Visual Git Diff in Pu
 If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo.||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
 |target-org<br/>-o|option|undefined||||
-|testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunAllTestsInOrg|
+|testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg|
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples

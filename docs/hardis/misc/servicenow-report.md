@@ -52,7 +52,7 @@ Example:
     },
     "serviceNowConfig": {
         "tables": [
-            { "tableName": "demand" },
+            { "tableName": "dmn_demand" },
             { "tableName": "incident" }
         ]
     }
@@ -78,6 +78,10 @@ Example:
 
 ```shell
 $ sf hardis:misc:servicenow-report
+```
+
+```shell
+$ sf hardis:misc:servicenow-report --config config/user-stories/my-config.json --where-choice "UAT all"
 ```
 
 

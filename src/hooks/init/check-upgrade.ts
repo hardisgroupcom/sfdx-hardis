@@ -7,13 +7,22 @@ const hook: Hook<'init'> = async (options) => {
     return;
   }
 
-  // Dynamically import libraries to avoid loading them if not needed
-  const c = (await import('chalk')).default;
-  const { fileURLToPath } = await import('url');
-  const path = await import('path');
-  const semver = (await import('semver')).default;
-  const updateNotifier = (await import('update-notifier')).default;
-  const { readPackageUp } = await import('read-package-up');
+  // Dynamically import libraries in parallel to avoid loading them if not needed
+  const [
+    { default: c },
+    { fileURLToPath },
+    path,
+    { default: semver },
+    { default: updateNotifier },
+    { readPackageUp },
+  ] = await Promise.all([
+    import('chalk'),
+    import('url'),
+    import('path'),
+    import('semver'),
+    import('update-notifier'),
+    import('read-package-up'),
+  ]);
 
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);

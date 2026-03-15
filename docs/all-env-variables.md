@@ -34,6 +34,7 @@ This list has been generated with GitHub Copilot so if you see any incoherence p
    - [MegaLinter LLM Advisor](#megalinter-llm-advisor)
    - [Agentforce (Salesforce) integration](#agentforce-salesforce-integration)
    - [LangChain integration (OpenAI, Anthropic, Gemini...)](#langchain-integration-openai-anthropic-gemini)
+   - [Codex (direct) variables](#codex-direct-variables)
    - [OpenAI (direct) variables](#openai-direct-variables)
    - [Email Notifications](#email-notifications)
    - [Browser Automation](#browser-automation)
@@ -80,14 +81,18 @@ These variables control specific behaviors and configurations within sfdx-hardis
 
 ### Monitoring & Debugging
 
-| Variable Name                             | Description                                                                                        | Default Value | Possible Values                                                           | Usage Location                                                                                                                               |
-|-------------------------------------------|----------------------------------------------------------------------------------------------------|---------------|---------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| **DEBUG**                                 | Enable debug logging output                                                                        | `undefined`   | `'true'`, `'false'`                                                       | [`src/common/websocketClient.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/websocketClient.ts)                     |
-| **DEBUG_DEPLOY**                          | Enable debug logging for deployment operations                                                     | `undefined`   | `'true'`, `'false'`                                                       | [`src/common/utils/orgUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/orgUtils.ts)                       |
-| **MONITORING_BACKUP_SKIP_METADATA_TYPES** | Metadata types to skip during backup monitoring                                                    | `undefined`   | Comma-separated metadata type names (e.g., `'Document,Report,Dashboard'`) | Found in changelog and documentation                                                                                                         |
-| **SFDX_HARDIS_MONITORING_KEY**            | Override the monitoring/org identifier used in notifications and metrics (alias: `MONITORING_KEY`) | `undefined`   | Any string identifier (e.g., `'production-org'`, `'my-sandbox'`)          | [`src/common/notifProvider/apiProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/apiProvider.ts) |
-| **SFDX_HARDIS_DEBUG_ENV**                 | Enable debug environment for sfdx-hardis                                                           | `undefined`   | `'true'`, `'false'`                                                       | [`src/hooks/init/log.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/hooks/init/log.ts)                                     |
-| **SFDX_HARDIS_MONITORING**                | Indicates if running a monitoring job                                                              | `undefined`   | `'true'`, `'false'`                                                       | [`src/common/utils/index.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/index.ts)                             |
+| Variable Name                             | Description                                                                                                  | Default Value | Possible Values                                                           | Usage Location                                                                                                                                                           |
+|-------------------------------------------|--------------------------------------------------------------------------------------------------------------|---------------|---------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **DEBUG**                                 | Enable debug logging output                                                                                  | `undefined`   | `'true'`, `'false'`                                                       | [`src/common/websocketClient.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/websocketClient.ts)                                                 |
+| **DEBUG_DEPLOY**                          | Enable debug logging for deployment operations                                                               | `undefined`   | `'true'`, `'false'`                                                       | [`src/common/utils/orgUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/orgUtils.ts)                                                   |
+| **APEX_CHARACTER_LIMIT**                  | Maximum Apex code character limit for org (classes + triggers, excludes @isTest). Used by limits monitoring. | `6000000`     | Positive integers (e.g., `'3000000'`, `'10000000'`)                       | [`src/common/utils/apexLimitUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/apexLimitUtils.ts)                                       |
+| **MONITORING_BACKUP_SKIP_METADATA_TYPES** | Metadata types to skip during backup monitoring                                                              | `undefined`   | Comma-separated metadata type names (e.g., `'Document,Report,Dashboard'`) | Found in changelog and documentation                                                                                                                                     |
+| **MONITORING_SKIP_APEX_LIMIT**            | Skip Apex character limit monitoring when running org limits check                                           | `undefined`   | `'true'`, `'false'`                                                       | [`src/commands/hardis/org/monitor/limits.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/monitor/limits.ts)                         |
+| **PERMSET_LIMITED_USERS_THRESHOLD**       | Max users to flag a permission set as "underused" in underusedpermsets (0 users always flagged)              | `5`           | Positive integers (e.g., `'5'`, `'10'`)                                   | [`src/commands/hardis/org/diagnose/underusedpermsets.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/diagnose/underusedpermsets.ts) |
+| **UNDERUSED_PERMISSION_SETS_IGNORE**      | Comma-separated list of permission set or group names to exclude from underused monitoring                   | `undefined`   | Names (e.g., `'My_PS,Sales_Admin,ReadOnly_Group'`)                        | [`src/commands/hardis/org/diagnose/underusedpermsets.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/diagnose/underusedpermsets.ts) |
+| **SFDX_HARDIS_MONITORING_KEY**            | Override the monitoring/org identifier used in notifications and metrics (alias: `MONITORING_KEY`)           | `undefined`   | Any string identifier (e.g., `'production-org'`, `'my-sandbox'`)          | [`src/common/notifProvider/apiProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/apiProvider.ts)                             |
+| **SFDX_HARDIS_DEBUG_ENV**                 | Enable debug environment for sfdx-hardis                                                                     | `undefined`   | `'true'`, `'false'`                                                       | [`src/hooks/init/log.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/hooks/init/log.ts)                                                                 |
+| **SFDX_HARDIS_MONITORING**                | Indicates if running a monitoring job                                                                        | `undefined`   | `'true'`, `'false'`                                                       | [`src/common/utils/index.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/index.ts)                                                         |
 
 ### System Configuration
 
@@ -222,6 +227,17 @@ Non-sensitive defaults (prompt template, custom endpoint) can be placed directly
 
 You can also define non-secret defaults (provider, model, temperature, etc.) in your project `.sfdx-hardis.yml` using camelCase versions of the LangChain environment variables (for example `langchainLlmProvider` and `langchainLlmModel`). API keys must still be provided via secure env vars.
 
+### Codex (direct) variables
+
+| Variable Name              | Description                                                                             | Default         | Possible Values                                                | Usage Location                                                                                                                             |
+|----------------------------|-----------------------------------------------------------------------------------------|-----------------|----------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| **USE_CODEX_DIRECT**       | Enable direct Codex provider integration                                                | `false`         | `'true'`, `'false'`                                            | [`src/common/aiProvider/codexProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codexProvider.ts) |
+| **CODEX_API_KEY**          | Codex API key for direct Codex operations (optional when local auth cache is available) | `undefined`     | Valid Codex/OpenAI API keys                                    | [`src/common/aiProvider/codexProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codexProvider.ts) |
+| **CODEX_MODEL**            | Codex model to use for prompts                                                          | `gpt-5.1-codex` | Codex model names (e.g., `gpt-5.1-codex`, `gpt-5.1-codex-max`) | Codex-specific configuration                                                                                                               |
+| **CODEX_REASONING_EFFORT** | Reasoning effort used for direct Codex calls                                            | `high`          | `low`, `medium`, `high`, `xhigh`                               | [`src/common/aiProvider/codexProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codexProvider.ts) |
+
+When `CODEX_API_KEY` is not defined, sfdx-hardis will also accept existing local Codex authentication cache at `CODEX_HOME/auth.json` (or `~/.codex/auth.json` when `CODEX_HOME` is not set).
+
 ### OpenAI (direct) variables
 
 | Variable Name      | Description                      | Default       | Possible Values                                                      | Usage Location                                                                                                             |
@@ -264,9 +280,9 @@ Project-wide defaults (e.g., preferred model) can be stored directly at the root
 
 ## Summary
 
-This documentation covers **182 environment variables** used throughout sfdx-hardis:
+This documentation covers **186 environment variables** used throughout sfdx-hardis:
 
-- **Custom sfdx-hardis Variables**: 26 variables controlling native behavior
+- **Custom sfdx-hardis Variables**: 30 variables controlling native behavior
 - **Tool-Specific Variables**: 156 variables for external integrations
 
 The variables are organized by functionality to help developers and administrators understand their purpose and configure them appropriately for their environments.

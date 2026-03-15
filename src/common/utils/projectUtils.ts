@@ -5,6 +5,7 @@ import { execCommand, sortCrossPlatform, uxLog } from './index.js';
 import { glob } from 'glob';
 import { parseXmlFile } from './xmlUtils.js';
 import { getApiVersion } from '../../config/index.js';
+import { t } from './i18n.js';
 
 export const GLOB_IGNORE_PATTERNS = [
   '**/node_modules/**',
@@ -22,7 +23,7 @@ export function isSfdxProject(cwd = process.cwd()) {
 }
 
 export async function createBlankSfdxProject(cwd = process.cwd(), debug = false) {
-  uxLog("action", this, c.cyan('Creating blank SFDX project...'));
+  uxLog("action", this, c.cyan(t('creatingBlankSfdxProject')));
   const projectCreateCommand = 'sf project generate --name "sfdx-hardis-blank-project"';
   await execCommand(projectCreateCommand, this, {
     cwd: cwd,
@@ -49,7 +50,7 @@ export async function listFlowFiles(packageDirs) {
     }
   }
   if (skippedFlows.length > 0) {
-    uxLog("warning", this, c.yellow(`Skipped ${skippedFlows.length} managed flows:`));
+    uxLog("warning", this, c.yellow(t('skippedManagedFlows', { skippedFlows: skippedFlows.length })));
     for (const skippedFlow of sortCrossPlatform(skippedFlows)) {
       uxLog("warning", this, c.yellow(`  ${skippedFlow}`));
     }
@@ -105,7 +106,7 @@ export async function listApexFiles(packageDirs) {
     }
   }
   if (skippedApex.length > 0) {
-    uxLog("warning", this, c.yellow(`Skipped ${skippedApex.length} managed Apex:`));
+    uxLog("warning", this, c.yellow(t('skippedManagedApex', { skippedApex: skippedApex.length })));
     for (const skippedApexItem of sortCrossPlatform(skippedApex)) {
       uxLog("warning", this, c.yellow(`  ${skippedApexItem}`));
     }
@@ -129,7 +130,7 @@ export async function listPageFiles(packageDirs) {
     }
   }
   if (skippedPages.length > 0) {
-    uxLog("warning", this, c.yellow(`Skipped ${skippedPages.length} managed Lightning Pages:`));
+    uxLog("warning", this, c.yellow(t('skippedManagedLightningPages', { skippedPages: skippedPages.length })));
     for (const skippedPage of sortCrossPlatform(skippedPages)) {
       uxLog("warning", this, c.yellow(`  ${skippedPage}`));
     }
@@ -137,24 +138,42 @@ export async function listPageFiles(packageDirs) {
   return pageFiles.sort();
 }
 
+// npmjs.com/package/@apexdevtools/apex-parser may give more robust result, but if use it, better to start from project2markdown.ts
+export function stripApexLeadingComments(code: string): string {
+  let s = code.trimStart();
+  while (s.startsWith("//") || s.startsWith("/*")) {
+    if (s.startsWith("//")) {
+      const newline = s.indexOf("\n");
+      s = newline === -1 ? "" : s.slice(newline + 1);
+    } else {
+      const end = s.indexOf("*/");
+      s = end === -1 ? "" : s.slice(end + 2);
+    }
+    s = s.trimStart();
+  }
+  return s;
+}
+
 export function returnApexType(apexCode: string) {
   const apexContentlower = apexCode.toLowerCase();
-  return apexContentlower.includes("@istest(seealldata=true)") ? "Test (See All Data)" :
-    apexContentlower.includes("@istest") ? "Test" :
-      apexContentlower.includes("@invocablemethod") ? "Invocable" :
-        apexContentlower.includes("@restresource") ? "REST" :
-          apexContentlower.includes("implements database.batchable") ? "Batch" :
-            apexContentlower.includes("implements batchable") ? "Batch" :
-              apexContentlower.includes("implements database.schedulable") ? "Schedulable" :
-                apexContentlower.includes("implements schedulable") ? "Schedulable" :
-                  apexContentlower.includes("@auraenabled") ? "Lightning Controller" :
-                    apexContentlower.includes("apexpages.standardcontroller") ? "Visualforce Controller" :
-                      apexContentlower.includes("pagereference") ? "Visualforce Controller" :
-                        apexContentlower.includes("triggerhandler") ? "Trigger Handler" :
-                          apexContentlower.includes("new httprequest") ? "Callout" :
-                            apexContentlower.includes("jsonparser parser") ? "JSON" :
-                              apexContentlower.includes("public class soaprequest") ? "SOAP" :
-                                "Class";
+  const strippedLower = stripApexLeadingComments(apexContentlower);
+  return strippedLower.trimStart().startsWith("trigger ") ? "Trigger" :
+    apexContentlower.includes("@istest(seealldata=true)") ? "Test (See All Data)" :
+      apexContentlower.includes("@istest") ? "Test" :
+        apexContentlower.includes("@invocablemethod") ? "Invocable" :
+          apexContentlower.includes("@restresource") ? "REST" :
+            apexContentlower.includes("implements database.batchable") ? "Batch" :
+              apexContentlower.includes("implements batchable") ? "Batch" :
+                apexContentlower.includes("implements database.schedulable") ? "Schedulable" :
+                  apexContentlower.includes("implements schedulable") ? "Schedulable" :
+                    apexContentlower.includes("@auraenabled") ? "Lightning Controller" :
+                      apexContentlower.includes("apexpages.standardcontroller") ? "Visualforce Controller" :
+                        apexContentlower.includes("pagereference") ? "Visualforce Controller" :
+                          apexContentlower.includes("triggerhandler") ? "Trigger Handler" :
+                            apexContentlower.includes("new httprequest") ? "Callout" :
+                              apexContentlower.includes("jsonparser parser") ? "JSON" :
+                                apexContentlower.includes("public class soaprequest") ? "SOAP" :
+                                  "Class";
 }
 
 // Update only if found API version is inferior to the candidate API version (convert to number)
@@ -170,7 +189,7 @@ export async function updateSfdxProjectApiVersion() {
       if (currentApiVersion < parseFloat(candidateApiVersion)) {
         sfdxProject.sourceApiVersion = candidateApiVersion;
         await fs.writeJson(sfdxProjectFile, sfdxProject, { spaces: 2 });
-        uxLog("action", this, c.cyan(`Updated API version in sfdx-project.json from ${currentApiVersionStr} to ${candidateApiVersion}`));
+        uxLog("action", this, c.cyan(t('updatedApiVersionInSfdxProjectJson', { currentApiVersionStr, candidateApiVersion })));
       }
     }
   }
@@ -190,7 +209,7 @@ export async function updateSfdxProjectApiVersion() {
             if (currentApiVersion < parseFloat(candidateApiVersion)) {
               const updatedXmlContent = xmlContent.replace(regex, `<version>${candidateApiVersion}</version>`);
               await fs.writeFile(fullPath, updatedXmlContent, 'utf-8');
-              uxLog("action", this, c.cyan(`Updated API version in ${manifestFile} from ${match[1]} to ${candidateApiVersion}`));
+              uxLog("action", this, c.cyan(t('updatedApiVersionInFromTo', { manifestFile, match: match[1], candidateApiVersion })));
             }
           }
         }

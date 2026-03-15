@@ -6,6 +6,7 @@ import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { deleteData, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
 import { promptOrgUsernameDefault } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -30,6 +31,8 @@ If you intend to run this command in a production environment, you must:
 
 - Set \`runnableInProduction\` to \`true\` in your \`export.json\` file within the SFDMU workspace.
 - Define \`sfdmuCanModify: YOUR_INSTANCE_URL\` in your branch-specific configuration file (e.g., \`config/branches/.sfdx-hardis.YOUR_BRANCH.yml\`) to explicitly authorize data modification for that instance.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/p4E2DUGZ3bs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -95,9 +98,7 @@ The command's technical implementation relies heavily on the SFDMU plugin:
     });
 
     // Output message
-    const message = `Successfully deleted data from org ${c.green(orgUsername)} using SFDMU project ${c.green(
-      sfdmuPath
-    )}`;
+    const message = t('successfullyDeletedData');
     uxLog("action", this, c.cyan(message));
     return { outputString: message };
   }

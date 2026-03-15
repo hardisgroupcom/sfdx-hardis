@@ -20,7 +20,7 @@ jobs:
       id-token: write # Required for OIDC
       contents: read
     environment:
-      name: alpha
+      name: release
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -43,7 +43,7 @@ jobs:
     permissions:
       packages: write
     environment:
-      name: alpha
+      name: release
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -88,7 +88,7 @@ jobs:
     permissions:
       packages: write
     environment:
-      name: alpha
+      name: release
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -133,7 +133,7 @@ jobs:
     permissions:
       packages: write
     environment:
-      name: alpha
+      name: release
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -178,7 +178,7 @@ jobs:
     permissions:
       packages: write
     environment:
-      name: alpha
+      name: release
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3

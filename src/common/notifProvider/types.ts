@@ -27,6 +27,7 @@ export interface NotifMessage {
   | "MISSING_ATTRIBUTES"
   | "SERVICENOW_REPORT"
   | "UNUSED_LICENSES"
+  | "UNDERUSED_PERMSETS"
   | "UNUSED_APEX_CLASSES"
   | "CONNECTED_APPS"
   | "UNSECURED_CONNECTED_APPS"
@@ -35,7 +36,9 @@ export interface NotifMessage {
   | "ORG_LIMITS"
   | "RELEASE_UPDATES"
   | "AGENTFORCE_CONVERSATIONS"
-  | "AGENTFORCE_FEEDBACK";
+  | "AGENTFORCE_FEEDBACK"
+  | "APEX_ERROR"
+  | "FLOW_ERROR";
   buttons?: NotifButton[];
   attachments?: any[];
   severity: NotifSeverity;

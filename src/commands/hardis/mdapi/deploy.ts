@@ -4,6 +4,7 @@ import c from 'chalk';
 import { AnyJson } from '@salesforce/ts-types';
 import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 const xorFlags = ['zipfile', 'validateddeployrequestid', 'deploydir'];
 export class Deploy extends SfCommand<any> {
@@ -112,8 +113,8 @@ This command acts as an intelligent wrapper around the Salesforce CLI's metadata
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Deploy);
-    uxLog("error", this, c.red('This command will be removed by Salesforce in November 2024.'));
-    uxLog("error", this, c.red('Please migrate to the command `sf hardis project deploy start`.'));
+    uxLog("error", this, c.red(t('thisCommandWillBeRemovedBySalesforce')));
+    uxLog("error", this, c.red(t('pleaseMigrateToTheCommandSfHardis')));
     uxLog(
       "error",
       this,

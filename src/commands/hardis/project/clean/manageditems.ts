@@ -8,6 +8,7 @@ import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -86,7 +87,7 @@ The command's technical implementation involves:
     }
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Removing unwanted dx managed source files with namespace ${c.bold(this.namespace)}...`));
+    uxLog("action", this, c.cyan(t('removingUnwantedDxManagedSourceFilesWith', { namespace: c.bold(this.namespace) })));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/${this.namespace}__*`;
@@ -110,7 +111,7 @@ The command's technical implementation involves:
         }
       }
       await fs.remove(matchingCustomFile);
-      uxLog("action", this, c.cyan(`Removed managed item ${c.yellow(matchingCustomFile)}`));
+      uxLog("action", this, c.cyan(t('removedManagedItem', { matchingCustomFile: c.yellow(matchingCustomFile) })));
     }
 
     // Return an object to be displayed with --json

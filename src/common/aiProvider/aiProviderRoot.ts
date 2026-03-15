@@ -2,6 +2,9 @@ import { SfError } from "@salesforce/core";
 import { AiResponse } from "./index.js";
 import { getEnvVar } from "../../config/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
+import c from "chalk";
+import { uxLog } from "../utils/index.js";
+import { t } from '../utils/i18n.js';
 
 export abstract class AiProviderRoot {
   protected token: string;
@@ -29,5 +32,15 @@ export abstract class AiProviderRoot {
   checkMaxAiCallsNumber() {
     const maxCalls = globalThis.aiCallsNumber || 0;
     return maxCalls < this.getAiMaxCallsNumber();
+  }
+
+  // Check if max number of calls has been reached and log warning if so
+  protected checkAndWarnMaxAiCalls(providerName: string): boolean {
+    if (!this.checkMaxAiCallsNumber()) {
+      const maxCalls = this.getAiMaxCallsNumber();
+      uxLog("warning", this, c.yellow('[' + providerName + '] ' + t('aiProviderMaxCallsReached', { maxCalls })));
+      return false;
+    }
+    return true;
   }
 }

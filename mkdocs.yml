@@ -12,7 +12,7 @@ theme:
     - content.code.copy
     - navigation.instant
     - navigation.footer
-  logo: assets/images/cloudity-text-logo.svg
+  logo: assets/images/cloudity-text-logo-white.svg
   favicon: assets/images/cloudity-logo.svg
   palette:
     - scheme: default
@@ -21,28 +21,28 @@ theme:
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-      background: "#F5F7FA"
-      foreground: "#1B1464"
+      background: "#F3F3F3"
+      foreground: "#001135"
       colors:
-        primary: "#0057B8"
-        accent: "#FFB81C"
-        link: "#0057B8"
-        header: "#1B1464"
-        nav: "#F5F7FA"
+        primary: "#0053FF"
+        accent: "#660FF2"
+        link: "#0053FF"
+        header: "#001135"
+        nav: "#F3F3F3"
     - scheme: slate
       primary: custom
       accent: custom
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-      background: "#181B2A"
-      foreground: "#FFB81C"
+      background: "#121212"
+      foreground: "#FFFFFF"
       colors:
-        primary: "#0057B8"
-        accent: "#FFB81C"
-        link: "#FFB81C"
-        header: "#181B2A"
-        nav: "#23263A"
+        primary: "#0053FF"
+        accent: "#660FF2"
+        link: "#0053FF"
+        header: "#121212"
+        nav: "#1A1A2E"
 plugins:
   - glightbox
   - search
@@ -137,6 +137,7 @@ nav:
               - Gitlab: salesforce-ci-cd-setup-integration-gitlab.md
               - Azure DevOps: salesforce-ci-cd-setup-integration-azure.md
               - BitBucket: salesforce-ci-cd-setup-integration-bitbucket.md
+              - Jenkins: salesforce-ci-cd-setup-integration-jenkins.md
               - Slack: salesforce-ci-cd-setup-integration-slack.md
               - Microsoft Teams: salesforce-ci-cd-setup-integration-ms-teams.md
               - Email: salesforce-ci-cd-setup-integration-email.md
@@ -164,6 +165,7 @@ nav:
           - Unused Custom Labels: salesforce-monitoring-unused-metadata.md
           - Inactive metadata: salesforce-monitoring-inactive-metadata.md
           - Missing metadata attributes: salesforce-monitoring-missing-metadata-attributes.md
+          - Underused Permission Sets: salesforce-monitoring-underused-permsets.md
       - Configuration:
           - Configuration guide: salesforce-monitoring-config-home.md
           - GitHub: salesforce-monitoring-config-github.md
@@ -223,6 +225,7 @@ nav:
                   - Additional Instructions: prompt-templates/VARIABLE_ADDITIONAL_INSTRUCTIONS.md
                   - Formatting Requirements: prompt-templates/VARIABLE_FORMATTING_REQUIREMENTS.md
                   - Output Format Markdown Doc: prompt-templates/VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC.md
+  - Sandbox Refresh: salesforce-sandbox-refresh.md
   - Commands:
       All commands: commands.md
       hardis:
@@ -232,6 +235,11 @@ nav:
           clear: hardis/cache/clear.md
         config:
           get: hardis/config/get.md
+        datacloud:
+          extract:
+            agentforce-conversations: hardis/datacloud/extract/agentforce-conversations.md
+            agentforce-feedback: hardis/datacloud/extract/agentforce-feedback.md
+          sql-query: hardis/datacloud/sql-query.md
         doc:
           extract:
             permsetgroups: hardis/doc/extract/permsetgroups.md
@@ -239,6 +247,7 @@ nav:
           flow2markdown: hardis/doc/flow2markdown.md
           mkdocs-to-cf: hardis/doc/mkdocs-to-cf.md
           mkdocs-to-salesforce: hardis/doc/mkdocs-to-salesforce.md
+          object-field-usage: hardis/doc/object-field-usage.md
           override-prompts: hardis/doc/override-prompts.md
           packagexml2markdown: hardis/doc/packagexml2markdown.md
           plugin:
@@ -278,6 +287,9 @@ nav:
             legacyapi: hardis/org/diagnose/legacyapi.md
             licenses: hardis/org/diagnose/licenses.md
             releaseupdates: hardis/org/diagnose/releaseupdates.md
+            storage-stats: hardis/org/diagnose/storage-stats.md
+            underusedpermsets: hardis/org/diagnose/underusedpermsets.md
+            unsecure-connected-apps: hardis/org/diagnose/unsecure-connected-apps.md
             unused-apex-classes: hardis/org/diagnose/unused-apex-classes.md
             unused-connected-apps: hardis/org/diagnose/unused-connected-apps.md
             unusedlicenses: hardis/org/diagnose/unusedlicenses.md
@@ -292,11 +304,14 @@ nav:
           monitor:
             all: hardis/org/monitor/all.md
             backup: hardis/org/monitor/backup.md
+            errors: hardis/org/monitor/errors.md
+            health-check: hardis/org/monitor/health-check.md
             limits: hardis/org/monitor/limits.md
           multi-org-query: hardis/org/multi-org-query.md
           purge:
             apexlog: hardis/org/purge/apexlog.md
             flow: hardis/org/purge/flow.md
+            profile: hardis/org/purge/profile.md
           refresh:
             after-refresh: hardis/org/refresh/after-refresh.md
             before-refresh: hardis/org/refresh/before-refresh.md
@@ -341,6 +356,7 @@ nav:
             manageditems: hardis/project/clean/manageditems.md
             minimizeprofiles: hardis/project/clean/minimizeprofiles.md
             orgmissingitems: hardis/project/clean/orgmissingitems.md
+            profiles-extract: hardis/project/clean/profiles-extract.md
             references: hardis/project/clean/references.md
             retrievefolders: hardis/project/clean/retrievefolders.md
             sensitive-metadatas: hardis/project/clean/sensitive-metadatas.md
@@ -371,6 +387,7 @@ nav:
             gitdelta: hardis/project/generate/gitdelta.md
           lint: hardis/project/lint.md
           metadata:
+            activate-decomposed: hardis/project/metadata/activate-decomposed.md
             findduplicates: hardis/project/metadata/findduplicates.md
         deploy:
           quick: hardis/deploy/quick.md
@@ -405,6 +422,7 @@ nav:
   - Configuration reference: sfdx-hardis-config-file.md
   - Frequently Asked Questions: https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476
   - Contributing: contributing.md
+  - Plugins: sfdx-hardis-plugins.md
   - License: license.md
   - Security: SECURITY.md
   - Changelog: CHANGELOG.md

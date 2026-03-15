@@ -20,6 +20,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from '../common/utils/index.js';
 import { prompts } from '../common/utils/prompts.js';
+import { t } from '../common/utils/i18n.js';
 
 const moduleName = 'sfdx-hardis';
 const projectConfigFiles = [
@@ -33,11 +34,17 @@ const username = os.userInfo().username;
 const userConfigFiles = [`config/user/.${moduleName}.${username}.yaml`, `config/user/.${moduleName}.${username}.yml`];
 const REMOTE_CONFIGS: any = {};
 
+const showBanner = false;
+
 export const CONSTANTS = {
   DEFAULT_API_VERSION: '65.0',
   DOC_URL_ROOT: "https://sfdx-hardis.cloudity.com",
-  WEBSITE_URL: "https://cloudity.com",
-  CONTACT_URL: "https://cloudity.com/#form",
+  WEBSITE_URL: "https://cloudity.com?ref=sfdxhardis",
+  CONTACT_URL: "https://cloudity.com/contact-us/",
+  BANNER_IMAGE_URL:
+    showBanner
+      ? "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/alpha/docs/assets/images/cloudity-banner.png"
+      : false,
   NOT_IMPACTING_METADATA_TYPES: process.env.NOT_IMPACTING_METADATA_TYPES
     ?.split(",")
     .map((item) => item.trim())
@@ -100,6 +107,13 @@ export const getApiVersionNumber = (conn: Connection | null = null) => {
   return parseFloat(apiVersion);
 }
 
+export const getBannerMarkdownAndLink = () => {
+  if (CONSTANTS.BANNER_IMAGE_URL === false) {
+    return '';
+  }
+  return `[![${t('bannerImageAltText')}](${CONSTANTS.BANNER_IMAGE_URL})](${CONSTANTS.WEBSITE_URL})`;
+}
+
 async function getBranchConfigFiles() {
   if (!isGitRepo()) {
     return [];
@@ -139,7 +153,7 @@ export const getConfig = async (layer: "project" | "branch" | "user" = 'user', o
 export const setConfig = async (layer: string, propValues: any): Promise<string | void> => {
   if (layer === 'user' && (fs.readdirSync(process.cwd()).length === 0 || !isGitRepo())) {
     if (process?.argv?.includes('--debug')) {
-      uxLog("log", this, c.grey('Skipping update of user config file because the current directory is not a Salesforce project.'));
+      uxLog("log", this, c.grey(t('skippingUpdateOfUserConfigFileBecause')));
     }
     return;
   }
@@ -271,7 +285,9 @@ export async function getReportDirectory() {
 export function getEnvVar(envVarName: string): string | null {
   const varValue = process.env[envVarName] || null;
   // Avoid Azure cases that sends the expression as string if variable not defined
-  if (varValue && varValue.includes(`(${envVarName}`)) {
+  // RegEx will match on strings beginning with '$(' some text, then ')' 
+  // It will match unresolved environment vars e.g. $(System.PullRequest.PullRequestId) or $(JIRA_TICKET_REGEX)
+  if (varValue && /^\$\([^)]+\)$/.test(varValue)) {
     return null;
   }
   return varValue;
@@ -289,9 +305,9 @@ export async function promptForProjectName() {
   const projectRes = await prompts({
     type: 'text',
     name: 'projectName',
-    message: 'What is the name of your project ?',
-    description: 'Used to generate environment variables and configuration files for your Salesforce project',
-    placeholder: 'Ex: MyClient',
+    message: t('whatIsTheNameOfYourProject'),
+    description: t('usedToGenerateEnvironmentVariablesAndConfig'),
+    placeholder: t('exMyClient'),
   });
   const userProjectName = projectRes.projectName + '';
   let projectName = projectRes.projectName.toLowerCase().replace(' ', '_');
@@ -302,13 +318,13 @@ export async function promptForProjectName() {
       "warning",
       this,
       c.yellow(
-        `Project name has been changed to ${projectName} because it must be compliant with the format of an environment variable.`
+        t('projectNameHasBeenChanged', { projectName })
       )
     );
     const promptResp = await prompts({
       type: 'confirm',
-      message: `Are you ok with updated project name "${projectName}" ?`,
-      description: 'Confirms the use of the sanitized project name which must be compliant with environment variable format',
+      message: t('areYouOkWithUpdatedProjectName', { projectName }),
+      description: t('confirmsUseOfSanitizedProjectName'),
     });
     if (promptResp.value === true) {
       return projectName;

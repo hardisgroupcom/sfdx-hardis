@@ -8,6 +8,7 @@ import { promptProfiles } from '../../../../common/utils/orgUtils.js';
 //import { executeApex } from "../../../../common/utils/deployUtils.js";
 import { prompts } from '../../../../common/utils/prompts.js';
 import { soqlQuery, bulkQuery, bulkUpdate } from '../../../../common/utils/apiUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -111,7 +112,7 @@ The command's technical implementation involves:
       // Manual user selection
       const profilesRes = await promptProfiles(conn, {
         multiselect: true,
-        message: 'Please select profiles that you do you want to freeze users that are assigned to them ?',
+        message: t('pleaseSelectProfilesThatYouDoYou'),
         returnField: 'record',
         allowSelectMine: false,
         allowSelectMineErrorMessage: "If you freeze your own profile, you'll be unable to unfreeze it later 😊",
@@ -129,7 +130,7 @@ The command's technical implementation involves:
       const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name IN (${profilesConstraintIn})`;
       const profilesQueryRes = await soqlQuery(profilesQuery, conn);
       if (this.debugMode) {
-        uxLog("log", this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
+        uxLog("log", this, c.grey(t('queryResult2', { JSON: JSON.stringify(profilesQueryRes, null, 2) })));
       }
       profileIds = profilesQueryRes.records.map((profile) => profile.Id);
       profileNames = profilesQueryRes.records.map((profile) => {
@@ -141,7 +142,7 @@ The command's technical implementation involves:
       const profilesQuery = `SELECT Id,Name FROM Profile WHERE Name NOT IN (${profilesConstraintIn})`;
       const profilesQueryRes = await soqlQuery(profilesQuery, conn);
       if (this.debugMode) {
-        uxLog("log", this, c.grey(`Query result:\n${JSON.stringify(profilesQueryRes, null, 2)}`));
+        uxLog("log", this, c.grey(t('queryResult2', { JSON: JSON.stringify(profilesQueryRes, null, 2) })));
       }
       profileIds = profilesQueryRes.records.map((profile) => profile.Id);
       profileNames = profilesQueryRes.records.map((profile) => {
@@ -153,7 +154,7 @@ The command's technical implementation involves:
     const profileIdsStr = profileIds.map((profileId) => `'${profileId}'`).join(',');
 
     // Query users that we want to freeze
-    uxLog("action", this, c.cyan(`Querying User records matching ${c.bold(profileIds.length)} profiles...`));
+    uxLog("action", this, c.cyan(t('queryingUserRecordsMatchingProfiles', { profileIds: c.bold(profileIds.length) })));
     const userQuery = `SELECT Id,Name,Username,ProfileId FROM User WHERE ProfileId IN (${profileIdsStr}) and IsActive=true`;
     const userQueryRes = await bulkQuery(userQuery, conn);
     const usersToFreeze = userQueryRes.records;
@@ -167,7 +168,7 @@ The command's technical implementation involves:
     }
 
     // Query related UserLogin records
-    uxLog("action", this, c.cyan(`Querying UserLogin records matching ${c.bold(usersToFreeze.length)} users...`));
+    uxLog("action", this, c.cyan(t('queryingUserloginRecordsMatchingUsers', { usersToFreeze: c.bold(usersToFreeze.length) })));
     const userLoginQuery = `SELECT Id,UserId,IsFrozen FROM UserLogin WHERE UserId IN (${userIdsStr}) and IsFrozen=false`;
     const userLoginQueryRes = await bulkQuery(userLoginQuery, conn);
     const userLoginsToFreeze = userLoginQueryRes.records;
@@ -181,13 +182,13 @@ The command's technical implementation involves:
         Profile: profileNames.filter((profile) => profile[0] === matchingUser.ProfileId)[1],
       };
     });
-    uxLog("action", this, c.cyan(`List of ${userLoginsToFreeze.length} users that will be frozen:`));
+    uxLog("action", this, c.cyan(t('listOfUsersThatWillBeFrozen', { userLoginsToFreeze: userLoginsToFreeze.length })));
     uxLogTable(
       this,
       this.debugMode ? usersToFreezeDisplay : usersToFreezeDisplay.slice(0, this.maxUsersDisplay)
     );
     if (!this.debugMode && usersToFreezeDisplay.length > this.maxUsersDisplay) {
-      uxLog("warning", this, c.yellow(c.italic(`(list truncated to the first ${this.maxUsersDisplay} users)`)));
+      uxLog("warning", this, c.yellow(c.italic(t('listTruncatedToFirstUsers', { maxUsersDisplay: this.maxUsersDisplay }))));
     }
 
     // Generate csv + xls of users about to be frozen
@@ -202,12 +203,8 @@ The command's technical implementation involves:
         type: 'confirm',
         name: 'value',
         initial: true,
-        message: c.cyanBright(
-          `Are you sure you want to freeze these ${c.bold(userLoginsToFreeze.length)} users in org ${c.green(
-            flags['target-org'].getUsername()
-          )} ?`
-        ),
-        description: 'Confirm freezing selected users, which will deactivate their accounts in the Salesforce org',
+        message: c.cyanBright(t('areYouSureYouWantToFreezeUsers', { count: userLoginsToFreeze.length, orgUsername: flags['target-org'].getUsername() })),
+        description: t('confirmFreezingSelectedUsers'),
       });
       if (confirmfreeze.value !== true) {
         const outputString = 'Script cancelled by user.';
@@ -225,11 +222,11 @@ The command's technical implementation involves:
     const freezeSuccessNb = bulkUpdateRes.successfulResults.length;
     const freezeErrorsNb = bulkUpdateRes.failedResults.length;
     if (freezeErrorsNb > 0) {
-      uxLog("warning", this, c.yellow(`Warning: ${c.red(c.bold(freezeErrorsNb))} users has not been frozen (bulk API errors)`));
+      uxLog("warning", this, c.yellow(t('warningUsersHasNotBeenFrozenBulk', { bold: c.red(c.bold(freezeErrorsNb)) })));
     }
 
     // Build results summary
-    uxLog("success", this, c.green(`${c.bold(freezeSuccessNb)} users has been be frozen.`));
+    uxLog("success", this, c.green(t('usersHaveBeenFrozen', { count: freezeSuccessNb })));
 
     // Return an object to be displayed with --json
     return {

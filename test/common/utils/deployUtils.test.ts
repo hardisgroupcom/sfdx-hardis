@@ -34,7 +34,7 @@ describe('Deploy Utils - Coverage not blocking', () => {
         status: 'Failed',
         success: false,
         warnings: ["GlobalValueSet, Produit__gvs, returned from org, but not found in the local project"],
-        truncatedBySfdxHardis: 'Result truncated by sfdx-hardis. Define NO_TRUNCATE_LOGS=true tu have full JSON logs',
+        truncatedBySfdxHardis: 'Result truncated by sfdx-hardis. Define NO_TRUNCATE_LOGS=true to have full JSON logs',
       },
     };
 

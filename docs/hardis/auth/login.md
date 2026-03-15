@@ -52,7 +52,7 @@ $ sf hardis:auth:login
 ```
 
 ```shell
-CI=true sf hardis:auth:login
+CI=true CI_COMMIT_REF_NAME=monitoring_myclient sf hardis:auth:login
 ```
 
 

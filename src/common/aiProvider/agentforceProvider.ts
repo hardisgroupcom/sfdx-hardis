@@ -8,6 +8,7 @@ import { Connection } from "@salesforce/core";
 import { UtilsAi } from "./utils.js";
 import { getEnvVar } from "../../config/index.js";
 import { resolveBooleanFlag } from "./providerConfigUtils.js";
+import { t } from '../utils/i18n.js';
 
 export class AgentforceProvider extends AiProviderRoot {
   protected conn: Connection;
@@ -66,16 +67,14 @@ export class AgentforceProvider extends AiProviderRoot {
   }
 
   public async promptAi(promptText: string, template: PromptTemplate): Promise<AiResponse | null> {
-    if (!this.checkMaxAiCallsNumber()) {
-      const maxCalls = this.getAiMaxCallsNumber();
-      uxLog("warning", this, c.yellow(`[Agentforce] Already performed maximum ${maxCalls} calls. Increase it by defining AI_MAXIMUM_CALL_NUMBER env variable`));
+    if (!this.checkAndWarnMaxAiCalls("Agentforce")) {
       return null;
     }
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog("log", this, c.grey(`[Agentforce] Requesting the following prompt${template ? (' using template ' + template) : ''}:\n${promptText}`));
+      uxLog("log", this, c.grey('[Agentforce] ' + t('agentforceRequestingPromptDebug', { template: template ? (' using template ' + template) : '', promptText })));
     }
     else {
-      uxLog("log", this, c.grey(`[Agentforce] Requesting prompt${template ? (' using template ' + template) : ''} (define DEBUG_PROMPTS=true to see details)`));
+      uxLog("log", this, c.grey('[Agentforce] ' + t('agentforceRequestingPrompt', { template: template ? (' using template ' + template) : '' })));
     }
     this.incrementAiCallsNumber();
     const promptUrl = this.interpolatePromptUrl(this.promptUrlTemplate, this.promptTemplate);
@@ -100,10 +99,10 @@ export class AgentforceProvider extends AiProviderRoot {
     }
     const agentforceResponse: any = await this.conn.requestPost(promptUrl, payload);
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog("log", this, c.grey("[Agentforce] Received prompt response\n" + JSON.stringify(agentforceResponse, null, 2)));
+      uxLog("log", this, c.grey('[Agentforce] ' + t('agentforceReceivedResponseDebug', { response: JSON.stringify(agentforceResponse, null, 2) })));
     }
     else {
-      uxLog("log", this, c.grey("[Agentforce] Received prompt response"));
+      uxLog("log", this, c.grey('[Agentforce] ' + t('agentforceReceivedResponse')));
     }
     const aiResponse: AiResponse = {
       success: false,

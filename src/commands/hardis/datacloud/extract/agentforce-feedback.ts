@@ -21,6 +21,7 @@ import {
   resolveExcludedConversationIds,
   stringValue,
 } from "../../../../common/utils/agentforceQueryUtils.js";
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -125,12 +126,12 @@ The command's technical implementation involves:
 
     this.queryString = buildMainQuery(dateFilterOptions).trim();
 
-    uxLog("action", this, c.cyan("Querying Feedbacks table..."));
+    uxLog("action", this, c.cyan(t('queryingFeedbacksTable')));
     const rawResult = await dataCloudSqlQuery(this.queryString, conn, {});
     const sessionIds = extractSessionIds(rawResult.records);
-    uxLog("action", this, c.cyan("Fetching full conversations transcripts..."));
+    uxLog("action", this, c.cyan(t('fetchingFullConversationsTranscripts')));
     const transcriptsBySession = await fetchConversationTranscripts(sessionIds, conn, { chunkSize: 25 });
-    uxLog("action", this, c.cyan("Aggregating and filtering data..."))
+    uxLog("action", this, c.cyan(t('aggregatingAndFilteringData')))
     const exportRecords = buildAgentforceFeedbackRecords(rawResult.records, {
       conversationLinkDomain,
       timeFilterDays,

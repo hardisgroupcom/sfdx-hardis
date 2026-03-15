@@ -8,6 +8,7 @@ import axios from 'axios';
 import path from 'path';
 import puppeteer, { Browser, Page } from 'puppeteer-core';
 import { execCommand, execSfdxJson, isCI, uxLog } from '../../../../common/utils/index.js';
+import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getChromeExecutablePath } from '../../../../common/utils/orgConfigUtils.js';
@@ -20,11 +21,21 @@ import {
   createConnectedAppSuccessResponse,
   handleConnectedAppError
 } from '../../../../common/utils/refresh/connectedAppUtils.js';
+import {
+  ECA_METADATA_TYPES,
+  getEcaNames,
+  listExternalClientAppNames,
+  retrieveExternalClientApps,
+  verifyEcaCredentials,
+  deleteExternalClientApps,
+  deleteConflictingConnectedApps,
+} from '../../../../common/utils/refresh/externalClientAppUtils.js';
 import { CONSTANTS, getConfig, setConfig } from '../../../../config/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { exportData, hasDataWorkspaces, selectDataWorkspace } from '../../../../common/utils/dataUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -45,34 +56,46 @@ interface BrowserContext {
   accessToken: string;
 }
 
+interface RefreshActionRow {
+  step: string;
+  type: string;
+  name: string;
+  status: string;
+  details: string;
+}
+
 export default class OrgRefreshBeforeRefresh extends SfCommand<AnyJson> {
   public static description = `
 ## Command Behavior
 
-**Backs up all Connected Apps (including Consumer Secrets), certificates, custom settings, records and other metadata from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
+**Backs up all Connected Apps (including Consumer Secrets), External Client Apps (including credentials), certificates, custom settings, records and other metadata from a Salesforce org before a sandbox refresh, enabling full restoration after the refresh.**
 
-This command prepares a complete backup prior to a sandbox refresh. It creates a dedicated project under \`scripts/sandbox-refresh/<sandbox-folder>\`, retrieves metadata and data, attempts to capture Connected App consumer secrets, and can optionally delete the apps so they can be reuploaded after the refresh.
+This command prepares a complete backup prior to a sandbox refresh. It creates a dedicated project under \`scripts/sandbox-refresh/<sandbox-folder>\`, retrieves metadata and data, attempts to capture Connected App and External Client App consumer secrets, and can optionally delete the apps so they can be reuploaded after the refresh.
 
 Key functionalities:
 
 - **Create a save project:** Generates a dedicated project folder to store all artifacts for the sandbox backup.
+- **Save External Client Apps:** Retrieves all External Client App metadata (ExternalClientApplication, ExtlClntAppOauthSettings, ExtlClntAppGlobalOauthSettings, ExtlClntAppOauthConfigurablePolicies, ExtlClntAppConfigurablePolicies), verifies that credentials (Consumer Key & Consumer Secret) are present in the retrieved Global OAuth settings, attempts to extract missing Consumer Secrets automatically via OAuth Credentials REST API or prompts for manual entry, and optionally deletes External Client Apps from the org so they can be recreated with the same credentials after the refresh.
 - **Find and select Connected Apps:** Lists Connected Apps in the org and lets you pick specific apps, use a name filter, or process all apps.
 - **Save metadata for restore:** Builds a manifest and retrieves the metadata types you choose so they can be restored after the refresh.
 - **Capture Consumer Secrets:** Attempts to capture Connected App consumer secrets automatically (opens a browser session when possible) and falls back to a short manual prompt when needed.
 - **Collect certificates:** Saves certificate files and their definitions so they can be redeployed later.
 - **Export custom settings & records:** Lets you pick custom settings to export as JSON and optionally export records using configured data workspaces.
 - **Persist choices & report:** Stores your backup choices in project config and sends report files for traceability.
-- **Optional cleanup:** Can delete backed-up Connected Apps from the org so they can be re-uploaded cleanly after the refresh.
+- **Optional cleanup:** Can delete backed-up Connected Apps and External Client Apps from the org so they can be re-uploaded cleanly after the refresh.
 - **Interactive safety checks:** Prompts you to confirm package contents and other potentially destructive actions; sensible defaults are chosen where appropriate.
 
 This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudity.com/salesforce-sandbox-refresh/) and is intended to be run before a sandbox refresh so that all credentials, certificates, metadata and data can be restored afterwards.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/cMzzWDIARbo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
 - **Salesforce CLI Integration:** Uses \`sf org list metadata\`, \`sf project retrieve start\`, \`sf project generate\`, \`sf project deploy start\`, and \`sf data tree export\`/\`import\` where applicable.
 - **Metadata Handling:** Writes and reads package XML files under the generated project (\`manifest/\`), copies MDAPI certificate artifacts into \`force-app/main/default/certs\`, and produces \`package-metadata-to-restore.xml\` for post-refresh deployment.
-- **Consumer Secret Handling:** Uses \`puppeteer-core\` with an executable path from \`getChromeExecutablePath()\` (env var \`PUPPETEER_EXECUTABLE_PATH\` may be required). Falls back to manual prompt when browser automation cannot be used.
+- **External Client App Handling:** Retrieves all 5 ECA metadata types, scans \`extlClntAppGlobalOauthSets/\` files for credentials (\`consumerKey\`, \`consumerSecret\`), extracts missing secrets via OAuth Credentials REST API or manual input, writes them back into the XML files, and deletes ECAs from the org using destructive changes so they can be recreated after refresh.
+- **Consumer Secret Handling:** Uses \`puppeteer-core\` with an executable path from \`getChromeExecutablePath()\` (env var \`PUPPETEER_EXECUTABLE_PATH\` may be required) for Connected Apps. Falls back to manual prompt when browser automation cannot be used.
 - **Data & Records:** Exports custom settings to JSON and supports exporting records through SFDMU workspaces chosen interactively.
 - **Config & Reporting:** Updates project/user config under \`config/.sfdx-hardis.yml#refreshSandboxConfig\` and reports artifacts to the WebSocket client.
 - **Error Handling:** Provides clear error messages and a summary response object indicating success/failure and which secrets were captured.
@@ -126,6 +149,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   protected processAll: boolean;
   protected nameFilter: string | undefined;
   protected deleteApps: boolean;
+  protected refreshActions: RefreshActionRow[] = [];
 
 
   public async run(): Promise<AnyJson> {
@@ -139,15 +163,9 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     this.nameFilter = this.processAll ? undefined : flags.name; // If --all is set, ignore --name
     const config = await getConfig("user");
     this.refreshSandboxConfig = config?.refreshSandboxConfig || {};
-    this.result = { success: true, message: 'before-refresh command performed successfully' };
+    this.result = { success: true, message: t('beforeRefreshCommandPerformedSuccessfully') };
 
-    uxLog("action", this, c.cyan(`This command will save information that must be restored after org refresh, in the following order:
-- Certificates
-- Other metadata
-- Custom Settings
-- Records (using SFDMU projects)
-- Connected Apps
-  `));
+    uxLog("action", this, c.cyan(t('thisCommandWillSaveInformationRefresh')));
 
     // Check org is connected
     if (!accessToken) {
@@ -155,6 +173,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     }
 
     this.saveProjectPath = await this.createSaveProject();
+    this.refreshActions.push({ step: "Create Save Project", type: "Project", name: path.basename(this.saveProjectPath), status: "Success", details: this.saveProjectPath });
 
     await this.retrieveCertificates();
 
@@ -164,7 +183,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
 
     await this.saveRecords();
 
+    await this.saveExternalClientApps();
+
     await this.retrieveDeleteConnectedApps(accessToken);
+
+    await this.generateActionsReport();
 
     return this.result;
   }
@@ -174,8 +197,13 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const sandboxRefreshRootFolder = path.join(process.cwd(), 'scripts', 'sandbox-refresh');
     const projectPath = path.join(sandboxRefreshRootFolder, folderName);
     if (fs.existsSync(projectPath)) {
-      uxLog("log", this, c.cyan(`Project folder ${projectPath} already exists. Reusing it.\n(Delete it and run again this command if you want to start fresh)`));
-      return projectPath;
+      if (fs.existsSync(path.join(projectPath, "sfdx-project.json"))) {
+        uxLog("log", this, c.cyan(t('projectFolderAlreadyExistsReusingItDelete', { projectPath })));
+        return projectPath;
+      }
+      else {
+        fs.removeSync(projectPath);
+      }
     }
     await fs.ensureDir(projectPath);
     uxLog("action", this, c.cyan(`Creating sfdx-project for sandbox info storage`));
@@ -184,14 +212,133 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       output: true,
       fail: true,
     });
-    uxLog("log", this, c.grey('Moving sfdx-project to root...'));
+    uxLog("log", this, c.grey(t('movingSfdxProjectToRoot')));
     await fs.copy(folderName, projectPath, { overwrite: true });
     await fs.remove(folderName);
-    uxLog("log", this, c.grey(`Save Project created in folder ${projectPath}`));
+    uxLog("log", this, c.grey(t('saveProjectCreatedInFolder', { projectPath })));
     return projectPath;
   }
 
+  private async saveExternalClientApps(): Promise<void> {
+    uxLog("action", this, c.cyan(t('savingExternalClientAppsBeforeSandboxRefresh')));
+
+    // List available ECAs in the org
+    uxLog("action", this, c.cyan(t('listingExternalClientAppsInOrg')));
+    let availableEcaNames: string[] = [];
+    try {
+      availableEcaNames = await listExternalClientAppNames(this.orgUsername, this);
+    } catch (_e: any) {
+      uxLog("warning", this, c.yellow(t('noExternalClientAppsFoundInTheOrg')));
+      return;
+    }
+
+    if (availableEcaNames.length === 0) {
+      uxLog("log", this, c.grey(t('noExternalClientAppsFoundInTheOrg')));
+      return;
+    }
+
+    uxLog("log", this, c.grey(t('foundExternalClientAppsInTheOrg', { count: availableEcaNames.length })));
+
+    // Multiselect which ECAs to save (pre-select previously chosen ones)
+    const initialSelection: string[] =
+      this.refreshSandboxConfig.externalClientApps && this.refreshSandboxConfig.externalClientApps.length > 0
+        ? this.refreshSandboxConfig.externalClientApps
+        : availableEcaNames;
+
+    const selectPrompt = await prompts({
+      type: 'multiselect',
+      name: 'selectedApps',
+      message: t('selectExternalClientAppsToSave'),
+      description: t('selectExternalClientAppsToSaveDescription'),
+      choices: availableEcaNames.map(name => ({ title: name, value: name })),
+      initial: initialSelection,
+    });
+
+    const selectedEcaNames: string[] = selectPrompt.selectedApps || [];
+    if (selectedEcaNames.length === 0) {
+      uxLog("warning", this, c.yellow(t('noExternalClientAppsSelected')));
+      this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Skipped", details: "No External Client Apps selected" });
+      return;
+    }
+
+    // Persist selection
+    this.refreshSandboxConfig.externalClientApps = selectedEcaNames.sort();
+    await this.saveConfig();
+
+    // Check if ECA folder already has content
+    const ecaFolder = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'externalClientApps');
+    if (fs.existsSync(ecaFolder) && fs.readdirSync(ecaFolder).length > 0) {
+      const confirmRetrieval = await prompts({
+        type: 'confirm',
+        name: 'retrieveAgain',
+        message: t('externalClientAppsFolderIsNotEmptyDo'),
+        description: t('externalClientAppsWillBeHandledSeparately'),
+        initial: false
+      });
+      if (!confirmRetrieval.retrieveAgain) {
+        return;
+      }
+    }
+
+    try {
+      const ecaCount = await retrieveExternalClientApps(this.orgUsername, this.saveProjectPath, this, selectedEcaNames);
+
+      if (ecaCount > 0) {
+        uxLog("success", this, c.green(t('externalClientAppsSavedSuccessfully', { count: ecaCount })));
+        uxLog("log", this, c.grey(t('externalClientAppsWillBeHandledSeparately')));
+
+        // Verify and capture credentials in Global OAuth settings files using OAuth Credentials REST API
+        await verifyEcaCredentials(this.saveProjectPath, this.instanceUrl, this.conn, this);
+
+        // Delete ECAs from org so they can be recreated with same credentials after refresh
+        const ecaNames = getEcaNames(this.saveProjectPath);
+        let deleteEcas = this.deleteApps;
+        if (!isCI && !this.deleteApps) {
+          const ecaNamesStr = ecaNames.join(', ');
+          const deletePrompt = await prompts({
+            type: 'confirm',
+            name: 'delete',
+            message: t('doYouWantToDeleteExternalClientApps', { ecaNames: ecaNamesStr }),
+            description: t('ifNotDeletedEcasWillRemainInOrg'),
+            initial: false
+          });
+          deleteEcas = deletePrompt.delete;
+        }
+        if (deleteEcas) {
+          const deletedEcaNames = await deleteExternalClientApps(this.orgUsername, ecaNames, this.saveProjectPath, this, true);
+          for (const name of deletedEcaNames) {
+            this.refreshActions.push({ step: "Delete External Client Apps", type: "ExternalClientApp", name, status: "Success", details: "Deleted from org before refresh" });
+          }
+          const notDeletedEcas = ecaNames.filter(n => !deletedEcaNames.includes(n));
+          for (const name of notDeletedEcas) {
+            this.refreshActions.push({ step: "Delete External Client Apps", type: "ExternalClientApp", name, status: "Error", details: "Deletion failed" });
+          }
+          // Also delete Connected Apps with the same name as deleted ECAs
+          const deletedConflictingApps = await deleteConflictingConnectedApps(this.orgUsername, ecaNames, this.saveProjectPath, this);
+          for (const name of deletedConflictingApps) {
+            this.refreshActions.push({ step: "Delete Conflicting Connected Apps", type: "ConnectedApp", name, status: "Success", details: "Deleted from org before refresh" });
+          }
+        }
+        for (const ecaName of selectedEcaNames) {
+          this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Success", details: deleteEcas ? "Saved and deleted from org" : "Saved" });
+        }
+      } else {
+        uxLog("log", this, c.grey(t('noExternalClientAppsFoundInTheOrg')));
+        this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: "N/A", status: "Warning", details: "No External Client Apps retrieved from org" });
+      }
+    } catch (_error: any) {
+      uxLog("warning", this, c.yellow(t('noExternalClientAppsFoundInTheOrg')));
+      for (const ecaName of selectedEcaNames) {
+        this.refreshActions.push({ step: "Save External Client Apps", type: "ExternalClientApp", name: ecaName, status: "Error", details: "Retrieval failed" });
+      }
+    }
+  }
+
   private async retrieveDeleteConnectedApps(accessToken: string): Promise<void> {
+    // Warn about Connected Apps deprecation since Spring '26
+    uxLog("warning", this, c.yellow(t('connectedAppsDeprecatedWarning')));
+    uxLog("action", this, c.cyan(t('convertConnectedAppsToExternalClientApps')));
+
     // If metadatas folder is not empty, ask if we want to retrieve them again
     let retrieveConnectedApps = true;
     const connectedAppsFolder = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'connectedApps');
@@ -199,8 +346,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       const confirmRetrieval = await prompts({
         type: 'confirm',
         name: 'retrieveAgain',
-        message: `Connected Apps folder is not empty. Do you want to retrieve Connected Apps again?`,
-        description: `If you do not retrieve them again, the Connected Apps will not be updated with the latest changes from the org.`,
+        message: t('connectedAppsFolderIsNotEmptyDo'),
+        description: t('ifNotRetrievedConnectedAppsNotUpdated'),
         initial: false
       });
 
@@ -215,8 +362,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         const connectedApps = await this.getConnectedApps(this.orgUsername, this.nameFilter, this.processAll);
 
         if (connectedApps.length === 0) {
-          uxLog("warning", this, c.yellow('No Connected Apps found'));
-          this.result = Object.assign(this.result, { success: false, message: 'No Connected Apps found' })
+          uxLog("warning", this, c.yellow(t('noConnectedAppsFound')));
+          this.result = Object.assign(this.result, { success: false, message: t('noConnectedAppsFound') })
           return;
         }
 
@@ -224,8 +371,8 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         const selectedApps = await this.selectConnectedApps(connectedApps, this.processAll, this.nameFilter);
 
         if (selectedApps.length === 0) {
-          uxLog("warning", this, c.yellow('No Connected Apps selected'));
-          this.result = Object.assign(this.result, { success: false, message: 'No Connected Apps selected' });
+          uxLog("warning", this, c.yellow(t('noConnectedAppsSelected')));
+          this.result = Object.assign(this.result, { success: false, message: t('noConnectedAppsSelected') });
           return;
         }
         this.refreshSandboxConfig.connectedApps = selectedApps.map(app => app.fullName).sort();
@@ -241,30 +388,38 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
           const deletePrompt = await prompts({
             type: 'confirm',
             name: 'delete',
-            message: `Do you want to delete the Connected Apps from the org after saving? ${connectedAppNames}`,
-            description: 'If you do not delete them, they will remain in the org and can be re-uploaded after refreshing the org.',
+            message: t('doYouWantToDeleteTheConnected', { connectedAppNames }),
+            description: t('ifNotDeletedTheyWillRemainInOrg'),
             initial: false
           });
           this.deleteApps = deletePrompt.delete;
         }
 
         if (this.deleteApps) {
-          uxLog("action", this, c.cyan(`Deleting ${updatedApps.length} Connected Apps from ${this.conn.instanceUrl} ...`));
+          uxLog("action", this, c.cyan(t('deletingConnectedAppsFrom', { updatedApps: updatedApps.length, conn: this.conn.instanceUrl })));
           await deleteConnectedApps(this.orgUsername, updatedApps, this, this.saveProjectPath);
-          uxLog("success", this, c.green('Connected Apps were successfully deleted from the org.'));
+          uxLog("success", this, c.green(t('connectedAppsWereSuccessfullyDeletedFromThe')));
         }
 
         const summaryMessage = this.deleteApps
-          ? `You are now ready to refresh your sandbox org, as you will be able to re-upload the Connected Apps after the refresh.`
-          : `Dry-run successful, run again the command with Connected Apps deletion to be able to refresh your org and re-upload the Connected Apps after the refresh.`;
+          ? t('readyToRefreshSandboxOrg')
+          : t('dryRunSuccessful');
         uxLog("action", this, c.cyan(summaryMessage));
         // Add a summary message at the end
         if (updatedApps.length > 0) {
-          uxLog("success", this, c.green(`Successfully saved locally ${updatedApps.length} Connected App(s) with their Consumer Secrets`));
+          uxLog("success", this, c.green(t('successfullySavedLocallyConnectedAppWithTheir', { updatedApps: updatedApps.length })));
         }
 
-        uxLog("success", this, c.cyan('Saved refresh sandbox configuration in config/.sfdx-hardis.yml'));
-        WebSocketClient.sendReportFileMessage(path.join(process.cwd(), 'config', '.sfdx-hardis.yml#refreshSandboxConfig'), "Sandbox refresh configuration", 'report');
+        for (const app of updatedApps) {
+          this.refreshActions.push({ step: "Save Connected Apps", type: "ConnectedApp", name: app.fullName, status: "Success", details: app.consumerSecret ? "Consumer Secret captured" : "No Consumer Secret" });
+        }
+        const appsWithoutSecret = selectedApps.filter((a: ConnectedApp) => !updatedApps.some((u: ConnectedApp) => u.fullName === a.fullName));
+        for (const app of appsWithoutSecret) {
+          this.refreshActions.push({ step: "Save Connected Apps", type: "ConnectedApp", name: app.fullName, status: "Warning", details: "Saved but Consumer Secret not captured" });
+        }
+
+        uxLog("success", this, c.cyan(t('savedRefreshSandboxConfigurationInConfigSfdx')));
+        WebSocketClient.sendReportFileMessage(path.join(process.cwd(), 'config', '.sfdx-hardis.yml#refreshSandboxConfig'), t('sandboxRefreshConfiguration'), 'report');
 
         const connectedAppRes = createConnectedAppSuccessResponse(
           `Successfully processed ${updatedApps.length} Connected App(s)`,
@@ -288,11 +443,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
   ): Promise<ConnectedApp[]> {
     // Set appropriate log message based on flags
     if (processAll) {
-      uxLog("action", this, c.cyan('Processing all Connected Apps from org (selection prompt bypassed)'));
+      uxLog("action", this, c.cyan(t('processingAllConnectedAppsFromOrgSelection')));
     } else if (nameFilter) {
-      uxLog("action", this, c.cyan(`Processing specified Connected App(s): ${nameFilter} (selection prompt bypassed)`));
+      uxLog("action", this, c.cyan(t('processingSpecifiedConnectedAppSelectionPromptBypassed', { nameFilter })));
     } else {
-      uxLog("action", this, c.cyan(`Listing Connected Apps in org ${this.conn.instanceUrl} ...`));
+      uxLog("action", this, c.cyan(t('listingConnectedAppsInOrg', { conn: this.conn.instanceUrl })));
     }
 
     const command = `sf org list metadata --metadata-type ConnectedApp --target-org ${orgUsername}`;
@@ -301,18 +456,18 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     const availableApps: ConnectedApp[] = result?.result && Array.isArray(result.result) ? result.result : [];
 
     if (availableApps.length === 0) {
-      uxLog("warning", this, c.yellow('No Connected Apps were found in the org.'));
+      uxLog("warning", this, c.yellow(t('noConnectedAppsWereFoundInThe2')));
       return [];
     }
     availableApps.sort((a, b) => a.fullName.localeCompare(b.fullName));
 
     const availableAppNames = availableApps.map(app => app.fullName);
-    uxLog("log", this, c.grey(`Found ${availableApps.length} Connected App(s) in the org`));
+    uxLog("log", this, c.grey(t('foundConnectedAppInTheOrg', { availableApps: availableApps.length })));
 
     // If name filter is provided, validate and filter the requested apps
     if (nameFilter) {
       const appNames = nameFilter.split(',').map(name => name.trim());
-      uxLog("action", this, c.cyan(`Validating specified Connected App(s): ${appNames.join(', ')}`));
+      uxLog("action", this, c.cyan(t('validatingSpecifiedConnectedApp', { appNames: appNames.join(', ') })));
 
       validateConnectedApps(appNames, availableAppNames, this, 'org');
 
@@ -321,7 +476,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
         appNames.some(name => name.toLowerCase() === app.fullName.toLowerCase())
       );
 
-      uxLog("success", this, c.green(`Successfully validated ${connectedApps.length} Connected App(s) in the org`));
+      uxLog("success", this, c.green(t('successfullyValidatedConnectedAppInTheOrg', { connectedApps: connectedApps.length })));
       return connectedApps;
     }
 
@@ -343,7 +498,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       initialSelection,
       processAll,
       nameFilter,
-      'Select Connected Apps that you will want to restore after org refresh',
+      'Select Connected Apps that you will want to restore after org refresh (SPOILERS: you probably can not since Spring 26!)',
       this
     );
   }
@@ -369,12 +524,11 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
       const connectedAppIdMap = await this.queryConnectedAppIds(orgUsername, connectedApps);
 
       // Step 3: Initialize browser for automation if access token is available
-      uxLog("action", this, c.cyan('Initializing browser for automated Connected App Secrets extraction...'));
+      uxLog("action", this, c.cyan(t('initializingBrowserForAutomatedConnectedAppSecrets')));
       try {
         browserContext = await this.initializeBrowser(instanceUrl, accessToken);
       } catch (e: any) {
-        uxLog("error", this, c.red(`Error initializing browser for automated Consumer Secret extraction: ${e.message}.
-You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Chrome/Chromium path. example: /usr/bin/chromium-browser`));
+        uxLog("error", this, c.red(t('errorInitializingBrowserConsumerSecret', { message: e.message })));
         // Continue without browser automation - will fall back to manual entry
       }
 
@@ -393,7 +547,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
             updatedApps.push(updatedApp);
           }
         } catch (error: any) {
-          uxLog("warning", this, c.yellow(`Error processing ${app.fullName}: ${error.message || error}`));
+          uxLog("warning", this, c.yellow(t('errorProcessing', { app: app.fullName, error: error.message || error })));
         }
       }
 
@@ -401,7 +555,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     } finally {
       // Close browser if it was opened
       if (browserContext?.browser) {
-        uxLog("log", this, c.cyan('Closing browser...'));
+        uxLog("log", this, c.cyan(t('closingBrowser')));
         await browserContext.browser.close();
       }
     }
@@ -412,7 +566,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     connectedApps: ConnectedApp[],
     saveProjectPath: string
   ): Promise<void> {
-    uxLog("action", this, c.cyan(`Retrieving ${connectedApps.length} Connected App(s) from ${orgUsername}`));
+    uxLog("action", this, c.cyan(t('retrievingConnectedAppFrom', { connectedApps: connectedApps.length, orgUsername })));
     await retrieveConnectedApps(orgUsername, connectedApps, this, saveProjectPath);
     this.verifyConnectedAppsRetrieval(connectedApps);
   }
@@ -466,7 +620,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       return connectedAppIdMap;
     }
 
-    uxLog("action", this, c.cyan('Retrieving applicationIds for all Connected Apps...'));
+    uxLog("action", this, c.cyan(t('retrievingApplicationidsForAllConnectedApps')));
     const queryCommand = `SELECT Id, Name FROM ConnectedApplication WHERE Name IN (${appNamesForQuery})`;
 
     try {
@@ -481,10 +635,10 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
         }
         uxLog("log", this, c.grey(logMsg));
       } else {
-        uxLog("warning", this, c.yellow('No applicationIds found in the org. Will use the fallback URL.'));
+        uxLog("warning", this, c.yellow(t('noApplicationidsFoundInTheOrgWill')));
       }
     } catch (queryError) {
-      uxLog("error", this, c.yellow(`Error retrieving applicationIds: ${queryError}`));
+      uxLog("error", this, c.yellow(t('errorRetrievingApplicationids', { queryError })));
     }
 
     return connectedAppIdMap;
@@ -496,7 +650,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
   ): Promise<BrowserContext> {
     // Get chrome/chromium executable path using shared utility
     const chromeExecutablePath = getChromeExecutablePath();
-    uxLog("log", this, c.cyan(`chromeExecutablePath: ${chromeExecutablePath}`));
+    uxLog("log", this, c.cyan(t('chromeexecutablepath', { chromeExecutablePath })));
 
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -507,7 +661,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
 
     // Log in once for the session
     const loginUrl = `${instanceUrl}/secur/frontdoor.jsp?sid=${accessToken}`;
-    uxLog("log", this, c.cyan(`Log in via browser using frontdoor.jsp...`));
+    uxLog("log", this, c.cyan(t('logInViaBrowserFrontdoor')));
     const page = await browser.newPage();
     await page.goto(loginUrl, { waitUntil: ['domcontentloaded', 'networkidle0'] });
     await page.close();
@@ -525,7 +679,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     const connectedAppFile = await findConnectedAppFile(app.fullName, this, saveProjectPath);
 
     if (!connectedAppFile) {
-      uxLog("warning", this, c.yellow(`Connected App file not found for ${app.fullName}`));
+      uxLog("warning", this, c.yellow(t('connectedAppFileNotFoundFor', { app: app.fullName })));
       return undefined;
     }
 
@@ -536,32 +690,32 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     // Try to extract application ID and view link
     if (connectedAppId) {
       try {
-        uxLog("action", this, c.cyan(`Extracting info for Connected App ${app.fullName}...`));
+        uxLog("action", this, c.cyan(t('extractingInfoForConnectedApp', { app: app.fullName })));
         const applicationId = await this.extractApplicationId(instanceUrl, connectedAppId, app.fullName, browserContext?.accessToken ?? '');
         viewLink = `${instanceUrl}/app/mgmt/forceconnectedapps/forceAppDetail.apexp?applicationId=${applicationId}`;
-        uxLog("success", this, c.green(`Successfully extracted application ID: ${applicationId} (viewLink: ${viewLink})`));
+        uxLog("success", this, c.green(t('successfullyExtractedApplicationIdViewlink', { applicationId, viewLink })));
 
         // Try automated extraction if browser is available
         if (browserContext?.browser) {
-          uxLog("log", this, c.cyan(`Attempting to automatically extract Consumer Secret for ${app.fullName}...`));
+          uxLog("log", this, c.cyan(t('attemptingToAutomaticallyExtractConsumerSecretFor', { app: app.fullName })));
           try {
             consumerSecretValue = await this.extractConsumerSecret(
               browserContext.browser,
               viewLink
             );
           } catch (puppeteerError) {
-            uxLog("warning", this, c.yellow(`Error extracting Consumer Secret with Puppeteer: ${puppeteerError}`));
+            uxLog("warning", this, c.yellow(t('errorExtractingConsumerSecretWithPuppeteer', { puppeteerError })));
             consumerSecretValue = null;
           }
         }
       } catch (error) {
-        uxLog("error", this, c.red(`Could not extract application ID for :  ${app.fullName}. Error message : ${error}`));
+        uxLog("error", this, c.red(t('couldNotExtractApplicationIdForError', { app: app.fullName, error })));
         viewLink = `${instanceUrl}/lightning/setup/NavigationMenus/home`;
-        uxLog("action", this, c.cyan(`Opening application list page. Please manually find ${app.fullName}.`));
+        uxLog("action", this, c.cyan(t('openingApplicationListPagePleaseManuallyFind', { app: app.fullName })));
       }
     } else {
       // Fallback to the connected apps list page if applicationId can't be found
-      uxLog("warning", this, c.yellow(`No applicationId found for ${app.fullName}, opening application list page instead`));
+      uxLog("warning", this, c.yellow(t('noApplicationidFoundForOpeningApplicationList', { app: app.fullName })));
       viewLink = `${instanceUrl}/lightning/setup/NavigationMenus/home`;
     }
 
@@ -594,13 +748,13 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
         const secretPromptResponse = await prompts({
           type: 'text',
           name: 'consumerSecret',
-          message: `Enter the Consumer Secret for ${app.fullName}:`,
-          description: 'You can find this in the browser after clicking "Manage Consumer Details"',
+          message: t('enterTheConsumerSecretFor', { app: app.fullName }),
+          description: t('youCanFindThisInTheBrowser'),
           validate: (value) => value && value.trim() !== '' ? true : 'Consumer Secret is required'
         });
 
         if (!secretPromptResponse.consumerSecret) {
-          uxLog("warning", this, c.yellow(`Skipping ${app.fullName} due to missing Consumer Secret`));
+          uxLog("warning", this, c.yellow(t('skippingDueToMissingConsumerSecret', { app: app.fullName })));
           return undefined;
         }
 
@@ -618,11 +772,11 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
             consumerKey
           );
         } else {
-          uxLog("warning", this, c.yellow(`Could not parse XML for ${app.fullName}`));
+          uxLog("warning", this, c.yellow(t('couldNotParseXmlFor', { app: app.fullName })));
         }
       }
     } catch (error: any) {
-      uxLog("warning", this, c.yellow(`Error processing ${app.fullName}: ${error.message}`));
+      uxLog("warning", this, c.yellow(t('errorProcessing2', { app: app.fullName, error: error.message })));
     }
 
     return undefined;
@@ -634,7 +788,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     connectedAppName: string,
     accessToken: string
   ): Promise<string> {
-    uxLog("log", this, c.cyan(`Extracting application ID for Connected App with ID: ${connectedAppName}`));
+    uxLog("log", this, c.cyan(t('extractingApplicationIdForConnectedAppWith', { connectedAppName })));
 
     const url = `${instanceUrl}/${connectedAppId}`;
     const response = await axios.get(url, {
@@ -674,11 +828,11 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       const consumerSecretSpanId = '#appsetup\\:setupForm\\:consumerDetails\\:oauthConsumerSection\\:consumerSecretSection\\:consumerSecret';
       await page.waitForSelector(consumerSecretSpanId, { timeout: 60000 });
       const consumerSecretValue = await page.$eval(consumerSecretSpanId, element => element.textContent);
-      uxLog("success", this, c.green(`Successfully extracted Consumer Secret`));
+      uxLog("success", this, c.green(t('successfullyExtractedConsumerSecret')));
 
       return consumerSecretValue || null;
     } catch (error) {
-      uxLog("error", this, c.red(`Error extracting Consumer Secret: ${error}`));
+      uxLog("error", this, c.red(t('errorExtractingConsumerSecret', { error })));
       return null;
     } finally {
       if (page) await page.close();
@@ -711,7 +865,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
 
     xmlData.ConnectedApp.consumerSecret = [consumerSecret];
 
-    uxLog("success", this, c.green(`Successfully added Consumer Secret to ${app.fullName} in ${connectedAppFile}`));
+    uxLog("success", this, c.green(t('successfullyAddedConsumerSecretToIn', { app: app.fullName, connectedAppFile })));
 
     return {
       ...app,
@@ -727,7 +881,7 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     }
     if (JSON.stringify(this.refreshSandboxConfig) !== JSON.stringify(config.refreshSandboxConfig)) {
       await setConfig("project", { refreshSandboxConfig: this.refreshSandboxConfig });
-      uxLog("log", this, c.cyan('Refresh sandbox configuration has been saved successfully.'));
+      uxLog("log", this, c.cyan(t('refreshSandboxConfigurationHasBeenSavedSuccessfully')));
     }
   }
 
@@ -737,23 +891,25 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       const promptResponse = await prompts({
         type: 'confirm',
         name: 'retrieveAgain',
-        message: `It seems you already have metadatas saved from a previous run.\nDo you want to retrieve certificates and metadata again ?`,
-        description: 'This will overwrite the existing package-metadatas-to-save.xml file and related certificates and metadatas.',
+        message: t('itSeemsYouAlreadyHaveMetadatasSaved'),
+        description: t('thisWillOverwriteExistingPackageMetadatasFile'),
         initial: false
       });
       if (!promptResponse.retrieveAgain) {
-        uxLog("log", this, c.grey(`Skipping metadata retrieval as it already exists at ${this.saveProjectPath}`));
+        uxLog("log", this, c.grey(t('skippingMetadataRetrievalAsItAlreadyExists', { saveProjectPath: this.saveProjectPath })));
+        this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Skipped", details: "Already exists - user skipped" });
         return;
       }
     }
 
     // Metadata package.Xml for backup
-    uxLog("action", this, c.cyan('Saving metadata files before sandbox refresh...'));
+    uxLog("action", this, c.cyan(t('savingMetadataFilesBeforeSandboxRefresh')));
     const savePackageXml = await this.createSavePackageXml();
 
     // Retrieve metadata from org using the package XML
     if (!savePackageXml) {
-      uxLog("log", this, c.grey(`Skipping metadata retrieval as per user choice`));
+      uxLog("log", this, c.grey(t('skippingMetadataRetrievalUserChoice')));
+      this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Skipped", details: "User choice" });
       return;
     }
 
@@ -761,7 +917,16 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     await this.retrieveMetadatasToSave(savePackageXml);
 
     // Generate new package.xml from saveProjectPath, and remove ConnectedApps from it
-    await this.generatePackageXmlToRestore();
+    const restoredPackage = await this.generatePackageXmlToRestore();
+    for (const [metadataType, items] of Object.entries(restoredPackage)) {
+      const itemList = Array.isArray(items) ? items : [String(items)];
+      for (const itemName of itemList) {
+        this.refreshActions.push({ step: "Save Metadata", type: metadataType, name: itemName, status: "Success", details: "" });
+      }
+    }
+    if (Object.keys(restoredPackage).length === 0) {
+      this.refreshActions.push({ step: "Save Metadata", type: "Metadata", name: "package-metadatas-to-save.xml", status: "Success", details: "" });
+    }
   }
 
   private async createSavePackageXml(): Promise<string | null> {
@@ -774,27 +939,27 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       const promptResponse = await prompts({
         type: 'confirm',
         name: 'overwrite',
-        message: `The file ${targetFile} already exists. Do you want to overwrite it?`,
-        description: 'This file is used to save the metadata that will be restored after org refresh.',
+        message: t('theFileAlreadyExistsDoYouWant', { targetFile }),
+        description: t('thisFileIsUsedToSaveMetadataForOrgRefresh'),
         initial: false
       });
       if (promptResponse.overwrite) {
-        uxLog("log", this, c.grey(`Overwriting default save package xml to ${targetFile}`));
+        uxLog("log", this, c.grey(t('overwritingDefaultSavePackageXmlTo', { targetFile })));
         await fs.copy(sourceFile, targetFile, { overwrite: true });
       }
     }
     else {
-      uxLog("log", this, c.grey(`Copying default package xml to ${targetFile}`));
+      uxLog("log", this, c.grey(t('copyingDefaultPackageXmlTo', { targetFile })));
       await fs.copy(sourceFile, targetFile, { overwrite: true });
     }
-    uxLog("log", this, c.grey(`Save package XML is located at ${targetFile}`));
-    WebSocketClient.sendReportFileMessage(targetFile, "Save package XML", 'report');
+    uxLog("log", this, c.grey(t('savePackageXmlIsLocatedAt', { targetFile })));
+    WebSocketClient.sendReportFileMessage(targetFile, t('savePackageXml'), 'report');
     // Prompt user to check packageXml content and update it if necessary
     const promptRes = await prompts({
       type: 'confirm',
       name: 'checkPackageXml',
-      message: `Please check package XML file ${targetFile} before retrieving, update it to add metadata if necessary then continue`,
-      description: 'You can add or remove metadata types to save before proceeding.',
+      message: t('pleaseCheckPackageXmlFileBeforeRetrieving', { targetFile }),
+      description: t('youCanAddOrRemoveMetadataTypesToSave'),
       initial: true
     });
     if (!promptRes.checkPackageXml) {
@@ -807,14 +972,14 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
   private async retrieveMetadatasToSave(savePackageXml: string) {
     uxLog("action", this, c.cyan(`Retrieving metadatas to save...`));
     await execCommand(
-      `sf project retrieve start --manifest ${savePackageXml} --target-org ${this.orgUsername} --ignore-conflicts --json`,
+      `sf project retrieve start --manifest "${savePackageXml}" --target-org ${this.orgUsername} --ignore-conflicts --json`,
       this,
       { output: true, fail: true, cwd: this.saveProjectPath }
     );
   }
 
-  private async generatePackageXmlToRestore() {
-    uxLog("action", this, c.cyan(`Generating new package.xml from saved project path ${this.saveProjectPath}...`));
+  private async generatePackageXmlToRestore(): Promise<Record<string, string[]>> {
+    uxLog("action", this, c.cyan(t('generatingNewPackageXmlFromSavedProject', { saveProjectPath: this.saveProjectPath })));
     const restorePackageXmlFileName = 'package-metadata-to-restore.xml';
     const restorePackageXmlFile = path.join(this.saveProjectPath, 'manifest', restorePackageXmlFileName);
     await execCommand(
@@ -822,65 +987,89 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       this,
       { output: true, fail: true, cwd: this.saveProjectPath }
     );
-    uxLog("success", this, c.grey(`Generated package.xml for restore at ${restorePackageXmlFile}`));
+    uxLog("success", this, c.grey(t('generatedPackageXmlForRestoreAt', { restorePackageXmlFile })));
     const restorePackage = await parsePackageXmlFile(restorePackageXmlFile);
     if (restorePackage?.["ConnectedApp"]) {
       delete restorePackage["ConnectedApp"];
       await writePackageXmlFile(restorePackageXmlFile, restorePackage);
-      uxLog("log", this, c.grey(`Removed ConnectedApps from ${restorePackageXmlFileName} as they will be handled separately`));
+      uxLog("log", this, c.grey(t('removedConnectedappsFromAsTheyWillBe', { restorePackageXmlFileName })));
     }
     if (restorePackage?.["Certificate"]) {
       delete restorePackage["Certificate"];
       await writePackageXmlFile(restorePackageXmlFile, restorePackage);
-      uxLog("log", this, c.grey(`Removed Certificates from ${restorePackageXmlFileName} as they will be handled separately`));
+      uxLog("log", this, c.grey(t('removedCertificatesFromAsTheyWillBe', { restorePackageXmlFileName })));
     }
     if (restorePackage?.["SamlSsoConfig"]) {
       delete restorePackage["SamlSsoConfig"];
       await writePackageXmlFile(restorePackageXmlFile, restorePackage);
-      uxLog("log", this, c.grey(`Removed SamlSsoConfig from ${restorePackageXmlFileName} as they will be handled separately`));
+      uxLog("log", this, c.grey(t('removedSamlssoconfigFromAsTheyWillBe', { restorePackageXmlFileName })));
     }
+    // Remove External Client App metadata types (handled separately)
+    let ecaRemoved = false;
+    for (const ecaType of ECA_METADATA_TYPES) {
+      if (restorePackage?.[ecaType]) {
+        delete restorePackage[ecaType];
+        ecaRemoved = true;
+      }
+    }
+    if (ecaRemoved) {
+      await writePackageXmlFile(restorePackageXmlFile, restorePackage);
+      uxLog("log", this, c.grey(t('removedExternalClientAppsFromRestorePackage', { restorePackageXmlFileName })));
+    }
+    return restorePackage;
   }
 
   private async retrieveCertificates() {
     const promptCerts = await prompts({
       type: 'confirm',
       name: 'retrieveCerts',
-      message: `Do you want to retrieve Certificates from ${this.instanceUrl} before refreshing it ?`,
-      description: 'Certificates cannot be retrieved using Source API, so we will use Metadata API for that.',
+      message: t('doYouWantToRetrieveCertificatesFrom', { instanceUrl: this.instanceUrl }),
+      description: t('certificatesCannotBeRetrievedUsingSourceApi'),
       initial: true
     });
     if (!promptCerts.retrieveCerts) {
       uxLog("log", this, c.grey(`Skipping Certificates retrieval as per user choice`));
+      this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Skipped", details: "User choice" });
       return;
     }
 
-    uxLog("action", this, c.cyan('Retrieving certificates (.crt) from org...'));
+    uxLog("action", this, c.cyan(t('retrievingCertificatesCrtFromOrg')));
     // Retrieve certificates using metadata api coz with source api it does not work
     const certificatesPackageXml = path.join(PACKAGE_ROOT_DIR, 'defaults/refresh-sandbox', 'package-certificates-to-save.xml');
     const packageCertsXml = path.join(this.saveProjectPath, 'manifest', 'package-certificates-to-save.xml');
-    uxLog("log", this, c.grey(`Copying default package XML for certificates to ${packageCertsXml}`));
+    uxLog("log", this, c.grey(t('copyingDefaultPackageXmlForCertificatesTo', { packageCertsXml })));
     await fs.copy(certificatesPackageXml, packageCertsXml, { overwrite: true });
-    uxLog("log", this, c.grey(`Retrieving certificates from org ${this.instanceUrl} using Metadata API (Source APi does not support it)...`));
+    uxLog("log", this, c.grey(t('retrievingCertificatesFromOrgUsingMetadataApi', { instanceUrl: this.instanceUrl })));
     await execSfdxJson(
-      `sf project retrieve start --manifest ${packageCertsXml} --target-org ${this.orgUsername} --target-metadata-dir ./mdapi_certs --unzip`,
+      `sf project retrieve start --manifest "${packageCertsXml}" --target-org ${this.orgUsername} --target-metadata-dir ./mdapi_certs --unzip`,
       this,
       { output: true, fail: true, cwd: this.saveProjectPath }
     );
     // Copy the extracted certificates to the main directory
     const mdapiCertsDir = path.join(this.saveProjectPath, 'mdapi_certs', 'unpackaged', 'unpackaged', 'certs');
     const certsDir = path.join(this.saveProjectPath, 'force-app', 'main', 'default', 'certs');
-    uxLog("log", this, c.grey(`Copying certificates from ${mdapiCertsDir} to ${certsDir}`));
+    uxLog("log", this, c.grey(t('copyingCertificatesFromTo', { mdapiCertsDir, certsDir })));
     await fs.ensureDir(certsDir);
     await fs.copy(mdapiCertsDir, certsDir, { overwrite: true });
     await fs.remove(path.join(this.saveProjectPath, 'mdapi_certs'));
-    uxLog("success", this, c.green(`Successfully retrieved certificates from org and saved them to ${certsDir}`));
-    uxLog("action", this, c.cyan('Retrieving certificates definitions (.crt-meta.xml) from org...'));
+    uxLog("success", this, c.green(t('successfullyRetrievedCertificatesFromOrgAndSaved', { certsDir })));
+    uxLog("action", this, c.cyan(t('retrievingCertificatesDefinitionsCrtMetaXmlFrom')));
     // Retrieve certificates definitions using source api
     await execCommand(
       `sf project retrieve start -m Certificate --target-org ${this.orgUsername} --ignore-conflicts --json`,
       this,
       { output: true, fail: true, cwd: this.saveProjectPath }
     );
+    const savedCertNames = fs.readdirSync(certsDir)
+      .filter(f => f.endsWith('.crt'))
+      .map(f => path.basename(f, '.crt'));
+    if (savedCertNames.length > 0) {
+      for (const certName of savedCertNames) {
+        this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: certName, status: "Success", details: "" });
+      }
+    } else {
+      this.refreshActions.push({ step: "Retrieve Certificates", type: "Certificate", name: "All", status: "Success", details: "" });
+    }
   }
 
   private async saveCustomSettings(): Promise<void> {
@@ -890,13 +1079,13 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       const confirmRetrieval = await prompts({
         type: 'confirm',
         name: 'retrieveAgain',
-        message: `Custom Settings folder is not empty. Do you want to retrieve Custom Settings again?`,
-        description: `If you do not retrieve them again, the Custom Settings will not be updated with the latest changes from the org.`,
+        message: t('customSettingsFolderIsNotEmptyDo'),
+        description: t('ifYouDoNotRetrieveThemAgainCustomSettingsWillNotBeUpdated'),
         initial: false
       });
 
       if (!confirmRetrieval.retrieveAgain) {
-        uxLog("log", this, c.grey(`Skipping Custom Settings retrieval as it already exists at ${customSettingsFolder}`));
+        uxLog("log", this, c.grey(t('skippingCustomSettingsRetrievalAsItAlready', { customSettingsFolder })));
         return;
       }
     }
@@ -905,100 +1094,118 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
     const globalDesc = await this.conn.describeGlobal();
     const customSettings = globalDesc.sobjects.filter(sobject => sobject.customSetting);
     if (customSettings.length === 0) {
-      uxLog("warning", this, c.yellow('No Custom Settings found in the org.'));
+      uxLog("warning", this, c.yellow(t('noCustomSettingsFoundInTheOrg')));
       return;
     }
     const customSettingsNames = customSettings.map(cs => `- ${cs.name}`).sort().join('\n');
-    uxLog("log", this, c.grey(`Found ${customSettings.length} Custom Setting(s) in the org:\n${customSettingsNames}`));
+    uxLog("log", this, c.grey(t('foundCustomSettingInTheOrg', { customSettings: customSettings.length, customSettingsNames })));
     // Ask user to select which Custom Settings to retrieve
     const initialCs = this.refreshSandboxConfig.customSettings || customSettings.map(cs => cs.name);
     const selectedSettings = await prompts({
       type: 'multiselect',
       name: 'settings',
-      message: 'Select Custom Settings to retrieve',
-      description: 'You can select multiple Custom Settings to retrieve.',
+      message: t('selectCustomSettingsToRetrieve'),
+      description: t('youCanSelectMultipleCustomSettingsToRetrieve'),
       choices: customSettings.map(cs => ({ title: cs.name, value: cs.name })),
       initial: initialCs,
     });
     if (selectedSettings.settings.length === 0) {
-      uxLog("warning", this, c.yellow('No Custom Settings selected for retrieval'));
+      uxLog("warning", this, c.yellow(t('noCustomSettingsSelectedForRetrieval')));
+      this.refreshActions.push({ step: "Save Custom Settings", type: "CustomSetting", name: "N/A", status: "Skipped", details: "No custom settings selected" });
       return;
     }
     this.refreshSandboxConfig.customSettings = selectedSettings.settings.sort();
     await this.saveConfig();
-    uxLog("log", this, c.cyan(`Retrieving ${selectedSettings.settings.length} selected Custom Settings`));
     const successCs: any = [];
     const emptyCs: any = [];
     const errorCs: any = [];
+    WebSocketClient.sendProgressStartMessage(t('retrievingSelectedCustomSettings', { selectedSettings: selectedSettings.settings.length }), selectedSettings.settings.length);
+    let csCounter = 0;
     // Retrieve each selected Custom Setting
-    for (const settingName of selectedSettings.settings) {
-      try {
-        uxLog("action", this, c.cyan(`Retrieving values of Custom Setting: ${settingName}`));
+    try {
+      for (const settingName of selectedSettings.settings) {
+        try {
+          uxLog("log", this, c.cyan(t('retrievingValuesOfCustomSetting', { settingName })));
 
-        // List all fields of the Custom Setting using globalDesc
-        const customSettingDesc = globalDesc.sobjects.find(sobject => sobject.name === settingName);
-        if (!customSettingDesc) {
-          uxLog("error", this, c.red(`Custom Setting ${settingName} not found in the org.`));
-          errorCs.push(settingName);
-          continue;
-        }
-        const csDescribe = await this.conn.sobject(settingName).describe();
-        const fieldList = csDescribe.fields.map(field => field.name).join(', ');
-        uxLog("log", this, c.grey(`Fields in Custom Setting ${settingName}: ${fieldList}`));
+          // List all fields of the Custom Setting using globalDesc
+          const customSettingDesc = globalDesc.sobjects.find(sobject => sobject.name === settingName);
+          if (!customSettingDesc) {
+            uxLog("error", this, c.red(t('customSettingNotFoundInTheOrg', { settingName })));
+            errorCs.push(settingName);
+            continue;
+          }
+          const csDescribe = await this.conn.sobject(settingName).describe();
+          const fieldList = csDescribe.fields.map(field => field.name).join(', ');
+          uxLog("log", this, c.grey(t('fieldsInCustomSetting', { settingName, fieldList })));
 
-        // Use data tree export to retrieve the Custom Setting
-        uxLog("log", this, c.cyan(`Running tree export for Custom Setting ${settingName}...`));
-        const retrieveCommand = `sf data tree export --query "SELECT ${fieldList} FROM ${settingName}" --target-org ${this.orgUsername} --json`;
-        const csFolder = path.join(customSettingsFolder, settingName);
-        await fs.ensureDir(csFolder);
-        const result = await execSfdxJson(retrieveCommand, this, {
-          output: true,
-          fail: true,
-          cwd: csFolder
-        });
-        if (!(result?.status === 0)) {
-          uxLog("error", this, c.red(`Failed to retrieve Custom Setting ${settingName}: ${JSON.stringify(result)}`));
-          continue;
-        }
-        const resultFile = path.join(csFolder, `${settingName}.json`);
-        if (fs.existsSync(resultFile)) {
-          uxLog("log", this, c.grey(`Custom Setting ${settingName} has been downloaded to ${resultFile}`));
-          successCs.push(settingName);
-        }
-        else if (result?.result?.records && result.result.records?.length === 0) {
-          uxLog("warning", this, c.yellow(`Custom Setting ${settingName} has no records in the org`));
-          emptyCs.push(settingName);
-        }
-        else {
-          uxLog("error", this, c.red(`Custom Setting ${settingName} was not retrieved correctly. No file found at ${resultFile}`));
+          // Use data tree export to retrieve the Custom Setting
+          uxLog("log", this, c.cyan(t('runningTreeExportForCustomSetting', { settingName })));
+          const retrieveCommand = `sf data tree export --query "SELECT ${fieldList} FROM ${settingName}" --target-org ${this.orgUsername} --json`;
+          const csFolder = path.join(customSettingsFolder, settingName);
+          await fs.ensureDir(csFolder);
+          const result = await execSfdxJson(retrieveCommand, this, {
+            output: true,
+            fail: true,
+            cwd: csFolder
+          });
+          if (!(result?.status === 0)) {
+            uxLog("error", this, c.red(t('failedToRetrieveCustomSetting', { settingName, JSON: JSON.stringify(result) })));
+            continue;
+          }
+          const resultFile = path.join(csFolder, `${settingName}.json`);
+          if (fs.existsSync(resultFile)) {
+            uxLog("log", this, c.grey(t('customSettingHasBeenDownloadedTo', { settingName, resultFile })));
+            successCs.push(settingName);
+          }
+          else if (result?.result?.records && result.result.records?.length === 0) {
+            uxLog("warning", this, c.yellow(t('customSettingHasNoRecordsInThe', { settingName })));
+            emptyCs.push(settingName);
+          }
+          else {
+            uxLog("error", this, c.red(t('customSettingWasNotRetrievedCorrectlyNo', { settingName, resultFile })));
+            errorCs.push(settingName);
+            continue;
+          }
+        } catch (error: any) {
           errorCs.push(settingName);
-          continue;
+          uxLog("error", this, c.red(t('errorRetrievingCustomSetting', { settingName, error: error.message || error })));
         }
-      } catch (error: any) {
-        errorCs.push(settingName);
-        uxLog("error", this, c.red(`Error retrieving Custom Setting ${settingName}: ${error.message || error}`));
+        csCounter++;
+        WebSocketClient.sendProgressStepMessage(csCounter, selectedSettings.settings.length);
       }
+    } finally {
+      WebSocketClient.sendProgressEndMessage();
     }
-    uxLog("action", this, c.cyan(`Custom Settings retrieval completed (${successCs.length} successful, ${emptyCs.length} empty, ${errorCs.length} failed)`));
+    uxLog("action", this, c.cyan(t('customSettingsRetrievalCompletedSuccessfulEmptyFailed', { successCs: successCs.length, emptyCs: emptyCs.length, errorCs: errorCs.length })));
     if (successCs.length > 0) {
       const successCsNames = successCs.map(cs => "- " + cs).join('\n');
-      uxLog("success", this, c.green(`Successfully retrieved Custom Settings:\n${successCsNames}`));
+      uxLog("success", this, c.green(t('successfullyRetrievedCustomSettings', { successCsNames })));
     }
     if (emptyCs.length > 0) {
       const emptyCsNames = emptyCs.map(cs => "- " + cs).join('\n');
-      uxLog("warning", this, c.yellow(`Custom Settings with no records:\n${emptyCsNames}`));
+      uxLog("warning", this, c.yellow(t('customSettingsWithNoRecords', { emptyCsNames })));
     }
     if (errorCs.length > 0) {
       const errorCsNames = errorCs.map(cs => "- " + cs).join('\n');
-      uxLog("error", this, c.red(`Failed to retrieve Custom Settings:\n${errorCsNames}`));
+      uxLog("error", this, c.red(t('failedToRetrieveCustomSettings', { errorCsNames })));
+    }
+    for (const cs of successCs) {
+      this.refreshActions.push({ step: "Save Custom Settings", type: "CustomSetting", name: cs, status: "Success", details: "" });
+    }
+    for (const cs of emptyCs) {
+      this.refreshActions.push({ step: "Save Custom Settings", type: "CustomSetting", name: cs, status: "Warning", details: "No records in org" });
+    }
+    for (const cs of errorCs) {
+      this.refreshActions.push({ step: "Save Custom Settings", type: "CustomSetting", name: cs, status: "Error", details: "Retrieval failed" });
     }
   }
 
   private async saveRecords(): Promise<void> {
     const hasDataWs = await hasDataWorkspaces();
     if (!hasDataWs) {
-      uxLog("action", this, c.yellow('No data workspaces found in the project, skipping record saving'));
-      uxLog("log", this, c.grey(`You can create data workspaces using ${CONSTANTS.DOC_URL_ROOT}/hardis/org/configure/data/`));
+      uxLog("action", this, c.yellow(t('noDataWorkspacesFoundInTheProject')));
+      uxLog("log", this, c.grey(t('youCanCreateDataWorkspacesUsingHardis', { CONSTANTS: CONSTANTS.DOC_URL_ROOT })));
+      this.refreshActions.push({ step: "Save Records", type: "Records", name: "N/A", status: "Skipped", details: "No data workspaces in project" });
       return;
     }
 
@@ -1008,7 +1215,8 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       initial: this?.refreshSandboxConfig?.dataWorkspaces || [],
     });
     if (!(Array.isArray(sfdmuWorkspaces) && sfdmuWorkspaces.length > 0)) {
-      uxLog("warning", this, c.yellow('No data workspace selected, skipping record saving'));
+      uxLog("warning", this, c.yellow(t('noDataWorkspaceSelectedSkippingRecordSaving')));
+      this.refreshActions.push({ step: "Save Records", type: "Records", name: "N/A", status: "Skipped", details: "No data workspace selected" });
       return;
     }
     this.refreshSandboxConfig.dataWorkspaces = sfdmuWorkspaces.sort();
@@ -1020,10 +1228,10 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
       const targetPath = path.join(this.saveProjectPath, sfdmuPath);
       await fs.ensureDir(path.dirname(targetPath));
       if (fs.existsSync(targetPath)) {
-        uxLog("log", this, c.grey(`Overwriting data workspace from ${sourcePath} to ${targetPath}`));
+        uxLog("log", this, c.grey(t('overwritingDataWorkspaceFromTo', { sourcePath, targetPath })));
         await fs.copy(sourcePath, targetPath, { overwrite: true });
       } else {
-        uxLog("log", this, c.grey(`Copying data workspace from ${sourcePath} to ${targetPath}`));
+        uxLog("log", this, c.grey(t('copyingDataWorkspaceFromTo', { sourcePath, targetPath })));
         await fs.copy(sourcePath, targetPath, { overwrite: true });
       }
     }
@@ -1033,6 +1241,18 @@ You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Ch
         sourceUsername: this.orgUsername,
         cwd: this.saveProjectPath
       });
+      this.refreshActions.push({ step: "Save Records", type: "Records", name: sfdmuPath, status: "Success", details: "" });
     }
+  }
+
+  private async generateActionsReport(): Promise<void> {
+    if (this.refreshActions.length === 0) {
+      return;
+    }
+    uxLog("action", this, c.cyan(t('generatingSandboxRefreshActionsReport')));
+    const reportPath = await generateReportPath('sandbox-refresh-before-actions', '');
+    await generateCsvFile(this.refreshActions, reportPath, {
+      fileTitle: t('sandboxRefreshActionsReport')
+    });
   }
 }

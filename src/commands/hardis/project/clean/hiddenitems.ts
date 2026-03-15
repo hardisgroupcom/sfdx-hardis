@@ -8,6 +8,7 @@ import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -76,24 +77,25 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Removing hidden dx managed source files`));
+    uxLog("action", this, c.cyan(t('removingHiddenDxManagedSourceFiles')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
-    const findManagedPattern = rootFolder + `/**/*.{app,cmp,evt,tokens,html,css,js,xml}`;
-    const matchingCustomFiles = await glob(findManagedPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
+    const findManagedPattern = '**/*.{app,cmp,evt,tokens,html,css,js,xml}';
+    const matchingCustomFiles = await glob(findManagedPattern, { cwd: rootFolder, ignore: GLOB_IGNORE_PATTERNS });
     let counter = 0;
     for (const matchingCustomFile of matchingCustomFiles) {
-      if (!fs.existsSync(matchingCustomFile)) {
+      const matchingCustomFilePath = path.join(rootFolder, matchingCustomFile);
+      if (!fs.existsSync(matchingCustomFilePath)) {
         continue;
       }
-      const fileContent = await fs.readFile(matchingCustomFile, 'utf8');
+      const fileContent = await fs.readFile(matchingCustomFilePath, 'utf8');
       if (fileContent.startsWith('(hidden)')) {
-        const componentFolder = path.dirname(matchingCustomFile);
+        const componentFolder = path.dirname(matchingCustomFilePath);
         const folderSplit = componentFolder.split(path.sep);
         const toRemove =
-          folderSplit.includes('lwc') || folderSplit.includes('aura') ? componentFolder : matchingCustomFile;
+          folderSplit.includes('lwc') || folderSplit.includes('aura') ? componentFolder : matchingCustomFilePath;
         await fs.remove(toRemove);
-        uxLog("action", this, c.cyan(`Removed hidden item ${c.yellow(toRemove)}`));
+        uxLog("action", this, c.cyan(t('removedHiddenItem', { toRemove: c.yellow(toRemove) })));
         counter++;
       }
     }

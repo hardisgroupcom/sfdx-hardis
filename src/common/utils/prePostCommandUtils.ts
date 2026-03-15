@@ -12,6 +12,7 @@ import { soqlQuery } from './apiUtils.js';
 import { getPullRequestData, setPullRequestData } from './gitUtils.js';
 import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { getPullRequestScopedSfdxHardisConfig, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
+import { t } from './i18n.js';
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, conn: Connection, extraCommands?: any[] }) {
   const actionLabel = property === 'commandsPreDeploy' ? 'Pre-deployment actions' : 'Post-deployment actions';
@@ -26,7 +27,7 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   }
   if (commands.length === 0) {
     uxLog("action", this, c.cyan(`[DeploymentActions] No ${actionLabel} defined in branch config or pull requests`));
-    uxLog("log", this, c.grey(`No ${property} found to run`));
+    uxLog("log", this, c.grey(t('noFoundToRun', { property })));
     return;
   }
   uxLog("action", this, c.cyan(

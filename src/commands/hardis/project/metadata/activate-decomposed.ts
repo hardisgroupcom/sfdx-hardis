@@ -8,6 +8,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { isSfdxProject } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -136,7 +137,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
     try {
       // Start main action section
-      uxLog("action", this, c.cyan(`Checking for metadata types eligible for decomposition (Beta feature)`));
+      uxLog("action", this, c.cyan(t('checkingMetadataTypesEligibleForDecomposition')));
 
       // Preliminary check: identify already decomposed and remaining metadata types
       const decompositionStatus = this.checkDecompositionStatus();
@@ -151,29 +152,29 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       // Display already decomposed types as a separate section (always visible)
       if (alreadyDecomposedNames) {
-        uxLog("action", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
+        uxLog("action", this, c.grey(t('alreadyDecomposed', { alreadyDecomposedNames })));
         results.alreadyDecomposedTypes = decompositionStatus.alreadyDecomposed.map(t => t.name);
       }
 
       // Display eligible types as a log entry under the last action
       if (applicableTypes.length > 0) {
         const remainingNames = applicableTypes.map(t => t.name).join(', ');
-        uxLog("log", this, c.cyan(`Eligible for decomposition: ${remainingNames}`));
+        uxLog("log", this, c.cyan(t('eligibleForDecomposition', { remainingNames })));
       }
 
       if (applicableTypes.length === 0) {
         if (alreadyDecomposedNames) {
-          uxLog("warning", this, c.yellow(`All supported metadata types are already decomposed in this project`));
-          uxLog("log", this, c.grey(`Already decomposed: ${alreadyDecomposedNames}`));
+          uxLog("warning", this, c.yellow(t('allSupportedMetadataTypesAlreadyDecomposed')));
+          uxLog("log", this, c.grey(t('alreadyDecomposed', { alreadyDecomposedNames })));
           return {
             success: true,
-            message: 'All metadata types already decomposed',
+            message: t('allMetadataTypesAlreadyDecomposed'),
             alreadyDecomposed: true,
             alreadyDecomposedTypes: results.alreadyDecomposedTypes
           };
         } else {
-          uxLog("warning", this, c.yellow(`No supported metadata types found in this project`));
-          return { success: false, message: 'No supported metadata types found' };
+          uxLog("warning", this, c.yellow(t('noSupportedMetadataTypesFoundInProject')));
+          return { success: false, message: t('noSupportedMetadataTypesFound') };
         }
       }
 
@@ -181,8 +182,8 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       const selectionResult = await prompts({
         type: 'multiselect',
         name: 'selectedTypes',
-        message: c.cyan('Select metadata types to decompose:'),
-        description: 'Use space to select/deselect, Enter to confirm',
+        message: c.cyan(t('selectMetadataTypesToDecompose')),
+        description: t('useSpaceToSelectDeselectEnterToConfirm'),
         choices: applicableTypes.map(type => ({
           title: type.name,
           value: type.name,
@@ -192,7 +193,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       // Check if user cancelled the selection
       if (!selectionResult.selectedTypes || selectionResult.selectedTypes.length === 0) {
-        uxLog("warning", this, c.yellow('Operation cancelled by user.'));
+        uxLog("warning", this, c.yellow(t('operationCancelledByUser')));
         results.cancelled = true;
         return results;
       }
@@ -202,7 +203,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         selectionResult.selectedTypes.includes(type.name)
       );
 
-      uxLog("log", this, c.cyan(`Selected for decomposition: ${selectedMetadataTypes.map(t => t.name).join(', ')}`));
+      uxLog("log", this, c.cyan(t('selectedForDecomposition', { selectedMetadataTypes: selectedMetadataTypes.map(t => t.name).join(', ') })));
 
       // Process each selected metadata type
       for (const metadataType of selectedMetadataTypes) {
@@ -217,9 +218,9 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       // Send success status to UI if any types were decomposed
       if (results.decomposedTypes.length > 0) {
-        uxLog("action", this, c.green(`Successfully decomposed: ${results.decomposedTypes.join(', ')}`));
+        uxLog("action", this, c.green(t('successfullyDecomposed2', { results: results.decomposedTypes.join(', ') })));
       } else {
-        uxLog("action", this, c.yellow(`No metadata types were decomposed`));
+        uxLog("action", this, c.yellow(t('noMetadataTypesWereDecomposed')));
       }
 
       // Log errors if any
@@ -307,7 +308,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     } catch (error: any) {
       // If there's an error reading the file, assume no options exist
       this.sourceBehaviorOptionsCache = null;
-      uxLog("warning", this, c.yellow(`Warning: Unable to read sfdx-project.json for sourceBehaviorOptions (error: ${error instanceof Error ? error.message : 'unknown error'})`));
+      uxLog("warning", this, c.yellow(t('warningUnableToReadSfdxProjectJson', { error: error instanceof Error ? error.message : 'unknown error' })));
       return [];
     }
   }
@@ -330,7 +331,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
       // Fallback to default if no project or no package directories
       return ['force-app'];
     } catch (error) {
-      uxLog("warning", this, c.yellow(`Warning: Unable to read package directories from sfdx-project.json (error: ${error instanceof Error ? error.message : 'unknown error'})`));
+      uxLog("warning", this, c.yellow(t('warningUnableToReadPackageDirectoriesFrom', { error: error instanceof Error ? error.message : 'unknown error' })));
       // Fallback to default on error
       return ['force-app'];
     }
@@ -445,7 +446,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     metadataType: MetadataTypeConfig,
     flags: any
   ): Promise<{ success: boolean; error?: string }> {
-    uxLog("action", this, c.cyan(`Attempting to decompose metadata ${metadataType.name}...`));
+    uxLog("action", this, c.cyan(t('attemptingToDecomposeMetadata', { metadataType: metadataType.name })));
 
     // Run sf project convert source-behavior command
     const command = `sf project convert source-behavior --behavior ${metadataType.behavior}`;
@@ -453,7 +454,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
     try {
       // Use cross-platform method to handle confirmation
       await this.execSfCommandWithConfirmation(command, flags);
-      uxLog("success", this, c.green(`Successfully decomposed ${metadataType.name}`));
+      uxLog("success", this, c.green(t('successfullyDecomposed', { metadataType: metadataType.name })));
       return { success: true };
     } catch (error: any) {
       // Extract all error information
@@ -475,14 +476,14 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
         const retryRes = await prompts({
           type: 'confirm',
           name: 'retry',
-          message: c.yellow(`You can not decompose metadata when default org has source tracking enabled. Do you want to unselect the default org and retry?`),
-          description: 'This will unset the default org for this project and try the command again',
+          message: c.yellow(t('cannotDecomposeMetadataSourceTrackingEnabled')),
+          description: t('unsetsDefaultOrgAndRetryDecomposition'),
           initial: true
         });
         if (retryRes.retry) {
           // Unset default org
           await execCommand('sf config unset target-org', this, { fail: true, debug: flags.debug });
-          uxLog("log", this, c.green(`Default org unset successfully. Retrying decomposition of ${metadataType.name}...`));
+          uxLog("log", this, c.green(t('defaultOrgUnsetSuccessfullyRetryingDecompositionOf', { metadataType: metadataType.name })));
           // Retry decomposition
           return await this.decomposeMetadataType(metadataType, flags);
         }
@@ -530,7 +531,7 @@ Note: All decomposed metadata features are currently in Beta in Salesforce CLI.
 
       // Also log to help with debugging
       if (flags.debug) {
-        uxLog("error", this, c.grey(`Full error object: ${JSON.stringify(error, null, 2)}`));
+        uxLog("error", this, c.grey(t('fullErrorObject', { JSON: JSON.stringify(error, null, 2) })));
       }
 
       return { success: false, error: detailedErrorReport };

@@ -7,6 +7,7 @@ import fs from 'fs-extra';
 import { glob } from 'glob';
 import { uxLog } from '../../../../common/utils/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -75,7 +76,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Adding identifiers to componentInstance in flexipages`));
+    uxLog("action", this, c.cyan(t('addingIdentifiersToComponentInstanceFlexipages')));
     /* jscpd:ignore-end */
 
     const globPattern = this.pathToBrowse + `/**/*.flexipage-meta.xml`;
@@ -83,7 +84,7 @@ The command's technical implementation involves:
     let counter = 0;
     const flexipages: any[] = [];
     const flexipageSourceFiles = await glob(globPattern, { cwd: this.pathToBrowse, ignore: GLOB_IGNORE_PATTERNS });
-    uxLog("log", this, c.grey(`Found ${flexipageSourceFiles.length} flexipages`));
+    uxLog("log", this, c.grey(t('foundFlexipages', { flexipageSourceFiles: flexipageSourceFiles.length })));
     const regexAndReplacements = [
       {
         regex: /(<componentName>.*<\/componentName>\n.*<\/componentInstance>)/gim,
@@ -128,7 +129,7 @@ The command's technical implementation involves:
         }
         if (found) {
           await fs.writeFile(flexiFile, flexipageRawXml);
-          uxLog("log", this, c.grey('Updated ' + flexiFile));
+          uxLog("log", this, c.grey(t('updated') + flexiFile));
         }
       }
     }

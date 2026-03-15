@@ -18,6 +18,14 @@
 |:----------------------------------------------|:------|
 | [**hardis:config:get**](hardis/config/get.md) |       |
 
+## hardis:datacloud
+
+| Command                                                                                                       | Title |
+|:--------------------------------------------------------------------------------------------------------------|:------|
+| [**hardis:datacloud:extract:agentforce-conversations**](hardis/datacloud/extract/agentforce-conversations.md) |       |
+| [**hardis:datacloud:extract:agentforce-feedback**](hardis/datacloud/extract/agentforce-feedback.md)           |       |
+| [**hardis:datacloud:sql-query**](hardis/datacloud/sql-query.md)                                               |       |
+
 ## hardis:deploy
 
 | Command                                                 | Title |
@@ -35,6 +43,7 @@
 | [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                 |       |
 | [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                   |       |
 | [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)   |       |
+| [**hardis:doc:object-field-usage**](hardis/doc/object-field-usage.md)       |       |
 | [**hardis:doc:override-prompts**](hardis/doc/override-prompts.md)           |       |
 | [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)     |       |
 | [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)             |       |
@@ -72,49 +81,55 @@
 
 ## hardis:org
 
-| Command                                                                                       | Title |
-|:----------------------------------------------------------------------------------------------|:------|
-| [**hardis:org:community:update**](hardis/org/community/update.md)                             |       |
-| [**hardis:org:configure:data**](hardis/org/configure/data.md)                                 |       |
-| [**hardis:org:configure:files**](hardis/org/configure/files.md)                               |       |
-| [**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)                     |       |
-| [**hardis:org:connect**](hardis/org/connect.md)                                               |       |
-| [**hardis:org:create**](hardis/org/create.md)                                                 |       |
-| [**hardis:org:data:delete**](hardis/org/data/delete.md)                                       |       |
-| [**hardis:org:data:export**](hardis/org/data/export.md)                                       |       |
-| [**hardis:org:data:import**](hardis/org/data/import.md)                                       |       |
-| [**hardis:org:diagnose:audittrail**](hardis/org/diagnose/audittrail.md)                       |       |
-| [**hardis:org:diagnose:instanceupgrade**](hardis/org/diagnose/instanceupgrade.md)             |       |
-| [**hardis:org:diagnose:legacyapi**](hardis/org/diagnose/legacyapi.md)                         |       |
-| [**hardis:org:diagnose:licenses**](hardis/org/diagnose/licenses.md)                           |       |
-| [**hardis:org:diagnose:releaseupdates**](hardis/org/diagnose/releaseupdates.md)               |       |
-| [**hardis:org:diagnose:unused-apex-classes**](hardis/org/diagnose/unused-apex-classes.md)     |       |
-| [**hardis:org:diagnose:unused-connected-apps**](hardis/org/diagnose/unused-connected-apps.md) |       |
-| [**hardis:org:diagnose:unusedlicenses**](hardis/org/diagnose/unusedlicenses.md)               |       |
-| [**hardis:org:diagnose:unusedusers**](hardis/org/diagnose/unusedusers.md)                     |       |
-| [**hardis:org:files:export**](hardis/org/files/export.md)                                     |       |
-| [**hardis:org:files:import**](hardis/org/files/import.md)                                     |       |
-| [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                             |       |
-| [**hardis:org:generate:packagexmlfull**](hardis/org/generate/packagexmlfull.md)               |       |
-| [**hardis:org:monitor:all**](hardis/org/monitor/all.md)                                       |       |
-| [**hardis:org:monitor:backup**](hardis/org/monitor/backup.md)                                 |       |
-| [**hardis:org:monitor:limits**](hardis/org/monitor/limits.md)                                 |       |
-| [**hardis:org:multi-org-query**](hardis/org/multi-org-query.md)                               |       |
-| [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                                   |       |
-| [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                         |       |
-| [**hardis:org:refresh:after-refresh**](hardis/org/refresh/after-refresh.md)                   |       |
-| [**hardis:org:refresh:before-refresh**](hardis/org/refresh/before-refresh.md)                 |       |
-| [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)                 |       |
-| [**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md)         |       |
-| [**hardis:org:retrieve:sources:dx**](hardis/org/retrieve/sources/dx.md)                       |       |
-| [**hardis:org:retrieve:sources:dx2**](hardis/org/retrieve/sources/dx2.md)                     |       |
-| [**hardis:org:retrieve:sources:metadata**](hardis/org/retrieve/sources/metadata.md)           |       |
-| [**hardis:org:retrieve:sources:retrofit**](hardis/org/retrieve/sources/retrofit.md)           |       |
-| [**hardis:org:select**](hardis/org/select.md)                                                 |       |
-| [**hardis:org:test:apex**](hardis/org/test/apex.md)                                           |       |
-| [**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)                     |       |
-| [**hardis:org:user:freeze**](hardis/org/user/freeze.md)                                       |       |
-| [**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)                                   |       |
+| Command                                                                                           | Title |
+|:--------------------------------------------------------------------------------------------------|:------|
+| [**hardis:org:community:update**](hardis/org/community/update.md)                                 |       |
+| [**hardis:org:configure:data**](hardis/org/configure/data.md)                                     |       |
+| [**hardis:org:configure:files**](hardis/org/configure/files.md)                                   |       |
+| [**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)                         |       |
+| [**hardis:org:connect**](hardis/org/connect.md)                                                   |       |
+| [**hardis:org:create**](hardis/org/create.md)                                                     |       |
+| [**hardis:org:data:delete**](hardis/org/data/delete.md)                                           |       |
+| [**hardis:org:data:export**](hardis/org/data/export.md)                                           |       |
+| [**hardis:org:data:import**](hardis/org/data/import.md)                                           |       |
+| [**hardis:org:diagnose:audittrail**](hardis/org/diagnose/audittrail.md)                           |       |
+| [**hardis:org:diagnose:instanceupgrade**](hardis/org/diagnose/instanceupgrade.md)                 |       |
+| [**hardis:org:diagnose:legacyapi**](hardis/org/diagnose/legacyapi.md)                             |       |
+| [**hardis:org:diagnose:licenses**](hardis/org/diagnose/licenses.md)                               |       |
+| [**hardis:org:diagnose:releaseupdates**](hardis/org/diagnose/releaseupdates.md)                   |       |
+| [**hardis:org:diagnose:storage-stats**](hardis/org/diagnose/storage-stats.md)                     |       |
+| [**hardis:org:diagnose:underusedpermsets**](hardis/org/diagnose/underusedpermsets.md)             |       |
+| [**hardis:org:diagnose:unsecure-connected-apps**](hardis/org/diagnose/unsecure-connected-apps.md) |       |
+| [**hardis:org:diagnose:unused-apex-classes**](hardis/org/diagnose/unused-apex-classes.md)         |       |
+| [**hardis:org:diagnose:unused-connected-apps**](hardis/org/diagnose/unused-connected-apps.md)     |       |
+| [**hardis:org:diagnose:unusedlicenses**](hardis/org/diagnose/unusedlicenses.md)                   |       |
+| [**hardis:org:diagnose:unusedusers**](hardis/org/diagnose/unusedusers.md)                         |       |
+| [**hardis:org:files:export**](hardis/org/files/export.md)                                         |       |
+| [**hardis:org:files:import**](hardis/org/files/import.md)                                         |       |
+| [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                                 |       |
+| [**hardis:org:generate:packagexmlfull**](hardis/org/generate/packagexmlfull.md)                   |       |
+| [**hardis:org:monitor:all**](hardis/org/monitor/all.md)                                           |       |
+| [**hardis:org:monitor:backup**](hardis/org/monitor/backup.md)                                     |       |
+| [**hardis:org:monitor:errors**](hardis/org/monitor/errors.md)                                     |       |
+| [**hardis:org:monitor:health-check**](hardis/org/monitor/health-check.md)                         |       |
+| [**hardis:org:monitor:limits**](hardis/org/monitor/limits.md)                                     |       |
+| [**hardis:org:multi-org-query**](hardis/org/multi-org-query.md)                                   |       |
+| [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                                       |       |
+| [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                             |       |
+| [**hardis:org:purge:profile**](hardis/org/purge/profile.md)                                       |       |
+| [**hardis:org:refresh:after-refresh**](hardis/org/refresh/after-refresh.md)                       |       |
+| [**hardis:org:refresh:before-refresh**](hardis/org/refresh/before-refresh.md)                     |       |
+| [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)                     |       |
+| [**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md)             |       |
+| [**hardis:org:retrieve:sources:dx**](hardis/org/retrieve/sources/dx.md)                           |       |
+| [**hardis:org:retrieve:sources:dx2**](hardis/org/retrieve/sources/dx2.md)                         |       |
+| [**hardis:org:retrieve:sources:metadata**](hardis/org/retrieve/sources/metadata.md)               |       |
+| [**hardis:org:retrieve:sources:retrofit**](hardis/org/retrieve/sources/retrofit.md)               |       |
+| [**hardis:org:select**](hardis/org/select.md)                                                     |       |
+| [**hardis:org:test:apex**](hardis/org/test/apex.md)                                               |       |
+| [**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)                         |       |
+| [**hardis:org:user:freeze**](hardis/org/user/freeze.md)                                           |       |
+| [**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)                                       |       |
 
 ## hardis:package
 
@@ -136,44 +151,46 @@
 
 ## hardis:project
 
-| Command                                                                                       | Title |
-|:----------------------------------------------------------------------------------------------|:------|
-| [**hardis:project:audit:apiversion**](hardis/project/audit/apiversion.md)                     |       |
-| [**hardis:project:audit:callincallout**](hardis/project/audit/callincallout.md)               |       |
-| [**hardis:project:audit:duplicatefiles**](hardis/project/audit/duplicatefiles.md)             |       |
-| [**hardis:project:audit:remotesites**](hardis/project/audit/remotesites.md)                   |       |
-| [**hardis:project:clean:emptyitems**](hardis/project/clean/emptyitems.md)                     |       |
-| [**hardis:project:clean:filter-xml-content**](hardis/project/clean/filter-xml-content.md)     |       |
-| [**hardis:project:clean:flowpositions**](hardis/project/clean/flowpositions.md)               |       |
-| [**hardis:project:clean:hiddenitems**](hardis/project/clean/hiddenitems.md)                   |       |
-| [**hardis:project:clean:listviews**](hardis/project/clean/listviews.md)                       |       |
-| [**hardis:project:clean:manageditems**](hardis/project/clean/manageditems.md)                 |       |
-| [**hardis:project:clean:minimizeprofiles**](hardis/project/clean/minimizeprofiles.md)         |       |
-| [**hardis:project:clean:orgmissingitems**](hardis/project/clean/orgmissingitems.md)           |       |
-| [**hardis:project:clean:references**](hardis/project/clean/references.md)                     |       |
-| [**hardis:project:clean:retrievefolders**](hardis/project/clean/retrievefolders.md)           |       |
-| [**hardis:project:clean:sensitive-metadatas**](hardis/project/clean/sensitive-metadatas.md)   |       |
-| [**hardis:project:clean:standarditems**](hardis/project/clean/standarditems.md)               |       |
-| [**hardis:project:clean:systemdebug**](hardis/project/clean/systemdebug.md)                   |       |
-| [**hardis:project:clean:xml**](hardis/project/clean/xml.md)                                   |       |
-| [**hardis:project:configure:auth**](hardis/project/configure/auth.md)                         |       |
-| [**hardis:project:convert:profilestopermsets**](hardis/project/convert/profilestopermsets.md) |       |
-| [**hardis:project:create**](hardis/project/create.md)                                         |       |
-| [**hardis:project:deploy:notify**](hardis/project/deploy/notify.md)                           |       |
-| [**hardis:project:deploy:quick**](hardis/project/deploy/quick.md)                             |       |
-| [**hardis:project:deploy:simulate**](hardis/project/deploy/simulate.md)                       |       |
-| [**hardis:project:deploy:smart**](hardis/project/deploy/smart.md)                             |       |
-| [**hardis:project:deploy:sources:dx**](hardis/project/deploy/sources/dx.md)                   |       |
-| [**hardis:project:deploy:sources:metadata**](hardis/project/deploy/sources/metadata.md)       |       |
-| [**hardis:project:deploy:start**](hardis/project/deploy/start.md)                             |       |
-| [**hardis:project:deploy:validate**](hardis/project/deploy/validate.md)                       |       |
-| [**hardis:project:fix:profiletabs**](hardis/project/fix/profiletabs.md)                       |       |
-| [**hardis:project:fix:v53flexipages**](hardis/project/fix/v53flexipages.md)                   |       |
-| [**hardis:project:generate:bypass**](hardis/project/generate/bypass.md)                       |       |
-| [**hardis:project:generate:flow-git-diff**](hardis/project/generate/flow-git-diff.md)         |       |
-| [**hardis:project:generate:gitdelta**](hardis/project/generate/gitdelta.md)                   |       |
-| [**hardis:project:lint**](hardis/project/lint.md)                                             |       |
-| [**hardis:project:metadata:findduplicates**](hardis/project/metadata/findduplicates.md)       |       |
+| Command                                                                                           | Title |
+|:--------------------------------------------------------------------------------------------------|:------|
+| [**hardis:project:audit:apiversion**](hardis/project/audit/apiversion.md)                         |       |
+| [**hardis:project:audit:callincallout**](hardis/project/audit/callincallout.md)                   |       |
+| [**hardis:project:audit:duplicatefiles**](hardis/project/audit/duplicatefiles.md)                 |       |
+| [**hardis:project:audit:remotesites**](hardis/project/audit/remotesites.md)                       |       |
+| [**hardis:project:clean:emptyitems**](hardis/project/clean/emptyitems.md)                         |       |
+| [**hardis:project:clean:filter-xml-content**](hardis/project/clean/filter-xml-content.md)         |       |
+| [**hardis:project:clean:flowpositions**](hardis/project/clean/flowpositions.md)                   |       |
+| [**hardis:project:clean:hiddenitems**](hardis/project/clean/hiddenitems.md)                       |       |
+| [**hardis:project:clean:listviews**](hardis/project/clean/listviews.md)                           |       |
+| [**hardis:project:clean:manageditems**](hardis/project/clean/manageditems.md)                     |       |
+| [**hardis:project:clean:minimizeprofiles**](hardis/project/clean/minimizeprofiles.md)             |       |
+| [**hardis:project:clean:orgmissingitems**](hardis/project/clean/orgmissingitems.md)               |       |
+| [**hardis:project:clean:profiles-extract**](hardis/project/clean/profiles-extract.md)             |       |
+| [**hardis:project:clean:references**](hardis/project/clean/references.md)                         |       |
+| [**hardis:project:clean:retrievefolders**](hardis/project/clean/retrievefolders.md)               |       |
+| [**hardis:project:clean:sensitive-metadatas**](hardis/project/clean/sensitive-metadatas.md)       |       |
+| [**hardis:project:clean:standarditems**](hardis/project/clean/standarditems.md)                   |       |
+| [**hardis:project:clean:systemdebug**](hardis/project/clean/systemdebug.md)                       |       |
+| [**hardis:project:clean:xml**](hardis/project/clean/xml.md)                                       |       |
+| [**hardis:project:configure:auth**](hardis/project/configure/auth.md)                             |       |
+| [**hardis:project:convert:profilestopermsets**](hardis/project/convert/profilestopermsets.md)     |       |
+| [**hardis:project:create**](hardis/project/create.md)                                             |       |
+| [**hardis:project:deploy:notify**](hardis/project/deploy/notify.md)                               |       |
+| [**hardis:project:deploy:quick**](hardis/project/deploy/quick.md)                                 |       |
+| [**hardis:project:deploy:simulate**](hardis/project/deploy/simulate.md)                           |       |
+| [**hardis:project:deploy:smart**](hardis/project/deploy/smart.md)                                 |       |
+| [**hardis:project:deploy:sources:dx**](hardis/project/deploy/sources/dx.md)                       |       |
+| [**hardis:project:deploy:sources:metadata**](hardis/project/deploy/sources/metadata.md)           |       |
+| [**hardis:project:deploy:start**](hardis/project/deploy/start.md)                                 |       |
+| [**hardis:project:deploy:validate**](hardis/project/deploy/validate.md)                           |       |
+| [**hardis:project:fix:profiletabs**](hardis/project/fix/profiletabs.md)                           |       |
+| [**hardis:project:fix:v53flexipages**](hardis/project/fix/v53flexipages.md)                       |       |
+| [**hardis:project:generate:bypass**](hardis/project/generate/bypass.md)                           |       |
+| [**hardis:project:generate:flow-git-diff**](hardis/project/generate/flow-git-diff.md)             |       |
+| [**hardis:project:generate:gitdelta**](hardis/project/generate/gitdelta.md)                       |       |
+| [**hardis:project:lint**](hardis/project/lint.md)                                                 |       |
+| [**hardis:project:metadata:activate-decomposed**](hardis/project/metadata/activate-decomposed.md) |       |
+| [**hardis:project:metadata:findduplicates**](hardis/project/metadata/findduplicates.md)           |       |
 
 ## hardis:scratch
 
