@@ -24,7 +24,10 @@ export function initI18n(): void {
   if (initialized) {
     return;
   }
-  const locale = (process.env.SFDX_HARDIS_LANG || 'en').substring(0, 5).toLowerCase();
+  /** Keep the format for i18next. e.g: en, es, pt-BR... */
+  const locale = (process.env.SFDX_HARDIS_LANG || 'en').substring(0, 5).replace(/^([a-zA-Z]{2})(-?)([a-zA-Z]{0,2})$/, (_, p1, p2, p3) =>
+    p1.toLowerCase() + p2 + p3.toUpperCase()
+  );
   const supportedLocales = ['de', 'en', 'es', 'fr', 'ja', 'pl', 'pt-BR'];
   const lng = supportedLocales.includes(locale) ? locale : 'en';
 
