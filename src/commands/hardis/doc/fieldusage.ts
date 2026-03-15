@@ -10,8 +10,6 @@ import { t } from '../../../common/utils/i18n.js';
 
 const REF_METADATA_COMPONENT_BATCH_SIZE = Number(process.env.METADATA_COMPONENT_BATCH_SIZE ?? 20);
 
-const REF_METADATA_COMPONENT_BATCH_SIZE = 50;
-
 export default class HardisDocFieldusage extends SfCommand<any> {
 
   public static flags: any = {

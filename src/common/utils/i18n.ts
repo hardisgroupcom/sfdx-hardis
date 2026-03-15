@@ -25,7 +25,7 @@ export function initI18n(): void {
     return;
   }
   const locale = (process.env.SFDX_HARDIS_LANG || 'en').substring(0, 5).toLowerCase();
-  const supportedLocales = ['de', 'en', 'es', 'fr', 'ja', 'pl', 'pt-br'];
+  const supportedLocales = ['de', 'en', 'es', 'fr', 'ja', 'pl', 'pt-BR'];
   const lng = supportedLocales.includes(locale) ? locale : 'en';
 
   const resources: Record<string, { translation: Record<string, string> }> = {
