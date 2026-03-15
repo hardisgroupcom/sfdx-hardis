@@ -4,6 +4,13 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [7.1.0] 2026-03-16
+
+- Add brazilian portuguese translation
+- Fix typo in GitHub CI/CD workflow
+
+## [7.0.1] 2026-03-15
+
 - [hardis:org:sandbox:after-refresh](https://sfdx-hardis.cloudity.com/hardis/org/sandbox/after-refresh/)
   - Integrate WebSocket progress messages for the custom settings restoration loop
   - Reorder External Client App restoration steps to delete existing ECAs before handling conflicting Connected Apps, ensuring a cleaner state for deployment.
