@@ -15,7 +15,7 @@ import { isTestClass } from '../../../../common/utils/apexLimitUtils.js';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-const DEFAULT_DEPRECATED_API_VERSION = 50;
+const DEFAULT_DEPRECATED_APEX_API_VERSION = 50;
 
 export default class DiagnoseApexApiVersion extends SfCommand<any> {
   public static title = 'Check Apex classes and triggers for deprecated API versions';
@@ -26,7 +26,7 @@ export default class DiagnoseApexApiVersion extends SfCommand<any> {
 
 Key functionalities:
 
-- **Threshold-based detection:** API versions at or below the threshold are flagged as deprecated. Configure via \`DEPRECATED_API_VERSION\` env var (default: \`50\`).
+- **Threshold-based detection:** API versions at or below the threshold are flagged as deprecated. Configure via \`DEPRECATED_APEX_API_VERSION\` env var (default: \`50\`).
 - **Apex classes:** Queries custom Apex classes (excludes managed packages). Optionally excludes \`@isTest\` classes via \`--includetestclasses\`.
 - **Apex triggers:** Queries custom Apex triggers (excludes managed packages).
 - **CSV report:** Generates a report listing all deprecated classes and triggers with their ApiVersion.
@@ -44,7 +44,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   public static flags: any = {
     threshold: Flags.integer({
       char: 't',
-      description: `API version threshold. Classes/triggers with ApiVersion <= this value are flagged. Overrides DEPRECATED_API_VERSION env var.`,
+      description: `API version threshold. Classes/triggers with ApiVersion <= this value are flagged. Overrides DEPRECATED_APEX_API_VERSION env var.`,
     }),
     includetestclasses: Flags.boolean({
       char: 'i',
@@ -89,9 +89,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     const threshold =
       flags.threshold ??
-      parseInt(getEnvVar('DEPRECATED_API_VERSION') || String(DEFAULT_DEPRECATED_API_VERSION), 10);
+      parseInt(getEnvVar('DEPRECATED_APEX_API_VERSION') || String(DEFAULT_DEPRECATED_APEX_API_VERSION), 10);
     if (!Number.isFinite(threshold) || threshold < 1) {
-      throw new Error(`Invalid DEPRECATED_API_VERSION or --threshold: must be a positive integer`);
+      throw new Error(`Invalid DEPRECATED_APEX_API_VERSION or --threshold: must be a positive integer`);
     }
 
     const includeTestClasses = flags.includetestclasses ?? false;
