@@ -27,6 +27,9 @@ const METADATA_ONLY_ELEMENTS = new Set([
   'custom',
 ]);
 
+/** xml2js parser keys (attributes, text content) - not permission elements */
+const XML2JS_RESERVED_KEYS = new Set(['$', '_']);
+
 const DEFAULT_MINIMAL_PERMSETS_THRESHOLD = 5;
 const GLOB_IGNORE_PATTERNS = ['**/node_modules/**', '**/.git/**'];
 
@@ -108,7 +111,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     let count = 0;
     for (const [key, value] of Object.entries(psObj)) {
       const elementName = key.replace(/^[^:]+:/, ''); // strip namespace prefix if present
-      if (METADATA_ONLY_ELEMENTS.has(elementName)) {
+      if (METADATA_ONLY_ELEMENTS.has(elementName) || XML2JS_RESERVED_KEYS.has(elementName)) {
         continue;
       }
       if (Array.isArray(value)) {
