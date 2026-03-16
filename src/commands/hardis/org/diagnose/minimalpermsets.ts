@@ -181,12 +181,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           const label =
             (Array.isArray(psRoot.label) ? psRoot.label[0] : psRoot.label) || cleanName;
           const relPath = path.relative(cwd, filePath);
+          const isZeroValue = permissionCount === 0;
           this.minimalPermSets.push({
             Name: label,
             FilePath: relPath,
             PermissionCount: permissionCount,
-            severity: 'warning',
-            severityIcon: getSeverityIcon('warning'),
+            severity: isZeroValue ? 'error' : 'warning',
+            severityIcon: getSeverityIcon(isZeroValue ? 'error' : 'warning'),
           });
           if (this.debugMode) {
             uxLog("log", this, c.grey(`  MINIMAL: ${label} (${fileName}) - ${permissionCount} permissions`));
@@ -239,11 +240,18 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const notifAttachments: any[] = [];
 
     if (this.minimalPermSets.length > 0) {
-      notifSeverity = 'warning';
+      const zeroValueCount = this.minimalPermSets.filter((ps) => ps.PermissionCount === 0).length;
+      notifSeverity = zeroValueCount > 0 ? 'error' : 'warning';
       notifText = `${this.minimalPermSets.length} minimal permission set(s) (<= ${threshold} permissions) in project for ${orgMarkdown}`;
+      if (zeroValueCount > 0) {
+        notifText = `${zeroValueCount} zero-value permission set(s) (0 permissions) and ${this.minimalPermSets.length - zeroValueCount} minimal in project for ${orgMarkdown}`;
+      }
       const detailText = this.minimalPermSets
         .slice(0, 20)
-        .map((ps) => `• ${ps.Name}: ${ps.PermissionCount} permissions`)
+        .map((ps) => {
+          const prefix = ps.PermissionCount === 0 ? '❌' : '⚠️';
+          return `${prefix} ${ps.Name}: ${ps.PermissionCount} permissions`;
+        })
         .join('\n');
       notifAttachments.push({
         text: this.minimalPermSets.length > 20 ? `${detailText}\n... and ${this.minimalPermSets.length - 20} more` : detailText,
@@ -261,6 +269,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       data: { metric: this.minimalPermSets.length, threshold },
       metrics: {
         minimalPermissionSets: this.minimalPermSets.length,
+        zeroValuePermissionSets: this.minimalPermSets.filter((ps) => ps.PermissionCount === 0).length,
         totalPermissionSets: this.totalCount,
         parseErrors: this.errorCount,
       },
