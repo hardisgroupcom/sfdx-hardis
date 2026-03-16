@@ -123,6 +123,12 @@ export default class MonitorAll extends SfCommand<any> {
       frequency: 'weekly',
     },
     {
+      key: 'APEX_API_VERSION',
+      title: 'Detect Apex classes and triggers with deprecated API version',
+      command: 'sf hardis:org:diagnose:apex-api-version',
+      frequency: 'weekly',
+    },
+    {
       key: 'CONNECTED_APPS',
       title: 'Detect unused Connected Apps in an org',
       command: 'sf hardis:org:diagnose:unused-connected-apps',
