@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Update Org Monitoring documentation
+
 ## [7.1.0] 2026-03-16
 
 - Add brazilian portuguese translation
