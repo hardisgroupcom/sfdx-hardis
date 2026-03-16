@@ -286,6 +286,7 @@ nav:
             export: hardis/org/data/export.md
             import: hardis/org/data/import.md
           diagnose:
+            apex-api-version: hardis/org/diagnose/apex-api-version.md
             audittrail: hardis/org/diagnose/audittrail.md
             instanceupgrade: hardis/org/diagnose/instanceupgrade.md
             legacyapi: hardis/org/diagnose/legacyapi.md

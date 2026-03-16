@@ -88,6 +88,7 @@ These variables control specific behaviors and configurations within sfdx-hardis
 | **APEX_CHARACTER_LIMIT**                  | Maximum Apex code character limit for org (classes + triggers, excludes @isTest). Used by limits monitoring. | `6000000`     | Positive integers (e.g., `'3000000'`, `'10000000'`)                       | [`src/common/utils/apexLimitUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/apexLimitUtils.ts)                                       |
 | **MONITORING_BACKUP_SKIP_METADATA_TYPES** | Metadata types to skip during backup monitoring                                                              | `undefined`   | Comma-separated metadata type names (e.g., `'Document,Report,Dashboard'`) | Found in changelog and documentation                                                                                                                                     |
 | **MONITORING_SKIP_APEX_LIMIT**            | Skip Apex character limit monitoring when running org limits check                                           | `undefined`   | `'true'`, `'false'`                                                       | [`src/commands/hardis/org/monitor/limits.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/monitor/limits.ts)                         |
+| **DEPRECATED_API_VERSION**               | API version threshold for apex-api-version diagnose. Classes/triggers with ApiVersion at or below this are flagged. | `50`          | Positive integers (e.g., `'50'`, `'55'`)                                  | [`src/commands/hardis/org/diagnose/apex-api-version.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/diagnose/apex-api-version.ts)   |
 | **PERMSET_LIMITED_USERS_THRESHOLD**       | Max users to flag a permission set as "underused" in underusedpermsets (0 users always flagged)              | `5`           | Positive integers (e.g., `'5'`, `'10'`)                                   | [`src/commands/hardis/org/diagnose/underusedpermsets.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/diagnose/underusedpermsets.ts) |
 | **UNDERUSED_PERMISSION_SETS_IGNORE**      | Comma-separated list of permission set or group names to exclude from underused monitoring                   | `undefined`   | Names (e.g., `'My_PS,Sales_Admin,ReadOnly_Group'`)                        | [`src/commands/hardis/org/diagnose/underusedpermsets.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/diagnose/underusedpermsets.ts) |
 | **SFDX_HARDIS_MONITORING_KEY**            | Override the monitoring/org identifier used in notifications and metrics (alias: `MONITORING_KEY`)           | `undefined`   | Any string identifier (e.g., `'production-org'`, `'my-sandbox'`)          | [`src/common/notifProvider/apiProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/apiProvider.ts)                             |
@@ -280,9 +281,9 @@ Project-wide defaults (e.g., preferred model) can be stored directly at the root
 
 ## Summary
 
-This documentation covers **186 environment variables** used throughout sfdx-hardis:
+This documentation covers **187 environment variables** used throughout sfdx-hardis:
 
-- **Custom sfdx-hardis Variables**: 30 variables controlling native behavior
+- **Custom sfdx-hardis Variables**: 31 variables controlling native behavior
 - **Tool-Specific Variables**: 156 variables for external integrations
 
 The variables are organized by functionality to help developers and administrators understand their purpose and configure them appropriately for their environments.
