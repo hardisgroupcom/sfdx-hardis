@@ -826,6 +826,7 @@
     "metadatatype",
     "metas",
     "mgmt",
+    "minimalpermsets",
     "minimizeprofiles",
     "minimumapiversion",
     "missingattributes",

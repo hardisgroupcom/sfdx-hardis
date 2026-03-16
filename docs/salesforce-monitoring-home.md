@@ -113,3 +113,4 @@ You can force the daily run of all commands by defining env var `MONITORING_IGNO
 | [Detect missing description on custom field](salesforce-monitoring-missing-metadata-attributes.md)                          | Weekly    |
 | [Detect underused permission sets](salesforce-monitoring-underused-permsets.md)                                             | Weekly    |
 | [Detect Apex classes and triggers with deprecated API version](salesforce-monitoring-apex-api-version.md)         | Weekly    |
+| [Detect permission sets with minimal permissions](salesforce-monitoring-minimal-permsets.md)                       | Weekly    |
