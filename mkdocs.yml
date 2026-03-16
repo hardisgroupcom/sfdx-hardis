@@ -289,6 +289,7 @@ nav:
             apex-api-version: hardis/org/diagnose/apex-api-version.md
             audittrail: hardis/org/diagnose/audittrail.md
             instanceupgrade: hardis/org/diagnose/instanceupgrade.md
+            minimalpermsets: hardis/org/diagnose/minimalpermsets.md
             legacyapi: hardis/org/diagnose/legacyapi.md
             licenses: hardis/org/diagnose/licenses.md
             releaseupdates: hardis/org/diagnose/releaseupdates.md

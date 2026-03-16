@@ -152,6 +152,12 @@ export default class MonitorAll extends SfCommand<any> {
       command: 'sf hardis:org:diagnose:underusedpermsets',
       frequency: 'weekly',
     },
+    {
+      key: 'MINIMAL_PERMSETS',
+      title: 'Detect permission sets with minimal permissions in project',
+      command: 'sf hardis:org:diagnose:minimalpermsets',
+      frequency: 'weekly',
+    },
   ];
 
   public static description = `Monitor org, generate reports and sends notifications
