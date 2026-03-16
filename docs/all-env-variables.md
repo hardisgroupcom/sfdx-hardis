@@ -282,9 +282,9 @@ Project-wide defaults (e.g., preferred model) can be stored directly at the root
 
 ## Summary
 
-This documentation covers **187 environment variables** used throughout sfdx-hardis:
+This documentation covers **188 environment variables** used throughout sfdx-hardis:
 
-- **Custom sfdx-hardis Variables**: 31 variables controlling native behavior
+- **Custom sfdx-hardis Variables**: 32 variables controlling native behavior
 - **Tool-Specific Variables**: 156 variables for external integrations
 
 The variables are organized by functionality to help developers and administrators understand their purpose and configure them appropriately for their environments.
