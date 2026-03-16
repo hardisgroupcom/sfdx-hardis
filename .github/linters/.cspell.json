@@ -712,6 +712,7 @@
     "includemanaged",
     "includepackages",
     "includeprofiles",
+    "includetestclasses",
     "inclure",
     "initial",
     "initialisation",
