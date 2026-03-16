@@ -18,19 +18,22 @@ import sortArray from 'sort-array';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-/** Metadata-only elements that don't grant permissions */
-const METADATA_ONLY_ELEMENTS = new Set([
-  'label',
-  'description',
-  'hasActivationRequired',
-  'license',
-  'custom',
-]);
-
 /** xml2js parser keys (attributes, text content) - not permission elements */
 const XML2JS_RESERVED_KEYS = new Set(['$', '_']);
 
 const DEFAULT_MINIMAL_PERMSETS_THRESHOLD = 5;
+
+/**
+ * Returns true if the value represents a nested/permission element (object or array of objects).
+ * Nested elements grant actual permissions (e.g. objectPermissions, fieldPermissions).
+ */
+function isPermissionElementValue(value: any): boolean {
+  if (value == null) return false;
+  if (Array.isArray(value)) {
+    return value.length > 0 && typeof value[0] === 'object' && value[0] !== null;
+  }
+  return typeof value === 'object';
+}
 const GLOB_IGNORE_PATTERNS = ['**/node_modules/**', '**/.git/**'];
 
 export default class DiagnoseMinimalPermsets extends SfCommand<any> {
@@ -43,7 +46,7 @@ These "minimal" permission sets may be candidates for consolidation to reduce or
 Key functionalities:
 
 - **Project-based analysis:** Scans \`.permissionset-meta.xml\` files in the project (no org connection required for analysis).
-- **Permission counting:** Counts all permission-granting elements. Metadata-only elements (label, description, hasActivationRequired, license, custom) are excluded.
+- **Permission counting:** Uses structure to differentiate leaf elements (primitives) from nested elements (objects). Leaf elements are metadata-only; nested elements grant permissions. Future API additions are supported automatically.
 - **Configurable threshold:** Set \`MINIMAL_PERMSETS_THRESHOLD\` env var or use \`--threshold\` (default: 5).
 - **Metadata directory:** Uses \`--metadata-dir\` or scans \`**/*.permissionset-meta.xml\` in the project.
 - **CSV report:** Generates a report listing minimal permission sets with their permission count.
@@ -102,7 +105,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   /**
    * Count permission-granting elements in a parsed PermissionSet XML object.
-   * Excludes metadata-only elements: label, description, hasActivationRequired, license, custom.
+   * Uses structure to differentiate: leaf elements (primitives/arrays of primitives) are metadata-only;
+   * nested elements (objects/arrays of objects) are actual permissions. No hard-coded element names.
    */
   private countPermissionElements(psObj: Record<string, any>): number {
     if (!psObj || typeof psObj !== 'object') {
@@ -111,8 +115,11 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     let count = 0;
     for (const [key, value] of Object.entries(psObj)) {
       const elementName = key.replace(/^[^:]+:/, ''); // strip namespace prefix if present
-      if (METADATA_ONLY_ELEMENTS.has(elementName) || XML2JS_RESERVED_KEYS.has(elementName)) {
+      if (XML2JS_RESERVED_KEYS.has(elementName)) {
         continue;
+      }
+      if (!isPermissionElementValue(value)) {
+        continue; // leaf/primitive element - metadata only
       }
       if (Array.isArray(value)) {
         count += value.length;
