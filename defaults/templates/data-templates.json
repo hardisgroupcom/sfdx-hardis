@@ -2,8 +2,8 @@
   "templates": [
     {
       "name": "CPQConfig.json",
-      "sfdxHardisLabel": "",
-      "sfdxHardisDescription": "",
+      "sfdxHardisLabel": "CPQ Configuration",
+      "sfdxHardisDescription": "Will export/import Salesforce CPQ configuration objects",
       "url": "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates/sfdmu/CPQConfig.json"
     },
     {
