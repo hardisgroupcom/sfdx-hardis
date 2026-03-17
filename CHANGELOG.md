@@ -8,6 +8,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - New commands
   - [hardis:org:diagnose:apex-api-version](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/apex-api-version/) to identify custom Apex classes and triggers in a Salesforce org running on older API versions, with details and notifications (available in sfdx-hardis monitoring)
   - [hardis:org:diagnose:minimalpermsets](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/minimalpermsets/) to identify custom permission sets in any SFDX project with very few permissions or no permissions (available in sfdx-hardis monitoring)
+  - Allow to [override MermaidJS theme](https://sfdx-hardis.cloudity.com/salesforce-project-doc-mermaid-theme/) used to generate Flow documentation
   - Fix banner typo
 
 ## [7.1.0] 2026-03-16
