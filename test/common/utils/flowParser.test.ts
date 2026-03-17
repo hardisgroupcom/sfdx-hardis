@@ -188,3 +188,114 @@ describe('Flow Parser - Mermaid Label Sanitization', () => {
     });
 
 });
+
+describe('Flow Parser - Mermaid Theme Overrides', () => {
+    const flowXml = `<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionCalls>
+        <name>test_action</name>
+        <label>Test Action</label>
+        <connector>
+            <targetReference>END</targetReference>
+        </connector>
+    </actionCalls>
+    <decisions>
+        <name>decision_1</name>
+        <label>Decision 1</label>
+        <defaultConnector>
+            <targetReference>test_action</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Default</defaultConnectorLabel>
+        <rules>
+            <name>Rule_1</name>
+            <label>Rule 1</label>
+            <connector>
+                <targetReference>test_action</targetReference>
+            </connector>
+        </rules>
+    </decisions>
+    <start>
+        <connector>
+            <targetReference>decision_1</targetReference>
+        </connector>
+    </start>
+    <label>Theme Test Flow</label>
+    <processType>Flow</processType>
+    <status>Active</status>
+</Flow>`;
+
+    it('Should keep default Mermaid class colors when mermaidTheme is absent', async () => {
+        const result = await parseFlow(flowXml, 'mermaid');
+
+        expect(result.uml).to.include('classDef decisions fill:#FDEAF6,color:black,text-decoration:none,max-height:100px');
+        expect(result.uml).to.include('classDef actionCalls fill:#D4E4FC,color:black,text-decoration:none,max-height:100px');
+    });
+
+    it('Should override only targeted node classes with nested mermaidTheme overrides', async () => {
+        const result = await parseFlow(flowXml, 'mermaid', {
+            mermaidTheme: {
+                decisions: {
+                    background: 'F88888',
+                    color: 'white',
+                },
+            },
+        });
+
+        expect(result.uml).to.include('classDef decisions fill:#F88888,color:white,text-decoration:none,max-height:100px');
+        expect(result.uml).to.include('classDef actionCalls fill:#D4E4FC,color:black,text-decoration:none,max-height:100px');
+    });
+
+    it('Should override stroke and Mermaid shape tokens with nested mermaidTheme overrides', async () => {
+        const result = await parseFlow(flowXml, 'mermaid', {
+            mermaidTheme: {
+                actionCalls: {
+                    stroke: 'E5E5E5',
+                    strokeWidth: '2px',
+                    mermaidOpen: '[[',
+                    mermaidClose: ']]',
+                },
+            },
+        });
+
+        expect(result.uml).to.include('classDef actionCalls fill:#D4E4FC,color:black,stroke:#E5E5E5,stroke-width:2px,text-decoration:none,max-height:100px');
+        expect(result.uml).to.include('test_action[["⚡ <em></em><br/>Test Action"]]:::actionCalls');
+    });
+
+    it('Should normalize flat mermaidTheme alias overrides', async () => {
+        const result = await parseFlow(flowXml, 'mermaid', {
+            mermaidTheme: {
+                decisionColor: 'F44444',
+                decisionTextColor: 'white',
+            },
+        });
+
+        expect(result.uml).to.include('classDef decisions fill:#F44444,color:white,text-decoration:none,max-height:100px');
+    });
+
+    it('Should render recordRollbacks nodes when present in Flow metadata', async () => {
+        const rollbackFlowXml = `<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <recordRollbacks>
+        <name>rollback_1</name>
+        <label>Rollback Changes</label>
+        <connector>
+            <targetReference>END</targetReference>
+        </connector>
+    </recordRollbacks>
+    <start>
+        <connector>
+            <targetReference>rollback_1</targetReference>
+        </connector>
+    </start>
+    <label>Rollback Flow</label>
+    <processType>Flow</processType>
+    <status>Active</status>
+</Flow>`;
+
+        const result = await parseFlow(rollbackFlowXml, 'mermaid');
+
+        expect(result.uml).to.include('rollback_1[("↩️ <em></em><br/>Rollback Changes")]:::recordRollbacks');
+        expect(result.uml).to.include('rollback_1 --> END_rollback_1');
+        expect(result.uml).to.include('classDef recordRollbacks fill:#FFF8C9,color:black,text-decoration:none,max-height:100px');
+    });
+});

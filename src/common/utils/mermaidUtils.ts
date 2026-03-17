@@ -5,7 +5,7 @@ import * as path from "path";
 import which from "which";
 import { execCommand, git, isDockerRunning, uxLog } from "./index.js";
 import { parseFlow } from "./flowVisualiser/flowParser.js";
-import { getReportDirectory } from "../../config/index.js";
+import { getConfig, getReportDirectory } from "../../config/index.js";
 import moment from "moment";
 import { SfError } from "@salesforce/core";
 import { PACKAGE_ROOT_DIR } from "../../settings.js";
@@ -15,6 +15,20 @@ import { generatePdfFileFromMarkdown } from "../utils/markdownUtils.js";
 import { DocBuilderFlow } from "../docBuilder/docBuilderFlow.js";
 import { includeFromFile } from "../docBuilder/docUtils.js";
 import { t } from './i18n.js';
+import { resolveMermaidTheme, type ResolvedMermaidTheme } from "./flowVisualiser/renderConfig.js";
+
+interface FlowDocGenerationOptions {
+  collapsedDetails: boolean;
+  describeWithAi: boolean;
+  flowDependencies: Record<string, string[]>;
+}
+
+interface FlowDiffGenerationOptions {
+  mermaidMd: boolean;
+  svgMd: boolean;
+  pngMd: boolean;
+  debug: boolean;
+}
 
 let IS_MERMAID_AVAILABLE: boolean | null = null;
 export async function isMermaidAvailable() {
@@ -41,9 +55,35 @@ export async function isDockerAvailable() {
   return IS_DOCKER_AVAILABLE;
 }
 
-export async function generateFlowMarkdownFile(flowName: string, flowXml: string, outputFlowMdFile: string, options: { collapsedDetails: boolean, describeWithAi: boolean, flowDependencies: any } = { collapsedDetails: true, describeWithAi: true, flowDependencies: {} }): Promise<boolean> {
+async function getMermaidTheme(): Promise<unknown> {
+  const config = await getConfig("project", { cache: true });
+  return config?.mermaidTheme ?? null;
+}
+
+function buildMermaidDiffClassStyle(diffStyle: { background: string; color: string; strokeWidth: string }) {
+  return `fill:${diffStyle.background},color:${diffStyle.color},stroke-width:${diffStyle.strokeWidth},text-decoration:none,max-height:100px`;
+}
+
+function buildMermaidDiffLinkStyle(diffStyle: { lineColor: string; strokeWidth: string }) {
+  return `stroke:${diffStyle.lineColor},stroke-width:${diffStyle.strokeWidth};`;
+}
+
+function isResolvedMermaidTheme(value: unknown): value is ResolvedMermaidTheme {
+  return typeof value === "object"
+    && value !== null
+    && "nodeConfig" in value
+    && "diffConfig" in value;
+}
+
+export async function generateFlowMarkdownFile(
+  flowName: string,
+  flowXml: string,
+  outputFlowMdFile: string,
+  options: FlowDocGenerationOptions = { collapsedDetails: true, describeWithAi: true, flowDependencies: {} },
+): Promise<boolean> {
   try {
-    const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true, collapsedDetails: options.collapsedDetails });
+    const mermaidTheme = await getMermaidTheme();
+    const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true, collapsedDetails: options.collapsedDetails, mermaidTheme });
     let flowMarkdownDoc = flowDocGenResult.uml;
     if (options.describeWithAi) {
       const docBuilder = new DocBuilderFlow(flowName, flowXml, "");
@@ -157,10 +197,13 @@ export async function generateMarkdownFileWithMermaidCli(outputFlowMdFileIn: str
   }
 }
 
-export function getMermaidExtraClasses() {
-  const added = 'fill:green,color:white,stroke-width:4px,text-decoration:none,max-height:100px';
-  const removed = 'fill:red,color:white,stroke-width:4px,text-decoration:none,max-height:100px';
-  const changed = 'fill:orange,color:white,stroke-width:4px,text-decoration:none,max-height:100px';
+export function getMermaidExtraClasses(mermaidTheme?: unknown) {
+  const resolvedMermaidTheme = isResolvedMermaidTheme(mermaidTheme)
+    ? mermaidTheme
+    : resolveMermaidTheme(mermaidTheme);
+  const added = buildMermaidDiffClassStyle(resolvedMermaidTheme.diffConfig.added);
+  const removed = buildMermaidDiffClassStyle(resolvedMermaidTheme.diffConfig.removed);
+  const changed = buildMermaidDiffClassStyle(resolvedMermaidTheme.diffConfig.changed);
 
   const addedClasses = [
     'actionCallsAdded',
@@ -172,6 +215,7 @@ export function getMermaidExtraClasses() {
     'recordCreatesAdded',
     'recordDeletesAdded',
     'recordLookupsAdded',
+    'recordRollbacksAdded',
     'recordUpdatesAdded',
     'screensAdded',
     'subflowsAdded',
@@ -189,6 +233,7 @@ export function getMermaidExtraClasses() {
     'recordCreatesRemoved',
     'recordDeletesRemoved',
     'recordLookupsRemoved',
+    'recordRollbacksRemoved',
     'recordUpdatesRemoved',
     'screensRemoved',
     'subflowsRemoved',
@@ -206,6 +251,7 @@ export function getMermaidExtraClasses() {
     'recordCreatesChanged',
     'recordDeletesChanged',
     'recordLookupsChanged',
+    'recordRollbacksChanged',
     'recordUpdatesChanged',
     'screensChanged',
     'subflowsChanged',
@@ -226,10 +272,12 @@ ${formatClasses(changedClasses, changed)}
 }
 
 export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, commitAfter: string,
-  options: { mermaidMd: boolean, svgMd: boolean, pngMd: boolean, debug: boolean } = { mermaidMd: false, svgMd: true, pngMd: false, debug: false }) {
+  options: FlowDiffGenerationOptions = { mermaidMd: false, svgMd: true, pngMd: false, debug: false }) {
+  const mermaidTheme = await getMermaidTheme();
+  const resolvedMermaidTheme = resolveMermaidTheme(mermaidTheme);
   const result: any = { outputDiffMdFile: "", hasFlowDiffs: false, isFlowDeletedOrAdded: false };
-  const { mermaidMdBefore, flowXmlBefore } = await getFlowXmlBefore(commitBefore, flowFile);
-  const { mermaidMdAfter, flowXmlAfter } = await getFlowXmlAfter(commitAfter, flowFile);
+  const { mermaidMdBefore, flowXmlBefore } = await getFlowXmlBefore(commitBefore, flowFile, mermaidTheme);
+  const { mermaidMdAfter, flowXmlAfter } = await getFlowXmlAfter(commitAfter, flowFile, mermaidTheme);
   const flowLabel = path.basename(flowFile, ".flow-meta.xml");
 
   // Check if flow was deleted (exists in before but not in after) or added (exists in after but not in before)
@@ -269,7 +317,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   // uxLog("other", this, JSON.stringify(mixedLines, null, 2));
   const compareMdLines: string[] = [];
   const linkLines: string[] = [];
-  buildFinalCompareMarkdown(mixedLines, compareMdLines, false, false, linkLines);
+  buildFinalCompareMarkdown(mixedLines, compareMdLines, false, false, linkLines, resolvedMermaidTheme);
 
   let diffMarkdown = compareMdLines.join("\n");
 
@@ -309,10 +357,10 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   return result;
 }
 
-async function getFlowXmlAfter(commitAfter: string, flowFile: any) {
+async function getFlowXmlAfter(commitAfter: string, flowFile: any, mermaidTheme?: unknown) {
   try {
     const flowXmlAfter = await git().show([`${commitAfter}:${flowFile}`]);
-    const mermaidMdAfter = await buildMermaidMarkdown(flowXmlAfter, flowFile);
+    const mermaidMdAfter = await buildMermaidMarkdown(flowXmlAfter, flowFile, mermaidTheme);
     return { mermaidMdAfter, flowXmlAfter };
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -321,10 +369,10 @@ async function getFlowXmlAfter(commitAfter: string, flowFile: any) {
   }
 }
 
-async function getFlowXmlBefore(commitBefore: string, flowFile: any) {
+async function getFlowXmlBefore(commitBefore: string, flowFile: any, mermaidTheme?: unknown) {
   try {
     const flowXmlBefore = await git().show([`${commitBefore}:${flowFile}`]);
-    const mermaidMdBefore = await buildMermaidMarkdown(flowXmlBefore, flowFile);
+    const mermaidMdBefore = await buildMermaidMarkdown(flowXmlBefore, flowFile, mermaidTheme);
     return { mermaidMdBefore, flowXmlBefore };
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -333,7 +381,7 @@ async function getFlowXmlBefore(commitBefore: string, flowFile: any) {
   }
 }
 
-function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid, isTableStarted, linkLines) {
+function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid, isTableStarted, linkLines, mermaidTheme: ResolvedMermaidTheme) {
   if (mixedLines.length === 0) {
     return;
   }
@@ -343,7 +391,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   if (isMermaid === false && currentLine.includes("```mermaid")) {
     isMermaid = true;
   } else if (isMermaid === true && currentLine.includes("```")) {
-    compareMdLines.push(...getMermaidExtraClasses().split("\n"));
+    compareMdLines.push(...getMermaidExtraClasses(mermaidTheme).split("\n"));
     // Build link positions
     let pos = 0;
     const positions = {
@@ -357,10 +405,10 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     }
     // Build added and removed links styles
     if (positions.added.length > 0) {
-      compareMdLines.push("linkStyle " + positions.added.join(",") + " stroke:#00ff00,stroke-width:4px,color:green;");
+      compareMdLines.push("linkStyle " + positions.added.join(",") + " " + buildMermaidDiffLinkStyle(mermaidTheme.diffConfig.added));
     }
     if (positions.removed.length > 0) {
-      compareMdLines.push("linkStyle " + positions.removed.join(",") + " stroke:#ff0000,stroke-width:4px,color:red;");
+      compareMdLines.push("linkStyle " + positions.removed.join(",") + " " + buildMermaidDiffLinkStyle(mermaidTheme.diffConfig.removed));
     }
     isMermaid = false
   }
@@ -385,7 +433,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines, mermaidTheme);
       return;
     }
   }
@@ -406,7 +454,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines, mermaidTheme);
       return;
     }
   }
@@ -425,7 +473,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines, mermaidTheme);
       return;
     }
   }
@@ -583,12 +631,12 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   /* jscpd:ignore-end */
   compareMdLines.push(styledLine);
   // Continue processing next lines
-  buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid, (styledLine.startsWith("|") && isTableStarted), linkLines);
+  buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid, (styledLine.startsWith("|") && isTableStarted), linkLines, mermaidTheme);
 }
 
-async function buildMermaidMarkdown(flowXml, flowFile) {
+async function buildMermaidMarkdown(flowXml, flowFile, mermaidTheme?: unknown) {
   try {
-    const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true });
+    const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true, mermaidTheme });
     return flowDocGenResult.uml;
   } catch (err: any) {
     throw new SfError(`Unable to build Graph for flow ${flowFile}: ${err.message}`)

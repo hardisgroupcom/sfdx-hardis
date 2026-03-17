@@ -179,6 +179,7 @@ nav:
       - Generate: salesforce-project-doc-generate.md
       - Improve with AI: salesforce-project-doc-ai.md
       - Complete manually: salesforce-project-doc-complete-manually.md
+      - Mermaid Theme Overrides: salesforce-project-doc-mermaid-theme.md
       - Host on Salesforce: salesforce-project-doc-host-on-salesforce.md
       - Host on Cloudflare: salesforce-project-doc-cloudflare.md
   - AI Deployment Assistant:

@@ -909,6 +909,81 @@
       "title": "Custom Org Colors",
       "type": "object"
     },
+    "mermaidTheme": {
+      "$id": "#/properties/mermaidTheme",
+      "description": "Overrides Flow Mermaid colors for generated Flow documentation and Flow diffs. Any value not provided keeps the default from the built-in Flow Mermaid renderConfig.",
+      "examples": [
+        {
+          "decisions": {
+            "background": "#F88888",
+            "color": "white"
+          },
+          "actionColor": "#F44444",
+          "addedColor": "#4CAF50"
+        }
+      ],
+      "title": "Flow Mermaid theme",
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^(actionCalls|assignments|collectionProcessors|customErrors|decisions|loops|recordCreates|recordDeletes|recordLookups|recordRollbacks|recordUpdates|screens|subflows|startClass|endClass|transforms)$": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "background": {
+              "type": "string",
+              "description": "Background color for the Mermaid node class"
+            },
+            "color": {
+              "type": "string",
+              "description": "Text color for the Mermaid node class"
+            },
+            "stroke": {
+              "type": "string",
+              "description": "Stroke color for the Mermaid node class"
+            },
+            "strokeWidth": {
+              "type": "string",
+              "description": "Stroke width for the Mermaid node class"
+            },
+            "mermaidOpen": {
+              "type": "string",
+              "description": "Opening Mermaid node shape token override"
+            },
+            "mermaidClose": {
+              "type": "string",
+              "description": "Closing Mermaid node shape token override"
+            }
+          }
+        },
+        "^(added|removed|changed)$": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "background": {
+              "type": "string",
+              "description": "Background color for diff-highlighted Mermaid nodes"
+            },
+            "color": {
+              "type": "string",
+              "description": "Text color for diff-highlighted Mermaid nodes"
+            },
+            "lineColor": {
+              "type": "string",
+              "description": "Link color for diff-highlighted Mermaid connectors"
+            },
+            "strokeWidth": {
+              "type": "string",
+              "description": "Stroke width for diff-highlighted Mermaid nodes and connectors"
+            }
+          }
+        },
+        "^(action|actionCalls|assignment|assignments|collectionProcessor|collectionProcessors|customError|customErrors|decision|decisions|loop|loops|recordCreate|recordCreates|recordDelete|recordDeletes|recordLookup|recordLookups|recordRollback|recordRollbacks|rollback|rollbacks|recordUpdate|recordUpdates|screen|screens|subflow|subflows|start|startClass|end|endClass|transform|transforms|added|removed|changed)(Color|TextColor|LinkColor)$": {
+          "type": "string",
+          "description": "Flat alias override such as decisionColor, actionTextColor, or addedLinkColor"
+        }
+      }
+    },
     "customPlugins": {
       "$id": "#/properties/customPlugins",
       "description": "List of additional plugins that will be displayed in VsCode SFDX-Hardis Dependencies panel",
