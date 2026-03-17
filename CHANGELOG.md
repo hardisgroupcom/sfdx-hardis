@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [7.2.0] 2026-03-17
+
 - Update Org Monitoring documentation
 - New commands
   - [hardis:org:diagnose:apex-api-version](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/apex-api-version/) to identify custom Apex classes and triggers in a Salesforce org running on older API versions, with details and notifications (available in sfdx-hardis monitoring)
