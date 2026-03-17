@@ -16,6 +16,6 @@ Key: **MINIMAL_PERMSETS**
 
 ### Environment variables
 
-| Variable                   | Description                                              | Default |
-|:---------------------------|:---------------------------------------------------------|:--------|
+| Variable                       | Description                                          | Default |
+|:-------------------------------|:-----------------------------------------------------|:--------|
 | **MINIMAL_PERMSETS_THRESHOLD** | Max permissions for a permission set to be "minimal" | `5`     |
