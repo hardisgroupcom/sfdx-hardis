@@ -123,7 +123,8 @@ nav:
               - Source retrieve issues: salesforce-ci-cd-retrieve.md
               - Auxiliary repository clean up tasks: salesforce-ci-cd-manual-repo-clean.md
           - sfdx-hardis for packaging: salesforce-ci-cd-packaging.md
-          - sfdx-hardis for conga: salesforce-ci-cd-conga.md
+          - sfdx-hardis for Conga: salesforce-ci-cd-conga.md
+          - sfdx-hardis for CPQ: salesforce-ci-cd-cpq.md
       - Setup Guide:
           - CI/CD Setup Home: salesforce-ci-cd-setup-home.md
           - Init Git repository: salesforce-ci-cd-setup-git.md
