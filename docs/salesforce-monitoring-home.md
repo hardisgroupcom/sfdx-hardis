@@ -85,23 +85,32 @@ In order to avoid to overflow channels of notifications, some commands are run e
 
 You can force the daily run of all commands by defining env var `MONITORING_IGNORE_FREQUENCY=true`.
 
-| Check                                                                                                              | Frequency |
-|--------------------------------------------------------------------------------------------------------------------|-----------|
-| [Metadata Backup](salesforce-monitoring-metadata-backup.md)                                                        | Daily     |
-| [Detect suspect setup actions in major org](salesforce-monitoring-suspect-audit-trail.md)                          | Daily     |
-| [Apex tests](salesforce-monitoring-apex-tests.md)                                                                  | Daily     |
-| [Quality Checks with MegaLinter](salesforce-monitoring-quality-checks.md)                                          | Daily     |
-| [Detect limits issues](salesforce-monitoring-org-limits.md)                                                        | Daily     |
-| [Detect calls to deprecated API versions](salesforce-monitoring-deprecated-api-calls.md)                           | Daily     |
-| [Check Release Updates](salesforce-monitoring-release-updates.md)                                                  | Weekly    |
-| [Security Health Check](salesforce-monitoring-health-check.md)                                                     | Weekly    |
-| [Detect inactive users](salesforce-monitoring-inactive-users.md)                                                   | Weekly    |
-| [Detect not used Apex Classes (Batch,Schedulable,Queueable)](salesforce-monitoring-unused-apex-classes.md)         | Weekly    |
-| [Detect not used Connected Apps](salesforce-monitoring-unused-connected-apps.md)                                   | Weekly    |
-| [Detect unused licenses](salesforce-monitoring-unused-licenses.md)                                                 | Weekly    |
-| [Detect custom elements with no access rights defined in permission sets](salesforce-monitoring-missing-access.md) | Weekly    |
-| [Detect custom labels and custom permissions that are not in use](salesforce-monitoring-unused-metadata.md)        | Weekly    |
-| [Detect inactive metadata](salesforce-monitoring-inactive-metadata.md)                                             | Weekly    |
-| [Detect missing attributes](salesforce-monitoring-missing-metadata-attributes.md)                                  | Weekly    |
-| [Detect underused permission sets](salesforce-monitoring-underused-permsets.md)                                    | Weekly    |
-
+| Check                                                                                                                       | Frequency |
+|-----------------------------------------------------------------------------------------------------------------------------|-----------|
+| [Metadata Backup](salesforce-monitoring-metadata-backup.md)                                                                 | Daily     |
+| [Detect suspect setup actions in major org](salesforce-monitoring-suspect-audit-trail.md)                                   | Daily     |
+| [Apex tests](salesforce-monitoring-apex-tests.md)                                                                           | Daily     |
+| [Quality Checks with MegaLinter](salesforce-monitoring-quality-checks.md)                                                   | Daily     |
+| [Detect calls to deprecated API versions](salesforce-monitoring-deprecated-api-calls.md)                                    | Daily     |
+| [Detect limits issues](salesforce-monitoring-org-limits.md)                                                                 | Daily     |
+| [Detect Apex and Flow errors](salesforce-monitoring-apex-flow-errors.md)                                                    | Daily     |
+| [Detect unsecured Connected Apps in an org](salesforce-monitoring-unsecured-connected-apps.md)                              | Daily     |
+| [Extract licenses information](salesforce-monitoring-licenses-overview.md)                                                  | Weekly    |
+| [Detect custom elements with no access rights defined in permission sets](salesforce-monitoring-missing-access.md)          | Weekly    |
+| [Detect permission set licenses that are assigned to users that do not need them](salesforce-monitoring-unused-licenses.md) | Weekly    |
+| [Detect active users without recent logins (All licenses, 6 months)](salesforce-monitoring-inactive-users.md)               | Weekly    |
+| [Detect active users without recent logins (CRM, 6 months)](salesforce-monitoring-inactive-users.md)                        | Weekly    |
+| [Detect active users without recent logins (Experience, 6 months)](salesforce-monitoring-inactive-users.md)                 | Weekly    |
+| [Detect active users with recent logins (CRM, 1 week)](salesforce-monitoring-inactive-users.md)                             | Weekly    |
+| [Detect active users with recent logins (Experience, 1 month)](salesforce-monitoring-inactive-users.md)                     | Weekly    |
+| [Get org info + SF instance info + next major upgrade date](salesforce-monitoring-org-instance-upgrade.md)                  | Weekly    |
+| [Gather warnings about incoming and overdue Release Updates](salesforce-monitoring-release-updates.md)                      | Weekly    |
+| [Run Salesforce Security Health Check](salesforce-monitoring-health-check.md)                                               | Weekly    |
+| [Detect custom labels and custom permissions that are not in use](salesforce-monitoring-unused-metadata.md)                 | Weekly    |
+| [Detect unused Apex classes in an org](salesforce-monitoring-unused-apex-classes.md)                                        | Weekly    |
+| [Detect unused Connected Apps in an org](salesforce-monitoring-unused-connected-apps.md)                                    | Weekly    |
+| [Detect inactive metadata](salesforce-monitoring-inactive-metadata.md)                                                      | Weekly    |
+| [Detect missing description on custom field](salesforce-monitoring-missing-metadata-attributes.md)                          | Weekly    |
+| [Detect underused permission sets](salesforce-monitoring-underused-permsets.md)                                             | Weekly    |
+| [Detect Apex classes and triggers with deprecated API version](salesforce-monitoring-apex-api-version.md)         | Weekly    |
+| [Detect permission sets with minimal permissions](salesforce-monitoring-minimal-permsets.md)                       | Weekly    |

@@ -123,6 +123,12 @@ export default class MonitorAll extends SfCommand<any> {
       frequency: 'weekly',
     },
     {
+      key: 'APEX_API_VERSION',
+      title: 'Detect Apex classes and triggers with deprecated API version',
+      command: 'sf hardis:org:diagnose:apex-api-version',
+      frequency: 'weekly',
+    },
+    {
       key: 'CONNECTED_APPS',
       title: 'Detect unused Connected Apps in an org',
       command: 'sf hardis:org:diagnose:unused-connected-apps',
@@ -144,6 +150,12 @@ export default class MonitorAll extends SfCommand<any> {
       key: 'UNDERUSED_PERMSETS',
       title: 'Detect underused permission sets',
       command: 'sf hardis:org:diagnose:underusedpermsets',
+      frequency: 'weekly',
+    },
+    {
+      key: 'MINIMAL_PERMSETS',
+      title: 'Detect permission sets with minimal permissions in project',
+      command: 'sf hardis:org:diagnose:minimalpermsets',
       frequency: 'weekly',
     },
   ];
