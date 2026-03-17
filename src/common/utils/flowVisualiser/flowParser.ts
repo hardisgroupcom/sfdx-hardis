@@ -1,4 +1,4 @@
-import { NODE_CONFIG } from "./renderConfig.js";
+import { resolveMermaidTheme, type MermaidNodeConfig, type ResolvedMermaidTheme } from "./renderConfig.js";
 
 import { XMLParser } from "fast-xml-parser";
 import { CONSTANTS } from "../../../config/index.js";
@@ -15,6 +15,13 @@ interface FlowMap {
     [propName: string]: any;
 }
 
+interface ParseFlowOptions {
+    collapsedDetails?: boolean;
+    mermaidTheme?: unknown;
+    outputAsMarkdown?: boolean;
+    wrapInMarkdown?: boolean;
+}
+
 const FLOW_NODE_TYPES = [
     'actionCalls',
     'assignments',
@@ -25,11 +32,14 @@ const FLOW_NODE_TYPES = [
     'recordCreates',
     'recordDeletes',
     'recordLookups',
+    'recordRollbacks',
     'recordUpdates',
     'screens',
     'subflows',
     'transforms'
-];
+ ] as const;
+
+type FlowNodeType = typeof FLOW_NODE_TYPES[number];
 
 /**
  * Sanitizes a label for use in Mermaid diagrams by escaping special characters
@@ -63,7 +73,11 @@ function sanitizeMermaidLabel(label: string | undefined): string {
         .replace(/}/g, '#125;');       // Replace } with #125;
 }
 
-export async function parseFlow(xml: string, renderAs: "mermaid" | "plantuml" = "mermaid", options: any = {}): Promise<{ flowMap: FlowMap, uml: string }> {
+export async function parseFlow(
+    xml: string,
+    renderAs: "mermaid" | "plantuml" = "mermaid",
+    options: ParseFlowOptions = {},
+): Promise<{ flowMap: FlowMap, uml: string }> {
     try {
         const flowObj = new XMLParser().parse(xml).Flow;
         const flowMap = await createFlowMap(flowObj);
@@ -71,9 +85,10 @@ export async function parseFlow(xml: string, renderAs: "mermaid" | "plantuml" = 
             throw new Error("no-renderable-content-found");
         }
         if (renderAs === "mermaid") {
+            const mermaidTheme = resolveMermaidTheme(options.mermaidTheme);
             return {
                 flowMap: flowMap,
-                uml: await generateMermaidContent(flowMap, flowObj, options)
+                uml: await generateMermaidContent(flowMap, flowObj, mermaidTheme, options)
             };
         }
         throw new Error("unknown-renderAs-" + renderAs);
@@ -137,7 +152,7 @@ async function createFlowMap(flowObj: any): Promise<FlowMap> {
                             break;
                     }
 
-                    if ((<any>NODE_CONFIG)[property]) {
+                    if (isFlowNodeType(property)) {
                         const mappedEl = {
                             name: el.name,
                             label: el.label,
@@ -164,6 +179,10 @@ async function createFlowMap(flowObj: any): Promise<FlowMap> {
         }
     }
     return (flowMap);
+}
+
+function isFlowNodeType(value: string): value is FlowNodeType {
+    return (FLOW_NODE_TYPES as readonly string[]).includes(value);
 }
 
 function getFlowType(flowMap: FlowMap): string {
@@ -193,7 +212,12 @@ function getFlowType(flowMap: FlowMap): string {
 /*===================================================================
  * M E R M A I D
  *=================================================================*/
-async function generateMermaidContent(flowMap: FlowMap, flowObj: any, options: any): Promise<string> {
+async function generateMermaidContent(
+    flowMap: FlowMap,
+    flowObj: any,
+    mermaidTheme: ResolvedMermaidTheme,
+    options: ParseFlowOptions,
+): Promise<string> {
     // console.log("options", options)
     const flowType = getFlowType(flowMap);
     const title = `# ${flowMap['label']}\n\n`;
@@ -203,8 +227,8 @@ async function generateMermaidContent(flowMap: FlowMap, flowObj: any, options: a
     const formulas = getFormulasMd(flowMap.formulas || []);
     const textTemplates = getTemplatesMd(flowMap.textTemplates || []);
     const mdStart = "## Flow Diagram\n\n```mermaid\n";
-    const { nodeDefStr, nodeDetailMd } = await getNodeDefStr(flowMap, flowType, startFingerPrint, startNodeLabel, startElementReference, options);
-    const mdClasses = getMermaidClasses() + "\n\n";
+    const { nodeDefStr, nodeDetailMd } = await getNodeDefStr(flowMap, flowType, startFingerPrint, startNodeLabel, startElementReference, mermaidTheme, options);
+    const mdClasses = getMermaidClasses(mermaidTheme) + "\n\n";
     const mdBody = await getMermaidBody(flowMap) + "\n\n";
     const mdEnd = "```\n\n<!-- Flow description -->\n\n";
     const currentBranch = await getCurrentGitBranch();
@@ -250,6 +274,7 @@ async function getMermaidBody(flowMap: FlowMap): Promise<string> {
             case 'recordCreates':
             case 'recordDeletes':
             case 'recordLookups':
+            case 'recordRollbacks':
             case 'recordUpdates':
             case 'screens':
             case 'transforms':
@@ -312,12 +337,21 @@ function manageAddEndNode(nextOrFaultNode: string, endNodeIds: string[]) {
     }
 }
 
-async function getNodeDefStr(flowMap: FlowMap, flowType: string, startFingerPrint: number, startNodeLabel: string, startElementReference: string, options: any): Promise<any> {
+async function getNodeDefStr(
+    flowMap: FlowMap,
+    flowType: string,
+    startFingerPrint: number,
+    startNodeLabel: string,
+    startElementReference: string,
+    mermaidTheme: ResolvedMermaidTheme,
+    options: ParseFlowOptions,
+): Promise<{ nodeDefStr: string; nodeDetailMd: string }> {
     let nodeDetailMd = "## Flow Nodes Details\n\n"
     if (options?.collapsedDetails) {
         nodeDetailMd += "<details><summary>NODES CONTENT (expand to view)</summary>\n\n"
     }
     let nodeDefStr = "";
+    const nodeConfig = mermaidTheme.nodeConfig;
     if (!["InvocableProcess", "Workflow"].includes(flowType) || (startNodeLabel !== 'START')) {
         nodeDefStr += `START(["${startNodeLabel}"]):::startClass\n`
         nodeDefStr += `click START "#general-information" "${startFingerPrint}"\n\n`;
@@ -328,36 +362,38 @@ async function getNodeDefStr(flowMap: FlowMap, flowType: string, startFingerPrin
     const allproperties = Object.keys(flowMap);
     for (const property of allproperties) {
         const type = flowMap?.[property]?.type;
-        let label: string = ((<any>NODE_CONFIG)[type]) ? (<any>NODE_CONFIG)[type].label : "";
-        let icon: string = ((<any>NODE_CONFIG)[type]) ? (<any>NODE_CONFIG)[type].mermaidIcon : null;
-        let nodeSimplified;
-        let tooltipClassMermaid;
+        if (!type || !isFlowNodeType(type)) {
+            continue;
+        }
+        let label = typeof nodeConfig[type].label === "string" ? nodeConfig[type].label : "";
+        let icon = typeof nodeConfig[type].mermaidIcon === "string" ? nodeConfig[type].mermaidIcon : null;
         if (type === 'actionCalls') {
-            icon = ((<any>NODE_CONFIG)[type].mermaidIcon[flowMap[property].actionType]) ?
-                (<any>NODE_CONFIG)[type].mermaidIcon[flowMap[property].actionType] :
-                (<any>NODE_CONFIG)[type].mermaidIcon.submit;
+            icon = (nodeConfig[type].mermaidIcon[flowMap[property].actionType]) ?
+                nodeConfig[type].mermaidIcon[flowMap[property].actionType] :
+                nodeConfig[type].mermaidIcon.submit;
         }
         else if (type === 'collectionProcessors') {
-            icon = ((<any>NODE_CONFIG)[type].mermaidIcon[flowMap[property].elementSubtype]) ?
-                (<any>NODE_CONFIG)[type].mermaidIcon[flowMap[property].elementSubtype] :
-                (<any>NODE_CONFIG)[type].mermaidIcon.submit;
+            const collectionProcessorIcons = nodeConfig[type].mermaidIcon;
+            icon = collectionProcessorIcons[flowMap[property].elementSubtype]
+                ?? collectionProcessorIcons.FilterCollectionProcessor
+                ?? Object.values(collectionProcessorIcons)[0]
+                ?? null;
 
-            label = ((<any>NODE_CONFIG)[type].label[flowMap[property].elementSubtype]) ?
-                (<any>NODE_CONFIG)[type].label[flowMap[property].elementSubtype] :
-                (<any>NODE_CONFIG)[type].label;
+            const collectionProcessorLabels = nodeConfig[type].label;
+            label = collectionProcessorLabels[flowMap[property].elementSubtype]
+                ?? collectionProcessorLabels.FilterCollectionProcessor
+                ?? "";
         }
         // Create Mermaid Lines
-        if (FLOW_NODE_TYPES.includes(type)) {
-            // Mermaid node
-            nodeDefStr += property + (<any>NODE_CONFIG)[type].mermaidOpen + '"' + icon + " <em>" + label + "</em><br/>" + sanitizeMermaidLabel(flowMap[property].label) + '"' + (<any>NODE_CONFIG)[type].mermaidClose + ':::' + type + "\n"
-            // Remove not relevant properties from node display
-            nodeSimplified = simplifyNode(flowMap[property]?.flowNodeDescription || flowMap[property]);
-            // Mermaid compare node
-            tooltipClassMermaid = `click ${property} "#${property.toLowerCase()}" "${farmhash.fingerprint32(JSON.stringify(nodeSimplified))}"`;
-            nodeDefStr += tooltipClassMermaid + "\n\n"
-            // Markdown details
-            nodeDetailMd += `### ${property}\n\n` + flowNodeToMarkdown(nodeSimplified, allproperties);
-        }
+        // Mermaid node
+        nodeDefStr += property + (nodeConfig[type].mermaidOpen || "") + '"' + icon + " <em>" + label + "</em><br/>" + sanitizeMermaidLabel(flowMap[property].label) + '"' + (nodeConfig[type].mermaidClose || "") + ':::' + type + "\n"
+        // Remove not relevant properties from node display
+        const nodeSimplified = simplifyNode(flowMap[property]?.flowNodeDescription || flowMap[property]);
+        // Mermaid compare node
+        const tooltipClassMermaid = `click ${property} "#${property.toLowerCase()}" "${farmhash.fingerprint32(JSON.stringify(nodeSimplified))}"`;
+        nodeDefStr += tooltipClassMermaid + "\n\n"
+        // Markdown details
+        nodeDetailMd += `### ${property}\n\n` + flowNodeToMarkdown(nodeSimplified, allproperties);
     }
     if (options?.collapsedDetails) {
         nodeDetailMd += "</details>\n\n"
@@ -457,10 +493,25 @@ function getTemplatesMd(textTemplates: any[]): string {
     return "";
 }
 
-function getMermaidClasses(): string {
+function buildMermaidClassStyle(propertyConfig: MermaidNodeConfig): string {
+    const styleParts = [
+        `fill:${propertyConfig.background}`,
+        `color:${propertyConfig.color}`,
+    ];
+    if (propertyConfig.stroke) {
+        styleParts.push(`stroke:${propertyConfig.stroke}`);
+    }
+    if (propertyConfig.strokeWidth) {
+        styleParts.push(`stroke-width:${propertyConfig.strokeWidth}`);
+    }
+    styleParts.push("text-decoration:none", "max-height:100px");
+    return styleParts.join(",");
+}
+
+function getMermaidClasses(mermaidTheme: ResolvedMermaidTheme): string {
     let classStr = "";
-    for (const property in NODE_CONFIG) {
-        classStr += "classDef " + property + " fill:" + (<any>NODE_CONFIG)[property].background + ",color:" + (<any>NODE_CONFIG)[property].color + ",text-decoration:none,max-height:100px\n";
+    for (const property of Object.keys(mermaidTheme.nodeConfig) as Array<keyof typeof mermaidTheme.nodeConfig>) {
+        classStr += "classDef " + property + " " + buildMermaidClassStyle(mermaidTheme.nodeConfig[property] as MermaidNodeConfig) + "\n";
     }
     return classStr;
 }
