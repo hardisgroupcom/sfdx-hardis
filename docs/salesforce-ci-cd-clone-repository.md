@@ -61,7 +61,7 @@ If later, it prompts several times the same password in VsCode, run the followin
 
 ![](assets/images/git-clone-3.jpg){ align=center }
 
-- You are now ready to [create a new task](salesforce-ci-cd-create-new-task.md) !
+- You are now ready to [create a new User Story](salesforce-ci-cd-create-new-task.md) !
 
 ![](assets/images/git-clone-4.jpg){ align=center }
 

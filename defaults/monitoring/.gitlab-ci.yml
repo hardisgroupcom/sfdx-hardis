@@ -16,7 +16,7 @@ stages:
   - monitor
 
 # Use sfdx-hardis docker image to always be up to date with latest version
-image: hardisgroupcom/sfdx-hardis:latest # test with alpha
+image: hardisgroupcom/sfdx-hardis:latest # If rate limits reached, use ghcr.io/hardisgroupcom/sfdx-hardis:latest
 
 ##############################################
 ### Sfdx Sources Backup + Push new commit ####

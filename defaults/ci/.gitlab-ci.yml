@@ -20,7 +20,7 @@ stages:
 
 # Jobs are run on sfdx-hardis image, that includes all required dependencies.
 # You can use latest, beta or latest-recommended
-image: hardisgroupcom/sfdx-hardis:latest
+image: hardisgroupcom/sfdx-hardis:latest # If rate limits reached, use ghcr.io/hardisgroupcom/sfdx-hardis:latest
 
 # Force color for output logs for better readability
 variables:
@@ -131,6 +131,8 @@ refresh_scratch_org_pool:
 # Run apex unit tests in testing scratch org
 test_apex:
   stage: test
+  when: delayed   # Orgs just created can be not ready yet, let's wait a while before running tests
+  start_in: 2 minutes
   tags: # Change or even remove tags if standard runners
     - ubuntu
   only:
@@ -146,7 +148,6 @@ test_apex:
     - job: create_scratch_org
       artifacts: true
   script:
-    - sleep 120 # Orgs just created can be not ready yet, let's wait a while before running tests
     - sf hardis:auth:login --scratchorg || true
     - sf hardis:org:test:apex
   artifacts:

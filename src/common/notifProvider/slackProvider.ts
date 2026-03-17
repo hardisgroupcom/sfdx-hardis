@@ -3,7 +3,8 @@ import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { ActionsBlock, Block, Button, SectionBlock, WebClient } from "@slack/web-api";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
-import { NotifMessage, UtilsNotifs } from "./index.js";
+import type { NotifMessage } from "./types.js";
+import { UtilsNotifs } from "./utils.js";
 import { getEnvVar } from "../../config/index.js";
 
 export class SlackProvider extends NotifProviderRoot {
@@ -93,10 +94,10 @@ export class SlackProvider extends NotifProviderRoot {
       };
       try {
         const resp = await this.slackClient.chat.postMessage(slackMessage);
-        uxLog(this, c.cyan(`[SlackProvider] Sent slack notification to channel ${mainNotifsChannelId}: ${resp.ok}`));
+        uxLog("action", this, c.cyan(`[SlackProvider] Sent slack notification to channel ${mainNotifsChannelId}: ${resp.ok}`));
       } catch (error) {
-        uxLog(this, c.gray("[SlackProvider] Failed slack message content: \n" + JSON.stringify(slackMessage, null, 2)));
-        uxLog(this, c.red(`[SlackProvider] Error while sending message to channel ${mainNotifsChannelId}\n${(error as any).message}`));
+        uxLog("error", this, c.grey("[SlackProvider] Failed slack message content: \n" + JSON.stringify(slackMessage, null, 2)));
+        uxLog("error", this, c.red(`[SlackProvider] Error while sending message to channel ${mainNotifsChannelId}\n${(error as any).message}`));
       }
     }
     return;

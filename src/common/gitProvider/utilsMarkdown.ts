@@ -5,6 +5,7 @@ import { MetadataUtils } from "../metadata-utils/index.js";
 import { uxLog } from "../utils/index.js";
 import { generateFlowVisualGitDiff } from "../utils/mermaidUtils.js";
 import { GitProvider } from "./index.js";
+import { t } from '../utils/i18n.js';
 
 export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
   let md = "## Deployment errors\n\n";
@@ -69,19 +70,34 @@ ${err.stack}
   return md;
 }
 
-export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTarget: number) {
+export function deployCodeCoverageToMarkdown(orgCoverage: number, orgCoverageTarget: number, options: { check: boolean, testClasses?: string }) {
+  let messageLines: string[] = [];
   if (orgCoverage < orgCoverageTarget) {
-    return `❌ Your code coverage is insufficient: **${orgCoverage}%**, while your target is **${orgCoverageTarget}%**`;
+    messageLines.push(`❌ Your code coverage is insufficient: **${orgCoverage}%**, while your target is **${orgCoverageTarget}%**`);
   } else {
-    return `✅ Your code coverage is ok :) **${orgCoverage}%**, while target is **${orgCoverageTarget}%**`;
+    messageLines.push(`✅ Your code coverage is ok 😊 **${orgCoverage}%**, while target is **${orgCoverageTarget}%**`);
   }
+  const testClassesInfoLines = options.testClasses ?
+    [
+      '',
+      `<details><summary>🧪 Apex test classes</summary>`,
+      '',
+      ...options.testClasses.split(" ").map(tc => `  - ${tc}`),
+      '',
+      `</details>`,
+    ] : [];
+  messageLines = messageLines.concat(testClassesInfoLines);
+  return messageLines.join("\n");
 }
 
 export function mdTableCell(str: string) {
   if (!str) {
     return "<!-- -->"
   }
-  return str.replace(/\n/gm, "<br/>".replace(/\|/gm, ""))
+  if (typeof str !== "string") {
+    str = String(str);
+  }
+  return str.replace(/\n/gm, "<br/>").replace(/\|/gm, "");
 }
 
 export async function flowDiffToMarkdownForPullRequest(flowNames: string[], fromCommit: string, toCommit: string, truncatedNb: number = 0): Promise<any> {
@@ -96,7 +112,7 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
     flowDiffFilesSummary += `- [${flowName}](#${flowName})\n`;
     const fileMetadata = await MetadataUtils.findMetaFileFromTypeAndName("Flow", flowName);
     try {
-      // Markdown with pure mermaidJs
+      // Markdown with pure MermaidJS
       if (supportsMermaidInPrMarkdown) {
         await generateDiffMarkdownWithMermaid(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }
@@ -109,7 +125,7 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
         await generateDiffMarkdownWithPng(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
       }
     } catch (e: any) {
-      uxLog(this, c.yellow(`[FlowGitDiff] Unable to generate Flow diff for ${flowName}: ${e.message}`));
+      uxLog("warning", this, c.yellow('[FlowGitDiff] ' + t('flowGitDiffUnableToGenerate', { flowName, message: e.message })) + "\n" + c.grey(e.stack));
     }
   }
   if (truncatedNb > 0) {
@@ -122,24 +138,24 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
 }
 
 async function generateDiffMarkdownWithMermaid(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile, hasFlowDiffs } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: false, debug: false });
-  if (outputDiffMdFile && hasFlowDiffs) {
+  const { outputDiffMdFile, hasFlowDiffs, isFlowDeletedOrAdded } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: false, debug: false });
+  if (outputDiffMdFile && hasFlowDiffs && !isFlowDeletedOrAdded) {
     const flowDiffMarkdownMermaid = await fs.readFile(outputDiffMdFile.replace(".md", ".mermaid.md"), "utf8");
     flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownMermaid, markdownFile: outputDiffMdFile });
   }
 }
 
 async function generateDiffMarkdownWithSvg(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile, hasFlowDiffs } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: true, pngMd: false, debug: false });
-  if (outputDiffMdFile && hasFlowDiffs && fs.existsSync(outputDiffMdFile)) {
+  const { outputDiffMdFile, hasFlowDiffs, isFlowDeletedOrAdded } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: true, pngMd: false, debug: false });
+  if (outputDiffMdFile && hasFlowDiffs && !isFlowDeletedOrAdded && fs.existsSync(outputDiffMdFile)) {
     const flowDiffMarkdownWithSvg = await fs.readFile(outputDiffMdFile, "utf8");
     flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithSvg, markdownFile: outputDiffMdFile });
   }
 }
 
 async function generateDiffMarkdownWithPng(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile, hasFlowDiffs } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: true, debug: false });
-  if (outputDiffMdFile && hasFlowDiffs && fs.existsSync(outputDiffMdFile)) {
+  const { outputDiffMdFile, hasFlowDiffs, isFlowDeletedOrAdded } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: true, debug: false });
+  if (outputDiffMdFile && hasFlowDiffs && !isFlowDeletedOrAdded && fs.existsSync(outputDiffMdFile)) {
     const flowDiffMarkdownWithPng = await fs.readFile(outputDiffMdFile, "utf8");
     flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithPng, markdownFile: outputDiffMdFile });
   }
@@ -157,11 +173,12 @@ ${message.replace(/:\n-/gm, `:\n\n-`).trim()}
 }
 
 function getAiPromptTextMarkdown(title, message) {
+  const safeMessage = typeof message === "string" ? message : String(message ?? "");
   return `<details><summary><b>${title}</b></summary>
 
 _Request AI by copy-pasting the following text in ChatGPT or other AI prompt_
 
-${message.replace(/:\n-/gm, `:\n\n-`)}
+${safeMessage.replace(/:\n-/gm, `:\n\n-`)}
 </details>
 <br/>
 `;
@@ -181,7 +198,7 @@ export function extractImagesFromMarkdown(markdown: string, sourceFile: string |
     else if (fs.existsSync(path.join(sourceFilePath, file))) {
       return true;
     }
-    uxLog(this, c.yellow(`[Markdown] Image file not found: ${file} or ${path.join(sourceFilePath, file)}`));
+    uxLog("warning", this, c.yellow('[Markdown] ' + t('markdownImageFileNotFound', { file, altPath: path.join(sourceFilePath, file) })));
     return false;
   }).map(file => {
     if (fs.existsSync(file)) {

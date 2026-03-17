@@ -40,29 +40,69 @@ Activate Smart Deployment tests with:
 
 Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-separated list on env var NOT_IMPACTING_METADATA_TYPES)
 
+- ActionLinkGroupTemplate
+- AnalyticSnapshot
+- AppMenu
 - Audience
 - AuraDefinitionBundle
 - Bot
 - BotVersion
+- BrandingSet
 - ContentAsset
+- CustomApplication
+- CustomApplicationComponent
+- CustomLabel
+- CustomFeedFilter
+- CustomHelpMenuSection
 - CustomObjectTranslation
+- CustomPageWebLink
 - CustomSite
 - CustomTab
+- CustomValueSetTranslation
 - Dashboard
+- DashboardFolder
+- Document
+- EmailTemplate
 - ExperienceBundle
-- Flexipage
+- FlexiPage
 - GlobalValueSetTranslation
+- HomePageComponent
+- HomePageLayout
 - Layout
+- Letterhead
+- LightningExperienceTheme
 - LightningComponentBundle
+- LightningMessageChannel
+- ListView
 - NavigationMenu
+- PathAssistant
+- QuickAction
 - ReportType
 - Report
+- ReportFolder
 - SiteDotCom
 - StandardValueSetTranslation
 - StaticResource
 - Translations
+- WebLink
 
 Note: if you want to disable Smart test classes for a PR, add **nosmart** in the text of the latest commit.
+
+### Custom Apex Test Classes (optional)
+
+You can force Smart Deploy to run a specific list of Apex Test Classes. This is **not recommended** because best practice is to run all local tests. Enable it only if you have a specific need.
+
+- `enableDeploymentApexTestClasses` (boolean, default: false): Activate the custom list.
+- `deploymentApexTestClasses` (array of strings): The Apex Test Classes to run. Used only when the flag above is true.
+
+Example configuration in `config/.sfdx-hardis.yml` (can also be scoped to branches in `config/branches/.sfdx-hardis-BRANCHNAME.yml` or in Pull Request description):
+
+```yaml
+enableDeploymentApexTestClasses: true
+deploymentApexTestClasses:
+  - MyTestClass1
+  - MyTestClass2
+```
 
 ### Dynamic deployment items / Overwrite management
 
@@ -73,30 +113,6 @@ If necessary,you can define the following files (that supports wildcards <member
 - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
 See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/)
-
-### Deployment plan
-
-If you need to deploy in multiple steps, you can define a property `deploymentPlan` in `.sfdx-hardis.yml`.
-
-- If a file `manifest/package.xml` is found, it will be placed with order 0 in the deployment plan
-
-- If a file `manifest/destructiveChanges.xml` is found, it will be executed as --postdestructivechanges
-
-- If env var `SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES` is defined as `false` , split of package.xml will be applied
-
-Example:
-
-```yaml
-deploymentPlan:
-  packages:
-    - label: Deploy Flow-Workflow
-      packageXmlFile: manifest/splits/packageXmlFlowWorkflow.xml
-      order: 6
-    - label: Deploy SharingRules - Case
-      packageXmlFile: manifest/splits/packageXmlSharingRulesCase.xml
-      order: 30
-      waitAfter: 30
-```
 
 ### Packages installation
 
@@ -168,6 +184,59 @@ commandsPostDeploy:
     runOnlyOnceByOrg: true
 ```
 
+### Pull Requests Custom Behaviors
+
+If some words are found **in the Pull Request description**, special behaviors will be applied
+
+| Word                                 | Behavior                                                                                                                                                                              |
+|:-------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| NO_DELTA                             | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request                                                                        |
+| PURGE_FLOW_VERSIONS                  | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
+| DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package                                                  |
+
+You can also override some `.sfdx-hardis.yml` properties directly in the Pull Request description using YAML blocks. Supported keys: `deploymentApexTestClasses`, `commandsPreDeploy`, `commandsPostDeploy`.
+
+Example (in PR description):
+
+```yaml
+deploymentApexTestClasses:
+  - MyTestClass1
+  - MyTestClass2
+```
+
+> For example, define `PURGE_FLOW_VERSIONS` and `DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT` in your Pull Request comments if you want to delete fields that are used in an active flow.
+
+Note: it is also possible to define these behaviors as ENV variables:
+
+- For all deployments (example: `PURGE_FLOW_VERSIONS=true`)
+- For a specific branch, by appending the target branch name (example: `PURGE_FLOW_VERSIONS_UAT=true`)
+
+### Deployment plan (deprecated)
+
+> **This feature is deactivated by default (enable with `enableDeprecatedDeploymentPlan` in project configuration). Use preCommands and postCommands instead.** 
+
+If you need to deploy in multiple steps, you can define a property `deploymentPlan` in `.sfdx-hardis.yml`.
+
+- If a file `manifest/package.xml` is found, it will be placed with order 0 in the deployment plan
+
+- If a file `manifest/destructiveChanges.xml` is found, it will be executed as --postdestructivechanges
+
+- If env var `SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES` is defined as `false` , split of package.xml will be applied
+
+Example:
+
+```yaml
+deploymentPlan:
+  packages:
+    - label: Deploy Flow-Workflow
+      packageXmlFile: manifest/splits/packageXmlFlowWorkflow.xml
+      order: 6
+    - label: Deploy SharingRules - Case
+      packageXmlFile: manifest/splits/packageXmlSharingRulesCase.xml
+      order: 30
+      waitAfter: 30
+```
+
 ### Automated fixes post deployments
 
 #### List view with scope Mine
@@ -217,49 +286,49 @@ If you want to disable the calculation and display of Flow Visual Git Diff in Pu
 If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo.||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
 |target-org<br/>-o|option|undefined||||
-|testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunAllTestsInOrg|
+|testlevel<br/>-l|option|Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes|||NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg|
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
-sf hardis:project:deploy:smart
+$ sf hardis:project:deploy:smart
 ```
 
 ```shell
-sf hardis:project:deploy:smart --check
+$ sf hardis:project:deploy:smart --check
 ```
 
 ```shell
-sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests
+$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests
 ```
 
 ```shell
-sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'
+$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTests --runtests '^(?!FLI|MyPrefix).*'
 ```
 
 ```shell
-sf hardis:project:deploy:smart --check --testlevel RunRepositoryTestsExceptSeeAllData
+$ sf hardis:project:deploy:smart --check --testlevel RunRepositoryTestsExceptSeeAllData
 ```
 
 ```shell
-sf hardis:project:deploy:smart
+$ sf hardis:project:deploy:smart
 ```
 
 ```shell
-FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod
+$ FORCE_TARGET_BRANCH=preprod NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org nicolas.vuillamy@myclient.com.preprod
 ```
 
 ```shell
-SYSTEM_ACCESSTOKEN=xxxxxx SYSTEM_COLLECTIONURI=https://dev.azure.com/xxxxxxx/ SYSTEM_TEAMPROJECT="xxxxxxx" BUILD_REPOSITORY_ID=xxxxx SYSTEM_PULLREQUEST_PULLREQUESTID=1418 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my.salesforce@org.com
+$ SYSTEM_ACCESSTOKEN=xxxxxx SYSTEM_COLLECTIONURI=https://dev.azure.com/xxxxxxx/ SYSTEM_TEAMPROJECT="xxxxxxx" BUILD_REPOSITORY_ID=xxxxx SYSTEM_PULLREQUEST_PULLREQUESTID=1418 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my.salesforce@org.com
 ```
 
 ```shell
-CI_SFDX_HARDIS_BITBUCKET_TOKEN=xxxxxx BITBUCKET_WORKSPACE=sfdxhardis-demo BITBUCKET_REPO_SLUG=test BITBUCKET_BUILD_NUMBER=1 BITBUCKET_BRANCH=uat BITBUCKET_PR_ID=2 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com
+$ CI_SFDX_HARDIS_BITBUCKET_TOKEN=xxxxxx BITBUCKET_WORKSPACE=sfdxhardis-demo BITBUCKET_REPO_SLUG=test BITBUCKET_BUILD_NUMBER=1 BITBUCKET_BRANCH=uat BITBUCKET_PR_ID=2 FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com
 ```
 
 ```shell
-GITHUB_TOKEN=xxxx GITHUB_REPOSITORY=my-user/my-repo FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com
+$ GITHUB_TOKEN=xxxx GITHUB_REPOSITORY=my-user/my-repo FORCE_TARGET_BRANCH=uat NODE_OPTIONS=--inspect-brk sf hardis:project:deploy:smart --check --websocket localhost:2702 --skipauth --target-org my-salesforce-org@client.com
 ```
 
 

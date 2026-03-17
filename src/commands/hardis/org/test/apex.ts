@@ -6,9 +6,11 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import { execCommand, extractRegexMatchesMultipleGroups, uxLog } from '../../../../common/utils/index.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
-import { CONSTANTS, getConfig, getReportDirectory } from '../../../../config/index.js';
+import { CONSTANTS, getConfig, getEnvVar, getReportDirectory } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateApexCoverageOutputFile } from '../../../../common/utils/deployUtils.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -23,7 +25,7 @@ If following configuration is defined, it will fail if apex coverage target is n
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 
-You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes.
+You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 120 minutes.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-apex-tests/) and can output Grafana, Slack and MsTeams Notifications.
 `;
@@ -75,27 +77,36 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const debugMode = flags.debug || false;
 
     this.configInfo = await getConfig('branch');
-    this.orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
+    const orgInstanceUrl = flags['target-org']?.getConnection()?.instanceUrl || '';
+    this.orgMarkdown = await getOrgMarkdown(orgInstanceUrl);
     this.notifButtons = await getNotificationButtons();
     /* jscpd:ignore-end */
+    uxLog("action", this, c.cyan(t('runningApexTestsInOrgWithTest', { orgInstanceUrl, testlevel })));
     await this.runApexTests(testlevel, debugMode, flags['target-org']?.getUsername());
+    uxLog("action", this, c.cyan(t('apexTestsCompletedWithOutcome', { testRunOutcome: this.testRunOutcome })));
     // No Apex
     if (this.testRunOutcome === 'NoApex') {
       this.notifSeverity = 'log';
       this.statusMessage = 'No Apex found in the org';
       this.notifText = `No Apex found in org ${this.orgMarkdown}`;
+      uxLog("log", this, c.grey(this.statusMessage));
     }
     // Failed tests
     else if (this.testRunOutcome === 'Failed') {
       await this.processApexTestsFailure();
     }
+    else if (this.testRunOutcome === 'Passed') {
+      uxLog("success", this, c.green(t('apexTestsPassed', { testRunOutcome: this.testRunOutcome })));
+    }
     // Get test coverage (and fail if not reached)
     await this.checkOrgWideCoverage();
     await this.checkTestRunCoverage();
 
-    uxLog(this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
+    if (this.testRunOutcome !== 'NoApex') {
+      uxLog("other", this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
+    }
 
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'APEX_TESTS',
       text: this.notifText,
@@ -118,9 +129,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     // Handle output message & exit code
     if (this.notifSeverity === 'error') {
       process.exitCode = 1;
-      uxLog(this, c.red(this.statusMessage));
+      uxLog("error", this, c.red(this.statusMessage));
     } else {
-      uxLog(this, c.green(this.statusMessage));
+      uxLog("success", this, c.green(this.statusMessage));
     }
 
     return { orgId: flags['target-org'].getOrgId(), outputString: this.statusMessage, statusCode: process.exitCode };
@@ -133,8 +144,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       'sf apex run test' +
       ' --code-coverage' +
       ' --result-format human' +
-      ` --output-dir ${reportDir}` +
-      ` --wait ${process.env.SFDX_TEST_WAIT_MINUTES || '60'}` +
+      ` --output-dir "${reportDir}"` +
+      ` --wait ${getEnvVar("SFDX_TEST_WAIT_MINUTES") || '60'}` +
       ` --test-level ${testlevel}` +
       (orgUsername ? ` --target-org ${orgUsername}` : '') +
       (debugMode ? ' --verbose' : '');
@@ -150,9 +161,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       await generateApexCoverageOutputFile();
     } catch (e) {
       // No Apex in the org
+      const errorMessage = (e as Error).message;
       if (
-        (e as Error).message.includes('Toujours fournir une propriété classes, suites, tests ou testLevel') ||
-        (e as Error).message.includes('Always provide a classes, suites, tests, or testLevel property')
+        errorMessage.includes('Toujours fournir une propriété classes, suites, tests ou testLevel') ||
+        errorMessage.includes('Always provide a classes, suites, tests, or testLevel property') ||
+        errorMessage.includes('No tests found for category') ||
+        errorMessage.includes('Aucun test trouvé pour category') ||
+        errorMessage.includes('Error (INVALID_INPUT)')
       ) {
         this.testRunOutcome = 'NoApex';
       } else {
@@ -175,7 +190,6 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     // Parse failing test classes
     const failuresRegex = /(.*) Fail (.*)/gm;
     const regexMatches = await extractRegexMatchesMultipleGroups(failuresRegex, this.testRunOutputString);
-    uxLog(this, c.yellow('Failing tests:'));
     for (const match of regexMatches) {
       this.failingTestClasses.push({ name: match[1].trim(), error: match[2].trim() });
     }
@@ -190,13 +204,28 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     ];
     this.statusMessage = `Apex tests failed (${this.failingTestClasses.length}). (Outcome: ${this.testRunOutcome})`;
     this.notifText = `Apex tests failed (${this.failingTestClasses.length}) in org ${this.orgMarkdown} (Outcome: ${this.testRunOutcome})`;
-    console.table(this.failingTestClasses);
+    const failedTestsString = this.failingTestClasses
+      .map((failingTestClass) => {
+        return `- ${failingTestClass.name}: ${failingTestClass.error}`;
+      })
+      .join('\n');
+    uxLog("warning", this, c.yellow(t('failingApexTests') + failedTestsString));
   }
 
   private async checkOrgWideCoverage() {
-    const coverageOrgWide = parseFloat(
-      (/Org Wide Coverage *(.*)/.exec(this.testRunOutputString) || '')[1].replace('%', '')
-    );
+    if (this.testRunOutcome === 'NoApex') {
+      return;
+    }
+    // Safely extract org-wide coverage from output to avoid crashes when regex doesn't match
+    const orgWideMatch = (/Org Wide Coverage\s*(.*)/.exec(this.testRunOutputString) || []);
+    const coverageOrgWide =
+      orgWideMatch[1] && typeof orgWideMatch[1] === 'string'
+        ? (Number.isFinite(parseFloat(orgWideMatch[1].replace('%', ''))) ? parseFloat(orgWideMatch[1].replace('%', '')) : 0.0)
+        : 0.0;
+    if (coverageOrgWide === 0.0) {
+      this.notifSeverity = 'error';
+      uxLog("warning", this, c.yellow(t('warningUnableToExtractOrgWideCoverage') + this.testRunOutputString));
+    }
     const minCoverageOrgWide = parseFloat(
       process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
       process.env.APEX_TESTS_MIN_COVERAGE ||
@@ -231,11 +260,18 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async checkTestRunCoverage() {
+    if (this.testRunOutcome === 'NoApex') {
+      return;
+    }
     if (this.testRunOutputString.includes('Test Run Coverage')) {
       // const coverageTestRun = parseFloat(testRes.result.summary.testRunCoverage.replace('%', ''));
-      const coverageTestRun = parseFloat(
-        (/Test Run Coverage *(.*)/.exec(this.testRunOutputString) || '')[1].replace('%', '')
-      );
+      const testRunMatch = /Test Run Coverage\s*(.*)/.exec(this.testRunOutputString);
+      const coverageTestRunRaw = testRunMatch && testRunMatch[1] ? testRunMatch[1].replace('%', '').trim() : '0';
+      const coverageTestRun = parseFloat(coverageTestRunRaw) || 0.0;
+      if (coverageTestRun === 0.0) {
+        this.notifSeverity = 'error';
+        uxLog("warning", this, c.yellow(t('warningUnableToExtractTestRunCoverage') + this.testRunOutputString));
+      }
       const minCoverageTestRun = parseFloat(
         process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
         process.env.APEX_TESTS_MIN_COVERAGE ||

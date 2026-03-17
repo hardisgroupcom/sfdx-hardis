@@ -10,6 +10,7 @@ import {
   gitHasLocalUpdates,
   execCommand,
   git,
+  gitFetch,
   uxLog,
   isCI,
 } from '../../../../../common/utils/index.js';
@@ -17,6 +18,7 @@ import { CleanOptions } from 'simple-git';
 import CleanReferences from '../../../project/clean/references.js';
 import SaveTask from '../../../work/save.js';
 import CleanXml from '../../../project/clean/xml.js';
+import { t } from '../../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -165,7 +167,7 @@ export default class Retrofit extends SfCommand<any> {
     this.retrofitTargetBranch =
       this.retrofitTargetBranch || config.retrofitBranch || 'retrofitTargetBranch MUST BE SET';
 
-    await git().fetch(['--prune']);
+    await gitFetch(['--prune']);
     const branches = await git().branch();
     if (branches.all.find((branch) => branch.includes(retrofitWorkBranch))) {
       // If manual command (not CI), force user to remove previous retrofit branches
@@ -174,15 +176,15 @@ export default class Retrofit extends SfCommand<any> {
           `You must delete local and remote branch ${c.yellow(retrofitWorkBranch)} before running this command`
         );
       }
-      uxLog(this, c.cyan(`Checkout to existing branch ${retrofitWorkBranch}`));
+      uxLog("action", this, c.cyan(t('checkoutToExistingBranch', { retrofitWorkBranch })));
       await git().checkout(retrofitWorkBranch, ['--force']);
     } else {
-      uxLog(this, c.cyan(`Create a new branch ${retrofitWorkBranch} from ${this.productionBranch}`));
+      uxLog("action", this, c.cyan(t('createNewBranchFrom', { retrofitWorkBranch, productionBranch: this.productionBranch })));
       await git().checkoutBranch(retrofitWorkBranch, `origin/${this.productionBranch}`);
     }
 
     const currentHash = await git().revparse(['HEAD']);
-    uxLog(this, c.grey(`HEAD currently at ${currentHash}`));
+    uxLog("log", this, c.grey(t('headCurrentlyAt', { currentHash })));
 
     // Retrieve sources from target org
     const hasChangedSources = await this.retrieveSources(flags);
@@ -197,10 +199,10 @@ export default class Retrofit extends SfCommand<any> {
         }
       }
     } else {
-      uxLog(this, c.yellow('No changes to commit'));
+      uxLog("warning", this, c.yellow(t('noChangesToCommit')));
       // Delete locally created branch if we are within CI process
       if (isCI) {
-        uxLog(this, c.yellow('Deleting local retrofit branch...'));
+        uxLog("warning", this, c.yellow(t('deletingLocalRetrofitBranch')));
         await git().branch([`-D ${retrofitWorkBranch}`]);
       }
     }
@@ -209,14 +211,14 @@ export default class Retrofit extends SfCommand<any> {
   // Commit all changes or only updated files
   async commitChanges(flags) {
     if (this.commitMode === 'updated') {
-      uxLog(this, c.cyan('Stage and commit only updated files... '));
+      uxLog("action", this, c.cyan(t('stageAndCommitOnlyUpdatedFiles')));
       await git().add(['--update']);
       await this.doCommit(flags);
-      uxLog(this, c.cyan('Removing created files... '));
+      uxLog("action", this, c.cyan(t('removingCreatedFiles')));
       await git().reset(['--hard']);
       await git().clean([CleanOptions.FORCE, CleanOptions.RECURSIVE]);
     } else {
-      uxLog(this, c.cyan('Stage and commit all files... '));
+      uxLog("action", this, c.cyan(t('stageAndCommitAllFiles')));
       await git().add(['--all']);
       await this.doCommit(flags);
     }
@@ -246,7 +248,7 @@ export default class Retrofit extends SfCommand<any> {
       debug: this.debugMode,
       output: true,
     });
-    uxLog(this, c.yellow(JSON.stringify(pushResult)));
+    uxLog("warning", this, c.yellow(JSON.stringify(pushResult)));
   }
 
   async setDefaultGitConfig() {
@@ -261,7 +263,7 @@ export default class Retrofit extends SfCommand<any> {
   }
 
   async retrieveSources(flags) {
-    uxLog(this, c.cyan(`Retrieving sources from ${c.green(flags['target-org'].getUsername())} ...`));
+    uxLog("action", this, c.cyan(t('retrievingSourcesFrom', { flags: c.green(flags['target-org'].getUsername()) })));
     const RETROFIT_MDT: Array<string> =
       process.env.CI_SOURCES_TO_RETROFIT || this.configInfo.sourcesToRetrofit || Retrofit.DEFAULT_SOURCES_TO_RETROFIT;
     const retrieveCommand = `sf project retrieve start -m "${RETROFIT_MDT.join(',')}" -o ${flags[
@@ -285,6 +287,7 @@ export default class Retrofit extends SfCommand<any> {
     const ignoredFiles = config.retrofitIgnoredFiles || [];
     if (ignoredFiles.length > 0) {
       uxLog(
+        "action",
         this,
         c.cyan(`Discarding ignored changes from .sfdx-hardis.yml ${c.bold('retrofitIgnoredFiles')} property...`)
       );

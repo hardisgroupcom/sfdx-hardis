@@ -4,23 +4,33 @@ import inquirer from "inquirer";
 import { SfError } from "@salesforce/core";
 import { isCI, uxLog } from "./index.js";
 import { WebSocketClient } from "../websocketClient.js";
+import { t } from './i18n.js';
+
+export interface PromptChoice<T = unknown> {
+  title: string;
+  value?: T;
+  description?: string;
+}
 
 export interface PromptsQuestion {
   message: string;
+  description: string;
+  placeholder?: string;
   type: "select" | "multiselect" | "confirm" | "text" | "number";
   name?: string;
+  /** Array of choices. Use `PromptChoice` for proper typing. */
   choices?: Array<any>;
-  default?: any;
-  validate?: any;
-  initial?: any;
+  default?: unknown;
+  validate?: (value: any) => boolean | string | Promise<boolean | string>;
+  initial?: unknown;
   optionsPerPage?: number;
 }
 
 // Centralized prompts function
-export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
+export async function prompts(options: PromptsQuestion | PromptsQuestion[]): Promise<Record<string, any>> {
   if (isCI) {
-    uxLog(this, c.grey(JSON.stringify(options, null, 2)));
-    throw new SfError("Nothing should be prompted during CI !");
+    uxLog("log", this, c.grey(JSON.stringify(options, null, 2)));
+    throw new SfError("Nothing should be prompted during CI!");
   }
   const questionsRaw = Array.isArray(options) ? options : [options];
   const questionsReformatted: any = [];
@@ -32,8 +42,8 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     if (question.type === "confirm") {
       question.type = "select";
       question.choices = [
-        { title: "✅ Yes", value: true },
-        { title: "❌ No", value: false },
+        { title: t('promptChoiceYes'), value: true },
+        { title: t('promptChoiceNo'), value: false },
       ];
       question.initial = question.initial === false ? 1 : 0;
     }
@@ -42,9 +52,9 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
       question.name = "value";
     }
     // Add exit option when possible
-    if (question.type === "select") {
+    if (question.type === "select" && !WebSocketClient.isAliveWithLwcUI()) {
       question.choices = question.choices || [];
-      question.choices.push({ title: "⛔ Exit this script", value: "exitNow" });
+      question.choices.push({ title: t('promptChoiceExit'), value: "exitNow" });
     }
     if (["select", "multiselect"].includes(question.type) && question.optionsPerPage == null) {
       question.optionsPerPage = 9999;
@@ -56,13 +66,18 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
   if (WebSocketClient.isAlive()) {
     // Use UI prompt
     for (const question of questionsReformatted) {
-      uxLog(this, c.cyan(question.message) + c.white(" Look up in VsCode ⬆️"));
+      uxLog("action", this, c.cyan(question.message) + c.white(" Look up in VS Code ⬆️."));
       const [questionAnswer] = await WebSocketClient.sendPrompts([question]);
       answers = Object.assign(answers, questionAnswer);
-      if (JSON.stringify(answers).toLowerCase().includes("token")) {
-        uxLog(this, c.grey("Selection done but hidden in log because it contains sensitive information"));
+      checkStopPrompts(answers);
+      // Find the answer value (the value of the only property of questionAnswer)
+      const answerKey = Object.keys(questionAnswer)[0];
+      const answerValue = questionAnswer[answerKey];
+      const answerLabel = getAnswerLabel(answerValue, question.choices);
+      if (JSON.stringify(answerLabel).toLowerCase().includes("token")) {
+        uxLog("log", this, c.grey(t('selectionHiddenBecauseItContainsSensitiveInformation')));
       } else {
-        uxLog(this, c.grey(JSON.stringify(answers)));
+        uxLog("log", this, c.grey(answerLabel));
       }
     }
   } else {
@@ -70,13 +85,62 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     answers = await terminalPrompts(questionsReformatted);
   }
   // Stop script if requested
-  for (const answer of Object.keys(answers)) {
-    if (answers[answer] === "exitNow") {
-      uxLog(this, "Script stopped by user request");
-      process.exit(0);
+  checkStopPrompts(answers);
+  return answers;
+}
+
+// Helper to get display label(s) for answer value(s)
+function getAnswerLabel(answerValue: any, choices?: Array<any>): string {
+  if (Array.isArray(answerValue)) {
+    if (choices && Array.isArray(choices) && choices.length > 0) {
+      return answerValue.map(val => findChoiceLabel(val, choices) ?? (typeof val === 'string' ? `- ${val}` : "- " + JSON.stringify(val))).join('\n');
+    } else {
+      return answerValue.map(val => (typeof val === 'string' ? `- ${val}` : "- " + JSON.stringify(val))).join('\n');
     }
   }
-  return answers;
+  const label = findChoiceLabel(answerValue, choices);
+  if (label) return label;
+  return typeof answerValue === 'string' ? answerValue : JSON.stringify(answerValue);
+}
+
+// Helper to find the label for a value in choices
+function findChoiceLabel(val: any, choices?: Array<any>): string | undefined {
+  if (!choices || !Array.isArray(choices) || choices.length === 0) return undefined;
+  const found = choices.find(choice => {
+    if (typeof choice.value === "object" && typeof val === "object") {
+      try {
+        return JSON.stringify(choice.value) === JSON.stringify(val);
+      } catch {
+        return false;
+      }
+    }
+    return choice.value === val;
+  });
+  return found && found.title ? found.title : undefined;
+}
+
+// Stop script if user requested it
+function checkStopPrompts(answers: any) {
+  if (typeof answers !== "object" || answers === null) {
+    stopPrompt();
+  }
+  if (Object.keys(answers).length === 0) {
+    stopPrompt();
+  }
+  for (const answer of Object.keys(answers)) {
+    if (answers[answer] === "exitNow") {
+      stopPrompt();
+    }
+  }
+}
+
+function stopPrompt() {
+  uxLog("error", this, c.red(t('scriptTerminatedAtUserRequest')));
+  // Send close client message with aborted status if WebSocket is alive
+  if (WebSocketClient.isAlive()) {
+    WebSocketClient.sendCloseClientMessage("aborted");
+  }
+  process.exit(0);
 }
 
 async function terminalPrompts(questions: PromptsQuestion[]) {

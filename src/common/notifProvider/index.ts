@@ -7,6 +7,8 @@ import { TeamsProvider } from "./teamsProvider.js";
 import { CONSTANTS, getConfig } from "../../config/index.js";
 import { EmailProvider } from "./emailProvider.js";
 import { ApiProvider } from "./apiProvider.js";
+import type { NotifMessage } from "./types.js";
+import { t } from '../utils/i18n.js';
 
 export abstract class NotifProvider {
   static getInstances(): NotifProviderRoot[] {
@@ -36,21 +38,23 @@ export abstract class NotifProvider {
     const config = await getConfig("user");
     const notificationsDisable =
       config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);
-    uxLog(this, c.gray(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
+    uxLog("log", this, c.grey(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
     const notifProviders = this.getInstances();
     if (notifProviders.length === 0 && isCI) {
       uxLog(
+        "log",
         this,
-        c.gray(
+        c.grey(
           `[NotifProvider] No notif has been configured: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
         ),
       );
     }
     for (const notifProvider of notifProviders) {
-      uxLog(this, c.gray(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
+      uxLog("log", this, c.grey(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
       // Skip if matching NOTIFICATIONS_DISABLE except for Api
       if (notificationsDisable.includes(notifMessage.type) && notifProvider.isUserNotifProvider()) {
         uxLog(
+          "warning",
           this,
           c.yellow(
             `[NotifProvider] Skip notification of type ${notifMessage.type} according to configuration (NOTIFICATIONS_DISABLE env var or notificationsDisable .sfdx-hardis.yml property)`,
@@ -61,7 +65,7 @@ export abstract class NotifProvider {
       else if (notifProvider.isApplicableForNotif(notifMessage)) {
         await notifProvider.postNotification(notifMessage);
       } else {
-        uxLog(this, c.gray(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
+        uxLog("error", this, c.grey(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
       }
     }
   }
@@ -72,47 +76,9 @@ export abstract class NotifProvider {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: string, buttons: any[] = [], attachments: any[] = []): Promise<void> {
-    uxLog(this, c.grey("method postNotification is not implemented on " + this.getLabel()));
+    uxLog("log", this, c.grey(t('methodPostnotificationIsNotImplementedOn') + this.getLabel()));
   }
 }
 
-export type NotifSeverity = "critical" | "error" | "warning" | "info" | "success" | "log";
-
-export interface NotifMessage {
-  text: string;
-  type:
-  | "ACTIVE_USERS"
-  | "AUDIT_TRAIL"
-  | "APEX_TESTS"
-  | "BACKUP"
-  | "DEPLOYMENT"
-  | "LEGACY_API"
-  | "LICENSES"
-  | "LINT_ACCESS"
-  | "UNUSED_METADATAS"
-  | "METADATA_STATUS"
-  | "MISSING_ATTRIBUTES"
-  | "UNUSED_LICENSES"
-  | "UNUSED_USERS"
-  | "UNUSED_APEX_CLASSES"
-  | "CONNECTED_APPS"
-  | "ORG_INFO"
-  | "ORG_LIMITS"
-  | "RELEASE_UPDATES";
-  buttons?: NotifButton[];
-  attachments?: any[];
-  severity: NotifSeverity;
-  sideImage?: string;
-  attachedFiles?: string[];
-  logElements: any[];
-  metrics: any;
-  data: any;
-}
-
-export interface NotifButton {
-  text: string;
-  url?: string;
-  style?: "primary" | "danger";
-}
-
 export const UtilsNotifs = utilsNotifs;
+export type { NotifMessage, NotifButton, NotifSeverity } from "./types.js";

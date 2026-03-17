@@ -11,6 +11,7 @@ import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { appendPackageXmlFilesContent } from '../../../common/utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -18,7 +19,34 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class MergePackageXml extends SfCommand<any> {
   public static title = 'Merge package.xml files';
 
-  public static description = 'Select and merge package.xml files';
+  public static description = `
+## Command Behavior
+
+**Merges multiple Salesforce \`package.xml\` files into a single, consolidated \`package.xml\` file.**
+
+This command is useful for combining metadata definitions from various sources (e.g., different feature branches, separate development efforts) into one comprehensive package.xml, which can then be used for deployments or retrievals.
+
+Key functionalities:
+
+- **Flexible Input:** You can specify the \`package.xml\` files to merge either by:
+  - Providing a comma-separated list of file paths using the \`--packagexmls\` flag.
+  - Specifying a folder and a glob pattern using \`--folder\` and \`--pattern\` to automatically discover \`package.xml\` files.
+  - If no input is provided, an interactive menu will prompt you to select files from the \`manifest\` folder.
+- **Customizable Output:** You can define the name and path of the resulting merged \`package.xml\` file using the \`--result\` flag.
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **File Discovery:** It uses \`glob\` to find \`package.xml\` files based on the provided folder and pattern, or it directly uses the list of files from the \`--packagexmls\` flag.
+- **Interactive Prompts:** If no \`package.xml\` files are specified, it uses the \`prompts\` library to allow the user to interactively select files to merge.
+- **\`appendPackageXmlFilesContent\` Utility:** The core merging logic is handled by the \`appendPackageXmlFilesContent\` utility function. This function reads the content of each input \`package.xml\` file, combines their metadata types and members, and writes the consolidated content to the specified result file.
+- **XML Manipulation:** Internally, \`appendPackageXmlFilesContent\` parses the XML of each \`package.xml\`, merges the \`<types>\` and \`<members>\` elements, and then rebuilds the XML structure for the output file.
+- **File System Operations:** It uses \`fs-extra\` to ensure the output directory exists and to write the merged \`package.xml\` file.
+- **WebSocket Communication:** It uses \`WebSocketClient.requestOpenFile\` to open the generated merged \`package.xml\` file in VS Code for immediate review.
+</details>
+`;
 
   public static examples = [
     '$ sf hardis:package:mergexml',
@@ -84,7 +112,8 @@ export default class MergePackageXml extends SfCommand<any> {
       const filesSelectRes = await prompts({
         type: 'multiselect',
         name: 'files',
-        message: 'Please select the package.xml files you want to merge',
+        message: t('pleaseSelectThePackageXmlFilesYou'),
+        description: t('chooseWhichPackageXmlFilesToCombine'),
         choices: matchingFiles.map((file) => {
           const relativeFile = path.relative(process.cwd(), file);
           return { title: relativeFile, value: relativeFile };
@@ -98,9 +127,9 @@ export default class MergePackageXml extends SfCommand<any> {
 
     // Summary
     const msg = `Merged ${c.green(c.bold(this.packageXmlFiles.length))} files into ${c.green(this.resultFileName)}`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
 
-    // Trigger command to open files config file in VsCode extension
+    // Trigger command to open files config file in VS Code extension
     WebSocketClient.requestOpenFile(this.resultFileName);
 
     // Return an object to be displayed with --json

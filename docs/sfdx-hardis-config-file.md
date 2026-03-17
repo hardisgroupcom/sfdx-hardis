@@ -10,6 +10,8 @@ Many of these properties are automatically set by CI/CD [setup](salesforce-ci-cd
 
 You can see the [**list of all configuration properties**](schema/sfdx-hardis-json-schema-parameters.html).
 
+Additional environment variables are also used by sfdx-hardis, see the [complete list of environment variables](all-env-variables.md).
+
 Here is an example of a .sfdx-hardis.yml config file:
 
 ```yaml
@@ -70,3 +72,4 @@ listViewsToSetToMine:
   - force-app/main/default/objects/Operation__c/listViews/MyCurrentOperations.listView-meta.xml
   - force-app/main/default/objects/Operation__c/listViews/MyFinalizedOperations.listView-meta.xml
 ```
+

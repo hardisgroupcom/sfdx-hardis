@@ -6,8 +6,8 @@ description: Enrich pull requests & notifications with ticketing info
 
 - [Generic ticketing integration](#generic-ticketing-integration)
 - [Configuration](#configuration)
-  - [GENERIC_TICKETING_PROVIDER_REGEX](#generic_ticketing_provider_regex)
-  - [GENERIC_TICKETING_PROVIDER_URL_BUILDER](#generic_ticketing_provider_url_builder)
+  - [Regular Expression to identify a Ticket](#regular-expression-to-identify-a-ticket)
+  - [URL Builder for Ticket Hyperlinks](#url-builder-for-ticket-hyperlinks)
 - [Gitlab configuration](#gitlab-configuration)
 - [Technical notes](#technical-notes)
 
@@ -21,9 +21,14 @@ Sfdx-hardis will automatically analyze commits and PR/MR descriptions to collect
 
 ## Configuration
 
-You need to define 2 environment variables in your CI/CD configuration
+You need to define 2 properties in .sfdx-hardis.yml, or 2 environment variables in your CI/CD configuration.
 
-### GENERIC_TICKETING_PROVIDER_REGEX
+> It is recommended to use .sfdx-hardis.yml to store these properties, so the VsCode extension will be able to use them for UI features.
+
+### Regular Expression to identify a Ticket
+
+- .sfdx-hardis.yml property: **genericTicketingProviderRegex**
+- ENV variable: **GENERIC_TICKETING_PROVIDER_REGEX**
 
 Regular expression allowing to detect your ticketing system identifiers in the commits / PR texts.
 
@@ -32,7 +37,10 @@ You can use <https://regex101.com/> to check your Regular Expression.
 Example: `([R|I][0-9]+-[0-9]+)` to detect EasyVista references, that can look like `I240103-0133` or
 `R230904-0026`
 
-### GENERIC_TICKETING_PROVIDER_URL_BUILDER
+### URL Builder for Ticket Hyperlinks
+
+- .sfdx-hardis.yml property: **genericTicketingProviderUrlBuilder**
+- ENV variable: **GENERIC_TICKETING_PROVIDER_URL_BUILDER**
 
 Template string allowing to build a hyperlink from a ticket identifier.
 
@@ -76,7 +84,7 @@ See merge request %{reference}
 
 ## Technical notes
 
-This integration use the following variables, that must be available from the pipelines:
+This integration use the following variables, that must be available from the pipelines or in .sfdx-hardis.yml:
 
-- GENERIC_TICKETING_PROVIDER_REGEX
-- GENERIC_TICKETING_PROVIDER_URL_BUILDER
+- genericTicketingProviderRegex or GENERIC_TICKETING_PROVIDER_REGEX
+- genericTicketingProviderUrlBuilder or GENERIC_TICKETING_PROVIDER_URL_BUILDER

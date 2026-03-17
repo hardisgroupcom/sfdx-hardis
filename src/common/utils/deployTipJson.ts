@@ -1,4 +1,4 @@
-// Analyze deployment errors to provide tips to user :)
+// Analyze deployment errors to provide tips to user 😊
 import c from "chalk";
 import format from "string-template";
 import { getAllTips } from "./deployTipsList.js";
@@ -6,6 +6,7 @@ import { stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
 import { updatePullRequestResult } from "./deployTips.js";
 import { shortenLogLines } from "./deployUtils.js";
+import { t } from './i18n.js';
 
 
 export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, includeInLog = true, options: any): Promise<any> {
@@ -74,7 +75,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
         error: { message: coverageErrorMsg },
         tip: {
           label: "CodeCoverageWarning",
-          message: "Please fix code coverage so your deployment can pass",
+          message: t('pleaseFixCodeCoverageSoYourDeployment'),
           docUrl: "https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_code_coverage_intro.htm",
         },
       }))
@@ -88,7 +89,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
       error: { message: resultJson.result.errorMessage },
       tip: {
         label: resultJson.result.errorStatusCode || "UNKNOWN",
-        message: "Please fix unknown errors (",
+        message: t('pleaseFixUnknownErrors'),
       },
     }))
     detailedErrorLines.push(...["", "⛔ " + c.red(c.bold("Unknown issue: " + resultJson.result.errorMessage)), ""]);
@@ -97,7 +98,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
   // Fallback : declare an error if we have not been able to identify errors
   if (errorsAndTips.length === 0 && failedTests.length === 0) {
     errorsAndTips.push(({
-      error: { message: "There has been an issue parsing errors, please notify sfdx-hardis maintainers" },
+      error: { message: t('thereHasBeenAnIssueParsingErrors') },
       tip: {
         label: "SfdxHardisInternalError",
         message: "Declare issue on https://github.com/hardisgroupcom/sfdx-hardis/issues",
@@ -127,7 +128,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
       }
     }
     else {
-      detailedErrorLines.push(...[c.yellow("No tip found for error. Try asking ChatGPT, Google or a Release Manager :)")])
+      detailedErrorLines.push(...[c.yellow("No tip found for error. Try asking ChatGPT, Google or a Release Manager 😊")])
     }
   }
   detailedErrorLines.push("");
@@ -229,9 +230,9 @@ async function findAiTip(error: any, alreadyProcessedErrors: string[]): Promise<
     return null;
   }
   alreadyProcessedErrors.push(error.message);
-  if (AiProvider.isAiAvailable()) {
+  if (await AiProvider.isAiAvailable()) {
     if (alreadyProcessedErrors.length > parseInt(process.env.MAX_DEPLOYMENT_TIPS_AI_CALLS || "20")) {
-      uxLog(this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
+      uxLog("warning", this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
       return null;
     }
     const prompt = buildPrompt(error);
@@ -239,7 +240,7 @@ async function findAiTip(error: any, alreadyProcessedErrors: string[]): Promise<
       const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_SOLVE_DEPLOYMENT_ERROR");
       return aiResponse;
     } catch (e) {
-      uxLog(this, c.yellow("[AI] Error while calling AI Provider: " + (e as Error).message));
+      uxLog("warning", this, c.yellow("[AI] Error while calling AI Provider: " + (e as Error).message));
     }
   }
   return null;

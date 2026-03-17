@@ -24,7 +24,7 @@ Assisted menu to propose to update `installedPackages` property in `.sfdx-hardis
 ## Examples
 
 ```shell
-sf hardis:package:install
+$ sf hardis:package:install
 ```
 
 

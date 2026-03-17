@@ -6,6 +6,7 @@ import { execCommand, execSfdxJson, uxLog } from '../../../common/utils/index.js
 import { prompts } from '../../../common/utils/prompts.js';
 import c from 'chalk';
 import sortArray from 'sort-array';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -13,7 +14,31 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class ScratchDelete extends SfCommand<any> {
   public static title = 'Delete scratch orgs(s)';
 
-  public static description = 'Assisted menu to delete scratch orgs associated to a DevHub';
+  public static description = `## Command Behavior
+
+**Provides an assisted menu to delete Salesforce scratch orgs associated with a Dev Hub.**
+
+This command simplifies the process of cleaning up your Salesforce development environments by allowing you to easily select and delete multiple scratch orgs. This is crucial for managing your scratch org limits and ensuring that you don't accumulate unnecessary or expired orgs.
+
+Key functionalities:
+
+- **Interactive Scratch Org Selection:** Displays a list of all active scratch orgs linked to your Dev Hub, including their usernames, instance URLs, and last used dates.
+- **Multi-Selection:** Allows you to select multiple scratch orgs for deletion.
+- **Confirmation Prompt:** Prompts for confirmation before proceeding with the deletion, ensuring that you don't accidentally delete important orgs.
+- **Dev Hub Integration:** Works with your configured Dev Hub to manage scratch orgs.
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **Salesforce CLI Integration:** It executes the \`sf org list\` command to retrieve a list of all scratch orgs associated with the current Dev Hub. It then filters this list to show only active orgs.
+- **Interactive Prompts:** Uses the \`prompts\` library to present a multi-select menu of scratch orgs to the user.
+- **Scratch Org Deletion:** For each selected scratch org, it executes the \`sf org delete scratch --no-prompt\` command to perform the deletion.
+- **Error Handling:** Includes basic error handling for Salesforce CLI commands.
+- **Data Sorting:** Sorts the list of scratch orgs by username, alias, and instance URL for better readability in the interactive menu.
+</details>
+`;
 
   public static examples = ['$ sf hardis:scratch:delete'];
 
@@ -66,7 +91,8 @@ export default class ScratchDelete extends SfCommand<any> {
     const scratchToDeleteRes = await prompts({
       type: 'multiselect',
       name: 'value',
-      message: c.cyanBright('Please select the list of scratch orgs you want to delete'),
+      message: c.cyanBright(t('pleaseSelectTheListOfScratchOrgs')),
+      description: t('chooseWhichScratchOrgsToDelete'),
       choices: scratchOrgChoices,
     });
 
@@ -75,9 +101,10 @@ export default class ScratchDelete extends SfCommand<any> {
       const deleteCommand = `sf org delete scratch --no-prompt --target-org ${scratchOrgToDelete.username}`;
       await execCommand(deleteCommand, this, { fail: false, debug: debugMode, output: true });
       uxLog(
+        "action",
         this,
         c.cyan(
-          `Scratch org ${c.green(scratchOrgToDelete.username)} at ${scratchOrgToDelete.instanceUrl} has been deleted`
+          t('scratchOrgHasBeenDeleted', { username: c.green(scratchOrgToDelete.username), instanceUrl: scratchOrgToDelete.instanceUrl })
         )
       );
     }

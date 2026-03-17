@@ -10,10 +10,13 @@ import {
   createTempDir,
   execCommand,
   getCurrentGitBranch,
+  getGitRepoUrl,
   git,
   gitHasLocalUpdates,
+  gitPush,
   normalizeFileStatusPath,
   uxLog,
+  uxLogTable,
 } from '../../../common/utils/index.js';
 import { exportData } from '../../../common/utils/dataUtils.js';
 import { forceSourcePull } from '../../../common/utils/deployUtils.js';
@@ -26,27 +29,38 @@ import {
   writeXmlFile,
 } from '../../../common/utils/xmlUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { CONSTANTS, getConfig, setConfig } from '../../../config/index.js';
+import { CONSTANTS, getApiVersion, getConfig, setConfig } from '../../../config/index.js';
 import CleanReferences from '../project/clean/references.js';
 import CleanXml from '../project/clean/xml.js';
+import { GitProvider } from '../../../common/gitProvider/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class SaveTask extends SfCommand<any> {
-  public static title = 'Save work task';
+  public static title = 'Save User Story';
 
-  public static description = `When a work task is completed, guide user to create a merge request
+  public static description = `
+## Command Behavior
 
-Advanced instructions in [Publish a task](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/)
+**Guides the user through the process of saving their work, preparing it for a Merge Request (also named Pull Request), and pushing changes to the remote Git repository.**
 
-- Generate package-xml diff using sfdx-git-delta
-- Automatically update \`manifest/package.xml\` and \`manifest/destructiveChanges.xml\` according to the committed updates
-- Automatically Clean XML files using \`.sfdx-hardis.yml\` properties
-  - \`autocleantypes\`: List of auto-performed sources cleanings, available on command [hardis:project:clean:references](${CONSTANTS.DOC_URL_ROOT}/hardis/project/clean/references/)
-  - \`autoRemoveUserPermissions\`: List of userPermission to automatically remove from profile metadatas
+This command automates several critical steps involved in finalizing a development User Story and integrating it into the main codebase. It ensures that your local changes are properly synchronized, cleaned, and committed before being pushed.
 
-Example:
+Key functionalities include:
+
+- **Git Status Management:** Ensures a clean Git working directory by handling ongoing merges and unstaging files.
+- **Org Synchronization (Optional):** Prompts the user to pull the latest metadata updates from their scratch org or source-tracked sandbox, ensuring local files reflect the org's state.
+- **Package.xml Updates:** Automatically generates \`package.xml\` and \`destructiveChanges.xml\` files based on the Git delta between your current branch and the target branch, reflecting added, modified, and deleted metadata.
+- **Automated Source Cleaning:** Applies predefined cleaning operations to your local Salesforce sources, such as removing unwanted references, minimizing profiles, or cleaning XML files based on configurations in your \`.sfdx-hardis.yml\`.
+  - \`autoCleanTypes\`: A list of automated source cleanings, configurable via [hardis:project:clean:references]($\{CONSTANTS.DOC_URL_ROOT}/hardis/project/clean/references/).
+  - \`autoRemoveUserPermissions\`: A list of user permissions to automatically remove from profile metadata.
+- **Deployment Plan Generation:** Builds an automated deployment plan based on the updated \`package.xml\` and configured deployment splits.
+- **Commit and Push:** Guides the user to commit the changes and push them to the remote Git repository, optionally handling force pushes if a branch reset occurred.
+- **Merge Request Guidance:** Provides information and links to facilitate the creation of a merge request after the changes are pushed.
+
+Example \`.sfdx-hardis.yml\` configuration:
 
 \`\`\`yaml
 autoCleanTypes:
@@ -67,8 +81,24 @@ autoRemoveUserPermissions:
   - WorkCalibrationUser
 \`\`\`
 
-- Push commit to server
-  `;
+Advanced instructions are available in the [Publish a User Story documentation]($\{CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/).
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves a series of orchestrated steps:
+
+- **Git Integration:** Extensively uses the \`git\` utility for status checks, adding files, committing, and pushing. It also leverages \`sfdx-git-delta\` for generating metadata differences between Git revisions.
+- **Interactive Prompts:** Employs the \`prompts\` library to interact with the user for decisions like pulling sources or pushing commits.
+- **Configuration Management:** Reads and updates project and user configurations using \`getConfig\` and \`setConfig\` to store preferences and deployment plans.
+- **Metadata Synchronization:** Calls \`forceSourcePull\` to retrieve metadata from the org and \`callSfdxGitDelta\` to generate \`package.xml\` and \`destructiveChanges.xml\` based on Git changes.
+- **XML Manipulation:** Utilizes \`appendPackageXmlFilesContent\`, \`removePackageXmlFilesContent\`, \`parseXmlFile\`, and \`writeXmlFile\` for modifying \`package.xml\` and \`destructiveChanges.xml\` files.
+- **Automated Cleaning:** Integrates with \`CleanReferences.run\` and \`CleanXml.run\` commands to perform automated cleaning operations on the Salesforce source files.
+- **Deployment Plan Building:** Dynamically constructs a deployment plan by analyzing the \`package.xml\` content and applying configured deployment splits.
+- **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshStatusMessage\` to notify connected VS Code clients about status updates.
+- **External Tool Integration:** Requires the \`sfdx-git-delta\` plugin to be installed for its core functionality.
+</details>
+`;
 
   public static examples = ['$ sf hardis:work:task:save', '$ sf hardis:work:task:save --nopull --nogit --noclean'];
 
@@ -136,7 +166,7 @@ autoRemoveUserPermissions:
     const localBranch = (await getCurrentGitBranch()) || '';
 
     // Define current and target branches
-    this.gitUrl = await git().listRemote(['--get-url']);
+    this.gitUrl = await getGitRepoUrl() || '';
     this.currentBranch = (await getCurrentGitBranch()) || '';
     if (this.targetBranch == null) {
       const userConfig = await getConfig('user');
@@ -146,16 +176,15 @@ autoRemoveUserPermissions:
     }
     if (this.targetBranch == null) {
       this.targetBranch = await selectTargetBranch({
-        message: 'Please select the target branch of your Merge Request',
+        message: t('pleaseSelectTheTargetBranchOfYour2', { GitProvider: GitProvider.getMergeRequestName(this.gitUrl) }),
       });
     }
     // User log info
     uxLog(
+      "action",
       this,
       c.cyan(
-        `This script will prepare the merge request from your local branch ${c.green(localBranch)} to remote ${c.green(
-          this.targetBranch
-        )}`
+        t('preparingMergeRequestFromBranchToBranch', { mergeRequestName: GitProvider.getMergeRequestName(this.gitUrl), sourceBranch: c.green(localBranch), targetBranch: c.green(this.targetBranch) })
       )
     );
     // Make sure git is clean before starting operations
@@ -175,56 +204,51 @@ autoRemoveUserPermissions:
     // Push new commit(s)
     await this.manageCommitPush(gitStatusWithConfig, gitStatusAfterDeployPlan);
 
+
+    let mergeRequestUrl = GitProvider.getMergeRequestCreateUrl(this.gitUrl, this.targetBranch || '', this.currentBranch);
+    mergeRequestUrl = mergeRequestUrl || this.gitUrl.replace('.git', '');
+
     // Merge request
-    uxLog(this, c.cyan(`If your work is ${c.bold('completed')}, you can create a ${c.bold('merge request')}:`));
-    uxLog(
-      this,
-      c.cyan(
-        `- click on the link in the upper text, below ${c.italic(
-          'To create a merge request for ' + this.currentBranch + ', visit'
-        )}`
-      )
-    );
-    uxLog(this, c.cyan(`- or manually create the merge request on repository UI: ${c.green(this.gitUrl)}`));
-    // const remote = await git().listRemote();
-    // const remoteMergeRequest = `${remote.replace('.git','-/merge_requests/new')}`;
-    // await open(remoteMergeRequest, {wait: true});
-    uxLog(
-      this,
-      c.cyan(
-        c.bold(
-          `${c.yellow('When your Merge Request will have been merged:')}
-  - ${c.yellow('DO NOT REUSE THE SAME BRANCH')}
-  - Use New task menu (sf hardis:work:new), even if you work in the same sandbox or scratch org :)`
-        )
-      )
-    );
-    uxLog(
-      this,
-      c.cyan(
-        `If you are working with a ticketing system like JIRA, try to add the FULL URL of the tickets in the MR/PR description
-- Good example: https://sfdx-hardis.atlassian.net/browse/CLOUDITY-4
-- Less good example but will work anyway on most cases: CLOUDITY-4
-`
-      )
-    );
-    uxLog(
-      this,
-      c.cyan(
-        `Merge request documentation is available here -> ${c.bold(
-          `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`
-        )}`
-      )
-    );
+    uxLog("action", this, c.cyan(t('ifYourWorkIsCreateOtherwisePush', { completed: c.bold(t('completed')), GitProvider: c.bold(GitProvider.getMergeRequestName(this.gitUrl)), currentBranch: c.green(this.currentBranch) })));
+    let summaryMsg = c.grey("");
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      WebSocketClient.sendReportFileMessage(mergeRequestUrl, t('createMergeRequestLabel', { mergeRequestName: GitProvider.getMergeRequestName(this.gitUrl) }), 'actionUrl');
+    }
+    else {
+      summaryMsg += c.grey(`- New ${GitProvider.getMergeRequestName(this.gitUrl)} URL: ${c.green(mergeRequestUrl)}\n`);
+    }
+    const mergeRequestDoc = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#create-merge-request`;
+    summaryMsg += c.grey('- ' + t('repositoryLabel') + ': ' + c.green(this.gitUrl.replace('.git', '')) + '\n');
+    summaryMsg += c.grey('- ' + t('sourceBranchLabel') + ': ' + c.green(this.currentBranch) + '\n');
+    summaryMsg += c.grey('- ' + t('targetBranchLabel') + ': ' + c.green(this.targetBranch));
+    uxLog("log", this, summaryMsg);
+    uxLog("log", this, `${c.yellow(t('whenYourHasBeenMerged', { GitProvider: GitProvider.getMergeRequestName(this.gitUrl) }))}
+- ${c.yellow(t('doNotReuseTheSameBranch'))}
+- ${t('useNewUserStoryMenuEvenIfSameOrg')} 😊`);
+    // Manual actions file
+    const config = await getConfig('project');
+    if (config.manualActionsFileUrl && config.manualActionsFileUrl !== '') {
+      uxLog("warning", this, c.yellow(t('ifYouHavePreDeploymentOrPost', { config: c.green(config.manualActionsFileUrl) })));
+      if (WebSocketClient.isAliveWithLwcUI()) {
+        WebSocketClient.sendReportFileMessage(config.manualActionsFileUrl, t('updateManualActionsFile'), 'actionUrl');
+      }
+    }
+    else {
+      uxLog("warning", this, c.yellow(t('defineManualActionsFileAskReleaseMgr')));
+    }
+    if (!WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("log", this, c.grey(`${GitProvider.getMergeRequestName(this.gitUrl)} documentation is available here -> ${c.bold(mergeRequestDoc)}`));
+    }
+    WebSocketClient.sendReportFileMessage(mergeRequestDoc, t('viewMergeRequestDocumentation', { mergeRequestName: GitProvider.getMergeRequestName(this.gitUrl) }), 'docUrl');
     // Return an object to be displayed with --json
-    return { outputString: 'Saved the task' };
+    return { outputString: 'Saved the User Story' };
   }
 
   // Clean git status
   private async cleanGitStatus() {
     // Skip git stuff if requested
     if (this.noGit) {
-      uxLog(this, c.cyan(`[Expert mode] Skipped git reset`));
+      uxLog("action", this, c.cyan(t('expertModeSkippedGitReset')));
       return;
     }
     let gitStatusInit = await git().status();
@@ -243,51 +267,50 @@ autoRemoveUserPermissions:
     // Manage project deploy start from scratch org
     if (this.noPull || this.auto) {
       // Skip pull
-      uxLog(this, c.cyan(`Skipped sf project:retrieve:start from scratch org`));
+      uxLog("action", this, c.cyan(t('skippedSfProjectRetrieveStart')));
       return;
     }
     // Request user if commit is ready
     const commitReadyRes = await prompts({
       type: 'select',
       name: 'value',
-      message: c.cyanBright('Have you already committed the updated metadata you want to deploy ?'),
+      message: c.cyanBright(t('haveYouAlreadyCommittedTheUpdatedMetadata')),
+      description: t('selectYourCurrentStateRegardingGitCommits'),
+      placeholder: t('selectCommitStatus'),
       choices: [
         {
-          title: '😎 Yes, my commit(s) is ready ! I staged my files then created one or multiple commits !',
+          title: t('commitsAreReady'),
           value: 'commitReady',
-          description:
-            "You have already pulled updates from your org (or locally updated the files if you're a nerd) then staged your files and created a commit",
+          description: t('commitsAreReadyDescription'),
         },
         {
-          title: '😐 No, please pull my latest updates from my org so I can commit my metadatas',
+          title: t('pleasePullLatestUpdatesFromOrgForCommit'),
           value: 'pleasePull',
-          description: 'Pull latest updates from org so then you can stage files and create your commit',
+          description: t('pullLatestUpdatesFromOrgToStageAndCommit'),
         },
         {
-          title: '😱 What is a commit ? What does mean pull ? Help !',
+          title: t('whatIsACommitHelp'),
           value: 'help',
-          description:
-            "Don't panic, just click on the link that will appear in the console (CTRL + Click) and then you will know :)",
+          description: t('dontPanicClickLinkInConsole'),
         },
       ],
     });
     if (commitReadyRes.value === 'pleasePull') {
       // Process sf project retrieve start
-      uxLog(this, c.cyan(`Pulling sources from scratch org ${flags['target-org'].getUsername()}...`));
+      uxLog("action", this, c.cyan(t('pullingSourcesFromScratchOrg', { flags: flags['target-org'].getUsername() })));
       await forceSourcePull(flags['target-org'].getUsername(), this.debugMode);
       uxLog(
+        "action",
         this,
-        c.cyan(
-          `Sources has been pulled from ${flags[
-            'target-org'
-          ].getUsername()}, now you can stage and commit your updates !`
-        )
+        c.cyan(t('sourcesHaveBeenPulledNowStageAndCommit', { username: flags['target-org'].getUsername() }))
       );
+      WebSocketClient.sendReportFileMessage("workbench.view.scm", t('commitYourRetrievedFiles'), "actionCommand");
+      WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, t('retrieveAndCommitDocumentation'), 'docUrl');
       return { outputString: 'Pull performed' };
     } else if (commitReadyRes.value === 'help') {
       // Show pull commit stage help
       const commitHelpUrl = `${CONSTANTS.DOC_URL_ROOT}/hardis/scratch/pull/`;
-      uxLog(this, c.cyan(`Opening help at ${commitHelpUrl} ...`));
+      uxLog("action", this, c.cyan(t('openingHelpAt', { commitHelpUrl })));
       await open(commitHelpUrl, { wait: true });
       return { outputString: 'Help displayed at ' };
     }
@@ -304,7 +327,8 @@ autoRemoveUserPermissions:
         const exportDataRes = await prompts({
           type: 'confirm',
           name: 'value',
-          message: c.cyan(`Did you update ${c.green(dataSource.label)} and want to export related data ?`),
+          message: c.cyan(t('didYouUpdateAndWantToExport', { dataSource: c.green(dataSource.label) })),
+          description: t('confirmExportDataUpdatedForDataSource'),
         });
         if (exportDataRes.value === true) {
           await exportData(dataSource.dataPath, this, {
@@ -316,6 +340,7 @@ autoRemoveUserPermissions:
   }
 
   private async upgradePackageXmlFilesWithDelta() {
+    uxLog("action", this, c.cyan(t('updatingManifestPackageXmlAndManifestDestructivechanges')));
     // Retrieving info about current branch latest commit and master branch latest commit
     const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch || '');
 
@@ -323,11 +348,10 @@ autoRemoveUserPermissions:
     const localPackageXml = path.join('manifest', 'package.xml');
     const toCommitMessage = gitDeltaScope.toCommit ? gitDeltaScope.toCommit.message : '';
     uxLog(
+      "log",
       this,
-      c.cyan(
-        `Calculating package.xml diff from [${c.green(this.targetBranch)}] to [${c.green(
-          this.currentBranch
-        )} - ${c.green(toCommitMessage)}]`
+      c.grey(
+        t('calculatingPackageXmlDiff', { targetBranch: c.green(this.targetBranch), currentBranch: c.green(this.currentBranch), commitMessage: c.green(toCommitMessage) })
       )
     );
     const tmpDir = await createTempDir();
@@ -343,7 +367,7 @@ autoRemoveUserPermissions:
         // Create default destructiveChanges.xml if not defined
         const blankDestructiveChanges = `<?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-    <version>${CONSTANTS.API_VERSION}</version>
+    <version>${getApiVersion()}</version>
 </Package>
 `;
         await fs.writeFile(localDestructiveChangesXml, blankDestructiveChanges);
@@ -351,8 +375,9 @@ autoRemoveUserPermissions:
       const diffDestructivePackageXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
       const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
       uxLog(
+        "log",
         this,
-        c.bold(c.cyan(`destructiveChanges.xml diff to be merged within ${c.green(localDestructiveChangesXml)}:\n`)) +
+        c.grey(c.bold(t('deltaDestructiveChangesXmlDiffToBeMerged', { file: c.green(localDestructiveChangesXml) }) + '\n')) +
         c.red(destructivePackageXmlDiffStr)
       );
       await appendPackageXmlFilesContent(
@@ -367,8 +392,9 @@ autoRemoveUserPermissions:
       const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
       const packageXmlDiffStr = await fs.readFile(diffPackageXml, 'utf8');
       uxLog(
+        "log",
         this,
-        c.bold(c.cyan(`package.xml diff to be merged within ${c.green(localPackageXml)}:\n`)) +
+        c.grey(c.bold(t('deltaPackageXmlDiffToBeMerged', { file: c.green(localPackageXml) }) + '\n')) +
         c.green(packageXmlDiffStr)
       );
       await appendPackageXmlFilesContent([localPackageXml, diffPackageXml], localPackageXml);
@@ -379,31 +405,38 @@ autoRemoveUserPermissions:
         await git().add(localPackageXml);
       }
     } else {
-      uxLog(this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
+      uxLog("log", this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
       uxLog(
+        "error",
         this,
-        c.red(
-          `Unable to build git diff.${c.yellow(
-            c.bold('Please update package.xml and destructiveChanges.xml manually')
-          )}`
-        )
+        c.red(t('unableToBuildGitDiff', { pleaseUpdateManually: c.yellow(c.bold(t('pleaseUpdatePackageXmlAndDestructiveManually'))) }))
       );
     }
 
     // Commit updates
     let gitStatusWithConfig = await git().status();
     if (gitStatusWithConfig.staged.length > 0 && !this.noGit) {
-      uxLog(this, `Committing files in local git branch ${c.green(this.currentBranch)}...`);
+      const commitMessage = '[sfdx-hardis] Update package content';
+      uxLog("action", this, c.cyan(t('addingNewCommitPackageXmlUpdates', { commitMessage })));
+
+      // Build files list for table
+      const filesTable = gitStatusWithConfig.staged.map((file) => {
+        const status = gitStatusWithConfig.files.find(f => f.path === file);
+        const statusLabel = status?.working_dir === 'D' ? 'deleted' : status?.index === 'A' ? 'created' : 'modified';
+        return {
+          Status: statusLabel,
+          File: file
+        };
+      });
+      uxLogTable(this, filesTable, ['Status', 'File']);
+
       try {
-        await git({ output: true }).commit('[sfdx-hardis] Update package content');
+        await git({ output: true }).commit(commitMessage);
       } catch (e) {
         uxLog(
+          "warning",
           this,
-          c.yellow(
-            `There may be an issue while committing files but it can be ok to ignore it\n${c.grey(
-              (e as Error).message
-            )}`
-          )
+          c.yellow(t('thereIsIssueCommittingFilesButIgnore', { message: c.grey((e as Error).message) }))
         );
         gitStatusWithConfig = await git().status();
       }
@@ -416,40 +449,50 @@ autoRemoveUserPermissions:
     const config = await getConfig('branch');
     if (!this.noClean) {
       const gitStatusFilesBeforeClean = (await git().status()).files.map((file) => file.path);
-      uxLog(this, JSON.stringify(gitStatusFilesBeforeClean, null, 2));
+      uxLog("other", this, JSON.stringify(gitStatusFilesBeforeClean, null, 2));
       // References cleaning
-      uxLog(this, c.cyan('Cleaning sfdx project from obsolete references...'));
-      // User defined cleaning
       await CleanReferences.run(['--type', 'all']);
       if (globalThis?.displayProfilesWarning === true) {
         uxLog(
+          "warning",
           this,
-          c.yellow(c.bold('Please make sure the attributes removed from Profiles are defined on Permission Sets :)'))
+          c.yellow(c.bold(t('pleaseMakeSureTheAttributesRemovedFrom') + ' 😊'))
         );
       }
 
-      uxLog(this, c.cyan('Cleaning sfdx project using patterns and xpaths defined in cleanXmlPatterns...'));
-      await CleanXml.run([]);
+      // Xml cleaning
+      if (config.cleanXmlPatterns && config.cleanXmlPatterns.length > 0) {
+        uxLog("action", this, c.cyan(t('cleaningProjectUsingPatternsDefinedInCleanxmlpatterns')));
+        await CleanXml.run([]);
+      }
+
       // Manage git after cleaning
       const gitStatusAfterClean = await git().status();
-      uxLog(this, JSON.stringify(gitStatusAfterClean, null, 2));
+      uxLog("other", this, JSON.stringify(gitStatusAfterClean, null, 2));
       const cleanedFiles = gitStatusAfterClean.files
         .filter((file) => !gitStatusFilesBeforeClean.includes(file.path))
         .map((file) => normalizeFileStatusPath(file.path, config));
       if (cleanedFiles.length > 0) {
-        uxLog(this, c.cyan(`Cleaned the following list of files:\n${cleanedFiles.join('\n')}`));
         if (!this.noGit) {
           try {
             await git().add(cleanedFiles);
-            await git({ output: true }).commit('[sfdx-hardis] Clean sfdx project');
+
+            const commitMessage = '[sfdx-hardis] Clean sfdx project';
+            uxLog("action", this, c.cyan(t('addingNewCommitCleanedFiles', { commitMessage })));
+
+            // Build files list for table
+            const filesTable = cleanedFiles.map((file) => ({
+              Status: 'modified',
+              File: file
+            }));
+            uxLogTable(this, filesTable, ['Status', 'File']);
+
+            await git({ output: true }).commit(commitMessage);
           } catch (e) {
             uxLog(
+              "warning",
               this,
-              c.yellow(
-                `There may be an issue while adding cleaned files but it can be ok to ignore it\n${c.grey(
-                  (e as Error).message
-                )}`
-              )
+              c.yellow(t('thereIsIssueAddingCleanedFilesButIgnore', { message: c.grey((e as Error).message) }))
             );
           }
         }
@@ -458,6 +501,11 @@ autoRemoveUserPermissions:
   }
 
   private async buildDeploymentPlan() {
+    const configProject = await getConfig('project');
+    if (!(configProject?.enableDeprecatedDeploymentPlan === true)) {
+      uxLog("log", this, c.cyan(t('deploymentPlanGenerationIsDisabledInProject')));
+      return await git().status();
+    }
     // Build deployment plan splits
     let splitConfig = await this.getSeparateDeploymentsConfig();
     const localPackageXml = path.join('manifest', 'package.xml');
@@ -550,16 +598,27 @@ autoRemoveUserPermissions:
     }
     let gitStatusAfterDeployPlan = await git().status();
     if (gitStatusAfterDeployPlan.staged.length > 0 && !this.noGit) {
+      const commitMessage = '[sfdx-hardis] Update deployment plan';
+      uxLog("action", this, c.cyan(t('addingNewCommitDeploymentPlan', { commitMessage })));
+
+      // Build files list for table
+      const filesTable = gitStatusAfterDeployPlan.staged.map((file) => {
+        const status = gitStatusAfterDeployPlan.files.find(f => f.path === file);
+        const statusLabel = status?.working_dir === 'D' ? 'deleted' : status?.index === 'A' ? 'created' : 'modified';
+        return {
+          Status: statusLabel,
+          File: file
+        };
+      });
+      uxLogTable(this, filesTable, ['Status', 'File']);
+
       try {
-        await git({ output: true }).commit('[sfdx-hardis] Update deployment plan');
+        await git({ output: true }).commit(commitMessage);
       } catch (e) {
         uxLog(
+          "warning",
           this,
-          c.yellow(
-            `There may be an issue while committing files but it can be ok to ignore it\n${c.grey(
-              (e as Error).message
-            )}`
-          )
+          c.yellow(t('thereIsIssueCommittingFilesButIgnore', { message: c.grey((e as Error).message) }))
         );
         gitStatusAfterDeployPlan = await git().status();
       }
@@ -581,22 +640,19 @@ autoRemoveUserPermissions:
         type: 'confirm',
         name: 'push',
         default: true,
-        message: c.cyanBright(
-          `Do you want to push your commit(s) on git server ? (git push in remote git branch ${c.green(
-            this.currentBranch
-          )})`
-        ),
+        message: c.cyanBright(t('doYouWantToPushCommitsToGitBranch', { branch: c.green(this.currentBranch) })),
+        description: t('pushBranchToRemoteDescription'),
       });
       if (pushResponse.push === true) {
-        uxLog(this, c.cyan(`Pushing new commit(s) in remote git branch ${c.green(`origin/${this.currentBranch}`)}...`));
+        uxLog("action", this, c.cyan(t('pushingCommitsToRemoteBranch', { branch: c.green(`origin/${this.currentBranch}`) })));
         const configUSer = await getConfig('user');
         let pushResult: any;
         if (configUSer.canForcePush === true) {
           // Force push if hardis:work:resetselection has been called before
-          pushResult = await git({ output: true }).push(['-u', 'origin', this.currentBranch, '--force']);
+          pushResult = await gitPush({ output: true }, ['-u', 'origin', this.currentBranch, '--force']);
           await setConfig('user', { canForcePush: false });
         } else {
-          pushResult = await git({ output: true }).push(['-u', 'origin', this.currentBranch]);
+          pushResult = await gitPush({ output: true }, ['-u', 'origin', this.currentBranch]);
         }
         // Update merge request info
         if (pushResult && pushResult.remoteMessages) {
@@ -612,7 +668,7 @@ autoRemoveUserPermissions:
           }
           // Update user config file & send Websocket event
           await setConfig('user', { mergeRequests: mergeRequestsStored.filter((mr: any) => mr !== null) });
-          WebSocketClient.sendMessage({ event: 'refreshStatus' });
+          WebSocketClient.sendRefreshStatusMessage();
         }
       }
     }
@@ -620,7 +676,7 @@ autoRemoveUserPermissions:
 
   private updateMergeRequestInfo(mergeRequestStored, mergeRequestInfo) {
     if (this.debugMode) {
-      uxLog(this, c.grey(JSON.stringify(mergeRequestInfo, null, 2)));
+      uxLog("log", this, c.grey(JSON.stringify(mergeRequestInfo, null, 2)));
     }
     if (mergeRequestInfo?.remoteMessages?.id) {
       mergeRequestStored.id = mergeRequestInfo.remoteMessages.id;

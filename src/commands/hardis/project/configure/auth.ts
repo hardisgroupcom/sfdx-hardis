@@ -5,14 +5,16 @@ import {
   optionalOrgFlagWithDeprecations,
   optionalHubFlagWithDeprecations,
 } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { fs, Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execSfdxJson, generateSSLCertificate, promptInstanceUrl, uxLog } from '../../../../common/utils/index.js';
+import * as yaml from 'js-yaml';
+import { execSfdxJson, generateSSLCertificate, git, promptInstanceUrl, uxLog } from '../../../../common/utils/index.js';
 import { getOrgAliasUsername, promptOrg } from '../../../../common/utils/orgUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { checkConfig, getConfig, setConfig, setInConfigFile } from '../../../../config/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -20,7 +22,48 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class ConfigureAuth extends SfCommand<any> {
   public static title = 'Configure authentication';
 
-  public static description = 'Configure authentication from git branch to target org';
+  public static description: string = `
+## Command Behavior
+
+**Configures authentication between a Git branch and a target Salesforce org for CI/CD deployments.**
+
+This command facilitates the setup of automated CI/CD pipelines, enabling seamless deployments from specific Git branches to designated Salesforce orgs. It supports both standard Salesforce orgs and Dev Hub configurations, catering to various enterprise deployment workflows.
+
+This command supports two authentication app types:
+- **Connected App** (traditional) - Standard OAuth app that works with all Salesforce editions
+- **External Client App** (modern) - Fully metadata-based, packageable in 2GP, requires API v59+
+
+Both use JWT Bearer flow with SSL certificates for secure CI/CD authentication.
+
+Key functionalities include:
+
+- **Org Selection/Login:** Guides the user to select an existing Salesforce org or log in to a new one.
+- **Git Branch Association:** Allows associating a specific Git branch with the chosen Salesforce org.
+- **Merge Target Definition:** Enables defining target Git branches into which the configured branch can merge, ensuring controlled deployment flows.
+- **Salesforce Username Configuration:** Prompts for the Salesforce username to be used by the CI server for deployments.
+- **SSL Certificate Generation:** Automatically generates an SSL certificate for secure authentication.
+- **App Type Selection:** Choose between Connected App (traditional) or External Client App (modern, metadata-based).
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's implementation involves several key technical aspects:
+
+- **SF CLI Integration:** Utilizes 
+@salesforce/sf-plugins-core
+ for command structure and flag parsing.
+- **Interactive Prompts:** Employs the 
+prompts
+ library for interactive user input, guiding the configuration process.
+- **Git Integration:** Interacts with Git to retrieve branch information using 
+\`git().branch(["--list", "-r"])\`
+.
+- **Configuration Management:** Leverages internal utilities (\`checkConfig\`, \`getConfig\`, \`setConfig\`, \`setInConfigFile\`) to read from and write to project-specific configuration files (e.g., \`.sfdx-hardis.<branchName>.yml\`).
+- **Salesforce CLI Execution:** Executes Salesforce CLI commands programmatically via \`execSfdxJson\` for org interactions.
+- **SSL Certificate Generation:** Calls \`generateSSLCertificate\` to create necessary SSL certificates for JWT-based authentication.
+- **WebSocket Communication:** Uses \`WebSocketClient\` for potential communication with external tools or processes, such as restarting the command in VS Code.
+- **Dependency Check:** Ensures the presence of \`openssl\` on the system, which is required for SSL certificate generation.
+`;
 
   public static examples = ['$ sf hardis:project:configure:auth'];
 
@@ -57,16 +100,20 @@ export default class ConfigureAuth extends SfCommand<any> {
     const { flags } = await this.parse(ConfigureAuth);
     const devHub = flags.devhub || false;
 
+    uxLog("action", this, c.cyan(t('thisCommandWillConfigureTheAuthenticationBetween', { devHub: devHub ? t('devHubLabel') : t('aSalesforceOrgLabel') })));
+
     // Ask user to login to org
     const prevUserName = devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername();
     await promptOrg(this, {
       setDefault: true,
       devHub: devHub,
-      promptMessage: 'Please select or login into the org you want to configure the SF CLI Authentication',
+      promptMessage: devHub ? t('pleaseSelectOrLoginIntoDevHub') : t('pleaseSelectOrLoginIntoOrg'),
+      defaultOrgUsername: devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername(),
     });
     await checkConfig(this);
 
     // Check if the user has changed. If yes, ask to run the command again
+    uxLog("action", this, c.cyan(t('checkingIfTheOrgUsernameHasChanged', { prevUserName: c.bold(prevUserName) })));
     const configGetRes = await execSfdxJson('sf config get ' + (devHub ? 'target-dev-hub' : 'target-org'), this, {
       output: false,
       fail: false,
@@ -76,14 +123,10 @@ export default class ConfigureAuth extends SfCommand<any> {
 
     if (prevUserName !== newUsername) {
       // Restart command so the org is selected as default org (will help to select profiles)
-      const infoMsg =
-        'Default org changed. Please restart the same command if VsCode does not do that automatically for you :)';
-      uxLog(this, c.yellow(infoMsg));
+      const infoMsg = t('defaultOrgChangedRestartVsCode');
+      uxLog("warning", this, c.yellow(infoMsg));
       const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ');
-      WebSocketClient.sendMessage({
-        event: 'runSfdxHardisCommand',
-        sfdxHardisCommand: currentCommand,
-      });
+      WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);
       return { outputString: infoMsg };
     }
 
@@ -91,49 +134,120 @@ export default class ConfigureAuth extends SfCommand<any> {
     // Get branch name to configure if not Dev Hub
     let branchName = '';
     let instanceUrl = 'https://login.salesforce.com';
+    const branches = await git().branch(["--list", "-r"]);
+    const branchesFiltered = branches.all
+      .map((branch: string) => branch.replace('origin/', ''))
+      .filter((branch: string) => branch !== branchName && !branch.includes("/"));
+
     if (!devHub) {
       const branchResponse = await prompts({
-        type: 'text',
+        type: 'select',
         name: 'value',
-        message: c.cyanBright(
-          'What is the name of the git branch you want to configure ? Examples: developpement,recette,production'
-        ),
+        message: c.cyanBright(t('whatIsNameOfGitBranchToConfigureCiCd')),
+        choices: branchesFiltered.map((branch: string) => {
+          return {
+            title: branch,
+            value: branch,
+          };
+        }),
+        description: t('enterGitBranchNameForOrgConfig'),
+        placeholder: t('selectTheGitBranchName'),
       });
       branchName = branchResponse.value.replace(/\s/g, '-');
       /* if (["main", "master"].includes(branchName)) {
         throw new SfError("You can not use main or master as deployment branch name. Maybe you want to use production ?");
       } */
-      instanceUrl = await promptInstanceUrl(['login', 'test'], `${branchName} related org`, {
-        instanceUrl: devHub
-          ? flags['target-dev-hub']?.getConnection()?.instanceUrl || ""
-          : flags['target-org']?.getConnection()?.instanceUrl || "",
-      });
     }
+
+    instanceUrl = await promptInstanceUrl(
+      devHub ? ["login"] : ['login', "test"],
+      devHub ? t('devHubOrgLabel') : t('branchRelatedOrg', { branchName }), {
+      instanceUrl: devHub
+        ? flags['target-dev-hub']?.getConnection()?.instanceUrl || ""
+        : flags['target-org']?.getConnection()?.instanceUrl || "",
+    });
+
+    // Request merge targets
+    if (!devHub) {
+      let initialMergeTargets: string[] = [];
+      const branchConfigFile = `./config/branches/.sfdx-hardis.${branchName}.yml`;
+      if (fs.existsSync(branchConfigFile)) {
+        const branchConfig: any = yaml.load(fs.readFileSync(branchConfigFile, 'utf8'));
+        if (branchConfig && branchConfig.mergeTargets) {
+          initialMergeTargets = branchConfig.mergeTargets;
+        }
+      }
+      const mergeTargetsResponse = await prompts({
+        type: 'multiselect',
+        name: 'value',
+        message: c.cyanBright(t('whatAreTargetGitBranchesToMergeIn', { branchName })),
+        choices: branchesFiltered.map((branch: string) => {
+          return {
+            title: branch,
+            value: branch,
+          };
+        }),
+        initial: initialMergeTargets,
+        description: t('selectGitBranchesThisBranchCanMergeIn'),
+        placeholder: t('selectTheTargetGitBranches'),
+      });
+      const mergeTargets = mergeTargetsResponse.value.map((branch: string) => branch.replace(/\s/g, '-'));
+      // Update config file
+      await setInConfigFile(
+        [],
+        {
+          mergeTargets: mergeTargets,
+        },
+        branchConfigFile
+      );
+    }
+
     // Request username
     const usernameResponse = await prompts({
       type: 'text',
       name: 'value',
       initial: (devHub ? flags['target-dev-hub']?.getUsername() || "" : flags['target-org'].getUsername() || "") || '',
       message: c.cyanBright(
-        `What is the Salesforce username that will be ${devHub ? 'used as Dev Hub' : 'used for deployments by CI server'
-        } ? Example: admin.sfdx@myclient.com`
+        devHub ? t('whatIsSalesforceUsernameDevHub') : t('whatIsSalesforceUsernameForDeployments')
       ),
+      description: t('enterSalesforceUsernameForConfig'),
+      placeholder: t('exAdminSfdxAtMyclient'),
     });
     if (devHub) {
-      await setConfig('project', {
+      if (!config.devHubAlias || config.devHubAlias === '') {
+        const devHubAliasResponse = await prompts({
+          type: 'text',
+          name: 'value',
+          message: c.cyanBright(t('whatIsTheAliasYouWantTo')),
+          description: t('enterAliasForDevHub'),
+          initial: config.projectName ? 'DevHub_' + config.projectName : 'DevHub',
+          placeholder: t('exMyCompanyDevHub'),
+        });
+        config.devHubAlias = devHubAliasResponse.value;
+        await setConfig('project', {
+          devHubAlias: config.devHubAlias,
+        });
+      }
+      const configFile = await setConfig('project', {
+        devHubInstanceUrl: instanceUrl,
         devHubUsername: usernameResponse.value,
       });
+      WebSocketClient.sendReportFileMessage(configFile!, t('updatedProjectConfigFile'), 'report');
     } else {
       // Update config file
+      const branchConfigFile = `./config/branches/.sfdx-hardis.${branchName}.yml`;
       await setInConfigFile(
         [],
         {
           targetUsername: usernameResponse.value,
           instanceUrl,
         },
-        `./config/branches/.sfdx-hardis.${branchName}.yml`
+        branchConfigFile
       );
+      WebSocketClient.sendReportFileMessage(branchConfigFile, t('updatedBranchConfigFile', { branchName }), 'report');
     }
+
+    WebSocketClient.sendRefreshPipelineMessage();
 
     // Generate SSL certificate (requires openssl to be installed on computer)
     const certFolder = devHub ? './config/.jwt' : './config/branches/.jwt';
@@ -143,6 +257,11 @@ export default class ConfigureAuth extends SfCommand<any> {
       targetUsername: devHub ? flags['target-dev-hub']?.getUsername() : flags['target-org']?.getUsername(),
     };
     await generateSSLCertificate(certName, certFolder, this, orgConn, sslGenOptions);
+
+    uxLog("action", this, c.green(t('branchSuccessfullyConfiguredForAuthentication', { devHub: devHub ? '(DevHub)' : branchName })));
+    uxLog("warning", this, c.yellow(t('makeSureYouHaveSetTheEnvironment')));
+    uxLog("warning", this, c.yellow(t('dontForgetToCommitConfigAndCertKey')));
+
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };
   }

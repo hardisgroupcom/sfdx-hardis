@@ -9,12 +9,12 @@
 
 /* light mode table header bgcolor */
 .md-typeset__table th {
-  background-color: #f2edfe;
+  background-color: #E8EDF5;
 }
 
 /* dark mode table header bgcolor */
 [data-md-color-scheme="slate"] .md-typeset__table th {
-  background-color: hsla(var(--md-hue), 25%, 25%, 1)
+  background-color: #1A1A2E;
 }
 
 /* light mode alternating table bg colors */
@@ -24,10 +24,18 @@
 
 /* dark mode alternating table bg colors */
 [data-md-color-scheme="slate"] .md-typeset__table tr:nth-child(2n) {
-  background-color: hsla(var(--md-hue), 25%, 25%, 1)
+  background-color: #1A1A2E;
 }
 
 :root>* {
-  --md-primary-fg-color: #1B1464;
-  --md-footer-bg-color: #1B1464;
+  --md-primary-fg-color: #001135;
+  --md-footer-bg-color: #001135;
+}
+
+/* Wider content area for large screens (1920px and above)*/
+@media screen and (min-width: 75em) {
+  .md-grid {
+    max-width: 90rem;
+    /* default is 61rem (~976px), now ~1440px */
+  }
 }

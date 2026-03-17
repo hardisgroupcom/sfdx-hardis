@@ -12,6 +12,8 @@ import { isCI, uxLog } from '../../../common/utils/index.js';
 import { managePackageConfig } from '../../../common/utils/orgUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { PACKAGE_ROOT_DIR } from '../../../settings.js';
+import { WebSocketClient } from '../../../common/websocketClient.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -69,13 +71,15 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
         title: `${c.yellow(pack.name)} - ${pack.repoUrl || 'Bundle'}`,
         value: pack,
       }));
-      allPackages.push({ title: 'Other', value: 'other' });
+      allPackages.push({ title: t('choiceOther'), value: 'other' });
       const packageResponse = await prompts({
         type: 'select',
         name: 'value',
         message: c.cyanBright(
           `Please select the package you want to install on org  ${c.green(flags['target-org'].getUsername())}`
         ),
+        description: t('chooseWhichPackageToInstall'),
+        placeholder: t('selectAPackage'),
         choices: allPackages,
         initial: 0,
       });
@@ -88,13 +92,15 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
               'What is the id of the Package Version to install ? (starting with 04t)\nYou can find it using tooling api request ' +
               c.bold('Select Id,SubscriberPackage.Name,SubscriberPackageVersionId from InstalledSubscriberPackage')
             ),
+            description: t('enterThePackageVersionId'),
+            placeholder: t('exPackageVersionId'),
           },
           {
             type: 'text',
             name: 'installationkey',
-            message: c.cyanBright(
-              'Enter the password for this package (leave empty if package is not protected by a password)'
-            ),
+            message: c.cyanBright(t('enterPackagePasswordOrLeaveEmpty')),
+            description: t('provideInstallationPasswordIfProtected'),
+            placeholder: t('exMypassword123'),
           },
         ]);
         const pckg: { SubscriberPackageVersionId?: string; installationkey?: string } = {
@@ -149,13 +155,13 @@ Assisted menu to propose to update \`installedPackages\` property in \`.sfdx-har
     // Install packages
     await MetadataUtils.installPackagesOnOrg(packagesToInstallCompleted, null, this, 'install');
     const installedPackages = await MetadataUtils.listInstalledPackages(null, this);
-    uxLog(this, c.italic(c.grey('New package list on org:\n' + JSON.stringify(installedPackages, null, 2))));
+    uxLog("other", this, c.italic(c.grey(t('newPackageListOnOrg') + JSON.stringify(installedPackages, null, 2))));
 
     if (!isCI) {
       // Manage package install config storage
       await managePackageConfig(installedPackages, packagesToInstallCompleted);
     }
-
+    WebSocketClient.sendRefreshPipelineMessage();
     // Return an object to be displayed with --json
     return { outputString: 'Installed package(s)' };
   }

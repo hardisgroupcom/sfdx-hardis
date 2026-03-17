@@ -3,13 +3,15 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { bulkQuery, bulkQueryChunksIn, bulkUpdate } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { CONSTANTS } from '../../../../config/index.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -17,17 +19,41 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class DiagnoseUnusedLicenses extends SfCommand<any> {
   public static title = 'Detect unused Permission Set Licenses (beta)';
 
-  public static description = `When you assign a Permission Set to a user, and that this Permission Set is related to a Permission Set License, a Permission Set License Assignment is automatically created for the user.
+  public static description = `
+## Command Behavior
 
-But when you unassign this Permission Set from the user, **the Permission Set License Assignment is not deleted**.
+**Detects and suggests the deletion of unused Permission Set License Assignments in a Salesforce org.**
 
-This leads that you can be **charged for Permission Set Licenses that are not used** !
+When a Permission Set (PS) linked to a Permission Set License (PSL) is assigned to a user, a Permission Set License Assignment (PSLA) is automatically created. However, when that PS is unassigned from the user, the PSLA is *not* automatically deleted. This can lead to organizations being charged for unused PSLAs, representing a hidden cost and technical debt.
 
-This command detects such useless Permission Set Licenses Assignments and suggests to delete them.
+This command identifies such useless PSLAs and provides options to delete them, helping to optimize license usage and reduce unnecessary expenses.
 
-Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for the inspiration during his great speaker session at [French Touch Dreamin '23](https://frenchtouchdreamin.com/), and his kind agreement for reusing such inspiration in this command :)
+Key functionalities:
+
+- **PSLA Detection:** Queries the Salesforce org to find all active PSLAs.
+- **Usage Verification:** Correlates PSLAs with actual Permission Set Assignments and Permission Set Group Assignments to determine if the underlying Permission Sets are still assigned to the user.
+- **Special Case Handling:** Accounts for specific scenarios where profiles might implicitly assign PSLAs (e.g., \`Salesforce API Only\` profile assigning \`SalesforceAPIIntegrationPsl\`) and allows for always excluding certain PSLAs from the unused check.
+- **Reporting:** Generates a CSV report of all identified unused PSLAs, including the user and the associated Permission Set License.
+- **Notifications:** Sends notifications to configured channels (Grafana, Slack, MS Teams) with a summary of unused PSLAs.
+- **Interactive Deletion:** In non-CI environments, it offers an interactive prompt to bulk delete the identified unused PSLAs.
+
+Many thanks to [Vincent Finet](https://www.linkedin.com/in/vincentfinet/) for the inspiration during his great speaker session at [French Touch Dreamin '23](https://frenchtouchdreamin.com/), and his kind agreement for reusing such inspiration in this command 😊
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-unused-licenses/) and can output Grafana, Slack and MsTeams Notifications.
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves extensive querying of Salesforce objects and data correlation:
+
+- **SOQL Queries (Bulk API):** It uses \`bulkQuery\` and \`bulkQueryChunksIn\` to efficiently retrieve large volumes of data from \`PermissionSetLicenseAssign\`, \`PermissionSetLicense\`, \`PermissionSet\`, \`PermissionSetGroupComponent\`, and \`PermissionSetAssignment\` objects.
+- **Data Correlation:** It meticulously correlates data across these objects to determine if a \`PermissionSetLicenseAssign\` record has a corresponding active assignment to a Permission Set or Permission Set Group for the same user.
+- **Filtering Logic:** It applies complex filtering logic to exclude PSLAs that are genuinely in use or are part of predefined exceptions (e.g., \`alwaysExcludeForActiveUsersPermissionSetLicenses\`).
+- **Bulk Deletion:** If the user opts to delete unused PSLAs, it uses \`bulkUpdate\` with the \`delete\` operation to efficiently remove multiple records.
+- **Report Generation:** It uses \`generateCsvFile\` to create the CSV report of unused PSLAs.
+- **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
+- **User Interaction:** Uses \`prompts\` for interactive confirmation before performing deletion operations.
+</details>
 `;
 
   public static examples = ['$ sf hardis:org:diagnose:unusedlicenses', '$ sf hardis:org:diagnose:unusedlicenses --fix'];
@@ -168,25 +194,20 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     let msg = `No unused permission set license assignment has been found`;
     if (this.unusedPermissionSetLicenseAssignments.length > 0) {
       this.statusCode = 1;
-      msg = `${this.unusedPermissionSetLicenseAssignments.length} unused Permission Set License Assignments have been found`;
-      uxLog(this, c.red(msg));
-      for (const pslMasterLabel of Object.keys(summary).sort()) {
-        const psl = this.getPermissionSetLicenseByMasterLabel(pslMasterLabel);
-        uxLog(
-          this,
-          c.red(
-            `- ${pslMasterLabel}: ${summary[pslMasterLabel]} (${psl.UsedLicenses} used on ${psl.TotalLicenses} available)`
-          )
-        );
-      }
+      const pslMasterLabels = Object.keys(summary).sort().map((pslMasterLabel) => {
+        return "- " + this.getPermissionSetLicenseByMasterLabel(pslMasterLabel).MasterLabel;
+      }).join('\n');
+      msg = `Unused Permission Set License Assignments:\n${pslMasterLabels}`;
+      uxLog("warning", this, c.yellow(msg));
     } else {
-      uxLog(this, c.green(msg));
+      uxLog("success", this, c.green(msg));
     }
 
     // Generate output CSV file
     if (this.unusedPermissionSetLicenseAssignments.length > 0) {
+      uxLogTable(this, this.unusedPermissionSetLicenseAssignments);
       this.outputFile = await generateReportPath('unused-ps-license-assignments', this.outputFile);
-      this.outputFilesRes = await generateCsvFile(this.unusedPermissionSetLicenseAssignments, this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.unusedPermissionSetLicenseAssignments, this.outputFile, { fileTitle: "Unused PSL assignments" });
     }
 
     // Manage notifications
@@ -210,7 +231,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async listAllPermissionSetLicenseAssignments(conn: any) {
-    uxLog(this, c.cyan(`Extracting all active Permission Sets Licenses Assignments...`));
+    uxLog("action", this, c.cyan(t('extractAllActivePermissionSetsLicenses')));
     const pslaQueryRes = await bulkQuery(
       `
     SELECT Id,PermissionSetLicenseId, PermissionSetLicense.DeveloperName, PermissionSetLicense.MasterLabel, AssigneeId, Assignee.Username, Assignee.IsActive, Assignee.Profile.Name
@@ -237,7 +258,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       );
     const psLicensesIds = relatedPermissionSetLicenses.map((psl) => psl.Id);
     if (relatedPermissionSetLicenses.length > 0) {
-      uxLog(this, c.cyan(`Extracting related Permission Sets Licenses...`));
+      uxLog("action", this, c.cyan(t('extractingRelatedPermissionSetsLicenses')));
       const pslQueryRes = await bulkQueryChunksIn(
         `SELECT Id,DeveloperName,MasterLabel,UsedLicenses,TotalLicenses
          FROM PermissionSetLicense
@@ -251,7 +272,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async listRelatedPermissionSets(psLicensesIds: string[], conn) {
-    uxLog(this, c.cyan(`Extracting related Permission Sets...`));
+    uxLog("action", this, c.cyan(t('extractingRelatedPermissionSets')));
     const psQueryRes = await bulkQueryChunksIn(
       `SELECT Id,Label,Name,LicenseId
        FROM PermissionSet
@@ -270,7 +291,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async listRelatedPermissionSetGroupsComponents(permissionSetsIds: string[], conn) {
-    uxLog(this, c.cyan(`Extracting related Permission Sets Group Components...`));
+    uxLog("action", this, c.cyan(t('extractingRelatedPermissionSetsGroupComponents')));
     const psgcQueryRes = await bulkQueryChunksIn(
       `SELECT Id,PermissionSetId,PermissionSetGroupId,PermissionSet.LicenseId,PermissionSet.Name,PermissionSetGroup.DeveloperName
          FROM PermissionSetGroupComponent
@@ -286,7 +307,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       ...new Set(this.permissionSetsGroupMembers.map((psgc) => psgc.PermissionSetGroupId)),
     ];
     if (permissionSetsGroupIds.length > 0) {
-      uxLog(this, c.cyan(`Extracting related Permission Set Group Assignments...`));
+      uxLog("action", this, c.cyan(t('extractingRelatedPermissionSetsGroupAssignments')));
       const psgaQueryRes = await bulkQueryChunksIn(
         `SELECT Id,Assignee.Username,PermissionSetGroupId,PermissionSetGroup.DeveloperName
            FROM PermissionSetAssignment
@@ -312,7 +333,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async listRelatedPermissionSetAssignmentsToPs(permissionSetsIds: string[], conn) {
-    uxLog(this, c.cyan(`Extracting related Permission Sets Assignments...`));
+    uxLog("action", this, c.cyan(t('extractingRelatedPermissionSetsAssignments')));
     const psaQueryRes = await bulkQueryChunksIn(
       `SELECT Id,Assignee.Username,PermissionSetId,PermissionSet.LicenseId,PermissionSet.Name
        FROM PermissionSetAssignment
@@ -349,7 +370,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       attachments = [{ text: notifDetailText }];
     }
     // Send notifications
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'UNUSED_LICENSES',
       text: notifText,
@@ -370,13 +391,15 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     if (!isCI && this.unusedPermissionSetLicenseAssignments.length) {
       const confirmRes = await prompts({
         type: 'select',
-        message: 'Do you want to delete unused Permission Set License Assignments ?',
+        message: t('doYouWantToDeleteUnusedPermission'),
+        description: t('removeUnusedPermissionSetLicenseDescription'),
+        placeholder: t('selectAnOption'),
         choices: [
           {
-            title: `Yes, delete the ${this.unusedPermissionSetLicenseAssignments.length} useless Permission Set License Assignments !`,
+            title: t('deleteUnusedPslYes'),
             value: 'all',
           },
-          { title: 'No' },
+          { title: t('deleteUnusedPslNo') },
         ],
       });
       if (confirmRes.value === 'all') {
@@ -386,17 +409,27 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         const deleteRes = await bulkUpdate('PermissionSetLicenseAssign', 'delete', pslaToDelete, conn);
         const deleteSuccessNb = deleteRes.successfulResults.length;
         const deleteErrorNb = deleteRes.failedResults.length;
+        uxLog("action", this, t('deletionsSummary'));
         if (deleteErrorNb > 0) {
           uxLog(
+            "warning",
             this,
-            c.yellow(`Warning: ${c.red(c.bold(deleteErrorNb))} assignments has not been deleted (bulk API errors)`)
+            c.yellow(t('assignmentsDeletionErrors', { count: c.red(c.bold(deleteErrorNb)) }))
           );
+          uxLogTable(this, deleteRes.failedResults);
+          this.outputFile = await generateReportPath('failed-delete-ps-license-assignments', this.outputFile);
+          this.outputFilesRes = await generateCsvFile(deleteRes.failedResults, this.outputFile, { fileTitle: "Failed PSL assignments deletions" });
           this.statusCode = 1;
         } else {
           this.statusCode = 0;
         }
         // Build results summary
-        uxLog(this, c.green(`${c.bold(deleteSuccessNb)} assignments has been deleted.`));
+        uxLog("success", this, c.green(t('assignmentsDeletedSuccess', { count: c.bold(deleteSuccessNb) })));
+        if (deleteSuccessNb) {
+          uxLogTable(this, deleteRes.successfulResults);
+          this.outputFile = await generateReportPath('deleted-ps-license-assignments', this.outputFile);
+          this.outputFilesRes = await generateCsvFile(this.unusedPermissionSetLicenseAssignments, this.outputFile, { fileTitle: "Deleted PSL assignments" });
+        }
       }
     }
     return this.statusCode;

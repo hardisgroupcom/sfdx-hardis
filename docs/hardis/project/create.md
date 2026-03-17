@@ -18,7 +18,7 @@ Create a new SFDX Project
 ## Examples
 
 ```shell
-sf hardis:project:create
+$ sf hardis:project:create
 ```
 
 

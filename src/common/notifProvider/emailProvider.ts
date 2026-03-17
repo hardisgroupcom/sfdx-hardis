@@ -3,8 +3,9 @@ import DOMPurify from "isomorphic-dompurify";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
-import { NotifMessage, UtilsNotifs } from "./index.js";
-import { CONSTANTS, getEnvVar } from "../../config/index.js";
+import type { NotifMessage } from "./types.js";
+import { UtilsNotifs } from "./utils.js";
+import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { marked } from "marked";
 import { EmailMessage, sendEmail } from "../utils/emailUtils.js";
 import { removeMarkdown } from "../utils/notifUtils.js";
@@ -21,10 +22,15 @@ export class EmailProvider extends NotifProviderRoot {
       throw new SfError("[EmailProvider] You need to define a variable NOTIF_EMAIL_ADDRESS to use sfdx-hardis Email notifications");
     }
     const emailAddresses = mainEmailAddress.split(",");
-    // Add branch custom Teams channel if defined
+    // Add branch custom emaild if defined
     const customEmailChannelVariable = `NOTIF_EMAIL_ADDRESS_${(await getCurrentGitBranch() || "").toUpperCase()}`;
     if (getEnvVar(customEmailChannelVariable)) {
       emailAddresses.push(...(getEnvVar(customEmailChannelVariable) || "").split(","));
+    }
+    // Add notif type custom emails if defined
+    const customEmailNotifTypeVariable = `NOTIF_EMAIL_ADDRESS_${notifMessage.type.toUpperCase()}`;
+    if (getEnvVar(customEmailNotifTypeVariable)) {
+      emailAddresses.push(...(getEnvVar(customEmailNotifTypeVariable) || "").split(","));
     }
 
     /* jscpd:ignore-start */
@@ -65,6 +71,8 @@ export class EmailProvider extends NotifProviderRoot {
     // Add sfdx-hardis ref
     emailBody += `_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT})_`;
 
+    emailBody += "\n\n" + getBannerMarkdownAndLink() + "\n\n";
+
     // Send email
     const emailBodyHtml1 = marked.parse(emailBody);
     const emailBodyHtml = typeof emailBodyHtml1 === "string" ? emailBodyHtml1 : await emailBodyHtml1;
@@ -77,10 +85,10 @@ export class EmailProvider extends NotifProviderRoot {
     };
     const emailRes = await sendEmail(emailMessage);
     if (emailRes?.success) {
-      uxLog(this, c.cyan(`[EmailProvider] Sent email to ${emailAddresses.join(",")}`));
+      uxLog("action", this, c.cyan(`[EmailProvider] Sent email to ${emailAddresses.join(",")}`));
     } else {
-      uxLog(this, c.yellow(`[EmailProvider] Error while sending email to ${emailAddresses.join(",")}`));
-      uxLog(this, c.grey(JSON.stringify(emailRes?.detail, null, 2)));
+      uxLog("warning", this, c.yellow(`[EmailProvider] Error while sending email to ${emailAddresses.join(",")}`));
+      uxLog("log", this, c.grey(JSON.stringify(emailRes?.detail, null, 2)));
     }
     return;
   }

@@ -55,19 +55,23 @@ Example: `DEPLOYED_TO_{BRANCH}`
 
 ## Global configuration
 
+> Prioritize defining these properties in **.sfdx-hardis.yml** file when possible, so VS Code extension can use them for UI features.
+
 ### Identify JIRA Tickets
 
-Define CI/CD variable **JIRA_TICKET_REGEX** with a regular expression allowing to identify the JIRA tickets of your project in commit& Pull Requests titles & bodies, for example `(CLOUDITY-[0-9]+)`
+- .sfdx-hardis.yml property: **jiraTicketRegex** or ENV variable **JIRA_TICKET_REGEX**
+
+Define regular expression allowing to identify the JIRA tickets of your project in commit& Pull Requests titles & bodies, for example `(CLOUDITY-[0-9]+)`
 
 If not defined, default value is `(?<=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\d{1,6})(?=[^a-zA-Z0-9_-]|$)`
 
 ### Jira Cloud
 
-Define CI/CD variables
+Define variables
 
-- JIRA_HOST (example: `https://sfdx-hardis.atlassian.net/`)
-- JIRA_EMAIL (example: `nicolas.vuillamy@cloudity.com`)
-- JIRA_TOKEN , to create following [Atlassian documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
+- .sfdx-hardis.yml property **jiraHost** or ENV variable **JIRA_HOST** (example: `https://sfdx-hardis.atlassian.net/`)
+- **JIRA_EMAIL** (example: `nicolas.vuillamy@cloudity.com`)
+- **JIRA_TOKEN** , to create following [Atlassian documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
 
 ### Jira On-Premise
 
@@ -75,8 +79,8 @@ _Note: Does not seems to work with every on-premise JIRA servers_
 
 Define CI/CD variables
 
-- JIRA_HOST (examples: `https://jira.cloudity.com/` , or with path like `https://pid.cloudity.com/jira/`)
-- JIRA_PAT, to create following [Atlassian Documentation](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html) (section **Creating PATs in the application**)
+- .sfdx-hardis.yml property **jiraHost** or ENV variable **JIRA_HOST** (examples: `https://jira.cloudity.com/` , or with path like `https://pid.cloudity.com/jira/`)
+- **JIRA_PAT**, to create following [Atlassian Documentation](https://confluence.atlassian.com/enterprise/using-personal-access-tokens-1026032365.html) (section **Creating PATs in the application**)
 
 ## Gitlab configuration
 

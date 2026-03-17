@@ -1,14 +1,21 @@
-import {
-  getCurrentGitBranch,
-  isCI,
-} from '../../common/utils/index.js';
-import c from "chalk"
-import { checkConfig, getConfig } from '../../config/index.js';
 import { Hook } from '@oclif/core';
-import { authOrg } from '../../common/utils/authUtils.js';
 
 const hook: Hook<'auth'> = async (options: any) => {
   const commandId = options?.Command?.id || '';
+
+  // Dynamic imports in parallel to avoid eagerly loading the entire dependency graph
+  const [
+    { getCurrentGitBranch, isCI },
+    { default: c },
+    { checkConfig, getConfig },
+    { authOrg },
+  ] = await Promise.all([
+    import('../../common/utils/index.js'),
+    import('chalk'),
+    import('../../config/index.js'),
+    import('../../common/utils/authUtils.js'),
+  ]);
+
   console.log(c.grey("Entering login Auth hook..."));
   let configInfo = await getConfig('user');
 

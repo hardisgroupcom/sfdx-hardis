@@ -8,6 +8,7 @@ import { prompts } from '../../../../common/utils/prompts.js';
 import { uxLog } from '../../../../common/utils/index.js';
 import { instantiateProvider, listKeyValueProviders } from '../../../../common/utils/poolUtils.js';
 import { KeyValueProviderInterface } from '../../../../common/utils/keyValueUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -62,6 +63,7 @@ export default class ScratchPoolCreate extends SfCommand<any> {
     // Tell user if he/she's about to overwrite existing configuration
     if (config.poolConfig && Object.keys(poolConfig).length > 0) {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `There is already an existing scratch org pool configuration: ${JSON.stringify(config.poolConfig)}.
@@ -76,7 +78,9 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
       {
         type: 'select',
         name: 'storageService',
-        message: c.cyanBright('What storage service do you want to use for your scratch orgs pool ?'),
+        message: c.cyanBright(t('whatStorageServiceDoYouWantTo')),
+        description: t('chooseStorageBackendForScratchOrgPools'),
+        placeholder: t('selectAStorageService'),
         initial: 0,
         choices: allProviders.map((provider: KeyValueProviderInterface) => {
           return { title: provider.name, description: provider.description, value: provider.name };
@@ -85,7 +89,9 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
       {
         type: 'number',
         name: 'maxScratchOrgsNumber',
-        message: c.cyanBright('What is the maximum number of scratch orgs in the pool ?'),
+        message: c.cyanBright(t('whatIsTheMaximumNumberOfScratch')),
+        description: t('setMaximumScratchOrgsInPool'),
+        placeholder: t('exFiveNumber'),
         initial: poolConfig.maxScratchOrgsNumber || 5,
       },
     ]);
@@ -106,19 +112,15 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
     const sfdxAuthUrl = authInfo.getSfdxAuthUrl();
     if (sfdxAuthUrl) {
       uxLog(
+        "action",
         this,
-        c.cyan(`You need to define CI masked variable ${c.green('SFDX_AUTH_URL_DEV_HUB')} = ${c.green(sfdxAuthUrl)}`)
+        c.cyan(t('youNeedToDefineCiMaskedVariableDevHub', { sfdxAuthUrl: c.green(sfdxAuthUrl) }))
       );
     } else {
       uxLog(
+        "warning",
         this,
-        c.yellow(
-          `You'll probably need to define CI masked variable ${c.green(
-            'SFDX_AUTH_URL_DEV_HUB'
-          )} with content of sfdxAuthUrl that you can retrieve with ${c.white(
-            'sf org display -o YOURDEVHUBUSERNAME --verbose --json'
-          )}`
-        )
+        c.yellow(t('youllProbablyNeedToDefineCiMaskedVar'))
       );
     }
 

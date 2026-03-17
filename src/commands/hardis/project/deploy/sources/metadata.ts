@@ -10,6 +10,7 @@ import { MetadataUtils } from '../../../../../common/metadata-utils/index.js';
 import { createTempDir, execCommand, uxLog } from '../../../../../common/utils/index.js';
 import { deployDestructiveChanges, deployMetadatas } from '../../../../../common/utils/deployUtils.js';
 import { getConfig } from '../../../../../config/index.js';
+import { t } from '../../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -48,7 +49,7 @@ export default class DxSources extends SfCommand<any> {
     testlevel: Flags.string({
       char: 'l',
       default: 'RunLocalTests',
-      options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunAllTestsInOrg'],
+      options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunRelevantTests', 'RunAllTestsInOrg'],
       description: messages.getMessage('testLevel'),
     }),
     debug: Flags.boolean({
@@ -78,9 +79,10 @@ export default class DxSources extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DxSources);
-    uxLog(this, c.red('This command is deprecated and will be removed in January 2025'));
-    uxLog(this, c.red('Nobody used Metadata format anymore :)'));
+    uxLog("error", this, c.red(t('thisCommandIsDeprecatedAndWillBe')));
+    uxLog("error", this, c.red(t('nobodyUsedMetadataFormatAnymore')));
     uxLog(
+      "error",
       this,
       c.red('If you think it should be kept and maintained, please post an issue on sfdx-hardis GitHub repository')
     );
@@ -122,9 +124,9 @@ export default class DxSources extends SfCommand<any> {
         // sfdx-essentials still here but deprecated and will be removed
         const filterCommand =
           'sfdx essentials:metadata:filter-from-packagexml' +
-          ` -i ${this.deployDir}` +
-          ` -p ${packageXmlFile}` +
-          ` -o ${tmpDir}`;
+          ` -i "${this.deployDir}"` +
+          ` -p "${packageXmlFile}"` +
+          ` -o "${tmpDir}"`;
         this.deployDir = tmpDir;
         await execCommand(filterCommand, this, {
           output: true,
@@ -144,13 +146,13 @@ export default class DxSources extends SfCommand<any> {
       if (deployRes.status === 0) {
         deployProcessed = true;
         message = '[sfdx-hardis] Successfully deployed sfdx project sources to Salesforce org';
-        uxLog(this, c.green(message));
+        uxLog("success", this, c.green(message));
       } else {
         message = '[sfdx-hardis] Unable to deploy sfdx project sources to Salesforce org';
-        uxLog(this, c.red(deployRes.errorMessage));
+        uxLog("error", this, c.red(deployRes.errorMessage));
       }
     } else {
-      uxLog(this, 'No package.xml found so no deployment has been performed');
+      uxLog("log", this, t('noPackageXmlFoundSoNoDeployment'));
     }
 
     // Deploy destructive changes
@@ -168,7 +170,7 @@ export default class DxSources extends SfCommand<any> {
     if (fs.existsSync(packageDeletedXmlFile)) {
       await deployDestructiveChanges(packageDeletedXmlFile, { debug: debugMode, check }, this);
     } else {
-      uxLog(this, 'No destructivePackage.Xml found so no destructive deployment has been performed');
+      uxLog("log", this, t('noDestructivepackageXmlFoundSoNoDestructive'));
     }
 
     return {

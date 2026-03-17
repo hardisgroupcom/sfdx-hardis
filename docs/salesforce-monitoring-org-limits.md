@@ -17,9 +17,9 @@ There are many limits on a Salesforce org:
 
 This feature controls that they are not reached, and will send notifications:
 
-- Info: > 50%
-- Warning > 75%
-- Error > 100%
+- Success <= 50%
+- Warning > 50%
+- Error > 75%
 
 Sfdx-hardis command: [sf hardis:org:monitor:limits](https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/)
 

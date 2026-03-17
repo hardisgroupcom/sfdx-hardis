@@ -6,7 +6,7 @@ description: See how Cloudity can help you as a Salesforce Consulting Partner
 ## Your Expert Salesforce Partner
 
 <div style="text-align: center;">
-    <a href="https://cloudity.com/" target="_blank"><img src="../assets/images/cloudity-logo.jpg" alt="description" /></a>
+    <a href="https://cloudity.com/" target="_blank"><img src="../assets/images/cloudity-banner.png" alt="description" /></a>
 </div>
 
 ___

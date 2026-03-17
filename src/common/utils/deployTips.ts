@@ -1,4 +1,4 @@
-// Analyze deployment errors to provide tips to user :)
+// Analyze deployment errors to provide tips to user 😊
 import c from "chalk";
 import format from "string-template";
 
@@ -7,6 +7,9 @@ import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/u
 import { findJsonInString, stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
 import { analyzeDeployErrorLogsJson } from "./deployTipJson.js";
+import { PullRequestData } from "../gitProvider/index.js";
+import { setPullRequestData } from "./gitUtils.js";
+import { t } from './i18n.js';
 
 let logRes: string | null = null;
 let errorsAndTips: any[] = [];
@@ -59,7 +62,7 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
           },
         });
       } else {
-        const promptText = AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": logLine.trim() });
+        const promptText = await AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": logLine.trim() });
         // No tip found, give the user an AI prompt
         logResLines.push(c.yellow("No sfdx-hardis tip to solve this error. You can try the following prompt:"));
         logResLines.push(c.yellow(promptText));
@@ -87,10 +90,10 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
   // Fallback in case we have not been able to identify errors
   if (errorsAndTips.length === 0 && failedTests.length === 0) {
     errorsAndTips.push(({
-      error: { message: "There has been an issue parsing errors, probably because of a SF CLI output format update. Please check console logs." },
+      error: { message: t('thereHasBeenAnIssueParsingErrors2') },
       tip: {
         label: "SfdxHardisParseError",
-        message: "If you are in CI/CD, please check at the bottom of deployment check job logs. The issue will be fixed ASAP.",
+        message: t('ifYouAreInCiCdPlease'),
       },
     }))
   }
@@ -282,7 +285,7 @@ function returnErrorLines(strIn) {
 
 // This data will be caught later to build a pull request message
 export async function updatePullRequestResult(errorsAndTips: Array<any>, failedTests: Array<any>, options: any) {
-  const prData: any = {
+  const prData: Partial<PullRequestData> = {
     messageKey: "deployment",
     title: options.check ? "✅ Deployment check success" : "✅ Deployment success",
     deployErrorsMarkdownBody: "No error has been found during the deployment",
@@ -297,7 +300,7 @@ export async function updatePullRequestResult(errorsAndTips: Array<any>, failedT
     prData.deployErrorsMarkdownBody = testFailuresToMarkdown(failedTests);
     prData.status = "invalid";
   }
-  globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
+  setPullRequestData(prData);
 }
 
 async function findAiTip(errorLine: any): Promise<AiResponse | null> {
@@ -305,17 +308,17 @@ async function findAiTip(errorLine: any): Promise<AiResponse | null> {
     return null;
   }
   alreadyProcessedErrors.push(errorLine);
-  if (AiProvider.isAiAvailable()) {
+  if (await AiProvider.isAiAvailable()) {
     if (alreadyProcessedErrors.length > parseInt(process.env.MAX_DEPLOYMENT_TIPS_AI_CALLS || "20")) {
-      uxLog(this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
+      uxLog("warning", this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
       return null;
     }
-    const prompt = AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": errorLine });
+    const prompt = await AiProvider.buildPrompt("PROMPT_SOLVE_DEPLOYMENT_ERROR", { "ERROR": errorLine });
     try {
       const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_SOLVE_DEPLOYMENT_ERROR");
       return aiResponse;
     } catch (e) {
-      uxLog(this, c.yellow("[AI] Error while calling OpenAI: " + (e as Error).message));
+      uxLog("warning", this, c.yellow("[AI] Error while calling OpenAI: " + (e as Error).message));
     }
   }
   return null;

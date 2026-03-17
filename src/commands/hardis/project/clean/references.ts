@@ -18,6 +18,7 @@ import { getConfig, setConfig } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { FilterXmlContent } from './filter-xml-content.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -25,7 +26,33 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class CleanReferences extends SfCommand<any> {
   public static title = 'Clean references in dx sources';
 
-  public static description = 'Remove unwanted references within sfdx project sources';
+  public static description = `
+## Command Behavior
+
+**Removes unwanted references and cleans up metadata within your Salesforce DX project sources.**
+
+This command provides a powerful way to maintain a clean and efficient Salesforce codebase by eliminating unnecessary or problematic metadata. It supports various cleaning types, from removing hardcoded user references in dashboards to minimizing profile attributes.
+
+Key functionalities include:
+
+- **Configurable Cleaning Types:** You can specify a particular cleaning type (e.g., 
+- **JSON/XML Configuration:** Cleaning operations can be driven by a JSON configuration file or a 
+- **Interactive Selection:** If no cleaning type is specified, the command interactively prompts you to select which references to clean.
+- **Persistent Configuration:** You can choose to save your cleaning selections in your project's configuration (\`.sfdx-hardis.yml\`) so they are automatically applied during future Work Save operations.
+- **File Deletion:** Beyond just cleaning XML content, it can also delete related files (e.g., custom field files and their translations when a custom field is marked for deletion).
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves several steps:
+
+- **Configuration Loading:** It reads the project's configuration to determine default cleaning types and user preferences.
+- **Cleaning Type Processing:** For each selected cleaning type, it either executes a dedicated sub-command (e.g., 
+- **XML Filtering:** For template-based cleanings, it constructs a temporary JSON configuration file based on predefined templates or user-provided 
+- **Package.xml Cleanup:** It iterates through 
+- **Object Property Removal:** The 
+</details>
+`;
 
   public static examples = [
     '$ sf hardis:project:clean:references',
@@ -80,66 +107,65 @@ export default class CleanReferences extends SfCommand<any> {
   protected allCleaningTypes = [
     {
       value: 'checkPermissions',
-      title: 'Check custom items are existing it at least one Permission Set',
+      title: t('cleaningTypeCheckPermissions'),
       command: 'sf hardis:lint:access',
     },
     {
       value: 'dashboards',
-      title: 'Dashboards: Remove reference to hardcoded users',
+      title: t('cleaningTypeDashboards'),
     },
     {
       value: 'destructivechanges',
-      title: 'DestructiveChanges.xml: Remove source files mentioned in destructiveChanges.xml',
+      title: t('cleaningTypeDestructiveChanges'),
     },
     {
       value: 'flowPositions',
-      title: `Flows: Replace all positions in AutoLayout Flows by 0 to simplify conflicts management`,
+      title: t('cleaningTypeFlowPositions'),
       command: 'sf hardis:project:clean:flowpositions',
     },
     {
       value: 'sensitiveMetadatas',
-      title: `Remove sensitive metadata content from sources (ex: Certificates)`,
+      title: t('cleaningTypeSensitiveMetadatas'),
       command: 'sf hardis:project:clean:sensitive-metadatas',
     },
     {
       value: 'listViewsMine',
-      title: `ListViews: Convert scope "Everything" into scope "Mine" on ListViews`,
+      title: t('cleaningTypeListViewsMine'),
       command: 'sf hardis:project:clean:listviews',
     },
     {
       value: 'minimizeProfiles',
-      title: 'Profiles: Remove profile attributes that exists on permission sets',
+      title: t('cleaningTypeMinimizeProfiles'),
       command: 'sf hardis:project:clean:minimizeprofiles',
     },
     {
       value: 'caseentitlement',
-      title: 'References to Entitlement Management items',
+      title: t('cleaningTypeCaseEntitlement'),
     },
     {
       value: 'datadotcom',
-      title: 'References to Data.com items. https://help.salesforce.com/articleView?id=000320795&type=1&mode=1',
+      title: t('cleaningTypeDataDotCom'),
     },
     {
       value: 'entitlement',
-      title: 'References to Entitlement object',
+      title: t('cleaningTypeEntitlement'),
     },
     {
       value: 'localfields',
-      title:
-        'References to Local Fields items. https://help.salesforce.com/articleView?id=sf.admin_local_name_fields.htm&type=5',
+      title: t('cleaningTypeLocalFields'),
     },
     {
       value: 'productrequest',
-      title: 'References to ProductRequest object',
+      title: t('cleaningTypeProductRequest'),
     },
     {
       value: 'systemDebug',
-      title: 'Remove System.debug from sources',
+      title: t('cleaningTypeSystemDebug'),
       command: 'sf hardis:project:clean:systemdebug',
     },
     {
       value: 'v60',
-      title: 'Make metadata compliant with v60',
+      title: t('cleaningTypeV60'),
     },
   ];
 
@@ -167,7 +193,8 @@ export default class CleanReferences extends SfCommand<any> {
         const typesResponse = await prompts({
           type: 'multiselect',
           name: 'value',
-          message: c.cyanBright('What references do you want to clean from your SFDX project sources ?'),
+          message: c.cyanBright(t('whatReferencesDoYouWantToClean')),
+          description: t('selectWhichTypesOfReferenceCleaning'),
           choices: this.allCleaningTypes,
         });
         this.cleaningTypes = typesResponse.value;
@@ -182,9 +209,8 @@ export default class CleanReferences extends SfCommand<any> {
         type: 'confirm',
         name: 'value',
         default: true,
-        message: c.cyanBright(
-          'Do you want to save this action in your project configuration, so it is executed at each Work Save ?'
-        ),
+        message: c.cyanBright(t('doYouWantToSaveCleaningAction')),
+        description: t('chooseSaveCleaningTypesFutureWorkSaves'),
       });
       if (saveResponse.value === true) {
         autoCleanTypes.push(...this.cleaningTypes);
@@ -204,7 +230,7 @@ export default class CleanReferences extends SfCommand<any> {
         if (this.argv.indexOf('--websocket') > -1) {
           command += ` --websocket ${this.argv[this.argv.indexOf('--websocket') + 1]}`;
         }
-        uxLog(this, c.cyan(`Run cleaning command ${c.bold(cleaningType)} (${cleaningTypeObj.title}) ...`));
+        uxLog("action", this, c.cyan(t('runCleaningCommand', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));
         // Command based cleaning
         await execCommand(command, this, {
           fail: true,
@@ -213,7 +239,7 @@ export default class CleanReferences extends SfCommand<any> {
         });
       } else {
         // Template based cleaning
-        uxLog(this, c.cyan(`Apply cleaning of references to ${c.bold(cleaningType)} (${cleaningTypeObj.title})...`));
+        uxLog("action", this, c.cyan(t('applyCleaningOfReferencesTo', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));
         const filterConfigFile = await this.getFilterConfigFile(cleaningType);
         const packageDirectories = this.project?.getPackageDirectories() || [];
         for (const packageDirectory of packageDirectories) {
@@ -226,7 +252,7 @@ export default class CleanReferences extends SfCommand<any> {
     }
 
     // Clean package.xml file from deleted items
-    uxLog(this, c.grey(`Cleaning package.xml files...`));
+    uxLog("log", this, c.grey(`Cleaning package.xml & files from deleted items...`));
     const patternPackageXml = '**/manifest/**/package*.xml';
     const packageXmlFiles = await glob(patternPackageXml, {
       cwd: process.cwd(),
@@ -238,19 +264,19 @@ export default class CleanReferences extends SfCommand<any> {
       const newPackageXmlContent = removeObjectPropertyLists(packageXmlContent, this.deleteItems);
       if (packageXmlContentStr !== JSON.stringify(newPackageXmlContent)) {
         await writePackageXmlFile(packageXmlFile, newPackageXmlContent);
-        uxLog(this, c.grey('-- cleaned elements from ' + packageXmlFile));
+        uxLog("log", this, c.grey('-- cleaned elements from ' + packageXmlFile));
       }
     }
 
     // Delete files when necessary (in parallel)
-    uxLog(this, c.grey(`Removing obsolete files...`));
+    uxLog("log", this, c.grey(`Removing obsolete files...`));
     await Promise.all(
       Object.keys(this.deleteItems).map(async (type) => {
         await this.manageDeleteRelatedFiles(type);
       })
     );
 
-    uxLog(this, c.green(`Cleaning complete`));
+    uxLog("success", this, c.green(t('cleaningComplete')));
     // Return an object to be displayed with --json
     return { outputString: 'Cleaned references from sfdx project' };
   }
@@ -312,7 +338,7 @@ export default class CleanReferences extends SfCommand<any> {
       const matchFiles = await glob(pattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
       for (const removeFile of matchFiles) {
         await fs.remove(removeFile);
-        uxLog(this, c.grey(`Removed file ${removeFile}`));
+        uxLog("log", this, c.grey(t('removedFile', { removeFile })));
       }
     }
     // Remove field in recordTypes
@@ -330,7 +356,7 @@ export default class CleanReferences extends SfCommand<any> {
         if (updatedPicklistValues.length !== recordType.RecordType.picklistValues.length) {
           recordType.RecordType.picklistValues = updatedPicklistValues;
           await writeXmlFile(recordTypeFile, recordType);
-          uxLog(this, c.grey(`Cleaned file ${recordTypeFile} from ${obj}.${fld}`));
+          uxLog("log", this, c.grey(t('cleanedFileFrom', { recordTypeFile, obj, fld })));
         }
       }
     }

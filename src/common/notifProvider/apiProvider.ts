@@ -2,12 +2,16 @@ import { Connection, SfError } from "@salesforce/core";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, getGitRepoName, uxLog } from "../utils/index.js";
-import { NotifMessage, NotifSeverity, UtilsNotifs } from "./index.js";
+import type { NotifMessage, NotifSeverity } from "./types.js";
+import { UtilsNotifs } from "./utils.js";
 import { CONSTANTS, getEnvVar } from "../../config/index.js";
 
 import { getSeverityIcon, removeMarkdown } from "../utils/notifUtils.js";
 import { GitProvider } from "../gitProvider/index.js";
 import axios, { AxiosRequestConfig } from "axios";
+import fs from "fs-extra";
+import * as path from "path";
+import { t } from '../utils/i18n.js';
 
 const MAX_LOKI_LOG_LENGTH = Number(process.env.MAX_LOKI_LOG_LENGTH || 200000);
 const TRUNCATE_LOKI_ELEMENTS_LENGTH = Number(process.env.TRUNCATE_LOKI_ELEMENTS_LENGTH || 500);
@@ -18,7 +22,9 @@ export class ApiProvider extends NotifProviderRoot {
   public payloadFormatted: any;
 
   protected metricsApiUrl: string | null;
+  protected jsonLogsFile: string | null;
   public metricsPayload: string;
+  protected metricsFormat: 'influx' | 'prometheus' = 'influx';
 
   public getLabel(): string {
     return "sfdx-hardis Api connector";
@@ -38,25 +44,60 @@ export class ApiProvider extends NotifProviderRoot {
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
     const apiPromises: Promise<void>[] = []; // Use Promises to optimize performances with api calls
     this.apiUrl = getEnvVar("NOTIF_API_URL");
-    if (this.apiUrl == null) {
-      throw new SfError("[ApiProvider] You need to define a variable NOTIF_API_URL to use sfdx-hardis Api notifications");
+    this.jsonLogsFile = getEnvVar("NOTIF_API_LOGS_JSON_FILE");
+    if (this.apiUrl == null && this.jsonLogsFile == null) {
+      throw new SfError("[ApiProvider] You need to define a variable NOTIF_API_URL or NOTIF_API_LOGS_JSON_FILE to use sfdx-hardis Api notifications");
     }
     // Build initial payload data from notifMessage
     await this.buildPayload(notifMessage);
     // Format payload according to API endpoint: for example, Grafana loki
     await this.formatPayload();
-    // Send notif
-    apiPromises.push(this.sendToApi());
+    // Send notif logs
+    this.managePostLogs(apiPromises, notifMessage);
     // Handle Metrics API if provided
+    this.managePostMetrics(apiPromises, notifMessage);
+    await Promise.allSettled(apiPromises);
+    return;
+  }
+
+  private managePostLogs(apiPromises: Promise<void>[], notifMessage: NotifMessage) {
+    const notifApiSkipLogs = getEnvVar("NOTIF_API_SKIP_LOGS");
+    if (notifApiSkipLogs === "all") {
+      uxLog("log", this, `[ApiProvider] Skipped posting logs to API and JSON file as NOTIF_API_SKIP_LOGS is set to 'all'`);
+      return;
+    }
+    else if (notifApiSkipLogs && notifApiSkipLogs?.split(",").includes(notifMessage.type)) {
+      uxLog("log", this, `[ApiProvider] Skipped posting logs to API and JSON file for notification type '${notifMessage.type}' as NOTIF_API_SKIP_LOGS includes it`);
+      return;
+    }
+    if (this.apiUrl !== null) {
+      apiPromises.push(this.sendToApi());
+    }
+    // Write logs to JSON file if configured
+    if (this.jsonLogsFile !== null) {
+      apiPromises.push(this.writeLogsToJsonFile(this.jsonLogsFile));
+    }
+  }
+
+  private managePostMetrics(apiPromises: Promise<void>[], notifMessage: NotifMessage) {
     this.metricsApiUrl = getEnvVar("NOTIF_API_METRICS_URL");
     if (this.metricsApiUrl !== null) {
+      const notifApiSkipMetrics = getEnvVar("NOTIF_API_SKIP_METRICS");
+      if (notifApiSkipMetrics === "all") {
+        uxLog("log", this, `[ApiProvider] Skipped posting metrics to API as NOTIF_API_SKIP_METRICS is set to 'all'`);
+        return;
+      }
+      else if (notifApiSkipMetrics && notifApiSkipMetrics?.split(",").includes(notifMessage.type)) {
+        uxLog("log", this, `[ApiProvider]Skipped posting metrics to API for notification type '${notifMessage.type}' as NOTIF_API_SKIP_METRICS includes it`);
+        return;
+      }
+      // Detect metrics format based on URL
+      this.detectMetricsFormat();
       this.buildMetricsPayload();
       if (this.metricsPayload.length > 0) {
         apiPromises.push(this.sendToMetricsApi());
       }
     }
-    await Promise.allSettled(apiPromises);
-    return;
   }
 
   // Build message
@@ -101,7 +142,10 @@ export class ApiProvider extends NotifProviderRoot {
     const repoName = (await getGitRepoName() || "").replace(".git", "");
     const currentGitBranch = await getCurrentGitBranch();
     const conn: Connection = globalThis.jsForceConn;
-    const orgIdentifier = (conn.instanceUrl) ? conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__") : currentGitBranch || "ERROR apiProvider";
+    const monitoringKeyOverride = getEnvVar("SFDX_HARDIS_MONITORING_KEY") || getEnvVar("MONITORING_KEY");
+    const orgIdentifier = monitoringKeyOverride
+      ? monitoringKeyOverride
+      : (conn.instanceUrl) ? conn.instanceUrl.replace("https://", "").replace(".my.salesforce.com", "").replace(/\./gm, "__") : currentGitBranch || "ERROR apiProvider";
     const notifKey = orgIdentifier + "!!" + notifMessage.type;
     this.payload = {
       source: "sfdx-hardis",
@@ -132,6 +176,7 @@ export class ApiProvider extends NotifProviderRoot {
       await this.formatPayloadLoki();
       return;
     }
+
     this.payloadFormatted = this.payload;
   }
 
@@ -151,6 +196,7 @@ export class ApiProvider extends NotifProviderRoot {
         newPayloadData._logElementsTruncated = true;
         payloadDataJson = JSON.stringify(newPayloadData);
         uxLog(
+          "log",
           this,
           c.grey(
             `[ApiProvider] Truncated _logElements from ${logElements.length} to ${truncatedLogElements.length} to avoid Loki entry max size reached (initial size: ${bodyBytesLen} bytes)`,
@@ -159,7 +205,7 @@ export class ApiProvider extends NotifProviderRoot {
       } else {
         newPayloadData._logBodyText = (newPayloadData._logBodyText || "").slice(0, 100) + "\n ... (truncated)";
         payloadDataJson = JSON.stringify(newPayloadData);
-        uxLog(this, c.grey(`[ApiProvider] Truncated _logBodyText to 100 to avoid Loki entry max size reached (initial size: ${bodyBytesLen} bytes)`));
+        uxLog("log", this, c.grey(`[ApiProvider] Truncated _logBodyText to 100 to avoid Loki entry max size reached (initial size: ${bodyBytesLen} bytes)`));
       }
     }
     this.payloadFormatted = {
@@ -193,20 +239,94 @@ export class ApiProvider extends NotifProviderRoot {
       const axiosResponse = await axios.post(this.apiUrl || "", this.payloadFormatted, axiosConfig);
       const httpStatus = axiosResponse.status;
       if (httpStatus > 200 && httpStatus < 300) {
-        uxLog(this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
+        uxLog("log", this, c.cyan(`[ApiProvider] Posted message to API ${this.apiUrl} (${httpStatus})`));
         if (getEnvVar("NOTIF_API_DEBUG") === "true") {
-          uxLog(this, c.cyan(JSON.stringify(this.payloadFormatted, null, 2)));
+          uxLog("log", this, c.cyan(JSON.stringify(this.payloadFormatted, null, 2)));
         }
       }
     } catch (e) {
-      uxLog(this, c.yellow(`[ApiProvider] Error while sending message to API ${this.apiUrl}: ${(e as Error).message}`));
-      uxLog(this, c.grey("Request body: \n" + JSON.stringify(this.payloadFormatted)));
-      uxLog(this, c.grey("Response body: \n" + JSON.stringify((e as any)?.response?.data || {})));
+      uxLog("warning", this, c.yellow(`[ApiProvider] Error while sending message to API ${this.apiUrl}: ${(e as Error).message}`));
+      uxLog("log", this, c.grey(t('requestBody') + JSON.stringify(this.payloadFormatted)));
+      uxLog("log", this, c.grey(t('responseBody2') + JSON.stringify((e as any)?.response?.data || {})));
     }
   }
 
-  // Build something like MetricName,source=sfdx-hardis,orgIdentifier=hardis-group metric=12.7,min=0,max=70,percent=0.63
+  // Write logs to JSON file in Loki-compatible newline-delimited JSON (NDJSON) format
+  // Writes one line per log element in full Loki push format for easy ingestion
+  private async writeLogsToJsonFile(filePath: string) {
+    try {
+      await fs.ensureDir(path.dirname(filePath));
+      const timestamp = new Date().toISOString();
+
+      // Always write flat aggregate format
+      const logEntry = {
+        timestamp: timestamp,
+        source: this.payload.source,
+        type: this.payload.type,
+        severity: this.payload.severity,
+        orgIdentifier: this.payload.orgIdentifier,
+        gitIdentifier: this.payload.gitIdentifier,
+        metric: this.payload.data.metric,
+        _metrics: this.payload.data._metrics,
+        _metricsKeys: this.payload.data._metricsKeys,
+        _logElements: this.payload.data._logElements || [],
+        _title: this.payload.data._title,
+        _jobUrl: this.payload.data._jobUrl,
+        ...(this.payload.data.limits && { limits: this.payload.data.limits }),
+      };
+
+      await fs.appendFile(filePath, JSON.stringify(logEntry) + '\n');
+      uxLog("log", this, c.cyan(`[ApiProvider] Appended log entry to file ${filePath}`));
+
+      const elementCount = this.payload.data._logElements?.length || 0;
+      const metricValue = this.payload.data.metric || 0;
+      uxLog(
+        "log",
+        this,
+        c.cyan(`[ApiProvider] Appended aggregate log entry (metric: ${metricValue}, elements: ${elementCount})`)
+      );
+
+      if (getEnvVar("NOTIF_API_DEBUG") === "true") {
+        uxLog("log", this, c.grey(t('logElementsCount', { elementCount })));
+        uxLog("log", this, c.grey(t('metricValue', { metricValue })));
+      }
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[ApiProvider] Error writing logs: ${(e as Error).message}`));
+    }
+  }
+
+  // Detect metrics format based on URL pattern
+  private detectMetricsFormat() {
+    const metricsUrl = this.metricsApiUrl || "";
+    // Force prometheus format if explicitly set
+    const forceFormat = getEnvVar("NOTIF_API_METRICS_FORMAT");
+    if (forceFormat === "prometheus" || forceFormat === "influx") {
+      this.metricsFormat = forceFormat;
+      return;
+    }
+    // Auto-detect based on URL patterns
+    if (metricsUrl.includes("/metrics/job/") || metricsUrl.includes("pushgateway")) {
+      this.metricsFormat = "prometheus";
+    } else if (metricsUrl.includes("influx") || metricsUrl.includes("grafana.net")) {
+      this.metricsFormat = "influx";
+    } else {
+      // Default to influx for backward compatibility
+      this.metricsFormat = "influx";
+    }
+    uxLog("log", this, c.grey(`[ApiProvider] Detected metrics format: ${this.metricsFormat}`));
+  }
+
+  // Build metrics payload in either InfluxDB or Prometheus format
   private buildMetricsPayload() {
+    if (this.metricsFormat === "prometheus") {
+      this.buildMetricsPayloadPrometheus();
+    } else {
+      this.buildMetricsPayloadInflux();
+    }
+  }
+
+  // Build InfluxDB line protocol: MetricName,source=sfdx-hardis,orgIdentifier=hardis-group metric=12.7,min=0,max=70,percent=0.63
+  private buildMetricsPayloadInflux() {
     // Build tag field
     const metricTags =
       `source=${this.payload.source},` +
@@ -242,11 +362,59 @@ export class ApiProvider extends NotifProviderRoot {
     this.metricsPayload = metricsPayloadLines.join("\n");
   }
 
+  // Build Prometheus format
+  private buildMetricsPayloadPrometheus() {
+    // Build labels
+    const labels =
+      `source="${this.payload.source}",` +
+      `type="${this.payload.type}",` +
+      `orgIdentifier="${this.payload.orgIdentifier}",` +
+      `gitIdentifier="${this.payload.gitIdentifier}"`;
+
+    const metricsPayloadLines: any[] = [];
+    for (const metricId of Object.keys(this.payload.data._metrics)) {
+      const metricData = this.payload.data._metrics[metricId];
+      const sanitizedMetricName = metricId.replace(/[^a-zA-Z0-9_]/g, '_');
+
+      if (typeof metricData === "number") {
+        // Simple metric
+        metricsPayloadLines.push(`# TYPE ${sanitizedMetricName} gauge`);
+        metricsPayloadLines.push(`${sanitizedMetricName}{${labels}} ${metricData.toFixed(2)}`);
+      } else if (typeof metricData === "object") {
+        // Complex metric with multiple values
+        if (metricData.value !== undefined) {
+          metricsPayloadLines.push(`# TYPE ${sanitizedMetricName} gauge`);
+          metricsPayloadLines.push(`${sanitizedMetricName}{${labels}} ${metricData.value.toFixed(2)}`);
+        }
+        if (metricData.min !== undefined) {
+          metricsPayloadLines.push(`# TYPE ${sanitizedMetricName}_min gauge`);
+          metricsPayloadLines.push(`${sanitizedMetricName}_min{${labels}} ${metricData.min.toFixed(2)}`);
+        }
+        if (metricData.max !== undefined) {
+          metricsPayloadLines.push(`# TYPE ${sanitizedMetricName}_max gauge`);
+          metricsPayloadLines.push(`${sanitizedMetricName}_max{${labels}} ${metricData.max.toFixed(2)}`);
+        }
+        if (metricData.percent !== undefined) {
+          metricsPayloadLines.push(`# TYPE ${sanitizedMetricName}_percent gauge`);
+          metricsPayloadLines.push(`${sanitizedMetricName}_percent{${labels}} ${metricData.percent.toFixed(2)}`);
+        }
+      }
+    }
+
+    this.metricsPayload = metricsPayloadLines.join("\n") + "\n";
+  }
+
   // Call remote API
   private async sendToMetricsApi() {
     const axiosConfig: AxiosRequestConfig = {
       responseType: "json",
     };
+
+    // Set content type based on format
+    if (this.metricsFormat === "prometheus") {
+      axiosConfig.headers = { 'Content-Type': 'text/plain; version=0.0.4' };
+    }
+
     // Basic Auth
     if (getEnvVar("NOTIF_API_METRICS_BASIC_AUTH_USERNAME") != null) {
       axiosConfig.auth = {
@@ -256,22 +424,25 @@ export class ApiProvider extends NotifProviderRoot {
     }
     // Bearer token
     else if (getEnvVar("NOTIF_API_METRICS_BEARER_TOKEN") != null) {
-      axiosConfig.headers = { Authorization: `Bearer ${getEnvVar("NOTIF_API_METRICS_BEARER_TOKEN")}` };
+      if (!axiosConfig.headers) {
+        axiosConfig.headers = {};
+      }
+      axiosConfig.headers.Authorization = `Bearer ${getEnvVar("NOTIF_API_METRICS_BEARER_TOKEN")}`;
     }
     // POST message
     try {
       const axiosResponse = await axios.post(this.metricsApiUrl || "", this.metricsPayload, axiosConfig);
       const httpStatus = axiosResponse.status;
-      if (httpStatus > 200 && httpStatus < 300) {
-        uxLog(this, c.cyan(`[ApiMetricProvider] Posted message to API ${this.metricsApiUrl} (${httpStatus})`));
+      if (httpStatus >= 200 && httpStatus < 300) {
+        uxLog("log", this, c.cyan(`[ApiMetricProvider] Posted metrics to API ${this.metricsApiUrl} (${httpStatus}) [format: ${this.metricsFormat}]`));
         if (getEnvVar("NOTIF_API_DEBUG") === "true") {
-          uxLog(this, c.cyan(JSON.stringify(this.metricsPayload, null, 2)));
+          uxLog("log", this, c.cyan(t('metricsPayload') + this.metricsPayload));
         }
       }
     } catch (e) {
-      uxLog(this, c.yellow(`[ApiMetricProvider] Error while sending message to API ${this.metricsApiUrl}: ${(e as Error).message}`));
-      uxLog(this, c.grey("Request body: \n" + JSON.stringify(this.metricsPayload)));
-      uxLog(this, c.grey("Response body: \n" + JSON.stringify((e as any)?.response?.data || {})));
+      uxLog("warning", this, c.yellow(`[ApiMetricProvider] Error while sending metrics to API ${this.metricsApiUrl}: ${(e as Error).message}`));
+      uxLog("log", this, c.grey(t('requestBody2') + this.metricsPayload));
+      uxLog("log", this, c.grey(t('responseBody') + JSON.stringify((e as any)?.response?.data || {})));
     }
   }
 }

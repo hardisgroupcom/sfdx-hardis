@@ -8,6 +8,7 @@ import { isCI, uxLog } from '../../../common/utils/index.js';
 import { bulkQuery } from '../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -15,13 +16,34 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class MultiOrgQuery extends SfCommand<any> {
   public static title = 'Multiple Orgs SOQL Query';
 
-  public static description = `Executes a SOQL query in multiple orgs and generate a single report from it
-  
-You can send a custom query using --query, or use one of the predefined queries using --query-template.
+  public static description = `
+**Executes a SOQL query across multiple Salesforce organizations and consolidates the results into a single report.**
 
-If you use the command from a CI/CD job, you must previously authenticate to the usernames present in --target-orgs.
+This command is highly valuable for administrators and developers who need to gather consistent data from various Salesforce environments (e.g., sandboxes, production orgs) for reporting, auditing, or comparison purposes. It streamlines the process of querying multiple orgs, eliminating the need to log into each one individually.
 
-[![Use in VsCode SFDX Hardis !](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/multi-org-query-demo.gif)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+Key functionalities:
+
+- **Flexible Query Input:** You can provide a custom SOQL query directly using the \`--query\` flag, or select from a list of predefined query templates (e.g., \`active-users\`, \`all-users\`) using the \`--query-template\` flag.
+- **Multiple Org Targeting:** Specify a list of Salesforce org usernames or aliases using the \`--target-orgs\` flag. If not provided, an interactive menu will allow you to select multiple authenticated orgs.
+- **Consolidated Report:** All query results from the different orgs are combined into a single CSV file, making data analysis and comparison straightforward.
+- **Authentication Handling:** For CI/CD jobs, ensure that the target orgs are already authenticated using Salesforce CLI. In interactive mode, it will prompt for authentication if an org is not connected.
+
+**Visual Demo:**
+
+[![Use in VS Code SFDX Hardis !](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/multi-org-query-demo.gif)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **Org Authentication and Connection:** It uses \`AuthInfo.create\` and \`Connection.create\` to establish connections to each target Salesforce org. It also leverages \`makeSureOrgIsConnected\` and \`promptOrgList\` for interactive org selection and authentication checks.
+- **SOQL Query Execution (Bulk API):** It executes the specified SOQL query against each connected org using \`bulkQuery\` for efficient data retrieval, especially for large datasets.
+- **Data Aggregation:** It collects the records from each org's query result and adds metadata about the source org (instance URL, alias, username) to each record, enabling easy identification of data origin in the consolidated report.
+- **Report Generation:** It uses \`generateCsvFile\` to create the final CSV report and \`generateReportPath\` to determine the output file location.
+- **Interactive Prompts:** The \`prompts\` library is used to guide the user through selecting a query template or entering a custom query, and for selecting target orgs if not provided as command-line arguments.
+- **Error Handling:** It logs errors for any orgs where the query fails, ensuring that the overall process continues and provides a clear summary of successes and failures.
+</details>
 `;
 
   public static examples = [
@@ -112,7 +134,7 @@ If you use the command from a CI/CD job, you must previously authenticate to the
 
     // Generate output CSV & XLS
     this.outputFile = await generateReportPath('multi-org-query', this.outputFile);
-    const outputFilesRes = await generateCsvFile(this.allRecords, this.outputFile);
+    const outputFilesRes = await generateCsvFile(this.allRecords, this.outputFile, { fileTitle: 'Multi Orgs Query Results' });
 
     return {
       allRecords: this.allRecords,
@@ -124,16 +146,17 @@ If you use the command from a CI/CD job, you must previously authenticate to the
   }
 
   private displayResults() {
+    uxLog("action", this, c.cyan(t('queryResultsFromOrgs', { targetOrgsIds: this.targetOrgsIds.length })));
     if (this.successOrgs.length > 0) {
-      uxLog(this, c.green(`Successfully performed query on ${this.successOrgs.length} orgs`));
+      uxLog("success", this, c.green(t('successfullyPerformedQueryOnOrgs', { successOrgs: this.successOrgs.length })));
       for (const org of this.successOrgs) {
-        uxLog(this, c.grey(`-  ${org.instanceUrl}`));
+        uxLog("log", this, c.grey(`-  ${org.instanceUrl}`));
       }
     }
     if (this.errorOrgs.length > 0) {
-      uxLog(this, c.green(`Error while performing query on ${this.errorOrgs.length} orgs`));
+      uxLog("success", this, c.green(t('errorWhilePerformingQueryOnOrgs', { errorOrgs: this.errorOrgs.length })));
       for (const org of this.successOrgs) {
-        uxLog(this, c.grey(`-  ${org.instanceUrl}: ${org?.error?.message}`));
+        uxLog("log", this, c.grey(`-  ${org.instanceUrl}: ${org?.error?.message}`));
       }
     }
   }
@@ -142,14 +165,14 @@ If you use the command from a CI/CD job, you must previously authenticate to the
     for (const orgId of this.targetOrgsIds) {
       const matchOrgs = this.targetOrgs.filter(org => (org.username === orgId || org.alias === orgId) && org.accessToken);
       if (matchOrgs.length === 0) {
-        uxLog(this, c.yellow(`Skipped ${orgId}: Unable to find authentication. Run "sf org login web" to authenticate.`));
+        uxLog("warning", this, c.yellow(t('skippedUnableToFindAuthenticationRunSf', { orgId })));
         continue;
       }
       const accessToken = matchOrgs[0].accessToken;
       const username = matchOrgs[0].username;
       const instanceUrl = matchOrgs[0].instanceUrl;
       const loginUrl = matchOrgs[0].loginUrl || instanceUrl;
-      uxLog(this, c.cyan(`Performing query on ${c.bold(orgId)}...`));
+      uxLog("action", this, c.cyan(t('performingQueryOn', { orgId: c.bold(orgId) })));
       try {
         const authInfo = await AuthInfo.create({
           username: username
@@ -171,7 +194,7 @@ If you use the command from a CI/CD job, you must previously authenticate to the
         this.allRecords.push(...records);
         this.successOrgs.push({ orgId: orgId, instanceUrl: instanceUrl, username: username })
       } catch (e: any) {
-        uxLog(this, c.red(`Error while querying ${orgId}: ${e.message}`));
+        uxLog("error", this, c.red(t('errorWhileQuerying', { orgId, message: e.message })));
         this.errorOrgs.push({ org: orgId, error: e })
       }
 
@@ -211,7 +234,9 @@ If you use the command from a CI/CD job, you must previously authenticate to the
       }
       const baseQueryPromptRes = await prompts({
         type: "select",
-        message: "Please select a predefined query, or custom SOQL option",
+        message: t('pleaseSelectPredefinedQueryOrCustomSoql'),
+        description: t('selectPredefinedQueryDescription'),
+        placeholder: t('selectAQueryTemplate'),
         choices: [
           ...Object.keys(this.allQueryTemplates).map(templateId => {
             return {
@@ -221,8 +246,8 @@ If you use the command from a CI/CD job, you must previously authenticate to the
             }
           }),
           {
-            title: "Custom SOQL Query",
-            description: "Enter a custom SOQL query to run",
+            title: t('customSoqlQueryTitle'),
+            description: t('customSoqlQueryDescription'),
             value: "custom"
           }
         ]
@@ -230,7 +255,9 @@ If you use the command from a CI/CD job, you must previously authenticate to the
       if (baseQueryPromptRes.value === "custom") {
         const queryPromptRes = await prompts({
           type: 'text',
-          message: 'Please input the SOQL Query to run in multiple orgs',
+          message: t('pleaseInputTheSoqlQueryToRun'),
+          description: t('enterCustomSoqlQueryForMultiOrg'),
+          placeholder: t('exSelectIdNameFromAccountLimit'),
         });
         this.query = queryPromptRes.value;
       }

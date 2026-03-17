@@ -3,12 +3,12 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import columnify from 'columnify';
 import sortArray from 'sort-array';
-import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { bulkQuery, bulkUpdate, soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { promptProfiles } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -71,7 +71,7 @@ See article below
     const conn = flags['target-org'].getConnection();
 
     // Query users that we want to freeze
-    uxLog(this, c.cyan(`Querying User records with email ending with .invalid...`));
+    uxLog("action", this, c.cyan(`Querying User records with email ending with .invalid...`));
     let userQuery = `SELECT Id,Name,Username,Email,ProfileId FROM User WHERE Email LIKE '%.invalid' and IsActive=true`;
     if (hasProfileConstraint) {
       const profilesQuery = `SELECT Id FROM Profile WHERE Name IN ('${this.profiles.join("','")}')`;
@@ -85,7 +85,7 @@ See article below
     // Check empty result
     if (usersToActivate.length === 0) {
       const outputString = `No matching user records found with email ending with .invalid`;
-      uxLog(this, c.yellow(outputString));
+      uxLog("warning", this, c.yellow(outputString));
       return { outputString };
     }
 
@@ -96,15 +96,13 @@ See article below
         type: 'select',
         name: 'value',
         initial: true,
-        message: c.cyanBright(
-          `Do you want to replace invalid mails by valid mails for all ${c.bold(
-            usersToActivate.length
-          )} found users in org ${c.green(flags['target-org'].getUsername())} ?`
-        ),
+        message: c.cyanBright(t('doYouWantToReplaceInvalidMails', { count: usersToActivate.length, orgUsername: flags['target-org'].getUsername() })),
+        description: t('chooseWhetherToUpdateEmailAddresses'),
+        placeholder: t('selectAnOption'),
         choices: [
           { title: `Yes, all ${c.bold(usersToActivate.length)} users`, value: 'all' },
-          { title: 'No, i want to manually select by profile(s)', value: 'selectProfiles' },
-          { title: 'No, i want to manually select user(s)', value: 'select' },
+          { title: t('noManuallySelectByProfiles'), value: 'selectProfiles' },
+          { title: t('noManuallySelectUsers'), value: 'select' },
         ],
       });
       // Let users select profiles to reactivate users
@@ -112,7 +110,7 @@ See article below
         const selectedProfileIds = await promptProfiles(flags['target-org'].getConnection(), {
           multiselect: true,
           returnField: 'Id',
-          message: 'Please select profiles that you want to reactivate users with .invalid emails',
+          message: t('pleaseSelectProfilesThatYouWantTo'),
         });
         usersToActivateFinal = usersToActivateFinal.filter((user) => selectedProfileIds.includes(user.ProfileId));
       }
@@ -125,15 +123,16 @@ See article below
         const selectUsers = await prompts({
           type: 'multiselect',
           name: 'value',
-          message: 'Please select users that you want to remove the .invalid from emails',
+          message: t('pleaseSelectUsersThatYouWantTo'),
+          description: t('chooseSpecificUsersToReactivateByRemovingInvalidSuffix'),
           choices: usersSorted.map((user: any) => {
             return { title: `${user.Name} - ${user.Email}`, value: user };
           }),
         });
         usersToActivateFinal = selectUsers.value;
       } else if (confirmSelect.value !== 'all') {
-        const outputString = 'Script cancelled by user';
-        uxLog(this, c.yellow(outputString));
+        const outputString = 'Script cancelled by user.';
+        uxLog("warning", this, c.yellow(outputString));
         return { outputString };
       }
     }
@@ -145,28 +144,27 @@ See article below
     });
     const bulkUpdateRes = await bulkUpdate('User', 'update', userToActivateUpdated, conn);
 
-    uxLog(
+    uxLog("action", this, c.cyan(t('resultsOfTheReactivationOfUsersBy', { userToActivateUpdated: userToActivateUpdated.length })));
+    uxLogTable(
       this,
-      '\n' +
-      c.white(
-        columnify(this.debugMode ? userToActivateUpdated : userToActivateUpdated.slice(0, this.maxUsersDisplay))
-      )
+      this.debugMode ? userToActivateUpdated : userToActivateUpdated.slice(0, this.maxUsersDisplay)
     );
+    if (!this.debugMode && userToActivateUpdated.length > this.maxUsersDisplay) {
+      uxLog("warning", this, c.yellow(c.italic(t('listTruncatedToFirstUsers', { maxUsersDisplay: this.maxUsersDisplay }))));
+    }
 
     const activateSuccessNb = bulkUpdateRes.successfulResults.length;
     const activateErrorNb = bulkUpdateRes.failedResults.length;
     if (activateErrorNb > 0) {
       uxLog(
+        "warning",
         this,
         c.yellow(`Warning: ${c.red(c.bold(activateErrorNb))} users has not been reactivated (bulk API errors)`)
       );
     }
 
     // Build results summary
-    uxLog(
-      this,
-      c.green(`${c.bold(activateSuccessNb)} users has been be reactivated by removing the .invalid of their email`)
-    );
+    uxLog("success", this, c.green(t('usersHaveBeenReactivatedByRemovingInvalid', { count: activateSuccessNb })));
 
     // Return an object to be displayed with --json
     return {

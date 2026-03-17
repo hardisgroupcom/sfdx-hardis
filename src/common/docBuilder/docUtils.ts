@@ -6,6 +6,7 @@ import { SfError } from "@salesforce/core";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
 import { uxLog, execCommand } from "../utils/index.js";
+import { t } from '../utils/i18n.js';
 
 
 export function readMkDocsFile(mkdocsYmlFile: string): any {
@@ -26,14 +27,14 @@ export function readMkDocsFile(mkdocsYmlFile: string): any {
 
 export async function writeMkDocsFile(mkdocsYmlFile: string, mkdocsYml: any) {
   const mkdocsYmlStr = yaml
-    .dump(mkdocsYml)
+    .dump(mkdocsYml, { lineWidth: -1 })
     .replace("!!python/name:materialx.emoji.twemoji", '!!python/name:material.extensions.emoji.twemoji')
     .replace("!!python/name:materialx.emoji.to_svg", '!!python/name:material.extensions.emoji.to_svg')
     .replace("'!!python/name:material.extensions.emoji.twemoji'", '!!python/name:material.extensions.emoji.twemoji')
     .replace("'!!python/name:material.extensions.emoji.to_svg'", '!!python/name:material.extensions.emoji.to_svg')
     .replace("'!!python/name:pymdownx.superfences.fence_code_format'", '!!python/name:pymdownx.superfences.fence_code_format');
   await fs.writeFile(mkdocsYmlFile, mkdocsYmlStr);
-  uxLog(this, c.cyan(`Updated mkdocs-material config file at ${c.green(mkdocsYmlFile)}`));
+  uxLog("action", this, c.cyan(t('updatedMkdocsMaterialConfigFileAt', { mkdocsYmlFile: c.green(mkdocsYmlFile) })));
 }
 
 const alreadySaid: string[] = [];
@@ -122,7 +123,7 @@ export class SalesforceSetupUrlBuilder {
 
     if (!pathTemplate) {
       if (!alreadySaid.includes(metadataType)) {
-        uxLog(this, c.grey(`Unsupported metadata type for doc quick link: ${metadataType}`));
+        //        uxLog("log", this, c.grey(`Unsupported metadata type for doc quick link: ${metadataType}`));
         alreadySaid.push(metadataType);
       }
       return null;
@@ -140,7 +141,7 @@ export class SalesforceSetupUrlBuilder {
       .replace(/\{apiName\}/g, apiNameFinal || '');
 
     if (urlPath.includes('{apiName}') || urlPath.includes('{objectName}')) {
-      uxLog(this, c.grey(`Wrong replacement in ${urlPath} with values apiName:${apiNameFinal} and objectName:${objectName}`));
+      uxLog("log", this, c.grey(t('wrongReplacementInWithValuesApinameAnd', { urlPath, apiNameFinal, objectName })));
     }
 
     return urlPath;
@@ -153,18 +154,18 @@ export async function completeAttributesDescriptionWithAi(attributesMarkdown: st
   }
   const aiCache = await UtilsAi.findAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown], objectName);
   if (aiCache.success === true) {
-    uxLog(this, c.grey("Used AI cache for attributes completion (set IGNORE_AI_CACHE=true to force call to AI)"));
-    return aiCache.cacheText ? `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText}` : attributesMarkdown;
+    uxLog("log", this, c.grey(t('usedAiCacheForAttributesCompletionSet')));
+    return aiCache.cacheText ? includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText) : attributesMarkdown;
   }
-  if (AiProvider.isAiAvailable()) {
+  if (await AiProvider.isAiAvailable()) {
     // Invoke AI Service
-    const prompt = AiProvider.buildPrompt("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", { "MARKDOWN": attributesMarkdown, "OBJECT_NAME": objectName });
+    const prompt = await AiProvider.buildPrompt("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", { "MARKDOWN": attributesMarkdown, "OBJECT_NAME": objectName });
     const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD");
     // Replace description in markdown
     if (aiResponse?.success) {
-      const responseText = aiResponse.promptResponse || "No AI description available";
+      const responseText = aiResponse.promptResponse || t('docMdNoAiDescriptionAvailable');
       await UtilsAi.writeAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown], objectName, responseText);
-      attributesMarkdown = `<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText}`;
+      attributesMarkdown = includeFromFile(aiCache.aiCacheDirFile, responseText);
     }
   }
   return attributesMarkdown;
@@ -180,7 +181,7 @@ export async function generateMkDocsHTML() {
   const mkdocsLocalOk = await installMkDocs();
   if (mkdocsLocalOk) {
     // Generate MkDocs HTML pages with local MkDocs
-    uxLog(this, c.cyan("Generating HTML pages with mkdocs..."));
+    uxLog("action", this, c.cyan(t('generatingHtmlPagesWithMkdocs')));
     const mkdocsBuildRes = await execCommand("mkdocs build -v || python -m mkdocs build -v || py -m mkdocs build -v", this, { fail: false, output: true, debug: false });
     if (mkdocsBuildRes.status !== 0) {
       throw new SfError('MkDocs build failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
@@ -188,7 +189,7 @@ export async function generateMkDocsHTML() {
   }
   else {
     // Generate MkDocs HTML pages with Docker
-    uxLog(this, c.cyan("Generating HTML pages with Docker..."));
+    uxLog("action", this, c.cyan(t('generatingHtmlPagesWithDocker')));
     const mkdocsBuildRes = await execCommand("docker run --rm -v $(pwd):/docs squidfunk/mkdocs-material build -v", this, { fail: false, output: true, debug: false });
     if (mkdocsBuildRes.status !== 0) {
       throw new SfError('MkDocs build with docker failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
@@ -197,20 +198,52 @@ export async function generateMkDocsHTML() {
 }
 
 export async function installMkDocs() {
-  uxLog(this, c.cyan("Managing mkdocs-material local installation..."));
+  uxLog("action", this, c.cyan(t('managingMkdocsMaterialLocalInstallation')));
   let mkdocsLocalOk = false;
-  const installMkDocsRes = await execCommand("pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists", this, { fail: false, output: true, debug: false });
+  const installMkDocsRes = await execCommand("pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python3 -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py3 -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists", this, { fail: false, output: true, debug: false });
   if (installMkDocsRes.status === 0) {
     mkdocsLocalOk = true;
   }
   return mkdocsLocalOk;
 }
 
-export function getMetaHideLines() {
+export function getMetaHideLines(): string {
   return `---
 hide:
   - path
 ---
 
 `;
+}
+
+export function includeFromFile(cacheFilePath: string, content: string): string {
+  // Detect if cacheFilePath contains a fingerprint at the end after the last "-"
+  const fileNameWithoutExtension = cacheFilePath.substring(0, cacheFilePath.lastIndexOf("."));
+  const fileExtensionWithDot = cacheFilePath.substring(cacheFilePath.lastIndexOf("."));
+  const lastDashIndex = fileNameWithoutExtension.lastIndexOf("-");
+  const cacheFileFingerprint = lastDashIndex !== -1 ? fileNameWithoutExtension.substring(lastDashIndex + 1) : "";
+  // Check if the fingerprint is a valid number
+  const isValidFingerprint = /^\d+$/.test(cacheFileFingerprint);
+  if (isValidFingerprint) {
+    // Remove the fingerprint from the cacheFilePath
+    const cacheFilePathOverridden = fileNameWithoutExtension.substring(0, lastDashIndex) + fileExtensionWithDot;
+    return `<!-- ${t('docMdAiGeneratedPartComment')} -->
+<!-- ${t('docMdOverrideManuallyHint', { cacheFilePathOverridden: cacheFilePathOverridden })} -->
+<!-- Cache file start: ${cacheFilePath} -->
+
+${content}
+
+<!-- Cache file end: ${cacheFilePath} -->
+`
+  }
+  else {
+    return `<!-- ${t('docMdAiGeneratedThenManuallyUpdated')} -->
+<!-- ${t('docMdAiRecalculateHint', { cacheFilePath: cacheFilePath })} -->
+<!-- Cache file: ${cacheFilePath} -->
+
+${content}
+
+<!-- Cache file end: ${cacheFilePath} -->`
+  }
+
 }

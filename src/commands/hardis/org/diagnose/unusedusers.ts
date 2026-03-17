@@ -3,13 +3,16 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { bulkQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
+import type { NotifMessage } from '../../../../common/notifProvider/index.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { CONSTANTS } from '../../../../config/index.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -17,22 +20,41 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class DiagnoseUnusedUsers extends SfCommand<any> {
   public static title = 'Detect unused Users in Salesforce';
 
-  public static description = `Efficient user management is vital in Salesforce to ensure resources are optimized and costs are controlled. However, inactive or unused user accounts can often go unnoticed, leading to wasted licenses and potential security risks. This tool addresses this challenge by enabling administrators to identify users who haven't logged in within a specified period.
+  public static description = `
+## Command Behavior
+
+**Detects and reports on inactive or unused Salesforce user accounts, helping to optimize license usage and enhance security.**
+
+Efficient user management is vital in Salesforce to ensure resources are optimized and costs are controlled. However, inactive or unused user accounts can often go unnoticed, leading to wasted licenses and potential security risks. This tool addresses this challenge by enabling administrators to identify users who haven't logged in within a specified period.
 
 By analyzing user login activity and last login timestamps, this feature highlights inactive user accounts, allowing administrators to take appropriate action. Whether it's deactivating dormant accounts, freeing up licenses, or ensuring compliance with security policies, this functionality empowers administrators to maintain a lean and secure Salesforce environment.
 
-licensetypes values are the following:
+Key functionalities:
 
-- all-crm: SFDC,AUL,AUL1,AULL_IGHT
-
-- all-paying: SFDC,AUL,AUL1,AULL_IGHT,PID_Customer_Community,PID_Customer_Community_Login,PID_Partner_Community,PID_Partner_Community_Login
-
-Note: You can see the full list of available license identifiers in [Salesforce Documentation](https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/object_reference/sforce_api_objects_userlicense.htm)
-
-Use --returnactiveusers to revert the command and retrieve active users that has logged in during the period.
+- **Inactivity Detection:** Identifies users who have not logged in for a specified number of days (\`--days\` flag, default 180 days in CI, 365 days otherwise).
+- **License Type Filtering:** Allows filtering users by license type using \`--licensetypes\` (e.g., \`all-crm\`, \`all-paying\`) or specific license identifiers using \`--licenseidentifiers\`.
+  - \`all-crm\`: Includes \`SFDC\`, \`AUL\`, \`AUL1\`, \`AULL_IGHT\` licenses.
+  - \`all-paying\`: Includes \`SFDC\`, \`AUL\`, \`AUL1\`, \`AULL_IGHT\`, \`PID_Customer_Community\`, \`PID_Customer_Community_Login\`, \`PID_Partner_Community\`, \`PID_Partner_Community_Login\` licenses.
+  - Note: You can see the full list of available license identifiers in [Salesforce Documentation](https://developer.salesforce.com/docs/atlas.en-us.object_reference.meta/sfdx_cli_reference/sforce_api_objects_userlicense.htm).
+- **Active User Retrieval:** The \`--returnactiveusers\` flag inverts the command, allowing you to retrieve active users who *have* logged in during the specified period.
+- **CSV Report Generation:** Generates a CSV file containing details of all identified users (inactive or active), including their last login date, profile, and license information.
+- **Notifications:** Sends notifications to configured channels (Grafana, Slack, MS Teams) with a summary of inactive or active users.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-inactive-users/) and can output Grafana, Slack and MsTeams Notifications.
-`;
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **SOQL Query (Bulk API):** It uses \`bulkQuery\` to efficiently retrieve user records from the Salesforce \`User\` object. The SOQL query dynamically constructs its WHERE clause based on the \`--days\`, \`--licensetypes\`, \`--licenseidentifiers\`, and \`--returnactiveusers\` flags.
+- **Interactive Prompts:** Uses \`prompts\` to interactively ask the user for the number of inactive days and license types if not provided via flags.
+- **License Mapping:** Internally maps common license type aliases (e.g., \`all-crm\`) to their corresponding Salesforce \`LicenseDefinitionKey\` values.
+- **Report Generation:** It uses \`generateCsvFile\` to create the CSV report of users.
+- **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
+- **User Feedback:** Provides a summary of the findings in the console, indicating the number of inactive or active users found.
+</details>`
+    ;
 
   public static examples = [
     '$ sf hardis:org:diagnose:unusedusers',
@@ -55,7 +77,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     }),
     licensetypes: Flags.string({
       char: 'l',
-      options: ['all', 'all-crm', 'all-paying'],
+      options: ['all', 'all-crm', 'all-paying', 'experience'],
       description: 'Type of licenses to check. If set, do not use licenseidentifiers option. In CI, default is all-crm',
     }),
     licenseidentifiers: Flags.string({
@@ -89,6 +111,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     'all-crm': 'SFDC,AUL,AUL1,AULL_IGHT',
     'all-paying':
       'SFDC,AUL,AUL1,AULL_IGHT,PID_Customer_Community,PID_Customer_Community_Login,PID_Partner_Community,PID_Partner_Community_Login',
+    experience: 'PID_Customer_Community,PID_Customer_Community_Login,PID_Partner_Community,PID_Partner_Community_Login',
   };
 
   protected returnActiveUsers = false;
@@ -120,6 +143,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     // Retrieve the list of users who haven't logged in for a while
     const conn = flags['target-org'].getConnection();
     uxLog(
+      "action",
       this,
       c.cyan(
         this.returnActiveUsers
@@ -131,11 +155,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     // Generate output CSV file
     if (this.users.length > 0) {
-      this.outputFile = await generateReportPath(
-        this.returnActiveUsers ? 'active-users' : 'unused-users',
-        this.outputFile
-      );
-      this.outputFilesRes = await generateCsvFile(this.users, this.outputFile);
+      const reportPrefix = this.getReportFilePrefix();
+      const periodLabel = this.getRangeLabel();
+      const reportTitle = this.returnActiveUsers
+        ? `Active users found (${periodLabel})`
+        : `Inactive users found (${periodLabel})`;
+      this.outputFile = await generateReportPath(reportPrefix, this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.users, this.outputFile, { fileTitle: reportTitle });
     }
 
     let summary;
@@ -162,9 +188,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     await this.manageNotifications(this.users);
 
     if (this.users.length > 0 && !this.returnActiveUsers) {
-      uxLog(this, c.yellow(summary));
+      uxLog("warning", this, c.yellow(summary));
+      uxLogTable(this, this.users);
     } else {
-      uxLog(this, c.green(summary));
+      uxLog("success", this, c.green(summary));
     }
 
     // Return an object to be displayed with --json
@@ -184,11 +211,14 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         const licenseTypesResponse = await prompts({
           type: 'select',
           name: 'licensetypes',
-          message: 'Please select the type of licenses you want to detect ',
+          message: t('pleaseSelectTheTypeOfLicensesYou'),
+          description: t('chooseWhichCategoriesOfUserLicensesToAnalyze'),
+          placeholder: t('selectLicenseType'),
           choices: [
-            { value: 'all', title: 'All licenses types' },
-            { value: `all-crm`, title: 'Salesforce Licenses' },
-            { value: `all-paying`, title: 'Salesforce Licences + Experience + Other paying' },
+            { value: 'all', title: t('allLicensesTypes') },
+            { value: `all-crm`, title: t('salesforceLicences') },
+            { value: `all-paying`, title: t('salesforceLicencesExperienceOtherPaying') },
+            { value: `experience`, title: t('experienceLicensesOnly') },
           ],
         });
         this.licenseTypes = licenseTypesResponse.licensetypes;
@@ -207,7 +237,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         const lastNdaysResponse = await prompts({
           type: 'select',
           name: 'days',
-          message: 'Please select the period to detect users.',
+          message: t('pleaseSelectThePeriodToDetectUsers'),
+          description: t('chooseHowFarBackToLookForUserActivity'),
+          placeholder: t('selectTimePeriod'),
           choices: [
             { title: `1 day`, value: 1 },
             { title: `2 days`, value: 2 },
@@ -273,12 +305,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         : `*${this.users.length}* active users have not logged in to ${orgMarkdown} within the last ${this.lastNdays} days.`;
       attachments = [{ text: notifDetailText }];
     }
-    const metrics = this.returnActiveUsers ? { ActiveUsers: this.users.length } : { UnusedUsers: this.users.length };
+    const notificationType = this.getNotificationType();
+    const metrics = { [notificationType]: this.users.length };
     /* jscpd:ignore-start */
     // Send notifications
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
-      type: this.returnActiveUsers ? 'ACTIVE_USERS' : 'UNUSED_USERS',
+      type: notificationType,
       text: notifText,
       attachments: attachments,
       buttons: notifButtons,
@@ -290,5 +323,42 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     });
     /* jscpd:ignore-end */
     return [];
+  }
+
+  private getNotificationType(): NotifMessage['type'] {
+    const normalizedLicenseType = (this.licenseTypes || '').toLowerCase();
+    const days = this.lastNdays ?? 0;
+    if (!this.returnActiveUsers) {
+      if (normalizedLicenseType === 'all-crm' && days === 180) {
+        return 'UNUSED_USERS_CRM_6_MONTHS';
+      }
+      if (normalizedLicenseType === 'experience' && days === 180) {
+        return 'UNUSED_USERS_EXPERIENCE_6_MONTHS';
+      }
+      return 'UNUSED_USERS';
+    }
+    if (normalizedLicenseType === 'all-crm' && days === 7) {
+      return 'ACTIVE_USERS_CRM_WEEKLY';
+    }
+    if (normalizedLicenseType === 'experience' && days === 30) {
+      return 'ACTIVE_USERS_EXPERIENCE_MONTHLY';
+    }
+    return 'ACTIVE_USERS';
+  }
+
+  private getReportFilePrefix(): string {
+    const base = this.getNotificationType().toLowerCase().replace(/_/g, '-');
+    const suffix = this.getRangeSuffix();
+    return `${base}-${suffix}`;
+  }
+
+  private getRangeSuffix(): string {
+    const days = this.lastNdays ?? 0;
+    return days > 0 ? `last-${days}-days` : 'custom-period';
+  }
+
+  private getRangeLabel(): string {
+    const days = this.lastNdays ?? 0;
+    return days > 0 ? `last ${days} days` : 'custom period';
   }
 }

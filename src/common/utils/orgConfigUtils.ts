@@ -9,6 +9,7 @@ import { uxLog } from './index.js';
 import { Connection, SfError } from '@salesforce/core';
 import { DescribeSObjectResult } from '@jsforce/jsforce-node';
 import { GLOB_IGNORE_PATTERNS } from './projectUtils.js';
+import { t } from './i18n.js';
 
 const listViewRegex = /objects\/(.*)\/listViews\/(.*)\.listView-meta\.xml/gi;
 
@@ -25,6 +26,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       const m = listViewRegex.exec(listViewStr);
       if (!m) {
         uxLog(
+          "error",
           this,
           c.red(
             `Unable to find list view object and name from ${listViewStr}. Use format ${c.bold(
@@ -42,14 +44,8 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   const instanceUrl = conn.instanceUrl;
   const loginUrl = `${instanceUrl}/secur/frontdoor.jsp?sid=${conn.accessToken}`;
 
-  // Get chrome/chromium executable path
-  let chromeExecutablePath = process.env?.PUPPETEER_EXECUTABLE_PATH || "";
-  if (chromeExecutablePath === "" || !fs.existsSync(chromeExecutablePath)) {
-    const chromePaths = chromeLauncher.Launcher.getInstallations();
-    if (chromePaths && chromePaths.length > 0) {
-      chromeExecutablePath = chromePaths[0];
-    }
-  }
+  // Get chrome/chromium executable path using the utility function
+  const chromeExecutablePath = getChromeExecutablePath();
 
   // Start puppeteer
   let browser: Browser;
@@ -60,9 +56,9 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       executablePath: chromeExecutablePath
     });
   } catch (e: any) {
-    uxLog(this, c.red("List View with Mine has not been restored: Error while trying to launch puppeteer (Browser simulator)"));
-    uxLog(this, c.red(e.message));
-    uxLog(this, c.red("You might need to set variable PUPPETEER_EXECUTABLE_PATH with the target of a Chrome/Chromium path. example: /usr/bin/chromium-browser"));
+    uxLog("error", this, c.red("List view 'Mine' has not been restored: error while trying to launch Puppeteer (browser simulator)."));
+    uxLog("error", this, c.red(e.message));
+    uxLog("error", this, c.red(t('youMightNeedToSetThePuppeteerexecutablepath')));
     return { error: e };
   }
   const page = await browser.newPage();
@@ -135,6 +131,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       } catch {
         unnecessary.push(`${objectName}:${listViewName}`);
         uxLog(
+          "warning",
           this,
           c.yellow(
             `Unable to hit save button, but it's probably because ${objectName}.${listViewName} was already set to "Mine"`
@@ -146,11 +143,11 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       // Confirmed saved toast
       await page.waitForSelector("xpath///span[contains(text(), 'List view updated.')]");
       success.push(`${objectName}:${listViewName}`);
-      uxLog(this, c.green(`Successfully set ${objectName}.${listViewName} as "Mine"`));
+      uxLog("success", this, c.green(t('successfullySetAsMine', { objectName, listViewName })));
     } catch (e) {
       // Unexpected puppeteer error
       failed.push(`${objectName}:${listViewName}`);
-      uxLog(this, c.red(`Puppeteer error while processing ${objectName}:${listViewName}: ${(e as Error).message}`));
+      uxLog("error", this, c.red(t('puppeteerErrorWhileProcessing', { objectName, listViewName, as: (e as Error).message })));
     }
   }
   // Close puppeteer browser
@@ -243,7 +240,11 @@ function guessMatchingMergeTargets(branchName: string, majorOrgs: any[]): string
   else if (isIntegration(branchName)) {
     return majorOrgs.filter(org => isUat(org.branchName)).map(org => org.branchName);
   }
-  uxLog(this, c.yellow(`Unable to guess merge targets for ${branchName}.
+  if (branchName.toLowerCase().includes('training')) {
+    uxLog('log', this, c.grey(t('branchAppearsToBeTrainingBranchThat', { branchName })));
+    return [];
+  }
+  uxLog("warning", this, c.yellow(`Unable to guess merge targets for ${branchName}.
 Please set them manually in config/branches/.sfdx-hardis.${branchName}.yml
 Example:
 mergeTargets:
@@ -286,4 +287,20 @@ export async function checkSfdxHardisTraceAvailable(conn: Connection) {
   if (traceObjectFields.filter(field => field.name === "Key__c").length === 0) {
     throw new SfError("You need a field Key__c (string, length 80) on SfdxHardisTrace__c in target org");
   }
+}
+
+/**
+ * Get the Chrome/Chromium executable path for Puppeteer
+ * This is used by various commands that need browser automation
+ * @returns string - Path to Chrome executable, or empty string if not found
+ */
+export function getChromeExecutablePath(): string {
+  let chromeExecutablePath = process.env?.PUPPETEER_EXECUTABLE_PATH || "";
+  if (chromeExecutablePath === "" || !fs.existsSync(chromeExecutablePath)) {
+    const chromePaths = chromeLauncher.Launcher.getInstallations();
+    if (chromePaths && chromePaths.length > 0) {
+      chromeExecutablePath = chromePaths[0];
+    }
+  }
+  return chromeExecutablePath;
 }

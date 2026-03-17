@@ -70,11 +70,11 @@ Example: Contact:MyContacts,Contact:MyActiveContacts,Opportunity:MYClosedOpportu
 ## Examples
 
 ```shell
-sf hardis:org:fix:listviewmine
+$ sf hardis:org:fix:listviewmine
 ```
 
 ```shell
-sf hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners
+$ sf hardis:org:fix:listviewmine --listviews Opportunity:MySubscriptions,Account:MyActivePartners
 ```
 
 

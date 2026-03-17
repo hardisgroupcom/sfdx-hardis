@@ -3,8 +3,9 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execCommand, uxLog } from '../../../../common/utils/index.js';
+import { execCommand, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -32,6 +33,18 @@ export default class MonitorAll extends SfCommand<any> {
       frequency: 'daily',
     },
     {
+      key: 'APEX_FLOW_ERRORS',
+      title: 'Detect Apex and Flow errors',
+      command: 'sf hardis:org:monitor:errors',
+      frequency: 'daily',
+    },
+    {
+      key: 'UNSECURED_CONNECTED_APPS',
+      title: 'Detect unsecured Connected Apps in an org',
+      command: 'sf hardis:org:diagnose:unsecure-connected-apps',
+      frequency: 'daily',
+    },
+    {
       key: 'LICENSES',
       title: 'Extract licenses information',
       command: 'sf hardis:org:diagnose:licenses',
@@ -51,14 +64,32 @@ export default class MonitorAll extends SfCommand<any> {
     },
     {
       key: 'UNUSED_USERS',
-      title: 'Detect active users without recent logins',
-      command: 'sf hardis:org:diagnose:unusedusers',
+      title: 'Detect active users without recent logins (All licenses, 6 months)',
+      command: 'sf hardis:org:diagnose:unusedusers --licensetypes all --days 180',
       frequency: 'weekly',
     },
     {
-      key: 'ACTIVE_USERS',
-      title: 'Detect active users with recent logins',
-      command: 'sf hardis:org:diagnose:unusedusers --returnactiveusers',
+      key: 'UNUSED_USERS_CRM_6_MONTHS',
+      title: 'Detect active users without recent logins (CRM, 6 months)',
+      command: 'sf hardis:org:diagnose:unusedusers --licensetypes all-crm --days 180',
+      frequency: 'weekly',
+    },
+    {
+      key: 'UNUSED_USERS_EXPERIENCE_6_MONTHS',
+      title: 'Detect active users without recent logins (Experience, 6 months)',
+      command: 'sf hardis:org:diagnose:unusedusers --licensetypes experience --days 180',
+      frequency: 'weekly',
+    },
+    {
+      key: 'ACTIVE_USERS_CRM_WEEKLY',
+      title: 'Detect active users with recent logins (CRM, 1 week)',
+      command: 'sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes all-crm --days 7',
+      frequency: 'weekly',
+    },
+    {
+      key: 'ACTIVE_USERS_EXPERIENCE_MONTHLY',
+      title: 'Detect active users with recent logins (Experience, 1 month)',
+      command: 'sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes experience --days 30',
       frequency: 'weekly',
     },
     {
@@ -74,6 +105,12 @@ export default class MonitorAll extends SfCommand<any> {
       frequency: 'weekly',
     },
     {
+      key: 'ORG_HEALTH_CHECK',
+      title: 'Run Salesforce Security Health Check',
+      command: 'sf hardis:org:monitor:health-check',
+      frequency: 'weekly',
+    },
+    {
       key: 'UNUSED_METADATAS',
       title: 'Detect custom labels and custom permissions that are not in use',
       command: 'sf hardis:lint:unusedmetadatas',
@@ -86,12 +123,17 @@ export default class MonitorAll extends SfCommand<any> {
       frequency: 'weekly',
     },
     {
+      key: 'APEX_API_VERSION',
+      title: 'Detect Apex classes and triggers with deprecated API version',
+      command: 'sf hardis:org:diagnose:apex-api-version',
+      frequency: 'weekly',
+    },
+    {
       key: 'CONNECTED_APPS',
       title: 'Detect unused Connected Apps in an org',
       command: 'sf hardis:org:diagnose:unused-connected-apps',
       frequency: 'weekly',
     },
-
     {
       key: 'METADATA_STATUS',
       title: 'Detect inactive metadata',
@@ -102,6 +144,18 @@ export default class MonitorAll extends SfCommand<any> {
       key: 'MISSING_ATTRIBUTES',
       title: 'Detect missing description on custom field',
       command: 'sf hardis:lint:missingattributes',
+      frequency: 'weekly',
+    },
+    {
+      key: 'UNDERUSED_PERMSETS',
+      title: 'Detect underused permission sets',
+      command: 'sf hardis:org:diagnose:underusedpermsets',
+      frequency: 'weekly',
+    },
+    {
+      key: 'MINIMAL_PERMSETS',
+      title: 'Detect permission sets with minimal permissions in project',
+      command: 'sf hardis:org:diagnose:minimalpermsets',
       frequency: 'weekly',
     },
   ];
@@ -191,8 +245,9 @@ ${this.getDefaultCommandsMarkdown()}
 
     // Build target org full manifest
     uxLog(
+      "action",
       this,
-      c.cyan('Running monitoring scripts for org ' + c.bold(flags['target-org'].getConnection().instanceUrl)) + ' ...'
+      c.cyan(t('runningMonitoringScriptsForOrg', { orgAlias: c.bold(flags['target-org'].getConnection().instanceUrl) }))
     );
 
     const config = await getConfig('user');
@@ -204,7 +259,7 @@ ${this.getDefaultCommandsMarkdown()}
     const commandsSummary: any[] = [];
     for (const command of commands) {
       if (monitoringDisable.includes(command.key)) {
-        uxLog(this, c.grey(`Skipped command ${c.bold(command.key)} according to custom configuration`));
+        uxLog("log", this, c.grey(t('skippedCommandAccordingToCustomConfiguration', { command: c.bold(command.key) })));
         continue;
       }
       if (
@@ -213,20 +268,21 @@ ${this.getDefaultCommandsMarkdown()}
         getEnvVar('MONITORING_IGNORE_FREQUENCY') !== 'true'
       ) {
         uxLog(
+          "log",
           this,
-          c.grey(`Skipped command ${c.bold(command.key)} as its frequency is defined as weekly and we are not Saturday`)
+          c.grey(t('skippedCommandWeeklyFrequency', { command: c.bold(command.key) }))
         );
         continue;
       }
       // Run command
-      uxLog(this, c.cyan(`Running monitoring command ${c.bold(command.title)} (key: ${c.bold(command.key)})`));
+      uxLog("action", this, c.cyan(t('runningMonitoringCommandKey', { command: c.bold(command.title), command1: c.bold(command.key) })));
       try {
         const execCommandResult = await execCommand(command.command, this, { fail: false, output: true });
         if (execCommandResult.status === 0) {
-          uxLog(this, c.green(`Command ${c.bold(command.title)} has been run successfully`));
+          uxLog("success", this, c.green(t('commandHasBeenRunSuccessfully', { command: c.bold(command.title) })));
         } else {
           success = false;
-          uxLog(this, c.yellow(`Command ${c.bold(command.title)} has failed`));
+          uxLog("warning", this, c.yellow(t('commandHasFailed', { command: c.bold(command.title) })));
         }
         commandsSummary.push({
           title: command.title,
@@ -236,7 +292,7 @@ ${this.getDefaultCommandsMarkdown()}
       } catch (e) {
         // Handle unexpected failure
         success = false;
-        uxLog(this, c.yellow(`Command ${c.bold(command.title)} has failed !\n${(e as Error).message}`));
+        uxLog("warning", this, c.yellow(t('commandHasFailed2', { command: c.bold(command.title), as: (e as Error).message })));
         commandsSummary.push({
           title: command.title,
           status: 'error',
@@ -245,15 +301,14 @@ ${this.getDefaultCommandsMarkdown()}
       }
     }
 
-    uxLog(this, c.cyan('Summary of monitoring scripts'));
-    console.table(commandsSummary);
-    uxLog(this, c.cyan('You can check details in reports in Job Artifacts'));
+    uxLog("action", this, c.cyan(t('summaryOfMonitoringScripts')));
+    uxLogTable(this, commandsSummary);
+    uxLog("log", this, c.grey(t('youCanCheckDetailsInReportsIn')));
 
     uxLog(
+      "warning",
       this,
-      c.yellow(
-        `To know more about sfdx-hardis monitoring, please check ${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/`
-      )
+      c.yellow(t('toKnowMoreAboutMonitoring'))
     );
 
     // Exit code is 1 if monitoring detected stuff

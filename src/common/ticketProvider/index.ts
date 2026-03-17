@@ -5,15 +5,18 @@ import { TicketProviderRoot } from "./ticketProviderRoot.js";
 import { uxLog } from "../utils/index.js";
 import { GenericTicketingProvider } from "./genericProvider.js";
 import { AzureBoardsProvider } from "./azureBoardsProvider.js";
+import { CommonPullRequestInfo } from "../gitProvider/index.js";
+import { getConfig } from "../../config/index.js";
+import { t } from '../utils/i18n.js';
 
 export const allTicketProviders = [JiraProvider, GenericTicketingProvider, AzureBoardsProvider];
 
 export abstract class TicketProvider {
-  static getInstances(): TicketProviderRoot[] {
+  static getInstances(config: any): TicketProviderRoot[] {
     const ticketProviders: TicketProviderRoot[] = [];
     for (const provider of allTicketProviders) {
-      if (provider.isAvailable()) {
-        ticketProviders.push(new provider());
+      if (provider.isAvailable(config)) {
+        ticketProviders.push(new provider(config));
       }
     }
     return ticketProviders;
@@ -32,9 +35,10 @@ export abstract class TicketProvider {
 
   // Adds ticket info by calling ticket providers APIs when possible
   public static async collectTicketsInfo(tickets: Ticket[]): Promise<Ticket[]> {
-    const ticketProviders = this.getInstances();
+    const config = await getConfig("project");
+    const ticketProviders = this.getInstances(config);
     if (ticketProviders.length === 0) {
-      uxLog(this, c.gray(`[TicketProvider] No ticket provider has been configured`));
+      uxLog("error", this, c.grey('[TicketProvider] ' + t('ticketProviderNotConfigured')));
     }
     for (const ticketProvider of ticketProviders) {
       if (ticketProvider.isActive) {
@@ -45,9 +49,10 @@ export abstract class TicketProvider {
   }
 
   // Process Ticket providers actions after a deployment.
-  // Can be comments on JIRA, and maybe later status changes ? :)
-  public static async postDeploymentActions(tickets: Ticket[], org: string, pullRequestInfo: any) {
-    const ticketProviders = this.getInstances();
+  // Can be comments on JIRA, and maybe later status changes ? 😊
+  public static async postDeploymentActions(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null) {
+    const config = await getConfig("project");
+    const ticketProviders = this.getInstances(config);
     for (const ticketProvider of ticketProviders) {
       if (ticketProvider.isActive) {
         await ticketProvider.postDeploymentComments(tickets, org, pullRequestInfo);
@@ -65,5 +70,11 @@ export interface Ticket {
   body?: string;
   status?: string;
   statusLabel?: string;
+  author?: string;
+  authorLabel?: string;
+  assignee?: string;
+  assigneeLabel?: string;
+  reporter?: string;
+  reporterLabel?: string;
   foundOnServer?: boolean;
 }

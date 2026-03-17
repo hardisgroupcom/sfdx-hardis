@@ -2,8 +2,10 @@
 import fs from 'fs-extra';
 import * as path from 'path';
 import c from 'chalk';
+import open from 'open';
 import * as split from 'split';
 import { PromisePool } from '@supercharge/promise-pool';
+import crypto from 'crypto';
 
 // Salesforce Specific and Other Specific Libraries
 import { Connection, SfError } from '@salesforce/core';
@@ -14,9 +16,12 @@ import ExcelJS from 'exceljs';
 import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from './index.js';
 import { bulkQuery, soqlQuery, bulkQueryByChunks } from './apiUtils.js';
 import { prompts } from './prompts.js';
-import { CONSTANTS, getReportDirectory } from '../../config/index.js';
+import { getApiVersion, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { FileDownloader } from './fileDownloader.js';
+import { ApiLimitsManager } from './limitUtils.js';
+import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
+import { t } from './i18n.js';
 
 export const filesFolderRoot = path.join('.', 'scripts', 'files');
 
@@ -40,8 +45,12 @@ export class FilesExporter {
   private bulkApiRecordsEnded = false;
 
   private recordChunksNumber = 0;
+  private logFile: string;
+  private hasExistingFiles: boolean;
+  private resumeExport: boolean;
 
-  private totalSoqlRequests = 0;
+  private totalRestApiCalls = 0;
+  private totalBulkApiCalls = 0;
   private totalParentRecords = 0;
   private parentRecordsWithFiles = 0;
   private recordsIgnored = 0;
@@ -49,13 +58,17 @@ export class FilesExporter {
   private filesErrors = 0;
   private filesIgnoredType = 0;
   private filesIgnoredExisting = 0;
-  private apiUsedBefore: number = 0;
-  private apiLimit: number = 0;
+  private filesIgnoredSize = 0;
+  private filesValidationErrors = 0;
+  private filesValidated = 0; // Count of files that went through validation (downloaded or existing)
+
+  // Optimized API Limits Management System
+  private apiLimitsManager: ApiLimitsManager;
 
   constructor(
     filesPath: string,
     conn: Connection,
-    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number },
+    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number; resumeExport?: boolean },
     commandThis: any
   ) {
     this.filesPath = filesPath;
@@ -64,10 +77,15 @@ export class FilesExporter {
     this.recordsChunkSize = options?.recordsChunkSize || 1000;
     this.parentRecordsChunkSize = 100000;
     this.startChunkNumber = options?.startChunkNumber || 0;
+    this.resumeExport = options?.resumeExport || false;
+    this.hasExistingFiles = fs.existsSync(path.join(this.filesPath, 'export'));
     this.commandThis = commandThis;
     if (options.exportConfig) {
       this.dtl = options.exportConfig;
     }
+
+    // Initialize the optimized API limits manager
+    this.apiLimitsManager = new ApiLimitsManager(conn, commandThis);
   }
 
   async processExport() {
@@ -75,53 +93,217 @@ export class FilesExporter {
     if (this.dtl === null) {
       this.dtl = await getFilesWorkspaceDetail(this.filesPath);
     }
-    uxLog(this.commandThis, c.cyan(`Exporting files from ${c.green(this.dtl.full_label)} ...`));
-    uxLog(this.commandThis, c.italic(c.grey(this.dtl.description)));
+    uxLog("action", this.commandThis, c.cyan(t('initializingFilesExportForWorkspace', { dtl: c.green(this.dtl.full_label) })));
+    uxLog("log", this.commandThis, c.italic(c.grey(this.dtl.description)));
+
     // Make sure export folder for files is existing
     this.exportedFilesFolder = path.join(this.filesPath, 'export');
     await fs.ensureDir(this.exportedFilesFolder);
 
+    // Handle resume/restart mode
+    if (!this.resumeExport) {
+      if (this.hasExistingFiles) {
+        // Restart mode: clear the output folder
+        uxLog("action", this.commandThis, c.yellow(t('restartModeClearingOutputFolder', { exportedFilesFolder: this.exportedFilesFolder })));
+        await fs.emptyDir(this.exportedFilesFolder);
+      }
+    } else {
+      uxLog("action", this.commandThis, c.cyan(`Resume mode: existing files will be validated and skipped if valid`));
+    }
+
     await this.calculateApiConsumption();
-    this.startQueue();
-    await this.processParentRecords();
-    await this.queueCompleted();
-    return await this.buildResult();
+
+    const reportDir = await getReportDirectory();
+    const reportExportDir = path.join(reportDir, 'files-export-log');
+    const now = new Date();
+    const dateStr = now.toISOString().replace(/T/, '_').replace(/:/g, '-').replace(/\..+/, '');
+    this.logFile = path.join(reportExportDir, `files-export-log-${this.dtl.name}-${dateStr}.csv`);
+
+    // Initialize CSV log file with headers
+    await this.initializeCsvLog();
+
+    // Phase 1: Calculate total files count for accurate progress tracking
+    uxLog("action", this.commandThis, c.cyan(t('estimatingTotalFilesToDownload')));
+    const totalFilesCount = await this.calculateTotalFilesCount();
+    uxLog("log", this.commandThis, c.grey(t('estimatedFilesToDownload', { totalFilesCount })));
+
+    // Phase 2: Process downloads with accurate progress tracking
+    await this.processDownloadsWithProgress(totalFilesCount);
+
+    const result = await this.buildResult();
+    return result;
   }
 
-  // Calculate API consumption
-  private async calculateApiConsumption() {
+  // Phase 1: Calculate total files count using efficient COUNT() queries
+  private async calculateTotalFilesCount(): Promise<number> {
+    let totalFiles = 0;
+
+    // Get parent records count to estimate batching
     const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT COUNT() FROM');
-    this.totalSoqlRequests++;
+    await this.waitIfApiLimitApproached('REST');
+    this.totalRestApiCalls++;
+    const countSoqlQueryRes = await soqlQuery(countSoqlQuery, this.conn);
+    const totalParentRecords = countSoqlQueryRes.totalSize;
+
+    // Count Attachments - use COUNT() query with IN clause batching for memory efficiency
+    const attachmentBatchSize = 200;
+
+    // Estimate Attachments count by sampling
+    const sampleSize = Math.min(attachmentBatchSize, totalParentRecords);
+    if (sampleSize > 0) {
+      // Get sample of parent IDs
+      let sampleQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT Id FROM');
+      sampleQuery = await parseSoqlAndReapplyLimit(sampleQuery, sampleSize, this);
+      await this.waitIfApiLimitApproached('REST');
+      this.totalRestApiCalls++;
+      const sampleParents = await soqlQuery(sampleQuery, this.conn);
+
+      if (sampleParents.records.length > 0) {
+        const sampleParentIds = sampleParents.records.map((record: any) => `'${record.Id}'`).join(',');
+        const attachmentCountQuery = `SELECT COUNT() FROM Attachment WHERE ParentId IN (${sampleParentIds})`;
+        await this.waitIfApiLimitApproached('REST');
+        this.totalRestApiCalls++;
+        const attachmentCountRes = await soqlQuery(attachmentCountQuery, this.conn);
+
+        // Extrapolate from sample
+        const avgAttachmentsPerRecord = attachmentCountRes.totalSize / sampleParents.records.length;
+        totalFiles += Math.round(avgAttachmentsPerRecord * totalParentRecords);
+      }
+    }
+
+    // Count ContentVersions - use COUNT() query with sampling for memory efficiency
+    if (sampleSize > 0) {
+      let sampleQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT Id FROM');
+      sampleQuery = await parseSoqlAndReapplyLimit(sampleQuery, sampleSize, this);
+      const sampleParents = await soqlQuery(sampleQuery, this.conn);
+
+      if (sampleParents.records.length > 0) {
+        const sampleParentIds = sampleParents.records.map((record: any) => `'${record.Id}'`).join(',');
+
+        // Count ContentDocumentLinks for sample
+        const linkCountQuery = `SELECT COUNT() FROM ContentDocumentLink WHERE LinkedEntityId IN (${sampleParentIds})`;
+        this.totalRestApiCalls++;
+        const linkCountRes = await soqlQuery(linkCountQuery, this.conn);
+
+        // Extrapolate from sample (ContentVersions ≈ ContentDocumentLinks for latest versions)
+        const avgContentVersionsPerRecord = linkCountRes.totalSize / sampleParents.records.length;
+        totalFiles += Math.round(avgContentVersionsPerRecord * totalParentRecords);
+      }
+    }
+
+    return Math.max(totalFiles, 1); // Ensure at least 1 for progress tracking
+  }
+
+  // Phase 2: Process downloads with accurate file-based progress tracking
+  private async processDownloadsWithProgress(estimatedFilesCount: number) {
+    let filesProcessed = 0;
+    let totalFilesDiscovered = 0; // Track actual files discovered
+    let actualTotalFiles = estimatedFilesCount; // Start with estimation, will be adjusted as we discover actual files
+
+    // Start progress tracking with estimated total files count
+    WebSocketClient.sendProgressStartMessage(t('exportingFiles'), actualTotalFiles);
+
+    // Progress callback function with total adjustment capability
+    const progressCallback = (filesCompleted: number, filesDiscoveredInChunk?: number) => {
+      filesProcessed += filesCompleted;
+
+      // If we discovered files in this chunk, update our tracking
+      if (filesDiscoveredInChunk !== undefined) {
+        totalFilesDiscovered += filesDiscoveredInChunk;
+        // Update total to use actual discovered count + remaining estimation
+        const processedChunks = this.recordChunksNumber;
+        const totalChunks = this.chunksNumber;
+        const remainingChunks = totalChunks - processedChunks;
+
+        if (remainingChunks > 0) {
+          // Estimate remaining files based on actual discovery rate
+          const avgFilesPerChunk = totalFilesDiscovered / processedChunks;
+          const estimatedRemainingFiles = Math.round(avgFilesPerChunk * remainingChunks);
+          actualTotalFiles = totalFilesDiscovered + estimatedRemainingFiles;
+        } else {
+          // All chunks processed, use actual total
+          actualTotalFiles = totalFilesDiscovered;
+        }
+
+        // Get API usage for display (non-blocking)
+        this.getApiUsageStatus().then(apiUsage => {
+          uxLog("other", this, c.grey(t('discoveredFilesInChunkUpdatedTotalEstimate2', { filesDiscoveredInChunk, actualTotalFiles, apiUsage: apiUsage.message })));
+        }).catch(() => {
+          uxLog("other", this, c.grey(t('discoveredFilesInChunkUpdatedTotalEstimate', { filesDiscoveredInChunk, actualTotalFiles })));
+        });
+      }
+
+      WebSocketClient.sendProgressStepMessage(filesProcessed, actualTotalFiles);
+    };
+
+    // Use modified queue system with progress tracking
+    this.startQueue(progressCallback);
+    await this.processParentRecords(progressCallback);
+    await this.queueCompleted();
+
+    // End progress tracking with final total
+    WebSocketClient.sendProgressEndMessage(actualTotalFiles);
+  }
+
+  // Calculate API consumption and validate limits - optimized with new ApiLimitsManager
+  private async calculateApiConsumption() {
+    // Initialize the API limits manager
+    await this.apiLimitsManager.initialize();
+
+    const countSoqlQuery = this.dtl.soqlQuery.replace(/SELECT (.*) FROM/gi, 'SELECT COUNT() FROM');
+    await this.apiLimitsManager.trackApiCall('REST');
+    this.totalRestApiCalls++;
     const countSoqlQueryRes = await soqlQuery(countSoqlQuery, this.conn);
     this.chunksNumber = Math.round(countSoqlQueryRes.totalSize / this.recordsChunkSize);
-    const estimatedApiCalls = Math.round(this.chunksNumber * 2) + 1;
-    this.apiUsedBefore = (this.conn as any)?.limitInfo?.apiUsage?.used
-      ? (this.conn as any).limitInfo.apiUsage.used - 1
-      : this.apiUsedBefore;
-    this.apiLimit = (this.conn as any)?.limitInfo?.apiUsage?.limit;
-    // Check if there are enough API calls available
-    if (this.apiLimit - this.apiUsedBefore < estimatedApiCalls + 1000) {
+
+    // Get current usage for API consumption estimation
+    const currentUsage = this.apiLimitsManager.getCurrentUsage();
+
+    // More accurate API consumption estimation:
+    // - 1 Bulk API v2 call for main parent records query
+    // - Multiple REST API calls for Attachment queries (batches of 200)
+    // - Multiple Bulk API v2 calls for ContentDocumentLink and ContentVersion queries
+    const estimatedRestApiCalls = Math.round(this.chunksNumber * (countSoqlQueryRes.totalSize / 200)) + 5; // Attachment batches + counting queries
+    const estimatedBulkApiCalls = Math.round(this.chunksNumber * 3) + 1; // Parent records + ContentDocumentLink + ContentVersion per chunk
+
+    // Check REST API limit with safety buffer
+    const restApiSafetyBuffer = 500;
+    if (currentUsage.restRemaining < estimatedRestApiCalls + restApiSafetyBuffer) {
       throw new SfError(
-        `You don't have enough API calls available (${c.bold(
-          this.apiLimit - this.apiUsedBefore
-        )}) to perform this export that could consume ${c.bold(estimatedApiCalls)} API calls`
+        `You don't have enough REST API calls available (${c.bold(
+          currentUsage.restRemaining
+        )}) to perform this export that could consume ${c.bold(estimatedRestApiCalls)} REST API calls`
       );
     }
+
+    // Check Bulk API v2 limit with safety buffer
+    const bulkApiSafetyBuffer = 100;
+    if (currentUsage.bulkRemaining < estimatedBulkApiCalls + bulkApiSafetyBuffer) {
+      throw new SfError(
+        `You don't have enough Bulk API v2 calls available (${c.bold(
+          currentUsage.bulkRemaining
+        )}) to perform this export that could consume ${c.bold(estimatedBulkApiCalls)} Bulk API v2 calls`
+      );
+    }
+
     // Request user confirmation
     if (!isCI) {
       const warningMessage = c.cyanBright(
         `This export of files could run on ${c.bold(c.yellow(countSoqlQueryRes.totalSize))} records, in ${c.bold(
           c.yellow(this.chunksNumber)
-        )} chunks, and consume up to ${c.bold(c.yellow(estimatedApiCalls))} API calls on the ${c.bold(
-          c.yellow(this.apiLimit - this.apiUsedBefore)
-        )} remaining API calls. Do you want to proceed ?`
+        )} chunks, and consume up to ${c.bold(c.yellow(estimatedRestApiCalls))} REST API calls (${c.bold(c.yellow(currentUsage.restRemaining))} remaining) and ${c.bold(c.yellow(estimatedBulkApiCalls))} Bulk API v2 calls (${c.bold(c.yellow(currentUsage.bulkRemaining))} remaining). Do you want to proceed ?`
       );
-      const promptRes = await prompts({ type: 'confirm', message: warningMessage });
+      const promptRes = await prompts({
+        type: 'confirm',
+        message: warningMessage,
+        description: t('proceedWithOperationDespiteApiUsageWarnings')
+      });
       if (promptRes.value !== true) {
-        throw new SfError('Command cancelled by user');
+        throw new SfError('Command cancelled by user.');
       }
       if (this.startChunkNumber === 0) {
         uxLog(
+          "warning",
           this,
           c.yellow(
             c.italic('Use --startchunknumber command line argument if you do not want to start from first chunk')
@@ -131,13 +313,26 @@ export class FilesExporter {
     }
   }
 
+  // Monitor API usage during operations using the optimized ApiLimitsManager
+  private async waitIfApiLimitApproached(operationType: 'REST' | 'BULK') {
+    await this.apiLimitsManager.trackApiCall(operationType);
+  }
+
+  // Get current API usage percentages for display
+  private async getApiUsageStatus(): Promise<{ rest: number; bulk: number; message: string }> {
+    return this.apiLimitsManager.getUsageStatus();
+  }
+
   // Run chunks one by one, and don't wait to have all the records fetched to start it
-  private startQueue() {
+  private startQueue(progressCallback?: (filesCompleted: number, filesDiscoveredInChunk?: number) => void) {
     this.queueInterval = setInterval(async () => {
       if (this.recordsChunkQueueRunning === false && this.recordsChunkQueue.length > 0) {
         this.recordsChunkQueueRunning = true;
-        const recordChunk = this.recordsChunkQueue.shift();
-        await this.processRecordsChunk(recordChunk);
+        const queueItem = this.recordsChunkQueue.shift();
+        // Handle both old format (array) and new format (object with records and progressCallback)
+        const recordChunk = Array.isArray(queueItem) ? queueItem : queueItem.records;
+        const chunkProgressCallback = Array.isArray(queueItem) ? progressCallback : queueItem.progressCallback;
+        await this.processRecordsChunk(recordChunk, chunkProgressCallback);
         this.recordsChunkQueueRunning = false;
         // Manage last chunk
       } else if (
@@ -147,7 +342,7 @@ export class FilesExporter {
       ) {
         const recordsToProcess = [...this.recordsChunk];
         this.recordsChunk = [];
-        this.recordsChunkQueue.push(recordsToProcess);
+        this.recordsChunkQueue.push({ records: recordsToProcess, progressCallback });
       }
     }, 1000);
   }
@@ -166,7 +361,7 @@ export class FilesExporter {
           resolve(true);
         }
         if (globalThis.sfdxHardisFatalError === true) {
-          uxLog(this, c.red('Fatal error while processing chunks queue'));
+          uxLog("error", this, c.red(t('fatalErrorWhileProcessingChunksQueue')));
           process.exit(1);
         }
       }, 1000);
@@ -175,9 +370,10 @@ export class FilesExporter {
     this.queueInterval = null;
   }
 
-  private async processParentRecords() {
+  private async processParentRecords(progressCallback?: (filesCompleted: number, filesDiscoveredInChunk?: number) => void) {
     // Query parent records using SOQL defined in export.json file
-    this.totalSoqlRequests++;
+    await this.waitIfApiLimitApproached('BULK');
+    this.totalBulkApiCalls++;
     this.conn.bulk.pollTimeout = this.pollTimeout || 600000; // Increase timeout in case we are on a bad internet connection or if the bulk api batch is queued
 
     // Use bulkQueryByChunks to handle large queries
@@ -189,6 +385,7 @@ export class FilesExporter {
       );
       if (this.dtl.overwriteParentRecords !== true && fs.existsSync(parentRecordFolderForFiles)) {
         uxLog(
+          "log",
           this,
           c.grey(
             `Skipped record - ${record[this.dtl.outputFolderNameField] || record.Id} - Record files already downloaded`
@@ -197,25 +394,26 @@ export class FilesExporter {
         this.recordsIgnored++;
         continue;
       }
-      await this.addToRecordsChunk(record);
+      await this.addToRecordsChunk(record, progressCallback);
     }
     this.bulkApiRecordsEnded = true;
   }
 
-  private async addToRecordsChunk(record: any) {
+  private async addToRecordsChunk(record: any, progressCallback?: (filesCompleted: number, filesDiscoveredInChunk?: number) => void) {
     this.recordsChunk.push(record);
     // If chunk size is reached , process the chunk of records
     if (this.recordsChunk.length === this.recordsChunkSize) {
       const recordsToProcess = [...this.recordsChunk];
       this.recordsChunk = [];
-      this.recordsChunkQueue.push(recordsToProcess);
+      this.recordsChunkQueue.push({ records: recordsToProcess, progressCallback });
     }
   }
 
-  private async processRecordsChunk(records: any[]) {
+  private async processRecordsChunk(records: any[], progressCallback?: (filesCompleted: number, filesDiscoveredInChunk?: number) => void) {
     this.recordChunksNumber++;
     if (this.recordChunksNumber < this.startChunkNumber) {
       uxLog(
+        "action",
         this,
         c.cyan(
           `Skip parent records chunk #${this.recordChunksNumber} because it is lesser than ${this.startChunkNumber}`
@@ -223,7 +421,11 @@ export class FilesExporter {
       );
       return;
     }
+
+    let actualFilesInChunk = 0;
+
     uxLog(
+      "action",
       this,
       c.cyan(
         `Processing parent records chunk #${this.recordChunksNumber} on ${this.chunksNumber} (${records.length} records) ...`
@@ -236,9 +438,12 @@ export class FilesExporter {
       const batch = records.slice(i, i + attachmentBatchSize);
       // Request all Attachment related to all records of the batch using REST API
       const parentIdIn = batch.map((record: any) => `'${record.Id}'`).join(',');
-      const attachmentQuery = `SELECT Id, Name, ContentType, ParentId FROM Attachment WHERE ParentId IN (${parentIdIn})`;
-      this.totalSoqlRequests++;
+      const attachmentQuery = `SELECT Id, Name, ContentType, ParentId, BodyLength FROM Attachment WHERE ParentId IN (${parentIdIn})`;
+      await this.waitIfApiLimitApproached('REST');
+      this.totalRestApiCalls++;
       const attachments = await this.conn.query(attachmentQuery);
+      actualFilesInChunk += attachments.records.length; // Count actual files discovered
+
       if (attachments.records.length > 0) {
         // Download attachments using REST API
         await PromisePool.withConcurrency(5)
@@ -246,13 +451,17 @@ export class FilesExporter {
           .process(async (attachment: any) => {
             try {
               await this.downloadAttachmentFile(attachment, batch);
+              // Call progress callback if available
+              if (progressCallback) {
+                progressCallback(1);
+              }
             } catch (e) {
               this.filesErrors++;
-              uxLog(this, c.red('Download file error: ' + attachment.Name + '\n' + e));
+              uxLog("warning", this, c.red(t('downloadFileError') + attachment.Name + '\n' + e));
             }
           });
       } else {
-        uxLog(this, c.grey('No Attachments found for the parent records in this batch'));
+        uxLog("log", this, c.grey(t('noAttachmentsFoundForTheParentRecords', { batch: batch.length })));
       }
     }
     for (let i = 0; i < records.length; i += contentVersionBatchSize) {
@@ -260,7 +469,9 @@ export class FilesExporter {
       // Request all ContentDocumentLink related to all records of the batch
       const linkedEntityIdIn = batch.map((record: any) => `'${record.Id}'`).join(',');
       const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
-      this.totalSoqlRequests++;
+      await this.waitIfApiLimitApproached('BULK');
+      this.totalBulkApiCalls++;
+      uxLog("log", this, c.grey(t('queryingContentdocumentlinksForParentRecordsInThis', { linkedEntityInQuery: linkedEntityInQuery.length })));
       const contentDocumentLinks = await bulkQueryByChunks(linkedEntityInQuery, this.conn, this.parentRecordsChunkSize);
       if (contentDocumentLinks.records.length > 0) {
         // Retrieve all ContentVersion related to ContentDocumentLink
@@ -270,6 +481,7 @@ export class FilesExporter {
           const contentDocIdBatch = contentDocIdIn.slice(j, j + contentVersionBatchSize).join(',');
           // Log the progression of contentDocIdBatch
           uxLog(
+            "action",
             this,
             c.cyan(
               `Processing ContentDocumentId chunk #${Math.ceil((j + 1) / contentVersionBatchSize)} on ${Math.ceil(
@@ -278,8 +490,9 @@ export class FilesExporter {
             )
           );
           // Request all ContentVersion related to all records of the batch
-          const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
-          this.totalSoqlRequests++;
+          const contentVersionSoql = `SELECT Id,ContentDocumentId,Description,FileExtension,FileType,PathOnClient,Title,ContentSize,Checksum FROM ContentVersion WHERE ContentDocumentId IN (${contentDocIdBatch}) AND IsLatest = true`;
+          await this.waitIfApiLimitApproached('BULK');
+          this.totalBulkApiCalls++;
           const contentVersions = await bulkQueryByChunks(contentVersionSoql, this.conn, this.parentRecordsChunkSize);
           // ContentDocument object can be linked to multiple other objects even with same type (for example: same attachment can be linked to multiple EmailMessage objects).
           // Because of this when we fetch ContentVersion for ContentDocument it can return less results than there is ContentDocumentLink objects to link.
@@ -296,6 +509,8 @@ export class FilesExporter {
               }
             });
           });
+          actualFilesInChunk += versionsAndLinks.length; // Count actual ContentVersion files discovered
+          uxLog("log", this, c.grey(t('downloadingFoundFiles', { versionsAndLinks: versionsAndLinks.length })))
           // Download files
           await PromisePool.withConcurrency(5)
             .for(versionsAndLinks)
@@ -306,28 +521,300 @@ export class FilesExporter {
                   batch,
                   versionAndLink.contentDocumentLink
                 );
+                // Call progress callback if available
+                if (progressCallback) {
+                  progressCallback(1);
+                }
               } catch (e) {
                 this.filesErrors++;
-                uxLog(this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
+                uxLog("warning", this, c.red(t('downloadFileError') + versionAndLink.contentVersion.Title + '\n' + e));
               }
             });
         }
       } else {
-        uxLog(this, c.grey('No ContentDocumentLinks found for the parent records in this batch'));
+        uxLog("log", this, c.grey(t('noContentdocumentlinksFoundForTheParentRecords')));
       }
+    }
+
+    // At the end of chunk processing, report the actual files discovered in this chunk
+    if (progressCallback && actualFilesInChunk > 0) {
+      // This will help adjust the total progress based on actual discovered files
+      progressCallback(0, actualFilesInChunk); // Report actual files found in this chunk
     }
   }
 
-  private async downloadFile(fetchUrl: string, outputFile: string) {
+  // Initialize CSV log file with headers
+  private async initializeCsvLog() {
+    await fs.ensureDir(path.dirname(this.logFile));
+    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentDocument Id,ContentVersion Id,Attachment Id,Validation Status,Download URL\n';
+    await fs.writeFile(this.logFile, headers, 'utf8');
+    uxLog("log", this, c.grey(t('csvLogFileInitialized', { logFile: this.logFile })));
+    WebSocketClient.sendReportFileMessage(this.logFile, t('exportedFilesReportCsv'), 'report');
+  }
+
+  // Helper method to extract file information from output path
+  private extractFileInfo(outputFile: string) {
+    const fileName = path.basename(outputFile);
+    const extension = path.extname(fileName);
+    const folderPath = path.dirname(outputFile)
+      .replace(process.cwd(), '')
+      .replace(this.exportedFilesFolder, '')
+      .replace(/\\/g, '/')
+      .replace(/^\/+/, '');
+
+    return { fileName, extension, folderPath };
+  }
+
+  // Helper method to log skipped files
+  private async logSkippedFile(
+    outputFile: string,
+    errorDetail: string,
+    contentDocumentId: string = '',
+    contentVersionId: string = '',
+    attachmentId: string = '',
+    downloadUrl: string = ''
+  ) {
+    const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
+    await this.writeCsvLogEntry('skipped', folderPath, fileName, extension, 0, errorDetail, contentDocumentId, contentVersionId, attachmentId, 'Skipped', downloadUrl);
+  }
+
+  // Helper method to calculate MD5 checksum of a file
+  private async calculateMD5(filePath: string): Promise<string> {
+    const hash = crypto.createHash('md5');
+    const stream = fs.createReadStream(filePath);
+
+    return new Promise((resolve, reject) => {
+      stream.on('error', reject);
+      stream.on('data', chunk => hash.update(chunk));
+      stream.on('end', () => resolve(hash.digest('hex')));
+    });
+  }
+
+  // Helper method to validate downloaded file
+  private async validateDownloadedFile(
+    outputFile: string,
+    expectedSize: number,
+    expectedChecksum?: string,
+  ): Promise<{ valid: boolean; actualSize: number; actualChecksum?: string; error?: string }> {
+    try {
+      // Check if file exists
+      if (!fs.existsSync(outputFile)) {
+        return { valid: false, actualSize: 0, error: 'File does not exist' };
+      }
+
+      // Get actual file size
+      const stats = await fs.stat(outputFile);
+      const actualSize = stats.size;
+
+      // Validate file size if expected size is provided
+      if (actualSize !== expectedSize) {
+        return {
+          valid: false,
+          actualSize,
+          error: `Size mismatch: expected ${expectedSize} bytes, got ${actualSize} bytes`
+        };
+      }
+
+      // Validate checksum if expected checksum is provided
+      if (expectedChecksum) {
+        const actualChecksum = await this.calculateMD5(outputFile);
+        if (actualChecksum.toLowerCase() !== expectedChecksum.toLowerCase()) {
+          return {
+            valid: false,
+            actualSize,
+            actualChecksum,
+            error: `Checksum mismatch: expected ${expectedChecksum}, got ${actualChecksum}`
+          };
+        }
+        return { valid: true, actualSize, actualChecksum };
+      }
+
+      return { valid: true, actualSize };
+    } catch (error) {
+      return {
+        valid: false,
+        actualSize: 0,
+        error: `Validation error: ${(error as Error).message}`
+      };
+    }
+  }
+
+  // Write a CSV entry for each file processed (fileSize in KB)
+  private async writeCsvLogEntry(
+    status: 'success' | 'failed' | 'skipped' | 'invalid',
+    folder: string,
+    fileName: string,
+    extension: string,
+    fileSizeKB: number,
+    errorDetail: string = '',
+    contentDocumentId: string = '',
+    contentVersionId: string = '',
+    attachmentId: string = '',
+    validationStatus: string = '',
+    downloadUrl: string = ''
+  ) {
+    try {
+      // Escape CSV values to handle commas, quotes, and newlines
+      const escapeCsvValue = (value: string | number): string => {
+        const strValue = String(value);
+        if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) {
+          return `"${strValue.replace(/"/g, '""')}"`;
+        }
+        return strValue;
+      };
+
+      const csvLine = [
+        escapeCsvValue(status),
+        escapeCsvValue(folder),
+        escapeCsvValue(fileName),
+        escapeCsvValue(extension),
+        escapeCsvValue(fileSizeKB),
+        escapeCsvValue(errorDetail),
+        escapeCsvValue(contentDocumentId),
+        escapeCsvValue(contentVersionId),
+        escapeCsvValue(attachmentId),
+        escapeCsvValue(validationStatus),
+        escapeCsvValue(downloadUrl)
+      ].join(',') + '\n';
+
+      await fs.appendFile(this.logFile, csvLine, 'utf8');
+    } catch (e) {
+      uxLog("warning", this, c.yellow(t('errorWritingToCsvLog', { as: (e as Error).message })));
+    }
+  }
+
+  private async downloadFile(
+    fetchUrl: string,
+    outputFile: string,
+    contentDocumentId: string = '',
+    contentVersionId: string = '',
+    attachmentId: string = '',
+    expectedSize: number,
+    expectedChecksum?: string,
+  ) {
+    // In resume mode, check if file already exists and is valid
+    if (this.resumeExport && fs.existsSync(outputFile)) {
+      const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
+      let fileSizeKB = 0;
+
+      try {
+        const stats = await fs.stat(outputFile);
+        fileSizeKB = Math.round(stats.size / 1024); // Convert bytes to KB
+
+        // Validate existing file (always have validation data: checksum for ContentVersion, size for Attachment)
+        const validation = await this.validateDownloadedFile(outputFile, expectedSize, expectedChecksum);
+
+        if (validation.valid) {
+          this.filesValidated++; // Count only valid files
+          // File exists and is valid - skip download
+          const fileDisplay = path.join(folderPath, fileName).replace(/\\/g, '/');
+          uxLog("success", this, c.grey(t('skippedValidExistingFile', { fileDisplay })));
+          this.filesIgnoredExisting++;
+
+          // Write success entry to CSV log
+          await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, 'Existing valid file', contentDocumentId, contentVersionId, attachmentId, 'Valid (existing)', fetchUrl);
+          return;
+        } else {
+          // File exists but is invalid - will re-download
+          uxLog("log", this, c.yellow(t('existingFileIsInvalidReDownloading', { fileName, validation: validation.error })));
+        }
+      } catch (e) {
+        uxLog("warning", this, c.yellow(t('couldNotValidateExistingFile', { fileName, as: (e as Error).message })));
+        // Continue with download if we can't validate existing file
+      }
+    }
+
+    // Proceed with normal download process
     const downloadResult = await new FileDownloader(fetchUrl, { conn: this.conn, outputFile: outputFile, label: 'file' }).download();
-    if (downloadResult.success) {
+
+    // Extract file information for CSV logging
+    const { fileName, extension, folderPath } = this.extractFileInfo(outputFile);
+    let fileSizeKB = 0;
+    let errorDetail = '';
+    let validationError = ''; // Store validation error separately
+    let validationStatus = '';
+    let isValidFile = false; // Track if file is both downloaded and valid
+
+    // Get file size if download was successful
+    if (downloadResult.success && fs.existsSync(outputFile)) {
+      try {
+        const stats = await fs.stat(outputFile);
+        fileSizeKB = Math.round(stats.size / 1024); // Convert bytes to KB
+
+        // Perform file validation (always have validation data: checksum for ContentVersion, size for Attachment)
+        const validation = await this.validateDownloadedFile(outputFile, expectedSize, expectedChecksum);
+
+        if (validation.valid) {
+          this.filesValidated++; // Count only valid files
+          validationStatus = 'Valid';
+          isValidFile = true;
+          uxLog("success", this, c.green(`✓ Validation passed for ${fileName}`));
+        } else {
+          validationStatus = 'Invalid';
+          validationError = validation.error || 'Unknown validation error';
+          isValidFile = false;
+          this.filesValidationErrors++;
+          uxLog("warning", this, c.yellow(`⚠ Validation failed for ${fileName}: ${validation.error}`));
+        }
+      } catch (e) {
+        uxLog("warning", this, c.yellow(t('couldNotGetFileSizeFor', { fileName, as: (e as Error).message })));
+        validationStatus = 'Invalid';
+        validationError = (e as Error).message;
+        isValidFile = false;
+      }
+    } else if (!downloadResult.success) {
+      errorDetail = downloadResult.error || 'Unknown download error';
+      validationStatus = 'Download failed';
+      isValidFile = false;
+    }
+
+    // Use file folder and file name for log display
+    const fileDisplay = path.join(folderPath, fileName).replace(/\\/g, '/');
+
+    // Log based on download success AND validation success
+    if (downloadResult.success && isValidFile) {
+      uxLog("success", this, c.grey(t('downloaded', { fileDisplay })));
       this.filesDownloaded++;
-    } else {
+
+      // Write success entry to CSV log with Salesforce IDs and validation status
+      await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, '', contentDocumentId, contentVersionId, attachmentId, validationStatus, fetchUrl);
+    } else if (downloadResult.success && !isValidFile) {
+      // File was downloaded but validation failed
+      uxLog("warning", this, c.red(t('invalidValidationFailed', { fileDisplay })));
       this.filesErrors++;
+
+      // Write invalid entry to CSV log with validation error details
+      await this.writeCsvLogEntry('invalid', folderPath, fileName, extension, fileSizeKB, validationError, contentDocumentId, contentVersionId, attachmentId, validationStatus, fetchUrl);
+    } else {
+      // Download failed
+      uxLog("warning", this, c.red(t('error', { fileDisplay })));
+      this.filesErrors++;
+
+      // Write failed entry to CSV log with Salesforce IDs and validation status
+      await this.writeCsvLogEntry('failed', folderPath, fileName, extension, fileSizeKB, errorDetail, contentDocumentId, contentVersionId, attachmentId, validationStatus, fetchUrl);
     }
   }
 
   private async downloadAttachmentFile(attachment: any, records: any[]) {
+    // Check file size filter (BodyLength is in bytes)
+    const fileSizeKB = attachment.BodyLength ? Math.round(attachment.BodyLength / 1024) : 0;
+    if (this.dtl.fileSizeMin && this.dtl.fileSizeMin > 0 && fileSizeKB < this.dtl.fileSizeMin) {
+      uxLog("log", this, c.grey(t('skippedFileSizeKbBelowMinimumKb', { attachment: attachment.Name, fileSizeKB, dtl: this.dtl.fileSizeMin })));
+      this.filesIgnoredSize++;
+
+      // Log skipped file to CSV
+      const parentAttachment = records.filter((record) => record.Id === attachment.ParentId)[0];
+      const attachmentParentFolderName = (parentAttachment[this.dtl.outputFolderNameField] || parentAttachment.Id).replace(
+        /[/\\?%*:|"<>]/g,
+        '-'
+      );
+      const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, attachmentParentFolderName));
+      const outputFile = path.join(parentRecordFolderForFiles, attachment.Name.replace(/[/\\?%*:|"<>]/g, '-'));
+      const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/Attachment/${attachment.Id}/Body`;
+      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, '', '', attachment.Id, fetchUrl);
+      return;
+    }
+
     // Retrieve initial record to build output files folder name
     const parentAttachment = records.filter((record) => record.Id === attachment.ParentId)[0];
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
@@ -340,12 +827,31 @@ export class FilesExporter {
     const outputFile = path.join(parentRecordFolderForFiles, attachment.Name.replace(/[/\\?%*:|"<>]/g, '-'));
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
-    // Download file locally
-    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/Attachment/${attachment.Id}/Body`;
-    await this.downloadFile(fetchUrl, outputFile);
+    // Download file locally with validation (Attachments have BodyLength but no checksum)
+    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/Attachment/${attachment.Id}/Body`;
+    await this.downloadFile(fetchUrl, outputFile, '', '', attachment.Id, Number(attachment.BodyLength), undefined);
   }
 
   private async downloadContentVersionFile(contentVersion: any, records: any[], contentDocumentLink: any) {
+    // Check file size filter (ContentSize is in bytes)
+    const fileSizeKB = contentVersion.ContentSize ? Math.round(contentVersion.ContentSize / 1024) : 0;
+    if (this.dtl.fileSizeMin && this.dtl.fileSizeMin > 0 && fileSizeKB < this.dtl.fileSizeMin) {
+      uxLog("log", this, c.grey(t('skippedFileSizeKbBelowMinimumKb2', { contentVersion: contentVersion.Title, fileSizeKB, dtl: this.dtl.fileSizeMin })));
+      this.filesIgnoredSize++;
+
+      // Log skipped file to CSV
+      const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
+      const parentFolderName = (parentRecord[this.dtl.outputFolderNameField] || parentRecord.Id).replace(
+        /[/\\?%*:|"<>]/g,
+        '-'
+      );
+      const parentRecordFolderForFiles = path.resolve(path.join(this.exportedFilesFolder, parentFolderName));
+      const outputFile = path.join(parentRecordFolderForFiles, contentVersion.Title.replace(/[/\\?%*:|"<>]/g, '-'));
+      const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
+      await this.logSkippedFile(outputFile, `File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`, contentVersion.ContentDocumentId, contentVersion.Id, '', fetchUrl);
+      return;
+    }
+
     // Retrieve initial record to build output files folder name
     const parentRecord = records.filter((record) => record.Id === contentDocumentLink.LinkedEntityId)[0];
     // Build record output files folder (if folder name contains slashes or antislashes, replace them by spaces)
@@ -380,54 +886,70 @@ export class FilesExporter {
     }
     // Check file extension
     if (this.dtl.fileTypes !== 'all' && !this.dtl.fileTypes.includes(contentVersion.FileType)) {
-      uxLog(this, c.grey(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File type ignored`));
+      uxLog("log", this, c.grey(t('skippedFileTypeIgnored', { outputFile: outputFile.replace(this.exportedFilesFolder, '') })));
       this.filesIgnoredType++;
+
+      // Log skipped file to CSV
+      const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
+      await this.logSkippedFile(outputFile, 'File type ignored', contentVersion.ContentDocumentId, contentVersion.Id, '', fetchUrl);
       return;
     }
-    // Check file overwrite
-    if (this.dtl.overwriteFiles !== true && fs.existsSync(outputFile)) {
-      uxLog(this, c.yellow(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File already existing`));
+    // Check file overwrite (unless in resume mode where downloadFile handles existing files)
+    if (this.dtl.overwriteFiles !== true && !this.resumeExport && fs.existsSync(outputFile)) {
+      uxLog("warning", this, c.yellow(t('skippedFileAlreadyExisting', { outputFile: outputFile.replace(this.exportedFilesFolder, '') })));
       this.filesIgnoredExisting++;
+
+      // Log skipped file to CSV
+      const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
+      await this.logSkippedFile(outputFile, 'File already exists', contentVersion.ContentDocumentId, contentVersion.Id, '', fetchUrl);
       return;
     }
     // Create directory if not existing
     await fs.ensureDir(parentRecordFolderForFiles);
-    // Download file locally
-    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${CONSTANTS.API_VERSION}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
-    await this.downloadFile(fetchUrl, outputFile);
+    // Download file locally with validation (ContentVersion has both Checksum and ContentSize)
+    const fetchUrl = `${this.conn.instanceUrl}/services/data/v${getApiVersion()}/sobjects/ContentVersion/${contentVersion.Id}/VersionData`;
+    await this.downloadFile(fetchUrl, outputFile, contentVersion.ContentDocumentId, contentVersion.Id, '', Number(contentVersion.ContentSize), contentVersion.Checksum);
   }
   // Build stats & result
   private async buildResult() {
-    const connAny = this.conn as any;
-    const apiCallsRemaining = connAny?.limitInfo?.apiUsage?.used
-      ? (connAny?.limitInfo?.apiUsage?.limit || 0) - (connAny?.limitInfo?.apiUsage?.used || 0)
-      : null;
-    uxLog(this, c.cyan(`API limit: ${c.bold(connAny?.limitInfo?.apiUsage?.limit || null)}`));
-    uxLog(this, c.cyan(`API used before process: ${c.bold(this.apiUsedBefore)}`));
-    uxLog(this, c.cyan(`API used after process: ${c.bold(connAny?.limitInfo?.apiUsage?.used || null)}`));
-    uxLog(this, c.cyan(`API calls remaining for today: ${c.bold(apiCallsRemaining)}`));
-    uxLog(this, c.cyan(`Total SOQL requests: ${c.bold(this.totalSoqlRequests)}`));
-    uxLog(this, c.cyan(`Total parent records found: ${c.bold(this.totalParentRecords)}`));
-    uxLog(this, c.cyan(`Total parent records with files: ${c.bold(this.parentRecordsWithFiles)}`));
-    uxLog(this, c.cyan(`Total parent records ignored because already existing: ${c.bold(this.recordsIgnored)}`));
-    uxLog(this, c.cyan(`Total files downloaded: ${c.bold(this.filesDownloaded)}`));
-    uxLog(this, c.cyan(`Total file download errors: ${c.bold(this.filesErrors)}`));
-    uxLog(this, c.cyan(`Total file skipped because of type constraint: ${c.bold(this.filesIgnoredType)}`));
-    uxLog(this, c.cyan(`Total file skipped because previously downloaded: ${c.bold(this.filesIgnoredExisting)}`));
+    // Get final API usage from the limits manager
+    const finalUsage = await this.apiLimitsManager.getFinalUsage();
 
-    return {
-      totalParentRecords: this.totalParentRecords,
-      parentRecordsWithFiles: this.parentRecordsWithFiles,
-      filesDownloaded: this.filesDownloaded,
-      filesErrors: this.filesErrors,
-      recordsIgnored: this.recordsIgnored,
-      filesIgnoredType: this.filesIgnoredType,
-      filesIgnoredExisting: this.filesIgnoredExisting,
-      apiLimit: connAny?.limitInfo?.apiUsage?.limit || null,
-      apiUsedBefore: this.apiUsedBefore,
-      apiUsedAfter: connAny?.limitInfo?.apiUsage?.used || null,
-      apiCallsRemaining,
+    // Display final API usage summary
+    try {
+      const finalApiUsage = await this.getApiUsageStatus();
+      uxLog("success", this, c.green(t('exportCompletedFinalApiUsage', { finalApiUsage: finalApiUsage.message })));
+    } catch (error) {
+      uxLog("warning", this, c.yellow(t('couldNotRetrieveFinalApiUsage', { error: (error as Error).message })));
+    }
+
+    const result = {
+      stats: {
+        filesValidated: this.filesValidated,
+        filesDownloaded: this.filesDownloaded,
+        filesErrors: this.filesErrors,
+        filesIgnoredType: this.filesIgnoredType,
+        filesIgnoredExisting: this.filesIgnoredExisting,
+        filesIgnoredSize: this.filesIgnoredSize,
+        filesValidationErrors: this.filesValidationErrors,
+        totalRestApiCalls: this.totalRestApiCalls,
+        totalBulkApiCalls: this.totalBulkApiCalls,
+        totalParentRecords: this.totalParentRecords,
+        parentRecordsWithFiles: this.parentRecordsWithFiles,
+        recordsIgnored: this.recordsIgnored,
+        restApiUsedBefore: finalUsage.restUsed,
+        restApiUsedAfter: finalUsage.restUsed,
+        restApiLimit: finalUsage.restLimit,
+        restApiCallsRemaining: finalUsage.restRemaining,
+        bulkApiUsedBefore: finalUsage.bulkUsed,
+        bulkApiUsedAfter: finalUsage.bulkUsed,
+        bulkApiLimit: finalUsage.bulkLimit,
+        bulkApiCallsRemaining: finalUsage.bulkRemaining,
+      },
+      logFile: this.logFile
     };
+    await createXlsxFromCsv(this.logFile, { fileTitle: "Exported files report" }, result);
+    return result;
   }
 }
 
@@ -439,6 +961,18 @@ export class FilesImporter {
   private dtl: any = null; // export config
   private exportedFilesFolder: string = '';
   private handleOverwrite = false;
+  private logFile: string;
+
+  // Statistics tracking
+  private totalFolders = 0;
+  private totalFiles = 0;
+  private filesUploaded = 0;
+  private filesOverwritten = 0;
+  private filesErrors = 0;
+  private filesSkipped = 0;
+
+  // Optimized API Limits Management System
+  private apiLimitsManager: ApiLimitsManager;
 
   constructor(
     filesPath: string,
@@ -454,6 +988,58 @@ export class FilesImporter {
     if (options.exportConfig) {
       this.dtl = options.exportConfig;
     }
+
+    // Initialize the optimized API limits manager
+    this.apiLimitsManager = new ApiLimitsManager(conn, commandThis);
+
+    // Initialize log file path
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    this.logFile = path.join(this.filesPath, `import-log-${timestamp}.csv`);
+  }
+
+  // Initialize CSV log file with headers
+  private async initializeCsvLog() {
+    await fs.ensureDir(path.dirname(this.logFile));
+    const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentVersion Id\n';
+    await fs.writeFile(this.logFile, headers, 'utf8');
+    uxLog("log", this.commandThis, c.grey(t('csvLogFileInitialized', { logFile: this.logFile })));
+    WebSocketClient.sendReportFileMessage(this.logFile, t('importedFilesReportCsv'), 'report');
+  }
+
+  // Helper method to extract file information from file path
+  private extractFileInfo(filePath: string, folderName: string) {
+    const fileName = path.basename(filePath);
+    const extension = path.extname(fileName);
+
+    return { fileName, extension, folderPath: folderName };
+  }
+
+  // Write a CSV entry for each file processed (fileSize in KB)
+  private async writeCsvLogEntry(status: 'success' | 'failed' | 'skipped' | 'overwritten', folder: string, fileName: string, extension: string, fileSizeKB: number, errorDetail: string = '', contentVersionId: string = '') {
+    try {
+      // Escape CSV values to handle commas, quotes, and newlines
+      const escapeCsvValue = (value: string | number): string => {
+        const strValue = String(value);
+        if (strValue.includes(',') || strValue.includes('"') || strValue.includes('\n')) {
+          return `"${strValue.replace(/"/g, '""')}"`;
+        }
+        return strValue;
+      };
+
+      const csvLine = [
+        escapeCsvValue(status),
+        escapeCsvValue(folder),
+        escapeCsvValue(fileName),
+        escapeCsvValue(extension),
+        escapeCsvValue(fileSizeKB),
+        escapeCsvValue(errorDetail),
+        escapeCsvValue(contentVersionId)
+      ].join(',') + '\n';
+
+      await fs.appendFile(this.logFile, csvLine, 'utf8');
+    } catch (e) {
+      uxLog("warning", this.commandThis, c.yellow(t('errorWritingToCsvLog', { as: (e as Error).message })));
+    }
   }
 
   async processImport() {
@@ -461,41 +1047,69 @@ export class FilesImporter {
     if (this.dtl === null) {
       this.dtl = await getFilesWorkspaceDetail(this.filesPath);
     }
-    uxLog(this.commandThis, c.cyan(`Importing files from ${c.green(this.dtl.full_label)} ...`));
-    uxLog(this.commandThis, c.italic(c.grey(this.dtl.description)));
+    uxLog("action", this.commandThis, c.cyan(t('importingFilesFrom', { dtl: c.green(this.dtl.full_label) })));
+    uxLog("log", this.commandThis, c.italic(c.grey(this.dtl.description)));
 
     // Get folders and files
     const allRecordFolders = fs.readdirSync(this.exportedFilesFolder).filter((file) => {
       return fs.statSync(path.join(this.exportedFilesFolder, file)).isDirectory();
     });
-    let totalFilesNumber = 0;
+
+    this.totalFolders = allRecordFolders.length;
+
+    // Count total files
     for (const folder of allRecordFolders) {
-      totalFilesNumber += fs.readdirSync(path.join(this.exportedFilesFolder, folder)).length;
+      this.totalFiles += fs.readdirSync(path.join(this.exportedFilesFolder, folder)).length;
     }
 
-    await this.calculateApiConsumption(totalFilesNumber);
+    // Initialize API usage tracking with total file count
+    await this.calculateApiConsumption(this.totalFiles);
 
+    // Initialize CSV logging
+    await this.initializeCsvLog();
+
+    // Start progress tracking
+    WebSocketClient.sendProgressStartMessage(t('importingFiles'), this.totalFiles);
+    const soqlQueryWithLimit = await parseSoqlAndReapplyLimit(this.dtl.soqlQuery, undefined, this);
     // Query parent objects to find Ids corresponding to field value used as folder name
-    const parentObjectsRes = await bulkQuery(this.dtl.soqlQuery, this.conn);
+    const parentObjectsRes = await bulkQuery(soqlQueryWithLimit, this.conn);
     const parentObjects = parentObjectsRes.records;
-    let successNb = 0;
-    let errorNb = 0;
+
+    let processedFiles = 0;
 
     for (const recordFolder of allRecordFolders) {
-      uxLog(this, c.grey(`Processing record ${recordFolder} ...`));
+      uxLog("log", this.commandThis, c.grey(t('processingRecord', { recordFolder })));
       const recordFolderPath = path.join(this.exportedFilesFolder, recordFolder);
+
       // List files in folder
       const files = fs.readdirSync(recordFolderPath).filter((file) => {
         return fs.statSync(path.join(this.exportedFilesFolder, recordFolder, file)).isFile();
       });
+
       // Find Id of parent object using folder name
       const parentRecordIds = parentObjects.filter(
         (parentObj) => parentObj[this.dtl.outputFolderNameField] === recordFolder
       );
+
       if (parentRecordIds.length === 0) {
-        uxLog(this, c.red(`Unable to find Id for ${this.dtl.outputFolderNameField}=${recordFolder}`));
+        uxLog("error", this.commandThis, c.red(t('unableToFindIdFor', { dtl: this.dtl.outputFolderNameField, recordFolder })));
+
+        // Log all files in this folder as skipped
+        for (const file of files) {
+          const { fileName, extension } = this.extractFileInfo(file, recordFolder);
+          const filePath = path.join(recordFolderPath, file);
+          const fileSizeKB = fs.existsSync(filePath) ? Math.round(fs.statSync(filePath).size / 1024) : 0;
+
+          await this.writeCsvLogEntry('skipped', recordFolder, fileName, extension, fileSizeKB, 'Parent record not found', '');
+          this.filesSkipped++;
+          processedFiles++;
+
+          // Update progress
+          WebSocketClient.sendProgressStepMessage(processedFiles, this.totalFiles);
+        }
         continue;
       }
+
       const parentRecordId = parentRecordIds[0].Id;
 
       let existingDocuments: any[] = [];
@@ -507,48 +1121,114 @@ export class FilesImporter {
       }
 
       for (const file of files) {
-        const fileData = fs.readFileSync(path.join(recordFolderPath, file));
-        const contentVersionParams: any = {
-          Title: file,
-          PathOnClient: file,
-          VersionData: fileData.toString('base64'),
-        };
-        const matchingExistingDocs = existingDocuments.filter((doc) => doc.Title === file);
-        if (matchingExistingDocs.length > 0) {
-          contentVersionParams.ContentDocumentId = matchingExistingDocs[0].ContentDocumentId;
-          uxLog(this, c.grey(`Overwriting file ${file} ...`));
-        } else {
-          contentVersionParams.FirstPublishLocationId = parentRecordId;
-          uxLog(this, c.grey(`Uploading file ${file} ...`));
-        }
+        const filePath = path.join(recordFolderPath, file);
+        const { fileName, extension } = this.extractFileInfo(file, recordFolder);
+        const fileSizeKB = fs.existsSync(filePath) ? Math.round(fs.statSync(filePath).size / 1024) : 0;
+
         try {
-          const insertResult = await this.conn.sobject('ContentVersion').create(contentVersionParams);
-          if (insertResult.length === 0) {
-            uxLog(this, c.red(`Unable to upload file ${file}`));
-            errorNb++;
+          const fileData = fs.readFileSync(filePath);
+          const contentVersionParams: any = {
+            Title: file,
+            PathOnClient: file,
+            VersionData: fileData.toString('base64'),
+          };
+
+          const matchingExistingDocs = existingDocuments.filter((doc) => doc.Title === file);
+          let isOverwrite = false;
+
+          if (matchingExistingDocs.length > 0) {
+            contentVersionParams.ContentDocumentId = matchingExistingDocs[0].ContentDocumentId;
+            uxLog("log", this.commandThis, c.grey(t('overwritingFile', { file })));
+            isOverwrite = true;
           } else {
-            successNb++;
+            contentVersionParams.FirstPublishLocationId = parentRecordId;
+            uxLog("log", this.commandThis, c.grey(t('uploadingFile', { file })));
+          }
+
+          const insertResult = await this.conn.sobject('ContentVersion').create(contentVersionParams);
+
+          if (Array.isArray(insertResult) && insertResult.length === 0) {
+            uxLog("error", this.commandThis, c.red(t('unableToUploadFile', { file })));
+            await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, 'Upload failed', '');
+            this.filesErrors++;
+          } else if (Array.isArray(insertResult) && !insertResult[0].success) {
+            uxLog("error", this.commandThis, c.red(t('unableToUploadFile', { file })));
+            await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, insertResult[0].errors?.join(', ') || 'Upload failed', '');
+            this.filesErrors++;
+          } else {
+            // Extract ContentVersion ID from successful insert result
+            const contentVersionId = Array.isArray(insertResult) && insertResult.length > 0
+              ? insertResult[0].id
+              : (insertResult as any).id || '';
+
+            if (isOverwrite) {
+              uxLog("success", this.commandThis, c.grey(t('overwritten', { file })));
+              await this.writeCsvLogEntry('overwritten', recordFolder, fileName, extension, fileSizeKB, '', contentVersionId);
+              this.filesOverwritten++;
+            } else {
+              uxLog("success", this.commandThis, c.grey(t('uploaded', { file })));
+              await this.writeCsvLogEntry('success', recordFolder, fileName, extension, fileSizeKB, '', contentVersionId);
+              this.filesUploaded++;
+            }
           }
         } catch (e) {
-          uxLog(this, c.red(`Unable to upload file ${file}: ${(e as Error).message}`));
-          errorNb++;
+          const errorDetail = (e as Error).message;
+          uxLog("error", this.commandThis, c.red(t('unableToUploadFile2', { file, errorDetail })));
+          await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, errorDetail, '');
+          this.filesErrors++;
         }
+
+        processedFiles++;
+        // Update progress
+        WebSocketClient.sendProgressStepMessage(processedFiles, this.totalFiles);
       }
     }
 
-    uxLog(this, c.green(`Uploaded ${successNb} files`));
-    if (errorNb > 0) {
-      uxLog(this, c.yellow(`Errors during the upload of ${successNb} files`));
-    }
-    return { successNb: successNb, errorNb: errorNb };
+    // End progress tracking
+    WebSocketClient.sendProgressEndMessage(this.totalFiles);
+
+    // Build and return result
+    return await this.buildResult();
   }
 
-  // Calculate API consumption
+  // Build stats & result
+  private async buildResult() {
+    // Get final API usage from the limits manager
+    const finalUsage = await this.apiLimitsManager.getFinalUsage();
+
+    const result = {
+      stats: {
+        filesUploaded: this.filesUploaded,
+        filesOverwritten: this.filesOverwritten,
+        filesErrors: this.filesErrors,
+        filesSkipped: this.filesSkipped,
+        totalFolders: this.totalFolders,
+        totalFiles: this.totalFiles,
+        restApiUsedBefore: finalUsage.restUsed,
+        restApiUsedAfter: finalUsage.restUsed,
+        restApiLimit: finalUsage.restLimit,
+        restApiCallsRemaining: finalUsage.restRemaining,
+        bulkApiUsedBefore: finalUsage.bulkUsed,
+        bulkApiUsedAfter: finalUsage.bulkUsed,
+        bulkApiLimit: finalUsage.bulkLimit,
+        bulkApiCallsRemaining: finalUsage.bulkRemaining,
+      },
+      logFile: this.logFile
+    };
+    await createXlsxFromCsv(this.logFile, { fileTitle: "Imported files report" }, result);
+    return result;
+  }
+
+  // Calculate API consumption using the optimized ApiLimitsManager
   private async calculateApiConsumption(totalFilesNumber) {
+    // Initialize the API limits manager
+    await this.apiLimitsManager.initialize();
+
     const bulkCallsNb = 1;
     if (this.handleOverwrite) {
       totalFilesNumber = totalFilesNumber * 2;
     }
+
     // Check if there are enough API calls available
     // Request user confirmation
     if (!isCI) {
@@ -556,7 +1236,11 @@ export class FilesImporter {
         `Files import consumes one REST API call per uploaded file.
         (Estimation: ${bulkCallsNb} Bulks calls and ${totalFilesNumber} REST calls) Do you confirm you want to proceed ?`
       );
-      const promptRes = await prompts({ type: 'confirm', message: warningMessage });
+      const promptRes = await prompts({
+        type: 'confirm',
+        message: warningMessage,
+        description: t('confirmFileImportOperationWhichWillConsumeApiCalls')
+      });
       if (promptRes.value !== true) {
         throw new SfError('Command cancelled by user');
       }
@@ -593,6 +1277,7 @@ export async function selectFilesWorkspace(opts = { selectFilesLabel: 'Please se
     type: 'select',
     name: 'value',
     message: c.cyanBright(opts.selectFilesLabel),
+    description: t('chooseFilesDataWorkspaceToUseForExport'),
     choices: choices,
   });
   return filesDirResult.value;
@@ -602,6 +1287,7 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
   const exportFile = path.join(filesWorkspace, 'export.json');
   if (!fs.existsSync(exportFile)) {
     uxLog(
+      "warning",
       this,
       c.yellow(
         `Your File export folder ${c.bold(filesWorkspace)} must contain an ${c.bold('export.json')} configuration file`
@@ -620,8 +1306,10 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
   const overwriteParentRecords =
     exportFileJson.overwriteParentRecords === false ? false : exportFileJson.overwriteParentRecords || true;
   const overwriteFiles = exportFileJson.overwriteFiles || false;
+  const fileSizeMin = exportFileJson.fileSizeMin || 0;
   return {
     full_label: `[${folderName}]${folderName != hardisLabel ? `: ${hardisLabel}` : ''}`,
+    name: folderName,
     label: hardisLabel,
     description: hardisDescription,
     soqlQuery: soqlQuery,
@@ -630,6 +1318,7 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
     outputFileNameFormat: outputFileNameFormat,
     overwriteParentRecords: overwriteParentRecords,
     overwriteFiles: overwriteFiles,
+    fileSizeMin: fileSizeMin,
   };
 }
 
@@ -642,19 +1331,23 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
           type: 'text',
           name: 'filesExportPath',
           message: c.cyanBright(
-            'Please input the files export config folder name (PascalCase format). Ex: "OpportunitiesPDF"'
+            'Please input the files export config folder name (PascalCase format)'
           ),
+          description: t('theFolderNameThatWillBeCreatedForExportConfig'),
+          placeholder: t('exOpportunitiesPdf'),
         },
         {
           type: 'text',
           name: 'sfdxHardisLabel',
-          message: c.cyanBright('Please input a label for the files export configuration'),
+          message: c.cyanBright(t('pleaseInputLabelForTheFilesExport')),
+          description: t('aHumanReadableLabelForExportConfig'),
           initial: filesExportConfig.sfdxHardisLabel,
         },
         {
           type: 'text',
           name: 'sfdxHardisDescription',
-          message: c.cyanBright('Please input a description of the files export configuration'),
+          message: c.cyanBright(t('pleaseInputDescriptionOfTheFilesExport')),
+          description: t('aDetailedDescriptionForExportConfig'),
           initial: filesExportConfig.sfdxHardisDescription,
         },
       ]
@@ -666,25 +1359,30 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         type: 'text',
         name: 'soqlQuery',
         message:
-          'Please input the main SOQL Query to fetch the parent records of files (ContentVersions). Ex: SELECT Id,Name from Opportunity',
+          'Please input the main SOQL Query to fetch the parent records of files (ContentVersions)',
+        description: t('soqlQueryThatRetrievesParentRecords'),
+        placeholder: t('exSelectIdNameFromOpportunity'),
         initial: filesExportConfig.soqlQuery,
       },
       {
         type: 'text',
         name: 'outputFolderNameField',
-        message: 'Please input the field to use to build the name of the folder containing downloaded files (can be the name, or another field like External ID)',
+        message: t('pleaseInputTheFieldToUseTo'),
+        description: t('fieldNameFromSoqlQueryForFolderName'),
+        placeholder: t('exName'),
         initial: filesExportConfig.outputFolderNameField,
       },
       {
         type: 'select',
         name: 'outputFileNameFormat',
         choices: [
-          { value: 'title', title: 'title (ex: "Cloudity New Project")' },
-          { value: 'title_id', title: 'title_id (ex: "Cloudity New Project_006bR00000Bet7WQAR")' },
-          { value: 'id_title', title: 'id_title (ex: "006bR00000Bet7WQAR_Cloudity New Project")' },
-          { value: 'id', title: 'id (ex: "006bR00000Bet7WQAR")' },
+          { value: 'title', title: t('choiceOutputFileNameFormatTitle') },
+          { value: 'title_id', title: t('choiceOutputFileNameFormatTitleId') },
+          { value: 'id_title', title: t('choiceOutputFileNameFormatIdTitle') },
+          { value: 'id', title: t('choiceOutputFileNameFormatId') },
         ],
-        message: 'Please select the format of output files names',
+        message: t('pleaseSelectTheFormatOfOutputFiles'),
+        description: t('chooseHowDownloadedFileNamesShouldBeFormatted'),
         initial: filesExportConfig.outputFileNameFormat,
       },
       {
@@ -692,13 +1390,24 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         name: 'overwriteParentRecords',
         message:
           'Do you want to try to download files attached to a parent records whose folder is already existing in local folders ?',
+        description: t('allowDownloadingFilesForRecordsWithExistingFolder'),
         initial: filesExportConfig.overwriteParentRecords,
       },
       {
         type: 'confirm',
         name: 'overwriteFiles',
-        message: 'Do you want to overwrite file that has already been previously downloaded ?',
+        message: t('doYouWantToOverwriteFileThat'),
+        description: t('replaceExistingLocalFilesWithNewVersions'),
         initial: filesExportConfig.overwriteFiles,
+      },
+      {
+        type: 'number',
+        name: 'fileSizeMin',
+        message: t('pleaseInputTheMinimumFileSizeIn'),
+        description: t('onlyFilesWithSizeGreaterThanValueDownloaded'),
+        placeholder: t('exTen'),
+        initial: filesExportConfig.fileSizeMin || 0,
+        min: 0,
       },
     ]
   );
@@ -713,6 +1422,7 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
     outputFileNameFormat: resp.outputFileNameFormat,
     overwriteParentRecords: resp.overwriteParentRecords,
     overwriteFiles: resp.overwriteFiles,
+    fileSizeMin: resp.fileSizeMin,
   });
   return filesConfig;
 }
@@ -747,17 +1457,26 @@ export async function countLinesInFile(file: string) {
  * It then joins the report directory, file name prefix, and branch name to form the full path of the report.
  *
  * @param {string} fileNamePrefix - The prefix for the file name.
+ * @param {string} outputFile - The output file path. If null, a new path is generated.
+ * @param {Object} [options] - Additional options for generating the report path.
+ * @param {boolean} [options.withDate=false] - Whether to append a timestamp to the file name.
+ * @param {boolean} [options.withBranchName=true] - Whether to include the branch name in the file name.
+ * @param {string} [options.fileExtension='csv'] - The file extension to use for the report file.
+ * @param {string} [options.fileNamePartsSeparator='-'] - The separator to use between file name parts.
  * @returns {Promise<string>} - A Promise that resolves to the full path of the report.
  */
-export async function generateReportPath(fileNamePrefix: string, outputFile: string): Promise<string> {
-  if (outputFile == null) {
+export async function generateReportPath(fileNamePrefix: string, outputFile: string, options: { withDate?: boolean; withBranchName?: boolean; fileExtension?: string; fileNamePartsSeparator?: string } = {}): Promise<string> {
+  const { withDate = false, withBranchName = true, fileExtension = 'csv', fileNamePartsSeparator = '-' } = options;
+  if (outputFile == null || outputFile === '') {
     const reportDir = await getReportDirectory();
-    const branchName =
-      (!isGitRepo()) ? 'no-git' :
-        process.env.CI_COMMIT_REF_NAME ||
-        (await getCurrentGitBranch({ formatted: true })) ||
-        'branch-not-found';
-    return path.join(reportDir, `${fileNamePrefix}-${branchName.split('/').pop()}.csv`);
+    const fileNameParts: string[] = [fileNamePrefix];
+    if (withBranchName) {
+      fileNameParts.push(!isGitRepo() ? 'no-git' : process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || 'branch-not-found');
+    }
+    if (withDate) {
+      fileNameParts.push(new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0]);
+    }
+    return path.join(reportDir, fileNameParts.join(fileNamePartsSeparator) + '.' + fileExtension);
   } else {
     await fs.ensureDir(path.dirname(outputFile));
     return outputFile;
@@ -773,51 +1492,360 @@ export async function generateReportPath(fileNamePrefix: string, outputFile: str
  * @param {string} outputPath - The path where the CSV file will be written.
  * @returns {Promise<void>} - A Promise that resolves when the operation is complete.
  */
-export async function generateCsvFile(data: any[], outputPath: string): Promise<any> {
+export interface ExcelColumnStyle {
+  wrap?: boolean;
+  width?: number;
+  hyperlinkFromValue?: boolean;
+  maxHeight?: number;
+}
+
+export interface ExcelExportOptions {
+  fileTitle?: string;
+  csvFileTitle?: string;
+  xlsFileTitle?: string;
+  noExcel?: boolean;
+  columnsCustomStyles?: Record<string, ExcelColumnStyle>;
+  skipNotifyToWebSocket?: boolean;
+}
+
+export async function generateCsvFile(
+  data: any[],
+  outputPath: string,
+  options: ExcelExportOptions = {}
+): Promise<any> {
   const result: any = {};
   try {
     const csvContent = Papa.unparse(data);
     await fs.writeFile(outputPath, csvContent, 'utf8');
-    uxLog(this, c.italic(c.cyan(`Please see detailed CSV log in ${c.bold(outputPath)}`)));
+    if (!WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn', { outputPath: c.bold(outputPath) }))));
+    }
     result.csvFile = outputPath;
-    WebSocketClient.requestOpenFile(outputPath);
-    if (data.length > 0) {
-      try {
-        // Generate mirror XSLX file
-        const xlsDirName = path.join(path.dirname(outputPath), 'xls');
-        const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
-        const xslxFile = path.join(xlsDirName, xslFileName);
-        await fs.ensureDir(xlsDirName);
-        await csvToXls(outputPath, xslxFile);
-        uxLog(this, c.italic(c.cyan(`Please see detailed XSLX log in ${c.bold(xslxFile)}`)));
-        result.xlsxFile = xslxFile;
-      } catch (e2) {
-        uxLog(
-          this,
-          c.yellow('Error while generating XSLX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
-        );
-      }
+    if (!WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket) {
+      WebSocketClient.requestOpenFile(outputPath);
+    }
+    const csvFileTitle = options?.fileTitle ? `${options.fileTitle} (CSV)` : options?.csvFileTitle ?? "Report (CSV)";
+    if (!options?.skipNotifyToWebSocket) {
+      WebSocketClient.sendReportFileMessage(outputPath, csvFileTitle, "report");
+    }
+    if (data.length > 0 && !options?.noExcel) {
+      await createXlsxFromCsv(outputPath, options, result);
     } else {
-      uxLog(this, c.grey(`No XLS file generated as ${outputPath} is empty`));
+      uxLog("other", this, c.grey(t('noXlsFileGeneratedAsIsEmpty', { outputPath })));
     }
   } catch (e) {
-    uxLog(this, c.yellow('Error while generating CSV log file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+    uxLog("warning", this, c.yellow(t('errorWhileGeneratingCsvLogFile') + (e as Error).message + '\n' + (e as Error).stack));
   }
   return result;
 }
 
-async function csvToXls(csvFile: string, xslxFile: string) {
+export async function createXlsxFromCsv(outputPath: string, options: ExcelExportOptions, result: any) {
+  try {
+    const xlsDirName = path.join(path.dirname(outputPath), 'xls');
+    const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
+    const xslxFile = path.join(xlsDirName, xslFileName);
+    await fs.ensureDir(xlsDirName);
+    // Delete existing file if any
+    await fs.remove(xslxFile);
+    await csvToXls(outputPath, xslxFile, options);
+    if (!WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
+    }
+    const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
+    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
+    result.xlsxFile = xslxFile;
+    if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+      try {
+        uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));
+        await open(xslxFile, { wait: false });
+      } catch (e) {
+        uxLog("warning", this, c.yellow(t('errorWhileOpeningXlsxFile') + (e as Error).message + '\n' + (e as Error).stack));
+      }
+    }
+  } catch (e2) {
+    uxLog(
+      "warning",
+      this,
+      c.yellow('Error while generating XLSX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
+    );
+  }
+}
+
+async function csvToXls(csvFile: string, xslxFile: string, options: ExcelExportOptions) {
   const workbook = new ExcelJS.Workbook();
   const worksheet = await workbook.csv.readFile(csvFile);
-  // Set filters
-  worksheet.autoFilter = 'A1:Z1';
-  // Adjust column size (only if the file is not too big, to avoid performances issues)
-  if (worksheet.rowCount < 5000) {
-    worksheet.columns.forEach((column) => {
-      const lengths = (column.values || []).map((v) => (v || '').toString().length);
-      const maxLength = Math.max(...lengths.filter((v) => typeof v === 'number'));
-      column.width = maxLength;
+  applyWorksheetFormatting(worksheet, options);
+  await workbook.xlsx.writeFile(xslxFile);
+}
+
+export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath: string, options: ExcelExportOptions = {}) {
+  try {
+    const xlsDirName = path.join(path.dirname(outputPath), 'xls');
+    const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
+    const xslxFile = path.join(xlsDirName, xslFileName);
+    await fs.ensureDir(xlsDirName);
+    // Delete existing file if any
+    await fs.remove(xslxFile);
+    await csvFilesToXls(csvFilesPath, xslxFile, options);
+    if (!WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
+    }
+    const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
+    WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
+    // result.xlsxFile = xslxFile;
+    if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+      try {
+        uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));
+        await open(xslxFile, { wait: false });
+      } catch (e) {
+        uxLog("warning", this, c.yellow(t('errorWhileOpeningXlsxFile') + (e as Error).message + '\n' + (e as Error).stack));
+      }
+    }
+  } catch (e2) {
+    uxLog(
+      "warning",
+      this,
+      c.yellow('Error while generating XLSX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
+    );
+  }
+}
+
+async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: ExcelExportOptions) {
+  const workbook = new ExcelJS.Workbook();
+  let worksheet: ExcelJS.Worksheet;
+  const usedWorksheetNames = new Set<string>();
+
+  const sanitizeWorksheetName = (name: string): string => {
+    // Excel constraints: max 31 chars, no : \ / ? * [ ] and no control chars.
+    const withoutControlChars = Array.from(name || '')
+      .filter((char) => char >= ' ')
+      .join('');
+    return withoutControlChars
+      .replace(/\.csv$/i, '')
+      .replace(/[\u005B\u005D*\\\\?:/]/g, ' ')
+      .trim();
+  };
+
+  const makeUniqueWorksheetName = (desiredName: string): string => {
+    const maxLength = 31;
+    const base = sanitizeWorksheetName(desiredName) || 'Sheet';
+
+    let candidate = base.substring(0, maxLength);
+    if (!usedWorksheetNames.has(candidate)) {
+      return candidate;
+    }
+
+    for (let i = 2; i < 1000; i++) {
+      const suffix = `_${i}`;
+      const available = Math.max(1, maxLength - suffix.length);
+      candidate = `${base.substring(0, available)}${suffix}`;
+      if (!usedWorksheetNames.has(candidate)) {
+        return candidate;
+      }
+    }
+
+    const hashSuffix = crypto.createHash('sha1').update(base).digest('hex').substring(0, 6);
+    const finalSuffix = `_${hashSuffix}`;
+    const available = Math.max(1, maxLength - finalSuffix.length);
+    return `${base.substring(0, available)}${finalSuffix}`;
+  };
+
+  for (const csvFile of csvFiles) {
+    if (!csvFile) {
+      console.warn(`[csvFilesToXls] Skipping null/undefined csvFile:`, csvFile);
+      continue;
+    }
+    if (!fs.existsSync(csvFile)) {
+      console.warn(`[csvFilesToXls] Skipping missing csvFile:`, csvFile);
+      continue;
+    }
+    const stat = await fs.stat(csvFile);
+    if (!stat || stat.size === 0) {
+      console.warn(`[csvFilesToXls] Skipping empty csvFile:`, csvFile);
+      continue;
+    }
+    worksheet = await workbook.csv.readFile(csvFile);
+    const desiredWorksheetName = path.basename(csvFile).replace('.csv', '');
+    const worksheetName = makeUniqueWorksheetName(desiredWorksheetName);
+    worksheet.name = worksheetName;
+    usedWorksheetNames.add(worksheetName);
+    applyWorksheetFormatting(worksheet, options);
+    // Scan only the first row and convert string formulas
+    const firstRow = worksheet.getRow(1);
+    firstRow.eachCell((cell) => {
+      if (typeof cell.value === 'string' && cell.value.startsWith('=')) {
+        cell.value = { formula: cell.value.substring(1) };
+      }
     });
   }
   await workbook.xlsx.writeFile(xslxFile);
+}
+
+function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelExportOptions) {
+  if (!worksheet.columns) {
+    return;
+  }
+
+  const columnStylePreferences = new Map<string, ExcelColumnStyle>();
+  const columnMaxHeightConstraints = new Map<number, number>();
+  Object.entries(options?.columnsCustomStyles ?? {}).forEach(([columnName, style]) => {
+    if (!columnName || !style) {
+      return;
+    }
+
+    const normalizedName = columnName.trim().toLowerCase();
+    const sanitizedStyle: ExcelColumnStyle = {
+      wrap: style.wrap === true,
+      width: typeof style.width === 'number' && style.width > 0 ? style.width : undefined,
+      hyperlinkFromValue: style.hyperlinkFromValue === true,
+      maxHeight: typeof style.maxHeight === 'number' && style.maxHeight > 0 ? style.maxHeight : undefined,
+    };
+
+    columnStylePreferences.set(normalizedName, sanitizedStyle);
+  });
+
+  const headerRow = worksheet.getRow(1);
+  const headerByColumn = new Map<number, string>();
+  headerRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    const headerValue = (cell?.text ?? (cell.value ?? '')).toString();
+    headerByColumn.set(colNumber, headerValue);
+  });
+
+  const shouldAutoFit = worksheet.rowCount < 5000;
+
+  // Add an Excel table (Insert > Table equivalent) for small-to-medium datasets
+  if (shouldAutoFit && worksheet.rowCount > 1 && worksheet.columnCount > 0) {
+    const lastCol = worksheet.columnCount;
+    const lastRow = worksheet.rowCount;
+
+    // Build unique column names — Excel tables require all column names to be distinct
+    const usedColumnNames = new Set<string>();
+    const tableColumns: { name: string; filterButton: boolean }[] = [];
+    for (let colNum = 1; colNum <= lastCol; colNum++) {
+      let colName = (headerByColumn.get(colNum) ?? '').trim() || `Column${colNum}`;
+      if (usedColumnNames.has(colName)) {
+        colName = `${colName}_${colNum}`;
+      }
+      usedColumnNames.add(colName);
+      tableColumns.push({ name: colName, filterButton: true });
+    }
+
+    // Snapshot existing cell values so addTable can rewrite them into the table range
+    const tableRows: any[][] = [];
+    for (let rowNum = 2; rowNum <= lastRow; rowNum++) {
+      const row = worksheet.getRow(rowNum);
+      const rowData: any[] = [];
+      for (let colNum = 1; colNum <= lastCol; colNum++) {
+        rowData.push(row.getCell(colNum).value ?? '');
+      }
+      tableRows.push(rowData);
+    }
+
+    const safeTableName = `Table_${(worksheet.name || 'Sheet').replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 25)}`;
+
+    try {
+      worksheet.addTable({
+        name: safeTableName,
+        ref: 'A1',
+        headerRow: true,
+        totalsRow: false,
+        style: {
+          theme: 'TableStyleMedium2',
+          showRowStripes: true,
+        },
+        columns: tableColumns,
+        rows: tableRows,
+      });
+    } catch (_e) {
+      // Table creation failed — fall back to a plain auto-filter
+      worksheet.autoFilter = 'A1:Z1';
+    }
+  } else {
+    worksheet.autoFilter = 'A1:Z1';
+  }
+
+  worksheet.columns.forEach((column, idx) => {
+    if (!column) {
+      return;
+    }
+    const columnNumber = column.number ?? idx + 1;
+    const headerName = headerByColumn.get(columnNumber) ?? '';
+    const normalizedHeader = headerName.trim().toLowerCase();
+    const stylePreferences = columnStylePreferences.get(normalizedHeader);
+    const preferredWidth = stylePreferences?.width;
+
+    if (typeof preferredWidth === 'number') {
+      column.width = preferredWidth;
+    } else if (shouldAutoFit) {
+      const lengths = (column.values || []).map((value) => (value ?? '').toString().length);
+      const filteredLengths = lengths.filter((len) => Number.isFinite(len));
+      const maxLength = filteredLengths.length > 0 ? Math.max(...filteredLengths) : 10;
+      column.width = maxLength;
+    }
+
+    if (stylePreferences?.wrap) {
+      const updatedAlignment = { ...(column.alignment || {}), wrapText: true };
+      column.alignment = updatedAlignment;
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        cell.alignment = { ...(cell.alignment || {}), wrapText: true };
+      });
+    }
+
+    if (stylePreferences?.hyperlinkFromValue) {
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        const hyperlinkTarget = extractHyperlinkTarget(cell);
+        if (!hyperlinkTarget) {
+          return;
+        }
+        const textValue = cell.text?.trim() || hyperlinkTarget;
+        cell.value = { text: textValue, hyperlink: hyperlinkTarget };
+        cell.font = { ...(cell.font || {}), color: { argb: 'FF0563C1' }, underline: true };
+      });
+    }
+
+    if (stylePreferences?.maxHeight && columnNumber) {
+      columnMaxHeightConstraints.set(columnNumber, stylePreferences.maxHeight);
+    }
+  });
+
+  if (columnMaxHeightConstraints.size > 0) {
+    worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+      if (rowNumber === 1 || !row) {
+        return;
+      }
+      let enforcedMaxHeight: number | undefined;
+      columnMaxHeightConstraints.forEach((maxHeight, columnNumber) => {
+        const cell = row.getCell(columnNumber);
+        if (!cell) {
+          return;
+        }
+        const hasValue = cell.value !== null && cell.value !== undefined && cell.value !== '';
+        if (!hasValue) {
+          return;
+        }
+        enforcedMaxHeight = typeof enforcedMaxHeight === 'number' ? Math.min(enforcedMaxHeight, maxHeight) : maxHeight;
+      });
+      if (typeof enforcedMaxHeight === 'number') {
+        if (!row.height || row.height > enforcedMaxHeight) {
+          row.height = enforcedMaxHeight;
+        }
+      }
+    });
+  }
+}
+
+function extractHyperlinkTarget(cell: ExcelJS.Cell): string | null {
+  const rawValue = typeof cell.value === 'string' ? cell.value : cell.text;
+  if (!rawValue) {
+    return null;
+  }
+  const trimmed = rawValue.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return isLikelyHyperlink(trimmed) ? trimmed : null;
+}
+
+function isLikelyHyperlink(value: string): boolean {
+  return /^(https?:\/\/|mailto:)/i.test(value);
 }

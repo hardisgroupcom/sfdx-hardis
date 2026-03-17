@@ -10,7 +10,7 @@ getConfig(layer) returns:
 - project if layer is project
 */
 
-import { SfError } from '@salesforce/core';
+import { Connection, SfError } from '@salesforce/core';
 import axios from 'axios';
 import c from 'chalk';
 import { cosmiconfig } from 'cosmiconfig';
@@ -20,6 +20,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from '../common/utils/index.js';
 import { prompts } from '../common/utils/prompts.js';
+import { t } from '../common/utils/i18n.js';
 
 const moduleName = 'sfdx-hardis';
 const projectConfigFiles = [
@@ -33,35 +34,85 @@ const username = os.userInfo().username;
 const userConfigFiles = [`config/user/.${moduleName}.${username}.yaml`, `config/user/.${moduleName}.${username}.yml`];
 const REMOTE_CONFIGS: any = {};
 
+const showBanner = false;
+
 export const CONSTANTS = {
-  API_VERSION: process.env.SFDX_API_VERSION || '62.0',
+  DEFAULT_API_VERSION: '65.0',
   DOC_URL_ROOT: "https://sfdx-hardis.cloudity.com",
-  WEBSITE_URL: "https://cloudity.com",
-  CONTACT_URL: "https://cloudity.com/#form",
-  NOT_IMPACTING_METADATA_TYPES: process.env.NOT_IMPACTING_METADATA_TYPES?.split(",") ?? [
-    "Audience",
-    "AuraDefinitionBundle",
-    "Bot",
-    "BotVersion",
-    "ContentAsset",
-    "CustomObjectTranslation",
-    "CustomSite",
-    "CustomTab",
-    "Dashboard",
-    "ExperienceBundle",
-    "Flexipage",
-    "GlobalValueSetTranslation",
-    "Layout",
-    "LightningComponentBundle",
-    "NavigationMenu",
-    "ReportType",
-    "Report",
-    "SiteDotCom",
-    "StandardValueSetTranslation",
-    "StaticResource",
-    "Translations"
-  ]
+  WEBSITE_URL: "https://cloudity.com?ref=sfdxhardis",
+  CONTACT_URL: "https://cloudity.com/contact-us/",
+  BANNER_IMAGE_URL:
+    showBanner
+      ? "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/alpha/docs/assets/images/cloudity-banner.png"
+      : false,
+  NOT_IMPACTING_METADATA_TYPES: process.env.NOT_IMPACTING_METADATA_TYPES
+    ?.split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0) ?? [
+      "ActionLinkGroupTemplate",
+      "AnalyticSnapshot",
+      "AppMenu",
+      "Audience",
+      "AuraDefinitionBundle",
+      "Bot",
+      "BotVersion",
+      "BrandingSet",
+      "ContentAsset",
+      "CustomApplication",
+      "CustomApplicationComponent",
+      "CustomLabel",
+      "CustomObjectTranslation",
+      "CustomPageWebLink",
+      "CustomSite",
+      "CustomTab",
+      "CustomValueSetTranslation",
+      "Dashboard",
+      "DashboardFolder",
+      "Document",
+      "EmailTemplate",
+      "ExperienceBundle",
+      "FlexiPage",
+      "GlobalValueSetTranslation",
+      "HomePageComponent",
+      "HomePageLayout",
+      "Layout",
+      "Letterhead",
+      "LightningExperienceTheme",
+      "LightningComponentBundle",
+      "LightningMessageChannel",
+      "ListView",
+      "NavigationMenu",
+      "PathAssistant",
+      "QuickAction",
+      "ReportType",
+      "Report",
+      "ReportFolder",
+      "SiteDotCom",
+      "StandardValueSetTranslation",
+      "StaticResource",
+      "Translations",
+      "WebLink",
+      "CustomHelpMenuSection",
+      "CustomFeedFilter"
+    ]
 };
+
+export const getApiVersion = (conn: Connection | null = null) => {
+  // globalThis.currentOrgApiVersion is set during authentication check (so not set if --skipauth option is used)
+  return process.env.SFDX_API_VERSION || globalThis.currentOrgApiVersion || (conn ? conn.getApiVersion() || CONSTANTS.DEFAULT_API_VERSION : CONSTANTS.DEFAULT_API_VERSION);
+}
+
+export const getApiVersionNumber = (conn: Connection | null = null) => {
+  const apiVersion = getApiVersion(conn);
+  return parseFloat(apiVersion);
+}
+
+export const getBannerMarkdownAndLink = () => {
+  if (CONSTANTS.BANNER_IMAGE_URL === false) {
+    return '';
+  }
+  return `[![${t('bannerImageAltText')}](${CONSTANTS.BANNER_IMAGE_URL})](${CONSTANTS.WEBSITE_URL})`;
+}
 
 async function getBranchConfigFiles() {
   if (!isGitRepo()) {
@@ -75,26 +126,34 @@ async function getBranchConfigFiles() {
   return branchConfigFiles;
 }
 
-export const getConfig = async (layer: "project" | "branch" | "user" = 'user'): Promise<any> => {
+const promptTemplateCache: Record<string, any> = {};
+
+export const getConfig = async (layer: "project" | "branch" | "user" = 'user', options: { cache: boolean } = { cache: false }): Promise<any> => {
+  if (options.cache && promptTemplateCache[layer]) {
+    return promptTemplateCache[layer];
+  }
   const defaultConfig = await loadFromConfigFile(projectConfigFiles);
   if (layer === 'project') {
+    promptTemplateCache['project'] = defaultConfig;
     return defaultConfig;
   }
   let branchConfig = await loadFromConfigFile(await getBranchConfigFiles());
   branchConfig = Object.assign(defaultConfig, branchConfig);
   if (layer === 'branch') {
+    promptTemplateCache['branch'] = branchConfig;
     return branchConfig;
   }
   let userConfig = await loadFromConfigFile(userConfigFiles);
   userConfig = Object.assign(branchConfig, userConfig);
+  promptTemplateCache['user'] = userConfig;
   return userConfig;
 };
 
 // Set data in configuration file
-export const setConfig = async (layer: string, propValues: any): Promise<void> => {
+export const setConfig = async (layer: string, propValues: any): Promise<string | void> => {
   if (layer === 'user' && (fs.readdirSync(process.cwd()).length === 0 || !isGitRepo())) {
     if (process?.argv?.includes('--debug')) {
-      uxLog(this, c.grey('Skip update user config file because current directory is not a salesforce project'));
+      uxLog("log", this, c.grey(t('skippingUpdateOfUserConfigFileBecause')));
     }
     return;
   }
@@ -106,20 +165,27 @@ export const setConfig = async (layer: string, propValues: any): Promise<void> =
         : layer === 'branch'
           ? await getBranchConfigFiles()
           : [];
-  await setInConfigFile(configSearchPlaces, propValues);
+  return await setInConfigFile(configSearchPlaces, propValues);
 };
 
 // Load configuration from file
 async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
-  const configExplorer = await cosmiconfig(moduleName, {
-    searchPlaces,
-  }).search();
-  let config = configExplorer != null ? configExplorer.config : {};
-  if (config.extends) {
-    const remoteConfig = await loadFromRemoteConfigFile(config.extends);
-    config = Object.assign(remoteConfig, config);
+  try {
+    const configExplorer = await cosmiconfig(moduleName, {
+      searchPlaces,
+    }).search();
+    let config = configExplorer != null ? configExplorer.config : {};
+    if (config.extends) {
+      const remoteConfig = await loadFromRemoteConfigFile(config.extends);
+      config = Object.assign(remoteConfig, config);
+    }
+    return config;
+  } catch (err) {
+    uxLog("error", this, c.red('[sfdx-hardis] Unable to read configuration file.\n' + (err as Error).message));
+    throw new SfError(
+      '[sfdx-hardis] Unable to read configuration file.\n' + (err as Error).message
+    );
   }
-  return config;
 }
 
 async function loadFromRemoteConfigFile(url) {
@@ -157,10 +223,12 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
   }
   if (!isCI) {
     uxLog(
+      "other",
       this,
       c.magentaBright(`Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues, null, 2)}`)
     );
   }
+  return configFile;
 }
 
 // Check configuration of project so it works with sfdx-hardis
@@ -185,13 +253,7 @@ export const checkConfig = async (options: any) => {
     devHubAliasOk = (process.env.DEVHUB_ALIAS || configProject.devHubAlias) != null;
     // If not found, prompt user project name and store it in user config file
     if (projectName == null) {
-      const promptResponse = await prompts({
-        type: 'text',
-        name: 'value',
-        message: c.cyanBright('Please input your project name without spaces or special characters (ex: MonClient)'),
-        validate: (value: string) => !value.match(/^[0-9a-z]+$/), // check only alphanumeric
-      });
-      projectName = promptResponse.value;
+      projectName = promptForProjectName();
       await setConfig('project', {
         projectName,
         devHubAlias: `DevHub_${projectName}`,
@@ -220,11 +282,54 @@ export async function getReportDirectory() {
   return reportDir;
 }
 
-export function getEnvVar(envVarName: string) {
+export function getEnvVar(envVarName: string): string | null {
   const varValue = process.env[envVarName] || null;
   // Avoid Azure cases that sends the expression as string if variable not defined
-  if (varValue && varValue.includes(`(${envVarName}`)) {
+  // RegEx will match on strings beginning with '$(' some text, then ')' 
+  // It will match unresolved environment vars e.g. $(System.PullRequest.PullRequestId) or $(JIRA_TICKET_REGEX)
+  if (varValue && /^\$\([^)]+\)$/.test(varValue)) {
     return null;
   }
   return varValue;
+}
+
+export function getEnvVarList(envVarName: string, separator: string = ','): string[] | null {
+  const varValue = getEnvVar(envVarName);
+  if (varValue) {
+    return varValue.split(separator).map((item) => item.trim());
+  }
+  return null;
+}
+
+export async function promptForProjectName() {
+  const projectRes = await prompts({
+    type: 'text',
+    name: 'projectName',
+    message: t('whatIsTheNameOfYourProject'),
+    description: t('usedToGenerateEnvironmentVariablesAndConfig'),
+    placeholder: t('exMyClient'),
+  });
+  const userProjectName = projectRes.projectName + '';
+  let projectName = projectRes.projectName.toLowerCase().replace(' ', '_');
+  // Make sure that projectName is compliant with the format of an environment variable
+  projectName = projectName.replace(/[^a-zA-Z0-9_]/g, '_').replace(/^[^a-zA-Z_]+/, '');
+  if (projectName !== userProjectName) {
+    uxLog(
+      "warning",
+      this,
+      c.yellow(
+        t('projectNameHasBeenChanged', { projectName })
+      )
+    );
+    const promptResp = await prompts({
+      type: 'confirm',
+      message: t('areYouOkWithUpdatedProjectName', { projectName }),
+      description: t('confirmsUseOfSanitizedProjectName'),
+    });
+    if (promptResp.value === true) {
+      return projectName;
+    }
+    return promptForProjectName();
+  }
+  return projectName;
 }

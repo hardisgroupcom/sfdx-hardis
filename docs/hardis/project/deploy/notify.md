@@ -13,11 +13,11 @@ Post notifications related to:
 
 According to the [integrations you configured](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](https://sfdx-hardis.cloudity.com/salesforce-deployment-assistant-home/#flow-visual-git-diff)
 
-- GitHub, Gitlab, Azure DevOps, Bitbucket comments on Pull Requests (including Flows Visual Git Diff)
+  - GitHub, Gitlab, Azure DevOps, Bitbucket comments on Pull Requests (including Flows Visual Git Diff)
 
-- Slack, Microsoft Teams, Email deployment summary after a successful deployment
+  - Slack, Microsoft Teams, Email deployment summary after a successful deployment
 
-- JIRA tags and comments on tickets that just has been deployed
+  - JIRA tags and comments on tickets that just has been deployed
 
 ![](https://sfdx-hardis.cloudity.com/assets/images/screenshot-jira-gitlab.jpg)
 
@@ -89,15 +89,15 @@ You can also use [sfdx-hardis wrapper commands of SF deployment commands](https:
 ## Examples
 
 ```shell
-sf hardis:project:deploy:notify --check-only --deploy-status valid --message "This deployment check is valid\n\nYahooo !!"
+$ sf hardis:project:deploy:notify --check-only --deploy-status valid --message "This deployment check is valid\n\nYahooo !!"
 ```
 
 ```shell
-sf hardis:project:deploy:notify --check-only --deploy-status invalid --message "This deployment check has failed !\n\Oh no !!"
+$ sf hardis:project:deploy:notify --check-only --deploy-status invalid --message "This deployment check has failed !\n\Oh no !!"
 ```
 
 ```shell
-sf hardis:project:deploy:notify --deploy-status valid --message "This deployment has been processed !\n\nYahooo !!"
+$ sf hardis:project:deploy:notify --deploy-status valid --message "This deployment has been processed !\n\nYahooo !!"
 ```
 
 

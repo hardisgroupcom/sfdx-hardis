@@ -4,6 +4,7 @@ import c from 'chalk';
 import { AnyJson } from '@salesforce/ts-types';
 import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 export default class Push extends SfCommand<any> {
   public static readonly description = `sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deployment errors.
@@ -44,9 +45,10 @@ export default class Push extends SfCommand<any> {
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Push);
-    uxLog(this, c.red('This command will be removed by Salesforce in November 2024.'));
-    uxLog(this, c.red('Please migrate to command sf hardis project deploy start'));
+    uxLog("error", this, c.red(t('thisCommandWillBeRemovedBySalesforce')));
+    uxLog("error", this, c.red(t('pleaseMigrateToCommandSfHardisProject')));
     uxLog(
+      "error",
       this,
       c.red(
         'See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm'

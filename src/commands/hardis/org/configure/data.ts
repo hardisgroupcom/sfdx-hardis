@@ -7,11 +7,12 @@ import fs from 'fs-extra';
 import pascalcase from 'pascalcase';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
-import { dataFolderRoot } from '../../../../common/utils/dataUtils.js';
+import { DATA_FOLDERS_ROOT } from '../../../../common/utils/dataUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { getConfig, setConfig } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -19,11 +20,39 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class ConfigureData extends SfCommand<any> {
   public static title = 'Configure Data project';
 
-  public static description = `Configure Data Export/Import with a [SFDX Data Loader](https://help.sfdmu.com/) Project
+  public static description = `
+## Command Behavior
 
-See article:
+**Configures a Salesforce Data Migration Utility (SFDMU) project for data export and import operations.**
+
+This command assists in setting up SFDMU workspaces, which are essential for managing data within your Salesforce environments. It streamlines the creation of \`export.json\` files and related configurations, enabling efficient data seeding, migration, and synchronization.
+
+Key functionalities:
+
+- **Template-Based Configuration:** Allows you to choose from predefined SFDMU templates or start with a blank configuration. Templates can pre-populate \`export.json\` with common data migration scenarios.
+- **Interactive Setup:** Guides you through the process of defining the SFDMU project folder name, label, and description.
+- **\`export.json\` Generation:** Creates the \`export.json\` file, which is the core configuration file for SFDMU, defining objects to export/import, queries, and operations.
+- **Additional File Generation:** Can generate additional configuration files, such as a \`badwords.json\` file for data filtering scenarios.
+- **Scratch Org Integration:** Offers to automatically configure the SFDMU project to be used for data import when initializing a new scratch org, ensuring consistent test data across development environments.
+
+See this article for a practical example:
 
 [![How to detect bad words in Salesforce records using SFDX Data Loader and sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-badwords.jpg)](https://nicolas.vuillamy.fr/how-to-detect-bad-words-in-salesforce-records-using-sfdx-data-loader-and-sfdx-hardis-171db40a9bac)
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **SFDMU Integration:** It acts as a setup wizard for SFDMU, generating the necessary configuration files that the \`sfdmu\` plugin consumes.
+- **Interactive Prompts:** Uses the \`prompts\` library to gather user input for various configuration parameters, such as the data path, label, and description.
+- **File System Operations:** Employs \`fs-extra\` to create directories (e.g., \`data/your-project-name/\`) and write the \`export.json\` and any additional configuration files.
+- **JSON Manipulation:** Constructs the \`export.json\` content dynamically based on user input and selected templates, including defining objects, queries, and operations.
+- **PascalCase Conversion:** Uses \`pascalcase\` to format the SFDMU folder name consistently.
+- **Configuration Persistence:** Updates the project's \`sfdx-hardis.yml\` file (via \`setConfig\`) to include the newly configured data package if it's intended for scratch org initialization.
+- **WebSocket Communication:** Uses \`WebSocketClient.requestOpenFile\` to open the generated \`export.json\` file in VS Code, facilitating immediate configuration.
+- **Required Plugin Check:** Explicitly lists \`sfdmu\` as a required plugin, ensuring the necessary dependency is present.
+</details>
 `;
 
   public static examples = ['$ sf hardis:org:configure:data'];
@@ -70,22 +99,30 @@ See article:
     await this.promptImportInScratchOrgs(sfdmuProjectFolder);
 
     // Set bac initial cwd
+    const sfdmuBaseDoc = "https://help.sfdmu.com/configuration";
+    const sfdmuExternalIdsDoc = "https://help.sfdmu.com/full-documentation/advanced-features/composite-external-id-keys";
     const message = c.cyan(`Successfully initialized sfdmu project ${c.green(sfdmuProjectFolder)}, with ${c.green(
       'export.json'
-    )} file.
-You can now configure it using SFDMU documentation: https://help.sfdmu.com/plugin-basics/basic-usage/minimal-configuration
-If you don't have unique field to identify an object, use composite external ids: https://help.sfdmu.com/full-documentation/advanced-features/composite-external-id-keys
-`);
-    uxLog(this, message);
+    )} file.`);
+    uxLog("other", this, message);
+    uxLog("log", this, c.grey(t('youCanNowConfigureItUsingSfdmu', { sfdmuBaseDoc: c.yellow(sfdmuBaseDoc) })));
+    uxLog("log", this, c.grey(t('ifYouDonHaveUniqueFieldTo', { sfdmuExternalIdsDoc: c.yellow(sfdmuExternalIdsDoc) })));
 
-    // Trigger command to open SFDMU config file in VsCode extension
-    WebSocketClient.requestOpenFile(exportJsonFile);
+    // Trigger command to open SFDMU config file in VS Code extension
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      WebSocketClient.sendReportFileMessage(exportJsonFile, t('editYourSfdmuExportJsonFile'), 'report');
+      WebSocketClient.sendReportFileMessage(sfdmuBaseDoc, t('sfdmuDocumentationBasic'), 'docUrl');
+      WebSocketClient.sendReportFileMessage(sfdmuExternalIdsDoc, t('sfdmuDocumentationExternalIds'), 'docUrl');
+    }
+    else {
+      WebSocketClient.requestOpenFile(exportJsonFile);
+    }
 
     return { outputString: message };
   }
 
   private async generateConfigurationFiles() {
-    const sfdmuProjectFolder = path.join(dataFolderRoot, this.dataPath);
+    const sfdmuProjectFolder = path.join(DATA_FOLDERS_ROOT, this.dataPath);
     if (fs.existsSync(sfdmuProjectFolder)) {
       throw new SfError(`[sfdx-hardis]${c.red(`Folder ${c.bold(sfdmuProjectFolder)} already exists`)}`);
     }
@@ -94,13 +131,18 @@ If you don't have unique field to identify an object, use composite external ids
     await fs.ensureDir(sfdmuProjectFolder);
     const exportJsonFile = path.join(sfdmuProjectFolder, 'export.json');
     await fs.writeFile(exportJsonFile, JSON.stringify(this.sfdmuConfig, null, 2));
-    uxLog(this, 'Generated SFDMU config file ' + exportJsonFile);
+    uxLog("action", this, c.cyan(t('generatedSfdmuConfigFile') + exportJsonFile));
 
     for (const additionalFile of this.additionalFiles) {
       const additionalFileFull = path.join(sfdmuProjectFolder, additionalFile.path);
       await fs.writeFile(additionalFileFull, additionalFile.text);
-      uxLog(this, c.cyan(additionalFile.message + ': ') + c.yellow(additionalFileFull));
-      WebSocketClient.requestOpenFile(additionalFileFull);
+      uxLog("action", this, c.cyan(additionalFile.message + ': ') + c.yellow(additionalFileFull));
+      if (WebSocketClient.isAliveWithLwcUI()) {
+        WebSocketClient.sendReportFileMessage(additionalFileFull, additionalFile.message, 'report');
+      }
+      else {
+        WebSocketClient.requestOpenFile(additionalFileFull);
+      }
     }
     return { exportJsonFile, sfdmuProjectFolder };
   }
@@ -157,7 +199,7 @@ If you don't have unique field to identify an object, use composite external ids
         this.additionalFiles.push({
           path: badwordsFileName,
           text: JSON.stringify(badwordsSample, null, 2),
-          message: 'Sample badwords file has been generated and needs to be updated',
+          message: t('sampleBadwordsFileHasBeenGeneratedAnd'),
         });
       }
     }
@@ -168,30 +210,33 @@ If you don't have unique field to identify an object, use composite external ids
       {
         type: 'text',
         name: 'dataPath',
-        message: c.cyanBright('Please input the SFDMU folder name (PascalCase format). Ex: "ProductsActive"'),
+        message: c.cyanBright(t('pleaseInputTheSfdmuFolderNamePascalcase')),
+        description: t('theFolderNameThatWillContainSfdmuDataConfigurationFiles'),
+        placeholder: t('exProductsActive'),
       },
       {
         type: 'text',
         name: 'sfdxHardisLabel',
-        message: c.cyanBright('Please input the SFDMU config label. Ex: "Active Products"'),
+        message: c.cyanBright(t('pleaseInputTheSfdmuConfigLabel')),
+        description: t('humanReadableLabelForDataConfig'),
+        placeholder: t('exActiveProducts'),
       },
       {
         type: 'text',
         name: 'sfdxHardisDescription',
-        message: c.cyanBright(
-          'Please input the SFDMU config description. Ex: "Active products are used for scratch org initialization and in deployments"'
-        ),
+        message: c.cyanBright(t('pleaseInputTheSfdmuConfigDescription')),
+        description: t('detailedDescriptionForDataConfig'),
+        placeholder: t('exActiveProductsFullDescription'),
       },
       {
         type: 'multiselect',
         name: 'additional',
-        message: c.cyanBright(
-          'Please select additional options if you need them. If not, just select nothing and continue'
-        ),
+        message: c.cyanBright(t('pleaseSelectAdditionalOptionsIfNeeded')),
+        description: t('chooseOptionalFeaturesForDataConfig'),
         choices: [
           {
-            title: 'Bad words detector',
-            description: 'Can detect a list of bad words in records',
+            title: t('badWordsDetectorTitle'),
+            description: t('badWordsDetectorDescription'),
             value: 'badwordsFilter',
           },
         ],
@@ -208,20 +253,22 @@ If you don't have unique field to identify an object, use composite external ids
       templateChoices.push({
         title: `📝 ${templateName}`,
         value: path.join(templatesFolder, templateFile),
-        description: `sfdx-hardis template for ${templateName}`,
+        description: t('sfdxHardisTemplateFor', { templateName }),
       });
     }
 
     const defaultTemplateChoice = {
-      title: '📄 Blank template',
+      title: t('blankTemplateTitle'),
       value: 'blank',
-      description: 'Configure your data import/export from scratch :)',
+      description: t('configureDataImportExportFromScratch'),
     };
 
     const templateResp = await prompts({
       type: 'select',
       name: 'template',
-      message: c.cyanBright('Please select a SFDMU template, or the blank one'),
+      message: c.cyanBright(t('pleaseSelectSfdmuTemplateOrTheBlank')),
+      description: t('choosePreConfiguredSfdmuTemplate'),
+      placeholder: t('selectATemplate'),
       choices: [...[defaultTemplateChoice], ...templateChoices],
     });
     return templateResp.template;
@@ -237,9 +284,8 @@ If you don't have unique field to identify an object, use composite external ids
     const importResp = await prompts({
       type: 'confirm',
       name: 'importInScratchOrgs',
-      message: c.cyanBright(
-        'Do you want this SFDMU config to be used to import data when initializing a new scratch org ?'
-      ),
+      message: c.cyanBright(t('doYouWantThisSfdmuConfigForScratchOrgs')),
+      description: t('automaticallyImportDataSetForScratchOrgs'),
       default: false,
     });
     this.importInScratchOrgs = importResp.importInScratchOrgs === true;

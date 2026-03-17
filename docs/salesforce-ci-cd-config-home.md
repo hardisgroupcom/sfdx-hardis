@@ -4,7 +4,7 @@ description: Learn how to configure your Salesforce CI/CD project so it works ea
 ---
 <!-- markdownlint-disable MD013 -->
 
-- New task Options(#new-task-options)
+- New User Story Options(#new-user-story-options)
 - [package.xml](#packagexml)
   * [Overwrite Management](#overwrite-management)
   * [Delta deployments](#delta-deployments)
@@ -13,9 +13,9 @@ description: Learn how to configure your Salesforce CI/CD project so it works ea
 - [Source retrieve issues](#source-retrieve-issues)
 - [All configuration properties](#all-configuration-properties)
 
-## New task options
+## New User Story options
 
-Look at all the [Overwrite properties of new task command](https://sfdx-hardis.cloudity.com/hardis/work/new/) to define the appropriate values of your project.
+Look at all the [Overwrite properties of new User Story command](https://sfdx-hardis.cloudity.com/hardis/work/new/) to define the appropriate values of your project.
 
 ## package.xml
 

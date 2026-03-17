@@ -2,27 +2,29 @@ import c from 'chalk';
 import * as path from 'path';
 import fs from 'fs-extra';
 import { SfError } from '@salesforce/core';
-import { uxLog } from '../utils/index.js';
+import { sortCrossPlatform, uxLog } from '../utils/index.js';
 import { countPackageXmlItems, parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { SalesforceSetupUrlBuilder } from './docUtils.js';
-import { CONSTANTS } from '../../config/index.js';
+import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
+import { prettifyFieldName } from '../utils/flowVisualiser/nodeFormatUtils.js';
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderPackageXML {
 
   public static async buildIndexTable(outputPackageXmlMarkdownFiles: any[]) {
     const packageLines: string[] = [];
-    const packagesForMenu: any = { "All manifests": "manifests.md" }
+    const packagesForMenu: any = { [t('docMdAllManifests')]: "manifests.md" }
     packageLines.push(...[
-      "## Package XML files",
+      `## ${t('docMdPackageXmlFiles')}`,
       "",
-      "| Package name | Description |",
+      `| ${t('docMdColPackageName')} | ${t('docMdColDescription')} |`,
       "| :----------- | :---------- |"
     ]);
 
     for (const outputPackageXmlDef of outputPackageXmlMarkdownFiles) {
       const metadataNb = await countPackageXmlItems(outputPackageXmlDef.path);
       const packageMdFile = path.basename(outputPackageXmlDef.path) + ".md";
-      const label = outputPackageXmlDef.name ? `Package folder: ${outputPackageXmlDef.name}` : path.basename(outputPackageXmlDef.path);
+      const label = outputPackageXmlDef.name ? t('docMdPackageFolder', { name: outputPackageXmlDef.name }) : path.basename(outputPackageXmlDef.path);
       const packageTableLine = `| [${label}](${packageMdFile}) (${metadataNb}) | ${outputPackageXmlDef.description} |`;
       packageLines.push(packageTableLine);
       packagesForMenu[label] = packageMdFile;
@@ -48,7 +50,7 @@ export class DocBuilderPackageXML {
     }
     await fs.ensureDir(path.dirname(outputFile));
 
-    uxLog(this, `Generating markdown doc from ${inputFile} to ${outputFile}...`);
+    uxLog("other", this, `Generating markdown doc from ${inputFile} to ${outputFile}...`);
 
     // Read content
     const packageXmlContent = await parsePackageXmlFile(inputFile);
@@ -61,20 +63,24 @@ export class DocBuilderPackageXML {
     if (packageXmlDefinition && packageXmlDefinition.description) {
       // Header
       mdLines.push(...[
-        `## Content of ${path.basename(inputFile)}`,
+        `## ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
         '',
         packageXmlDefinition.description,
         '',
-        `Metadatas: ${nbItems}`,
+        '<div id="jstree-container"></div>',
+        '',
+        t('docMdMetadatas', { nbItems }),
         ''
       ]);
     }
     else {
       // Header
       mdLines.push(...[
-        `## Content of ${path.basename(inputFile)}`,
+        `## ${t('docMdContentOf', { fileName: path.basename(inputFile) })}`,
         '',
-        `Metadatas: ${nbItems}`,
+        '<div id="jstree-container"></div>',
+        '',
+        t('docMdMetadatas', { nbItems }),
         ''
       ]);
     }
@@ -82,11 +88,11 @@ export class DocBuilderPackageXML {
     // Generate package.xml markdown
     for (const metadataType of metadataTypes) {
       const members = packageXmlContent[metadataType];
-      members.sort();
+      sortCrossPlatform(members);
       const memberLengthLabel = members.length === 1 && members[0] === "*" ? "*" : members.length;
       mdLines.push(`<details><summary>${metadataType} (${memberLengthLabel})</summary>\n\n`);
       for (const member of members) {
-        const memberLabel = member === "*" ? "ALL (wildcard *)" : member;
+        const memberLabel = member === "*" ? t('docMdWildcardAll') : member;
         const setupUrl = SalesforceSetupUrlBuilder.getSetupUrl(metadataType, member);
         if (setupUrl && rootSalesforceUrl) {
           mdLines.push(`  • <a href="${rootSalesforceUrl}${setupUrl}" target="_blank">${memberLabel}</a><br/>`);
@@ -100,14 +106,23 @@ export class DocBuilderPackageXML {
       mdLines.push("");
     }
     mdLines.push("");
-
+    mdLines.push(getBannerMarkdownAndLink());
+    mdLines.push("");
     // Footer
     mdLines.push(`_Documentation generated with [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT})_`);
 
     // Write output file
     await fs.writeFile(outputFile, mdLines.join("\n") + "\n");
+    uxLog("success", this, c.green(t('successfullyGeneratedDocumentationInto', { path: path.basename(inputFile), outputFile })));
 
-    uxLog(this, c.green(`Successfully generated ${path.basename(inputFile)} documentation into ${outputFile}`));
+    const jsonTree = await this.generateJsonTree(metadataTypes, packageXmlContent);
+    if (jsonTree) {
+      const packageXmlFileName = path.basename(outputFile, ".md");
+      const jsonFile = `./docs/json/root-${packageXmlFileName}.json`;
+      await fs.ensureDir(path.dirname(jsonFile));
+      await fs.writeFile(jsonFile, JSON.stringify(jsonTree, null, 2));
+      uxLog("success", this, c.green(t('successfullyGeneratedJsonInto', { packageXmlFileName, jsonFile })));
+    }
 
     return outputFile;
   }
@@ -147,4 +162,74 @@ export class DocBuilderPackageXML {
     ];
   }
 
+  // Generate json for display with jsTree npm library 
+  public static async generateJsonTree(metadataTypes: any, packageXmlContent: any): Promise<any> {
+    if (metadataTypes === "all") {
+      metadataTypes = Object.keys(packageXmlContent);
+      metadataTypes.sort();
+    }
+    const treeElements: any[] = [];
+    for (const metadataType of metadataTypes) {
+      const members = packageXmlContent[metadataType] || [];
+      sortCrossPlatform(members);
+      const memberLengthLabel = members.length === 1 && members[0] === "*" ? "all" : members.length;
+      const typeRoot: any = {
+        text: prettifyFieldName(metadataType) + " (" + memberLengthLabel + ")",
+        icon: memberLengthLabel !== "all" ? "fa-solid fa-folder icon-blue" : "fa-solid fa-folder icon-warning",
+        a_attr: { href: null },
+        children: [],
+      }
+      if (memberLengthLabel !== "all") {
+        if (metadataType === "CustomField") {
+          // Sort custom fields by object name
+          DocBuilderPackageXML.createCustomFieldsTree(members, typeRoot);
+        }
+        else {
+          DocBuilderPackageXML.createMembersTree(members, typeRoot);
+        }
+      }
+      treeElements.push(typeRoot);
+    }
+    return treeElements;
+  }
+
+  private static createCustomFieldsTree(members: any, typeRoot: any) {
+    const elementsByObject: any = [];
+    for (const element of members) {
+      const objectName = element.split('.')[0];
+      if (!elementsByObject[objectName]) {
+        elementsByObject[objectName] = [];
+      }
+      elementsByObject[objectName].push(element);
+    }
+    // Create object nodes and fields as children
+    for (const objectName of Object.keys(elementsByObject)) {
+      const objectNode: any = {
+        text: objectName + " (" + elementsByObject[objectName].length + ")",
+        icon: "fa-solid fa-folder icon-blue",
+        a_attr: { href: null },
+        children: [],
+      };
+      for (const element of elementsByObject[objectName]) {
+        const subElement: any = {
+          text: element,
+          icon: "fa-solid fa-circle-check icon-success",
+          a_attr: { href: null },
+        };
+        objectNode.children.push(subElement);
+      }
+      typeRoot.children.push(objectNode);
+    }
+  }
+
+  private static createMembersTree(members: any, typeRoot: any) {
+    for (const member of members) {
+      const subElement: any = {
+        text: member,
+        icon: "fa-solid fa-circle-check icon-success",
+        a_attr: { href: null },
+      };
+      typeRoot.children.push(subElement);
+    }
+  }
 }

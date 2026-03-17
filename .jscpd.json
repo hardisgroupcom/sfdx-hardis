@@ -1,9 +1,6 @@
 {
   "threshold": 0,
-  "reporters": [
-    "html",
-    "markdown"
-  ],
+  "reporters": ["html", "markdown"],
   "ignore": [
     "**/node_modules/**",
     "**/.git/**",
@@ -21,15 +18,22 @@
     "**/commands/hardis/work/**",
     "**/apex.ts",
     "**/access.ts",
+    "**/actionsProvider/*.ts",
     "**/audittrail.ts",
     "**/auth.ts",
+    "**/deployTips.ts",
     "**/freeze.ts",
+    "**/github.ts",
+    "**/bitbucket.ts",
     "**/legacyapi.ts",
     "**/unfreeze.ts",
     "**/redis.ts",
+    "**/agentforce-feedback.ts",
     "**/*.json",
     "**/*.svg",
     "**/*.yml",
-    "**/*.xml"
+    "**/*.xml",
+    "**/megalinter-reports/**",
+    "**/lib/**"
   ]
 }

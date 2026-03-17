@@ -25,16 +25,18 @@ const hook: Hook<'prerun'> = async (options) => {
     return;
   }
 
-  // Dynamic imports to improve performances when other CLI commands are called
-  const { authOrg } = await import('../../common/utils/authUtils.js');
-  const c = (await import('chalk')).default;
-  const { checkConfig, getConfig } = await import('../../config/index.js');
-  const {
-    elapseStart,
-    getCurrentGitBranch,
-    isCI,
-    restoreLocalSfdxInfo,
-  } = await import('../../common/utils/index.js');
+  // Dynamic imports in parallel to improve performances when other CLI commands are called
+  const [
+    { authOrg },
+    { default: c },
+    { checkConfig, getConfig },
+    { elapseStart, getCurrentGitBranch, isCI, restoreLocalSfdxInfo },
+  ] = await Promise.all([
+    import('../../common/utils/authUtils.js'),
+    import('chalk'),
+    import('../../config/index.js'),
+    import('../../common/utils/index.js'),
+  ]);
 
   if (commandId.startsWith('hardis')) {
     elapseStart(`${options?.Command?.id} execution time`);

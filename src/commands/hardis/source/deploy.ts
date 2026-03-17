@@ -5,12 +5,13 @@ import c from 'chalk';
 import { GitProvider } from '../../../common/gitProvider/index.js';
 import {
   checkDeploymentOrgCoverage,
-  executePrePostCommands,
   extractOrgCoverageFromLog,
 } from '../../../common/utils/deployUtils.js';
 import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS } from '../../../config/index.js';
+import { executePrePostCommands } from '../../../common/utils/prePostCommandUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 // Wrapper for sfdx force:source:deploy
 export class Deploy extends SfCommand<any> {
@@ -185,9 +186,10 @@ Notes:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Deploy);
-    uxLog(this, c.red('This command will be removed by Salesforce in November 2024.'));
-    uxLog(this, c.red('Please migrate to command sf hardis project deploy start'));
+    uxLog("error", this, c.red(t('thisCommandWillBeRemovedBySalesforce')));
+    uxLog("error", this, c.red(t('pleaseMigrateToCommandSfHardisProject')));
     uxLog(
+      "error",
       this,
       c.red(
         'See https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_mig_deploy_retrieve.htm'
@@ -205,14 +207,14 @@ Notes:
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: checkOnly });
         } catch (errCoverage) {
-          await GitProvider.managePostPullRequestComment();
+          await GitProvider.managePostPullRequestComment(checkOnly);
           throw errCoverage;
         }
       }
     }
     // Run post deployment commands if defined
     await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: checkOnly, conn: conn });
-    await GitProvider.managePostPullRequestComment();
+    await GitProvider.managePostPullRequestComment(checkOnly);
     return result;
   }
 }

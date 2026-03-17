@@ -1,6 +1,6 @@
 import { SfError } from "@salesforce/core";
 import { uxLog } from "../utils/index.js";
-import { NotifMessage } from "./index.js";
+import type { NotifMessage } from "./types.js";
 
 export abstract class NotifProviderRoot {
   protected token: string;
@@ -11,6 +11,9 @@ export abstract class NotifProviderRoot {
 
   // By default, we don't send logs to other notif targets than API to avoid noise
   public isApplicableForNotif(notifMessage: NotifMessage) {
+    if (notifMessage.alwaysSend) {
+      return true;
+    }
     return ["critical", "error", "warning", "info", "success"].includes(notifMessage.severity);
   }
 
@@ -21,7 +24,7 @@ export abstract class NotifProviderRoot {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: NotifMessage): Promise<void> {
-    uxLog(this, `Method postNotification is not implemented yet on ${this.getLabel()}`);
+    uxLog("other", this, `Method postNotification is not implemented yet on ${this.getLabel()}`);
     return;
   }
 }

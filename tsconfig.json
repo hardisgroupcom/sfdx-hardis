@@ -6,9 +6,18 @@
     "noImplicitAny": false,
     "noImplicitThis": false,
     "strictPropertyInitialization": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
   },
   "include": [
-    "./src/**/*.ts"
+    "./src/**/*.ts",
+    "./src/**/*.json"
+  ],
+  "exclude": [
+    "lib",
+    "defaults",
+    "docs",
+    "hardis-report",
+    "**/*.d.ts"
   ]
 }

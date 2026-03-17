@@ -5,7 +5,7 @@ import * as path from "path";
 import which from "which";
 import { execCommand, git, isDockerRunning, uxLog } from "./index.js";
 import { parseFlow } from "./flowVisualiser/flowParser.js";
-import { getReportDirectory } from "../../config/index.js";
+import { getConfig, getReportDirectory } from "../../config/index.js";
 import moment from "moment";
 import { SfError } from "@salesforce/core";
 import { PACKAGE_ROOT_DIR } from "../../settings.js";
@@ -13,6 +13,22 @@ import { AiProvider } from "../aiProvider/index.js";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { generatePdfFileFromMarkdown } from "../utils/markdownUtils.js";
 import { DocBuilderFlow } from "../docBuilder/docBuilderFlow.js";
+import { includeFromFile } from "../docBuilder/docUtils.js";
+import { t } from './i18n.js';
+import { resolveMermaidTheme, type ResolvedMermaidTheme } from "./flowVisualiser/renderConfig.js";
+
+interface FlowDocGenerationOptions {
+  collapsedDetails: boolean;
+  describeWithAi: boolean;
+  flowDependencies: Record<string, string[]>;
+}
+
+interface FlowDiffGenerationOptions {
+  mermaidMd: boolean;
+  svgMd: boolean;
+  pngMd: boolean;
+  debug: boolean;
+}
 
 let IS_MERMAID_AVAILABLE: boolean | null = null;
 export async function isMermaidAvailable() {
@@ -22,7 +38,7 @@ export async function isMermaidAvailable() {
   const isMmdAvailable = await which("mmdc", { nothrow: true });
   IS_MERMAID_AVAILABLE = isMmdAvailable !== null
   if (IS_MERMAID_AVAILABLE === false) {
-    uxLog(this, c.yellow("MermaidJs is not available. To improve performances, please install it by running `npm install @mermaid-js/mermaid-cli --global`"));
+    uxLog("warning", this, c.yellow(t('mermaidjsIsNotAvailableToImprovePerformance')));
   }
   return IS_MERMAID_AVAILABLE;
 }
@@ -34,14 +50,40 @@ export async function isDockerAvailable() {
   }
   IS_DOCKER_AVAILABLE = await isDockerRunning();
   if (!IS_DOCKER_AVAILABLE) {
-    uxLog(this, c.yellow("Docker daemon is not available. If you have issues running npm package @mermaid-js/mermaid-cli, please install Docker and start it"));
+    uxLog("warning", this, c.yellow(t('dockerDaemonIsNotAvailableIfYou')));
   }
   return IS_DOCKER_AVAILABLE;
 }
 
-export async function generateFlowMarkdownFile(flowName: string, flowXml: string, outputFlowMdFile: string, options: { collapsedDetails: boolean, describeWithAi: boolean, flowDependencies: any } = { collapsedDetails: true, describeWithAi: true, flowDependencies: {} }): Promise<boolean> {
+async function getMermaidTheme(): Promise<unknown> {
+  const config = await getConfig("project", { cache: true });
+  return config?.mermaidTheme ?? null;
+}
+
+function buildMermaidDiffClassStyle(diffStyle: { background: string; color: string; strokeWidth: string }) {
+  return `fill:${diffStyle.background},color:${diffStyle.color},stroke-width:${diffStyle.strokeWidth},text-decoration:none,max-height:100px`;
+}
+
+function buildMermaidDiffLinkStyle(diffStyle: { lineColor: string; strokeWidth: string }) {
+  return `stroke:${diffStyle.lineColor},stroke-width:${diffStyle.strokeWidth};`;
+}
+
+function isResolvedMermaidTheme(value: unknown): value is ResolvedMermaidTheme {
+  return typeof value === "object"
+    && value !== null
+    && "nodeConfig" in value
+    && "diffConfig" in value;
+}
+
+export async function generateFlowMarkdownFile(
+  flowName: string,
+  flowXml: string,
+  outputFlowMdFile: string,
+  options: FlowDocGenerationOptions = { collapsedDetails: true, describeWithAi: true, flowDependencies: {} },
+): Promise<boolean> {
   try {
-    const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true, collapsedDetails: options.collapsedDetails });
+    const mermaidTheme = await getMermaidTheme();
+    const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true, collapsedDetails: options.collapsedDetails, mermaidTheme });
     let flowMarkdownDoc = flowDocGenResult.uml;
     if (options.describeWithAi) {
       const docBuilder = new DocBuilderFlow(flowName, flowXml, "");
@@ -70,10 +112,10 @@ export async function generateFlowMarkdownFile(flowName: string, flowXml: string
     }
 
     await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
-    uxLog(this, c.grey(`Written ${flowName} documentation in ${outputFlowMdFile}`));
+    uxLog("log", this, c.grey(t('writtenDocumentationTo', { flowName, outputFlowMdFile })));
     return true;
   } catch (e: any) {
-    uxLog(this, c.yellow(`Error generating Flow ${flowName} documentation: ${e.message}`) + "\n" + c.grey(e.stack));
+    uxLog("warning", this, c.yellow(t('errorGeneratingFlowDocumentation', { flowName, message: e.message })) + "\n" + c.grey(e.stack));
     return false;
   }
 }
@@ -108,13 +150,13 @@ export async function generateMarkdownFileWithMermaid(outputFlowMdFileIn: string
         if (!pdfGenerated) { return false; }
 
         const fileName = path.basename(pdfGenerated).replace(".pdf", "");
-        uxLog(this, c.grey(`Written ${fileName} PDF documentation in ${pdfGenerated}`));
+        uxLog("log", this, c.grey(t('writtenPdfDocumentationIn', { fileName, pdfGenerated })));
       }
       return true;
     }
   }
   if ((globalThis.mermaidUnavailableTools || []).includes("cli") && (globalThis.mermaidUnavailableTools || []).includes("docker")) {
-    uxLog(this, c.yellow("Either mermaid-cli or docker is required to work to generate mermaidJs Graphs. Please install/fix one of them if you want to generate SVG diagrams."));
+    uxLog("warning", this, c.yellow(t('eitherMermaidCliOrDockerIsRequired')));
   }
   return false;
 }
@@ -128,10 +170,10 @@ export async function generateMarkdownFileWithMermaidDocker(outputFlowMdFileIn: 
     await execCommand(dockerCommand, this, { output: false, fail: true, debug: false });
     return true;
   } catch (e: any) {
-    uxLog(this, c.yellow(`Error generating mermaidJs Graphs from ${outputFlowMdFileIn} documentation with Docker: ${e.message}`) + "\n" + c.grey(e.stack));
+    uxLog("warning", this, c.yellow(t('errorGeneratingMermaidjsGraphsFromDocumentationWith2', { outputFlowMdFileIn, message: e.message })) + "\n" + c.grey(e.stack));
     if (JSON.stringify(e).includes("Cannot connect to the Docker daemon") || JSON.stringify(e).includes("daemon is not running")) {
       globalThis.mermaidUnavailableTools = (globalThis.mermaidUnavailableTools || []).concat("docker");
-      uxLog(this, c.yellow("[Mermaid] Docker unavailable: do not try again"));
+      uxLog("warning", this, c.yellow("[Mermaid] Docker unavailable: do not try again"));
     }
     return false;
   }
@@ -146,19 +188,22 @@ export async function generateMarkdownFileWithMermaidCli(outputFlowMdFileIn: str
     await execCommand(mermaidCmd, this, { output: false, fail: true, debug: false });
     return true;
   } catch (e: any) {
-    uxLog(this, c.yellow(`Error generating mermaidJs Graphs from ${outputFlowMdFileIn} documentation with CLI: ${e.message}`) + "\n" + c.grey(e.stack));
+    uxLog("warning", this, c.yellow(t('errorGeneratingMermaidjsGraphsFromDocumentationWith', { outputFlowMdFileIn, message: e.message })) + "\n" + c.grey(e.stack));
     if (JSON.stringify(e).includes("timed out")) {
       globalThis.mermaidUnavailableTools = (globalThis.mermaidUnavailableTools || []).concat("cli");
-      uxLog(this, c.yellow("[Mermaid] CLI unavailable: do not try again"));
+      uxLog("warning", this, c.yellow("[Mermaid] CLI unavailable: do not try again"));
     }
     return false;
   }
 }
 
-export function getMermaidExtraClasses() {
-  const added = 'fill:green,color:white,stroke-width:4px,text-decoration:none,max-height:100px';
-  const removed = 'fill:red,color:white,stroke-width:4px,text-decoration:none,max-height:100px';
-  const changed = 'fill:orange,color:white,stroke-width:4px,text-decoration:none,max-height:100px';
+export function getMermaidExtraClasses(mermaidTheme?: unknown) {
+  const resolvedMermaidTheme = isResolvedMermaidTheme(mermaidTheme)
+    ? mermaidTheme
+    : resolveMermaidTheme(mermaidTheme);
+  const added = buildMermaidDiffClassStyle(resolvedMermaidTheme.diffConfig.added);
+  const removed = buildMermaidDiffClassStyle(resolvedMermaidTheme.diffConfig.removed);
+  const changed = buildMermaidDiffClassStyle(resolvedMermaidTheme.diffConfig.changed);
 
   const addedClasses = [
     'actionCallsAdded',
@@ -170,6 +215,7 @@ export function getMermaidExtraClasses() {
     'recordCreatesAdded',
     'recordDeletesAdded',
     'recordLookupsAdded',
+    'recordRollbacksAdded',
     'recordUpdatesAdded',
     'screensAdded',
     'subflowsAdded',
@@ -187,6 +233,7 @@ export function getMermaidExtraClasses() {
     'recordCreatesRemoved',
     'recordDeletesRemoved',
     'recordLookupsRemoved',
+    'recordRollbacksRemoved',
     'recordUpdatesRemoved',
     'screensRemoved',
     'subflowsRemoved',
@@ -204,6 +251,7 @@ export function getMermaidExtraClasses() {
     'recordCreatesChanged',
     'recordDeletesChanged',
     'recordLookupsChanged',
+    'recordRollbacksChanged',
     'recordUpdatesChanged',
     'screensChanged',
     'subflowsChanged',
@@ -224,20 +272,29 @@ ${formatClasses(changedClasses, changed)}
 }
 
 export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, commitAfter: string,
-  options: { mermaidMd: boolean, svgMd: boolean, pngMd: boolean, debug: boolean } = { mermaidMd: false, svgMd: true, pngMd: false, debug: false }) {
-  const result: any = { outputDiffMdFile: "", hasFlowDiffs: false };
-  const { mermaidMdBefore, flowXmlBefore } = await getFlowXmlBefore(commitBefore, flowFile);
-  const { mermaidMdAfter, flowXmlAfter } = await getFlowXmlAfter(commitAfter, flowFile);
+  options: FlowDiffGenerationOptions = { mermaidMd: false, svgMd: true, pngMd: false, debug: false }) {
+  const mermaidTheme = await getMermaidTheme();
+  const resolvedMermaidTheme = resolveMermaidTheme(mermaidTheme);
+  const result: any = { outputDiffMdFile: "", hasFlowDiffs: false, isFlowDeletedOrAdded: false };
+  const { mermaidMdBefore, flowXmlBefore } = await getFlowXmlBefore(commitBefore, flowFile, mermaidTheme);
+  const { mermaidMdAfter, flowXmlAfter } = await getFlowXmlAfter(commitAfter, flowFile, mermaidTheme);
   const flowLabel = path.basename(flowFile, ".flow-meta.xml");
+
+  // Check if flow was deleted (exists in before but not in after) or added (exists in after but not in before)
+  if (flowXmlBefore === "" || flowXmlAfter === "") {
+    result.isFlowDeletedOrAdded = true;
+    uxLog("log", this, c.grey(`[FlowGitDiff] Flow ${flowLabel} was ${flowXmlBefore === "" ? "added" : "deleted"}, skipping diagram generation for PR comment`));
+    return result;
+  }
 
   const reportDir = await getReportDirectory();
   await fs.ensureDir(path.join(reportDir, "flow-diff"));
   const diffMdFile = path.join(reportDir, 'flow-diff', `${flowLabel}_${moment().format("YYYYMMDD-hhmmss")}.md`);
 
   if (options.debug) {
-    uxLog(this, c.grey("FLOW DOC BEFORE:\n" + mermaidMdBefore) + "\n");
+    uxLog("log", this, c.grey(t('flowDocBefore') + mermaidMdBefore) + "\n");
     await fs.writeFile(diffMdFile.replace(".md", ".mermaid-before.md"), mermaidMdBefore);
-    uxLog(this, c.grey("FLOW DOC AFTER:\n" + mermaidMdAfter) + "\n");
+    uxLog("log", this, c.grey(t('flowDocAfter') + mermaidMdAfter) + "\n");
     await fs.writeFile(diffMdFile.replace(".md", ".mermaid-after.md"), mermaidMdAfter);
   }
 
@@ -257,10 +314,10 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
       mixedLines.push(...line.value.split(/\r?\n/).map(lineSplit => { return ["unchanged", lineSplit] }));
     }
   }
-  // uxLog(this, JSON.stringify(mixedLines, null, 2));
+  // uxLog("other", this, JSON.stringify(mixedLines, null, 2));
   const compareMdLines: string[] = [];
   const linkLines: string[] = [];
-  buildFinalCompareMarkdown(mixedLines, compareMdLines, false, false, linkLines);
+  buildFinalCompareMarkdown(mixedLines, compareMdLines, false, false, linkLines, resolvedMermaidTheme);
 
   let diffMarkdown = compareMdLines.join("\n");
 
@@ -282,7 +339,7 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
     // Generate final markdown with mermaid SVG
     const finalRes = await generateMarkdownFileWithMermaid(diffMdFile, diffMdFile, ["cli", "docker"]);
     if (finalRes) {
-      uxLog(this, c.green(`Successfully generated visual git diff for flow: ${diffMdFile}`));
+      uxLog("success", this, c.green(t('successfullyGeneratedVisualGitDiffForFlow', { diffMdFile })));
     }
   }
   else if (options.pngMd) {
@@ -300,10 +357,10 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
   return result;
 }
 
-async function getFlowXmlAfter(commitAfter: string, flowFile: any) {
+async function getFlowXmlAfter(commitAfter: string, flowFile: any, mermaidTheme?: unknown) {
   try {
     const flowXmlAfter = await git().show([`${commitAfter}:${flowFile}`]);
-    const mermaidMdAfter = await buildMermaidMarkdown(flowXmlAfter, flowFile);
+    const mermaidMdAfter = await buildMermaidMarkdown(flowXmlAfter, flowFile, mermaidTheme);
     return { mermaidMdAfter, flowXmlAfter };
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -312,10 +369,10 @@ async function getFlowXmlAfter(commitAfter: string, flowFile: any) {
   }
 }
 
-async function getFlowXmlBefore(commitBefore: string, flowFile: any) {
+async function getFlowXmlBefore(commitBefore: string, flowFile: any, mermaidTheme?: unknown) {
   try {
     const flowXmlBefore = await git().show([`${commitBefore}:${flowFile}`]);
-    const mermaidMdBefore = await buildMermaidMarkdown(flowXmlBefore, flowFile);
+    const mermaidMdBefore = await buildMermaidMarkdown(flowXmlBefore, flowFile, mermaidTheme);
     return { mermaidMdBefore, flowXmlBefore };
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -324,7 +381,7 @@ async function getFlowXmlBefore(commitBefore: string, flowFile: any) {
   }
 }
 
-function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid, isTableStarted, linkLines) {
+function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid, isTableStarted, linkLines, mermaidTheme: ResolvedMermaidTheme) {
   if (mixedLines.length === 0) {
     return;
   }
@@ -334,7 +391,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   if (isMermaid === false && currentLine.includes("```mermaid")) {
     isMermaid = true;
   } else if (isMermaid === true && currentLine.includes("```")) {
-    compareMdLines.push(...getMermaidExtraClasses().split("\n"));
+    compareMdLines.push(...getMermaidExtraClasses(mermaidTheme).split("\n"));
     // Build link positions
     let pos = 0;
     const positions = {
@@ -348,10 +405,10 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     }
     // Build added and removed links styles
     if (positions.added.length > 0) {
-      compareMdLines.push("linkStyle " + positions.added.join(",") + " stroke:#00ff00,stroke-width:4px,color:green;");
+      compareMdLines.push("linkStyle " + positions.added.join(",") + " " + buildMermaidDiffLinkStyle(mermaidTheme.diffConfig.added));
     }
     if (positions.removed.length > 0) {
-      compareMdLines.push("linkStyle " + positions.removed.join(",") + " stroke:#ff0000,stroke-width:4px,color:red;");
+      compareMdLines.push("linkStyle " + positions.removed.join(",") + " " + buildMermaidDiffLinkStyle(mermaidTheme.diffConfig.removed));
     }
     isMermaid = false
   }
@@ -376,7 +433,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines, mermaidTheme);
       return;
     }
   }
@@ -397,7 +454,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines, mermaidTheme);
       return;
     }
   }
@@ -416,7 +473,7 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
     if (!updatedInBlock) {
       const mixedLinesStartingFromNextBlock = mixedLines.slice(nextBlockPos);
       // Continue processing next lines
-      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines);
+      buildFinalCompareMarkdown(mixedLinesStartingFromNextBlock, compareMdLines, isMermaid, false, linkLines, mermaidTheme);
       return;
     }
   }
@@ -574,12 +631,12 @@ function buildFinalCompareMarkdown(mixedLines: any[], compareMdLines, isMermaid,
   /* jscpd:ignore-end */
   compareMdLines.push(styledLine);
   // Continue processing next lines
-  buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid, (styledLine.startsWith("|") && isTableStarted), linkLines);
+  buildFinalCompareMarkdown(mixedLines, compareMdLines, isMermaid, (styledLine.startsWith("|") && isTableStarted), linkLines, mermaidTheme);
 }
 
-async function buildMermaidMarkdown(flowXml, flowFile) {
+async function buildMermaidMarkdown(flowXml, flowFile, mermaidTheme?: unknown) {
   try {
-    const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true });
+    const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true, mermaidTheme });
     return flowDocGenResult.uml;
   } catch (err: any) {
     throw new SfError(`Unable to build Graph for flow ${flowFile}: ${err.message}`)
@@ -602,7 +659,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
   // Compute for all states
   const fileHistory = await git().log({ file: flowFile });
   const flowLabel = path.basename(flowFile, ".flow-meta.xml");
-  uxLog(this, c.cyan(`Generating ${flowLabel} markdown diff between ${fileHistory.all.length} Flow states...`));
+  uxLog("log", this, c.grey(t('generatingMarkdownDiffBetweenFlowStates', { flowLabel, fileHistory: fileHistory.all.length })));
   const diffMdFiles: any[] = [];
   for (let i = 0; i < fileHistory.all.length; i++) {
     const commitAfter = fileHistory.all[i];
@@ -633,12 +690,12 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
         });
       }
       else {
-        uxLog(this, c.yellow(`No real flow diff has been found between ${commitBefore.hash} and ${commitAfter.hash}`));
+        uxLog("warning", this, c.yellow(t('noRealFlowDiffHasBeenFound', { commitBefore: commitBefore.hash, commitAfter: commitAfter.hash })));
       }
     }
   }
   // Set all the results in a single tabbed markdown
-  uxLog(this, c.cyan(`Aggregating results in summary tabbed file ${diffMdFile}...`));
+  uxLog("log", this, c.grey(t('aggregatingResultsInSummaryTabbedFile', { diffMdFile })));
   let finalMd = `# ${flowLabel} history\n\n`;
   finalMd += "<!-- This page has been generated to be viewed with mkdocs-material, you can not view it just as markdown . Activate tab plugin following the doc at https://squidfunk.github.io/mkdocs-material/reference/content-tabs/ -->\n\n"
   for (const diffMdFile of diffMdFiles) {
@@ -678,7 +735,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
     }
   }
 
-  uxLog(this, c.green(`Markdown diff between ${fileHistory.all.length} Flow states generated in ${diffMdFile}`));
+  uxLog("success", this, c.green(t('markdownDiffBetweenFlowStatesGeneratedIn', { fileHistory: fileHistory.all.length, diffMdFile })));
   return diffMdFile;
 }
 
@@ -713,13 +770,13 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
   const flowXmlPreviousStripped = await new DocBuilderFlow("", flowXmlPrevious, "").stripXmlForAi();
   const aiCache = await UtilsAi.findAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNewStripped, flowXmlPreviousStripped], diffKey);
   if (aiCache.success) {
-    uxLog(this, c.grey("Used AI cache for diff description (set IGNORE_AI_CACHE=true to force call to AI)"));
-    const replaceText = `## AI-Generated Differences Summary\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${aiCache.cacheText || ""}`;
+    uxLog("log", this, c.grey(t('usedAiCacheForDiffDescriptionSet')));
+    const replaceText = `## AI-Generated Differences Summary\n\n${includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText || "")}`;
     return flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
   }
-  if (AiProvider.isAiAvailable()) {
+  if (await AiProvider.isAiAvailable()) {
     // Invoke AI Service
-    const prompt = AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW_DIFF", { "FLOW_XML_NEW": flowXmlNewStripped, "FLOW_XML_PREVIOUS": flowXmlPreviousStripped });
+    const prompt = await AiProvider.buildPrompt("PROMPT_DESCRIBE_FLOW_DIFF", { "FLOW_XML_NEW": flowXmlNewStripped, "FLOW_XML_PREVIOUS": flowXmlPreviousStripped });
     const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_DESCRIBE_FLOW_DIFF");
     // Replace description in markdown
     if (aiResponse?.success) {
@@ -728,7 +785,7 @@ async function completeWithDiffAiDescription(flowMarkdownDoc: string, flowXmlNew
         responseText = responseText.split("\n").slice(1).join("\n");
       }
       await UtilsAi.writeAiCache("PROMPT_DESCRIBE_FLOW_DIFF", [flowXmlNewStripped, flowXmlPreviousStripped], diffKey, responseText);
-      const replaceText = `## AI-Generated Differences Summary\n\n<!-- Cache file: ${aiCache.aiCacheDirFile} -->\n\n${responseText || ""}`;
+      const replaceText = `## AI-Generated Differences Summary\n\n${includeFromFile(aiCache.aiCacheDirFile, responseText || "")}`;
       const flowMarkdownDocUpdated = flowMarkdownDoc.replace("<!-- Flow description -->", replaceText);
       return flowMarkdownDocUpdated;
     }

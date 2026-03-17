@@ -6,30 +6,33 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
 import sortArray from 'sort-array';
-import { catchMatches, generateReports, uxLog } from '../../../../common/utils/index.js';
+import { catchMatches, generateReports, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-import { CONSTANTS } from '../../../../config/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 export default class CallInCallOut extends SfCommand<any> {
   public static title = 'Audit Metadatas API Version';
 
-  public static description = `This command detects metadatas whose apiVersion is lower than parameter --minimumapiversion
+  public static description = `This command identifies metadata with an apiVersion lower than the value specified in the --minimumapiversion parameter.
 
-  It can also fix the apiVersions with the latest one, if parameter --fix is sent
+  It can also update the apiVersion to a specific value:
+  - When --fix parameter is provided (updates to minimumapiversion)
+  - When --newapiversion is specified (updates to that version)
 
   Example to handle [ApexClass / Trigger & ApexPage mandatory version upgrade](https://help.salesforce.com/s/articleView?id=sf.admin_locales_update_api.htm&type=5) :
    
-   \`sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45.0 --fix\`
+   \`sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --newapiversion 50\`
   `
 
   public static examples = [
     '$ sf hardis:project:audit:apiversion',
     '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45',
-    '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --fix'
+    '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --fix',
+    '$ sf hardis:project:audit:apiversion --metadatatype ApexClass,ApexTrigger,ApexPage --minimumapiversion 45 --newapiversion 50'
   ];
 
   // public static args = [{name: 'file'}];
@@ -62,7 +65,11 @@ export default class CallInCallOut extends SfCommand<any> {
     fix: Flags.boolean({
       // can't use "f", already use for failiferror
       default: false,
-      description: 'Fix ApiVersion on specified Metadata Types.',
+      description: 'Automatically update API versions in files that are below the minimum version threshold to match the minimum version',
+    }),
+    newapiversion: Flags.integer({
+      char: 'n',
+      description: 'Define an API version value to apply when updating files',
     }),
   };
 
@@ -75,7 +82,10 @@ export default class CallInCallOut extends SfCommand<any> {
     const { flags } = await this.parse(CallInCallOut);
     const minimumApiVersion = flags.minimumapiversion || false;
     const failIfError = flags.failiferror || false;
-    const fix = flags.fix || false;
+    const newApiVersion = flags.newapiversion;
+    // Apply fixes if either fix flag is present or a new API version is specified
+    const shouldFix = flags.fix || (newApiVersion !== undefined);
+    const fixApiVersion = newApiVersion || minimumApiVersion;
     const metadataType = flags.metadatatype || '';
 
     const fixAllowedExtensions = {
@@ -87,8 +97,9 @@ export default class CallInCallOut extends SfCommand<any> {
 
     const fixTargetedMetadataTypes = metadataType.trim() === '' ? [] : (metadataType || '').replace(/\s+/g, '').split(',');
     const fixInvalidMetadataTypes = fixTargetedMetadataTypes.filter(value => !fixAllowedMetadataTypes.includes(value));
-    if (fixTargetedMetadataTypes.length > 0 && fixInvalidMetadataTypes.length > 0 && fix) {
+    if (fixTargetedMetadataTypes.length > 0 && fixInvalidMetadataTypes.length > 0 && shouldFix) {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `[sfdx-hardis] WARNING: --fix Invalid Metadata Type(s) found:  ${c.bold(
@@ -117,7 +128,12 @@ export default class CallInCallOut extends SfCommand<any> {
 
     let pattern = '**/*.xml';
     if (fixTargetedMetadataTypes.length > 0) {
-      pattern = `**/*.{${fixTargetedMetadataTypesExtensions.join(',')}}-meta.xml`;
+      // Check if there's only one extension type
+      if (fixTargetedMetadataTypesExtensions.length === 1) {
+        pattern = `**/*.${fixTargetedMetadataTypesExtensions[0]}-meta.xml`;
+      } else {
+        pattern = `**/*.{${fixTargetedMetadataTypesExtensions.join(',')}}-meta.xml`;
+      }
     }
 
     const catchers = [
@@ -131,30 +147,43 @@ export default class CallInCallOut extends SfCommand<any> {
     ];
     const xmlFiles = await glob(pattern, { ignore: GLOB_IGNORE_PATTERNS });
     this.matchResults = [];
-    uxLog(this, `Browsing ${xmlFiles.length} files`);
+    uxLog("other", this, `Browsing ${xmlFiles.length} files`);
     // Loop in files
     for (const file of xmlFiles) {
-      const fileText = await fs.readFile(file, 'utf8');
-      // Update ApiVersion on file
-      let fixed = false;
-      if (fix && fixTargetedMetadataTypes.length > 0 && fixTargetedMetadataTypesPattern.test(file)) {
-        const updatedContent = fileText.replace(/<apiVersion>(.*?)<\/apiVersion>/, `<apiVersion>${CONSTANTS.API_VERSION}</apiVersion>`);
-        await fs.promises.writeFile(file, updatedContent, 'utf-8');
-        fixed = true;
-        uxLog(this, `Updated apiVersion in file: ${file}`);
-      }
-      // Loop on criteria to find matches in this file
-      for (const catcher of catchers) {
-        const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
-        // Add the "fixed" flag
-        const enrichedResults = catcherMatchResults.map(result => ({
-          ...result,
-          fixed,
-        }));
-        this.matchResults.push(...enrichedResults);
+      try {
+        const fileText = await fs.readFile(file, 'utf8');
+        // Update ApiVersion on file
+        let fixed = false;
+        if (shouldFix && fixTargetedMetadataTypes.length > 0 && fixTargetedMetadataTypesPattern.test(file)) {
+          const apiVersionMatch = fileText.match(/<apiVersion>(.*?)<\/apiVersion>/);
+          if (apiVersionMatch && apiVersionMatch[1]) {
+            const currentApiVersion = parseFloat(apiVersionMatch[1]);
+            if (currentApiVersion < minimumApiVersion) {
+              const updatedContent = fileText.replace(/<apiVersion>(.*?)<\/apiVersion>/, `<apiVersion>${fixApiVersion}.0</apiVersion>`);
+              await fs.promises.writeFile(file, updatedContent, 'utf-8');
+              fixed = true;
+              uxLog("other", this, `Updated apiVersion in file: ${file} from ${currentApiVersion}.0 to ${fixApiVersion}.0`);
+            }
+          }
+        }
+        // Loop on criteria to find matches in this file
+        for (const catcher of catchers) {
+          const catcherMatchResults = await catchMatches(catcher, file, fileText, this);
+          // Add the "fixed" flag
+          const enrichedResults = catcherMatchResults.map(result => ({
+            ...result,
+            fixed,
+          }));
+          this.matchResults.push(...enrichedResults);
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          uxLog("warning", this, c.yellow(t('errorProcessingFile2', { file, error: error.message })));
+        } else {
+          uxLog("warning", this, c.yellow(t('errorProcessingFile', { file, String: String(error) })));
+        }
       }
     }
-
     // Format result
     const result: any[] = this.matchResults.map((item: any) => {
       return {
@@ -162,7 +191,7 @@ export default class CallInCallOut extends SfCommand<any> {
         fileName: item.fileName,
         nameSpace: item.fileName.includes('__') ? item.fileName.split('__')[0] : 'Custom',
         apiVersion: parseFloat(item.detail['apiVersion']),
-        valid: parseFloat(item.detail['apiVersion']) > (minimumApiVersion || 100) ? 'yes' : 'no',
+        valid: parseFloat(item.detail['apiVersion']) >= (minimumApiVersion || 100) ? 'yes' : 'no',
         fixed: item.fixed ? 'yes' : 'no',
       };
     });
@@ -173,36 +202,39 @@ export default class CallInCallOut extends SfCommand<any> {
     });
 
     // Display as table
+    uxLog("action", this, c.cyan(t('foundMetadataFilesWithApiVersion', { resultSorted: c.bold(resultSorted.length) })));
     const resultsLight = JSON.parse(JSON.stringify(resultSorted));
-    console.table(
+    uxLogTable(this,
       resultsLight.map((item: any) => {
         delete item.detail;
         return item;
       })
     );
 
+
     const numberOfInvalid = result.filter((res: any) => res.valid === 'no').length;
     const numberOfValid = result.length - numberOfInvalid;
-
     if (numberOfInvalid > 0) {
       uxLog(
+        "warning",
         this,
         c.yellow(
-          `[sfdx-hardis] WARNING: Your sources contain ${c.bold(
+          `WARNING: Your sources contain ${c.bold(
             numberOfInvalid
           )} metadata files with API Version lesser than ${c.bold(minimumApiVersion)}`
         )
       );
       if (failIfError) {
         throw new SfError(
-          c.red(`[sfdx-hardis][ERROR] ${c.bold(numberOfInvalid)} metadata files with wrong API version detected`)
+          c.red(`${c.bold(numberOfInvalid)} metadata files with wrong API version detected`)
         );
       }
     } else {
       uxLog(
+        "success",
         this,
         c.green(
-          `[sfdx-hardis] SUCCESS: Your sources contain ${c.bold(
+          `SUCCESS: Your sources contain ${c.bold(
             numberOfValid
           )} metadata files with API Version superior to ${c.bold(minimumApiVersion)}`
         )

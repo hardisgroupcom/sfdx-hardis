@@ -5,6 +5,7 @@ import * as path from "path";
 import { XMLParser } from "fast-xml-parser";
 import { GLOB_IGNORE_PATTERNS } from "../utils/projectUtils.js";
 import { uxLog } from "../utils/index.js";
+import { t } from '../utils/i18n.js';
 
 let ALL_LINKS_CACHE: any[] = [];
 let ALL_OBJECTS_CACHE: any[] = [];
@@ -76,6 +77,12 @@ classDef mainObject fill:#FFB3B3,stroke:#A94442,stroke-width:4px,rx:14px,ry:14px
     if (lookupPos.length > 0) {
       mermaidSchema += "linkStyle " + lookupPos.join(",") + " stroke:#A6A6A6,stroke-width:2px;\n";
     }
+
+    // Use Graph LR if there are too many lines for a nice mermaid display
+    if (mermaidSchema.split("\n").length > 50) {
+      mermaidSchema = mermaidSchema.replace("graph TD", "graph LR");
+    }
+
     return mermaidSchema;
   }
 
@@ -107,7 +114,7 @@ classDef mainObject fill:#FFB3B3,stroke:#A94442,stroke-width:4px,rx:14px,ry:14px
           this.allLinks.push(link);
         }
         else {
-          uxLog(this, c.yellow(`Warning: ${objectName}.${fieldName} has no referenceTo value so has been ignored.`));
+          uxLog("warning", this, c.yellow(t('warningHasNoReferencetoValueSoHas', { objectName, fieldName })));
         }
       }
     }
@@ -167,9 +174,20 @@ classDef mainObject fill:#FFB3B3,stroke:#A94442,stroke-width:4px,rx:14px,ry:14px
   }
 
   async selectLinks() {
-    for (const link of this.allLinks) {
-      if (this.selectedObjectsNames.has(link.from) && this.selectedObjectsNames.has(link.to)) {
-        this.selectedLinks.push(link);
+    if (this.selectedObjectsNames.size > 10) {
+      for (const link of this.allLinks) {
+        if ((link.from === this.mainCustomObject || link.to === this.mainCustomObject) &&
+          (this.selectedObjectsNames.has(link.from) && this.selectedObjectsNames.has(link.to))
+        ) {
+          this.selectedLinks.push(link);
+        }
+      }
+    }
+    else {
+      for (const link of this.allLinks) {
+        if (this.selectedObjectsNames.has(link.from) && this.selectedObjectsNames.has(link.to)) {
+          this.selectedLinks.push(link);
+        }
       }
     }
   }

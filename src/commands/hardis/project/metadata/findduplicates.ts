@@ -6,9 +6,9 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import { glob } from 'glob';
-import { basename } from 'path';
 import c from 'chalk';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -100,12 +100,27 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Find);
-    uxLog(this, c.cyan(`Start finding duplicate values in XML metadata files.`));
+    uxLog("action", this, c.cyan(t('startFindingDuplicateValuesInXml')));
     await this.initConfig();
     const filesWithDuplicates = await this.findDuplicates(flags);
-    uxLog(this, c.cyan(`Done finding duplicate values in XML metadata files.`));
+    uxLog("action", this, c.cyan(t('summary')));
     if (filesWithDuplicates.length > 0) {
+      const duplicatesString = filesWithDuplicates
+        .map((file) => {
+          return `${file.file}\n  - Key    : ${file.key}\n  - Values : ${file.duplicates.join(', ')}`;
+        })
+        .join('\n');
+      uxLog(
+        "error",
+        this,
+        c.red(
+          t('foundFilesWithDuplicateValues', { count: filesWithDuplicates.length, duplicatesString })
+        )
+      );
       process.exitCode = 1;
+    }
+    else {
+      uxLog("success", this, c.green(t('noDuplicateValuesFound')));
     }
     return filesWithDuplicates;
   }
@@ -133,13 +148,17 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
       // Extract given metadata type based on filename using type-meta.xml
       // For example PersonAccount.layout-meta.xml returns layout and Admin.profile-meta.xml returns profile
       const filenameRegex = /\w*\.(\w*)-meta.xml/;
+      if (!inputFile.match(filenameRegex)) {
+        uxLog("warning", this, c.yellow(t('filenameDoesNotMatchExpectedPatternSkipping', { inputFile })));
+        continue;
+      }
       const type = inputFile.match(filenameRegex)[1];
 
       // Check if given metadata type has unicity rules
       const uniqueKeys = Find.metadataDuplicateFindKeys[type];
       if (!uniqueKeys) {
         if (this.logLevel === LoggerLevel.DEBUG) {
-          uxLog(this, c.gray(`No unicity rule found for metadata type ${type} (processing ${inputFile})`));
+          uxLog("error", this, c.grey(t('noUnicityRuleFoundForMetadataType', { type, inputFile })));
         }
         continue;
       }
@@ -149,6 +168,10 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
       uniqueKeys.forEach((key) => {
         // Traverse the file down to the key based on the fragments separated by . (dots), abort if not found
         const allProps = key.split('.');
+        if (!file || !allProps[0] || !file[allProps[0]]) {
+          uxLog("warning", this, c.yellow(t('keyNotFoundInFile', { key, inputFile })));
+          return;
+        }
         const valuesFound = this.traverseDown(file, allProps[0], allProps, []);
 
         // https://stackoverflow.com/a/840808
@@ -159,13 +182,6 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
             key,
             duplicates,
           });
-          uxLog(
-            this,
-            c.red(`Duplicate values in ${basename(inputFile)}
-  - Key    : ${key}
-  - Values : ${duplicates.join(', ')}
-`)
-          );
         }
       });
     }
@@ -186,7 +202,7 @@ $ sf hardis:project.metadata:findduplicates -f "force-app/main/default/**/*.xml"
 
     // If we're at the end of property path (A.B.C -> parent = A.B, currentProp = C, nextProp = undefined) we add the
     // value contained in A.B.C
-    if (nextProp === undefined) {
+    if (nextProp === undefined && parent[currentProp]) {
       results.push(parent[currentProp][0]);
     }
     // If A.B is an array, we'll traverse A.B.C1, A.B.C2, etc...

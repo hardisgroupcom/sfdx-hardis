@@ -3,12 +3,15 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execSfdxJson, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { CONSTANTS, getEnvVar } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { MessageAttachment } from '@slack/web-api';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { getApexCharacterLimitUsage } from '../../../../common/utils/apexLimitUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -16,9 +19,37 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class MonitorLimits extends SfCommand<any> {
   public static title = 'Check org limits';
 
-  public static description = `Check limits of a SF org and send notifications about limits are superior to 50%, 75% or 100%.
+  public static description = `
+## Command Behavior
+
+**Checks the current usage of various Salesforce org limits and sends notifications if thresholds are exceeded.**
+
+This command is a critical component of proactive Salesforce org management, helping administrators and developers monitor resource consumption and prevent hitting critical limits that could impact performance or functionality. It provides early warnings when limits are approaching their capacity.
+
+Key functionalities:
+
+- **Limit Retrieval:** Fetches a comprehensive list of all Salesforce org limits using the Salesforce CLI.
+- **Usage Calculation:** Calculates the percentage of each limit that is currently being used.
+- **Threshold-Based Alerting:** Assigns a severity (success, warning, or error) to each limit based on configurable thresholds:
+  - **Warning:** If usage exceeds 50% (configurable via \`LIMIT_THRESHOLD_WARNING\` environment variable).
+  - **Error:** If usage exceeds 75% (configurable via \`LIMIT_THRESHOLD_ERROR\` environment variable).
+- **CSV Report Generation:** Generates a CSV file containing all org limits, their current usage, maximum allowed, and calculated percentage used, along with the assigned severity.
+- **Notifications:** Sends notifications to configured channels (Grafana, Slack, MS Teams) with a summary of limits that have exceeded the warning or error thresholds.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-org-limits/) and can output Grafana, Slack and MsTeams Notifications.
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **Salesforce CLI Integration:** It executes the \`sf org limits list\` command to retrieve the current org limits. It parses the JSON output of this command.
+- **Data Processing:** It iterates through the retrieved limits, calculates the \`used\` and \`percentUsed\` values, and assigns a \`severity\` (success, warning, error) based on the configured thresholds.
+- **Environment Variable Configuration:** Reads \`LIMIT_THRESHOLD_WARNING\` and \`LIMIT_THRESHOLD_ERROR\` environment variables to set the warning and error thresholds for limit usage.
+- **Report Generation:** It uses \`generateCsvFile\` to create the CSV report of org limits.
+- **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and detailed metrics for each limit, which can be consumed by monitoring dashboards like Grafana.
+- **Exit Code Management:** Sets the process exit code to 1 if any limit is in an 'error' state, indicating a critical issue.
+</details>
 `;
 
   public static examples = ['$ sf hardis:org:monitor:limits'];
@@ -49,7 +80,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   protected static triggerNotification = true;
 
   protected limitThresholdWarning = Number(getEnvVar('LIMIT_THRESHOLD_WARNING') || 50.0);
-  protected limitThresholdError = Number(getEnvVar('LIMIT_THRESHOLD_WARNING') || 75.0);
+  protected limitThresholdError = Number(getEnvVar('LIMIT_THRESHOLD_ERROR') || 75.0);
 
   protected limitEntries: any[] = [];
   protected outputFile;
@@ -64,7 +95,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.debugMode = flags.debug || false;
 
     // List org limits
-    uxLog(this, c.cyan(`Run the org limits list command ...`));
+    uxLog("action", this, c.cyan(t('runningOrgLimitsListCommand')));
     const limitsCommandRes = await execSfdxJson(`sf org limits list`, this, {
       fail: true,
       output: true,
@@ -90,10 +121,50 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         return limit;
       });
 
-    console.table(this.limitEntries);
+    // Add Apex character limit (custom classes + triggers, excludes @isTest)
+    if (flags['target-org'] && getEnvVar('MONITORING_SKIP_APEX_LIMIT') !== 'true') {
+      try {
+        uxLog("log", this, c.grey("Querying custom Apex classes and triggers for character limit monitoring..."));
+        const conn = flags['target-org'].getConnection();
+        const apexUsage = await getApexCharacterLimitUsage(conn);
+        const apexLimitEntry = {
+          name: 'ApexCodeCharacters',
+          used: apexUsage.used,
+          max: apexUsage.max,
+          remaining: apexUsage.max - apexUsage.used,
+          percentUsed: apexUsage.percentUsed,
+          severity:
+            apexUsage.percentUsed > this.limitThresholdError
+              ? 'error'
+              : apexUsage.percentUsed > this.limitThresholdWarning
+                ? 'warning'
+                : 'success',
+          severityIcon: getSeverityIcon(
+            apexUsage.percentUsed > this.limitThresholdError
+              ? 'error'
+              : apexUsage.percentUsed > this.limitThresholdWarning
+                ? 'warning'
+                : 'success'
+          ),
+          label: 'Apex Code Characters',
+        };
+        this.limitEntries.push(apexLimitEntry);
+        uxLog(
+          "log",
+          this,
+          c.grey(
+            `Apex Used Limits: ${apexUsage.totalChars.toLocaleString()} chars (${apexUsage.percentUsed}% of ${apexUsage.max.toLocaleString()}), ${apexUsage.totalClasses} classes + ${apexUsage.totalTriggers} triggers`
+          )
+        );
+      } catch (e: any) {
+        uxLog("warning", this, c.yellow(`Error monitoring Apex character limit: ${e?.message || e}`));
+      }
+    }
+
+    uxLogTable(this, this.limitEntries);
 
     this.outputFile = await generateReportPath('org-limits', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(this.limitEntries, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.limitEntries, this.outputFile, { fileTitle: 'Org Limits' });
 
     const limitsError = this.limitEntries.filter((limit) => limit.severity === 'error');
     const numberLimitsError = limitsError.length;
@@ -119,7 +190,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       notifAttachments.push({
         text: errorText,
       });
-      uxLog(this, c.red(notifText + '\n' + errorText));
+      uxLog("error", this, c.red(notifText + '\n' + errorText));
       process.exitCode = 1;
     }
     // Warning limits detected
@@ -134,9 +205,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       notifAttachments.push({
         text: warningText,
       });
-      uxLog(this, c.yellow(notifText + '\n' + warningText));
+      uxLog("warning", this, c.yellow(notifText + '\n' + warningText));
     } else {
-      uxLog(this, c.green('No limit issue has been found'));
+      uxLog("success", this, c.green(t('noLimitIssueHasBeenFound')));
     }
 
     const limitEntriesMap = {};
@@ -151,7 +222,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     }
 
     // Post notifications
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'ORG_LIMITS',
       text: notifText,

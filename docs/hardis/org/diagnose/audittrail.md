@@ -5,6 +5,8 @@
 
 Export Audit trail into a CSV file with selected criteria, and highlight suspect actions
 
+Also detects updates of Custom Settings values (disable by defining `SKIP_AUDIT_TRAIL_CUSTOM_SETTINGS=true`)
+
 Regular setup actions performed in major orgs are filtered.
 
 - ""
@@ -17,8 +19,10 @@ Regular setup actions performed in major orgs are filtered.
 - Custom App Licenses
   - addeduserpackagelicense
   - granteduserpackagelicense
+  - revokeduserpackagelicense
 - Customer Portal
   - createdcustomersuccessuser
+  - CSPUserDisabled
 - Currency
   - updateddatedexchrate
 - Data Management
@@ -26,12 +30,15 @@ Regular setup actions performed in major orgs are filtered.
 - Email Administration
   - dkimRotationPreparationSuccessful
   - dkimRotationSuccessful
+- External Objects
+  - xdsEncryptedFieldChange
 - Groups
   - groupMembership
 - Holidays
   - holiday_insert
 - Inbox mobile and legacy desktop apps
   - enableSIQUserNonEAC
+  - siqUserAcceptedTOS
 - Manage Users
   - activateduser
   - createduser
@@ -43,16 +50,24 @@ Regular setup actions performed in major orgs are filtered.
   - changedinteractionuseronoff
   - changedmarketinguseroffon
   - changedmarketinguseronoff
+  - changedofflineuseroffon
+  - changedprofileforuserstdtostd
   - changedprofileforuser
   - changedprofileforusercusttostd
   - changedprofileforuserstdtocust
   - changedroleforusertonone
   - changedroleforuser
   - changedroleforuserfromnone
+  - changedUserAdminVerifiedStatusVerified
   - changedUserEmailVerifiedStatusUnverified
   - changedUserEmailVerifiedStatusVerified
+  - changedknowledgeuseroffon
+  - changedsfcontentuseroffon
+  - changedsupportuseroffon
+  - changedusername
   - changedUserPhoneNumber
   - changedUserPhoneVerifiedStatusUnverified
+  - changedUserPhoneVerifiedStatusVerified
   - deactivateduser
   - deleteAuthenticatorPairing
   - deleteTwoFactorInfo2
@@ -70,6 +85,8 @@ Regular setup actions performed in major orgs are filtered.
   - PermSetLicenseUnassign
   - registeredUserPhoneNumber
   - resetpassword
+  - suNetworkAdminLogin
+  - suNetworkAdminLogout
   - suOrgAdminLogin
   - suOrgAdminLogout
   - unfrozeuser
@@ -101,6 +118,14 @@ monitoringAllowedSectionsActions:
   "Some other section": ["actionType1","actionType2","actionType3"] // Will ignore only those 3 actions from section "Some other section". Other actions in the same section will be considered as suspect.
 ```
 
+## Excel output example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-audittrail-excel.jpg)
+
+## Local output example
+
+![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-monitoring-audittrail-local.jpg)
+
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-suspect-audit-trail/) and can output Grafana, Slack and MsTeams Notifications.
 
 
@@ -121,19 +146,19 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 ## Examples
 
 ```shell
-sf hardis:org:diagnose:audittrail
+$ sf hardis:org:diagnose:audittrail
 ```
 
 ```shell
-sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com
+$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com
 ```
 
 ```shell
-sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com
+$ sf hardis:org:diagnose:audittrail --excludeusers baptiste@titi.com,bertrand@titi.com
 ```
 
 ```shell
-sf hardis:org:diagnose:audittrail --lastndays 5
+$ sf hardis:org:diagnose:audittrail --lastndays 5
 ```
 
 

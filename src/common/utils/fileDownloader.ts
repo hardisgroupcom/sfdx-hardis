@@ -81,10 +81,10 @@ export class FileDownloader {
       });
 
       // Handle end of download, or error
-      await new Promise((resolve, reject) => {
-        fetchRes.body.on("error", reject);
-        stream.on("error", reject);
-        stream.on("finish", resolve);
+      await new Promise<void>((resolve, reject) => {
+        fetchRes.body.on("error", () => reject());
+        stream.on("error", () => reject());
+        stream.on("finish", () => resolve());
       });
 
       const fileExists = await fs.exists(this.outputFile);

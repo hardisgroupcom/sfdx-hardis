@@ -1,6 +1,6 @@
 # Docker image to run sfdx-hardis
 
-FROM python:3.12.8-alpine3.20
+FROM python:3.12.12-alpine3.23
 
 LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
 
@@ -13,13 +13,18 @@ RUN apk add --update --no-cache \
             # Required for docker
             docker \
             openrc \
+            openjdk17 \
             # Required for puppeteer
             chromium \
             nss \
             freetype \
             harfbuzz \
             ca-certificates \
-            ttf-freefont
+        ttf-freefont && \
+    # Pull latest security patches for base packages (openssl, openjdk, etc.)
+    apk upgrade --no-cache && \
+    # Clean up package cache
+    rm -rf /var/cache/apk/*
 
 # Start docker daemon in case mermaid-cli image is used
 RUN rc-update add docker boot && (rc-service docker start || true)
@@ -33,20 +38,37 @@ ENV PUPPETEER_EXECUTABLE_PATH="${CHROMIUM_PATH}"
 # hadolint ignore=DL3044
 ENV PATH="/node_modules/.bin:${PATH}"
 
+# Set Java environment for code scanner (PMD)
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
 ARG SFDX_CLI_VERSION=latest
 ARG SFDX_HARDIS_VERSION=latest
+# Default to a placeholder so deploy workflows (remote install) do not fail on missing file
+ARG SFDX_HARDIS_TGZ=defaults/empty.tgz
+
+# Include pre-packaged plugin from the build context when provided
+COPY ${SFDX_HARDIS_TGZ} /tmp/sfdx-hardis.tgz
 
 # Install npm packages +install sfdx plugins & display versions
 RUN npm install --no-cache yarn -g && \
     npm install --no-cache @salesforce/cli@${SFDX_CLI_VERSION} -g && \
-    sf plugins install @salesforce/plugin-packaging && \
-    sf plugins install @salesforce/plugin-deploy-retrieve && \
-    echo 'y' | sf plugins install sfdx-hardis@${SFDX_HARDIS_VERSION} && \
-    echo 'y' | sf plugins install sfdmu && \
+        sf plugins install @salesforce/plugin-packaging && \
+        sf plugins install @salesforce/plugin-deploy-retrieve && \
+        # Prefer local plugin package (built from current sources); fallback to registry version
+        if echo 'y' | sf plugins install file:/tmp/sfdx-hardis.tgz; then \
+            echo 'Installed local sfdx-hardis package'; \
+        else \
+            echo 'Local package not found; installing sfdx-hardis@'"${SFDX_HARDIS_VERSION}"; \
+            echo 'y' | sf plugins install sfdx-hardis@${SFDX_HARDIS_VERSION}; \
+        fi && \
     echo 'y' | sf plugins install sfdx-git-delta && \
-    echo 'y' | sf plugins install texei-sfdx-plugin && \
+    echo 'y' | sf plugins install sfdmu && \
     sf version --verbose --json && \
-    rm -rf /root/.npm/_cacache
+    # Clean up npm cache and temporary files
+    rm -rf /root/.npm/_cacache && \
+    rm -rf /tmp/* && \
+    npm cache clean --force
 
 ENV MERMAID_MODES="docker"
 

@@ -27,7 +27,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 ## Examples
 
 ```shell
-sf hardis:org:diagnose:releaseupdates
+$ sf hardis:org:diagnose:releaseupdates
 ```
 
 

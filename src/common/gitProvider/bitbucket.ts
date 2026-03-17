@@ -3,10 +3,11 @@ import c from 'chalk';
 import fs from "fs-extra";
 import FormData from 'form-data'
 import * as path from "path";
-import { PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
+import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
 import { git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
-import { CONSTANTS } from '../../config/index.js';
+import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
+import { t } from '../utils/i18n.js';
 const { Bitbucket } = bbPkg;
 
 export class BitbucketProvider extends GitProviderRoot {
@@ -34,6 +35,7 @@ export class BitbucketProvider extends GitProviderRoot {
       return jobUrl;
     }
     uxLog(
+      "warning",
       this,
       c.yellow(`[Bitbucket Integration] You need the following variables to be accessible to sfdx-hardis to build current job url:
         - BITBUCKET_WORKSPACE
@@ -50,6 +52,7 @@ export class BitbucketProvider extends GitProviderRoot {
       return currentBranchUrl;
     }
     uxLog(
+      "warning",
       this,
       c.yellow(`[Bitbucket Integration] You need the following variables to be accessible to sfdx-hardis to build current job url:
         - BITBUCKET_WORKSPACE
@@ -66,7 +69,7 @@ export class BitbucketProvider extends GitProviderRoot {
   }
 
   // Find pull request info
-  public async getPullRequestInfo(): Promise<any> {
+  public async getPullRequestInfo(): Promise<CommonPullRequestInfo | null> {
     const pullRequestIdStr = process.env.BITBUCKET_PR_ID || null;
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
@@ -84,34 +87,40 @@ export class BitbucketProvider extends GitProviderRoot {
         // Add cross git provider properties used by sfdx-hardis
         return this.completePullRequestInfo(pullRequest.data);
       } else {
-        uxLog(this, c.yellow(`[Bitbucket Integration] Warning: incomplete PR found (id: ${pullRequestIdStr})`));
-        uxLog(this, c.grey(JSON.stringify(pullRequest || {})));
+        uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketIncompletePr', { prId: pullRequestIdStr })));
+        uxLog("log", this, c.grey(JSON.stringify(pullRequest || {})));
       }
     }
 
     // Case when we find PR from a commit
     const sha = await git().revparse(['HEAD']);
-    const latestPullRequestsOnBranch = await this.bitbucket.repositories.listPullrequestsForCommit({
-      // cspell:disable-line
-      commit: sha,
-      repo_slug: repoSlug || '',
-      workspace: workspace || '',
-    });
-    const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch?.data?.values?.filter(
-      (pr) => pr.state === 'MERGED' && pr.merge_commit?.hash === sha
-    );
-    if (latestMergedPullRequestOnBranch?.length && latestMergedPullRequestOnBranch?.length > 0) {
-      const pullRequest = latestMergedPullRequestOnBranch[0];
-      // Add cross git provider properties used by sfdx-hardis
-      return this.completePullRequestInfo(pullRequest);
+    try {
+      // Note: listPullrequestsForCommit API can be unreliable - it requires the "Pull Request Commit Links" app to be installed
+      // See: https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-commit-commit-pullrequests-get
+      const latestPullRequestsOnBranch = await this.bitbucket.repositories.listPullrequestsForCommit({
+        workspace: workspace || '',
+        repo_slug: repoSlug || '',
+        commit: sha,
+      });
+      const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch?.data?.values?.filter(
+        (pr) => pr.state === 'MERGED' && pr.merge_commit?.hash === sha
+      );
+      if (latestMergedPullRequestOnBranch?.length && latestMergedPullRequestOnBranch?.length > 0) {
+        const pullRequest = latestMergedPullRequestOnBranch[0];
+        // Add cross git provider properties used by sfdx-hardis
+        return this.completePullRequestInfo(pullRequest);
+      }
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketUnableToRetrievePrForCommit', { sha, message: (e as Error).message })));
+      uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketPrCommitLinksAppRequired')));
     }
 
-    uxLog(this, c.grey(`[Bitbucket Integration] Unable to find related Pull Request Info`));
+    uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketUnableToFindPrInfo')));
     return null;
   }
 
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
-    let deploymentCheckId = null;
+    let deploymentCheckId: string | null = null;
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const latestMergedPullRequestsOnBranch = await this.bitbucket.repositories.listPullRequests({
@@ -132,7 +141,7 @@ export class BitbucketProvider extends GitProviderRoot {
         repoSlug || '',
         workspace || '',
         deploymentCheckId,
-        latestPullRequest
+        this.completePullRequestInfo(latestPullRequest)
       );
     }
 
@@ -145,7 +154,7 @@ export class BitbucketProvider extends GitProviderRoot {
       const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
       const workspace = process.env.BITBUCKET_WORKSPACE || null;
       return await this.getDeploymentIdFromPullRequest(
-        pullRequestInfo.id,
+        pullRequestInfo.idNumber || 0,
         repoSlug || '',
         workspace || '',
         null,
@@ -159,9 +168,9 @@ export class BitbucketProvider extends GitProviderRoot {
     latestPullRequestId: number,
     repoSlug: string,
     workspace: string,
-    deploymentCheckId: any,
-    latestPullRequest: Schema.Pullrequest
-  ) {
+    deploymentCheckId: string | null,
+    latestPullRequest: CommonPullRequestInfo
+  ): Promise<string | null> {
     const comments = await this.bitbucket.repositories.listPullRequestComments({
       pull_request_id: latestPullRequestId,
       repo_slug: repoSlug,
@@ -174,8 +183,9 @@ export class BitbucketProvider extends GitProviderRoot {
         if (matches) {
           deploymentCheckId = matches[1];
           uxLog(
+            "log",
             this,
-            c.gray(
+            c.grey(
               `[Bitbucket Integration] Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`
             )
           );
@@ -186,27 +196,162 @@ export class BitbucketProvider extends GitProviderRoot {
     return deploymentCheckId;
   }
 
+  public async listPullRequestsInBranchSinceLastMerge(
+    currentBranchName: string,
+    targetBranchName: string,
+    childBranchesNames: string[],
+  ): Promise<CommonPullRequestInfo[]> {
+    if (!this.bitbucket || !process.env.BITBUCKET_WORKSPACE || !process.env.BITBUCKET_REPO_SLUG) {
+      return [];
+    }
+
+    try {
+      const workspace = process.env.BITBUCKET_WORKSPACE;
+      const repoSlug = process.env.BITBUCKET_REPO_SLUG;
+
+      // Step 1: Find the last merged PR from currentBranch to targetBranch
+      const lastMergeQuery = `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`;
+      uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFindingLastMergedPr', { query: lastMergeQuery })));
+
+      const lastMergeResponse = await this.bitbucket.pullrequests.list({
+        workspace,
+        repo_slug: repoSlug,
+        q: lastMergeQuery,
+        sort: '-updated_on',
+      } as any);
+
+      const lastMergePRs =
+        lastMergeResponse &&
+          lastMergeResponse.data &&
+          lastMergeResponse.data.values
+          ? lastMergeResponse.data.values
+          : [];
+      const lastMergeToTarget =
+        lastMergePRs.length > 0 ? lastMergePRs[0] : null;
+
+      if (lastMergeToTarget) {
+        uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketLastMergedPr', { prId: lastMergeToTarget.id, prTitle: lastMergeToTarget.title })));
+      } else {
+        uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketNoPreviousMerge', { sourceBranch: currentBranchName, targetBranch: targetBranchName })));
+      }
+
+      // Step 2: Get commits between branches
+      const excludeRef = lastMergeToTarget
+        ? lastMergeToTarget.merge_commit?.hash
+        : targetBranchName;
+
+      uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketGettingCommits', { include: currentBranchName, exclude: excludeRef })));
+
+      const commitsResponse = await this.bitbucket.commits.list({
+        workspace,
+        repo_slug: repoSlug,
+        include: currentBranchName,
+        exclude: excludeRef,
+      } as any);
+
+      const commits =
+        commitsResponse &&
+          commitsResponse.data &&
+          commitsResponse.data.values
+          ? commitsResponse.data.values
+          : [];
+
+      uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFoundCommits', { count: commits.length })));
+
+      if (commits.length === 0) {
+        return [];
+      }
+
+      const commitHashes = new Set(commits.map((c: any) => c.hash));
+
+      // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
+      const allBranches = [currentBranchName, ...childBranchesNames];
+
+      uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFetchingMergedPrs', { branches: allBranches.join(', ') })));
+
+      const prPromises = allBranches.map(async (branchName) => {
+        try {
+          const branchQuery = `destination.branch.name = "${branchName}" AND state = "MERGED"`;
+          const response = await this.bitbucket.pullrequests.list({
+            workspace,
+            repo_slug: repoSlug,
+            q: branchQuery,
+          } as any);
+
+          const values =
+            response && response.data && response.data.values
+              ? response.data.values
+              : [];
+
+          uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketFoundMergedPrs', { count: values.length, branchName })));
+
+          return values;
+        } catch (err) {
+          uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketErrorFetchingMergedPrs', { branchName, message: String(err) })));
+          return [];
+        }
+      });
+
+      const prResults = await Promise.all(prPromises);
+      const allMergedPRs: any[] = prResults.flat();
+
+      uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketTotalMergedPrs', { count: allMergedPRs.length })));
+
+      // Step 4: Filter PRs whose merge commit is in our commit list
+      const relevantPRs = allMergedPRs.filter((pr) => {
+        const mergeCommitHash = pr.merge_commit?.hash;
+        return mergeCommitHash && commitHashes.has(mergeCommitHash);
+      });
+
+      uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketRelevantPrs', { count: relevantPRs.length })));
+
+      // Step 5: Remove duplicates
+      const uniquePRsMap = new Map();
+      for (const pr of relevantPRs) {
+        if (!uniquePRsMap.has(pr.id)) {
+          uniquePRsMap.set(pr.id, pr);
+        }
+      }
+
+      const uniquePRs = Array.from(uniquePRsMap.values());
+
+      uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketUniquePrs', { count: uniquePRs.length })));
+
+      // Step 6: Convert to CommonPullRequestInfo
+      return uniquePRs.map((pr) =>
+        this.completePullRequestInfo(pr)
+      );
+    } catch (err) {
+      uxLog("warning", this, c.yellow(t('errorInListpullrequestsinbranchsincelastmerge', { String: String(err) })));
+      return [];
+    }
+  }
+
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
-    const pullRequestIdStr = process.env.BITBUCKET_PR_ID || null;
+    const prInfo = await this.getPullRequestInfo();
+    const pullRequestIdStr = process.env.BITBUCKET_PR_ID || prInfo?.idStr || null;
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
 
     if (repoSlug == null || pullRequestIdStr == null) {
-      uxLog(this, c.grey('[Bitbucket integration] No repo and pull request, so no note posted...'));
+      uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketNoRepoNoPrNote')));
       return { posted: false, providerResult: { info: 'No related pull request' } };
     }
     const pullRequestId = Number(pullRequestIdStr);
     const bitbucketBuildNumber = process.env.BITBUCKET_BUILD_NUMBER || null;
     const bitbucketJobUrl = await this.getCurrentJobUrl();
 
-    const messageKey = `${prMessage.messageKey}-${bitbucketBuildNumber}-${pullRequestId}`;
-    let messageBody = `**${prMessage.title || ''}**
+    const messageKey = `${prMessage.messageKey}-${pullRequestId}`;
+    let messageBody = `## ${prMessage.title || ''}
 
-        ${prMessage.message}
-        
-        \n_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${bitbucketBuildNumber}](${bitbucketJobUrl})_
-        \n<!-- sfdx-hardis message-key ${messageKey} -->
-        `;
+${prMessage.message}
+
+_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${bitbucketBuildNumber}](${bitbucketJobUrl})_
+
+${getBannerMarkdownAndLink()}
+
+<!-- sfdx-hardis message-key ${messageKey} -->
+`;
 
     // Add deployment id if present
     if (globalThis.pullRequestDeploymentId) {
@@ -222,7 +367,7 @@ export class BitbucketProvider extends GitProviderRoot {
     };
 
     // Check for existing comment from a previous run
-    uxLog(this, c.grey('[Bitbucket integration] Listing comments of Pull Request...'));
+    uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketListingPrComments')));
     const existingComments = await this.bitbucket.repositories.listPullRequestComments({
       pull_request_id: pullRequestId,
       repo_slug: repoSlug,
@@ -241,7 +386,7 @@ export class BitbucketProvider extends GitProviderRoot {
     // Create or update MR comment
     if (existingCommentId) {
       // Update existing comment
-      uxLog(this, c.grey('[Bitbucket integration] Updating Pull Request Comment on Bitbucket...'));
+      uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketUpdatingPrComment')));
       const pullRequestComment = await this.bitbucket.repositories.updatePullRequestComment({
         workspace: workspace || '',
         repo_slug: repoSlug,
@@ -254,11 +399,11 @@ export class BitbucketProvider extends GitProviderRoot {
         posted: (pullRequestComment?.data?.id || -1) > 0,
         providerResult: pullRequestComment,
       };
-      uxLog(this, c.grey(`[Bitbucket integration] Updated Pull Request comment ${existingCommentId}`));
+      uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketUpdatedPrComment', { commentId: existingCommentId })));
       return prResult;
     } else {
       // Create new comment if no existing comment was found
-      uxLog(this, c.grey('[Bitbucket integration] Adding Pull Request Comment on Bitbucket...'));
+      uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketAddingPrComment')));
 
       const pullRequestComment = await this.bitbucket.repositories.createPullRequestComment({
         workspace: workspace || '',
@@ -272,19 +417,28 @@ export class BitbucketProvider extends GitProviderRoot {
         providerResult: pullRequestComment,
       };
       if (prResult.posted) {
-        uxLog(this, c.grey(`[Bitbucket integration] Posted Pull Request comment on ${pullRequestId}`));
+        uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketPostedPrComment', { prId: pullRequestId })));
       } else {
-        uxLog(this, c.yellow(`[Bitbucket integration] Unable to post Pull Request comment on ${pullRequestId}:\n${JSON.stringify(pullRequestComment, null, 2)}`));
+        uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketUnableToPostPrComment', { prId: pullRequestId, comment: JSON.stringify(pullRequestComment, null, 2) })));
       }
       return prResult;
     }
   }
 
-  private completePullRequestInfo(prData: Schema.Pullrequest) {
-    const prInfo: any = Object.assign({}, prData);
-    prInfo.sourceBranch = prData?.source?.branch?.name || '';
-    prInfo.targetBranch = prData?.destination?.branch?.name || '';
-    return prInfo;
+  private completePullRequestInfo(prData: Schema.Pullrequest): CommonPullRequestInfo {
+    const prInfo: CommonPullRequestInfo = {
+      idNumber: prData?.id || 0,
+      idStr: prData.id ? prData?.id?.toString() : '',
+      sourceBranch: prData?.source?.branch?.name || '',
+      targetBranch: prData?.destination?.branch?.name || '',
+      title: prData?.rendered?.title?.raw || prData?.rendered?.title?.markup || prData?.rendered?.title?.html || '',
+      description: prData?.rendered?.description?.raw || prData?.rendered?.description?.markup || prData?.rendered?.description?.html || '',
+      webUrl: prData?.links?.html?.href || '',
+      authorName: prData?.author?.display_name || '',
+      providerInfo: prData,
+      customBehaviors: {}
+    };
+    return this.completeWithCustomBehaviors(prInfo);
   }
 
   // Upload the image to Bitbucket
@@ -300,14 +454,14 @@ export class BitbucketProvider extends GitProviderRoot {
       });
       if (attachmentResponse) {
         const imageRef = `${this.serverUrl}/${process.env.BITBUCKET_WORKSPACE}/${process.env.BITBUCKET_REPO_SLUG}/downloads/${imageName}`;
-        uxLog(this, c.grey(`[Bitbucket Integration] Image uploaded for comment: ${imageRef}`));
+        uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketImageUploaded', { imageRef })));
         return imageRef;
       }
       else {
-        uxLog(this, c.yellow(`[Bitbucket Integration] Image uploaded but unable to get URL from response\n${JSON.stringify(attachmentResponse, null, 2)}`));
+        uxLog("warning", this, c.yellow(`[Bitbucket Integration] Image uploaded but unable to get URL from response\n${JSON.stringify(attachmentResponse, null, 2)}`));
       }
     } catch (e) {
-      uxLog(this, c.yellow(`[Bitbucket Integration] Error while uploading image in downloads section ${localImagePath}\n${(e as Error).message}`));
+      uxLog("warning", this, c.yellow(`[Bitbucket Integration] Error while uploading image in downloads section ${localImagePath}\n${(e as Error).message}`));
     }
     return null;
   }

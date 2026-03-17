@@ -30,6 +30,7 @@ import { addScratchOrgToPool, fetchScratchOrg } from '../../../common/utils/pool
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { getConfig, setConfig } from '../../../config/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -37,18 +38,54 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class ScratchCreate extends SfCommand<any> {
   public static title = 'Create and initialize scratch org';
 
-  public static description = `Create and initialize a scratch org or a source-tracked sandbox (config can be defined using \`config/.sfdx-hardis.yml\`):
+  public static description = `
+## Command Behavior
 
-- **Install packages**
-  - Use property \`installedPackages\`
-- **Push sources**
-- **Assign permission sets**
-  - Use property \`initPermissionSets\`
-- **Run apex initialization scripts**
-  - Use property \`scratchOrgInitApexScripts\`
-- **Load data**
-  - Use property \`dataPackages\`
-  `;
+**Creates and fully initializes a Salesforce scratch org with complete development environment setup.**
+
+This command is a comprehensive scratch org provisioning tool that automates the entire process of creating, configuring, and initializing a Salesforce scratch org for development work. It handles everything from basic org creation to advanced configuration including package installation, metadata deployment, and data initialization.
+
+Key functionalities:
+
+- **Intelligent Org Management:** Automatically generates unique scratch org aliases based on username, git branch, and timestamp, with options to reuse existing orgs or force creation of new ones.
+- **Scratch Org Pool Integration:** Supports fetching pre-configured scratch orgs from pools for faster development cycles and CI/CD optimization.
+- **Custom Scratch Definition:** Dynamically builds project-scratch-def.json files with user-specific configurations including email, username patterns, and org shape settings (set variable **SCRATCH_ORG_SHAPE** to use org shapes).
+- **Package Installation:** Automatically installs all configured packages defined in \`installedPackages\` configuration property.
+- **Metadata Deployment:** Pushes source code and deploys metadata using optimized deployment strategies for scratch org environments.
+- **Permission Set Assignment:** Assigns specified permission sets defined in \`initPermissionSets\` configuration to the scratch org user.
+- **Apex Script Execution:** Runs custom Apex initialization scripts defined in \`scratchOrgInitApexScripts\` for org-specific setup.
+- **Data Loading:** Loads initial data using SFDMU data packages from \`dataPackages\` configuration for realistic development environments.
+- **User Configuration:** Automatically configures the scratch org admin user with proper names, email, country settings, and marketing user permissions.
+- **Password Generation:** Creates and stores secure passwords for easy scratch org access during development.
+- **CI/CD Integration:** Provides specialized handling for continuous integration environments including automated cleanup and pool management.
+- **Error Handling:** Comprehensive error recovery including scratch org cleanup on failure and detailed troubleshooting messages.
+
+The command configuration can be customized using:
+
+- \`config/.sfdx-hardis.yml\` file with properties like \`installedPackages\`, \`initPermissionSets\`, \`scratchOrgInitApexScripts\`, and \`dataPackages\`.
+- Environment variable **SCRATCH_ORG_SHAPE** with shape org id, if you want to use org shapes
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **Configuration Management:** Loads hierarchical configuration from \`.sfdx-hardis.yml\`, branch-specific, and user-specific configuration files using \`getConfig('user')\`.
+- **Alias Generation Logic:** Creates intelligent scratch org aliases using username, git branch, timestamp patterns with CI and pool prefixes for different environments.
+- **Scratch Org Definition Building:** Dynamically constructs \`project-scratch-def.json\` with user email, custom usernames, org shapes, and feature flags like StateAndCountryPicklist and MarketingUser.
+- **Pool Integration:** Implements scratch org pool fetching using \`fetchScratchOrg\` for rapid org provisioning in development and CI environments.
+- **Salesforce CLI Integration:** Executes \`sf org create scratch\` commands with proper parameter handling including wait times, duration, and dev hub targeting.
+- **Package Installation Pipeline:** Uses \`installPackages\` utility to install managed and unmanaged packages with dependency resolution and error handling.
+- **Metadata Deployment:** Leverages \`initOrgMetadatas\` for optimized source pushing and metadata deployment specific to scratch org environments.
+- **Permission Set Assignment:** Implements \`initPermissionSetAssignments\` for automated permission set assignment to scratch org users.
+- **Apex Script Execution:** Runs custom Apex initialization scripts using \`initApexScripts\` for org-specific configuration and setup.
+- **Data Loading Integration:** Uses SFDMU integration through \`initOrgData\` for comprehensive data loading from configured data packages.
+- **User Management:** Performs SOQL queries and DML operations to configure scratch org users with proper names, emails, country codes, and permission flags.
+- **Authentication Management:** Handles SFDX auth URL generation and storage for CI/CD environments and scratch org pool management.
+- **Error Recovery:** Implements comprehensive error handling with scratch org cleanup, pool management, and detailed error messaging for troubleshooting.
+- **WebSocket Integration:** Provides real-time status updates and file reporting through WebSocket connections for VS Code extension integration.
+</details>
+`;
 
   public static examples = ['$ sf hardis:scratch:create'];
 
@@ -82,7 +119,7 @@ export default class ScratchCreate extends SfCommand<any> {
   public static requiresProject = true;
 
   // List required plugins, their presence will be tested before running the command
-  protected static requiresSfdxPlugins = ['sfdmu', 'texei-sfdx-plugin'];
+  protected static requiresSfdxPlugins = ['sfdmu'];
 
   protected forceNew = false;
 
@@ -134,11 +171,12 @@ export default class ScratchCreate extends SfCommand<any> {
       }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
-      uxLog(this, c.grey('Error: ' + (e as Error).message + '\n' + (e as Error).stack));
+      uxLog("log", this, c.grey(t('error2') + (e as Error).message + '\n' + (e as Error).stack));
       if (isCI && this.scratchOrgFromPool) {
         this.scratchOrgFromPool.failures = this.scratchOrgFromPool.failures || [];
         this.scratchOrgFromPool.failures.push(JSON.stringify(e, null, 2));
         uxLog(
+          "log",
           this,
           '[pool] ' +
           c.yellow('Put back scratch org in the scratch orgs pool. ') +
@@ -150,7 +188,7 @@ export default class ScratchCreate extends SfCommand<any> {
           fail: false,
           output: true,
         });
-        uxLog(this, c.red('Deleted scratch org as we are in CI and its creation has failed'));
+        uxLog("error", this, c.red(t('deletedScratchOrgAsWeAreIn')));
       }
       throw e;
     }
@@ -158,6 +196,7 @@ export default class ScratchCreate extends SfCommand<any> {
     // Show password to user
     if (this.scratchOrgPassword) {
       uxLog(
+        "action",
         this,
         c.cyan(
           `You can connect to your scratch using username ${c.green(this.scratchOrgUsername)} and password ${c.green(
@@ -206,13 +245,11 @@ export default class ScratchCreate extends SfCommand<any> {
         type: 'confirm',
         name: 'value',
         message: c.cyanBright(
-          `You are about to reuse scratch org ${c.green(
-            this.scratchOrgAlias
-          )}. Are you sure that's what you want to do ?\n${c.grey(
-            '(if not, run again hardis:work:new or use hardis:scratch:create --forcenew)'
-          )}`
+          t('aboutToReuseScratchOrgAreYouSure', { alias: c.green(this.scratchOrgAlias) }) +
+          '\n' + c.grey(t('ifNotRunAgainHardisWorkNew'))
         ),
         default: false,
+        description: t('confirmReuseExistingScratchOrg'),
       });
       if (checkRes.value === false) {
         process.exit(0);
@@ -243,16 +280,22 @@ export default class ScratchCreate extends SfCommand<any> {
   // Create a new scratch org or reuse existing one
   public async createScratchOrg(flags) {
     // Build project-scratch-def-branch-user.json
-    uxLog(this, c.cyan('Building custom project-scratch-def.json...'));
+    uxLog("action", this, c.cyan(t('buildingCustomProjectScratchDefJson')));
     this.projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json', 'utf-8'));
     this.projectScratchDef.orgName = this.scratchOrgAlias;
     this.projectScratchDef.adminEmail = this.userEmail;
     // Keep only first 15 and last 15 chars if scratch org alias is too long
     const aliasForUsername = this.scratchOrgAlias.length > 30 ? this.scratchOrgAlias.slice(0, 15) + this.scratchOrgAlias.slice(-15) : this.scratchOrgAlias;
     this.projectScratchDef.username = `${this.userEmail.split('@')[0].slice(0, 20)}@hardis-scratch-${aliasForUsername}.com`;
+    if (process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape) {
+      this.projectScratchDef.sourceOrg = process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape;
+    }
+    uxLog("log", this, c.grey(t('projectScratchDef') + JSON.stringify(this.projectScratchDef, null, 2)));
     const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
     await fs.ensureDir(path.dirname(projectScratchDefLocal));
     await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
+    WebSocketClient.sendReportFileMessage(projectScratchDefLocal, t('scratchOrgDefinition'), "report");
+
     // Check current scratch org
     const orgListResult = await execSfdxJson('sf org list', this);
     const hubOrgUsername = flags['target-dev-hub'].getUsername();
@@ -264,7 +307,7 @@ export default class ScratchCreate extends SfCommand<any> {
     if (matchingScratchOrgs?.length > 0 && !this.forceNew && this.pool == false) {
       this.scratchOrgInfo = matchingScratchOrgs[0];
       this.scratchOrgUsername = this.scratchOrgInfo.username;
-      uxLog(this, c.cyan(`Reusing org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`));
+      uxLog("action", this, c.cyan(t('reusingOrgWithUser', { scratchOrgAlias: c.green(this.scratchOrgAlias), scratchOrgUsername: c.green(this.scratchOrgUsername) })));
       return;
     }
     // Try to fetch a scratch org from the pool
@@ -280,6 +323,7 @@ export default class ScratchCreate extends SfCommand<any> {
         this.scratchOrgPassword = this.scratchOrgFromPool.scratchOrgPassword;
         await setConfig('user', { scratchOrgAlias: this.scratchOrgAlias });
         uxLog(
+          "log",
           this,
           '[pool] ' +
           c.cyan(
@@ -288,6 +332,7 @@ export default class ScratchCreate extends SfCommand<any> {
         );
         if (!isCI) {
           uxLog(
+            "action",
             this,
             c.cyan('Now opening org...') +
             ' ' +
@@ -298,8 +343,8 @@ export default class ScratchCreate extends SfCommand<any> {
             output: false,
             debug: this.debugMode,
           });
-          // Trigger a status refresh on VsCode WebSocket Client
-          WebSocketClient.sendMessage({ event: 'refreshStatus' });
+          // Trigger a status refresh on VS Code WebSocket Client
+          WebSocketClient.sendRefreshStatusMessage();
         }
         return;
       }
@@ -309,11 +354,11 @@ export default class ScratchCreate extends SfCommand<any> {
     const tmpShapeFolder = path.join(os.tmpdir(), 'shape');
     if (fs.existsSync(tmpShapeFolder) && this.pool === false) {
       await fs.remove(tmpShapeFolder);
-      uxLog(this, c.grey('Deleted ' + tmpShapeFolder));
+      uxLog("log", this, c.grey(t('deleted') + tmpShapeFolder));
     }
 
     // Create new scratch org
-    uxLog(this, c.cyan('Creating new scratch org...'));
+    uxLog("action", this, c.cyan(t('creatingNewScratchOrg')));
     const waitTime = process.env.SCRATCH_ORG_WAIT || '15';
     const createCommand =
       'sf org create scratch --set-default ' +
@@ -328,6 +373,10 @@ export default class ScratchCreate extends SfCommand<any> {
       debug: this.debugMode,
     });
     await clearCache('sf org list');
+    if (!createResult || createResult.status !== 0 || !createResult.result) {
+      uxLog("error", this, this.buildScratchCreateErrorMessage(createResult));
+      throw new SfError('Scratch org creation failed');
+    }
     assert(createResult.status === 0 && createResult.result, this.buildScratchCreateErrorMessage(createResult));
     this.scratchOrgInfo = createResult.result;
     this.scratchOrgUsername = this.scratchOrgInfo.username;
@@ -346,8 +395,8 @@ export default class ScratchCreate extends SfCommand<any> {
     await setConfig('user', {
       scratchOrgPassword: this.scratchOrgPassword,
     });
-    // Trigger a status refresh on VsCode WebSocket Client
-    WebSocketClient.sendMessage({ event: 'refreshStatus' });
+    // Trigger a status refresh on VS Code WebSocket Client
+    WebSocketClient.sendRefreshStatusMessage();
 
     if (isCI || this.pool === true) {
       // Try to store sfdxAuthUrl for scratch org reuse during CI
@@ -374,9 +423,10 @@ export default class ScratchCreate extends SfCommand<any> {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
           uxLog(
+            "warning",
             this,
             c.yellow(
-              `Unable to fetch sfdxAuthUrl for ${displayResult.result.username}. Only Scratch Orgs created from DevHub using authenticated using sf org login sfdx-url or sf org login web will have access token and enabled for autoLogin\nYou may need to define SFDX_AUTH_URL_DEV_HUB or SFDX_AUTH_URL_devHubAlias in your CI job running sf hardis:scratch:pool:refresh`
+              t('unableToFetchSfdxAuthUrlForScratch', { username: displayResult.result.username })
             )
           );
           this.scratchOrgSfdxAuthUrl = null;
@@ -394,7 +444,7 @@ export default class ScratchCreate extends SfCommand<any> {
         output: false,
         debug: this.debugMode,
       });
-      uxLog(this, c.cyan(`Open scratch org with url: ${c.green(openRes?.result?.url)}`));
+      uxLog("action", this, c.cyan(t('openScratchOrgWithUrl2', { openRes: c.green(openRes?.result?.url) })));
     } else {
       // Open scratch org for user if not in CI
       await execSfdxJson('sf org open', this, {
@@ -404,8 +454,9 @@ export default class ScratchCreate extends SfCommand<any> {
       });
     }
     uxLog(
+      "action",
       this,
-      c.cyan(`Created scratch org ${c.green(this.scratchOrgAlias)} with user ${c.green(this.scratchOrgUsername)}`)
+      c.cyan(t('createdScratchOrgWithUser', { alias: c.green(this.scratchOrgAlias), username: c.green(this.scratchOrgUsername) }))
     );
   }
 
@@ -439,7 +490,7 @@ export default class ScratchCreate extends SfCommand<any> {
   public async updateScratchOrgUser() {
     const config = await getConfig('user');
     // Update scratch org main user
-    uxLog(this, c.cyan('Update / fix scratch org user ' + this.scratchOrgUsername));
+    uxLog("action", this, c.cyan(t('updateFixScratchOrgUser') + this.scratchOrgUsername));
     const userQueryCommand = `sf data get record --sobject User --where "Username=${this.scratchOrgUsername}" --target-org ${this.scratchOrgAlias}`;
     const userQueryRes = await execSfdxJson(userQueryCommand, this, {
       fail: true,

@@ -37,7 +37,7 @@ jobs:
   - job: DeploymentCheck
     timeoutInMinutes: 150
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
     steps:
       # Checkout repo
       - checkout: self
@@ -48,7 +48,7 @@ jobs:
       # Setup Node.js
       - task: UseNode@1
         inputs:
-          version: ">=20.0.0"
+          version: ">=24.0.0"
         displayName: "Use Node.js"
 
       # Install SFDX & Dependencies
@@ -71,7 +71,7 @@ jobs:
           CONFIG_BRANCH: $(BRANCH_NAME)
           ORG_ALIAS: $(BRANCH_NAME)
           CI: "true"
-          SFDX_DEPLOY_WAIT_MINUTES: 150
+          SFDX_DEPLOY_WAIT_MINUTES: $(SFDX_DEPLOY_WAIT_MINUTES)
           SLACK_TOKEN: $(SLACK_TOKEN)
           SLACK_CHANNEL_ID: $(SLACK_CHANNEL_ID)
           NOTIF_EMAIL_ADDRESS: $(NOTIF_EMAIL_ADDRESS)
@@ -83,6 +83,7 @@ jobs:
           JIRA_PAT: $(JIRA_HOST)
           JIRA_TICKET_REGEX: $(JIRA_TICKET_REGEX)
           OPENAI_API_KEY: $(OPENAI_API_KEY)
+          SFDX_AUTH_URL_TECHNICAL_ORG: $(SFDX_AUTH_URL_TECHNICAL_ORG)
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)
           CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
           SYSTEM_COLLECTIONURI: $(System.CollectionUri)
@@ -102,7 +103,7 @@ jobs:
   # Config is editable in .mega-linter.yml
   - job: MegaLinter
     pool:
-      vmImage: ubuntu-20.04
+      vmImage: ubuntu-latest
     steps:
       # Pull MegaLinter docker image
       - script: docker pull oxsecurity/megalinter-salesforce:latest
@@ -114,6 +115,9 @@ jobs:
             -e CI=true \
             -e SYSTEM_ACCESSTOKEN=$(System.AccessToken) \
             -e GIT_AUTHORIZATION_BEARER=$(System.AccessToken) \
+            -e SYSTEM_PULLREQUEST_SOURCECOMMITID=$(System.PullRequest.SourceCommitId) \
+            -e SYSTEM_PULLREQUEST_TARGETBRANCH=$(System.PullRequest.TargetBranch) \
+            -e BUILD_REASON=$(Build.Reason) \
             oxsecurity/megalinter-salesforce:latest
         displayName: Run MegaLinter
       # Publish Megalinter reports

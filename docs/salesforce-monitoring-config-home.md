@@ -81,6 +81,22 @@ Example in env var:
 NOTIFICATIONS_DISABLE=METADATA_STATUS,UNUSED_METADATAS
 ```
 
+You can also decide to skip posting logs or metrics to API for all notification types or specific ones by defining env variables **NOTIF_API_SKIP_LOGS** and **NOTIF_API_SKIP_METRICS**.
+
+Examples:
+
+```sh
+# Skip posting logs to API and JSON file for specific notification types
+NOTIF_API_SKIP_LOGS=UNUSED_USERS,METADATA_STATUS
+```
+
+```sh
+# Skip posting logs to API and JSON file for all notification types
+NOTIF_API_SKIP_LOGS=all
+# Skip posting metrics to API for specific notification types
+NOTIF_API_SKIP_METRICS=METADATA_STATUS,UNUSED_METADATAS
+```
+
 ## Monitoring commands
 
 You can decide to disable commands by defining either a **monitoringDisable** property in `.sfdx-hardis.yml`, or a comma separated list in env variable **MONITORING_DISABLE**
@@ -107,6 +123,10 @@ If there are more than 10000 items, your monitoring job will crash.
 
 In that case, you can:
 
-- Single Branch scope: Manually update file `manifest/package-skip-items.xml` in the branch corresponding to an org, then commit and push
+- Single Branch scope: Manually update file `manifest/package-skip-items.xml` in the branch corresponding to an org, then commit and push. It works with:
+  - Full wildcard (`<members>*</members>`)
+  - Named metadata (`<members>Account.Name</members>`)
+  - Partial wildcards names (`<members>pi__*</members>` , `<members>*__dlm</members>` , or `<members>prefix*suffix</members>`)
+
 - All branches scope: Define CI/CD env var **MONITORING_BACKUP_SKIP_METADATA_TYPES** with the list of additional metadata types you want to skip
   - example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`

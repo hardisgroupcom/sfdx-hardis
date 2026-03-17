@@ -4,6 +4,10 @@ description: Learn how to configure CI/CD variables for CI Server authentication
 ---
 <!-- markdownlint-disable MD013 -->
 
+## PRE-REQUISITES
+
+If you are building a CI/CD pipeline, follow the steps in [Configure Integrations between sfdx-hardis and Azure Pipelines](salesforce-ci-cd-setup-integration-azure.md) to create your pipelines.
+
 ## Define sfdx-hardis environment variables
 
 - Go to **Project -> Pipelines**
@@ -15,3 +19,20 @@ description: Learn how to configure CI/CD variables for CI Server authentication
 ![](assets/images/screenshot-monitoring-azure-variable.png)
 
 More info: [Azure documentation](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/variables?view=azure-devops&tabs=classic%2Cbatch){target=blank}
+
+## Reference variables in your pipeline YAML files
+
+When you defined your secret variables in Azure Pipelines, you need to reference them in your pipeline YAML files using the syntax `VARIABLE_NAME: $(VARIABLE_NAME)`, so their values are correctly passed to the pipeline.
+
+Example:
+
+```yaml
+          SFDX_CLIENT_ID_MY_ORG: $(SFDX_CLIENT_ID_MY_ORG)
+          SFDX_CLIENT_KEY_MY_ORG: $(SFDX_CLIENT_KEY_MY_ORG)
+```
+
+Impacted YAML files if present in your repo:
+
+- `azure-pipelines-checks.yml`
+- `azure-pipelines-deployment.yml`
+- `azure-pipelines.yml`

@@ -1,8 +1,10 @@
 import { SfError } from "@salesforce/core";
 import c from "chalk";
-import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { uxLog } from "../utils/index.js";
 import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
+import { getEnvVar } from "../../config/index.js";
+import { t } from '../utils/i18n.js';
 
 export abstract class GitProviderRoot {
   public serverUrl: string | null;
@@ -14,27 +16,27 @@ export abstract class GitProviderRoot {
   }
 
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
-    uxLog(this, `Method getBranchDeploymentCheckId(${gitBranch}) is not implemented yet on ${this.getLabel()}`);
+    uxLog("other", this, `Method getBranchDeploymentCheckId(${gitBranch}) is not implemented yet on ${this.getLabel()}`);
     return null;
   }
 
   public async getPullRequestDeploymentCheckId(): Promise<string | null> {
-    uxLog(this, `Method getPullRequestDeploymentCheckId() is not implemented yet on ${this.getLabel()}`);
+    uxLog("other", this, `Method getPullRequestDeploymentCheckId() is not implemented yet on ${this.getLabel()}`);
     return null;
   }
 
   public async getCurrentJobUrl(): Promise<string | null> {
-    uxLog(this, `Method getCurrentJobUrl is not implemented yet on ${this.getLabel()}`);
+    uxLog("other", this, `Method getCurrentJobUrl is not implemented yet on ${this.getLabel()}`);
     return null;
   }
 
   public async getCurrentBranchUrl(): Promise<string | null> {
-    uxLog(this, `Method getCurrentBranchUrl is not implemented yet on ${this.getLabel()}`);
+    uxLog("other", this, `Method getCurrentBranchUrl is not implemented yet on ${this.getLabel()}`);
     return null;
   }
 
   public async supportsMermaidInPrMarkdown(): Promise<boolean> {
-    uxLog(this, `Method supportsMermaidInPrMarkdown is not implemented yet on ${this.getLabel()}`);
+    uxLog("other", this, `Method supportsMermaidInPrMarkdown is not implemented yet on ${this.getLabel()}`);
     return false;
   }
 
@@ -43,14 +45,14 @@ export abstract class GitProviderRoot {
     return false;
   }
 
-  public async getPullRequestInfo(): Promise<any> {
-    uxLog(this, `Method getPullRequestInfo is not implemented yet on ${this.getLabel()}`);
+  public async getPullRequestInfo(): Promise<CommonPullRequestInfo | null> {
+    uxLog("other", this, `Method getPullRequestInfo is not implemented yet on ${this.getLabel()}`);
     return null;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async uploadImage(image: string): Promise<any> {
-    uxLog(this, `Method uploadImage is not implemented yet on ${this.getLabel()}`);
+    uxLog("other", this, `Method uploadImage is not implemented yet on ${this.getLabel()}`);
     return null;
   }
 
@@ -62,13 +64,24 @@ export abstract class GitProviderRoot {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } = {}, options: {
     formatted?: boolean
-  } = { formatted: false }): Promise<any> {
-    uxLog(this, `Method listPullRequests is not implemented yet on ${this.getLabel()}`);
+  } = { formatted: false }): Promise<any | null> {
+    uxLog("other", this, `Method listPullRequests is not implemented yet on ${this.getLabel()}`);
     return null;
   }
 
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  public async listPullRequestsInBranchSinceLastMerge(
+    _currentBranchName: string,
+    _targetBranchName: string,
+    _childBranchesNames: string[],
+  ): Promise<CommonPullRequestInfo[]> {
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+    uxLog("other", this, `Method listPullRequestsInBranchSinceLastMerge is not implemented yet on ${this.getLabel()}`);
+    return [];
+  }
+
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
-    uxLog(this, c.yellow("Method postPullRequestMessage is not yet implemented on " + this.getLabel() + " to post " + JSON.stringify(prMessage)));
+    uxLog("warning", this, c.yellow(t('methodPostpullrequestmessageIsNotYetImplementedOn') + this.getLabel() + " to post " + JSON.stringify(prMessage)));
     return { posted: false, providerResult: { error: "Not implemented in sfdx-hardis" } };
   }
   /* jscpd:ignore-start */
@@ -78,7 +91,7 @@ export abstract class GitProviderRoot {
     try {
       prResult = await this.postPullRequestMessage(prMessage);
     } catch (e) {
-      uxLog(this, c.yellow(`[GitProvider] Error while trying to post pull request message.\n${(e as Error).message}\n${(e as Error).stack}`));
+      uxLog("warning", this, c.yellow(`[GitProvider] Error while trying to post pull request message.\n${(e as Error).message}\n${(e as Error).stack}`));
       prResult = { posted: false, providerResult: { error: e } };
     }
     return prResult;
@@ -89,12 +102,40 @@ export abstract class GitProviderRoot {
     const replacements: any = {};
     const markdownImages = extractImagesFromMarkdown(markdownBody, sourceFile);
     for (const image of markdownImages) {
-      const imageUrl = await this.uploadImage(image.path);
+      let imageUrl: string | null = null;
+      try {
+        imageUrl = await this.uploadImage(image.path);
+      } catch (e) {
+        uxLog("warning", this, c.yellow(`[GitProvider] Error while trying to upload image ${image.path}.\n${(e as Error).message}\n${(e as Error).stack}`));
+      }
       if (imageUrl) {
         replacements[image.name] = imageUrl;
       }
     }
     markdownBody = replaceImagesInMarkdown(markdownBody, replacements);
     return markdownBody;
+  }
+
+  protected completeWithCustomBehaviors(pullRequestInfo: CommonPullRequestInfo): CommonPullRequestInfo {
+    const desc = pullRequestInfo.description || "";
+    if (desc.includes("NO_DELTA")
+      || getEnvVar("NO_DELTA") === "true"
+      || getEnvVar("NO_DELTA_" + pullRequestInfo.targetBranch) === "true"
+    ) {
+      pullRequestInfo.customBehaviors.noDeltaDeployment = true;
+    }
+    if (desc.includes("PURGE_FLOW_VERSIONS")
+      || getEnvVar("PURGE_FLOW_VERSIONS") === "true"
+      || getEnvVar("PURGE_FLOW_VERSIONS_" + pullRequestInfo.targetBranch) === "true"
+    ) {
+      pullRequestInfo.customBehaviors.purgeFlowVersions = true;
+    }
+    if (desc.includes("DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT")
+      || getEnvVar("DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT") === "true"
+      || getEnvVar("DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT_" + pullRequestInfo.targetBranch) === "true"
+    ) {
+      pullRequestInfo.customBehaviors.destructiveChangesAfterDeployment = true;
+    }
+    return pullRequestInfo;
   }
 }

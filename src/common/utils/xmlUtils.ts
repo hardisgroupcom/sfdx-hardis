@@ -5,8 +5,9 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import * as util from 'util';
 import * as xml2js from 'xml2js';
-import { uxLog } from './index.js';
-import { CONSTANTS } from '../../config/index.js';
+import { sortCrossPlatform, uxLog } from './index.js';
+import { getApiVersion } from '../../config/index.js';
+import { t } from './i18n.js';
 
 export async function parseXmlFile(xmlFile: string) {
   const packageXmlString = await fs.readFile(xmlFile, 'utf8');
@@ -40,10 +41,7 @@ export async function writeXmlFileFormatted(xmlFile: string, xmlString: string) 
 export async function parsePackageXmlFile(packageXmlFile: string) {
   const targetOrgPackage = await parseXmlFile(packageXmlFile);
   const targetOrgContent: any = {};
-  if (!targetOrgPackage?.Package?.types) {
-    uxLog(this, c.yellow(`File ${packageXmlFile} doesn't seem to respect package.xml format.`))
-  }
-  for (const type of targetOrgPackage.Package.types || []) {
+  for (const type of targetOrgPackage?.Package?.types || []) {
     const mdType = type.name[0];
     const members = type.members || [];
     targetOrgContent[mdType] = members;
@@ -61,7 +59,7 @@ export async function countPackageXmlItems(packageXmlFile: string): Promise<numb
 }
 
 export async function writePackageXmlFile(packageXmlFile: string, packageXmlObject: any) {
-  let packageXmlContent: any = { Package: { types: [], version: [CONSTANTS.API_VERSION] } };
+  let packageXmlContent: any = { Package: { types: [], version: [getApiVersion()] } };
   if (fs.existsSync(packageXmlFile)) {
     packageXmlContent = await parseXmlFile(packageXmlFile);
   }
@@ -111,7 +109,7 @@ export async function isPackageXmlEmpty(
 
 // Read package.xml files and build concatenated list of items
 export async function appendPackageXmlFilesContent(packageXmlFileList: string[], outputXmlFile: string) {
-  uxLog(this, c.cyan(`Appending ${packageXmlFileList.join(',')} into ${outputXmlFile}...`));
+  uxLog("log", this, c.grey(t('appendingInto', { packageXmlFileList: packageXmlFileList.join(', '), outputXmlFile })));
   let firstPackageXmlContent: any = null;
   let allPackageXmlFilesTypes = {};
   // loop on packageXml files
@@ -134,11 +132,11 @@ export async function appendPackageXmlFilesContent(packageXmlFileList: string[],
       }
       const nameKey = typePkg.name[0];
       if (allPackageXmlFilesTypes[nameKey] != null && typePkg.members != null) {
-        allPackageXmlFilesTypes[nameKey] = Array.from(
+        sortCrossPlatform(allPackageXmlFilesTypes[nameKey] = Array.from(
           new Set(allPackageXmlFilesTypes[nameKey].concat(typePkg.members))
-        ).sort();
+        ));
       } else if (typePkg.members != null) {
-        allPackageXmlFilesTypes[nameKey] = Array.from(new Set(typePkg.members)).sort();
+        sortCrossPlatform(allPackageXmlFilesTypes[nameKey] = Array.from(new Set(typePkg.members)));
       }
     }
   }
@@ -162,7 +160,7 @@ export async function removePackageXmlFilesContent(
   // Read package.xml file to update
   const parsedPackageXml: any = await parseXmlFile(packageXmlFile);
   if (logFlag) {
-    uxLog(this, `Parsed ${packageXmlFile} :\n` + util.inspect(parsedPackageXml, false, null));
+    uxLog("other", this, `Parsed ${packageXmlFile}:\n` + util.inspect(parsedPackageXml, false, null));
   }
   let packageXmlMetadatasTypeLs: any;
   // get metadata types in parse result
@@ -175,7 +173,7 @@ export async function removePackageXmlFilesContent(
   // Read package.xml file to use for filtering first file
   const parsedPackageXmlRemove: any = await parseXmlFile(removePackageXmlFile);
   if (logFlag) {
-    uxLog(this, c.grey(`Parsed ${removePackageXmlFile} :\n` + util.inspect(parsedPackageXmlRemove, false, null)));
+    uxLog("log", this, c.grey(`Parsed ${removePackageXmlFile}:\n` + util.inspect(parsedPackageXmlRemove, false, null)));
   }
   let packageXmlRemoveMetadatasTypeLs: any;
   // get metadata types in parse result
@@ -205,12 +203,13 @@ export async function removePackageXmlFilesContent(
     // Manage * case contained in target
     if (removedOnly === true && typeMembers.includes('*')) {
       typeMembers = removeTypeMembers;
-      uxLog(this, c.grey(c.italic(`Found wildcard * on type ${c.bold(type.name)}, kept items: ${typeMembers.length}`)));
+      uxLog("log", this, c.grey(c.italic(t('foundWildcardOnTypeKeptItems', { type: c.bold(type.name), typeMembers: typeMembers.length }))));
     }
     // Manage * case contained in source
     else if (removeTypeMembers[0] && removeTypeMembers[0] === '*') {
       typeMembers = typeMembers.filter(() => checkRemove(false, removedOnly));
       uxLog(
+        "log",
         this,
         c.grey(
           c.italic(
@@ -224,6 +223,7 @@ export async function removePackageXmlFilesContent(
         checkRemove(!removeTypeMembers.includes(member), removedOnly)
       );
       uxLog(
+        "log",
         this,
         c.grey(
           c.italic(
@@ -257,7 +257,7 @@ export async function removePackageXmlFilesContent(
 
   // display in logs if requested
   if (logFlag) {
-    uxLog(this, 'Package.xml remove results :\n' + util.inspect(packageXmlMetadatasTypeLs, false, null));
+    uxLog("other", this, 'Package.xml remove results:\n' + util.inspect(packageXmlMetadatasTypeLs, false, null));
   }
 
   // Write in output file if required
@@ -265,7 +265,7 @@ export async function removePackageXmlFilesContent(
     parsedPackageXml.Package.types = packageXmlMetadatasTypeLs;
     await writeXmlFile(outputXmlFile, parsedPackageXml);
     if (logFlag) {
-      uxLog(this, 'Generated package.xml file: ' + outputXmlFile);
+      uxLog("other", this, 'Generated package.xml file: ' + outputXmlFile);
     }
   }
   return packageXmlMetadatasTypeLs;
@@ -289,7 +289,7 @@ export async function applyAllReplacementsDefinitions(
   referenceStrings: string[],
   replacementDefinitions: any[]
 ) {
-  uxLog(this, c.cyan(`Initializing replacements in files for ${referenceStrings.join(',')}...`));
+  uxLog("action", this, c.cyan(t('initializingReplacementsInFilesFor', { referenceStrings: referenceStrings.join(', ') })));
   for (const ref of referenceStrings) {
     for (const replacementDefinition of replacementDefinitions) {
       replacementDefinition.refRegexes = replacementDefinition.refRegexes.map((refRegex) => {
@@ -361,7 +361,7 @@ export async function applyReplacementDefinition(
     if (updated) {
       const updatedFileText = fileLines.join('\n');
       await fs.writeFile(sourceFile, updatedFileText);
-      uxLog(this, c.grey(`- updated ${replacementDefinition.label}: ${sourceFile}`));
+      uxLog("log", this, c.grey(`- updated ${replacementDefinition.label}: ${sourceFile}`));
     }
   }
 }

@@ -2,6 +2,7 @@
 title: Initialize sfdx sources from Salesforce org
 description: Learn how to initialize sfdx sources from a Salesforce org
 ---
+
 <!-- markdownlint-disable MD013 -->
 
 If this is a new Salesforce project, or if you want to setup CI/CD in **incremental mode**, you can skip this step and directly go to [Create first merge request](#create-first-merge-request).
@@ -22,17 +23,12 @@ If you want to go for a **full init setup**, follow the steps below !
 
 ## Retrieve Metadatas
 
-- Run the following command that will retrieve locally all the metadatas of production org
-
-`sf hardis:org:retrieve:sources:dx --shape -u YOURSOURCEORGUSERNAME`
-
-- In case you get an error:
-  - Run the generate package xml command : [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/)
-  - Clean up the generated package created by removing the unnecessary metadatas
-  - Run retrieve metadata command : [sf project:retrieve:start](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_retrieve_start_unified)
+- Run the generate package xml command : [hardis:org:generate:packagexmlfull](https://sfdx-hardis.cloudity.com/hardis/org/generate/packagexmlfull/)
+- Clean up the generated package created by removing the unnecessary metadatas
+- Run retrieve metadata command : [sf project:retrieve:start](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_retrieve_start_unified)
 
 Example :
-  
+
 - `sf hardis:org:generate:packagexmlfull --targetusername nico@example.com --outputfile ./packagexmlfull.xml`
 - Remove Document part on packagexmlfull.xml
   ```xml
@@ -106,9 +102,11 @@ Manually delete files (or even folders) that are maintained directly in producti
 
 ## Retrieve installed packages
 
-Run the following command to retrieve packages installed on production org
+Use **DevOps Pipeline -> Installed Packages** to retrieve the list of Packages of your project.
 
-`sf hardis:org:retrieve:packageconfig -u YOUR_PROD_ORG_USER`
+See [Retrieve Packages Documentation](salesforce-ci-cd-work-on-task-install-packages.md)
+
+> CLI Alternative: `sf hardis:org:retrieve:packageconfig -u YOUR_PROD_ORG_USER`
 
 This will update file **config/.sfdx-hardis.yml**
 

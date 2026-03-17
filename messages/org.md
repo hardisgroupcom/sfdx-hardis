@@ -28,7 +28,7 @@ Updates project-scratch-def.json from org shape
 
 # completeWorkTask
 
-When a work task is completed, guide user to create a merge request
+When a User Story is completed, guide user to create a merge request
 
 # dataTreeExport
 
@@ -84,7 +84,7 @@ Filter according to Name criteria
 
 # newWorkTask
 
-New work task
+New User Story
 
 # orgFreezeUser
 

@@ -12,26 +12,33 @@ import {
   extractRegexMatches,
   getCurrentGitBranch,
   getGitRepoRoot,
+  getGitRepoUrl,
   git,
+  gitFetch,
   uxLog,
 } from './index.js';
-import { GitProvider } from '../gitProvider/index.js';
+import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { Ticket, TicketProvider } from '../ticketProvider/index.js';
 import { DefaultLogFields, ListLogLine } from 'simple-git';
 import { flowDiffToMarkdownForPullRequest } from '../gitProvider/utilsMarkdown.js';
 import { MessageAttachment } from '@slack/types';
 import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from './notifUtils.js';
 import { NotifProvider, UtilsNotifs } from '../notifProvider/index.js';
+import { setConnectionVariables } from './orgUtils.js';
+import { WebSocketClient } from '../websocketClient.js';
+import { countPackageXmlItems } from './xmlUtils.js';
+import { t } from './i18n.js';
 
 export async function selectTargetBranch(options: { message?: string } = {}) {
+  const gitUrl = await getGitRepoUrl() || '';
   const message =
     options.message ||
-    'What will be the target branch of your new task ? (the branch where you will make your merge request after the task is completed)';
+    t('whatWillBeTheTargetBranch', { mergeRequestName: GitProvider.getMergeRequestName(gitUrl) });
   const config = await getConfig('user');
   const availableTargetBranches = config.availableTargetBranches || null;
   // There is only once choice so return it
   if (availableTargetBranches === null && config.developmentBranch) {
-    uxLog(this, c.cyan(`Selected target branch is ${c.green(config.developmentBranch)}`));
+    uxLog("action", this, c.cyan(t('automaticallySelectedTargetBranchIs', { config: c.green(config.developmentBranch) })));
     return config.developmentBranch;
   }
 
@@ -41,6 +48,8 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
       type: availableTargetBranches ? 'select' : 'text',
       name: 'targetBranch',
       message: c.cyanBright(message),
+      description: t('descChooseTargetBranch'),
+      placeholder: availableTargetBranches ? undefined : t('exIntegration'),
       choices: availableTargetBranches
         ? availableTargetBranches.map((branch) => {
           return {
@@ -58,25 +67,23 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
 
 export async function getGitDeltaScope(currentBranch: string, targetBranch: string) {
   try {
-    await git().fetch(['origin', `${targetBranch}:${targetBranch}`]);
+    await gitFetch(['origin', `${targetBranch}:${targetBranch}`]);
   } catch (e) {
     uxLog(
+      "other",
       this,
-      c.gray(
-        `[Warning] Unable to fetch target branch ${targetBranch} to prepare call to sfdx-git-delta\n` +
-        JSON.stringify(e)
-      )
+      `[Warning] Unable to fetch target branch ${targetBranch} to prepare call to sfdx-git-delta\n` +
+      JSON.stringify(e)
     );
   }
   try {
-    await git().fetch(['origin', `${currentBranch}:${currentBranch}`]);
+    await gitFetch(['origin', `${currentBranch}:${currentBranch}`]);
   } catch (e) {
     uxLog(
+      "other",
       this,
-      c.gray(
-        `[Warning] Unable to fetch current branch ${currentBranch} to prepare call to sfdx-git-delta\n` +
-        JSON.stringify(e)
-      )
+      `[Warning] Unable to fetch current branch ${currentBranch} to prepare call to sfdx-git-delta\n` +
+      JSON.stringify(e)
     );
   }
   const logResult = await git().log([`${targetBranch}..${currentBranch}`]);
@@ -97,19 +104,46 @@ export async function callSfdxGitDelta(from: string, to: string, outputDir: stri
     debug: options?.debugMode || false,
     cwd: await getGitRepoRoot(),
   });
+  // Send results to UI if there is one
+  if (WebSocketClient.isAliveWithLwcUI()) {
+    const deltaPackageXml = path.join(outputDir, 'package', 'package.xml');
+    const deltaPackageXmlExists = await fs.exists(deltaPackageXml);
+    if (deltaPackageXmlExists) {
+      const deltaNumberOfItems = await countPackageXmlItems(deltaPackageXml);
+      if (deltaNumberOfItems > 0) {
+        WebSocketClient.sendReportFileMessage(deltaPackageXml, t('gitDeltaPackageXmlCount', { count: deltaNumberOfItems }), "report");
+      }
+    }
+    const deltaDestructiveChangesXml = path.join(outputDir, 'destructiveChanges', 'destructiveChanges.xml');
+    const deltaDestructiveChangesXmlExists = await fs.exists(deltaDestructiveChangesXml);
+    if (deltaDestructiveChangesXmlExists) {
+      const deltaDestructiveChangesNumberOfItems = await countPackageXmlItems(deltaDestructiveChangesXml);
+      if (deltaDestructiveChangesNumberOfItems > 0) {
+        WebSocketClient.sendReportFileMessage(deltaDestructiveChangesXml, t('gitDeltaDestructiveChangesXmlCount', { count: deltaDestructiveChangesNumberOfItems }), "report");
+      }
+    }
+  }
   return gitDeltaCommandRes;
 }
 
-export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
-  uxLog(this, c.cyan('Computing commits summary...'));
+export function getPullRequestData(): any {
+  return globalThis.pullRequestData || {};
+}
+
+export function setPullRequestData(prData: any): void {
+  globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prData);
+}
+
+export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPullRequestInfo | null = null) {
+  uxLog("action", this, c.cyan(t('computingCommitsSummary')));
   const currentGitBranch = await getCurrentGitBranch();
   let logResults: (DefaultLogFields & ListLogLine)[] = [];
   let previousTargetBranchCommit = "";
   if (checkOnly || GitProvider.isDeployBeforeMerge()) {
-    const prInfo = await GitProvider.getPullRequestInfo();
+    const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
     const deltaScope = await getGitDeltaScope(
-      prInfo?.sourceBranch || currentGitBranch,
-      prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH
+      prInfo?.sourceBranch || currentGitBranch || "",
+      prInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH || ""
     );
     logResults = [...deltaScope.logResult.all];
     previousTargetBranchCommit = deltaScope.fromCommit;
@@ -152,7 +186,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
 
   // Unify and sort tickets
   const ticketsSorted: Ticket[] = sortArray(arrayUniqueByKey(tickets, 'id'), { by: ['id'], order: ['asc'] });
-  uxLog(this, c.grey(`[TicketProvider] Found ${ticketsSorted.length} tickets in commit bodies`));
+  uxLog("log", this, c.grey('[TicketProvider] ' + t('ticketProviderFoundTickets', { count: ticketsSorted.length })));
   // Try to contact Ticketing servers to gather more info
   await TicketProvider.collectTicketsInfo(ticketsSorted);
 
@@ -171,7 +205,11 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
     let ticketsMarkdown = '## Tickets\n\n';
     for (const ticket of ticketsSorted) {
       if (ticket.foundOnServer) {
-        ticketsMarkdown += '- [' + ticket.id + '](' + ticket.url + ') ' + ticket.subject + '\n';
+        ticketsMarkdown += '- [' + ticket.id + '](' + ticket.url + ') ' + ticket.subject;
+        if (ticket.statusLabel) {
+          ticketsMarkdown += ' (' + ticket.statusLabel + ')';
+        }
+        ticketsMarkdown += '\n'
       } else {
         ticketsMarkdown += '- [' + ticket.id + '](' + ticket.url + ')\n';
       }
@@ -192,7 +230,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
             flowList.push(flowName);
           }
           else {
-            uxLog(this, c.yellow(`[FlowGitDiff] Unable to find Flow file ${updatedFile} (probably has been deleted)`));
+            uxLog("warning", this, c.yellow(`[FlowGitDiff] Unable to find Flow file ${updatedFile} (probably has been deleted)`));
           }
         }
       }
@@ -204,8 +242,8 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: any) {
     if (flowListUnique.length > maxFlowsToShow) {
       truncatedNb = flowListUnique.length - maxFlowsToShow;
       flowListUnique.splice(maxFlowsToShow, flowListUnique.length - maxFlowsToShow);
-      uxLog(this, c.yellow(`[FlowGitDiff] Truncated flow list to 30 flows to avoid flooding Pull Request comments`));
-      uxLog(this, c.yellow(`[FlowGitDiff] If you want to see the diff of truncated flows, use VsCode SFDX Hardis extension :)`));
+      uxLog("warning", this, c.yellow(`[FlowGitDiff] Truncated flow list to 30 flows to avoid flooding Pull Request comments`));
+      uxLog("warning", this, c.yellow(`[FlowGitDiff] If you want to see the diff of truncated flows, use the VS Code SFDX Hardis extension 😊`));
     }
     flowDiffMarkdown = await flowDiffToMarkdownForPullRequest(flowListUnique, previousTargetBranchCommit, (logResults.at(-1) || logResults[0]).hash, truncatedNb);
   }
@@ -237,20 +275,20 @@ export async function getCommitUpdatedFiles(commitHash) {
 
 export async function buildCheckDeployCommitSummary() {
   try {
-    const pullRequestInfo = await GitProvider.getPullRequestInfo();
+    const pullRequestInfo = await GitProvider.getPullRequestInfo({ useCache: true });
     const commitsSummary = await computeCommitsSummary(true, pullRequestInfo);
     const prDataCommitsSummary = {
       commitsSummary: commitsSummary.markdown,
       flowDiffMarkdown: commitsSummary.flowDiffMarkdown
     };
-    globalThis.pullRequestData = Object.assign(globalThis.pullRequestData || {}, prDataCommitsSummary);
+    setPullRequestData(prDataCommitsSummary);
   } catch (e3) {
-    uxLog(this, c.yellow('Unable to compute git summary:\n' + e3));
+    uxLog("warning", this, c.yellow(t('unableToComputeGitSummary') + e3));
   }
 }
 
 export async function handlePostDeploymentNotifications(flags, targetUsername: any, quickDeploy: any, delta: boolean, debugMode: boolean, additionalMessage = "") {
-  const pullRequestInfo = await GitProvider.getPullRequestInfo();
+  const pullRequestInfo = await GitProvider.getPullRequestInfo({ useCache: true });
   const attachments: MessageAttachment[] = [];
   try {
     // Build notification attachments & handle ticketing systems comments
@@ -262,6 +300,7 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
     );
   } catch (e4: any) {
     uxLog(
+      "warning",
       this,
       c.yellow('Unable to handle commit info on TicketProvider post deployment actions:\n' + e4.message) +
       '\n' +
@@ -286,17 +325,16 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
   const notifButtons = await getNotificationButtons();
   if (pullRequestInfo) {
     if (debugMode) {
-      uxLog(this, c.gray('PR info:\n' + JSON.stringify(pullRequestInfo)));
+      uxLog("error", this, c.grey(t('prInfo') + JSON.stringify(pullRequestInfo)));
     }
-    const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
-    const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
-    notifMessage += `\nRelated: <${prUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : '');
+    const prAuthor = pullRequestInfo?.authorName;
+    notifMessage += `\nRelated: <${pullRequestInfo.webUrl}|${pullRequestInfo.title}>` + (prAuthor ? ` by ${prAuthor}` : '');
     const prButtonText = 'View Pull Request';
-    notifButtons.push({ text: prButtonText, url: prUrl });
+    notifButtons.push({ text: prButtonText, url: pullRequestInfo.webUrl });
   } else {
-    uxLog(this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
+    uxLog("warning", this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
   }
-  globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+  await setConnectionVariables(flags['target-org']?.getConnection(), true);// Required for some notifications providers like Email
   await NotifProvider.postNotifications({
     type: 'DEPLOYMENT',
     text: notifMessage,
@@ -312,7 +350,7 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
 }
 
 
-async function collectNotifAttachments(attachments: MessageAttachment[], pullRequestInfo: any) {
+async function collectNotifAttachments(attachments: MessageAttachment[], pullRequestInfo: CommonPullRequestInfo | null) {
   const commitsSummary = await computeCommitsSummary(false, pullRequestInfo);
   // Tickets attachment
   if (commitsSummary.tickets.length > 0) {
@@ -320,7 +358,11 @@ async function collectNotifAttachments(attachments: MessageAttachment[], pullReq
       text: `*Tickets*\n${commitsSummary.tickets
         .map((ticket) => {
           if (ticket.foundOnServer) {
-            return '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id) + ' ' + ticket.subject;
+            let ticketsMarkdown = '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id) + ' ' + ticket.subject;
+            if (ticket.statusLabel) {
+              ticketsMarkdown += ' (' + ticket.statusLabel + ')';
+            }
+            return ticketsMarkdown;
           } else {
             return '• ' + UtilsNotifs.markdownLink(ticket.url, ticket.id);
           }
@@ -349,4 +391,14 @@ async function collectNotifAttachments(attachments: MessageAttachment[], pullReq
     });
   }
   return commitsSummary;
+}
+
+export function makeFileNameGitCompliant(fileName: string) {
+  // Remove all characters that are not alphanumeric, underscore, hyphen, space or dot
+  const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9_. -]/g, '_');
+  return sanitizedFileName;
+}
+
+export function getFileAtCommit(commit: string, filePath: string) {
+  return git().show([`${commit}:${filePath}`]);
 }

@@ -3,7 +3,48 @@
 
 ## Description
 
-Configure authentication from git branch to target org
+
+## Command Behavior
+
+**Configures authentication between a Git branch and a target Salesforce org for CI/CD deployments.**
+
+This command facilitates the setup of automated CI/CD pipelines, enabling seamless deployments from specific Git branches to designated Salesforce orgs. It supports both standard Salesforce orgs and Dev Hub configurations, catering to various enterprise deployment workflows.
+
+This command supports two authentication app types:
+- **Connected App** (traditional) - Standard OAuth app that works with all Salesforce editions
+- **External Client App** (modern) - Fully metadata-based, packageable in 2GP, requires API v59+
+
+Both use JWT Bearer flow with SSL certificates for secure CI/CD authentication.
+
+Key functionalities include:
+
+- **Org Selection/Login:** Guides the user to select an existing Salesforce org or log in to a new one.
+- **Git Branch Association:** Allows associating a specific Git branch with the chosen Salesforce org.
+- **Merge Target Definition:** Enables defining target Git branches into which the configured branch can merge, ensuring controlled deployment flows.
+- **Salesforce Username Configuration:** Prompts for the Salesforce username to be used by the CI server for deployments.
+- **SSL Certificate Generation:** Automatically generates an SSL certificate for secure authentication.
+- **App Type Selection:** Choose between Connected App (traditional) or External Client App (modern, metadata-based).
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's implementation involves several key technical aspects:
+
+- **SF CLI Integration:** Utilizes 
+@salesforce/sf-plugins-core
+ for command structure and flag parsing.
+- **Interactive Prompts:** Employs the 
+prompts
+ library for interactive user input, guiding the configuration process.
+- **Git Integration:** Interacts with Git to retrieve branch information using 
+`git().branch(["--list", "-r"])`
+.
+- **Configuration Management:** Leverages internal utilities (`checkConfig`, `getConfig`, `setConfig`, `setInConfigFile`) to read from and write to project-specific configuration files (e.g., `.sfdx-hardis.<branchName>.yml`).
+- **Salesforce CLI Execution:** Executes Salesforce CLI commands programmatically via `execSfdxJson` for org interactions.
+- **SSL Certificate Generation:** Calls `generateSSLCertificate` to create necessary SSL certificates for JWT-based authentication.
+- **WebSocket Communication:** Uses `WebSocketClient` for potential communication with external tools or processes, such as restarting the command in VS Code.
+- **Dependency Check:** Ensures the presence of `openssl` on the system, which is required for SSL certificate generation.
+
 
 ## Parameters
 
@@ -21,7 +62,7 @@ Configure authentication from git branch to target org
 ## Examples
 
 ```shell
-sf hardis:project:configure:auth
+$ sf hardis:project:configure:auth
 ```
 
 

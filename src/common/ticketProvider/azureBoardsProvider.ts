@@ -7,9 +7,11 @@ import { Ticket } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { extractRegexMatches, uxLog } from "../utils/index.js";
 import { SfError } from "@salesforce/core";
-import { getEnvVar } from "../../config/index.js";
+import { getConfig, getEnvVar } from "../../config/index.js";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces.js";
+import { CommonPullRequestInfo } from "../gitProvider/index.js";
+import { t } from '../utils/i18n.js';
 /* jscpd:ignore-end */
 
 export class AzureBoardsProvider extends TicketProviderRoot {
@@ -17,7 +19,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   protected azureApi: InstanceType<typeof azdev.WebApi>;
   protected teamProject: string | null;
 
-  constructor() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  constructor(_config: any) {
     super();
     // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
     this.serverUrl = getEnvVar("SYSTEM_COLLECTIONURI");
@@ -33,7 +36,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     }
   }
 
-  public static isAvailable() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static isAvailable(_config: any): boolean {
     if (
       // Basic auth
       getEnvVar("SYSTEM_COLLECTIONURI") &&
@@ -49,7 +53,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     return "sfdx-hardis JIRA connector";
   }
 
-  public static async getTicketsFromString(text: string, options: any = {}): Promise<Ticket[]> {
+  public static async getTicketsFromString(text: string, prInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
     // Extract Azure Boards Work Items
     const azureBoardsUrlRegex = /(https:\/\/.*\/_workitems\/edit\/[0-9]+)/g;
@@ -68,16 +72,17 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       }
     }
     const ticketsSorted: Ticket[] = sortArray(tickets, { by: ["id"], order: ["asc"] });
-    if (!this.isAvailable()) {
+    const config = await getConfig("project");
+    if (!this.isAvailable(config)) {
       return ticketsSorted;
     }
     // Get tickets from Azure commits
-    if (options.commits) {
-      const azureBoardsProvider = new AzureBoardsProvider();
+    if (prInfo?.providerInfo?.commits) {
+      const azureBoardsProvider = new AzureBoardsProvider(config);
       const azureApi = azureBoardsProvider.azureApi;
       const azureGitApi = await azureApi.getGitApi();
       const repositoryId = getEnvVar("BUILD_REPOSITORY_ID") || "";
-      const commitIds = options.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
+      const commitIds = prInfo?.providerInfo?.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
       const azureCommits: GitCommitRef[] = [];
       for (const commitId of commitIds) {
         const commitRefs = await azureGitApi.getCommits(repositoryId, { fromCommitId: commitId, toCommitId: commitId, includeWorkItems: true });
@@ -97,8 +102,8 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     }
 
     // Get tickets from Azure PR
-    if (options?.pullRequestInfo?.workItemRefs?.length) {
-      for (const workItemRef of options.pullRequestInfo.workItemRefs) {
+    if (prInfo?.providerInfo?.workItemRefs?.length) {
+      for (const workItemRef of prInfo.providerInfo.workItemRefs) {
         if (!tickets.some((ticket) => ticket.id === workItemRef.id)) {
           tickets.push({
             provider: "AZURE",
@@ -117,11 +122,10 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     const azureTicketsNumber = tickets.filter((ticket) => ticket.provider === "AZURE").length;
     if (azureTicketsNumber > 0) {
       uxLog(
+        "action",
         this,
-        c.cyan(
-          `[AzureBoardsProvider] Now trying to collect ${azureTicketsNumber} tickets infos from Azure Boards Server ` +
-          process.env.SYSTEM_COLLECTIONURI +
-          " ...",
+        c.cyan('[AzureBoardsProvider]' + 
+          t('azureBoardsProviderCollectingTickets', { azureTicketsNumber, serverUrl: process.env.SYSTEM_COLLECTIONURI || "" }),
         ),
       );
     }
@@ -137,17 +141,17 @@ export class AzureBoardsProvider extends TicketProviderRoot {
           if (ticketInfo?._links && ticketInfo._links["html"] && ticketInfo._links["html"]["href"]) {
             ticket.url = ticketInfo?._links["html"]["href"];
           }
-          uxLog(this, c.grey("[AzureBoardsProvider] Collected data for Work Item " + ticket.id));
+          uxLog("log", this, c.grey('[AzureBoardsProvider] ' + t('azureBoardsProviderCollectedWorkItem', { ticketId: ticket.id })));
         } else {
-          uxLog(this, c.yellow("[AzureBoardsProvider] Unable to get Azure Boards WorkItem " + ticket.id + "\n" + c.grey(JSON.stringify(ticketInfo))));
+          uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderUnableToGetWorkItem', { ticketId: ticket.id, ticketInfo: JSON.stringify(ticketInfo) })));
         }
       }
     }
     return tickets;
   }
 
-  public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: any) {
-    uxLog(this, c.cyan(`[AzureBoardsProvider] Try to post comments on ${tickets.length} work items...`));
+  public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
+    uxLog("action", this, c.cyan('[AzureBoardsProvider] ' + t('azureBoardsProviderPostingComments', { count: tickets.length })));
     const orgMarkdown = await getOrgMarkdown(org, "html");
     const branchMarkdown = await getBranchMarkdown("html");
     const tag = await this.getDeploymentTag();
@@ -158,9 +162,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       if (ticket.foundOnServer) {
         let azureBoardsComment = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
         if (pullRequestInfo) {
-          const prUrl = pullRequestInfo.web_url || pullRequestInfo.html_url || pullRequestInfo.url;
+          const prUrl = pullRequestInfo.webUrl || "";
           if (prUrl) {
-            const prAuthor = pullRequestInfo?.authorName || pullRequestInfo?.author?.login || pullRequestInfo?.author?.name || null;
+            const prAuthor = pullRequestInfo.authorName;
             azureBoardsComment += `<br/><br/>PR: <a href="${prUrl}">${pullRequestInfo.title}</a>` + (prAuthor ? ` by ${prAuthor}` : "");
           }
         }
@@ -174,7 +178,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             throw new SfError("commentPostRes: " + commentPostRes);
           }
         } catch (e6) {
-          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${(e6 as any).message}\n${c.grey((e6 as any).stack)}`));
+          uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderErrorPostingComment', { ticketId: ticket.id, message: (e6 as any).message })));
         }
 
         // Add tag
@@ -193,20 +197,22 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             throw new SfError("tag workItem: " + workItem);
           }
         } catch (e6) {
-          uxLog(this, c.yellow(`[AzureBoardsProvider] Error while adding tag ${tag} on ${ticket.id}\n${(e6 as any).message} \n${c.grey((e6 as any).stack)} `));
+          uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderErrorAddingTag', { tag, ticketId: ticket.id, message: (e6 as any).message })));
         }
       }
     }
     uxLog(
+      "log",
       this,
-      c.gray(
-        `[AzureBoardsProvider] Posted comments on ${commentedTickets.length} work item(s): ` + commentedTickets.map((ticket) => ticket.id).join(", "),
+      c.grey('[AzureBoardsProvider]' + 
+        t('azureBoardsProviderPostedComments', { count: commentedTickets.length, tickets: commentedTickets.map((ticket) => ticket.id).join(", ") }),
       ),
     );
     uxLog(
+      "log",
       this,
-      c.gray(
-        `[AzureBoardsProvider] Added tag ${tag} on ${taggedTickets.length} work item(s): ` + taggedTickets.map((ticket) => ticket.id).join(", "),
+      c.grey('[AzureBoardsProvider]' + 
+        t('azureBoardsProviderAddedTag', { tag, count: taggedTickets.length, tickets: taggedTickets.map((ticket) => ticket.id).join(", ") }),
       ),
     );
     return tickets;

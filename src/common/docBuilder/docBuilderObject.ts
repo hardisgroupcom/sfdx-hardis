@@ -2,6 +2,7 @@ import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
 import { mdTableCell } from "../gitProvider/utilsMarkdown.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderObject extends DocBuilderRoot {
 
@@ -13,9 +14,9 @@ export class DocBuilderObject extends DocBuilderRoot {
   public static buildIndexTable(prefix: string, objectDescriptions: any[]) {
     const lines: string[] = [];
     lines.push(...[
-      "## Objects",
+      `## ${t('docMdObjects')}`,
       "",
-      "| Name      | Label | Description |",
+      `| ${t('docMdColName')} | ${t('docMdColLabel')} | ${t('docMdColDescription')} |`,
       "| :-------- | :---- | :---------- | "
     ]);
     for (const objectDescription of objectDescriptions) {
@@ -37,14 +38,14 @@ export class DocBuilderObject extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      "## Fields",
+      `## ${t('docMdFields')}`,
       "",
-      "| Name      | Label | Type | Description |",
+      `| ${t('docMdColName')} | ${t('docMdColLabel')} | ${t('docMdColType')} | ${t('docMdColDescription')} |`,
       "| :-------- | :---- | :--: | :---------- | "
     ]);
     for (const field of fields) {
       lines.push(...[
-        `| ${field.fullName} | ${field.label || ""} | ${field.type || ""} | ${mdTableCell(field.description)} |`
+        `| ${field.fullName} | ${field.label || ""} | ${field.type || ""} | ${mdTableCell(String(field.description))} |`
       ]);
     }
     lines.push("");
@@ -60,14 +61,15 @@ export class DocBuilderObject extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      "## Validation Rules",
+      `## ${t('docMdValidationRules')}`,
       "",
-      "| Rule      | Active | Description | Formula |",
+      `| ${t('docMdColRule')} | ${t('docMdColActive')} | ${t('docMdColDescription')} | ${t('docMdColFormula')} |`,
       "| :-------- | :---- | :---------- | :------ |"
     ]);
     for (const rule of validationRules) {
+      const escapedFormula = (rule.errorConditionFormula || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       lines.push(...[
-        `| ${rule.fullName} | ${rule.active ? "Yes" : "No ⚠️"} | ${rule.description || ""} | \`${rule.errorConditionFormula}\` |`
+        `| ${rule.fullName} | ${rule.active ? t('docMdYes') : t('docMdNo')} | ${rule.description || ""} | ${mdTableCell(escapedFormula)} |`
       ]);
     }
     lines.push("");
@@ -85,13 +87,21 @@ export class DocBuilderObject extends DocBuilderRoot {
       '',
       '<!-- Flows table -->',
       '',
+      '<!-- Process Builders table -->',
+      '',
       '<!-- Apex table -->',
       '',
-      '<!-- Pages table -->'
+      '<!-- Pages table -->',
+      '',
+      '<!-- Profiles table -->',
+      '',
+      '<!-- PermissionSets table -->',
+      '',
+      '<!-- Workflow Rules table -->',
     ];
   }
 
-  public stripXmlForAi(): Promise<string> {
+  public async stripXmlForAi(): Promise<string> {
     const xmlObj = new XMLParser().parse(this.metadataXml);
     // Remove record types picklist values
     if (xmlObj?.CustomObject?.recordTypes) {
@@ -118,7 +128,7 @@ export class DocBuilderObject extends DocBuilderRoot {
       delete xmlObj.CustomObject.listViews;
     }
     const xmlStripped = new XMLBuilder().build(xmlObj);
-    return xmlStripped
+    return xmlStripped;
   }
 
 }

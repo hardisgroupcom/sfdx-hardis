@@ -4,11 +4,12 @@ import c from "chalk";
 import fs from 'fs-extra';
 import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../utils/index.js";
 import * as path from "path";
-import { PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
-import { CONSTANTS } from "../../config/index.js";
+import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
+import { t } from '../utils/i18n.js';
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -29,18 +30,18 @@ export class AzureDevopsProvider extends GitProviderRoot {
 
   public static async handleLocalIdentification() {
     if (!isGitRepo()) {
-      uxLog(this, c.yellow("[Azure Integration] You must be in a git repository context"));
+      uxLog("warning", this, c.yellow('[Azure Integration] ' + t('azureIntegrationNotGitRepo')));
       return;
     }
     if (!process.env.SYSTEM_COLLECTIONURI) {
       const repoUrl = await getGitRepoUrl() || "";
       if (!repoUrl) {
-        uxLog(this, c.yellow("[Azure Integration] An git origin must be set"));
+        uxLog("warning", this, c.yellow('[Azure Integration] ' + t('azureIntegrationNoGitOrigin')));
         return;
       }
       const parseUrlRes = this.parseAzureRepoUrl(repoUrl);
       if (!parseUrlRes) {
-        uxLog(this, c.yellow(`[Azure Integration] Unable to parse ${repoUrl} to get SYSTEM_COLLECTIONURI and BUILD_REPOSITORY_ID`));
+        uxLog("warning", this, c.yellow('[Azure Integration] ' + t('azureIntegrationUnableToParseRepoUrl', { repoUrl })));
         return;
       }
       process.env.SYSTEM_COLLECTIONURI = parseUrlRes.collectionUri;
@@ -48,11 +49,12 @@ export class AzureDevopsProvider extends GitProviderRoot {
       process.env.BUILD_REPOSITORY_ID = parseUrlRes.repositoryId;
     }
     if (!process.env.SYSTEM_ACCESSTOKEN) {
-      uxLog(this, c.yellow("If you need an Azure Personal Access Token, create one following this documentation: https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows"));
-      uxLog(this, c.yellow("Then please save it in a secured password tracker !"));
+      uxLog("warning", this, c.yellow(t('ifYouNeedAzurePersonalAccessToken') + ': https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate?view=azure-devops&tabs=Windows'));
+      uxLog("warning", this, c.yellow(t('thenPleaseSaveItInSecuredPassword')));
       const accessTokenResp = await prompts({
         name: "token",
-        message: "Please input an Azure Personal Access Token (it won't be stored)",
+        message: t('pleaseInputAnAzurePersonalAccessToken'),
+        description: t('enterYourAzureDevopsPersonalAccessToken'),
         type: "text"
       });
       process.env.SYSTEM_ACCESSTOKEN = accessTokenResp.token;
@@ -74,6 +76,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
       return jobUrl;
     }
     uxLog(
+      "warning",
       this,
       c.yellow(`[Azure DevOps] You need the following variables to be accessible to sfdx-hardis to build current job url:
   - SYSTEM_COLLECTIONURI
@@ -97,6 +100,7 @@ export class AzureDevopsProvider extends GitProviderRoot {
       return currentBranchUrl;
     }
     uxLog(
+      "warning",
       this,
       c.yellow(`[Azure DevOps] You need the following variables to be defined in azure devops pipeline step:
 ${this.getPipelineVariablesConfig()}
@@ -110,14 +114,62 @@ ${this.getPipelineVariablesConfig()}
     return false;
   }
 
+  // Extract PR ID from commit message (fallback when SYSTEM_PULLREQUEST_PULLREQUESTID is null after merge)
+  private async extractPullRequestIdFromCommitMessage(): Promise<number | null> {
+    try {
+      const log = await git().log(['-1']); // Get the latest commit message
+      const commitMessage = log?.latest?.message || '';
+      if (!commitMessage) {
+        return null;
+      }
+      // Azure DevOps merge commit patterns:
+      // - "Merge pull request #123 from branch-name"
+      // - "Merged PR #123: Title"
+      // - "Merge PR #123"
+      // - "Merged pull request #123"
+      // - "Merge pull request 123 from branch-name"
+      // - "Merged PR 123: Title"
+      // - "Merge PR 123"
+      // - "Merged pull request 123"
+      const prIdPatterns = [
+        /(?:Merge|Merged)\s+(?:pull\s+request|PR)\s+#?(\d+)/i,
+        /(?:Merge|Merged)\s+PR\s+#?(\d+)/i,
+        /pull\s+request\s+#?(\d+)/i,
+        /PR\s+#?(\d+)/i,
+      ];
+      for (const pattern of prIdPatterns) {
+        const match = commitMessage.match(pattern);
+        if (match && match[1]) {
+          const prId = Number(match[1]);
+          if (!isNaN(prId) && prId > 0) {
+            uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationExtractedPrId', { prId })));
+            return prId;
+          }
+        }
+      }
+    } catch (error) {
+      uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationUnableToExtractPrId', { message: (error as Error).message })));
+    }
+    return null;
+  }
+
   // Find pull request info
-  public async getPullRequestInfo(): Promise<any> {
+  public async getPullRequestInfo(): Promise<CommonPullRequestInfo | null> {
     // Case when PR is found in the context
     // Get CI variables
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
-    const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
+    let pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
     const azureGitApi = await this.azureApi.getGitApi();
     const currentGitBranch = await getCurrentGitBranch();
+
+    // If SYSTEM_PULLREQUEST_PULLREQUESTID is null or invalid, try to extract from commit message
+    if (pullRequestIdStr === null) {
+      const extractedPrId = await this.extractPullRequestIdFromCommitMessage();
+      if (extractedPrId !== null) {
+        pullRequestIdStr = String(extractedPrId);
+      }
+    }
+
     if (
       pullRequestIdStr !== null &&
       !(pullRequestIdStr || "").includes("SYSTEM_PULLREQUEST_PULLREQUESTID") &&
@@ -133,8 +185,8 @@ ${this.getPipelineVariablesConfig()}
         }
         return this.completePullRequestInfo(pullRequest);
       } else {
-        uxLog(this, c.yellow(`[Azure Integration] Warning: incomplete PR found (id: ${pullRequestIdStr})`));
-        uxLog(this, c.grey(JSON.stringify(pullRequest || {})));
+        uxLog("warning", this, c.yellow('[Azure Integration] ' + t('azureIntegrationIncompletePr', { prId: pullRequestIdStr })));
+        uxLog("log", this, c.grey(JSON.stringify(pullRequest || {})));
       }
     }
     // Case when we find PR from a commit
@@ -155,7 +207,7 @@ ${this.getPipelineVariablesConfig()}
       }
       return this.completePullRequestInfo(latestMergedPullRequestOnBranch[0]);
     }
-    uxLog(this, c.grey(`[Azure Integration] Unable to find related Pull Request Info`));
+    uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationUnableToFindPrInfo')));
     return null;
   }
 
@@ -172,12 +224,12 @@ ${this.getPipelineVariablesConfig()}
     const azureGitApi = await this.azureApi.getGitApi();
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     if (repositoryId == null) {
-      uxLog(this, c.yellow("[Azure Integration] Unable to find BUILD_REPOSITORY_ID"));
+      uxLog("warning", this, c.yellow('[Azure Integration] ' + t('azureIntegrationNoBuildRepositoryId')));
       return [];
     }
     const teamProject = process.env.SYSTEM_TEAMPROJECT || null;
     if (teamProject == null) {
-      uxLog(this, c.yellow("[Azure Integration] Unable to find SYSTEM_TEAMPROJECT"));
+      uxLog("warning", this, c.yellow("[Azure Integration] Unable to find SYSTEM_TEAMPROJECT"));
       return [];
     }
     // Build search criteria
@@ -203,17 +255,16 @@ ${this.getPipelineVariablesConfig()}
       queryConstraint.minTime = filters.minDate
     }
     // Process request
-    uxLog(this, c.cyan("Calling Azure API to list Pull Requests..."));
-    uxLog(this, c.grey(`Constraint:\n${JSON.stringify(queryConstraint, null, 2)}`));
+    uxLog("action", this, c.cyan(t('callingAzureApiToListPullRequests')));
+    uxLog("log", this, c.grey(t('constraint', { JSON: JSON.stringify(queryConstraint, null, 2) })));
 
     // List pull requests
     const pullRequests = await azureGitApi.getPullRequests(repositoryId, queryConstraint, teamProject);
-
     // Complete results with PR comments
-    const pullRequestsWithComments: any[] = [];
+    const pullRequestsWithComments: Array<GitPullRequest & { threads?: any[] }> = [];
     for (const pullRequest of pullRequests) {
-      const pr: any = Object.assign({}, pullRequest);
-      uxLog(this, c.grey(`Getting threads for PR ${pullRequest.pullRequestId}...`));
+      const pr: GitPullRequest & { threads?: any[] } = Object.assign({}, pullRequest);
+      uxLog("log", this, c.grey(t('gettingThreadsForPr', { pullRequest: pullRequest.pullRequestId })));
       const existingThreads = await azureGitApi.getThreads(pullRequest.repository?.id || "", pullRequest.pullRequestId || 0, teamProject);
       pr.threads = existingThreads.filter(thread => !thread.isDeleted);
       pullRequestsWithComments.push(pr);
@@ -221,12 +272,12 @@ ${this.getPipelineVariablesConfig()}
 
     // Format if requested
     if (options.formatted) {
-      uxLog(this, c.cyan(`Formatting ${pullRequestsWithComments.length} results...`));
+      uxLog("action", this, c.cyan(t('formattingResults', { pullRequestsWithComments: pullRequestsWithComments.length })));
       const pullRequestsFormatted = pullRequestsWithComments.map(pr => {
         const prFormatted: any = {};
-        let tickets = "";
         // Find sfdx-hardis deployment simulation status comment and extract tickets part
-        for (const thread of pr.threads) {
+        let tickets = "";
+        for (const thread of pr.threads || []) {
           for (const comment of thread?.comments || []) {
             if ((comment?.content || "").includes(`<!-- sfdx-hardis deployment-id `)) {
               const ticketsSplit = comment.content.split("## Tickets");
@@ -259,16 +310,17 @@ ${this.getPipelineVariablesConfig()}
     }
     return pullRequestsWithComments;
   }
-
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
-    let deploymentCheckId = null;
+    let deploymentCheckId: string | null = null;
     // Get Azure Git API
+    /* jscpd:ignore-start */
     const azureGitApi = await this.azureApi.getGitApi();
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     if (repositoryId == null) {
-      uxLog(this, c.yellow("BUILD_REPOSITORY_ID must be defined"));
+      uxLog("warning", this, c.yellow(t('buildrepositoryidMustBeDefined')));
       return null;
     }
+    /* jscpd:ignore-end */
     const latestPullRequestsOnBranch = await azureGitApi.getPullRequests(repositoryId, {
       targetRefName: `refs/heads/${gitBranch}`,
       status: PullRequestStatus.Completed,
@@ -291,24 +343,25 @@ ${this.getPipelineVariablesConfig()}
   public async getPullRequestDeploymentCheckId(): Promise<string | null> {
     const pullRequestInfo = await this.getPullRequestInfo();
     if (pullRequestInfo) {
+      /* jscpd:ignore-start */
       const azureGitApi = await this.azureApi.getGitApi();
       const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
       if (repositoryId == null) {
-        uxLog(this, c.yellow("BUILD_REPOSITORY_ID must be defined"));
+        uxLog("warning", this, c.yellow(t('buildrepositoryidMustBeDefined')));
         return null;
       }
-      return await this.getDeploymentIdFromPullRequest(azureGitApi, repositoryId, pullRequestInfo.pullRequestId, null, pullRequestInfo);
+      /* jscpd:ignore-end */
+      return await this.getDeploymentIdFromPullRequest(azureGitApi, repositoryId, pullRequestInfo.idNumber || 0, null, pullRequestInfo);
     }
     return null;
   }
-
   private async getDeploymentIdFromPullRequest(
-    azureGitApi,
+    azureGitApi: any,
     repositoryId: string,
     latestPullRequestId: number,
-    deploymentCheckId: any,
-    latestPullRequest,
-  ) {
+    deploymentCheckId: string | null,
+    latestPullRequest: any,
+  ): Promise<string | null> {
     const existingThreads = await azureGitApi.getThreads(repositoryId, latestPullRequestId);
     for (const existingThread of existingThreads) {
       if (existingThread.isDeleted) {
@@ -319,7 +372,7 @@ ${this.getPipelineVariablesConfig()}
           const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment.content);
           if (matches) {
             deploymentCheckId = matches[1];
-            uxLog(this, c.gray(`Found deployment id ${deploymentCheckId} on PR #${latestPullRequestId} ${latestPullRequest.title}`));
+            uxLog("error", this, c.grey(t('foundDeploymentIdOnPr', { deploymentCheckId, latestPullRequestId, latestPullRequest: latestPullRequest.title })));
             break;
           }
         }
@@ -331,16 +384,157 @@ ${this.getPipelineVariablesConfig()}
     return deploymentCheckId;
   }
 
+  public async listPullRequestsInBranchSinceLastMerge(
+    currentBranchName: string,
+    targetBranchName: string,
+    childBranchesNames: string[],
+  ): Promise<CommonPullRequestInfo[]> {
+    if (!this.azureApi || !process.env.SYSTEM_TEAMPROJECT || !process.env.BUILD_REPOSITORY_ID) {
+      return [];
+    }
+
+    try {
+      const gitApi = await this.azureApi.getGitApi();
+
+      // Step 1: Find the last completed PR from currentBranch to targetBranch
+      const lastMergePRs = await gitApi.getPullRequests(
+        process.env.BUILD_REPOSITORY_ID,
+        {
+          sourceRefName: `refs/heads/${currentBranchName}`,
+          targetRefName: `refs/heads/${targetBranchName}`,
+          status: PullRequestStatus.Completed,
+        },
+        process.env.SYSTEM_TEAMPROJECT,
+        undefined,
+        undefined,
+        1, // top: only need the latest one
+      );
+      uxLog("log", this, c.grey(`[Azure Integration][listPullRequestsInBranchSinceLastMerge] Last merge PR query: ${currentBranchName} -> ${targetBranchName}`));
+
+      const lastMergedPrToTarget = lastMergePRs && lastMergePRs.length > 0 ? lastMergePRs[0] : null;
+
+      // Step 2: Get commits since last merge
+      const commitsCriteria: any = {
+        compareVersion: {
+          version: currentBranchName,
+          versionType: 0, // GitVersionType.Branch
+        },
+      };
+
+      // If there was a previous merge, use the merge commit (from target branch) as the base comparison point
+      if (lastMergedPrToTarget?.lastMergeSourceCommit?.commitId) {
+        commitsCriteria.itemVersion = {
+          version: lastMergedPrToTarget?.lastMergeSourceCommit?.commitId,
+          versionType: 2, // GitVersionType.Commit
+        };
+      } else {
+        // No previous merge, compare against target branch to get all commits
+        // Just list all commits in currentBranch
+        commitsCriteria.itemVersion = {
+          version: targetBranchName,
+          versionType: 0, // GitVersionType.Branch
+        };
+      }
+
+      const commits = await gitApi.getCommitsBatch(
+        commitsCriteria,
+        process.env.BUILD_REPOSITORY_ID,
+        process.env.SYSTEM_TEAMPROJECT,
+      );
+      uxLog("log", this, c.grey(`[Azure Integration][listPullRequestsInBranchSinceLastMerge] Found ${commits?.length || 0} commits since last merge`));
+
+      if (!commits || commits.length === 0) {
+        return [];
+      }
+
+      // Create a Set of commit IDs for fast lookup
+      const commitIds = new Set(
+        commits.map((c) => c.commitId).filter((id) => id),
+      );
+
+      // Step 3: Get all completed PRs targeting currentBranch and child branches (parallelized)
+      const allBranches = [currentBranchName, ...childBranchesNames];
+
+      const prPromises = allBranches.map(async (branchName) => {
+        try {
+          const prs = await gitApi.getPullRequests(
+            process.env.BUILD_REPOSITORY_ID!,
+            {
+              targetRefName: `refs/heads/${branchName}`,
+              status: PullRequestStatus.Completed,
+            },
+            process.env.SYSTEM_TEAMPROJECT,
+          );
+          uxLog("log", this, c.grey(`[Azure Integration][listPullRequestsInBranchSinceLastMerge] Found ${prs?.length || 0} completed PRs for branch ${branchName}`));
+          return prs || [];
+        } catch (err) {
+          uxLog(
+            "warning",
+            this,
+            c.yellow(`Error fetching completed PRs for branch ${branchName}: ${String(err)}`),
+          );
+          return [];
+        }
+      });
+
+      const prResults = await Promise.all(prPromises);
+      const allMergedPRs: any[] = prResults.flat();
+
+      // Step 4: Filter PRs whose merge commit is in our commit list
+      const relevantPRs = allMergedPRs.filter((pr) => {
+        // Check if the merge commit ID is in our commits
+        const mergeCommitId = pr.lastMergeCommit?.commitId;
+        if (mergeCommitId && commitIds.has(mergeCommitId)) {
+          return true;
+        }
+
+        // Also check the source commit (last commit from the PR branch before merge)
+        const sourceCommitId = pr.lastMergeSourceCommit?.commitId;
+        if (sourceCommitId && commitIds.has(sourceCommitId)) {
+          return true;
+        }
+
+        return false;
+      });
+
+      // Step 5: Remove duplicates
+      const uniquePRsMap = new Map();
+      for (const pr of relevantPRs) {
+        if (!uniquePRsMap.has(pr.pullRequestId)) {
+          uniquePRsMap.set(pr.pullRequestId, pr);
+        }
+      }
+
+      const uniquePRs = Array.from(uniquePRsMap.values());
+      uxLog("log", this, c.grey(`[Azure Integration][listPullRequestsInBranchSinceLastMerge] Returning ${uniquePRs.length} unique PRs`));
+
+      // Step 6: Convert to CommonPullRequestInfo
+      return uniquePRs.map((pr) =>
+        this.completePullRequestInfo(pr)
+      );
+    } catch (err) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(`Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`),
+      );
+      return [];
+    }
+  }
+
   // Posts a note on the merge request
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     // Get CI variables
+    const prInfo = await this.getPullRequestInfo();
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     const buildId = process.env.BUILD_BUILD_ID || null;
     const jobId = process.env.SYSTEM_JOB_ID || null;
-    const pullRequestIdStr = process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || null;
+    const pullRequestIdStr = getEnvVar("SYSTEM_PULLREQUEST_PULLREQUESTID") || prInfo?.idStr || null;
+
     if (repositoryId == null || pullRequestIdStr == null) {
-      uxLog(this, c.grey("[Azure integration] No project and pull request, so no note thread..."));
+      uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationNoProjectNoPrThread')));
       uxLog(
+        "warning",
         this,
         c.yellow(`Following variables should be defined when available:
 ${this.getPipelineVariablesConfig()}
@@ -355,13 +549,16 @@ ${this.getPipelineVariablesConfig()}
     const azureBuildUri = `${SYSTEM_COLLECTIONURI}${encodeURIComponent(SYSTEM_TEAMPROJECT)}/_build/results?buildId=${buildId}&view=logs&j=${jobId}`;
     // Build thread message
     const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
-    let messageBody = `**${prMessage.title || ""}**
+    let messageBody = `## ${prMessage.title || ""}
 
 ${prMessage.message}
 
 <br/>
 
 _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](${azureBuildUri})_
+
+${getBannerMarkdownAndLink()}
+
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present
@@ -373,7 +570,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
     // Check for existing threads from a previous run
-    uxLog(this, c.grey("[Azure integration] Listing Threads of Pull Request..."));
+    uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationListingPrThreads', { pullRequestId })));
     const existingThreads = await azureGitApi.getThreads(repositoryId, pullRequestId);
     let existingThreadId: number | null = null;
     let existingThreadComment: GitPullRequestCommentThread | null = null;
@@ -398,7 +595,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     // Create or update MR note
     if (existingThreadId) {
       // Delete previous comment
-      uxLog(this, c.grey("[Azure integration] Deleting previous comment and closing previous thread..."));
+      uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationDeletingPreviousThread')));
       await azureGitApi.deleteComment(repositoryId, pullRequestId, existingThreadId, existingThreadCommentId || 0);
       existingThreadComment = await azureGitApi.getPullRequestThread(repositoryId, pullRequestId, existingThreadId);
       // Update existing thread
@@ -410,7 +607,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     }
 
     // Create new thread
-    uxLog(this, c.grey("[Azure integration] Adding Pull Request Thread on Azure..."));
+    uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationAddingPrThread')));
     const newThreadComment: GitPullRequestCommentThread = {
       comments: [{ content: messageBody }],
       status: this.pullRequestStatusToAzureThreadStatus(prMessage),
@@ -420,7 +617,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
       posted: (azureEditThreadResult.id || -1) > 0,
       providerResult: azureEditThreadResult,
     };
-    uxLog(this, c.grey(`[Azure integration] Posted Pull Request Thread ${azureEditThreadResult.id}`));
+    uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationPostedPrThread', { threadId: azureEditThreadResult.id })));
     return prResult;
   }
 
@@ -433,20 +630,27 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
         : CommentThreadStatus.Unknown;
   }
 
-  private completePullRequestInfo(prData: any) {
-    const prInfo: any = Object.assign({}, prData);
-    prInfo.sourceBranch = (prData.sourceRefName || "").replace("refs/heads/", "");
-    prInfo.targetBranch = (prData.targetRefName || "").replace("refs/heads/", "");
-    prInfo.web_url = `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT || "")}/_git/${encodeURIComponent(
-      process.env.BUILD_REPOSITORYNAME || "",
-    )}/pullrequest/${prData.pullRequestId}`;
-    prInfo.authorName = prData?.createdBy?.displayName || "";
-    return prInfo;
+  private completePullRequestInfo(prData: GitPullRequest): CommonPullRequestInfo {
+    const prInfo: CommonPullRequestInfo = {
+      idNumber: prData.pullRequestId || 0,
+      idStr: String(prData.pullRequestId || 0),
+      sourceBranch: (prData.sourceRefName || "").replace("refs/heads/", ""),
+      targetBranch: (prData.targetRefName || "").replace("refs/heads/", ""),
+      title: prData.title || "",
+      description: prData.description || "",
+      webUrl: `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(process.env.SYSTEM_TEAMPROJECT || "")}/_git/${encodeURIComponent(
+        process.env.BUILD_REPOSITORYNAME || "",
+      )}/pullrequest/${prData.pullRequestId}`,
+      authorName: prData?.createdBy?.displayName || "",
+      providerInfo: prData,
+      customBehaviors: {}
+    };
+    return this.completeWithCustomBehaviors(prInfo);
   }
 
   private getPipelineVariablesConfig() {
     return `
-    SFDX_DEPLOY_WAIT_MINUTES: 150
+    SFDX_DEPLOY_WAIT_MINUTES: $(SFDX_DEPLOY_WAIT_MINUTES)
     CI_COMMIT_REF_NAME: $(BRANCH_NAME)
     CONFIG_BRANCH: $(BRANCH_NAME)
     ORG_ALIAS: $(BRANCH_NAME)
@@ -473,7 +677,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     try {
       prResult = await this.postPullRequestMessage(prMessage);
     } catch (e) {
-      uxLog(this, c.yellow(`[GitProvider] Error while trying to post pull request message.\n${(e as Error).message}\n${(e as Error).stack}`));
+      uxLog("warning", this, c.yellow(`[GitProvider] Error while trying to post pull request message.\n${(e as Error).message}\n${(e as Error).stack}`));
       prResult = { posted: false, providerResult: { error: e } };
     }
     return prResult;
@@ -489,14 +693,26 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     let teamProject: string;
 
     if (remoteUrl.startsWith("https://")) {
-      // Handle HTTPS URLs with or without username
-      const httpsRegex = /https:\/\/(?:[^@]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)/;
-      const match = remoteUrl.match(httpsRegex);
-      if (match) {
-        const organization = match[1];
-        teamProject = decodeURIComponent(match[2]); // Decode URL-encoded project name
-        repositoryId = decodeURIComponent(match[3]); // Decode URL-encoded repository name
+      // Handle modern dev.azure.com URLs with or without username
+      const devAzureRegex = /https:\/\/(?:[^@]+@)?dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/]+)/;
+      const devAzureMatch = remoteUrl.match(devAzureRegex);
+      if (devAzureMatch) {
+        const organization = devAzureMatch[1];
+        teamProject = decodeURIComponent(devAzureMatch[2]); // Decode URL-encoded project name
+        repositoryId = decodeURIComponent(devAzureMatch[3]); // Decode URL-encoded repository name
         collectionUri = `https://dev.azure.com/${organization}/`;
+        return { collectionUri, teamProject, repositoryId };
+      }
+
+      // Handle legacy visualstudio.com URLs
+      // Format: https://organization.visualstudio.com/ProjectName/_git/RepoName
+      const vsRegex = /https:\/\/(?:[^@]+@)?([^.]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/?]+)/;
+      const vsMatch = remoteUrl.match(vsRegex);
+      if (vsMatch) {
+        const organization = vsMatch[1];
+        teamProject = decodeURIComponent(vsMatch[2]); // Decode URL-encoded project name
+        repositoryId = decodeURIComponent(vsMatch[3]); // Decode URL-encoded repository name
+        collectionUri = `https://${organization}.visualstudio.com/`;
         return { collectionUri, teamProject, repositoryId };
       }
     } else if (remoteUrl.startsWith("git@")) {
@@ -532,7 +748,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
         process.env.SYSTEM_TEAMPROJECT, // Project name
       );
       if (attachment && attachment.url) {
-        uxLog(this, c.grey(`[Azure Integration] Image uploaded for comment: ${attachment.url}`));
+        uxLog("log", this, c.grey(`[Azure Integration] Image uploaded for comment: ${attachment.url}`));
         // Link attachment to work item
         const techWorkItemId = await this.findCreateAttachmentsWorkItemId();
         if (techWorkItemId) {
@@ -554,15 +770,15 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
             techWorkItemId,
             process.env.SYSTEM_TEAMPROJECT
           );
-          uxLog(this, c.grey(`[Azure Integration] Attachment linked to work item ${techWorkItemId}`));
+          uxLog("log", this, c.grey(`[Azure Integration] Attachment linked to work item ${techWorkItemId}`));
         }
         return attachment.url;
       }
       else {
-        uxLog(this, c.yellow(`[Azure Integration] Image uploaded but unable to get URL from response\n${JSON.stringify(attachment, null, 2)}`));
+        uxLog("warning", this, c.yellow(`[Azure Integration] Image uploaded but unable to get URL from response\n${JSON.stringify(attachment, null, 2)}`));
       }
     } catch (e) {
-      uxLog(this, c.yellow(`[Azure Integration] Error while uploading image ${localImagePath}\n${(e as Error).message}`));
+      uxLog("warning", this, c.yellow(`[Azure Integration] Error while uploading image ${localImagePath}\n${(e as Error).message}`));
     }
     return null;
   }
@@ -590,9 +806,98 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](
     const workItemIds = (queryResult.workItems || []).map(item => item.id);
     if (workItemIds.length > 0) {
       this.attachmentsWorkItemId = Number(workItemIds[0]);
+      // Check the number of attached images: if too many, rename the work item with (full) then create a new one by cloning its parameters
+      const workItem = await witApi.getWorkItem(this.attachmentsWorkItemId, undefined, undefined, 1); // WorkItemExpand.Relations = 1
+      const attachedImages = (workItem.relations || []).filter(rel => rel.rel === "AttachedFile");
+      if (attachedImages.length >= 90) {
+        // Rename the work item
+        const newTitle = this.attachmentsWorkItemTitle + " (full)";
+        await witApi.updateWorkItem(
+          [],
+          [
+            {
+              op: "replace",
+              path: "/fields/System.Title",
+              value: newTitle
+            }
+          ],
+          this.attachmentsWorkItemId,
+          process.env.SYSTEM_TEAMPROJECT
+        );
+        uxLog("log", this, c.grey(`[Azure Integration] Renamed work item ${this.attachmentsWorkItemId} to '${newTitle}'`));
+
+        // Create a new work item by cloning the old one's parameters
+        const newWorkItem = await witApi.createWorkItem(
+          [],
+          [
+            {
+              op: "add",
+              path: "/fields/System.Title",
+              value: this.attachmentsWorkItemTitle
+            },
+            {
+              op: "add",
+              path: "/fields/System.WorkItemType",
+              value: workItem.fields?.["System.WorkItemType"] || "Task"
+            },
+            {
+              op: "add",
+              path: "/fields/System.Description",
+              value: "Technical work item used by sfdx-hardis to attach images for PR comments"
+            }
+          ],
+          process.env.SYSTEM_TEAMPROJECT!,
+          workItem.fields?.["System.WorkItemType"] || "Task"
+        );
+
+        if (newWorkItem && newWorkItem.id) {
+          this.attachmentsWorkItemId = newWorkItem.id;
+          uxLog("log", this, c.grey(`[Azure Integration] Created new technical work item ${this.attachmentsWorkItemId} (${this.attachmentsWorkItemTitle}) to store image attachments, previous one was full`));
+        }
+      } else {
+        uxLog("log", this, c.grey(`[Azure Integration] Found existing technical work item ${this.attachmentsWorkItemId} (${this.attachmentsWorkItemTitle}) for storing image attachments`));
+      }
       return this.attachmentsWorkItemId;
     }
-    uxLog(this, c.red(`[Azure Integration] You need to create a technical work item exactly named '${this.attachmentsWorkItemTitle}', then set its identifier in variable AZURE_ATTACHMENTS_WORK_ITEM_ID`));
+
+    // No work item found, create a new one
+    uxLog("log", this, c.grey(`[Azure Integration] No technical work item found with title '${this.attachmentsWorkItemTitle}' to store image attachments, attempting to create one automatically...`));
+    try {
+      const newWorkItem = await witApi.createWorkItem(
+        [],
+        [
+          {
+            op: "add",
+            path: "/fields/System.Title",
+            value: this.attachmentsWorkItemTitle
+          },
+          {
+            op: "add",
+            path: "/fields/System.WorkItemType",
+            value: "Task"
+          },
+          {
+            op: "add",
+            path: "/fields/System.Description",
+            value: "Technical work item used by sfdx-hardis to store image attachments for PR comments. This work item serves as a container for uploaded images and should not be deleted."
+          }
+        ],
+        process.env.SYSTEM_TEAMPROJECT!,
+        "Task"
+      );
+
+      if (newWorkItem && newWorkItem.id) {
+        this.attachmentsWorkItemId = newWorkItem.id;
+        uxLog("log", this, c.grey(`[Azure Integration] Successfully created technical work item ${this.attachmentsWorkItemId} (${this.attachmentsWorkItemTitle}) to store image attachments for PR comments`));
+        return this.attachmentsWorkItemId;
+      }
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[Azure Integration] Failed to automatically create technical work item for storing image attachments: ${(e as Error).message}`));
+      uxLog("warning", this, c.yellow(`[Azure Integration] Please manually create a work item (type: Task) with the exact title '${this.attachmentsWorkItemTitle}' in project '${process.env.SYSTEM_TEAMPROJECT}', or set the AZURE_ATTACHMENTS_WORK_ITEM_ID environment variable with an existing work item ID.`));
+      uxLog("warning", this, c.yellow(`[Azure Integration] This work item is required as a container to store image attachments for Pull Request comments.`));
+    }
+
+    uxLog("error", this, c.yellow(`[Azure Integration] Unable to find or create technical work item for image attachments. Image uploads to PR comments will not work until this is resolved.`));
     return null;
   }
 }

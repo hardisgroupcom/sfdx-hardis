@@ -553,7 +553,7 @@ Report type is missing for report {1}
 
 ```shell
 Replace Mine by Everything in the list view SFDX source XML.
-Have a look at this command to manage that automatically :)
+Have a look at this command to manage that automatically 😊
 https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/ 
 
 ```
@@ -1202,7 +1202,7 @@ Please check https://developer.salesforce.com/forums/?id=9060G0000005kVLQAY
 
 **Detection**
 
-- RegExp: `0%`
+- RegExp: ` 0%`
 
 **Resolution**
 

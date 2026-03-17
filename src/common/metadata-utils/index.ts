@@ -12,9 +12,10 @@ import {
   filterPackageXml,
   git,
   isGitRepo,
+  sortCrossPlatform,
   uxLog,
 } from '../../common/utils/index.js';
-import { CONSTANTS } from '../../config/index.js';
+import { getApiVersion } from '../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { getCache, setCache } from '../cache/index.js';
 import { buildOrgManifest } from '../utils/deployUtils.js';
@@ -25,6 +26,7 @@ import { parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { listMetadataTypes } from './metadataList.js';
 import { FileStatusResult } from 'simple-git';
 import { glob } from 'glob';
+import { t } from '../utils/i18n.js';
 
 class MetadataUtils {
   // Describe packageXml <=> metadata folder correspondance
@@ -64,7 +66,7 @@ class MetadataUtils {
   public static async listLocalOrgs(type = 'any', options: any = {}) {
     const quickListParams = options?.quickOrgList === true ? ' --skip-connection-status' : '';
     const orgListCommand = `sf org list${quickListParams}`;
-    let orgListResult = await getCache(orgListCommand, null);
+    let orgListResult = options.useCache === false ? null : await getCache(orgListCommand, null);
     if (orgListResult == null) {
       orgListResult = await execSfdxJson(orgListCommand, this);
       await setCache(orgListCommand, orgListResult);
@@ -83,8 +85,12 @@ class MetadataUtils {
     }
     // Sandbox
     else if (type === 'devSandbox') {
+      const orgListSorted = sortArray(orgListResult?.result?.nonScratchOrgs || [], {
+        by: ['instanceUrl', 'username', 'alias'],
+        order: ['asc', 'asc', 'asc'],
+      });
       const allSandboxes =
-        orgListResult?.result?.nonScratchOrgs?.filter((org: any) => {
+        orgListSorted.filter((org: any) => {
           return org.loginUrl.includes('--') || org.loginUrl.includes('test.salesforce.com');
         }) || [];
       const majorOrgs = await listMajorOrgs();
@@ -127,6 +133,7 @@ class MetadataUtils {
       return alreadyInstalled?.result || [];
     } catch (e) {
       uxLog(
+        "warning",
         this,
         c.yellow(
           `Unable to list installed packages: This is probably a @salesforce/cli bug !\n${(e as Error).message}\n${(e as Error).stack
@@ -145,9 +152,11 @@ class MetadataUtils {
     commandThis: any = null,
     context = 'none'
   ) {
+    uxLog("action", commandThis, c.cyan(`Listing packages installed on ` + (orgAlias ? c.green(orgAlias) : 'current org') + '...'));
     const alreadyInstalled = await MetadataUtils.listInstalledPackages(orgAlias, this);
     if (globalThis?.workaroundCliPackages === true) {
       uxLog(
+        "warning",
         commandThis,
         c.yellow(`Skip packages installation because of a @salesforce/cli bug.
 Until it is solved, please install packages manually in target org if necessary.
@@ -163,8 +172,9 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
       ) {
         if (context === 'scratch' && package1.installOnScratchOrgs === false) {
           uxLog(
+            "log",
             commandThis,
-            c.cyan(
+            c.grey(
               `Skip installation of ${c.green(
                 package1.SubscriberPackageName
               )} as it is configured to not be installed on scratch orgs`
@@ -174,8 +184,9 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         }
         if (context === 'deploy' && package1.installDuringDeployments === false) {
           uxLog(
+            "log",
             commandThis,
-            c.cyan(
+            c.grey(
               `Skip installation of ${c.green(
                 package1.SubscriberPackageName
               )} as it is configured to not be installed on scratch orgs`
@@ -184,6 +195,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
           continue;
         }
         uxLog(
+          "log",
           commandThis,
           c.cyan(
             `Installing package ${c.green(
@@ -223,6 +235,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         } catch (ex: any) {
           if (ex.message.includes('Installation key not valid')) {
             uxLog(
+              "warning",
               this,
               c.yellow(
                 `${c.bold('Package requiring password')}: Please manually install package ${package1.SubscriberPackageName
@@ -240,13 +253,15 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
             throw ex;
           }
           uxLog(
+            "warning",
             this,
             c.yellow(
               `${c.bold('This is not a real error')}: A newer version of ${package1.SubscriberPackageName
-              } has been found. You may update installedPackages property in .sfdx-hardis.yml`
+              } has been found. You may upgrade stored package version using VS Code SFDX-Hardis "Installed Packages" feature in menu "DevOps Pipeline" (it will update installedPackages property in .sfdx-hardis.yml)`
             )
           );
           uxLog(
+            "warning",
             this,
             c.yellow(
               `You can do that using command ${c.bold('sf hardis:org:retrieve:packageconfig')} in a minor git branch`
@@ -256,8 +271,9 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         elapseEnd(`Install package ${package1.SubscriberPackageName}`);
       } else {
         uxLog(
+          "log",
           commandThis,
-          c.cyan(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is already installed`)
+          c.grey(`Skip installation of ${c.green(package1.SubscriberPackageName)} as it is already installed`)
         );
       }
     }
@@ -282,7 +298,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     await fs.copyFile('package-full.xml', 'package.xml');
     // Filter managed items if requested
     if (options.filterManagedItems) {
-      uxLog(commandThis, c.cyan('Filtering managed items from package.Xml manifest...'));
+      uxLog("action", commandThis, c.cyan(t('filteringManagedItemsFromPackageXmlManifest')));
       // List installed packages & collect managed namespaces
       let namespaces: any[] = [];
       if (isSfdxProject()) {
@@ -311,40 +327,40 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         removeNamespaces: namespaces,
         removeStandard: removeStandard,
         removeFromPackageXmlFile: packageXmlToRemove,
-        updateApiVersion: CONSTANTS.API_VERSION,
+        updateApiVersion: getApiVersion(),
       });
-      uxLog(commandThis, filterNamespaceRes.message);
+      uxLog("log", commandThis, filterNamespaceRes.message);
     }
     // Filter package.xml only using locally defined remove-items-package.xml
     else if (fs.existsSync('./remove-items-package.xml')) {
       const filterNamespaceRes = await filterPackageXml(packageXml, packageXml, {
         removeFromPackageXmlFile: path.resolve('./remove-items-package.xml'),
-        updateApiVersion: CONSTANTS.API_VERSION,
+        updateApiVersion: getApiVersion(),
       });
-      uxLog(commandThis, filterNamespaceRes.message);
+      uxLog("other", commandThis, filterNamespaceRes.message);
     }
 
     // Filter package XML to remove identified metadatas
     const filterRes = await filterPackageXml(packageXml, packageXml, {
       removeMetadatas: filteredMetadatas,
     });
-    uxLog(commandThis, filterRes.message);
+    uxLog("other", commandThis, filterRes.message);
 
     // Filter package XML to keep only selected Metadata types
     if (options.keepMetadataTypes) {
       const filterRes2 = await filterPackageXml(packageXml, packageXml, {
         keepMetadataTypes: options.keepMetadataTypes,
       });
-      uxLog(commandThis, filterRes2.message);
+      uxLog("other", commandThis, filterRes2.message);
     }
 
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
-      uxLog(commandThis, c.cyan(`Retrieving metadatas in ${c.green(metadataFolder)}...`));
+      uxLog("action", commandThis, c.cyan(t('retrievingMetadatasIn', { metadataFolder: c.green(metadataFolder) })));
       const retrieveCommand =
         'sf project retrieve start' +
-        ` --target-metadata-dir ${metadataFolder}` +
-        ` --manifest ${packageXml}` +
+        ` --target-metadata-dir "${metadataFolder}"` +
+        ` --manifest "${packageXml}"` +
         ` --wait ${process.env.SFDX_RETRIEVE_WAIT_MINUTES || '60'}` +
         (debug ? ' --verbose' : '');
       const retrieveRes = await execSfdxJson(retrieveCommand, this, {
@@ -353,10 +369,10 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         debug,
       });
       if (debug) {
-        uxLog(commandThis, retrieveRes);
+        uxLog("other", commandThis, retrieveRes);
       }
       // Unzip metadatas
-      uxLog(commandThis, c.cyan('Unzipping metadatas...'));
+      uxLog("action", commandThis, c.cyan(t('unzippingMetadatas')));
       await extractZip(path.join(metadataFolder, 'unpackaged.zip'), {
         dir: metadataFolder,
       });
@@ -369,7 +385,8 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const metadataTypes = sortArray(listMetadataTypes(), { by: ['xmlName'], order: ['asc'] });
     const metadataResp = await prompts({
       type: 'multiselect',
-      message: c.cyanBright('Please select metadata types'),
+      message: c.cyanBright(t('pleaseSelectMetadataTypes')),
+      description: t('descChooseMetadataTypes'),
       choices: metadataTypes.map((metadataType: any) => {
         return {
           title: c.cyan(`${metadataType.xmlName || 'no xml name'} (${metadataType.directoryName || 'no dir name'})`),
@@ -478,10 +495,11 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
 
   public static async promptFlow() {
     const flowFiles = await glob("**/*.flow-meta.xml", { ignore: GLOB_IGNORE_PATTERNS });
-    flowFiles.sort();
+    sortCrossPlatform(flowFiles);
     const flowSelectRes = await prompts({
       type: 'select',
-      message: 'Please select the Flow you want to visually compare',
+      message: t('pleaseSelectTheFlowYouWantTo'),
+      description: t('descChooseFlowForComparison'),
       choices: flowFiles.map(flowFile => {
         return { value: flowFile, title: path.basename(flowFile, ".flow-meta.xml") }
       })
@@ -491,10 +509,11 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
 
   public static async promptMultipleFlows() {
     const flowFiles = await glob("**/*.flow-meta.xml", { ignore: GLOB_IGNORE_PATTERNS });
-    flowFiles.sort();
+    sortCrossPlatform(flowFiles);
     const flowSelectRes = await prompts({
       type: 'multiselect',
-      message: 'Please select the Flows you want to create the documentation',
+      message: t('pleaseSelectTheFlowsYouWantTo'),
+      description: t('descChooseFlowsForDoc'),
       choices: flowFiles.map(flowFile => {
         return { value: flowFile, title: path.basename(flowFile, ".flow-meta.xml") }
       })

@@ -5,6 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { execSfdxJson, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -12,7 +13,32 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class PackageCreate extends SfCommand<any> {
   public static title = 'Create a new package';
 
-  public static description = messages.getMessage('packageCreate');
+  public static description = `
+## Command Behavior
+
+**Creates a new Salesforce package (either Managed or Unlocked) in your Dev Hub.**
+
+This command streamlines the process of setting up a new Salesforce package, which is a fundamental step for modularizing your Salesforce metadata and enabling continuous integration and delivery practices. It guides you through defining the package's essential properties.
+
+Key functionalities:
+
+- **Interactive Package Definition:** Prompts you for the package name, the path to its source code, and the package type (Managed or Unlocked).
+- **Package Type Selection:**
+  - **Managed Packages:** Ideal for AppExchange solutions, where code is hidden in subscriber orgs.
+  - **Unlocked Packages:** Suitable for client projects or shared tooling, where code is readable and modifiable in subscriber orgs.
+- **Package Creation:** Executes the Salesforce CLI command to create the package in your connected Dev Hub.
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **Interactive Prompts:** Uses the \`prompts\` library to gather necessary information from the user, such as \`packageName\`, \`packagePath\`, and \`packageType\`.
+- **Salesforce CLI Integration:** It constructs and executes the \`sf package create\` command, passing the user-provided details as arguments.
+- **\`execSfdxJson\`:** This utility is used to execute the Salesforce CLI command and capture its JSON output, which includes the newly created package's ID.
+- **User Feedback:** Provides clear messages to the user about the successful creation of the package, including its ID and the associated Dev Hub.
+</details>
+`;
 
   public static examples = ['$ sf hardis:package:create'];
 
@@ -47,29 +73,33 @@ export default class PackageCreate extends SfCommand<any> {
       {
         type: 'text',
         name: 'packageName',
-        message: c.cyanBright(`Please input the name of the package (ex: MyPackage)`),
+        message: c.cyanBright(t('pleaseInputPackageName')),
+        description: t('enterClearNameForNewPackage'),
+        placeholder: t('exMyPackage'),
       },
       {
         type: 'text',
         name: 'packagePath',
-        message: c.cyanBright(`Please input the path of the package (ex: sfdx-source/apex-mocks)`),
+        message: c.cyanBright(t('pleaseInputPackagePath')),
+        description: t('specifyPackageSourceCodePath'),
+        placeholder: t('exSfdxSourceApexMocks'),
       },
       {
         type: 'select',
         name: 'packageType',
-        message: c.cyanBright(`Please select the type of the package`),
+        message: c.cyanBright(t('pleaseSelectPackageName')),
+        description: t('chooseUnlockedOrManagedPackage'),
+        placeholder: t('selectPackageTypePlaceholder'),
         choices: [
           {
-            title: 'Managed',
+            title: t('managedPackageTitle'),
             value: 'Managed',
-            description:
-              'Managed packages code is hidden in orgs where it is installed. Suited for AppExchanges packages',
+            description: t('managedPackageDescription'),
           },
           {
-            title: 'Unlocked',
+            title: t('unlockedPackageTitle'),
             value: 'Unlocked',
-            description:
-              'Unlocked packages code is readable and modifiable in orgs where it is installed. Use it for client project or shared tooling',
+            description: t('unlockedPackageDescription'),
           },
         ],
       },
@@ -86,14 +116,7 @@ export default class PackageCreate extends SfCommand<any> {
       fail: true,
       debug: debugMode,
     });
-    uxLog(
-      this,
-      c.cyan(
-        `Created package Id: ${c.green(packageCreateResult.result.Id)} associated to DevHub ${c.green(
-          flags['target-dev-hub'].getUsername()
-        )}`
-      )
-    );
+    uxLog("action", this, c.cyan(t('createdPackageIdAssociatedToDevHub', { packageId: packageCreateResult.result.Id, devHub: flags['target-dev-hub'].getUsername() })));
 
     // Return an object to be displayed with --json
     return {

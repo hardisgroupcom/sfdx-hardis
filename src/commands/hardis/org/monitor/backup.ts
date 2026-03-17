@@ -8,7 +8,7 @@ import * as path from 'path';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
 import { execCommand, filterPackageXml, uxLog } from '../../../../common/utils/index.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
-import { CONSTANTS, getConfig } from '../../../../config/index.js';
+import { CONSTANTS, getApiVersion, getConfig, getEnvVar } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { MessageAttachment } from '@slack/web-api';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
@@ -17,6 +17,10 @@ import { countPackageXmlItems, parsePackageXmlFile, writePackageXmlFile } from '
 import Project2Markdown from '../../doc/project2markdown.js';
 import MkDocsToSalesforce from '../../doc/mkdocs-to-salesforce.js';
 import MkDocsToCloudflare from '../../doc/mkdocs-to-cf.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { makeFileNameGitCompliant } from '../../../../common/utils/gitUtils.js';
+import { updateSfdxProjectApiVersion } from '../../../../common/utils/projectUtils.js';
+import { reinitI18n, t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -35,6 +39,8 @@ Automatically skips metadatas from installed packages with namespace.
 You can remove more metadata types from backup, especially in case you have too many metadatas and that provokes a crash, using:
 
 - Manual update of \`manifest/package-skip-items.xml\` config file (then commit & push in the same branch)
+
+  - Works with full wildcard (\`<members>*</members>\`) , named metadata (\`<members>Account.Name</members>\`) or partial wildcards names (\`<members>pi__*</members>\` , \`<members>*__dlm</members>\` , or \`<members>prefix*suffix</members>\`)
 
 - Environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`): that will be applied to all monitoring branches.
 
@@ -55,6 +61,14 @@ _With those both options, it's like if you are not using --full, but with chunke
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
 
+## Troubleshooting
+
+If you have unknown errors (it happens !), you can investigate using the full command with smaller chunks.
+
+Example: \`sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters --max-by-chunk 500\`
+
+It will allow you the identify the responsible metadata and ignore it using package-skip-items.xml or MONITORING_BACKUP_SKIP_METADATA_TYPES env variable.
+
 ## Documentation
 
 [Doc generation (including visual flows)](${CONSTANTS.DOC_URL_ROOT}/hardis/doc/project2markdown/) is triggered at the end of the command.
@@ -62,6 +76,12 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 If you want to also upload HTML Documentation on your Salesforce Org as static resource, use variable **SFDX_HARDIS_DOC_DEPLOY_TO_ORG="true"**
 
 If you want to also upload HTML Documentation on Cloudflare, use variable **SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE="true"**
+
+- If you want to generate the documentation in multiple languages, define variable SFDX_DOC_LANGUAGES (ex: SFDX_DOC_LANGUAGES=en,fr,de)
+- You can define one Cloudflare site by language, for example with the following variables:
+  - CLOUDFLARE_PROJECT_NAME_EN=cloudity-demo-english
+  - CLOUDFLARE_PROJECT_NAME_FR=cloudity-demo-french
+  - CLOUDFLARE_PROJECT_NAME_DE=cloudity-demo-german
 
 If Flow history doc always display a single state, you probably need to update your workflow configuration:
 
@@ -97,6 +117,10 @@ If Flow history doc always display a single state, you probably need to update y
       default: false,
       description: 'If mode --full is activated, apply filters of manifest/package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES anyway',
     }),
+    "start-chunk": Flags.integer({
+      default: 1,
+      description: 'Use this parameter to troubleshoot a specific chunk. It will be used as the first chunk to retrieve',
+    }),
     "skip-doc": Flags.boolean({
       default: false,
       description: 'Skip the generation of project documentation at the end of the command',
@@ -129,6 +153,7 @@ If Flow history doc always display a single state, you probably need to update y
   protected diffFilesSimplified: any[] = [];
   protected full: boolean = false;
   protected maxByChunk: number = 3000;
+  protected startChunk: number = 1;
   protected excludeNamespaces: boolean = false;
   protected fullApplyFilters: boolean = false;
   protected skipDoc: boolean = false;
@@ -150,16 +175,21 @@ If Flow history doc always display a single state, you probably need to update y
     const { flags } = await this.parse(MonitorBackup);
     this.full = flags.full || (process.env?.MONITORING_BACKUP_MODE_FULL === "true" ? true : false);
     this.maxByChunk = flags["max-by-chunk"] || 3000;
+    this.startChunk = flags["start-chunk"] || 1;
     this.excludeNamespaces = flags["exclude-namespaces"] === true ? true : false;
     this.fullApplyFilters = flags["full-apply-filters"] === true ? true : false;
     this.skipDoc = flags["skip-doc"] === true ? true : false;
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
 
+    // Update apiVersion if necessary
+    await updateSfdxProjectApiVersion();
+
     // Build target org full manifest
     uxLog(
+      "action",
       this,
-      c.cyan('Building full manifest for org ' + c.bold(flags['target-org'].getConnection().instanceUrl)) + ' ...'
+      c.cyan(t('buildingFullManifestForOrg', { orgAlias: c.bold(flags['target-org'].getConnection().instanceUrl) }))
     );
     const packageXmlFullFile = 'manifest/package-all-org-items.xml';
     await buildOrgManifest('', packageXmlFullFile, flags['target-org'].getConnection());
@@ -173,6 +203,9 @@ If Flow history doc always display a single state, you probably need to update y
       }
     }
 
+    // Create force-app/main/default if not exists
+    await fs.ensureDir(path.join(process.cwd(), 'force-app', 'main', 'default'));
+
     // Check if we have package-skip_items.xml
     if (this.full) {
       await this.extractMetadatasFull(packageXmlFullFile, flags);
@@ -182,13 +215,13 @@ If Flow history doc always display a single state, you probably need to update y
     }
 
     // Write installed packages
-    uxLog(this, c.cyan(`Write installed packages ...`));
+    uxLog("action", this, c.cyan(t('writeInstalledPackages')));
     const installedPackagesLog: any[] = [];
     const packageFolder = path.join(process.cwd(), 'installedPackages');
     await fs.ensureDir(packageFolder);
     for (const installedPackage of this.installedPackages) {
       const fileName = (installedPackage.SubscriberPackageName || installedPackage.SubscriberPackageId) + '.json';
-      const fileNameNoSep = fileName.replace(/\//g, '_').replace(/:/g, '_'); // Handle case when package name contains slashes or colon
+      const fileNameNoSep = makeFileNameGitCompliant(fileName); // Handle case when package name contains slashes or colon
       delete installedPackage.Id; // Not needed for diffs
       await fs.writeFile(path.join(packageFolder, fileNameNoSep), JSON.stringify(installedPackage, null, 2));
       const installedPackageLog = {
@@ -199,6 +232,19 @@ If Flow history doc always display a single state, you probably need to update y
         SubscriberPackageVersionNumber: installedPackage.SubscriberPackageVersionNumber,
       };
       installedPackagesLog.push(installedPackageLog);
+      // Clean repo: Remove previous versions of file names
+      const fileNameNoSepBad1 = fileName.replace(/\//g, '_').replace(/:/g, '_');
+      const fileNameNoSepBad2 = fileName;
+      for (const oldFileName of [fileNameNoSepBad1, fileNameNoSepBad2]) {
+        if (oldFileName === fileNameNoSep) {
+          continue;
+        }
+        const oldFilePath = path.join(packageFolder, oldFileName);
+        if (fs.existsSync(oldFilePath)) {
+          await fs.remove(oldFilePath);
+        }
+      }
+
     }
 
     this.diffFiles = await MetadataUtils.listChangedFiles();
@@ -219,7 +265,7 @@ If Flow history doc always display a single state, you probably need to update y
           severityIcon: severityIconLog,
         };
       });
-      this.outputFilesRes = await generateCsvFile(this.diffFilesSimplified, this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.diffFilesSimplified, this.outputFile, { fileTitle: 'Updated Metadatas' });
     }
 
     // Build notifications
@@ -247,11 +293,11 @@ If Flow history doc always display a single state, you probably need to update y
         },
       ];
     } else {
-      uxLog(this, c.grey("No updated metadata for today's backup :)"));
+      uxLog("log", this, c.grey(t('noUpdatedMetadataForBackup')));
     }
 
     // Post notifications
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'BACKUP',
       text: notifText,
@@ -272,24 +318,40 @@ If Flow history doc always display a single state, you probably need to update y
 
     // Run project documentation generation
     if (this.skipDoc !== true) {
+      const prevPromptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
+      const prevSfdxHardisLang = getEnvVar('SFDX_HARDIS_LANG') || 'en';
       try {
-        await Project2Markdown.run(["--diff-only", "--with-history"]);
-        uxLog(this, c.cyan("Documentation generated from retrieved sources. If you want to skip it, use option --skip-doc"));
         const config = await getConfig("user");
-        if (config.docDeployToOrg || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_ORG === "true") {
-          await MkDocsToSalesforce.run(["--type", "Monitoring"]);
-        }
-        else if (config.docDeployToCloudflare || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE === "true") {
-          await MkDocsToCloudflare.run([]);
+        const docLanguages = (getEnvVar('SFDX_DOC_LANGUAGES') || getEnvVar('PROMPTS_LANGUAGE') || config.promptsLanguage || 'en').split(",").reverse(); // Can be 'fr,en,de' for example
+        for (const langKey of docLanguages) {
+          uxLog("action", this, c.cyan(t('generatingDocInLanguage') + c.bold(langKey)));
+          process.env.PROMPTS_LANGUAGE = langKey;
+          process.env.SFDX_HARDIS_LANG = langKey;
+          reinitI18n();
+
+          await Project2Markdown.run(["--diff-only", "--with-history"]);
+          uxLog("action", this, c.cyan(t('documentationGeneratedFromRetrievedSourcesIfYou')));
+
+          if (config.docDeployToOrg || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_ORG === "true") {
+            await MkDocsToSalesforce.run(["--type", "Monitoring"]);
+          }
+          else if (config.docDeployToCloudflare || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE === "true") {
+            await MkDocsToCloudflare.run([]);
+          }
         }
       } catch (e: any) {
-        uxLog(this, c.yellow("Error while generating project documentation " + e.message));
-        uxLog(this, c.grey(e.stack));
+        uxLog("warning", this, c.yellow(t('errorWhileGeneratingProjectDocumentation') + e.message));
+        uxLog("log", this, c.grey(e.stack));
+      } finally {
+        process.env.PROMPTS_LANGUAGE = prevPromptsLanguage;
+        process.env.SFDX_HARDIS_LANG = prevSfdxHardisLang;
+        reinitI18n();
       }
     }
 
     return { outputString: 'BackUp processed on org ' + flags['target-org'].getConnection().instanceUrl };
   }
+
 
   private async extractMetadatasFull(packageXmlFullFile: string, flags) {
     let packageXmlToExtract = packageXmlFullFile;
@@ -300,9 +362,9 @@ If Flow history doc always display a single state, you probably need to update y
       const namespacesToFilter = (this.excludeNamespaces || process.env?.SFDX_HARDIS_BACKUP_EXCLUDE_NAMESPACES === "true") ? this.namespaces : [];
       await filterPackageXml(packageXmlFullFile, packageXmlFullFileWithoutNamespace, {
         removeNamespaces: namespacesToFilter,
-        removeStandard: false,
+        removeStandard: this.fullApplyFilters,
         removeFromPackageXmlFile: this.packageXmlToRemove,
-        updateApiVersion: CONSTANTS.API_VERSION,
+        updateApiVersion: getApiVersion(),
       });
       packageXmlToExtract = packageXmlFullFileWithoutNamespace;
     }
@@ -313,6 +375,7 @@ If Flow history doc always display a single state, you probably need to update y
     // Handle predefined chunks
     const predefinedChunkTypes = [
       { types: ["CustomLabel"], memberMode: "*" },
+      // { types: ["CustomObject", "Profile"] },
       { types: ["SharingRules", "SharingOwnerRule", "SharingCriteriaRule"] },
       { types: ["Workflow", "WorkflowAlert", "WorkflowFieldUpdate", "WorkflowRule"] }
     ]
@@ -360,22 +423,28 @@ If Flow history doc always display a single state, you probably need to update y
     const packageXmlChunkFiles: string[] = [];
     const chunksFolder = path.join("manifest", "chunks");
     await fs.ensureDir(chunksFolder);
-    uxLog(this, c.cyan(`Building package.xml files for ${packageXmlChunkFiles.length} chunks...`));
+    uxLog("action", this, c.cyan(t('buildingPackageXmlFilesForChunks', { extractPackageXmlChunks: this.extractPackageXmlChunks.length })));
     for (const packageChunk of this.extractPackageXmlChunks) {
+      pos++;
       const packageChunkFileName = path.join(chunksFolder, "chunk-" + pos + ".xml");
       await writePackageXmlFile(packageChunkFileName, packageChunk);
       packageXmlChunkFiles.push(packageChunkFileName);
-      uxLog(this, c.grey(`Chunk ${pos} -> ${packageChunkFileName}:`))
+      uxLog("log", this, c.grey(t('chunk', { pos, packageChunkFileName })))
       for (const mdType of Object.keys(packageChunk)) {
-        uxLog(this, c.grey(`- ${mdType} (${packageChunk?.[mdType]?.length || 0} elements)`));
+        uxLog("log", this, c.grey(`- ${mdType} (${packageChunk?.[mdType]?.length || 0} elements)`));
       }
-      uxLog(this, "");
-      pos++;
+      uxLog("other", this, "");
     }
 
     // Retrieve metadatas for each chunk
-    uxLog(this, c.cyan(`Starting the retrieve of ${packageXmlChunkFiles.length} chunks...`));
+    uxLog("action", this, c.cyan(t('startingTheRetrieveOfChunks', { packageXmlChunkFiles: packageXmlChunkFiles.length })));
+    let posChunk = 0;
     for (const packageXmlChunkFile of packageXmlChunkFiles) {
+      posChunk++;
+      if (this.startChunk > posChunk) {
+        uxLog("log", this, c.grey(t('skippingChunkAccordingToStartChunkOption', { posChunk, packageXmlChunkFile })));
+        continue;
+      }
       await this.retrievePackageXml(packageXmlChunkFile, flags);
     }
   }
@@ -392,12 +461,12 @@ If Flow history doc always display a single state, you probably need to update y
     const packageXmlBackUpItemsFile = await this.buildFilteredManifestsForRetrieve(packageXmlFullFile);
 
     // Apply filters to package.xml
-    uxLog(this, c.cyan(`Reducing content of ${packageXmlFullFile} to generate ${packageXmlBackUpItemsFile} ...`));
+    uxLog("action", this, c.cyan(t('reducingContentOfToGenerate', { packageXmlFullFile, packageXmlBackUpItemsFile })));
     await filterPackageXml(packageXmlFullFile, packageXmlBackUpItemsFile, {
       removeNamespaces: this.namespaces,
       removeStandard: true,
       removeFromPackageXmlFile: this.packageXmlToRemove,
-      updateApiVersion: CONSTANTS.API_VERSION,
+      updateApiVersion: getApiVersion(),
     });
 
     // Retrieve sfdx sources in local git repo
@@ -409,10 +478,9 @@ If Flow history doc always display a single state, you probably need to update y
     const packageXmlSkipItemsFile = 'manifest/package-skip-items.xml';
     if (fs.existsSync(packageXmlSkipItemsFile)) {
       uxLog(
+        "log",
         this,
-        c.grey(
-          `${packageXmlSkipItemsFile} has been found and will be use to reduce the content of ${packageXmlFullFile} ...`
-        )
+        c.grey(t('packageSkipItemsFoundReducing', { packageXmlSkipItemsFile, packageXmlFullFile }))
       );
       this.packageXmlToRemove = packageXmlSkipItemsFile;
     }
@@ -421,10 +489,9 @@ If Flow history doc always display a single state, you probably need to update y
     const additionalSkipMetadataTypes = process.env?.MONITORING_BACKUP_SKIP_METADATA_TYPES;
     if (additionalSkipMetadataTypes) {
       uxLog(
+        "log",
         this,
-        c.grey(
-          `En var MONITORING_BACKUP_SKIP_METADATA_TYPES has been found and will also be used to reduce the content of ${packageXmlFullFile} ...`
-        )
+        c.grey(t('monitoringBackupSkipMetadataTypesFound', { types: additionalSkipMetadataTypes, packageXmlFullFile }))
       );
       let packageSkipItems = {};
       if (fs.existsSync(this.packageXmlToRemove || '')) {
@@ -442,44 +509,48 @@ If Flow history doc always display a single state, you probably need to update y
   private async retrievePackageXml(packageXmlBackUpItemsFile: string, flags: any) {
     const nbRetrievedItems = await countPackageXmlItems(packageXmlBackUpItemsFile);
     const packageXml = await parsePackageXmlFile(packageXmlBackUpItemsFile);
-    uxLog(this, c.cyan(`Run the retrieve command for ${path.basename(packageXmlBackUpItemsFile)}, containing ${nbRetrievedItems} items:`));
-    for (const mdType of Object.keys(packageXml)) {
-      uxLog(this, c.cyan(`- ${mdType} (${packageXml?.[mdType]?.length || 0})`));
-    }
+    uxLog("action", this, c.cyan(t('runTheRetrieveCommandForContainingItems', { path: path.basename(packageXmlBackUpItemsFile), nbRetrievedItems })));
+    const mdTypesString = Object.keys(packageXml).map((mdType) => {
+      return `- ${mdType} (${packageXml?.[mdType]?.length || 0})`;
+    }).join('\n');
+    uxLog("log", this, c.grey(mdTypesString));
     try {
       await execCommand(
         `sf project retrieve start -x "${packageXmlBackUpItemsFile}" -o ${flags['target-org'].getUsername()} --ignore-conflicts --wait 120`,
         this,
         {
           fail: true,
-          output: true,
+          output: this.debugMode ? true : false,
           debug: this.debugMode,
         }
       );
     } catch (e) {
       const failedPackageXmlContent = await fs.readFile(packageXmlBackUpItemsFile, 'utf8');
-      uxLog(this, c.yellow('BackUp package.xml that failed to be retrieved:\n' + c.grey(failedPackageXmlContent)));
+      uxLog("warning", this, c.yellow(t('backupPackageXmlThatFailedToBe') + c.grey(failedPackageXmlContent)));
       if (this.full) {
         uxLog(
+          "error",
           this,
           c.red(
             c.bold(
-              'This should not happen: Please report the issue on sfdx-hardis repository: https://github.com/hardisgroupcom/sfdx-hardis/issues'
+              t('unexpectedBackupError')
             )
           )
         );
       }
       else {
         uxLog(
+          "error",
           this,
           c.red(
             c.bold(
-              'Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it, or use variable MONITORING_BACKUP_SKIP_METADATA_TYPES'
+              t('crashDuringBackupExcludeMetadataTypes')
             )
           )
         );
       }
       uxLog(
+        "warning",
         this,
         c.yellow(
           c.bold(

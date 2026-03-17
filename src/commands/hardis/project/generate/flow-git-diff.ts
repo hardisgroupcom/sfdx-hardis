@@ -15,6 +15,7 @@ import moment from 'moment';
 import { generateFlowVisualGitDiff, generateHistoryDiffMarkdown } from '../../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -88,7 +89,7 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
     // List states of flow file using git
     const fileHistory = await git().log({ file: this.flowFile });
     if (fileHistory.all.length === 1) {
-      uxLog(this, c.green(`There is only one state for Flow ${this.flowFile}`));
+      uxLog("success", this, c.green(t('thereIsOnlyOneStateForFlow', { flowFile: this.flowFile })));
       return {};
     }
 
@@ -109,12 +110,14 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       const commitBeforeSelectRes = await prompts({
         type: 'select',
         name: 'before',
-        message: 'Please select BEFORE UPDATE commit',
+        message: t('pleaseSelectBeforeUpdateCommit'),
+        description: t('chooseCommitBeforeYourChanges'),
+        placeholder: t('selectACommit'),
         choices: [...allChoices, ...[
           {
-            title: "Calculate for all Flow states",
+            title: t('calculateForAllFlowStates'),
             value: "allStates",
-            description: "Requires mkdocs-material to be read correctly. If you do not have it, we advise to select 2 commits for comparison."
+            description: t('requiresMkdocsMaterialForAllStates')
           }
         ]]
       });
@@ -124,7 +127,6 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
 
     if (this.commitBefore === "allStates") {
       diffMdFile = await generateHistoryDiffMarkdown(this.flowFile, this.debugMode);
-      uxLog(this, c.yellow(`It is recommended to use mkdocs-material to read it correctly (see https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/#doc-html-pages)`));
     }
     else {
       if (this.commitAfter === "" && !isCI) {
@@ -132,7 +134,9 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
         const commitAfterSelectRes = await prompts({
           type: 'select',
           name: 'after',
-          message: 'Please select AFTER UPDATE commit',
+          message: t('pleaseSelectAfterUpdateCommit'),
+          description: t('chooseCommitAfterYourChanges'),
+          placeholder: t('selectACommit'),
           choices: allChoices
         })
         this.commitAfter = commitAfterSelectRes.after;
@@ -140,8 +144,15 @@ Run \`npm install @mermaid-js/mermaid-cli --global\`
       // Generate diff
       const { outputDiffMdFile } = await generateFlowVisualGitDiff(this.flowFile, this.commitBefore, this.commitAfter, { svgMd: true, pngMd: false, mermaidMd: this.debugMode, debug: this.debugMode })
       diffMdFile = outputDiffMdFile;
-      // Open file in a new VsCode tab if available
-      WebSocketClient.requestOpenFile(path.relative(process.cwd(), outputDiffMdFile));
+    }
+
+    // Open file in a new VS Code tab if available
+    WebSocketClient.requestOpenFile(path.relative(process.cwd(), diffMdFile));
+    WebSocketClient.sendReportFileMessage(diffMdFile, t('fileDocumentation', { name: path.basename(diffMdFile).replace(".md", "") }), 'report');
+
+    uxLog("action", this, c.green(t('markdownFlowDiffDocumentationGeneratedFor', { path: path.basename(diffMdFile).replace(".md", "") })));
+    if (this.commitBefore === "allStates") {
+      uxLog("warning", this, c.yellow(t('recommendedToUseMkdocsMaterialToRead')));
     }
 
     // Return an object to be displayed with --json

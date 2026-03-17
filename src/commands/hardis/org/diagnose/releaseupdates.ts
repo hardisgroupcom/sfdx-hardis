@@ -3,14 +3,15 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { uxLog } from '../../../../common/utils/index.js';
+import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import moment from 'moment';
-import columnify from 'columnify';
 import { CONSTANTS } from '../../../../config/index.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -65,13 +66,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
     const conn = flags['target-org'].getConnection();
-    uxLog(this, c.cyan(`Extracting Release Updates and checks to perform in ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(t('extractingReleaseUpdatesAndChecksToPerform', { conn: conn.instanceUrl })));
 
     // Fetch ReleaseUpdate records
     const releaseUpdatesQuery =
       `SELECT StepStage,Status,Category,Title,DueDate,Description,Release,ReleaseLabel,ReleaseDate,ApiVersion,DurableId,HasNewSteps,IsReleased,SupportsRevoke,DeveloperName ` +
       `FROM ReleaseUpdate ` +
-      `WHERE StepStage IN ('Upcoming','OverDue') AND Status IN ('Invocable','Revocable','Nascent','Invoked','Info') AND DueDate >= LAST_N_DAYS:60 ` +
+      `WHERE StepStage IN ('Upcoming','OverDue') AND Status IN ('Pending','Invocable','Revocable','Nascent','Invoked','Info') AND DueDate >= LAST_N_DAYS:60 ` +
       `ORDER BY DueDate ASC`;
     const queryRes = await soqlQueryTooling(releaseUpdatesQuery, conn);
     const severityIconWarning = getSeverityIcon('warning');
@@ -86,7 +87,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     if (this.releaseUpdatesRecords.length > 0) {
       // Generate output CSV file
       this.outputFile = await generateReportPath('release-updates', this.outputFile);
-      this.outputFilesRes = await generateCsvFile(this.releaseUpdatesRecords, this.outputFile);
+      this.outputFilesRes = await generateCsvFile(this.releaseUpdatesRecords, this.outputFile, { fileTitle: 'Release Updates to Check' });
 
       // Build notification
       const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
@@ -99,7 +100,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       }
       const notifAttachments = [{ text: notifDetailText }];
       // Post notif
-      globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+      await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
       await NotifProvider.postNotifications({
         type: 'RELEASE_UPDATES',
         text: notifText,
@@ -124,10 +125,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
           DueDate: moment(releaseUpdate.DueDate).format('ll')
         }
       })
-      uxLog(this, c.yellow(notifText + "\n" + columnify(releaseUpdatesLight)));
+
+      const summaryText = `${this.releaseUpdatesRecords.length} Release Updates to check have been found in ${conn.instanceUrl}`
+      uxLog("action", this, c.cyan(summaryText));
+      uxLogTable(this, releaseUpdatesLight);
     }
     else {
-      uxLog(this, c.green("No release updates has been found"));
+      uxLog("success", this, c.green(t('noReleaseUpdatesHasBeenFound')));
     }
 
     // Return an object to be displayed with --json

@@ -17,13 +17,41 @@ import { MessageAttachment } from '@slack/types';
 import { getBranchMarkdown, getNotificationButtons, getSeverityIcon } from '../../../common/utils/notifUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
+import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 /* jscpd:ignore-end */
 export default class MetadataStatus extends SfCommand<any> {
   public static title = 'check missing description on custom fields';
-  public static description = "Check if elements(custom fields) aren't description";
+  public static description = `
+## Command Behavior
+
+**Checks for missing descriptions on custom fields within your Salesforce DX project.**
+
+This command helps enforce documentation standards by identifying custom fields that lack a descriptive explanation. Comprehensive field descriptions are crucial for:
+
+- **Maintainability:** Making it easier for developers and administrators to understand the purpose and usage of each field.
+- **Data Governance:** Ensuring data quality and consistency.
+- **User Adoption:** Providing clear guidance to end-users on how to interact with fields.
+
+It specifically targets custom fields (ending with \`__c\`) and excludes standard fields, managed package fields, and fields on Custom Settings or Data Cloud objects.
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **File Discovery:** It uses \`glob\` to find all custom field metadata files (\`.field-meta.xml\`) within your project.
+- **Custom Setting Exclusion:** It first filters out fields belonging to Custom Settings by reading the corresponding object metadata files (\`.object-meta.xml\`) and checking for the \`<customSettingsType>\` tag. It also excludes Data Cloud objects (\`__dlm\`, \`__dll\`) and managed package fields.
+- **XML Parsing:** For each remaining custom field file, it reads the XML content and parses it using \`xml2js\` to extract the \`fullName\` and \`description\` attributes.
+- **Description Check:** It verifies if the \`description\` attribute is present and not empty for each custom field.
+- **Data Aggregation:** All custom fields found to be missing a description are collected into a list, along with their object and field names.
+- **Report Generation:** It generates a CSV report (\`lint-missingattributes.csv\`) containing details of all fields with missing descriptions.
+- **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications (e.g., to Slack, MS Teams, Grafana) about the presence and count of fields with missing descriptions, making it suitable for automated quality checks in CI/CD pipelines.
+</details>
+`;
   public static examples = ['$ sf hardis:lint:missingattributes'];
   /* jscpd:ignore-start */
   public static flags: any = {
@@ -65,11 +93,11 @@ export default class MetadataStatus extends SfCommand<any> {
     const branchMd = await getBranchMarkdown();
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = 'log';
-    let notifText = `No missing descriptions on fields has been found in ${branchMd}`;
+    let notifText = `No missing descriptions on fields were found in ${branchMd}.`;
     let attachments: MessageAttachment[] = [];
     if (this.fieldsWithoutDescription.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${this.fieldsWithoutDescription.length} missing descriptions on fields have been found in ${branchMd}`;
+      notifText = `${this.fieldsWithoutDescription.length} fields with missing descriptions were found in ${branchMd}`;
       await this.buildCsvFile(this.fieldsWithoutDescription);
       attachments = [
         {
@@ -77,10 +105,10 @@ export default class MetadataStatus extends SfCommand<any> {
         },
       ];
     } else {
-      uxLog(this, 'No missing descriptions on fields have been found');
+      uxLog("other", this, t('noMissingDescriptionsOnFieldsWereFound'));
     }
     // Post notifications
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'MISSING_ATTRIBUTES',
       text: notifText,
@@ -188,6 +216,6 @@ export default class MetadataStatus extends SfCommand<any> {
   private async buildCsvFile(fieldsWithoutDescription: any[]): Promise<void> {
     this.outputFile = await generateReportPath('lint-missingattributes', this.outputFile);
     const csvData = fieldsWithoutDescription.map((field) => ({ type: 'Field', name: field.name }));
-    this.outputFilesRes = await generateCsvFile(csvData, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(csvData, this.outputFile, { fileTitle: 'Missing Attributes' });
   }
 }

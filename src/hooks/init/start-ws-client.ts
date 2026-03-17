@@ -1,25 +1,96 @@
 import { Hook } from '@oclif/core';
 
 const hook: Hook<'init'> = async (options) => {
-  // Skip hooks from other commands than hardis commands
   const commandId = options?.id || '';
-  if (!commandId.startsWith('hardis')) {
+
+  // Skip if command is not in sfdx-hardis or a sfdx-hardis plugin context
+  if (!shouldInitWebSocket(commandId, options?.config)) {
     return;
   }
 
-  // Dynamically import libraries to avoid loading it if not needed
-  const { isCI } = await import('../../common/utils/index.js');
+  // Flag that we are in sfdx-hardis or a sfdx-hardis plugin context
+  // Set before CI check so it is true even in CI environments
+  globalThis.hardisCommandActivated = true;
+
+  // Skip WebSocket initialization in CI environments
+  // Inlined isCI check avoids importing the heavy utils module (~2300 lines + transitive deps)
+  if (process.env.CI != null) {
+    return;
+  }
+
+  // Dynamically import only when actually needed (non-CI, eligible command)
   const { WebSocketClient } = await import('../../common/websocketClient.js');
 
-  // Initialize WebSocketClient to communicate with VsCode SFDX Hardis extension
-  if (!isCI) {
-    const context: any = { command: commandId, id: process.pid };
-    const websocketArgIndex = options?.argv?.indexOf('--websocket');
-    if (websocketArgIndex || websocketArgIndex === 0) {
-      context.websocketHostPort = options.argv[websocketArgIndex + 1];
+  // Initialize WebSocketClient to communicate with VS Code SFDX Hardis extension
+  const context: any = { command: commandId, id: process.pid };
+
+  // Resolve the plugin root so websocketClient can import the command class
+  // even when the command comes from a third-party plugin.
+  try {
+    const cmd = options?.config?.findCommand(commandId);
+    const pluginRoot = (cmd as any)?.plugin?.root;
+    if (pluginRoot) {
+      context.commandPluginRoot = pluginRoot;
     }
-    globalThis.webSocketClient = new WebSocketClient(context);
+  } catch {
+    // Silently ignore – commandPluginRoot is optional
   }
+
+  const websocketArgIndex = options?.argv?.indexOf('--websocket') ?? -1;
+  if (
+    websocketArgIndex > -1 &&
+    options?.argv &&
+    options.argv.length > websocketArgIndex + 1
+  ) {
+    context.websocketHostPort = options.argv[websocketArgIndex + 1];
+  }
+  globalThis.webSocketClient = new WebSocketClient(context);
+  await WebSocketClient.isInitialized();
 };
+
+// Check if the WebSocket should be initialized for this command
+function shouldInitWebSocket(commandId: string, config: any): boolean {
+  // Always activate for hardis commands
+  if (commandId.startsWith('hardis')) {
+    return true;
+  }
+
+  // Check SFDX_HARDIS_PLUGIN_PREFIXES env var for additional command prefixes (comma-separated)
+  const extraPrefixes = process.env.SFDX_HARDIS_PLUGIN_PREFIXES;
+  if (extraPrefixes) {
+    const prefixes = extraPrefixes.split(',').map(p => p.trim()).filter(Boolean);
+    if (prefixes.some(prefix => commandId.startsWith(prefix))) {
+      return true;
+    }
+  }
+
+  // Auto-detect: check if the command belongs to a plugin that depends on sfdx-hardis
+  if (config) {
+    try {
+      const command = config.findCommand(commandId);
+      if (command.pluginType === 'core') {
+        return false; // Core commands are not from plugins, so we can skip
+      }
+      const pluginName = command?.pluginName ?? command?.plugin?.name;
+      if (!pluginName || ["sfdx-git-delta", "sfdmu"].includes(pluginName)) {
+        return false; // If we can't determine the plugin, we can't assume it depends on sfdx-hardis
+      }
+      for (const plugin of config.plugins?.values?.() ?? []) {
+        if (plugin.name === pluginName) {
+          const deps = plugin.pjson?.dependencies ?? {};
+          const peerDeps = plugin.pjson?.peerDependencies ?? {};
+          if (deps['sfdx-hardis'] || peerDeps['sfdx-hardis']) {
+            return true;
+          }
+          break;
+        }
+      }
+    } catch {
+      // Silently ignore lookup errors
+    }
+  }
+
+  return false;
+}
 
 export default hook;

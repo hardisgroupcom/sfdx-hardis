@@ -1,10 +1,14 @@
 import { requiredOrgFlagWithDeprecations, SfCommand } from '@salesforce/sf-plugins-core';
 import { Flags } from '@salesforce/sf-plugins-core';
-import { Connection  } from '@salesforce/core';
+import { Connection } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
+import c from 'chalk';
 import sortArray from 'sort-array';
-import { generateReports, uxLog } from '../../../common/utils/index.js';
+import { generateReports, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../../../common/utils/apiUtils.js';
+import { t } from '../../../common/utils/i18n.js';
+
+const REF_METADATA_COMPONENT_BATCH_SIZE = Number(process.env.METADATA_COMPONENT_BATCH_SIZE ?? 20);
 
 export default class HardisDocFieldusage extends SfCommand<any> {
 
@@ -18,9 +22,30 @@ export default class HardisDocFieldusage extends SfCommand<any> {
   };
 
   public static description = `
-    Retrieves custom field usage from metadata dependencies for specified sObjects.
-    !["Find custom fields usage"](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/doc-fieldusage.png)
-  `;
+## Command Behavior
+
+**Retrieves and displays the usage of custom fields within a Salesforce org, based on metadata dependencies.**
+
+This command helps identify where custom fields are referenced across various metadata components in your Salesforce environment. It's particularly useful for impact analysis before making changes to fields, or for understanding the complexity and interconnectedness of your Salesforce customizations.
+
+- **Targeted sObjects:** You can specify a comma-separated list of sObjects (e.g., \`Account,Contact\`) to narrow down the analysis to relevant objects. If no sObjects are specified, it will analyze all customizable sObjects.
+- **Usage Details:** For each custom field, the command lists the metadata components (e.g., Apex Classes, Visualforce Pages, Flows, Reports) that reference it, along with their types and names.
+
+!['Find custom fields usage'](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/doc-fieldusage.png)
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command operates by querying Salesforce's Tooling API and Metadata Component Dependency API:
+
+- **sObject Retrieval:** It first queries \`EntityDefinition\` to get a list of customizable sObjects, optionally filtered by the user's input.
+- **Custom Field Identification:** For each identified sObject, it queries \`CustomField\` to retrieve all custom fields associated with it.
+- **Dependency Lookup:** The core of the command involves querying \`MetadataComponentDependency\` using the IDs of the custom fields. This API provides information about which other metadata components depend on the specified fields.
+- **Data Aggregation & Reporting:** The retrieved data is then processed and formatted into a tabular output, showing the sObject name, field name, field type, dependency type, and dependency name. The results are also generated into various report formats (e.g., CSV, JSON) for further analysis.
+- **SOQL Queries:** It uses \`soqlQuery\` and \`soqlQueryTooling\` utilities to execute SOQL queries against the Salesforce org.
+- **Batching:** MetadataComponentDependency queries are processed in batches (default: 20 fields per batch, configurable via \`METADATA_COMPONENT_BATCH_SIZE\` environment variable) to avoid HTTP 431 errors with large numbers of fields.
+</details>
+`;
 
   public static examples = [
     '$ sf hardis:doc:fieldusage',
@@ -34,7 +59,7 @@ export default class HardisDocFieldusage extends SfCommand<any> {
       FROM EntityDefinition 
       WHERE IsCustomizable = true
     `;
-    
+
     if (sObjectsFilter && sObjectsFilter.length > 0) {
       const sObjectsList = sObjectsFilter
         .map(sObject => sObject.trim().replace(/__c$/, ''))
@@ -45,7 +70,7 @@ export default class HardisDocFieldusage extends SfCommand<any> {
     }
 
     const sObjectResults = await soqlQuery(sObjectsQuery, connection);
-    uxLog(this, `Found ${sObjectResults.records.length} sObjects.`);
+    uxLog("other", this, `Found ${sObjectResults.records.length} sObjects.`);
     return sObjectResults;
   }
 
@@ -55,9 +80,9 @@ export default class HardisDocFieldusage extends SfCommand<any> {
 
     sObjectResults.records.forEach((record) => {
       if (!record.DeveloperName.endsWith('__Share') && !record.DeveloperName.endsWith('__ChangeEvent')) {
-        sObjectsDict[record.DeveloperName] = { 
-          publisherId: record.PublisherId, 
-          fields: [] 
+        sObjectsDict[record.DeveloperName] = {
+          publisherId: record.PublisherId,
+          fields: []
         };
       }
     });
@@ -66,7 +91,7 @@ export default class HardisDocFieldusage extends SfCommand<any> {
   }
 
   public async queryCustomFields(connection: Connection, sObjectName: string) {
-    uxLog(this, `Extracting fields for sObject: ${sObjectName}`);
+    uxLog("other", this, `Extracting fields for sObject: ${sObjectName}.`);
     const queryTooling = `
       SELECT Id, DeveloperName
       FROM CustomField 
@@ -77,14 +102,24 @@ export default class HardisDocFieldusage extends SfCommand<any> {
   }
 
   public async queryMetadataComponentDependency(connection: Connection, fieldIds: string[]) {
-    const metadataQuery = `
-      SELECT MetadataComponentId, MetadataComponentType, MetadataComponentName, RefMetadataComponentName, RefMetadataComponentId
-      FROM MetadataComponentDependency
-      WHERE RefMetadataComponentId IN (${fieldIds.join(',')})
-    `;
-    const dependencyResults = await soqlQueryTooling(metadataQuery, connection);
+    const allRecords: any[] = [];
 
-    return dependencyResults;
+    for (let i = 0; i < fieldIds.length; i += REF_METADATA_COMPONENT_BATCH_SIZE) {
+      const batch = fieldIds.slice(i, i + REF_METADATA_COMPONENT_BATCH_SIZE);
+
+      const metadataQuery = `
+        SELECT MetadataComponentId, MetadataComponentType, MetadataComponentName, RefMetadataComponentName, RefMetadataComponentId
+        FROM MetadataComponentDependency
+        WHERE RefMetadataComponentId IN (${batch.join(',')})
+      `;
+
+      const dependencyResults = await soqlQueryTooling(metadataQuery, connection);
+      allRecords.push(...dependencyResults.records);
+
+      uxLog("other", this, `Processed batch ${Math.floor(i / REF_METADATA_COMPONENT_BATCH_SIZE) + 1} of ${Math.ceil(fieldIds.length / REF_METADATA_COMPONENT_BATCH_SIZE)} (${batch.length} fields)`);
+    }
+
+    return { records: allRecords };
   }
 
   public async run(): Promise<AnyJson> {
@@ -112,11 +147,11 @@ export default class HardisDocFieldusage extends SfCommand<any> {
 
     const dependencyQueries = Object.entries(sObjectsDict).map(async ([sObjectName, { fields }]) => {
       if (fields.length === 0) {
-        uxLog(this, `sObject ${sObjectName} does not have any custom fields, skipping dependencies.`);
+        uxLog("other", this, `sObject ${sObjectName} has no custom fields; skipping dependencies.`);
         return;
       }
 
-      uxLog(this, `Retrieving dependencies for sObject: ${sObjectName}`);
+      uxLog("other", this, `Retrieving dependencies for sObject: ${sObjectName}.`);
 
       const fieldIds = fields.map((field) => `'${field.id}'`);
       const dependencyResults = await this.queryMetadataComponentDependency(connection, fieldIds);
@@ -160,7 +195,8 @@ export default class HardisDocFieldusage extends SfCommand<any> {
       order: ['asc', 'asc', 'asc'],
     });
 
-    console.table(rows);
+    uxLog("action", this, c.cyan(t('foundCustomFieldUsageRecords', { resultSorted: resultSorted.length })));
+    uxLogTable(this, rows);
 
     const reportFiles = await generateReports(resultSorted, columns, this, {
       logFileName: 'fields-usage',
@@ -168,7 +204,7 @@ export default class HardisDocFieldusage extends SfCommand<any> {
     });
 
     return {
-      outputString: 'Processed fieldusage doc',
+      outputString: 'Processed fieldusage documentation.',
       result: resultSorted,
       reportFiles,
     };

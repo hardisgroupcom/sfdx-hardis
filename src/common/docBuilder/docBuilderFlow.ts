@@ -5,6 +5,7 @@ import * as path from "path";
 import { prettifyFieldName } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { mdTableCell } from "../gitProvider/utilsMarkdown.js";
 import fs from "fs";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderFlow extends DocBuilderRoot {
 
@@ -20,10 +21,10 @@ export class DocBuilderFlow extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Flows" : "## Flows",
+      filterObject ? `## ${t('docMdRelatedFlows')}` : `## ${t('docMdFlows')}`,
       "",
-      "| Object | Name      | Type | Description |",
-      "| :----  | :-------- | :--: | :---------- | "
+      `| ${t('docMdColObject')} | ${t('docMdColName')} | ${t('docMdColType')} | ${t('docMdColDescription')} | ${t('docMdColStatus')} |`,
+      "| :----  | :-------- | :--: | :---------- | :----- |"
     ]);
     for (const flow of filteredFlows) {
       const outputFlowHistoryMdFile = path.join(outputMarkdownRoot, "flows", flow.name + "-history.md");
@@ -31,7 +32,7 @@ export class DocBuilderFlow extends DocBuilderRoot {
         `[${flow.name}](${prefix}${flow.name}.md) [🕒](${prefix}${flow.name}-history.md)` :
         `[${flow.name}](${prefix}${flow.name}.md)`;
       lines.push(...[
-        `| ${flow.object || "💻"} | ${flowNameCell} | ${prettifyFieldName(flow.type)} | ${mdTableCell(flow.description)} |`
+        `| ${flow.object || "💻"} | ${flowNameCell} | ${prettifyFieldName(flow.type)} | ${mdTableCell(flow.description)} | ${flow.status || ""} |`
       ]);
     }
     lines.push("");

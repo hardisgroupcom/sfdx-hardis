@@ -3,7 +3,7 @@
 
 # Doc & support: https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/
 
-image: node:20
+image: node:24
 definitions:
   services:
     docker:

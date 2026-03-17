@@ -3,16 +3,17 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { git, isGitRepo, uxLog } from '../../../../common/utils/index.js';
+import { git, isGitRepo, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import moment from 'moment';
-import columnify from 'columnify';
 import sortArray from 'sort-array';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -22,7 +23,7 @@ export default class DiagnoseUnusedApexClasses extends SfCommand<any> {
 
   public static description = `List all async Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days.
   
-The result class list probably can be removed from the project, and that will improve your test classes performances :)
+The result class list probably can be removed from the project, and that will improve your test classes performances 😊
 
 The number of unused day is overridable using --days option. 
 
@@ -103,7 +104,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     // Generate output CSV file
     this.outputFile = await generateReportPath('unused-apex-classes', this.outputFile);
-    this.outputFilesRes = await generateCsvFile(this.asyncClassList, this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.asyncClassList, this.outputFile, { fileTitle: 'Unused Apex Classes' });
 
     // Exit code
     if ((this.argv || []).includes('unused-apex-classes')) {
@@ -124,16 +125,18 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async findCronTriggers(conn: any) {
+    uxLog("action", this, c.cyan(t('retrievingCrontriggersFromOrg', { conn: conn.instanceUrl })));
     const cronTriggersQuery = `SELECT Id, CronJobDetail.JobType, CronJobDetail.Name, State, NextFireTime FROM CronTrigger  WHERE State IN ('WAITING', 'ACQUIRED', 'EXECUTING', 'PAUSED', 'BLOCKED', 'PAUSED_BLOCKED')`;
     const cronTriggersResult = await soqlQuery(cronTriggersQuery, conn);
     return cronTriggersResult.records;
   }
 
   private displaySummaryOutput() {
-    let summary = `All async apex classes have been called during the latest ${this.lastNdays} days.`;
+    uxLog("action", this, c.cyan(t('foundAsyncApexClassesThatMightNot', { unusedNumber: this.unusedNumber })));
+    let summary = t('allApexClassesCalledInLastDays', { days: this.lastNdays });
     if (this.unusedNumber > 0) {
       summary = `${this.unusedNumber} apex classes might not be used anymore.
-Note: Salesforce does not provide all info to be 100% sure that a class is not used, so double-check before deleting them :)`
+Note: Salesforce does not provide all info to be 100% sure that a class is not used, so double-check before deleting them 😊`
         ;
       const summaryClasses = this.asyncClassList.map(apexClass => {
         return {
@@ -148,18 +151,19 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
           classCreatedBy: apexClass.ClassCreatedBy
         };
       });
-      uxLog(this, c.yellow("\n" + columnify(summaryClasses)));
+      uxLogTable(this, summaryClasses);
     }
 
     if (this.unusedNumber > 0) {
-      uxLog(this, c.yellow(summary));
+      uxLog("warning", this, c.yellow(summary));
     } else {
-      uxLog(this, c.green(summary));
+      uxLog("success", this, c.green(summary));
     }
     return summary;
   }
 
   private matchClassesWithJobs(latestJobsAll: any[], cronTriggers: any[]) {
+    uxLog("action", this, c.cyan(t('matchingApexClassesWithJobs')));
     this.asyncClassList = this.asyncClassList.map(apexClass => {
       const futureJobs = cronTriggers.filter(cronJob => apexClass.Name === cronJob.CronJobDetail.Name);
       apexClass.nextJobDate = "";
@@ -203,6 +207,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
   }
 
   private async findLatestApexJobsForEachClass(conn: any) {
+    uxLog("action", this, c.cyan(t('retrievingLatestApexJobsFromOrg', { conn: conn.instanceUrl })));
     const classIds = this.asyncClassList.map(apexClass => apexClass.Id);
     const query = `SELECT ApexClassId, Status, MAX(CreatedDate)` +
       ` FROM AsyncApexJob` +
@@ -213,6 +218,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
   }
 
   private async listAsyncApexClasses(conn: any) {
+    uxLog("action", this, c.cyan(t('retrievingAsyncApexClassesFromOrg', { conn: conn.instanceUrl })));
     const classListRes = await soqlQueryTooling("SELECT Id, Name, Body FROM ApexClass WHERE ManageableState ='unmanaged' ORDER BY Name ASC", conn);
     const allClassList: any[] = classListRes.records || [];
     for (const classItem of allClassList) {
@@ -291,7 +297,7 @@ Note: Salesforce does not provide all info to be 100% sure that a class is not u
     }
     /* jscpd:ignore-start */
     // Send notifications
-    globalThis.jsForceConn = flags['target-org']?.getConnection(); // Required for some notifications providers like Email
+    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
     await NotifProvider.postNotifications({
       type: 'UNUSED_APEX_CLASSES',
       text: notifText,

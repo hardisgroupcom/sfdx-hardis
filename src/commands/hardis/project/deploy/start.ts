@@ -2,9 +2,11 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { AnyJson } from "@salesforce/ts-types";
 import { wrapSfdxCoreCommand } from "../../../../common/utils/wrapUtils.js";
-import { checkDeploymentOrgCoverage, executePrePostCommands, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
+import { checkDeploymentOrgCoverage, extractOrgCoverageFromLog } from '../../../../common/utils/deployUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { executePrePostCommands } from '../../../../common/utils/prePostCommandUtils.js';
 
 export default class ProjectDeployStart extends SfCommand<any> {
   public static description = `sfdx-hardis wrapper for **sf project deploy start** that displays tips to solve deployment errors.
@@ -153,6 +155,7 @@ commandsPostDeploy:
     const { flags } = await this.parse(ProjectDeployStart);
     const conn = flags["target-org"].getConnection();
     const checkOnly = flags["dry-run"] === true;
+    await setConnectionVariables(flags['target-org']?.getConnection(), true);
     // Compute data for PR comments & flow diffs
     if (checkOnly) {
       await buildCheckDeployCommitSummary()
@@ -167,7 +170,7 @@ commandsPostDeploy:
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: checkOnly });
         } catch (errCoverage) {
-          await GitProvider.managePostPullRequestComment();
+          await GitProvider.managePostPullRequestComment(checkOnly);
           throw errCoverage;
         }
       }
@@ -175,9 +178,7 @@ commandsPostDeploy:
     // Run post deployment commands if defined
     await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: checkOnly, conn: conn });
     // Post comment if deployment check success
-    if (checkOnly) {
-      await GitProvider.managePostPullRequestComment();
-    }
+    await GitProvider.managePostPullRequestComment(checkOnly);
     // Post success deployment notifications
     if (process.exitCode === 0 && !checkOnly) {
       await handlePostDeploymentNotifications(flags, flags["target-org"].getUsername(), false, false, flags["debug"]);

@@ -13,4 +13,4 @@ You can use Salesforce Setup to configure your org as you would do on any sandbo
 - Click on ![Open current org button](assets/images/btn-open-org.jpg) to open your org in browser
   - _If you want to use another org, use menu ![Select org button](assets/images/btn-select-org.jpg) to select another one_
 - Perform your configurations in the org
-- Once you have finished, you can [publish your task](salesforce-ci-cd-publish-task.md)
+- Once you have finished, you can [publish your User Story](salesforce-ci-cd-publish-task.md)

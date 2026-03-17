@@ -9,6 +9,7 @@ import { uxLog } from '../../../../common/utils/index.js';
 import { minimizeProfile } from '../../../../common/utils/profileUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -16,13 +17,16 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class CleanMinimizeProfiles extends SfCommand<any> {
   public static title = 'Clean profiles of Permission Set attributes';
 
-  public static description = `Remove all profile attributes that exist on Permission Sets
+  public static description = `
+## Command Behavior
+
+**Removes all profile attributes that exist on Permission Sets**
 
 It is a bad practice to define on Profiles elements that can be defined on Permission Sets.
 
 Salesforce will deprecate such capability in Spring 26.
 
-Don't wait for that, and use minimizeProfiles cleaning to automatically remove from Profiles any permission that exists on a Permission Set !
+Don't wait for that, and use minimizeProfiles cleaning to automatically remove from Profiles any permission that exists on a Permission Set!
 
 The following XML tags are removed automatically:
 
@@ -34,14 +38,14 @@ The following XML tags are removed automatically:
 - pageAccesses
 - userPermissions (except on Admin Profile)
 
-You can override this list by defining a property minimizeProfilesNodesToRemove in your .sfdx-hardis.yml config file.
+You can override this list by defining a property \`minimizeProfilesNodesToRemove\` in your \`.sfdx-hardis.yml\` config file.
 
-You can also skip profiles using property skipMinimizeProfiles
+You can also skip profiles using property \`skipMinimizeProfiles\`.
 
-Example: 
+Example:
 
 \`\`\`yaml
-skipMinimizeProfiles
+skipMinimizeProfiles:
   - MyClient Customer Community Login User
   - MyClientPortail Profile
 \`\`\`
@@ -80,7 +84,7 @@ skipMinimizeProfiles
     this.debugMode = flags.debug || false;
 
     // Delete standard files when necessary
-    uxLog(this, c.cyan(`Removing profile attributes that exist on Permission Sets`));
+    uxLog("action", this, c.cyan(t('removingProfileAttributesOnPermissionSets')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
     const findManagedPattern = rootFolder + `/**/*.profile-meta.xml`;
@@ -91,7 +95,7 @@ skipMinimizeProfiles
     for (const profileFile of matchingProfileFiles) {
       const profileName = path.basename(profileFile).replace('.profile-meta.xml', '');
       if (skipMinimizeProfiles.includes(profileName)) {
-        uxLog(this, c.grey(`Skipped ${profileName} as found in skipMinimizeProfiles property`));
+        uxLog("log", this, c.grey(t('skippedAsFoundInSkipminimizeprofilesProperty', { profileName })));
         continue;
       }
       const res = await minimizeProfile(profileFile);
@@ -102,11 +106,11 @@ skipMinimizeProfiles
 
     // Summary
     if (counter > 0) {
-      uxLog(this, c.yellow('Please make sure the attributes removed from Profiles are defined on Permission Sets'));
+      uxLog("warning", this, c.yellow(t('pleaseMakeSureTheAttributesRemovedFrom')));
       globalThis.displayProfilesWarning = true;
     }
     const msg = `Cleaned ${c.green(c.bold(counter))} profiles from attributes existing on Permission Sets`;
-    uxLog(this, c.cyan(msg));
+    uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
     return { outputString: msg };
   }

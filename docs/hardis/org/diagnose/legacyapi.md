@@ -30,19 +30,19 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 ## Examples
 
 ```shell
-sf hardis:org:diagnose:legacyapi
+$ sf hardis:org:diagnose:legacyapi
 ```
 
 ```shell
-sf hardis:org:diagnose:legacyapi -u hardis@myclient.com
+$ sf hardis:org:diagnose:legacyapi -u hardis@myclient.com
 ```
 
 ```shell
-sf hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legacyapi.csv'
+$ sf hardis:org:diagnose:legacyapi --outputfile 'c:/path/to/folder/legacyapi.csv'
 ```
 
 ```shell
-sf hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legacyapi.csv
+$ sf hardis:org:diagnose:legacyapi -u hardis@myclient.com --outputfile ./tmp/legacyapi.csv
 ```
 
 

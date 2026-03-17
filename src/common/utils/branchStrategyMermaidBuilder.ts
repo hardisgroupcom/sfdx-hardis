@@ -60,7 +60,17 @@ export class BranchStrategyMermaidBuilder {
     // Create feature branches for branches that are not merge targets
     const noMergeTargetBranchAndOrg = this.branchesAndOrgs.filter((branchAndOrg) => !branchesWhoAreMergeTargets.includes(branchAndOrg.branchName));
     if (branchesMergingInPreprod.length < 2 && !noMergeTargetBranchAndOrg.find((branchAndOrg) => isPreprod(branchAndOrg.branchName))) {
-      noMergeTargetBranchAndOrg.push(this.branchesAndOrgs.find((branchAndOrg) => isPreprod(branchAndOrg.branchName)));
+
+      // We must check if a 'preprod' branch exists before adding it to the array.
+      // The .find() method returns undefined if no matching element is found.
+      // Without this check, an 'undefined' value could be pushed to the array,
+      // causing a null pointer exception later when the code tries to access the 'branchName' property.
+      const preprodBranch = this.branchesAndOrgs.find((branchAndOrg) =>
+        isPreprod(branchAndOrg.branchName)
+      );
+      if (preprodBranch) {
+        noMergeTargetBranchAndOrg.push(preprodBranch);
+      }
     }
     for (const branchAndOrg of noMergeTargetBranchAndOrg) {
       const nameBase = isPreprod(branchAndOrg.branchName) ? "hotfix" : "feature";
@@ -237,7 +247,7 @@ export class BranchStrategyMermaidBuilder {
     classDef gitMajor fill:#FFCA76,stroke:#E65C00,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
     classDef gitMain fill:#F97B8B,stroke:#CC2936,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
     classDef gitFeature fill:#B0DE87,stroke:#2D6A4F,stroke-width:2px,color:#000000,font-weight:bold,border-radius:10px;
-    
+
     style GitBranches fill:#F4F5F9,color:#000000,stroke:#8B72B2,stroke-width:1px;
     style SalesforceOrgs fill:#F1F7F5,color:#000000,stroke:#468C70,stroke-width:1px;
 `
