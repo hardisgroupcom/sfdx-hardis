@@ -1,0 +1,22 @@
+{
+  "templates": [
+    {
+      "name": "CPQConfig.json",
+      "sfdxHardisLabel": "CPQ Configuration",
+      "sfdxHardisDescription": "Will export/import Salesforce CPQ configuration objects",
+      "url": "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates/sfdmu/CPQConfig.json"
+    },
+    {
+      "name": "CongaConfig.json",
+      "sfdxHardisLabel": "Conga Configuration",
+      "sfdxHardisDescription": "Will export/import Conga config (Templates, Queries, Email Templates, Solutions)",
+      "url": "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates/sfdmu/CongaConfig.json"
+    },
+    {
+      "name": "ContactEmailsAnonymize.json",
+      "sfdxHardisLabel": "Anonymize Contacts Emails",
+      "sfdxHardisDescription": "Can be used to export Contacts then reimport them in the same org to anonymize email addresses",
+      "url": "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates/sfdmu/ContactEmailsAnonymize.json"
+    }
+  ]
+}

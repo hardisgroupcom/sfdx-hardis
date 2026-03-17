@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add summary files for sfdmu and file export templates
+- Jira connector: allow to use a service account and connect with client id and client secret
+
 ## [7.2.0] 2026-03-17
 
 - Update Org Monitoring documentation

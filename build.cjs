@@ -15,6 +15,7 @@ class SfdxHardisBuilder {
     await this.generatePagesFromReadme();
     await this.buildDeployTipsDoc();
     await this.buildPromptTemplatesDocs();
+    await this.buildTemplatesSummaries();
     this.truncateReadme();
     // this.fixOnlineIndex();
     console.log("All done.");
@@ -365,6 +366,34 @@ class SfdxHardisBuilder {
       console.log(`Generated ${pageFile}`);
     }
     console.log("All pages generated from README.md");
+  }
+
+  async buildTemplatesSummaries() {
+    console.log("Building templates summaries...");
+    const GITHUB_RAW_BASE = "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates";
+    const TEMPLATES_ROOT = "./defaults/templates";
+    const subFolders = [
+      { folder: "files", outputFile: `${TEMPLATES_ROOT}/file-templates.json` },
+      { folder: "sfdmu", outputFile: `${TEMPLATES_ROOT}/data-templates.json` },
+    ];
+    for (const { folder, outputFile } of subFolders) {
+      const folderPath = `${TEMPLATES_ROOT}/${folder}`;
+      const files = fs.readdirSync(folderPath).filter((f) => f.endsWith(".json"));
+      const templates = [];
+      for (const file of files.sort()) {
+        const filePath = `${folderPath}/${file}`;
+        const content = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        templates.push({
+          name: file,
+          sfdxHardisLabel: content.sfdxHardisLabel || "",
+          sfdxHardisDescription: content.sfdxHardisDescription || "",
+          url: `${GITHUB_RAW_BASE}/${folder}/${file}`,
+        });
+      }
+      const summary = JSON.stringify({ templates }, null, 2) + "\n";
+      this.writeFileIfChanged(outputFile, summary);
+      console.log(`Written templates summary ${outputFile}`);
+    }
   }
 
   truncateReadme() {
