@@ -643,8 +643,10 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     // Convert bold
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
-    // Convert italic
+    // Convert italic (both *text* and _text_ variants)
+    // Negative lookbehind/lookahead on _..._  avoids matching snake_case identifiers
     html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    html = html.replace(/(?<![a-zA-Z0-9])_([^_\n]+)_(?![a-zA-Z0-9])/g, '<em>$1</em>');
 
     // Convert lists (supports nested bullet and ordered lists)
     html = this.convertLists(html);
