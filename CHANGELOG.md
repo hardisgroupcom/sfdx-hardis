@@ -6,6 +6,8 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Add summary files for sfdmu and file export templates
 - Jira connector: allow to use a service account and connect with client id and client secret
+- New command [hardis:doc:mkdocs-to-confluence](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-confluence/) to export MkDocs documentation to Confluence wiki pages
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Fix wrong labels when generating doc over another language
 
 ## [7.2.0] 2026-03-17
 

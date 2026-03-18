@@ -17,6 +17,7 @@ import { countPackageXmlItems, parsePackageXmlFile, writePackageXmlFile } from '
 import Project2Markdown from '../../doc/project2markdown.js';
 import MkDocsToSalesforce from '../../doc/mkdocs-to-salesforce.js';
 import MkDocsToCloudflare from '../../doc/mkdocs-to-cf.js';
+import MkDocsToConfluence from '../../doc/mkdocs-to-confluence.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../../common/utils/gitUtils.js';
 import { updateSfdxProjectApiVersion } from '../../../../common/utils/projectUtils.js';
@@ -76,6 +77,8 @@ It will allow you the identify the responsible metadata and ignore it using pack
 If you want to also upload HTML Documentation on your Salesforce Org as static resource, use variable **SFDX_HARDIS_DOC_DEPLOY_TO_ORG="true"**
 
 If you want to also upload HTML Documentation on Cloudflare, use variable **SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE="true"**
+
+If you want to also publish Documentation on Confluence, use variable **SFDX_HARDIS_DOC_DEPLOY_TO_CONFLUENCE="true"** (see [configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-project-doc-confluence/))
 
 - If you want to generate the documentation in multiple languages, define variable SFDX_DOC_LANGUAGES (ex: SFDX_DOC_LANGUAGES=en,fr,de)
 - You can define one Cloudflare site by language, for example with the following variables:
@@ -337,6 +340,9 @@ If Flow history doc always display a single state, you probably need to update y
           }
           else if (config.docDeployToCloudflare || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE === "true") {
             await MkDocsToCloudflare.run([]);
+          }
+          if (config.docDeployToConfluence || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CONFLUENCE === "true") {
+            await MkDocsToConfluence.run([]);
           }
         }
       } catch (e: any) {

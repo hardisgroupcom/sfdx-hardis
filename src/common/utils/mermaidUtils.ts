@@ -197,6 +197,134 @@ export async function generateMarkdownFileWithMermaidCli(outputFlowMdFileIn: str
   }
 }
 
+/**
+ * Derive a short slug from a relative page path for use in mermaid image filenames.
+ * e.g. "objects/Account.md" → "objects-Account", "flows/My Flow.md" → "flows-My_Flow"
+ */
+function derivePageSlug(pagePath: string): string {
+  const normalized = pagePath.replace(/\\/g, '/');
+  const withoutExt = normalized.replace(/\.[^/.]+$/, '');
+  return withoutExt
+    .replace(/[^a-zA-Z0-9/_-]/g, '_')
+    .replace(/\//g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+/**
+ * Convert all MermaidJS code blocks found in a markdown string to PNG images written to tempDir.
+ * The original markdown file is never modified.
+ * Each block is tried with CLI (mmdc / npx) then Docker as fallback.
+ * Returns the modified markdown string (mermaid blocks replaced by image refs) and the list of generated PNG paths.
+ * @param pagePath  Optional relative path of the source markdown file; used to generate
+ *                  recognisable image names (e.g. mermaid-objects-Account-0-{hash}.png)
+ *                  and to prune stale cache entries when the diagram content changes.
+ */
+export interface MermaidConversionResult {
+  imageName: string;
+  fingerPrint: string;
+  status: 'success' | 'failure';
+  failureReason: string;
+}
+
+export async function convertMermaidBlocksToImages(
+  markdownContent: string,
+  tempDir: string,
+  pagePath?: string,
+): Promise<{ markdownWithImages: string; mermaidImages: string[]; mermaidResults: MermaidConversionResult[] }> {
+  const mermaidImages: string[] = [];
+  const mermaidResults: MermaidConversionResult[] = [];
+  const mermaidRegex = /```mermaid\n([\s\S]*?)```/g;
+  const mermaidBlocks: Array<{ fullMatch: string; code: string; idx: number }> = [];
+  let m: RegExpExecArray | null;
+  while ((m = mermaidRegex.exec(markdownContent)) !== null) {
+    mermaidBlocks.push({ fullMatch: m[0], code: m[1], idx: mermaidBlocks.length });
+  }
+  if (mermaidBlocks.length === 0) {
+    return { markdownWithImages: markdownContent, mermaidImages, mermaidResults };
+  }
+  await fs.ensureDir(tempDir);
+  const mermaidCacheDir = path.join("docs", "cache-mermaid");
+  const pageSlug = pagePath ? derivePageSlug(pagePath) : null;
+  let markdownWithImages = markdownContent;
+  for (const block of mermaidBlocks) {
+    // Fingerprint is derived from diagram source — used for cache key and image filename
+    const fingerPrint = UtilsAi.getFingerPrint([block.code.trim()]);
+    // Include page slug and block index in the name so images are easy to identify
+    // and multiple diagrams on the same page get distinct names.
+    const imageName = pageSlug
+      ? `mermaid-${pageSlug}-${block.idx}-${fingerPrint}.png`
+      : `mermaid-${fingerPrint}.png`;
+    const tempMmdFile = path.join(tempDir, `mermaid-${block.idx}.mmd`);
+    const tempImgFile = path.join(tempDir, imageName);
+    try {
+      // Sanitize the mermaid source to avoid charset issues when mmdc parses the file:
+      // - Remove UTF-8 BOM (\ufeff) that may have been embedded in the markdown file
+      // - Normalize line endings (\r\n or lone \r → \n) to avoid lexer confusion
+      // - Strip ASCII control characters (C0 controls except \t and \n) that are
+      //   illegal in mermaid diagrams and can appear after encoding round-trips on Windows
+      /* jscpd:ignore-start */
+      // eslint-disable-next-line no-control-regex
+      const controlCharsRegex = new RegExp('[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]', 'g');
+      /* jscpd:ignore-end */
+      const sanitizedCode = block.code
+        .replace(/\ufeff/g, '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(controlCharsRegex, '')
+        .trim();
+      await fs.writeFile(tempMmdFile, sanitizedCode, 'utf8');
+      let success = false;
+      // Check image cache first (keyed by fingerprint of diagram source)
+      const cachedImgFile = path.join(mermaidCacheDir, imageName);
+      if (process.env?.IGNORE_MERMAID_CACHE !== "true" && fs.existsSync(cachedImgFile)) {
+        await fs.copy(cachedImgFile, tempImgFile);
+        success = true;
+        uxLog("log", this, c.grey(t('mermaidDiagramFromCache', { idx: block.idx })));
+      } else {
+        // Try CLI first (mmdc or npx fallback), then Docker
+        if (!(globalThis.mermaidUnavailableTools || []).includes("cli")) {
+          success = await generateMarkdownFileWithMermaidCli(tempMmdFile, tempImgFile);
+        }
+        if (!success && !(globalThis.mermaidUnavailableTools || []).includes("docker")) {
+          const isDockerAvlbl = await isDockerAvailable();
+          if (isDockerAvlbl) {
+            success = await generateMarkdownFileWithMermaidDocker(tempMmdFile, tempImgFile);
+          }
+        }
+        // Write to cache if generation succeeded
+        if (success && fs.existsSync(tempImgFile)) {
+          await fs.ensureDir(mermaidCacheDir);
+          // Remove stale cache files for the same page/block slot (different fingerprint)
+          if (pageSlug !== null) {
+            const stalePattern = new RegExp(`^mermaid-${pageSlug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-${block.idx}-.*.png$`);
+            const existingCacheFiles = await fs.readdir(mermaidCacheDir).catch(() => [] as string[]);
+            for (const f of existingCacheFiles) {
+              if (stalePattern.test(f) && f !== imageName) {
+                await fs.remove(path.join(mermaidCacheDir, f));
+                uxLog("log", this, c.grey(t('mermaidDeletedStaleCache', { file: f })));
+              }
+            }
+          }
+          await fs.copy(tempImgFile, cachedImgFile);
+        }
+      }
+      if (success && fs.existsSync(tempImgFile)) {
+        markdownWithImages = markdownWithImages.replace(block.fullMatch, `![Mermaid Diagram](${imageName})`);
+        mermaidImages.push(tempImgFile);
+        mermaidResults.push({ imageName, fingerPrint, status: 'success', failureReason: '' });
+        uxLog("log", this, c.grey(t('mermaidDiagramConvertedToImage', { idx: block.idx })));
+      } else {
+        mermaidResults.push({ imageName, fingerPrint, status: 'failure', failureReason: t('mermaidDiagramConversionFailed', { idx: block.idx, error: 'No output produced' }) });
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('mermaidDiagramConversionFailed', { idx: block.idx, error: e.message })));
+      mermaidResults.push({ imageName, fingerPrint, status: 'failure', failureReason: e.message });
+    }
+  }
+  return { markdownWithImages, mermaidImages, mermaidResults };
+}
+
 export function getMermaidExtraClasses(mermaidTheme?: unknown) {
   const resolvedMermaidTheme = isResolvedMermaidTheme(mermaidTheme)
     ? mermaidTheme

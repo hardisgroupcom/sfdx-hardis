@@ -42,3 +42,7 @@ If it is a sfdx-hardis CI/CD project, a diagram of the branches and orgs strateg
 
 ![](assets/images/screenshot-doc-branches-strategy.jpg)
 
+It can also be hosted on Confluence.
+
+![](assets/images/confluence-doc-example.jpg)
+
