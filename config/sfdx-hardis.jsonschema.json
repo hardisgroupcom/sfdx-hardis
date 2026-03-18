@@ -1250,6 +1250,16 @@
       "title": "Doc: Deploy to Cloudflare",
       "type": "boolean"
     },
+    "docDeployToConfluence": {
+      "$id": "#/properties/docDeployToConfluence",
+      "default": false,
+      "description": "Automatically publish MkDocs documentation from sfdx-hardis Monitoring Workflow (BackUp step) to Atlassian Confluence. Requires CONFLUENCE_SPACE_KEY and authentication variables to be set.",
+      "examples": [
+        true
+      ],
+      "title": "Doc: Deploy to Confluence",
+      "type": "boolean"
+    },
     "docDeployToOrg": {
       "$id": "#/properties/docDeployToOrg",
       "default": false,
