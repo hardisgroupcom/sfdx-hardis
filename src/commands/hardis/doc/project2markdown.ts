@@ -9,7 +9,7 @@ import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { completeAttributesDescriptionWithAi, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getBannerMarkdownAndLink, getConfig } from '../../../config/index.js';
@@ -1301,6 +1301,13 @@ ${this.htmlInstructions}
     }
     // Update mkdocs nav items
     const mkdocsYml: any = readMkDocsFile(mkdocsYmlFile);
+
+    // Remove stale nav entries from previous language or translation versions.
+    // Collects all known translated values for docMdMenu*/docMdAll* keys across all locales,
+    // then filters out any root nav item whose key matches one of those values.
+    // This prevents duplicates like "Objekte" remaining alongside "Objects" after a language change.
+    const allKnownNavLabels = buildAllKnownNavLabels();
+    mkdocsYml.nav = mkdocsYml.nav.filter((navItem: any) => !allKnownNavLabels.has(Object.keys(navItem)[0]));
 
     for (const navMenu of this.mkDocsNavNodes) {
       let pos = 0;

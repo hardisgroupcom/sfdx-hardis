@@ -1,13 +1,44 @@
 import c from 'chalk';
 import fs from 'fs-extra';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 import * as yaml from 'js-yaml';
 import { SfError } from "@salesforce/core";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
 import { uxLog, execCommand } from "../utils/index.js";
-import { t } from '../utils/i18n.js';
+import { SUPPORTED_LOCALES, t } from '../utils/i18n.js';
 
+
+/**
+ * Builds a Set of all known translated values for docMdMenu* and docMdAll* i18n keys
+ * across all supported locales. Used to detect and remove stale nav entries in mkdocs.yml
+ * when the documentation language changes between runs.
+ */
+export function buildAllKnownNavLabels(): Set<string> {
+  const labels = new Set<string>();
+  /* jscpd:ignore-start */
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  /* jscpd:ignore-end */
+  for (const locale of SUPPORTED_LOCALES) {
+    const localeFile = path.join(__dirname, '..', '..', 'i18n', `${locale}.json`);
+    if (fs.existsSync(localeFile)) {
+      try {
+        const translations: Record<string, string> = JSON.parse(fs.readFileSync(localeFile, 'utf-8'));
+        for (const [key, value] of Object.entries(translations)) {
+          if (key.startsWith('docMdMenu') || key.startsWith('docMdAll')) {
+            labels.add(value);
+          }
+        }
+      } catch {
+        // Ignore unreadable locale files
+      }
+    }
+  }
+  return labels;
+}
 
 export function readMkDocsFile(mkdocsYmlFile: string): any {
   const mkdocsYml: any = yaml.load(

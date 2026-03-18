@@ -3,6 +3,8 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs-extra';
 
+export const SUPPORTED_LOCALES = ['de', 'en', 'es', 'fr', 'ja', 'pl', 'pt-BR'];
+
 let initialized = false;
 
 function loadTranslations(locale: string): Record<string, string> {
@@ -28,8 +30,7 @@ export function initI18n(): void {
   const locale = (process.env.SFDX_HARDIS_LANG || 'en').substring(0, 5).replace(/^([a-zA-Z]{2})(-?)([a-zA-Z]{0,2})$/, (_, p1, p2, p3) =>
     p1.toLowerCase() + p2 + p3.toUpperCase()
   );
-  const supportedLocales = ['de', 'en', 'es', 'fr', 'ja', 'pl', 'pt-BR'];
-  const lng = supportedLocales.includes(locale) ? locale : 'en';
+  const lng = SUPPORTED_LOCALES.includes(locale) ? locale : 'en';
 
   const resources: Record<string, { translation: Record<string, string> }> = {
     en: { translation: loadTranslations('en') },
