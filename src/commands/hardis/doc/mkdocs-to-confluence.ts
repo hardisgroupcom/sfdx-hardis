@@ -2,15 +2,18 @@
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import fs from 'fs-extra';
 import c from "chalk";
+import * as os from "os";
 import * as path from "path";
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import axios, { AxiosInstance } from 'axios';
-import { uxLog } from '../../../common/utils/index.js';
+import { uxLog, uxLogTable } from '../../../common/utils/index.js';
+import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { CONSTANTS, getEnvVar } from '../../../config/index.js';
 import { readMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { t } from '../../../common/utils/i18n.js';
+import { convertMermaidBlocksToImages } from '../../../common/utils/mermaidUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -118,6 +121,10 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
   protected failedPages: string[] = [];
   protected spaceId: string;
   protected publishedPageCount = 0;
+  // Per-page report rows (populated during publishing)
+  protected pageReportRows: Array<{ type: string; pageName: string; file: string; status: string; failureReason: string; url: string }> = [];
+  protected outputFilesRes: any = {};
+  protected outputFile: string;
 
   /* jscpd:ignore-end */
 
@@ -146,6 +153,9 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     // Resolve the space ID
     await this.resolveSpaceId();
 
+    // Validate the parent page exists (fails fast if CONFLUENCE_PARENT_PAGE_ID is stale or wrong)
+    await this.validateParentPage();
+
     // Build page title map first (needed for link resolution)
     this.buildPageTitleMap(navItems, "");
 
@@ -156,17 +166,44 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     await this.publishNavItems(navItems, this.confluenceParentPageId);
     WebSocketClient.sendProgressEndMessage(totalPages);
 
-    // Summary
+    // Build and write the CSV/XLSX report
+    this.outputFile = await generateReportPath('mkdocs-to-confluence', this.outputFile);
+    this.outputFilesRes = await generateCsvFile(this.pageReportRows, this.outputFile, {
+      fileTitle: t('confluenceDeploymentSummary'),
+      columnsCustomStyles: {
+        type: { width: 10 },
+        pageName: { width: 40 },
+        file: { width: 40 },
+        status: { width: 12 },
+        failureReason: { width: 60, wrap: true },
+        url: { width: 60, hyperlinkFromValue: true },
+      },
+    });
+
+    // Summary table
+    const summaryRows = [
+      ...Array.from(this.pageTitleMap.entries()).map(([file, title]) => ({
+        page: title,
+        file,
+        result: this.failedPages.includes(file)
+          ? c.red('✗ ' + t('confluencePublishFailed'))
+          : c.green('✓ ' + t('confluencePublishSuccess')),
+      })),
+    ];
+    uxLog("action", this, c.bold(t('confluenceDeploymentSummary')));
+    uxLogTable(this, summaryRows, ['page', 'file', 'result']);
+
+    const publishedCount = this.pageTitleMap.size - this.failedPages.length;
     if (this.failedPages.length > 0) {
       uxLog("warning", this, c.yellow(t('confluenceSomePagesFailedToPublish', { count: this.failedPages.length })));
-      for (const failed of this.failedPages) {
-        uxLog("warning", this, c.yellow(`  - ${failed}`));
-      }
-    } else {
+    }
+    uxLog("action", this, c.cyan(t('confluencePublishedCount', { published: publishedCount, total: this.pageTitleMap.size })));
+
+    if (this.failedPages.length === 0) {
       uxLog("success", this, c.green(t('confluenceAllPagesPublishedSuccessfully', { count: this.pageTitleMap.size })));
     }
 
-    return { success: this.failedPages.length === 0, publishedPages: this.pageTitleMap.size, failedPages: this.failedPages.length };
+    return { success: this.failedPages.length === 0, publishedPages: this.pageTitleMap.size, failedPages: this.failedPages.length, outputFile: this.outputFilesRes?.csvFile || null };
   }
 
   private async setupConfluenceClient() {
@@ -264,6 +301,26 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     return cloudId;
   }
 
+  private async validateParentPage() {
+    if (!this.confluenceParentPageId) {
+      return; // No parent page configured, nothing to validate
+    }
+    try {
+      await this.axiosClient.get(`/wiki/api/v2/pages/${this.confluenceParentPageId}`);
+      uxLog("log", this, c.grey(t('confluenceParentPageValidated', { pageId: this.confluenceParentPageId })));
+    } catch (e: any) {
+      const statusCode = e.response?.status;
+      if (statusCode === 404) {
+        throw new SfError(
+          t('confluenceParentPageNotFound', { pageId: this.confluenceParentPageId }) +
+          '\nPlease update the CONFLUENCE_PARENT_PAGE_ID environment variable with a valid page ID.'
+        );
+      }
+      // For other errors (auth, network) just re-throw
+      throw e;
+    }
+  }
+
   private async resolveSpaceId() {
     uxLog("action", this, c.cyan(t('confluenceResolvingSpaceId', { spaceKey: this.confluenceSpaceKey })));
     const response = await this.axiosClient.get('/wiki/api/v2/spaces', {
@@ -284,13 +341,13 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     for (const item of navItems) {
       if (typeof item === 'string') {
         // Direct file reference without title
-        const title = this.confluencePagePrefix + this.titleFromFilePath(item);
+        const title = this.computePagePrefix(item) + this.titleFromFilePath(item);
         this.pageTitleMap.set(item, title);
       } else if (typeof item === 'object') {
         for (const [label, value] of Object.entries(item)) {
           if (typeof value === 'string') {
             // Leaf page: { "Label": "file.md" }
-            const title = this.confluencePagePrefix + label;
+            const title = this.computePagePrefix(value as string) + label;
             this.pageTitleMap.set(value as string, title);
           } else if (Array.isArray(value)) {
             // Section with array children: { "Label": [ ... ] }
@@ -310,7 +367,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
   private buildPageTitleMapFromObject(obj: Record<string, any>) {
     for (const [childLabel, childValue] of Object.entries(obj)) {
       if (typeof childValue === 'string') {
-        this.pageTitleMap.set(childValue, this.confluencePagePrefix + childLabel);
+        this.pageTitleMap.set(childValue, this.computePagePrefix(childValue) + childLabel);
       } else if (Array.isArray(childValue)) {
         this.buildPageTitleMap(childValue as any[], childLabel);
       } else if (typeof childValue === 'object' && childValue !== null) {
@@ -328,57 +385,112 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
 
   /**
    * Recursively publish pages from the mkdocs nav structure.
+   * Siblings at each level are published in parallel (up to CONFLUENCE_PUBLISH_CONCURRENCY).
+   * After publishing, pages are reordered via the Confluence move API to match nav order.
    */
   private async publishNavItems(navItems: any[], parentPageId: string | null) {
+    const tasks: Array<() => Promise<void>> = [];
+    const orderedPageIds: Array<string | null> = [];
     for (const item of navItems) {
       if (typeof item === 'string') {
-        await this.publishPage(item, this.pageTitleMap.get(item) || this.confluencePagePrefix + this.titleFromFilePath(item), parentPageId);
+        const slotIdx = orderedPageIds.length;
+        orderedPageIds.push(null);
+        tasks.push(async () => {
+          await this.publishPage(item, this.pageTitleMap.get(item) || this.computePagePrefix(item) + this.titleFromFilePath(item), parentPageId);
+          orderedPageIds[slotIdx] = this.pageIdMap.get(item) || null;
+        });
       } else if (typeof item === 'object') {
         for (const [label, value] of Object.entries(item)) {
+          const slotIdx = orderedPageIds.length;
+          orderedPageIds.push(null);
           if (typeof value === 'string') {
             // Leaf page: { "Label": "file.md" }
-            await this.publishPage(value as string, this.pageTitleMap.get(value as string) || this.confluencePagePrefix + label, parentPageId);
+            tasks.push(async () => {
+              await this.publishPage(value as string, this.pageTitleMap.get(value as string) || this.computePagePrefix(value as string) + label, parentPageId);
+              orderedPageIds[slotIdx] = this.pageIdMap.get(value as string) || null;
+            });
           } else if (Array.isArray(value)) {
-            // Section with array children: { "Label": [ ... ] }
-            const sectionTitle = this.confluencePagePrefix + label;
-            const sectionPageId = await this.createOrUpdatePage(sectionTitle, `<p>${label}</p>`, parentPageId);
-            if (sectionPageId) {
-              await this.publishNavItems(value as any[], sectionPageId);
-            }
+            // Section with array children: create container then process children
+            tasks.push(async () => {
+              const sectionTitle = this.confluencePagePrefix + label;
+              try {
+                const sectionPageId = await this.createOrUpdatePage(sectionTitle, `<p>${this.escapeXml(label)}</p>`, parentPageId);
+                orderedPageIds[slotIdx] = sectionPageId;
+                if (sectionPageId) {
+                  await this.publishNavItems(value as any[], sectionPageId);
+                }
+              } catch (e: any) {
+                uxLog("warning", this, c.yellow(t('confluencePagePublishError', { title: sectionTitle, error: this.apiErrorMessage(e) })));
+              }
+            });
           } else if (typeof value === 'object' && value !== null) {
             // Section with flat object children: { "Label": { "Child": "file.md", ... } }
-            const sectionTitle = this.confluencePagePrefix + label;
-            const sectionPageId = await this.createOrUpdatePage(sectionTitle, `<p>${label}</p>`, parentPageId);
-            if (sectionPageId) {
-              await this.publishNavItemsFromObject(value as Record<string, any>, sectionPageId);
-            }
+            tasks.push(async () => {
+              const sectionTitle = this.confluencePagePrefix + label;
+              try {
+                const sectionPageId = await this.createOrUpdatePage(sectionTitle, `<p>${this.escapeXml(label)}</p>`, parentPageId);
+                orderedPageIds[slotIdx] = sectionPageId;
+                if (sectionPageId) {
+                  await this.publishNavItemsFromObject(value as Record<string, any>, sectionPageId);
+                }
+              } catch (e: any) {
+                uxLog("warning", this, c.yellow(t('confluencePagePublishError', { title: sectionTitle, error: this.apiErrorMessage(e) })));
+              }
+            });
           }
         }
       }
     }
+    await this.runInParallel(tasks);
+    // Reorder sibling pages to match nav order
+    await this.reorderChildPages(orderedPageIds.filter((id): id is string => id !== null));
   }
 
   /**
    * Publish pages from a flat-object nav section, e.g. { "Account": "objects/Account.md", ... }
    */
   private async publishNavItemsFromObject(obj: Record<string, any>, parentPageId: string | null) {
+    const tasks: Array<() => Promise<void>> = [];
+    const orderedPageIds: Array<string | null> = [];
     for (const [childLabel, childValue] of Object.entries(obj)) {
+      const slotIdx = orderedPageIds.length;
+      orderedPageIds.push(null);
       if (typeof childValue === 'string') {
-        await this.publishPage(childValue, this.pageTitleMap.get(childValue) || this.confluencePagePrefix + childLabel, parentPageId);
+        tasks.push(async () => {
+          await this.publishPage(childValue, this.pageTitleMap.get(childValue) || this.computePagePrefix(childValue) + childLabel, parentPageId);
+          orderedPageIds[slotIdx] = this.pageIdMap.get(childValue) || null;
+        });
       } else if (Array.isArray(childValue)) {
-        const sectionTitle = this.confluencePagePrefix + childLabel;
-        const sectionPageId = await this.createOrUpdatePage(sectionTitle, `<p>${childLabel}</p>`, parentPageId);
-        if (sectionPageId) {
-          await this.publishNavItems(childValue as any[], sectionPageId);
-        }
+        tasks.push(async () => {
+          const sectionTitle = this.confluencePagePrefix + childLabel;
+          try {
+            const sectionPageId = await this.createOrUpdatePage(sectionTitle, `<p>${this.escapeXml(childLabel)}</p>`, parentPageId);
+            orderedPageIds[slotIdx] = sectionPageId;
+            if (sectionPageId) {
+              await this.publishNavItems(childValue as any[], sectionPageId);
+            }
+          } catch (e: any) {
+            uxLog("warning", this, c.yellow(t('confluencePagePublishError', { title: sectionTitle, error: this.apiErrorMessage(e) })));
+          }
+        });
       } else if (typeof childValue === 'object' && childValue !== null) {
-        const sectionTitle = this.confluencePagePrefix + childLabel;
-        const sectionPageId = await this.createOrUpdatePage(sectionTitle, `<p>${childLabel}</p>`, parentPageId);
-        if (sectionPageId) {
-          await this.publishNavItemsFromObject(childValue as Record<string, any>, sectionPageId);
-        }
+        tasks.push(async () => {
+          const sectionTitle = this.confluencePagePrefix + childLabel;
+          try {
+            const sectionPageId = await this.createOrUpdatePage(sectionTitle, `<p>${this.escapeXml(childLabel)}</p>`, parentPageId);
+            orderedPageIds[slotIdx] = sectionPageId;
+            if (sectionPageId) {
+              await this.publishNavItemsFromObject(childValue as Record<string, any>, sectionPageId);
+            }
+          } catch (e: any) {
+            uxLog("warning", this, c.yellow(t('confluencePagePublishError', { title: sectionTitle, error: this.apiErrorMessage(e) })));
+          }
+        });
       }
     }
+    await this.runInParallel(tasks);
+    // Reorder sibling pages to match nav order
+    await this.reorderChildPages(orderedPageIds.filter((id): id is string => id !== null));
   }
 
   /**
@@ -389,19 +501,33 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     if (!fs.existsSync(mdFilePath)) {
       uxLog("warning", this, c.yellow(t('confluenceMarkdownFileNotFound', { file: mdRelPath })));
       this.failedPages.push(mdRelPath);
+      this.pageReportRows.push({ type: 'page', pageName: title, file: mdRelPath, status: 'failure', failureReason: t('confluenceMarkdownFileNotFound', { file: mdRelPath }), url: '' });
       return;
     }
 
+    const tempDir = path.join(os.tmpdir(), `sfdx-hardis-mermaid-${Date.now()}`);
     try {
       uxLog("action", this, c.cyan(t('confluencePublishingPage', { title, file: mdRelPath })));
 
       let markdownContent = await fs.readFile(mdFilePath, 'utf-8');
+      // Strip UTF-8 BOM that some editors (e.g. Notepad on Windows) add to files
+      if (markdownContent.charCodeAt(0) === 0xFEFF) {
+        markdownContent = markdownContent.slice(1);
+      }
 
       // Strip YAML frontmatter
       markdownContent = this.stripFrontmatter(markdownContent);
 
+      // Convert MermaidJS diagrams to images in a temp directory (Confluence does not support mermaid natively)
+      const { markdownWithImages, mermaidImages, mermaidResults } = await convertMermaidBlocksToImages(markdownContent, tempDir);
+
+      // Track mermaid conversion results in report
+      for (const mr of mermaidResults) {
+        this.pageReportRows.push({ type: 'mermaid', pageName: title, file: mr.imageName, status: mr.status, failureReason: mr.failureReason, url: '' });
+      }
+
       // Convert markdown to Confluence storage format
-      const confluenceContent = this.convertMarkdownToConfluenceStorage(markdownContent, mdRelPath);
+      const confluenceContent = this.convertMarkdownToConfluenceStorage(markdownWithImages, mdRelPath);
 
       // Create or update the page
       const pageId = await this.createOrUpdatePage(title, confluenceContent, parentPageId);
@@ -409,18 +535,45 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
       if (pageId) {
         this.pageIdMap.set(mdRelPath, pageId);
 
-        // Upload images as attachments
-        await this.uploadImagesForPage(markdownContent, mdRelPath, pageId);
+        // Upload images referenced in original markdown as attachments
+        const imageUploadResults = await this.uploadImagesForPage(markdownContent, mdRelPath, pageId);
+        for (const ir of imageUploadResults) {
+          this.pageReportRows.push({ type: 'image', pageName: title, file: ir.fileName, status: ir.status, failureReason: ir.failureReason, url: '' });
+        }
 
+        // Upload mermaid-generated images as attachments
+        for (const imgFile of mermaidImages) {
+          if (fs.existsSync(imgFile)) {
+            const imgName = path.basename(imgFile);
+            try {
+              await this.uploadAttachment(pageId, imgFile, imgName);
+              this.pageReportRows.push({ type: 'image', pageName: title, file: imgName, status: 'success', failureReason: '', url: '' });
+              uxLog("log", this, c.grey(t('confluenceImageUploaded', { image: imgName, page: mdRelPath })));
+            } catch (e: any) {
+              this.pageReportRows.push({ type: 'image', pageName: title, file: imgName, status: 'failure', failureReason: this.apiErrorMessage(e), url: '' });
+              uxLog("warning", this, c.yellow(t('confluenceImageUploadError', { image: imgName, error: this.apiErrorMessage(e) })));
+            }
+          }
+        }
+
+        const pageUrl = `${this.confluenceBaseUrl}/wiki/spaces/${this.confluenceSpaceKey}/pages/${pageId}`;
+        this.pageReportRows.push({ type: 'page', pageName: title, file: mdRelPath, status: 'success', failureReason: '', url: pageUrl });
         uxLog("success", this, c.green(t('confluencePagePublished', { title })));
         this.publishedPageCount++;
         WebSocketClient.sendProgressStepMessage(this.publishedPageCount, this.pageTitleMap.size);
       }
     } catch (e: any) {
-      uxLog("warning", this, c.yellow(t('confluencePagePublishError', { title, error: e.message })));
+      uxLog("warning", this, c.yellow(t('confluencePagePublishError', { title, error: this.apiErrorMessage(e) })));
       this.failedPages.push(mdRelPath);
+      this.pageReportRows.push({ type: 'page', pageName: title, file: mdRelPath, status: 'failure', failureReason: this.apiErrorMessage(e), url: '' });
+    } finally {
+      // Clean up temp directory used for mermaid image generation
+      if (fs.existsSync(tempDir)) {
+        await fs.remove(tempDir);
+      }
     }
   }
+
 
   private stripFrontmatter(content: string): string {
     const frontmatterRegex = /^---\s*\n[\s\S]*?\n---\s*\n/;
@@ -432,6 +585,13 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
    */
   protected convertMarkdownToConfluenceStorage(markdown: string, currentFilePath: string): string {
     let html = markdown;
+
+    // Normalize line endings to avoid regex issues on Windows (\r\n) or old Mac (\r)
+    html = html.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+    // Strip trailing whitespace from each line (markdown editors often leave trailing spaces,
+    // which breaks table detection that expects rows to end exactly with '|')
+    html = html.replace(/[ \t]+$/gm, '');
 
     // Remove HTML comments
     html = html.replace(/<!--[\s\S]*?-->/g, '');
@@ -486,19 +646,14 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     // Convert italic
     html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
-    // Convert unordered lists (basic single-level)
-    html = html.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
-
-    // Convert ordered lists (basic single-level)
-    html = html.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
-
-    // Wrap consecutive <li> elements in <ul>
-    html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+    // Convert lists (supports nested bullet and ordered lists)
+    html = this.convertLists(html);
 
     // Convert horizontal rules
     html = html.replace(/^---+$/gm, '<hr />');
 
-    // Convert paragraphs: blank-line separated text blocks
+    // Convert paragraphs: blank-line separated text blocks.
+    // Block-level elements (<ul>, <table>, <ac:>, etc.) flush the pending text buffer immediately.
     const lines = html.split('\n');
     const paragraphed: string[] = [];
     let buffer = '';
@@ -509,6 +664,13 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
           paragraphed.push(this.wrapInParagraphIfNeeded(buffer.trim()));
         }
         buffer = '';
+      } else if (/^<(h[1-6]|p|ul|ol|li|table|ac:|div|hr|blockquote)/i.test(trimmed)) {
+        // Block-level element: flush pending text first, then add the block directly
+        if (buffer.trim()) {
+          paragraphed.push(this.wrapInParagraphIfNeeded(buffer.trim()));
+          buffer = '';
+        }
+        paragraphed.push(trimmed);
       } else {
         buffer += line + '\n';
       }
@@ -530,7 +692,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
   }
 
   private convertTables(markdown: string): string {
-    const tableRegex = /(?:^|\n)((?:\|[^\n]+\|\n)+)/g;
+    const tableRegex = /(?:^|\n)((?:\|[^\n]+\|(?:\n|$))+)/g;
     return markdown.replace(tableRegex, (_match, tableBlock: string) => {
       const rows = tableBlock.trim().split('\n').filter((row) => row.trim());
       if (rows.length < 2) return tableBlock;
@@ -581,9 +743,12 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     const existingPage = await this.findPageByTitle(title);
 
     if (existingPage) {
+      // Fetch full page by ID to ensure we have the current version number
+      const currentPage = await this.axiosClient.get(`/wiki/api/v2/pages/${existingPage.id}`).then(r => r.data);
+      const currentVersion = parseInt(currentPage.version?.number ?? currentPage.version ?? '1', 10);
       // Update existing page
       uxLog("log", this, c.grey(t('confluenceUpdatingExistingPage', { title })));
-      const response = await this.axiosClient.put(`/wiki/api/v2/pages/${existingPage.id}`, {
+      const updatePayload: any = {
         id: existingPage.id,
         status: 'current',
         title,
@@ -593,11 +758,19 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
           value: body,
         },
         version: {
-          number: (existingPage.version?.number || 1) + 1,
-          message: 'Updated by sfdx-hardis',
+          number: currentVersion + 1,
         },
-      });
-      return response.data.id;
+      };
+      // Preserve the existing parent to avoid hierarchy changes
+      if (currentPage.parentId) {
+        updatePayload.parentId = currentPage.parentId;
+      }
+      try {
+        const response = await this.axiosClient.put(`/wiki/api/v2/pages/${existingPage.id}`, updatePayload);
+        return response.data.id;
+      } catch (e: any) {
+        throw new Error(this.apiErrorMessage(e));
+      }
     }
 
     // Create new page
@@ -614,8 +787,12 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     if (parentPageId) {
       payload.parentId = parentPageId;
     }
-    const response = await this.axiosClient.post('/wiki/api/v2/pages', payload);
-    return response.data.id;
+    try {
+      const response = await this.axiosClient.post('/wiki/api/v2/pages', payload);
+      return response.data.id;
+    } catch (e: any) {
+      throw new Error(this.apiErrorMessage(e));
+    }
   }
 
   private async findPageByTitle(title: string): Promise<any | null> {
@@ -633,10 +810,11 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
   /**
    * Upload images referenced in markdown as Confluence page attachments.
    */
-  private async uploadImagesForPage(markdownContent: string, mdRelPath: string, pageId: string) {
+  private async uploadImagesForPage(markdownContent: string, mdRelPath: string, pageId: string): Promise<Array<{ fileName: string; status: string; failureReason: string }>> {
     const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
     let match: RegExpExecArray | null;
     const uploadedFiles = new Set<string>();
+    const results: Array<{ fileName: string; status: string; failureReason: string }> = [];
 
     while ((match = imageRegex.exec(markdownContent)) !== null) {
       const imgPath = match[2];
@@ -655,17 +833,32 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
 
       if (!fs.existsSync(resolvedImgPath)) {
         uxLog("warning", this, c.yellow(t('confluenceImageNotFound', { image: imgPath, page: mdRelPath })));
+        results.push({ fileName, status: 'failure', failureReason: t('confluenceImageNotFound', { image: imgPath, page: mdRelPath }) });
         continue;
       }
 
       try {
         await this.uploadAttachment(pageId, resolvedImgPath, fileName);
         uploadedFiles.add(fileName);
+        results.push({ fileName, status: 'success', failureReason: '' });
         uxLog("log", this, c.grey(t('confluenceImageUploaded', { image: fileName, page: mdRelPath })));
       } catch (e: any) {
-        uxLog("warning", this, c.yellow(t('confluenceImageUploadError', { image: fileName, error: e.message })));
+        results.push({ fileName, status: 'failure', failureReason: this.apiErrorMessage(e) });
+        uxLog("warning", this, c.yellow(t('confluenceImageUploadError', { image: fileName, error: this.apiErrorMessage(e) })));
       }
     }
+    return results;
+  }
+
+  /**
+   * Builds a human-readable error message from an axios (or plain) error.
+   * For HTTP errors the Confluence response body is appended so failures are easy to investigate.
+   */
+  private apiErrorMessage(e: any): string {
+    if (e?.response?.data) {
+      return `${e.message} \u2014 Confluence details: ${JSON.stringify(e.response.data)}`;
+    }
+    return e?.message ?? String(e);
   }
 
   /**
@@ -678,16 +871,143 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     form.append('file', fileBuffer, { filename: fileName });
     form.append('minorEdit', 'true');
 
-    await this.axiosClient.post(
-      `/wiki/rest/api/content/${pageId}/child/attachment`,
-      form,
-      {
-        headers: {
-          ...form.getHeaders(),
-          'X-Atlassian-Token': 'nocheck',
-        },
+    try {
+      await this.axiosClient.post(
+        `/wiki/rest/api/content/${pageId}/child/attachment`,
+        form,
+        {
+          headers: {
+            ...form.getHeaders(),
+            'X-Atlassian-Token': 'nocheck',
+          },
+        }
+      );
+    } catch (e: any) {
+      // Confluence returns 400 when an attachment with the same filename already exists.
+      // For mermaid images the filename embeds a content fingerprint, so an existing attachment
+      // with the same name is guaranteed to be identical — skip silently.
+      const body = e?.response?.data;
+      const msg: string = body?.message ?? e?.message ?? '';
+      if (e?.response?.status === 400 && msg.includes('same file name as an existing attachment')) {
+        uxLog("log", this, c.grey(t('confluenceAttachmentAlreadyExists', { fileName })));
+        return;
       }
-    );
+      throw e;
+    }
+  }
+
+  /**
+   * Compute a page prefix based on the markdown file's top-level folder.
+   * e.g. objects/Contact.md → "[Object] ", apex/Foo.md → "[Apex] "
+   * Falls back to confluencePagePrefix for root-level files.
+   */
+  private computePagePrefix(mdRelPath?: string): string {
+    if (!mdRelPath) return this.confluencePagePrefix;
+    const normalized = mdRelPath.replace(/\\/g, '/');
+    const firstSlash = normalized.indexOf('/');
+    if (firstSlash <= 0) return this.confluencePagePrefix;
+    const folderName = normalized.substring(0, firstSlash);
+    const singular = this.singularizeFolderName(folderName);
+    const humanName = singular
+      .split(/[-_]/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    return `[${humanName}] `;
+  }
+
+  /** Basic English singularization for common Salesforce folder names. */
+  private singularizeFolderName(name: string): string {
+    if (name.endsWith('sses')) return name.slice(0, -2); // classes → class
+    if (name.endsWith('ies')) return name.slice(0, -3) + 'y'; // categories → category
+    if (name.endsWith('s') && name.length > 3) return name.slice(0, -1); // objects → object
+    return name;
+  }
+
+  /**
+   * Reorder sibling Confluence pages to match the given ordered list of page IDs.
+   * Uses the Confluence v1 move API (PUT /wiki/rest/api/content/{id}/move/after/{targetId})
+   * to position each page after its predecessor — O(n-1) API calls per level.
+   */
+  private async reorderChildPages(orderedPageIds: string[]): Promise<void> {
+    if (orderedPageIds.length < 2) return;
+    uxLog("log", this, c.grey(t('confluenceReorderingPages', { count: orderedPageIds.length })));
+    for (let i = 1; i < orderedPageIds.length; i++) {
+      const prevId = orderedPageIds[i - 1];
+      const currId = orderedPageIds[i];
+      try {
+        await this.axiosClient.put(`/wiki/rest/api/content/${currId}/move/after/${prevId}`);
+      } catch (e: any) {
+        uxLog("warning", this, c.yellow(t('confluencePageReorderError', { id: currId, error: this.apiErrorMessage(e) })));
+      }
+    }
+  }
+
+  /**
+   * Run an array of async tasks with a max concurrency.
+   * Concurrency is controlled by the CONFLUENCE_PUBLISH_CONCURRENCY env var (default: 5).
+   */
+  private async runInParallel(tasks: Array<() => Promise<void>>): Promise<void> {
+    const concurrency = Math.max(1, parseInt(getEnvVar('CONFLUENCE_PUBLISH_CONCURRENCY') || '5', 10));
+    for (let i = 0; i < tasks.length; i += concurrency) {
+      await Promise.all(tasks.slice(i, i + concurrency).map(fn => fn()));
+    }
+  }
+
+  /**
+   * Convert markdown list blocks (including nested lists) to proper HTML <ul>/<ol>.
+   * Handles arbitrary nesting depth; each call processes lines at a given indent level.
+   */
+  private convertLists(markdown: string): string {
+    const lines = markdown.split('\n');
+    let i = 0;
+    const result: string[] = [];
+    while (i < lines.length) {
+      const match = /^( *)([-*]|\d+\.) /.exec(lines[i]);
+      if (match) {
+        const baseIndent = match[1].length;
+        const [listHtml, consumed] = this.parseList(lines, i, baseIndent);
+        if (consumed > 0) {
+          result.push(listHtml);
+          i += consumed;
+        } else {
+          result.push(lines[i]);
+          i++;
+        }
+      } else {
+        result.push(lines[i]);
+        i++;
+      }
+    }
+    return result.join('\n');
+  }
+
+  private parseList(lines: string[], startIdx: number, baseIndent: number): [string, number] {
+    const items: string[] = [];
+    let i = startIdx;
+    let listType: 'ul' | 'ol' = 'ul';
+    while (i < lines.length) {
+      const match = /^( *)([-*]|\d+\.) (.*)/.exec(lines[i]);
+      if (!match) break;
+      const indent = match[1].length;
+      if (indent < baseIndent) break;
+      if (indent > baseIndent) break;
+      listType = /^\d+\./.test(match[2]) ? 'ol' : 'ul';
+      const content = match[3];
+      i++;
+      // Recursively collect nested items at a deeper indent
+      let nestedHtml = '';
+      if (i < lines.length) {
+        const nextMatch = /^( *)([-*]|\d+\.) /.exec(lines[i]);
+        if (nextMatch && nextMatch[1].length > baseIndent) {
+          const [nestedList, consumed] = this.parseList(lines, i, nextMatch[1].length);
+          nestedHtml = nestedList;
+          i += consumed;
+        }
+      }
+      items.push(`<li>${content}${nestedHtml}</li>`);
+    }
+    if (items.length === 0) return ['', 0];
+    return [`<${listType}>${items.join('')}</${listType}>`, i - startIdx];
   }
 
   private escapeXml(str: string): string {
