@@ -1297,6 +1297,7 @@
   "mergeConflictsPleaseResolve": "Il y a des conflits de fusion, veuillez les résoudre, puis sélectionnez OUI ici. Sinon, quittez le script et demandez de l'aide à un développeur",
   "mermaidDiagramConversionFailed": "Impossible de convertir le diagramme MermaidJS #{{idx}} en image : {{error}}",
   "mermaidDiagramConvertedToImage": "Diagramme MermaidJS #{{idx}} converti en image",
+  "mermaidDeletedStaleCache": "Fichier de cache mermaid obsolète supprimé : {{file}}",
   "mermaidDiagramFromCache": "Diagramme MermaidJS #{{idx}} chargé depuis le cache (génération ignorée)",
   "mermaidjsIsNotAvailableToImprovePerformance": "MermaidJS n'est pas disponible. Pour améliorer les performances, installez-le en exécutant `npm install @mermaid-js/mermaid-cli --global`.",
   "metadataRestoreCancelledByUser": "Restauration des métadonnées annulée par l'utilisateur.",

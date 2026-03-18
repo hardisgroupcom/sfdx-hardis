@@ -1294,6 +1294,7 @@
   "mergeConflictsPleaseResolve": "Istnieją konflikty merge, proszę je rozwiązać, a następnie wybrać TAK tutaj. W przeciwnym razie zakończ skrypt i poproś programistę o pomoc",
   "mermaidDiagramConversionFailed": "Nie udało się przekonwertować diagramu MermaidJS #{{idx}} na obraz: {{error}}",
   "mermaidDiagramConvertedToImage": "Diagram MermaidJS #{{idx}} przekonwertowany na obraz",
+  "mermaidDeletedStaleCache": "Usunięto nieaktualny plik cache mermaid: {{file}}",
   "mermaidDiagramFromCache": "Diagram MermaidJS #{{idx}} wczytany z cache (generowanie pominięte)",
   "mermaidjsIsNotAvailableToImprovePerformance": "MermaidJS nie jest dostępny. Aby poprawić wydajność, zainstaluj go, uruchamiając `npm install @mermaid-js/mermaid-cli --global`.",
   "metadataAlreadyExistsDeleteIt": "{{label}} o nazwie {{fullName}} już istnieje w {{orgLabel}}. Usuń go w Konfiguracja > {{setupLocation}} przed kontynuowaniem.",

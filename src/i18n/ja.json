@@ -1295,6 +1295,7 @@
   "mergeConflictsPleaseResolve": "merge の競合があります。競合を解決してから、ここで「はい」を選択してください。解決できない場合は、スクリプトを終了して開発者に連絡してください",
   "mermaidDiagramConversionFailed": "MermaidJS ダイアグラム #{{idx}} を画像に変換できませんでした: {{error}}",
   "mermaidDiagramConvertedToImage": "MermaidJS ダイアグラム #{{idx}} を画像に変換しました",
+  "mermaidDeletedStaleCache": "古い mermaid キャッシュファイルを削除しました: {{file}}",
   "mermaidDiagramFromCache": "MermaidJS図形 #{{idx}} をキャッシュから読み込みました（生成はスキップ）",
   "mermaidjsIsNotAvailableToImprovePerformance": "MermaidJS が利用できません。パフォーマンスを改善するには、`npm install @mermaid-js/mermaid-cli --global` を実行してインストールしてください。",
   "metadataRestoreCancelledByUser": "メタデータのリストアがユーザーによりキャンセルされました。",

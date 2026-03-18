@@ -198,10 +198,27 @@ export async function generateMarkdownFileWithMermaidCli(outputFlowMdFileIn: str
 }
 
 /**
+ * Derive a short slug from a relative page path for use in mermaid image filenames.
+ * e.g. "objects/Account.md" → "objects-Account", "flows/My Flow.md" → "flows-My_Flow"
+ */
+function derivePageSlug(pagePath: string): string {
+  const normalized = pagePath.replace(/\\/g, '/');
+  const withoutExt = normalized.replace(/\.[^/.]+$/, '');
+  return withoutExt
+    .replace(/[^a-zA-Z0-9/_-]/g, '_')
+    .replace(/\//g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+/**
  * Convert all MermaidJS code blocks found in a markdown string to PNG images written to tempDir.
  * The original markdown file is never modified.
  * Each block is tried with CLI (mmdc / npx) then Docker as fallback.
  * Returns the modified markdown string (mermaid blocks replaced by image refs) and the list of generated PNG paths.
+ * @param pagePath  Optional relative path of the source markdown file; used to generate
+ *                  recognisable image names (e.g. mermaid-objects-Account-0-{hash}.png)
+ *                  and to prune stale cache entries when the diagram content changes.
  */
 export interface MermaidConversionResult {
   imageName: string;
@@ -213,6 +230,7 @@ export interface MermaidConversionResult {
 export async function convertMermaidBlocksToImages(
   markdownContent: string,
   tempDir: string,
+  pagePath?: string,
 ): Promise<{ markdownWithImages: string; mermaidImages: string[]; mermaidResults: MermaidConversionResult[] }> {
   const mermaidImages: string[] = [];
   const mermaidResults: MermaidConversionResult[] = [];
@@ -227,11 +245,16 @@ export async function convertMermaidBlocksToImages(
   }
   await fs.ensureDir(tempDir);
   const mermaidCacheDir = path.join("docs", "cache-mermaid");
+  const pageSlug = pagePath ? derivePageSlug(pagePath) : null;
   let markdownWithImages = markdownContent;
   for (const block of mermaidBlocks) {
     // Fingerprint is derived from diagram source — used for cache key and image filename
     const fingerPrint = UtilsAi.getFingerPrint([block.code.trim()]);
-    const imageName = `mermaid-${fingerPrint}.png`;
+    // Include page slug and block index in the name so images are easy to identify
+    // and multiple diagrams on the same page get distinct names.
+    const imageName = pageSlug
+      ? `mermaid-${pageSlug}-${block.idx}-${fingerPrint}.png`
+      : `mermaid-${fingerPrint}.png`;
     const tempMmdFile = path.join(tempDir, `mermaid-${block.idx}.mmd`);
     const tempImgFile = path.join(tempDir, imageName);
     try {
@@ -272,6 +295,17 @@ export async function convertMermaidBlocksToImages(
         // Write to cache if generation succeeded
         if (success && fs.existsSync(tempImgFile)) {
           await fs.ensureDir(mermaidCacheDir);
+          // Remove stale cache files for the same page/block slot (different fingerprint)
+          if (pageSlug !== null) {
+            const stalePattern = new RegExp(`^mermaid-${pageSlug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-${block.idx}-.*.png$`);
+            const existingCacheFiles = await fs.readdir(mermaidCacheDir).catch(() => [] as string[]);
+            for (const f of existingCacheFiles) {
+              if (stalePattern.test(f) && f !== imageName) {
+                await fs.remove(path.join(mermaidCacheDir, f));
+                uxLog("log", this, c.grey(t('mermaidDeletedStaleCache', { file: f })));
+              }
+            }
+          }
           await fs.copy(tempImgFile, cachedImgFile);
         }
       }

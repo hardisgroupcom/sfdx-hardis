@@ -519,7 +519,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
       markdownContent = this.stripFrontmatter(markdownContent);
 
       // Convert MermaidJS diagrams to images in a temp directory (Confluence does not support mermaid natively)
-      const { markdownWithImages, mermaidImages, mermaidResults } = await convertMermaidBlocksToImages(markdownContent, tempDir);
+      const { markdownWithImages, mermaidImages, mermaidResults } = await convertMermaidBlocksToImages(markdownContent, tempDir, mdRelPath);
 
       // Track mermaid conversion results in report
       for (const mr of mermaidResults) {
@@ -987,27 +987,96 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     const items: string[] = [];
     let i = startIdx;
     let listType: 'ul' | 'ol' = 'ul';
+
     while (i < lines.length) {
       const match = /^( *)([-*]|\d+\.) (.*)/.exec(lines[i]);
       if (!match) break;
       const indent = match[1].length;
       if (indent < baseIndent) break;
       if (indent > baseIndent) break;
+
       listType = /^\d+\./.test(match[2]) ? 'ol' : 'ul';
-      const content = match[3];
+      // marker width: e.g. "1." (2) + space (1) = 3; "-" (1) + space (1) = 2
+      const markerWidth = match[2].length + 1;
+      // Minimum indentation for body continuation lines
+      const bodyIndent = baseIndent + markerWidth;
+      const content = match[3].trim();
       i++;
-      // Recursively collect nested items at a deeper indent
-      let nestedHtml = '';
-      if (i < lines.length) {
-        const nextMatch = /^( *)([-*]|\d+\.) /.exec(lines[i]);
-        if (nextMatch && nextMatch[1].length > baseIndent) {
-          const [nestedList, consumed] = this.parseList(lines, i, nextMatch[1].length);
-          nestedHtml = nestedList;
-          i += consumed;
+
+      const bodyParts: string[] = [];
+
+      // Collect the body of this list item: continuation paragraphs and nested lists.
+      // Handles "loose lists" where items and body are separated by blank lines.
+      while (i < lines.length) {
+        const line = lines[i];
+
+        if (line.trim() === '') {
+          // Blank line — look ahead past all consecutive blanks to decide what follows
+          let j = i + 1;
+          while (j < lines.length && lines[j].trim() === '') j++;
+          if (j >= lines.length) break;
+
+          const peekLine = lines[j];
+          const peekListMatch = /^( *)([-*]|\d+\.) /.exec(peekLine);
+          const peekIndent = (peekLine.match(/^( *)/)?.[1] ?? '').length;
+
+          if (peekListMatch) {
+            const peekLevel = peekListMatch[1].length;
+            if (peekLevel === baseIndent) {
+              // Next sibling at same level — advance past blank lines and stop body
+              i = j;
+              break;
+            } else if (peekLevel > baseIndent) {
+              // Nested list follows after blank lines — skip blanks and continue
+              i = j;
+              continue;
+            } else {
+              // Outer-level item — end of current list
+              break;
+            }
+          } else if (peekIndent >= bodyIndent) {
+            // Indented continuation paragraph
+            i = j;
+            bodyParts.push(`<p>${lines[i].trim()}</p>`);
+            i++;
+            continue;
+          } else {
+            // Insufficient indentation — end of this list
+            break;
+          }
         }
+
+        // Non-blank line: nested list or continuation
+        const listMatch = /^( *)([-*]|\d+\.) /.exec(line);
+        if (listMatch) {
+          const curLevel = listMatch[1].length;
+          if (curLevel === baseIndent) break; // next sibling (no blank line before it)
+          if (curLevel > baseIndent) {
+            const [nestedHtml, consumed] = this.parseList(lines, i, curLevel);
+            bodyParts.push(nestedHtml);
+            i += consumed;
+            continue;
+          }
+          break; // outer-level item
+        }
+
+        // Plain indented continuation line (no blank line before it)
+        const lineIndent = (line.match(/^( *)/)?.[1] ?? '').length;
+        if (lineIndent >= bodyIndent || lineIndent > baseIndent) {
+          bodyParts.push(`<p>${line.trim()}</p>`);
+          i++;
+          continue;
+        }
+        break;
       }
-      items.push(`<li>${content}${nestedHtml}</li>`);
+
+      if (bodyParts.length > 0) {
+        items.push(`<li><p>${content}</p>${bodyParts.join('')}</li>`);
+      } else {
+        items.push(`<li>${content}</li>`);
+      }
     }
+
     if (items.length === 0) return ['', 0];
     return [`<${listType}>${items.join('')}</${listType}>`, i - startIdx];
   }
