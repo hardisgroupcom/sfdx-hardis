@@ -180,6 +180,28 @@
       "type": "string",
       "default": "gpt-4o-mini"
     },
+    "openaiServiceTier": {
+      "$id": "#/properties/openaiServiceTier",
+      "description": "Service tier used for direct OpenAI prompts. Equivalent to OPENAI_SERVICE_TIER env var.",
+      "title": "OpenAI service tier",
+      "type": "string",
+      "enum": [
+        "auto",
+        "default",
+        "flex"
+      ]
+    },
+    "openaiReasoningEffort": {
+      "$id": "#/properties/openaiReasoningEffort",
+      "description": "Reasoning effort used for direct OpenAI prompts on supported models. Equivalent to OPENAI_REASONING_EFFORT env var.",
+      "title": "OpenAI reasoning effort",
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
     "useAgentforce": {
       "$id": "#/properties/useAgentforce",
       "description": "Set to true to enable Agentforce integration (mirrors USE_AGENTFORCE env var).",
