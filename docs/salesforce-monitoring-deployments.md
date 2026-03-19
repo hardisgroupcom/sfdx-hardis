@@ -6,7 +6,7 @@ description: Analyze metadata deployments and validations with sfdx-hardis Monit
 
 ## Analyze metadata deployments and validations
 
-Analyzes metadata deployments and validations by querying DeployRequest records via the Tooling API. Based on [sfmon deployments.py](https://github.com/mcarvin8/sfmon/blob/main/src/sfmon/audit/deployments.py).
+Analyzes metadata deployments and validations by querying DeployRequest records via the Tooling API.
 
 Sfdx-hardis command: [sf hardis:org:diagnose:deployments](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/deployments/)
 
