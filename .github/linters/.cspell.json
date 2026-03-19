@@ -621,6 +621,7 @@
     "hardisorgdatadelete",
     "hardisorgdataexport",
     "hardisorgdataimport",
+    "hardisorgdiagnosedeployments",
     "hardisorgdiagnoselegacyapi",
     "hardisorgfilesexport",
     "hardisorgfixlistviewmine",

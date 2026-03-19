@@ -48,6 +48,7 @@ export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<an
 }
 
 // Perform simple SOQL query with Tooling API
+// Uses Sforce-Query-Options: batchSize=2000 to avoid default 100-record limit (Tooling API can return fewer by default)
 export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<any> {
   uxLog(
     "log",
@@ -57,22 +58,36 @@ export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Pro
       c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery)
     )
   );
-  // First query
-  const res = await conn.tooling.query(soqlQuery);
-  let pageRes = Object.assign({}, res);
+  const apiVersion = `v${conn.getApiVersion() || '65.0'}`;
+  const queryPath = `/services/data/${apiVersion}/tooling/query/?q=${encodeURIComponent(soqlQuery)}`;
+  const headers: Record<string, string> = {
+    'Sforce-Query-Options': 'batchSize=2000',
+  };
+  const res = await conn.request<{ records: any[]; done: boolean; nextRecordsUrl?: string }>({
+    method: 'GET',
+    url: queryPath,
+    headers,
+  });
+  const result = { records: res.records || [], done: res.done, nextRecordsUrl: res.nextRecordsUrl };
   let batchCount = 1;
-  // Get all page results
-  while (pageRes.done === false && pageRes.nextRecordsUrl) {
-    pageRes = await conn.tooling.queryMore(pageRes.nextRecordsUrl || "");
-    res.records.push(...pageRes.records);
+  while (result.done === false && result.nextRecordsUrl) {
+    const nextPath = result.nextRecordsUrl.startsWith('/') ? result.nextRecordsUrl : `/${result.nextRecordsUrl}`;
+    const pageRes = await conn.request<{ records: any[]; done: boolean; nextRecordsUrl?: string }>({
+      method: 'GET',
+      url: nextPath,
+      headers,
+    });
+    result.records.push(...(pageRes.records || []));
+    result.done = pageRes.done;
+    result.nextRecordsUrl = pageRes.nextRecordsUrl;
     batchCount++;
   }
   if (batchCount > 1) {
-    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
+    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${result.records.length} records in ${batchCount} chunks(s)`));
   } else {
-    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records`));
+    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${result.records.length} records`));
   }
-  return res;
+  return result;
 }
 
 let spinnerQ;
