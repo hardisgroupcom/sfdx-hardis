@@ -22,7 +22,7 @@ Key: **DEPLOYMENTS**
 
 ### Options
 
-- `--period daily|weekly|all` – Time period: daily (last 24h), weekly (last 7 days), or all (default: weekly). No limit applied; Salesforce retains DeployRequest records for ~30 days.
+- `--period daily|weekly|all` – Time period: daily (last 24h), weekly (last 7 days), or all (default: daily). No limit applied; Salesforce retains DeployRequest records for ~30 days.
 
 ### Metrics reported
 

@@ -70,7 +70,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     period: Flags.string({
       char: 'p',
       options: ['daily', 'weekly', 'all'],
-      default: 'weekly',
+      default: 'daily',
       description: 'Time period to analyze: daily (last 24h), weekly (last 7 days), or all (no date filter)',
     }),
     outputfile: Flags.string({
