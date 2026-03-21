@@ -1680,10 +1680,10 @@
     uuid "^11.1.0"
     zod "^3.25.76 || ^4"
 
-"@langchain/google-genai@2.1.19":
-  version "2.1.19"
-  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-2.1.19.tgz#c0adc5eea987dd3c9797fa41b6a24a1d68b81bf9"
-  integrity sha512-41u+a81BIr8UcGcptJ57Pc7IyEXP75LERzheyS5X+iNSQu5U4vaIMwSNnyJ0hzAlTjSp552XCsa8D2Ifq7icuA==
+"@langchain/google-genai@2.1.24":
+  version "2.1.24"
+  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-2.1.24.tgz#cc7cc26946faf392f04a8974497840b1ce061280"
+  integrity sha512-gBuYWIrTiT4S8U3AxaAMl6SKeGKtB10fXc+m0p2BPSvTfCaTbIlycH7IZjZUTD1L92dQMi/SULwCWffq5OIBgQ==
   dependencies:
     "@google/generative-ai" "^0.24.0"
     uuid "^11.1.0"
