@@ -9,12 +9,20 @@ import { resolveBooleanFlag } from "./providerConfigUtils.js";
 import { t } from '../utils/i18n.js';
 
 export class OpenAiProvider extends AiProviderRoot {
-  protected openai: OpenAI;
-  private modelName: string;
+  private static readonly DEFAULT_MODEL = "gpt-4o-mini";
+  private static readonly SUPPORTED_SERVICE_TIERS: OpenAiServiceTier[] = ["auto", "default", "flex"];
+  private static readonly SUPPORTED_REASONING_EFFORTS: OpenAiReasoningEffort[] = ["low", "medium", "high"];
 
-  private constructor(modelName: string) {
+  protected openai: OpenAI;
+  private readonly modelName: string;
+  private readonly serviceTier?: OpenAiServiceTier;
+  private readonly reasoningEffort?: OpenAiReasoningEffort;
+
+  private constructor(config: OpenAiResolvedConfig) {
     super();
-    this.modelName = modelName || "gpt-4o-mini";
+    this.modelName = config.modelName || OpenAiProvider.DEFAULT_MODEL;
+    this.serviceTier = config.serviceTier;
+    this.reasoningEffort = config.reasoningEffort;
     this.openai = new OpenAI();
   }
 
@@ -32,7 +40,7 @@ export class OpenAiProvider extends AiProviderRoot {
     if (!config) {
       throw new Error("OpenAI provider is not properly configured");
     }
-    return new OpenAiProvider(config.modelName);
+    return new OpenAiProvider(config);
   }
 
   private static async resolveConfig(): Promise<OpenAiResolvedConfig | null> {
@@ -50,8 +58,37 @@ export class OpenAiProvider extends AiProviderRoot {
     const modelName = getEnvVar("OPENAI_MODEL")
       || rootConfig.openaiModel
       || rootConfig.OPENAI_MODEL
-      || "gpt-4o-mini";
-    return { modelName };
+      || OpenAiProvider.DEFAULT_MODEL;
+    const serviceTier = this.resolveOptionalServiceTier(
+      getEnvVar("OPENAI_SERVICE_TIER")
+      || rootConfig.openaiServiceTier
+      || rootConfig.OPENAI_SERVICE_TIER
+    );
+    const reasoningEffort = this.resolveOptionalReasoningEffort(
+      getEnvVar("OPENAI_REASONING_EFFORT")
+      || rootConfig.openaiReasoningEffort
+      || rootConfig.OPENAI_REASONING_EFFORT
+    );
+    return { modelName, serviceTier, reasoningEffort };
+  }
+
+  private static resolveOptionalServiceTier(rawValue: string | null | undefined): OpenAiServiceTier | undefined {
+    return this.resolveOptionalEnumValue(rawValue, OpenAiProvider.SUPPORTED_SERVICE_TIERS);
+  }
+
+  private static resolveOptionalReasoningEffort(rawValue: string | null | undefined): OpenAiReasoningEffort | undefined {
+    return this.resolveOptionalEnumValue(rawValue, OpenAiProvider.SUPPORTED_REASONING_EFFORTS);
+  }
+
+  private static resolveOptionalEnumValue<T extends string>(rawValue: string | null | undefined, supportedValues: T[]): T | undefined {
+    if (!rawValue) {
+      return undefined;
+    }
+    const normalizedValue = rawValue.toLowerCase();
+    if (supportedValues.includes(normalizedValue as T)) {
+      return normalizedValue as T;
+    }
+    return undefined;
   }
 
   public async promptAi(promptText: string, template: PromptTemplate | null = null): Promise<AiResponse | null> {
@@ -66,23 +103,30 @@ export class OpenAiProvider extends AiProviderRoot {
       uxLog("log", this, c.grey('[OpenAI] ' + t('openaiRequestingPrompt', { modelName: gptModel, template: template ? ' using template ' + template : '' })));
     }
     this.incrementAiCallsNumber();
-    const completion = await this.openai.chat.completions.create({
-      messages: [{ role: "system", content: promptText }],
+    const request: OpenAI.Responses.ResponseCreateParamsNonStreaming = {
       model: gptModel,
-    });
+      input: [{ role: "system", content: promptText }],
+    };
+    if (this.serviceTier) {
+      request.service_tier = this.serviceTier;
+    }
+    if (this.reasoningEffort) {
+      request.reasoning = { effort: this.reasoningEffort };
+    }
+    const response = await this.openai.responses.create(request);
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog("log", this, c.grey('[OpenAI] ' + t('openaiReceivedResponseDebug', { modelName: gptModel, response: JSON.stringify(completion, null, 2) })));
+      uxLog("log", this, c.grey('[OpenAI] ' + t('openaiReceivedResponseDebug', { modelName: gptModel, response: JSON.stringify(response, null, 2) })));
     }
     else {
       uxLog("log", this, c.grey('[OpenAI] ' + t('openaiReceivedResponse', { modelName: gptModel })));
     }
     const aiResponse: AiResponse = {
       success: false,
-      model: completion.model,
+      model: response.model,
     };
-    if (completion?.choices?.length > 0) {
+    if (response.output.length > 0) {
       aiResponse.success = true;
-      aiResponse.promptResponse = completion.choices[0].message.content ?? undefined;
+      aiResponse.promptResponse = response.output_text || undefined;
     }
     return aiResponse;
   }
@@ -90,4 +134,9 @@ export class OpenAiProvider extends AiProviderRoot {
 
 interface OpenAiResolvedConfig {
   modelName: string;
+  serviceTier?: OpenAiServiceTier;
+  reasoningEffort?: OpenAiReasoningEffort;
 }
+
+type OpenAiServiceTier = "auto" | "default" | "flex";
+type OpenAiReasoningEffort = "low" | "medium" | "high";

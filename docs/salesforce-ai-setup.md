@@ -156,16 +156,20 @@ You need to define env variable OPENAI_API_KEY and make it available to your CI/
 
 To get an OpenAi API key , register on [OpenAi Platform](https://platform.openai.com/).
 
-| Variable       | Description                                                                               | Default       |
-|----------------|-------------------------------------------------------------------------------------------|---------------|
-| OPENAI_API_KEY | Your openai account API key                                                               |               |
-| OPENAI_MODEL   | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/)) | `gpt-4o-mini` |
+| Variable                 | Description                                                                                           | Default       |
+|--------------------------|-------------------------------------------------------------------------------------------------------|---------------|
+| OPENAI_API_KEY           | Your openai account API key                                                                           |               |
+| OPENAI_MODEL             | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/))            | `gpt-4o-mini` |
+| OPENAI_SERVICE_TIER      | Optional OpenAI service tier for supported projects (`auto`, `default`, `flex`)                      |               |
+| OPENAI_REASONING_EFFORT  | Optional reasoning effort for supported OpenAI reasoning models (`low`, `medium`, `high`)            |               |
 
 #### Configure OpenAI via .sfdx-hardis.yml
 
 ```yaml
 useOpenaiDirect: true
 openaiModel: gpt-4o-mini
+openaiServiceTier: auto
+openaiReasoningEffort: medium
 ```
 
 Store only model and provider preferences in the config file; keep `OPENAI_API_KEY` in a secure environment variable.
