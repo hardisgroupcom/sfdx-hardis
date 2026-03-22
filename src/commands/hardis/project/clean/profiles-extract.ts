@@ -52,7 +52,7 @@ Key capabilities:
   ];
 
   /* jscpd:ignore-start */
-  public static readonly flags = {
+  public static readonly flags: any = {
     'target-org': Flags.requiredOrg({
       char: 'o',
       description: 'The target Salesforce org to fetch SObjects from.',

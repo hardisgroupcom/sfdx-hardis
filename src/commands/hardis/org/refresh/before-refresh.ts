@@ -112,7 +112,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     "$ sf hardis:org:refresh:before-refresh --delete",
   ];
 
-  public static flags = {
+  public static flags: any = {
     "target-org": Flags.requiredOrg(),
     delete: Flags.boolean({
       char: 'd',
