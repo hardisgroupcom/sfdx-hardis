@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Direct OpenAI integration: Migrated to OpenAI ResponsesAPI and Implemented service tier and reasoning options.
+- Update Metadata list
+
 ## [7.3.0] 2026-03-18
 
 - Add summary files for sfdmu and file export templates
