@@ -47,7 +47,7 @@ The command's technical implementation involves:
     `$ sf hardis:org:community:update --name 'MyNetworkName,MySecondNetworkName' --status Live`
   ];
 
-  public static readonly flags = {
+  public static readonly flags: any = {
     name: Flags.string({
       description: 'List of Networks Names that you want to update, separated by comma',
       char: 'n',

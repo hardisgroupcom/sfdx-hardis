@@ -97,7 +97,7 @@ This command is part of [sfdx-hardis Sandbox Refresh](https://sfdx-hardis.cloudi
     `$ sf hardis:org:refresh:after-refresh --target-org myDevOrg`,
   ];
 
-  public static flags = {
+  public static flags: any = {
     "target-org": Flags.requiredOrg(),
     name: Flags.string({
       char: 'n',
