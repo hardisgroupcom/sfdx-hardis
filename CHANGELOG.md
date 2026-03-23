@@ -6,6 +6,9 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - Direct OpenAI integration: Migrated to OpenAI ResponsesAPI and Implemented service tier and reasoning options.
 - Update Metadata list
+- Add translation in Italian
+- Add translation in Dutch
+- CI: Disable trivy until they fix their security issues
 
 ## [7.3.0] 2026-03-18
 

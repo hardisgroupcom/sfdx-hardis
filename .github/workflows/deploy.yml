@@ -72,13 +72,13 @@ jobs:
           tags: |
             docker.io/hardisgroupcom/sfdx-hardis:alpha
             ghcr.io/hardisgroupcom/sfdx-hardis:alpha
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis:alpha
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis:alpha
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   push_alpha_to_registry_sfdx_recommended:
     if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
@@ -117,13 +117,13 @@ jobs:
           tags: |
             docker.io/hardisgroupcom/sfdx-hardis:alpha-sfdx-recommended
             ghcr.io/hardisgroupcom/sfdx-hardis:alpha-sfdx-recommended
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis:alpha-sfdx-recommended
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis:alpha-sfdx-recommended
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   push_alpha_ubuntu_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
@@ -162,13 +162,13 @@ jobs:
           tags: |
             docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   push_alpha_ubuntu_to_registry_sfdx_recommended:
     if: github.event_name == 'push' && github.ref == 'refs/heads/alpha'
@@ -207,13 +207,13 @@ jobs:
           tags: |
             docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha-sfdx-recommended
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha-sfdx-recommended
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha-sfdx-recommended
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:alpha-sfdx-recommended
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   deploy_canary:
     if: github.event_name == 'push' && github.ref == 'refs/heads/canary'
@@ -274,13 +274,13 @@ jobs:
           tags: |
             docker.io/hardisgroupcom/sfdx-hardis:canary
             ghcr.io/hardisgroupcom/sfdx-hardis:canary
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis:canary
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis:canary
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   push_canary_ubuntu_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/canary'
@@ -319,13 +319,13 @@ jobs:
           tags: |
             docker.io/hardisgroupcom/sfdx-hardis-ubuntu:canary
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:canary
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:canary
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:canary
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   deploy_beta:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -387,50 +387,50 @@ jobs:
           tags: |
             docker.io/hardisgroupcom/sfdx-hardis:beta
             ghcr.io/hardisgroupcom/sfdx-hardis:beta
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
-          format: table
-          output: sfdx-hardis-trivy-image-beta-results.txt
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
-          format: sarif
-          output: sfdx-hardis-trivy-image-beta-results.sarif
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
-          format: cyclonedx
-          output: sfdx-hardis-image-sbom-beta.cyclonedx.json
-          scan-type: image
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
-          format: spdx-json
-          output: sfdx-hardis-image-sbom-beta.spdx.json
-          scan-type: image
-      - uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: sfdx-hardis-trivy-image-beta-results.sarif
-          category: trivy
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: security-and-sbom-documents
-          path: |
-            sfdx-hardis-image-sbom-beta.cyclonedx.json
-            sfdx-hardis-image-sbom-beta.spdx.json
-            sfdx-hardis-trivy-image-beta-results.txt
-            sfdx-hardis-trivy-image-beta-results.sarif
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
+      #     format: table
+      #     output: sfdx-hardis-trivy-image-beta-results.txt
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
+      #     format: sarif
+      #     output: sfdx-hardis-trivy-image-beta-results.sarif
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
+      #     format: cyclonedx
+      #     output: sfdx-hardis-image-sbom-beta.cyclonedx.json
+      #     scan-type: image
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:beta
+      #     format: spdx-json
+      #     output: sfdx-hardis-image-sbom-beta.spdx.json
+      #     scan-type: image
+      # - uses: github/codeql-action/upload-sarif@v3
+      #   if: always()
+      #   with:
+      #     sarif_file: sfdx-hardis-trivy-image-beta-results.sarif
+      #     category: trivy
+      # - uses: actions/upload-artifact@v4
+      #   if: always()
+      #   with:
+      #     name: security-and-sbom-documents
+      #     path: |
+      #       sfdx-hardis-image-sbom-beta.cyclonedx.json
+      #       sfdx-hardis-image-sbom-beta.spdx.json
+      #       sfdx-hardis-trivy-image-beta-results.txt
+      #       sfdx-hardis-trivy-image-beta-results.sarif
 
   push_beta_to_registry_sfdx_recommended:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -469,13 +469,13 @@ jobs:
           tags: |
             docker.io/hardisgroupcom/sfdx-hardis:beta-sfdx-recommended
             ghcr.io/hardisgroupcom/sfdx-hardis:beta-sfdx-recommended
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis:beta-sfdx-recommended
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis:beta-sfdx-recommended
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   push_beta_ubuntu_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -515,50 +515,50 @@ jobs:
           tags: |
             docker.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
-          format: table
-          output: sfdx-hardis-ubuntu-trivy-image-beta-results.txt
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
-          format: sarif
-          output: sfdx-hardis-ubuntu-trivy-image-beta-results.sarif
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
-          format: cyclonedx
-          output: sfdx-hardis-ubuntu-image-sbom-beta.cyclonedx.json
-          scan-type: image
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
-          format: spdx-json
-          output: sfdx-hardis-ubuntu-image-sbom-beta.spdx.json
-          scan-type: image
-      - uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: sfdx-hardis-ubuntu-trivy-image-beta-results.sarif
-          category: trivy-ubuntu
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: security-and-sbom-documents-ubuntu
-          path: |
-            sfdx-hardis-ubuntu-image-sbom-beta.cyclonedx.json
-            sfdx-hardis-ubuntu-image-sbom-beta.spdx.json
-            sfdx-hardis-ubuntu-trivy-image-beta-results.txt
-            sfdx-hardis-ubuntu-trivy-image-beta-results.sarif
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
+      #     format: table
+      #     output: sfdx-hardis-ubuntu-trivy-image-beta-results.txt
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
+      #     format: sarif
+      #     output: sfdx-hardis-ubuntu-trivy-image-beta-results.sarif
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
+      #     format: cyclonedx
+      #     output: sfdx-hardis-ubuntu-image-sbom-beta.cyclonedx.json
+      #     scan-type: image
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
+      #     format: spdx-json
+      #     output: sfdx-hardis-ubuntu-image-sbom-beta.spdx.json
+      #     scan-type: image
+      # - uses: github/codeql-action/upload-sarif@v3
+      #   if: always()
+      #   with:
+      #     sarif_file: sfdx-hardis-ubuntu-trivy-image-beta-results.sarif
+      #     category: trivy-ubuntu
+      # - uses: actions/upload-artifact@v4
+      #   if: always()
+      #   with:
+      #     name: security-and-sbom-documents-ubuntu
+      #     path: |
+      #       sfdx-hardis-ubuntu-image-sbom-beta.cyclonedx.json
+      #       sfdx-hardis-ubuntu-image-sbom-beta.spdx.json
+      #       sfdx-hardis-ubuntu-trivy-image-beta-results.txt
+      #       sfdx-hardis-ubuntu-trivy-image-beta-results.sarif
 
   push_beta_ubuntu_to_registry_sfdx_recommended:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -597,13 +597,13 @@ jobs:
           tags: |
             docker.io/hardisgroupcom/sfdx-hardis-ubuntu:beta-sfdx-recommended
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta-sfdx-recommended
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:beta-sfdx-recommended
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:beta-sfdx-recommended
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   deploy_release:
     if: github.event_name == 'release'
@@ -665,50 +665,50 @@ jobs:
             docker.io/hardisgroupcom/sfdx-hardis:latest
             ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
             ghcr.io/hardisgroupcom/sfdx-hardis:latest
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
-          format: table
-          output: sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.txt
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
-          format: sarif
-          output: sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.sarif
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
-          format: cyclonedx
-          output: sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
-          scan-type: image
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
-          format: spdx-json
-          output: sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.spdx.json
-          scan-type: image
-      - uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.sarif
-          category: trivy
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: security-and-sbom-documents
-          path: |
-            sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
-            sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.spdx.json
-            sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.txt
-            sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+      #     format: table
+      #     output: sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.txt
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+      #     format: sarif
+      #     output: sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+      #     format: cyclonedx
+      #     output: sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
+      #     scan-type: image
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis:${{ github.event.release.tag_name }}
+      #     format: spdx-json
+      #     output: sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.spdx.json
+      #     scan-type: image
+      # - uses: github/codeql-action/upload-sarif@v3
+      #   if: always()
+      #   with:
+      #     sarif_file: sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+      #     category: trivy
+      # - uses: actions/upload-artifact@v4
+      #   if: always()
+      #   with:
+      #     name: security-and-sbom-documents
+      #     path: |
+      #       sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
+      #       sfdx-hardis-image-sbom-${{ github.event.release.tag_name }}.spdx.json
+      #       sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.txt
+      #       sfdx-hardis-trivy-image-${{ github.event.release.tag_name }}-results.sarif
 
   push_release_to_registry_sfdx_recommended:
     if: github.event_name == 'release'
@@ -747,13 +747,13 @@ jobs:
           tags: |
             docker.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
             ghcr.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis:latest-sfdx-recommended
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
 
   push_release_ubuntu_to_registry:
     if: github.event_name == 'release'
@@ -795,50 +795,50 @@ jobs:
             docker.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
-          format: table
-          output: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.txt
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
-          format: sarif
-          output: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
-          format: cyclonedx
-          output: sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
-          scan-type: image
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
-          format: spdx-json
-          output: sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.spdx.json
-          scan-type: image
-      - uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
-          category: trivy-ubuntu
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: security-and-sbom-documents-ubuntu
-          path: |
-            sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
-            sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.spdx.json
-            sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.txt
-            sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+      #     format: table
+      #     output: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.txt
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+      #     format: sarif
+      #     output: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+      #     format: cyclonedx
+      #     output: sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
+      #     scan-type: image
+      # - uses: aquasecurity/trivy-action@master
+      #   if: always()
+      #   with:
+      #     image-ref: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:${{ github.event.release.tag_name }}
+      #     format: spdx-json
+      #     output: sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.spdx.json
+      #     scan-type: image
+      # - uses: github/codeql-action/upload-sarif@v3
+      #   if: always()
+      #   with:
+      #     sarif_file: sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
+      #     category: trivy-ubuntu
+      # - uses: actions/upload-artifact@v4
+      #   if: always()
+      #   with:
+      #     name: security-and-sbom-documents-ubuntu
+      #     path: |
+      #       sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.cyclonedx.json
+      #       sfdx-hardis-ubuntu-image-sbom-${{ github.event.release.tag_name }}.spdx.json
+      #       sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.txt
+      #       sfdx-hardis-ubuntu-trivy-image-${{ github.event.release.tag_name }}-results.sarif
 
   push_release_ubuntu_to_registry_sfdx_recommended:
     if: github.event_name == 'release'
@@ -877,10 +877,10 @@ jobs:
           tags: |
             docker.io/hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended
             ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended
-          format: table
-          exit-code: "1"
-          vuln-type: os,library
-          severity: CRITICAL,HIGH
+      # - uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: docker.io/hardisgroupcom/sfdx-hardis-ubuntu:latest-sfdx-recommended
+      #     format: table
+      #     exit-code: "1"
+      #     vuln-type: os,library
+      #     severity: CRITICAL,HIGH
