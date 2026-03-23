@@ -777,6 +777,13 @@ export function listMetadataTypes() {
         xmlName: 'CnfgItemTypeRelationDef',
       },
       {
+        directoryName: 'cnfgMgmtCiSourceDefs',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'cnfgMgmtCiSourceDef',
+        xmlName: 'CnfgMgmtCiSourceDef',
+      },
+      {
         directoryName: 'cnfgMgmtRelationTypeDefs',
         inFolder: false,
         metaFile: false,
