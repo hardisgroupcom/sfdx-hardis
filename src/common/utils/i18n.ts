@@ -3,7 +3,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs-extra';
 
-export const SUPPORTED_LOCALES = ['de', 'en', 'es', 'fr', 'it', 'ja', 'pl', 'pt-BR'];
+export const SUPPORTED_LOCALES = ['de', 'en', 'es', 'fr', 'it', 'ja', 'nl', 'pl', 'pt-BR'];
 
 let initialized = false;
 
