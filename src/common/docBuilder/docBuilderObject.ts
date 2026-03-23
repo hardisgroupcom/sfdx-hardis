@@ -1,4 +1,5 @@
-import { XMLBuilder, XMLParser } from "fast-xml-parser";
+import { XMLBuilder } from "fast-xml-parser";
+import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
 import { mdTableCell } from "../gitProvider/utilsMarkdown.js";
@@ -102,7 +103,7 @@ export class DocBuilderObject extends DocBuilderRoot {
   }
 
   public async stripXmlForAi(): Promise<string> {
-    const xmlObj = new XMLParser().parse(this.metadataXml);
+    const xmlObj = getLargeXmlParser().parse(this.metadataXml);
     // Remove record types picklist values
     if (xmlObj?.CustomObject?.recordTypes) {
       if (!Array.isArray(xmlObj.CustomObject.recordTypes)) {

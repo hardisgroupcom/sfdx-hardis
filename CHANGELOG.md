@@ -9,6 +9,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 - Add translation in Italian
 - Add translation in Dutch
 - CI: Disable trivy until they fix their security issues
+- Fix crash when XML is too large to be parsed (Entity expansion limit exceeded)
 
 ## [7.3.0] 2026-03-18
 

@@ -1,6 +1,6 @@
 import { resolveMermaidTheme, type MermaidNodeConfig, type ResolvedMermaidTheme } from "./renderConfig.js";
 
-import { XMLParser } from "fast-xml-parser";
+import { getLargeXmlParser } from '../xmlUtils.js';
 import { CONSTANTS } from "../../../config/index.js";
 import { getCurrentGitBranch } from "../index.js";
 import farmhash from 'farmhash';
@@ -37,7 +37,7 @@ const FLOW_NODE_TYPES = [
     'screens',
     'subflows',
     'transforms'
- ] as const;
+] as const;
 
 type FlowNodeType = typeof FLOW_NODE_TYPES[number];
 
@@ -79,7 +79,7 @@ export async function parseFlow(
     options: ParseFlowOptions = {},
 ): Promise<{ flowMap: FlowMap, uml: string }> {
     try {
-        const flowObj = new XMLParser().parse(xml).Flow;
+        const flowObj = getLargeXmlParser().parse(xml).Flow;
         const flowMap = await createFlowMap(flowObj);
         if (Object.keys(flowMap).length === 0) {
             throw new Error("no-renderable-content-found");

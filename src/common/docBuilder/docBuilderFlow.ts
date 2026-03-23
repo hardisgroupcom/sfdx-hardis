@@ -1,4 +1,5 @@
-import { XMLBuilder, XMLParser } from "fast-xml-parser";
+import { XMLBuilder } from "fast-xml-parser";
+import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
 import * as path from "path";
@@ -41,7 +42,7 @@ export class DocBuilderFlow extends DocBuilderRoot {
 
   public async stripXmlForAi(): Promise<string> {
     const xmlStringStripped = this.metadataXml.replace(/<locationX>.*?<\/locationX>\s*|<locationY>.*?<\/locationY>\s*/g, '');
-    const xmlObj = new XMLParser().parse(xmlStringStripped);
+    const xmlObj = getLargeXmlParser().parse(xmlStringStripped);
     const xmlStripped = new XMLBuilder().build(xmlObj);
     return xmlStripped;
   }
