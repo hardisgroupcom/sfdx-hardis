@@ -465,6 +465,8 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Matt Carvin](https://www.linkedin.com/in/matthew-carvin/), for underused permission sets command
 - [Salik Lennert Pedersen](https://www.linkedin.com/in/saliklp/), for his numerous bug fixes
 - [Ryad Meguimi](https://www.linkedin.com/in/ryad-meguimi/), for the Light & Dark modes and the whole refactoring of CSS
+- [Nicholas Fiorendi](https://www.linkedin.com/in/nicholas-fiorendi/), for Italian translation
+- [Timo Pouw](https://www.linkedin.com/in/timopouw/), for Dutch translation
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 
@@ -475,6 +477,8 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - Polish: [Dagmara Ryborz](https://www.linkedin.com/in/dagmara-ryborz-7618b991/)
 - Japanese: [Shinnosuke Takakura](https://www.linkedin.com/in/shinnosuke-takakura-9041ba217/)
 - Brazilian-portuguese: [Matheus Delazeri](https://www.linkedin.com/in/matheus-delazeri-souza/)
+- Italian: [Nicholas Fiorendi](https://www.linkedin.com/in/nicholas-fiorendi/)
+- Dutch: [Timo Pouw](https://www.linkedin.com/in/timopouw/)
 
 <!-- contributors.md end -->
 

@@ -1,4 +1,5 @@
-import { XMLBuilder, XMLParser } from "fast-xml-parser";
+import { XMLBuilder } from "fast-xml-parser";
+import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { buildGenericMarkdownTable, prettifyFieldName } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderProfile } from "./docBuilderProfile.js";
@@ -50,7 +51,7 @@ export class DocBuilderPermissionSet extends DocBuilderProfile {
   }
 
   public async stripXmlForAi(): Promise<string> {
-    const xmlObj = new XMLParser().parse(this.metadataXml);
+    const xmlObj = getLargeXmlParser().parse(this.metadataXml);
     // Remove class access: not relevant for prompt
     if (xmlObj?.PermissionSet?.classAccesses) {
       delete xmlObj.PermissionSet.classAccesses;
@@ -65,7 +66,7 @@ export class DocBuilderPermissionSet extends DocBuilderProfile {
 
   // Generate json for display with jsTree npm library 
   public async generateJsonTree(): Promise<any> {
-    const xmlObj = new XMLParser().parse(this.metadataXml);
+    const xmlObj = getLargeXmlParser().parse(this.metadataXml);
     const treeElements: any[] = [];
     for (const psRootAttribute of Object.keys(xmlObj?.PermissionSet || {})) {
       if (["label", "license", "hasActivationRequired", "description"].includes(psRootAttribute)) {

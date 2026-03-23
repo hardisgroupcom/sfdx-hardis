@@ -3,7 +3,7 @@ import { UtilsAi } from "../aiProvider/utils.js";
 import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from '../aiProvider/promptTemplates.js';
 import { AiProvider } from '../aiProvider/index.js';
-import { XMLParser } from 'fast-xml-parser';
+import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import fs from 'fs-extra';
 import path from 'path';
 import { getMetaHideLines, includeFromFile } from './docUtils.js';
@@ -42,7 +42,7 @@ export abstract class DocBuilderRoot {
       this.parsedXmlObject = this.metadataXml;
     }
     else if (this.xmlRootKey) {
-      this.parsedXmlObject = new XMLParser().parse(this.metadataXml)?.[this.xmlRootKey] || {};
+      this.parsedXmlObject = getLargeXmlParser().parse(this.metadataXml)?.[this.xmlRootKey] || {};
     }
     const mdLines: string[] = [
       '<!-- This file is auto-generated. if you do not want it to be overwritten, set TRUE in the line below -->',

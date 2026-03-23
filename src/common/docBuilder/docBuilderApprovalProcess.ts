@@ -1,7 +1,8 @@
 import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
-import { XMLBuilder, XMLParser } from "fast-xml-parser";
+import { XMLBuilder } from "fast-xml-parser";
+import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import { t } from '../utils/i18n.js';
 
 export class DocBuilderApprovalProcess extends DocBuilderRoot {
@@ -52,7 +53,7 @@ export class DocBuilderApprovalProcess extends DocBuilderRoot {
 
   public async stripXmlForAi(): Promise<string> {
 
-    const xmlObj = new XMLParser().parse(this.metadataXml);
+    const xmlObj = getLargeXmlParser().parse(this.metadataXml);
 
     // Remove var that defines if Approval History is enabled: not relevant for prompt
     if (xmlObj?.ApprovalProcess?.showApprovalHistory) {
