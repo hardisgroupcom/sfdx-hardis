@@ -77,7 +77,7 @@ monitoring_tools:
   before_script:
     - git config --global user.name "${GITLAB_USER_NAME}"
     - git config --global user.email "${GITLAB_USER_EMAIL}"
-    - git pull origin "${CI_COMMIT_REF_NAME}"
+    - git pull origin "${CI_COMMIT_REF_NAME}" || echo "Issue when pulling latest branch state, but that should be ok"
   script:
     # Login & run apex tests
     - sf hardis:auth:login
@@ -102,7 +102,7 @@ megalinter:
   before_script:
     - git config --global user.name "${GITLAB_USER_NAME}"
     - git config --global user.email "${GITLAB_USER_EMAIL}"
-    - git pull origin "${CI_COMMIT_REF_NAME}"
+    - git pull origin "${CI_COMMIT_REF_NAME}" || echo "Issue when pulling latest branch state, but that should be ok"
   variables:
     # All available variables are described in documentation
     # https://megalinter.io/latest/config-file/

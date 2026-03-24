@@ -5,9 +5,19 @@ import fs from 'fs-extra';
 import * as path from 'path';
 import * as util from 'util';
 import * as xml2js from 'xml2js';
+import { XMLParser } from 'fast-xml-parser';
 import { sortCrossPlatform, uxLog } from './index.js';
 import { getApiVersion } from '../../config/index.js';
 import { t } from './i18n.js';
+
+/**
+ * Returns an XMLParser configured with a higher entity expansion limit (10 000)
+ * to handle Salesforce metadata files with rich-text descriptions containing
+ * many HTML entities without hitting the default security limit of 1 000.
+ */
+export function getLargeXmlParser(): XMLParser {
+  return new XMLParser({ processEntities: { maxTotalExpansions: 10000 } });
+}
 
 export async function parseXmlFile(xmlFile: string) {
   const packageXmlString = await fs.readFile(xmlFile, 'utf8');

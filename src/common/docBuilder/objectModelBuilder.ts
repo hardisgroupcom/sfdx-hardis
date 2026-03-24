@@ -2,7 +2,7 @@ import c from "chalk";
 import { glob } from "glob";
 import fs from "fs-extra";
 import * as path from "path";
-import { XMLParser } from "fast-xml-parser";
+import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from "../utils/projectUtils.js";
 import { uxLog } from "../utils/index.js";
 import { t } from '../utils/i18n.js';
@@ -100,7 +100,7 @@ classDef mainObject fill:#FFB3B3,stroke:#A94442,stroke-width:4px,rx:14px,ry:14px
         continue;
       }
       const fieldXml = fs.readFileSync(fieldFile, "utf8").toString();
-      const fieldDetail = new XMLParser().parse(fieldXml);
+      const fieldDetail = getLargeXmlParser().parse(fieldXml);
       if (fieldDetail?.CustomField?.type === "MasterDetail" || fieldDetail?.CustomField?.type === "Lookup") {
         const fieldName = path.basename(fieldFile, ".field-meta.xml");
         if (fieldDetail?.CustomField?.referenceTo) {
@@ -132,7 +132,7 @@ classDef mainObject fill:#FFB3B3,stroke:#A94442,stroke-width:4px,rx:14px,ry:14px
     for (const objectFile of matchingObjectFiles) {
       const objectName = path.basename(objectFile, ".object-meta.xml");
       const objectXml = fs.readFileSync(objectFile, "utf8").toString();
-      const objectDetail = new XMLParser().parse(objectXml);
+      const objectDetail = getLargeXmlParser().parse(objectXml);
       const object = {
         name: objectName,
         label: objectDetail?.CustomObject?.label || objectName,

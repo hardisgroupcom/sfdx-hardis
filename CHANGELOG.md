@@ -6,8 +6,25 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - New commands
   - [hardis:org:diagnose:deployments](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/deployments/) to analyze metadata deployments and validations by querying DeployRequest records via the Tooling API (available in sfdx-hardis monitoring)
+
+## [7.5.0] 2026-03-24
+
+- Org Monitoring workflows: Fallback when git pull fails to avoid crash
+- [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/):
+  - Now also checks **External Client Apps** in addition to Connected Apps
+  - New `App Type` column in reports (`Connected App` or `Ext Client App`)
+  - Security for External Client Apps is determined via `ExtlClntAppOauthPlcyCnfg.PermittedUsersPolicyType` (`AdminApprovedPreAuthorized` = secured)
+  - AppName-based matching fallback when External Client App tokens have no `AppMenuItem` link
+  - New stale-token cleanup: warns when a secured app still has old unsecured OAuth tokens and offers to delete them interactively
+
+## [7.4.0] 2026-03-23
+
 - Direct OpenAI integration: Migrated to OpenAI ResponsesAPI and Implemented service tier and reasoning options.
 - Update Metadata list
+- Add translation in Italian
+- Add translation in Dutch
+- CI: Disable trivy until they fix their security issues
+- Fix crash when XML is too large to be parsed (Entity expansion limit exceeded)
 
 ## [7.3.0] 2026-03-18
 

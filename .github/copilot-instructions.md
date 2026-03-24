@@ -99,15 +99,17 @@ docs/                 # Project documentation
 
 ## Internationalization (i18n) / Translations
 
-sfdx-hardis uses **i18next** for runtime translations. The locale is selected via the `SFDX_HARDIS_LOCALE` environment variable (default: `en`; supported: `en`, `de`, `fr`, `es`, `ja`, `pl`).
+sfdx-hardis uses **i18next** for runtime translations. The locale is selected via the `SFDX_HARDIS_LOCALE` environment variable (default: `en`; supported: `en`, `de`, `fr`, `es`, `it`, `ja`, `nl`, `pl`).
 
 ### Translation files
 
 - English: `src/i18n/en.json`
 - French: `src/i18n/fr.json`
 - Spanish: `src/i18n/es.json`
+- Italian: `src/i18n/it.json`
 - Japanese: `src/i18n/ja.json`
 - German: `src/i18n/de.json`
+- Dutch: `src/i18n/nl.json`
 - Polish: `src/i18n/pl.json`
 
 All files are flat JSON objects with **camelCase** keys and **i18next interpolation** syntax for variables (`{{varName}}`).
@@ -135,7 +137,7 @@ uxLog("warning", this, c.yellow(t("fileNotFound", { path: filePath })));
   - `"Processing file {{file}}..."` → `processingFile`
   - `"Error while deploying metadata: {{message}}"` → `errorWhileDeployingMetadata`
 - Keep keys unique across the whole file.
-- Always add the key to **all** translation files (`en.json`, `fr.json`, `es.json`, `ja.json`, and `de.json`) simultaneously. Non-English translations can mirror English when unsure, but should be translated.
+- Always add the key to **all** translation files (`en.json`, `fr.json`, `es.json`, `it.json`, `ja.json`, `de.json`, `nl.json`, and `pl.json`) simultaneously. Non-English translations can mirror English when unsure, but should be translated.
 - Reuse existing translations when possible instead of creating new keys for similar messages.
 - Always keep translation json files well-formatted and sorted alphabetically by key for readability.
 
@@ -166,6 +168,19 @@ uxLog("warning", this, c.yellow(t("fileNotFound", { path: filePath })));
   - Keep brand names untranslated: Salesforce, SFDMU, Git, GitHub, GitLab, JIRA, VS Code, Azure DevOps, Bitbucket, Docker, Cloudflare, ServiceNow, MermaidJS.
   - Translate key terms consistently: "deployment" → "wdrożenie", "deploy" → "wdrożyć", "retrieve" → "pobrać"/"pobieranie", "scratch org" → stays as "Scratch Org", "metadata" → "metadane", "org" → stays as "org".
   - Use Polish-specific software vocabulary: "błąd" for error, "ostrzeżenie" for warning, "repozytorium" for repository, "gałąź" for branch (but keep "branch" as-is when referring to git commands), "wdrożenie" for deployment.
+- **Italian-specific terms**: Use natural, informal Italian ("tu" register) matching the standard style used in Italian software products.
+  - Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub, SOQL, DML, CSV, REST, Bulk API, upsert, mock data, sandbox, deployment plan, pull request, merge request.
+  - Keep Salesforce metadata names in English: Flow, Permission Set, Permission Set Group, Profile, Custom Setting, Custom Label, Custom Permission, Connected App, External Client App, Validation Rule, Workflow Rule, Approval Process, Assignment Rule, Escalation Rule, Record Type, Lightning Page, Lightning Web Component, Static Resource, Visualforce, sObject, Flexipage.
+  - Keep brand names untranslated: Salesforce, SFDMU, Git, GitHub, GitLab, JIRA, VS Code, Cloudity, Apex, LWC, sfdx-hardis, Azure DevOps, Docker, Cloudflare, ServiceNow, MermaidJS.
+  - Translate key terms consistently: "deployment" → "distribuzione", "configuration" → "configurazione", "settings" → "impostazioni", "metadata" → "metadati", "package" (generic) → "pacchetto".
+  - "org" stays as "org"; "workspace" stays as "workspace" or "area di lavoro".
+  - Keep all `{{varName}}` interpolation placeholders, `\n` newlines, `<br/>` tags, emoji characters, and markdown formatting exactly as-is.
+- **Dutch-specific terms (nl)**: Use natural, informal Dutch ("je/jij" register, not "u/uw") matching the style used in Dutch software products.
+  - Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub, SOQL, DML, CSV, REST, Bulk API, upsert, mock data, sandbox, deployment plan, pull request, merge request, pipeline, deploy.
+  - Keep Salesforce metadata names in English: Flow, Permission Set, Permission Set Group, Profile, Custom Setting, Custom Label, Custom Permission, Connected App, External Client App, Validation Rule, Workflow Rule, Approval Process, Assignment Rule, Escalation Rule, Record Type, Lightning Page, Lightning Web Component, Static Resource, Visualforce, sObject, Flexipage.
+  - Keep brand names untranslated: Salesforce, SFDMU, Git, GitHub, GitLab, JIRA, VS Code, Cloudity, Apex, LWC, sfdx-hardis, Azure DevOps, Docker, Cloudflare, ServiceNow, MermaidJS.
+  - Translate key terms consistently: "deployment" → "implementatie", "deploy" → "implementeren", "configuration" → "configuratie", "settings" → "instellingen", "retrieve" → "ophalen", "run/execute" → "uitvoeren", "workspace" → "werkruimte".
+  - Keep all `{{varName}}` interpolation placeholders, `\n` newlines, `<br/>` tags, emoji characters, and markdown formatting exactly as-is.
 
 ### uxLog calls
 

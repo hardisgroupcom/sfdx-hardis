@@ -4,13 +4,13 @@ import fs from 'fs-extra';
 import c from "chalk";
 import * as path from "path";
 import { process as ApexDocGen } from '@cparra/apexdocs';
-import { XMLBuilder, XMLParser } from "fast-xml-parser";
+import { XMLBuilder } from "fast-xml-parser";
 import sortArray from 'sort-array';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, getMetaHideLines, readMkDocsFile, replaceInFile, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
-import { parseXmlFile } from '../../../common/utils/xmlUtils.js';
+import { getLargeXmlParser, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getBannerMarkdownAndLink, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
@@ -706,7 +706,7 @@ ${this.htmlInstructions}
       const mdFile = path.join(this.outputMarkdownRoot, "pages", pageName + ".md");
       pagesForMenu[pageName] = "pages/" + pageName + ".md";
       const pageXml = await fs.readFile(pagefile, "utf8");
-      const pageXmlParsed = new XMLParser().parse(pageXml);
+      const pageXmlParsed = getLargeXmlParser().parse(pageXml);
       this.pageDescriptions.push({
         name: pageName,
         type: prettifyFieldName(pageXmlParsed?.FlexiPage?.type || "Unknown"),
@@ -758,7 +758,7 @@ ${this.htmlInstructions}
       const mdFile = path.join(this.outputMarkdownRoot, "profiles", profileName + ".md");
       profilesForMenu[profileName] = "profiles/" + profileName + ".md";
       const profileXml = await fs.readFile(profileFile, "utf8");
-      const profileXmlParsed = new XMLParser().parse(profileXml);
+      const profileXmlParsed = getLargeXmlParser().parse(profileXml);
       this.profileDescriptions.push({
         name: profileName,
         userLicense: prettifyFieldName(profileXmlParsed?.Profile?.userLicense || "Unknown"),
@@ -809,7 +809,7 @@ ${this.htmlInstructions}
       const mdFile = path.join(this.outputMarkdownRoot, "permissionsets", psName + ".md");
       psForMenu[psName] = "permissionsets/" + psName + ".md";
       const psXml = await fs.readFile(psFile, "utf8");
-      const psXmlParsed = new XMLParser().parse(psXml);
+      const psXmlParsed = getLargeXmlParser().parse(psXml);
       this.permissionSetsDescriptions.push({
         name: psName,
         userLicense: prettifyFieldName(psXmlParsed?.PermissionSet?.license || "Unknown"),
@@ -862,7 +862,7 @@ ${this.htmlInstructions}
       const mdFile = path.join(this.outputMarkdownRoot, "permissionsetgroups", psgName + ".md");
       psgForMenu[psgName] = "permissionsetgroups/" + psgName + ".md";
       const psgXml = await fs.readFile(psgFile, "utf8");
-      const psgXmlParsed = new XMLParser().parse(psgXml);
+      const psgXmlParsed = getLargeXmlParser().parse(psgXml);
       let permissionSets = psgXmlParsed?.PermissionSetGroup?.permissionSets || [];
       if (!Array.isArray(permissionSets)) {
         permissionSets = [permissionSets];
@@ -912,7 +912,7 @@ ${this.htmlInstructions}
     for (const roleFile of roleFiles) {
       const roleApiName = path.basename(roleFile, ".role-meta.xml");
       const roleXml = await fs.readFile(roleFile, "utf8");
-      const roleXmlParsed = new XMLParser().parse(roleXml);
+      const roleXmlParsed = getLargeXmlParser().parse(roleXml);
       // build object with all XML root tags
       const roleInfo = { apiName: roleApiName };
       for (const roleAttribute of Object.keys(roleXmlParsed?.Role || {})) {
@@ -950,7 +950,7 @@ ${this.htmlInstructions}
     const workItems: { currentRuleName: string; mdFile: string; ruleXml: string }[] = [];
     for (const assignmentRulesFile of assignmentRulesFiles) {
       const assignmentRulesXml = await fs.readFile(assignmentRulesFile, "utf8");
-      const assignmentRulesXmlParsed = new XMLParser().parse(assignmentRulesXml);
+      const assignmentRulesXmlParsed = getLargeXmlParser().parse(assignmentRulesXml);
       const assignmentRulesName = path.basename(assignmentRulesFile, ".assignmentRules-meta.xml");
       let rulesList = assignmentRulesXmlParsed?.AssignmentRules?.assignmentRule || [];
       if (!Array.isArray(rulesList)) {
@@ -1022,7 +1022,7 @@ ${this.htmlInstructions}
       const mdFile = path.join(this.outputMarkdownRoot, "approvalProcesses", approvalProcessName + ".md");
       approvalProcessesForMenu[approvalProcessName] = "approvalProcesses/" + approvalProcessName + ".md";
       const approvalProcessXml = await fs.readFile(approvalProcessFile, "utf8");
-      const approvalProcessXmlParsed = new XMLParser().parse(approvalProcessXml);
+      const approvalProcessXmlParsed = getLargeXmlParser().parse(approvalProcessXml);
       this.approvalProcessesDescriptions.push({
         name: approvalProcessName,
         active: approvalProcessXmlParsed?.ApprovalProcess?.active,
@@ -1071,7 +1071,7 @@ ${this.htmlInstructions}
     const workItems: { currentRuleName: string; mdFile: string; ruleXml: string }[] = [];
     for (const autoResponseRulesFile of autoResponseRulesFiles) {
       const autoResponseRulesXml = await fs.readFile(autoResponseRulesFile, "utf8");
-      const autoResponseRulesXmlParsed = new XMLParser().parse(autoResponseRulesXml);
+      const autoResponseRulesXmlParsed = getLargeXmlParser().parse(autoResponseRulesXml);
       const autoResponseRulesName = path.basename(autoResponseRulesFile, ".autoResponseRules-meta.xml");
       let rulesList = autoResponseRulesXmlParsed?.AutoResponseRules?.autoResponseRule || [];
       if (!Array.isArray(rulesList)) {
@@ -1136,7 +1136,7 @@ ${this.htmlInstructions}
     const workItems: { currentRuleName: string; mdFile: string; ruleXml: string }[] = [];
     for (const escalationRulesFile of escalationRulesFiles) {
       const escalationRulesXml = await fs.readFile(escalationRulesFile, "utf8");
-      const escalationRulesXmlParsed = new XMLParser().parse(escalationRulesXml);
+      const escalationRulesXmlParsed = getLargeXmlParser().parse(escalationRulesXml);
       const escalationRulesName = path.basename(escalationRulesFile, ".escalationRules-meta.xml");
       let rulesList = escalationRulesXmlParsed?.EscalationRules?.escalationRule || [];
       if (!Array.isArray(rulesList)) {
@@ -1205,7 +1205,7 @@ ${this.htmlInstructions}
     const workItems: { ruleName: string; mdFile: string; ruleXml: string }[] = [];
     for (const workflowFile of workflowRulesFiles) {
       const workflowXml = await fs.readFile(workflowFile, "utf8");
-      const workflowXmlParsed = new XMLParser().parse(workflowXml);
+      const workflowXmlParsed = getLargeXmlParser().parse(workflowXml);
       const workflowObjectName = path.basename(workflowFile, ".workflow-meta.xml");
       let rulesList = workflowXmlParsed?.Workflow?.rules || workflowXmlParsed?.Workflow?.workflowRule || [];
       if (!Array.isArray(rulesList)) {
@@ -1461,7 +1461,7 @@ ${this.htmlInstructions}
       }
       const objectXml = (await fs.readFile(path.join(this.tempDir, objectFile), "utf8")).toString();
       const objectMdFile = path.join(this.outputMarkdownRoot, "objects", objectName + ".md");
-      const objectXmlParsed = new XMLParser().parse(objectXml);
+      const objectXmlParsed = getLargeXmlParser().parse(objectXml);
       objectsForMenu[objectName] = "objects/" + objectName + ".md";
       this.objectDescriptions.push({
         name: objectName,
@@ -1571,7 +1571,7 @@ ${this.htmlInstructions}
     const customFieldsLinks: string[] = [];
     for (const fieldFile of matchingFieldFiles) {
       const fieldXml = fs.readFileSync(fieldFile, "utf8").toString();
-      const fieldDetail = new XMLParser().parse(fieldXml);
+      const fieldDetail = getLargeXmlParser().parse(fieldXml);
       if (fieldDetail?.CustomField?.type === "MasterDetail" || fieldDetail?.CustomField?.type === "Lookup") {
         const fieldName = path.basename(fieldFile, ".field-meta.xml");
         const objectName = fieldFile.substring(fieldFile.indexOf('objects/')).split("/")[1];
@@ -1869,7 +1869,7 @@ ${this.htmlInstructions}
 
         // Read XML metadata for information about the component
         const lwcMetaXml = await fs.readFile(lwcMetaFile, "utf8");
-        const lwcMetaXmlParsed = new XMLParser().parse(lwcMetaXml);
+        const lwcMetaXmlParsed = getLargeXmlParser().parse(lwcMetaXml);
 
         // Read JS file to get a better idea of what objects this component works with
         const jsFile = path.join(lwcDirPath, `${lwcName}.js`);
