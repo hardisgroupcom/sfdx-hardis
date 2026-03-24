@@ -5,11 +5,10 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
-import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { CONSTANTS } from '../../../../config/index.js';
-import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { prepareOrgNotificationContext } from '../../../../common/utils/orgNotificationContext.js';
 import sortArray from 'sort-array';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -187,6 +186,22 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const validationSuccessRate =
       validations.length > 0 ? Math.round((succeededValidations.length / validations.length) * 100) : 0;
 
+    const roundedAvgDeploymentMinutes = Math.round(avgDeploymentMinutes * 10) / 10;
+    const roundedAvgValidationMinutes = Math.round(avgValidationMinutes * 10) / 10;
+    const roundedAvgDeploymentPendingMinutes = Math.round(avgDeploymentPendingMinutes * 10) / 10;
+    const roundedAvgValidationPendingMinutes = Math.round(avgValidationPendingMinutes * 10) / 10;
+    const deploymentSummaryBase = {
+      period,
+      deploymentsTotal: deployments.length,
+      validationsTotal: validations.length,
+      failedDeployments: failedDeployments.length,
+      failedValidations: failedValidations.length,
+      deploymentSuccessRate,
+      validationSuccessRate,
+      avgDeploymentMinutes: roundedAvgDeploymentMinutes,
+      avgValidationMinutes: roundedAvgValidationMinutes,
+    };
+
     uxLog("action", this, c.cyan(`Deployment & Validation Summary (${period})`));
     uxLog(
       "log",
@@ -214,9 +229,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     });
 
     // Notifications
-    await setConnectionVariables(flags['target-org']?.getConnection());
-    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
-    const notifButtons = await getNotificationButtons();
+    const { orgMarkdown, notifButtons } = await prepareOrgNotificationContext(flags['target-org']?.getConnection());
     let notifSeverity: NotifSeverity = 'log';
     let notifText = `Deployment analysis (${period}) for ${orgMarkdown}: ${deployments.length} deployments (${deploymentSuccessRate}% success, avg ${avgDeploymentMinutes.toFixed(1)} min), ${validations.length} validations (${validationSuccessRate}% success, avg ${avgValidationMinutes.toFixed(1)} min)`;
     const notifAttachments: any[] = [];
@@ -246,17 +259,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
       logElements: this.deployRecords,
       data: {
-        period,
-        deploymentsTotal: deployments.length,
-        validationsTotal: validations.length,
-        failedDeployments: failedDeployments.length,
-        failedValidations: failedValidations.length,
-        deploymentSuccessRate: deploymentSuccessRate,
-        validationSuccessRate: validationSuccessRate,
-        avgDeploymentMinutes: Math.round(avgDeploymentMinutes * 10) / 10,
-        avgValidationMinutes: Math.round(avgValidationMinutes * 10) / 10,
-        avgDeploymentPendingMinutes: Math.round(avgDeploymentPendingMinutes * 10) / 10,
-        avgValidationPendingMinutes: Math.round(avgValidationPendingMinutes * 10) / 10,
+        ...deploymentSummaryBase,
+        avgDeploymentPendingMinutes: roundedAvgDeploymentPendingMinutes,
+        avgValidationPendingMinutes: roundedAvgValidationPendingMinutes,
       },
       metrics: {
         deploymentsTotal: deployments.length,
@@ -267,22 +272,11 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         validationsFailed: failedValidations.length,
         deploymentSuccessRate: deploymentSuccessRate,
         validationSuccessRate: validationSuccessRate,
-        avgDeploymentMinutes: Math.round(avgDeploymentMinutes * 10) / 10,
-        avgValidationMinutes: Math.round(avgValidationMinutes * 10) / 10,
+        avgDeploymentMinutes: deploymentSummaryBase.avgDeploymentMinutes,
+        avgValidationMinutes: deploymentSummaryBase.avgValidationMinutes,
       },
     });
 
-    return {
-      period,
-      deploymentsTotal: deployments.length,
-      validationsTotal: validations.length,
-      failedDeployments: failedDeployments.length,
-      failedValidations: failedValidations.length,
-      deploymentSuccessRate: deploymentSuccessRate,
-      validationSuccessRate: validationSuccessRate,
-      avgDeploymentMinutes: Math.round(avgDeploymentMinutes * 10) / 10,
-      avgValidationMinutes: Math.round(avgValidationMinutes * 10) / 10,
-      outputFile: this.outputFile,
-    } as AnyJson;
+    return { ...deploymentSummaryBase, outputFile: this.outputFile } as AnyJson;
   }
 }
