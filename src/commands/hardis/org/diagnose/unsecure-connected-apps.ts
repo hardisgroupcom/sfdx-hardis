@@ -452,6 +452,62 @@ The command's technical implementation involves:
       process.exitCode = numberWarnings > 0 ? 1 : 0;
     }
 
+    // Handle secured apps that also have stale unsecured tokens (mixed-status apps)
+    if (!isCI && unsecuredOAuthTokens.length > 0) {
+      const securedAppsWithUnsecuredTokensMap = new Map<string, any[]>();
+      for (const token of unsecuredOAuthTokens) {
+        const hasSecuredToken = allOAuthTokensWithStatus.some(
+          t => t.AppName === token.AppName && t.Status === '✅ Secured'
+        );
+        if (hasSecuredToken) {
+          const existing = securedAppsWithUnsecuredTokensMap.get(token.AppName) ?? [];
+          existing.push(token);
+          securedAppsWithUnsecuredTokensMap.set(token.AppName, existing);
+        }
+      }
+
+      for (const [appName, staleTokens] of securedAppsWithUnsecuredTokensMap) {
+        uxLog("action", this, c.yellow(t('securedAppHasUnsecuredTokens', { appName, count: staleTokens.length })));
+        uxLogTable(this, staleTokens);
+
+        const safeAppName = appName.replace(/[^a-zA-Z0-9_-]/g, '_');
+        const outputFileStaleTokens = await generateReportPath(`unsecured-tokens-secured-app-${safeAppName}`, '');
+        await generateCsvFile(staleTokens, outputFileStaleTokens, { fileTitle: t('unsecuredTokensForSecuredAppFiletitle', { appName }) });
+
+        const confirmDeleteStaleRes = await prompts({
+          type: 'confirm',
+          message: t('doYouWantToDeleteStaleTokensForApp', { appName, count: staleTokens.length, total: allOAuthTokensWithStatus.filter(t => t.AppName === appName).length }),
+          description: t('deletePhantomAppsTokensDescription'),
+          initial: false,
+        });
+
+        if (confirmDeleteStaleRes.value === true) {
+          WebSocketClient.sendProgressStartMessage(t('deletingOAuthTokens', { count: staleTokens.length }), staleTokens.length);
+          let counter = 0;
+          for (const tokenToDelete of staleTokens) {
+            const deleteTokenRecord = allOAuthTokens.find(t => t.Id === tokenToDelete["x-Token-Id"]);
+            if (!deleteTokenRecord) {
+              uxLog("error", this, c.red(t('oauthTokenNotFoundSkipping', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName })));
+              counter++;
+              continue;
+            }
+            const deleteTokenUrl = `${conn.instanceUrl}/services/oauth2/revoke?token=${encodeURIComponent(deleteTokenRecord.DeleteToken)}`;
+            uxLog("log", this, t('deletingOAuthTokenForApp', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName }));
+            try {
+              await conn.requestPost(deleteTokenUrl, {});
+              uxLog("success", this, c.green(t('oauthTokenDeleted', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName })));
+            } catch (error) {
+              uxLog("error", this, c.red(t('failedToDeleteOAuthToken', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName, error: error })));
+            }
+            counter++;
+            WebSocketClient.sendProgressStepMessage(counter, staleTokens.length);
+          }
+          WebSocketClient.sendProgressEndMessage(staleTokens.length);
+          uxLog("action", this, c.green(t('oauthTokenDeletionCompleted')));
+        }
+      }
+    }
+
     return {
       status: numberWarnings === 0 ? 'success' : 'warning',
       allOAuthTokensWithStatus: allOAuthTokensWithStatus,
