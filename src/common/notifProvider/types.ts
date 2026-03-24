@@ -40,7 +40,8 @@ export interface NotifMessage {
   | "AGENTFORCE_CONVERSATIONS"
   | "AGENTFORCE_FEEDBACK"
   | "APEX_ERROR"
-  | "FLOW_ERROR";
+  | "FLOW_ERROR"
+  | "DEPLOYMENTS";
   buttons?: NotifButton[];
   attachments?: any[];
   severity: NotifSeverity;

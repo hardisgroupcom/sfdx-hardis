@@ -6,9 +6,9 @@ import c from 'chalk';
 import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
-import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
+import { getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
-import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { prepareOrgNotificationContext } from '../../../../common/utils/orgNotificationContext.js';
 import { CONSTANTS, getEnvVar } from '../../../../config/index.js';
 import { isTestClass } from '../../../../common/utils/apexLimitUtils.js';
 
@@ -172,9 +172,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     });
 
     // Notifications
-    await setConnectionVariables(flags['target-org']?.getConnection());
-    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
-    const notifButtons = await getNotificationButtons();
+    const { orgMarkdown, notifButtons } = await prepareOrgNotificationContext(flags['target-org']?.getConnection());
     let notifSeverity: NotifSeverity = 'log';
     let notifText = `No deprecated Apex API versions found in ${orgMarkdown} (threshold: ${threshold})`;
     const notifAttachments: any[] = [];
