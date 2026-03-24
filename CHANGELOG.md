@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [7.5.0] 2026-03-24
+
 - Org Monitoring workflows: Fallback when git pull fails to avoid crash
 - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/):
   - Now also checks **External Client Apps** in addition to Connected Apps
