@@ -143,7 +143,7 @@ jobs:
         displayName: Install @salesforce/cli & sfdx-hardis
 
       - script: |
-          git pull origin "${BRANCH_NAME}"
+          git pull origin "${BRANCH_NAME}" || echo "Issue when pulling latest branch state, but that should be ok"
         displayName: Pull git branch latest commit
         env:
           CI: "true"
@@ -206,7 +206,7 @@ jobs:
       - script: |
           git config --global user.email "contact@cloudity.com"
           git config --global user.name "sfdx-hardis monitoring"
-          git pull origin "${BRANCH_NAME}"
+          git pull origin "${BRANCH_NAME}" || echo "Issue when pulling latest branch state, but that should be ok"
         workingDirectory: $(System.DefaultWorkingDirectory)
         displayName: Git config & pull latest commit
 
@@ -262,7 +262,7 @@ jobs:
       - script: |
           git config --global user.email "contact@cloudity.com"
           git config --global user.name "sfdx-hardis monitoring"
-          git pull origin "${BRANCH_NAME}"
+          git pull origin "${BRANCH_NAME}" || echo "Issue when pulling latest branch state, but that should be ok"
         displayName: Pull git branch latest commit
         env:
           CI: "true"
