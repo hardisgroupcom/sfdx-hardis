@@ -137,7 +137,7 @@ The command's technical implementation involves:
     try {
       const externalClientAppQueryRes = await soqlQuery(externalClientAppQuery, conn);
       allExternalClientApps = externalClientAppQueryRes.records;
-    } catch (e) {
+    } catch (_e) {
       // ExternalClientApplication may not be available in all orgs or API versions
     }
     uxLog("log", this, t('externalClientAppsFound', { count: allExternalClientApps.length }));
@@ -156,7 +156,7 @@ The command's technical implementation involves:
     try {
       const ecaOauthPoliciesQueryRes = await soqlQuery(ecaOauthPoliciesQuery, conn);
       allEcaOauthPolicies = ecaOauthPoliciesQueryRes.records;
-    } catch (e) {
+    } catch (_e) {
       // ExtlClntAppOauthConfigurablePolicies may not be available in all orgs or API versions
     }
     const ecaOauthPoliciesByAppId = new Map<string, any>(allEcaOauthPolicies.map(policy => [policy.ExternalClientApplicationId, policy]));
@@ -416,37 +416,11 @@ The command's technical implementation involves:
           });
           if (deleteTokensPromptRes?.value.length > 0) {
             const tokensToDelete = unsecuredOAuthTokens.filter(token => deleteTokensPromptRes.value.includes(token.AppName));
-            WebSocketClient.sendProgressStartMessage(t('deletingOAuthTokens', { count: tokensToDelete.length }), tokensToDelete.length);
-            const deletedOAuthTokens: any[] = [];
-            let counter = 0;
-            for (const tokenToDelete of tokensToDelete) {
-              const deleteTokenRecord = allOAuthTokens.find(t => t.Id === tokenToDelete["x-Token-Id"]);
-              if (!deleteTokenRecord) {
-                uxLog("error", this, c.red(t('oauthTokenNotFoundSkipping', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName })));
-                counter++;
-                continue;
-              }
-              const deleteTokenUrl = `${conn.instanceUrl}/services/oauth2/revoke?token=${encodeURIComponent(deleteTokenRecord.DeleteToken)}`;
-              uxLog("log", this, t('deletingOAuthTokenForApp', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName }));
-              try {
-                await conn.requestPost(deleteTokenUrl, {});
-                uxLog("success", this, c.green(t('oauthTokenDeleted', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName })));
-                deletedOAuthTokens.push(tokenToDelete);
-              }
-              catch (error) {
-                uxLog("error", this, c.red(t('failedToDeleteOAuthToken', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName, error: error })));
-              }
-              counter++;
-              WebSocketClient.sendProgressStepMessage(counter, tokensToDelete.length);
-            }
-            WebSocketClient.sendProgressEndMessage(tokensToDelete.length);
-
+            const deletedOAuthTokens = await this.revokeOAuthTokens(tokensToDelete, allOAuthTokens, conn);
             if (deletedOAuthTokens.length > 0) {
               const outputFileDeletedAuthTokens = await generateReportPath('deleted-auth-tokens', '');
               await generateCsvFile(deletedOAuthTokens, outputFileDeletedAuthTokens, { fileTitle: t('deletedAuthTokensFiletitle') });
             }
-
-            uxLog("action", this, c.green(t('oauthTokenDeletionCompleted')));
           }
         }
       }
@@ -486,28 +460,7 @@ The command's technical implementation involves:
         });
 
         if (confirmDeleteStaleRes.value === true) {
-          WebSocketClient.sendProgressStartMessage(t('deletingOAuthTokens', { count: staleTokens.length }), staleTokens.length);
-          let counter = 0;
-          for (const tokenToDelete of staleTokens) {
-            const deleteTokenRecord = allOAuthTokens.find(t => t.Id === tokenToDelete["x-Token-Id"]);
-            if (!deleteTokenRecord) {
-              uxLog("error", this, c.red(t('oauthTokenNotFoundSkipping', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName })));
-              counter++;
-              continue;
-            }
-            const deleteTokenUrl = `${conn.instanceUrl}/services/oauth2/revoke?token=${encodeURIComponent(deleteTokenRecord.DeleteToken)}`;
-            uxLog("log", this, t('deletingOAuthTokenForApp', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName }));
-            try {
-              await conn.requestPost(deleteTokenUrl, {});
-              uxLog("success", this, c.green(t('oauthTokenDeleted', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName })));
-            } catch (error) {
-              uxLog("error", this, c.red(t('failedToDeleteOAuthToken', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName, error: error })));
-            }
-            counter++;
-            WebSocketClient.sendProgressStepMessage(counter, staleTokens.length);
-          }
-          WebSocketClient.sendProgressEndMessage(staleTokens.length);
-          uxLog("action", this, c.green(t('oauthTokenDeletionCompleted')));
+          await this.revokeOAuthTokens(staleTokens, allOAuthTokens, conn);
         }
       }
     }
@@ -518,5 +471,33 @@ The command's technical implementation involves:
       unsecuredOAuthTokens: unsecuredOAuthTokens,
       unsecuredConnectedApps: uniqueUnsecuredAppNames as AnyJson[],
     }
+  }
+
+  private async revokeOAuthTokens(tokensToRevoke: any[], allOAuthTokens: any[], conn: Connection): Promise<any[]> {
+    WebSocketClient.sendProgressStartMessage(t('deletingOAuthTokens', { count: tokensToRevoke.length }), tokensToRevoke.length);
+    const revokedTokens: any[] = [];
+    let counter = 0;
+    for (const tokenToDelete of tokensToRevoke) {
+      const deleteTokenRecord = allOAuthTokens.find(tok => tok.Id === tokenToDelete["x-Token-Id"]);
+      if (!deleteTokenRecord) {
+        uxLog("error", this, c.red(t('oauthTokenNotFoundSkipping', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName })));
+        counter++;
+        continue;
+      }
+      const deleteTokenUrl = `${conn.instanceUrl}/services/oauth2/revoke?token=${encodeURIComponent(deleteTokenRecord.DeleteToken)}`;
+      uxLog("log", this, t('deletingOAuthTokenForApp', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName }));
+      try {
+        await conn.requestPost(deleteTokenUrl, {});
+        uxLog("success", this, c.green(t('oauthTokenDeleted', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName })));
+        revokedTokens.push(tokenToDelete);
+      } catch (error) {
+        uxLog("error", this, c.red(t('failedToDeleteOAuthToken', { tokenId: tokenToDelete["x-Token-Id"], appName: tokenToDelete.AppName, error: error })));
+      }
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter, tokensToRevoke.length);
+    }
+    WebSocketClient.sendProgressEndMessage(tokensToRevoke.length);
+    uxLog("action", this, c.green(t('oauthTokenDeletionCompleted')));
+    return revokedTokens;
   }
 }
