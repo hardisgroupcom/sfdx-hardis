@@ -61,7 +61,7 @@ pipelines:
               - export ORG_ALIAS=$BRANCH_NAME
               - export FORCE_COLOR=1
               # Get latest commit of the branch
-              - git pull origin "${BRANCH_NAME}"
+              - git pull origin "${BRANCH_NAME}" || echo "Issue when pulling latest branch state, but that should be ok"
               # Login
               - sf hardis:auth:login
               # Apex tests
@@ -79,7 +79,7 @@ pipelines:
             script:
               # Get latest commit of the branch
               - export BRANCH_NAME=$(echo "$BITBUCKET_BRANCH" | sed 's/refs\/heads\///')
-              - git pull origin "${BRANCH_NAME}"
+              - git pull origin "${BRANCH_NAME}" || echo "Issue when pulling latest branch state, but that should be ok"
               - export DEFAULT_WORKSPACE=$BITBUCKET_CLONE_DIR && bash /entrypoint.sh
             artifacts:
               - megalinter-reports/**
@@ -100,7 +100,7 @@ pipelines:
               - export ORG_ALIAS=$BRANCH_NAME
               - export FORCE_COLOR=1
               # Get latest commit of the branch
-              - git pull origin "${BRANCH_NAME}"
+              - git pull origin "${BRANCH_NAME}" || echo "Issue when pulling latest branch state, but that should be ok"
               # Login
               - sf hardis:auth:login
               # Other monitoring tools
