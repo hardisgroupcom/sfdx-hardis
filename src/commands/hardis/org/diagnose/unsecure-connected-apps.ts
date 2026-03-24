@@ -126,6 +126,37 @@ The command's technical implementation involves:
     const allConnectedApps = connectedAppQueryRes.records;
     uxLog("log", this, t('connectedAppsFound', { count: allConnectedApps.length }));
 
+    // List available External Client Apps
+    uxLog("action", this, c.cyan(t('listingAllExternalClientAppsFrom', { conn: conn.instanceUrl })));
+    const externalClientAppQuery = `SELECT Id, MasterLabel, DeveloperName FROM ExternalClientApplication ORDER BY MasterLabel ASC`;
+    let allExternalClientApps: any[] = [];
+    try {
+      const externalClientAppQueryRes = await soqlQuery(externalClientAppQuery, conn);
+      allExternalClientApps = externalClientAppQueryRes.records;
+    } catch (e) {
+      // ExternalClientApplication may not be available in all orgs or API versions
+    }
+    uxLog("log", this, t('externalClientAppsFound', { count: allExternalClientApps.length }));
+    const allExternalClientAppsById = new Map<string, any>(allExternalClientApps.map(app => [app.Id, app]));
+    // Also index by MasterLabel and DeveloperName for AppName-based matching (tokens without AppMenuItem link)
+    const allExternalClientAppsByName = new Map<string, any>();
+    for (const app of allExternalClientApps) {
+      if (app.MasterLabel) allExternalClientAppsByName.set(app.MasterLabel.toLowerCase(), app);
+      if (app.DeveloperName) allExternalClientAppsByName.set(app.DeveloperName.toLowerCase(), app);
+    }
+
+    // Query External Client App OAuth Policies to check admin pre-approval setting
+    // PermittedUsersPolicyType === 'AdminApprovedPreAuthorized' means admin pre-approved
+    const ecaOauthPoliciesQuery = `SELECT Id, ExternalClientApplicationId, PermittedUsersPolicyType FROM ExtlClntAppOauthPlcyCnfg`;
+    let allEcaOauthPolicies: any[] = [];
+    try {
+      const ecaOauthPoliciesQueryRes = await soqlQuery(ecaOauthPoliciesQuery, conn);
+      allEcaOauthPolicies = ecaOauthPoliciesQueryRes.records;
+    } catch (e) {
+      // ExtlClntAppOauthConfigurablePolicies may not be available in all orgs or API versions
+    }
+    const ecaOauthPoliciesByAppId = new Map<string, any>(allEcaOauthPolicies.map(policy => [policy.ExternalClientApplicationId, policy]));
+
     // Collect all OAuth Tokens
     uxLog("action", this, c.cyan(t('extractingAllOauthTokensFrom', { conn: conn.instanceUrl })));
     const tokensCountQuery = `SELECT count() FROM OauthToken`;
@@ -163,21 +194,45 @@ The command's technical implementation involves:
     sortArray(allOAuthTokens, { by: 'AppName' });
 
     const allOAuthTokensWithStatus = allOAuthTokens.map(oAuthToken => {
-      const adminPreApproved = oAuthToken["AppMenuItem.IsUsingAdminAuthorization"] ?? false;
+      let adminPreApproved = oAuthToken["AppMenuItem.IsUsingAdminAuthorization"] ?? false;
       let appName = oAuthToken.AppName ? oAuthToken.AppName : 'N/A';
-      if (oAuthToken["AppMenuItem.ApplicationId"]) {
-        const matchingConnectedApp = allConnectedApps.find(app => app.Id === oAuthToken["AppMenuItem.ApplicationId"]);
-        if (matchingConnectedApp) {
-          appName = matchingConnectedApp.Name;
+      let appType = 'Connected App';
+      const applicationId = oAuthToken["AppMenuItem.ApplicationId"];
+      if (applicationId) {
+        if (applicationId.startsWith("0xI")) {
+          // External Client App (matched via AppMenuItem.ApplicationId)
+          appType = 'Ext Client App';
+          const matchingExtClientApp = allExternalClientAppsById.get(applicationId);
+          if (matchingExtClientApp) {
+            appName = matchingExtClientApp.MasterLabel || matchingExtClientApp.DeveloperName;
+          }
+          // Use the actual ECA OAuth policy to determine admin pre-approval
+          const ecaPolicy = ecaOauthPoliciesByAppId.get(applicationId);
+          adminPreApproved = ecaPolicy?.PermittedUsersPolicyType === 'AdminApprovedPreAuthorized';
+        } else {
+          // Connected App
+          const matchingConnectedApp = allConnectedApps.find(app => app.Id === applicationId);
+          if (matchingConnectedApp) {
+            appName = matchingConnectedApp.Name;
+          } else {
+            throw new SfError(`Connected App with Id ${applicationId} not found among installed Connected Apps.`);
+          }
         }
-        else {
-          throw new SfError(`Connected App with Id ${oAuthToken["AppMenuItem.ApplicationId"]} not found among installed Connected Apps.`);
+      } else if (appName !== 'N/A') {
+        // No AppMenuItem link — try to match by AppName against External Client Apps
+        const matchingExtClientApp = allExternalClientAppsByName.get(appName.toLowerCase());
+        if (matchingExtClientApp) {
+          appType = 'Ext Client App';
+          appName = matchingExtClientApp.MasterLabel || matchingExtClientApp.DeveloperName;
+          const ecaPolicy = ecaOauthPoliciesByAppId.get(matchingExtClientApp.Id);
+          adminPreApproved = ecaPolicy?.PermittedUsersPolicyType === 'AdminApprovedPreAuthorized';
         }
       }
 
       const isIgnored = unsecuredConnectedAppsToIgnoreSet.has(normalizeAppName(appName));
       const appResult = {
         AppName: appName,
+        "App Type": appType,
         "Status": isIgnored ? '⚪ Ignored' : (adminPreApproved ? '✅ Secured' : '❌ Unsecured'),
         "Admin Pre-Approved": adminPreApproved ? 'Yes' : 'No',
         "User": oAuthToken["User.Name"] ? oAuthToken["User.Name"] : 'N/A',
@@ -207,12 +262,16 @@ The command's technical implementation involves:
     const uniqueUnsecuredAppNamesAndTokenNumber: { [key: string]: number } = {};
     const uniqueUnsecuredAppNamesAndProfiles: { [key: string]: Set<string> } = {};
     const uniqueUnsecuredAppNamesAndLastUsageDate: { [key: string]: string } = {};
+    const uniqueUnsecuredAppNamesAndType: { [key: string]: string } = {};
     for (const app of unsecuredOAuthTokens) {
       if (uniqueUnsecuredAppNamesAndTokenNumber[app.AppName]) {
         uniqueUnsecuredAppNamesAndTokenNumber[app.AppName]++;
       }
       else {
         uniqueUnsecuredAppNamesAndTokenNumber[app.AppName] = 1;
+      }
+      if (!uniqueUnsecuredAppNamesAndType[app.AppName]) {
+        uniqueUnsecuredAppNamesAndType[app.AppName] = app["App Type"] || 'Connected App';
       }
       if (!uniqueUnsecuredAppNamesAndProfiles[app.AppName]) {
         uniqueUnsecuredAppNamesAndProfiles[app.AppName] = new Set<string>();
@@ -231,6 +290,7 @@ The command's technical implementation involves:
     const uniqueUnsecureConnectedAppsWithTokens = uniqueUnsecuredAppNames.map(appName => {
       return {
         AppName: appName,
+        "App Type": uniqueUnsecuredAppNamesAndType[appName] || 'Connected App',
         NumberOfUnsecuredOAuthTokens: uniqueUnsecuredAppNamesAndTokenNumber[appName],
         LatestUsageDate: uniqueUnsecuredAppNamesAndLastUsageDate[appName] || "N/A",
         ProfilesOfUsersUsingIt: Array.from(uniqueUnsecuredAppNamesAndProfiles[appName] || []).sort().join(', '),
@@ -277,11 +337,12 @@ The command's technical implementation involves:
       WebSocketClient.sendReportFileMessage(OAuthUsageSetupUrl, t('reviewOAuthConnectedApps'), "actionUrl");
     }
 
-    // Suggest to ignore connected apps that we are not able to find in either Connected Apps, either in OAuthUsage setup page
+    // Suggest to ignore connected apps that we are not able to find in either Connected Apps, External Client Apps, either in OAuthUsage setup page
     const uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps: string[] = [];
     for (const appName of uniqueUnsecuredAppNames) {
       const matchingConnectedApp = allConnectedApps.find(app => app.Name === appName);
-      if (!matchingConnectedApp) {
+      const matchingExtClientApp = allExternalClientApps.find(app => app.MasterLabel === appName || app.DeveloperName === appName);
+      if (!matchingConnectedApp && !matchingExtClientApp) {
         uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.push(appName);
       }
     }
