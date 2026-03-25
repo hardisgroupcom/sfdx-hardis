@@ -1312,6 +1312,7 @@
   "methodPostpullrequestmessageIsNotYetImplementedOn": "メソッド postPullRequestMessage は以下でまだ実装されていません ",
   "metricsPayload": "メトリクスペイロード:\\n",
   "metricValue": "メトリクス値: {{metricValue}}",
+  "monitorErrorsAggregatedReportTitle": "タイプと操作別エラーサマリー",
   "monitorErrorsApexDetected": "{{org}} で Apex エラーが検出されました（{{count}} 件、過去 {{days}} 日間）。",
   "monitorErrorsApexNone": "{{org}} で Apex エラーは検出されませんでした（過去 {{days}} 日間）。",
   "monitorErrorsApexReportTitle": "Apex エラー",
