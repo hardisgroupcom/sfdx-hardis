@@ -32,6 +32,7 @@ This command is intended to safely remove PS attributes from Profiles after a mi
 - Filters the manifest to remove selected managed package namespaces and keep only relevant metadata types required for profile processing.
 - Retrieves the necessary metadata (profiles, objects, fields, classes) into the local project.
 - Iterates over selected profile files and mutes configured attributes (for example: classAccesses.enabled, fieldPermissions.readable/editable, objectPermissions.* and userPermissions.enabled).
+- Resets record type visibilities on purged objects: assigns the Master record type as default and visible, and unchecks all other record types.
 - Writes the modified profile XML files back to the repository
 - Deploys the updated profiles to the target org.
 
@@ -314,6 +315,9 @@ The command checks for uncommitted changes and will not run if the working tree 
       }
     }
 
+    // Reset record type visibilities: set Master as default and visible, uncheck others
+    this.resetRecordTypeVisibilities(profileParsedXml, changes);
+
     // Build a single summary string and emit it with one uxLog("log") call
     const summaryLines: string[] = [];
     summaryLines.push(`Profile: ${profileName}`);
@@ -332,6 +336,125 @@ The command checks for uncommitted changes and will not run if the working tree 
     uxLog('log', this, c.cyan(summaryLines.join('\n')));
     this.allChanges.push(...changes.map(change => ({ profile: profileName, ...change })));
     return profileParsedXml;
+  }
+
+  private resetRecordTypeVisibilities(
+    profileParsedXml: any,
+    changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[]
+  ): void {
+    const nodeName = 'recordTypeVisibilities';
+    if (!profileParsedXml?.Profile?.[nodeName]) {
+      return;
+    }
+    // Ensure we work with an array
+    if (!Array.isArray(profileParsedXml.Profile[nodeName])) {
+      profileParsedXml.Profile[nodeName] = [profileParsedXml.Profile[nodeName]];
+    }
+
+    // Collect purged object names from objectPermissions
+    const purgedObjects = new Set<string>();
+    if (profileParsedXml?.Profile?.objectPermissions) {
+      const objPerms = Array.isArray(profileParsedXml.Profile.objectPermissions)
+        ? profileParsedXml.Profile.objectPermissions
+        : [profileParsedXml.Profile.objectPermissions];
+      for (const objPerm of objPerms) {
+        let objName = objPerm.object;
+        if (Array.isArray(objName)) {
+          objName = objName[0];
+        }
+        if (objName) {
+          purgedObjects.add(objName);
+        }
+      }
+    }
+
+    if (purgedObjects.size === 0) {
+      return;
+    }
+
+    for (const rtNode of profileParsedXml.Profile[nodeName]) {
+      let recordTypeName = rtNode.recordType;
+      if (Array.isArray(recordTypeName)) {
+        recordTypeName = recordTypeName[0];
+      }
+      if (!recordTypeName) {
+        continue;
+      }
+
+      // recordType format is "ObjectName.RecordTypeName"
+      const dotIndex = recordTypeName.lastIndexOf('.');
+      if (dotIndex === -1) {
+        continue;
+      }
+      const objectName = recordTypeName.substring(0, dotIndex);
+      const rtName = recordTypeName.substring(dotIndex + 1);
+
+      // Only process record types for purged objects
+      if (!purgedObjects.has(objectName)) {
+        continue;
+      }
+
+      const isMaster = rtName === 'Master';
+      const targetVisible = isMaster;
+      const targetDefault = isMaster;
+
+      // Update "visible" attribute
+      if (rtNode.visible !== undefined) {
+        let oldVisible = rtNode.visible;
+        if (Array.isArray(oldVisible)) {
+          oldVisible = oldVisible[0];
+        }
+        const oldVisibleBool = oldVisible === 'true' || oldVisible === true;
+        if (oldVisibleBool !== targetVisible) {
+          changes.push({
+            node: nodeName,
+            name: recordTypeName,
+            attribute: 'visible',
+            oldValue: oldVisible,
+            newValue: targetVisible,
+          });
+          rtNode.visible = targetVisible;
+        }
+      }
+
+      // Update "default" attribute
+      if (rtNode.default !== undefined) {
+        let oldDefault = rtNode.default;
+        if (Array.isArray(oldDefault)) {
+          oldDefault = oldDefault[0];
+        }
+        const oldDefaultBool = oldDefault === 'true' || oldDefault === true;
+        if (oldDefaultBool !== targetDefault) {
+          changes.push({
+            node: nodeName,
+            name: recordTypeName,
+            attribute: 'default',
+            oldValue: oldDefault,
+            newValue: targetDefault,
+          });
+          rtNode.default = targetDefault;
+        }
+      }
+
+      // Update "personAccountDefault" attribute if present (same logic as default)
+      if (rtNode.personAccountDefault !== undefined) {
+        let oldPADefault = rtNode.personAccountDefault;
+        if (Array.isArray(oldPADefault)) {
+          oldPADefault = oldPADefault[0];
+        }
+        const oldPADefaultBool = oldPADefault === 'true' || oldPADefault === true;
+        if (oldPADefaultBool !== targetDefault) {
+          changes.push({
+            node: nodeName,
+            name: recordTypeName,
+            attribute: 'personAccountDefault',
+            oldValue: oldPADefault,
+            newValue: targetDefault,
+          });
+          rtNode.personAccountDefault = targetDefault;
+        }
+      }
+    }
   }
 
   async filterFullOrgPackageByNamespaces(packageFullOrgPath: string, packageFilteredPackagesPath: string): Promise<void> {
