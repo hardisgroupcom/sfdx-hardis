@@ -3,7 +3,9 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { t } from '../../../../common/utils/i18n.js';
+import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { prompts } from '../../../../common/utils/prompts.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
@@ -69,8 +71,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     period: Flags.string({
       char: 'p',
       options: ['daily', 'weekly', 'all'],
-      default: 'daily',
-      description: 'Time period to analyze: daily (last 24h), weekly (last 7 days), or all (no date filter)',
+      description: 'Time period to analyze: daily (last 24h), weekly (last 7 days), or all (no date filter). If not set, defaults to daily in CI or prompts for a number of days interactively.',
     }),
     outputfile: Flags.string({
       char: 'f',
@@ -105,19 +106,38 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     const { flags } = await this.parse(DiagnoseDeployments);
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
-    const period = (flags.period || 'weekly') as 'daily' | 'weekly' | 'all';
+    let period = flags.period as string | undefined;
 
     const conn = flags['target-org'].getConnection();
 
-    const dateFilter = period === 'daily' ? ' AND CreatedDate = LAST_N_DAYS:1' : period === 'weekly' ? ' AND CreatedDate = LAST_N_DAYS:7' : '';
-    uxLog("action", this, c.cyan(`Fetching deployment and validation records (period: ${period})...`));
+    let dateFilter: string | undefined;
+    if (!period) {
+      if (isCI) {
+        period = 'daily';
+      } else {
+        const promptRes = await prompts({
+          type: 'number',
+          name: 'value',
+          message: t('selectAnalysisPeriodInDays'),
+          description: t('selectAnalysisPeriodInDaysDescription'),
+          initial: 7,
+        });
+        const days = Math.max(1, Math.floor(Number(promptRes.value) || 7));
+        period = `${days} days`;
+        dateFilter = ` AND CreatedDate = LAST_N_DAYS:${days}`;
+      }
+    }
+    if (dateFilter === undefined) {
+      dateFilter = period === 'daily' ? ' AND CreatedDate = LAST_N_DAYS:1' : period === 'weekly' ? ' AND CreatedDate = LAST_N_DAYS:7' : '';
+    }
+    uxLog("action", this, c.cyan(t("fetchingDeploymentAndValidationRecords", { period })));
 
-    const query = `SELECT Id, Status, StartDate, CreatedBy.Name, CreatedDate, CompletedDate, CheckOnly FROM DeployRequest WHERE Status != 'InProgress'${dateFilter} ORDER BY CompletedDate DESC NULLS LAST`;
+    const query = `SELECT Status, StartDate, CreatedBy.Name, CreatedDate, CompletedDate, CheckOnly, Id FROM DeployRequest WHERE Status != 'InProgress'${dateFilter} ORDER BY CompletedDate DESC NULLS LAST`;
     let res: any;
     try {
       res = await soqlQueryTooling(query, conn);
     } catch (e: any) {
-      uxLog("error", this, c.red(`Failed to query DeployRequest: ${e?.message || e}`));
+      uxLog("error", this, c.red(t("failedToQueryDeployRequest", { message: e?.message || e })));
       return { error: e?.message || String(e) } as AnyJson;
     }
 
@@ -137,7 +157,6 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
       this.deployRecords.push({
         Type: isValidation ? 'Validation' : 'Deployment',
-        Id: rec.Id || '',
         Status: rec.Status || 'Unknown',
         DeployedBy: deployedBy,
         CreatedDate: rec.CreatedDate || '',
@@ -145,6 +164,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         CompletedDate: rec.CompletedDate || '',
         PendingMinutes: Math.round(pendingMinutes * 10) / 10,
         DurationMinutes: Math.round(durationMinutes * 10) / 10,
+        Id: rec.Id || '',
       });
     }
 
@@ -202,21 +222,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       avgValidationMinutes: roundedAvgValidationMinutes,
     };
 
-    uxLog("action", this, c.cyan(`Deployment & Validation Summary (${period})`));
-    uxLog(
-      "log",
-      this,
-      c.grey(
-        `Deployments: ${deployments.length} total (${succeededDeployments.length} succeeded, ${failedDeployments.length} failed) | Success rate: ${deploymentSuccessRate}% | Avg duration: ${avgDeploymentMinutes.toFixed(1)} min | Avg pending: ${avgDeploymentPendingMinutes.toFixed(1)} min`
-      )
-    );
-    uxLog(
-      "log",
-      this,
-      c.grey(
-        `Validations: ${validations.length} total (${succeededValidations.length} succeeded, ${failedValidations.length} failed) | Success rate: ${validationSuccessRate}% | Avg duration: ${avgValidationMinutes.toFixed(1)} min | Avg pending: ${avgValidationPendingMinutes.toFixed(1)} min`
-      )
-    );
+    uxLog("action", this, c.cyan(t("deploymentAndValidationSummary", { period })));
+    uxLog("log", this, c.grey(t("deploymentsStats", { total: deployments.length, succeeded: succeededDeployments.length, failed: failedDeployments.length, successRate: deploymentSuccessRate, avgDuration: avgDeploymentMinutes.toFixed(1), avgPending: avgDeploymentPendingMinutes.toFixed(1) })));
+    uxLog("log", this, c.grey(t("validationsStats", { total: validations.length, succeeded: succeededValidations.length, failed: failedValidations.length, successRate: validationSuccessRate, avgDuration: avgValidationMinutes.toFixed(1), avgPending: avgValidationPendingMinutes.toFixed(1) })));
 
     if (this.deployRecords.length > 0) {
       uxLogTable(this, this.deployRecords.slice(0, 15));
