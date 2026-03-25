@@ -1314,6 +1314,7 @@
   "methodPostpullrequestmessageIsNotYetImplementedOn": "Methode postPullRequestMessage is nog niet geïmplementeerd op ",
   "metricsPayload": "Metriekpayload:\\n",
   "metricValue": "Metriekwaarde: {{metricValue}}",
+  "monitorErrorsAggregatedReportTitle": "Foutenoverzicht per type en bewerking",
   "monitorErrorsApexDetected": "Apex-fouten gedetecteerd in {{org}} ({{count}}) gedurende de laatste {{days}} dag(en).",
   "monitorErrorsApexNone": "Geen Apex-fouten gedetecteerd in {{org}} gedurende de laatste {{days}} dag(en).",
   "monitorErrorsApexReportTitle": "Apex-fouten",

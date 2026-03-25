@@ -1314,6 +1314,7 @@
   "methodPostpullrequestmessageIsNotYetImplementedOn": "Metoda postPullRequestMessage nie jest jeszcze zaimplementowana na ",
   "metricsPayload": "Ładunek metryk:\\n",
   "metricValue": "Wartość metryki: {{metricValue}}",
+  "monitorErrorsAggregatedReportTitle": "Podsumowanie błędów według typu i operacji",
   "monitorErrorsApexDetected": "Wykryto błędy Apex w {{org}} ({{count}}) w ciągu ostatnich {{days}} dnia/dni.",
   "monitorErrorsApexNone": "Nie wykryto błędów Apex w {{org}} w ciągu ostatnich {{days}} dnia/dni.",
   "monitorErrorsApexReportTitle": "Błędy Apex",
