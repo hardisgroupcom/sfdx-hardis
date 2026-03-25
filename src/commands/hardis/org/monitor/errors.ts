@@ -404,7 +404,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
     for (const record of this.flowErrors) {
       const rawOperation = (record.Operation ?? '').trim();
-      const operation = rawOperation.replace(/\s+\d{1,2}\/\d{1,2}\/\d{4}\s+\d{2}:\d{2}.*$/, '').trim();
+      const operation = rawOperation.replace(/\s+\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}.*$/, '').trim();
       const key = `Flow\0${operation}`;
       countMap.set(key, (countMap.get(key) ?? 0) + 1);
     }
