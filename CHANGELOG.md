@@ -6,6 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 - New command [hardis:org:diagnose:deployments](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/deployments/) to analyze metadata deployments and validations by querying DeployRequest records via the Tooling API (available in sfdx-hardis monitoring)
 - [hardis:org:monitor:errors](https://sfdx-hardis.cloudity.com/hardis/monitor/errors/): Add aggregated summary report
+- Auto-update Grafana dashboards using yarn run sync:grafana
 
 ## [7.5.0] 2026-03-24
 

@@ -211,6 +211,7 @@
     "postinstall": "yarn husky install || echo \"Unable to install Husky. If you are in a CI/CD job, that's ok !\"",
     "postpack": "sf-clean --ignore-signing-artifacts",
     "prepack": "sf-prepack",
+    "sync:grafana": "node scripts/sync-grafana.cjs",
     "test": "wireit",
     "test:nuts": "nyc mocha \"**/*.nut.ts\" --slow 4500 --timeout 600000 --parallel",
     "test:only": "wireit",
