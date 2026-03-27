@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 3638389128646656,
+  "id": 37,
   "links": [],
   "panels": [
     {
@@ -36,15 +36,12 @@
             "cellOptions": {
               "type": "auto"
             },
-            "footer": {
-              "reducers": []
-            },
             "inspect": true
           },
           "links": [
             {
-              "title": "View all packages for ${__data.fields[\"Salesforce Org Identifier\"]}",
-              "url": "/d/sfdx-hardis-today-summary/dash-00-home?var-org=${__data.fields[\"Salesforce Org Identifier\"]}"
+              "title": "View all licenses for ${__data.fields[\"Salesforce Org Identifier\"]}",
+              "url": "/d/sfdx-hardis-licenses-all-orgs/dash-licenses-for-all-orgs?var-org=${__data.fields[\"Salesforce Org Identifier\"]}"
             }
           ],
           "mappings": [],
@@ -53,7 +50,7 @@
             "steps": [
               {
                 "color": "blue",
-                "value": 0
+                "value": null
               }
             ]
           }
@@ -178,6 +175,14 @@
       "id": 1,
       "options": {
         "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
         "showHeader": true,
         "sortBy": [
           {
@@ -186,16 +191,15 @@
           }
         ]
       },
-      "pluginVersion": "12.4.0-19938312174",
+      "pluginVersion": "11.1.0-71516",
       "targets": [
         {
           "datasource": {
             "type": "loki",
             "uid": "grafanacloud-logs"
           },
-          "direction": "backward",
           "editorMode": "builder",
-          "expr": "{type=\"ORG_INFO\"} |~ `(?i)$orgId`",
+          "expr": "{type=\"LICENSES\"} |~ `(?i)$license`",
           "maxLines": 1000,
           "queryType": "range",
           "refId": "A"
@@ -217,6 +221,60 @@
           }
         },
         {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "licenses"
+              }
+            ],
+            "keepTime": false,
+            "replace": false,
+            "source": "Line"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Line": true,
+              "Time": true,
+              "id": true,
+              "labelTypes": true,
+              "labels": true,
+              "traceID": true,
+              "tsNs": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "activeLicenses": "Active Licenses",
+              "licenses": "All active licenses",
+              "orgIdentifier": "Salesforce Org Identifier",
+              "usedLicenses": "Active Licenses"
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "regex",
+                  "options": {
+                    "value": "^(?!.*\\..*)(?!.*sandbox.*).*$"
+                  }
+                },
+                "fieldName": "Salesforce Org Identifier"
+              }
+            ],
+            "match": "all",
+            "type": "include"
+          }
+        },
+        {
           "id": "groupBy",
           "options": {
             "fields": {
@@ -229,22 +287,7 @@
               "Salesforce Org Identifier": {
                 "aggregations": [],
                 "operation": "groupby"
-              },
-              "orgIdentifier": {
-                "aggregations": [],
-                "operation": "groupby"
               }
-            }
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "includeByName": {},
-            "indexByName": {},
-            "renameByName": {
-              "orgIdentifier": "Salesforce Org Identifier"
             }
           }
         }
@@ -252,28 +295,29 @@
       "type": "table"
     }
   ],
-  "preload": false,
-  "refresh": "",
-  "schemaVersion": 42,
+  "schemaVersion": 39,
   "tags": [],
   "templating": {
     "list": [
       {
         "current": {
-          "text": "input org id here",
-          "value": "input org id here"
+          "selected": false,
+          "text": "",
+          "value": ""
         },
-        "description": "Enter the org identifier that you want to find",
-        "label": "Orgnaization Id",
-        "name": "orgId",
+        "description": "Enter any string that can match a license name and the results willl be filtered :)",
+        "hide": 0,
+        "label": "License",
+        "name": "license",
         "options": [
           {
             "selected": true,
-            "text": "input org id here",
-            "value": "input org id here"
+            "text": "",
+            "value": ""
           }
         ],
-        "query": "input org id here",
+        "query": "",
+        "skipUrlSync": false,
         "type": "textbox"
       }
     ]
@@ -284,8 +328,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "SEARCH - Org Id",
-  "uid": "sfdx-hardis-search-by-org-id",
-  "version": 2,
+  "title": "SEARCH - Licenses Used (WIP)",
+  "uid": "sfdx-hardis-search-licenses-used",
+  "version": 3,
   "weekStart": ""
 }
