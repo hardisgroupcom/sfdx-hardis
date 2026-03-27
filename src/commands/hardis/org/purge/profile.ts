@@ -588,6 +588,7 @@ The command checks for uncommitted changes and will not run if the working tree 
         .map((a: any) => a.packageType)
         .filter((pkgType: any) => pkgType != null),
       'Profile',
+      'CustomApplication', // needed to retrieve applicationVisibilities in profiles
     ]));
 
     for (const key of Object.keys(parsedPackage)) {
