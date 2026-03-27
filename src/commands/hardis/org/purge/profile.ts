@@ -33,6 +33,7 @@ This command is intended to safely remove PS attributes from Profiles after a mi
 - Retrieves the necessary metadata (profiles, objects, fields, classes) into the local project.
 - Iterates over selected profile files and mutes configured attributes (for example: classAccesses.enabled, fieldPermissions.readable/editable, objectPermissions.* and userPermissions.enabled).
 - Resets record type visibilities on purged objects: assigns the Master record type as default and visible, and unchecks all other record types.
+- Resets application visibilities: keeps only the default app visible, and sets all others to not visible.
 - Writes the modified profile XML files back to the repository
 - Deploys the updated profiles to the target org.
 
@@ -318,6 +319,9 @@ The command checks for uncommitted changes and will not run if the working tree 
     // Reset record type visibilities: set Master as default and visible, uncheck others
     this.resetRecordTypeVisibilities(profileParsedXml, changes);
 
+    // Reset application visibilities: keep only the default app visible, uncheck others
+    this.resetApplicationVisibilities(profileParsedXml, changes);
+
     // Build a single summary string and emit it with one uxLog("log") call
     const summaryLines: string[] = [];
     summaryLines.push(`Profile: ${profileName}`);
@@ -452,6 +456,68 @@ The command checks for uncommitted changes and will not run if the working tree 
             newValue: targetDefault,
           });
           rtNode.personAccountDefault = targetDefault;
+        }
+      }
+    }
+  }
+
+  private resetApplicationVisibilities(
+    profileParsedXml: any,
+    changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[]
+  ): void {
+    const nodeName = 'applicationVisibilities';
+    if (!profileParsedXml?.Profile?.[nodeName]) {
+      return;
+    }
+    // Ensure we work with an array
+    if (!Array.isArray(profileParsedXml.Profile[nodeName])) {
+      profileParsedXml.Profile[nodeName] = [profileParsedXml.Profile[nodeName]];
+    }
+
+    // Find the default app name
+    let defaultAppName: string | null = null;
+    for (const appNode of profileParsedXml.Profile[nodeName]) {
+      let isDefault = appNode.default;
+      if (Array.isArray(isDefault)) {
+        isDefault = isDefault[0];
+      }
+      if (isDefault === true || isDefault === 'true') {
+        let appName = appNode.application;
+        if (Array.isArray(appName)) {
+          appName = appName[0];
+        }
+        defaultAppName = appName;
+        break;
+      }
+    }
+
+    for (const appNode of profileParsedXml.Profile[nodeName]) {
+      let appName = appNode.application;
+      if (Array.isArray(appName)) {
+        appName = appName[0];
+      }
+      if (!appName) {
+        continue;
+      }
+
+      const isDefault = appName === defaultAppName;
+      const targetVisible = isDefault;
+
+      if (appNode.visible !== undefined) {
+        let oldVisible = appNode.visible;
+        if (Array.isArray(oldVisible)) {
+          oldVisible = oldVisible[0];
+        }
+        const oldVisibleBool = oldVisible === 'true' || oldVisible === true;
+        if (oldVisibleBool !== targetVisible) {
+          changes.push({
+            node: nodeName,
+            name: appName,
+            attribute: 'visible',
+            oldValue: oldVisible,
+            newValue: targetVisible,
+          });
+          appNode.visible = targetVisible;
         }
       }
     }
