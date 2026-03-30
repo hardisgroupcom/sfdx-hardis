@@ -32,6 +32,8 @@ This command is intended to safely remove PS attributes from Profiles after a mi
 - Filters the manifest to remove selected managed package namespaces and keep only relevant metadata types required for profile processing.
 - Retrieves the necessary metadata (profiles, objects, fields, classes) into the local project.
 - Iterates over selected profile files and mutes configured attributes (for example: classAccesses.enabled, fieldPermissions.readable/editable, objectPermissions.* and userPermissions.enabled).
+- Resets record type visibilities on purged objects: assigns the Master record type as default and visible, and unchecks all other record types.
+- Resets application visibilities: keeps only the default app visible, and sets all others to not visible.
 - Writes the modified profile XML files back to the repository
 - Deploys the updated profiles to the target org.
 
@@ -314,6 +316,12 @@ The command checks for uncommitted changes and will not run if the working tree 
       }
     }
 
+    // Reset record type visibilities: set Master as default and visible, uncheck others
+    this.resetRecordTypeVisibilities(profileParsedXml, changes);
+
+    // Reset application visibilities: keep only the default app visible, uncheck others
+    this.resetApplicationVisibilities(profileParsedXml, changes);
+
     // Build a single summary string and emit it with one uxLog("log") call
     const summaryLines: string[] = [];
     summaryLines.push(`Profile: ${profileName}`);
@@ -332,6 +340,141 @@ The command checks for uncommitted changes and will not run if the working tree 
     uxLog('log', this, c.cyan(summaryLines.join('\n')));
     this.allChanges.push(...changes.map(change => ({ profile: profileName, ...change })));
     return profileParsedXml;
+  }
+
+  private resetRecordTypeVisibilities(
+    profileParsedXml: any,
+    changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[]
+  ): void {
+    const nodeName = 'recordTypeVisibilities';
+    const profileNodes = this.getProfileNodeArray(profileParsedXml, nodeName);
+    if (!profileNodes) {
+      return;
+    }
+
+    // Collect purged object names from objectPermissions
+    const purgedObjects = new Set<string>();
+    if (profileParsedXml?.Profile?.objectPermissions) {
+      const objPerms = Array.isArray(profileParsedXml.Profile.objectPermissions)
+        ? profileParsedXml.Profile.objectPermissions
+        : [profileParsedXml.Profile.objectPermissions];
+      for (const objPerm of objPerms) {
+        const objName = this.unwrapProfileValue(objPerm.object);
+        if (objName) {
+          purgedObjects.add(objName);
+        }
+      }
+    }
+
+    if (purgedObjects.size === 0) {
+      return;
+    }
+
+    for (const rtNode of profileNodes) {
+      const recordTypeName = this.unwrapProfileValue(rtNode.recordType);
+      if (!recordTypeName) {
+        continue;
+      }
+
+      // recordType format is "ObjectName.RecordTypeName"
+      const dotIndex = recordTypeName.lastIndexOf('.');
+      if (dotIndex === -1) {
+        continue;
+      }
+      const objectName = recordTypeName.substring(0, dotIndex);
+      const rtName = recordTypeName.substring(dotIndex + 1);
+
+      // Only process record types for purged objects
+      if (!purgedObjects.has(objectName)) {
+        continue;
+      }
+
+      const isMaster = rtName === 'Master';
+      const targetVisible = isMaster;
+      const targetDefault = isMaster;
+
+      this.updateBooleanProfileAttribute(rtNode, 'visible', targetVisible, nodeName, recordTypeName, changes);
+      this.updateBooleanProfileAttribute(rtNode, 'default', targetDefault, nodeName, recordTypeName, changes);
+      this.updateBooleanProfileAttribute(rtNode, 'personAccountDefault', targetDefault, nodeName, recordTypeName, changes);
+    }
+  }
+
+  private resetApplicationVisibilities(
+    profileParsedXml: any,
+    changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[]
+  ): void {
+    const nodeName = 'applicationVisibilities';
+    const profileNodes = this.getProfileNodeArray(profileParsedXml, nodeName);
+    if (!profileNodes) {
+      return;
+    }
+
+    // Find the default app name
+    let defaultAppName: string | null = null;
+    for (const appNode of profileNodes) {
+      const isDefault = this.parseProfileBoolean(appNode.default);
+      if (isDefault) {
+        const appName = this.unwrapProfileValue(appNode.application);
+        defaultAppName = appName;
+        break;
+      }
+    }
+
+    for (const appNode of profileNodes) {
+      const appName = this.unwrapProfileValue(appNode.application);
+      if (!appName) {
+        continue;
+      }
+
+      const isDefault = appName === defaultAppName;
+      const targetVisible = isDefault;
+      this.updateBooleanProfileAttribute(appNode, 'visible', targetVisible, nodeName, appName, changes);
+    }
+  }
+
+  private unwrapProfileValue(value: any): any {
+    return Array.isArray(value) ? value[0] : value;
+  }
+
+  private getProfileNodeArray(profileParsedXml: any, nodeName: string): any[] | null {
+    const profileNode = profileParsedXml?.Profile?.[nodeName];
+    if (!profileNode) {
+      return null;
+    }
+    if (!Array.isArray(profileNode)) {
+      profileParsedXml.Profile[nodeName] = [profileNode];
+    }
+    return profileParsedXml.Profile[nodeName];
+  }
+
+  private parseProfileBoolean(value: any): boolean {
+    const unwrapped = this.unwrapProfileValue(value);
+    return unwrapped === true || unwrapped === 'true';
+  }
+
+  private updateBooleanProfileAttribute(
+    nodeObj: any,
+    attribute: string,
+    targetValue: boolean,
+    nodeName: string,
+    memberName: string,
+    changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[]
+  ): void {
+    if (nodeObj?.[attribute] === undefined) {
+      return;
+    }
+    const oldValue = this.unwrapProfileValue(nodeObj[attribute]);
+    const oldValueBool = this.parseProfileBoolean(oldValue);
+    if (oldValueBool !== targetValue) {
+      changes.push({
+        node: nodeName,
+        name: memberName,
+        attribute,
+        oldValue,
+        newValue: targetValue,
+      });
+      nodeObj[attribute] = targetValue;
+    }
   }
 
   async filterFullOrgPackageByNamespaces(packageFullOrgPath: string, packageFilteredPackagesPath: string): Promise<void> {
@@ -399,6 +542,7 @@ The command checks for uncommitted changes and will not run if the working tree 
         .map((a: any) => a.packageType)
         .filter((pkgType: any) => pkgType != null),
       'Profile',
+      'CustomApplication', // needed to retrieve applicationVisibilities in profiles
     ]));
 
     for (const key of Object.keys(parsedPackage)) {
