@@ -347,12 +347,9 @@ The command checks for uncommitted changes and will not run if the working tree 
     changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[]
   ): void {
     const nodeName = 'recordTypeVisibilities';
-    if (!profileParsedXml?.Profile?.[nodeName]) {
+    const profileNodes = this.getProfileNodeArray(profileParsedXml, nodeName);
+    if (!profileNodes) {
       return;
-    }
-    // Ensure we work with an array
-    if (!Array.isArray(profileParsedXml.Profile[nodeName])) {
-      profileParsedXml.Profile[nodeName] = [profileParsedXml.Profile[nodeName]];
     }
 
     // Collect purged object names from objectPermissions
@@ -373,7 +370,7 @@ The command checks for uncommitted changes and will not run if the working tree 
       return;
     }
 
-    for (const rtNode of profileParsedXml.Profile[nodeName]) {
+    for (const rtNode of profileNodes) {
       const recordTypeName = this.unwrapProfileValue(rtNode.recordType);
       if (!recordTypeName) {
         continue;
@@ -407,17 +404,14 @@ The command checks for uncommitted changes and will not run if the working tree 
     changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[]
   ): void {
     const nodeName = 'applicationVisibilities';
-    if (!profileParsedXml?.Profile?.[nodeName]) {
+    const profileNodes = this.getProfileNodeArray(profileParsedXml, nodeName);
+    if (!profileNodes) {
       return;
-    }
-    // Ensure we work with an array
-    if (!Array.isArray(profileParsedXml.Profile[nodeName])) {
-      profileParsedXml.Profile[nodeName] = [profileParsedXml.Profile[nodeName]];
     }
 
     // Find the default app name
     let defaultAppName: string | null = null;
-    for (const appNode of profileParsedXml.Profile[nodeName]) {
+    for (const appNode of profileNodes) {
       const isDefault = this.parseProfileBoolean(appNode.default);
       if (isDefault) {
         const appName = this.unwrapProfileValue(appNode.application);
@@ -426,7 +420,7 @@ The command checks for uncommitted changes and will not run if the working tree 
       }
     }
 
-    for (const appNode of profileParsedXml.Profile[nodeName]) {
+    for (const appNode of profileNodes) {
       const appName = this.unwrapProfileValue(appNode.application);
       if (!appName) {
         continue;
@@ -440,6 +434,17 @@ The command checks for uncommitted changes and will not run if the working tree 
 
   private unwrapProfileValue(value: any): any {
     return Array.isArray(value) ? value[0] : value;
+  }
+
+  private getProfileNodeArray(profileParsedXml: any, nodeName: string): any[] | null {
+    const profileNode = profileParsedXml?.Profile?.[nodeName];
+    if (!profileNode) {
+      return null;
+    }
+    if (!Array.isArray(profileNode)) {
+      profileParsedXml.Profile[nodeName] = [profileNode];
+    }
+    return profileParsedXml.Profile[nodeName];
   }
 
   private parseProfileBoolean(value: any): boolean {
