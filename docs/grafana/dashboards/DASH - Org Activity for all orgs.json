@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 27,
+  "id": 25,
   "links": [],
   "panels": [
     {
@@ -29,7 +29,7 @@
         "x": 0,
         "y": 0
       },
-      "id": 10,
+      "id": 9,
       "panels": [],
       "repeat": "org",
       "repeatDirection": "h",
@@ -46,11 +46,11 @@
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "Deactivated Flows & VR",
+          "displayName": "Updated metadatas in org",
           "links": [
             {
               "title": "Show details",
-              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}&var-type=METADATA_STATUS&${__url_time_range}&var-indicatorLabel=Deactivated Flow & VR"
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}&var-type=BACKUP&${__url_time_range}&var-indicatorLabel=Updated metadatas in org"
             }
           ],
           "mappings": [],
@@ -60,14 +60,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 1
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -80,7 +72,7 @@
         "x": 0,
         "y": 1
       },
-      "id": 6,
+      "id": 2,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -97,7 +89,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69950",
+      "pluginVersion": "11.1.0-70903",
       "targets": [
         {
           "datasource": {
@@ -105,7 +97,7 @@
             "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
-          "expr": "{type=\"METADATA_STATUS\", orgIdentifier=\"$org\"} |= ``",
+          "expr": "{type=\"BACKUP\", orgIdentifier=\"$org\"} |= ``",
           "maxLines": 1,
           "queryType": "range",
           "refId": "A"
@@ -121,6 +113,8 @@
                 "path": "metric"
               }
             ],
+            "keepTime": false,
+            "replace": false,
             "source": "Line"
           }
         }
@@ -137,11 +131,11 @@
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "Attributes without permissions",
+          "displayName": "Suspiscious Updates in Setup",
           "links": [
             {
-              "title": "Show detailsl",
-              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}&var-type=LINT_ACCESS&${__url_time_range}&var-indicatorLabel=Attributes without permissions"
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}&var-type=AUDIT_TRAIL&${__url_time_range}&var-indicatorLabel=Suspect Setup Actions"
             }
           ],
           "mappings": [],
@@ -171,7 +165,7 @@
         "x": 6,
         "y": 1
       },
-      "id": 4,
+      "id": 1,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -188,7 +182,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69950",
+      "pluginVersion": "11.1.0-70903",
       "targets": [
         {
           "datasource": {
@@ -196,7 +190,7 @@
             "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
-          "expr": "{type=\"LINT_ACCESS\", orgIdentifier=\"$org\"} |= ``",
+          "expr": "{type=\"AUDIT_TRAIL\", orgIdentifier=\"$org\"} |= ``",
           "maxLines": 1,
           "queryType": "range",
           "refId": "A"
@@ -228,11 +222,11 @@
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "Unused Metadatas",
+          "displayName": "Inactive Users",
           "links": [
             {
               "title": "Show details",
-              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}&var-type=UNUSED_METADATAS&${__url_time_range}&var-indicatorLabel=Unused Metadatas"
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}&var-type=LEGACY_API&${__url_time_range}&var-indicatorLabel=Suspect Setup Actions"
             }
           ],
           "mappings": [],
@@ -244,12 +238,8 @@
                 "value": null
               },
               {
-                "color": "#EAB839",
+                "color": "dark-orange",
                 "value": 1
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -258,11 +248,11 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
+        "w": 4,
         "x": 12,
         "y": 1
       },
-      "id": 3,
+      "id": 20,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -279,7 +269,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69950",
+      "pluginVersion": "11.1.0-70903",
       "targets": [
         {
           "datasource": {
@@ -287,7 +277,7 @@
             "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
-          "expr": "{type=\"UNUSED_METADATAS\", orgIdentifier=\"$org\"} |= ``",
+          "expr": "{type=\"UNUSED_USERS\", orgIdentifier=\"$org\", source=\"sfdx-hardis\"} |= ``",
           "maxLines": 1,
           "queryType": "range",
           "refId": "A"
@@ -319,11 +309,11 @@
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "Fields without description",
+          "displayName": "Weekly Active Users",
           "links": [
             {
               "title": "Show details",
-              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}&var-type=MISSING_ATTRIBUTES&${__url_time_range}&var-indicatorLabel=Fields without description"
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}&var-type=LEGACY_API&${__url_time_range}&var-indicatorLabel=Suspect Setup Actions"
             }
           ],
           "mappings": [],
@@ -331,12 +321,24 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "red",
                 "value": null
               },
               {
+                "color": "dark-orange",
+                "value": 10
+              },
+              {
                 "color": "#EAB839",
-                "value": 1
+                "value": 20
+              },
+              {
+                "color": "#6ED0E0",
+                "value": 30
+              },
+              {
+                "color": "green",
+                "value": 40
               }
             ]
           }
@@ -345,11 +347,11 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
+        "w": 4,
+        "x": 16,
         "y": 1
       },
-      "id": 5,
+      "id": 351,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -366,7 +368,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.1.0-69950",
+      "pluginVersion": "11.1.0-70903",
       "targets": [
         {
           "datasource": {
@@ -374,7 +376,94 @@
             "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
-          "expr": "{type=\"MISSING_ATTRIBUTES\", orgIdentifier=\"$org\"} |= ``",
+          "expr": "{type=\"ACTIVE_USERS\", orgIdentifier=\"$org\", source=\"sfdx-hardis\"} |= ``",
+          "maxLines": 1,
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "path": "metric"
+              }
+            ],
+            "source": "Line"
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "grafanacloud-logs"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "displayName": "Legacy API Calls",
+          "links": [
+            {
+              "title": "Show details",
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}&var-type=LEGACY_API&${__url_time_range}&var-indicatorLabel=Suspect Setup Actions"
+            }
+          ],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "dark-orange",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 20,
+        "y": 1
+      },
+      "id": 19,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.0-70903",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "grafanacloud-logs"
+          },
+          "editorMode": "builder",
+          "expr": "{type=\"LEGACY_API\", orgIdentifier=\"$org\"} |= ``",
           "maxLines": 1,
           "queryType": "range",
           "refId": "A"
@@ -399,11 +488,7 @@
   ],
   "refresh": "",
   "schemaVersion": 39,
-  "tags": [
-    "sfdx-hardis",
-    "salesforce",
-    "monitoring"
-  ],
+  "tags": [],
   "templating": {
     "list": [
       {
@@ -448,8 +533,8 @@
   "timeRangeUpdatedDuringEditOrView": false,
   "timepicker": {},
   "timezone": "browser",
-  "title": "DASH - Tech Debt for all orgs",
-  "uid": "sfdx-hardis-tech-debt-all-orgs",
-  "version": 7,
+  "title": "DASH - Org Activity for all orgs",
+  "uid": "sfdx-hardis-org-activity-all-orgs",
+  "version": 13,
   "weekStart": ""
 }

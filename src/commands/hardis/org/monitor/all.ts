@@ -45,6 +45,12 @@ export default class MonitorAll extends SfCommand<any> {
       frequency: 'daily',
     },
     {
+      key: 'DEPLOYMENTS',
+      title: 'Analyze metadata deployments and validations',
+      command: 'sf hardis:org:diagnose:deployments --period weekly',
+      frequency: 'daily',
+    },
+    {
       key: 'LICENSES',
       title: 'Extract licenses information',
       command: 'sf hardis:org:diagnose:licenses',

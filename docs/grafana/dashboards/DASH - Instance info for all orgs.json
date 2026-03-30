@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 24,
+  "id": 41,
   "links": [],
   "panels": [
     {
@@ -29,7 +29,7 @@
         "x": 0,
         "y": 0
       },
-      "id": 12,
+      "id": 27,
       "panels": [],
       "repeat": "org",
       "title": "$org",
@@ -45,11 +45,11 @@
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "Org limits issues",
+          "displayName": "Release Updates to check",
           "links": [
             {
               "title": "Show details",
-              "url": "/d/sfdx-hardis-limits-details/50-limits-details?orgId=1&${org:queryparam}&${__url_time_range}"
+              "url": "/d/sfdx-hardis-indicator-details/02-indicator-details?${org:queryparam}&var-type=RELEASE_UPDATES&${__url_time_range}&var-indicatorLabel=Release Updates to check"
             }
           ],
           "mappings": [],
@@ -61,8 +61,12 @@
                 "value": null
               },
               {
-                "color": "red",
+                "color": "#EAB839",
                 "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
               }
             ]
           }
@@ -70,12 +74,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 6,
+        "h": 3,
+        "w": 4,
         "x": 0,
         "y": 1
       },
-      "id": 13,
+      "id": 34,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -93,7 +97,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "11.4.0-77383",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -101,7 +105,7 @@
             "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
-          "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
+          "expr": "{type=\"RELEASE_UPDATES\", orgIdentifier=\"$org\"} |= ``",
           "maxLines": 1,
           "queryType": "range",
           "refId": "A"
@@ -118,8 +122,6 @@
                 "path": "metric"
               }
             ],
-            "keepTime": false,
-            "replace": true,
             "source": "Line"
           }
         }
@@ -128,68 +130,55 @@
     },
     {
       "datasource": {
+        "default": false,
         "type": "loki",
         "uid": "grafanacloud-logs"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "Data Storage",
-          "fieldMinMax": false,
-          "links": [
-            {
-              "title": "Show History",
-              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}&${__url_time_range}&var-limitId=${__data.fields.limitName}"
-            }
-          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "blue",
                 "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 50
-              },
-              {
-                "color": "red",
-                "value": 75
               }
             ]
           },
-          "unit": "percent"
+          "unit": "days"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 3,
-        "x": 6,
+        "h": 3,
+        "w": 4,
+        "x": 4,
         "y": 1
       },
-      "id": 15,
+      "id": 29,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
-          "limit": 1,
+          "fields": "/^InstanceName$/",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "11.4.0-77383",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -197,13 +186,13 @@
             "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
-          "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
+          "expr": "{type=\"ORG_INFO\", orgIdentifier=\"$org\"} |= ``",
           "maxLines": 1,
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "",
+      "title": "SF Instance",
       "transformations": [
         {
           "id": "extractFields",
@@ -211,7 +200,7 @@
             "format": "json",
             "jsonPaths": [
               {
-                "path": "limits.DataStorageMB"
+                "path": "_logElements"
               }
             ],
             "keepTime": false,
@@ -222,104 +211,78 @@
         {
           "id": "extractFields",
           "options": {
-            "format": "json",
-            "jsonPaths": [
-              {
-                "alias": "",
-                "path": "percentUsed"
-              },
-              {
-                "alias": "limitName",
-                "path": "name"
-              },
-              {
-                "alias": "displayName",
-                "path": "label"
-              }
-            ],
+            "format": "auto",
             "replace": true,
-            "source": "limits.DataStorageMB"
+            "source": "_logElements"
           }
         },
         {
-          "id": "convertFieldType",
+          "id": "extractFields",
           "options": {
-            "conversions": [
+            "format": "json",
+            "jsonPaths": [
               {
-                "destinationType": "number",
-                "targetField": "percentUsed"
+                "path": "InstanceName"
               }
             ],
-            "fields": {}
+            "replace": true,
+            "source": "0"
           }
         }
       ],
-      "type": "gauge"
+      "type": "stat"
     },
     {
       "datasource": {
+        "default": false,
         "type": "loki",
         "uid": "grafanacloud-logs"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "Files Storage",
-          "fieldMinMax": false,
-          "links": [
-            {
-              "title": "Show History",
-              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}&${__url_time_range}&var-limitId=${__data.fields.limitName}"
-            }
-          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "blue",
                 "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 50
-              },
-              {
-                "color": "red",
-                "value": 75
               }
             ]
           },
-          "unit": "percent"
+          "unit": "days"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 3,
-        "x": 9,
+        "h": 3,
+        "w": 4,
+        "x": 8,
         "y": 1
       },
-      "id": 16,
+      "id": 33,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
-          "limit": 1,
+          "fields": "/^OrganizationType$/",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "11.4.0-77383",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -327,13 +290,13 @@
             "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
-          "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
+          "expr": "{type=\"ORG_INFO\", orgIdentifier=\"$org\"} |= ``",
           "maxLines": 1,
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "",
+      "title": "Org Type",
       "transformations": [
         {
           "id": "extractFields",
@@ -341,7 +304,7 @@
             "format": "json",
             "jsonPaths": [
               {
-                "path": "limits.FileStorageMB"
+                "path": "_logElements"
               }
             ],
             "keepTime": false,
@@ -352,104 +315,78 @@
         {
           "id": "extractFields",
           "options": {
-            "format": "json",
-            "jsonPaths": [
-              {
-                "alias": "",
-                "path": "percentUsed"
-              },
-              {
-                "alias": "limitName",
-                "path": "name"
-              },
-              {
-                "alias": "displayName",
-                "path": "label"
-              }
-            ],
+            "format": "auto",
             "replace": true,
-            "source": "limits.FileStorageMB"
+            "source": "_logElements"
           }
         },
         {
-          "id": "convertFieldType",
+          "id": "extractFields",
           "options": {
-            "conversions": [
+            "format": "json",
+            "jsonPaths": [
               {
-                "destinationType": "number",
-                "targetField": "percentUsed"
+                "path": "OrganizationType"
               }
             ],
-            "fields": {}
+            "replace": true,
+            "source": "0"
           }
         }
       ],
-      "type": "gauge"
+      "type": "stat"
     },
     {
       "datasource": {
+        "default": false,
         "type": "loki",
         "uid": "grafanacloud-logs"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "Daily Api Requests",
-          "fieldMinMax": false,
-          "links": [
-            {
-              "title": "Show History",
-              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}&${__url_time_range}&var-limitId=${__data.fields.limitName}"
-            }
-          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "blue",
                 "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 50
-              },
-              {
-                "color": "red",
-                "value": 75
               }
             ]
           },
-          "unit": "percent"
+          "unit": "days"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 3,
+        "h": 3,
+        "w": 5,
         "x": 12,
         "y": 1
       },
-      "id": 17,
+      "id": 32,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
-          "limit": 1,
+          "fields": "/.*/",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "11.4.0-77383",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -457,13 +394,13 @@
             "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
-          "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
+          "expr": "{type=\"ORG_INFO\", orgIdentifier=\"$org\"} |= ``",
           "maxLines": 1,
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "",
+      "title": "Next Version",
       "transformations": [
         {
           "id": "extractFields",
@@ -471,7 +408,7 @@
             "format": "json",
             "jsonPaths": [
               {
-                "path": "limits.DailyApiRequests"
+                "path": "_logElements"
               }
             ],
             "keepTime": false,
@@ -482,104 +419,94 @@
         {
           "id": "extractFields",
           "options": {
-            "format": "json",
-            "jsonPaths": [
-              {
-                "alias": "",
-                "path": "percentUsed"
-              },
-              {
-                "alias": "limitName",
-                "path": "name"
-              },
-              {
-                "alias": "displayName",
-                "path": "label"
-              }
-            ],
+            "format": "auto",
             "replace": true,
-            "source": "limits.DailyApiRequests"
+            "source": "_logElements"
           }
         },
         {
-          "id": "convertFieldType",
+          "id": "extractFields",
           "options": {
-            "conversions": [
+            "format": "json",
+            "jsonPaths": [
               {
-                "destinationType": "number",
-                "targetField": "percentUsed"
+                "path": "maintenanceNextUpgrade"
               }
             ],
-            "fields": {}
+            "keepTime": false,
+            "replace": true,
+            "source": "0"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "Next Version",
+                "path": "name"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "maintenanceNextUpgrade"
           }
         }
       ],
-      "type": "gauge"
+      "type": "stat"
     },
     {
       "datasource": {
+        "default": false,
         "type": "loki",
         "uid": "grafanacloud-logs"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "Daily Bulk API Batches",
-          "fieldMinMax": false,
-          "links": [
-            {
-              "title": "Show History",
-              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}&${__url_time_range}&var-limitId=${__data.fields.limitName}"
-            }
-          ],
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "blue",
                 "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 50
-              },
-              {
-                "color": "red",
-                "value": 75
               }
             ]
           },
-          "unit": "percent"
+          "unit": "days"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
-        "w": 3,
-        "x": 15,
+        "h": 3,
+        "w": 5,
+        "x": 17,
         "y": 1
       },
-      "id": 18,
+      "id": 31,
       "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
-          "limit": 1,
+          "fields": "/.*/",
           "values": false
         },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
       },
-      "pluginVersion": "11.4.0-77383",
+      "pluginVersion": "11.3.0-75420",
       "targets": [
         {
           "datasource": {
@@ -587,13 +514,13 @@
             "uid": "grafanacloud-logs"
           },
           "editorMode": "builder",
-          "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
+          "expr": "{type=\"ORG_INFO\", orgIdentifier=\"$org\"} |= ``",
           "maxLines": 1,
           "queryType": "range",
           "refId": "A"
         }
       ],
-      "title": "",
+      "title": "Next Upgrade",
       "transformations": [
         {
           "id": "extractFields",
@@ -601,7 +528,7 @@
             "format": "json",
             "jsonPaths": [
               {
-                "path": "limits.DailyBulkApiBatches"
+                "path": "_logElements"
               }
             ],
             "keepTime": false,
@@ -612,131 +539,9 @@
         {
           "id": "extractFields",
           "options": {
-            "format": "json",
-            "jsonPaths": [
-              {
-                "alias": "",
-                "path": "percentUsed"
-              },
-              {
-                "alias": "limitName",
-                "path": "name"
-              },
-              {
-                "alias": "displayName",
-                "path": "label"
-              }
-            ],
+            "format": "auto",
             "replace": true,
-            "source": "limits.DailyBulkApiBatches"
-          }
-        },
-        {
-          "id": "convertFieldType",
-          "options": {
-            "conversions": [
-              {
-                "destinationType": "number",
-                "targetField": "percentUsed"
-              }
-            ],
-            "fields": {}
-          }
-        }
-      ],
-      "type": "gauge"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "grafanacloud-logs"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "displayName": "Daily Platform Events (Standard Volume)",
-          "fieldMinMax": false,
-          "links": [
-            {
-              "title": "Show History",
-              "url": "/d/sfdx-hardis-limits-evolution/03-limits-evolution?orgId=1&${org:queryparam}&${__url_time_range}&var-limitId=${__data.fields.limitName}"
-            }
-          ],
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "#EAB839",
-                "value": 50
-              },
-              {
-                "color": "red",
-                "value": 75
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 3,
-        "x": 18,
-        "y": 1
-      },
-      "id": 20,
-      "options": {
-        "minVizHeight": 75,
-        "minVizWidth": 75,
-        "orientation": "auto",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "limit": 1,
-          "values": false
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "sizing": "auto"
-      },
-      "pluginVersion": "11.4.0-77383",
-      "targets": [
-        {
-          "datasource": {
-            "type": "loki",
-            "uid": "grafanacloud-logs"
-          },
-          "editorMode": "builder",
-          "expr": "{type=\"ORG_LIMITS\", orgIdentifier=\"$org\"} |= ``",
-          "maxLines": 1,
-          "queryType": "range",
-          "refId": "A"
-        }
-      ],
-      "title": "",
-      "transformations": [
-        {
-          "id": "extractFields",
-          "options": {
-            "format": "json",
-            "jsonPaths": [
-              {
-                "path": "limits.DailyStandardVolumePlatformEvents"
-              }
-            ],
-            "keepTime": false,
-            "replace": true,
-            "source": "Line"
+            "source": "_logElements"
           }
         },
         {
@@ -745,21 +550,27 @@
             "format": "json",
             "jsonPaths": [
               {
-                "alias": "",
-                "path": "percentUsed"
-              },
-              {
-                "alias": "limitName",
-                "path": "name"
-              },
-              {
-                "alias": "displayName",
-                "path": "label"
+                "path": "maintenanceNextUpgrade"
               }
             ],
             "keepTime": false,
             "replace": true,
-            "source": "limits.DailyStandardVolumePlatformEvents"
+            "source": "0"
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "jsonPaths": [
+              {
+                "alias": "Upgrade Date",
+                "path": "plannedStartTime"
+              }
+            ],
+            "keepTime": false,
+            "replace": true,
+            "source": "maintenanceNextUpgrade"
           }
         },
         {
@@ -767,25 +578,22 @@
           "options": {
             "conversions": [
               {
-                "destinationType": "number",
-                "targetField": "percentUsed"
+                "dateFormat": "",
+                "destinationType": "time",
+                "targetField": "Upgrade Date"
               }
             ],
             "fields": {}
           }
         }
       ],
-      "type": "gauge"
+      "type": "stat"
     }
   ],
   "preload": false,
   "refresh": "",
-  "schemaVersion": 40,
-  "tags": [
-    "sfdx-hardis",
-    "salesforce",
-    "monitoring"
-  ],
+  "schemaVersion": 39,
+  "tags": [],
   "templating": {
     "list": [
       {
@@ -803,6 +611,7 @@
         },
         "definition": "",
         "includeAll": true,
+        "label": "Salesforce Org",
         "multi": true,
         "name": "org",
         "options": [],
@@ -825,8 +634,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "DASH - Limits for all orgs",
-  "uid": "sfdx-hardis-limits-all-orgs",
-  "version": 12,
+  "title": "DASH - Instance info for all orgs",
+  "uid": "sfdx-hardis-org-info-all-orgs",
+  "version": 6,
   "weekStart": ""
 }

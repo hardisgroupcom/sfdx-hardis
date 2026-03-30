@@ -89,6 +89,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
   protected apexOutputFilesRes: any = {};
   protected flowOutputFilesRes: any = {};
+  protected aggregatedOutputFilesRes: any = {};
   protected tempDir = '';
 
   /* jscpd:ignore-end */
@@ -385,6 +386,39 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     this.flowOutputFilesRes = await generateCsvFile(this.flowErrors, flowReportPath, {
       fileTitle: t('monitorErrorsFlowReportTitle'),
     });
+
+    const aggregatedReportPath = await generateReportPath('monitor-errors-summary', '');
+    this.aggregatedOutputFilesRes = await generateCsvFile(this.buildAggregatedErrors(), aggregatedReportPath, {
+      fileTitle: t('monitorErrorsAggregatedReportTitle'),
+    });
+  }
+
+  protected buildAggregatedErrors(): any[] {
+    const countMap = new Map<string, number>();
+
+    for (const record of this.apexErrors) {
+      const operation = (record.Operation ?? '').trim();
+      const key = `Apex\0${operation}`;
+      countMap.set(key, (countMap.get(key) ?? 0) + 1);
+    }
+
+    for (const record of this.flowErrors) {
+      const rawOperation = (record.Operation ?? '').trim();
+      const operation = rawOperation.replace(/\s+\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}.*$/, '').trim();
+      const key = `Flow\0${operation}`;
+      countMap.set(key, (countMap.get(key) ?? 0) + 1);
+    }
+
+    return Array.from(countMap.entries())
+      .map(([key, count]) => {
+        const separatorIdx = key.indexOf('\0');
+        return {
+          Type: key.substring(0, separatorIdx),
+          Operation: key.substring(separatorIdx + 1),
+          'Number of errors': count,
+        };
+      })
+      .sort((a, b) => b['Number of errors'] - a['Number of errors']);
   }
 
   protected removeAlwaysNullColumns(records: any[]): any[] {

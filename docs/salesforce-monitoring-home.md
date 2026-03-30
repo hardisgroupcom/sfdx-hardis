@@ -95,6 +95,7 @@ You can force the daily run of all commands by defining env var `MONITORING_IGNO
 | [Detect limits issues](salesforce-monitoring-org-limits.md)                                                                 | Daily     |
 | [Detect Apex and Flow errors](salesforce-monitoring-apex-flow-errors.md)                                                    | Daily     |
 | [Detect unsecured Connected Apps in an org](salesforce-monitoring-unsecured-connected-apps.md)                              | Daily     |
+| [Analyze metadata deployments and validations](salesforce-monitoring-deployments.md)                                        | Daily     |
 | [Extract licenses information](salesforce-monitoring-licenses-overview.md)                                                  | Weekly    |
 | [Detect custom elements with no access rights defined in permission sets](salesforce-monitoring-missing-access.md)          | Weekly    |
 | [Detect permission set licenses that are assigned to users that do not need them](salesforce-monitoring-unused-licenses.md) | Weekly    |

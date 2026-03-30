@@ -51,6 +51,9 @@ node_modules
 .DS_Store
 .idea
 
+.env
 hardis-report/
 megalinter-reports/
 config/user/
+
+.sfdx/
