@@ -362,10 +362,7 @@ The command checks for uncommitted changes and will not run if the working tree 
         ? profileParsedXml.Profile.objectPermissions
         : [profileParsedXml.Profile.objectPermissions];
       for (const objPerm of objPerms) {
-        let objName = objPerm.object;
-        if (Array.isArray(objName)) {
-          objName = objName[0];
-        }
+        const objName = this.unwrapProfileValue(objPerm.object);
         if (objName) {
           purgedObjects.add(objName);
         }
@@ -377,10 +374,7 @@ The command checks for uncommitted changes and will not run if the working tree 
     }
 
     for (const rtNode of profileParsedXml.Profile[nodeName]) {
-      let recordTypeName = rtNode.recordType;
-      if (Array.isArray(recordTypeName)) {
-        recordTypeName = recordTypeName[0];
-      }
+      const recordTypeName = this.unwrapProfileValue(rtNode.recordType);
       if (!recordTypeName) {
         continue;
       }
@@ -402,62 +396,9 @@ The command checks for uncommitted changes and will not run if the working tree 
       const targetVisible = isMaster;
       const targetDefault = isMaster;
 
-      // Update "visible" attribute
-      if (rtNode.visible !== undefined) {
-        let oldVisible = rtNode.visible;
-        if (Array.isArray(oldVisible)) {
-          oldVisible = oldVisible[0];
-        }
-        const oldVisibleBool = oldVisible === 'true' || oldVisible === true;
-        if (oldVisibleBool !== targetVisible) {
-          changes.push({
-            node: nodeName,
-            name: recordTypeName,
-            attribute: 'visible',
-            oldValue: oldVisible,
-            newValue: targetVisible,
-          });
-          rtNode.visible = targetVisible;
-        }
-      }
-
-      // Update "default" attribute
-      if (rtNode.default !== undefined) {
-        let oldDefault = rtNode.default;
-        if (Array.isArray(oldDefault)) {
-          oldDefault = oldDefault[0];
-        }
-        const oldDefaultBool = oldDefault === 'true' || oldDefault === true;
-        if (oldDefaultBool !== targetDefault) {
-          changes.push({
-            node: nodeName,
-            name: recordTypeName,
-            attribute: 'default',
-            oldValue: oldDefault,
-            newValue: targetDefault,
-          });
-          rtNode.default = targetDefault;
-        }
-      }
-
-      // Update "personAccountDefault" attribute if present (same logic as default)
-      if (rtNode.personAccountDefault !== undefined) {
-        let oldPADefault = rtNode.personAccountDefault;
-        if (Array.isArray(oldPADefault)) {
-          oldPADefault = oldPADefault[0];
-        }
-        const oldPADefaultBool = oldPADefault === 'true' || oldPADefault === true;
-        if (oldPADefaultBool !== targetDefault) {
-          changes.push({
-            node: nodeName,
-            name: recordTypeName,
-            attribute: 'personAccountDefault',
-            oldValue: oldPADefault,
-            newValue: targetDefault,
-          });
-          rtNode.personAccountDefault = targetDefault;
-        }
-      }
+      this.updateBooleanProfileAttribute(rtNode, 'visible', targetVisible, nodeName, recordTypeName, changes);
+      this.updateBooleanProfileAttribute(rtNode, 'default', targetDefault, nodeName, recordTypeName, changes);
+      this.updateBooleanProfileAttribute(rtNode, 'personAccountDefault', targetDefault, nodeName, recordTypeName, changes);
     }
   }
 
@@ -477,49 +418,57 @@ The command checks for uncommitted changes and will not run if the working tree 
     // Find the default app name
     let defaultAppName: string | null = null;
     for (const appNode of profileParsedXml.Profile[nodeName]) {
-      let isDefault = appNode.default;
-      if (Array.isArray(isDefault)) {
-        isDefault = isDefault[0];
-      }
-      if (isDefault === true || isDefault === 'true') {
-        let appName = appNode.application;
-        if (Array.isArray(appName)) {
-          appName = appName[0];
-        }
+      const isDefault = this.parseProfileBoolean(appNode.default);
+      if (isDefault) {
+        const appName = this.unwrapProfileValue(appNode.application);
         defaultAppName = appName;
         break;
       }
     }
 
     for (const appNode of profileParsedXml.Profile[nodeName]) {
-      let appName = appNode.application;
-      if (Array.isArray(appName)) {
-        appName = appName[0];
-      }
+      const appName = this.unwrapProfileValue(appNode.application);
       if (!appName) {
         continue;
       }
 
       const isDefault = appName === defaultAppName;
       const targetVisible = isDefault;
+      this.updateBooleanProfileAttribute(appNode, 'visible', targetVisible, nodeName, appName, changes);
+    }
+  }
 
-      if (appNode.visible !== undefined) {
-        let oldVisible = appNode.visible;
-        if (Array.isArray(oldVisible)) {
-          oldVisible = oldVisible[0];
-        }
-        const oldVisibleBool = oldVisible === 'true' || oldVisible === true;
-        if (oldVisibleBool !== targetVisible) {
-          changes.push({
-            node: nodeName,
-            name: appName,
-            attribute: 'visible',
-            oldValue: oldVisible,
-            newValue: targetVisible,
-          });
-          appNode.visible = targetVisible;
-        }
-      }
+  private unwrapProfileValue(value: any): any {
+    return Array.isArray(value) ? value[0] : value;
+  }
+
+  private parseProfileBoolean(value: any): boolean {
+    const unwrapped = this.unwrapProfileValue(value);
+    return unwrapped === true || unwrapped === 'true';
+  }
+
+  private updateBooleanProfileAttribute(
+    nodeObj: any,
+    attribute: string,
+    targetValue: boolean,
+    nodeName: string,
+    memberName: string,
+    changes: { node: string; name: string; attribute: string; oldValue: any; newValue: any }[]
+  ): void {
+    if (nodeObj?.[attribute] === undefined) {
+      return;
+    }
+    const oldValue = this.unwrapProfileValue(nodeObj[attribute]);
+    const oldValueBool = this.parseProfileBoolean(oldValue);
+    if (oldValueBool !== targetValue) {
+      changes.push({
+        node: nodeName,
+        name: memberName,
+        attribute,
+        oldValue,
+        newValue: targetValue,
+      });
+      nodeObj[attribute] = targetValue;
     }
   }
 
