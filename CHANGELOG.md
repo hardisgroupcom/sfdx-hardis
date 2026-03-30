@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- [hardis:org:purge:profile](https://sfdx-hardis.cloudity.com/hardis/org/purge/profile/): Empty Record types and Applications from Profiles.
+
 ## [7.6.0] 2026-03-29
 
 - New command [hardis:org:diagnose:deployments](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/deployments/) to analyze metadata deployments and validations by querying DeployRequest records via the Tooling API (available in sfdx-hardis monitoring)
