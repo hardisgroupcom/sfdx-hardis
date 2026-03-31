@@ -756,6 +756,13 @@ export function listMetadataTypes() {
         xmlName: 'CnfgItemAttrSetDef',
       },
       {
+        directoryName: 'cnfgItemSourceDefinitions',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'cnfgItemSourceDefinition',
+        xmlName: 'CnfgItemSourceDefinition',
+      },
+      {
         directoryName: 'cnfgItemTypeAttrRelDefs',
         inFolder: false,
         metaFile: false,
@@ -775,13 +782,6 @@ export function listMetadataTypes() {
         metaFile: false,
         suffix: 'cnfgItemTypeRelationDef',
         xmlName: 'CnfgItemTypeRelationDef',
-      },
-      {
-        directoryName: 'cnfgMgmtCiSourceDefs',
-        inFolder: false,
-        metaFile: false,
-        suffix: 'cnfgMgmtCiSourceDef',
-        xmlName: 'CnfgMgmtCiSourceDef',
       },
       {
         directoryName: 'cnfgMgmtRelationTypeDefs',
@@ -1869,6 +1869,13 @@ export function listMetadataTypes() {
         metaFile: false,
         suffix: 'ecaOauthPlcy',
         xmlName: 'ExtlClntAppOauthConfigurablePolicies',
+      },
+      {
+        directoryName: 'extlClntAppOauthSecuritySettings',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'ecaOauthSecurity',
+        xmlName: 'ExtlClntAppOauthSecuritySettings',
       },
       {
         directoryName: 'extlClntAppOauthSettings',
@@ -3721,6 +3728,13 @@ export function listMetadataTypes() {
         xmlName: 'Translations',
       },
       {
+        directoryName: 'uiBundles',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'uibundle',
+        xmlName: 'UIBundle',
+      },
+      {
         directoryName: 'uiFormatSpecificationSets',
         inFolder: false,
         metaFile: false,
@@ -3886,13 +3900,6 @@ export function listMetadataTypes() {
         metaFile: false,
         suffix: 'xmd',
         xmlName: 'WaveXmd',
-      },
-      {
-        directoryName: 'webapplications',
-        inFolder: false,
-        metaFile: true,
-        suffix: 'webapplication',
-        xmlName: 'WebApplication',
       },
       {
         directoryName: 'webStoreBundles',
