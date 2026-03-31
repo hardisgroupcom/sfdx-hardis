@@ -4,6 +4,10 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [7.6.2] 2026-03-31
+
+- Pin axios version to stay safe regarding its hack (we already were, it's a preventive action !)
+
 ## [7.6.1] 2026-03-30
 
 - [hardis:org:purge:profile](https://sfdx-hardis.cloudity.com/hardis/org/purge/profile/): Empty Record types and Applications from Profiles.
