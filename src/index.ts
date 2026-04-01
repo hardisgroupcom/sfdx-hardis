@@ -6,3 +6,18 @@ export type { PromptsQuestion } from './common/utils/prompts.js';
 export { NotifProvider, UtilsNotifs } from './common/notifProvider/index.js';
 export type { NotifMessage, NotifButton, NotifSeverity } from './common/notifProvider/types.js';
 export { uxLog } from './common/utils/index.js';
+export { execCommand, execSfdxJson } from './common/utils/index.js';
+export {
+  soqlQuery,
+  soqlQueryTooling,
+  bulkQuery,
+  bulkQueryChunksIn,
+  bulkQueryByChunks,
+  bulkUpdate,
+  bulkDelete,
+  bulkDeleteTooling,
+} from './common/utils/apiUtils.js';
+export { generateCsvFile } from './common/utils/filesUtils.js';
+
+
+

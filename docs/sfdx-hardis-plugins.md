@@ -75,6 +75,17 @@ import {
   prompts,
   WebSocketClient,
   NotifProvider,
+  execCommand,
+  execSfdxJson,
+  soqlQuery,
+  soqlQueryTooling,
+  bulkQuery,
+  bulkQueryChunksIn,
+  bulkQueryByChunks,
+  bulkUpdate,
+  bulkDelete,
+  bulkDeleteTooling,
+  generateCsvFile,
 } from "sfdx-hardis/plugin-api";
 // Types are also available
 import type {
@@ -217,6 +228,92 @@ const confirmResponse = await prompts({
   name: "proceed",
   message: "Do you want to continue?",
   description: "This will start the deployment",
+});
+```
+
+### `execCommand(command, commandThis, options)`
+
+Runs a shell command and streams progress to the terminal and VS Code UI.
+
+**Parameters:**
+
+| Parameter     | Type     | Description                                                  |
+|---------------|----------|--------------------------------------------------------------|
+| `command`     | `string` | Command line to execute                                      |
+| `commandThis` | `any`    | The current command instance (`this` in a command's `run()`) |
+| `options`     | `object` | Optional. `{ fail, output, debug, spinner, cwd }`            |
+
+**Example:**
+
+```typescript
+import { execCommand } from "sfdx-hardis/plugin-api";
+
+await execCommand("sf org list", this, { output: true });
+```
+
+### `execSfdxJson(command, commandThis, options)`
+
+Runs a Salesforce CLI command and forces `--json` output.
+
+**Parameters:**
+
+| Parameter     | Type     | Description                                                  |
+|---------------|----------|--------------------------------------------------------------|
+| `command`     | `string` | Salesforce CLI command (without `--json`)                    |
+| `commandThis` | `any`    | The current command instance (`this` in a command's `run()`) |
+| `options`     | `object` | Optional. `{ fail, output, debug }`                          |
+
+**Example:**
+
+```typescript
+import { execSfdxJson } from "sfdx-hardis/plugin-api";
+
+const res = await execSfdxJson("sf org display", this, { output: false });
+```
+
+### SOQL and Bulk helpers
+
+Utility wrappers around REST/Tooling SOQL and Bulk API v2 helpers.
+
+**Functions:**
+
+- `soqlQuery(soqlQuery, conn)`
+- `soqlQueryTooling(soqlQuery, conn)`
+- `bulkQuery(soqlQuery, conn, retries?)`
+- `bulkQueryChunksIn(soqlQuery, conn, inElements, batchSize?, retries?)`
+- `bulkQueryByChunks(soqlQuery, conn, batchSize?, retries?)`
+- `bulkUpdate(objectName, action, records, conn)`
+- `bulkDelete(objectName, recordIds, conn)`
+- `bulkDeleteTooling(objectName, recordIds, conn)`
+
+**Example:**
+
+```typescript
+import { soqlQuery, bulkQuery } from "sfdx-hardis/plugin-api";
+
+const res = await soqlQuery("SELECT Id, Name FROM Account", conn);
+const bulkRes = await bulkQuery("SELECT Id FROM Contact", conn);
+```
+
+### `generateCsvFile(data, outputPath, options?)`
+
+Generates CSV (and optionally XLSX) files and notifies the VS Code UI.
+
+**Parameters:**
+
+| Parameter    | Type     | Description                                                                    |
+|--------------|----------|--------------------------------------------------------------------------------|
+| `data`       | `any[]`  | Rows to export                                                                 |
+| `outputPath` | `string` | Full output path for the CSV                                                   |
+| `options`    | `object` | Optional. `{ fileTitle, noExcel, columnsCustomStyles, skipNotifyToWebSocket }` |
+
+**Example:**
+
+```typescript
+import { generateCsvFile } from "sfdx-hardis/plugin-api";
+
+await generateCsvFile(records, "./reports/accounts.csv", {
+  fileTitle: "Accounts",
 });
 ```
 
