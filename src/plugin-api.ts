@@ -26,3 +26,17 @@ export type { NotifMessage, NotifButton, NotifSeverity } from './common/notifPro
 
 // Logging utilities
 export { uxLog, uxLogTable } from './common/utils/index.js';
+
+// CLI and Salesforce API helpers
+export { execCommand, execSfdxJson } from './common/utils/index.js';
+export {
+  soqlQuery,
+  soqlQueryTooling,
+  bulkQuery,
+  bulkQueryChunksIn,
+  bulkQueryByChunks,
+  bulkUpdate,
+  bulkDelete,
+  bulkDeleteTooling,
+} from './common/utils/apiUtils.js';
+export { generateCsvFile } from './common/utils/filesUtils.js';

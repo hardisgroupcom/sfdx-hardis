@@ -75,6 +75,17 @@ import {
   prompts,
   WebSocketClient,
   NotifProvider,
+  execCommand,
+  execSfdxJson,
+  soqlQuery,
+  soqlQueryTooling,
+  bulkQuery,
+  bulkQueryChunksIn,
+  bulkQueryByChunks,
+  bulkUpdate,
+  bulkDelete,
+  bulkDeleteTooling,
+  generateCsvFile,
 } from "sfdx-hardis/plugin-api";
 // Types are also available
 import type {
@@ -108,7 +119,7 @@ Sends a log message to the terminal and to the VS Code extension (when connected
 **Parameters:**
 
 | Parameter     | Type      | Description                                                                            |
-|---------------|-----------|----------------------------------------------------------------------------------------|
+| ------------- | --------- | -------------------------------------------------------------------------------------- |
 | `logType`     | `LogType` | One of: `'log'`, `'action'`, `'warning'`, `'error'`, `'success'`, `'table'`, `'other'` |
 | `commandThis` | `any`     | The current command instance (`this` in a command's `run()` method)                    |
 | `message`     | `string`  | The message to display (supports chalk formatting)                                     |
@@ -134,7 +145,7 @@ Renders a user-facing table in the terminal and in the VS Code extension.
 **Parameters:**
 
 | Parameter      | Type       | Description                                                         |
-|----------------|------------|---------------------------------------------------------------------|
+| -------------- | ---------- | ------------------------------------------------------------------- |
 | `commandThis`  | `any`      | The current command instance (`this` in a command's `run()` method) |
 | `tableData`    | `any[]`    | Array of row objects to render                                      |
 | `columnsOrder` | `string[]` | Optional. Column keys to keep and the order to display them         |
@@ -168,13 +179,13 @@ Displays interactive prompts. When the VS Code extension is connected, prompts a
 **Parameters:**
 
 | Parameter | Type                                   | Description                             |
-|-----------|----------------------------------------|-----------------------------------------|
+| --------- | -------------------------------------- | --------------------------------------- |
 | `options` | `PromptsQuestion \| PromptsQuestion[]` | A single question or array of questions |
 
 **`PromptsQuestion` interface:**
 
 | Property      | Type                                                           | Description                                                    |
-|---------------|----------------------------------------------------------------|----------------------------------------------------------------|
+| ------------- | -------------------------------------------------------------- | -------------------------------------------------------------- |
 | `message`     | `string`                                                       | The question text                                              |
 | `description` | `string`                                                       | Additional description                                         |
 | `placeholder` | `string`                                                       | Optional placeholder text                                      |
@@ -217,6 +228,92 @@ const confirmResponse = await prompts({
   name: "proceed",
   message: "Do you want to continue?",
   description: "This will start the deployment",
+});
+```
+
+### `execCommand(command, commandThis, options)`
+
+Runs a shell command and streams progress to the terminal and VS Code UI.
+
+**Parameters:**
+
+| Parameter     | Type     | Description                                                  |
+| ------------- | -------- | ------------------------------------------------------------ |
+| `command`     | `string` | Command line to execute                                      |
+| `commandThis` | `any`    | The current command instance (`this` in a command's `run()`) |
+| `options`     | `object` | Optional. `{ fail, output, debug, spinner, cwd }`            |
+
+**Example:**
+
+```typescript
+import { execCommand } from "sfdx-hardis/plugin-api";
+
+await execCommand("sf org list", this, { output: true });
+```
+
+### `execSfdxJson(command, commandThis, options)`
+
+Runs a Salesforce CLI command and forces `--json` output.
+
+**Parameters:**
+
+| Parameter     | Type     | Description                                                  |
+| ------------- | -------- | ------------------------------------------------------------ |
+| `command`     | `string` | Salesforce CLI command (without `--json`)                    |
+| `commandThis` | `any`    | The current command instance (`this` in a command's `run()`) |
+| `options`     | `object` | Optional. `{ fail, output, debug }`                          |
+
+**Example:**
+
+```typescript
+import { execSfdxJson } from "sfdx-hardis/plugin-api";
+
+const res = await execSfdxJson("sf org display", this, { output: false });
+```
+
+### SOQL and Bulk helpers
+
+Utility wrappers around REST/Tooling SOQL and Bulk API v2 helpers.
+
+**Functions:**
+
+- `soqlQuery(soqlQuery, conn)`
+- `soqlQueryTooling(soqlQuery, conn)`
+- `bulkQuery(soqlQuery, conn, retries?)`
+- `bulkQueryChunksIn(soqlQuery, conn, inElements, batchSize?, retries?)`
+- `bulkQueryByChunks(soqlQuery, conn, batchSize?, retries?)`
+- `bulkUpdate(objectName, action, records, conn)`
+- `bulkDelete(objectName, recordIds, conn)`
+- `bulkDeleteTooling(objectName, recordIds, conn)`
+
+**Example:**
+
+```typescript
+import { soqlQuery, bulkQuery } from "sfdx-hardis/plugin-api";
+
+const res = await soqlQuery("SELECT Id, Name FROM Account", conn);
+const bulkRes = await bulkQuery("SELECT Id FROM Contact", conn);
+```
+
+### `generateCsvFile(data, outputPath, options?)`
+
+Generates CSV (and optionally XLSX) files and notifies the VS Code UI.
+
+**Parameters:**
+
+| Parameter    | Type     | Description                                                                    |
+| ------------ | -------- | ------------------------------------------------------------------------------ |
+| `data`       | `any[]`  | Rows to export                                                                 |
+| `outputPath` | `string` | Full output path for the CSV                                                   |
+| `options`    | `object` | Optional. `{ fileTitle, noExcel, columnsCustomStyles, skipNotifyToWebSocket }` |
+
+**Example:**
+
+```typescript
+import { generateCsvFile } from "sfdx-hardis/plugin-api";
+
+await generateCsvFile(records, "./reports/accounts.csv", {
+  fileTitle: "Accounts",
 });
 ```
 
@@ -284,7 +381,7 @@ WebSocketClient.sendReportFileMessage(
 ```
 
 | `type` value      | Description               |
-|-------------------|---------------------------|
+| ----------------- | ------------------------- |
 | `"report"`        | A report file to download |
 | `"docUrl"`        | A documentation URL       |
 | `"actionUrl"`     | An action URL             |
@@ -293,7 +390,7 @@ WebSocketClient.sendReportFileMessage(
 #### Other available methods
 
 | Method                                                      | Description                                  |
-|-------------------------------------------------------------|----------------------------------------------|
+| ----------------------------------------------------------- | -------------------------------------------- |
 | `sendRefreshStatusMessage()`                                | Triggers a status refresh in VS Code         |
 | `sendRefreshCommandsMessage()`                              | Triggers a commands list refresh             |
 | `sendCommandLogLineMessage(message, logType?, isQuestion?)` | Sends a log line to the command output panel |
@@ -426,7 +523,7 @@ See [`NotifMessage`](#notifmessage) for all available fields.
 Interface describing a notification to send.
 
 | Property        | Type                 | Required | Description                                                                                                                           |
-|-----------------|----------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------|
+| --------------- | -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `text`          | `string`             | ✓        | Main notification text (supports Slack markdown: `*bold*`, `_italic_`)                                                                |
 | `type`          | `string`             | ✓        | Notification type identifier — use a unique ALL_CAPS string for your plugin (e.g. `"MY_PLUGIN_RESULT"`)                               |
 | `severity`      | `NotifSeverity`      | ✓        | One of: `"critical"`, `"error"`, `"warning"`, `"info"`, `"success"`, `"log"`                                                          |
