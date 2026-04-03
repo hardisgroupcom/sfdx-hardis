@@ -293,6 +293,20 @@ export function getEnvVar(envVarName: string): string | null {
   return varValue;
 }
 
+export function getCurrentI18nLocale(): string {
+  return (process.env.SFDX_HARDIS_LANG || process.env.SFDX_HARDIS_LOCALE || 'en')
+    .substring(0, 5)
+    .replace(/^([a-zA-Z]{2})(-?)([a-zA-Z]{0,2})$/, (_match, p1, p2, p3) =>
+      p1.toLowerCase() + p2 + p3.toUpperCase()
+    );
+}
+
+export function getLocalizedEnvVar(baseName: string): string | null {
+  const locale = getCurrentI18nLocale();
+  const localeSuffix = locale.replace(/-/g, '_').toUpperCase();
+  return getEnvVar(`${baseName}_${localeSuffix}`) || getEnvVar(baseName);
+}
+
 export function getEnvVarList(envVarName: string, separator: string = ','): string[] | null {
   const varValue = getEnvVar(envVarName);
   if (varValue) {

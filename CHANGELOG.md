@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Support localized configuration and CLI overrides for documentation publishing
+
 ## [7.6.3] 2026-01-04
 
 - Expose more methods in plugin API
