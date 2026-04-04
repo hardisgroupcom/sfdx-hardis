@@ -81,6 +81,8 @@ If you want to also upload HTML Documentation on Cloudflare, use variable **SFDX
 
 If you want to also publish Documentation on Confluence, use variable **SFDX_HARDIS_DOC_DEPLOY_TO_CONFLUENCE="true"** (see [configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-project-doc-confluence/))
 
+By default, only changed files are used to generate the documentation (diff-only). If you want to force the full documentation rebuild, use option **--rebuild-full-doc** or set env variable **MONITORING_BACKUP_REBUILD_FULL_DOC="true"**
+
 - If you want to generate the documentation in multiple languages, define variable SFDX_DOC_LANGUAGES (ex: SFDX_DOC_LANGUAGES=en,fr,de)
 - You can define one Cloudflare site by language, for example with the following variables:
   - CLOUDFLARE_PROJECT_NAME_EN=cloudity-demo-english
@@ -99,7 +101,8 @@ If Flow history doc always display a single state, you probably need to update y
     '$ sf hardis:org:monitor:backup',
     '$ sf hardis:org:monitor:backup --full',
     '$ sf hardis:org:monitor:backup --full --exclude-namespaces',
-    '$ sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters'
+    '$ sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters',
+    '$ sf hardis:org:monitor:backup --rebuild-full-doc'
   ];
 
   public static flags: any = {
@@ -128,6 +131,10 @@ If Flow history doc always display a single state, you probably need to update y
     "skip-doc": Flags.boolean({
       default: false,
       description: 'Skip the generation of project documentation at the end of the command',
+    }),
+    "rebuild-full-doc": Flags.boolean({
+      default: false,
+      description: 'Rebuild the full project documentation, not just the diff. Can also be activated using env variable MONITORING_BACKUP_REBUILD_FULL_DOC=true',
     }),
     outputfile: Flags.string({
       char: 'f',
@@ -161,6 +168,7 @@ If Flow history doc always display a single state, you probably need to update y
   protected excludeNamespaces: boolean = false;
   protected fullApplyFilters: boolean = false;
   protected skipDoc: boolean = false;
+  protected rebuildFullDoc: boolean = false;
 
   protected packageXmlToRemove: string | null = null;
   protected extractPackageXmlChunks: any[] = [];
@@ -183,7 +191,9 @@ If Flow history doc always display a single state, you probably need to update y
     this.excludeNamespaces = flags["exclude-namespaces"] === true ? true : false;
     this.fullApplyFilters = flags["full-apply-filters"] === true ? true : false;
     this.skipDoc = flags["skip-doc"] === true ? true : false;
+    this.rebuildFullDoc = flags["rebuild-full-doc"] === true || process.env?.MONITORING_BACKUP_REBUILD_FULL_DOC === "true";
     const skipDocFlagProvided = process.argv.includes("--skip-doc");
+    const rebuildFullDocFlagProvided = process.argv.includes("--rebuild-full-doc");
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
 
@@ -333,6 +343,18 @@ If Flow history doc always display a single state, you probably need to update y
       this.skipDoc = generateDocRes.generateDoc !== true;
     }
 
+    // Ask interactively if the user wants to rebuild the full documentation or just the diff.
+    if (!isCI && !this.skipDoc && !rebuildFullDocFlagProvided && process.env?.MONITORING_BACKUP_REBUILD_FULL_DOC == null) {
+      const rebuildFullDocRes = await prompts({
+        type: 'confirm',
+        name: 'rebuildFullDoc',
+        message: t('doYouWantToRebuildFullDocumentation'),
+        description: t('rebuildFullDocDescription'),
+        initial: false,
+      });
+      this.rebuildFullDoc = rebuildFullDocRes.rebuildFullDoc === true;
+    }
+
     // Run project documentation generation
     if (this.skipDoc !== true) {
       const prevPromptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
@@ -346,7 +368,7 @@ If Flow history doc always display a single state, you probably need to update y
           process.env.SFDX_HARDIS_LANG = langKey;
           reinitI18n();
 
-          await Project2Markdown.run(["--diff-only", "--with-history"]);
+          await Project2Markdown.run(this.rebuildFullDoc ? ["--with-history"] : ["--diff-only", "--with-history"]);
           uxLog("action", this, c.cyan(t('documentationGeneratedFromRetrievedSourcesIfYou')));
 
           if (config.docDeployToOrg || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_ORG === "true") {
