@@ -5,6 +5,13 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - CI: Scope SFDX_HARDIS_GITHUB_IO_SSH_PRIVATE_KEY to environment "doc" (also has been rotated)
+- Support localized configuration and CLI overrides for documentation publishing
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
+  - Generate PDF files in a single final batch to improve Puppeteer reuse and reduce timeouts
+  - Improve tables display to avoid overflow
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/):
+  - When not running in CI and `--skip-doc` is not provided, prompt the user after backup completion and before doc generation
+- [hardis:doc:mkdocs-to-confluence](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-confluence/): Fix markdown/mermaid conversion to Confluence issues
 
 ## [7.6.3] 2026-01-04
 

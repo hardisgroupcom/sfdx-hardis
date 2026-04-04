@@ -9,7 +9,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import axios, { AxiosInstance } from 'axios';
 import { uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
-import { CONSTANTS, getEnvVar } from '../../../config/index.js';
+import { CONSTANTS, getEnvVar, getLocalizedEnvVar } from '../../../config/index.js';
 import { readMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { t } from '../../../common/utils/i18n.js';
@@ -47,6 +47,7 @@ Two authentication methods are supported: **Basic Auth** (username + API token) 
 | \`CONFLUENCE_SPACE_KEY\`           | Confluence space key where pages will be published                        | _Required_           |
 | \`CONFLUENCE_PARENT_PAGE_ID\`      | ID of the parent page under which all doc pages will be created           | Space root           |
 | \`CONFLUENCE_PAGE_PREFIX\`         | Prefix added to all page titles to avoid name collisions                  | \`[Doc] \`            |
+| \`CONFLUENCE_PAGE_SUFFIX\`         | Suffix added to all page titles to avoid name collisions                  | _Empty_              |
 | **Basic Auth**                    |                                                                           |                      |
 | \`CONFLUENCE_BASE_URL\`            | Confluence instance base URL (e.g. \`https://mycompany.atlassian.net\`)    | _Required for Basic_ |
 | \`CONFLUENCE_USERNAME\`            | Confluence username (email for Confluence Cloud)                          | _Required for Basic_ |
@@ -55,6 +56,10 @@ Two authentication methods are supported: **Basic Auth** (username + API token) 
 | \`CONFLUENCE_CLIENT_ID\`           | Atlassian OAuth2 client ID                                                | _Required for OAuth_ |
 | \`CONFLUENCE_CLIENT_SECRET\`       | Atlassian OAuth2 client secret                                            | _Required for OAuth_ |
 | \`CONFLUENCE_BASE_URL\`            | Confluence instance base URL, used to match the right Atlassian resource  | First available      |
+
+For \`CONFLUENCE_SPACE_KEY\`, \`CONFLUENCE_PARENT_PAGE_ID\`, \`CONFLUENCE_PAGE_PREFIX\`, and \`CONFLUENCE_PAGE_SUFFIX\`,
+the command first checks a language-scoped variable for the current i18n locale, then falls back to the default one.
+Examples: \`CONFLUENCE_SPACE_KEY_FR\`, \`CONFLUENCE_PARENT_PAGE_ID_NL\`, \`CONFLUENCE_PAGE_SUFFIX_PT_BR\`.
 
 **Prerequisite:** The documentation must have been previously generated using \`sf hardis:doc:project2markdown\`.
 
@@ -95,6 +100,18 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     websocket: Flags.string({
       description: messages.getMessage('websocket'),
     }),
+    confluenceSpaceKey: Flags.string({
+      description: 'Confluence space key. Overrides CONFLUENCE_SPACE_KEY[_<LANG>] env vars',
+    }),
+    confluenceParentPageId: Flags.string({
+      description: 'Confluence parent page ID. Overrides CONFLUENCE_PARENT_PAGE_ID[_<LANG>] env vars',
+    }),
+    confluencePagePrefix: Flags.string({
+      description: 'Confluence page title prefix. Overrides CONFLUENCE_PAGE_PREFIX[_<LANG>] env vars',
+    }),
+    confluencePageSuffix: Flags.string({
+      description: 'Confluence page title suffix. Overrides CONFLUENCE_PAGE_SUFFIX[_<LANG>] env vars',
+    }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     })
@@ -110,6 +127,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
   protected confluenceToken: string;
   protected confluenceParentPageId: string | null;
   protected confluencePagePrefix: string;
+  protected confluencePageSuffix: string;
   protected confluenceClientId: string | null;
   protected confluenceClientSecret: string | null;
   protected axiosClient: AxiosInstance;
@@ -144,7 +162,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     }
 
     // Setup Confluence connection
-    await this.setupConfluenceClient();
+    await this.setupConfluenceClient(flags);
 
     // Read mkdocs.yml nav structure
     const mkdocsYml = readMkDocsFile(mkdocsYmlFile);
@@ -206,15 +224,16 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     return { success: this.failedPages.length === 0, publishedPages: this.pageTitleMap.size, failedPages: this.failedPages.length, outputFile: this.outputFilesRes?.csvFile || null };
   }
 
-  private async setupConfluenceClient() {
+  private async setupConfluenceClient(flags: Record<string, unknown>) {
     this.confluenceBaseUrl = (getEnvVar('CONFLUENCE_BASE_URL') || '').replace(/\/+$/, '');
-    this.confluenceSpaceKey = getEnvVar('CONFLUENCE_SPACE_KEY') || '';
+    this.confluenceSpaceKey = (flags.confluenceSpaceKey as string) || getLocalizedEnvVar('CONFLUENCE_SPACE_KEY') || '';
     this.confluenceUsername = getEnvVar('CONFLUENCE_USERNAME') || '';
     this.confluenceToken = getEnvVar('CONFLUENCE_TOKEN') || '';
     this.confluenceClientId = getEnvVar('CONFLUENCE_CLIENT_ID') || null;
     this.confluenceClientSecret = getEnvVar('CONFLUENCE_CLIENT_SECRET') || null;
-    this.confluenceParentPageId = getEnvVar('CONFLUENCE_PARENT_PAGE_ID') || null;
-    this.confluencePagePrefix = getEnvVar('CONFLUENCE_PAGE_PREFIX') || '[Doc] ';
+    this.confluenceParentPageId = (flags.confluenceParentPageId as string) || getLocalizedEnvVar('CONFLUENCE_PARENT_PAGE_ID') || null;
+    this.confluencePagePrefix = (flags.confluencePagePrefix as string) || getLocalizedEnvVar('CONFLUENCE_PAGE_PREFIX') || '[Doc] ';
+    this.confluencePageSuffix = (flags.confluencePageSuffix as string) || getLocalizedEnvVar('CONFLUENCE_PAGE_SUFFIX') || '';
 
     if (!this.confluenceSpaceKey) {
       WebSocketClient.sendReportFileMessage(
@@ -341,13 +360,13 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     for (const item of navItems) {
       if (typeof item === 'string') {
         // Direct file reference without title
-        const title = this.computePagePrefix(item) + this.titleFromFilePath(item);
+        const title = this.computePagePrefix(item) + this.titleFromFilePath(item) + this.confluencePageSuffix;
         this.pageTitleMap.set(item, title);
       } else if (typeof item === 'object') {
         for (const [label, value] of Object.entries(item)) {
           if (typeof value === 'string') {
             // Leaf page: { "Label": "file.md" }
-            const title = this.computePagePrefix(value as string) + label;
+            const title = this.computePagePrefix(value as string) + label + this.confluencePageSuffix;
             this.pageTitleMap.set(value as string, title);
           } else if (Array.isArray(value)) {
             // Section with array children: { "Label": [ ... ] }
@@ -367,7 +386,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
   private buildPageTitleMapFromObject(obj: Record<string, any>) {
     for (const [childLabel, childValue] of Object.entries(obj)) {
       if (typeof childValue === 'string') {
-        this.pageTitleMap.set(childValue, this.computePagePrefix(childValue) + childLabel);
+        this.pageTitleMap.set(childValue, this.computePagePrefix(childValue) + childLabel + this.confluencePageSuffix);
       } else if (Array.isArray(childValue)) {
         this.buildPageTitleMap(childValue as any[], childLabel);
       } else if (typeof childValue === 'object' && childValue !== null) {
@@ -396,7 +415,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
         const slotIdx = orderedPageIds.length;
         orderedPageIds.push(null);
         tasks.push(async () => {
-          await this.publishPage(item, this.pageTitleMap.get(item) || this.computePagePrefix(item) + this.titleFromFilePath(item), parentPageId);
+          await this.publishPage(item, this.pageTitleMap.get(item) || this.computePagePrefix(item) + this.titleFromFilePath(item) + this.confluencePageSuffix, parentPageId);
           orderedPageIds[slotIdx] = this.pageIdMap.get(item) || null;
         });
       } else if (typeof item === 'object') {
@@ -406,13 +425,13 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
           if (typeof value === 'string') {
             // Leaf page: { "Label": "file.md" }
             tasks.push(async () => {
-              await this.publishPage(value as string, this.pageTitleMap.get(value as string) || this.computePagePrefix(value as string) + label, parentPageId);
+              await this.publishPage(value as string, this.pageTitleMap.get(value as string) || this.computePagePrefix(value as string) + label + this.confluencePageSuffix, parentPageId);
               orderedPageIds[slotIdx] = this.pageIdMap.get(value as string) || null;
             });
           } else if (Array.isArray(value)) {
             // Section with array children: create container then process children
             tasks.push(async () => {
-              const sectionTitle = this.confluencePagePrefix + label;
+              const sectionTitle = this.confluencePagePrefix + label + this.confluencePageSuffix;
               try {
                 const sectionPageId = await this.createOrUpdatePage(sectionTitle, `<p>${this.escapeXml(label)}</p>`, parentPageId);
                 orderedPageIds[slotIdx] = sectionPageId;
@@ -426,7 +445,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
           } else if (typeof value === 'object' && value !== null) {
             // Section with flat object children: { "Label": { "Child": "file.md", ... } }
             tasks.push(async () => {
-              const sectionTitle = this.confluencePagePrefix + label;
+              const sectionTitle = this.confluencePagePrefix + label + this.confluencePageSuffix;
               try {
                 const sectionPageId = await this.createOrUpdatePage(sectionTitle, `<p>${this.escapeXml(label)}</p>`, parentPageId);
                 orderedPageIds[slotIdx] = sectionPageId;
@@ -457,12 +476,12 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
       orderedPageIds.push(null);
       if (typeof childValue === 'string') {
         tasks.push(async () => {
-          await this.publishPage(childValue, this.pageTitleMap.get(childValue) || this.computePagePrefix(childValue) + childLabel, parentPageId);
+          await this.publishPage(childValue, this.pageTitleMap.get(childValue) || this.computePagePrefix(childValue) + childLabel + this.confluencePageSuffix, parentPageId);
           orderedPageIds[slotIdx] = this.pageIdMap.get(childValue) || null;
         });
       } else if (Array.isArray(childValue)) {
         tasks.push(async () => {
-          const sectionTitle = this.confluencePagePrefix + childLabel;
+          const sectionTitle = this.confluencePagePrefix + childLabel + this.confluencePageSuffix;
           try {
             const sectionPageId = await this.createOrUpdatePage(sectionTitle, `<p>${this.escapeXml(childLabel)}</p>`, parentPageId);
             orderedPageIds[slotIdx] = sectionPageId;
@@ -475,7 +494,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
         });
       } else if (typeof childValue === 'object' && childValue !== null) {
         tasks.push(async () => {
-          const sectionTitle = this.confluencePagePrefix + childLabel;
+          const sectionTitle = this.confluencePagePrefix + childLabel + this.confluencePageSuffix;
           try {
             const sectionPageId = await this.createOrUpdatePage(sectionTitle, `<p>${this.escapeXml(childLabel)}</p>`, parentPageId);
             orderedPageIds[slotIdx] = sectionPageId;
@@ -585,6 +604,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
    */
   protected convertMarkdownToConfluenceStorage(markdown: string, currentFilePath: string): string {
     let html = markdown;
+    const codeBlockPlaceholders: string[] = [];
 
     // Normalize line endings to avoid regex issues on Windows (\r\n) or old Mac (\r)
     html = html.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -599,7 +619,10 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     // Convert fenced code blocks to Confluence code macro
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_match, lang, code) => {
       const langAttr = lang ? `<ac:parameter ac:name="language">${this.escapeXml(lang)}</ac:parameter>` : '';
-      return `<ac:structured-macro ac:name="code">${langAttr}<ac:plain-text-body><![CDATA[${code}]]></ac:plain-text-body></ac:structured-macro>`;
+      const macro = `<ac:structured-macro ac:name="code">${langAttr}<ac:plain-text-body><![CDATA[${code}]]></ac:plain-text-body></ac:structured-macro>`;
+      const placeholder = `@@HARDIS_CODE_BLOCK_${codeBlockPlaceholders.length}@@`;
+      codeBlockPlaceholders.push(macro);
+      return placeholder;
     });
 
     // Convert inline code
@@ -643,10 +666,10 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     // Convert bold
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
-    // Convert italic (both *text* and _text_ variants)
-    // Negative lookbehind/lookahead on _..._  avoids matching snake_case identifiers
+    // Convert italic using *text* and _text_ variants.
+    // For _text_, apply strict boundaries so Salesforce API names like Siren__c are preserved.
     html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    html = html.replace(/(?<![a-zA-Z0-9])_([^_\n]+)_(?![a-zA-Z0-9])/g, '<em>$1</em>');
+    html = html.replace(/(?<![A-Za-z0-9_])_([^_\n]+)_(?![A-Za-z0-9_])/g, '<em>$1</em>');
 
     // Convert lists (supports nested bullet and ordered lists)
     html = this.convertLists(html);
@@ -666,7 +689,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
           paragraphed.push(this.wrapInParagraphIfNeeded(buffer.trim()));
         }
         buffer = '';
-      } else if (/^<(h[1-6]|p|ul|ol|li|table|ac:|div|hr|blockquote)/i.test(trimmed)) {
+      } else if (/^<(h[1-6]|p|ul|ol|li|table|ac:|div|hr|blockquote)/i.test(trimmed) || /^@@HARDIS_CODE_BLOCK_\d+@@$/.test(trimmed)) {
         // Block-level element: flush pending text first, then add the block directly
         if (buffer.trim()) {
           paragraphed.push(this.wrapInParagraphIfNeeded(buffer.trim()));
@@ -681,6 +704,9 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
       paragraphed.push(this.wrapInParagraphIfNeeded(buffer.trim()));
     }
     html = paragraphed.join('\n');
+
+    // Restore code block macros after paragraph processing.
+    html = html.replace(/@@HARDIS_CODE_BLOCK_(\d+)@@/g, (_match, index) => codeBlockPlaceholders[parseInt(index, 10)] || '');
 
     return html;
   }

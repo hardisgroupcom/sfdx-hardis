@@ -8,7 +8,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import Cloudflare from 'cloudflare';
 import { execCommand, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
 
-import { CONSTANTS, getEnvVar } from '../../../config/index.js';
+import { CONSTANTS, getEnvVar, getLocalizedEnvVar } from '../../../config/index.js';
 import which from 'which';
 import { generateMkDocsHTML } from '../../../common/docBuilder/docUtils.js';
 import { UtilsAi } from '../../../common/aiProvider/utils.js';
@@ -156,9 +156,9 @@ The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
   // Search first for CLOUDFLARE_PROJECT_NAME_<lang> env var, then CLOUDFLARE_PROJECT_NAME, then git branch name
   // If none of them is found, use the default project name
   private async getProjectName(): Promise<string> {
-    const defaultProjectName = (getEnvVar('CLOUDFLARE_PROJECT_NAME') || this.currentGitBranch).replace(/\//g, "-").toLowerCase();
+    const defaultProjectName = (getLocalizedEnvVar('CLOUDFLARE_PROJECT_NAME') || this.currentGitBranch).replace(/\//g, "-").toLowerCase();
     const promptsLanguage = await UtilsAi.getPromptsLanguage();
-    const languageScopedProjectVariableName = `CLOUDFLARE_PROJECT_NAME_${promptsLanguage?.toUpperCase()}`;
+    const languageScopedProjectVariableName = `CLOUDFLARE_PROJECT_NAME_${promptsLanguage?.replace(/-/g, '_').toUpperCase()}`;
     if (getEnvVar(languageScopedProjectVariableName)) {
       return getEnvVar(languageScopedProjectVariableName) || defaultProjectName;
     }
