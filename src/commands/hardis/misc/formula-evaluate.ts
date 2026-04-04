@@ -215,6 +215,7 @@ The variable descriptor shape is:
               { title: 'Date',      value: 'date' },
               { title: 'Time',      value: 'time' },
               { title: 'Datetime',  value: 'datetime' },
+              { title: 'Picklist',  value: 'picklist' },
               { title: 'Null',      value: 'null' },
             ],
           });
