@@ -35,7 +35,6 @@ Key features:
 
 - **Multi-record evaluation:** Supply multiple records (each as a variable map) to evaluate the same formula against all of them in one shot.
 - **Inline or file input:** Provide the formula and records directly as CLI flags, or point to a JSON file that contains both.
-- **Structured JSON output:** Use \`--json\` to get machine-readable results, including per-record outcomes and any parser errors.
 - **Error transparency:** Formulon errors (wrong argument count, type mismatches, etc.) are surfaced per record rather than aborting the whole run.
 
 ### Input JSON file format
@@ -75,7 +74,6 @@ The variable descriptor shape is:
     `$ sf hardis:formula:evaluate --formula 'IF(TRUE, "Yes", "No")'`,
     `$ sf hardis:formula:evaluate --inputfile ./my-formula.json`,
     `$ sf hardis:formula:evaluate --formula 'Amount__c * 2' --records '[{"Amount__c":{"type":"literal","dataType":"number","value":100,"options":{"length":6,"scale":2}}}]'`,
-    `$ sf hardis:formula:evaluate --inputfile ./my-formula.json --json`,
   ];
 
   public static flags: any = {
