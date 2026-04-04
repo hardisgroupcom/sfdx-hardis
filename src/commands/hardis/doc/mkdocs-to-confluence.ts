@@ -604,6 +604,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
    */
   protected convertMarkdownToConfluenceStorage(markdown: string, currentFilePath: string): string {
     let html = markdown;
+    const codeBlockPlaceholders: string[] = [];
 
     // Normalize line endings to avoid regex issues on Windows (\r\n) or old Mac (\r)
     html = html.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -618,7 +619,10 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     // Convert fenced code blocks to Confluence code macro
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_match, lang, code) => {
       const langAttr = lang ? `<ac:parameter ac:name="language">${this.escapeXml(lang)}</ac:parameter>` : '';
-      return `<ac:structured-macro ac:name="code">${langAttr}<ac:plain-text-body><![CDATA[${code}]]></ac:plain-text-body></ac:structured-macro>`;
+      const macro = `<ac:structured-macro ac:name="code">${langAttr}<ac:plain-text-body><![CDATA[${code}]]></ac:plain-text-body></ac:structured-macro>`;
+      const placeholder = `@@HARDIS_CODE_BLOCK_${codeBlockPlaceholders.length}@@`;
+      codeBlockPlaceholders.push(macro);
+      return placeholder;
     });
 
     // Convert inline code
@@ -662,10 +666,10 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     // Convert bold
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 
-    // Convert italic (both *text* and _text_ variants)
-    // Negative lookbehind/lookahead on _..._  avoids matching snake_case identifiers
+    // Convert italic using *text* and _text_ variants.
+    // For _text_, apply strict boundaries so Salesforce API names like Siren__c are preserved.
     html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    html = html.replace(/(?<![a-zA-Z0-9])_([^_\n]+)_(?![a-zA-Z0-9])/g, '<em>$1</em>');
+    html = html.replace(/(?<![A-Za-z0-9_])_([^_\n]+)_(?![A-Za-z0-9_])/g, '<em>$1</em>');
 
     // Convert lists (supports nested bullet and ordered lists)
     html = this.convertLists(html);
@@ -685,7 +689,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
           paragraphed.push(this.wrapInParagraphIfNeeded(buffer.trim()));
         }
         buffer = '';
-      } else if (/^<(h[1-6]|p|ul|ol|li|table|ac:|div|hr|blockquote)/i.test(trimmed)) {
+      } else if (/^<(h[1-6]|p|ul|ol|li|table|ac:|div|hr|blockquote)/i.test(trimmed) || /^@@HARDIS_CODE_BLOCK_\d+@@$/.test(trimmed)) {
         // Block-level element: flush pending text first, then add the block directly
         if (buffer.trim()) {
           paragraphed.push(this.wrapInParagraphIfNeeded(buffer.trim()));
@@ -700,6 +704,9 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
       paragraphed.push(this.wrapInParagraphIfNeeded(buffer.trim()));
     }
     html = paragraphed.join('\n');
+
+    // Restore code block macros after paragraph processing.
+    html = html.replace(/@@HARDIS_CODE_BLOCK_(\d+)@@/g, (_match, index) => codeBlockPlaceholders[parseInt(index, 10)] || '');
 
     return html;
   }

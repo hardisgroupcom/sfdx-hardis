@@ -11,6 +11,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
   - Improve tables display to avoid overflow
 - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/):
   - When not running in CI and `--skip-doc` is not provided, prompt the user after backup completion and before doc generation
+- [hardis:doc:mkdocs-to-confluence](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-confluence/): Fix markdown/mermaid conversion to Confluence issues
 
 ## [7.6.3] 2026-01-04
 
