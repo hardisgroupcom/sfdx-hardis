@@ -13,6 +13,18 @@ export async function generatePdfFileFromMarkdown(markdownFile: string): Promise
               max-height: 20%;
               display: block;
               margin: 0 auto;
+            }
+            table {
+              width: 100%;
+              table-layout: fixed;
+              border-collapse: collapse;
+              word-break: break-word;
+              overflow-wrap: break-word;
+            }
+            th, td {
+              word-break: break-word;
+              overflow-wrap: break-word;
+              padding: 4px 8px;
             }`,
       stylesheet_encoding: 'utf-8'
     });
