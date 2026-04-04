@@ -65,7 +65,7 @@ Set these environment variables before running the command.
 |:---------------------------------|:----------------------------------------------------------|:----------:|
 | `CONFLUENCE_PARENT_PAGE_ID`      | ID of the page under which all doc pages will be nested   | Space root |
 | `CONFLUENCE_PAGE_PREFIX`         | Prefix added to every page title to avoid name collisions |  `[Doc] `  |
-| `CONFLUENCE_PAGE_SUFFIX`         | Suffix added to every page title to avoid name collisions |  _(empty)_ |
+| `CONFLUENCE_PAGE_SUFFIX`         | Suffix added to every page title to avoid name collisions | _(empty)_  |
 | `CONFLUENCE_PUBLISH_CONCURRENCY` | Number of pages published simultaneously                  |    `5`     |
 
 ### Language-specific variables
