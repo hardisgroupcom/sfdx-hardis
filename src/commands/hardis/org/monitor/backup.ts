@@ -6,7 +6,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
-import { execCommand, filterPackageXml, uxLog } from '../../../../common/utils/index.js';
+import { execCommand, filterPackageXml, isCI, uxLog } from '../../../../common/utils/index.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { CONSTANTS, getApiVersion, getConfig, getEnvVar } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
@@ -22,6 +22,7 @@ import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../../common/utils/gitUtils.js';
 import { updateSfdxProjectApiVersion } from '../../../../common/utils/projectUtils.js';
 import { reinitI18n, t } from '../../../../common/utils/i18n.js';
+import { prompts } from '../../../../common/utils/prompts.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -182,6 +183,7 @@ If Flow history doc always display a single state, you probably need to update y
     this.excludeNamespaces = flags["exclude-namespaces"] === true ? true : false;
     this.fullApplyFilters = flags["full-apply-filters"] === true ? true : false;
     this.skipDoc = flags["skip-doc"] === true ? true : false;
+    const skipDocFlagProvided = process.argv.includes("--skip-doc");
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
 
@@ -318,6 +320,18 @@ If Flow history doc always display a single state, you probably need to update y
         UpdatedMetadatas: this.diffFilesSimplified.length,
       },
     });
+
+    // Ask interactively only after backup is done and just before doc generation.
+    if (!isCI && !skipDocFlagProvided) {
+      const generateDocRes = await prompts({
+        type: 'confirm',
+        name: 'generateDoc',
+        message: t('doYouWantToGenerateProjectDocumentation'),
+        description: t('documentationGeneratedFromRetrievedSourcesIfYou'),
+        initial: true,
+      });
+      this.skipDoc = generateDocRes.generateDoc !== true;
+    }
 
     // Run project documentation generation
     if (this.skipDoc !== true) {

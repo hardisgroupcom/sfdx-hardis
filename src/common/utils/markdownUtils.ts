@@ -6,7 +6,8 @@ import { t } from './i18n.js';
 export async function generatePdfFileFromMarkdown(markdownFile: string): Promise<string | false> {
   try {
     const outputPdfFile = markdownFile.replace('.md', '.pdf');
-    await mdToPdf({ path: markdownFile }, {
+    const launchTimeoutMs = 120000;
+    const mdToPdfOptions = {
       dest: outputPdfFile,
       css: `img {
               max-width: 50%;
@@ -26,8 +27,19 @@ export async function generatePdfFileFromMarkdown(markdownFile: string): Promise
               overflow-wrap: break-word;
               padding: 4px 8px;
             }`,
-      stylesheet_encoding: 'utf-8'
-    });
+      stylesheet_encoding: 'utf-8',
+      launch_options: {
+        timeout: launchTimeoutMs,
+        args: [
+          "--disable-dev-shm-usage",
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+        ],
+      }
+    };
+
+    await mdToPdf({ path: markdownFile }, mdToPdfOptions);
+
     uxLog("success", this, c.green(t('pdfFileGeneratedFromDocumentation', { markdownFile, outputPdfFile: c.bold(outputPdfFile) })));
     return outputPdfFile;
   } catch (e: any) {

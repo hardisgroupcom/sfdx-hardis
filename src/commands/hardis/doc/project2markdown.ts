@@ -265,6 +265,7 @@ ${this.htmlInstructions}
   protected objectFiles: string[];
   protected allObjectsNames: string[];
   protected tempDir: string;
+  protected pdfQueue: Set<string> = new Set();
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
@@ -435,6 +436,9 @@ ${this.htmlInstructions}
       await this.generateExcelFile();
     }
 
+    // Generate PDFs at the end to keep Puppeteer usage in a single sequential batch.
+    await this.flushPdfGenerationQueue();
+
     // Delete files found in docs folder that contain characters not compliant with Windows file system
     // (e.g. /, \, :, *, ?, ", <, >, |)
     const filesToDelete = await glob("**/*", { cwd: this.outputMarkdownRoot, nodir: true });
@@ -583,9 +587,7 @@ ${this.htmlInstructions}
           await fs.writeFile(item.mdFile, getMetaHideLines() + updatedContent);
         }
         uxLog("log", this, c.grey(t('generatedMarkdownForApexClass', { item: item.apexName })));
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(item.mdFile);
-        }
+        this.queuePdfGeneration(item.mdFile);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
@@ -668,9 +670,7 @@ ${this.htmlInstructions}
           "PACKAGE_METADATAS": item.packageMetadatas,
           "PACKAGE_FILE": item.tmpOutput
         }).generateMarkdownFileFromXml();
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(item.mdFile);
-        }
+        this.queuePdfGeneration(item.mdFile);
         // Recovery to save git repos: Kill existing file if it has been created with forbidden characters
         if (item.mdFileBad !== item.mdFile && fs.existsSync(item.mdFileBad)) {
           await fs.remove(item.mdFileBad);
@@ -723,9 +723,7 @@ ${this.htmlInstructions}
       .for(workItems)
       .process(async (item) => {
         await new DocBuilderPage(item.pageName, item.pageXml, item.mdFile).generateMarkdownFileFromXml();
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(item.mdFile);
-        }
+        this.queuePdfGeneration(item.mdFile);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
@@ -775,9 +773,7 @@ ${this.htmlInstructions}
       .for(workItems)
       .process(async (item) => {
         await new DocBuilderProfile(item.profileName, item.profileXml, item.mdFile).generateMarkdownFileFromXml();
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(item.mdFile);
-        }
+        this.queuePdfGeneration(item.mdFile);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
@@ -829,9 +825,7 @@ ${this.htmlInstructions}
         // Permission Set Groups Table
         const relatedPsg = DocBuilderPermissionSetGroup.buildIndexTable('../permissionsetgroups/', this.permissionSetGroupsDescriptions, item.psName);
         await replaceInFile(item.mdFile, '<!-- Permission Set Groups table -->', relatedPsg.join("\n"));
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(item.mdFile);
-        }
+        this.queuePdfGeneration(item.mdFile);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
@@ -883,9 +877,7 @@ ${this.htmlInstructions}
       .for(workItems)
       .process(async (item) => {
         await new DocBuilderPermissionSetGroup(item.psgName, item.psgXml, item.mdFile).generateMarkdownFileFromXml();
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(item.mdFile);
-        }
+        this.queuePdfGeneration(item.mdFile);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
@@ -928,9 +920,7 @@ ${this.htmlInstructions}
     // Add Roles documentation
     const rolesIndexFile = path.join(this.outputMarkdownRoot, "roles.md");
     await DocBuilderRoles.generateMarkdownFileFromRoles(this.roleDescriptions, rolesIndexFile);
-    if (this.withPdf) {
-      await generatePdfFileFromMarkdown(rolesIndexFile);
-    }
+    this.queuePdfGeneration(rolesIndexFile);
   }
 
 
@@ -982,9 +972,7 @@ ${this.htmlInstructions}
       .for(workItems)
       .process(async (item) => {
         await new DocBuilderAssignmentRules(item.currentRuleName, item.ruleXml, item.mdFile).generateMarkdownFileFromXml();
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(item.mdFile);
-        }
+        this.queuePdfGeneration(item.mdFile);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
@@ -1039,9 +1027,7 @@ ${this.htmlInstructions}
       .for(workItems)
       .process(async (item) => {
         await new DocBuilderApprovalProcess(item.approvalProcessName, item.approvalProcessXml, item.mdFile).generateMarkdownFileFromXml();
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(item.mdFile);
-        }
+        this.queuePdfGeneration(item.mdFile);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
@@ -1103,9 +1089,7 @@ ${this.htmlInstructions}
       .for(workItems)
       .process(async (item) => {
         await new DocBuilderAutoResponseRules(item.currentRuleName, item.ruleXml, item.mdFile).generateMarkdownFileFromXml();
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(item.mdFile);
-        }
+        this.queuePdfGeneration(item.mdFile);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
@@ -1168,9 +1152,7 @@ ${this.htmlInstructions}
       .for(workItems)
       .process(async (item) => {
         await new DocBuilderEscalationRules(item.currentRuleName, item.ruleXml, item.mdFile).generateMarkdownFileFromXml();
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(item.mdFile);
-        }
+        this.queuePdfGeneration(item.mdFile);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
@@ -1242,9 +1224,7 @@ ${this.htmlInstructions}
       .for(workItems)
       .process(async (item) => {
         await new DocBuilderWorkflowRule(item.ruleName, item.ruleXml, item.mdFile).generateMarkdownFileFromXml();
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(item.mdFile);
-        }
+        this.queuePdfGeneration(item.mdFile);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
@@ -1279,9 +1259,7 @@ ${this.htmlInstructions}
     const indexLines = DocBuilderFlow.buildIndexTable('../flows/', processBuilders, this.outputMarkdownRoot);
     const processBuildersIndexFile = path.join(this.outputMarkdownRoot, "processBuilders", "index.md");
     await fs.writeFile(processBuildersIndexFile, getMetaHideLines() + indexLines.join("\n") + `\n${this.footer}\n`);
-    if (this.withPdf) {
-      await generatePdfFileFromMarkdown(processBuildersIndexFile);
-    }
+    this.queuePdfGeneration(processBuildersIndexFile);
   }
 
   private async buildMkDocsYml() {
@@ -1499,8 +1477,8 @@ ${this.htmlInstructions}
         const mermaidSchema = await new ObjectModelBuilder(item.objectName).buildObjectsMermaidSchema();
         await replaceInFile(item.objectMdFile, '<!-- Mermaid schema -->', '## Schema\n\n```mermaid\n' + mermaidSchema + '\n```\n');
         if (this.withPdf) {
-          /** Regenerate using Mermaid CLI to convert Mermaid code into SVG */
-          await generateMarkdownFileWithMermaid(item.objectMdFile, item.objectMdFile, null, true);
+          // Convert Mermaid to SVG before the final PDF batch.
+          await generateMarkdownFileWithMermaid(item.objectMdFile, item.objectMdFile, ["cli"], false);
         }
         // Flows Table
         const nonProcessBuilderFlows = this.flowDescriptions.filter(flow => flow.processType !== "Workflow");
@@ -1538,9 +1516,7 @@ ${this.htmlInstructions}
         const relatedWorkflowRulesTable = DocBuilderWorkflowRule.buildIndexTable('../workflowRules/', this.workflowRulesDescriptions, item.objectName);
         await replaceInFile(item.objectMdFile, '<!-- Workflow Rules table -->', relatedWorkflowRulesTable.join("\n"));
 
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(item.objectMdFile);
-        }
+        this.queuePdfGeneration(item.objectMdFile);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
@@ -1662,13 +1638,19 @@ ${this.htmlInstructions}
         if (this.debugMode) {
           await fs.copyFile(item.outputFlowMdFile, item.outputFlowMdFile.replace(".md", ".mermaid.md"));
         }
-        const gen2res = await generateMarkdownFileWithMermaid(item.outputFlowMdFile, item.outputFlowMdFile, null, this.withPdf);
+        const gen2res = await generateMarkdownFileWithMermaid(
+          item.outputFlowMdFile,
+          item.outputFlowMdFile,
+          this.withPdf ? ["cli"] : null,
+          false
+        );
         if (!gen2res) {
           flowWarnings.push(item.flowFile);
           counter++;
           WebSocketClient.sendProgressStepMessage(counter, flowWorkItems.length);
           return;
         }
+        this.queuePdfGeneration(item.outputFlowMdFile);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, flowWorkItems.length);
       });
@@ -1827,6 +1809,34 @@ ${this.htmlInstructions}
     }
   }
 
+  private queuePdfGeneration(markdownFile: string) {
+    if (!this.withPdf) {
+      return;
+    }
+    this.pdfQueue.add(markdownFile);
+  }
+
+  private async flushPdfGenerationQueue() {
+    if (!this.withPdf || this.pdfQueue.size === 0) {
+      return;
+    }
+    const queuedFiles = Array.from(this.pdfQueue);
+    const pdfBatchMessage = `[PDF] ${t('generatingPDFFiles')}`;
+    uxLog("action", this, c.cyan(pdfBatchMessage));
+    WebSocketClient.sendProgressStartMessage(pdfBatchMessage, queuedFiles.length);
+    let counter = 0;
+    for (const markdownFile of queuedFiles) {
+      const pdfGenerated = await generatePdfFileFromMarkdown(markdownFile);
+      if (pdfGenerated) {
+        const fileName = path.basename(pdfGenerated).replace('.pdf', '');
+        uxLog("log", this, c.grey(t('writtenPdfDocumentationIn', { fileName, pdfGenerated })));
+      }
+      counter++;
+      WebSocketClient.sendProgressStepMessage(counter, queuedFiles.length);
+    }
+    WebSocketClient.sendProgressEndMessage();
+  }
+
   private async generatePackageXmlMarkdown(packageXmlCandidates, instanceUrl) {
     uxLog("action", this, c.cyan(t('generatingPackageXmlDocumentation')));
     // Generate packageXml doc when found
@@ -1924,9 +1934,7 @@ ${this.htmlInstructions}
           LWC_JS_META: item.lwcMetaXml
         }).generateMarkdownFileFromXml();
 
-        if (this.withPdf) {
-          await generatePdfFileFromMarkdown(item.mdFile);
-        }
+        this.queuePdfGeneration(item.mdFile);
         counter++;
         WebSocketClient.sendProgressStepMessage(counter, workItems.length);
       });
