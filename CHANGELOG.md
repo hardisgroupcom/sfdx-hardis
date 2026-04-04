@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - CI: Scope SFDX_HARDIS_GITHUB_IO_SSH_PRIVATE_KEY to environment "doc" (also has been rotated)
+- Support localized configuration and CLI overrides for documentation publishing
 
 ## [7.6.3] 2026-01-04
 

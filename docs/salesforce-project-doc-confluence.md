@@ -17,6 +17,16 @@ sf hardis:doc:project2markdown
 sf hardis:doc:mkdocs-to-confluence
 ```
 
+You can also override Confluence targeting and naming from CLI flags:
+
+```bash
+sf hardis:doc:mkdocs-to-confluence \
+	--confluence-space-key MYSPACE \
+	--confluence-parent-page-id 123456789 \
+	--confluence-page-prefix "[Doc] " \
+	--confluence-page-suffix " [FR]"
+```
+
 ### From CI/CD
 
 ```bash
@@ -55,7 +65,23 @@ Set these environment variables before running the command.
 |:---------------------------------|:----------------------------------------------------------|:----------:|
 | `CONFLUENCE_PARENT_PAGE_ID`      | ID of the page under which all doc pages will be nested   | Space root |
 | `CONFLUENCE_PAGE_PREFIX`         | Prefix added to every page title to avoid name collisions |  `[Doc] `  |
+| `CONFLUENCE_PAGE_SUFFIX`         | Suffix added to every page title to avoid name collisions |  _(empty)_ |
 | `CONFLUENCE_PUBLISH_CONCURRENCY` | Number of pages published simultaneously                  |    `5`     |
+
+### Language-specific variables
+
+For these variables, the command first checks a language-scoped env var for the current i18n locale, then falls back to the default variable:
+
+- `CONFLUENCE_SPACE_KEY`
+- `CONFLUENCE_PARENT_PAGE_ID`
+- `CONFLUENCE_PAGE_PREFIX`
+- `CONFLUENCE_PAGE_SUFFIX`
+
+Examples:
+
+- `CONFLUENCE_SPACE_KEY_FR`
+- `CONFLUENCE_PARENT_PAGE_ID_NL`
+- `CONFLUENCE_PAGE_SUFFIX_PT_BR`
 
 > **Tip — finding the parent page ID:** open the target parent page in Confluence and look at the URL:
 > `https://mycompany.atlassian.net/wiki/spaces/MYSPACE/pages/**123456789**/My+Page`
