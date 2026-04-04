@@ -160,7 +160,7 @@ export function formatEvaluationSummary(summary: FormulaEvaluationSummary): stri
 }
 
 /**
- * Converts the summary into a plain JSON-serialisable object,
+ * Converts the summary into a plain JSON-serializable object,
  * ready to be returned from a SfCommand's `run()` for `--json` output.
  */
 export function summaryToJson(summary: FormulaEvaluationSummary): Record<string, unknown> {
