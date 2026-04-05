@@ -6,7 +6,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 
 ## [7.6.4] 2026-04-05
 
-- Support localized configuration and CLI overrides for documentation publishing (Cloudfare & Confluence)
+- Support localized configuration and CLI overrides for documentation publishing (Cloudflare & Confluence)
 - Update documentation related to sfdx-hardis plugins menus and commands discovery
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
   - Generate PDF files in a single final batch to improve Puppeteer reuse and reduce timeouts
