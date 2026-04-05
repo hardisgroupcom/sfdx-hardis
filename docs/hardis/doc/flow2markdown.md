@@ -25,30 +25,30 @@ Key features include:
 The command leverages several internal utilities and external libraries to achieve its functionality:
 
 - **Flow Metadata Parsing:** Reads and parses the XML content of Salesforce Flow metadata files (.flow-meta.xml).
-- **Markdown Generation:** Utilizes 	exttt{generateFlowMarkdownFile} to transform the parsed Flow data into a structured Markdown format.
-- **Mermaid Integration:** Employs 	exttt{generateMarkdownFileWithMermaid} to embed Mermaid diagrams within the Markdown output, which are then rendered by compatible Markdown viewers.
-- **AI Integration:** If enabled, it interacts with an AI service (via 	exttt{describeWithAi} option) to generate a high-level summary of the Flow.
-- **Git History Analysis:** For the --with-history flag, it uses 	exttt{generateHistoryDiffMarkdown} to analyze Git history and present changes to the Flow.
-- **File System Operations:** Uses 	exttt{fs-extra} for file system operations like reading input files, creating output directories (e.g., 	exttt{docs/flows/}), and writing Markdown and PDF files.
-- **Salesforce CLI Integration:** Uses 	exttt{@salesforce/sf-plugins-core} for command-line parsing and 	exttt{setConnectionVariables} for Salesforce organization context.
-- **WebSocket Communication:** Interacts with a WebSocket client (	exttt{WebSocketClient.requestOpenFile}) to open the generated Markdown file in a VS Code tab, enhancing user experience.
+- **Markdown Generation:** Utilizes `generateFlowMarkdownFile` to transform the parsed Flow data into a structured Markdown format.
+- **Mermaid Integration:** Employs `generateMarkdownFileWithMermaid` to embed Mermaid diagrams within the Markdown output, which are then rendered by compatible Markdown viewers.
+- **AI Integration:** If enabled, it interacts with an AI service (via `describeWithAi` option) to generate a high-level summary of the Flow.
+- **Git History Analysis:** For the `--with-history` flag, it uses `generateHistoryDiffMarkdown` to analyze Git history and present changes to the Flow.
+- **File System Operations:** Uses `fs-extra` for file system operations like reading input files, creating output directories (e.g., `docs/flows/`), and writing Markdown and PDF files.
+- **Salesforce CLI Integration:** Uses `@salesforce/sf-plugins-core` for command-line parsing and `setConnectionVariables` for Salesforce organization context.
+- **WebSocket Communication:** Interacts with a WebSocket client (`WebSocketClient.requestOpenFile`) to open the generated Markdown file in a VS Code tab, enhancing user experience.
 </details>
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                    | Default | Required | Options |
-|:------------------|:-------:|:-------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                |         |          |         |
-| flags-dir         | option  | undefined                                                                      |         |          |         |
-| inputfile<br/>-x  | option  | Path to Flow metadata file. If not specified, the command will prompt the user |         |          |         |
-| json              | boolean | Format output as json.                                                         |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output markdown file. Must end with .md             |         |          |         |
-| pdf               | boolean | Also generate the documentation in PDF format                                  |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                  |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                      |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                      |         |          |         |
-| with-history      | boolean | Generate a markdown file with the history diff of the Flow                     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|inputfile<br/>-x|option|Path to Flow metadata file. If not specified, the command will prompt the user||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|Force the path and name of output markdown file. Must end with .md||||
+|pdf|boolean|Also generate the documentation in PDF format||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+|with-history|boolean|Generate a markdown file with the history diff of the Flow||||
 
 ## Examples
 
