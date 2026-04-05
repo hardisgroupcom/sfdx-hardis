@@ -45,6 +45,7 @@ export default class DiagnoseDeployments extends SfCommand<any> {
   public static description = `Analyzes metadata deployments and validations by querying DeployRequest records via the Tooling API.
 
 Tracks:
+
 - Deployment/validation status (Succeeded, Failed, InProgress, Canceled)
 - Pending time (CreatedDate to StartDate)
 - Duration (StartDate to CompletedDate)

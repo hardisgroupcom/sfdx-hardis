@@ -14,6 +14,8 @@ This command is intended to safely remove PS attributes from Profiles after a mi
 - Filters the manifest to remove selected managed package namespaces and keep only relevant metadata types required for profile processing.
 - Retrieves the necessary metadata (profiles, objects, fields, classes) into the local project.
 - Iterates over selected profile files and mutes configured attributes (for example: classAccesses.enabled, fieldPermissions.readable/editable, objectPermissions.* and userPermissions.enabled).
+- Resets record type visibilities on purged objects: assigns the Master record type as default and visible, and unchecks all other record types.
+- Resets application visibilities: keeps only the default app visible, and sets all others to not visible.
 - Writes the modified profile XML files back to the repository
 - Deploys the updated profiles to the target org.
 

@@ -26,6 +26,7 @@ export default class DiagnoseUnderusedPermsets extends SfCommand<any> {
 **Detects Permission Sets and Permission Set Groups that are assigned to zero users or to a configurable low number of users.**
 
 This command helps identify permission sets and permission set groups that may be candidates for cleanup or consolidation. It includes:
+
 - **Permission Sets:** Custom permission sets (NamespacePrefix = null, LicenseId = null) not owned by profiles and not in groups. Excludes PSL-linked and managed package permission sets.
 - **Permission Set Groups:** Custom groups (NamespacePrefix = null). Excludes managed package groups.
 
