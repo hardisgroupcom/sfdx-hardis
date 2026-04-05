@@ -448,6 +448,26 @@ async function getKey(orgAlias: string, config: any) {
 
 // Try to find certificate key file for SF CLI connected app in different locations
 async function getCertificateKeyFile(orgAlias: string, config: any) {
+  // Support storing encrypted certificate content in a CI/CD env variable instead of a file in the repo.
+  // This allows enterprises to avoid committing key files to git.
+  // Variable names tried (in order): SFDX_CLIENT_CERT_<ORGALIAS>, SFDX_CLIENT_CERT
+  const certVarName = `SFDX_CLIENT_CERT_${orgAlias.toUpperCase()}`;
+  const encryptedCertContent = process.env[certVarName] || process.env.SFDX_CLIENT_CERT;
+  if (encryptedCertContent) {
+    const usedVarName = process.env[certVarName] ? certVarName : 'SFDX_CLIENT_CERT';
+    console.log(c.grey(`[sfdx-hardis] Using ${usedVarName} env variable for certificate key (no key file needed in repo)`));
+    const sshKey = await getKey(orgAlias, config);
+    if (sshKey) {
+      const tmpDir = await createTempDir();
+      const encryptedKeyFile = path.join(tmpDir, `${orgAlias}.key.enc`);
+      const tmpSshKeyFile = path.join(tmpDir, `${orgAlias}.key`);
+      await fs.writeFile(encryptedKeyFile, encryptedCertContent, 'utf8');
+      console.log(c.grey(`[sfdx-hardis] Decrypting key...`));
+      await decryptFile(encryptedKeyFile, tmpSshKeyFile, sshKey);
+      return tmpSshKeyFile;
+    }
+  }
+
   const filesToTry = [
     `./config/branches/.jwt/${orgAlias}.key`,
     `./config/.jwt/${orgAlias}.key`,
@@ -455,7 +475,7 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
     `./.ssh/${orgAlias}.key`,
     './ssh/server.key',
   ];
-  // Check if we find multiple files 
+  // Check if we find multiple files
   const filesFound = filesToTry.filter((file) => fs.existsSync(file));
   if (filesFound.length > 1) {
     console.warn(
@@ -484,9 +504,9 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
   if (isCI) {
     console.error(
       c.red(
-        `[sfdx-hardis] You must put a certificate key to connect via JWT.Possible locations:\n  -${filesToTry.join(
+        `[sfdx-hardis] You must put a certificate key to connect via JWT. Possible locations:\n  -${filesToTry.join(
           '\n  -'
-        )}`
+        )}\nAlternatively, set env variable SFDX_CLIENT_CERT_${orgAlias.toUpperCase()} with the encrypted key content to avoid storing key files in git.`
       )
     );
     uxLog("error", this, c.red(t('seeCiAuthenticationDocAtSalesforceCi', { CONSTANTS: CONSTANTS.DOC_URL_ROOT })));
