@@ -3,7 +3,7 @@
   "description": "French-army-knife Toolbox for Salesforce. Orchestrates base commands and assist users with interactive wizards to make much more than native Salesforce CLI + Allows you to define a complete CI/CD Pipeline and Schedule a daily Metadata backup & monitoring of your orgs + AI-enhanced org Documentation",
   "author": "NicolasVuillamy @nvuillam",
   "bugs": "https://github.com/hardisgroupcom/sfdx-hardis/issues",
-  "version": "7.6.3",
+  "version": "7.6.4",
   "dependencies": {
     "@actions/github": "7.0.0",
     "@cparra/apexdocs": "3.21.2",
