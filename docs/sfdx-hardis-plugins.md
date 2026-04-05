@@ -110,6 +110,121 @@ sf plugins install sfdx-hardis
 sf plugins install my-sfdx-hardis-plugin
 ```
 
+### 5. Expose custom menus in the VS Code extension
+
+The VS Code extension can now discover custom menus exposed by installed non-core Salesforce CLI plugins.
+
+If your plugin implements a command named `sf <your-plugin-prefix>:hardis-commands --json`, the extension will call it in the background and merge the returned menus with the menus defined in `.sfdx-hardis.yml`.
+
+This is useful when your plugin wants to surface guided entry points directly in:
+
+- the **Welcome page** as clickable cards
+- the **Commands panel** as custom menu sections
+
+Your command should return a JSON payload with this shape:
+
+```json
+{
+  "customCommands": [
+    {
+      "id": "my-plugin-menu",
+      "label": "My Plugin",
+      "description": "Short description shown on the Welcome page card",
+      "vscodeIcon": "symbol-misc",
+      "sldsIcon": "utility:apps",
+      "commands": [
+        {
+          "id": "analyze-org",
+          "label": "Analyze org",
+          "command": "sf myplugin analyze org",
+          "tooltip": "Run the org analysis workflow",
+          "helpUrl": "https://example.com/docs/analyze-org",
+          "icon": "cloudity-logo.svg",
+          "vscodeIcon": "run",
+          "sldsIcon": "utility:apex"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Notes:
+
+- Menu defaults: `vscodeIcon` defaults to `symbol-misc`, `sldsIcon` defaults to `utility:apps`.
+- Command defaults: `icon` defaults to `cloudity-logo.svg`, `vscodeIcon` defaults to `run`, `sldsIcon` defaults to `utility:apex`.
+- `vscodeIcon` must be a valid [VS Code ThemeIcon](https://code.visualstudio.com/api/references/icons-in-labels#icon-listing).
+- `sldsIcon` must be an [SLDS icon](https://www.lightningdesignsystem.com/icons/) in `category:name` format.
+
+Example implementation:
+
+```typescript
+import { SfCommand } from '@salesforce/sf-plugins-core';
+import { AnyJson } from '@salesforce/ts-types';
+
+export default class HardisCommands extends SfCommand<AnyJson> {
+  public static readonly summary = 'Expose example custom menus to the sfdx-hardis VS Code extension';
+
+  public static readonly description = `
+## Command Behavior
+
+**Returns example custom menus that illustrate the plugin discovery contract used by the sfdx-hardis VS Code extension.**
+
+This hidden command is a working example for plugin authors who want to expose Welcome page cards and Commands panel entries through the \`hardis-commands\` JSON contract.
+
+## Technical explanations
+
+- **Hidden helper command:** It is not intended for regular end users and is primarily consumed with \`--json\`.
+- **Discovery payload:** It returns \`customCommands\` with the menu and command metadata supported by the extension.
+- **Illustrative links:** Each sample command includes a documentation URL to demonstrate how help links can be attached to custom commands.
+`;
+
+  public static readonly examples = ['$ sf sfdx-hardis:hardis-commands --json'];
+
+  public static readonly aliases = ['sfdx-hardis:hardis-commands'];
+
+  public static readonly hidden = true;
+
+  public static readonly requiresProject = false;
+
+  public async run(): Promise<AnyJson> {
+    return {
+      customCommands: [
+        {
+          id: 'plugin-api-examples',
+          label: 'Plugin API examples',
+          description: 'Example custom commands exposed through the sfdx-hardis plugin API',
+          vscodeIcon: 'symbol-misc',
+          sldsIcon: 'utility:apps',
+          commands: [
+            {
+              id: 'generate-project-documentation',
+              label: 'Generate project documentation',
+              command: 'sf hardis:doc:project2markdown',
+              tooltip: 'Generate Markdown project documentation from the current repository',
+              helpUrl: 'https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/',
+              icon: 'file.svg',
+              vscodeIcon: 'file',
+              sldsIcon: 'utility:file',
+            },
+            {
+              id: 'detect-legacy-api-usage',
+              label: 'Detect legacy API usage',
+              command: 'sf hardis:org:diagnose:legacyapi',
+              tooltip: 'Analyze the org and exported logs to find deprecated Salesforce API versions',
+              helpUrl: 'https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/',
+              icon: 'salesforce.svg',
+              vscodeIcon: 'warning',
+              sldsIcon: 'utility:warning',
+            },
+          ],
+        },
+      ],
+    };
+  }
+}
+```
+
 ## API Reference
 
 ### `uxLog(logType, commandThis, message, sensitive?)`

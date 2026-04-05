@@ -785,24 +785,31 @@
     },
     "customCommands": {
       "$id": "#/properties/customCommands",
-      "description": "List of custom commands for VsCode SFDX-Hardis extension",
+      "description": "List of custom menus and commands for the VsCode SFDX-Hardis extension Welcome page and Commands panel",
       "examples": [
         [
           {
             "id": "custom-menu",
             "label": "Custom commands",
+            "description": "Optional description shown on the Welcome page card",
+            "vscodeIcon": "symbol-misc",
+            "sldsIcon": "utility:apps",
             "commands": [
               {
                 "id": "generate-manifest-xml",
                 "label": "Generate manifest",
                 "icon": "file.svg",
+                "vscodeIcon": "file",
+                "sldsIcon": "utility:file",
                 "tooltip": "Generates a manifest package.xml using local sfdx source files",
-                "command": "sf project generate manifest --source-path force-app --name myNewManifest"
+                "command": "sf project generate manifest --source-dir force-app --name myNewManifest"
               },
               {
                 "id": "list-all-orgs",
                 "label": "List all orgs",
                 "icon": "salesforce.svg",
+                "vscodeIcon": "run",
+                "sldsIcon": "utility:apex",
                 "tooltip": "List all orgs that has already been authenticated using sfdx",
                 "command": "sf org list --all"
               }
@@ -841,6 +848,26 @@
             "title": "Label",
             "type": "string"
           },
+          "description": {
+            "$id": "#/properties/customCommands/items/properties/description",
+            "description": "Optional description shown on the Welcome page card for the menu",
+            "title": "Description",
+            "type": "string"
+          },
+          "vscodeIcon": {
+            "$id": "#/properties/customCommands/items/properties/vscodeIcon",
+            "description": "VS Code ThemeIcon id used for the custom menu in the Commands panel. Default: symbol-misc",
+            "title": "VS Code icon",
+            "type": "string",
+            "default": "symbol-misc"
+          },
+          "sldsIcon": {
+            "$id": "#/properties/customCommands/items/properties/sldsIcon",
+            "description": "SLDS icon name in category:name format used for the custom menu on the Welcome page. Default: utility:apps",
+            "title": "SLDS icon",
+            "type": "string",
+            "default": "utility:apps"
+          },
           "commands": {
             "$id": "#/properties/customCommands/items/properties/commands",
             "description": "List of commands of the menu",
@@ -864,9 +891,23 @@
                 },
                 "icon": {
                   "$id": "#/properties/customCommands/items/properties/commands/items/properties/icon",
-                  "description": "Icon (can be any of svg icons of this list: https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/master/resources",
+                  "description": "SVG icon filename for the command tree item (can be any icon in https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/main/resources). Default: cloudity-logo.svg",
                   "title": "Icon",
                   "type": "string"
+                },
+                "vscodeIcon": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/vscodeIcon",
+                  "description": "VS Code ThemeIcon id used for the command in the Commands panel. Default: run",
+                  "title": "VS Code icon",
+                  "type": "string",
+                  "default": "run"
+                },
+                "sldsIcon": {
+                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/sldsIcon",
+                  "description": "SLDS icon name in category:name format used for the command on the Welcome page. Default: utility:apex",
+                  "title": "SLDS icon",
+                  "type": "string",
+                  "default": "utility:apex"
                 },
                 "tooltip": {
                   "$id": "#/properties/customCommands/items/properties/commands/items/properties/tooltip",
@@ -908,7 +949,7 @@
     "customCommandsPosition": {
       "$id": "#/properties/customCommandsPosition",
       "description": "Position of custom commands in the menu (first or last)",
-      "default": "first",
+      "default": "last",
       "enum": [
         "first",
         "last"
