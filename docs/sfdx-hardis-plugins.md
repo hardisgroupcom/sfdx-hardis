@@ -110,6 +110,89 @@ sf plugins install sfdx-hardis
 sf plugins install my-sfdx-hardis-plugin
 ```
 
+### 5. Expose custom menus in the VS Code extension
+
+The VS Code extension can now discover custom menus exposed by installed non-core Salesforce CLI plugins.
+
+If your plugin implements a command named `sf <your-plugin-prefix>:hardis-commands --json`, the extension will call it in the background and merge the returned menus with the menus defined in `.sfdx-hardis.yml`.
+
+This is useful when your plugin wants to surface guided entry points directly in:
+
+- the **Welcome page** as clickable cards
+- the **Commands panel** as custom menu sections
+
+Your command should return a JSON payload with this shape:
+
+```json
+{
+  "customCommands": [
+    {
+      "id": "my-plugin-menu",
+      "label": "My Plugin",
+      "description": "Short description shown on the Welcome page card",
+      "vscodeIcon": "symbol-misc",
+      "sldsIcon": "utility:apps",
+      "commands": [
+        {
+          "id": "analyze-org",
+          "label": "Analyze org",
+          "command": "sf myplugin analyze org",
+          "tooltip": "Run the org analysis workflow",
+          "helpUrl": "https://example.com/docs/analyze-org",
+          "icon": "cloudity-logo.svg",
+          "vscodeIcon": "run",
+          "sldsIcon": "utility:apex"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Notes:
+
+- Menu defaults: `vscodeIcon` defaults to `symbol-misc`, `sldsIcon` defaults to `utility:apps`.
+- Command defaults: `icon` defaults to `cloudity-logo.svg`, `vscodeIcon` defaults to `run`, `sldsIcon` defaults to `utility:apex`.
+- `vscodeIcon` must be a valid [VS Code ThemeIcon](https://code.visualstudio.com/api/references/icons-in-labels#icon-listing).
+- `sldsIcon` must be an [SLDS icon](https://www.lightningdesignsystem.com/icons/) in `category:name` format.
+
+Example implementation:
+
+```typescript
+import { SfCommand } from "@salesforce/sf-plugins-core";
+import { type AnyJson } from "@salesforce/ts-types";
+
+export default class HardisCommands extends SfCommand<AnyJson> {
+  public static readonly summary = "Expose custom menus to the sfdx-hardis VS Code extension";
+  public static readonly hidden = true;
+
+  public async run(): Promise<AnyJson> {
+    return {
+      customCommands: [
+        {
+          id: "my-plugin-menu",
+          label: "My Plugin",
+          description: "Quick entry points for plugin workflows",
+          vscodeIcon: "symbol-misc",
+          sldsIcon: "utility:apps",
+          commands: [
+            {
+              id: "analyze-org",
+              label: "Analyze org",
+              command: "sf myplugin analyze org",
+              tooltip: "Run the org analysis workflow",
+              helpUrl: "https://example.com/docs/analyze-org",
+              vscodeIcon: "run",
+              sldsIcon: "utility:apex",
+            },
+          ],
+        },
+      ],
+    } as AnyJson;
+  }
+}
+```
+
 ## API Reference
 
 ### `uxLog(logType, commandThis, message, sensitive?)`
