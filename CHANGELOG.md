@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Add more conditions to open WebSocketClient (exclude hidden commands, hardis-commands to list custom menus and known plugins)
+
 ## [7.6.4] 2026-04-05
 
 - Support localized configuration and CLI overrides for documentation publishing (Cloudflare & Confluence)
