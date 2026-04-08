@@ -93,6 +93,7 @@ You can force the daily run of all commands by defining env var `MONITORING_IGNO
 | [Quality Checks with MegaLinter](salesforce-monitoring-quality-checks.md)                                                   | Daily     |
 | [Detect calls to deprecated API versions](salesforce-monitoring-deprecated-api-calls.md)                                    | Daily     |
 | [Detect limits issues](salesforce-monitoring-org-limits.md)                                                                 | Daily     |
+| [Detect Apex flex queue backlog](salesforce-monitoring-apex-flex-queue.md)                                                  | Daily     |
 | [Detect Apex and Flow errors](salesforce-monitoring-apex-flow-errors.md)                                                    | Daily     |
 | [Detect unsecured Connected Apps in an org](salesforce-monitoring-unsecured-connected-apps.md)                              | Daily     |
 | [Analyze metadata deployments and validations](salesforce-monitoring-deployments.md)                                        | Daily     |
