@@ -1400,7 +1400,7 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, sens
   }
   // VS Code sfdx-hardis log
   if (WebSocketClient.isAlive() && !text.includes('[command]') && !text.includes('[NotifProvider]')) {
-    if (sensitive && !text.includes('SFDX_CLIENT_ID_') && !text.includes('SFDX_CLIENT_KEY_')) {
+    if (sensitive && !text.includes('SFDX_CLIENT_ID_') && !text.includes('SFDX_CLIENT_KEY_') && !text.includes('SFDX_CLIENT_CERT_')) {
       WebSocketClient.sendCommandLogLineMessage('OBFUSCATED LOG LINE');
     }
     else {
