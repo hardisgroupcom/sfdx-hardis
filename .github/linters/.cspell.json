@@ -11,7 +11,8 @@
     "**/metadataList.ts",
     "**/actionsProvider/**",
     "**/i18n/*.json",
-    "**/copilot-instructions.md"
+    "**/copilot-instructions.md",
+    "**/cryptoUtils.test.ts"
   ],
   "language": "en",
   "version": "0.2",
