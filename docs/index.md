@@ -3,7 +3,7 @@
 
 [![sfdx-hardis by Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner.png)](https://sfdx-hardis.cloudity.com)
 
-_Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl) _and [_Dreamforce 24!_](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH)_
+_Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl) _and [_Dreamforce 24!_](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH)_ - [**See sfdx-hardis v7 Walkthrough video**](https://www.youtube.com/watch?v=t8jT6IPd9n4)
 
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
@@ -49,6 +49,10 @@ ___
 [![VsCode SFDX Hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/extension-demo.gif)](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
 ___
+
+_See sfdx-hardis v7 Walkthrough_
+
+[![sfdx-hardis v7 walkthrough](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-v7-demo.png)](https://www.youtube.com/watch?v=t8jT6IPd9n4)
 
 _Featured on SalesforceBen_
 
@@ -447,7 +451,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Roman Hentschke](https://www.linkedin.com/in/derroman/), for building the BitBucket CI/CD integration and german translation
 - [Leo Jokinen](https://www.linkedin.com/in/leojokinen/), for building the GitHub CI/CD integration
 - [Mariia Pyvovarchuk](https://www.linkedin.com/in/mpyvo/), for her work about generating automations documentation
-- [Matheus Delazeri](https://www.linkedin.com/in/matheus-delazeri-souza/), for the PDF output of documentation
+- [Matheus Delazeri](https://www.linkedin.com/in/matheus-delazeri-souza/), for the PDF output of documentation and brazilian-portuguese translation
 - [Taha Basri](https://www.linkedin.com/in/tahabasri/), for his work about generating documentation of LWC
 - [Anush Poudel](https://www.linkedin.com/in/anushpoudel/), for integrating sfdx-hardis with multiple LLMs using langchainJs
 - [Sebastien Colladon](https://www.linkedin.com/in/sebastien-colladon/), for providing sfdx-git-delta which is highly used within sfdx-hardis
@@ -462,6 +466,8 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Matt Carvin](https://www.linkedin.com/in/matthew-carvin/), for underused permission sets command
 - [Salik Lennert Pedersen](https://www.linkedin.com/in/saliklp/), for his numerous bug fixes
 - [Ryad Meguimi](https://www.linkedin.com/in/ryad-meguimi/), for the Light & Dark modes and the whole refactoring of CSS
+- [Nicholas Fiorendi](https://www.linkedin.com/in/nicholas-fiorendi/), for Italian translation
+- [Timo Pouw](https://www.linkedin.com/in/timopouw/), for Dutch translation
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 
@@ -471,6 +477,9 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - German: [Roman Hentschke](https://www.linkedin.com/in/derroman/)
 - Polish: [Dagmara Ryborz](https://www.linkedin.com/in/dagmara-ryborz-7618b991/)
 - Japanese: [Shinnosuke Takakura](https://www.linkedin.com/in/shinnosuke-takakura-9041ba217/)
+- Brazilian-portuguese: [Matheus Delazeri](https://www.linkedin.com/in/matheus-delazeri-souza/)
+- Italian: [Nicholas Fiorendi](https://www.linkedin.com/in/nicholas-fiorendi/)
+- Dutch: [Timo Pouw](https://www.linkedin.com/in/timopouw/)
 
 <!-- contributors.md end -->
 
@@ -520,6 +529,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                       |       |
 | [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                 |       |
 | [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                   |       |
+| [**hardis:doc:mkdocs-to-confluence**](hardis/doc/mkdocs-to-confluence.md)   |       |
 | [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)   |       |
 | [**hardis:doc:object-field-usage**](hardis/doc/object-field-usage.md)       |       |
 | [**hardis:doc:override-prompts**](hardis/doc/override-prompts.md)           |       |
@@ -570,10 +580,13 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:org:data:delete**](hardis/org/data/delete.md)                                           |       |
 | [**hardis:org:data:export**](hardis/org/data/export.md)                                           |       |
 | [**hardis:org:data:import**](hardis/org/data/import.md)                                           |       |
+| [**hardis:org:diagnose:apex-api-version**](hardis/org/diagnose/apex-api-version.md)               |       |
 | [**hardis:org:diagnose:audittrail**](hardis/org/diagnose/audittrail.md)                           |       |
+| [**hardis:org:diagnose:deployments**](hardis/org/diagnose/deployments.md)                         |       |
 | [**hardis:org:diagnose:instanceupgrade**](hardis/org/diagnose/instanceupgrade.md)                 |       |
 | [**hardis:org:diagnose:legacyapi**](hardis/org/diagnose/legacyapi.md)                             |       |
 | [**hardis:org:diagnose:licenses**](hardis/org/diagnose/licenses.md)                               |       |
+| [**hardis:org:diagnose:minimalpermsets**](hardis/org/diagnose/minimalpermsets.md)                 |       |
 | [**hardis:org:diagnose:releaseupdates**](hardis/org/diagnose/releaseupdates.md)                   |       |
 | [**hardis:org:diagnose:storage-stats**](hardis/org/diagnose/storage-stats.md)                     |       |
 | [**hardis:org:diagnose:underusedpermsets**](hardis/org/diagnose/underusedpermsets.md)             |       |

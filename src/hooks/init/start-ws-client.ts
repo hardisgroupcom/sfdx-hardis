@@ -55,6 +55,11 @@ function shouldInitWebSocket(commandId: string, config: any): boolean {
     return true;
   }
 
+  // Always deactivate when listing commands
+  if (commandId.includes("hardis-commands")) {
+    return false;
+  }
+
   // Check SFDX_HARDIS_PLUGIN_PREFIXES env var for additional command prefixes (comma-separated)
   const extraPrefixes = process.env.SFDX_HARDIS_PLUGIN_PREFIXES;
   if (extraPrefixes) {
@@ -71,8 +76,11 @@ function shouldInitWebSocket(commandId: string, config: any): boolean {
       if (command.pluginType === 'core') {
         return false; // Core commands are not from plugins, so we can skip
       }
+      if (command.hidden === true) {
+        return false; // Hidden commands are likely not meant for end-users, so we can skip
+      }
       const pluginName = command?.pluginName ?? command?.plugin?.name;
-      if (!pluginName || ["sfdx-git-delta", "sfdmu"].includes(pluginName)) {
+      if (!pluginName || ["sfdx-git-delta", "sfdmu", "sf-git-merge-driver"].includes(pluginName)) {
         return false; // If we can't determine the plugin, we can't assume it depends on sfdx-hardis
       }
       for (const plugin of config.plugins?.values?.() ?? []) {

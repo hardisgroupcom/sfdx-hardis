@@ -11,8 +11,9 @@
 This command facilitates the setup of automated CI/CD pipelines, enabling seamless deployments from specific Git branches to designated Salesforce orgs. It supports both standard Salesforce orgs and Dev Hub configurations, catering to various enterprise deployment workflows.
 
 This command supports two authentication app types:
-- **Connected App** (traditional) - Standard OAuth app that works with all Salesforce editions
-- **External Client App** (modern) - Fully metadata-based, packageable in 2GP, requires API v59+
+
+- **External Client App** (modern)
+- **Connected App** (legacy)
 
 Both use JWT Bearer flow with SSL certificates for secure CI/CD authentication.
 
@@ -33,12 +34,15 @@ The command's implementation involves several key technical aspects:
 - **SF CLI Integration:** Utilizes 
 @salesforce/sf-plugins-core
  for command structure and flag parsing.
+
 - **Interactive Prompts:** Employs the 
 prompts
  library for interactive user input, guiding the configuration process.
+
 - **Git Integration:** Interacts with Git to retrieve branch information using 
 `git().branch(["--list", "-r"])`
 .
+
 - **Configuration Management:** Leverages internal utilities (`checkConfig`, `getConfig`, `setConfig`, `setInConfigFile`) to read from and write to project-specific configuration files (e.g., `.sfdx-hardis.<branchName>.yml`).
 - **Salesforce CLI Execution:** Executes Salesforce CLI commands programmatically via `execSfdxJson` for org interactions.
 - **SSL Certificate Generation:** Calls `generateSSLCertificate` to create necessary SSL certificates for JWT-based authentication.
