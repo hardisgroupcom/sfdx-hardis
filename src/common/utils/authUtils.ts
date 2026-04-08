@@ -152,16 +152,20 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         '';
     }
     if (authUrl.includes('force://')) {
-      const authFile = path.join(await createTempDir(), 'sfdxScratchAuth.txt');
-      await fs.writeFile(authFile, authUrl, 'utf8');
-      const authCommand =
-        `sf org login sfdx-url -f "${authFile}"` +
-        (isDevHub ? ` --set-default-dev-hub` : (setDefaultOrg ? ` --set-default` : '')) +
-        (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
-      await execCommand(authCommand, this, { fail: true, output: false });
-      uxLog("action", this, c.cyan(t('successfullyLoggedUsingSfdxauthurl')));
-      await fs.remove(authFile);
-      return true;
+      const authTmpDir = await createTempDir();
+      const authFile = path.join(authTmpDir, 'sfdxScratchAuth.txt');
+      try {
+        await fs.writeFile(authFile, authUrl, 'utf8');
+        const authCommand =
+          `sf org login sfdx-url -f "${authFile}"` +
+          (isDevHub ? ` --set-default-dev-hub` : (setDefaultOrg ? ` --set-default` : '')) +
+          (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
+        await execCommand(authCommand, this, { fail: true, output: false });
+        uxLog("action", this, c.cyan(t('successfullyLoggedUsingSfdxauthurl')));
+        return true;
+      } finally {
+        await fs.remove(authTmpDir);
+      }
     }
 
     // Get auth variables, with priority CLI arguments, environment variables, then .sfdx-hardis.yml config file
@@ -208,23 +212,25 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
     const usernameArg = options.setDefault === false ? '' : isDevHub ? '--set-default-dev-hub' : '--set-default';
     if (crtKeyfile && sfdxClientId && username) {
       // Login with JWT
-      const loginCommand =
-        'sf org login jwt' +
-        ` ${usernameArg}` +
-        ` --client-id ${sfdxClientId}` +
-        ` --jwt-key-file "${crtKeyfile}"` +
-        ` --username ${username}` +
-        ` --instance-url ${instanceUrl}` +
-        (orgAlias && !options.forceUsername ? ` --alias ${orgAlias}` : '');
-      const jwtAuthRes = await execSfdxJson(loginCommand, this, {
-        fail: false,
-        output: false
-      });
-      // await fs.remove(crtKeyfile); // Delete private key file from temp folder TODO: move to postrun hook
-      logged = jwtAuthRes.status === 0;
-      if (!logged) {
-        console.error(c.red(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`));
-        process.exit(1);
+      try {
+        const loginCommand =
+          'sf org login jwt' +
+          ` ${usernameArg}` +
+          ` --client-id ${sfdxClientId}` +
+          ` --jwt-key-file "${crtKeyfile}"` +
+          ` --username ${username}` +
+          ` --instance-url ${instanceUrl}` +
+          (orgAlias && !options.forceUsername ? ` --alias ${orgAlias}` : '');
+        const jwtAuthRes = await execSfdxJson(loginCommand, this, {
+          fail: false,
+          output: false
+        });
+        logged = jwtAuthRes.status === 0;
+        if (!logged) {
+          throw new SfError(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`);
+        }
+      } finally {
+        await safeDeleteAuthTempFile(crtKeyfile);
       }
     } else if (!isCI) {
       // Login with web auth
@@ -354,6 +360,17 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
   }
   // Fallback: should not be reached, but satisfy the boolean return contract
   return false;
+}
+
+async function safeDeleteAuthTempFile(filePath?: string | null): Promise<void> {
+  if (!filePath) {
+    return;
+  }
+  await fs.remove(filePath);
+  const parentDir = path.dirname(filePath);
+  if (path.basename(parentDir).startsWith('sfdx-hardis-')) {
+    await fs.remove(parentDir);
+  }
 }
 
 // Get clientId for SFDX connected app
