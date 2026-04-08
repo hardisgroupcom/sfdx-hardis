@@ -1400,7 +1400,7 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, sens
   }
   // VS Code sfdx-hardis log
   if (WebSocketClient.isAlive() && !text.includes('[command]') && !text.includes('[NotifProvider]')) {
-    if (sensitive && !text.includes('SFDX_CLIENT_ID_') && !text.includes('SFDX_CLIENT_KEY_')) {
+    if (sensitive && !text.includes('SFDX_CLIENT_ID_') && !text.includes('SFDX_CLIENT_KEY_') && !text.includes('SFDX_CLIENT_CERT_')) {
       WebSocketClient.sendCommandLogLineMessage('OBFUSCATED LOG LINE');
     }
     else {
@@ -1714,6 +1714,7 @@ export async function generateSSLCertificate(
   await fs.copy(path.join(tmpDir, 'server.key'), targetKeyFile);
   const encryptionKey = await encryptFile(targetKeyFile);
   WebSocketClient.sendReportFileMessage(targetKeyFile, t('encryptedSslCertificateKeyForBranch', { branchName }), 'report');
+  const encryptedCertificateValue = await fs.readFile(targetKeyFile, 'utf8');
   // Copy certificate file in user home project
   const crtFile = path.join(os.homedir(), `${branchName}.crt`);
   await fs.copy(path.join(tmpDir, 'server.crt'), crtFile);
@@ -1733,12 +1734,37 @@ export async function generateSSLCertificate(
   if (confirmResponse.value === true) {
     const clientIdStringRaw = `SFDX_CLIENT_ID_${branchName.toUpperCase()}`;
     const clientKeyStringRaw = `SFDX_CLIENT_KEY_${branchName.toUpperCase()}`;
+    const clientCertStringRaw = `SFDX_CLIENT_CERT_${branchName.toUpperCase()}`;
+
+    const certStorageResponse = await prompts({
+      type: 'select',
+      name: 'value',
+      message: c.cyanBright(t('whichJwtCertificateStorageModeDoYouWant')),
+      description: t('descSelectJwtCertificateStorageMode'),
+      choices: [
+        {
+          title: t('titleJwtCertificateAsEncryptedFile'),
+          value: 'file',
+          description: t('descJwtCertificateAsEncryptedFile')
+        },
+        {
+          title: t('titleJwtCertificateAsCiVariable'),
+          value: 'variable',
+          description: t('descJwtCertificateAsCiVariable')
+        },
+      ],
+      initial: 0,
+    });
+    const storeCertificateInVariable = certStorageResponse.value === 'variable';
+
     const idKeyValues = {
       clientIdString: clientIdStringRaw,
       clientIdValueString: consumerKey,
       clientKeyString: clientKeyStringRaw,
       clientKeyValueString: encryptionKey,
-    }
+      clientCertString: clientCertStringRaw,
+      clientCertValueString: encryptedCertificateValue,
+    };
     // Add <copy></copy> around values if we have VsCode UI to allow to display copy icon
     if (WebSocketClient.isAliveWithLwcUI()) {
       for (const key of Object.keys(idKeyValues)) {
@@ -1746,7 +1772,11 @@ export async function generateSSLCertificate(
       }
     }
 
-    uxLog("action", commandThis, c.cyan(t('pleaseConfigureBothBelowVariablesInYour')));
+    uxLog(
+      "action",
+      commandThis,
+      c.cyan(t(storeCertificateInVariable ? 'pleaseConfigureThreeBelowVariablesInYour' : 'pleaseConfigureBothBelowVariablesInYour'))
+    );
     uxLog(
       "log",
       commandThis,
@@ -1770,12 +1800,40 @@ export async function generateSSLCertificate(
       )),
       true
     );
+    if (storeCertificateInVariable) {
+      uxLog(
+        "log",
+        commandThis,
+        c.grey(c.cyanBright(
+          `- Variable: ${c.green(
+            c.bold(idKeyValues.clientCertString)
+          )}
+          - Value: ${c.bold(c.green(idKeyValues.clientCertValueString))}`
+        )),
+        true
+      );
+    }
     uxLog(
       "log",
       commandThis,
       c.grey(c.yellow(t('helpToConfigureCiCdVariablesUrl', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/` })))
     );
-    uxLog("warning", commandThis, c.yellow(t('ifYouAreUsingGithubOrAzure', { clientIdStringRaw, clientKeyStringRaw })));
+    uxLog(
+      "warning",
+      commandThis,
+      c.yellow(
+        t(
+          storeCertificateInVariable ? 'ifYouAreUsingGithubOrAzureWithClientCert' : 'ifYouAreUsingGithubOrAzure',
+          { clientIdStringRaw, clientKeyStringRaw, clientCertStringRaw }
+        )
+      )
+    );
+
+    if (storeCertificateInVariable) {
+      await fs.remove(targetKeyFile);
+      uxLog("log", commandThis, c.cyan(t('encryptedCertificateKeyFileDeletedLocally', { targetKeyFile })));
+    }
+
     WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, t('helpToConfigureCiVariables'), "docUrl");
     await prompts({
       type: 'confirm',
