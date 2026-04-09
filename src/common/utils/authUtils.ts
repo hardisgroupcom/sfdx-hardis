@@ -10,6 +10,7 @@ import {
   getCurrentGitBranch,
   isCI,
   promptInstanceUrl,
+  stripAnsi,
   uxLog,
 } from './index.js';
 import { CONSTANTS, getConfig } from '../../config/index.js';
@@ -633,8 +634,9 @@ async function execSfdxWebLoginWithLiveVerificationCode(command: string, command
     const reportedCodes = new Set<string>();
 
     const reportVerificationCodeFromText = (text: string) => {
+      const cleanText = stripAnsi(text);
       const codeRegex = /Verification\s+Code:\s*([A-Za-z0-9]+)/gi;
-      for (const match of text.matchAll(codeRegex)) {
+      for (const match of cleanText.matchAll(codeRegex)) {
         const code = match[1];
         if (!code || reportedCodes.has(code)) {
           continue;
@@ -686,15 +688,38 @@ async function execSfdxWebLoginWithLiveVerificationCode(command: string, command
       }
 
       const status = typeof exitCode === 'number' ? exitCode : 1;
+      const stdoutClean = stripAnsi(stdout);
+      const stderrClean = stripAnsi(stderr);
       if (status === 0) {
-        resolve({ status: 0, stdout, stderr });
+        const parsedResult = parseAuthorizedUserFromWebLoginOutput(`${stdoutClean}\n${stderrClean}`);
+        resolve({
+          status: 0,
+          stdout,
+          stderr,
+          username: parsedResult?.username || null,
+          orgId: parsedResult?.orgId || null,
+          result: parsedResult ? { username: parsedResult.username, id: parsedResult.orgId } : null,
+        });
         return;
       }
 
-      const output = `${stdout}\n${stderr}`.trim();
+      const output = `${stdoutClean}\n${stderrClean}`.trim();
       reject(new SfError(c.red(`[sfdx-hardis][ERROR] Command failed (${status}): ${command}\n${output}`)));
     });
   });
+}
+
+function parseAuthorizedUserFromWebLoginOutput(output: string): { username: string; orgId: string } | null {
+  const cleanOutput = stripAnsi(output);
+  const successRegex = /Successfully\s+authorized\s+([^\s]+)\s+with\s+org\s+ID\s+([A-Za-z0-9]+)/i;
+  const match = cleanOutput.match(successRegex);
+  if (!match?.[1] || !match?.[2]) {
+    return null;
+  }
+  return {
+    username: match[1],
+    orgId: match[2],
+  };
 }
 
 function extractPortFromOauthError(error: unknown): number | null {
