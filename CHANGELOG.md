@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Handle verification code for web org authentication
+
 ## [7.7.0] 2026-04-08
 
 - Add more conditions to open WebSocketClient (exclude hidden commands, hardis-commands to list custom menus and known plugins)

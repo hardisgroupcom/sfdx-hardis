@@ -55,6 +55,7 @@
   "attemptingToExtractEcaConsumerSecret": "Próba automatycznego wyodrębnienia Consumer Secret dla External Client App {{appName}}...",
   "authenticatingToScratchOrgFromPool": "Uwierzytelnianie do Scratch Org z puli...",
   "authenticatingUsingWebLogin": "Uwierzytelnianie za pomocą logowania przez przeglądarkę...",
+  "verificationCodeEnterInBrowser": "Kod weryfikacyjny: {{code}}. Jeśli pojawi się prośba, wpisz ten kod w oknie przeglądarki.",
   "authenticationHasExpiredPleaseLogIn": "Uwierzytelnienie wygasło. Zaloguj się ponownie za pomocą przeglądarki internetowej.",
   "autocleantypesHasBeenActivatedOnTheNew": "autoCleanTypes {{defaultAutoCleanTypes}} zostało aktywowane w nowym projekcie.",
   "automaticallyImportDataSetForScratchOrgs": "Automatycznie importuj ten zestaw danych podczas tworzenia nowych Scratch Org do prac deweloperskich",

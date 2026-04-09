@@ -1,7 +1,7 @@
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { exec as childExec } from 'node:child_process';
+import { exec as childExec, spawn as childSpawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import {
   createTempDir,
@@ -10,6 +10,7 @@ import {
   getCurrentGitBranch,
   isCI,
   promptInstanceUrl,
+  stripAnsi,
   uxLog,
 } from './index.js';
 import { CONSTANTS, getConfig } from '../../config/index.js';
@@ -269,7 +270,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
       const maxWebLoginAttempts = 2;
       for (let attempt = 1; attempt <= maxWebLoginAttempts; attempt++) {
         try {
-          loginResult = await execSfdxJson(loginCommand, this, { output: false, fail: true, spinner: false });
+          loginResult = await execSfdxWebLoginWithLiveVerificationCode(loginCommand, this);
           break;
         } catch (e) {
           const errorMessage = (e as Error).message || '';
@@ -607,6 +608,118 @@ async function safeExecCommand(command: string): Promise<{ success: boolean; std
     const stderr = (error as any)?.stderr ?? '';
     return { success: false, stdout, stderr };
   }
+}
+
+async function execSfdxWebLoginWithLiveVerificationCode(command: string, commandThis: any): Promise<any> {
+  const env = { ...process.env };
+  env.FORCE_COLOR = '0';
+  if (env?.NODE_OPTIONS && env.NODE_OPTIONS.includes('--inspect-brk')) {
+    env.NODE_OPTIONS = '';
+  }
+  if (env?.JSFORCE_LOG_LEVEL) {
+    env.JSFORCE_LOG_LEVEL = '';
+  }
+
+  return await new Promise((resolve, reject) => {
+    const child = childSpawn(command, {
+      env,
+      shell: true,
+      windowsHide: true,
+    });
+
+    let stdout = '';
+    let stderr = '';
+    let stdoutPending = '';
+    let stderrPending = '';
+    const reportedCodes = new Set<string>();
+
+    const reportVerificationCodeFromText = (text: string) => {
+      const cleanText = stripAnsi(text);
+      const codeRegex = /Verification\s+Code:\s*([A-Za-z0-9]+)/gi;
+      for (const match of cleanText.matchAll(codeRegex)) {
+        const code = match[1];
+        if (!code || reportedCodes.has(code)) {
+          continue;
+        }
+        reportedCodes.add(code);
+        uxLog('action', commandThis, c.cyan(t('verificationCodeEnterInBrowser', { code: c.bold(code) })));
+      }
+    };
+
+    const processChunk = (chunk: string, isStdout: boolean) => {
+      if (isStdout) {
+        stdout += chunk;
+        stdoutPending += chunk;
+      } else {
+        stderr += chunk;
+        stderrPending += chunk;
+      }
+      const pending = isStdout ? stdoutPending : stderrPending;
+      const lines = pending.split(/\r?\n/);
+      const keep = lines.pop() ?? '';
+      for (const line of lines) {
+        reportVerificationCodeFromText(line);
+      }
+      if (isStdout) {
+        stdoutPending = keep;
+      } else {
+        stderrPending = keep;
+      }
+    };
+
+    child.stdout.on('data', (data: Buffer | string) => {
+      processChunk(data.toString(), true);
+    });
+
+    child.stderr.on('data', (data: Buffer | string) => {
+      processChunk(data.toString(), false);
+    });
+
+    child.on('error', (error) => {
+      reject(error);
+    });
+
+    child.on('close', (exitCode) => {
+      if (stdoutPending) {
+        reportVerificationCodeFromText(stdoutPending);
+      }
+      if (stderrPending) {
+        reportVerificationCodeFromText(stderrPending);
+      }
+
+      const status = typeof exitCode === 'number' ? exitCode : 1;
+      const stdoutClean = stripAnsi(stdout);
+      const stderrClean = stripAnsi(stderr);
+      if (status === 0) {
+        const parsedResult = parseAuthorizedUserFromWebLoginOutput(`${stdoutClean}\n${stderrClean}`);
+        resolve({
+          status: 0,
+          stdout,
+          stderr,
+          username: parsedResult?.username || null,
+          orgId: parsedResult?.orgId || null,
+          result: parsedResult ? { username: parsedResult.username, id: parsedResult.orgId } : null,
+        });
+        return;
+      }
+
+      const output = `${stdoutClean}\n${stderrClean}`.trim();
+      reject(new SfError(c.red(`[sfdx-hardis][ERROR] Command failed (${status}): ${command}\n${output}`)));
+    });
+  });
+}
+
+function parseAuthorizedUserFromWebLoginOutput(output: string): { username: string; orgId: string } | null {
+  const cleanOutput = stripAnsi(output);
+  const successRegex = /Successfully\s+authorized\s+([^\s]+)\s+with\s+org\s+ID\s+([A-Za-z0-9]+)/i;
+  const match = cleanOutput.match(successRegex);
+  if (!match?.[1] || !match?.[2]) {
+    return null;
+  }
+  return {
+    username: match[1],
+    orgId: match[2],
+  };
 }
 
 function extractPortFromOauthError(error: unknown): number | null {
