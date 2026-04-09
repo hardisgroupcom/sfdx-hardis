@@ -1,7 +1,7 @@
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { exec as childExec } from 'node:child_process';
+import { exec as childExec, spawn as childSpawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import {
   createTempDir,
@@ -269,7 +269,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
       const maxWebLoginAttempts = 2;
       for (let attempt = 1; attempt <= maxWebLoginAttempts; attempt++) {
         try {
-          loginResult = await execSfdxJson(loginCommand, this, { output: false, fail: true, spinner: false });
+          loginResult = await execSfdxJsonWithLiveVerificationCode(loginCommand, this);
           break;
         } catch (e) {
           const errorMessage = (e as Error).message || '';
@@ -607,6 +607,99 @@ async function safeExecCommand(command: string): Promise<{ success: boolean; std
     const stderr = (error as any)?.stderr ?? '';
     return { success: false, stdout, stderr };
   }
+}
+
+async function execSfdxJsonWithLiveVerificationCode(command: string, commandThis: any): Promise<any> {
+  const commandWithJson = command.includes('--json') ? command : `${command} --json`;
+  const env = { ...process.env };
+  env.FORCE_COLOR = '0';
+  if (env?.NODE_OPTIONS && env.NODE_OPTIONS.includes('--inspect-brk')) {
+    env.NODE_OPTIONS = '';
+  }
+  if (env?.JSFORCE_LOG_LEVEL) {
+    env.JSFORCE_LOG_LEVEL = '';
+  }
+
+  return await new Promise((resolve, reject) => {
+    const child = childSpawn(commandWithJson, {
+      env,
+      shell: true,
+      windowsHide: true,
+    });
+
+    let stdout = '';
+    let stderr = '';
+    let stdoutPending = '';
+    let stderrPending = '';
+    const reportedCodes = new Set<string>();
+
+    const reportVerificationCodeFromText = (text: string) => {
+      const codeRegex = /Verification\s+Code:\s*([A-Za-z0-9]+)/gi;
+      for (const match of text.matchAll(codeRegex)) {
+        const code = match[1];
+        if (!code || reportedCodes.has(code)) {
+          continue;
+        }
+        reportedCodes.add(code);
+        uxLog('action', commandThis, c.cyan(t('verificationCodeEnterInBrowser', { code: c.bold(code) })));
+      }
+    };
+
+    const processChunk = (chunk: string, isStdout: boolean) => {
+      if (isStdout) {
+        stdout += chunk;
+        stdoutPending += chunk;
+      } else {
+        stderr += chunk;
+        stderrPending += chunk;
+      }
+      const pending = isStdout ? stdoutPending : stderrPending;
+      const lines = pending.split(/\r?\n/);
+      const keep = lines.pop() ?? '';
+      for (const line of lines) {
+        reportVerificationCodeFromText(line);
+      }
+      if (isStdout) {
+        stdoutPending = keep;
+      } else {
+        stderrPending = keep;
+      }
+    };
+
+    child.stdout.on('data', (data: Buffer | string) => {
+      processChunk(data.toString(), true);
+    });
+
+    child.stderr.on('data', (data: Buffer | string) => {
+      processChunk(data.toString(), false);
+    });
+
+    child.on('error', (error) => {
+      reject(error);
+    });
+
+    child.on('close', () => {
+      if (stdoutPending) {
+        reportVerificationCodeFromText(stdoutPending);
+      }
+      if (stderrPending) {
+        reportVerificationCodeFromText(stderrPending);
+      }
+
+      try {
+        const parsedResult = JSON.parse(stdout);
+        if (parsedResult.status && parsedResult.status > 0) {
+          throw new SfError(c.red(`[sfdx-hardis][ERROR] Command failed: ${commandWithJson}`));
+        }
+        if (stderr && stderr.trim().length > 0) {
+          uxLog('other', commandThis, '[sfdx-hardis][WARNING] stderr: ' + c.yellow(stderr));
+        }
+        resolve(parsedResult);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
 }
 
 function extractPortFromOauthError(error: unknown): number | null {

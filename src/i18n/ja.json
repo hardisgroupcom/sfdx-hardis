@@ -55,6 +55,7 @@
   "attemptingToExtractEcaConsumerSecret": "外部クライアントアプリケーション {{appName}} の Consumer Secret を自動抽出しています...",
   "authenticatingToScratchOrgFromPool": "プールからスクラッチ組織に認証しています...",
   "authenticatingUsingWebLogin": "Web ログインを使用して認証しています...",
+  "verificationCodeEnterInBrowser": "確認コード: {{code}}。求められた場合は、このコードをブラウザウィンドウに入力してください。",
   "authenticationHasExpiredPleaseLogIn": "認証の有効期限が切れました。Webブラウザから再度ログインしてください。",
   "autocleantypesHasBeenActivatedOnTheNew": "新しいプロジェクトで autoCleanTypes {{defaultAutoCleanTypes}} が有効化されました。",
   "automaticallyImportDataSetForScratchOrgs": "開発用の新しいスクラッチ組織を作成する際に、このデータセットを自動的にインポートする",

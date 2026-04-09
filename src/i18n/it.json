@@ -55,6 +55,7 @@
   "attemptingToExtractEcaConsumerSecret": "Tentativo di estrazione automatica del Consumer Secret per l'External Client App {{appName}}...",
   "authenticatingToScratchOrgFromPool": "Autenticazione alla scratch org dal pool...",
   "authenticatingUsingWebLogin": "Autenticazione tramite web login...",
+  "verificationCodeEnterInBrowser": "Codice di verifica: {{code}}. Se richiesto, inserisci questo codice nella finestra del browser.",
   "authenticationHasExpiredPleaseLogIn": "La tua autenticazione è scaduta. Effettua nuovamente l'accesso tramite il browser web.",
   "autocleantypesHasBeenActivatedOnTheNew": "autoCleanTypes {{defaultAutoCleanTypes}} è stato attivato nel nuovo progetto.",
   "automaticallyImportDataSetForScratchOrgs": "Importa automaticamente questo set di dati durante la creazione di nuove scratch org per lo sviluppo",
