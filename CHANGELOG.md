@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [7.7.1] 2026-04-09
+
 - Handle verification code for web org authentication
 
 ## [7.7.0] 2026-04-08
