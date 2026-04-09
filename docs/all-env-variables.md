@@ -86,6 +86,7 @@ These variables control specific behaviors and configurations within sfdx-hardis
 | **DEBUG**                                 | Enable debug logging output                                                                                         | `undefined`   | `'true'`, `'false'`                                                       | [`src/common/websocketClient.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/websocketClient.ts)                                                 |
 | **DEBUG_DEPLOY**                          | Enable debug logging for deployment operations                                                                      | `undefined`   | `'true'`, `'false'`                                                       | [`src/common/utils/orgUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/orgUtils.ts)                                                   |
 | **APEX_CHARACTER_LIMIT**                  | Maximum Apex code character limit for org (classes + triggers, excludes @isTest). Used by limits monitoring.        | `6000000`     | Positive integers (e.g., `'3000000'`, `'10000000'`)                       | [`src/common/utils/apexLimitUtils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/apexLimitUtils.ts)                                       |
+| **APEX_FLEX_QUEUE_THRESHOLD**             | Minimum count of `AsyncApexJob` rows with `Status = 'Holding'` to raise a warning (Apex flex queue monitor). **Error** severity when count reaches 100 (queue full). | `90`          | Integers `1`–`100` (e.g., `'90'`, `'95'`)                                  | [`src/commands/hardis/org/diagnose/flex-queue.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/diagnose/flex-queue.ts)               |
 | **MONITORING_BACKUP_SKIP_METADATA_TYPES** | Metadata types to skip during backup monitoring                                                                     | `undefined`   | Comma-separated metadata type names (e.g., `'Document,Report,Dashboard'`) | Found in changelog and documentation                                                                                                                                     |
 | **MONITORING_SKIP_APEX_LIMIT**            | Skip Apex character limit monitoring when running org limits check                                                  | `undefined`   | `'true'`, `'false'`                                                       | [`src/commands/hardis/org/monitor/limits.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/monitor/limits.ts)                         |
 | **DEPRECATED_APEX_API_VERSION**           | API version threshold for apex-api-version diagnose. Classes/triggers with ApiVersion at or below this are flagged. | `50`          | Positive integers (e.g., `'50'`, `'55'`)                                  | [`src/commands/hardis/org/diagnose/apex-api-version.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/diagnose/apex-api-version.ts)   |
@@ -284,9 +285,9 @@ Project-wide defaults (e.g., preferred model) can be stored directly at the root
 
 ## Summary
 
-This documentation covers **188 environment variables** used throughout sfdx-hardis:
+This documentation covers **189 environment variables** used throughout sfdx-hardis:
 
-- **Custom sfdx-hardis Variables**: 32 variables controlling native behavior
+- **Custom sfdx-hardis Variables**: 33 variables controlling native behavior
 - **Tool-Specific Variables**: 156 variables for external integrations
 
 The variables are organized by functionality to help developers and administrators understand their purpose and configure them appropriately for their environments.

@@ -33,6 +33,12 @@ export default class MonitorAll extends SfCommand<any> {
       frequency: 'daily',
     },
     {
+      key: 'APEX_FLEX_QUEUE',
+      title: 'Detect Apex flex queue backlog (AsyncApexJob Holding)',
+      command: 'sf hardis:org:diagnose:flex-queue',
+      frequency: 'daily',
+    },
+    {
       key: 'APEX_FLOW_ERRORS',
       title: 'Detect Apex and Flow errors',
       command: 'sf hardis:org:monitor:errors',
