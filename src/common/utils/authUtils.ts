@@ -269,7 +269,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
       const maxWebLoginAttempts = 2;
       for (let attempt = 1; attempt <= maxWebLoginAttempts; attempt++) {
         try {
-          loginResult = await execSfdxJsonWithLiveVerificationCode(loginCommand, this);
+          loginResult = await execSfdxWebLoginWithLiveVerificationCode(loginCommand, this);
           break;
         } catch (e) {
           const errorMessage = (e as Error).message || '';
@@ -609,8 +609,7 @@ async function safeExecCommand(command: string): Promise<{ success: boolean; std
   }
 }
 
-async function execSfdxJsonWithLiveVerificationCode(command: string, commandThis: any): Promise<any> {
-  const commandWithJson = command.includes('--json') ? command : `${command} --json`;
+async function execSfdxWebLoginWithLiveVerificationCode(command: string, commandThis: any): Promise<any> {
   const env = { ...process.env };
   env.FORCE_COLOR = '0';
   if (env?.NODE_OPTIONS && env.NODE_OPTIONS.includes('--inspect-brk')) {
@@ -621,7 +620,7 @@ async function execSfdxJsonWithLiveVerificationCode(command: string, commandThis
   }
 
   return await new Promise((resolve, reject) => {
-    const child = childSpawn(commandWithJson, {
+    const child = childSpawn(command, {
       env,
       shell: true,
       windowsHide: true,
@@ -678,7 +677,7 @@ async function execSfdxJsonWithLiveVerificationCode(command: string, commandThis
       reject(error);
     });
 
-    child.on('close', () => {
+    child.on('close', (exitCode) => {
       if (stdoutPending) {
         reportVerificationCodeFromText(stdoutPending);
       }
@@ -686,18 +685,14 @@ async function execSfdxJsonWithLiveVerificationCode(command: string, commandThis
         reportVerificationCodeFromText(stderrPending);
       }
 
-      try {
-        const parsedResult = JSON.parse(stdout);
-        if (parsedResult.status && parsedResult.status > 0) {
-          throw new SfError(c.red(`[sfdx-hardis][ERROR] Command failed: ${commandWithJson}`));
-        }
-        if (stderr && stderr.trim().length > 0) {
-          uxLog('other', commandThis, '[sfdx-hardis][WARNING] stderr: ' + c.yellow(stderr));
-        }
-        resolve(parsedResult);
-      } catch (error) {
-        reject(error);
+      const status = typeof exitCode === 'number' ? exitCode : 1;
+      if (status === 0) {
+        resolve({ status: 0, stdout, stderr });
+        return;
       }
+
+      const output = `${stdout}\n${stderr}`.trim();
+      reject(new SfError(c.red(`[sfdx-hardis][ERROR] Command failed (${status}): ${command}\n${output}`)));
     });
   });
 }
