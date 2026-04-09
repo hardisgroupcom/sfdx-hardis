@@ -55,6 +55,7 @@
   "attemptingToExtractEcaConsumerSecret": "Poging om Consumer Secret voor External Client App {{appName}} automatisch te extraheren...",
   "authenticatingToScratchOrgFromPool": "Authenticeren bij scratch org vanuit de pool...",
   "authenticatingUsingWebLogin": "Authenticeren via weblogin...",
+  "verificationCodeEnterInBrowser": "Verificatiecode: {{code}}. Voer deze code in je browservenster in als daarom wordt gevraagd.",
   "authenticationHasExpiredPleaseLogIn": "Je authenticatie is verlopen. Log opnieuw in via de webbrowser.",
   "autocleantypesHasBeenActivatedOnTheNew": "autoCleanTypes {{defaultAutoCleanTypes}} is geactiveerd op het nieuwe project.",
   "automaticallyImportDataSetForScratchOrgs": "Deze dataset automatisch importeren bij het aanmaken van nieuwe scratch orgs voor ontwikkeling",
