@@ -1485,6 +1485,13 @@ export function listMetadataTypes() {
         xmlName: 'DynamicTrigger',
       },
       {
+        directoryName: 'dynamicUiCardDefinitions',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'dynamicUiCardDefinition',
+        xmlName: 'DynamicUiCardDefinition',
+      },
+      {
         directoryName: 'eclair',
         inFolder: false,
         metaFile: true,
