@@ -19,8 +19,8 @@ Key: **APEX_FLEX_QUEUE**
 
 ### Environment variables
 
-| Variable                       | Description                                                                 | Default |
-|:-------------------------------|:----------------------------------------------------------------------------|:--------|
+| Variable                      | Description                                                                                 | Default |
+|:------------------------------|:--------------------------------------------------------------------------------------------|:--------|
 | **APEX_FLEX_QUEUE_THRESHOLD** | Alert when the number of Holding jobs is **≥** this value (1–100). Overrides `--threshold`. | `90`    |
 
 You can disable this check in `hardis:org:monitor:all` with `MONITORING_DISABLE=APEX_FLEX_QUEUE` or the same value under `monitoringDisable` in `.sfdx-hardis.yml`. See [all environment variables](all-env-variables.md#monitoring-debugging).
