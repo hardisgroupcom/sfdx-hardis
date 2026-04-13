@@ -13,7 +13,7 @@
     "**/i18n/*.json",
     "**/copilot-instructions.md",
     "**/cryptoUtils.test.ts",
-    ".grype.yaml"
+    "**/.grype.yaml"
   ],
   "language": "en",
   "version": "0.2",
