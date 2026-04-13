@@ -18,6 +18,18 @@ You can define them at two levels:
 - **Pull Request level**: these actions will be run during the deployment of a feature pull request, but also during deployment of Pull Requests between major branches (ex: `preprod` to `main`)
 - **Project level**: The deployment actions will be performed during each deployment
 
+### Use DevOps Pipeline UI
+
+You can display / create / edit deployment actions using **My Pull Request** button in the DevOps pipeline UI.
+
+![](assets/images/card-my-pull-request.png)
+
+![](assets/images/screenshot-edit-deployment-action.jpg)
+
+You can also see deployment actions of already merged Pull Requests by clicking on a major git branch name in the pipeline.
+
+![](assets/images/screenshot-deployment-actions.jpg)
+
 ### How to define deployment actions
 
 Actions can be defined in properties `commandsPreDeploy` / `commandsPostDeploy` of .sfdx-hardis.yml config files.
