@@ -78,6 +78,8 @@
   },
   "resolutions": {
     "axios": "1.15.0",
+    "wireit/brace-expansion": "5.0.5",
+    "@typescript-eslint/typescript-estree/minimatch": "9.0.9",
     "basic-ftp": "5.2.2",
     "form-data": "4.0.5",
     "fast-xml-parser": "5.5.10",
