@@ -19,14 +19,14 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
 ## Parameters
 
-| Name                      | Type    | Description                                                                                                                          | Default | Required |
-|:--------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|
-| debug<br/>-d              | boolean | Activate debug mode (more logs)                                                                                                      | `false` |          |
-| outputfile<br/>-f         | string  | Force the path and name of the output report file (must end with `.csv`)                                                             |         |          |
-| skipauth                  | boolean | Skip authentication check when a default username is required                                                                      |         |          |
-| target-org<br/>-o         | string  | Salesforce org alias or username                                                                                                     |         |          |
-| threshold<br/>-t          | integer | Alert when Holding job count ≥ this value (1–100). Overrides **APEX_FLEX_QUEUE_THRESHOLD**.                                          | `90`*   |          |
-| websocket                 | string  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                            |         |          |
+| Name              |  Type   | Description                                                                                 | Default | Required |
+|:------------------|:-------:|:--------------------------------------------------------------------------------------------|:-------:|:--------:|
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                             | `false` |          |
+| outputfile<br/>-f | string  | Force the path and name of the output report file (must end with `.csv`)                    |         |          |
+| skipauth          | boolean | Skip authentication check when a default username is required                               |         |          |
+| target-org<br/>-o | string  | Salesforce org alias or username                                                            |         |          |
+| threshold<br/>-t  | integer | Alert when Holding job count ≥ this value (1–100). Overrides **APEX_FLEX_QUEUE_THRESHOLD**. |  `90`*  |          |
+| websocket         | string  | Websocket host:port for VsCode SFDX Hardis UI integration                                   |         |          |
 
 \*Default **90** comes from **APEX_FLEX_QUEUE_THRESHOLD** when the env var is set; otherwise **90**.
 
