@@ -121,13 +121,13 @@ flowchart LR
 
 The command reads its configuration from `config/.sfdx-hardis.yml` (or branch-specific files like `config/branches/.sfdx-hardis-BRANCHNAME.yml`). See [CI/CD Configuration](salesforce-ci-cd-config-home.md) for details. Key flags include:
 
-| Flag | Description |
-|:-----|:------------|
-| `--check` | Simulate deployment (dry-run / validation) |
-| `--testlevel` | [Apex test level](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_deploy.htm#deploy_options) (RunLocalTests, RunRepositoryTests, NoTestRun, etc.) |
-| `--runtests` | Specific test classes or regex filter |
-| `--delta` | Force delta deployment from CLI |
-| `--packagexml` | Custom path to package.xml |
+| Flag           | Description                                                                                                                                                                     |
+|:---------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--check`      | Simulate deployment (dry-run / validation)                                                                                                                                      |
+| `--testlevel`  | [Apex test level](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_deploy.htm#deploy_options) (RunLocalTests, RunRepositoryTests, NoTestRun, etc.) |
+| `--runtests`   | Specific test classes or regex filter                                                                                                                                           |
+| `--delta`      | Force delta deployment from CLI                                                                                                                                                 |
+| `--packagexml` | Custom path to package.xml                                                                                                                                                      |
 
 ### Test Level & Test Class Resolution
 
@@ -327,8 +327,8 @@ flowchart TD
     class DONE_OW sfSuccess
 ```
 
-| File | Behavior |
-|:-----|:---------|
+| File                                | Behavior                                                                                                                                                                                                |
+|:------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `manifest/package-no-overwrite.xml` | Items are deployed **only if they don't already exist** in the target org. Useful for ListViews that clients customize in production. See [Overwrite management](salesforce-ci-cd-config-overwrite.md). |
 
 ---
@@ -404,14 +404,14 @@ flowchart TD
 
 **Action types:**
 
-| Type | Description | Key parameters |
-|:-----|:------------|:---------------|
-| `command` (default) | Runs any CLI command (sf, sfdx, shell...) | `command`: the command line to execute |
-| `data` | Imports data using an [SFDMU](https://help.sfdmu.com/) project workspace | `parameters.sfdmuProject`: name of the [SFDMU data workspace](https://help.sfdmu.com/full-documentation/configuration/basic-usage) |
-| `apex` | Executes an [anonymous Apex](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_anonymous_block.htm) script file | `parameters.apexScript`: path to the `.apex` script file |
-| `publish-community` | Publishes an [Experience Cloud](https://developer.salesforce.com/docs/atlas.en-us.communities_dev.meta/communities_dev/communities_dev_intro.htm) community/site | `parameters.communityName`: name of the community to publish |
-| `schedule-batch` | Schedules (or re-schedules) a [Schedulable](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_scheduler.htm) Apex batch | `parameters.className`: Apex class name, `parameters.cronExpression`: cron schedule, `parameters.jobName` (optional) |
-| `manual` | Records manual instructions in the deployment report (not executed automatically) | `parameters.instructions`: text instructions for the operator |
+| Type                | Description                                                                                                                                                      | Key parameters                                                                                                                     |
+|:--------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------|
+| `command` (default) | Runs any CLI command (sf, sfdx, shell...)                                                                                                                        | `command`: the command line to execute                                                                                             |
+| `data`              | Imports data using an [SFDMU](https://help.sfdmu.com/) project workspace                                                                                         | `parameters.sfdmuProject`: name of the [SFDMU data workspace](https://help.sfdmu.com/full-documentation/configuration/basic-usage) |
+| `apex`              | Executes an [anonymous Apex](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_anonymous_block.htm) script file                      | `parameters.apexScript`: path to the `.apex` script file                                                                           |
+| `publish-community` | Publishes an [Experience Cloud](https://developer.salesforce.com/docs/atlas.en-us.communities_dev.meta/communities_dev/communities_dev_intro.htm) community/site | `parameters.communityName`: name of the community to publish                                                                       |
+| `schedule-batch`    | Schedules (or re-schedules) a [Schedulable](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_scheduler.htm) Apex batch              | `parameters.className`: Apex class name, `parameters.cronExpression`: cron schedule, `parameters.jobName` (optional)               |
+| `manual`            | Records manual instructions in the deployment report (not executed automatically)                                                                                | `parameters.instructions`: text instructions for the operator                                                                      |
 
 All action types support the following common properties: `id`, `label`, `context`, `skipIfError`, `allowFailure`, `runOnlyOnceByOrg`, and `customUsername` (to run the action as a different user).
 
@@ -542,62 +542,62 @@ The PR comment includes:
 
 ### .sfdx-hardis.yml properties
 
-| Property | Type | Description |
-|:---------|:-----|:------------|
-| `useDeltaDeployment` | boolean | Enable [delta deployments](salesforce-ci-cd-config-delta-deployment.md) between minor and major branches |
-| `enableDeltaDeploymentBetweenMajorBranches` | boolean | Force [delta](salesforce-ci-cd-config-delta-deployment.md) even between major branches (not recommended) |
-| `useSmartDeploymentTests` | boolean | Skip tests if only [non-impacting metadata types](#delta-processing) in delta |
-| `testLevel` | string | Default [test level](#test-level--test-class-resolution) |
-| `enableDeploymentApexTestClasses` | boolean | Enable custom [test class list](#test-level--test-class-resolution) from config/PRs |
-| `deploymentApexTestClasses` | string[] | Explicit list of [Apex test classes](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_testing.htm) to run |
-| `installedPackages` | object[] | [Packages to install](salesforce-ci-cd-work-on-task-install-packages.md) during deployment |
-| `installPackagesDuringCheckDeploy` | boolean | Install [packages](salesforce-ci-cd-work-on-task-install-packages.md) even in check-only mode |
-| `commandsPreDeploy` | object[] | [Commands to run before deployment](salesforce-ci-cd-work-on-task-deployment-actions.md) |
-| `commandsPostDeploy` | object[] | [Commands to run after deployment](salesforce-ci-cd-work-on-task-deployment-actions.md) |
-| `packageNoOverwritePath` | string | Custom path to [package-no-overwrite.xml](salesforce-ci-cd-config-overwrite.md) |
-| `testCoverageNotBlocking` | boolean | Allow deployment even with insufficient [code coverage](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_code_coverage_intro.htm) |
-| `skipCodeCoverage` | boolean | Skip [code coverage](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_code_coverage_intro.htm) reporting |
+| Property                                    | Type     | Description                                                                                                                                                    |
+|:--------------------------------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `useDeltaDeployment`                        | boolean  | Enable [delta deployments](salesforce-ci-cd-config-delta-deployment.md) between minor and major branches                                                       |
+| `enableDeltaDeploymentBetweenMajorBranches` | boolean  | Force [delta](salesforce-ci-cd-config-delta-deployment.md) even between major branches (not recommended)                                                       |
+| `useSmartDeploymentTests`                   | boolean  | Skip tests if only [non-impacting metadata types](#delta-processing) in delta                                                                                  |
+| `testLevel`                                 | string   | Default [test level](#test-level--test-class-resolution)                                                                                                       |
+| `enableDeploymentApexTestClasses`           | boolean  | Enable custom [test class list](#test-level--test-class-resolution) from config/PRs                                                                            |
+| `deploymentApexTestClasses`                 | string[] | Explicit list of [Apex test classes](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_testing.htm) to run                         |
+| `installedPackages`                         | object[] | [Packages to install](salesforce-ci-cd-work-on-task-install-packages.md) during deployment                                                                     |
+| `installPackagesDuringCheckDeploy`          | boolean  | Install [packages](salesforce-ci-cd-work-on-task-install-packages.md) even in check-only mode                                                                  |
+| `commandsPreDeploy`                         | object[] | [Commands to run before deployment](salesforce-ci-cd-work-on-task-deployment-actions.md)                                                                       |
+| `commandsPostDeploy`                        | object[] | [Commands to run after deployment](salesforce-ci-cd-work-on-task-deployment-actions.md)                                                                        |
+| `packageNoOverwritePath`                    | string   | Custom path to [package-no-overwrite.xml](salesforce-ci-cd-config-overwrite.md)                                                                                |
+| `testCoverageNotBlocking`                   | boolean  | Allow deployment even with insufficient [code coverage](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_code_coverage_intro.htm) |
+| `skipCodeCoverage`                          | boolean  | Skip [code coverage](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_code_coverage_intro.htm) reporting                          |
 
 ### Environment Variables
 
 See also the [full environment variables reference](all-env-variables.md).
 
-| Variable | Description |
-|:---------|:------------|
-| `USE_DELTA_DEPLOYMENT` | Enable [delta deployment](salesforce-ci-cd-config-delta-deployment.md) |
-| `ALWAYS_ENABLE_DELTA_DEPLOYMENT` | Force [delta](salesforce-ci-cd-config-delta-deployment.md) even between major branches |
-| `DISABLE_DELTA_DEPLOYMENT` | Explicitly disable [delta](salesforce-ci-cd-config-delta-deployment.md) |
-| `USE_DELTA_DEPLOYMENT_AFTER_MERGE` | Allow [delta](salesforce-ci-cd-config-delta-deployment.md) for merge jobs (not just checks) |
-| `USE_SMART_DEPLOYMENT_TESTS` | Enable [smart test skipping](#delta-processing) |
-| `NOT_IMPACTING_METADATA_TYPES` | Override the list of [non-impacting types](#delta-processing) (comma-separated) |
-| `SFDX_HARDIS_QUICK_DEPLOY` | Set to `false` to disable [Quick Deploy](#quick-deploy) |
-| `SFDX_DEPLOY_WAIT_MINUTES` | Deployment wait timeout (default: 120) |
-| `INSTALL_PACKAGES_DURING_CHECK_DEPLOY` | Install [packages](salesforce-ci-cd-work-on-task-install-packages.md) in check-only mode |
-| `SKIP_PACKAGE_DEPLOY_ONCE` | Skip [package-no-overwrite.xml](salesforce-ci-cd-config-overwrite.md) processing |
-| `FORCE_TARGET_BRANCH` | Override target branch for delta scope |
-| `SFDX_HARDIS_DEPLOY_BEFORE_MERGE` | Use current PR instead of merged PR for notifications |
-| `SFDX_DISABLE_FLOW_DIFF` | Disable [Flow Visual Git Diff](hardis/project/generate/flow-git-diff.md) in PR comments |
+| Variable                               | Description                                                                                 |
+|:---------------------------------------|:--------------------------------------------------------------------------------------------|
+| `USE_DELTA_DEPLOYMENT`                 | Enable [delta deployment](salesforce-ci-cd-config-delta-deployment.md)                      |
+| `ALWAYS_ENABLE_DELTA_DEPLOYMENT`       | Force [delta](salesforce-ci-cd-config-delta-deployment.md) even between major branches      |
+| `DISABLE_DELTA_DEPLOYMENT`             | Explicitly disable [delta](salesforce-ci-cd-config-delta-deployment.md)                     |
+| `USE_DELTA_DEPLOYMENT_AFTER_MERGE`     | Allow [delta](salesforce-ci-cd-config-delta-deployment.md) for merge jobs (not just checks) |
+| `USE_SMART_DEPLOYMENT_TESTS`           | Enable [smart test skipping](#delta-processing)                                             |
+| `NOT_IMPACTING_METADATA_TYPES`         | Override the list of [non-impacting types](#delta-processing) (comma-separated)             |
+| `SFDX_HARDIS_QUICK_DEPLOY`             | Set to `false` to disable [Quick Deploy](#quick-deploy)                                     |
+| `SFDX_DEPLOY_WAIT_MINUTES`             | Deployment wait timeout (default: 120)                                                      |
+| `INSTALL_PACKAGES_DURING_CHECK_DEPLOY` | Install [packages](salesforce-ci-cd-work-on-task-install-packages.md) in check-only mode    |
+| `SKIP_PACKAGE_DEPLOY_ONCE`             | Skip [package-no-overwrite.xml](salesforce-ci-cd-config-overwrite.md) processing            |
+| `FORCE_TARGET_BRANCH`                  | Override target branch for delta scope                                                      |
+| `SFDX_HARDIS_DEPLOY_BEFORE_MERGE`      | Use current PR instead of merged PR for notifications                                       |
+| `SFDX_DISABLE_FLOW_DIFF`               | Disable [Flow Visual Git Diff](hardis/project/generate/flow-git-diff.md) in PR comments     |
 
 
 ### PR Description Keywords
 
-| Keyword | Effect |
-|:--------|:-------|
-| `NO_DELTA` | Force full deployment for this PR |
-| `PURGE_FLOW_VERSIONS` | Purge inactive/obsolete Flow versions after deployment (runs [`sf hardis:org:purge:flow`](hardis/org/purge/flow.md)) |
+| Keyword                                | Effect                                                                                                                                                               |
+|:---------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `NO_DELTA`                             | Force full deployment for this PR                                                                                                                                    |
+| `PURGE_FLOW_VERSIONS`                  | Purge inactive/obsolete Flow versions after deployment (runs [`sf hardis:org:purge:flow`](hardis/org/purge/flow.md))                                                 |
 | `DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT` | Run [destructiveChanges.xml](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_deploy_deleting_files.htm) in a separate post-deploy step |
-| `nodelta` (in commit message) | Disable delta for this specific deployment |
-| `nosmart` (in commit message) | Disable Smart Deployment Tests for this deployment |
+| `nodelta` (in commit message)          | Disable delta for this specific deployment                                                                                                                           |
+| `nosmart` (in commit message)          | Disable Smart Deployment Tests for this deployment                                                                                                                   |
 
 ---
 
 ## Check Mode vs. Process Mode
 
-| Aspect | Check Mode (`--check`) | Process Mode (no flag) |
-|:-------|:----------------------|:----------------------|
-| Deployment | Dry-run / validation | Actual deployment |
-| [Quick Deploy](#quick-deploy) | Stores deployment ID in PR | Uses stored deployment ID |
-| [Delta](salesforce-ci-cd-config-delta-deployment.md) scope | PR source branch → target branch | HEAD^ → HEAD |
-| [Packages](salesforce-ci-cd-work-on-task-install-packages.md) | Warns about missing packages | Installs packages |
-| [Post commands](salesforce-ci-cd-work-on-task-deployment-actions.md) | Skips `process-deployment-only` commands | Skips `check-deployment-only` commands |
-| [Notifications](salesforce-ci-cd-setup-integrations-home.md) | Posts check results to PR | Sends deployment success [notifications](salesforce-ci-cd-setup-integrations-home.md) |
+| Aspect                                                               | Check Mode (`--check`)                   | Process Mode (no flag)                                                                |
+|:---------------------------------------------------------------------|:-----------------------------------------|:--------------------------------------------------------------------------------------|
+| Deployment                                                           | Dry-run / validation                     | Actual deployment                                                                     |
+| [Quick Deploy](#quick-deploy)                                        | Stores deployment ID in PR               | Uses stored deployment ID                                                             |
+| [Delta](salesforce-ci-cd-config-delta-deployment.md) scope           | PR source branch → target branch         | HEAD^ → HEAD                                                                          |
+| [Packages](salesforce-ci-cd-work-on-task-install-packages.md)        | Warns about missing packages             | Installs packages                                                                     |
+| [Post commands](salesforce-ci-cd-work-on-task-deployment-actions.md) | Skips `process-deployment-only` commands | Skips `check-deployment-only` commands                                                |
+| [Notifications](salesforce-ci-cd-setup-integrations-home.md)         | Posts check results to PR                | Sends deployment success [notifications](salesforce-ci-cd-setup-integrations-home.md) |
