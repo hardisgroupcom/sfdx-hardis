@@ -65,6 +65,8 @@ Advanced features make sfdx-hardis a credible alternative to expensive Salesforc
 | **Integration with ticketing systems**   | Integrate with [Jira](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jira/), [Azure Boards](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure-boards/), or [any other tool](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-generic-ticketing/). |
 | **AI integration**                       | [Help resolve deployment issues (Agentforce or direct calls to OpenAI, Anthropic, Gemini).](salesforce-deployment-assistant-home.md)                                                                                                                                                                              |
 
+> See the [whole sfdx-hardis smart deployment workflow explained in detail](salesforce-ci-cd-smart-deployment.md)
+
 We provide **ready-to-use CI/CD pipeline workflows** for the following Git platforms, with the results of deployment simulation jobs posted as comments on pull requests:
 
 | Platform       | CI/CD template                                                                                                                                                                                                                                                                                           |

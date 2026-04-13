@@ -5,6 +5,7 @@
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
 - New command [hardis:org:diagnose:flex-queue](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/flex-queue/) to monitor AsyncApexJob Holding backlog and get alerts before the flex queue is full (available in sfdx-hardis monitoring)
+- Document the Smart Deployment workflow
 
 ## [7.7.1] 2026-04-09
 
