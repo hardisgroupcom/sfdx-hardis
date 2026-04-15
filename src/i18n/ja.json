@@ -287,6 +287,7 @@
   "codingAgentAppliedFixes": "コーディングエージェントが{{count}}個のファイルに修正を適用しました。",
   "codingAgentAutoFixError": "自動修正中にエラーが発生しました: {{message}}",
   "codingAgentAutoFixNotEnabled": "コーディングエージェントの自動修正が有効になっていません。SFDX_HARDIS_CODING_AGENT_AUTO_FIX=trueを設定するか、.sfdx-hardis.ymlでcodingAgentAutoFix: trueを設定してください。",
+  "codingAgentBetaWarning": "[BETA] コーディングエージェントの自動修正はベータ機能です。AIは誤りを犯す可能性があります — 提案された変更はすべて、mergeする前に専門家が慎重に確認する必要があります。",
   "codingAgentCreatingFixBranch": "修正ブランチ {{branch}} を作成しています...",
   "codingAgentCreatingPullRequest": "{{target}}を対象とするPull Requestを作成しています...",
   "codingAgentExecutionError": "コーディングエージェント {{agent}} の実行中にエラーが発生しました: {{message}}",

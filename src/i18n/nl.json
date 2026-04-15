@@ -287,6 +287,7 @@
   "codingAgentAppliedFixes": "Coding agent heeft fixes toegepast op {{count}} bestand(en).",
   "codingAgentAutoFixError": "Fout tijdens auto-fix: {{message}}",
   "codingAgentAutoFixNotEnabled": "Auto-fix van coding agent is niet ingeschakeld. Stel SFDX_HARDIS_CODING_AGENT_AUTO_FIX=true in of codingAgentAutoFix: true in .sfdx-hardis.yml.",
+  "codingAgentBetaWarning": "[BETA] Auto-fix van coding agent is een bètafunctie. AI kan fouten maken — alle voorgestelde wijzigingen moeten zorgvuldig worden gecontroleerd door een expert vóór het mergen.",
   "codingAgentCreatingFixBranch": "Fix branch {{branch}} aanmaken...",
   "codingAgentCreatingPullRequest": "Pull request aanmaken gericht op {{target}}...",
   "codingAgentExecutionError": "Fout bij het uitvoeren van coding agent {{agent}}: {{message}}",

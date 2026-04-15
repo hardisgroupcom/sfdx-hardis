@@ -194,6 +194,7 @@ nav:
       - Deployment Assistant home: salesforce-deployment-assistant-home.md
       - Configuration:
           - Setup Deployment Assistant: salesforce-deployment-assistant-setup.md
+          - Coding Agent Auto-Fix: salesforce-deployment-assistant-autofix.md
           - Setup AI integration: salesforce-ai-setup.md
       - Deployment errors list: salesforce-deployment-assistant-error-list.md
   - Integrations:
@@ -230,6 +231,7 @@ nav:
               - Describe Profile: prompt-templates/PROMPT_DESCRIBE_PROFILE.md
               - Describe Roles: prompt-templates/PROMPT_DESCRIBE_ROLES.md
               - Solve Deployment Error: prompt-templates/PROMPT_SOLVE_DEPLOYMENT_ERROR.md
+              - Coding Agent Fix Deployment Errors: prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.md
               - Variables:
                   - Additional Instructions: prompt-templates/VARIABLE_ADDITIONAL_INSTRUCTIONS.md
                   - Formatting Requirements: prompt-templates/VARIABLE_FORMATTING_REQUIREMENTS.md

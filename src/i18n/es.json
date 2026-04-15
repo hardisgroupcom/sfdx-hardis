@@ -287,6 +287,7 @@
   "codingAgentAppliedFixes": "El agente de codificación aplicó correcciones en {{count}} archivo(s).",
   "codingAgentAutoFixError": "Error durante la corrección automática: {{message}}",
   "codingAgentAutoFixNotEnabled": "La corrección automática del agente de codificación no está habilitada. Establece SFDX_HARDIS_CODING_AGENT_AUTO_FIX=true o codingAgentAutoFix: true en .sfdx-hardis.yml para habilitarla.",
+  "codingAgentBetaWarning": "[BETA] La corrección automática del agente de codificación es una funcionalidad en fase beta. La IA puede cometer errores — todos los cambios propuestos deben ser revisados cuidadosamente por un experto antes del merge.",
   "codingAgentCreatingFixBranch": "Creando branch de corrección {{branch}}...",
   "codingAgentCreatingPullRequest": "Creando pull request dirigida a {{target}}...",
   "codingAgentExecutionError": "Error al ejecutar el agente de codificación {{agent}}: {{message}}",

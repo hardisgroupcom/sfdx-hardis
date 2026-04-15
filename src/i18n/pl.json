@@ -287,6 +287,7 @@
   "codingAgentAppliedFixes": "Agent kodujący zastosował poprawki w {{count}} pliku(ach).",
   "codingAgentAutoFixError": "Błąd podczas automatycznej naprawy: {{message}}",
   "codingAgentAutoFixNotEnabled": "Automatyczna naprawa przez agenta kodującego nie jest włączona. Ustaw SFDX_HARDIS_CODING_AGENT_AUTO_FIX=true lub codingAgentAutoFix: true w .sfdx-hardis.yml.",
+  "codingAgentBetaWarning": "[BETA] Automatyczna naprawa przez agenta kodującego jest funkcją w fazie beta. AI może popełniać błędy — wszystkie proponowane zmiany muszą zostać starannie zweryfikowane przez eksperta przed merge.",
   "codingAgentCreatingFixBranch": "Tworzenie gałęzi naprawczej {{branch}}...",
   "codingAgentCreatingPullRequest": "Tworzenie pull request skierowanego do {{target}}...",
   "codingAgentExecutionError": "Błąd podczas uruchamiania agenta kodującego {{agent}}: {{message}}",

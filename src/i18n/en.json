@@ -287,6 +287,7 @@
   "codingAgentAppliedFixes": "Coding agent applied fixes to {{count}} file(s).",
   "codingAgentAutoFixError": "Error during auto-fix: {{message}}",
   "codingAgentAutoFixNotEnabled": "Coding agent auto-fix is not enabled. Set SFDX_HARDIS_CODING_AGENT_AUTO_FIX=true or codingAgentAutoFix: true in .sfdx-hardis.yml to enable.",
+  "codingAgentBetaWarning": "[BETA] Coding agent auto-fix is a beta feature. AI can make mistakes — all proposed changes must be carefully reviewed by an expert before merging.",
   "codingAgentCreatingFixBranch": "Creating fix branch {{branch}}...",
   "codingAgentCreatingPullRequest": "Creating pull request targeting {{target}}...",
   "codingAgentExecutionError": "Error running coding agent {{agent}}: {{message}}",
