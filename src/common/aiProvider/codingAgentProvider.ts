@@ -108,12 +108,14 @@ export class CodingAgentProvider {
       }
     }
 
-    // 3. Auto-detect available agents in priority order
+    // 3. Auto-detect: only select agents that have an API key configured and are installed
     const agentOrder: CodingAgentType[] = ["claude", "codex-cli", "gemini-cli", "copilot-cli"];
     for (const agent of agentOrder) {
-      const config = await this.buildAgentConfig(agent, branchConfig);
-      if (config?.available) {
-        return config;
+      if (this.hasApiKeyConfigured(agent)) {
+        const config = await this.buildAgentConfig(agent, branchConfig);
+        if (config?.available) {
+          return config;
+        }
       }
     }
     return null;
@@ -331,6 +333,24 @@ export class CodingAgentProvider {
       return result?.status === 0;
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Check if an API key is configured for the given agent type.
+   */
+  private static hasApiKeyConfigured(agent: CodingAgentType): boolean {
+    switch (agent) {
+      case "claude":
+        return !!(process.env.ANTHROPIC_API_KEY || getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY"));
+      case "codex-cli":
+        return !!(process.env.OPENAI_API_KEY || process.env.CODEX_API_KEY || getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY"));
+      case "gemini-cli":
+        return !!(process.env.GEMINI_API_KEY || getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY"));
+      case "copilot-cli":
+        return !!(process.env.COPILOT_GITHUB_TOKEN || process.env.GH_TOKEN || process.env.GITHUB_TOKEN);
+      default:
+        return false;
     }
   }
 
