@@ -51,6 +51,6 @@ export interface CodingAgentInfo {
   apiKeyEnvVar: string | null;
   /** Set the coding agent CLI's API key env var, reusing the LangChain API key */
   setupApiKey(langchainApiKey: string | null): void;
-  /** Build the full CLI command string to invoke the agent with the given escaped prompt */
-  buildCommand(escapedPrompt: string): string;
+  /** Build the full CLI command string to invoke the agent with the prompt read from a file */
+  buildCommand(promptFilePath: string): string;
 }

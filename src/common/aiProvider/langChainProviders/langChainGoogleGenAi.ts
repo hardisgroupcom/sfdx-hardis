@@ -33,8 +33,8 @@ export class LangChainGoogleGenAiProvider extends AbstractLLMProvider {
           process.env.GEMINI_API_KEY = langchainApiKey;
         }
       },
-      buildCommand(escapedPrompt: string): string {
-        return `gemini -p "${escapedPrompt}"`;
+      buildCommand(promptFilePath: string): string {
+        return `cat "${promptFilePath}" | gemini -p -`;
       },
     };
   }

@@ -33,8 +33,8 @@ export class LangChainAnthropicProvider extends AbstractLLMProvider {
           process.env.ANTHROPIC_API_KEY = langchainApiKey;
         }
       },
-      buildCommand(escapedPrompt: string): string {
-        return `claude --dangerously-skip-permissions -p "${escapedPrompt}"`;
+      buildCommand(promptFilePath: string): string {
+        return `cat "${promptFilePath}" | claude --dangerously-skip-permissions -p -`;
       },
     };
   }

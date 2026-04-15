@@ -33,8 +33,8 @@ export class LangChainOpenAIProvider extends AbstractLLMProvider {
           process.env.OPENAI_API_KEY = langchainApiKey;
         }
       },
-      buildCommand(escapedPrompt: string): string {
-        return `codex --approval-mode full-auto -q "${escapedPrompt}"`;
+      buildCommand(promptFilePath: string): string {
+        return `cat "${promptFilePath}" | codex --approval-mode full-auto -q -`;
       },
     };
   }

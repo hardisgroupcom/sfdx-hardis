@@ -1,4 +1,7 @@
 import c from "chalk";
+import path from "path";
+import os from "os";
+import fs from "fs-extra";
 import { execCommand, git, uxLog } from "../utils/index.js";
 import { getConfig, getEnvVar } from "../../config/index.js";
 import { t } from "../utils/i18n.js";
@@ -36,8 +39,8 @@ const COPILOT_CLI_AGENT_INFO: CodingAgentInfo = {
       process.env.GH_TOKEN = copilotToken;
     }
   },
-  buildCommand(escapedPrompt: string): string {
-    return `copilot -p "${escapedPrompt}" --allow-all-tools`;
+  buildCommand(promptFilePath: string): string {
+    return `cat "${promptFilePath}" | copilot -p - --allow-all-tools`;
   },
 };
 
@@ -229,34 +232,42 @@ export class CodingAgentProvider {
     agentConfig: CodingAgentConfig,
     prompt: string,
   ): Promise<CodingAgentResult> {
-    const escapedPrompt = prompt.replace(/"/g, '\\"').replace(/\n/g, "\\n");
+    // Write prompt to a temp file to avoid shell escaping issues with special characters
+    const promptFilePath = path.join(os.tmpdir(), `sfdx-hardis-agent-prompt-${Date.now()}.txt`);
+    await fs.writeFile(promptFilePath, prompt, "utf-8");
 
     // Delegate command building to the provider's CodingAgentInfo
     const agentInfo = agentConfig.codingAgentInfo;
     if (!agentInfo) {
+      await fs.remove(promptFilePath);
       throw new Error(t("codingAgentNoProviderInfo", { agent: agentConfig.agent }));
     }
-    const commandStr = agentInfo.buildCommand(escapedPrompt);
+    const commandStr = agentInfo.buildCommand(promptFilePath);
 
     uxLog("log", this, c.grey(t("codingAgentRunningCommand", { command: commandStr.substring(0, 200) + "..." })));
 
-    const result = await execCommand(commandStr, null, {
-      fail: false,
-      output: true,
-      debug: process.env?.DEBUG_CODING_AGENT === "true",
-    });
+    try {
+      const result = await execCommand(commandStr, null, {
+        fail: false,
+        output: true,
+        debug: process.env?.DEBUG_CODING_AGENT === "true",
+      });
 
-    const fixedFiles = await this.getChangedFiles();
-    const fixesDescription = this.parseFixesSummary(result?.stdout || "");
-    const errorsDescription = this.buildErrorsDescription([], []);
+      const fixedFiles = await this.getChangedFiles();
+      const fixesDescription = this.parseFixesSummary(result?.stdout || "");
+      const errorsDescription = this.buildErrorsDescription([], []);
 
-    return {
-      success: fixedFiles.length > 0,
-      agent: agentConfig.agent,
-      fixedFiles,
-      errorsDescription,
-      fixesDescription: fixesDescription || t("codingAgentAppliedFixes", { count: String(fixedFiles.length) }),
-    };
+      return {
+        success: fixedFiles.length > 0,
+        agent: agentConfig.agent,
+        fixedFiles,
+        errorsDescription,
+        fixesDescription: fixesDescription || t("codingAgentAppliedFixes", { count: String(fixedFiles.length) }),
+      };
+    } finally {
+      // Clean up temp file
+      await fs.remove(promptFilePath).catch(() => { });
+    }
   }
 
   private static async getChangedFiles(): Promise<string[]> {
