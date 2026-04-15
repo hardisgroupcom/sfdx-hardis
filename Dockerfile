@@ -65,6 +65,11 @@ RUN npm install --no-cache yarn -g && \
     echo 'y' | sf plugins install sfdx-git-delta && \
     echo 'y' | sf plugins install sfdmu && \
     sf version --verbose --json && \
+    # Install coding agent CLIs for auto-fix feature
+    npm install --no-cache @anthropic-ai/claude-code@latest -g && \
+    npm install --no-cache @openai/codex@latest -g && \
+    npm install --no-cache @google/gemini-cli@latest -g && \
+    npm install --no-cache @github/copilot@latest -g && \
     # Clean up npm cache and temporary files
     rm -rf /root/.npm/_cacache && \
     rm -rf /tmp/* && \

@@ -27,11 +27,11 @@ export interface CodingAgentConfig {
 /** Fallback coding agent info for copilot-cli (no LangChain provider) */
 const COPILOT_CLI_AGENT_INFO: CodingAgentInfo = {
   agentType: "copilot-cli",
-  command: "gh",
+  command: "copilot",
   apiKeyEnvVar: null,
-  setupApiKey(): void { /* copilot-cli uses GitHub token, no LangChain API key reuse */ },
+  setupApiKey(): void { /* copilot-cli uses GH_TOKEN / GITHUB_TOKEN, no LangChain API key reuse */ },
   buildCommand(escapedPrompt: string): string {
-    return `gh copilot suggest "${escapedPrompt}"`;
+    return `copilot -p "${escapedPrompt}" --allow-all-tools`;
   },
 };
 

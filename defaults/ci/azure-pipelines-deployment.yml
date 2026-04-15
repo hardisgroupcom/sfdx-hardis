@@ -54,6 +54,11 @@ jobs:
           echo 'y' | sf plugins install sfdmu
           echo 'y' | sf plugins install sfdx-git-delta
           sf version --verbose --json
+          # Uncomment the coding agent CLIs you want to use for auto-fix of deployment errors
+          # npm install --no-cache @anthropic-ai/claude-code@latest --global
+          # npm install --no-cache @openai/codex@latest --global
+          # npm install --no-cache @google/gemini-cli@latest --global
+          # npm install --no-cache @github/copilot@latest --global
         displayName: "Install SFDX & plugins"
 
       # Login & Deploy sfdx sources to related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
