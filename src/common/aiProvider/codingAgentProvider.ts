@@ -29,7 +29,13 @@ const COPILOT_CLI_AGENT_INFO: CodingAgentInfo = {
   agentType: "copilot-cli",
   command: "copilot",
   apiKeyEnvVar: null,
-  setupApiKey(): void { /* copilot-cli uses GH_TOKEN / GITHUB_TOKEN, no LangChain API key reuse */ },
+  setupApiKey(): void {
+    // Priority: COPILOT_GITHUB_TOKEN > GH_TOKEN > GITHUB_TOKEN
+    const copilotToken = process.env.COPILOT_GITHUB_TOKEN;
+    if (copilotToken && !process.env.GH_TOKEN) {
+      process.env.GH_TOKEN = copilotToken;
+    }
+  },
   buildCommand(escapedPrompt: string): string {
     return `copilot -p "${escapedPrompt}" --allow-all-tools`;
   },
