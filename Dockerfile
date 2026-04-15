@@ -66,10 +66,11 @@ RUN npm install --no-cache yarn -g && \
     echo 'y' | sf plugins install sfdmu && \
     sf version --verbose --json && \
     # Install coding agent CLIs for auto-fix feature
-    npm install --no-cache @anthropic-ai/claude-code@latest -g && claude --version && \
-    npm install --no-cache @openai/codex@latest -g && codex --version && \
-    npm install --no-cache @google/gemini-cli@latest -g && gemini --version && \
-    npm install --no-cache @github/copilot@latest -g && copilot --version && \
+    # Note: some agents may crash on Alpine/musl at runtime. If so, use the Ubuntu-based image instead.
+    (npm install --no-cache @anthropic-ai/claude-code@latest -g && claude --version || echo 'WARNING: claude-code install or version check failed') && \
+    (npm install --no-cache @openai/codex@latest -g && codex --version || echo 'WARNING: codex install or version check failed') && \
+    (npm install --no-cache @google/gemini-cli@latest -g && gemini --version || echo 'WARNING: gemini-cli install or version check failed') && \
+    (npm install --no-cache @github/copilot@latest -g && copilot --version || echo 'WARNING: copilot install or version check failed') && \
     # Clean up npm cache and temporary files
     rm -rf /root/.npm/_cacache && \
     rm -rf /tmp/* && \
