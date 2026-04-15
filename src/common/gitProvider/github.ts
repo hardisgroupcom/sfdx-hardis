@@ -2,7 +2,7 @@ import * as github from "@actions/github";
 import c from "chalk";
 import { GitProviderRoot } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GitHub } from "@actions/github/lib/utils.js";
 import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
@@ -387,5 +387,26 @@ ${getBannerMarkdownAndLink()}
       customBehaviors: {}
     }
     return this.completeWithCustomBehaviors(prInfo);
+  }
+
+  public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
+    if (!this.repoOwner || !this.repoName) {
+      uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('githubCannotCreatePrMissingRepoInfo')));
+      return { created: false, pullRequestUrl: null, providerResult: { error: "Missing repo owner or name" } };
+    }
+    uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubCreatingPullRequest', { source: request.sourceBranch, target: request.targetBranch })));
+    const result = await this.octokit.rest.pulls.create({
+      owner: this.repoOwner,
+      repo: this.repoName,
+      title: request.title,
+      body: request.body,
+      head: request.sourceBranch,
+      base: request.targetBranch,
+    });
+    return {
+      created: result.data.number > 0,
+      pullRequestUrl: result.data.html_url || null,
+      providerResult: result,
+    };
   }
 }

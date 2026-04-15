@@ -3,7 +3,7 @@ import c from 'chalk';
 import fs from "fs-extra";
 import FormData from 'form-data'
 import * as path from "path";
-import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
 import { git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
@@ -466,5 +466,30 @@ ${getBannerMarkdownAndLink()}
     return null;
   }
 
+  public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    if (!workspace || !repoSlug) {
+      uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketCannotCreatePrMissingRepoInfo')));
+      return { created: false, pullRequestUrl: null, providerResult: { error: "Missing BITBUCKET_WORKSPACE or BITBUCKET_REPO_SLUG" } };
+    }
+    uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketCreatingPullRequest', { source: request.sourceBranch, target: request.targetBranch })));
+    const result = await this.bitbucket.repositories.createPullRequest({
+      workspace,
+      repo_slug: repoSlug,
+      _body: {
+        title: request.title,
+        description: request.body,
+        source: { branch: { name: request.sourceBranch } },
+        destination: { branch: { name: request.targetBranch } },
+      } as any,
+    });
+    const prData = result?.data as any;
+    return {
+      created: !!(prData?.id),
+      pullRequestUrl: prData?.links?.html?.href || null,
+      providerResult: result,
+    };
+  }
 
 }

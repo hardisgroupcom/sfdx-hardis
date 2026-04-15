@@ -38,6 +38,7 @@ import { PullRequestData } from '../gitProvider/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { executePrePostCommands } from './prePostCommandUtils.js';
 import { t } from './i18n.js';
+import { autoFixDeployErrors } from './deployErrorAutoFix.js';
 
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
@@ -578,7 +579,7 @@ async function handleDeployError(
     }
   }
   // Handle Effective error
-  const { errLog } = await analyzeDeployErrorLogs(output, true, { check: check });
+  const { errLog, errorsAndTips: deployErrorsAndTips, failedTests: deployFailedTests } = await analyzeDeployErrorLogs(output, true, { check: check });
   uxLog("error", commandThis, c.red(c.bold(t('sadlyThereHasBeenDeploymentError'))));
   if (process.env?.SFDX_HARDIS_DEPLOY_ERR_COLORS === 'false') {
     uxLog("other", this, '\n' + errLog);
@@ -586,6 +587,12 @@ async function handleDeployError(
     uxLog("error", this, c.red('\n' + errLog));
   }
   await displayDeploymentLink(output, options);
+  // Try auto-fix with coding agent if enabled
+  await autoFixDeployErrors(
+    deployErrorsAndTips || [],
+    deployFailedTests || [],
+    { targetUsername: options.targetUsername, check },
+  );
   elapseEnd(`deploy ${deployment.label}`);
   await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check, conn: options.conn });
   await GitProvider.managePostPullRequestComment(check);

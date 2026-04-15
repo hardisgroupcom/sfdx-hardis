@@ -250,6 +250,25 @@ export abstract class GitProvider {
     return prInfo;
   }
 
+  static async createPullRequest(request: CreatePullRequestRequest): Promise<string | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderNotConfiguredForPrCreation')));
+      return null;
+    }
+    try {
+      const result = await gitProvider.createPullRequest(request);
+      if (result.created && result.pullRequestUrl) {
+        return result.pullRequestUrl;
+      }
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationFailed')));
+      return null;
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationError', { message: (e as Error).message })));
+      return null;
+    }
+  }
+
   static isDeployBeforeMerge(): boolean {
     const deployBeforeMerge = getEnvVar("SFDX_HARDIS_DEPLOY_BEFORE_MERGE") || false;
     return [true, "true"].includes(deployBeforeMerge);
@@ -381,4 +400,17 @@ export declare type PullRequestMessageResult = {
   posted: boolean;
   providerResult: any;
   additionalProviderResult?: any;
+};
+
+export declare type CreatePullRequestRequest = {
+  title: string;
+  body: string;
+  sourceBranch: string;
+  targetBranch: string;
+};
+
+export declare type CreatePullRequestResult = {
+  created: boolean;
+  pullRequestUrl: string | null;
+  providerResult: any;
 };

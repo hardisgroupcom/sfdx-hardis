@@ -1,7 +1,7 @@
 import { Gitlab } from "@gitbeaker/rest";
 import c from "chalk";
 import { Agent as HttpsAgent } from "https";
-import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { GitProviderRoot } from "./gitProviderRoot.js";
 import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
@@ -400,5 +400,26 @@ ${getBannerMarkdownAndLink()}
       customBehaviors: {}
     }
     return this.completeWithCustomBehaviors(prInfo);
+  }
+
+  public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
+    const projectId = process.env.CI_PROJECT_ID || null;
+    if (!projectId) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabCannotCreateMrMissingProjectId')));
+      return { created: false, pullRequestUrl: null, providerResult: { error: "Missing CI_PROJECT_ID" } };
+    }
+    uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabCreatingMergeRequest', { source: request.sourceBranch, target: request.targetBranch })));
+    const result = await this.gitlabApi.MergeRequests.create(
+      projectId,
+      request.sourceBranch,
+      request.targetBranch,
+      request.title,
+      { description: request.body },
+    );
+    return {
+      created: !!(result?.iid),
+      pullRequestUrl: (result as any)?.web_url || null,
+      providerResult: result,
+    };
   }
 }

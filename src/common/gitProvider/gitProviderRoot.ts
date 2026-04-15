@@ -1,6 +1,6 @@
 import { SfError } from "@salesforce/core";
 import c from "chalk";
-import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { uxLog } from "../utils/index.js";
 import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
 import { getEnvVar } from "../../config/index.js";
@@ -83,6 +83,12 @@ export abstract class GitProviderRoot {
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     uxLog("warning", this, c.yellow(t('methodPostpullrequestmessageIsNotYetImplementedOn') + this.getLabel() + " to post " + JSON.stringify(prMessage)));
     return { posted: false, providerResult: { error: "Not implemented in sfdx-hardis" } };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
+    uxLog("warning", this, c.yellow(`[GitProvider] createPullRequest is not yet implemented on ${this.getLabel()}`));
+    return { created: false, pullRequestUrl: null, providerResult: { error: "Not implemented in sfdx-hardis" } };
   }
   /* jscpd:ignore-start */
   // Do not make crash the whole process in case there is an issue with integration

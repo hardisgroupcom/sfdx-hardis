@@ -36,4 +36,21 @@ export abstract class AbstractLLMProvider implements BaseLLMProvider {
   getLabel(): string {
     return "LangChain connector";
   }
-} 
+}
+
+/**
+ * Information about the coding agent CLI associated with a LangChain provider.
+ * Each LangChain sub-provider can expose this via a static getCodingAgentInfo() method.
+ */
+export interface CodingAgentInfo {
+  /** The coding agent type identifier (e.g. "claude", "codex-cli", "gemini-cli") */
+  agentType: string;
+  /** The CLI command name used for availability checks (e.g. "claude", "codex", "gemini") */
+  command: string;
+  /** The environment variable name the coding agent CLI uses for authentication, or null */
+  apiKeyEnvVar: string | null;
+  /** Set the coding agent CLI's API key env var, reusing the LangChain API key */
+  setupApiKey(langchainApiKey: string | null): void;
+  /** Build the full CLI command string to invoke the agent with the given escaped prompt */
+  buildCommand(escapedPrompt: string): string;
+}

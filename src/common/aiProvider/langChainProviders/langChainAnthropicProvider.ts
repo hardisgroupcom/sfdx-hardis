@@ -1,6 +1,6 @@
 import { ChatAnthropic } from "@langchain/anthropic";
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { AbstractLLMProvider, ModelConfig } from "./langChainBaseProvider.js";
+import { AbstractLLMProvider, CodingAgentInfo, ModelConfig } from "./langChainBaseProvider.js";
 
 export class LangChainAnthropicProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {
@@ -22,4 +22,20 @@ export class LangChainAnthropicProvider extends AbstractLLMProvider {
 
     return new ChatAnthropic(config) as BaseChatModel;
   }
-} 
+
+  static getCodingAgentInfo(): CodingAgentInfo {
+    return {
+      agentType: "claude",
+      command: "claude",
+      apiKeyEnvVar: "ANTHROPIC_API_KEY",
+      setupApiKey(langchainApiKey: string | null): void {
+        if (!process.env.ANTHROPIC_API_KEY && langchainApiKey) {
+          process.env.ANTHROPIC_API_KEY = langchainApiKey;
+        }
+      },
+      buildCommand(escapedPrompt: string): string {
+        return `claude --dangerously-skip-permissions -p "${escapedPrompt}"`;
+      },
+    };
+  }
+}

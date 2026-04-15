@@ -7,6 +7,7 @@ import { PROMPT_VARIABLES, PromptVariable } from "./promptTemplates/variablesInd
 import { uxLog } from "../utils/index.js";
 
 export type PromptTemplate =
+  "PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS" |
   "PROMPT_SOLVE_DEPLOYMENT_ERROR" |
   "PROMPT_DESCRIBE_FLOW" |
   "PROMPT_DESCRIBE_FLOW_DIFF" |

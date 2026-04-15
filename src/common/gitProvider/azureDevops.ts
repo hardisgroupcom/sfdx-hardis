@@ -4,7 +4,7 @@ import c from "chalk";
 import fs from 'fs-extra';
 import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../utils/index.js";
 import * as path from "path";
-import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
@@ -899,5 +899,31 @@ ${getBannerMarkdownAndLink()}
 
     uxLog("error", this, c.yellow(`[Azure Integration] Unable to find or create technical work item for image attachments. Image uploads to PR comments will not work until this is resolved.`));
     return null;
+  }
+
+  public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const teamProject = process.env.SYSTEM_TEAMPROJECT || null;
+    if (!repositoryId || !teamProject) {
+      uxLog("warning", this, c.yellow('[Azure Integration] ' + t('azureCannotCreatePrMissingRepoInfo')));
+      return { created: false, pullRequestUrl: null, providerResult: { error: "Missing BUILD_REPOSITORY_ID or SYSTEM_TEAMPROJECT" } };
+    }
+    uxLog("log", this, c.grey('[Azure Integration] ' + t('azureCreatingPullRequest', { source: request.sourceBranch, target: request.targetBranch })));
+    const azureGitApi = await this.azureApi.getGitApi();
+    const prToCreate: GitPullRequest = {
+      sourceRefName: `refs/heads/${request.sourceBranch}`,
+      targetRefName: `refs/heads/${request.targetBranch}`,
+      title: request.title,
+      description: request.body,
+    };
+    const result = await azureGitApi.createPullRequest(prToCreate, repositoryId, teamProject);
+    const pullRequestUrl = result?.url || (result?.pullRequestId
+      ? `${this.serverUrl}${teamProject}/_git/${repositoryId}/pullrequest/${result.pullRequestId}`
+      : null);
+    return {
+      created: !!(result?.pullRequestId),
+      pullRequestUrl,
+      providerResult: result,
+    };
   }
 }
