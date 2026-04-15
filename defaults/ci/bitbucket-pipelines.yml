@@ -30,10 +30,10 @@ pipelines:
                 - echo 'y' | sf plugins install sfdx-git-delta
                 - sf version --verbose --json
                 # Uncomment the coding agent CLIs you want to use for auto-fix of deployment errors
-                # - npm install --no-cache @anthropic-ai/claude-code@latest --global
-                # - npm install --no-cache @openai/codex@latest --global
-                # - npm install --no-cache @google/gemini-cli@latest --global
-                # - npm install --no-cache @github/copilot@latest --global
+                # - npm install --no-cache @anthropic-ai/claude-code@latest --global && claude --version
+                # - npm install --no-cache @openai/codex@latest --global && codex --version
+                # - npm install --no-cache @google/gemini-cli@latest --global && gemini --version
+                # - npm install --no-cache @github/copilot@latest --global && copilot --version
                 - export BRANCH_NAME=$(echo "$BITBUCKET_PR_DESTINATION_BRANCH" | sed 's/refs\/heads\///')
                 - export CI_COMMIT_REF_NAME=$BRANCH_NAME
                 - export ORG_ALIAS=$BRANCH_NAME
@@ -57,10 +57,10 @@ pipelines:
             - echo 'y' | sf plugins install sfdx-git-delta
             - sf version --verbose --json
             # Uncomment the coding agent CLIs you want to use for auto-fix of deployment errors
-            # - npm install --no-cache @anthropic-ai/claude-code@latest --global
-            # - npm install --no-cache @openai/codex@latest --global
-            # - npm install --no-cache @google/gemini-cli@latest --global
-            # - npm install --no-cache @github/copilot@latest --global
+            # - npm install --no-cache @anthropic-ai/claude-code@latest --global && claude --version
+            # - npm install --no-cache @openai/codex@latest --global && codex --version
+            # - npm install --no-cache @google/gemini-cli@latest --global && gemini --version
+            # - npm install --no-cache @github/copilot@latest --global && copilot --version
             - export BRANCH_NAME=$(echo "$BITBUCKET_BRANCH" | sed 's/refs\/heads\///')
             - export CI_COMMIT_REF_NAME=$BRANCH_NAME
             - export CONFIG_BRANCH=$BRANCH_NAME

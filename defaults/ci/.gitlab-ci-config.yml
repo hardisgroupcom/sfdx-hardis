@@ -6,7 +6,7 @@ variables:
 
 # Uncomment to install coding agent CLIs for auto-fix of deployment errors (when not using Docker image)
 # before_script:
-#   - npm install --no-cache @anthropic-ai/claude-code@latest -g
-#   - npm install --no-cache @openai/codex@latest -g
-#   - npm install --no-cache @google/gemini-cli@latest -g
-#   - npm install --no-cache @github/copilot@latest -g
+#   - npm install --no-cache @anthropic-ai/claude-code@latest -g && claude --version
+#   - npm install --no-cache @openai/codex@latest -g && codex --version
+#   - npm install --no-cache @google/gemini-cli@latest -g && gemini --version
+#   - npm install --no-cache @github/copilot@latest -g && copilot --version
