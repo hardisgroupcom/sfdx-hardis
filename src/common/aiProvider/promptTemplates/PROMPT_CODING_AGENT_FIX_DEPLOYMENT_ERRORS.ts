@@ -47,9 +47,9 @@ const template: PromptTemplateDefinition = {
 ## INSTRUCTIONS
 
 1. Analyze the errors above carefully
-2. Look in the local metadata files (force-app/, src/, or similar directories) for the files causing the errors
+2. Look in the local metadata files (force-app/, src/, or similar directories references in sfdx-project.json) for the files causing the errors
 3. If needed, query the target org ({{TARGET_ORG}}) to understand the current state of metadata
-4. Fix the errors by modifying the appropriate local metadata files
+4. Fix the errors by modifying the appropriate local metadata files (if there are missing references, remove them from the local XML files)
 5. After fixing all errors, output a summary of all changes you made in the following format:
 
 --- FIXES SUMMARY ---

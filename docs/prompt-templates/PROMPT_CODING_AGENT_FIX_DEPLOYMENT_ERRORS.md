@@ -6,11 +6,11 @@ description: Prompt template for PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS
 # PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS
 
 ## Variables
-| Name              | Description                                                          | Example                                                                                                              |
-|:------------------|:---------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------|
-| **ERRORS**        | The deployment errors with tips, formatted as a structured list.     | `### Error: Field 'MyField__c' not found on object 'Account'\nTip: Check if the field exists in the target org.`      |
-| **FAILED_TESTS**  | The failed Apex test classes with error details.                     | `### Test: MyTestClass.testMethod\nError: System.AssertException: Assertion Failed\nStack: Class.MyTestClass: line 42` |
-| **TARGET_ORG**    | The target org username or alias that can be used for querying metadata and data. | `myorg@example.com`                                                                                        |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **ERRORS** | The deployment errors with tips, formatted as a structured list. | `### Error: Field 'MyField__c' not found on object 'Account'<br>Tip: Check if the field exists in the target org or in local metadata files.` |
+| **FAILED_TESTS** | The failed Apex test classes with error details. | `### Test: MyTestClass.testMethod<br>Error: System.AssertException: Assertion Failed<br>Stack: Class.MyTestClass.testMethod: line 42` |
+| **TARGET_ORG** | The target org username or alias that can be used for querying metadata and data. | `myorg@example.com` |
 
 ## Prompt
 
@@ -54,4 +54,13 @@ FIX: <description of what was changed>
 ---
 
 {{VARIABLE_ADDITIONAL_INSTRUCTIONS}}
+
 ```
+
+## How to override
+
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.txt**
+
+You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
+
+If you do so, please don't forget to use the replacement variables :)
