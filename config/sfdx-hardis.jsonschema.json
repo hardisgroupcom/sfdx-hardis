@@ -72,11 +72,7 @@
       "type": "number",
       "default": 10,
       "minimum": 1,
-      "examples": [
-        1,
-        5,
-        10
-      ]
+      "examples": [1, 5, 10]
     },
     "useLangchainLlm": {
       "$id": "#/properties/useLangchainLlm",
@@ -90,12 +86,7 @@
       "description": "LLM provider identifier used with LangChain (ex: openai, anthropic, google-genai, ollama). Equivalent to LANGCHAIN_LLM_PROVIDER env var.",
       "title": "LangChain provider",
       "type": "string",
-      "enum": [
-        "openai",
-        "anthropic",
-        "google-genai",
-        "ollama"
-      ],
+      "enum": ["openai", "anthropic", "google-genai", "ollama"],
       "enumNames": [
         "OpenAI",
         "Anthropic Claude",
@@ -158,12 +149,7 @@
       "description": "Reasoning effort used for direct Codex prompts. Equivalent to CODEX_REASONING_EFFORT env var. Note: Not all values are supported by all models",
       "title": "Codex reasoning effort",
       "type": "string",
-      "enum": [
-        "low",
-        "medium",
-        "high",
-        "xhigh"
-      ],
+      "enum": ["low", "medium", "high", "xhigh"],
       "default": "high"
     },
     "useOpenaiDirect": {
@@ -185,22 +171,14 @@
       "description": "Service tier used for direct OpenAI prompts. Equivalent to OPENAI_SERVICE_TIER env var.",
       "title": "OpenAI service tier",
       "type": "string",
-      "enum": [
-        "auto",
-        "default",
-        "flex"
-      ]
+      "enum": ["auto", "default", "flex"]
     },
     "openaiReasoningEffort": {
       "$id": "#/properties/openaiReasoningEffort",
       "description": "Reasoning effort used for direct OpenAI prompts on supported models. Equivalent to OPENAI_REASONING_EFFORT env var.",
       "title": "OpenAI reasoning effort",
       "type": "string",
-      "enum": [
-        "low",
-        "medium",
-        "high"
-      ]
+      "enum": ["low", "medium", "high"]
     },
     "useAgentforce": {
       "$id": "#/properties/useAgentforce",
@@ -223,24 +201,34 @@
       "type": "string",
       "default": "/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{PROMPT_TEMPLATE}}/generations"
     },
+    "codingAgentAutoFix": {
+      "$id": "#/properties/codingAgentAutoFix",
+      "description": "Set to true to enable automatic fixing of deployment errors using a coding agent CLI (beta). Equivalent to SFDX_HARDIS_CODING_AGENT_AUTO_FIX env var.",
+      "title": "Enable coding agent auto-fix (beta)",
+      "type": "boolean",
+      "default": false
+    },
+    "codingAgent": {
+      "$id": "#/properties/codingAgent",
+      "description": "Force a specific coding agent CLI instead of auto-detection. Equivalent to SFDX_HARDIS_CODING_AGENT env var.",
+      "title": "Coding agent",
+      "type": "string",
+      "enum": ["claude", "codex-cli", "gemini-cli", "copilot-cli"],
+      "enumNames": [
+        "Claude (Anthropic)",
+        "Codex (OpenAI)",
+        "Gemini CLI (Google)",
+        "Copilot CLI (GitHub)"
+      ]
+    },
     "allowedOrgTypes": {
       "$id": "#/properties/allowedOrgTypes",
       "description": "Types of Salesforce Orgs allowed for config & development. If not set, Sandbox Orgs and Scratch Orgs are allowed by default",
-      "examples": [
-        [
-          "sandbox"
-        ]
-      ],
+      "examples": [["sandbox"]],
       "items": {
         "type": "string",
-        "enum": [
-          "sandbox",
-          "scratch"
-        ],
-        "enumNames": [
-          "Sandbox Orgs",
-          "Scratch Orgs"
-        ]
+        "enum": ["sandbox", "scratch"],
+        "enumNames": ["Sandbox Orgs", "Scratch Orgs"]
       },
       "title": "Allowed org types",
       "type": "array"
@@ -249,13 +237,7 @@
       "$id": "#/properties/autoCleanTypes",
       "description": "When saving/publishing a User Story, sfdx-hardis can automatically clean the sources before submitting a Pull Request.\nSelect the cleanings that will be automatically applied on your project.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-cleaning/",
-      "examples": [
-        [
-          "dashboards",
-          "datadotcom",
-          "destructivechanges"
-        ]
-      ],
+      "examples": [["dashboards", "datadotcom", "destructivechanges"]],
       "items": {
         "type": "string",
         "enum": [
@@ -314,13 +296,8 @@
       "description": "Sometimes, SF Cli forgets to pull some metadata updates, like Custom Application for example.\nsfdx-hardis can automatically retrieve named metadatas to avoid issues.\nExample:\n- CustomApplication:MyApp1\n- CustomApplication:MyApp2\nWorks also with full metadata types (ex: CustomApplication)",
       "docUrl": "https://sfdx-hardis.cloudity.com/hardis/scratch/pull/#command-behavior",
       "examples": [
-        [
-          "CustomApplication"
-        ],
-        [
-          "CustomApplication:MyApp1",
-          "CustomApplication:MyApp2"
-        ]
+        ["CustomApplication"],
+        ["CustomApplication:MyApp1", "CustomApplication:MyApp2"]
       ],
       "items": {
         "type": "string"
@@ -332,23 +309,14 @@
       "$id": "#/properties/apexTestsMinCoverageOrgWide",
       "default": 75.0,
       "description": "Minimum percentage of apex code coverage accepted.\n75.0% by default, but if you are on a clean project, it's better to define 80.0, 95.0 or 90.0 😎",
-      "examples": [
-        80.0,
-        95.0
-      ],
+      "examples": [80.0, 95.0],
       "title": "Minimum Apex Tests coverage % accepted for a deployment",
       "type": "number"
     },
     "availableProjects": {
       "$id": "#/properties/availableProjects",
       "description": "List of business projects that are managed in the same repository.\nIf defined, when creating a new User Story, it will be prompted to the contributor then used to create the git branch name.\nIf a value contains a comma, the left part will be used for key and the right part as label for the users.",
-      "examples": [
-        [
-          "sales_cloud",
-          "service_cloud",
-          "community"
-        ]
-      ],
+      "examples": [["sales_cloud", "service_cloud", "community"]],
       "items": {
         "type": "string"
       },
@@ -358,12 +326,7 @@
     "availableTargetBranches": {
       "$id": "#/properties/availableTargetBranches",
       "description": "List of git branches that can be used as target for Pull Requests.\nContributors will be prompt to select one of these target branch when creating a new User Story\nA classic example on a project with BUILD & RUN in parallel is to have preprod and integration as available target branches.\nIf defined, makes obsolete the parameter Default Pull Request target branch.",
-      "examples": [
-        [
-          "preprod",
-          "integration"
-        ]
-      ],
+      "examples": [["preprod", "integration"]],
       "items": {
         "type": "string"
       },
@@ -430,9 +393,7 @@
           "globPattern": {
             "$id": "#/properties/cleanXmlPatterns/items/properties/globPattern",
             "description": "Glob pattern to identify XML files to clean",
-            "examples": [
-              "/**/*.flexipage-meta.xml"
-            ],
+            "examples": ["/**/*.flexipage-meta.xml"],
             "title": "Glob pattern",
             "type": "string"
           },
@@ -451,10 +412,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "globPattern",
-          "xpaths"
-        ]
+        "required": ["globPattern", "xpaths"]
       },
       "title": "Clean XML Patterns",
       "type": "array"
@@ -505,13 +463,7 @@
             "description": "Type of the action",
             "title": "Type",
             "type": "string",
-            "enum": [
-              "command",
-              "data",
-              "apex",
-              "publish-community",
-              "manual"
-            ],
+            "enum": ["command", "data", "apex", "publish-community", "manual"],
             "enumNames": [
               "Command",
               "Data Import",
@@ -568,11 +520,7 @@
             "title": "Context",
             "default": "all",
             "type": "string",
-            "enum": [
-              "all",
-              "check-deployment-only",
-              "process-deployment-only"
-            ],
+            "enum": ["all", "check-deployment-only", "process-deployment-only"],
             "enumNames": [
               "All",
               "Check Deployment Only",
@@ -605,12 +553,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "label",
-          "type",
-          "context"
-        ],
+        "required": ["id", "label", "type", "context"],
         "title": "Action"
       },
       "title": "Actions Pre-Deployment",
@@ -665,13 +608,7 @@
             "description": "Type of the action",
             "title": "Type",
             "type": "string",
-            "enum": [
-              "command",
-              "data",
-              "apex",
-              "publish-community",
-              "manual"
-            ],
+            "enum": ["command", "data", "apex", "publish-community", "manual"],
             "enumNames": [
               "Command",
               "Data Import",
@@ -728,11 +665,7 @@
             "title": "Context",
             "default": "all",
             "type": "string",
-            "enum": [
-              "all",
-              "check-deployment-only",
-              "process-deployment-only"
-            ],
+            "enum": ["all", "check-deployment-only", "process-deployment-only"],
             "enumNames": [
               "All",
               "Check Deployment Only",
@@ -772,12 +705,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "label",
-          "type",
-          "context"
-        ],
+        "required": ["id", "label", "type", "context"],
         "title": "Action"
       },
       "title": "Actions Post-Deployment",
@@ -928,20 +856,13 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "id",
-                "label",
-                "command"
-              ]
+              "required": ["id", "label", "command"]
             },
             "title": "Label",
             "type": "array"
           }
         },
-        "required": [
-          "id",
-          "label"
-        ]
+        "required": ["id", "label"]
       },
       "title": "Custom commands",
       "type": "array"
@@ -950,18 +871,9 @@
       "$id": "#/properties/customCommandsPosition",
       "description": "Position of custom commands in the menu (first or last)",
       "default": "last",
-      "enum": [
-        "first",
-        "last"
-      ],
-      "enumNames": [
-        "First",
-        "Last"
-      ],
-      "examples": [
-        "first",
-        "last"
-      ],
+      "enum": ["first", "last"],
+      "enumNames": ["First", "Last"],
+      "examples": ["first", "last"],
       "title": "Custom commands position",
       "type": "string"
     },
@@ -1071,10 +983,7 @@
           "name": {
             "$Id": "#/properties/customPlugins/items/properties/name",
             "description": "Name of the plugin npm package",
-            "examples": [
-              "mo-dx-plugin",
-              "shane-sfdx-plugins"
-            ],
+            "examples": ["mo-dx-plugin", "shane-sfdx-plugins"],
             "title": "Name",
             "type": "string"
           },
@@ -1116,10 +1025,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "dataPath",
-          "importInScratchOrgs"
-        ]
+        "required": ["dataPath", "importInScratchOrgs"]
       },
       "title": "Data packages",
       "type": "array"
@@ -1138,12 +1044,7 @@
     "deploymentApexTestClasses": {
       "$id": "#/properties/deploymentApexTestClasses",
       "description": "List of Apex Test Classes that will be run during deployments. Requires enableDeploymentApexTestClasses and enableDeltaDeploymentBetweenMajorBranches to be set to true (Not recommended, use only if you have specific needs)",
-      "examples": [
-        [
-          "MyTestClass1",
-          "MyTestClass2"
-        ]
-      ],
+      "examples": [["MyTestClass1", "MyTestClass2"]],
       "items": {
         "type": "string"
       },
@@ -1155,11 +1056,7 @@
       "default": "integration",
       "description": "When creating a new sfdx-hardis User Story, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
       "docUrl": "https://sfdx-hardis.cloudity.com/hardis/work/new/",
-      "examples": [
-        "integration",
-        "dev_lot2",
-        "hotfixes"
-      ],
+      "examples": ["integration", "dev_lot2", "hotfixes"],
       "title": "Default Pull Request/Merge Request target branch when you create a new User Story.",
       "type": "string"
     },
@@ -1213,9 +1110,7 @@
             "properties": {
               "dataPath": {
                 "$id": "#/properties/install/properties/packages/items/dataPath",
-                "examples": [
-                  "scripts/data/EmailTemplate"
-                ],
+                "examples": ["scripts/data/EmailTemplate"],
                 "title": "Path to SFDMU data project to deploy",
                 "type": "string"
               },
@@ -1230,38 +1125,26 @@
               },
               "order": {
                 "$id": "#/properties/install/properties/packages/items/order",
-                "examples": [
-                  -20,
-                  13,
-                  50
-                ],
+                "examples": [-20, 13, 50],
                 "title": "Execution order in deployment plan",
                 "type": "number"
               },
               "packageXmlFile": {
                 "$id": "#/properties/install/properties/packages/items/packageXmlFile",
-                "examples": [
-                  "manifest/splits/packageXmlEmails.xml"
-                ],
+                "examples": ["manifest/splits/packageXmlEmails.xml"],
                 "title": "Path to package.xml file to use for deployment",
                 "type": "string"
               },
               "waitAfter": {
                 "$id": "#/properties/install/properties/packages/items/waitAfter",
                 "description": "Delay to wait before installing the next package",
-                "examples": [
-                  10,
-                  20
-                ],
+                "examples": [10, 20],
                 "title": "Wait after install (seconds)",
                 "type": "number"
               }
             }
           },
-          "required": [
-            "label",
-            "order"
-          ],
+          "required": ["label", "order"],
           "title": "List of packages to deploy",
           "type": "array"
         }
@@ -1285,9 +1168,7 @@
       "$id": "#/properties/devHubInstanceUrl",
       "default": "https://login.salesforce.com",
       "description": "Dev Hub instance URL used for authenticating to DevHub from CI jobs",
-      "examples": [
-        "DevHub_MyClientMyProject"
-      ],
+      "examples": ["DevHub_MyClientMyProject"],
       "title": "Dev Hub Instance URL",
       "type": "string"
     },
@@ -1307,9 +1188,7 @@
       "$id": "#/properties/docDeployToCloudflare",
       "default": false,
       "description": "Automatically deploy MkDocs HTML documentation from sfdx-hardis Monitoring Workflow (BackUp step) to Cloudflare, as a static web site",
-      "examples": [
-        true
-      ],
+      "examples": [true],
       "title": "Doc: Deploy to Cloudflare",
       "type": "boolean"
     },
@@ -1317,9 +1196,7 @@
       "$id": "#/properties/docDeployToConfluence",
       "default": false,
       "description": "Automatically publish MkDocs documentation from sfdx-hardis Monitoring Workflow (BackUp step) to Atlassian Confluence. Requires CONFLUENCE_SPACE_KEY and authentication variables to be set.",
-      "examples": [
-        true
-      ],
+      "examples": [true],
       "title": "Doc: Deploy to Confluence",
       "type": "boolean"
     },
@@ -1327,9 +1204,7 @@
       "$id": "#/properties/docDeployToOrg",
       "default": false,
       "description": "Automatically deploy MkDocs HTML documentation from sfdx-hardis Monitoring Workflow (BackUp step) to Salesforce org, as static resource",
-      "examples": [
-        true
-      ],
+      "examples": [true],
       "title": "Doc: Deploy to Salesforce Org",
       "type": "boolean"
     },
@@ -1337,10 +1212,7 @@
       "$id": "#/properties/enableDeltaDeploymentBetweenMajorBranches",
       "description": "Enable delta deployments between major branches (ex: integration -> uat). Not recommended, as real DevOps best practice is to deploy full source: use only if you have specific needs.",
       "default": false,
-      "examples": [
-        true,
-        false
-      ],
+      "examples": [true, false],
       "title": "Enable delta deployments between major branches (NOT RECOMMENDED)",
       "type": "boolean"
     },
@@ -1348,10 +1220,7 @@
       "$id": "#/properties/enableDeploymentApexTestClasses",
       "description": "Enable the use of custom Apex Test Classes list during deployments. Requires enableDeltaDeploymentBetweenMajorBranches to be set to true. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.",
       "default": false,
-      "examples": [
-        true,
-        false
-      ],
+      "examples": [true, false],
       "title": "Enable custom Apex Test Classes during deployments (NOT RECOMMENDED) (Beta)",
       "type": "boolean"
     },
@@ -1374,10 +1243,7 @@
     "genericTicketingProviderRegex": {
       "$id": "#/properties/genericTicketingProviderRegex",
       "description": "Regular expression to identify ticket IDs from your ticketing system. Example: ([R|I][0-9]+-[0-9]+) for EasyVista.",
-      "examples": [
-        "([R|I][0-9]+-[0-9]+)",
-        "(^[A-Z]{2,5}-\\d{1,6}$)"
-      ],
+      "examples": ["([R|I][0-9]+-[0-9]+)", "(^[A-Z]{2,5}-\\d{1,6}$)"],
       "title": "Generic Ticketing Provider Regex",
       "type": "string",
       "visible-conditions": [
@@ -1391,9 +1257,7 @@
     "genericTicketingProviderUrlBuilder": {
       "$id": "#/properties/genericTicketingProviderUrlBuilder",
       "description": "URL pattern to build ticket URLs from ticket IDs. Use {ticketId} as placeholder for the ticket ID. Example: https://tickets.mycompany.com/ticket/{ticketId}",
-      "examples": [
-        "https://tickets.mycompany.com/ticket/{ticketId}"
-      ],
+      "examples": ["https://tickets.mycompany.com/ticket/{ticketId}"],
       "title": "Generic Ticketing Provider URL Builder",
       "type": "string",
       "visible-conditions": [
@@ -1407,12 +1271,7 @@
     "initPermissionSets": {
       "$id": "#/properties/initPermissionSets",
       "description": "When creating a scratch org, Admin user will be automatically assigned to those permission sets. Example: PS_Admin",
-      "examples": [
-        [
-          "MyPermissionSet",
-          "MyPermissionSetGroup"
-        ]
-      ],
+      "examples": [["MyPermissionSet", "MyPermissionSetGroup"]],
       "items": {
         "type": "string"
       },
@@ -1459,69 +1318,49 @@
         "properties": {
           "Id": {
             "$Id": "#/properties/install/properties/packages/items/Id",
-            "examples": [
-              "0A35r000000GveVCAS"
-            ],
+            "examples": ["0A35r000000GveVCAS"],
             "title": "(unused) PackageId",
             "type": "string"
           },
           "SubscriberPackageId": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageId",
-            "examples": [
-              "033b0000000Pf2AAAS"
-            ],
+            "examples": ["033b0000000Pf2AAAS"],
             "title": "Subscriber Package Id",
             "type": "string"
           },
           "SubscriberPackageName": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageName",
-            "examples": [
-              "Files Attachment Notes"
-            ],
+            "examples": ["Files Attachment Notes"],
             "title": "Subscriber Package Name",
             "type": "string"
           },
           "SubscriberPackageNamespace": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageNamespace",
-            "examples": [
-              "fan_astrea"
-            ],
+            "examples": ["fan_astrea"],
             "title": "Subscriber Package NameSpace",
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": ["string", "null"]
           },
           "SubscriberPackageVersionId": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionId",
-            "examples": [
-              "04t0o000003nRWAAA2"
-            ],
+            "examples": ["04t0o000003nRWAAA2"],
             "title": "Subscriber Version Id (IMPORTANT)",
             "type": "string"
           },
           "SubscriberPackageVersionName": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionName",
-            "examples": [
-              "Summer2021"
-            ],
+            "examples": ["Summer2021"],
             "title": "Subscriber Version Name",
             "type": "string"
           },
           "SubscriberPackageVersionNumber": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionNumber",
-            "examples": [
-              "1.22.0.2"
-            ],
+            "examples": ["1.22.0.2"],
             "title": "Subscriber Version Number",
             "type": "string"
           },
           "VersionSettings": {
             "$Id": "#/properties/install/properties/packages/items/VersionSettings",
-            "examples": [
-              "namespace",
-              "none"
-            ],
+            "examples": ["namespace", "none"],
             "title": "Version Settings",
             "type": "string"
           },
@@ -1529,10 +1368,7 @@
             "$Id": "#/properties/install/properties/packages/items/installDuringDeployments",
             "default": false,
             "description": "If true, during deployments this package will be installed in target org if not installed yet",
-            "examples": [
-              true,
-              false
-            ],
+            "examples": [true, false],
             "title": "Install during deployments",
             "type": "boolean"
           },
@@ -1540,27 +1376,19 @@
             "$Id": "#/properties/install/properties/packages/items/installOnScratchOrgs",
             "default": false,
             "description": "If true, this package will be installed when creating a new scratch org with sfdx-hardis",
-            "examples": [
-              true,
-              false
-            ],
+            "examples": [true, false],
             "title": "Install on scratch orgs",
             "type": "boolean"
           },
           "installationkey": {
             "$Id": "#/properties/install/properties/packages/items/installationkey",
-            "examples": [
-              "MyInstallationKey",
-              "4FzkMzUSwFfP#@"
-            ],
+            "examples": ["MyInstallationKey", "4FzkMzUSwFfP#@"],
             "description": "Installation key for key-protected package",
             "title": "Package installation key",
             "type": "string"
           }
         },
-        "required": [
-          "SubscriberPackageVersionId"
-        ],
+        "required": ["SubscriberPackageVersionId"],
         "title": "Salesforce package"
       },
       "title": "Installed Packages",
@@ -1571,9 +1399,7 @@
       "default": false,
       "description": "If your configuration contains an installedPackages property, activating this option allows you to make sfdx-hardis automatically install packages during the Deployments Check workflow, and not to wait after the merge of the Pull Request.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-install-packages/",
-      "examples": [
-        true
-      ],
+      "examples": [true],
       "title": "Install packages during deployment checks workflow",
       "type": "boolean"
     },
@@ -1592,10 +1418,7 @@
     "jiraHost": {
       "$id": "#/properties/jiraHost",
       "description": "Jira host URL (without https://). Example: mycompany.atlassian.net",
-      "examples": [
-        "mycompany.atlassian.net",
-        "hardisgroup.atlassian.net"
-      ],
+      "examples": ["mycompany.atlassian.net", "hardisgroup.atlassian.net"],
       "title": "Jira Host",
       "type": "string"
     },
@@ -1630,13 +1453,7 @@
     "sourcesToRetrofit": {
       "$id": "#/properties/sourcesToRetrofit",
       "description": "List of metadata to retrieve for retrofit job",
-      "examples": [
-        [
-          "CustomField",
-          "Layout",
-          "PermissionSet"
-        ]
-      ],
+      "examples": [["CustomField", "Layout", "PermissionSet"]],
       "items": {
         "type": "string"
       },
@@ -1647,23 +1464,14 @@
       "$id": "#/properties/manualActionsFileUrl",
       "default": "",
       "description": "URL of the XLS file that contains manual actions to perform before or after a deployment",
-      "examples": [
-        "https://some.sharepoint.com/file.xlsx"
-      ],
+      "examples": ["https://some.sharepoint.com/file.xlsx"],
       "title": "Manual Actions File URL",
       "type": "string"
     },
     "mergeTargets": {
       "$id": "#/properties/mergeTargets",
       "description": "In branch-scoped config file, declares the list of branches that the current one can have as merge target. For example, integration will have mergeTargets [uat]",
-      "examples": [
-        [
-          "preprod"
-        ],
-        [
-          "integration"
-        ]
-      ],
+      "examples": [["preprod"], ["integration"]],
       "items": {
         "type": "string"
       },
@@ -1720,10 +1528,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "title",
-          "command"
-        ]
+        "required": ["title", "command"]
       },
       "title": "Monitoring commands",
       "type": "array"
@@ -1738,12 +1543,7 @@
     "monitoringDisable": {
       "$id": "#/properties/monitoringDisable",
       "description": "List of commands to skip during monitoring jobs",
-      "examples": [
-        [
-          "METADATA_STATUS",
-          "UNUSED_METADATAS"
-        ]
-      ],
+      "examples": [["METADATA_STATUS", "UNUSED_METADATAS"]],
       "items": {
         "$ref": "#/definitions/enum_monitoring_commands"
       },
@@ -1754,10 +1554,7 @@
       "$id": "#/properties/monitoringExcludeUsernames",
       "description": "List of usernames to exclude while running monitoring commands",
       "examples": [
-        [
-          "deploymentuser@cloudity.com",
-          "mc-cloud-user@cloudity.com"
-        ]
+        ["deploymentuser@cloudity.com", "mc-cloud-user@cloudity.com"]
       ],
       "items": {
         "type": "string"
@@ -1768,12 +1565,7 @@
     "monitoringUnsecureConnectedAppsIgnore": {
       "$id": "#/properties/monitoringUnsecureConnectedAppsIgnore",
       "description": "List of Connected App names to ignore while running Unsecure Connected Apps monitoring command",
-      "examples": [
-        [
-          "ForcePad",
-          "Another Unsecure Connected App"
-        ]
-      ],
+      "examples": [["ForcePad", "Another Unsecure Connected App"]],
       "items": {
         "type": "string"
       },
@@ -1784,9 +1576,7 @@
       "$id": "#/properties/msTeamsWebhookUrl",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send ALL notifications",
-      "examples": [
-        "https://my.msteams.webhook.url"
-      ],
+      "examples": ["https://my.msteams.webhook.url"],
       "title": "MsTeams WebHook Url (ALL)",
       "type": "string"
     },
@@ -1794,9 +1584,7 @@
       "$id": "#/properties/msTeamsWebhookUrlCritical",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send CRITICAL notifications",
-      "examples": [
-        "https://my.msteams.webhook.url"
-      ],
+      "examples": ["https://my.msteams.webhook.url"],
       "title": "MsTeams WebHook Url (CRITICAL)",
       "type": "string"
     },
@@ -1804,9 +1592,7 @@
       "$id": "#/properties/msTeamsWebhookUrlSevere",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send SEVERE notifications",
-      "examples": [
-        "https://my.msteams.webhook.url"
-      ],
+      "examples": ["https://my.msteams.webhook.url"],
       "title": "MsTeams WebHook Url (SEVERE)",
       "type": "string"
     },
@@ -1814,9 +1600,7 @@
       "$id": "#/properties/msTeamsWebhookUrlWarning",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send WARNING notifications",
-      "examples": [
-        "https://my.msteams.webhook.url"
-      ],
+      "examples": ["https://my.msteams.webhook.url"],
       "title": "MsTeams WebHook Url (WARNING)",
       "type": "string"
     },
@@ -1824,9 +1608,7 @@
       "$id": "#/properties/msTeamsWebhookUrlInfo",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send INFO notifications",
-      "examples": [
-        "https://my.msteams.webhook.url"
-      ],
+      "examples": ["https://my.msteams.webhook.url"],
       "title": "MsTeams WebHook Url (INFO)",
       "type": "string"
     },
@@ -1846,21 +1628,14 @@
       "$id": "#/properties/newTaskNameRegexExample",
       "default": "",
       "description": "If you activated User Story name validation via RegEx, define an example value that will be displayed to users.\nExample: 'MYPROJECT-168 Update account status validation rule'",
-      "examples": [
-        "MYPROJECT-123 Update account status validation rule"
-      ],
+      "examples": ["MYPROJECT-123 Update account status validation rule"],
       "title": "Example string for User Story name validation regex",
       "type": "string"
     },
     "notificationsDisable": {
       "$id": "#/properties/notificationsDisable",
       "description": "List of notifications types to skip sending",
-      "examples": [
-        [
-          "METADATA_STATUS",
-          "UNUSED_METADATAS"
-        ]
-      ],
+      "examples": [["METADATA_STATUS", "UNUSED_METADATAS"]],
       "items": {
         "$ref": "#/definitions/enum_notification_types"
       },
@@ -1921,11 +1696,7 @@
       "$id": "#/properties/productionBranch",
       "default": "",
       "description": "Name of the git branch corresponding to production environment",
-      "examples": [
-        "master",
-        "main",
-        "production"
-      ],
+      "examples": ["master", "main", "production"],
       "title": "Production branch name",
       "type": "string"
     },
@@ -1933,11 +1704,7 @@
       "$id": "#/properties/projectName",
       "default": "",
       "description": "Identifier for the project (can be the client and project)",
-      "examples": [
-        "MyClientMyProject",
-        "GoogleGmail",
-        "AppleIWatch"
-      ],
+      "examples": ["MyClientMyProject", "GoogleGmail", "AppleIWatch"],
       "title": "Project Name",
       "type": "string"
     },
@@ -1948,12 +1715,7 @@
         "connectedApps": {
           "$id": "#/properties/refreshSandboxConfig/connectedApps",
           "description": "List of connected apps to download before refresh and to upload after refresh",
-          "examples": [
-            [
-              "My_Connected_App_1",
-              "My_Connected_App_2"
-            ]
-          ],
+          "examples": [["My_Connected_App_1", "My_Connected_App_2"]],
           "items": {
             "type": "string"
           },
@@ -1963,12 +1725,7 @@
         "customSettings": {
           "$id": "#/properties/refreshSandboxConfig/customSettings",
           "description": "List of Custom Settings to download before refresh and to upload after refresh",
-          "examples": [
-            [
-              "MyCustomSetting1__c",
-              "MyCustomSetting2__c"
-            ]
-          ],
+          "examples": [["MyCustomSetting1__c", "MyCustomSetting2__c"]],
           "items": {
             "type": "string"
           },
@@ -2000,11 +1757,7 @@
       "$id": "#/properties/retrofitBranch",
       "default": "",
       "description": "Name of the git branch where retrofit merge requests targets to",
-      "examples": [
-        "preprod",
-        "dev",
-        "maintenance"
-      ],
+      "examples": ["preprod", "dev", "maintenance"],
       "title": "Retrofit branch name",
       "type": "string"
     },
@@ -2062,9 +1815,7 @@
       "$id": "#/properties/sfdmuCanModify",
       "default": "",
       "description": "Instance host name to allow SFDMU to deploy data in a production org",
-      "examples": [
-        "myproject.force.com"
-      ],
+      "examples": ["myproject.force.com"],
       "title": "SFDMU can modify",
       "type": "string"
     },
@@ -2079,10 +1830,7 @@
       "$id": "#/properties/skipMinimizeProfiles",
       "description": "These profiles will not be reformatted by command hardis:project:clean:minimizeprofiles",
       "examples": [
-        [
-          "MyClient Customer Community Login User",
-          "MyClientPortail Profile"
-        ]
+        ["MyClient Customer Community Login User", "MyClientPortail Profile"]
       ],
       "items": {
         "type": "string"
@@ -2152,30 +1900,16 @@
         "Run All Tests In Org (never use it)",
         "No Test Run (not recommended, better use Run Local Tests + deploymentApexTestClasses)"
       ],
-      "examples": [
-        "RunRepositoryTests",
-        "RunSpecifiedTests"
-      ],
+      "examples": ["RunRepositoryTests", "RunSpecifiedTests"],
       "title": "Test level for deployments",
       "type": "string"
     },
     "ticketingProvider": {
       "$id": "#/properties/ticketingProvider",
       "description": "Ticketing provider used on the project",
-      "enum": [
-        "JIRA",
-        "AZURE",
-        "GENERIC"
-      ],
-      "enumNames": [
-        "Jira",
-        "Azure Boards",
-        "Generic"
-      ],
-      "examples": [
-        "JIRA",
-        "AZURE"
-      ],
+      "enum": ["JIRA", "AZURE", "GENERIC"],
+      "enumNames": ["Jira", "Azure Boards", "Generic"],
+      "examples": ["JIRA", "AZURE"],
       "title": "Ticketing Provider",
       "type": "string"
     },

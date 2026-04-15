@@ -2,6 +2,7 @@
 title: Sfdx-hardis deployment assistant setup
 description: Learn how to setup Salesforce deployment assistant
 ---
+
 <!-- markdownlint-disable MD013 -->
 
 # Setup Salesforce Deployment Assistant
@@ -27,7 +28,7 @@ If you are using [sfdx-hardis CI/CD](https://sfdx-hardis.cloudity.com/salesforce
 Replace your calls to Salesforce CLI by calls to sfdx-hardis commands wrapper.
 
 | sfdx command                                                                                                                                                                                                                                                              | Corresponding sfdx-hardis wrapper command                                                             |
-|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------|
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------- |
 | [sf project deploy start](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_deploy_start_unified)                                                             | [sf hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/)       |
 | [sf project deploy validate](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_deploy_validate_unified)                                                       | [sf hardis:project:deploy:validate](https://sfdx-hardis.cloudity.com/hardis/project/deploy/validate/) |
 | [sf project deploy quick](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_deploy_quick_unified)                                                             | [sf hardis:project:deploy:quick](https://sfdx-hardis.cloudity.com/hardis/project/deploy/quick/)       |

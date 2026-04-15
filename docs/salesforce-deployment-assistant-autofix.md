@@ -2,12 +2,14 @@
 title: Coding Agent Auto-Fix
 description: Automatically fix deployment errors using AI coding agents
 ---
+
 <!-- markdownlint-disable MD013 -->
 
 # Coding Agent Auto-Fix
 
 !!! warning "Beta Feature"
-    This feature is currently in **beta**. AI coding agents can make mistakes — **all proposed changes must be carefully reviewed by an expert** before merging. Never blindly accept auto-fix Pull Requests.
+
+This feature is currently in **beta**. AI coding agents can make mistakes — **all proposed changes must be carefully reviewed by an expert** before merging. Never blindly accept auto-fix Pull Requests.
 
 ## Overview
 
@@ -15,12 +17,12 @@ When a deployment fails, sfdx-hardis can automatically invoke a **coding agent C
 
 This feature works with the following coding agent CLIs:
 
-| Agent | CLI Package | Auth mechanism |
-|:------|:------------|:---------------|
-| **Claude** (Anthropic) | [`@anthropic-ai/claude-code`](https://www.npmjs.com/package/@anthropic-ai/claude-code) | `ANTHROPIC_API_KEY` env var |
-| **Codex** (OpenAI) | [`@openai/codex`](https://www.npmjs.com/package/@openai/codex) | `OPENAI_API_KEY` or `CODEX_API_KEY` env var |
-| **Gemini** (Google) | [`@google/gemini-cli`](https://www.npmjs.com/package/@google/gemini-cli) | `GEMINI_API_KEY` env var |
-| **Copilot** (GitHub) | [`@github/copilot`](https://www.npmjs.com/package/@github/copilot) | `GH_TOKEN` or `GITHUB_TOKEN` env var |
+| Agent                  | CLI Package                                                                            | Auth mechanism                              |
+| :--------------------- | :------------------------------------------------------------------------------------- | :------------------------------------------ |
+| **Claude** (Anthropic) | [`@anthropic-ai/claude-code`](https://www.npmjs.com/package/@anthropic-ai/claude-code) | `ANTHROPIC_API_KEY` env var                 |
+| **Codex** (OpenAI)     | [`@openai/codex`](https://www.npmjs.com/package/@openai/codex)                         | `OPENAI_API_KEY` or `CODEX_API_KEY` env var |
+| **Gemini** (Google)    | [`@google/gemini-cli`](https://www.npmjs.com/package/@google/gemini-cli)               | `GEMINI_API_KEY` env var                    |
+| **Copilot** (GitHub)   | [`@github/copilot`](https://www.npmjs.com/package/@github/copilot)                     | `GH_TOKEN` or `GITHUB_TOKEN` env var        |
 
 ## How it works
 
@@ -71,11 +73,11 @@ You can enable auto-fix either via environment variable or via `.sfdx-hardis.yml
 
 The coding agent CLI needs to authenticate with its AI provider. You must provide the appropriate API key as a **secure environment variable** in your CI/CD pipeline.
 
-| Agent | Required env var |
-|:------|:-----------------|
-| Claude | `ANTHROPIC_API_KEY` |
-| Codex | `OPENAI_API_KEY` or `CODEX_API_KEY` |
-| Gemini | `GEMINI_API_KEY` |
+| Agent   | Required env var                                                  |
+| :------ | :---------------------------------------------------------------- |
+| Claude  | `ANTHROPIC_API_KEY`                                               |
+| Codex   | `OPENAI_API_KEY` or `CODEX_API_KEY`                               |
+| Gemini  | `GEMINI_API_KEY`                                                  |
 | Copilot | `GH_TOKEN` or `GITHUB_TOKEN` (usually already available in CI/CD) |
 
 **Tip:** If you already have a LangChain AI provider configured (see [AI setup](salesforce-ai-setup.md)), sfdx-hardis will automatically **reuse** `LANGCHAIN_LLM_MODEL_API_KEY` so you don't need to set a separate key.
@@ -103,11 +105,11 @@ To override, set explicitly:
 
 ## Configuration reference
 
-| Variable / Config key | Description | Default |
-|:----------------------|:------------|:--------|
-| `SFDX_HARDIS_CODING_AGENT_AUTO_FIX` / `codingAgentAutoFix` | Enable automatic fix of deployment errors using a coding agent | `false` |
-| `SFDX_HARDIS_CODING_AGENT` / `codingAgent` | Force a specific coding agent CLI (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`) | Auto-detected |
-| `DEBUG_CODING_AGENT` | Set to `true` to show full coding agent output in logs | `false` |
+| Variable / Config key                                      | Description                                                                            | Default       |
+| :--------------------------------------------------------- | :------------------------------------------------------------------------------------- | :------------ |
+| `SFDX_HARDIS_CODING_AGENT_AUTO_FIX` / `codingAgentAutoFix` | Enable automatic fix of deployment errors using a coding agent                         | `false`       |
+| `SFDX_HARDIS_CODING_AGENT` / `codingAgent`                 | Force a specific coding agent CLI (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`) | Auto-detected |
+| `DEBUG_CODING_AGENT`                                       | Set to `true` to show full coding agent output in logs                                 | `false`       |
 
 ## Customizing the prompt
 
@@ -119,18 +121,19 @@ config/prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.txt
 
 The template receives the following variables:
 
-| Variable | Description |
-|:---------|:------------|
-| `ERRORS` | Structured list of deployment errors with tips |
+| Variable       | Description                                                  |
+| :------------- | :----------------------------------------------------------- |
+| `ERRORS`       | Structured list of deployment errors with tips               |
 | `FAILED_TESTS` | Failed Apex test classes with error details and stack traces |
-| `TARGET_ORG` | The target org username (for read-only queries) |
+| `TARGET_ORG`   | The target org username (for read-only queries)              |
 
 See [prompt templates documentation](salesforce-ai-prompts.md) for more details on how to override prompts.
 
 ## Security considerations
 
 !!! danger "Expert review required"
-    AI coding agents can produce incorrect or incomplete fixes. **Every auto-fix Pull Request must be reviewed and validated by an expert** before merging. Treat these PRs the same way you would treat any code contribution — run tests, inspect changes, and verify correctness.
+
+AI coding agents can produce incorrect or incomplete fixes. **Every auto-fix Pull Request must be reviewed and validated by an expert** before merging. Treat these PRs the same way you would treat any code contribution — run tests, inspect changes, and verify correctness.
 
 - The coding agent runs with `--allow-all-tools` / full auto-approval mode so it can read and modify files autonomously
 - The agent is **instructed to never deploy** anything to Salesforce — it only modifies local files
@@ -160,5 +163,5 @@ variables:
 
 ```yaml
 codingAgentAutoFix: true
-codingAgent: claude   # optional: force a specific agent
+codingAgent: claude # optional: force a specific agent
 ```
