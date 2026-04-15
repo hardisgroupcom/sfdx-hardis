@@ -106,7 +106,7 @@ To override, set explicitly:
 ## Configuration reference
 
 | Variable / Config key                                      | Description                                                                            | Default       |
-| :--------------------------------------------------------- | :------------------------------------------------------------------------------------- | :------------ |
+|:-----------------------------------------------------------|:---------------------------------------------------------------------------------------|:--------------|
 | `SFDX_HARDIS_CODING_AGENT_AUTO_FIX` / `codingAgentAutoFix` | Enable automatic fix of deployment errors using a coding agent                         | `false`       |
 | `SFDX_HARDIS_CODING_AGENT` / `codingAgent`                 | Force a specific coding agent CLI (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`) | Auto-detected |
 | `DEBUG_CODING_AGENT`                                       | Set to `true` to show full coding agent output in logs                                 | `false`       |
@@ -122,7 +122,7 @@ config/prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.txt
 The template receives the following variables:
 
 | Variable       | Description                                                  |
-| :------------- | :----------------------------------------------------------- |
+|:---------------|:-------------------------------------------------------------|
 | `ERRORS`       | Structured list of deployment errors with tips               |
 | `FAILED_TESTS` | Failed Apex test classes with error details and stack traces |
 | `TARGET_ORG`   | The target org username (for read-only queries)              |
