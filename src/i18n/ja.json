@@ -295,6 +295,7 @@
   "codingAgentNoFixesApplied": "コーディングエージェントは修正を適用しませんでした。",
   "codingAgentNoProviderInfo": "コーディングエージェント {{agent}} のプロバイダー情報が見つかりません。コマンドを構築できません。",
   "codingAgentNotAvailable": "コーディングエージェント {{agent}} はこのシステムで利用できません。",
+  "codingAgentNotInstalledSuggestUbuntu": "コーディングエージェント {{agent}} のAPIキーが設定されていますが、CLIが利用できません。Alpine Linux (musl) の非互換性が原因の可能性があります。代わりにUbuntuベースのDockerイメージ ({{ubuntuImage}}) の使用を検討してください。",
   "codingAgentPullRequestCreated": "Pull Requestが作成されました: {{url}}",
   "codingAgentPullRequestCreationFailed": "Pull Requestの作成に失敗しました。修正ブランチはプッシュされましたので、手動でPRを作成できます。",
   "codingAgentPushingFixBranch": "修正ブランチ {{branch}} をプッシュしています...",

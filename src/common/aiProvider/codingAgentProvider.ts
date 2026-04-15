@@ -83,6 +83,7 @@ export class CodingAgentProvider {
         return config;
       }
       uxLog("warning", this, c.yellow(t("codingAgentNotAvailable", { agent: preferredAgent })));
+      this.warnAgentNotInstalledSuggestUbuntu(preferredAgent);
     }
 
     // 2. Derive from active AI provider
@@ -116,6 +117,8 @@ export class CodingAgentProvider {
         if (config?.available) {
           return config;
         }
+        // API key is set but CLI is not available — warn and suggest Ubuntu image if on Alpine/musl
+        this.warnAgentNotInstalledSuggestUbuntu(agent);
       }
     }
     return null;
@@ -405,5 +408,30 @@ export class CodingAgentProvider {
       available,
       codingAgentInfo: agentInfo,
     };
+  }
+
+  /**
+   * Detect if the current system uses musl libc (Alpine Linux).
+   */
+  private static isMuslSystem(): boolean {
+    try {
+      // Alpine Linux uses musl; check /etc/os-release or ldd version output
+      if (fs.existsSync("/etc/alpine-release")) {
+        return true;
+      }
+    } catch {
+      // Ignore
+    }
+    return false;
+  }
+
+  /**
+   * Warn the user when an API key is configured for an agent but its CLI is not available.
+   * On Alpine/musl systems, suggest using the Ubuntu-based Docker image instead.
+   */
+  private static warnAgentNotInstalledSuggestUbuntu(agent: CodingAgentType): void {
+    if (this.isMuslSystem()) {
+      uxLog("warning", this, c.yellow(t("codingAgentNotInstalledSuggestUbuntu", { agent, ubuntuImage: "hardisgroupcom/sfdx-hardis-ubuntu:latest" })));
+    }
   }
 }

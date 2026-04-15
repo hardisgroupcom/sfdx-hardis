@@ -295,6 +295,7 @@
   "codingAgentNoFixesApplied": "Agent kodujący nie zastosował żadnych poprawek.",
   "codingAgentNoProviderInfo": "Nie znaleziono informacji o dostawcy dla agenta kodującego {{agent}}. Nie można zbudować polecenia.",
   "codingAgentNotAvailable": "Agent kodujący {{agent}} nie jest dostępny w tym systemie.",
+  "codingAgentNotInstalledSuggestUbuntu": "Agent kodujący {{agent}} ma skonfigurowany klucz API, ale jego CLI nie jest dostępne. Może to być spowodowane niekompatybilnością z Alpine Linux (musl). Rozważ użycie obrazu Docker opartego na Ubuntu ({{ubuntuImage}}).",
   "codingAgentPullRequestCreated": "Pull request utworzony: {{url}}",
   "codingAgentPullRequestCreationFailed": "Nie udało się utworzyć pull request. Gałąź naprawcza została wypchnięta, możesz utworzyć PR ręcznie.",
   "codingAgentPushingFixBranch": "Wypychanie gałęzi naprawczej {{branch}}...",

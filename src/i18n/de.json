@@ -295,6 +295,7 @@
   "codingAgentNoFixesApplied": "Der Coding-Agent hat keine Korrekturen angewendet.",
   "codingAgentNoProviderInfo": "Keine Anbieterinformationen für Coding-Agent {{agent}} gefunden. Befehl kann nicht erstellt werden.",
   "codingAgentNotAvailable": "Der Coding-Agent {{agent}} ist auf diesem System nicht verfügbar.",
+  "codingAgentNotInstalledSuggestUbuntu": "Der Coding-Agent {{agent}} hat einen API-Schlüssel konfiguriert, aber sein CLI ist nicht verfügbar. Dies kann durch eine Inkompatibilität mit Alpine Linux (musl) verursacht werden. Erwägen Sie, stattdessen das Ubuntu-basierte Docker-Image ({{ubuntuImage}}) zu verwenden.",
   "codingAgentPullRequestCreated": "Pull Request erstellt: {{url}}",
   "codingAgentPullRequestCreationFailed": "Pull Request konnte nicht erstellt werden. Der Fix-Branch wurde gepusht, Sie können einen PR manuell erstellen.",
   "codingAgentPushingFixBranch": "Push des Fix-Branch {{branch}}...",

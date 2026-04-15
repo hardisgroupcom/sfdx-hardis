@@ -295,6 +295,7 @@
   "codingAgentNoFixesApplied": "Il coding agent non ha applicato nessuna correzione.",
   "codingAgentNoProviderInfo": "Nessuna informazione del provider trovata per il coding agent {{agent}}. Impossibile costruire il comando.",
   "codingAgentNotAvailable": "Il coding agent {{agent}} non è disponibile su questo sistema.",
+  "codingAgentNotInstalledSuggestUbuntu": "Il coding agent {{agent}} ha una API key configurata ma il suo CLI non è disponibile. Questo potrebbe essere causato da un'incompatibilità con Alpine Linux (musl). Considera l'uso dell'immagine Docker basata su Ubuntu ({{ubuntuImage}}).",
   "codingAgentPullRequestCreated": "Pull request creata: {{url}}",
   "codingAgentPullRequestCreationFailed": "Impossibile creare la pull request. Il branch di correzione è stato pushato, puoi creare una PR manualmente.",
   "codingAgentPushingFixBranch": "Push del branch di correzione {{branch}}...",

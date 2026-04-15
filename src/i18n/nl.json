@@ -295,6 +295,7 @@
   "codingAgentNoFixesApplied": "Coding agent heeft geen fixes toegepast.",
   "codingAgentNoProviderInfo": "Geen providerinformatie gevonden voor coding agent {{agent}}. Kan het commando niet opbouwen.",
   "codingAgentNotAvailable": "Coding agent {{agent}} is niet beschikbaar op dit systeem.",
+  "codingAgentNotInstalledSuggestUbuntu": "Coding agent {{agent}} heeft een API key geconfigureerd maar de CLI is niet beschikbaar. Dit kan veroorzaakt worden door incompatibiliteit met Alpine Linux (musl). Overweeg om in plaats daarvan de Ubuntu-gebaseerde Docker image ({{ubuntuImage}}) te gebruiken.",
   "codingAgentPullRequestCreated": "Pull request aangemaakt: {{url}}",
   "codingAgentPullRequestCreationFailed": "Aanmaken van pull request mislukt. De fix branch is gepusht, je kunt handmatig een PR aanmaken.",
   "codingAgentPushingFixBranch": "Fix branch {{branch}} pushen...",

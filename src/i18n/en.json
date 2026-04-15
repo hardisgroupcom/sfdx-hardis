@@ -295,6 +295,7 @@
   "codingAgentNoFixesApplied": "Coding agent did not apply any fixes.",
   "codingAgentNoProviderInfo": "No provider info found for coding agent {{agent}}. Cannot build command.",
   "codingAgentNotAvailable": "Coding agent {{agent}} is not available on this system.",
+  "codingAgentNotInstalledSuggestUbuntu": "Coding agent {{agent}} has an API key configured but its CLI is not available. This may be caused by Alpine Linux (musl) incompatibility. Consider using the Ubuntu-based Docker image ({{ubuntuImage}}) instead.",
   "codingAgentPullRequestCreated": "Pull request created: {{url}}",
   "codingAgentPullRequestCreationFailed": "Failed to create pull request. The fix branch has been pushed, you can create a PR manually.",
   "codingAgentPushingFixBranch": "Pushing fix branch {{branch}}...",
