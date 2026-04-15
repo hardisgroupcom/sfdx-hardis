@@ -18,7 +18,7 @@ When a deployment fails, sfdx-hardis can automatically invoke a **coding agent C
 This feature works with the following coding agent CLIs:
 
 | Agent                  | CLI Package                                                                            | Auth mechanism                              |
-| :--------------------- | :------------------------------------------------------------------------------------- | :------------------------------------------ |
+|:-----------------------|:---------------------------------------------------------------------------------------|:--------------------------------------------|
 | **Claude** (Anthropic) | [`@anthropic-ai/claude-code`](https://www.npmjs.com/package/@anthropic-ai/claude-code) | `ANTHROPIC_API_KEY` env var                 |
 | **Codex** (OpenAI)     | [`@openai/codex`](https://www.npmjs.com/package/@openai/codex)                         | `OPENAI_API_KEY` or `CODEX_API_KEY` env var |
 | **Gemini** (Google)    | [`@google/gemini-cli`](https://www.npmjs.com/package/@google/gemini-cli)               | `GEMINI_API_KEY` env var                    |
@@ -74,7 +74,7 @@ You can enable auto-fix either via environment variable or via `.sfdx-hardis.yml
 The coding agent CLI needs to authenticate with its AI provider. You must provide the appropriate API key as a **secure environment variable** in your CI/CD pipeline.
 
 | Agent   | Required env var                                                  |
-| :------ | :---------------------------------------------------------------- |
+|:--------|:------------------------------------------------------------------|
 | Claude  | `ANTHROPIC_API_KEY`                                               |
 | Codex   | `OPENAI_API_KEY` or `CODEX_API_KEY`                               |
 | Gemini  | `GEMINI_API_KEY`                                                  |
@@ -106,7 +106,7 @@ To override, set explicitly:
 ## Configuration reference
 
 | Variable / Config key                                      | Description                                                                            | Default       |
-| :--------------------------------------------------------- | :------------------------------------------------------------------------------------- | :------------ |
+|:-----------------------------------------------------------|:---------------------------------------------------------------------------------------|:--------------|
 | `SFDX_HARDIS_CODING_AGENT_AUTO_FIX` / `codingAgentAutoFix` | Enable automatic fix of deployment errors using a coding agent                         | `false`       |
 | `SFDX_HARDIS_CODING_AGENT` / `codingAgent`                 | Force a specific coding agent CLI (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`) | Auto-detected |
 | `DEBUG_CODING_AGENT`                                       | Set to `true` to show full coding agent output in logs                                 | `false`       |
@@ -122,7 +122,7 @@ config/prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.txt
 The template receives the following variables:
 
 | Variable       | Description                                                  |
-| :------------- | :----------------------------------------------------------- |
+|:---------------|:-------------------------------------------------------------|
 | `ERRORS`       | Structured list of deployment errors with tips               |
 | `FAILED_TESTS` | Failed Apex test classes with error details and stack traces |
 | `TARGET_ORG`   | The target org username (for read-only queries)              |

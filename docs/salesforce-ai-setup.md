@@ -26,7 +26,7 @@ See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and ho
 ### Common variables
 
 | Variable                     | Description                                                                                                                                                                                             | Default |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+|------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
 | AI_MAXIMUM_CALL_NUMBER       | Maximum allowed number of calls to AI Providers during a single sfdx-hardis command                                                                                                                     | `10000` |
 | PROMPTS_LANGUAGE             | Language to use for prompts results (`en`,`fr`, or any [ISO Language code](https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes))                                                               | `en`    |
 | DEBUG_PROMPTS                | Set to true if you want prompts requests and responses in logs                                                                                                                                          | `false` |
@@ -47,7 +47,7 @@ See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and ho
 - The connected used must be assigned to permission set **Prompt Template User**
 
 | Variable                           | Description                                                                                                                                                                                                                       | Default                                                                                                        |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+|------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
 | USE_AGENTFORCE                     | Set to true to activate the use of Agentforce prompts                                                                                                                                                                             | false                                                                                                          |
 | GENERIC_AGENTFORCE_PROMPT_TEMPLATE | Set this variable to override default prompt template                                                                                                                                                                             | `SfdxHardisGenericPrompt`                                                                                      |
 | GENERIC_AGENTFORCE_PROMPT_URL      | Set this variable to override default prompt url                                                                                                                                                                                  | `/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{GENERIC_AGENTFORCE_PROMPT_TEMPLATE}}/generations` |
@@ -79,7 +79,7 @@ Currently supported LangchainJS providers:
 - Google GenAI
 
 | Variable                    | Description                                                                                     | Default                          |
-| --------------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------- |
+|-----------------------------|-------------------------------------------------------------------------------------------------|----------------------------------|
 | USE_LANGCHAIN_LLM           | Set to true to use LangChain integration                                                        | `false`                          |
 | LANGCHAIN_LLM_PROVIDER      | The LLM provider to use (currently supports `ollama`, `openai`, `anthropic` and `google-genai`) |                                  |
 | LANGCHAIN_LLM_MODEL         | The model to use with the selected provider (e.g. `gpt-4o`, `qwen2.5-coder:14b`)                |                                  |
@@ -158,7 +158,7 @@ You need to define env variable OPENAI_API_KEY and make it available to your CI/
 To get an OpenAi API key , register on [OpenAi Platform](https://platform.openai.com/).
 
 | Variable                | Description                                                                               | Default       |
-| ----------------------- | ----------------------------------------------------------------------------------------- | ------------- |
+|-------------------------|-------------------------------------------------------------------------------------------|---------------|
 | OPENAI_API_KEY          | Your openai account API key                                                               |               |
 | OPENAI_MODEL            | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/)) | `gpt-4o-mini` |
 | OPENAI_SERVICE_TIER     | Optional OpenAI service tier for supported projects (`auto`, `default`, `flex`)           |               |
@@ -185,7 +185,7 @@ Authentication is resolved in this order:
 2. Existing Codex local auth cache file at `$CODEX_HOME/auth.json` (or `~/.codex/auth.json` when `CODEX_HOME` is not set).
 
 | Variable               | Description                                                                    | Default         |
-| ---------------------- | ------------------------------------------------------------------------------ | --------------- |
+|------------------------|--------------------------------------------------------------------------------|-----------------|
 | USE_CODEX_DIRECT       | Set to true to activate direct Codex integration                               | `false`         |
 | CODEX_API_KEY          | Codex API key used by `@openai/codex-sdk` (optional if auth cache file exists) |                 |
 | CODEX_MODEL            | Codex model used to perform prompts                                            | `gpt-5.1-codex` |
@@ -218,7 +218,7 @@ See [Coding Agent Auto-Fix](salesforce-deployment-assistant-autofix.md) for full
 You can override default prompts by defining the following environment variables.
 
 | Prompt Template                           | Description                                                                                         |                          Variables                          |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------- | :---------------------------------------------------------: |
+|-------------------------------------------|-----------------------------------------------------------------------------------------------------|:-----------------------------------------------------------:|
 | PROMPT_SOLVE_DEPLOYMENT_ERROR             | Ask AI about how to solve a deployment error                                                        |                            ERROR                            |
 | PROMPT_DESCRIBE_FLOW                      | Describe a flow from its XML                                                                        |                          FLOW_XML                           |
 | PROMPT_DESCRIBE_FLOW_DIFF                 | Describe the differences between 2 flow versions by comparing their XML                             |               FLOW_XML_NEW, FLOW_XML_PREVIOUS               |
