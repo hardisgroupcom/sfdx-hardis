@@ -18,7 +18,7 @@ When a deployment fails, sfdx-hardis can automatically invoke a **coding agent C
 This feature works with the following coding agent CLIs:
 
 | Agent                  | CLI Package                                                                            | Auth mechanism                                               |
-| :--------------------- | :------------------------------------------------------------------------------------- | :----------------------------------------------------------- |
+|:-----------------------|:---------------------------------------------------------------------------------------|:-------------------------------------------------------------|
 | **Claude** (Anthropic) | [`@anthropic-ai/claude-code`](https://www.npmjs.com/package/@anthropic-ai/claude-code) | `ANTHROPIC_API_KEY` env var                                  |
 | **Codex** (OpenAI)     | [`@openai/codex`](https://www.npmjs.com/package/@openai/codex)                         | `OPENAI_API_KEY` or `CODEX_API_KEY` env var                  |
 | **Gemini** (Google)    | [`@google/gemini-cli`](https://www.npmjs.com/package/@google/gemini-cli)               | `GEMINI_API_KEY` env var                                     |
@@ -74,7 +74,7 @@ You can enable auto-fix either via environment variable or via `.sfdx-hardis.yml
 The coding agent CLI needs to authenticate with its AI provider. You must provide the appropriate API key as a **secure environment variable** in your CI/CD pipeline.
 
 | Agent   | Required env var                                                                          |
-| :------ | :---------------------------------------------------------------------------------------- |
+|:--------|:------------------------------------------------------------------------------------------|
 | Claude  | `ANTHROPIC_API_KEY`                                                                       |
 | Codex   | `OPENAI_API_KEY` or `CODEX_API_KEY`                                                       |
 | Gemini  | `GEMINI_API_KEY`                                                                          |
