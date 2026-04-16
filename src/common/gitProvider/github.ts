@@ -418,4 +418,29 @@ ${getBannerMarkdownAndLink()}
       providerResult: result,
     };
   }
+
+  public async findOpenPullRequest(sourceBranch: string, targetBranch: string): Promise<{ pullRequestUrl: string; id: any } | null> {
+    if (!this.repoOwner || !this.repoName) return null;
+    const result = await this.octokit.rest.pulls.list({
+      owner: this.repoOwner,
+      repo: this.repoName,
+      state: "open",
+      head: `${this.repoOwner}:${sourceBranch}`,
+      base: targetBranch,
+    });
+    const pr = result.data?.[0];
+    if (!pr) return null;
+    return { pullRequestUrl: pr.html_url, id: pr.number };
+  }
+
+  public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
+    if (!this.repoOwner || !this.repoName) return;
+    await this.octokit.rest.pulls.update({
+      owner: this.repoOwner,
+      repo: this.repoName,
+      pull_number: id,
+      title,
+      body,
+    });
+  }
 }

@@ -588,11 +588,14 @@ async function handleDeployError(
   }
   await displayDeploymentLink(output, options);
   // Try auto-fix with coding agent if enabled
-  await autoFixDeployErrors(
+  const autoFixResult = await autoFixDeployErrors(
     deployErrorsAndTips || [],
     deployFailedTests || [],
     { targetUsername: options.targetUsername, check },
   );
+  if (autoFixResult?.pullRequestUrl) {
+    setPullRequestData({ autoFixPullRequestUrl: autoFixResult.pullRequestUrl });
+  }
   elapseEnd(`deploy ${deployment.label}`);
   await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check, conn: options.conn });
   await GitProvider.managePostPullRequestComment(check);

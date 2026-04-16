@@ -501,4 +501,31 @@ ${getBannerMarkdownAndLink()}
     };
   }
 
+  public async findOpenPullRequest(sourceBranch: string, targetBranch: string): Promise<{ pullRequestUrl: string; id: any } | null> {
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    if (!workspace || !repoSlug) return null;
+    const result = await this.bitbucket.repositories.listPullRequests({
+      workspace,
+      repo_slug: repoSlug,
+      state: "OPEN" as any,
+      q: `source.branch.name="${sourceBranch}" AND destination.branch.name="${targetBranch}"`,
+    });
+    const pr = (result?.data as any)?.values?.[0];
+    if (!pr) return null;
+    return { pullRequestUrl: pr.links?.html?.href, id: pr.id };
+  }
+
+  public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    if (!workspace || !repoSlug) return;
+    await this.bitbucket.repositories.updatePullRequest({
+      workspace,
+      repo_slug: repoSlug,
+      pull_request_id: id,
+      _body: { title, description: body } as any,
+    });
+  }
+
 }

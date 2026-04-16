@@ -126,6 +126,9 @@ export abstract class GitProvider {
       if (prData.deployErrorsMarkdownBody) {
         markdownBody += prData.deployErrorsMarkdownBody;
       }
+      if (prData?.autoFixPullRequestUrl) {
+        markdownBody += `\n\n---\n🤖 **A coding agent created a fix pull request:** [View fix PR](${prData.autoFixPullRequestUrl})`;
+      }
       if (prData.codeCoverageMarkdownBody) {
         markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
       }
@@ -255,6 +258,13 @@ export abstract class GitProvider {
     if (gitProvider == null) {
       uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderNotConfiguredForPrCreation')));
       return null;
+    }
+    // Check if a PR already exists for this source→target branch (e.g. from a previous auto-fix run)
+    const existing = await gitProvider.findOpenPullRequest(request.sourceBranch, request.targetBranch);
+    if (existing) {
+      uxLog("log", this, c.grey(`[Git Provider] Found existing open PR for ${request.sourceBranch} → ${request.targetBranch}, updating description.`));
+      await gitProvider.updatePullRequestDescription(existing.id, request.title, request.body);
+      return existing.pullRequestUrl;
     }
     try {
       const result = await gitProvider.createPullRequest(request);

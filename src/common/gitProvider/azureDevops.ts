@@ -935,4 +935,28 @@ ${getBannerMarkdownAndLink()}
       providerResult: result,
     };
   }
+
+  public async findOpenPullRequest(sourceBranch: string, targetBranch: string): Promise<{ pullRequestUrl: string; id: any } | null> {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const teamProject = process.env.SYSTEM_TEAMPROJECT || null;
+    if (!repositoryId || !teamProject) return null;
+    const azureGitApi = await this.azureApi.getGitApi();
+    const prs = await azureGitApi.getPullRequests(repositoryId, {
+      sourceRefName: `refs/heads/${sourceBranch}`,
+      targetRefName: `refs/heads/${targetBranch}`,
+      status: 1, // active
+    }, teamProject);
+    const pr = prs?.[0];
+    if (!pr?.pullRequestId) return null;
+    const pullRequestUrl = pr.url || `${this.serverUrl}${teamProject}/_git/${repositoryId}/pullrequest/${pr.pullRequestId}`;
+    return { pullRequestUrl, id: pr.pullRequestId };
+  }
+
+  public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const teamProject = process.env.SYSTEM_TEAMPROJECT || null;
+    if (!repositoryId || !teamProject) return;
+    const azureGitApi = await this.azureApi.getGitApi();
+    await azureGitApi.updatePullRequest({ title, description: body }, repositoryId, id, teamProject);
+  }
 }

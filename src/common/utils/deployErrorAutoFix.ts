@@ -45,15 +45,16 @@ export async function autoFixDeployErrors(
     return { success: false };
   }
 
-  // Generate fix branch name
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").substring(0, 19);
-  const fixBranch = `auto-fix/${currentBranch}/${timestamp}`;
+  // Fix branch name is deterministic (no timestamp) so re-runs replace the previous fix branch
+  const fixBranch = `auto-fix/${currentBranch}`;
 
   uxLog("action", this, c.cyan(t("codingAgentCreatingFixBranch", { branch: fixBranch })));
 
   try {
     uxLog("warning", this, c.yellow(t("codingAgentBetaWarning")));
 
+    // Delete local fix branch if it already exists, then create fresh from current HEAD
+    try { await git().deleteLocalBranch(fixBranch, true); } catch { /* branch didn't exist locally */ }
     // Create and checkout the fix branch
     await git().checkoutLocalBranch(fixBranch);
 
@@ -75,8 +76,8 @@ export async function autoFixDeployErrors(
 
     uxLog("action", this, c.cyan(t("codingAgentFixesApplied", { count: String(agentResult.fixedFiles.length) })));
 
-    // Stage and commit the fixes
-    await git().add("--all");
+    // Stage and commit the fixes (exclude docs/ folder — documentation should not be auto-committed)
+    await git().raw(["add", "--all", "--", ".", ":!docs"]);
     await git().addConfig("user.email", "sfdx-hardis-bot@cloudity.com", false, "global");
     await git().addConfig("user.name", "sfdx-hardis Bot", false, "global");
     const commitMessage = `fix: auto-fix deployment errors using ${agentResult.agent}\n\n${agentResult.fixesDescription.substring(0, 500)}`;
@@ -85,7 +86,7 @@ export async function autoFixDeployErrors(
     // Push the fix branch
     uxLog("action", this, c.cyan(t("codingAgentPushingFixBranch", { branch: fixBranch })));
     try {
-      await git().push("origin", fixBranch, ["--set-upstream"]);
+      await git().push("origin", fixBranch, ["--set-upstream", "--force"]);
     } catch (e) {
       uxLog("error", this, c.red(`[sfdx-hardis] Push failed for branch ${fixBranch}: ${(e as Error).message}`));
       await GitProvider.logAutoFixRemediation("push");

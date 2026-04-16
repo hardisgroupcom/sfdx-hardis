@@ -431,4 +431,24 @@ ${getBannerMarkdownAndLink()}
       providerResult: result,
     };
   }
+
+  public async findOpenPullRequest(sourceBranch: string, targetBranch: string): Promise<{ pullRequestUrl: string; id: any } | null> {
+    const projectId = process.env.CI_PROJECT_ID || null;
+    if (!projectId) return null;
+    const results = await this.gitlabApi.MergeRequests.all({
+      projectId,
+      state: "opened",
+      sourceBranch,
+      targetBranch,
+    } as any);
+    const mr = (results as any[])?.[0];
+    if (!mr) return null;
+    return { pullRequestUrl: mr.web_url, id: mr.iid };
+  }
+
+  public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
+    const projectId = process.env.CI_PROJECT_ID || null;
+    if (!projectId) return;
+    await this.gitlabApi.MergeRequests.edit(projectId, id, { title, description: body });
+  }
 }
