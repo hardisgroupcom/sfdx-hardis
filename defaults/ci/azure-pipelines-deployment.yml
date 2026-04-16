@@ -59,6 +59,7 @@ jobs:
           # npm install --no-cache @openai/codex@latest --global && codex --version
           # npm install --no-cache @google/gemini-cli@latest --global && gemini --version
           # npm install --no-cache @github/copilot@latest --global && copilot --version
+          # curl https://cursor.com/install -fsS | bash && (agent --version || agent -v)
         displayName: "Install SFDX & plugins"
 
       # Login & Deploy sfdx sources to related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )

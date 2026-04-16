@@ -53,6 +53,7 @@ jobs:
           # npm install --no-cache @openai/codex@latest --global && codex --version
           # npm install --no-cache @google/gemini-cli@latest --global && gemini --version
           # npm install --no-cache @github/copilot@latest --global && copilot --version
+          # curl https://cursor.com/install -fsS | bash && (agent --version || agent -v)
       # Login & check deploy with test classes & code coverage
       - name: Login & Simulate deployment
         env:
@@ -84,6 +85,7 @@ jobs:
           # Uncomment to provide API keys for coding agent auto-fix of deployment errors
           # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           # GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           FORCE_COLOR: "1"
           SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD
         run: |

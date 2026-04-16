@@ -34,6 +34,7 @@ pipelines:
                 # - npm install --no-cache @openai/codex@latest --global && codex --version
                 # - npm install --no-cache @google/gemini-cli@latest --global && gemini --version
                 # - npm install --no-cache @github/copilot@latest --global && copilot --version
+                # - curl https://cursor.com/install -fsS | bash && (agent --version || agent -v)
                 - export BRANCH_NAME=$(echo "$BITBUCKET_PR_DESTINATION_BRANCH" | sed 's/refs\/heads\///')
                 - export CI_COMMIT_REF_NAME=$BRANCH_NAME
                 - export ORG_ALIAS=$BRANCH_NAME
@@ -61,6 +62,7 @@ pipelines:
             # - npm install --no-cache @openai/codex@latest --global && codex --version
             # - npm install --no-cache @google/gemini-cli@latest --global && gemini --version
             # - npm install --no-cache @github/copilot@latest --global && copilot --version
+            # - curl https://cursor.com/install -fsS | bash && (agent --version || agent -v)
             - export BRANCH_NAME=$(echo "$BITBUCKET_BRANCH" | sed 's/refs\/heads\///')
             - export CI_COMMIT_REF_NAME=$BRANCH_NAME
             - export CONFIG_BRANCH=$BRANCH_NAME

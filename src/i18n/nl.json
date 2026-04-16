@@ -1399,7 +1399,7 @@
   "noCertificatesFoundInTheBackupFolder": "Geen certificaten gevonden in de back-upmap, certificaatherstel overgeslagen.",
   "noCertificatesSelectedForRestoreSkippingCertificate": "Geen certificaten geselecteerd voor herstel, certificaatherstel overgeslagen.",
   "noChangesToCommit": "Geen wijzigingen om te committen",
-  "noCodingAgentAvailable": "Geen coding agent beschikbaar (claude, codex, gemini-cli, copilot-cli). Stel SFDX_HARDIS_CODING_AGENT of codingAgent in .sfdx-hardis.yml in, of installeer een coding agent CLI.",
+  "noCodingAgentAvailable": "Geen coding agent beschikbaar (claude, codex, gemini-cli, copilot-cli, cursor-cli). Stel SFDX_HARDIS_CODING_AGENT of codingAgent in .sfdx-hardis.yml in, of installeer een coding agent CLI.",
   "noConfigurationFilesFoundInConfigUser": "Geen configuratiebestanden gevonden in de map config/user-stories/. Standaardconfiguratie wordt gebruikt...",
   "noConnectedAppFilesFoundInThe": "Geen Connected App-bestanden gevonden in het project",
   "noConnectedAppIgnorePatternsFoundIn": "Geen Connected App-negeerpatronen gevonden in .forceignore.",

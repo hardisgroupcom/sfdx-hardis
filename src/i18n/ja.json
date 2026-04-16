@@ -1397,7 +1397,7 @@
   "noCertificatesFoundInTheBackupFolder": "バックアップフォルダに証明書が見つかりません。証明書のリストアをスキップします。",
   "noCertificatesSelectedForRestoreSkippingCertificate": "リストア用の証明書が選択されていません。証明書のリストアをスキップします。",
   "noChangesToCommit": "commit する変更がありません",
-  "noCodingAgentAvailable": "コーディングエージェントが利用できません (claude, codex, gemini-cli, copilot-cli)。SFDX_HARDIS_CODING_AGENTまたは.sfdx-hardis.ymlのcodingAgentを設定するか、エージェントCLIをインストールしてください。",
+  "noCodingAgentAvailable": "コーディングエージェントが利用できません (claude, codex, gemini-cli, copilot-cli, cursor-cli)。SFDX_HARDIS_CODING_AGENTまたは.sfdx-hardis.ymlのcodingAgentを設定するか、エージェントCLIをインストールしてください。",
   "noConfigurationFilesFoundInConfigUser": "config/user-stories/ ディレクトリに設定ファイルが見つかりません。デフォルト設定を使用します...",
   "noConnectedAppFilesFoundInThe": "プロジェクトに接続アプリケーションファイルが見つかりませんでした",
   "noConnectedAppIgnorePatternsFoundIn": ".forceignore に接続アプリケーションの無視パターンが見つかりませんでした。",

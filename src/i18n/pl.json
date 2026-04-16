@@ -1399,7 +1399,7 @@
   "noCertificatesFoundInTheBackupFolder": "Nie znaleziono certyfikatów w folderze kopii zapasowej, pomijanie przywracania certyfikatów.",
   "noCertificatesSelectedForRestoreSkippingCertificate": "Nie wybrano certyfikatów do przywrócenia, pomijanie przywracania certyfikatów.",
   "noChangesToCommit": "Brak zmian do zatwierdzenia (commit)",
-  "noCodingAgentAvailable": "Brak dostępnego agenta kodującego (claude, codex, gemini-cli, copilot-cli). Ustaw SFDX_HARDIS_CODING_AGENT lub codingAgent w .sfdx-hardis.yml, lub zainstaluj CLI agenta.",
+  "noCodingAgentAvailable": "Brak dostępnego agenta kodującego (claude, codex, gemini-cli, copilot-cli, cursor-cli). Ustaw SFDX_HARDIS_CODING_AGENT lub codingAgent w .sfdx-hardis.yml, lub zainstaluj CLI agenta.",
   "noConfigurationFilesFoundInConfigUser": "Nie znaleziono plików konfiguracyjnych w katalogu config/user-stories/. Używanie domyślnej konfiguracji...",
   "noConnectedAppFilesFoundInThe": "Nie znaleziono plików Connected App w projekcie",
   "noConnectedAppIgnorePatternsFoundIn": "Nie znaleziono wzorców ignorowania Connected App w .forceignore.",

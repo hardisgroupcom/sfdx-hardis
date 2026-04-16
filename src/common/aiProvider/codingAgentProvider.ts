@@ -9,7 +9,7 @@ import { buildPromptFromTemplate } from "./promptTemplates.js";
 import { LangChainProviderFactory } from "./langChainProviders/langChainProviderFactory.js";
 import { CodingAgentInfo } from "./langChainProviders/langChainBaseProvider.js";
 
-export type CodingAgentType = "claude" | "codex-cli" | "gemini-cli" | "copilot-cli";
+export type CodingAgentType = "claude" | "codex-cli" | "gemini-cli" | "copilot-cli" | "cursor-cli";
 
 export interface CodingAgentResult {
   success: boolean;
@@ -41,6 +41,22 @@ const COPILOT_CLI_AGENT_INFO: CodingAgentInfo = {
   },
   buildCommand(promptFilePath: string): string {
     return `cat "${promptFilePath}" | copilot -p - --allow-all-tools`;
+  },
+};
+
+/** Fallback coding agent info for cursor-cli (no LangChain provider) */
+const CURSOR_CLI_AGENT_INFO: CodingAgentInfo = {
+  agentType: "cursor-cli",
+  command: "agent",
+  apiKeyEnvVar: "CURSOR_API_KEY",
+  setupApiKey(langchainApiKey: string | null): void {
+    if (!process.env.CURSOR_API_KEY && langchainApiKey) {
+      process.env.CURSOR_API_KEY = langchainApiKey;
+    }
+  },
+  buildCommand(promptFilePath: string): string {
+    // Use --force to enable file modifications in scripts, -p for non-interactive mode
+    return `agent -p --force "$(<"${promptFilePath}")" `;
   },
 };
 
@@ -110,7 +126,7 @@ export class CodingAgentProvider {
     }
 
     // 3. Auto-detect: only select agents that have an API key configured and are installed
-    const agentOrder: CodingAgentType[] = ["claude", "codex-cli", "gemini-cli", "copilot-cli"];
+    const agentOrder: CodingAgentType[] = ["claude", "codex-cli", "gemini-cli", "copilot-cli", "cursor-cli"];
     for (const agent of agentOrder) {
       if (this.hasApiKeyConfigured(agent)) {
         const config = await this.buildAgentConfig(agent, branchConfig);
@@ -352,6 +368,8 @@ export class CodingAgentProvider {
         return !!(process.env.GEMINI_API_KEY || getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY"));
       case "copilot-cli":
         return !!(process.env.COPILOT_GITHUB_TOKEN || process.env.GH_TOKEN || process.env.GITHUB_TOKEN);
+      case "cursor-cli":
+        return !!(process.env.CURSOR_API_KEY || getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY"));
       default:
         return false;
     }
@@ -373,9 +391,12 @@ export class CodingAgentProvider {
       }
     }
 
-    // If no matching LangChain provider, check if it's copilot-cli
+    // If no matching LangChain provider, check if it's copilot-cli or cursor-cli
     if (!codingAgentInfo && agent === "copilot-cli") {
       codingAgentInfo = COPILOT_CLI_AGENT_INFO;
+    }
+    if (!codingAgentInfo && agent === "cursor-cli") {
+      codingAgentInfo = CURSOR_CLI_AGENT_INFO;
     }
 
     // For agents without a matching LangChain provider, try all providers
