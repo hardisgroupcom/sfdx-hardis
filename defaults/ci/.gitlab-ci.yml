@@ -26,19 +26,6 @@ image: hardisgroupcom/sfdx-hardis:latest # If rate limits reached, use ghcr.io/h
 variables:
   FORCE_COLOR: "1"
 
-# Optional: allow coding agents to git push and create merge requests.
-# This is applied only when CI_SFDX_HARDIS_GITLAB_TOKEN is available.
-before_script:
-  - |
-    if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
-      git config user.email "sfdx-hardis-bot@cloudity.com"
-      git config user.name "sfdx-hardis Bot"
-      git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
-      echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
-    else
-      echo "[sfdx-hardis] Skipping coding-agent GitLab auth setup: CI_SFDX_HARDIS_GITLAB_TOKEN is not set"
-    fi
-
 # Uncomment to test your sfdx-hardis fork
 #  before_script:
 #    - apk add tree
@@ -97,6 +84,15 @@ check_deploy_to_target_branch_org:
     SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD setup
   script:
     - '[ -z "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ] && exit 0;' # Skip this job if it is launched from web UI and we are not in merge request context
+    - |
+      if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
+        git config user.email "sfdx-hardis-bot@cloudity.com"
+        git config user.name "sfdx-hardis Bot"
+        git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+        echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
+      else
+        echo "[sfdx-hardis] Skipping coding-agent GitLab auth setup: CI_SFDX_HARDIS_GITLAB_TOKEN is not set"
+      fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart --check
 
@@ -222,6 +218,15 @@ check_deploy_to_current_branch_org:
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
   script:
+    - |
+      if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
+        git config user.email "sfdx-hardis-bot@cloudity.com"
+        git config user.name "sfdx-hardis Bot"
+        git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+        echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
+      else
+        echo "[sfdx-hardis] Skipping coding-agent GitLab auth setup: CI_SFDX_HARDIS_GITLAB_TOKEN is not set"
+      fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart --check
 
@@ -240,5 +245,14 @@ deploy_to_org:
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
   script:
+    - |
+      if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
+        git config user.email "sfdx-hardis-bot@cloudity.com"
+        git config user.name "sfdx-hardis Bot"
+        git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+        echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
+      else
+        echo "[sfdx-hardis] Skipping coding-agent GitLab auth setup: CI_SFDX_HARDIS_GITLAB_TOKEN is not set"
+      fi
     - sf hardis:auth:login
     - sf hardis:project:deploy:smart
