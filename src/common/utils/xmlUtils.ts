@@ -16,7 +16,7 @@ import { t } from './i18n.js';
  * many HTML entities without hitting the default security limit of 1 000.
  */
 export function getLargeXmlParser(): XMLParser {
-  return new XMLParser({ processEntities: { maxTotalExpansions: 10000 } });
+  return new XMLParser({ processEntities: { maxTotalExpansions: Infinity } });
 }
 
 export async function parseXmlFile(xmlFile: string) {
