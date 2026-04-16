@@ -65,16 +65,22 @@ RUN npm install --no-cache yarn -g && \
     echo 'y' | sf plugins install sfdx-git-delta && \
     echo 'y' | sf plugins install sfdmu && \
     sf version --verbose --json && \
-    # Install coding agent CLIs for auto-fix feature
-    # Note: some agents may crash on Alpine/musl at runtime. If so, use the Ubuntu-based image instead.
-    (npm install --no-cache @anthropic-ai/claude-code@latest -g && claude --version || echo 'WARNING: claude-code install or version check failed') && \
-    (npm install --no-cache @openai/codex@latest -g && codex --version || echo 'WARNING: codex install or version check failed') && \
-    (npm install --no-cache @google/gemini-cli@latest -g && gemini --version || echo 'WARNING: gemini-cli install or version check failed') && \
-    (npm install --no-cache @github/copilot@latest -g && copilot --version || echo 'WARNING: copilot install or version check failed') && \
     # Clean up npm cache and temporary files
     rm -rf /root/.npm/_cacache && \
     rm -rf /tmp/* && \
     npm cache clean --force
+
+# Optionally install coding agent CLIs for auto-fix feature
+# Note: some agents may crash on Alpine/musl at runtime. If so, use the Ubuntu-based image instead.
+# Use --build-arg INSTALL_AGENTS=true to include agent CLIs (sfdx-hardis-with-agents images)
+ARG INSTALL_AGENTS=false
+RUN if [ "$INSTALL_AGENTS" = "true" ]; then \
+    (npm install --no-cache @anthropic-ai/claude-code@latest -g && claude --version || echo 'WARNING: claude-code install or version check failed') && \
+    (npm install --no-cache @openai/codex@latest -g && codex --version || echo 'WARNING: codex install or version check failed') && \
+    (npm install --no-cache @google/gemini-cli@latest -g && gemini --version || echo 'WARNING: gemini-cli install or version check failed') && \
+    (npm install --no-cache @github/copilot@latest -g && copilot --version || echo 'WARNING: copilot install or version check failed') && \
+    npm cache clean --force; \
+fi
 
 ENV MERMAID_MODES="docker"
 
