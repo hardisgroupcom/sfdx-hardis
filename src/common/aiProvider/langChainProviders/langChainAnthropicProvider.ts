@@ -34,7 +34,9 @@ export class LangChainAnthropicProvider extends AbstractLLMProvider {
         }
       },
       buildCommand(promptFilePath: string): string {
-        return `cat "${promptFilePath}" | claude --dangerously-skip-permissions -p -`;
+        // Use --allowedTools with broad patterns instead of --dangerously-skip-permissions.
+        // This works consistently in all environments (root, Docker, non-root) and is safer.
+        return `cat "${promptFilePath}" | claude -p --allowedTools "Bash(*)" "Read" "Edit" "Write" "WebFetch(*)" -`;
       },
     };
   }
