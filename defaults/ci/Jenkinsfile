@@ -27,7 +27,6 @@ pipeline {
         // ANTHROPIC_API_KEY = credentials('ANTHROPIC_API_KEY')
         // OPENAI_API_KEY = credentials('OPENAI_API_KEY')
         // GEMINI_API_KEY = credentials('GEMINI_API_KEY')
-        // CURSOR_API_KEY = credentials('CURSOR_API_KEY')
         CONFIG_BRANCH = "${GIT_BRANCH}"
         CI_COMMIT_REF_NAME = "${GIT_BRANCH}"
         ORG_ALIAS = "${GIT_BRANCH}"

@@ -1399,7 +1399,7 @@
   "noCertificatesFoundInTheBackupFolder": "Aucun certificat trouvé dans le dossier de sauvegarde, restauration des certificats ignorée.",
   "noCertificatesSelectedForRestoreSkippingCertificate": "Aucun certificat sélectionné pour la restauration, restauration des certificats ignorée.",
   "noChangesToCommit": "Aucun changement à commiter",
-  "noCodingAgentAvailable": "Aucun agent de codage disponible (claude, codex, gemini-cli, copilot-cli, cursor-cli). Définissez SFDX_HARDIS_CODING_AGENT ou codingAgent dans .sfdx-hardis.yml, ou installez un CLI d'agent.",
+  "noCodingAgentAvailable": "Aucun agent de codage disponible (claude, codex, gemini-cli, copilot-cli). Définissez SFDX_HARDIS_CODING_AGENT ou codingAgent dans .sfdx-hardis.yml, ou installez un CLI d'agent.",
   "noConfigurationFilesFoundInConfigUser": "Aucun fichier de configuration trouvé dans le répertoire config/user-stories/. Utilisation de la configuration par défaut...",
   "noConnectedAppFilesFoundInThe": "Aucun fichier d'application connectée trouvé dans le projet",
   "noConnectedAppIgnorePatternsFoundIn": "Aucun modèle d'exclusion d'application connectée trouvé dans .forceignore.",

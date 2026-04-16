@@ -1398,7 +1398,7 @@
   "noCertificatesFoundInTheBackupFolder": "Keine Zertifikate im Backup-Ordner gefunden, Zertifikat-Wiederherstellung wird übersprungen.",
   "noCertificatesSelectedForRestoreSkippingCertificate": "Keine Zertifikate für die Wiederherstellung ausgewählt, Zertifikat-Wiederherstellung wird übersprungen.",
   "noChangesToCommit": "Keine Änderungen zu commit",
-  "noCodingAgentAvailable": "Kein Coding-Agent verfügbar (claude, codex, gemini-cli, copilot-cli, cursor-cli). Setzen Sie SFDX_HARDIS_CODING_AGENT oder codingAgent in .sfdx-hardis.yml, oder installieren Sie einen Agent-CLI.",
+  "noCodingAgentAvailable": "Kein Coding-Agent verfügbar (claude, codex, gemini-cli, copilot-cli). Setzen Sie SFDX_HARDIS_CODING_AGENT oder codingAgent in .sfdx-hardis.yml, oder installieren Sie einen Agent-CLI.",
   "noConfigurationFilesFoundInConfigUser": "Keine Konfigurationsdateien im Verzeichnis config/user-stories/ gefunden. Standardkonfiguration wird verwendet...",
   "noConnectedAppFilesFoundInThe": "Keine Connected App-Dateien im Projekt gefunden",
   "noConnectedAppIgnorePatternsFoundIn": "Keine Connected App-Ignore-Muster in .forceignore gefunden.",

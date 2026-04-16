@@ -23,7 +23,6 @@ This feature works with the following coding agent CLIs:
 | **Codex** (OpenAI)     | [`@openai/codex`](https://www.npmjs.com/package/@openai/codex)                         | `OPENAI_API_KEY` or `CODEX_API_KEY` env var                  |
 | **Gemini** (Google)    | [`@google/gemini-cli`](https://www.npmjs.com/package/@google/gemini-cli)               | `GEMINI_API_KEY` env var                                     |
 | **Copilot** (GitHub)   | [`@github/copilot`](https://www.npmjs.com/package/@github/copilot)                     | `COPILOT_GITHUB_TOKEN`, `GH_TOKEN` or `GITHUB_TOKEN` env var |
-| **Cursor** (Cursor)    | [Cursor CLI](https://cursor.com/docs/cli)                                              | `CURSOR_API_KEY` env var                                     |
 
 ## How it works
 
@@ -50,11 +49,6 @@ npm install -g @anthropic-ai/claude-code
 npm install -g @openai/codex
 npm install -g @google/gemini-cli
 npm install -g @github/copilot
-
-# For Cursor CLI, use the installation script:
-curl https://cursor.com/install -fsS | bash  # macOS, Linux, WSL
-# or for Windows PowerShell:
-irm 'https://cursor.com/install?win32=true' | iex
 ```
 
 In the default CI/CD pipeline templates, these lines are present but **commented out**. Uncomment the one(s) you need.
@@ -85,7 +79,6 @@ The coding agent CLI needs to authenticate with its AI provider. You must provid
 | Codex   | `OPENAI_API_KEY` or `CODEX_API_KEY`                                                       |
 | Gemini  | `GEMINI_API_KEY`                                                                          |
 | Copilot | `COPILOT_GITHUB_TOKEN`, `GH_TOKEN` or `GITHUB_TOKEN` (usually already available in CI/CD) |
-| Cursor  | `CURSOR_API_KEY`                                                                          |
 
 **Tip:** If you already have a LangChain AI provider configured (see [AI setup](salesforce-ai-setup.md)), sfdx-hardis will automatically **reuse** `LANGCHAIN_LLM_MODEL_API_KEY` so you don't need to set a separate key.
 
@@ -101,13 +94,13 @@ To override, set explicitly:
 === "Environment variable"
 
     ```bash
-    SFDX_HARDIS_CODING_AGENT=claude    # or: codex-cli, gemini-cli, copilot-cli, cursor-cli
+    SFDX_HARDIS_CODING_AGENT=claude    # or: codex-cli, gemini-cli, copilot-cli
     ```
 
 === ".sfdx-hardis.yml"
 
     ```yaml
-    codingAgent: claude    # or: codex-cli, gemini-cli, copilot-cli, cursor-cli
+    codingAgent: claude    # or: codex-cli, gemini-cli, copilot-cli
     ```
 
 ## Configuration reference
@@ -115,7 +108,7 @@ To override, set explicitly:
 | Variable / Config key                                      | Description                                                                            | Default       |
 |:-----------------------------------------------------------|:---------------------------------------------------------------------------------------|:--------------|
 | `SFDX_HARDIS_CODING_AGENT_AUTO_FIX` / `codingAgentAutoFix` | Enable automatic fix of deployment errors using a coding agent                         | `false`       |
-| `SFDX_HARDIS_CODING_AGENT` / `codingAgent`                 | Force a specific coding agent CLI (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`, `cursor-cli`) | Auto-detected |
+| `SFDX_HARDIS_CODING_AGENT` / `codingAgent`                 | Force a specific coding agent CLI (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`) | Auto-detected |
 | `DEBUG_CODING_AGENT`                                       | Set to `true` to show full coding agent output in logs                                 | `false`       |
 
 ## Customizing the prompt

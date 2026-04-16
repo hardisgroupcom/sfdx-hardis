@@ -53,7 +53,6 @@ jobs:
           # npm install --no-cache @openai/codex@latest --global && codex --version
           # npm install --no-cache @google/gemini-cli@latest --global && gemini --version
           # npm install --no-cache @github/copilot@latest --global && copilot --version
-          # curl https://cursor.com/install -fsS | bash && (agent --version || agent -v)
       # Set env branch variable (github.ref_name seems to not work)
       - name: Set env.BRANCH
         run: echo "BRANCH=$(echo "$GITHUB_REF" | cut -d'/' -f 3)" >> "$GITHUB_ENV"
@@ -86,7 +85,6 @@ jobs:
           # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           # OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          # CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           FORCE_COLOR: "1"
         run: |
           echo "Process SFDX deployment using Hardis against \"$CONFIG_BRANCH\""

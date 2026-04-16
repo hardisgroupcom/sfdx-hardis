@@ -99,7 +99,6 @@ RUN npm install --no-cache yarn -g && \
     npm install --no-cache @openai/codex@latest -g && codex --version && \
     npm install --no-cache @google/gemini-cli@latest -g && gemini --version && \
     npm install --no-cache @github/copilot@latest -g && copilot --version && \
-    curl https://cursor.com/install -fsS | bash && (agent --version || agent -v) && \
     # Clean up npm cache and temporary files
     rm -rf /root/.npm/_cacache && \
     rm -rf /tmp/* && \

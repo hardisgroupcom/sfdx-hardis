@@ -7,7 +7,6 @@ LABEL maintainer="Nicolas VUILLAMY <nicolas.vuillamy@cloudity.com>"
 RUN apk add --update --no-cache \
             coreutils \
             git \
-            curl \
             bash \
             nodejs \
             npm \
@@ -72,7 +71,6 @@ RUN npm install --no-cache yarn -g && \
     (npm install --no-cache @openai/codex@latest -g && codex --version || echo 'WARNING: codex install or version check failed') && \
     (npm install --no-cache @google/gemini-cli@latest -g && gemini --version || echo 'WARNING: gemini-cli install or version check failed') && \
     (npm install --no-cache @github/copilot@latest -g && copilot --version || echo 'WARNING: copilot install or version check failed') && \
-    (curl https://cursor.com/install -fsS | bash && (agent --version || agent -v) || echo 'WARNING: cursor cli install or version check failed') && \
     # Clean up npm cache and temporary files
     rm -rf /root/.npm/_cacache && \
     rm -rf /tmp/* && \

@@ -3,3 +3,10 @@ variables:
   DEPLOY_BRANCHES: /^(development|integration|recette|preprod|main|master)$/ # Regex contenant la liste des branches où un push va déclencher un déploiement
   CI_DELETE_SCRATCH_ORG: "true" # Set to "false" only to investigate issues. When solved, always put back this value to "true" !
   USE_SCRATCH_ORGS: "true" # Set to "false" to not use scratch orgs on your Salesforce project
+
+# Uncomment to install coding agent CLIs for auto-fix of deployment errors (when not using Docker image)
+# before_script:
+#   - npm install --no-cache @anthropic-ai/claude-code@latest -g && claude --version
+#   - npm install --no-cache @openai/codex@latest -g && codex --version
+#   - npm install --no-cache @google/gemini-cli@latest -g && gemini --version
+#   - npm install --no-cache @github/copilot@latest -g && copilot --version
