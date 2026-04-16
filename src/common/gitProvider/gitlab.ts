@@ -34,6 +34,15 @@ export class GitlabProvider extends GitProviderRoot {
     return "sfdx-hardis Gitlab connector";
   }
 
+  public logAutoFixRemediation(step: "push" | "pr-create"): void {
+    const stepLabel = step === "push" ? "git push" : "merge request creation";
+    uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (gitlab)`);
+    uxLog("log", this, "1) Update workflow: before auto-fix, configure git remote with a write token.");
+    uxLog("log", this, "   Example: git remote set-url origin https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@<gitlab-host>/<group>/<repo>.git");
+    uxLog("log", this, "2) Set variable: CI_SFDX_HARDIS_GITLAB_TOKEN");
+    uxLog("log", this, "3) How to get value: GitLab Project -> Settings -> Access Tokens -> create Project Access Token with role Developer (or Maintainer), scopes api + write_repository. Store it as a masked CI/CD variable.");
+  }
+
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string | null> {
     if (process.env.PIPELINE_JOB_URL) {

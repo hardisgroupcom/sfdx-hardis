@@ -42,6 +42,15 @@ export class GithubProvider extends GitProviderRoot {
   public getLabel(): string {
     return "sfdx-hardis GitHub connector";
   }
+
+  public logAutoFixRemediation(step: "push" | "pr-create"): void {
+    const stepLabel = step === "push" ? "git push" : "pull request creation";
+    uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (github)`);
+    uxLog("log", this, "1) Update workflow: keep checkout credentials and grant write permissions.");
+    uxLog("log", this, "   Example: actions/checkout with persist-credentials: true, and workflow permissions contents: write, pull-requests: write.");
+    uxLog("log", this, "2) Set variable: GITHUB_TOKEN (or a PAT mapped to GITHUB_TOKEN).");
+    uxLog("log", this, "3) How to get value: use secrets.GITHUB_TOKEN with repository workflow permissions set to Read and write; or create a Fine-grained PAT with Repository contents Read/Write and Pull requests Read/Write.");
+  }
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId: string | null = null;
     uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubListingClosedPullRequests')));

@@ -58,3 +58,36 @@ In that case, to still benefit from GitHub integration, you need to make sure th
 | GITHUB_RUN_ID           | ex: `14282257027`. If you can't have it, to not set the variable.                                                                                                              |
 | PIPELINE_JOB_URL        | Direct link to the page where we can see your job results. ex: `https://yourserver.com/jobs/345`                                                                               |
 
+## Instructions for using Coding Agents
+
+When using auto-fix with coding agents, the pipeline must be able to push a fix branch and create/update Pull Requests.
+
+This works for both:
+
+- GitHub Cloud (`github.com`)
+- GitHub Enterprise Server / GitHub Enterprise Cloud custom domains
+
+Add this in your deployment/check workflow step before running `sf hardis:*` commands:
+
+```yaml
+env:
+  CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+
+run: |
+  if [ -n "${CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN:-}" ]; then
+    git config user.email "sfdx-hardis-bot@cloudity.com"
+    git config user.name "sfdx-hardis Bot"
+    GITHUB_HOST=$(echo "${GITHUB_SERVER_URL:-https://github.com}" | sed -E 's#^https?://##')
+    git remote set-url origin "https://x-access-token:${CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN}@${GITHUB_HOST}/${GITHUB_REPOSITORY}.git"
+    echo "[sfdx-hardis] GitHub push/PR auth enabled for coding agents"
+  else
+    echo "[sfdx-hardis] Skipping coding-agent GitHub auth setup: CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN is not set"
+  fi
+```
+
+Required secret/variable:
+
+- `CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN` (or `PAT`):
+  - Use `secrets.GITHUB_TOKEN` if your workflow permissions include `contents: write` and `pull-requests: write`.
+  - Otherwise create a fine-grained PAT with repository scopes `Contents: Read and write` and `Pull requests: Read and write`.
+

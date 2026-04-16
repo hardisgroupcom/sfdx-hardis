@@ -65,6 +65,15 @@ export class AzureDevopsProvider extends GitProviderRoot {
     return "sfdx-hardis Azure Devops connector";
   }
 
+  public logAutoFixRemediation(step: "push" | "pr-create"): void {
+    const stepLabel = step === "push" ? "git push" : "pull request creation";
+    uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (azure)`);
+    uxLog("log", this, "1) Update workflow: enable OAuth token for scripts and persist git credentials in checkout.");
+    uxLog("log", this, "   Example: checkout with persistCredentials: true and expose SYSTEM_ACCESSTOKEN in job env.");
+    uxLog("log", this, "2) Set variable: SYSTEM_ACCESSTOKEN (or CI_SFDX_HARDIS_AZURE_TOKEN).");
+    uxLog("log", this, "3) How to get value: enable \"Allow scripts to access OAuth token\" in pipeline settings; or create a PAT with Code Read & Write + Pull Request Threads Read & Write and store it as a secret variable.");
+  }
+
   // Returns current job URL
   public async getCurrentJobUrl(): Promise<string | null> {
     if (process.env.PIPELINE_JOB_URL) {

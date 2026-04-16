@@ -71,6 +71,7 @@ jobs:
           ORG_ALIAS: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
           CONFIG_BRANCH: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
           SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           SLACK_CHANNEL_ID_INTEGRATION: ${{ secrets.SLACK_CHANNEL_ID_INTEGRATION }}
@@ -88,5 +89,15 @@ jobs:
           SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD
         run: |
           echo "Simulate SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
+          # Optional: allow coding agents to git push and create PRs (safe no-op if token is missing)
+          if [ -n "${CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN:-}" ]; then
+            git config user.email "sfdx-hardis-bot@cloudity.com"
+            git config user.name "sfdx-hardis Bot"
+            GITHUB_HOST=$(echo "${GITHUB_SERVER_URL:-https://github.com}" | sed -E 's#^https?://##')
+            git remote set-url origin "https://x-access-token:${CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN}@${GITHUB_HOST}/${GITHUB_REPOSITORY}.git"
+            echo "[sfdx-hardis] GitHub push/PR auth enabled for coding agents"
+          else
+            echo "[sfdx-hardis] Skipping coding-agent GitHub auth setup: CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN is not set"
+          fi
           sf hardis:auth:login
           sf hardis:project:deploy:smart --check

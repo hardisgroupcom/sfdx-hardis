@@ -63,6 +63,13 @@ jobs:
 
       # Login & Deploy sfdx sources to related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
       - script: |
+          if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
+            git config user.email "sfdx-hardis-bot@cloudity.com"
+            git config user.name "sfdx-hardis Bot"
+            echo "[sfdx-hardis] Azure push/PR auth enabled for coding agents via SYSTEM_ACCESSTOKEN"
+          else
+            echo "[sfdx-hardis] Skipping coding-agent Azure auth setup: SYSTEM_ACCESSTOKEN is not set"
+          fi
           sf hardis:auth:login
           sf hardis:project:deploy:smart
         env:

@@ -26,6 +26,15 @@ export class BitbucketProvider extends GitProviderRoot {
     return 'sfdx-hardis Bitbucket connector';
   }
 
+  public logAutoFixRemediation(step: "push" | "pr-create"): void {
+    const stepLabel = step === "push" ? "git push" : "pull request creation";
+    uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (bitbucket)`);
+    uxLog("log", this, "1) Update workflow: set git remote with token credentials before auto-fix push.");
+    uxLog("log", this, "   Example: git remote set-url origin https://x-token-auth:${CI_SFDX_HARDIS_BITBUCKET_TOKEN}@bitbucket.org/<workspace>/<repo>.git");
+    uxLog("log", this, "2) Set variable: CI_SFDX_HARDIS_BITBUCKET_TOKEN");
+    uxLog("log", this, "3) How to get value: Bitbucket Repository Settings -> Access Tokens -> create token with pullrequest:read, pullrequest:write, repository:read, repository:write; store it as a secured pipeline variable.");
+  }
+
   public async getCurrentJobUrl(): Promise<string | null> {
     if (process.env.PIPELINE_JOB_URL) {
       return process.env.PIPELINE_JOB_URL;

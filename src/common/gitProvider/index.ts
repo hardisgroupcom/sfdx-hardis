@@ -269,6 +269,16 @@ export abstract class GitProvider {
     }
   }
 
+  static async logAutoFixRemediation(step: "push" | "pr-create"): Promise<void> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider) {
+      gitProvider.logAutoFixRemediation(step);
+      return;
+    }
+    uxLog("log", this, "[sfdx-hardis] Unable to find a Git provider instance for auto-fix remediation guidance.");
+    return;
+  }
+
   static isDeployBeforeMerge(): boolean {
     const deployBeforeMerge = getEnvVar("SFDX_HARDIS_DEPLOY_BEFORE_MERGE") || false;
     return [true, "true"].includes(deployBeforeMerge);

@@ -40,6 +40,16 @@ pipelines:
                 - export CONFIG_BRANCH=$BRANCH_NAME
                 - export FORCE_COLOR=1
                 - export SFDX_DISABLE_FLOW_DIFF=false # Set to true to disable Flow doc during CI/CD setup
+                - |
+                  if [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ]; then
+                    git config user.email "sfdx-hardis-bot@cloudity.com"
+                    git config user.name "sfdx-hardis Bot"
+                      ORIGIN_PATH=$(git remote get-url origin | sed -E 's#^https?://##; s#^git@([^:]+):#\1/#; s#^ssh://git@([^/]+)/#\1/#; s#\.git$##')
+                      git remote set-url origin "https://x-token-auth:${CI_SFDX_HARDIS_BITBUCKET_TOKEN}@${ORIGIN_PATH}.git"
+                    echo "[sfdx-hardis] Bitbucket push/PR auth enabled for coding agents"
+                  else
+                    echo "[sfdx-hardis] Skipping coding-agent Bitbucket auth setup: CI_SFDX_HARDIS_BITBUCKET_TOKEN is not set"
+                  fi
                 - sf hardis:auth:login
                 - sf hardis:project:deploy:smart --check
 
@@ -66,5 +76,15 @@ pipelines:
             - export CONFIG_BRANCH=$BRANCH_NAME
             - export ORG_ALIAS=$BRANCH_NAME
             - export FORCE_COLOR=1
+            - |
+              if [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ]; then
+                git config user.email "sfdx-hardis-bot@cloudity.com"
+                git config user.name "sfdx-hardis Bot"
+                  ORIGIN_PATH=$(git remote get-url origin | sed -E 's#^https?://##; s#^git@([^:]+):#\1/#; s#^ssh://git@([^/]+)/#\1/#; s#\.git$##')
+                  git remote set-url origin "https://x-token-auth:${CI_SFDX_HARDIS_BITBUCKET_TOKEN}@${ORIGIN_PATH}.git"
+                echo "[sfdx-hardis] Bitbucket push/PR auth enabled for coding agents"
+              else
+                echo "[sfdx-hardis] Skipping coding-agent Bitbucket auth setup: CI_SFDX_HARDIS_BITBUCKET_TOKEN is not set"
+              fi
             - sf hardis:auth:login
             - sf hardis:project:deploy:smart

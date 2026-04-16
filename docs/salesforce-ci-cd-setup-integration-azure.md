@@ -132,3 +132,30 @@ Notes:
   - BUILD_BUILD_ID: $(Build.BuildId)
   - BUILD_REPOSITORY_ID: $(Build.Repository.ID)
   - AZURE_ATTACHMENTS_WORK_ITEM_ID (optional: identifier of the Work Items used to attach images)
+
+## Instructions for using Coding Agents
+
+When using auto-fix with coding agents, the pipeline must be able to push a fix branch and create/update Pull Requests.
+
+This works for both:
+
+- Azure DevOps Services (cloud)
+- Azure DevOps Server (on-premise)
+
+Add this in your deployment/check script step before running `sf hardis:*` commands:
+
+```bash
+if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
+   git config user.email "sfdx-hardis-bot@cloudity.com"
+   git config user.name "sfdx-hardis Bot"
+   echo "[sfdx-hardis] Azure push/PR auth enabled for coding agents via SYSTEM_ACCESSTOKEN"
+else
+   echo "[sfdx-hardis] Skipping coding-agent Azure auth setup: SYSTEM_ACCESSTOKEN is not set"
+fi
+```
+
+Required secret/variable:
+
+- `SYSTEM_ACCESSTOKEN` (or `CI_SFDX_HARDIS_AZURE_TOKEN`):
+   - In pipeline settings, enable **Allow scripts to access OAuth token**.
+   - Alternative: create an Azure DevOps PAT with **Code Read & Write** and **Pull Request Threads Read & Write**, then store it as a secret variable and map it to `CI_SFDX_HARDIS_AZURE_TOKEN`.

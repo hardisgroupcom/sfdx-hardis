@@ -84,7 +84,13 @@ export async function autoFixDeployErrors(
 
     // Push the fix branch
     uxLog("action", this, c.cyan(t("codingAgentPushingFixBranch", { branch: fixBranch })));
-    await git().push("origin", fixBranch, ["--set-upstream"]);
+    try {
+      await git().push("origin", fixBranch, ["--set-upstream"]);
+    } catch (e) {
+      uxLog("error", this, c.red(`[sfdx-hardis] Push failed for branch ${fixBranch}: ${(e as Error).message}`));
+      await GitProvider.logAutoFixRemediation("push");
+      throw e;
+    }
 
     // Build PR description with errors and fixes
     const prDescription = buildPullRequestDescription(
@@ -106,6 +112,7 @@ export async function autoFixDeployErrors(
       uxLog("action", this, c.green(t("codingAgentPullRequestCreated", { url: prUrl })));
     } else {
       uxLog("warning", this, c.yellow(t("codingAgentPullRequestCreationFailed")));
+      await GitProvider.logAutoFixRemediation("pr-create");
     }
 
     // Go back to original branch
