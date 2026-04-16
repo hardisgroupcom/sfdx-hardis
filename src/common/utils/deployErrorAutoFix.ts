@@ -155,46 +155,36 @@ function buildPullRequestDescription(
   lines.push(`This pull request was automatically created by **sfdx-hardis** using the **${agentResult.agent}** coding agent to fix deployment errors.`);
   lines.push("");
 
-  // Errors section
-  lines.push("## Errors Found");
+  lines.push("## Fixed Errors");
   lines.push("");
   if (errorsAndTips.length > 0) {
-    lines.push("### Deployment Errors");
-    lines.push("");
-    lines.push("| # | Error | Tip |");
-    lines.push("|---|-------|-----|");
-    let errorNum = 1;
     for (const item of errorsAndTips) {
-      const error = (item.error?.message || "Unknown error").replace(/\|/g, "\\|").replace(/\n/g, " ");
-      const tip = (item.tip?.message || item.tipFromAi?.promptResponse || "-").replace(/\|/g, "\\|").replace(/\n/g, " ");
-      lines.push(`| ${errorNum} | ${error} | ${tip} |`);
-      errorNum++;
+      const error = sanitizeAutoFixText(item.error?.message || "Unknown error");
+      const fix = sanitizeAutoFixText(item.tip?.message || item.tipFromAi?.promptResponse || agentResult.fixesDescription || "Fix details not available.");
+      lines.push(`### Error: ${error}`);
+      lines.push("");
+      lines.push(`Fix: ${fix}`);
+      lines.push("");
     }
-    lines.push("");
   }
 
   if (failedTests.length > 0) {
-    lines.push("### Failed Tests");
-    lines.push("");
-    lines.push("| Class | Method | Error |");
-    lines.push("|-------|--------|-------|");
     for (const test of failedTests) {
-      const error = (test.error || "").replace(/\|/g, "\\|").replace(/\n/g, " ");
-      lines.push(`| ${test.class} | ${test.method} | ${error} |`);
+      const testError = sanitizeAutoFixText(`${test.class}.${test.method}: ${test.error || "Unknown test failure"}`);
+      const fix = sanitizeAutoFixText(agentResult.fixesDescription || "Fix details not available.");
+      lines.push(`### Error: ${testError}`);
+      lines.push("");
+      lines.push(`Fix: ${fix}`);
+      lines.push("");
     }
+  }
+
+  if (errorsAndTips.length === 0 && failedTests.length === 0 && agentResult.fixesDescription) {
+    lines.push(`Fix: ${sanitizeAutoFixText(agentResult.fixesDescription)}`);
     lines.push("");
   }
 
-  // Fixes section
-  lines.push("## Fixes Applied");
-  lines.push("");
-  if (agentResult.fixesDescription) {
-    lines.push(agentResult.fixesDescription);
-    lines.push("");
-  }
-
-  // Modified files
-  lines.push("### Modified Files");
+  lines.push("## Updated Files");
   lines.push("");
   for (const file of agentResult.fixedFiles) {
     lines.push(`- \`${file}\``);
@@ -205,4 +195,8 @@ function buildPullRequestDescription(
   lines.push("_Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) auto-fix feature_");
 
   return lines.join("\n");
+}
+
+function sanitizeAutoFixText(text: string): string {
+  return text.replace(/\r?\n+/g, " ").replace(/\s+/g, " ").trim();
 }
