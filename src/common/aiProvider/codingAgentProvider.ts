@@ -289,7 +289,7 @@ export class CodingAgentProvider {
   }
 
   private static parseFixesSummary(output: string): string {
-    const summaryMatch = output.match(/--- FIXES SUMMARY ---([\s\S]*?)---/);
+    const summaryMatch = output.match(/---SUMMARY---([\s\S]*?)(?:---|$)/);
     if (summaryMatch) {
       return summaryMatch[1].trim();
     }

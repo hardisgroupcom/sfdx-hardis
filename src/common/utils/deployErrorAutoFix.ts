@@ -216,10 +216,10 @@ function buildPullRequestDescription(
 function formatFixesSummary(summary: string): string {
   if (!summary) return "";
   return summary
-    .replace(/<\/br>\s*/gi, "\n")
     .replace(/^FILE:\s*/gm, "**File:** ")
     .replace(/^ERROR:\s*/gm, "**Error:** ")
     .replace(/^FIX:\s*/gm, "**Fix:** ")
+    .replace(/\r?\n/g, " </br>")
     .trim();
 }
 
