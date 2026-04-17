@@ -166,7 +166,7 @@ function buildPullRequestDescription(
     for (const item of errorsAndTips) {
       const error = sanitizeAutoFixText(item.error?.message || "Unknown error");
       const fix = sanitizeAutoFixText(item.tip?.message || item.tipFromAi?.promptResponse || "Fix details not available.");
-      lines.push(`<details>`);
+      lines.push(`<details markdown="1">`);
       lines.push(`<summary>❌ <strong>Error:</strong> ${error}</summary>`);
       lines.push("");
       if (fix) {
@@ -180,7 +180,7 @@ function buildPullRequestDescription(
     for (const test of failedTests) {
       const testName = sanitizeAutoFixText(`${test.class}.${test.method}`);
       const testError = sanitizeAutoFixText(test.error || "Unknown test failure");
-      lines.push(`<details>`);
+      lines.push(`<details markdown="1">`);
       lines.push(`<summary>🧪 <strong>Test Failure:</strong> ${testName}</summary>`);
       lines.push("");
       lines.push(`**Error:** ${testError}`);
@@ -216,15 +216,17 @@ function buildPullRequestDescription(
 function formatFixesSummary(summary: string): string {
   if (!summary) return "";
   return summary
-    // Normalize newlines to spaces first (agent may output inline or multiline)
-    .replace(/\r?\n/g, " ")
-    // Entry separators become a line break
-    .replace(/\s*---+\s*/g, " </br>")
-    // Insert a line break before each FILE:/ERROR:/FIX: marker
-    .replace(/\bFILE:\s*/g, "</br>\n**File:** ")
-    .replace(/\bERROR:\s*/g, "</br>\n**Error:** ")
-    .replace(/\bFIX:\s*/g, "</br>\n**Fix:** ")
-    .replace(/\s+/g, " ")
+    // Normalize CRLF
+    .replace(/\r\n/g, "\n")
+    // Normalize bold markers from agent output (**FILE:**) and plain markers (FILE:) to consistent labels
+    .replace(/^\*\*FILE:\*\*\s*/gm, "**File:** ")
+    .replace(/^\*\*ERROR:\*\*\s*/gm, "**Error:** ")
+    .replace(/^\*\*FIX:\*\*\s*/gm, "**Fix:** ")
+    .replace(/^FILE:\s*/gm, "**File:** ")
+    .replace(/^ERROR:\s*/gm, "**Error:** ")
+    .replace(/^FIX:\s*/gm, "**Fix:** ")
+    // Append </br> to every line so markdown renders line breaks in PR descriptions
+    .replace(/\n/g, " </br>\n")
     .trim();
 }
 

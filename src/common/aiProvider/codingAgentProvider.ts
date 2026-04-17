@@ -290,12 +290,13 @@ export class CodingAgentProvider {
 
   private static parseFixesSummary(output: string): string {
     // Match both '---SUMMARY---' (template) and '--- FIXES SUMMARY ---' (agent output)
-    const summaryMatch = output.match(/---[\s\w]*SUMMARY[\s\w]*---([\s\S]*?)(?:---|$)/i);
+    // Capture everything after the header marker (greedy) so all entries are included
+    const summaryMatch = output.match(/---[\s\w]*SUMMARY[\s\w]*---([\s\S]*)/i);
     if (summaryMatch) {
       return summaryMatch[1].trim();
     }
     if (output.length > 0) {
-      return output.slice(-2000).trim();
+      return output.slice(-5000).trim();
     }
     return "";
   }
