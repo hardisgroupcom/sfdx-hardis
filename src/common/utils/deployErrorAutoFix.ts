@@ -233,5 +233,5 @@ function formatFixesSummary(summary: string): string {
 }
 
 function sanitizeAutoFixText(text: string): string {
-  return text.replace(/\r?\n+/g, "\n\n").trim();
+  return text.replace(/\r?\n+/g, "\n").trim();
 }
