@@ -211,13 +211,15 @@ function buildPullRequestDescription(
 }
 
 /**
- * Convert raw agent summary output (FILE:/ERROR:/FIX: markers, </br> tags) into clean markdown.
+ * Convert raw agent summary output (FILE:/ERROR:/FIX: markers, break tags) into clean markdown.
  */
 function formatFixesSummary(summary: string): string {
   if (!summary) return "";
   return summary
     // Normalize CRLF
     .replace(/\r\n/g, "\n")
+    // Normalize legacy HTML break tags
+    .replace(/<\/?br\s*\/?\s*>/gi, "<br/>")
     // Normalize bold markers from agent output (**FILE:**) and plain markers (FILE:) to consistent labels
     .replace(/^\*\*FILE:\*\*\s*/gm, "**File:** ")
     .replace(/^\*\*ERROR:\*\*\s*/gm, "**Error:** ")
@@ -225,8 +227,8 @@ function formatFixesSummary(summary: string): string {
     .replace(/^FILE:\s*/gm, "**File:** ")
     .replace(/^ERROR:\s*/gm, "**Error:** ")
     .replace(/^FIX:\s*/gm, "**Fix:** ")
-    // Append </br> to every line so markdown renders line breaks in PR descriptions
-    .replace(/\n/g, " </br>\n")
+    // Append <br/> to every line so markdown renders line breaks in PR descriptions
+    .replace(/\n/g, " <br/>\n")
     .trim();
 }
 
