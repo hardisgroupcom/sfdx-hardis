@@ -228,10 +228,10 @@ function formatFixesSummary(summary: string): string {
     .replace(/^ERROR:\s*/gm, "**Error:** ")
     .replace(/^FIX:\s*/gm, "**Fix:** ")
     // Append <br/> to every line so markdown renders line breaks in PR descriptions
-    .replace(/\n/g, " <br/>\n")
+    .replace(/\n/g, "\n\n")
     .trim();
 }
 
 function sanitizeAutoFixText(text: string): string {
-  return text.replace(/\r?\n+/g, " ").replace(/\s+/g, " ").trim();
+  return text.replace(/\r?\n+/g, "\n\n").trim();
 }
