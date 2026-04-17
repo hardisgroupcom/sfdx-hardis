@@ -216,10 +216,15 @@ function buildPullRequestDescription(
 function formatFixesSummary(summary: string): string {
   if (!summary) return "";
   return summary
-    .replace(/^FILE:\s*/gm, "**File:** ")
-    .replace(/^ERROR:\s*/gm, "**Error:** ")
-    .replace(/^FIX:\s*/gm, "**Fix:** ")
-    .replace(/\r?\n/g, " </br>")
+    // Normalize newlines to spaces first (agent may output inline or multiline)
+    .replace(/\r?\n/g, " ")
+    // Entry separators become a line break
+    .replace(/\s*---+\s*/g, " </br>")
+    // Insert a line break before each FILE:/ERROR:/FIX: marker
+    .replace(/\bFILE:\s*/g, "</br>\n**File:** ")
+    .replace(/\bERROR:\s*/g, "</br>\n**Error:** ")
+    .replace(/\bFIX:\s*/g, "</br>\n**Fix:** ")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
