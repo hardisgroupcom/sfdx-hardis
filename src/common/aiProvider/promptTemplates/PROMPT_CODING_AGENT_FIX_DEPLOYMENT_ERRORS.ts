@@ -50,14 +50,18 @@ const template: PromptTemplateDefinition = {
 2. Look in the local metadata files (force-app/, src/, or similar directories references in sfdx-project.json) for the files causing the errors
 3. If needed, query the target org ({{TARGET_ORG}}) to understand the current state of metadata
 4. Fix the errors by modifying the appropriate local metadata files (if there are missing references, remove them from the local XML files)
-5. After fixing all errors, output a summary of all changes you made in the following format:
+5. After fixing all errors, output a summary of all changes you made in the following format (repeat one block per error):
 
---- FIXES SUMMARY ---
-For each fix, write:
-FILE: <path to modified file>
-ERROR: <the error that was fixed>
-FIX: <description of what was changed>
+### <the exact deployment error or test failure>
+
+<what you changed to fix it; if not fixed, explain what to do to fix it>
+
+Updated files:
+- \`<path/to/file1>\`
+- \`<path/to/file2>\`
 ---
+
+6. If a fix is partial or not completed, still include the block and clearly explain the remaining steps in HOW_FIXED.
 
 {{VARIABLE_ADDITIONAL_INSTRUCTIONS}}
 `,

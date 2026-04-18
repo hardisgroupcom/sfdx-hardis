@@ -156,53 +156,17 @@ function buildPullRequestDescription(
   lines.push(`This pull request was automatically created by **sfdx-hardis** using the **${agentResult.agent}** coding agent to fix deployment errors.`);
   lines.push("");
 
-  const hasErrors = errorsAndTips.length > 0;
-  const hasFailedTests = failedTests.length > 0;
-
-  if (hasErrors || hasFailedTests) {
-    lines.push("## Errors Fixed");
-    lines.push("");
-
-    for (const item of errorsAndTips) {
-      const error = sanitizeAutoFixText(item.error?.message || "Unknown error");
-      const fix = sanitizeAutoFixText(item.tip?.message || item.tipFromAi?.promptResponse || "Fix details not available.");
-      lines.push(`<details markdown="1">`);
-      lines.push(`<summary>❌ <strong>Error:</strong> ${error}</summary>`);
-      lines.push("");
-      if (fix) {
-        lines.push(`**Fix:** ${fix}`);
-        lines.push("");
-      }
-      lines.push(`</details>`);
-      lines.push("");
-    }
-
-    for (const test of failedTests) {
-      const testName = sanitizeAutoFixText(`${test.class}.${test.method}`);
-      const testError = sanitizeAutoFixText(test.error || "Unknown test failure");
-      lines.push(`<details markdown="1">`);
-      lines.push(`<summary>🧪 <strong>Test Failure:</strong> ${testName}</summary>`);
-      lines.push("");
-      lines.push(`**Error:** ${testError}`);
-      lines.push("");
-      lines.push(`</details>`);
-      lines.push("");
-    }
-  }
-
-  if (agentResult.fixesDescription) {
-    lines.push("## Changes Summary");
-    lines.push("");
-    lines.push(formatFixesSummary(agentResult.fixesDescription));
-    lines.push("");
-  }
-
-  lines.push("## Updated Files");
+  lines.push("## Fixes Overview");
   lines.push("");
-  for (const file of agentResult.fixedFiles) {
-    lines.push(`- \`${file}\``);
+
+  if (agentResult.fixesDescription?.trim()) {
+    // Keep agent output untouched: prompt controls the exact markdown structure.
+    lines.push(agentResult.fixesDescription.trim());
+    lines.push("");
+  } else {
+    lines.push("No fix summary was provided by the coding agent.");
+    lines.push("");
   }
-  lines.push("");
 
   lines.push("---");
   lines.push("_Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) auto-fix feature_");
@@ -210,28 +174,3 @@ function buildPullRequestDescription(
   return lines.join("\n");
 }
 
-/**
- * Convert raw agent summary output (FILE:/ERROR:/FIX: markers, break tags) into clean markdown.
- */
-function formatFixesSummary(summary: string): string {
-  if (!summary) return "";
-  return summary
-    // Normalize CRLF
-    .replace(/\r\n/g, "\n")
-    // Normalize legacy HTML break tags
-    .replace(/<\/?br\s*\/?\s*>/gi, "<br/>")
-    // Normalize bold markers from agent output (**FILE:**) and plain markers (FILE:) to consistent labels
-    .replace(/^\*\*FILE:\*\*\s*/gm, "**File:** ")
-    .replace(/^\*\*ERROR:\*\*\s*/gm, "**Error:** ")
-    .replace(/^\*\*FIX:\*\*\s*/gm, "**Fix:** ")
-    .replace(/^FILE:\s*/gm, "**File:** ")
-    .replace(/^ERROR:\s*/gm, "**Error:** ")
-    .replace(/^FIX:\s*/gm, "**Fix:** ")
-    // Append <br/> to every line so markdown renders line breaks in PR descriptions
-    .replace(/\n/g, "\n\n")
-    .trim();
-}
-
-function sanitizeAutoFixText(text: string): string {
-  return text.replace(/\r?\n+/g, "\n").trim();
-}
