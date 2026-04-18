@@ -33,3 +33,8 @@ Impacted files if present in your repo:
 
 - `Jenkinsfile`
 
+## Auto-fix branches
+
+Default CI templates skip steps that run `sf hardis` commands when the current branch starts with `auto-fix/`.
+This prevents recursive or redundant deploy/check executions on auto-generated fix branches.
+

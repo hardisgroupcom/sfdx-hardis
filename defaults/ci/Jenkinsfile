@@ -71,6 +71,13 @@ pipeline {
                 //Validation on the appropriate org
                 steps {
                     script {
+                        sh '''
+CURRENT_BRANCH=$(echo "${GIT_BRANCH}" | sed -E 's#^refs/heads/##; s#^origin/##')
+if [ "${CURRENT_BRANCH#auto-fix/}" != "${CURRENT_BRANCH}" ]; then
+    echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${CURRENT_BRANCH}"
+    exit 0
+fi
+'''
                                                 sh '''
 if [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_AZURE_TOKEN:-}" ] || [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
     git config user.email "sfdx-hardis-bot@cloudity.com"
@@ -112,6 +119,13 @@ fi
                 //deploy on the appropriate org
                 steps {
                     script {
+                        sh '''
+CURRENT_BRANCH=$(echo "${GIT_BRANCH}" | sed -E 's#^refs/heads/##; s#^origin/##')
+if [ "${CURRENT_BRANCH#auto-fix/}" != "${CURRENT_BRANCH}" ]; then
+    echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${CURRENT_BRANCH}"
+    exit 0
+fi
+'''
                                                 sh '''
 if [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_AZURE_TOKEN:-}" ] || [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
     git config user.email "sfdx-hardis-bot@cloudity.com"

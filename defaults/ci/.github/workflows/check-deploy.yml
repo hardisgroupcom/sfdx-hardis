@@ -55,6 +55,7 @@ jobs:
           # npm install --no-cache @github/copilot@latest --global && copilot --version
       # Login & check deploy with test classes & code coverage
       - name: Login & Simulate deployment
+        if: ${{ !startsWith(github.head_ref, 'auto-fix/') && !startsWith(github.ref_name, 'auto-fix/') }}
         env:
           SFDX_CLIENT_ID_INTEGRATION: ${{ secrets.SFDX_CLIENT_ID_INTEGRATION}}
           SFDX_CLIENT_KEY_INTEGRATION: ${{ secrets.SFDX_CLIENT_KEY_INTEGRATION}}

@@ -15,7 +15,8 @@ pipelines:
               name: Run MegaLinter
               image: oxsecurity/megalinter-salesforce:latest
               script:
-                - export DEFAULT_WORKSPACE=$BITBUCKET_CLONE_DIR && bash /entrypoint.sh
+                - export DEFAULT_WORKSPACE=$BITBUCKET_CLONE_DIR && bash
+                  /entrypoint.sh
               artifacts:
                 - megalinter-reports/**
           # Simulate deployment
@@ -34,12 +35,20 @@ pipelines:
                 # - npm install --no-cache @openai/codex@latest --global && codex --version
                 # - npm install --no-cache @google/gemini-cli@latest --global && gemini --version
                 # - npm install --no-cache @github/copilot@latest --global && copilot --version
-                - export BRANCH_NAME=$(echo "$BITBUCKET_PR_DESTINATION_BRANCH" | sed 's/refs\/heads\///')
+                - export BRANCH_NAME=$(echo "$BITBUCKET_PR_DESTINATION_BRANCH" |
+                  sed 's/refs\/heads\///')
                 - export CI_COMMIT_REF_NAME=$BRANCH_NAME
                 - export ORG_ALIAS=$BRANCH_NAME
                 - export CONFIG_BRANCH=$BRANCH_NAME
+                - export
+                  CURRENT_BRANCH_NAME=${BITBUCKET_BRANCH:-$BITBUCKET_PR_SOURCE_BRANCH}
                 - export FORCE_COLOR=1
                 - export SFDX_DISABLE_FLOW_DIFF=false # Set to true to disable Flow doc during CI/CD setup
+                - |
+                  if [ "${CURRENT_BRANCH_NAME#auto-fix/}" != "$CURRENT_BRANCH_NAME" ]; then
+                    echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CURRENT_BRANCH_NAME"
+                    exit 0
+                  fi
                 - |
                   if [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ]; then
                     git config user.email "sfdx-hardis-bot@cloudity.com"
@@ -71,11 +80,18 @@ pipelines:
             # - npm install --no-cache @openai/codex@latest --global && codex --version
             # - npm install --no-cache @google/gemini-cli@latest --global && gemini --version
             # - npm install --no-cache @github/copilot@latest --global && copilot --version
-            - export BRANCH_NAME=$(echo "$BITBUCKET_BRANCH" | sed 's/refs\/heads\///')
+            - export BRANCH_NAME=$(echo "$BITBUCKET_BRANCH" | sed
+              's/refs\/heads\///')
             - export CI_COMMIT_REF_NAME=$BRANCH_NAME
             - export CONFIG_BRANCH=$BRANCH_NAME
             - export ORG_ALIAS=$BRANCH_NAME
+            - export CURRENT_BRANCH_NAME=$BRANCH_NAME
             - export FORCE_COLOR=1
+            - |
+              if [ "${CURRENT_BRANCH_NAME#auto-fix/}" != "$CURRENT_BRANCH_NAME" ]; then
+                echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CURRENT_BRANCH_NAME"
+                exit 0
+              fi
             - |
               if [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ]; then
                 git config user.email "sfdx-hardis-bot@cloudity.com"

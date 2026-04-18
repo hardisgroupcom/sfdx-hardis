@@ -31,6 +31,8 @@ variables:
     value: "1"
   - name: BRANCH_NAME
     value: $[replace(variables['System.PullRequest.TargetBranch'], 'refs/heads/', '')]
+  - name: CURRENT_BRANCH_NAME
+    value: $[replace(variables['System.PullRequest.SourceBranch'], 'refs/heads/', '')]
 
 jobs:
   # Simulate SFDX deployment
@@ -67,6 +69,10 @@ jobs:
 
       # Login & check deployment to PR target branch related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
       - script: |
+          if [ "$(CURRENT_BRANCH_NAME#auto-fix/)" != "$(CURRENT_BRANCH_NAME)" ]; then
+            echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $(CURRENT_BRANCH_NAME)"
+            exit 0
+          fi
           if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
             git config user.email "sfdx-hardis-bot@cloudity.com"
             git config user.name "sfdx-hardis Bot"

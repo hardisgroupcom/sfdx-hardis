@@ -58,6 +58,7 @@ jobs:
         run: echo "BRANCH=$(echo "$GITHUB_REF" | cut -d'/' -f 3)" >> "$GITHUB_ENV"
       # Login & check deploy with test classes & code coverage
       - name: Login & Process Deployment
+        if: ${{ !startsWith(github.ref_name, 'auto-fix/') }}
         env:
           SFDX_CLIENT_ID_INTEGRATION: ${{ secrets.SFDX_CLIENT_ID_INTEGRATION}}
           SFDX_CLIENT_KEY_INTEGRATION: ${{ secrets.SFDX_CLIENT_KEY_INTEGRATION}}

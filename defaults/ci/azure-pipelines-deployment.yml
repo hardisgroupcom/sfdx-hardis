@@ -63,6 +63,10 @@ jobs:
 
       # Login & Deploy sfdx sources to related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
       - script: |
+          if [ "$(BRANCH_NAME#auto-fix/)" != "$(BRANCH_NAME)" ]; then
+            echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $(BRANCH_NAME)"
+            exit 0
+          fi
           if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
             git config user.email "sfdx-hardis-bot@cloudity.com"
             git config user.name "sfdx-hardis Bot"

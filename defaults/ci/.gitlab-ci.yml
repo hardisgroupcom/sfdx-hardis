@@ -41,7 +41,8 @@ variables:
 # https://megalinter.io/latest/flavors/salesforce/
 check_quality:
   stage: build
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     - merge_requests
@@ -51,7 +52,7 @@ check_quality:
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
   image: oxsecurity/megalinter-salesforce:latest
-  script: ["true"]
+  script: [ "true" ]
   variables:
     # All available variables are described in documentation
     # https://megalinter.io/latest/config-file/
@@ -68,7 +69,8 @@ check_quality:
 # If auth not configure yet, check this doc: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/
 check_deploy_to_target_branch_org:
   stage: build
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     refs:
@@ -83,7 +85,12 @@ check_deploy_to_target_branch_org:
     ORG_ALIAS: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
     SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD setup
   script:
-    - '[ -z "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ] && exit 0;' # Skip this job if it is launched from web UI and we are not in merge request context
+    - "[ -z \"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME\" ] && exit 0;" # Skip this job if it is launched from web UI and we are not in merge request context
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
     - |
       if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
         git config user.email "sfdx-hardis-bot@cloudity.com"
@@ -99,7 +106,8 @@ check_deploy_to_target_branch_org:
 # Create scratch org to check the sources push & the unit tests
 create_scratch_org:
   stage: build
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     - merge_requests
@@ -111,6 +119,11 @@ create_scratch_org:
       - $USE_SCRATCH_ORGS == "false"
   interruptible: true
   script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
     - sf hardis:auth:login --devhub
     - sf hardis:scratch:create
   artifacts:
@@ -125,13 +138,19 @@ create_scratch_org:
 # Refresh scratch org pool: IF you use scratch orgs, job to schedule with variable SCRATCH_ORG_POOL: true
 refresh_scratch_org_pool:
   stage: build
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     variables:
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
   script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
     - sf hardis:auth:login --devhub
     - sf hardis:scratch:pool:refresh
   artifacts:
@@ -142,7 +161,8 @@ test_apex:
   stage: test
   when: delayed # Orgs just created can be not ready yet, let's wait a while before running tests
   start_in: 2 minutes
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     - merge_requests
@@ -157,6 +177,11 @@ test_apex:
     - job: create_scratch_org
       artifacts: true
   script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
     - sf hardis:auth:login --scratchorg || true
     - sf hardis:org:test:apex
   artifacts:
@@ -183,7 +208,8 @@ test_apex:
 # Delete testing scratch org
 clean:
   stage: clean
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   when: on_success
   only:
@@ -199,6 +225,11 @@ clean:
     - job: create_scratch_org
     - job: test_apex
   script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
     - sf hardis:auth:login --devhub
     - sf hardis:auth:login --scratchorg || true
     - sf org delete scratch --no-prompt || true
@@ -207,7 +238,8 @@ clean:
 # Is triggered only when scheduled, or via manual launch
 check_deploy_to_current_branch_org:
   stage: check_deploy
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     - schedules
@@ -218,6 +250,11 @@ check_deploy_to_current_branch_org:
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
   script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
     - |
       if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
         git config user.email "sfdx-hardis-bot@cloudity.com"
@@ -234,7 +271,8 @@ check_deploy_to_current_branch_org:
 # Don't forget to define variable DEPLOY_BRANCHES to match your branches in .gitlab-ci-config.yml
 deploy_to_org:
   stage: deploy
-  tags: # Change or even remove tags if standard runners
+  tags:
+    # Change or even remove tags if standard runners
     - ubuntu
   only:
     - pushes
@@ -245,6 +283,11 @@ deploy_to_org:
       - $SCRATCH_ORG_POOL == "true"
   interruptible: true
   script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
     - |
       if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
         git config user.email "sfdx-hardis-bot@cloudity.com"
