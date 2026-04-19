@@ -9,7 +9,7 @@ description: Automatically fix deployment errors using AI coding agents
 
 !!! warning "Beta Feature"
 
-This feature is currently in **beta**. AI coding agents can make mistakes — **all proposed changes must be carefully reviewed by an expert** before merging. Never blindly accept auto-fix Pull Requests.
+> This feature is currently in **beta**. AI coding agents can make mistakes: **all proposed changes must be carefully reviewed by an expert** before merging. Never blindly accept auto-fix Pull Requests.
 
 ## Overview
 
@@ -34,6 +34,37 @@ When `codingAgentAutoFix` is enabled and a deployment fails:
 4. The agent reads, analyzes and **modifies local metadata files** to fix the errors (it does NOT deploy anything)
 5. Changes are **committed and pushed** to the fix branch
 6. A **Pull Request** is created targeting the original branch, with a description of all errors and applied fixes
+
+### Deployment Agent cinematic
+
+```mermaid
+flowchart TD
+  A[Contributor creates PR-1] --> B[Check deploy job runs]
+  B --> C{Deployment valid?}
+  C -->|Yes| D[PR-1 can be merged]
+  C -->|No| E[Collect errors and tips]
+  E --> F[Call coding agent CLI]
+  F --> G[Agent updates local metadata]
+  G --> H[Create fix PR-n targeting PR-1 branch]
+  H --> I[Review and merge fix PR-n into PR-1]
+  I --> B
+
+  classDef contributor fill:#EAF5FE,stroke:#0176D3,stroke-width:2px,color:#032D60;
+  classDef pipeline fill:#F3F2F2,stroke:#706E6B,stroke-width:1.5px,color:#181818;
+  classDef decision fill:#E5F3FF,stroke:#0B5CAB,stroke-width:2px,color:#032D60;
+  classDef agent fill:#E8F7F1,stroke:#2E844A,stroke-width:2px,color:#0B3E26;
+  classDef fix fill:#FFF6E5,stroke:#A96403,stroke-width:2px,color:#4A2F00;
+  classDef success fill:#E9F9EE,stroke:#2E844A,stroke-width:2px,color:#0B3E26;
+
+  class A contributor;
+  class B pipeline;
+  class C decision;
+  class D success;
+  class E,F,G agent;
+  class H,I fix;
+```
+
+This loop can run multiple times (`PR-2`, `PR-3`, etc.) until the check deploy job is valid and the initial Pull Request can be merged.
 
 ## Setup
 
