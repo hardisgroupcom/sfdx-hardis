@@ -301,7 +301,9 @@ class SfdxHardisBuilder {
         '', '## How to override',
 
         '',
-        `To define your own prompt text, you can define a local file **config/prompt-templates/${templateName}.txt**`,
+        `To define your own prompt text, you can define a local file **config/prompt-templates/${templateName}.md**`,
+        ``,
+        `> For backward compatibility, **config/prompt-templates/${templateName}.txt** is also supported, but **.md is preferred**.`,
         ``,
         `You can also use the command \`sf hardis:doc:override-prompts\` to automatically create all override template files at once.`,
         ``,
@@ -337,7 +339,9 @@ class SfdxHardisBuilder {
         '',
         '## How to override',
         '',
-        `To define your own variable content, you can define a local file **config/prompt-templates/${variableName}.txt**`,
+        `To define your own variable content, you can define a local file **config/prompt-templates/${variableName}.md**`,
+        ``,
+        `> For backward compatibility, **config/prompt-templates/${variableName}.txt** is also supported, but **.md is preferred**.`,
         ``,
         `You can also use the command \`sf hardis:doc:override-prompts\` to automatically create all override variable files at once.`,
         ``

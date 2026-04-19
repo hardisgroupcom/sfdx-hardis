@@ -17,7 +17,9 @@ The output will be in markdown format, which will be used in a documentation sit
 
 ## How to override
 
-To define your own variable content, you can define a local file **config/prompt-templates/VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC.txt**
+To define your own variable content, you can define a local file **config/prompt-templates/VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC.md**
+
+> For backward compatibility, **config/prompt-templates/VARIABLE_OUTPUT_FORMAT_MARKDOWN_DOC.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override variable files at once.
 

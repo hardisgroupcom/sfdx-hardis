@@ -6,10 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_APPROVAL_PROCESS
 # PROMPT_DESCRIBE_APPROVAL_PROCESS
 
 ## Variables
-| Name                     | Description                                              | Example                                  |
-|:-------------------------|:---------------------------------------------------------|:-----------------------------------------|
-| **APPROVALPROCESS_NAME** | The name of the Salesforce Approval Process to describe. | `Opportunity_Approval`                   |
-| **APPROVALPROCESS_XML**  | The XML metadata for the Salesforce Approval Process.    | `<ApprovalProcess>...</ApprovalProcess>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **APPROVALPROCESS_NAME** | The name of the Salesforce Approval Process to describe. | `Opportunity_Approval` |
+| **APPROVALPROCESS_XML** | The XML metadata for the Salesforce Approval Process. | `<ApprovalProcess>...</ApprovalProcess>` |
 
 ## Prompt
 
@@ -35,7 +35,9 @@ You are a skilled business analyst working on a Salesforce project. Your goal is
 
 ## How to override
 
-To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_APPROVAL_PROCESS.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_APPROVAL_PROCESS.md**
+
+> For backward compatibility, **config/prompt-templates/PROMPT_DESCRIBE_APPROVAL_PROCESS.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 

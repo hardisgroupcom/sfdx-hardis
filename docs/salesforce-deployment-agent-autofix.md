@@ -149,7 +149,7 @@ To override, set explicitly:
 The prompt sent to the coding agent uses the template `PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS`, which can be **overridden** by placing a file at:
 
 ```
-config/prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.txt
+config/prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.md
 ```
 
 The template receives the following variables:

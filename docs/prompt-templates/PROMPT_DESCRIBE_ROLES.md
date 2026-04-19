@@ -6,8 +6,8 @@ description: Prompt template for PROMPT_DESCRIBE_ROLES
 # PROMPT_DESCRIBE_ROLES
 
 ## Variables
-| Name                  | Description                         | Example                                                                                                                                                                                                                                                                             |
-|:----------------------|:------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Name | Description | Example |
+| :------|:-------------|:---------|
 | **ROLES_DESCRIPTION** | Description of all roles of the org | `- **Role Name (id:role_api_name)**: Role description (parentId: parent_role_id)<br>- **Another Role (id:another_role_api_name)**: Another role description (parentId: another_parent_role_id)<br> - **Root Role (id:root_role_api_name)**: Root role description (parentId: ROOT)` |
 
 ## Prompt
@@ -36,7 +36,9 @@ You are a skilled business analyst working on a Salesforce project. Your goal is
 
 ## How to override
 
-To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_ROLES.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_ROLES.md**
+
+> For backward compatibility, **config/prompt-templates/PROMPT_DESCRIBE_ROLES.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 

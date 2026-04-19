@@ -6,11 +6,11 @@ description: Prompt template for PROMPT_DESCRIBE_OBJECT
 # PROMPT_DESCRIBE_OBJECT
 
 ## Variables
-| Name                 | Description                                                               | Example                                                          |
-|:---------------------|:--------------------------------------------------------------------------|:-----------------------------------------------------------------|
-| **OBJECT_NAME**      | The API name of the Salesforce object to describe.                        | `Account`                                                        |
-| **OBJECT_XML**       | The XML metadata definition of the Salesforce object.                     | `<CustomObject>...</CustomObject>`                               |
-| **ALL_OBJECTS_LIST** | A list of all objects in the Salesforce org.                              | `Account, Contact, Opportunity, ...`                             |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **OBJECT_NAME** | The API name of the Salesforce object to describe. | `Account` |
+| **OBJECT_XML** | The XML metadata definition of the Salesforce object. | `<CustomObject>...</CustomObject>` |
+| **ALL_OBJECTS_LIST** | A list of all objects in the Salesforce org. | `Account, Contact, Opportunity, ...` |
 | **ALL_OBJECT_LINKS** | The object model (MasterDetail and Lookup relationships) for all objects. | `Account->Contact (Lookup), Opportunity->Account (MasterDetail)` |
 
 ## Prompt
@@ -53,7 +53,9 @@ You are a business analyst working on a Salesforce project. Your goal is to desc
 
 ## How to override
 
-To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_OBJECT.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_OBJECT.md**
+
+> For backward compatibility, **config/prompt-templates/PROMPT_DESCRIBE_OBJECT.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 

@@ -6,8 +6,8 @@ description: Prompt template for PROMPT_SOLVE_DEPLOYMENT_ERROR
 # PROMPT_SOLVE_DEPLOYMENT_ERROR
 
 ## Variables
-| Name      | Description                                                   | Example                                                    |
-|:----------|:--------------------------------------------------------------|:-----------------------------------------------------------|
+| Name | Description | Example |
+| :------|:-------------|:---------|
 | **ERROR** | The Salesforce deployment error message to analyze and solve. | `Cannot deploy component: missing field 'X' on object 'Y'` |
 
 ## Prompt
@@ -39,7 +39,9 @@ You are a Salesforce release manager using Salesforce CLI commands to perform de
 
 ## How to override
 
-To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_SOLVE_DEPLOYMENT_ERROR.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_SOLVE_DEPLOYMENT_ERROR.md**
+
+> For backward compatibility, **config/prompt-templates/PROMPT_SOLVE_DEPLOYMENT_ERROR.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 

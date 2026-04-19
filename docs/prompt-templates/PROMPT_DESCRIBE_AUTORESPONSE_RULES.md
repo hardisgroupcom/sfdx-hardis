@@ -6,10 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_AUTORESPONSE_RULES
 # PROMPT_DESCRIBE_AUTORESPONSE_RULES
 
 ## Variables
-| Name                       | Description                                                | Example                                      |
-|:---------------------------|:-----------------------------------------------------------|:---------------------------------------------|
-| **AUTORESPONSERULES_NAME** | The name of the Salesforce AutoResponse Rules to describe. | `Case_AutoResponse_Rules`                    |
-| **AUTORESPONSERULES_XML**  | The XML metadata for the Salesforce AutoResponse Rules.    | `<AutoResponseRules>...</AutoResponseRules>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **AUTORESPONSERULES_NAME** | The name of the Salesforce AutoResponse Rules to describe. | `Case_AutoResponse_Rules` |
+| **AUTORESPONSERULES_XML** | The XML metadata for the Salesforce AutoResponse Rules. | `<AutoResponseRules>...</AutoResponseRules>` |
 
 ## Prompt
 
@@ -37,7 +37,9 @@ You are a skilled business analyst working on a Salesforce project. Your goal is
 
 ## How to override
 
-To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_AUTORESPONSE_RULES.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_AUTORESPONSE_RULES.md**
+
+> For backward compatibility, **config/prompt-templates/PROMPT_DESCRIBE_AUTORESPONSE_RULES.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 

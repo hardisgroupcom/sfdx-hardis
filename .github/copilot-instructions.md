@@ -64,7 +64,7 @@ docs/                 # Project documentation
 
 - Prompt templates are defined in `src/common/aiProvider/promptTemplates/`
 - Each template exports a `PromptTemplateDefinition` with variables and multilingual text
-- Templates can be overridden by placing `.txt` files in `config/prompt-templates/`
+- Templates can be overridden by placing `.md` files in `config/prompt-templates/` (`.txt` is also supported for backward compatibility)
 - Support multiple AI providers via LangChain
 
 ### Build and Test

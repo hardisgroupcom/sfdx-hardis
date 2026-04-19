@@ -6,12 +6,12 @@ description: Prompt template for PROMPT_DESCRIBE_LWC
 # PROMPT_DESCRIBE_LWC
 
 ## Variables
-| Name              | Description                                                  | Example                                                    |
-|:------------------|:-------------------------------------------------------------|:-----------------------------------------------------------|
-| **LWC_NAME**      | The name of the Lightning Web Component to describe.         | `myCustomComponent`                                        |
-| **LWC_JS_CODE**   | The JavaScript code of the Lightning Web Component.          | `import { LightningElement } from 'lwc'; ...`              |
-| **LWC_HTML_CODE** | The HTML template code of the Lightning Web Component.       | `<template>...</template>`                                 |
-| **LWC_JS_META**   | The meta configuration file for the Lightning Web Component. | `<LightningComponentBundle>...</LightningComponentBundle>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **LWC_NAME** | The name of the Lightning Web Component to describe. | `myCustomComponent` |
+| **LWC_JS_CODE** | The JavaScript code of the Lightning Web Component. | `import { LightningElement } from 'lwc'; ...` |
+| **LWC_HTML_CODE** | The HTML template code of the Lightning Web Component. | `<template>...</template>` |
+| **LWC_JS_META** | The meta configuration file for the Lightning Web Component. | `<LightningComponentBundle>...</LightningComponentBundle>` |
 
 ## Prompt
 
@@ -56,7 +56,9 @@ You are a skilled Salesforce developer working on a Lightning Web Components (LW
 
 ## How to override
 
-To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_LWC.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_LWC.md**
+
+> For backward compatibility, **config/prompt-templates/PROMPT_DESCRIBE_LWC.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 

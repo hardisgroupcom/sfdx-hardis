@@ -6,8 +6,8 @@ description: Prompt template for PROMPT_DESCRIBE_FLOW
 # PROMPT_DESCRIBE_FLOW
 
 ## Variables
-| Name         | Description                                            | Example            |
-|:-------------|:-------------------------------------------------------|:-------------------|
+| Name | Description | Example |
+| :------|:-------------|:---------|
 | **FLOW_XML** | The XML definition of the Salesforce Flow to describe. | `<Flow>...</Flow>` |
 
 ## Prompt
@@ -39,7 +39,9 @@ You are a business analyst working on a Salesforce project. Your goal is to desc
 
 ## How to override
 
-To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_FLOW.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_FLOW.md**
+
+> For backward compatibility, **config/prompt-templates/PROMPT_DESCRIBE_FLOW.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 

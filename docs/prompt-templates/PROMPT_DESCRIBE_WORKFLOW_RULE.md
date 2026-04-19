@@ -6,10 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_WORKFLOW_RULE
 # PROMPT_DESCRIBE_WORKFLOW_RULE
 
 ## Variables
-| Name                  | Description                                           | Example                            |
-|:----------------------|:------------------------------------------------------|:-----------------------------------|
-| **WORKFLOWRULE_NAME** | The name of the Salesforce Workflow Rule to describe. | `Account.HighValue_Alert`          |
-| **WORKFLOWRULE_XML**  | The XML metadata for the Salesforce Workflow Rule.    | `<workflowRule>...</workflowRule>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **WORKFLOWRULE_NAME** | The name of the Salesforce Workflow Rule to describe. | `Account.HighValue_Alert` |
+| **WORKFLOWRULE_XML** | The XML metadata for the Salesforce Workflow Rule. | `<workflowRule>...</workflowRule>` |
 
 ## Prompt
 
@@ -35,7 +35,9 @@ You are a skilled business analyst working on a Salesforce project. Your goal is
 
 ## How to override
 
-To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_WORKFLOW_RULE.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_WORKFLOW_RULE.md**
+
+> For backward compatibility, **config/prompt-templates/PROMPT_DESCRIBE_WORKFLOW_RULE.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 

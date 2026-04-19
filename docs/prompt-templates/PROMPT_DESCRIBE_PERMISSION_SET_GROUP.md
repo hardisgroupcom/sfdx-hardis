@@ -6,10 +6,10 @@ description: Prompt template for PROMPT_DESCRIBE_PERMISSION_SET_GROUP
 # PROMPT_DESCRIBE_PERMISSION_SET_GROUP
 
 ## Variables
-| Name                        | Description                                                  | Example                                        |
-|:----------------------------|:-------------------------------------------------------------|:-----------------------------------------------|
-| **PERMISSIONSETGROUP_NAME** | The name of the Salesforce Permission Set Group to describe. | `PS_CloudityAdmin`                             |
-| **PERMISSIONSETGROUP_XML**  | The XML metadata for the Salesforce Permission Set Group.    | `<PermissionSetGroup>...</PermissionSetGroup>` |
+| Name | Description | Example |
+| :------|:-------------|:---------|
+| **PERMISSIONSETGROUP_NAME** | The name of the Salesforce Permission Set Group to describe. | `PS_CloudityAdmin` |
+| **PERMISSIONSETGROUP_XML** | The XML metadata for the Salesforce Permission Set Group. | `<PermissionSetGroup>...</PermissionSetGroup>` |
 
 ## Prompt
 
@@ -35,7 +35,9 @@ You are a skilled business analyst working on a Salesforce project. Your goal is
 
 ## How to override
 
-To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_PERMISSION_SET_GROUP.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_DESCRIBE_PERMISSION_SET_GROUP.md**
+
+> For backward compatibility, **config/prompt-templates/PROMPT_DESCRIBE_PERMISSION_SET_GROUP.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 
