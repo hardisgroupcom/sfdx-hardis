@@ -4,6 +4,8 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+## [7.8.0] 2026-04-19
+
 - Allow coding agents (claude, codex, gemini, copilot) to solve deployments errors
 - Override text of prompts in markdown file extension, not .txt (but .txt still supported for backward compatibility)
 - New command [hardis:org:diagnose:flex-queue](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/flex-queue/) to monitor AsyncApexJob Holding backlog and get alerts before the flex queue is full (available in sfdx-hardis monitoring)
