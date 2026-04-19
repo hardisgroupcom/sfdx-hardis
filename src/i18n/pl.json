@@ -302,6 +302,7 @@
   "codingAgentReusingApiKey": "Ponowne użycie klucza API z {{source}} dla agenta kodującego {{agent}}.",
   "codingAgentRunningCommand": "Uruchamianie polecenia agenta kodującego: {{command}}",
   "codingAgentUnableToDetectBranch": "Nie można wykryć bieżącej gałęzi git do automatycznej naprawy.",
+  "codingAgentUsingOptions": "Opcje agenta kodującego: model={{model}}, maxTurns={{maxTurns}}",
   "colDeploymentUsername": "Nazwa użytkownika wdrożenia",
   "colDescriptionDocLink": "Opis i link do dokumentacji",
   "colGitBranch": "Git branch",

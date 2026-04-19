@@ -302,6 +302,7 @@
   "codingAgentReusingApiKey": "Reusing API key from {{source}} for coding agent {{agent}}.",
   "codingAgentRunningCommand": "Running coding agent command: {{command}}",
   "codingAgentUnableToDetectBranch": "Unable to detect current git branch for auto-fix.",
+  "codingAgentUsingOptions": "Coding agent options: model={{model}}, maxTurns={{maxTurns}}",
   "colDeploymentUsername": "Deployment Username",
   "colDescriptionDocLink": "Description & doc link",
   "colGitBranch": "Git branch",

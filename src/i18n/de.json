@@ -302,6 +302,7 @@
   "codingAgentReusingApiKey": "API-Schlüssel von {{source}} wird für Coding-Agent {{agent}} wiederverwendet.",
   "codingAgentRunningCommand": "Coding-Agent-Befehl wird ausgeführt: {{command}}",
   "codingAgentUnableToDetectBranch": "Kann den aktuellen Git-Branch für die automatische Korrektur nicht erkennen.",
+  "codingAgentUsingOptions": "Coding-Agent-Optionen: model={{model}}, maxTurns={{maxTurns}}",
   "colDeploymentUsername": "Bereitstellungs-Benutzername",
   "colDescriptionDocLink": "Beschreibung & Dokumentationslink",
   "colGitBranch": "Git Branch",

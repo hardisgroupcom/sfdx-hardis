@@ -302,6 +302,7 @@
   "codingAgentReusingApiKey": "API-sleutel van {{source}} wordt hergebruikt voor coding agent {{agent}}.",
   "codingAgentRunningCommand": "Coding agent commando uitvoeren: {{command}}",
   "codingAgentUnableToDetectBranch": "Kan huidige git branch niet detecteren voor auto-fix.",
+  "codingAgentUsingOptions": "Coding agent opties: model={{model}}, maxTurns={{maxTurns}}",
   "colDeploymentUsername": "Implementatie-gebruikersnaam",
   "colDescriptionDocLink": "Beschrijving & documentatielink",
   "colGitBranch": "Git branch",

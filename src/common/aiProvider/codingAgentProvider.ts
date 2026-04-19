@@ -7,7 +7,7 @@ import { getConfig, getEnvVar } from "../../config/index.js";
 import { t } from "../utils/i18n.js";
 import { buildPromptFromTemplate } from "./promptTemplates.js";
 import { LangChainProviderFactory } from "./langChainProviders/langChainProviderFactory.js";
-import { CodingAgentInfo } from "./langChainProviders/langChainBaseProvider.js";
+import { CodingAgentInfo, CodingAgentOptions } from "./langChainProviders/langChainBaseProvider.js";
 
 export type CodingAgentType = "claude" | "codex-cli" | "gemini-cli" | "copilot-cli";
 
@@ -39,8 +39,9 @@ const COPILOT_CLI_AGENT_INFO: CodingAgentInfo = {
       process.env.GH_TOKEN = copilotToken;
     }
   },
-  buildCommand(promptFilePath: string): string {
-    return `cat "${promptFilePath}" | copilot -p - --allow-all-tools`;
+  buildCommand(promptFilePath: string, options?: CodingAgentOptions): string {
+    const modelFlag = options?.model ? ` --model ${options.model}` : "";
+    return `cat "${promptFilePath}" | copilot -p -${modelFlag} --allow-all-tools`;
   },
 };
 
@@ -247,7 +248,17 @@ export class CodingAgentProvider {
       await fs.remove(promptFilePath);
       throw new Error(t("codingAgentNoProviderInfo", { agent: agentConfig.agent }));
     }
-    const commandStr = agentInfo.buildCommand(promptFilePath);
+
+    // Read coding agent options from config / env vars
+    const agentOptions = await this.getCodingAgentOptions();
+    const commandStr = agentInfo.buildCommand(promptFilePath, agentOptions);
+
+    if (agentOptions.model || agentOptions.maxTurns) {
+      uxLog("log", this, c.grey(t("codingAgentUsingOptions", {
+        model: agentOptions.model || "default",
+        maxTurns: String(agentOptions.maxTurns || "default"),
+      })));
+    }
 
     uxLog("log", this, c.grey(t("codingAgentRunningCommand", { command: commandStr.substring(0, 200) + "..." })));
 
@@ -326,6 +337,21 @@ export class CodingAgentProvider {
     }
 
     return lines.join("\n");
+  }
+
+  /**
+   * Read coding agent CLI options from config / environment variables.
+   *
+   * Sources (env var takes priority over .sfdx-hardis.yml):
+   * - codingAgentModel / SFDX_HARDIS_CODING_AGENT_MODEL → model override
+   * - codingAgentMaxTurns / SFDX_HARDIS_CODING_AGENT_MAX_TURNS → max agentic turns
+   */
+  private static async getCodingAgentOptions(): Promise<CodingAgentOptions> {
+    const branchConfig = await getConfig("branch");
+    const model = getEnvVar("SFDX_HARDIS_CODING_AGENT_MODEL") || branchConfig?.codingAgentModel || undefined;
+    const maxTurnsRaw = getEnvVar("SFDX_HARDIS_CODING_AGENT_MAX_TURNS") || branchConfig?.codingAgentMaxTurns;
+    const maxTurns = maxTurnsRaw ? parseInt(String(maxTurnsRaw), 10) : undefined;
+    return { model, maxTurns: Number.isNaN(maxTurns) ? undefined : maxTurns };
   }
 
   private static async isAgentAvailable(command: string): Promise<boolean> {

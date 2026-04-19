@@ -1,6 +1,6 @@
 import { ChatAnthropic } from "@langchain/anthropic";
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { AbstractLLMProvider, CodingAgentInfo, ModelConfig } from "./langChainBaseProvider.js";
+import { AbstractLLMProvider, CodingAgentInfo, CodingAgentOptions, ModelConfig } from "./langChainBaseProvider.js";
 
 export class LangChainAnthropicProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {
@@ -33,10 +33,12 @@ export class LangChainAnthropicProvider extends AbstractLLMProvider {
           process.env.ANTHROPIC_API_KEY = langchainApiKey;
         }
       },
-      buildCommand(promptFilePath: string): string {
+      buildCommand(promptFilePath: string, options?: CodingAgentOptions): string {
         // Use --allowedTools with broad patterns instead of --dangerously-skip-permissions.
         // This works consistently in all environments (root, Docker, non-root) and is safer.
-        return `cat "${promptFilePath}" | claude -p --allowedTools "Bash(*)" "Read" "Edit" "Write" "WebFetch(*)" -`;
+        const modelFlag = options?.model ? ` --model ${options.model}` : "";
+        const maxTurnsFlag = options?.maxTurns ? ` --max-turns ${options.maxTurns}` : "";
+        return `cat "${promptFilePath}" | claude -p${modelFlag}${maxTurnsFlag} --allowedTools "Bash(*)" "Read" "Edit" "Write" "WebFetch(*)" -`;
       },
     };
   }

@@ -39,6 +39,17 @@ export abstract class AbstractLLMProvider implements BaseLLMProvider {
 }
 
 /**
+ * Options that can be passed to a coding agent CLI command.
+ * Configured via .sfdx-hardis.yml properties or environment variables.
+ */
+export interface CodingAgentOptions {
+  /** Override the model used by the coding agent CLI (e.g. "claude-sonnet-4-20250514", "o3", "gemini-2.5-pro") */
+  model?: string;
+  /** Maximum number of agentic turns / iterations the CLI is allowed to perform */
+  maxTurns?: number;
+}
+
+/**
  * Information about the coding agent CLI associated with a LangChain provider.
  * Each LangChain sub-provider can expose this via a static getCodingAgentInfo() method.
  */
@@ -52,5 +63,5 @@ export interface CodingAgentInfo {
   /** Set the coding agent CLI's API key env var, reusing the LangChain API key */
   setupApiKey(langchainApiKey: string | null): void;
   /** Build the full CLI command string to invoke the agent with the prompt read from a file */
-  buildCommand(promptFilePath: string): string;
+  buildCommand(promptFilePath: string, options?: CodingAgentOptions): string;
 }

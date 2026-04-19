@@ -302,6 +302,7 @@
   "codingAgentReusingApiKey": "コーディングエージェント {{agent}} に {{source}} のAPIキーを再利用しています。",
   "codingAgentRunningCommand": "コーディングエージェントのコマンドを実行しています: {{command}}",
   "codingAgentUnableToDetectBranch": "自動修正のための現在のgitブランチを検出できません。",
+  "codingAgentUsingOptions": "コーディングエージェントのオプション: model={{model}}, maxTurns={{maxTurns}}",
   "colDeploymentUsername": "デプロイユーザー名",
   "colDescriptionDocLink": "説明とドキュメントリンク",
   "colGitBranch": "Git branch",

@@ -86,6 +86,9 @@ jobs:
           # Uncomment to provide API keys for coding agent auto-fix of deployment errors
           # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           # GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # Uncomment to customize coding agent behavior
+          # SFDX_HARDIS_CODING_AGENT_MODEL: "claude-sonnet-4-20250514" # Override the model used by the agent
+          # SFDX_HARDIS_CODING_AGENT_MAX_TURNS: "30" # Limit the number of agentic turns
           FORCE_COLOR: "1"
           SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD
         run: |

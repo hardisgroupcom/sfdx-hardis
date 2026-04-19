@@ -34,6 +34,7 @@ This list has been generated with GitHub Copilot so if you see any incoherence p
    - [MegaLinter LLM Advisor](#megalinter-llm-advisor)
    - [Agentforce (Salesforce) integration](#agentforce-salesforce-integration)
    - [LangChain integration (OpenAI, Anthropic, Gemini...)](#langchain-integration-openai-anthropic-gemini)
+   - [Coding Agent Auto-Fix](#coding-agent-auto-fix)
    - [Codex (direct) variables](#codex-direct-variables)
    - [OpenAI (direct) variables](#openai-direct-variables)
    - [Email Notifications](#email-notifications)
@@ -229,6 +230,20 @@ Non-sensitive defaults (prompt template, custom endpoint) can be placed directly
 | **LANGCHAIN_LLM_BASE_URL**      | Base URL for LangChain HTTP-based providers (e.g., Ollama)                        | `http://localhost:11434` | URL string                                                          | LangChain / Ollama examples                                                                                                                        |
 
 You can also define non-secret defaults (provider, model, temperature, etc.) in your project `.sfdx-hardis.yml` using camelCase versions of the LangChain environment variables (for example `langchainLlmProvider` and `langchainLlmModel`). API keys must still be provided via secure env vars.
+
+### Coding Agent Auto-Fix
+
+These variables control the **coding agent auto-fix** feature, which uses AI coding agent CLIs (Claude, Codex, Gemini, Copilot) to automatically fix deployment errors and create Pull Requests. See [Coding Agent Auto-Fix documentation](salesforce-deployment-assistant-autofix.md) for full setup instructions.
+
+| Variable Name                              | Description                                                                                          | Default         | Possible Values                                                       | Usage Location                                                                                                                                             |
+|--------------------------------------------|------------------------------------------------------------------------------------------------------|-----------------|-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **SFDX_HARDIS_CODING_AGENT_AUTO_FIX**      | Enable automatic fix of deployment errors using a coding agent CLI                                   | `false`         | `'true'`, `'false'`                                                   | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts)       |
+| **SFDX_HARDIS_CODING_AGENT**               | Force a specific coding agent CLI instead of auto-detection                                          | Auto-detected   | `claude`, `codex-cli`, `gemini-cli`, `copilot-cli`                    | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts)       |
+| **SFDX_HARDIS_CODING_AGENT_MODEL**         | Override the model used by the coding agent CLI (e.g. `claude-sonnet-4-20250514`, `o3`, `gemini-2.5-pro`) | Agent default   | Model identifier supported by the chosen agent CLI                    | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts)       |
+| **SFDX_HARDIS_CODING_AGENT_MAX_TURNS**     | Maximum number of agentic turns / iterations the coding agent CLI is allowed to perform              | Agent default   | Positive integer (e.g., `10`, `30`, `50`)                             | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts)       |
+| **DEBUG_CODING_AGENT**                     | Show full coding agent output in logs (useful for debugging)                                         | `false`         | `'true'`, `'false'`                                                   | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts)       |
+
+All non-secret options can also be set in `.sfdx-hardis.yml` using camelCase keys: `codingAgentAutoFix`, `codingAgent`, `codingAgentModel`, `codingAgentMaxTurns`.
 
 ### Codex (direct) variables
 

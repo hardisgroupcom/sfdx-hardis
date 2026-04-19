@@ -302,6 +302,7 @@
   "codingAgentReusingApiKey": "Réutilisation de la clé API de {{source}} pour l'agent de codage {{agent}}.",
   "codingAgentRunningCommand": "Exécution de la commande de l agent de codage : {{command}}",
   "codingAgentUnableToDetectBranch": "Impossible de détecter la branche git actuelle pour la correction automatique.",
+  "codingAgentUsingOptions": "Options de l'agent de codage : model={{model}}, maxTurns={{maxTurns}}",
   "colDeploymentUsername": "Utilisateur de déploiement",
   "colDescriptionDocLink": "Description et lien doc",
   "colGitBranch": "Branche Git",

@@ -109,6 +109,8 @@ To override, set explicitly:
 |:-----------------------------------------------------------|:---------------------------------------------------------------------------------------|:--------------|
 | `SFDX_HARDIS_CODING_AGENT_AUTO_FIX` / `codingAgentAutoFix` | Enable automatic fix of deployment errors using a coding agent                         | `false`       |
 | `SFDX_HARDIS_CODING_AGENT` / `codingAgent`                 | Force a specific coding agent CLI (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`) | Auto-detected |
+| `SFDX_HARDIS_CODING_AGENT_MODEL` / `codingAgentModel`      | Override the model used by the coding agent CLI (e.g. `claude-sonnet-4-20250514`, `o3`, `gemini-2.5-pro`) | Agent default |
+| `SFDX_HARDIS_CODING_AGENT_MAX_TURNS` / `codingAgentMaxTurns` | Maximum number of agentic turns / iterations the CLI is allowed to perform           | Agent default |
 | `DEBUG_CODING_AGENT`                                       | Set to `true` to show full coding agent output in logs                                 | `false`       |
 
 ## Customizing the prompt
@@ -164,4 +166,6 @@ variables:
 ```yaml
 codingAgentAutoFix: true
 codingAgent: claude # optional: force a specific agent
+codingAgentModel: claude-sonnet-4-20250514 # optional: override the model
+codingAgentMaxTurns: 30 # optional: limit the number of agentic turns
 ```

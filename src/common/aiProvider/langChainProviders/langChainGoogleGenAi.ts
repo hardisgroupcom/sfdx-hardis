@@ -1,6 +1,6 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { AbstractLLMProvider, CodingAgentInfo, ModelConfig } from "./langChainBaseProvider.js";
+import { AbstractLLMProvider, CodingAgentInfo, CodingAgentOptions, ModelConfig } from "./langChainBaseProvider.js";
 
 export class LangChainGoogleGenAiProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {
@@ -33,8 +33,9 @@ export class LangChainGoogleGenAiProvider extends AbstractLLMProvider {
           process.env.GEMINI_API_KEY = langchainApiKey;
         }
       },
-      buildCommand(promptFilePath: string): string {
-        return `cat "${promptFilePath}" | gemini -p -`;
+      buildCommand(promptFilePath: string, options?: CodingAgentOptions): string {
+        const modelFlag = options?.model ? ` --model ${options.model}` : "";
+        return `cat "${promptFilePath}" | gemini${modelFlag} -p -`;
       },
     };
   }

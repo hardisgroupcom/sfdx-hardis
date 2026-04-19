@@ -1,6 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { AbstractLLMProvider, CodingAgentInfo, ModelConfig } from "./langChainBaseProvider.js";
+import { AbstractLLMProvider, CodingAgentInfo, CodingAgentOptions, ModelConfig } from "./langChainBaseProvider.js";
 
 export class LangChainOpenAIProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {
@@ -33,8 +33,9 @@ export class LangChainOpenAIProvider extends AbstractLLMProvider {
           process.env.OPENAI_API_KEY = langchainApiKey;
         }
       },
-      buildCommand(promptFilePath: string): string {
-        return `cat "${promptFilePath}" | codex --approval-mode full-auto -q -`;
+      buildCommand(promptFilePath: string, options?: CodingAgentOptions): string {
+        const modelFlag = options?.model ? ` --model ${options.model}` : "";
+        return `cat "${promptFilePath}" | codex${modelFlag} --approval-mode full-auto -q -`;
       },
     };
   }

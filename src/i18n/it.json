@@ -302,6 +302,7 @@
   "codingAgentReusingApiKey": "Riutilizzo della chiave API da {{source}} per il coding agent {{agent}}.",
   "codingAgentRunningCommand": "Esecuzione comando del coding agent: {{command}}",
   "codingAgentUnableToDetectBranch": "Impossibile rilevare il branch git corrente per la correzione automatica.",
+  "codingAgentUsingOptions": "Opzioni del coding agent: model={{model}}, maxTurns={{maxTurns}}",
   "colDeploymentUsername": "Username di distribuzione",
   "colDescriptionDocLink": "Descrizione e link alla documentazione",
   "colGitBranch": "Git branch",

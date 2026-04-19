@@ -27,6 +27,9 @@ pipeline {
         // ANTHROPIC_API_KEY = credentials('ANTHROPIC_API_KEY')
         // OPENAI_API_KEY = credentials('OPENAI_API_KEY')
         // GEMINI_API_KEY = credentials('GEMINI_API_KEY')
+        // Uncomment to customize coding agent behavior
+        // SFDX_HARDIS_CODING_AGENT_MODEL = "claude-sonnet-4-20250514" // Override the model used by the agent
+        // SFDX_HARDIS_CODING_AGENT_MAX_TURNS = "30" // Limit the number of agentic turns
         // Optional tokens to allow coding agents to git push and create PR/MR
         // GITHUB_TOKEN = credentials('GITHUB_TOKEN')
         // CI_SFDX_HARDIS_GITLAB_TOKEN = credentials('CI_SFDX_HARDIS_GITLAB_TOKEN')
