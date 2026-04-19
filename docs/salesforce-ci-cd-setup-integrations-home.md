@@ -63,9 +63,9 @@ Depending of your git provider, configure one of the following integrations.
 ## Large Language Models (AI)
 
 - [Agentforce](salesforce-ai-setup.md/#with-agentforce)
-  - AI deployment assistant
+  - Deployment Agent
   - Project Documentation
 
 - [OpenAi, Anthropic, Gemini, Ollama](salesforce-ai-setup.md/#with-langchain)
-  - AI deployment assistant
+  - Deployment Agent
   - Project Documentation

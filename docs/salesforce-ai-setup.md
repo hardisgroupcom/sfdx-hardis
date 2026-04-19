@@ -211,7 +211,7 @@ The API key configured for your AI provider (e.g. `LANGCHAIN_LLM_MODEL_API_KEY`)
 
 > **Use with caution:** This feature is in beta. AI coding agents can make mistakes — all proposed changes must be reviewed by an expert before merging.
 
-See [Coding Agent Auto-Fix](salesforce-deployment-assistant-autofix.md) for full setup instructions.
+See [Coding Agent Auto-Fix](salesforce-deployment-agent-autofix.md) for full setup instructions.
 
 ## Templates
 

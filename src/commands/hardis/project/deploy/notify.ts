@@ -24,7 +24,7 @@ export default class DeployNotify extends SfCommand<any> {
 
 ### Integrations
 
-According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-assistant-home/#flow-visual-git-diff)
+According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-agent-flow-visual-git-diff/)
 
   - GitHub, Gitlab, Azure DevOps, Bitbucket comments on Pull Requests (including Flows Visual Git Diff)
 
@@ -82,7 +82,7 @@ sf hardis:project:deploy:notify --check-only --deploy-status "$MYSTATUS"
 
 This command is for custom SF Cli pipelines, if you are a sfdx-hardis user, it is already embedded in sf hardis:deploy:smart.
 
-You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-assistant-setup/#using-custom-cicd-pipeline)
+You can also use [sfdx-hardis wrapper commands of SF deployment commands](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-agent-setup/#using-custom-cicd-pipeline)
 `
 
   public static examples = [

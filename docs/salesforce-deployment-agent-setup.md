@@ -17,7 +17,7 @@ You can also receive [Slack](salesforce-ci-cd-setup-integration-slack.md), [Ms T
 
 If you configure [JIRA](salesforce-ci-cd-setup-integration-jira.md) or [Generic Ticketing](salesforce-ci-cd-setup-integration-generic-ticketing.md) integrations, ticket numbers will be extracted and displayed in the Pull Request comment.
 
-If you want to **automatically fix deployment errors using coding agents** (Claude, Codex, Gemini, Copilot), see [Coding Agent Auto-Fix setup](salesforce-deployment-assistant-autofix.md).
+If you want to **automatically fix deployment errors using coding agents** (Claude, Codex, Gemini, Copilot), see [Coding Agent Auto-Fix setup](salesforce-deployment-agent-autofix.md).
 
 ## Using sfdx-hardis CI/CD
 

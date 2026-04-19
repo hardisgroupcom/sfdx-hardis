@@ -8,7 +8,7 @@ description: List of errors handled by sfdx-hardis Deployment Agent
 
 sfdx-hardis can help solve deployment errors using a predefined list of issues and associated solutions.
 
-See how to [setup Deployment Agent](salesforce-deployment-assistant-setup.md)
+See how to [setup Deployment Agent](salesforce-deployment-agent-setup.md)
 
 If you see a deployment error which is not here yet, please [add it in this file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/deployTipsList.ts) :)
 

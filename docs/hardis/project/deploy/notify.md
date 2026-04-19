@@ -11,7 +11,7 @@ Post notifications related to:
 
 ### Integrations
 
-According to the [integrations you configured](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](https://sfdx-hardis.cloudity.com/salesforce-deployment-assistant-home/#flow-visual-git-diff)
+According to the [integrations you configured](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-flow-visual-git-diff/)
 
   - GitHub, Gitlab, Azure DevOps, Bitbucket comments on Pull Requests (including Flows Visual Git Diff)
 
@@ -69,7 +69,7 @@ sf hardis:project:deploy:notify --check-only --deploy-status "$MYSTATUS"
 
 This command is for custom SF Cli pipelines, if you are a sfdx-hardis user, it is already embedded in sf hardis:deploy:smart.
 
-You can also use [sfdx-hardis wrapper commands of SF deployment commands](https://sfdx-hardis.cloudity.com/salesforce-deployment-assistant-setup/#using-custom-cicd-pipeline)
+You can also use [sfdx-hardis wrapper commands of SF deployment commands](https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-setup/#using-custom-cicd-pipeline)
 
 
 ## Parameters
