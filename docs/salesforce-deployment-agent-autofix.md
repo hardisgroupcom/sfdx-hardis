@@ -15,6 +15,8 @@ description: Automatically fix deployment errors using AI coding agents
 
 When a deployment fails, sfdx-hardis can automatically invoke a **coding agent CLI** to analyze the errors, modify local metadata files, and create a Pull Request with the proposed fixes.
 
+![](assets/images/screenshot-pr-autofix.png)
+
 This feature works with the following coding agent CLIs:
 
 | Agent                  | CLI Package                                                                            | Auth mechanism                                               |
