@@ -18,7 +18,7 @@ It contains core rules and can optionally be integrated with AI to provide the b
 ## Pages
 
 - [Agent deployment Hints](salesforce-deployment-agent-hints.md)
-- [Coding Agent Auto-Fix (Beta)](salesforce-deployment-assistant-autofix.md)
+- [Coding Agent Auto-Fix (Beta)](salesforce-deployment-agent-autofix.md)
 - [Flow Visual Git Diff](salesforce-deployment-agent-flow-visual-git-diff.md)
 
 ## Integrations
@@ -33,8 +33,8 @@ It also provides tips in console logs.
 
 Follow these instructions to get started in a few minutes.
 
-- [Setup Deployment Agent](salesforce-deployment-assistant-setup.md)
+- [Setup Deployment Agent](salesforce-deployment-agent-setup.md)
 - [Agent deployment Hints](salesforce-deployment-agent-hints.md)
-- [Coding Agent Auto-Fix (Beta)](salesforce-deployment-assistant-autofix.md)
+- [Coding Agent Auto-Fix (Beta)](salesforce-deployment-agent-autofix.md)
 - [Flow Visual Git Diff](salesforce-deployment-agent-flow-visual-git-diff.md)
 - [sfdx-hardis AI setup instructions](salesforce-ai-setup.md) (requires an OpenAI API key)

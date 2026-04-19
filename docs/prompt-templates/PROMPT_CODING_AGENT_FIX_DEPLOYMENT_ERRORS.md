@@ -63,7 +63,9 @@ Updated files:
 
 ## How to override
 
-To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.txt**
+To define your own prompt text, you can define a local file **config/prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.md**
+
+> For backward compatibility, **config/prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.txt** is also supported, but **.md is preferred**.
 
 You can also use the command `sf hardis:doc:override-prompts` to automatically create all override template files at once.
 

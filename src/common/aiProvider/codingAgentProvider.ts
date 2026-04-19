@@ -183,7 +183,7 @@ export class CodingAgentProvider {
   /**
    * Build the prompt using the prompt template system.
    * The template PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS can be overridden
-   * by placing a file in config/prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.txt
+   * by placing a file in config/prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.md (or .txt for backward compatibility)
    */
   private static async buildAgentPrompt(
     errorsAndTips: any[],

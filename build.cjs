@@ -169,8 +169,8 @@ class SfdxHardisBuilder {
   }
 
   async buildDeployTipsDoc() {
-    console.log("Building salesforce-deployment-assistant-error-list.md doc...");
-    const deployTipsDocFile = "./docs/salesforce-deployment-assistant-error-list.md";
+    console.log("Building salesforce-deployment-agent-error-list.md doc...");
+    const deployTipsDocFile = "./docs/salesforce-deployment-agent-error-list.md";
     const { getAllTips } = await import("./lib/common/utils/deployTipsList.js");
     const deployTips = getAllTips();
     const deployTipsMd = [
@@ -184,7 +184,7 @@ class SfdxHardisBuilder {
       "",
       "sfdx-hardis can help solve solve deployment errors using a predefined list of issues and associated solutions",
       "",
-      "See how to [setup sfdx-hardis deployment assistant](salesforce-deployment-assistant-setup.md)",
+      "See how to [setup Deployment Agent](salesforce-deployment-agent-setup.md)",
       "",
       "If you see a deployment error which is not here yet, please [add it in this file](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/utils/deployTipsList.ts) :)",
       ""
@@ -301,7 +301,9 @@ class SfdxHardisBuilder {
         '', '## How to override',
 
         '',
-        `To define your own prompt text, you can define a local file **config/prompt-templates/${templateName}.txt**`,
+        `To define your own prompt text, you can define a local file **config/prompt-templates/${templateName}.md**`,
+        ``,
+        `> For backward compatibility, **config/prompt-templates/${templateName}.txt** is also supported, but **.md is preferred**.`,
         ``,
         `You can also use the command \`sf hardis:doc:override-prompts\` to automatically create all override template files at once.`,
         ``,
@@ -337,7 +339,9 @@ class SfdxHardisBuilder {
         '',
         '## How to override',
         '',
-        `To define your own variable content, you can define a local file **config/prompt-templates/${variableName}.txt**`,
+        `To define your own variable content, you can define a local file **config/prompt-templates/${variableName}.md**`,
+        ``,
+        `> For backward compatibility, **config/prompt-templates/${variableName}.txt** is also supported, but **.md is preferred**.`,
         ``,
         `You can also use the command \`sf hardis:doc:override-prompts\` to automatically create all override variable files at once.`,
         ``

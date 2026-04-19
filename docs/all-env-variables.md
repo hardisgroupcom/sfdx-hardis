@@ -233,7 +233,7 @@ You can also define non-secret defaults (provider, model, temperature, etc.) in 
 
 ### Coding Agent Auto-Fix
 
-These variables control the **coding agent auto-fix** feature, which uses AI coding agent CLIs (Claude, Codex, Gemini, Copilot) to automatically fix deployment errors and create Pull Requests. See [Coding Agent Auto-Fix documentation](salesforce-deployment-assistant-autofix.md) for full setup instructions.
+These variables control the **coding agent auto-fix** feature, which uses AI coding agent CLIs (Claude, Codex, Gemini, Copilot) to automatically fix deployment errors and create Pull Requests. See [Coding Agent Auto-Fix documentation](salesforce-deployment-agent-autofix.md) for full setup instructions.
 
 | Variable Name                          | Description                                                                             | Default       | Possible Values                                    | Usage Location                                                                                                                                         |
 |----------------------------------------|-----------------------------------------------------------------------------------------|---------------|----------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
