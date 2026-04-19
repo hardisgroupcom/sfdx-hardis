@@ -1,12 +1,12 @@
 ---
-title: Deployment Agent errors list
-description: List of errors handled by sfdx-hardis Deployment Agent
+title: Sfdx-hardis deployment assistant list of errors
+description: List of errors that are handled by sfdx-hardis deployment assistant
 ---
 <!-- markdownlint-disable MD013 -->
 
-# Deployment Agent errors list
+# Salesforce deployment assistant errors list
 
-sfdx-hardis can help solve deployment errors using a predefined list of issues and associated solutions.
+sfdx-hardis can help solve solve deployment errors using a predefined list of issues and associated solutions
 
 See how to [setup Deployment Agent](salesforce-deployment-agent-setup.md)
 
