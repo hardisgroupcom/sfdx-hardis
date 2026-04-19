@@ -250,7 +250,7 @@
     },
     "codingAgentModel": {
       "$id": "#/properties/codingAgentModel",
-      "description": "Override the model used by the coding agent CLI (e.g. claude-sonnet-4-20250514, o3, gemini-2.5-pro). Equivalent to SFDX_HARDIS_CODING_AGENT_MODEL env var.",
+      "description": "Override the model used by the coding agent CLI (e.g. sonnet, o3, gemini-2.5-pro). Equivalent to SFDX_HARDIS_CODING_AGENT_MODEL env var.",
       "title": "Coding agent model",
       "type": "string"
     },

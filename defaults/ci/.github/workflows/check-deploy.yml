@@ -55,7 +55,8 @@ jobs:
           # npm install --no-cache @github/copilot@latest --global && copilot --version
       # Login & check deploy with test classes & code coverage
       - name: Login & Simulate deployment
-        if: ${{ !startsWith(github.head_ref, 'auto-fix/') && !startsWith(github.ref_name, 'auto-fix/') }}
+        if: ${{ !startsWith(github.head_ref, 'auto-fix/') &&
+          !startsWith(github.ref_name, 'auto-fix/') }}
         env:
           SFDX_CLIENT_ID_INTEGRATION: ${{ secrets.SFDX_CLIENT_ID_INTEGRATION}}
           SFDX_CLIENT_KEY_INTEGRATION: ${{ secrets.SFDX_CLIENT_KEY_INTEGRATION}}
@@ -87,7 +88,7 @@ jobs:
           # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           # GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           # Uncomment to customize coding agent behavior
-          # SFDX_HARDIS_CODING_AGENT_MODEL: "claude-sonnet-4-20250514" # Override the model used by the agent
+          # SFDX_HARDIS_CODING_AGENT_MODEL: "sonnet" # Override the model used by the agent
           # SFDX_HARDIS_CODING_AGENT_MAX_TURNS: "30" # Limit the number of agentic turns
           FORCE_COLOR: "1"
           SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD
