@@ -42,3 +42,34 @@ Notes:
   - CI_JOB_NAME (provided by Gitlab CI)
   - CI_JOB_URL (provided by Gitlab CI)
   - GITLAB_API_REJECT_UNAUTHORIZED: set to `"false"` if you want to allow connection even without certificate (can be useful on on-premise GitLab instance)
+
+## Instructions for using Coding Agents
+
+When using auto-fix with coding agents, the pipeline must be able to push a fix branch and create/update Merge Requests.
+
+This works for both:
+
+- GitLab.com
+- GitLab self-managed / on-premise instances
+
+Add this in your workflow before running `sf hardis:*` commands:
+
+```yaml
+before_script:
+  - |
+      if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
+        git config user.email "sfdx-hardis-bot@cloudity.com"
+        git config user.name "sfdx-hardis Bot"
+        git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+        echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
+      else
+        echo "[sfdx-hardis] Skipping coding-agent GitLab auth setup: CI_SFDX_HARDIS_GITLAB_TOKEN is not set"
+      fi
+```
+
+Required secret/variable:
+
+- `CI_SFDX_HARDIS_GITLAB_TOKEN`:
+  - Go to **Project -> Settings -> Access Tokens**.
+  - Create a Project Access Token with role **Developer** (or higher), scopes **api** and **write_repository**.
+  - Store it as a **masked** CI/CD variable named `CI_SFDX_HARDIS_GITLAB_TOKEN`.

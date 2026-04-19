@@ -223,6 +223,44 @@
       "type": "string",
       "default": "/services/data/v{{API_VERSION}}/einstein/prompt-templates/{{PROMPT_TEMPLATE}}/generations"
     },
+    "codingAgentAutoFix": {
+      "$id": "#/properties/codingAgentAutoFix",
+      "description": "Set to true to enable automatic fixing of deployment errors using a coding agent CLI (beta). Equivalent to SFDX_HARDIS_CODING_AGENT_AUTO_FIX env var.",
+      "title": "Enable coding agent auto-fix (beta)",
+      "type": "boolean",
+      "default": false
+    },
+    "codingAgent": {
+      "$id": "#/properties/codingAgent",
+      "description": "Force a specific coding agent CLI instead of auto-detection. Equivalent to SFDX_HARDIS_CODING_AGENT env var.",
+      "title": "Coding agent",
+      "type": "string",
+      "enum": [
+        "claude",
+        "codex-cli",
+        "gemini-cli",
+        "copilot-cli"
+      ],
+      "enumNames": [
+        "Claude (Anthropic)",
+        "Codex (OpenAI)",
+        "Gemini CLI (Google)",
+        "Copilot CLI (GitHub)"
+      ]
+    },
+    "codingAgentModel": {
+      "$id": "#/properties/codingAgentModel",
+      "description": "Override the model used by the coding agent CLI (e.g. sonnet, o3, gemini-2.5-pro). Equivalent to SFDX_HARDIS_CODING_AGENT_MODEL env var.",
+      "title": "Coding agent model",
+      "type": "string"
+    },
+    "codingAgentMaxTurns": {
+      "$id": "#/properties/codingAgentMaxTurns",
+      "description": "Maximum number of agentic turns / iterations the coding agent CLI is allowed to perform. Equivalent to SFDX_HARDIS_CODING_AGENT_MAX_TURNS env var.",
+      "title": "Coding agent max turns",
+      "type": "integer",
+      "minimum": 1
+    },
     "allowedOrgTypes": {
       "$id": "#/properties/allowedOrgTypes",
       "description": "Types of Salesforce Orgs allowed for config & development. If not set, Sandbox Orgs and Scratch Orgs are allowed by default",

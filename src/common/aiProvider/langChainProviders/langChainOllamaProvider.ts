@@ -1,6 +1,6 @@
 import { ChatOllama } from "@langchain/ollama";
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { AbstractLLMProvider, ModelConfig } from "./langChainBaseProvider.js";
+import { AbstractLLMProvider, CodingAgentInfo, ModelConfig } from "./langChainBaseProvider.js";
 
 export class LangChainOllamaProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {
@@ -18,4 +18,9 @@ export class LangChainOllamaProvider extends AbstractLLMProvider {
 
     return new ChatOllama(config) as BaseChatModel;
   }
-} 
+
+  /** Ollama has no corresponding coding agent CLI */
+  static getCodingAgentInfo(): CodingAgentInfo | null {
+    return null;
+  }
+}

@@ -33,3 +33,34 @@ Notes:
   - BITBUCKET_BRANCH
   - BITBUCKET_PR_ID
   - BITBUCKET_BUILD_NUMBER
+
+## Instructions for using Coding Agents
+
+When using auto-fix with coding agents, the pipeline must be able to push a fix branch and create/update Pull Requests.
+
+This works for both:
+
+- Bitbucket Cloud
+- Bitbucket Data Center / Server (on-premise)
+
+Add this in your pipeline script before running `sf hardis:*` commands:
+
+```yaml
+- |
+    if [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ]; then
+      git config user.email "sfdx-hardis-bot@cloudity.com"
+      git config user.name "sfdx-hardis Bot"
+      ORIGIN_PATH=$(git remote get-url origin | sed -E 's#^https?://##; s#^git@([^:]+):#\1/#; s#^ssh://git@([^/]+)/#\1/#; s#\.git$##')
+      git remote set-url origin "https://x-token-auth:${CI_SFDX_HARDIS_BITBUCKET_TOKEN}@${ORIGIN_PATH}.git"
+      echo "[sfdx-hardis] Bitbucket push/PR auth enabled for coding agents"
+    else
+      echo "[sfdx-hardis] Skipping coding-agent Bitbucket auth setup: CI_SFDX_HARDIS_BITBUCKET_TOKEN is not set"
+    fi
+```
+
+Required secret/variable:
+
+- `CI_SFDX_HARDIS_BITBUCKET_TOKEN`:
+  - Go to **Repository Settings -> Access Tokens**.
+  - Create a repository access token with scopes: `pullrequest`, `pullrequest:write`, `repository`, `repository:write`.
+  - Store it as a secured repository variable named `CI_SFDX_HARDIS_BITBUCKET_TOKEN`.

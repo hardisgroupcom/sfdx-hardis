@@ -1,6 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
-import { AbstractLLMProvider, ModelConfig } from "./langChainBaseProvider.js";
+import { AbstractLLMProvider, CodingAgentInfo, CodingAgentOptions, ModelConfig } from "./langChainBaseProvider.js";
 
 export class LangChainOpenAIProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {
@@ -22,4 +22,21 @@ export class LangChainOpenAIProvider extends AbstractLLMProvider {
 
     return new ChatOpenAI(config) as BaseChatModel;
   }
-} 
+
+  static getCodingAgentInfo(): CodingAgentInfo {
+    return {
+      agentType: "codex-cli",
+      command: "codex",
+      apiKeyEnvVar: "OPENAI_API_KEY",
+      setupApiKey(langchainApiKey: string | null): void {
+        if (!process.env.OPENAI_API_KEY && !process.env.CODEX_API_KEY && langchainApiKey) {
+          process.env.OPENAI_API_KEY = langchainApiKey;
+        }
+      },
+      buildCommand(promptFilePath: string, options?: CodingAgentOptions): string {
+        const modelFlag = options?.model ? ` --model ${options.model}` : "";
+        return `cat "${promptFilePath}" | codex${modelFlag} --approval-mode full-auto -q -`;
+      },
+    };
+  }
+}

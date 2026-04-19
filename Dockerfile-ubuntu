@@ -99,6 +99,17 @@ RUN npm install --no-cache yarn -g && \
     rm -rf /tmp/* && \
     npm cache clean --force
 
+# Optionally install coding agent CLIs for auto-fix feature
+# Use --build-arg INSTALL_AGENTS=true to include agent CLIs (sfdx-hardis-ubuntu-with-agents images)
+ARG INSTALL_AGENTS=false
+RUN if [ "$INSTALL_AGENTS" = "true" ]; then \
+    npm install --no-cache @anthropic-ai/claude-code@latest -g && claude --version && \
+    npm install --no-cache @openai/codex@latest -g && codex --version && \
+    npm install --no-cache @google/gemini-cli@latest -g && gemini --version && \
+    npm install --no-cache @github/copilot@latest -g && copilot --version && \
+    npm cache clean --force; \
+fi
+
 ENV MERMAID_MODES="cli"
 
 # Workaround for https://github.com/forcedotcom/salesforcedx-apex/issues/213

@@ -1,6 +1,6 @@
 import { SfError } from "@salesforce/core";
 import c from "chalk";
-import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { uxLog } from "../utils/index.js";
 import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
 import { getEnvVar } from "../../config/index.js";
@@ -84,6 +84,20 @@ export abstract class GitProviderRoot {
     uxLog("warning", this, c.yellow(t('methodPostpullrequestmessageIsNotYetImplementedOn') + this.getLabel() + " to post " + JSON.stringify(prMessage)));
     return { posted: false, providerResult: { error: "Not implemented in sfdx-hardis" } };
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
+    uxLog("warning", this, c.yellow(`[GitProvider] createPullRequest is not yet implemented on ${this.getLabel()}`));
+    return { created: false, pullRequestUrl: null, providerResult: { error: "Not implemented in sfdx-hardis" } };
+  }
+
+  public logAutoFixRemediation(step: "push" | "pr-create"): void {
+    const stepLabel = step === "push" ? "git push" : "pull request creation";
+    uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide`);
+    uxLog("log", this, "1) Update workflow: ensure the CI identity can push branches and create PR/MR.");
+    uxLog("log", this, "2) Set provider token variable: GitHub=GITHUB_TOKEN, GitLab=CI_SFDX_HARDIS_GITLAB_TOKEN, Azure=SYSTEM_ACCESSTOKEN/CI_SFDX_HARDIS_AZURE_TOKEN, Bitbucket=CI_SFDX_HARDIS_BITBUCKET_TOKEN.");
+    uxLog("log", this, "3) How to get value: create a CI service token/PAT with repository write + pull request/merge request permissions, then store it as a masked secret variable.");
+  }
   /* jscpd:ignore-start */
   // Do not make crash the whole process in case there is an issue with integration
   public async tryPostPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
@@ -137,5 +151,15 @@ export abstract class GitProviderRoot {
       pullRequestInfo.customBehaviors.destructiveChangesAfterDeployment = true;
     }
     return pullRequestInfo;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async findOpenPullRequest(sourceBranch: string, targetBranch: string): Promise<{ pullRequestUrl: string; id: any } | null> {
+    return null;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
+    // Default no-op — providers may override
   }
 }

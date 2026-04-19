@@ -23,6 +23,18 @@ pipeline {
         JIRA_EMAIL = credentials('JIRA_EMAIL') // Remove if not used
         JIRA_TOKEN = credentials('JIRA_TOKEN') // Remove if not used
         JIRA_PAT = credentials('JIRA_PAT') // Remove if not used
+        // Uncomment to provide API keys for coding agent auto-fix of deployment errors
+        // ANTHROPIC_API_KEY = credentials('ANTHROPIC_API_KEY')
+        // OPENAI_API_KEY = credentials('OPENAI_API_KEY')
+        // GEMINI_API_KEY = credentials('GEMINI_API_KEY')
+        // Uncomment to customize coding agent behavior
+        // SFDX_HARDIS_CODING_AGENT_MODEL = "sonnet" // Override the model used by the agent
+        // SFDX_HARDIS_CODING_AGENT_MAX_TURNS = "30" // Limit the number of agentic turns
+        // Optional tokens to allow coding agents to git push and create PR/MR
+        // GITHUB_TOKEN = credentials('GITHUB_TOKEN')
+        // CI_SFDX_HARDIS_GITLAB_TOKEN = credentials('CI_SFDX_HARDIS_GITLAB_TOKEN')
+        // CI_SFDX_HARDIS_BITBUCKET_TOKEN = credentials('CI_SFDX_HARDIS_BITBUCKET_TOKEN')
+        // CI_SFDX_HARDIS_AZURE_TOKEN = credentials('CI_SFDX_HARDIS_AZURE_TOKEN')
         CONFIG_BRANCH = "${GIT_BRANCH}"
         CI_COMMIT_REF_NAME = "${GIT_BRANCH}"
         ORG_ALIAS = "${GIT_BRANCH}"
@@ -62,6 +74,22 @@ pipeline {
                 //Validation on the appropriate org
                 steps {
                     script {
+                        sh '''
+CURRENT_BRANCH=$(echo "${GIT_BRANCH}" | sed -E 's#^refs/heads/##; s#^origin/##')
+if [ "${CURRENT_BRANCH#auto-fix/}" != "${CURRENT_BRANCH}" ]; then
+    echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${CURRENT_BRANCH}"
+    exit 0
+fi
+'''
+                                                sh '''
+if [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_AZURE_TOKEN:-}" ] || [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
+    git config user.email "sfdx-hardis-bot@cloudity.com"
+    git config user.name "sfdx-hardis Bot"
+    echo "[sfdx-hardis] Coding-agent git auth prerequisites found"
+else
+    echo "[sfdx-hardis] Skipping coding-agent git auth setup: no provider token variable is set"
+fi
+'''
                         sh 'sf hardis:auth:login'
                         sh 'sf hardis:project:deploy:smart --check'
                     }
@@ -94,6 +122,22 @@ pipeline {
                 //deploy on the appropriate org
                 steps {
                     script {
+                        sh '''
+CURRENT_BRANCH=$(echo "${GIT_BRANCH}" | sed -E 's#^refs/heads/##; s#^origin/##')
+if [ "${CURRENT_BRANCH#auto-fix/}" != "${CURRENT_BRANCH}" ]; then
+    echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${CURRENT_BRANCH}"
+    exit 0
+fi
+'''
+                                                sh '''
+if [ -n "${GITHUB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_BITBUCKET_TOKEN:-}" ] || [ -n "${CI_SFDX_HARDIS_AZURE_TOKEN:-}" ] || [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
+    git config user.email "sfdx-hardis-bot@cloudity.com"
+    git config user.name "sfdx-hardis Bot"
+    echo "[sfdx-hardis] Coding-agent git auth prerequisites found"
+else
+    echo "[sfdx-hardis] Skipping coding-agent git auth setup: no provider token variable is set"
+fi
+'''
                         sh 'sf hardis:auth:login'
                         sh 'sf hardis:project:deploy:smart'
                     }

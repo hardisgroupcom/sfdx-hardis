@@ -2,7 +2,7 @@ import * as github from "@actions/github";
 import c from "chalk";
 import { GitProviderRoot } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GitHub } from "@actions/github/lib/utils.js";
 import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
@@ -41,6 +41,15 @@ export class GithubProvider extends GitProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis GitHub connector";
+  }
+
+  public logAutoFixRemediation(step: "push" | "pr-create"): void {
+    const stepLabel = step === "push" ? "git push" : "pull request creation";
+    uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (github)`);
+    uxLog("log", this, "1) Update workflow: keep checkout credentials and grant write permissions.");
+    uxLog("log", this, "   Example: actions/checkout with persist-credentials: true, and workflow permissions contents: write, pull-requests: write.");
+    uxLog("log", this, "2) Set variable: GITHUB_TOKEN (or a PAT mapped to GITHUB_TOKEN).");
+    uxLog("log", this, "3) How to get value: use secrets.GITHUB_TOKEN with repository workflow permissions set to Read and write; or create a Fine-grained PAT with Repository contents Read/Write and Pull requests Read/Write.");
   }
   public async getBranchDeploymentCheckId(gitBranch: string): Promise<string | null> {
     let deploymentCheckId: string | null = null;
@@ -387,5 +396,51 @@ ${getBannerMarkdownAndLink()}
       customBehaviors: {}
     }
     return this.completeWithCustomBehaviors(prInfo);
+  }
+
+  public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
+    if (!this.repoOwner || !this.repoName) {
+      uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('githubCannotCreatePrMissingRepoInfo')));
+      return { created: false, pullRequestUrl: null, providerResult: { error: "Missing repo owner or name" } };
+    }
+    uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubCreatingPullRequest', { source: request.sourceBranch, target: request.targetBranch })));
+    const result = await this.octokit.rest.pulls.create({
+      owner: this.repoOwner,
+      repo: this.repoName,
+      title: request.title,
+      body: request.body,
+      head: request.sourceBranch,
+      base: request.targetBranch,
+    });
+    return {
+      created: result.data.number > 0,
+      pullRequestUrl: result.data.html_url || null,
+      providerResult: result,
+    };
+  }
+
+  public async findOpenPullRequest(sourceBranch: string, targetBranch: string): Promise<{ pullRequestUrl: string; id: any } | null> {
+    if (!this.repoOwner || !this.repoName) return null;
+    const result = await this.octokit.rest.pulls.list({
+      owner: this.repoOwner,
+      repo: this.repoName,
+      state: "open",
+      head: `${this.repoOwner}:${sourceBranch}`,
+      base: targetBranch,
+    });
+    const pr = result.data?.[0];
+    if (!pr) return null;
+    return { pullRequestUrl: pr.html_url, id: pr.number };
+  }
+
+  public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
+    if (!this.repoOwner || !this.repoName) return;
+    await this.octokit.rest.pulls.update({
+      owner: this.repoOwner,
+      repo: this.repoName,
+      pull_number: id,
+      title,
+      body,
+    });
   }
 }

@@ -1,7 +1,7 @@
 import { Gitlab } from "@gitbeaker/rest";
 import c from "chalk";
 import { Agent as HttpsAgent } from "https";
-import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { GitProviderRoot } from "./gitProviderRoot.js";
 import { CONSTANTS, getBannerMarkdownAndLink } from "../../config/index.js";
@@ -32,6 +32,15 @@ export class GitlabProvider extends GitProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis Gitlab connector";
+  }
+
+  public logAutoFixRemediation(step: "push" | "pr-create"): void {
+    const stepLabel = step === "push" ? "git push" : "merge request creation";
+    uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (gitlab)`);
+    uxLog("log", this, "1) Update workflow: before auto-fix, configure git remote with a write token.");
+    uxLog("log", this, "   Example: git remote set-url origin https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@<gitlab-host>/<group>/<repo>.git");
+    uxLog("log", this, "2) Set variable: CI_SFDX_HARDIS_GITLAB_TOKEN");
+    uxLog("log", this, "3) How to get value: GitLab Project -> Settings -> Access Tokens -> create Project Access Token with role Developer (or Maintainer), scopes api + write_repository. Store it as a masked CI/CD variable.");
   }
 
   // Returns current job URL
@@ -400,5 +409,46 @@ ${getBannerMarkdownAndLink()}
       customBehaviors: {}
     }
     return this.completeWithCustomBehaviors(prInfo);
+  }
+
+  public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
+    const projectId = process.env.CI_PROJECT_ID || null;
+    if (!projectId) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabCannotCreateMrMissingProjectId')));
+      return { created: false, pullRequestUrl: null, providerResult: { error: "Missing CI_PROJECT_ID" } };
+    }
+    uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabCreatingMergeRequest', { source: request.sourceBranch, target: request.targetBranch })));
+    const result = await this.gitlabApi.MergeRequests.create(
+      projectId,
+      request.sourceBranch,
+      request.targetBranch,
+      request.title,
+      { description: request.body },
+    );
+    return {
+      created: !!(result?.iid),
+      pullRequestUrl: (result as any)?.web_url || null,
+      providerResult: result,
+    };
+  }
+
+  public async findOpenPullRequest(sourceBranch: string, targetBranch: string): Promise<{ pullRequestUrl: string; id: any } | null> {
+    const projectId = process.env.CI_PROJECT_ID || null;
+    if (!projectId) return null;
+    const results = await this.gitlabApi.MergeRequests.all({
+      projectId,
+      state: "opened",
+      sourceBranch,
+      targetBranch,
+    } as any);
+    const mr = (results as any[])?.[0];
+    if (!mr) return null;
+    return { pullRequestUrl: mr.web_url, id: mr.iid };
+  }
+
+  public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
+    const projectId = process.env.CI_PROJECT_ID || null;
+    if (!projectId) return;
+    await this.gitlabApi.MergeRequests.edit(projectId, id, { title, description: body });
   }
 }

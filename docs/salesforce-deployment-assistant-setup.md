@@ -2,6 +2,7 @@
 title: Sfdx-hardis deployment assistant setup
 description: Learn how to setup Salesforce deployment assistant
 ---
+
 <!-- markdownlint-disable MD013 -->
 
 # Setup Salesforce Deployment Assistant
@@ -15,6 +16,8 @@ If you want to **supercharge Salesforce deployment assistant with AI**, process 
 You can also receive [Slack](salesforce-ci-cd-setup-integration-slack.md), [Ms Teams](salesforce-ci-cd-setup-integration-ms-teams.md) and [Email](salesforce-ci-cd-setup-integration-email.md) notifications in case of successful deployment.
 
 If you configure [JIRA](salesforce-ci-cd-setup-integration-jira.md) or [Generic Ticketing](salesforce-ci-cd-setup-integration-generic-ticketing.md) integrations, ticket numbers will be extracted and displayed in the Pull Request comment.
+
+If you want to **automatically fix deployment errors using coding agents** (Claude, Codex, Gemini, Copilot), see [Coding Agent Auto-Fix setup](salesforce-deployment-assistant-autofix.md).
 
 ## Using sfdx-hardis CI/CD
 

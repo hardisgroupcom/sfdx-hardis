@@ -48,8 +48,15 @@ jobs:
           echo 'y' | sf plugins install sfdx-hardis
           echo 'y' | sf plugins install sfdx-git-delta
           sf version --verbose --json
+          # Uncomment the coding agent CLIs you want to use for auto-fix of deployment errors
+          # npm install --no-cache @anthropic-ai/claude-code@latest --global && claude --version
+          # npm install --no-cache @openai/codex@latest --global && codex --version
+          # npm install --no-cache @google/gemini-cli@latest --global && gemini --version
+          # npm install --no-cache @github/copilot@latest --global && copilot --version
       # Login & check deploy with test classes & code coverage
       - name: Login & Simulate deployment
+        if: ${{ !startsWith(github.head_ref, 'auto-fix/') &&
+          !startsWith(github.ref_name, 'auto-fix/') }}
         env:
           SFDX_CLIENT_ID_INTEGRATION: ${{ secrets.SFDX_CLIENT_ID_INTEGRATION}}
           SFDX_CLIENT_KEY_INTEGRATION: ${{ secrets.SFDX_CLIENT_KEY_INTEGRATION}}
@@ -66,6 +73,7 @@ jobs:
           ORG_ALIAS: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
           CONFIG_BRANCH: ${{ github.event.pull_request.base.ref }} # Defines the target branch of the PR
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
           SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           SLACK_CHANNEL_ID_INTEGRATION: ${{ secrets.SLACK_CHANNEL_ID_INTEGRATION }}
@@ -76,9 +84,25 @@ jobs:
           JIRA_PAT: ${{ secrets.JIRA_HOST }}
           JIRA_TICKET_REGEX: ${{ secrets.JIRA_TICKET_REGEX }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # Uncomment to provide API keys for coding agent auto-fix of deployment errors
+          # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # Uncomment to customize coding agent behavior
+          # SFDX_HARDIS_CODING_AGENT_MODEL: "sonnet" # Override the model used by the agent
+          # SFDX_HARDIS_CODING_AGENT_MAX_TURNS: "30" # Limit the number of agentic turns
           FORCE_COLOR: "1"
           SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD
         run: |
           echo "Simulate SFDX deployment using Hardis against \"$CONFIG_BRANCH\""
+          # Optional: allow coding agents to git push and create PRs (safe no-op if token is missing)
+          if [ -n "${CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN:-}" ]; then
+            git config user.email "sfdx-hardis-bot@cloudity.com"
+            git config user.name "sfdx-hardis Bot"
+            GITHUB_HOST=$(echo "${GITHUB_SERVER_URL:-https://github.com}" | sed -E 's#^https?://##')
+            git remote set-url origin "https://x-access-token:${CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN}@${GITHUB_HOST}/${GITHUB_REPOSITORY}.git"
+            echo "[sfdx-hardis] GitHub push/PR auth enabled for coding agents"
+          else
+            echo "[sfdx-hardis] Skipping coding-agent GitHub auth setup: CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN is not set"
+          fi
           sf hardis:auth:login
           sf hardis:project:deploy:smart --check

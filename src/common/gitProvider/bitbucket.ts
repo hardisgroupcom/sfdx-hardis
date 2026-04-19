@@ -3,7 +3,7 @@ import c from 'chalk';
 import fs from "fs-extra";
 import FormData from 'form-data'
 import * as path from "path";
-import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
 import { git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
@@ -24,6 +24,15 @@ export class BitbucketProvider extends GitProviderRoot {
 
   public getLabel(): string {
     return 'sfdx-hardis Bitbucket connector';
+  }
+
+  public logAutoFixRemediation(step: "push" | "pr-create"): void {
+    const stepLabel = step === "push" ? "git push" : "pull request creation";
+    uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (bitbucket)`);
+    uxLog("log", this, "1) Update workflow: set git remote with token credentials before auto-fix push.");
+    uxLog("log", this, "   Example: git remote set-url origin https://x-token-auth:${CI_SFDX_HARDIS_BITBUCKET_TOKEN}@bitbucket.org/<workspace>/<repo>.git");
+    uxLog("log", this, "2) Set variable: CI_SFDX_HARDIS_BITBUCKET_TOKEN");
+    uxLog("log", this, "3) How to get value: Bitbucket Repository Settings -> Access Tokens -> create token with pullrequest:read, pullrequest:write, repository:read, repository:write; store it as a secured pipeline variable.");
   }
 
   public async getCurrentJobUrl(): Promise<string | null> {
@@ -466,5 +475,57 @@ ${getBannerMarkdownAndLink()}
     return null;
   }
 
+  public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    if (!workspace || !repoSlug) {
+      uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('bitbucketCannotCreatePrMissingRepoInfo')));
+      return { created: false, pullRequestUrl: null, providerResult: { error: "Missing BITBUCKET_WORKSPACE or BITBUCKET_REPO_SLUG" } };
+    }
+    uxLog("log", this, c.grey('[Bitbucket Integration] ' + t('bitbucketCreatingPullRequest', { source: request.sourceBranch, target: request.targetBranch })));
+    const result = await this.bitbucket.repositories.createPullRequest({
+      workspace,
+      repo_slug: repoSlug,
+      _body: {
+        title: request.title,
+        description: request.body,
+        source: { branch: { name: request.sourceBranch } },
+        destination: { branch: { name: request.targetBranch } },
+      } as any,
+    });
+    const prData = result?.data as any;
+    return {
+      created: !!(prData?.id),
+      pullRequestUrl: prData?.links?.html?.href || null,
+      providerResult: result,
+    };
+  }
+
+  public async findOpenPullRequest(sourceBranch: string, targetBranch: string): Promise<{ pullRequestUrl: string; id: any } | null> {
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    if (!workspace || !repoSlug) return null;
+    const result = await this.bitbucket.repositories.listPullRequests({
+      workspace,
+      repo_slug: repoSlug,
+      state: "OPEN" as any,
+      q: `source.branch.name="${sourceBranch}" AND destination.branch.name="${targetBranch}"`,
+    });
+    const pr = (result?.data as any)?.values?.[0];
+    if (!pr) return null;
+    return { pullRequestUrl: pr.links?.html?.href, id: pr.id };
+  }
+
+  public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    if (!workspace || !repoSlug) return;
+    await this.bitbucket.repositories.updatePullRequest({
+      workspace,
+      repo_slug: repoSlug,
+      pull_request_id: id,
+      _body: { title, description: body } as any,
+    });
+  }
 
 }

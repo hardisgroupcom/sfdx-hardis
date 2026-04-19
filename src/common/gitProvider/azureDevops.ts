@@ -4,7 +4,7 @@ import c from "chalk";
 import fs from 'fs-extra';
 import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../utils/index.js";
 import * as path from "path";
-import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { SfError } from "@salesforce/core";
@@ -63,6 +63,15 @@ export class AzureDevopsProvider extends GitProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis Azure Devops connector";
+  }
+
+  public logAutoFixRemediation(step: "push" | "pr-create"): void {
+    const stepLabel = step === "push" ? "git push" : "pull request creation";
+    uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (azure)`);
+    uxLog("log", this, "1) Update workflow: enable OAuth token for scripts and persist git credentials in checkout.");
+    uxLog("log", this, "   Example: checkout with persistCredentials: true and expose SYSTEM_ACCESSTOKEN in job env.");
+    uxLog("log", this, "2) Set variable: SYSTEM_ACCESSTOKEN (or CI_SFDX_HARDIS_AZURE_TOKEN).");
+    uxLog("log", this, "3) How to get value: enable \"Allow scripts to access OAuth token\" in pipeline settings; or create a PAT with Code Read & Write + Pull Request Threads Read & Write and store it as a secret variable.");
   }
 
   // Returns current job URL
@@ -899,5 +908,55 @@ ${getBannerMarkdownAndLink()}
 
     uxLog("error", this, c.yellow(`[Azure Integration] Unable to find or create technical work item for image attachments. Image uploads to PR comments will not work until this is resolved.`));
     return null;
+  }
+
+  public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const teamProject = process.env.SYSTEM_TEAMPROJECT || null;
+    if (!repositoryId || !teamProject) {
+      uxLog("warning", this, c.yellow('[Azure Integration] ' + t('azureCannotCreatePrMissingRepoInfo')));
+      return { created: false, pullRequestUrl: null, providerResult: { error: "Missing BUILD_REPOSITORY_ID or SYSTEM_TEAMPROJECT" } };
+    }
+    uxLog("log", this, c.grey('[Azure Integration] ' + t('azureCreatingPullRequest', { source: request.sourceBranch, target: request.targetBranch })));
+    const azureGitApi = await this.azureApi.getGitApi();
+    const prToCreate: GitPullRequest = {
+      sourceRefName: `refs/heads/${request.sourceBranch}`,
+      targetRefName: `refs/heads/${request.targetBranch}`,
+      title: request.title,
+      description: request.body,
+    };
+    const result = await azureGitApi.createPullRequest(prToCreate, repositoryId, teamProject);
+    const pullRequestUrl = result?.url || (result?.pullRequestId
+      ? `${this.serverUrl}${teamProject}/_git/${repositoryId}/pullrequest/${result.pullRequestId}`
+      : null);
+    return {
+      created: !!(result?.pullRequestId),
+      pullRequestUrl,
+      providerResult: result,
+    };
+  }
+
+  public async findOpenPullRequest(sourceBranch: string, targetBranch: string): Promise<{ pullRequestUrl: string; id: any } | null> {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const teamProject = process.env.SYSTEM_TEAMPROJECT || null;
+    if (!repositoryId || !teamProject) return null;
+    const azureGitApi = await this.azureApi.getGitApi();
+    const prs = await azureGitApi.getPullRequests(repositoryId, {
+      sourceRefName: `refs/heads/${sourceBranch}`,
+      targetRefName: `refs/heads/${targetBranch}`,
+      status: 1, // active
+    }, teamProject);
+    const pr = prs?.[0];
+    if (!pr?.pullRequestId) return null;
+    const pullRequestUrl = pr.url || `${this.serverUrl}${teamProject}/_git/${repositoryId}/pullrequest/${pr.pullRequestId}`;
+    return { pullRequestUrl, id: pr.pullRequestId };
+  }
+
+  public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const teamProject = process.env.SYSTEM_TEAMPROJECT || null;
+    if (!repositoryId || !teamProject) return;
+    const azureGitApi = await this.azureApi.getGitApi();
+    await azureGitApi.updatePullRequest({ title, description: body }, repositoryId, id, teamProject);
   }
 }

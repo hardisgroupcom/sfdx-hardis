@@ -126,6 +126,9 @@ export abstract class GitProvider {
       if (prData.deployErrorsMarkdownBody) {
         markdownBody += prData.deployErrorsMarkdownBody;
       }
+      if (prData?.autoFixPullRequestUrl) {
+        markdownBody += `\n\n---\n🤖 **A coding agent created a fix pull request:** [View fix PR](${prData.autoFixPullRequestUrl})`;
+      }
       if (prData.codeCoverageMarkdownBody) {
         markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
       }
@@ -248,6 +251,42 @@ export abstract class GitProvider {
       prInfo = null;
     }
     return prInfo;
+  }
+
+  static async createPullRequest(request: CreatePullRequestRequest): Promise<string | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderNotConfiguredForPrCreation')));
+      return null;
+    }
+    // Check if a PR already exists for this source→target branch (e.g. from a previous auto-fix run)
+    const existing = await gitProvider.findOpenPullRequest(request.sourceBranch, request.targetBranch);
+    if (existing) {
+      uxLog("log", this, c.grey(`[Git Provider] Found existing open PR for ${request.sourceBranch} → ${request.targetBranch}, updating description.`));
+      await gitProvider.updatePullRequestDescription(existing.id, request.title, request.body);
+      return existing.pullRequestUrl;
+    }
+    try {
+      const result = await gitProvider.createPullRequest(request);
+      if (result.created && result.pullRequestUrl) {
+        return result.pullRequestUrl;
+      }
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationFailed')));
+      return null;
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationError', { message: (e as Error).message })));
+      return null;
+    }
+  }
+
+  static async logAutoFixRemediation(step: "push" | "pr-create"): Promise<void> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider) {
+      gitProvider.logAutoFixRemediation(step);
+      return;
+    }
+    uxLog("log", this, "[sfdx-hardis] Unable to find a Git provider instance for auto-fix remediation guidance.");
+    return;
   }
 
   static isDeployBeforeMerge(): boolean {
@@ -381,4 +420,17 @@ export declare type PullRequestMessageResult = {
   posted: boolean;
   providerResult: any;
   additionalProviderResult?: any;
+};
+
+export declare type CreatePullRequestRequest = {
+  title: string;
+  body: string;
+  sourceBranch: string;
+  targetBranch: string;
+};
+
+export declare type CreatePullRequestResult = {
+  created: boolean;
+  pullRequestUrl: string | null;
+  providerResult: any;
 };
