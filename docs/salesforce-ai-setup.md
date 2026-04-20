@@ -166,16 +166,29 @@ Only values that are safe to commit (model, provider, tuning) are loaded from th
 
 ### With OpenAI Directly
 
-You need to define env variable OPENAI_API_KEY and make it available to your CI/CD workflow.
+You need to define env variable OPENAI_API_KEY (or use gateway authentication) and make it available to your CI/CD workflow.
 
 To get an OpenAi API key , register on [OpenAi Platform](https://platform.openai.com/).
 
 | Variable                | Description                                                                               | Default       |
 |-------------------------|-------------------------------------------------------------------------------------------|---------------|
-| OPENAI_API_KEY          | Your openai account API key                                                               |               |
+| OPENAI_API_KEY          | Your openai account API key (not required when using gateway headers)                     |               |
 | OPENAI_MODEL            | OpenAi model used to perform prompts (see [models list](https://openai.com/api/pricing/)) | `gpt-4o-mini` |
 | OPENAI_SERVICE_TIER     | Optional OpenAI service tier for supported projects (`auto`, `default`, `flex`)           |               |
 | OPENAI_REASONING_EFFORT | Optional reasoning effort for supported OpenAI reasoning models (`low`, `medium`, `high`) |               |
+| OPENAI_BASE_URL         | Base URL for OpenAI API (for corporate gateways/proxies)                                  |               |
+| OPENAI_DEFAULT_HEADERS  | JSON object of default HTTP headers for gateway/proxy authentication                      |               |
+
+#### OpenAI via corporate gateway (no API key needed)
+
+```sh
+USE_OPENAI_DIRECT=true
+OPENAI_MODEL=gpt-4o
+OPENAI_BASE_URL=https://your-company-gateway.example.com/v1
+OPENAI_DEFAULT_HEADERS={"X-Company-Auth": "your-token-here"}
+```
+
+When `OPENAI_DEFAULT_HEADERS` is set together with `OPENAI_BASE_URL`, the OpenAI provider skips the API key requirement and authenticates via the supplied headers instead.
 
 #### Configure OpenAI via .sfdx-hardis.yml
 
@@ -186,7 +199,7 @@ openaiServiceTier: auto
 openaiReasoningEffort: medium
 ```
 
-Store only model and provider preferences in the config file; keep `OPENAI_API_KEY` in a secure environment variable.
+Store only model and provider preferences in the config file; keep `OPENAI_API_KEY` (or gateway headers) in secure environment variables.
 
 ### With Codex Directly
 
@@ -195,7 +208,8 @@ To use Codex directly, set `USE_CODEX_DIRECT=true`.
 Authentication is resolved in this order:
 
 1. `CODEX_API_KEY` environment variable (recommended for CI/CD).
-2. Existing Codex local auth cache file at `$CODEX_HOME/auth.json` (or `~/.codex/auth.json` when `CODEX_HOME` is not set).
+2. Gateway authentication via `CODEX_BASE_URL` + `CODEX_DEFAULT_HEADERS` (for corporate OpenAI gateways).
+3. Existing Codex local auth cache file at `$CODEX_HOME/auth.json` (or `~/.codex/auth.json` when `CODEX_HOME` is not set).
 
 | Variable               | Description                                                                    | Default         |
 |------------------------|--------------------------------------------------------------------------------|-----------------|
@@ -203,8 +217,21 @@ Authentication is resolved in this order:
 | CODEX_API_KEY          | Codex API key used by `@openai/codex-sdk` (optional if auth cache file exists) |                 |
 | CODEX_MODEL            | Codex model used to perform prompts                                            | `gpt-5.1-codex` |
 | CODEX_REASONING_EFFORT | Reasoning effort used for Codex calls (`low`, `medium`, `high`, `xhigh`)       | `high`          |
+| CODEX_BASE_URL         | Base URL for Codex API (for corporate gateways/proxies; falls back to `OPENAI_BASE_URL`) |        |
+| CODEX_DEFAULT_HEADERS  | JSON object of default HTTP headers for gateway/proxy auth (falls back to `OPENAI_DEFAULT_HEADERS`) | |
 
 If `CODEX_REASONING_EFFORT` is set to an unsupported value, sfdx-hardis falls back to `high`.
+
+#### Codex via corporate gateway (no API key needed)
+
+```sh
+USE_CODEX_DIRECT=true
+CODEX_MODEL=gpt-5.1-codex
+CODEX_BASE_URL=https://your-company-gateway.example.com/v1
+CODEX_DEFAULT_HEADERS={"X-Company-Auth": "your-token-here"}
+```
+
+When headers are configured, sfdx-hardis defines a custom Codex CLI model provider with the supplied headers and routes requests through it.
 
 #### Configure Codex via .sfdx-hardis.yml
 

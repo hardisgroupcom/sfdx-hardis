@@ -23,7 +23,20 @@ export class OpenAiProvider extends AiProviderRoot {
     this.modelName = config.modelName || OpenAiProvider.DEFAULT_MODEL;
     this.serviceTier = config.serviceTier;
     this.reasoningEffort = config.reasoningEffort;
-    this.openai = new OpenAI();
+
+    const clientOptions: Record<string, unknown> = {};
+    if (config.apiKey) {
+      clientOptions.apiKey = config.apiKey;
+    } else if (config.defaultHeaders) {
+      clientOptions.apiKey = "";
+    }
+    if (config.baseURL) {
+      clientOptions.baseURL = config.baseURL;
+    }
+    if (config.defaultHeaders) {
+      clientOptions.defaultHeaders = config.defaultHeaders;
+    }
+    this.openai = new OpenAI(clientOptions as ConstructorParameters<typeof OpenAI>[0]);
   }
 
   public getLabel(): string {
@@ -44,9 +57,24 @@ export class OpenAiProvider extends AiProviderRoot {
   }
 
   private static async resolveConfig(): Promise<OpenAiResolvedConfig | null> {
-    if (!getEnvVar("OPENAI_API_KEY")) {
+    const apiKey = getEnvVar("OPENAI_API_KEY") || undefined;
+    const baseURL = getEnvVar("OPENAI_BASE_URL") || undefined;
+
+    let defaultHeaders: Record<string, string> | undefined;
+    const headersRaw = getEnvVar("OPENAI_DEFAULT_HEADERS");
+    if (headersRaw) {
+      try {
+        defaultHeaders = JSON.parse(headersRaw);
+      } catch {
+        uxLog("warning", this, c.yellow("[OpenAI] OPENAI_DEFAULT_HEADERS is not valid JSON — ignoring."));
+      }
+    }
+
+    const hasGatewayAuth = baseURL && defaultHeaders && Object.keys(defaultHeaders).length > 0;
+    if (!apiKey && !hasGatewayAuth) {
       return null;
     }
+
     const { enabled, rootConfig } = await resolveBooleanFlag({
       envVar: "USE_OPENAI_DIRECT",
       configKey: "useOpenaiDirect",
@@ -69,7 +97,7 @@ export class OpenAiProvider extends AiProviderRoot {
       || rootConfig.openaiReasoningEffort
       || rootConfig.OPENAI_REASONING_EFFORT
     );
-    return { modelName, serviceTier, reasoningEffort };
+    return { apiKey, baseURL, defaultHeaders, modelName, serviceTier, reasoningEffort };
   }
 
   private static resolveOptionalServiceTier(rawValue: string | null | undefined): OpenAiServiceTier | undefined {
@@ -133,6 +161,9 @@ export class OpenAiProvider extends AiProviderRoot {
 }
 
 interface OpenAiResolvedConfig {
+  apiKey?: string;
+  baseURL?: string;
+  defaultHeaders?: Record<string, string>;
   modelName: string;
   serviceTier?: OpenAiServiceTier;
   reasoningEffort?: OpenAiReasoningEffort;

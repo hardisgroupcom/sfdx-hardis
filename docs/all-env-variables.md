@@ -254,8 +254,10 @@ All non-secret options can also be set in `.sfdx-hardis.yml` using camelCase key
 | **CODEX_API_KEY**          | Codex API key for direct Codex operations (optional when local auth cache is available) | `undefined`     | Valid Codex/OpenAI API keys                                    | [`src/common/aiProvider/codexProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codexProvider.ts) |
 | **CODEX_MODEL**            | Codex model to use for prompts                                                          | `gpt-5.1-codex` | Codex model names (e.g., `gpt-5.1-codex`, `gpt-5.1-codex-max`) | Codex-specific configuration                                                                                                               |
 | **CODEX_REASONING_EFFORT** | Reasoning effort used for direct Codex calls                                            | `high`          | `low`, `medium`, `high`, `xhigh`                               | [`src/common/aiProvider/codexProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codexProvider.ts) |
+| **CODEX_BASE_URL**         | Base URL for Codex API (for corporate gateways/proxies; falls back to `OPENAI_BASE_URL`) |                | URL string                                                     | [`src/common/aiProvider/codexProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codexProvider.ts) |
+| **CODEX_DEFAULT_HEADERS**  | JSON object of default HTTP headers for gateway/proxy auth (falls back to `OPENAI_DEFAULT_HEADERS`). Defines a custom Codex CLI model provider with headers. | | JSON string (e.g., `'{"X-Auth": "token"}'`) | [`src/common/aiProvider/codexProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codexProvider.ts) |
 
-When `CODEX_API_KEY` is not defined, sfdx-hardis will also accept existing local Codex authentication cache at `CODEX_HOME/auth.json` (or `~/.codex/auth.json` when `CODEX_HOME` is not set).
+When `CODEX_API_KEY` is not defined, sfdx-hardis will also accept gateway authentication via `CODEX_BASE_URL` + `CODEX_DEFAULT_HEADERS`, or an existing local Codex authentication cache at `CODEX_HOME/auth.json` (or `~/.codex/auth.json` when `CODEX_HOME` is not set).
 
 ### OpenAI (direct) variables
 
@@ -265,8 +267,10 @@ When `CODEX_API_KEY` is not defined, sfdx-hardis will also accept existing local
 | **OPENAI_MODEL**            | OpenAI model to use for prompts                       | `gpt-4o-mini` | OpenAI model names (e.g., `gpt-4o-mini`, `gpt-4o`, `gpt-4o-mini-3b`) | OpenAI-specific configuration                                                                                                                |
 | **OPENAI_SERVICE_TIER**     | Optional OpenAI service tier for direct prompts       | `undefined`   | `auto`, `default`, `flex`                                            | [`src/common/aiProvider/openaiProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/openaiProvider.ts) |
 | **OPENAI_REASONING_EFFORT** | Optional reasoning effort for supported OpenAI models | `undefined`   | `low`, `medium`, `high`                                              | [`src/common/aiProvider/openaiProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/openaiProvider.ts) |
+| **OPENAI_BASE_URL**         | Base URL for OpenAI API (for corporate gateways/proxies) |            | URL string                                                           | [`src/common/aiProvider/openaiProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/openaiProvider.ts) |
+| **OPENAI_DEFAULT_HEADERS**  | JSON object of default HTTP headers for gateway/proxy auth. When set with a base URL, the OpenAI provider no longer requires an API key. | | JSON string (e.g., `'{"X-Auth": "token"}'`) | [`src/common/aiProvider/openaiProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/openaiProvider.ts) |
 
-Project-wide defaults (e.g., preferred model) can be stored directly at the root of `.sfdx-hardis.yml` using camelCase keys (for example `openaiModel`, `openaiServiceTier`, `openaiReasoningEffort`), but the `OPENAI_API_KEY` must remain in a secured environment variable.
+Project-wide defaults (e.g., preferred model) can be stored directly at the root of `.sfdx-hardis.yml` using camelCase keys (for example `openaiModel`, `openaiServiceTier`, `openaiReasoningEffort`), but `OPENAI_API_KEY` and gateway headers must remain in secured environment variables.
 
 ### Email Notifications
 

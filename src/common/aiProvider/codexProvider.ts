@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import c from "chalk";
-import { Codex } from "@openai/codex-sdk";
+import { Codex, type CodexOptions } from "@openai/codex-sdk";
 import { getEnvVar } from "../../config/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
 import { resolveBooleanFlag } from "./providerConfigUtils.js";
@@ -15,16 +15,21 @@ export class CodexProvider extends AiProviderRoot {
   private static readonly DEFAULT_MODEL = "gpt-5.1-codex";
   private static readonly DEFAULT_REASONING_EFFORT: CodexReasoningEffort = "high";
   private static readonly SUPPORTED_REASONING_EFFORTS: CodexReasoningEffort[] = ["low", "medium", "high", "xhigh"];
+  private static readonly CUSTOM_PROVIDER_ID = "sfdx-hardis-gateway";
 
   private codex: Codex | null = null;
   private readonly modelName: string;
   private readonly apiKey?: string;
+  private readonly baseUrl?: string;
+  private readonly defaultHeaders?: Record<string, string>;
   private readonly reasoningEffort: CodexReasoningEffort;
 
   private constructor(config: CodexResolvedConfig) {
     super();
     this.modelName = config.modelName;
     this.apiKey = config.apiKey;
+    this.baseUrl = config.baseUrl;
+    this.defaultHeaders = config.defaultHeaders;
     this.reasoningEffort = config.reasoningEffort;
   }
 
@@ -49,6 +54,11 @@ export class CodexProvider extends AiProviderRoot {
     if (getEnvVar("CODEX_API_KEY")) {
       return false;
     }
+    const hasGatewayHeaders = !!(getEnvVar("CODEX_DEFAULT_HEADERS") || getEnvVar("OPENAI_DEFAULT_HEADERS"));
+    const hasGatewayBaseUrl = !!(getEnvVar("CODEX_BASE_URL") || getEnvVar("OPENAI_BASE_URL"));
+    if (hasGatewayHeaders && hasGatewayBaseUrl) {
+      return false;
+    }
     return !existsSync(this.resolveAuthFilePath());
   }
 
@@ -71,7 +81,20 @@ export class CodexProvider extends AiProviderRoot {
     }
 
     const apiKey = getEnvVar("CODEX_API_KEY") || undefined;
-    if (!apiKey && !existsSync(this.resolveAuthFilePath())) {
+    const baseUrl = getEnvVar("CODEX_BASE_URL") || getEnvVar("OPENAI_BASE_URL") || undefined;
+
+    let defaultHeaders: Record<string, string> | undefined;
+    const headersRaw = getEnvVar("CODEX_DEFAULT_HEADERS") || getEnvVar("OPENAI_DEFAULT_HEADERS");
+    if (headersRaw) {
+      try {
+        defaultHeaders = JSON.parse(headersRaw);
+      } catch {
+        uxLog("warning", this, c.yellow("[Codex] CODEX_DEFAULT_HEADERS is not valid JSON — ignoring."));
+      }
+    }
+
+    const hasGatewayAuth = baseUrl && defaultHeaders && Object.keys(defaultHeaders).length > 0;
+    if (!apiKey && !hasGatewayAuth && !existsSync(this.resolveAuthFilePath())) {
       return null;
     }
 
@@ -86,7 +109,7 @@ export class CodexProvider extends AiProviderRoot {
       || CodexProvider.DEFAULT_REASONING_EFFORT
     );
 
-    return { apiKey, modelName, reasoningEffort };
+    return { apiKey, baseUrl, defaultHeaders, modelName, reasoningEffort };
   }
 
   private static resolveAuthFilePath(): string {
@@ -106,9 +129,35 @@ export class CodexProvider extends AiProviderRoot {
 
   private getCodexClient(): Codex {
     if (!this.codex) {
-      this.codex = this.apiKey ? new Codex({ apiKey: this.apiKey }) : new Codex();
+      const options: CodexOptions = {};
+      if (this.apiKey) {
+        options.apiKey = this.apiKey;
+      }
+      if (this.baseUrl) {
+        options.baseUrl = this.baseUrl;
+      }
+      if (this.defaultHeaders && Object.keys(this.defaultHeaders).length > 0) {
+        options.config = {
+          model_providers: {
+            [CodexProvider.CUSTOM_PROVIDER_ID]: {
+              name: "sfdx-hardis Gateway",
+              base_url: this.baseUrl || "https://api.openai.com/v1",
+              wire_api: "responses",
+              http_headers: this.defaultHeaders,
+            },
+          },
+        };
+      }
+      this.codex = new Codex(options);
     }
     return this.codex;
+  }
+
+  private getEffectiveModel(): string {
+    if (this.defaultHeaders && Object.keys(this.defaultHeaders).length > 0) {
+      return `${CodexProvider.CUSTOM_PROVIDER_ID}/${this.modelName}`;
+    }
+    return this.modelName;
   }
 
   public async promptAi(promptText: string, template: PromptTemplate | null = null): Promise<AiResponse | null> {
@@ -125,7 +174,7 @@ export class CodexProvider extends AiProviderRoot {
     this.incrementAiCallsNumber();
 
     const thread = this.getCodexClient().startThread({
-      model: this.modelName,
+      model: this.getEffectiveModel(),
       modelReasoningEffort: this.reasoningEffort,
       sandboxMode: "read-only",
       approvalPolicy: "never",
@@ -152,6 +201,8 @@ export class CodexProvider extends AiProviderRoot {
 
 interface CodexResolvedConfig {
   apiKey?: string;
+  baseUrl?: string;
+  defaultHeaders?: Record<string, string>;
   modelName: string;
   reasoningEffort: CodexReasoningEffort;
 }
