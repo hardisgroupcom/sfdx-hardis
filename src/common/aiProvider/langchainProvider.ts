@@ -7,7 +7,7 @@ import { PromptTemplate } from "./promptTemplates.js";
 import { LangChainProviderFactory } from "./langChainProviders/langChainProviderFactory.js";
 import { ModelConfig, ProviderType } from "./langChainProviders/langChainBaseProvider.js";
 import { getConfig, getEnvVar } from "../../config/index.js";
-import { parseDefaultHeaders } from "./providerConfigUtils.js";
+import { parseDefaultHeaders, HEADER_PARSE_I18N_KEYS } from "./providerConfigUtils.js";
 import { t } from '../utils/i18n.js';
 
 export class LangChainProvider extends AiProviderRoot {
@@ -68,11 +68,11 @@ export class LangChainProvider extends AiProviderRoot {
       return null;
     }
 
-    const defaultHeaders = parseDefaultHeaders(
-      getEnvVar("LANGCHAIN_LLM_DEFAULT_HEADERS"),
-      "LangChain",
-      (level, _scope, msg) => uxLog(level, this, c.yellow(msg)),
-    );
+    const headerResult = parseDefaultHeaders(getEnvVar("LANGCHAIN_LLM_DEFAULT_HEADERS"));
+    if (headerResult.error) {
+      uxLog("warning", this, c.yellow(t(HEADER_PARSE_I18N_KEYS[headerResult.error], { label: "LangChain", key: headerResult.errorKey })));
+    }
+    const defaultHeaders = headerResult.headers;
 
     return {
       provider,

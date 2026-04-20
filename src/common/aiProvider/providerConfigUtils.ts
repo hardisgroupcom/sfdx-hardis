@@ -1,5 +1,4 @@
 import { getConfig, getEnvVar } from "../../config/index.js";
-import type { LogType } from "../websocketClient.js";
 
 interface BooleanFlagOptions {
   envVar: string;
@@ -49,45 +48,60 @@ function parseBoolean(value: string | null): boolean | undefined {
   return undefined;
 }
 
+export type HeaderParseErrorCode =
+  | "invalidJson"
+  | "notObject"
+  | "nonStringValue"
+  | "invalidHeaderName";
+
+/** Maps each error code to the corresponding i18n translation key. */
+export const HEADER_PARSE_I18N_KEYS: Record<HeaderParseErrorCode, string> = {
+  invalidJson: "defaultHeadersInvalidJson",
+  notObject: "defaultHeadersNotObject",
+  nonStringValue: "defaultHeadersNonStringValue",
+  invalidHeaderName: "defaultHeadersInvalidHeaderName",
+};
+
+export interface HeaderParseResult {
+  headers?: Record<string, string>;
+  error?: HeaderParseErrorCode;
+  /** The offending header key, when the error is key-specific. */
+  errorKey?: string;
+}
+
 /**
  * Parse and validate a JSON string into a Record<string, string> of HTTP headers.
- * Returns undefined if the input is falsy, not valid JSON, not a plain object,
- * or contains non-string values.
+ *
+ * Returns `{ headers }` on success. On failure, returns `{ error, errorKey? }`
+ * so callers can emit a localized warning via `t()`.
+ * Returns `{}` (no headers, no error) when the input is falsy or an empty object.
  */
-export function parseDefaultHeaders(
-  raw: string | null | undefined,
-  label: string,
-  logger?: (level: LogType, scope: unknown, message: string) => void,
-): Record<string, string> | undefined {
+export function parseDefaultHeaders(raw: string | null | undefined): HeaderParseResult {
   if (!raw) {
-    return undefined;
+    return {};
   }
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    logger?.("warning", null, `[${label}] Default headers value is not valid JSON — ignoring.`);
-    return undefined;
+    return { error: "invalidJson" };
   }
   if (parsed == null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    logger?.("warning", null, `[${label}] Default headers must be a JSON object — ignoring.`);
-    return undefined;
+    return { error: "notObject" };
   }
   const entries = Object.entries(parsed as Record<string, unknown>);
   if (entries.length === 0) {
-    return undefined;
+    return {};
   }
   for (const [key, value] of entries) {
     if (typeof value !== "string") {
-      logger?.("warning", null, `[${label}] Default header "${key}" has a non-string value — ignoring all headers.`);
-      return undefined;
+      return { error: "nonStringValue", errorKey: key };
     }
     if (!isValidHeaderName(key)) {
-      logger?.("warning", null, `[${label}] Default header name "${key}" contains invalid characters — ignoring all headers.`);
-      return undefined;
+      return { error: "invalidHeaderName", errorKey: key };
     }
   }
-  return parsed as Record<string, string>;
+  return { headers: parsed as Record<string, string> };
 }
 
 /** RFC 7230 token characters allowed in HTTP header field-names. */

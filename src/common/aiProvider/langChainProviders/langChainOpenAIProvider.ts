@@ -55,9 +55,8 @@ export class LangChainOpenAIProvider extends AbstractLLMProvider {
         if (baseUrl && !process.env.OPENAI_BASE_URL) {
           process.env.OPENAI_BASE_URL = baseUrl;
         }
-        const gatewayHeaders = parseDefaultHeaders(
+        const { headers: gatewayHeaders } = parseDefaultHeaders(
           getEnvVar("LANGCHAIN_LLM_DEFAULT_HEADERS"),
-          "OpenAI",
         );
         if (gatewayHeaders && !process.env.OPENAI_API_KEY && !process.env.CODEX_API_KEY) {
           process.env.OPENAI_API_KEY = "";
@@ -67,11 +66,10 @@ export class LangChainOpenAIProvider extends AbstractLLMProvider {
         let modelFlag = options?.model ? ` --model ${shellEscape(options.model)}` : "";
         let configFlags = "";
 
-        const headers = parseDefaultHeaders(
+        const { headers } = parseDefaultHeaders(
           getEnvVar("LANGCHAIN_LLM_DEFAULT_HEADERS")
             || getEnvVar("CODEX_DEFAULT_HEADERS")
             || getEnvVar("OPENAI_DEFAULT_HEADERS"),
-          "OpenAI",
         );
         const baseUrl = getEnvVar("LANGCHAIN_LLM_BASE_URL")
           || getEnvVar("CODEX_BASE_URL")
