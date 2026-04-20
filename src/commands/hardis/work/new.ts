@@ -458,7 +458,11 @@ The command's logic orchestrates various underlying processes:
       }
     } else if (availableTargetBranches.length > 0 && !availableTargetBranches.includes(targetBranch)) {
       missing.push(
-        `target-branch="${targetBranch}" is not in availableTargetBranches. Available: ${this.toOptionList(availableTargetBranches)}`
+        `target-branch="${targetBranch}" is not an allowed target branch. Available: ${this.toOptionList(availableTargetBranches)}`
+      );
+    } else if (availableTargetBranches.length === 0) {
+      missing.push(
+        `target-branch cannot be validated: configure availableTargetBranches or developmentBranch in .sfdx-hardis.yml`
       );
     }
 
