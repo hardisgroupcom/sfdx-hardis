@@ -63,7 +63,7 @@ Key features include:
 
 Use \`--agent\` to disable all prompts. Typical usage:
 
-\`sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration --target-org my-org@example.com\`
+\`sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration\`
 
 Required in agent mode:
 

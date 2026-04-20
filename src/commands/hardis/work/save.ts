@@ -65,7 +65,7 @@ Key functionalities include:
 
 Use \`--agent\` to disable prompts. Typical usage:
 
-\`sf hardis:work:save --agent --targetbranch integration --target-org my-org@example.com\`
+\`sf hardis:work:save --agent\`
 
 In \`--agent\` mode:
 
