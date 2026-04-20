@@ -7,6 +7,7 @@ import { PromptTemplate } from "./promptTemplates.js";
 import { LangChainProviderFactory } from "./langChainProviders/langChainProviderFactory.js";
 import { ModelConfig, ProviderType } from "./langChainProviders/langChainBaseProvider.js";
 import { getConfig, getEnvVar } from "../../config/index.js";
+import { parseDefaultHeaders, HEADER_PARSE_I18N_KEYS } from "./providerConfigUtils.js";
 import { t } from '../utils/i18n.js';
 
 export class LangChainProvider extends AiProviderRoot {
@@ -32,7 +33,8 @@ export class LangChainProvider extends AiProviderRoot {
       maxTokens: options.maxTokens,
       maxRetries: options.maxRetries,
       baseUrl: options.baseUrl,
-      apiKey: options.apiKey
+      apiKey: options.apiKey,
+      defaultHeaders: options.defaultHeaders,
     };
 
     const llmProvider = LangChainProviderFactory.createProvider(providerType, this.modelName, config);
@@ -66,6 +68,12 @@ export class LangChainProvider extends AiProviderRoot {
       return null;
     }
 
+    const headerResult = parseDefaultHeaders(getEnvVar("LANGCHAIN_LLM_DEFAULT_HEADERS"));
+    if (headerResult.error) {
+      uxLog("warning", this, c.yellow(t(HEADER_PARSE_I18N_KEYS[headerResult.error], { label: "LangChain", key: headerResult.errorKey })));
+    }
+    const defaultHeaders = headerResult.headers;
+
     return {
       provider,
       modelName,
@@ -87,6 +95,7 @@ export class LangChainProvider extends AiProviderRoot {
       ),
       baseUrl: getEnvVar("LANGCHAIN_LLM_BASE_URL") || rootConfig.langchainLlmBaseUrl || rootConfig.LANGCHAIN_LLM_BASE_URL,
       apiKey: getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY") || undefined,
+      defaultHeaders,
     };
   }
 
@@ -178,4 +187,5 @@ interface LangChainResolvedConfig {
   maxRetries?: number;
   baseUrl?: string;
   apiKey?: string;
+  defaultHeaders?: Record<string, string>;
 }

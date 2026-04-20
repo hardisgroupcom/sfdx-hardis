@@ -7,6 +7,7 @@ export interface ModelConfig {
   maxRetries?: number;
   baseUrl?: string;
   apiKey?: string;
+  defaultHeaders?: Record<string, string>;
 }
 
 export type ProviderType = "ollama" | "openai" | "anthropic" | "google-genai";
