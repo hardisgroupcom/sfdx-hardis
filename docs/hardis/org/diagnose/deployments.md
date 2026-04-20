@@ -24,16 +24,16 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
-|period<br/>-p|option|Time period to analyze: daily (last 24h), weekly (last 7 days), or all (no date filter). If not set, defaults to daily in CI or prompts for a number of days interactively.|||daily<br/>weekly<br/>all|
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name              |  Type   | Description                                                                                                                                                                 | Default | Required |         Options          |
+|:------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:------------------------:|
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                                                                             |         |          |                          |
+| flags-dir         | option  | undefined                                                                                                                                                                   |         |          |                          |
+| json              | boolean | Format output as json.                                                                                                                                                      |         |          |                          |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                                                                                           |         |          |                          |
+| period<br/>-p     | option  | Time period to analyze: daily (last 24h), weekly (last 7 days), or all (no date filter). If not set, defaults to daily in CI or prompts for a number of days interactively. |         |          | daily<br/>weekly<br/>all |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                                                                               |         |          |                          |
+| target-org<br/>-o | option  | undefined                                                                                                                                                                   |         |          |                          |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                   |         |          |                          |
 
 ## Examples
 
