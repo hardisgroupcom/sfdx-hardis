@@ -1,4 +1,5 @@
 import { getConfig, getEnvVar } from "../../config/index.js";
+import { LogType } from "../websocketClient.js";
 
 interface BooleanFlagOptions {
   envVar: string;
@@ -53,12 +54,10 @@ function parseBoolean(value: string | null): boolean | undefined {
  * Returns undefined if the input is falsy, not valid JSON, not a plain object,
  * or contains non-string values.
  */
-type LogLevel = "warning" | "log" | "action" | "error" | "success" | "table" | "other";
-
 export function parseDefaultHeaders(
   raw: string | null | undefined,
   label: string,
-  logger?: (level: LogLevel, scope: unknown, message: string) => void,
+  logger?: (level: LogType, scope: unknown, message: string) => void,
 ): Record<string, string> | undefined {
   if (!raw) {
     return undefined;
