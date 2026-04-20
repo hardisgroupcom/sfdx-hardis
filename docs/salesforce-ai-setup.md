@@ -83,11 +83,12 @@ Currently supported LangchainJS providers:
 | USE_LANGCHAIN_LLM           | Set to true to use LangChain integration                                                        | `false`                          |
 | LANGCHAIN_LLM_PROVIDER      | The LLM provider to use (currently supports `ollama`, `openai`, `anthropic` and `google-genai`) |                                  |
 | LANGCHAIN_LLM_MODEL         | The model to use with the selected provider (e.g. `gpt-4o`, `qwen2.5-coder:14b`)                |                                  |
-| LANGCHAIN_LLM_MODEL_API_KEY | API key for the selected provider (required for OpenAI, Anthropic and Gemini)                   |                                  |
+| LANGCHAIN_LLM_MODEL_API_KEY | API key for the selected provider (required for OpenAI, Anthropic, and Gemini unless using gateway headers for OpenAI)            |                                  |
 | LANGCHAIN_LLM_TEMPERATURE   | Controls randomness (0-1)                                                                       |                                  |
 | LANGCHAIN_LLM_MAX_TOKENS    | Maximum number of tokens to generate                                                            |                                  |
 | LANGCHAIN_LLM_MAX_RETRIES   | Number of retries for failed requests                                                           |                                  |
-| LANGCHAIN_LLM_BASE_URL      | Base URL for the API (mainly for Ollama)                                                        | Ollama: `http://localhost:11434` |
+| LANGCHAIN_LLM_BASE_URL      | Base URL for the API (for Ollama or corporate OpenAI gateways)                                  | Ollama: `http://localhost:11434` |
+| LANGCHAIN_LLM_DEFAULT_HEADERS | JSON object of default HTTP headers sent with every request (for gateway/proxy authentication) |                                  |
 
 #### Example configurations
 
@@ -115,6 +116,18 @@ LANGCHAIN_LLM_MODEL_API_KEY=your-api-key
 LANGCHAIN_LLM_TEMPERATURE=0.7
 LANGCHAIN_LLM_MAX_TOKENS=2000
 ```
+
+For OpenAI via a corporate gateway (no API key needed):
+
+```sh
+USE_LANGCHAIN_LLM=true
+LANGCHAIN_LLM_PROVIDER=openai
+LANGCHAIN_LLM_MODEL=gpt-4o
+LANGCHAIN_LLM_BASE_URL=https://your-company-gateway.example.com/v1
+LANGCHAIN_LLM_DEFAULT_HEADERS={"X-Company-Auth": "your-token-here"}
+```
+
+When `LANGCHAIN_LLM_DEFAULT_HEADERS` is set together with `LANGCHAIN_LLM_BASE_URL`, the OpenAI provider skips the API key requirement and authenticates via the supplied headers instead.
 
 For Anthropic:
 

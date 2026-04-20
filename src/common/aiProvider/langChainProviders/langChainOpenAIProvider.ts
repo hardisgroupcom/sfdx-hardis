@@ -4,21 +4,36 @@ import { AbstractLLMProvider, CodingAgentInfo, CodingAgentOptions, ModelConfig }
 
 export class LangChainOpenAIProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {
-    if (!config.apiKey) {
-      throw new Error("API key is required for OpenAI provider. Define it in a secured env var LANGCHAIN_LLM_MODEL_API_KEY");
+    const hasGatewayAuth = config.baseUrl && config.defaultHeaders && Object.keys(config.defaultHeaders).length > 0;
+    if (!config.apiKey && !hasGatewayAuth) {
+      throw new Error(
+        "OpenAI provider requires either an API key (LANGCHAIN_LLM_MODEL_API_KEY) " +
+        "or a base URL with default headers (LANGCHAIN_LLM_BASE_URL + LANGCHAIN_LLM_DEFAULT_HEADERS) for gateway authentication."
+      );
     }
     super(modelName, config);
     this.model = this.getModel();
   }
 
   getModel(): BaseChatModel {
-    const config = {
+    const config: Record<string, unknown> = {
       modelName: this.modelName,
-      openAIApiKey: this.config.apiKey!,
+      openAIApiKey: this.config.apiKey || "",
       temperature: this.config.temperature,
       maxTokens: this.config.maxTokens,
-      maxRetries: this.config.maxRetries
+      maxRetries: this.config.maxRetries,
     };
+
+    const clientConfig: Record<string, unknown> = {};
+    if (this.config.baseUrl) {
+      clientConfig.baseURL = this.config.baseUrl;
+    }
+    if (this.config.defaultHeaders) {
+      clientConfig.defaultHeaders = this.config.defaultHeaders;
+    }
+    if (Object.keys(clientConfig).length > 0) {
+      config.configuration = clientConfig;
+    }
 
     return new ChatOpenAI(config) as BaseChatModel;
   }

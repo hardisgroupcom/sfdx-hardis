@@ -32,7 +32,8 @@ export class LangChainProvider extends AiProviderRoot {
       maxTokens: options.maxTokens,
       maxRetries: options.maxRetries,
       baseUrl: options.baseUrl,
-      apiKey: options.apiKey
+      apiKey: options.apiKey,
+      defaultHeaders: options.defaultHeaders,
     };
 
     const llmProvider = LangChainProviderFactory.createProvider(providerType, this.modelName, config);
@@ -66,6 +67,16 @@ export class LangChainProvider extends AiProviderRoot {
       return null;
     }
 
+    let defaultHeaders: Record<string, string> | undefined;
+    const headersRaw = getEnvVar("LANGCHAIN_LLM_DEFAULT_HEADERS");
+    if (headersRaw) {
+      try {
+        defaultHeaders = JSON.parse(headersRaw);
+      } catch {
+        uxLog("warning", this, c.yellow("[LangChain] LANGCHAIN_LLM_DEFAULT_HEADERS is not valid JSON — ignoring."));
+      }
+    }
+
     return {
       provider,
       modelName,
@@ -87,6 +98,7 @@ export class LangChainProvider extends AiProviderRoot {
       ),
       baseUrl: getEnvVar("LANGCHAIN_LLM_BASE_URL") || rootConfig.langchainLlmBaseUrl || rootConfig.LANGCHAIN_LLM_BASE_URL,
       apiKey: getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY") || undefined,
+      defaultHeaders,
     };
   }
 
@@ -178,4 +190,5 @@ interface LangChainResolvedConfig {
   maxRetries?: number;
   baseUrl?: string;
   apiKey?: string;
+  defaultHeaders?: Record<string, string>;
 }
