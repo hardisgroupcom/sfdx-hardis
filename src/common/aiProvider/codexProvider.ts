@@ -5,7 +5,7 @@ import c from "chalk";
 import { Codex, type CodexOptions } from "@openai/codex-sdk";
 import { getEnvVar } from "../../config/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
-import { resolveBooleanFlag } from "./providerConfigUtils.js";
+import { resolveBooleanFlag, parseDefaultHeaders } from "./providerConfigUtils.js";
 import { uxLog } from "../utils/index.js";
 import { AiProviderRoot } from "./aiProviderRoot.js";
 import { AiResponse } from "./index.js";
@@ -54,9 +54,12 @@ export class CodexProvider extends AiProviderRoot {
     if (getEnvVar("CODEX_API_KEY")) {
       return false;
     }
-    const hasGatewayHeaders = !!(getEnvVar("CODEX_DEFAULT_HEADERS") || getEnvVar("OPENAI_DEFAULT_HEADERS"));
-    const hasGatewayBaseUrl = !!(getEnvVar("CODEX_BASE_URL") || getEnvVar("OPENAI_BASE_URL"));
-    if (hasGatewayHeaders && hasGatewayBaseUrl) {
+    const gatewayHeaders = parseDefaultHeaders(
+      getEnvVar("CODEX_DEFAULT_HEADERS") || getEnvVar("OPENAI_DEFAULT_HEADERS"),
+      "Codex",
+    );
+    const gatewayBaseUrl = (getEnvVar("CODEX_BASE_URL") || getEnvVar("OPENAI_BASE_URL") || "").trim();
+    if (gatewayHeaders && gatewayBaseUrl) {
       return false;
     }
     return !existsSync(this.resolveAuthFilePath());
@@ -83,15 +86,11 @@ export class CodexProvider extends AiProviderRoot {
     const apiKey = getEnvVar("CODEX_API_KEY") || undefined;
     const baseUrl = getEnvVar("CODEX_BASE_URL") || getEnvVar("OPENAI_BASE_URL") || undefined;
 
-    let defaultHeaders: Record<string, string> | undefined;
-    const headersRaw = getEnvVar("CODEX_DEFAULT_HEADERS") || getEnvVar("OPENAI_DEFAULT_HEADERS");
-    if (headersRaw) {
-      try {
-        defaultHeaders = JSON.parse(headersRaw);
-      } catch {
-        uxLog("warning", this, c.yellow("[Codex] CODEX_DEFAULT_HEADERS is not valid JSON — ignoring."));
-      }
-    }
+    const defaultHeaders = parseDefaultHeaders(
+      getEnvVar("CODEX_DEFAULT_HEADERS") || getEnvVar("OPENAI_DEFAULT_HEADERS"),
+      "Codex",
+      (level, _scope, msg) => uxLog(level, this, c.yellow(msg)),
+    );
 
     const hasGatewayAuth = baseUrl && defaultHeaders && Object.keys(defaultHeaders).length > 0;
     if (!apiKey && !hasGatewayAuth && !existsSync(this.resolveAuthFilePath())) {

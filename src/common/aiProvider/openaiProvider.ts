@@ -5,7 +5,7 @@ import c from "chalk";
 import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
 import { getEnvVar } from "../../config/index.js";
-import { resolveBooleanFlag } from "./providerConfigUtils.js";
+import { resolveBooleanFlag, parseDefaultHeaders } from "./providerConfigUtils.js";
 import { t } from '../utils/i18n.js';
 
 export class OpenAiProvider extends AiProviderRoot {
@@ -60,15 +60,11 @@ export class OpenAiProvider extends AiProviderRoot {
     const apiKey = getEnvVar("OPENAI_API_KEY") || undefined;
     const baseURL = getEnvVar("OPENAI_BASE_URL") || undefined;
 
-    let defaultHeaders: Record<string, string> | undefined;
-    const headersRaw = getEnvVar("OPENAI_DEFAULT_HEADERS");
-    if (headersRaw) {
-      try {
-        defaultHeaders = JSON.parse(headersRaw);
-      } catch {
-        uxLog("warning", this, c.yellow("[OpenAI] OPENAI_DEFAULT_HEADERS is not valid JSON — ignoring."));
-      }
-    }
+    const defaultHeaders = parseDefaultHeaders(
+      getEnvVar("OPENAI_DEFAULT_HEADERS"),
+      "OpenAI",
+      (level, _scope, msg) => uxLog(level, this, c.yellow(msg)),
+    );
 
     const hasGatewayAuth = baseURL && defaultHeaders && Object.keys(defaultHeaders).length > 0;
     if (!apiKey && !hasGatewayAuth) {
