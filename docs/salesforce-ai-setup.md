@@ -78,17 +78,17 @@ Currently supported LangchainJS providers:
 - Anthropic
 - Google GenAI
 
-| Variable                    | Description                                                                                     | Default                          |
-|-----------------------------|-------------------------------------------------------------------------------------------------|----------------------------------|
-| USE_LANGCHAIN_LLM           | Set to true to use LangChain integration                                                        | `false`                          |
-| LANGCHAIN_LLM_PROVIDER      | The LLM provider to use (currently supports `ollama`, `openai`, `anthropic` and `google-genai`) |                                  |
-| LANGCHAIN_LLM_MODEL         | The model to use with the selected provider (e.g. `gpt-4o`, `qwen2.5-coder:14b`)                |                                  |
-| LANGCHAIN_LLM_MODEL_API_KEY | API key for the selected provider (required for OpenAI, Anthropic, and Gemini unless using gateway headers for OpenAI)            |                                  |
-| LANGCHAIN_LLM_TEMPERATURE   | Controls randomness (0-1)                                                                       |                                  |
-| LANGCHAIN_LLM_MAX_TOKENS    | Maximum number of tokens to generate                                                            |                                  |
-| LANGCHAIN_LLM_MAX_RETRIES   | Number of retries for failed requests                                                           |                                  |
-| LANGCHAIN_LLM_BASE_URL      | Base URL for the API (for Ollama or corporate OpenAI gateways)                                  | Ollama: `http://localhost:11434` |
-| LANGCHAIN_LLM_DEFAULT_HEADERS | JSON object of default HTTP headers sent with every request (for gateway/proxy authentication) |                                  |
+| Variable                      | Description                                                                                                            | Default                          |
+|-------------------------------|------------------------------------------------------------------------------------------------------------------------|----------------------------------|
+| USE_LANGCHAIN_LLM             | Set to true to use LangChain integration                                                                               | `false`                          |
+| LANGCHAIN_LLM_PROVIDER        | The LLM provider to use (currently supports `ollama`, `openai`, `anthropic` and `google-genai`)                        |                                  |
+| LANGCHAIN_LLM_MODEL           | The model to use with the selected provider (e.g. `gpt-4o`, `qwen2.5-coder:14b`)                                       |                                  |
+| LANGCHAIN_LLM_MODEL_API_KEY   | API key for the selected provider (required for OpenAI, Anthropic, and Gemini unless using gateway headers for OpenAI) |                                  |
+| LANGCHAIN_LLM_TEMPERATURE     | Controls randomness (0-1)                                                                                              |                                  |
+| LANGCHAIN_LLM_MAX_TOKENS      | Maximum number of tokens to generate                                                                                   |                                  |
+| LANGCHAIN_LLM_MAX_RETRIES     | Number of retries for failed requests                                                                                  |                                  |
+| LANGCHAIN_LLM_BASE_URL        | Base URL for the API (for Ollama or corporate OpenAI gateways)                                                         | Ollama: `http://localhost:11434` |
+| LANGCHAIN_LLM_DEFAULT_HEADERS | JSON object of default HTTP headers sent with every request (for gateway/proxy authentication)                         |                                  |
 
 #### Example configurations
 
@@ -211,14 +211,14 @@ Authentication is resolved in this order:
 2. Gateway authentication via `CODEX_BASE_URL` + `CODEX_DEFAULT_HEADERS` (for corporate OpenAI gateways).
 3. Existing Codex local auth cache file at `$CODEX_HOME/auth.json` (or `~/.codex/auth.json` when `CODEX_HOME` is not set).
 
-| Variable               | Description                                                                    | Default         |
-|------------------------|--------------------------------------------------------------------------------|-----------------|
-| USE_CODEX_DIRECT       | Set to true to activate direct Codex integration                               | `false`         |
-| CODEX_API_KEY          | Codex API key used by `@openai/codex-sdk` (optional if auth cache file exists) |                 |
-| CODEX_MODEL            | Codex model used to perform prompts                                            | `gpt-5.1-codex` |
-| CODEX_REASONING_EFFORT | Reasoning effort used for Codex calls (`low`, `medium`, `high`, `xhigh`)       | `high`          |
-| CODEX_BASE_URL         | Base URL for Codex API (for corporate gateways/proxies; falls back to `OPENAI_BASE_URL`) |        |
-| CODEX_DEFAULT_HEADERS  | JSON object of default HTTP headers for gateway/proxy auth (falls back to `OPENAI_DEFAULT_HEADERS`) | |
+| Variable               | Description                                                                                         | Default         |
+|------------------------|-----------------------------------------------------------------------------------------------------|-----------------|
+| USE_CODEX_DIRECT       | Set to true to activate direct Codex integration                                                    | `false`         |
+| CODEX_API_KEY          | Codex API key used by `@openai/codex-sdk` (optional if auth cache file exists)                      |                 |
+| CODEX_MODEL            | Codex model used to perform prompts                                                                 | `gpt-5.1-codex` |
+| CODEX_REASONING_EFFORT | Reasoning effort used for Codex calls (`low`, `medium`, `high`, `xhigh`)                            | `high`          |
+| CODEX_BASE_URL         | Base URL for Codex API (for corporate gateways/proxies; falls back to `OPENAI_BASE_URL`)            |                 |
+| CODEX_DEFAULT_HEADERS  | JSON object of default HTTP headers for gateway/proxy auth (falls back to `OPENAI_DEFAULT_HEADERS`) |                 |
 
 If `CODEX_REASONING_EFFORT` is set to an unsupported value, sfdx-hardis falls back to `high`.
 
