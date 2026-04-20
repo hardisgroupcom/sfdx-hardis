@@ -5,7 +5,7 @@ import c from "chalk";
 import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
 import { getEnvVar } from "../../config/index.js";
-import { resolveBooleanFlag } from "./providerConfigUtils.js";
+import { resolveBooleanFlag, parseDefaultHeaders, HEADER_PARSE_I18N_KEYS } from "./providerConfigUtils.js";
 import { t } from '../utils/i18n.js';
 
 export class OpenAiProvider extends AiProviderRoot {
@@ -23,7 +23,20 @@ export class OpenAiProvider extends AiProviderRoot {
     this.modelName = config.modelName || OpenAiProvider.DEFAULT_MODEL;
     this.serviceTier = config.serviceTier;
     this.reasoningEffort = config.reasoningEffort;
-    this.openai = new OpenAI();
+
+    const clientOptions: Record<string, unknown> = {};
+    if (config.apiKey) {
+      clientOptions.apiKey = config.apiKey;
+    } else if (config.defaultHeaders) {
+      clientOptions.apiKey = "";
+    }
+    if (config.baseURL) {
+      clientOptions.baseURL = config.baseURL;
+    }
+    if (config.defaultHeaders) {
+      clientOptions.defaultHeaders = config.defaultHeaders;
+    }
+    this.openai = new OpenAI(clientOptions as ConstructorParameters<typeof OpenAI>[0]);
   }
 
   public getLabel(): string {
@@ -44,9 +57,20 @@ export class OpenAiProvider extends AiProviderRoot {
   }
 
   private static async resolveConfig(): Promise<OpenAiResolvedConfig | null> {
-    if (!getEnvVar("OPENAI_API_KEY")) {
+    const apiKey = getEnvVar("OPENAI_API_KEY") || undefined;
+    const baseURL = getEnvVar("OPENAI_BASE_URL") || undefined;
+
+    const headerResult = parseDefaultHeaders(getEnvVar("OPENAI_DEFAULT_HEADERS"));
+    if (headerResult.error) {
+      uxLog("warning", this, c.yellow(t(HEADER_PARSE_I18N_KEYS[headerResult.error], { label: "OpenAI", key: headerResult.errorKey })));
+    }
+    const defaultHeaders = headerResult.headers;
+
+    const hasGatewayAuth = baseURL && defaultHeaders && Object.keys(defaultHeaders).length > 0;
+    if (!apiKey && !hasGatewayAuth) {
       return null;
     }
+
     const { enabled, rootConfig } = await resolveBooleanFlag({
       envVar: "USE_OPENAI_DIRECT",
       configKey: "useOpenaiDirect",
@@ -69,7 +93,7 @@ export class OpenAiProvider extends AiProviderRoot {
       || rootConfig.openaiReasoningEffort
       || rootConfig.OPENAI_REASONING_EFFORT
     );
-    return { modelName, serviceTier, reasoningEffort };
+    return { apiKey, baseURL, defaultHeaders, modelName, serviceTier, reasoningEffort };
   }
 
   private static resolveOptionalServiceTier(rawValue: string | null | undefined): OpenAiServiceTier | undefined {
@@ -133,6 +157,9 @@ export class OpenAiProvider extends AiProviderRoot {
 }
 
 interface OpenAiResolvedConfig {
+  apiKey?: string;
+  baseURL?: string;
+  defaultHeaders?: Record<string, string>;
   modelName: string;
   serviceTier?: OpenAiServiceTier;
   reasoningEffort?: OpenAiReasoningEffort;
