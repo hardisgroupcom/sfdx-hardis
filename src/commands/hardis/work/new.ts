@@ -379,13 +379,11 @@ The command's logic orchestrates various underlying processes:
     if (!Array.isArray(allowedOrgTypes) || allowedOrgTypes.length === 0) {
       return 'currentOrg';
     }
-    if (allowedOrgTypes[0] === 'sandbox') {
+    // Force currentOrg only when sandbox is the ONLY allowed type (can't create sandbox non-interactively)
+    if (allowedOrgTypes.every((t: string) => t === 'sandbox')) {
       return 'currentOrg';
     }
-    if (Array.isArray(allowedOrgTypes) && allowedOrgTypes.length > 0) {
-      return allowedOrgTypes[0];
-    }
-    return 'currentOrg';
+    return allowedOrgTypes[0];
   }
 
   private parseProjectValue(project: string): string {
@@ -458,11 +456,7 @@ The command's logic orchestrates various underlying processes:
       } else {
         missing.push(`target-branch is required with --agent. Available: ${this.toOptionList(availableTargetBranches)}`);
       }
-    } else if (availableTargetBranches.length === 0) {
-      missing.push(
-        `target-branch="${targetBranch}" cannot be validated: availableTargetBranches is not configured in .sfdx-hardis.yml (usually set to [integration] or [integration,preprod])`
-      );
-    } else if (!availableTargetBranches.includes(targetBranch)) {
+    } else if (availableTargetBranches.length > 0 && !availableTargetBranches.includes(targetBranch)) {
       missing.push(
         `target-branch="${targetBranch}" is not in availableTargetBranches. Available: ${this.toOptionList(availableTargetBranches)}`
       );

@@ -65,7 +65,7 @@ Key functionalities include:
 
 Use \`--agent\` to disable prompts. Typical usage:
 
-\`sf hardis:work:task:save --agent --targetbranch integration --target-org my-org@example.com\`
+\`sf hardis:work:save --agent --targetbranch integration --target-org my-org@example.com\`
 
 In \`--agent\` mode:
 
@@ -120,7 +120,7 @@ The command's technical implementation involves a series of orchestrated steps:
   public static examples = [
     '$ sf hardis:work:task:save',
     '$ sf hardis:work:task:save --nopull --nogit --noclean',
-    '$ sf hardis:work:task:save --agent --targetbranch integration',
+    '$ sf hardis:work:save --agent --targetbranch integration',
   ];
 
   // public static args = [{name: 'file'}];
@@ -726,12 +726,13 @@ The command's technical implementation involves a series of orchestrated steps:
           if (mergeRequestStored?.branch === this.currentBranch) {
             return this.updateMergeRequestInfo(mergeRequestStored, pushResult);
           }
+          return mergeRequestStored;
         });
       } else {
         mergeRequestsStored.push(this.updateMergeRequestInfo({ branch: this.currentBranch }, pushResult));
       }
       // Update user config file & send Websocket event
-      await setConfig('user', { mergeRequests: mergeRequestsStored.filter((mr: any) => mr !== null) });
+      await setConfig('user', { mergeRequests: mergeRequestsStored.filter((mr: any) => mr != null) });
       WebSocketClient.sendRefreshStatusMessage();
     }
   }

@@ -2384,7 +2384,7 @@
   "youllProbablyNeedToDefineCiMaskedVar": "Probablemente necesite definir la variable CI enmascarada SFDX_AUTH_URL_DEV_HUB con el contenido del sfdxAuthUrl que puede recuperar con: sf org display -o YOURDEVHUBUSERNAME --verbose --json",
   "yourAuthTokenHasExpiredYouNeed": "Su token de autenticación ha expirado. Debe autenticarse de nuevo.\n(Sea paciente después de iniciar sesión; puede tardar unos segundos 😑)",
   "yourConfigurationForOrgMonitoringIsNow": "La configuración del monitoreo de su org está ahora lista 😊",
-  "yourCurrentOrgUrlIs": "La URL actual de tu org es {{url}}",
+  "yourCurrentOrgUrlIs": "La URL actual de su org es {{url}}",
   "yourDefaultOrgIsNow": "Su org predeterminada es ahora {{org}} ({{org1}})",
   "yourForceignoreIsDeprecatedDoYouAgree": "Su .forceignore está obsoleto. ¿Desea actualizarlo?",
   "yourGitignoreIsDeprecatedDoYouAgree": "Su .gitignore está obsoleto. ¿Desea actualizarlo?"
