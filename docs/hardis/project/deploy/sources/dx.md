@@ -7,6 +7,8 @@ Smart deploy of SFDX sources to target org, with many useful options.
 
 In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error messages.
 
+> See the [whole sfdx-hardis smart deployment workflow explained in detail](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-smart-deployment.md)
+
 ### Quick Deploy
 
 In case Pull Request comments are configured on the project, Quick Deploy will try to be used (equivalent to button Quick Deploy)
