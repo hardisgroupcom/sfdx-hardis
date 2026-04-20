@@ -12,6 +12,11 @@ const hook: Hook<'init'> = async (options) => {
   // Set before CI check so it is true even in CI environments
   globalThis.hardisCommandActivated = true;
 
+  // Skip WebSocket initialization when running in agent mode
+  if (options?.argv?.includes('--agent')) {
+    return;
+  }
+
   // Skip WebSocket initialization in CI environments
   // Inlined isCI check avoids importing the heavy utils module (~2300 lines + transitive deps)
   if (process.env.CI != null) {

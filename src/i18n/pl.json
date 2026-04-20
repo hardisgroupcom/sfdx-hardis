@@ -2384,6 +2384,7 @@
   "youllProbablyNeedToDefineCiMaskedVar": "Prawdopodobnie będziesz musiał zdefiniować ukrytą zmienną CI SFDX_AUTH_URL_DEV_HUB z zawartością sfdxAuthUrl, którą możesz pobrać za pomocą: sf org display -o YOURDEVHUBUSERNAME --verbose --json",
   "yourAuthTokenHasExpiredYouNeed": "Twój token uwierzytelniający wygasł. Musisz się ponownie uwierzytelnić.\n(Bądź cierpliwy po zalogowaniu; może to chwilę zająć 😑)",
   "yourConfigurationForOrgMonitoringIsNow": "Twoja konfiguracja monitorowania org jest teraz gotowa 😊",
+  "yourCurrentOrgUrlIs": "URL bieżącego org to {{url}}",
   "yourDefaultOrgIsNow": "Twój domyślny org to teraz {{org}} ({{org1}})",
   "yourForceignoreIsDeprecatedDoYouAgree": "Twój plik .forceignore jest przestarzały, czy zgadzasz się na jego aktualizację?",
   "yourGitignoreIsDeprecatedDoYouAgree": "Twój plik .gitignore jest przestarzały, czy zgadzasz się na jego aktualizację?"
