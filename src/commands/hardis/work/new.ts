@@ -57,6 +57,37 @@ Key features include:
 
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
 
+- **Agent Mode (\`--agent\`):** Enables a fully non-interactive execution path for AI agents and automation. In this mode, all required decisions must be provided as flags and are validated at command start with explicit error messages listing missing inputs and available options.
+
+### Agent Mode Invocation
+
+Use \`--agent\` to disable all prompts. Typical usage:
+
+\`sf hardis:work:new --agent --task-name "MYPROJECT-123 My Story" --target-branch integration --target-org my-org@example.com\`
+
+Required in agent mode:
+
+- \`--task-name\`
+- \`--target-branch\`
+
+In \`--agent\` mode, org type is computed automatically:
+
+- \`currentOrg\` when \`allowedOrgTypes\` is missing
+- \`currentOrg\` when \`allowedOrgTypes\` only contains \`sandbox\`
+- otherwise first value of \`allowedOrgTypes\`
+
+In \`--agent\` mode, the command also computes automatically:
+
+- branch prefix: first configured branch prefix choice, fallback \`feature\`
+- scratch mode: always create a new scratch org
+
+In \`--agent\` mode, the command intentionally skips:
+
+- sandbox initialization
+- updating default target branch in user config
+
+In \`--agent\` mode, opening org in browser is optional via \`--open-org\`.
+
 Advanced instructions are available in the [Create New User Story documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-create-new-task/).
 
 <details markdown="1">
@@ -79,6 +110,20 @@ The command's logic orchestrates various underlying processes:
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
+    'task-name': Flags.string({
+      description: 'Task name used in created branch name',
+    }),
+    'target-branch': Flags.string({
+      description: 'Target branch to branch from',
+    }),
+    'open-org': Flags.boolean({
+      default: false,
+      description: 'Open the selected org in browser',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -106,15 +151,21 @@ The command's logic orchestrates various underlying processes:
     const { flags } = await this.parse(NewTask);
     this.debugMode = flags.debug || false;
 
+    const config = await getConfig('project');
+    const agentMode = flags.agent === true;
+    const agentInputs = agentMode ? await this.validateAgentInputs(flags, config) : null;
+
     uxLog("action", this, c.cyan(t('creatingNewUserStoryDevOrConfig')));
-    uxLog("log", this, c.grey(t('whenUnsurePressEnterToUseThe')));
+    if (!agentMode) {
+      uxLog("log", this, c.grey(t('whenUnsurePressEnterToUseThe')));
+    }
 
     // Make sure the git status is clean, to not delete uncommitted updates
     await checkGitClean({ allowStash: true });
 
-    const config = await getConfig('project');
-
-    this.targetBranch = await selectTargetBranch();
+    this.targetBranch = agentMode
+      ? agentInputs.targetBranch
+      : (flags['target-branch'] || await selectTargetBranch());
 
     const defaultBranchPrefixChoices = [
       {
@@ -133,7 +184,7 @@ The command's logic orchestrates various underlying processes:
     // Select project if multiple projects are defined in availableProjects .sfdx-hardis.yml property
     let projectBranchPart = '';
     const availableProjects = config.availableProjects || [];
-    if (availableProjects.length > 1) {
+    if (!agentMode && availableProjects.length > 1) {
       const projectResponse = await prompts({
         type: 'select',
         name: 'project',
@@ -151,20 +202,27 @@ The command's logic orchestrates various underlying processes:
     }
 
     // Request info to build branch name. ex features/config/MYTASK
-    const response = await prompts([
-      {
-        type: 'select',
-        name: 'branch',
-        message: c.cyanBright(t('whatTypeOfUserStoryDoYou')),
-        description: t('selectCategoryOfWorkForUserStory'),
-        placeholder: t('selectUserStoryType'),
-        initial: 0,
-        choices: branchPrefixChoices,
-      },
-    ]);
+    const response = agentMode
+      ? { branch: agentInputs.branchPrefix }
+      : await prompts([
+        {
+          type: 'select',
+          name: 'branch',
+          message: c.cyanBright(t('whatTypeOfUserStoryDoYou')),
+          description: t('selectCategoryOfWorkForUserStory'),
+          placeholder: t('selectUserStoryType'),
+          initial: 0,
+          choices: branchPrefixChoices,
+        },
+      ]);
 
     // Request task name
-    const taskName = await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
+    const taskName = agentMode
+      ? agentInputs.normalizedTaskName
+      : flags['task-name']
+        ? this.normalizeTaskName(flags['task-name'])
+        : await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
+    this.validateTaskNameOrThrow(taskName, config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
 
     // Checkout development main branch
     const branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
@@ -182,14 +240,20 @@ The command's logic orchestrates various underlying processes:
     await ensureGitBranch(branchName);
     // Update config if necessary
     if (config.developmentBranch !== this.targetBranch && (config.availableTargetBranches || null) == null) {
-      const updateDefaultBranchRes = await prompts({
-        type: 'confirm',
-        name: 'value',
-        message: c.cyanBright(t('doYouWantToUpdateDefaultTargetBranch', { branch: c.green(this.targetBranch) })),
-        description: t('setAsDefaultTargetForFutureWorkItems'),
-        default: false,
-      });
-      if (updateDefaultBranchRes.value === true) {
+      let shouldUpdateDefaultTargetBranch = false;
+      if (agentMode) {
+        shouldUpdateDefaultTargetBranch = false;
+      } else {
+        const updateDefaultBranchRes = await prompts({
+          type: 'confirm',
+          name: 'value',
+          message: c.cyanBright(t('doYouWantToUpdateDefaultTargetBranch', { branch: c.green(this.targetBranch) })),
+          description: t('setAsDefaultTargetForFutureWorkItems'),
+          default: false,
+        });
+        shouldUpdateDefaultTargetBranch = updateDefaultBranchRes.value === true;
+      }
+      if (shouldUpdateDefaultTargetBranch) {
         await setConfig('user', { developmentBranch: this.targetBranch });
       }
     }
@@ -230,31 +294,218 @@ The command's logic orchestrates various underlying processes:
       value: 'noOrg',
       description: t('workWithXmlAndSfdxHardisConfigOnly'),
     });
-    const orgTypeResponse = await prompts({
-      type: 'select',
-      name: 'value',
-      message: c.cyanBright(t('whichSalesforceOrgDoYouWantToWorkIn')),
-      description: t('chooseTypeOfSalesforceOrgForWork'),
-      placeholder: t('selectOrgType'),
-      initial: 0,
-      choices: orgTypeChoices,
-    });
-    selectedOrgType = orgTypeResponse.value;
+    if (agentMode) {
+      selectedOrgType = agentInputs.selectedOrgType;
+    } else {
+      const orgTypeResponse = await prompts({
+        type: 'select',
+        name: 'value',
+        message: c.cyanBright(t('whichSalesforceOrgDoYouWantToWorkIn')),
+        description: t('chooseTypeOfSalesforceOrgForWork'),
+        placeholder: t('selectOrgType'),
+        initial: 0,
+        choices: orgTypeChoices,
+      });
+      selectedOrgType = orgTypeResponse.value;
+    }
+
+    let selectedOrgInfo: { username?: string; instanceUrl?: string } | null = null;
 
     // Select or create org that user will work in
     if (selectedOrgType === 'scratch') {
       // scratch org
-      await this.selectOrCreateScratchOrg(branchName, flags);
+      selectedOrgInfo = await this.selectOrCreateScratchOrg(branchName, flags, agentInputs);
     } else if (selectedOrgType === 'sandbox' || selectedOrgType === 'currentOrg') {
       // source tracked sandbox
-      await this.selectOrCreateSandbox(branchName, config, flags, selectedOrgType);
+      selectedOrgInfo = await this.selectOrCreateSandbox(branchName, config, flags, selectedOrgType, agentInputs);
     } else {
       uxLog("warning", this, c.yellow(t('noOrgSelectedEnsureYouKnow')));
     }
 
     uxLog("action", this, c.cyan(t('readyToWorkInBranch', { branchName: c.green(branchName) })));
+    if (selectedOrgInfo?.username) {
+      uxLog("log", this, c.cyan(t('useYourDefaultOrgWithUsername', { username: c.green(selectedOrgInfo.username) })));
+    }
+    if (selectedOrgInfo?.instanceUrl) {
+      uxLog("log", this, c.cyan(t('yourCurrentOrgUrlIs', { url: selectedOrgInfo.instanceUrl })));
+    }
     // Return an object to be displayed with --json
     return { outputString: 'Created new User Story' };
+  }
+
+  private validateTaskNameOrThrow(taskName: string, validationRegex: string | null, taskNameExample: string | null): void {
+    const effectiveTaskNameExample = taskNameExample || 'MYPROJECT-123 Update account status validation rule';
+    if (validationRegex != null && !new RegExp(validationRegex).test(taskName)) {
+      throw new SfError(
+        `task-name "${taskName}" does not match required pattern (${validationRegex}). Example: ${effectiveTaskNameExample}`
+      );
+    }
+  }
+
+  private buildAgentUsageHelp(): string {
+    return [
+      'Agent mode usage:',
+      '  --agent',
+      '  --task-name <name>',
+      '  --target-branch <branch>',
+      '  --open-org (optional, opens org in browser when set)',
+      '  branch-prefix is auto-selected in --agent mode: first configured prefix, else feature',
+      '  project is never used in --agent mode',
+      '  org-type is auto-selected in --agent mode: currentOrg when allowedOrgTypes is missing or starts with sandbox, else first allowedOrgTypes value',
+      '  scratch mode is auto-selected in --agent mode: always new',
+      'In --agent mode, sandbox init and updating default target branch are always skipped.',
+    ].join('\n');
+  }
+
+  private computeAgentBranchPrefix(config: any): string {
+    const defaultBranchPrefixChoices = [
+      {
+        title: t('choiceBranchFeature'),
+        value: 'feature',
+        description: t('branchPrefixFeatureDescription'),
+      },
+      {
+        title: t('choiceBranchFix'),
+        value: 'fix',
+        description: t('branchPrefixFixDescription'),
+      },
+    ];
+    const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
+    return branchPrefixChoices[0]?.value || 'feature';
+  }
+
+  private computeAgentOrgType(config: any): 'scratch' | 'sandbox' | 'currentOrg' | 'noOrg' {
+    const allowedOrgTypes = config?.allowedOrgTypes || [];
+    if (!Array.isArray(allowedOrgTypes) || allowedOrgTypes.length === 0) {
+      return 'currentOrg';
+    }
+    if (allowedOrgTypes[0] === 'sandbox') {
+      return 'currentOrg';
+    }
+    if (Array.isArray(allowedOrgTypes) && allowedOrgTypes.length > 0) {
+      return allowedOrgTypes[0];
+    }
+    return 'currentOrg';
+  }
+
+  private parseProjectValue(project: string): string {
+    return project.includes(',') ? project.split(',')[0] : project;
+  }
+
+  private toOptionList(items: string[]): string {
+    return items.length > 0 ? items.join(', ') : '(none)';
+  }
+
+  private throwAgentValidationError(missing: string[], availableOptions: string[]): never {
+    const missingBlock = missing.length > 0 ? missing.map((m) => `- ${m}`).join('\n') : '- (none)';
+    const optionsBlock = availableOptions.length > 0 ? availableOptions.map((o) => `- ${o}`).join('\n') : '- (none)';
+    throw new SfError(
+      `Invalid --agent invocation.\n\nMissing or invalid inputs:\n${missingBlock}\n\nAvailable options:\n${optionsBlock}\n\n${this.buildAgentUsageHelp()}`
+    );
+  }
+
+  private normalizeTaskName(taskName: string): string {
+    let normalizedTaskName = taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-');
+    normalizedTaskName = normalizedTaskName.replace(/-+/g, '-');
+    normalizedTaskName = normalizedTaskName.replace(/^-+|-+$/g, '');
+    return normalizedTaskName;
+  }
+
+  private async validateAgentInputs(flags: any, config: any): Promise<any> {
+    const missing: string[] = [];
+    const available: string[] = [];
+
+    const defaultBranchPrefixChoices = [
+      {
+        title: t('choiceBranchFeature'),
+        value: 'feature',
+        description: t('branchPrefixFeatureDescription'),
+      },
+      {
+        title: t('choiceBranchFix'),
+        value: 'fix',
+        description: t('branchPrefixFixDescription'),
+      },
+    ];
+
+    const branchPrefixChoices = config.branchPrefixChoices || defaultBranchPrefixChoices;
+    const availableBranchPrefixes = branchPrefixChoices.map((choice: any) => choice.value);
+    const branchPrefix = this.computeAgentBranchPrefix(config);
+    available.push(`branch-prefix: auto-selected as ${branchPrefix} from ${this.toOptionList(availableBranchPrefixes)}`);
+
+    const availableTargetBranches = [
+      ...(Array.isArray(config.availableTargetBranches) ? config.availableTargetBranches : []),
+      ...(config.developmentBranch ? [config.developmentBranch] : []),
+    ].filter((value: string, index: number, self: string[]) => value && self.indexOf(value) === index);
+    available.push(`target-branch: ${this.toOptionList(availableTargetBranches)}`);
+
+    const availableProjects = (config.availableProjects || []).map((project: string) => this.parseProjectValue(project));
+    if (availableProjects.length > 0) {
+      available.push(`project: ignored in --agent mode. Configured values: ${this.toOptionList(availableProjects)}`);
+    }
+
+    const orgType = this.computeAgentOrgType(config);
+    available.push(`org-type: auto-selected as ${orgType}`);
+
+    const taskNameRaw = flags['task-name'];
+    if (!taskNameRaw) {
+      missing.push('task-name is required with --agent');
+    }
+    let targetBranch = flags['target-branch'];
+    if (!targetBranch) {
+      if (availableTargetBranches.length === 1) {
+        targetBranch = availableTargetBranches[0];
+      } else {
+        missing.push(`target-branch is required with --agent. Available: ${this.toOptionList(availableTargetBranches)}`);
+      }
+    } else if (availableTargetBranches.length === 0) {
+      missing.push(
+        `target-branch="${targetBranch}" cannot be validated: availableTargetBranches is not configured in .sfdx-hardis.yml (usually set to [integration] or [integration,preprod])`
+      );
+    } else if (!availableTargetBranches.includes(targetBranch)) {
+      missing.push(
+        `target-branch="${targetBranch}" is not in availableTargetBranches. Available: ${this.toOptionList(availableTargetBranches)}`
+      );
+    }
+
+    const taskNameExample = config.newTaskNameRegexExample || 'MYPROJECT-123 Update account status validation rule';
+    const normalizedTaskName = this.normalizeTaskName(taskNameRaw || '');
+    if (!normalizedTaskName) {
+      missing.push('task-name produced an empty normalized value');
+    }
+    if (config.newTaskNameRegex && normalizedTaskName && !new RegExp(config.newTaskNameRegex).test(normalizedTaskName)) {
+      missing.push(
+        `task-name does not match newTaskNameRegex (${config.newTaskNameRegex}). Example: ${taskNameExample}`
+      );
+    }
+
+    if (orgType === 'scratch') {
+      available.push('scratch-mode: auto-selected as new');
+    }
+    available.push(`open-org: ${flags['open-org'] === true ? 'enabled' : 'disabled'}`);
+
+    if (orgType === 'currentOrg' && !flags['target-org']?.getUsername()) {
+      missing.push('target-org is required because selected org-type is currentOrg');
+    }
+
+    if (missing.length > 0) {
+      this.throwAgentValidationError(missing, available);
+    }
+
+    return {
+      taskNameRaw,
+      normalizedTaskName,
+      branchPrefix,
+      targetBranch,
+      project: null,
+      selectedOrgType: orgType,
+      scratchMode: 'new',
+      scratchOrgUsername: null,
+      sandboxOrgUsername: null,
+      initSandbox: false,
+      openOrg: flags['open-org'] === true,
+      updateDefaultTargetBranch: false,
+    };
   }
 
   async promptTaskName(validationRegex: string | null, taskNameExample: string | null) {
@@ -283,10 +534,32 @@ The command's logic orchestrates various underlying processes:
   }
 
   // Select/Create scratch org
-  async selectOrCreateScratchOrg(branchName, flags) {
+  async selectOrCreateScratchOrg(branchName, flags, agentInputs: any = null): Promise<{ username?: string; instanceUrl?: string } | null> {
+    if (agentInputs) {
+      const config = await getConfig();
+      if (!config.devHubAlias) {
+        throw new SfError(
+          'No DevHub is currently selected. Please authenticate and select a DevHub first (e.g. sf hardis:auth:login --devhub), then retry.'
+        );
+      }
+      await setConfig('user', {
+        scratchOrgAlias: null,
+        scratchOrgUsername: null,
+      });
+      const createResult = await ScratchCreate.run(['--forcenew', '--targetdevhubusername', config.devHubAlias]);
+      if (createResult == null) {
+        throw new SfError('Unable to create scratch org');
+      }
+      const currentScratchOrg = await MetadataUtils.getCurrentOrg();
+      return currentScratchOrg
+        ? { username: currentScratchOrg.username, instanceUrl: currentScratchOrg.instanceUrl }
+        : null;
+    }
+
     const hubOrgUsername = flags['target-dev-hub'].getUsername();
     const scratchOrgList = await MetadataUtils.listLocalOrgs('scratch', { devHubUsername: hubOrgUsername });
     const currentOrg = await MetadataUtils.getCurrentOrg();
+
     const baseChoices = [
       {
         title: c.yellow(t('createNewScratchOrg')),
@@ -336,6 +609,10 @@ The command's logic orchestrates various underlying processes:
       if (createResult == null) {
         throw new SfError('Unable to create scratch org');
       }
+      const currentScratchOrg = await MetadataUtils.getCurrentOrg();
+      return currentScratchOrg
+        ? { username: currentScratchOrg.username, instanceUrl: currentScratchOrg.instanceUrl }
+        : null;
     } else {
       // Set selected org as default org
       await execCommand(`sf config set target-org=${scratchResponse.value.username}`, this, {
@@ -360,55 +637,68 @@ The command's logic orchestrates various underlying processes:
       });
       // Trigger a status refresh on VS Code WebSocket Client
       WebSocketClient.sendRefreshStatusMessage();
+      return {
+        username: scratchResponse.value.username,
+        instanceUrl: scratchResponse.value.instanceUrl,
+      };
     }
+    return null;
   }
 
   // Select or create sandbox
-  async selectOrCreateSandbox(branchName, config, flags, selectedOrgType: "sandbox" | "currentOrg") {
+  async selectOrCreateSandbox(branchName, config, flags, selectedOrgType: 'sandbox' | 'currentOrg', agentInputs: any = null): Promise<{ username?: string; instanceUrl?: string } | null> {
     let openOrg = false;
-    let orgUsername = "";
-    if (selectedOrgType === "currentOrg") {
+    let orgUsername = '';
+    let orgInstanceUrl: string | undefined;
+    if (selectedOrgType === 'currentOrg') {
       openOrg = true;
       orgUsername = flags['target-org'].getUsername();
+      orgInstanceUrl = flags['target-org']?.getConnection()?.instanceUrl;
       await makeSureOrgIsConnected(orgUsername);
-    }
-    else {
+    } else {
       const promptRes = await this.promptSandbox(flags, branchName);
       orgUsername = promptRes.orgUsername;
+      orgInstanceUrl = promptRes.instanceUrl;
       openOrg = promptRes.openOrg;
     }
 
     // Initialize / Update existing sandbox if available
     if (!(config.sharedDevSandboxes === true)) {
-      const initSandboxResponse = await prompts({
-        type: 'select',
-        name: 'value',
-        message: c.cyanBright(t('doYouWantToUpdateSandboxToMatchBranch', { branch: this.targetBranch })),
-        description: t('chooseSyncSandboxWithLatestChanges'),
-        placeholder: t('selectSyncOption'),
-        choices: [
-          {
-            title: t('continueWorkingOnCurrentSandboxState'),
-            value: 'no',
-            description: t('useIfMultipleUsersShareSandbox'),
-          },
-          {
-            title: t('yesUpdateMySandbox'),
-            value: 'init',
-            description: t('integrateNewUpdatesFromParentBranch', { targetBranch: this.targetBranch }),
-          },
-        ],
-      });
-      let initSandbox = initSandboxResponse.value === 'init';
-      // Ask the user if he's really sure of what he's doing !
-      if (initSandbox) {
-        const promptConfirm = await prompts({
-          type: 'confirm',
-          message: c.cyanBright(t('confirmUpdateDevSandboxWithBranchState', { branch: this.targetBranch })),
-          description: t('confirmResetSandboxToMatchTargetBranch'),
+      let initSandbox = false;
+      if (agentInputs) {
+        initSandbox = agentInputs.initSandbox === true;
+      } else {
+        const initSandboxResponse = await prompts({
+          type: 'select',
+          name: 'value',
+          message: c.cyanBright(t('doYouWantToUpdateSandboxToMatchBranch', { branch: this.targetBranch })),
+          description: t('chooseSyncSandboxWithLatestChanges'),
+          placeholder: t('selectSyncOption'),
+          choices: [
+            {
+              title: t('continueWorkingOnCurrentSandboxState'),
+              value: 'no',
+              description: t('useIfMultipleUsersShareSandbox'),
+            },
+            {
+              title: t('yesUpdateMySandbox'),
+              value: 'init',
+              description: t('integrateNewUpdatesFromParentBranch', { targetBranch: this.targetBranch }),
+            },
+          ],
         });
-        initSandbox = promptConfirm.value === true;
+        initSandbox = initSandboxResponse.value === 'init';
+        // Ask the user if he's really sure of what he's doing !
+        if (initSandbox) {
+          const promptConfirm = await prompts({
+            type: 'confirm',
+            message: c.cyanBright(t('confirmUpdateDevSandboxWithBranchState', { branch: this.targetBranch })),
+            description: t('confirmResetSandboxToMatchTargetBranch'),
+          });
+          initSandbox = promptConfirm.value === true;
+        }
       }
+
       if (initSandbox) {
         let initSourcesErr: any = null;
         let initSandboxErr: any = null;
@@ -469,14 +759,21 @@ The command's logic orchestrates various underlying processes:
     }
     // Open of if not already open
     if (openOrg === true) {
-      const openOrgRes = await prompts({
-        type: 'confirm',
-        name: 'value',
-        message: c.cyanBright(t('doYouWantToOpenOrgIn', { orgUsername: c.green(orgUsername) })),
-        description: t('openTheSandboxOrgInYourWebBrowser'),
-        initial: true
-      });
-      if (openOrgRes.value === true) {
+      let shouldOpenOrg = false;
+      if (agentInputs) {
+        shouldOpenOrg = agentInputs.openOrg === true;
+      } else {
+        const openOrgRes = await prompts({
+          type: 'confirm',
+          name: 'value',
+          message: c.cyanBright(t('doYouWantToOpenOrgIn', { orgUsername: c.green(orgUsername) })),
+          description: t('openTheSandboxOrgInYourWebBrowser'),
+          initial: true
+        });
+        shouldOpenOrg = openOrgRes.value === true;
+      }
+
+      if (shouldOpenOrg) {
         uxLog("action", this, c.cyan(t('openingOrg', { orgUsername: c.green(orgUsername) })));
         await execSfdxJson('sf org open', this, {
           fail: true,
@@ -488,6 +785,10 @@ The command's logic orchestrates various underlying processes:
 
     // Trigger a status refresh on VS Code WebSocket Client
     WebSocketClient.sendRefreshStatusMessage();
+    return {
+      username: orgUsername || undefined,
+      instanceUrl: orgInstanceUrl,
+    };
   }
 
   private async promptSandbox(flags: any, branchName: any) {
@@ -536,9 +837,11 @@ The command's logic orchestrates various underlying processes:
     // Connect to a sandbox
     let orgUsername = '';
     let openOrg = false;
+    let instanceUrl: string | undefined;
     if (sandboxResponse.value === 'connectSandbox') {
       const slctdOrg = await promptOrg(this, { setDefault: true, devSandbox: true });
       orgUsername = slctdOrg.username;
+      instanceUrl = slctdOrg.instanceUrl;
     }
 
     // Create a new sandbox ( NOT WORKING YET, DO NOT USE)
@@ -548,6 +851,7 @@ The command's logic orchestrates various underlying processes:
         throw new SfError('Unable to create sandbox org');
       }
       orgUsername = (createResult as any).username;
+      instanceUrl = (createResult as any).instanceUrl;
     }
 
     // Selected sandbox from list
@@ -559,8 +863,9 @@ The command's logic orchestrates various underlying processes:
         fail: true,
       });
       orgUsername = sandboxResponse.value.username;
+      instanceUrl = sandboxResponse.value.instanceUrl;
       openOrg = true;
     }
-    return { orgUsername, openOrg };
+    return { orgUsername, instanceUrl, openOrg };
   }
 }

@@ -2348,6 +2348,7 @@
   "youNeedToManuallyConfigureTheExternalClientApp": "Você precisa configurar manualmente o Aplicativo Cliente Externo. Siga as INSTRUÇÕES MANUAIS acima e então continue aqui",
   "yourAuthTokenHasExpiredYouNeed": "Seu token de autenticação expirou. Você precisa autenticar novamente.\n(Seja paciente após o login; pode demorar um pouco 😑)",
   "yourConfigurationForOrgMonitoringIsNow": "Sua configuração para o monitoramento da org está pronta agora 😊",
+  "yourCurrentOrgUrlIs": "A URL da sua org atual é {{url}}",
   "yourDefaultOrgIsNow": "Sua org padrão agora é {{org}} ({{org1}})",
   "yourForceignoreIsDeprecatedDoYouAgree": "Seu .forceignore está desatualizado, você concorda em atualizá-lo?",
   "yourGitignoreIsDeprecatedDoYouAgree": "Seu .gitignore está desatualizado, você concorda em atualizá-lo?",

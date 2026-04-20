@@ -2384,6 +2384,7 @@
   "youllProbablyNeedToDefineCiMaskedVar": "Je moet waarschijnlijk de CI-gemaskeerde variabele SFDX_AUTH_URL_DEV_HUB definiëren met de inhoud van sfdxAuthUrl die je kunt ophalen met: sf org display -o YOURDEVHUBUSERNAME --verbose --json",
   "yourAuthTokenHasExpiredYouNeed": "Je authenticatietoken is verlopen. Je moet je opnieuw authenticeren.\n(Wees geduldig na het inloggen; het kan even duren 😑)",
   "yourConfigurationForOrgMonitoringIsNow": "Je configuratie voor org-monitoring is nu gereed 😊",
+  "yourCurrentOrgUrlIs": "De URL van je huidige org is {{url}}",
   "yourDefaultOrgIsNow": "Je standaard org is nu {{org}} ({{org1}})",
   "yourForceignoreIsDeprecatedDoYouAgree": "Je .forceignore is verouderd, ga je akkoord met het upgraden?",
   "yourGitignoreIsDeprecatedDoYouAgree": "Je .gitignore is verouderd, ga je akkoord met het upgraden?"

@@ -2381,6 +2381,7 @@
   "youllProbablyNeedToDefineCiMaskedVar": "CI のマスク変数 SFDX_AUTH_URL_DEV_HUB を定義する必要がある場合があります。sfdxAuthUrl の内容は以下のコマンドで取得できます: sf org display -o YOURDEVHUBUSERNAME --verbose --json",
   "yourAuthTokenHasExpiredYouNeed": "認証トークンの有効期限が切れました。再度認証する必要があります。\n（ログイン後、しばらくお待ちください。時間がかかる場合があります 😑）",
   "yourConfigurationForOrgMonitoringIsNow": "組織監視の構成が完了しました 😊",
+  "yourCurrentOrgUrlIs": "現在の組織のURLは {{url}} です",
   "yourDefaultOrgIsNow": "デフォルトの組織が {{org}} ({{org1}}) に設定されました",
   "yourForceignoreIsDeprecatedDoYouAgree": ".forceignore が非推奨です。アップグレードしてもよろしいですか？",
   "yourGitignoreIsDeprecatedDoYouAgree": ".gitignore が非推奨です。アップグレードしてもよろしいですか？"

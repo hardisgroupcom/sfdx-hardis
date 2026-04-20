@@ -4,6 +4,9 @@
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
 
+- Allow DevOps command to be call by headless agents using **--agent**
+  - [hardis:work:new]()
+
 ## [7.8.0] 2026-04-19
 
 - Allow coding agents (claude, codex, gemini, copilot) to solve deployments errors
