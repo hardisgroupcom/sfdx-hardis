@@ -24,20 +24,20 @@ Key operations performed:
 
 Two authentication methods are supported: **Basic Auth** (username + API token) or **OAuth2 service account** (client credentials).
 
-| Variable                     | Description                                                              |       Default        |
-|:-----------------------------|:-------------------------------------------------------------------------|:--------------------:|
-| `CONFLUENCE_SPACE_KEY`       | Confluence space key where pages will be published                       |      _Required_      |
-| `CONFLUENCE_PARENT_PAGE_ID`  | ID of the parent page under which all doc pages will be created          |      Space root      |
-| `CONFLUENCE_PAGE_PREFIX`     | Prefix added to all page titles to avoid name collisions                 |       `[Doc] `       |
-| `CONFLUENCE_PAGE_SUFFIX`     | Suffix added to all page titles to avoid name collisions                 |       _Empty_        |
-| **Basic Auth**               |                                                                          |                      |
-| `CONFLUENCE_BASE_URL`        | Confluence instance base URL (e.g. `https://mycompany.atlassian.net`)    | _Required for Basic_ |
-| `CONFLUENCE_USERNAME`        | Confluence username (email for Confluence Cloud)                         | _Required for Basic_ |
-| `CONFLUENCE_TOKEN`           | Confluence API token (personal access token)                             | _Required for Basic_ |
-| **OAuth2 (service account)** |                                                                          |                      |
-| `CONFLUENCE_CLIENT_ID`       | Atlassian OAuth2 client ID                                               | _Required for OAuth_ |
-| `CONFLUENCE_CLIENT_SECRET`   | Atlassian OAuth2 client secret                                           | _Required for OAuth_ |
-| `CONFLUENCE_BASE_URL`        | Confluence instance base URL, used to match the right Atlassian resource |   First available    |
+| Variable                          | Description                                                               | Default              |
+| :-------------------------------- | :------------------------------------------------------------------------ | :------------------: |
+| `CONFLUENCE_SPACE_KEY`           | Confluence space key where pages will be published                        | _Required_           |
+| `CONFLUENCE_PARENT_PAGE_ID`      | ID of the parent page under which all doc pages will be created           | Space root           |
+| `CONFLUENCE_PAGE_PREFIX`         | Prefix added to all page titles to avoid name collisions                  | `[Doc] `            |
+| `CONFLUENCE_PAGE_SUFFIX`         | Suffix added to all page titles to avoid name collisions                  | _Empty_              |
+| **Basic Auth**                    |                                                                           |                      |
+| `CONFLUENCE_BASE_URL`            | Confluence instance base URL (e.g. `https://mycompany.atlassian.net`)    | _Required for Basic_ |
+| `CONFLUENCE_USERNAME`            | Confluence username (email for Confluence Cloud)                          | _Required for Basic_ |
+| `CONFLUENCE_TOKEN`               | Confluence API token (personal access token)                              | _Required for Basic_ |
+| **OAuth2 (service account)**      |                                                                           |                      |
+| `CONFLUENCE_CLIENT_ID`           | Atlassian OAuth2 client ID                                                | _Required for OAuth_ |
+| `CONFLUENCE_CLIENT_SECRET`       | Atlassian OAuth2 client secret                                            | _Required for OAuth_ |
+| `CONFLUENCE_BASE_URL`            | Confluence instance base URL, used to match the right Atlassian resource  | First available      |
 
 For `CONFLUENCE_SPACE_KEY`, `CONFLUENCE_PARENT_PAGE_ID`, `CONFLUENCE_PAGE_PREFIX`, and `CONFLUENCE_PAGE_SUFFIX`,
 the command first checks a language-scoped variable for the current i18n locale, then falls back to the default one.
@@ -71,17 +71,17 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
 
 ## Parameters
 
-| Name                   |  Type   | Description                                                                      | Default | Required | Options |
-|:-----------------------|:-------:|:---------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| confluencePagePrefix   | option  | Confluence page title prefix. Overrides CONFLUENCE_PAGE_PREFIX[_<LANG>] env vars |         |          |         |
-| confluencePageSuffix   | option  | Confluence page title suffix. Overrides CONFLUENCE_PAGE_SUFFIX[_<LANG>] env vars |         |          |         |
-| confluenceParentPageId | option  | Confluence parent page ID. Overrides CONFLUENCE_PARENT_PAGE_ID[_<LANG>] env vars |         |          |         |
-| confluenceSpaceKey     | option  | Confluence space key. Overrides CONFLUENCE_SPACE_KEY[_<LANG>] env vars           |         |          |         |
-| debug<br/>-d           | boolean | Activate debug mode (more logs)                                                  |         |          |         |
-| flags-dir              | option  | undefined                                                                        |         |          |         |
-| json                   | boolean | Format output as json.                                                           |         |          |         |
-| skipauth               | boolean | Skip authentication check when a default username is required                    |         |          |         |
-| websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                        |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|confluencePagePrefix|option|Confluence page title prefix. Overrides CONFLUENCE_PAGE_PREFIX[_<LANG>] env vars||||
+|confluencePageSuffix|option|Confluence page title suffix. Overrides CONFLUENCE_PAGE_SUFFIX[_<LANG>] env vars||||
+|confluenceParentPageId|option|Confluence parent page ID. Overrides CONFLUENCE_PARENT_PAGE_ID[_<LANG>] env vars||||
+|confluenceSpaceKey|option|Confluence space key. Overrides CONFLUENCE_SPACE_KEY[_<LANG>] env vars||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
