@@ -124,7 +124,7 @@ USE_LANGCHAIN_LLM=true
 LANGCHAIN_LLM_PROVIDER=openai
 LANGCHAIN_LLM_MODEL=gpt-4o
 LANGCHAIN_LLM_BASE_URL=https://your-company-gateway.example.com/v1
-LANGCHAIN_LLM_DEFAULT_HEADERS={"X-Company-Auth": "your-token-here"}
+LANGCHAIN_LLM_DEFAULT_HEADERS='{"X-Company-Auth": "your-token-here"}'
 ```
 
 When `LANGCHAIN_LLM_DEFAULT_HEADERS` is set together with `LANGCHAIN_LLM_BASE_URL`, the OpenAI provider skips the API key requirement and authenticates via the supplied headers instead.
@@ -185,7 +185,7 @@ To get an OpenAi API key , register on [OpenAi Platform](https://platform.openai
 USE_OPENAI_DIRECT=true
 OPENAI_MODEL=gpt-4o
 OPENAI_BASE_URL=https://your-company-gateway.example.com/v1
-OPENAI_DEFAULT_HEADERS={"X-Company-Auth": "your-token-here"}
+OPENAI_DEFAULT_HEADERS='{"X-Company-Auth": "your-token-here"}'
 ```
 
 When `OPENAI_DEFAULT_HEADERS` is set together with `OPENAI_BASE_URL`, the OpenAI provider skips the API key requirement and authenticates via the supplied headers instead.
@@ -228,7 +228,7 @@ If `CODEX_REASONING_EFFORT` is set to an unsupported value, sfdx-hardis falls ba
 USE_CODEX_DIRECT=true
 CODEX_MODEL=gpt-5.1-codex
 CODEX_BASE_URL=https://your-company-gateway.example.com/v1
-CODEX_DEFAULT_HEADERS={"X-Company-Auth": "your-token-here"}
+CODEX_DEFAULT_HEADERS='{"X-Company-Auth": "your-token-here"}'
 ```
 
 When headers are configured, sfdx-hardis defines a custom Codex CLI model provider with the supplied headers and routes requests through it.

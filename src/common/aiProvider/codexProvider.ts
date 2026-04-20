@@ -135,12 +135,12 @@ export class CodexProvider extends AiProviderRoot {
       if (this.baseUrl) {
         options.baseUrl = this.baseUrl;
       }
-      if (this.defaultHeaders && Object.keys(this.defaultHeaders).length > 0) {
+      if (this.baseUrl && this.defaultHeaders && Object.keys(this.defaultHeaders).length > 0) {
         options.config = {
           model_providers: {
             [CodexProvider.CUSTOM_PROVIDER_ID]: {
               name: "sfdx-hardis Gateway",
-              base_url: this.baseUrl || "https://api.openai.com/v1",
+              base_url: this.baseUrl,
               wire_api: "responses",
               http_headers: this.defaultHeaders,
             },
@@ -153,7 +153,7 @@ export class CodexProvider extends AiProviderRoot {
   }
 
   private getEffectiveModel(): string {
-    if (this.defaultHeaders && Object.keys(this.defaultHeaders).length > 0) {
+    if (this.baseUrl && this.defaultHeaders && Object.keys(this.defaultHeaders).length > 0) {
       return `${CodexProvider.CUSTOM_PROVIDER_ID}/${this.modelName}`;
     }
     return this.modelName;

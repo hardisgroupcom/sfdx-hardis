@@ -1,5 +1,5 @@
 import { getConfig, getEnvVar } from "../../config/index.js";
-import { LogType } from "../websocketClient.js";
+import type { LogType } from "../websocketClient.js";
 
 interface BooleanFlagOptions {
   envVar: string;
@@ -82,8 +82,19 @@ export function parseDefaultHeaders(
       logger?.("warning", null, `[${label}] Default header "${key}" has a non-string value — ignoring all headers.`);
       return undefined;
     }
+    if (!isValidHeaderName(key)) {
+      logger?.("warning", null, `[${label}] Default header name "${key}" contains invalid characters — ignoring all headers.`);
+      return undefined;
+    }
   }
   return parsed as Record<string, string>;
+}
+
+/** RFC 7230 token characters allowed in HTTP header field-names. */
+const HEADER_NAME_RE = /^[!#$%&'*+\-.^_`|~A-Za-z0-9]+$/;
+
+function isValidHeaderName(name: string): boolean {
+  return HEADER_NAME_RE.test(name);
 }
 
 /**

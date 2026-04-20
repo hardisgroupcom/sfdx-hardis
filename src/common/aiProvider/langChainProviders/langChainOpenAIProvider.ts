@@ -73,12 +73,10 @@ export class LangChainOpenAIProvider extends AbstractLLMProvider {
             || getEnvVar("OPENAI_DEFAULT_HEADERS"),
           "OpenAI",
         );
-        if (headers) {
-          const baseUrl = getEnvVar("LANGCHAIN_LLM_BASE_URL")
-            || getEnvVar("CODEX_BASE_URL")
-            || getEnvVar("OPENAI_BASE_URL")
-            || "https://api.openai.com/v1";
-
+        const baseUrl = getEnvVar("LANGCHAIN_LLM_BASE_URL")
+          || getEnvVar("CODEX_BASE_URL")
+          || getEnvVar("OPENAI_BASE_URL");
+        if (headers && baseUrl) {
           configFlags += ` --config model_providers.${GATEWAY_PROVIDER_ID}.base_url=${shellEscape(baseUrl)}`;
           configFlags += ` --config model_providers.${GATEWAY_PROVIDER_ID}.wire_api=responses`;
           for (const [key, value] of Object.entries(headers)) {
