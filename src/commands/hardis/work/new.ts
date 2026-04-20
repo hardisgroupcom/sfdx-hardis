@@ -327,7 +327,7 @@ The command's logic orchestrates various underlying processes:
       uxLog("log", this, c.cyan(t('useYourDefaultOrgWithUsername', { username: c.green(selectedOrgInfo.username) })));
     }
     if (selectedOrgInfo?.instanceUrl) {
-      uxLog("log", this, c.cyan(t('yourCurrentOrgUrlIs', { url: selectedOrgInfo.instanceUrl })));
+      uxLog("log", this, c.cyan(t('yourCurrentOrgUrlIs', { url: c.green(selectedOrgInfo.instanceUrl) })));
     }
     // Return an object to be displayed with --json
     return { outputString: 'Created new User Story' };
