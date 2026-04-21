@@ -57,3 +57,4 @@ megalinter-reports/
 config/user/
 
 .sfdx/
+.claude/settings.local.json
