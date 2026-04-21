@@ -45,16 +45,16 @@ sf hardis:work:new --agent --task-name "MYPROJECT-123 My User Story" --target-br
 
 ### Required flags in agent mode
 
-| Flag               | Description                                                                 |
-|--------------------|-----------------------------------------------------------------------------|
-| `--task-name`      | Name of the User Story. Used to generate the branch name.                   |
-| `--target-branch`  | The branch to create the feature branch from (e.g. `integration`, `main`).  |
+| Flag              | Description                                                                |
+|-------------------|----------------------------------------------------------------------------|
+| `--task-name`     | Name of the User Story. Used to generate the branch name.                  |
+| `--target-branch` | The branch to create the feature branch from (e.g. `integration`, `main`). |
 
 ### Optional flags
 
-| Flag           | Description                                     |
-|----------------|-------------------------------------------------|
-| `--open-org`   | Open the org in a browser after creation.        |
+| Flag         | Description                               |
+|--------------|-------------------------------------------|
+| `--open-org` | Open the org in a browser after creation. |
 
 ### Behavior in agent mode
 
@@ -96,11 +96,11 @@ sf hardis:work:save --agent --targetbranch integration
 
 ### Optional flags
 
-| Flag               | Description                                                                                |
-|--------------------|--------------------------------------------------------------------------------------------|
-| `--targetbranch`   | Merge request target branch. Auto-resolved from config if omitted.                          |
-| `--noclean`        | Skip automated source cleaning.                                                             |
-| `--nogit`          | Skip git commit and push (useful if you only want cleaning + package.xml generation).        |
+| Flag             | Description                                                                           |
+|------------------|---------------------------------------------------------------------------------------|
+| `--targetbranch` | Merge request target branch. Auto-resolved from config if omitted.                    |
+| `--noclean`      | Skip automated source cleaning.                                                       |
+| `--nogit`        | Skip git commit and push (useful if you only want cleaning + package.xml generation). |
 
 ### Behavior in agent mode
 
@@ -203,13 +203,13 @@ graph TD
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| `target-branch is required with --agent` | Provide `--target-branch <branch>` or configure `availableTargetBranches` in `config/.sfdx-hardis.yml`. |
-| `target-branch="X" is not an allowed target branch` | Check `availableTargetBranches` in `config/.sfdx-hardis.yml` and use one of the listed branches. |
-| `target branch cannot be resolved` (`work:save`) | Provide `--targetbranch <branch>` explicitly, or ensure the current branch was created with `work:new`. |
-| Authentication errors | Ensure `sf org login` has been run and a default org is set before invoking agent commands. |
-| `sfdx-git-delta` not found (`work:save`) | Install the plugin: `sf plugins install sfdx-git-delta` |
+| Issue                                               | Solution                                                                                                |
+|-----------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| `target-branch is required with --agent`            | Provide `--target-branch <branch>` or configure `availableTargetBranches` in `config/.sfdx-hardis.yml`. |
+| `target-branch="X" is not an allowed target branch` | Check `availableTargetBranches` in `config/.sfdx-hardis.yml` and use one of the listed branches.        |
+| `target branch cannot be resolved` (`work:save`)    | Provide `--targetbranch <branch>` explicitly, or ensure the current branch was created with `work:new`. |
+| Authentication errors                               | Ensure `sf org login` has been run and a default org is set before invoking agent commands.             |
+| `sfdx-git-delta` not found (`work:save`)            | Install the plugin: `sf plugins install sfdx-git-delta`                                                 |
 
 ---
 
