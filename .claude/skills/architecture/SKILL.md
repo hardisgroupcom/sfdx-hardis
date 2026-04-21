@@ -62,11 +62,11 @@ External integrations use a root class + concrete implementations:
 
 Configuration uses a three-layer merge with priority: **user > branch > project**.
 
-| Layer | File locations | Purpose |
-|-------|---------------|---------|
-| **Project** (global) | `config/.sfdx-hardis.yml` or `config/.sfdx-hardis.yaml` (also `.sfdx-hardis.yaml`/`.yml` at repo root, or `package.json`) | Shared settings for the entire project, committed to git |
-| **Branch** | `config/branches/.sfdx-hardis.<branch-name>.yml` | Per-branch overrides (e.g., different target org, deploy options per environment). Branch name is auto-detected from git or `CONFIG_BRANCH` env var |
-| **User** | `config/user/.sfdx-hardis.<os-username>.yml` | Per-developer overrides, typically git-ignored |
+| Layer                | File locations                                                                                                            | Purpose                                                                                                                                             |
+|----------------------|---------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Project** (global) | `config/.sfdx-hardis.yml` or `config/.sfdx-hardis.yaml` (also `.sfdx-hardis.yaml`/`.yml` at repo root, or `package.json`) | Shared settings for the entire project, committed to git                                                                                            |
+| **Branch**           | `config/branches/.sfdx-hardis.<branch-name>.yml`                                                                          | Per-branch overrides (e.g., different target org, deploy options per environment). Branch name is auto-detected from git or `CONFIG_BRANCH` env var |
+| **User**             | `config/user/.sfdx-hardis.<os-username>.yml`                                                                              | Per-developer overrides, typically git-ignored                                                                                                      |
 
 Higher-priority layers override lower ones via `Object.assign()` (shallow merge).
 
