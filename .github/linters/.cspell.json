@@ -13,7 +13,8 @@
     "**/i18n/*.json",
     "**/copilot-instructions.md",
     "**/cryptoUtils.test.ts",
-    "**/.grype.yaml"
+    "**/.grype.yaml",
+    ".claude/**"
   ],
   "language": "en",
   "version": "0.2",
@@ -701,6 +702,7 @@
     "hhmm",
     "libc",
     "accordioncoding",
+    "subdirs",
     "hiddenitems",
     "high",
     "historization",

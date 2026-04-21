@@ -1,6 +1,9 @@
 {
   "threshold": 0,
-  "reporters": ["html", "markdown"],
+  "reporters": [
+    "html",
+    "markdown"
+  ],
   "ignore": [
     "**/node_modules/**",
     "**/.git/**",
@@ -31,6 +34,7 @@
     "**/agentforce-feedback.ts",
     "**/*.json",
     "**/*.svg",
+    "**/*.md",
     "**/*.yml",
     "**/*.xml",
     "**/megalinter-reports/**",
