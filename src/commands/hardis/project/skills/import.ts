@@ -111,10 +111,10 @@ Key functionalities:
       throw new Error(t("skillsImportNoClaudeDir", { repo: repoUrl }));
     }
 
-    // Check if any existing files will be overwritten and ask once
+    // Collect all files to copy from .claude/ subdirectories
     const targetClaudeDir = path.join(process.cwd(), '.claude');
     const subdirs = ['skills', 'agents', 'rules'];
-    let hasExistingFiles = false;
+    const filesToCopy: Array<{ sourcePath: string; targetPath: string; label: string }> = [];
 
     for (const subdir of subdirs) {
       const sourceSubdir = path.join(sourceClaudeDir, subdir);
@@ -123,73 +123,49 @@ Key functionalities:
       }
       const files = await this.listFilesRecursive(sourceSubdir);
       for (const relPath of files) {
-        const targetPath = path.join(targetClaudeDir, subdir, relPath);
-        if (await fs.pathExists(targetPath)) {
-          hasExistingFiles = true;
-          break;
-        }
+        filesToCopy.push({
+          sourcePath: path.join(sourceSubdir, relPath),
+          targetPath: path.join(targetClaudeDir, subdir, relPath),
+          label: path.join(subdir, relPath),
+        });
       }
-      if (hasExistingFiles) break;
     }
 
-    // Also check root files
+    // Also collect root-level files (CLAUDE.md, WORKFLOW.md)
     const rootFiles = ['CLAUDE.md', 'WORKFLOW.md'];
-    if (!hasExistingFiles) {
-      for (const rootFile of rootFiles) {
-        if ((await fs.pathExists(path.join(tmpDir, rootFile))) && (await fs.pathExists(path.join(process.cwd(), rootFile)))) {
-          hasExistingFiles = true;
-          break;
-        }
+    for (const rootFile of rootFiles) {
+      const sourceFile = path.join(tmpDir, rootFile);
+      if (await fs.pathExists(sourceFile)) {
+        filesToCopy.push({
+          sourcePath: sourceFile,
+          targetPath: path.join(process.cwd(), rootFile),
+          label: rootFile,
+        });
       }
     }
 
-    // Ask overwrite once: agent mode auto-accepts, interactive mode prompts once
+    // Check if any target files already exist and ask overwrite once
+    const hasExistingFiles = await this.hasAnyExistingTarget(filesToCopy.map((f) => f.targetPath));
     let overwriteExisting = agentMode;
     if (hasExistingFiles && !agentMode) {
       overwriteExisting = await this.promptOverwrite();
     }
 
-    // Copy .claude/ subdirectories
+    // Copy all files
     let copiedCount = 0;
     let skippedCount = 0;
 
-    for (const subdir of subdirs) {
-      const sourceSubdir = path.join(sourceClaudeDir, subdir);
-      if (!(await fs.pathExists(sourceSubdir))) {
+    for (const { sourcePath, targetPath, label } of filesToCopy) {
+      if ((await fs.pathExists(targetPath)) && !overwriteExisting) {
+        uxLog("log", this, c.grey(t("skillsImportSkipped", { file: label })));
+        skippedCount++;
         continue;
       }
-      const files = await this.listFilesRecursive(sourceSubdir);
-      for (const relPath of files) {
-        const sourcePath = path.join(sourceSubdir, relPath);
-        const targetPath = path.join(targetClaudeDir, subdir, relPath);
 
-        if ((await fs.pathExists(targetPath)) && !overwriteExisting) {
-          uxLog("log", this, c.grey(t("skillsImportSkipped", { file: path.join(subdir, relPath) })));
-          skippedCount++;
-          continue;
-        }
-
-        await fs.ensureDir(path.dirname(targetPath));
-        await fs.copy(sourcePath, targetPath);
-        uxLog("action", this, c.green(t("skillsImportCopied", { file: path.join(subdir, relPath) })));
-        copiedCount++;
-      }
-    }
-
-    // Copy root-level files (CLAUDE.md, WORKFLOW.md) if they exist in source
-    for (const rootFile of rootFiles) {
-      const sourceFile = path.join(tmpDir, rootFile);
-      if (await fs.pathExists(sourceFile)) {
-        const targetFile = path.join(process.cwd(), rootFile);
-        if ((await fs.pathExists(targetFile)) && !overwriteExisting) {
-          uxLog("log", this, c.grey(t("skillsImportSkipped", { file: rootFile })));
-          skippedCount++;
-        } else {
-          await fs.copy(sourceFile, targetFile);
-          uxLog("action", this, c.green(t("skillsImportCopied", { file: rootFile })));
-          copiedCount++;
-        }
-      }
+      await fs.ensureDir(path.dirname(targetPath));
+      await fs.copy(sourcePath, targetPath);
+      uxLog("action", this, c.green(t("skillsImportCopied", { file: label })));
+      copiedCount++;
     }
 
     // Cleanup temp directory
@@ -243,6 +219,15 @@ Key functionalities:
       initial: true,
     });
     return response.overwrite !== false;
+  }
+
+  private async hasAnyExistingTarget(targetPaths: string[]): Promise<boolean> {
+    for (const targetPath of targetPaths) {
+      if (await fs.pathExists(targetPath)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private async listFilesRecursive(dir: string, base = ''): Promise<string[]> {
