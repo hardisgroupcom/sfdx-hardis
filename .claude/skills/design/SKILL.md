@@ -19,6 +19,7 @@ Your goal is to design a solution and produce a technical specification.
    - Define the approach (new command, provider method, utility function, etc.)
    - Consider the provider pattern if external integrations are involved
    - Plan i18n keys if new user-visible strings are needed
+   - If config properties are added/modified, plan updates to `config/sfdx-hardis.jsonschema.json`
    - Consider edge cases and error handling
 4. **Write tech spec**:
    - **Overview**: One-paragraph summary

@@ -23,7 +23,8 @@ Read `.claude/rules/` for coding conventions, i18n rules, and translation rules 
    - Use `prompts()` for user input
    - Follow the provider pattern for external integrations
 3. **Add translations**: If new i18n keys were introduced, add them to **all 9 locale files** (`en`, `de`, `es`, `fr`, `it`, `ja`, `nl`, `pl`, `pt-BR`), sorted alphabetically.
-4. **Verify patterns**: Ensure new code matches existing patterns in the codebase.
+4. **Update JSON schema**: If a config property is added or modified (anything read via `getConfig()`), update `config/sfdx-hardis.jsonschema.json` to match. Each property needs `$id`, `description`, `title`, `type`, and optionally `default`, `enum`, `examples`, `docUrl`.
+5. **Verify patterns**: Ensure new code matches existing patterns in the codebase.
 
 Continue iterating until all changes from the design are implemented. Do not stop to ask whether to continue.
 
