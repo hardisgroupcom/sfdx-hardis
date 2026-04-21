@@ -2113,6 +2113,16 @@
       "title": "Skip code coverage check",
       "type": "boolean"
     },
+    "skillsRepo": {
+      "$id": "#/properties/skillsRepo",
+      "default": "",
+      "description": "Git repository URL containing .claude/ skills, agents, and rules to import with hardis:project:skills:import",
+      "examples": [
+        "https://github.com/mycompany/claude-skills.git"
+      ],
+      "title": "Skills Repository",
+      "type": "string"
+    },
     "skipMinimizeProfiles": {
       "$id": "#/properties/skipMinimizeProfiles",
       "description": "These profiles will not be reformatted by command hardis:project:clean:minimizeprofiles",

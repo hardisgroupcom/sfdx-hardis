@@ -25,6 +25,11 @@ Read `.claude/rules/` for coding conventions, i18n rules, and translation rules 
 3. **Add translations**: If new i18n keys were introduced, add them to **all 9 locale files** (`en`, `de`, `es`, `fr`, `it`, `ja`, `nl`, `pl`, `pt-BR`), sorted alphabetically.
 4. **Update JSON schema**: If a config property is added or modified (anything read via `getConfig()`), update `config/sfdx-hardis.jsonschema.json` to match. Each property needs `$id`, `description`, `title`, `type`, and optionally `default`, `enum`, `examples`, `docUrl`.
 5. **Verify patterns**: Ensure new code matches existing patterns in the codebase.
+6. **Update CHANGELOG.md**: Add a bullet point under the `## [beta] (master)` section describing the change. Follow the existing style:
+   - Start with a short description of the change.
+   - If a new command was added, include a link: `[hardis:topic:action](https://sfdx-hardis.cloudity.com/hardis/topic/action/)`.
+   - If an existing command was modified, reference it the same way.
+   - Keep it concise (one or two lines per change).
 
 Continue iterating until all changes from the design are implemented. Do not stop to ask whether to continue.
 

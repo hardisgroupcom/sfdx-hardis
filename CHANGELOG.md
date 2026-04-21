@@ -3,6 +3,8 @@
 ## [beta] (master)
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
+- New command [hardis:project:skills:import](https://sfdx-hardis.cloudity.com/hardis/project/skills/import/) to import Claude Code skills, agents, and rules from a remote git repository
+- Implement Claude skills for sfdx-hardis repo
 
 ## [7.9.0] 2026-04-21
 
