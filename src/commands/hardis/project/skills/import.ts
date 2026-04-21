@@ -97,6 +97,13 @@ Key functionalities:
       throw new Error(t("skillsImportCloneError", { repo: repoUrl, error: (e as Error).message }));
     }
 
+    // Clone succeeded: persist repo URL in project config
+    const config = await getConfig('project');
+    if (config.skillsRepo !== repoUrl) {
+      await setConfig('project', { skillsRepo: repoUrl });
+      uxLog("log", this, c.grey(t("skillsImportRepoSaved", { repo: repoUrl })));
+    }
+
     // Check that the cloned repo has a .claude/ directory
     const sourceClaudeDir = path.join(tmpDir, '.claude');
     if (!(await fs.pathExists(sourceClaudeDir))) {
@@ -223,10 +230,6 @@ Key functionalities:
     if (!response.repoUrl) {
       throw new Error(t("skillsImportRepoRequired"));
     }
-
-    // Store in project config for future use
-    await setConfig('project', { skillsRepo: response.repoUrl });
-    uxLog("log", this, c.grey(t("skillsImportRepoSaved", { repo: response.repoUrl })));
 
     return response.repoUrl;
   }
