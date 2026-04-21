@@ -14,7 +14,7 @@
     "**/copilot-instructions.md",
     "**/cryptoUtils.test.ts",
     "**/.grype.yaml",
-    ".claude/**"
+    "**/.claude/**"
   ],
   "language": "en",
   "version": "0.2",
@@ -44,6 +44,7 @@
     "Actv",
     "Administrateur",
     "Affero",
+    "accordionskills",
     "Afterwork",
     "Agentforce",
     "Ajoutez",
