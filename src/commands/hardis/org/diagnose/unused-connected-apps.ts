@@ -85,7 +85,9 @@ The command's technical implementation involves:
 - **File System Operations:** Uses \`fs-extra\` for creating and removing temporary directories and files.
 - **Environment Variable Reading:** Reads the \`ALLOWED_INACTIVE_CONNECTED_APPS\` environment variable to customize the list of ignored Connected Apps.
 </details>
-`;
+
+
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:unused-connected-apps',
@@ -106,6 +108,10 @@ The command's technical implementation involves:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };

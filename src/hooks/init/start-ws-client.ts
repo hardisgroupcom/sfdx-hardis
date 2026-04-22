@@ -12,19 +12,21 @@ const hook: Hook<'init'> = async (options) => {
   // Set before CI check so it is true even in CI environments
   globalThis.hardisCommandActivated = true;
 
-  // Skip WebSocket initialization when running in agent mode or requesting help
-  if (options?.argv?.includes('--agent') || options?.argv?.includes('--help') || options?.argv?.includes('-h')) {
-    return;
-  }
-
   // Skip WebSocket initialization in CI environments
   // Inlined isCI check avoids importing the heavy utils module (~2300 lines + transitive deps)
   if (process.env.CI != null) {
     return;
   }
 
+  // Skip WebSocket initialization when running in agent mode or requesting help
   // Dynamically import only when actually needed (non-CI, eligible command)
-  const { WebSocketClient } = await import('../../common/websocketClient.js');
+  const { isAgentMode, WebSocketClient } = await Promise.all([
+    import('../../common/utils/index.js'),
+    import('../../common/websocketClient.js'),
+  ]).then(([utils, ws]) => ({ isAgentMode: utils.isAgentMode, WebSocketClient: ws.WebSocketClient }));
+  if (isAgentMode() || options?.argv?.includes('--help') || options?.argv?.includes('-h')) {
+    return;
+  }
 
   // Initialize WebSocketClient to communicate with VS Code SFDX Hardis extension
   const context: any = { command: commandId, id: process.pid };

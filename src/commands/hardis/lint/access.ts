@@ -61,7 +61,9 @@ The command's technical implementation involves:
 - **Access Verification Logic:** Iterates through each element to check and verifies if it has the necessary access enabled in any of the non-ignored Permission Sets or Profiles.
 - **Data Aggregation:** Collects all elements with missing access into a \`missingElements\` array and \`missingElementsMap\` for reporting and notification purposes.
 </details>
-`;
+
+
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
 
   public static examples = [
     '$ sf hardis:lint:access',

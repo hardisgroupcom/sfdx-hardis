@@ -53,8 +53,8 @@ Key functionalities:
 - **Notifications:** Sends notifications with summary metrics and file attachments.
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/) and can output Grafana, Slack and MsTeams Notifications.
-`;
 
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
   public static examples = ['$ sf hardis:org:monitor:errors'];
 
   public static flags: any = {
