@@ -247,6 +247,10 @@ ${this.getDefaultCommandsMarkdown()}
   public static examples = ['$ sf hardis:org:monitor:all'];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Sub-commands will use default values and never prompt.',
+    }),
     'force-all': Flags.boolean({
       default: false,
       description: 'Force all monitoring commands to run, including weekly ones. Equivalent to MONITORING_IGNORE_FREQUENCY=true',
@@ -292,6 +296,7 @@ ${this.getDefaultCommandsMarkdown()}
     const { flags } = await this.parse(MonitorAll);
     this.debugMode = flags.debug || false;
     const forceAll = flags['force-all'] || getEnvVar('MONITORING_IGNORE_FREQUENCY') === 'true';
+    const agentMode = flags.agent === true;
 
     const orgUrl = flags['target-org'].getConnection().instanceUrl;
 
@@ -337,9 +342,10 @@ ${this.getDefaultCommandsMarkdown()}
         continue;
       }
       // Run command
+      const commandStr = agentMode ? `${command.command} --agent` : command.command;
       uxLog("action", this, c.cyan(t('runningMonitoringCommandKey', { command: c.bold(command.title), command1: c.bold(command.key) })));
       try {
-        const execCommandResult = await execCommand(command.command, this, { fail: false, output: true });
+        const execCommandResult = await execCommand(commandStr, this, { fail: false, output: true });
         if (execCommandResult.status === 0) {
           uxLog("success", this, c.green(t('commandHasBeenRunSuccessfully', { command: c.bold(command.title) })));
         } else {

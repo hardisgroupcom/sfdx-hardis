@@ -100,6 +100,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -115,6 +119,7 @@ The command's technical implementation involves:
   };
 
   protected returnActiveUsers = false;
+  protected agentMode = false;
   protected debugMode = false;
   protected outputFile;
   protected outputFilesRes: any = {};
@@ -128,6 +133,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DiagnoseUnusedUsers);
+    this.agentMode = flags.agent === true;
     this.debugMode = flags.debug || false;
     this.returnActiveUsers = flags.returnactiveusers ?? false;
     this.outputFile = flags.outputfile || null;
@@ -207,7 +213,7 @@ The command's technical implementation involves:
   private async defineLicenseIdentifiers() {
     if (!this.licenseIdentifiers) {
       // Ask user if interactive mode
-      if (!this.licenseTypes && !isCI) {
+      if (!this.licenseTypes && !isCI && !this.agentMode) {
         const licenseTypesResponse = await prompts({
           type: 'select',
           name: 'licensetypes',
@@ -232,7 +238,7 @@ The command's technical implementation involves:
 
   private async defineNumberOfInactiveDays() {
     if (!this.lastNdays) {
-      if (!isCI) {
+      if (!isCI && !this.agentMode) {
         // If manual mode and days not sent as parameter, prompt user
         const lastNdaysResponse = await prompts({
           type: 'select',

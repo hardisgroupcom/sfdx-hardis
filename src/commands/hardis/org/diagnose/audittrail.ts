@@ -177,6 +177,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -186,6 +190,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   protected lastNdays: number | undefined;
   protected allowedSectionsActions = {};
   protected debugMode = false;
+  protected agentMode = false;
 
   protected suspectRecords: any[] = [];
   protected suspectUsers: any[] = [];
@@ -202,6 +207,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DiagnoseAuditTrail);
+    this.agentMode = flags.agent === true;
     this.debugMode = flags.debug || false;
     this.excludeUsers = flags.excludeusers ? flags.excludeusers.split(',') : [];
     this.lastNdays = flags.lastndays;
@@ -531,7 +537,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   }
 
   private async manageAuditTimeframe() {
-    if (!isCI && !this.lastNdays) {
+    if (!isCI && !this.agentMode && !this.lastNdays) {
       const lastNdaysResponse = await prompts({
         type: 'select',
         name: 'lastndays',
