@@ -782,7 +782,7 @@
             />
         </svg>
     <a href="#codingAgent" onclick="anchorLink('codingAgent')">codingAgent</a></div><h4>Coding agent</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
-<span class="description"><p>Force a specific coding agent CLI instead of auto-detection. Equivalent to SFDX<em>HARDIS</em>CODING_AGENT env var.</p>
+<span class="description"><p>Coding agent CLI to use for features that invoke coding agents (auto-fix, monitoring reports, etc.). Must be set to enable coding agent features. Locally, agents authenticate via their own login (e.g. claude login); in CI, provide the matching API key env var. Equivalent to SFDX<em>HARDIS</em>CODING_AGENT env var.</p>
 </span><div class="enum-value" id="codingAgent_enum">
             <h4>Must be one of:</h4>
             <ul class="list-group"><li class="list-group-item enum-item">"claude"</li><li class="list-group-item enum-item">"codex-cli"</li><li class="list-group-item enum-item">"gemini-cli"</li><li class="list-group-item enum-item">"copilot-cli"</li></ul>
