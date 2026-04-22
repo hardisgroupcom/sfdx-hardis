@@ -61,6 +61,7 @@
     "ora": "8.2.0",
     "papaparse": "5.5.3",
     "pascalcase": "2.0.0",
+    "pptxgenjs": "^4.0.1",
     "psl": "1.15.0",
     "puppeteer-core": "23.11.1",
     "read-package-up": "11.0.0",

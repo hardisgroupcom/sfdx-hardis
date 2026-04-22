@@ -232,7 +232,7 @@
     },
     "codingAgent": {
       "$id": "#/properties/codingAgent",
-      "description": "Force a specific coding agent CLI instead of auto-detection. Equivalent to SFDX_HARDIS_CODING_AGENT env var.",
+      "description": "Coding agent CLI to use for features that invoke coding agents (auto-fix, monitoring reports, etc.). Must be set to enable coding agent features. Locally, agents authenticate via their own login (e.g. claude login); in CI, provide the matching API key env var. Equivalent to SFDX_HARDIS_CODING_AGENT env var.",
       "title": "Coding agent",
       "type": "string",
       "enum": [

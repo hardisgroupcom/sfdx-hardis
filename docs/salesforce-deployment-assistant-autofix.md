@@ -19,10 +19,10 @@ This feature works with the following coding agent CLIs:
 
 | Agent                  | CLI Package                                                                            | Auth mechanism                                               |
 |:-----------------------|:---------------------------------------------------------------------------------------|:-------------------------------------------------------------|
-| **Claude** (Anthropic) | [`@anthropic-ai/claude-code`](https://www.npmjs.com/package/@anthropic-ai/claude-code) | `ANTHROPIC_API_KEY` env var                                  |
-| **Codex** (OpenAI)     | [`@openai/codex`](https://www.npmjs.com/package/@openai/codex)                         | `OPENAI_API_KEY` or `CODEX_API_KEY` env var                  |
-| **Gemini** (Google)    | [`@google/gemini-cli`](https://www.npmjs.com/package/@google/gemini-cli)               | `GEMINI_API_KEY` env var                                     |
-| **Copilot** (GitHub)   | [`@github/copilot`](https://www.npmjs.com/package/@github/copilot)                     | `COPILOT_GITHUB_TOKEN`, `GH_TOKEN` or `GITHUB_TOKEN` env var |
+| **Claude** (Anthropic) | [`@anthropic-ai/claude-code`](https://www.npmjs.com/package/@anthropic-ai/claude-code) | `ANTHROPIC_API_KEY` env var, or `claude login` locally                |
+| **Codex** (OpenAI)     | [`@openai/codex`](https://www.npmjs.com/package/@openai/codex)                         | `OPENAI_API_KEY` or `CODEX_API_KEY` env var, or local auth            |
+| **Gemini** (Google)    | [`@google/gemini-cli`](https://www.npmjs.com/package/@google/gemini-cli)               | `GEMINI_API_KEY` env var, or `gemini login` locally                   |
+| **Copilot** (GitHub)   | [`@github/copilot`](https://www.npmjs.com/package/@github/copilot)                     | `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`, or `gh auth login` locally |
 
 ## How it works
 
@@ -71,7 +71,7 @@ You can enable auto-fix either via environment variable or via `.sfdx-hardis.yml
 
 ### 3. Provide API keys
 
-The coding agent CLI needs to authenticate with its AI provider. You must provide the appropriate API key as a **secure environment variable** in your CI/CD pipeline.
+In **CI/CD**, the coding agent CLI needs to authenticate with its AI provider. You must provide the appropriate API key as a **secure environment variable** in your CI/CD pipeline.
 
 | Agent   | Required env var                                                                          |
 |:--------|:------------------------------------------------------------------------------------------|
@@ -82,14 +82,13 @@ The coding agent CLI needs to authenticate with its AI provider. You must provid
 
 **Tip:** If you already have a LangChain AI provider configured (see [AI setup](salesforce-ai-setup.md)), sfdx-hardis will automatically **reuse** `LANGCHAIN_LLM_MODEL_API_KEY` so you don't need to set a separate key.
 
-### 4. (Optional) Choose a specific agent
+!!! tip "Local mode — no API key needed"
 
-By default, sfdx-hardis detects the coding agent automatically:
+    When running **outside CI/CD** (i.e. on your local machine), sfdx-hardis will automatically detect installed coding agent CLIs and use them **without requiring API key environment variables**. Agents authenticate via their own login mechanisms (`claude login`, `gh auth login`, etc.), so you just need the CLI installed and logged in.
 
-1. If a **LangChain provider** is configured, it maps to the matching agent (anthropic → Claude, openai → Codex, google-genai → Gemini)
-2. Otherwise, it **auto-detects** which CLI is installed, in priority order: Claude, Codex, Gemini, Copilot
+### 4. Choose a coding agent
 
-To override, set explicitly:
+You **must** specify which coding agent CLI to use. Set it via environment variable or `.sfdx-hardis.yml`:
 
 === "Environment variable"
 
@@ -108,7 +107,7 @@ To override, set explicitly:
 | Variable / Config key                                        | Description                                                                                               | Default       |
 |:-------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------|:--------------|
 | `SFDX_HARDIS_CODING_AGENT_AUTO_FIX` / `codingAgentAutoFix`   | Enable automatic fix of deployment errors using a coding agent                                            | `false`       |
-| `SFDX_HARDIS_CODING_AGENT` / `codingAgent`                   | Force a specific coding agent CLI (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`)                    | Auto-detected |
+| `SFDX_HARDIS_CODING_AGENT` / `codingAgent`                   | **Required.** Coding agent CLI to use (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`)            |               |
 | `SFDX_HARDIS_CODING_AGENT_MODEL` / `codingAgentModel`        | Override the model used by the coding agent CLI (e.g. `claude-sonnet-4-20250514`, `o3`, `gemini-2.5-pro`) | Agent default |
 | `SFDX_HARDIS_CODING_AGENT_MAX_TURNS` / `codingAgentMaxTurns` | Maximum number of agentic turns / iterations the CLI is allowed to perform                                | Agent default |
 | `DEBUG_CODING_AGENT`                                         | Set to `true` to show full coding agent output in logs                                                    | `false`       |
@@ -165,7 +164,7 @@ variables:
 
 ```yaml
 codingAgentAutoFix: true
-codingAgent: claude # optional: force a specific agent
+codingAgent: claude # required: which agent CLI to use
 codingAgentModel: claude-sonnet-4-20250514 # optional: override the model
 codingAgentMaxTurns: 30 # optional: limit the number of agentic turns
 ```

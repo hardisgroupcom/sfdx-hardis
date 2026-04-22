@@ -9,6 +9,7 @@ import { EmailProvider } from "./emailProvider.js";
 import { ApiProvider } from "./apiProvider.js";
 import type { NotifMessage } from "./types.js";
 import { t } from '../utils/i18n.js';
+import { writeMonitoringNotifFile } from './monitoringNotifWriter.js';
 
 export abstract class NotifProvider {
   static getInstances(): NotifProviderRoot[] {
@@ -67,6 +68,11 @@ export abstract class NotifProvider {
       } else {
         uxLog("error", this, c.grey(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
       }
+    }
+    // Write notification to file if monitoring aggregation is active
+    const notifOutputDir = process.env.MONITORING_NOTIF_OUTPUT_DIR;
+    if (notifOutputDir) {
+      await writeMonitoringNotifFile(notifOutputDir, notifMessage);
     }
   }
 

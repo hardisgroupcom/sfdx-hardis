@@ -2,21 +2,19 @@ import c from "chalk";
 import path from "path";
 import os from "os";
 import fs from "fs-extra";
-import { execCommand, git, uxLog } from "../utils/index.js";
+import { execCommand, isCI, uxLog } from "../utils/index.js";
 import { getConfig, getEnvVar } from "../../config/index.js";
 import { t } from "../utils/i18n.js";
-import { buildPromptFromTemplate } from "./promptTemplates.js";
 import { LangChainProviderFactory } from "./langChainProviders/langChainProviderFactory.js";
 import { CodingAgentInfo, CodingAgentOptions } from "./langChainProviders/langChainBaseProvider.js";
 
 export type CodingAgentType = "claude" | "codex-cli" | "gemini-cli" | "copilot-cli";
 
-export interface CodingAgentResult {
-  success: boolean;
+export interface CodingAgentRunResult {
   agent: CodingAgentType;
-  fixedFiles: string[];
-  errorsDescription: string;
-  fixesDescription: string;
+  stdout: string;
+  stderr: string;
+  status: number;
 }
 
 export interface CodingAgentConfig {
@@ -47,11 +45,11 @@ const COPILOT_CLI_AGENT_INFO: CodingAgentInfo = {
 
 /**
  * Manages coding agents (Claude, Codex CLI, Gemini CLI, GitHub Copilot CLI)
- * that can analyze deployment errors and fix local metadata files.
+ * that can run arbitrary prompts via CLI.
  *
  * Agent-specific logic (CLI commands, API key setup) is defined in each
  * LangChain sub-provider class via CodingAgentInfo. This class orchestrates
- * agent detection, prompt building, execution, and result parsing.
+ * agent detection, execution, and cleanup.
  *
  * Configuration is read from:
  * 1. Environment variables (SFDX_HARDIS_CODING_AGENT, SFDX_HARDIS_CODING_AGENT_AUTO_FIX)
@@ -63,81 +61,34 @@ export class CodingAgentProvider {
   /**
    * Detects which coding agent is configured and available.
    *
-   * Resolution order:
-   * 1. Explicit config: env var SFDX_HARDIS_CODING_AGENT or .sfdx-hardis.yml codingAgent
-   * 2. AI provider mapping: derives agent from active LangChain provider
-   * 3. Auto-detect: tries each agent CLI in priority order
+   * The codingAgent property (or SFDX_HARDIS_CODING_AGENT env var) must be set.
+   * If not configured, no agent detection is attempted.
+   *
+   * In local mode (outside CI), API keys are not required — agents use their
+   * own login mechanisms (claude login, gh auth login, etc.).
    */
   static async getConfiguredAgent(): Promise<CodingAgentConfig | null> {
     const branchConfig = await getConfig("branch");
     const langchainApiKey = getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY");
 
-    // 1. Explicit preference from env var or config
     const preferredAgent = (getEnvVar("SFDX_HARDIS_CODING_AGENT") || branchConfig?.codingAgent || null) as CodingAgentType | null;
-    if (preferredAgent) {
-      const config = await this.buildAgentConfig(preferredAgent, branchConfig);
-      if (config?.available) {
+    if (!preferredAgent) {
+      return null;
+    }
+
+    const config = await this.buildAgentConfig(preferredAgent, branchConfig);
+    if (config?.available) {
+      if (langchainApiKey) {
         config.codingAgentInfo?.setupApiKey(langchainApiKey);
-        if (config.codingAgentInfo) {
-          uxLog("log", this, c.grey(t("codingAgentReusingApiKey", { agent: config.agent, source: "LANGCHAIN_LLM_MODEL_API_KEY" })));
-        }
-        return config;
+        uxLog("log", this, c.grey(t("codingAgentReusingApiKey", { agent: config.agent, source: "LANGCHAIN_LLM_MODEL_API_KEY" })));
+      } else if (!isCI) {
+        uxLog("log", this, c.grey(t("codingAgentDetectedLocally", { agent: config.agent })));
       }
-      uxLog("warning", this, c.yellow(t("codingAgentNotAvailable", { agent: preferredAgent })));
-      this.warnAgentNotInstalledSuggestUbuntu(preferredAgent);
+      return config;
     }
 
-    // 2. Derive from active AI provider
-    const langchainProvider = getEnvVar("LANGCHAIN_LLM_PROVIDER") || branchConfig?.langchainLlmProvider || null;
-    if (langchainProvider) {
-      const agentInfo = LangChainProviderFactory.getCodingAgentInfo(langchainProvider);
-      if (agentInfo) {
-        const config = await this.buildAgentConfigFromInfo(agentInfo);
-        if (config?.available) {
-          agentInfo.setupApiKey(langchainApiKey);
-          uxLog("log", this, c.grey(t("codingAgentReusingApiKey", { agent: config.agent, source: "LANGCHAIN_LLM_MODEL_API_KEY" })));
-          return config;
-        }
-      }
-    }
-
-    // Check direct provider configs (codex, openai)
-    const directAgent = await this.getAgentFromDirectProvider(branchConfig);
-    if (directAgent) {
-      const config = await this.buildAgentConfig(directAgent, branchConfig);
-      if (config?.available) {
-        return config;
-      }
-    }
-
-    // 3. Auto-detect: only select agents that have an API key configured and are installed
-    const agentOrder: CodingAgentType[] = ["claude", "codex-cli", "gemini-cli", "copilot-cli"];
-    for (const agent of agentOrder) {
-      if (this.hasApiKeyConfigured(agent)) {
-        const config = await this.buildAgentConfig(agent, branchConfig);
-        if (config?.available) {
-          return config;
-        }
-        // API key is set but CLI is not available — warn and suggest Ubuntu image if on Alpine/musl
-        this.warnAgentNotInstalledSuggestUbuntu(agent);
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Check for direct (non-LangChain) provider configurations that map to a coding agent.
-   */
-  private static async getAgentFromDirectProvider(branchConfig: any): Promise<CodingAgentType | null> {
-    const useCodex = getEnvVar("USE_CODEX_DIRECT") || branchConfig?.useCodexDirect;
-    if (useCodex === "true" || useCodex === true) {
-      return "codex-cli";
-    }
-    const useOpenAi = getEnvVar("USE_OPENAI_DIRECT") || branchConfig?.useOpenaiDirect;
-    const openAiKey = getEnvVar("OPENAI_API_KEY");
-    if ((useOpenAi === "true" || useOpenAi === true) || openAiKey) {
-      return "codex-cli";
-    }
+    uxLog("warning", this, c.yellow(t("codingAgentNotAvailable", { agent: preferredAgent })));
+    this.warnAgentNotInstalledSuggestUbuntu(preferredAgent);
     return null;
   }
 
@@ -154,102 +105,40 @@ export class CodingAgentProvider {
   }
 
   /**
-   * Run a coding agent to fix deployment errors.
+   * Run a coding agent with the given prompt string.
+   *
+   * This is the generic public entry point for invoking any coding agent.
+   * It handles agent detection, temp file management, command building,
+   * execution, and cleanup.
+   *
+   * Returns null if no agent is available.
    */
-  static async runAgentToFixErrors(
-    errorsAndTips: any[],
-    failedTests: any[],
-    targetUsername: string | null,
-  ): Promise<CodingAgentResult | null> {
+  static async runPrompt(prompt: string): Promise<CodingAgentRunResult | null> {
     const agentConfig = await this.getConfiguredAgent();
     if (!agentConfig) {
       uxLog("warning", this, c.yellow(t("noCodingAgentAvailable")));
       return null;
     }
-
-    uxLog("action", this, c.cyan(t("startingCodingAgentToFixErrors", { agent: agentConfig.agent })));
-
-    const prompt = await this.buildAgentPrompt(errorsAndTips, failedTests, targetUsername);
-
-    try {
-      const result = await this.executeAgent(agentConfig, prompt);
-      return result;
-    } catch (e) {
-      uxLog("error", this, c.red(t("codingAgentExecutionError", { agent: agentConfig.agent, message: (e as Error).message })));
-      return null;
-    }
+    return this.runPromptWithConfig(agentConfig, prompt);
   }
 
   /**
-   * Build the prompt using the prompt template system.
-   * The template PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS can be overridden
-   * by placing a file in config/prompt-templates/PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS.md (or .txt for backward compatibility)
+   * Run a coding agent with the given prompt string and a pre-resolved config.
+   * Handles temp file management, command building, execution, and cleanup.
    */
-  private static async buildAgentPrompt(
-    errorsAndTips: any[],
-    failedTests: any[],
-    targetUsername: string | null,
-  ): Promise<string> {
-    const errorsText = this.formatErrorsForPrompt(errorsAndTips);
-    const failedTestsText = this.formatFailedTestsForPrompt(failedTests);
-
-    return await buildPromptFromTemplate("PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS", {
-      ERRORS: errorsText || "No deployment errors.",
-      FAILED_TESTS: failedTestsText || "No failed tests.",
-      TARGET_ORG: targetUsername || "N/A",
-    });
-  }
-
-  private static formatErrorsForPrompt(errorsAndTips: any[]): string {
-    if (errorsAndTips.length === 0) return "";
-    const lines: string[] = [];
-    for (const item of errorsAndTips) {
-      lines.push(`### Error: ${item.error?.message || "Unknown error"}`);
-      if (item.tip?.message) {
-        lines.push(`Tip: ${item.tip.message}`);
-      }
-      if (item.tipFromAi?.promptResponse) {
-        lines.push(`AI Suggestion: ${item.tipFromAi.promptResponse}`);
-      }
-      lines.push("");
-    }
-    return lines.join("\n");
-  }
-
-  private static formatFailedTestsForPrompt(failedTests: any[]): string {
-    if (failedTests.length === 0) return "";
-    const lines: string[] = [];
-    for (const test of failedTests) {
-      lines.push(`### Test: ${test.class}.${test.method}`);
-      lines.push(`Error: ${test.error}`);
-      if (test.stack) {
-        lines.push(`Stack: ${test.stack}`);
-      }
-      lines.push("");
-    }
-    return lines.join("\n");
-  }
-
-  /**
-   * Execute the coding agent with the given prompt.
-   * Delegates command building to the CodingAgentInfo from the provider.
-   */
-  private static async executeAgent(
+  private static async runPromptWithConfig(
     agentConfig: CodingAgentConfig,
     prompt: string,
-  ): Promise<CodingAgentResult> {
-    // Write prompt to a temp file to avoid shell escaping issues with special characters
+  ): Promise<CodingAgentRunResult> {
     const promptFilePath = path.join(os.tmpdir(), `sfdx-hardis-agent-prompt-${Date.now()}.txt`);
     await fs.writeFile(promptFilePath, prompt, "utf-8");
 
-    // Delegate command building to the provider's CodingAgentInfo
     const agentInfo = agentConfig.codingAgentInfo;
     if (!agentInfo) {
       await fs.remove(promptFilePath);
       throw new Error(t("codingAgentNoProviderInfo", { agent: agentConfig.agent }));
     }
 
-    // Read coding agent options from config / env vars
     const agentOptions = await this.getCodingAgentOptions();
     const commandStr = agentInfo.buildCommand(promptFilePath, agentOptions);
 
@@ -269,74 +158,15 @@ export class CodingAgentProvider {
         debug: process.env?.DEBUG_CODING_AGENT === "true",
       });
 
-      const fixedFiles = await this.getChangedFiles();
-      const fixesDescription = this.parseFixesSummary(result?.stdout || "");
-      const errorsDescription = this.buildErrorsDescription([], []);
-
       return {
-        success: fixedFiles.length > 0,
         agent: agentConfig.agent,
-        fixedFiles,
-        errorsDescription,
-        fixesDescription: fixesDescription || t("codingAgentAppliedFixes", { count: String(fixedFiles.length) }),
+        stdout: result?.stdout || "",
+        stderr: result?.stderr || "",
+        status: result?.status ?? 1,
       };
     } finally {
-      // Clean up temp file
       await fs.remove(promptFilePath).catch(() => { });
     }
-  }
-
-  private static async getChangedFiles(): Promise<string[]> {
-    try {
-      const status = await git().status();
-      return [
-        ...status.modified,
-        ...status.created,
-        ...status.renamed.map((r) => r.to),
-      ];
-    } catch {
-      return [];
-    }
-  }
-
-  private static parseFixesSummary(output: string): string {
-    // Match both '---SUMMARY---' (template) and '--- FIXES SUMMARY ---' (agent output)
-    // Capture everything after the header marker (greedy) so all entries are included
-    const summaryMatch = output.match(/---[\s\w]*SUMMARY[\s\w]*---([\s\S]*)/i);
-    if (summaryMatch) {
-      return summaryMatch[1].trim();
-    }
-    if (output.length > 0) {
-      return output.slice(-5000).trim();
-    }
-    return "";
-  }
-
-  static buildErrorsDescription(errorsAndTips: any[], failedTests: any[]): string {
-    const lines: string[] = [];
-
-    if (errorsAndTips.length > 0) {
-      lines.push("## Deployment Errors");
-      lines.push("");
-      for (const item of errorsAndTips) {
-        lines.push(`- **Error**: ${item.error?.message || "Unknown error"}`);
-        if (item.tip?.message) {
-          lines.push(`  - **Tip**: ${item.tip.message}`);
-        }
-      }
-      lines.push("");
-    }
-
-    if (failedTests.length > 0) {
-      lines.push("## Failed Tests");
-      lines.push("");
-      for (const test of failedTests) {
-        lines.push(`- **${test.class}.${test.method}**: ${test.error}`);
-      }
-      lines.push("");
-    }
-
-    return lines.join("\n");
   }
 
   /**
@@ -364,24 +194,6 @@ export class CodingAgentProvider {
       return result?.status === 0;
     } catch {
       return false;
-    }
-  }
-
-  /**
-   * Check if an API key is configured for the given agent type.
-   */
-  private static hasApiKeyConfigured(agent: CodingAgentType): boolean {
-    switch (agent) {
-      case "claude":
-        return !!(process.env.ANTHROPIC_API_KEY || getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY"));
-      case "codex-cli":
-        return !!(process.env.OPENAI_API_KEY || process.env.CODEX_API_KEY || getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY"));
-      case "gemini-cli":
-        return !!(process.env.GEMINI_API_KEY || getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY"));
-      case "copilot-cli":
-        return !!(process.env.COPILOT_GITHUB_TOKEN || process.env.GH_TOKEN || process.env.GITHUB_TOKEN);
-      default:
-        return false;
     }
   }
 
@@ -423,19 +235,6 @@ export class CodingAgentProvider {
 
     const available = await this.isAgentAvailable(codingAgentInfo.command);
     return { agent, command: codingAgentInfo.command, available, codingAgentInfo };
-  }
-
-  /**
-   * Build agent configuration directly from a CodingAgentInfo (from factory lookup).
-   */
-  private static async buildAgentConfigFromInfo(agentInfo: CodingAgentInfo): Promise<CodingAgentConfig | null> {
-    const available = await this.isAgentAvailable(agentInfo.command);
-    return {
-      agent: agentInfo.agentType as CodingAgentType,
-      command: agentInfo.command,
-      available,
-      codingAgentInfo: agentInfo,
-    };
   }
 
   /**

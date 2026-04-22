@@ -239,12 +239,16 @@ These variables control the **coding agent auto-fix** feature, which uses AI cod
 | Variable Name                          | Description                                                                             | Default       | Possible Values                                    | Usage Location                                                                                                                                         |
 |----------------------------------------|-----------------------------------------------------------------------------------------|---------------|----------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **SFDX_HARDIS_CODING_AGENT_AUTO_FIX**  | Enable automatic fix of deployment errors using a coding agent CLI                      | `false`       | `'true'`, `'false'`                                | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
-| **SFDX_HARDIS_CODING_AGENT**           | Force a specific coding agent CLI instead of auto-detection                             | Auto-detected | `claude`, `codex-cli`, `gemini-cli`, `copilot-cli` | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
+| **SFDX_HARDIS_CODING_AGENT**           | **Required.** Coding agent CLI to use                                                   |               | `claude`, `codex-cli`, `gemini-cli`, `copilot-cli` | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
 | **SFDX_HARDIS_CODING_AGENT_MODEL**     | Override the model used by the coding agent CLI (e.g. `sonnet`, `o3`, `gemini-2.5-pro`) | Agent default | Model identifier supported by the chosen agent CLI | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
 | **SFDX_HARDIS_CODING_AGENT_MAX_TURNS** | Maximum number of agentic turns / iterations the coding agent CLI is allowed to perform | Agent default | Positive integer (e.g., `10`, `30`, `50`)          | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
 | **DEBUG_CODING_AGENT**                 | Show full coding agent output in logs (useful for debugging)                            | `false`       | `'true'`, `'false'`                                | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
 
 All non-secret options can also be set in `.sfdx-hardis.yml` using camelCase keys: `codingAgentAutoFix`, `codingAgent`, `codingAgentModel`, `codingAgentMaxTurns`.
+
+!!! tip "Local mode"
+
+    When running outside CI/CD (locally), sfdx-hardis auto-detects installed coding agent CLIs **without requiring API key environment variables**. Agents use their own login (`claude login`, `gh auth login`, etc.).
 
 ### Codex (direct) variables
 
