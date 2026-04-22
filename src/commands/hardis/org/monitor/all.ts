@@ -244,7 +244,12 @@ ${this.getDefaultCommandsMarkdown()}
 
 `;
 
-  public static examples = ['$ sf hardis:org:monitor:all'];
+  public static examples = [
+    '$ sf hardis:org:monitor:all',
+    '$ sf hardis:org:monitor:all --target-org myorg@example.com',
+    '$ sf hardis:org:monitor:all --force-all',
+    '$ sf hardis:org:monitor:all --target-org myorg@example.com --debug',
+  ];
 
   public static flags: any = {
     agent: Flags.boolean({
