@@ -117,7 +117,9 @@ In **CI/CD**, the coding agent CLI needs to authenticate with its AI provider. Y
 
 !!! tip "Local mode — no API key needed"
 
-    When running **outside CI/CD** (i.e. on your local machine), sfdx-hardis will automatically detect installed coding agent CLIs and use them **without requiring API key environment variables**. Agents authenticate via their own login mechanisms (`claude login`, `gh auth login`, etc.), so you just need the CLI installed and logged in.
+  When running **outside CI/CD** (i.e. on your local machine), sfdx-hardis uses the configured `codingAgent` (for example `claude`) with your existing local CLI authentication session.
+
+  Example: if `codingAgent: claude` is configured and `claude login` has already been completed, commands will run with Claude directly, **without requiring API key environment variables**.
 
 ### 4. Choose a coding agent
 
