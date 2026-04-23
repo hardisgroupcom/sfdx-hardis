@@ -33,7 +33,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
       # Mega-Linter
@@ -41,7 +41,7 @@ jobs:
         id: ml
         # You can override Mega-Linter flavor used to have faster performances
         # More info at https://megalinter.io/latest/flavors/
-        uses: oxsecurity/megalinter/flavors/salesforce@latest
+        uses: oxsecurity/megalinter/flavors/salesforce@beta
         env:
           # All available variables are described in documentation
           # https://megalinter.io/latest/config-file/
