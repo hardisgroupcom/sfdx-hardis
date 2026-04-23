@@ -1,9 +1,8 @@
 import c from "chalk";
 import path from "path";
-import os from "os";
 import fs from "fs-extra";
 import { execCommand, isCI, uxLog } from "../utils/index.js";
-import { getConfig, getEnvVar } from "../../config/index.js";
+import { getConfig, getEnvVar, getReportDirectory } from "../../config/index.js";
 import { t } from "../utils/i18n.js";
 import { LangChainProviderFactory } from "./langChainProviders/langChainProviderFactory.js";
 import { CodingAgentInfo, CodingAgentOptions } from "./langChainProviders/langChainBaseProvider.js";
@@ -130,12 +129,17 @@ export class CodingAgentProvider {
     agentConfig: CodingAgentConfig,
     prompt: string,
   ): Promise<CodingAgentRunResult> {
-    const promptFilePath = path.join(os.tmpdir(), `sfdx-hardis-agent-prompt-${Date.now()}.txt`);
+    const timestamp = Date.now();
+
+    // Write prompt to hardis-report/prompts for record keeping
+    const reportDir = await getReportDirectory();
+    const promptsDir = path.join(reportDir, "prompts");
+    await fs.ensureDir(promptsDir);
+    const promptFilePath = path.join(promptsDir, `prompt-${timestamp}-${agentConfig.agent}.txt`);
     await fs.writeFile(promptFilePath, prompt, "utf-8");
 
     const agentInfo = agentConfig.codingAgentInfo;
     if (!agentInfo) {
-      await fs.remove(promptFilePath);
       throw new Error(t("codingAgentNoProviderInfo", { agent: agentConfig.agent }));
     }
 
@@ -165,7 +169,7 @@ export class CodingAgentProvider {
         status: result?.status ?? 1,
       };
     } finally {
-      await fs.remove(promptFilePath).catch(() => { });
+      // Keep prompt files in hardis-report for auditing
     }
   }
 

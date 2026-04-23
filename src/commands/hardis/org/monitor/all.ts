@@ -477,12 +477,6 @@ ${this.getDefaultCommandsMarkdown()}
       uxLog("log", this, c.grey(t('monitoringAiSummaryNoNotifications')));
     }
 
-    // Always clean up notification files
-    try {
-      await fs.remove(notifDir);
-    } catch (_) {
-      // Ignore cleanup errors
-    }
     delete process.env.MONITORING_NOTIF_OUTPUT_DIR;
 
     // Exit code is 1 if monitoring detected stuff
