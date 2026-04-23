@@ -19,9 +19,12 @@ export async function writeMonitoringNotifFile(outputDir: string, notifMessage: 
       severity: notifMessage.severity,
       data: notifMessage.data,
       metrics: notifMessage.metrics,
+      textDetails: notifMessage.attachments,
+      attachedFiles: notifMessage.attachedFiles?.filter(file => file.endsWith('csv') || file.endsWith('.log') || file.endsWith('.txt')) || [],
     };
     const fileName = `${notifMessage.type}_${Date.now()}.json`;
     await fs.writeJson(path.join(outputDir, fileName), sanitized, { spaces: 2 });
+    uxLog("log", null, c.grey(t('monitoringNotifWritten', { file: fileName })));
   } catch (e) {
     uxLog("warning", null, c.yellow(t('monitoringNotifWriteError', { message: (e as Error).message })));
   }

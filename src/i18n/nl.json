@@ -1380,6 +1380,7 @@
   "monitoringAiSummaryNotifTitle": "AI-monitoringsamenvatting voor {{orgUrl}}",
   "monitoringAiSummaryStarting": "AI-gestuurde monitoringsamenvatting wordt gegenereerd...",
   "monitoringNotifReadError": "Monitoringmeldingsbestand {{file}} kon niet worden gelezen: {{message}}",
+  "monitoringNotifWritten": "Monitoringmeldingsbestand {{file}} is geschreven",
   "monitoringNotifWriteError": "Monitoringmeldingsbestand kon niet worden geschreven: {{message}}",
   "monitoringPptxCriticalFindings": "Kritieke bevindingen en fouten",
   "monitoringPptxExecutiveSummary": "Samenvatting",

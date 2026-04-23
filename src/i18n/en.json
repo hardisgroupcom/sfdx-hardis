@@ -1384,6 +1384,7 @@
   "monitoringAiSummaryNotifTitle": "AI Monitoring Summary for {{orgUrl}}",
   "monitoringAiSummaryStarting": "Generating AI-powered monitoring summary...",
   "monitoringNotifReadError": "Failed to read monitoring notification file {{file}}: {{message}}",
+  "monitoringNotifWritten": "Written monitoring notification file {{file}}",
   "monitoringNotifWriteError": "Failed to write monitoring notification file: {{message}}",
   "monitoringPptxCriticalFindings": "Critical & Error Findings",
   "monitoringPptxExecutiveSummary": "Executive Summary",

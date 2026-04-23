@@ -1380,6 +1380,7 @@
   "monitoringAiSummaryNotifTitle": "Podsumowanie AI monitorowania dla {{orgUrl}}",
   "monitoringAiSummaryStarting": "Generowanie podsumowania monitorowania z użyciem AI...",
   "monitoringNotifReadError": "Nie udało się odczytać pliku powiadomienia monitorowania {{file}}: {{message}}",
+  "monitoringNotifWritten": "Zapisano plik powiadomienia monitorowania {{file}}",
   "monitoringNotifWriteError": "Nie udało się zapisać pliku powiadomienia monitorowania: {{message}}",
   "monitoringPptxCriticalFindings": "Krytyczne ustalenia i błędy",
   "monitoringPptxExecutiveSummary": "Podsumowanie",

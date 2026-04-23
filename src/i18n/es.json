@@ -1380,6 +1380,7 @@
   "monitoringAiSummaryNotifTitle": "Resumen AI de monitorización para {{orgUrl}}",
   "monitoringAiSummaryStarting": "Generando resumen de monitorización con AI...",
   "monitoringNotifReadError": "No se pudo leer el fichero de notificación de monitorización {{file}}: {{message}}",
+  "monitoringNotifWritten": "Fichero de notificación de monitorización escrito: {{file}}",
   "monitoringNotifWriteError": "No se pudo escribir el fichero de notificación de monitorización: {{message}}",
   "monitoringPptxCriticalFindings": "Hallazgos críticos y errores",
   "monitoringPptxExecutiveSummary": "Resumen ejecutivo",

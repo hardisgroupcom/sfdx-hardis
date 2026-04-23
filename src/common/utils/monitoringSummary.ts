@@ -21,6 +21,7 @@ export async function generateMonitoringAiSummary(
     const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_MONITORING_SUMMARY");
     if (aiResponse?.success && aiResponse.promptResponse) {
       uxLog("success", null, c.green(t('monitoringAiSummaryGenerated')));
+      uxLog("log", null, c.grey(`[AI Summary]\n${aiResponse.promptResponse}`));
       return aiResponse.promptResponse;
     }
     uxLog("warning", null, c.yellow(t('monitoringAiSummaryFailed', { message: 'No response from AI provider' })));

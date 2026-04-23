@@ -1379,6 +1379,7 @@
   "monitoringAiSummaryNotifTitle": "AI-Monitoring-Zusammenfassung für {{orgUrl}}",
   "monitoringAiSummaryStarting": "AI-gestützte Monitoring-Zusammenfassung wird erstellt...",
   "monitoringNotifReadError": "Monitoring-Benachrichtigungsdatei {{file}} konnte nicht gelesen werden: {{message}}",
+  "monitoringNotifWritten": "Monitoring-Benachrichtigungsdatei {{file}} wurde geschrieben",
   "monitoringNotifWriteError": "Monitoring-Benachrichtigungsdatei konnte nicht geschrieben werden: {{message}}",
   "monitoringPptxCriticalFindings": "Kritische Befunde und Fehler",
   "monitoringPptxExecutiveSummary": "Zusammenfassung",

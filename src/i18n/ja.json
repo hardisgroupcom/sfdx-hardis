@@ -1378,6 +1378,7 @@
   "monitoringAiSummaryNotifTitle": "{{orgUrl}} のAI監視サマリー",
   "monitoringAiSummaryStarting": "AIを使用して監視サマリーを生成しています...",
   "monitoringNotifReadError": "監視通知ファイル {{file}} の読み取りに失敗しました: {{message}}",
+  "monitoringNotifWritten": "監視通知ファイル {{file}} を書き込みました",
   "monitoringNotifWriteError": "監視通知ファイルの書き込みに失敗しました: {{message}}",
   "monitoringPptxCriticalFindings": "重大な発見とエラー",
   "monitoringPptxExecutiveSummary": "エグゼクティブサマリー",

@@ -1380,6 +1380,7 @@
   "monitoringAiSummaryNotifTitle": "Riepilogo AI di monitoraggio per {{orgUrl}}",
   "monitoringAiSummaryStarting": "Generazione del riepilogo di monitoraggio con AI...",
   "monitoringNotifReadError": "Impossibile leggere il file di notifica di monitoraggio {{file}}: {{message}}",
+  "monitoringNotifWritten": "File di notifica di monitoraggio scritto: {{file}}",
   "monitoringNotifWriteError": "Impossibile scrivere il file di notifica di monitoraggio: {{message}}",
   "monitoringPptxCriticalFindings": "Risultati critici ed errori",
   "monitoringPptxExecutiveSummary": "Riepilogo esecutivo",

@@ -13,6 +13,8 @@ import { collectMonitoringNotifications } from '../../../../common/notifProvider
 import { NotifProvider } from '../../../../common/notifProvider/index.js';
 import { generateMonitoringAiSummary } from '../../../../common/utils/monitoringSummary.js';
 import { generateMonitoringPptxReport } from '../../../../common/utils/monitoringPptxReport.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -251,7 +253,7 @@ ${this.getDefaultCommandsMarkdown()}
   public static examples = [
     '$ sf hardis:org:monitor:all',
     '$ sf hardis:org:monitor:all --target-org myorg@example.com',
-    '$ sf hardis:org:monitor:all --force-all',
+    '$ sf hardis:org:monitor:all --force-all --agent',
     '$ sf hardis:org:monitor:all --target-org myorg@example.com --debug',
   ];
 
@@ -301,14 +303,28 @@ ${this.getDefaultCommandsMarkdown()}
     return mdLines.join("\n");
   }
 
+  private static formatDuration(ms: number): string {
+    if (ms < 1000) {
+      return `${Math.round(ms)}ms`;
+    }
+    const seconds = Math.floor(ms / 1000);
+    const remainder = ms % 1000;
+    if (seconds < 60) {
+      return remainder > 0 ? `${seconds}.${Math.floor(remainder / 100)}s` : `${seconds}s`;
+    }
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes}m ${secs}s`;
+  }
+
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(MonitorAll);
     this.debugMode = flags.debug || false;
     const forceAll = flags['force-all'] || getEnvVar('MONITORING_IGNORE_FREQUENCY') === 'true';
 
     const orgUrl = flags['target-org'].getConnection().instanceUrl;
+    await setConnectionVariables(flags['target-org']?.getConnection(), true);// Required for some notifications providers like Email
 
-    // Build target org full manifest
     uxLog(
       "action",
       this,
@@ -319,11 +335,10 @@ ${this.getDefaultCommandsMarkdown()}
     const commands = MonitorAll.monitoringCommandsDefault.concat(config.monitoringCommands || []);
     const monitoringDisable =
       config.monitoringDisable ?? (process.env?.MONITORING_DISABLE ? process.env.MONITORING_DISABLE.split(',') : []);
-    const codingAgentGenerateReportsEnv = getEnvVar('SFDX_HARDIS_CODING_AGENT_GENERATE_REPORTS');
     const codingAgentGenerateReports =
-      codingAgentGenerateReportsEnv !== undefined
-        ? codingAgentGenerateReportsEnv === 'true'
-        : config.codingAgentGenerateReports === true;
+      getEnvVar('SFDX_HARDIS_CODING_AGENT_GENERATE_REPORTS') === 'true' ? true :
+        getEnvVar('SFDX_HARDIS_CODING_AGENT_GENERATE_REPORTS') === 'false' ? false :
+          config.codingAgentGenerateReports ?? false;
 
     // Check if AI is available for notification collection and summary
     const aiAvailable = await AiProvider.isAiAvailable();
@@ -355,12 +370,17 @@ ${this.getDefaultCommandsMarkdown()}
         continue;
       }
       // Run command
-      const commandStr = /(^|\s)--agent(\s|$)/.test(command.command)
+      let commandStr = /(^|\s)--agent(\s|$)/.test(command.command)
         ? command.command
         : `${command.command} --agent`;
+      if (/^sf hardis/.test(commandStr) && !/(^|\s)--skipauth(\s|$)/.test(commandStr)) {
+        commandStr = `${commandStr} --skipauth`;
+      }
       uxLog("action", this, c.cyan(t('runningMonitoringCommandKey', { command: c.bold(command.title), command1: c.bold(command.key) })));
+      const startTime = Date.now();
       try {
         const execCommandResult = await execCommand(commandStr, this, { fail: false, output: true });
+        const duration = Date.now() - startTime;
         if (execCommandResult.status === 0) {
           uxLog("success", this, c.green(t('commandHasBeenRunSuccessfully', { command: c.bold(command.title) })));
         } else {
@@ -371,15 +391,18 @@ ${this.getDefaultCommandsMarkdown()}
           title: command.title,
           status: execCommandResult.status === 0 ? 'success' : 'failure',
           command: command.command,
+          duration: MonitorAll.formatDuration(duration),
         });
       } catch (e) {
         // Handle unexpected failure
+        const duration = Date.now() - startTime;
         success = false;
         uxLog("warning", this, c.yellow(t('commandHasFailed2', { command: c.bold(command.title), as: (e as Error).message })));
         commandsSummary.push({
           title: command.title,
           status: 'error',
           command: command.command,
+          duration: MonitorAll.formatDuration(duration),
         });
       }
     }
@@ -422,6 +445,7 @@ ${this.getDefaultCommandsMarkdown()}
         const pptxPath = await generateMonitoringPptxReport(notifications, aiSummary, orgUrl, reportDir);
         if (pptxPath) {
           uxLog("success", this, c.green(t('monitoringPptxReportGenerated', { path: pptxPath })));
+          WebSocketClient.sendReportFileMessage(pptxPath, t('monitoringPptxReport', { path: pptxPath }), "report");
         }
       } catch (pptxErr) {
         uxLog("warning", this, c.yellow(t('monitoringPptxReportFailed', { message: (pptxErr as Error).message })));
