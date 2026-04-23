@@ -85,8 +85,8 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 - **Notifications:** Relies on \`NotifProvider\` to broadcast the score metric, top risky settings, and the XLSX attachment. Grafana pipelines reuse \`data.metric\` (score) and \`metrics\` (risk counters) fields.
 - **Exit codes:** Sets \`process.exitCode = 1\` whenever an error severity is detected to help CI pipelines fail fast when the security score drops below expectations.
 </details>
-`;
 
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
   public static examples = ['$ sf hardis:org:monitor:health-check'];
 
   public static flags: any = {
@@ -104,6 +104,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };

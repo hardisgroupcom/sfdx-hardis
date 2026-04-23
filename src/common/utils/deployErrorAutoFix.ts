@@ -1,6 +1,7 @@
 import c from "chalk";
 import { getCurrentGitBranch, git, uxLog } from "./index.js";
 import { CodingAgentProvider } from "../aiProvider/codingAgentProvider.js";
+import { buildPromptFromTemplate } from "../aiProvider/promptTemplates.js";
 import { GitProvider } from "../gitProvider/index.js";
 import { t } from "./i18n.js";
 
@@ -59,13 +60,20 @@ export async function autoFixDeployErrors(
     await git().checkoutLocalBranch(fixBranch);
 
     // Run the coding agent to fix errors
-    const agentResult = await CodingAgentProvider.runAgentToFixErrors(
-      errorsAndTips,
-      failedTests,
-      options.targetUsername || null,
-    );
+    const prompt = await buildDeployFixPrompt(errorsAndTips, failedTests, options.targetUsername || null);
+    const runResult = await CodingAgentProvider.runPrompt(prompt);
 
-    if (!agentResult || !agentResult.success || agentResult.fixedFiles.length === 0) {
+    if (!runResult) {
+      uxLog("warning", this, c.yellow(t("codingAgentNoFixesApplied")));
+      await git().checkout(currentBranch);
+      await git().deleteLocalBranch(fixBranch, true);
+      return { success: false };
+    }
+
+    const fixedFiles = await getChangedFiles();
+    const fixesDescription = parseFixesSummary(runResult.stdout);
+
+    if (fixedFiles.length === 0) {
       uxLog("warning", this, c.yellow(t("codingAgentNoFixesApplied")));
       // Go back to original branch
       await git().checkout(currentBranch);
@@ -73,6 +81,13 @@ export async function autoFixDeployErrors(
       await git().deleteLocalBranch(fixBranch, true);
       return { success: false };
     }
+
+    const agentResult = {
+      agent: runResult.agent,
+      fixedFiles,
+      errorsDescription: buildErrorsDescription(errorsAndTips, failedTests),
+      fixesDescription: fixesDescription || t("codingAgentAppliedFixes", { count: String(fixedFiles.length) }),
+    };
 
     uxLog("action", this, c.cyan(t("codingAgentFixesApplied", { count: String(agentResult.fixedFiles.length) })));
 
@@ -170,6 +185,105 @@ function buildPullRequestDescription(
 
   lines.push("---");
   lines.push("_Powered by [sfdx-hardis](https://sfdx-hardis.cloudity.com) auto-fix feature_");
+
+  return lines.join("\n");
+}
+
+/**
+ * Build the prompt for the coding agent using the template system.
+ */
+async function buildDeployFixPrompt(
+  errorsAndTips: any[],
+  failedTests: any[],
+  targetUsername: string | null,
+): Promise<string> {
+  const errorsText = formatErrorsForPrompt(errorsAndTips);
+  const failedTestsText = formatFailedTestsForPrompt(failedTests);
+
+  return await buildPromptFromTemplate("PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS", {
+    ERRORS: errorsText || "No deployment errors.",
+    FAILED_TESTS: failedTestsText || "No failed tests.",
+    TARGET_ORG: targetUsername || "N/A",
+  });
+}
+
+function formatErrorsForPrompt(errorsAndTips: any[]): string {
+  if (errorsAndTips.length === 0) return "";
+  const lines: string[] = [];
+  for (const item of errorsAndTips) {
+    lines.push(`### Error: ${item.error?.message || "Unknown error"}`);
+    if (item.tip?.message) {
+      lines.push(`Tip: ${item.tip.message}`);
+    }
+    if (item.tipFromAi?.promptResponse) {
+      lines.push(`AI Suggestion: ${item.tipFromAi.promptResponse}`);
+    }
+    lines.push("");
+  }
+  return lines.join("\n");
+}
+
+function formatFailedTestsForPrompt(failedTests: any[]): string {
+  if (failedTests.length === 0) return "";
+  const lines: string[] = [];
+  for (const test of failedTests) {
+    lines.push(`### Test: ${test.class}.${test.method}`);
+    lines.push(`Error: ${test.error}`);
+    if (test.stack) {
+      lines.push(`Stack: ${test.stack}`);
+    }
+    lines.push("");
+  }
+  return lines.join("\n");
+}
+
+async function getChangedFiles(): Promise<string[]> {
+  try {
+    const status = await git().status();
+    return [
+      ...status.modified,
+      ...status.created,
+      ...status.renamed.map((r) => r.to),
+    ];
+  } catch {
+    return [];
+  }
+}
+
+function parseFixesSummary(output: string): string {
+  const summaryMatch = output.match(/---[\s\w]*SUMMARY[\s\w]*---([\s\S]*)/i);
+  if (summaryMatch) {
+    return summaryMatch[1].trim();
+  }
+  if (output.length > 0) {
+    return output.slice(-5000).trim();
+  }
+  return "";
+}
+
+function buildErrorsDescription(errorsAndTips: any[], failedTests: any[]): string {
+  const lines: string[] = [];
+
+  if (errorsAndTips.length > 0) {
+    lines.push("## Deployment Errors");
+    lines.push("");
+    for (const item of errorsAndTips) {
+      lines.push(`- **Error**: ${item.error?.message || "Unknown error"}`);
+      if (item.tip?.message) {
+        lines.push(`  - **Tip**: ${item.tip.message}`);
+      }
+    }
+    lines.push("");
+  }
+
+  if (failedTests.length > 0) {
+    lines.push("## Failed Tests");
+    lines.push("");
+    for (const test of failedTests) {
+      lines.push(`- **${test.class}.${test.method}**: ${test.error}`);
+    }
+    lines.push("");
+  }
 
   return lines.join("\n");
 }

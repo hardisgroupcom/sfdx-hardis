@@ -59,7 +59,9 @@ Key functionalities:
 - **Notifications:** Sends to Grafana, Slack, MS Teams.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/) and can output Grafana, Slack and MsTeams Notifications.
-`;
+
+
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:deployments',
@@ -89,6 +91,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -105,6 +111,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DiagnoseDeployments);
+    const agentMode = flags.agent === true;
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
     let period = flags.period as string | undefined;
@@ -113,7 +120,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     let dateFilter: string | undefined;
     if (!period) {
-      if (isCI) {
+      if (isCI || agentMode) {
         period = 'daily';
       } else {
         const promptRes = await prompts({

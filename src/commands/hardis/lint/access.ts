@@ -61,7 +61,9 @@ The command's technical implementation involves:
 - **Access Verification Logic:** Iterates through each element to check and verifies if it has the necessary access enabled in any of the non-ignored Permission Sets or Profiles.
 - **Data Aggregation:** Collects all elements with missing access into a \`missingElements\` array and \`missingElementsMap\` for reporting and notification purposes.
 </details>
-`;
+
+
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
 
   public static examples = [
     '$ sf hardis:lint:access',
@@ -100,6 +102,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': optionalOrgFlagWithDeprecations,
   };
 
@@ -109,6 +115,7 @@ The command's technical implementation involves:
   public static requiresProject = true;
 
   protected folder: string;
+  protected agentMode = false;
   protected customSettingsNames: string[] = [];
   protected missingElements: any[] = [];
   protected missingElementsMap: any = {};
@@ -168,6 +175,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(LintAccess);
+    this.agentMode = flags.agent === true;
     const config = await getConfig('user');
     this.folder = flags.folder || './force-app';
     this.hasToDisplayJsonOnly = this.argv.includes('--json');
@@ -531,7 +539,7 @@ The command's technical implementation involves:
   }
 
   private async handleFixIssues() {
-    if (!isCI && this.missingElements.length > 0 && this.argv.includes('--websocket')) {
+    if (!isCI && !this.agentMode && this.missingElements.length > 0 && this.argv.includes('--websocket')) {
       const promptUpdate = await prompts({
         type: 'confirm',
         message: c.cyanBright(t('doYouWantToAddTheMissing')),

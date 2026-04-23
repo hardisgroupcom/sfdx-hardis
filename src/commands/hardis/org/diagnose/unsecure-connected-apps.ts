@@ -66,7 +66,9 @@ The command's technical implementation involves:
 - **File Management:** Generates multiple output formats (CSV, XLSX) and manages file paths using \`generateReportPath\` for consistent report organization.
 - **Connection Management:** Uses \`setConnectionVariables\` to ensure proper authentication context for notification providers that require org connection details.
 </details>
-`;
+
+
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:unsecure-connected-apps',
@@ -88,6 +90,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -106,6 +112,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(UnsecuredConnectedApps);
+    const agentMode = flags.agent === true;
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
     const conn: Connection = flags['target-org'].getConnection();
@@ -350,7 +357,7 @@ The command's technical implementation involves:
         uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.push(appName);
       }
     }
-    if (!isCI) {
+    if (!isCI && !agentMode) {
       if (uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.length > 0) {
         const confirmPromptRes = await prompts({
           type: 'confirm',
@@ -383,7 +390,7 @@ The command's technical implementation involves:
     }
 
     // Suggest to delete tokens for some connected apps using https://MyDomainName.my.salesforce.com/services/oauth2/revoke?token=(the Delete Token)
-    if (!isCI && unsecuredOAuthTokens.length > 0) {
+    if (!isCI && !agentMode && unsecuredOAuthTokens.length > 0) {
       const deletableOAuthTokens = unsecuredOAuthTokens.filter(token => uniqueUnsecureConnectedAppsWithTokensNotInConnectedApps.includes(token.AppName));
 
       if (deletableOAuthTokens.length > 0) {
@@ -431,7 +438,7 @@ The command's technical implementation involves:
     }
 
     // Handle secured apps that also have stale unsecured tokens (mixed-status apps)
-    if (!isCI && unsecuredOAuthTokens.length > 0) {
+    if (!isCI && !agentMode && unsecuredOAuthTokens.length > 0) {
       const securedAppsWithUnsecuredTokensMap = new Map<string, any[]>();
       for (const token of unsecuredOAuthTokens) {
         const hasSecuredToken = allOAuthTokensWithStatus.some(

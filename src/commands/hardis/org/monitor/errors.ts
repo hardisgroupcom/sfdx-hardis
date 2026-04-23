@@ -53,8 +53,8 @@ Key functionalities:
 - **Notifications:** Sends notifications with summary metrics and file attachments.
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/) and can output Grafana, Slack and MsTeams Notifications.
-`;
 
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
   public static examples = ['$ sf hardis:org:monitor:errors'];
 
   public static flags: any = {
@@ -73,6 +73,10 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -80,6 +84,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
   protected static triggerNotification = true;
 
   protected debugMode = false;
+  protected agentMode = false;
   protected days = 1;
 
   protected apexErrors: any[] = [];
@@ -96,6 +101,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(MonitorErrors);
+    this.agentMode = flags.agent === true;
     this.debugMode = flags.debug || false;
     this.days = await this.resolveDays(flags.days);
 
@@ -148,7 +154,7 @@ This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.co
     if (Number.isFinite(inputDays) && (inputDays as number) > 0) {
       return Math.floor(inputDays as number);
     }
-    if (isCI) {
+    if (isCI || this.agentMode) {
       return 1;
     }
     const promptRes = await prompts({

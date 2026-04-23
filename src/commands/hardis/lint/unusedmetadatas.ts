@@ -56,7 +56,9 @@ The command's technical implementation involves:
 - **Report Generation:** It generates a CSV report (\`lint-unusedmetadatas.csv\`) containing details of all unused metadata elements.
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications (e.g., to Slack, MS Teams, Grafana) about the presence and count of unused metadata, making it suitable for automated monitoring in CI/CD pipelines.
 </details>
-`;
+
+
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
   public static examples = ['$ sf hardis:lint:unusedmetadatas'];
   /* jscpd:ignore-start */
   public static flags: any = {
@@ -74,6 +76,10 @@ The command's technical implementation involves:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': optionalOrgFlagWithDeprecations,
   };

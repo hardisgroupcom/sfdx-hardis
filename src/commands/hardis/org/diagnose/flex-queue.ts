@@ -31,7 +31,9 @@ export default class DiagnoseFlexQueue extends SfCommand<any> {
 - **Severity:** **error** when count reaches **${APEX_FLEX_QUEUE_MAX_JOBS}** (queue full); **warning** when count is at or above the threshold but below the max.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/) and can output Grafana, Slack and MsTeams Notifications.
-`;
+
+
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:flex-queue',
@@ -60,6 +62,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };

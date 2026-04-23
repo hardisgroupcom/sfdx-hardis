@@ -50,7 +50,9 @@ The command's technical implementation involves:
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and detailed metrics for each limit, which can be consumed by monitoring dashboards like Grafana.
 - **Exit Code Management:** Sets the process exit code to 1 if any limit is in an 'error' state, indicating a critical issue.
 </details>
-`;
+
+
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
 
   public static examples = ['$ sf hardis:org:monitor:limits'];
 
@@ -69,6 +71,10 @@ The command's technical implementation involves:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };

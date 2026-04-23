@@ -2,6 +2,7 @@
 title: All Environment Variables
 description: Comprehensive list of all environment variables used in sfdx-hardis
 ---
+
 <!-- markdownlint-disable MD013 -->
 
 ## All Environment Variables
@@ -17,31 +18,30 @@ This list has been generated with GitHub Copilot so if you see any incoherence p
 
 - [Custom sfdx-hardis Variables](#custom-sfdx-hardis-variables)
 
-   - [Salesforce Configuration](#salesforce-configuration)
-   - [Deployment Control](#deployment-control)
-   - [Monitoring & Debugging](#monitoring-debugging)
-   - [System Configuration](#system-configuration)
-   - [Bulk API Settings](#bulk-api-settings)
+  - [Salesforce Configuration](#salesforce-configuration)
+  - [Deployment Control](#deployment-control)
+  - [Monitoring & Debugging](#monitoring-debugging)
+  - [System Configuration](#system-configuration)
+  - [Bulk API Settings](#bulk-api-settings)
 
 - [Tool-Specific Variables](#tool-specific-variables)
-   - [Azure DevOps](#azure-devops)
-   - [GitLab](#gitlab)
-   - [GitHub](#github)
-   - [Bitbucket](#bitbucket)
-   - [JIRA Integration](#jira-integration)
-   - [Slack Integration](#slack-integration)
-   - [AI Common variables](#ai-common-variables)
-   - [MegaLinter LLM Advisor](#megalinter-llm-advisor)
-   - [Agentforce (Salesforce) integration](#agentforce-salesforce-integration)
-   - [LangChain integration (OpenAI, Anthropic, Gemini...)](#langchain-integration-openai-anthropic-gemini)
-   - [Coding Agent Auto-Fix](#coding-agent-auto-fix)
-   - [Codex (direct) variables](#codex-direct-variables)
-   - [OpenAI (direct) variables](#openai-direct-variables)
-   - [Email Notifications](#email-notifications)
-   - [Browser Automation](#browser-automation)
-   - [Generic Ticketing](#generic-ticketing)
-   - [Generic CI/CD](#generic-cicd)
-   
+  - [Azure DevOps](#azure-devops)
+  - [GitLab](#gitlab)
+  - [GitHub](#github)
+  - [Bitbucket](#bitbucket)
+  - [JIRA Integration](#jira-integration)
+  - [Slack Integration](#slack-integration)
+  - [AI Common variables](#ai-common-variables)
+  - [MegaLinter LLM Advisor](#megalinter-llm-advisor)
+  - [Agentforce (Salesforce) integration](#agentforce-salesforce-integration)
+  - [LangChain integration (OpenAI, Anthropic, Gemini...)](#langchain-integration-openai-anthropic-gemini)
+  - [Coding Agent Auto-Fix](#coding-agent-auto-fix)
+  - [Codex (direct) variables](#codex-direct-variables)
+  - [OpenAI (direct) variables](#openai-direct-variables)
+  - [Email Notifications](#email-notifications)
+  - [Browser Automation](#browser-automation)
+  - [Generic Ticketing](#generic-ticketing)
+  - [Generic CI/CD](#generic-cicd)
 - [Summary](#summary)
 
 ---
@@ -163,13 +163,13 @@ These variables integrate sfdx-hardis with external tools and platforms.
 
 ### JIRA Integration
 
-| Variable Name         | Description                                   | Default Value                                                             | Possible Values                                                                                    | Usage Location                                                                                                                                   |
-|-----------------------|-----------------------------------------------|---------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| **JIRA_EMAIL**        | JIRA user email for authentication            | `undefined`                                                               | Valid email addresses (e.g., `'admin@mycompany.com'`, `'jira-user@example.org'`)                   | [`src/common/ticketProvider/jiraProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/jiraProvider.ts) |
-| **JIRA_HOST**         | JIRA server hostname                          | `"https://define.JIRA_HOST.in.cicd.variables/"`                           | Valid JIRA server URLs (e.g., `'https://mycompany.atlassian.net'`, `'https://jira.mycompany.com'`) | [`src/common/ticketProvider/jiraProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/jiraProvider.ts) |
-| **JIRA_PAT**          | JIRA Personal Access Token for authentication | `undefined`                                                               | Valid JIRA personal access tokens (e.g., `'ATATTXXXXXXXXXXXXXXXXXXXX'`)                            | [`src/common/ticketProvider/jiraProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/jiraProvider.ts) |
-| **JIRA_TICKET_REGEX** | Regular expression for JIRA ticket references | `"(?<=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\\d{1,6})(?=[^a-zA-Z0-9_-]|$)"` | Valid regular expressions (e.g., `'PROJ-\\d+'`, `'[A-Z]+-\\d{1,4}'`)                               | [`src/common/ticketProvider/jiraProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/jiraProvider.ts) |
-| **JIRA_TOKEN**        | JIRA API token for authentication             | `undefined`                                                               | Valid JIRA API tokens (e.g., `'ATATT3xFfGF0T4JVXXXXXXXXXXXXXXXXXXXX'`)                             | [`src/common/ticketProvider/jiraProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/jiraProvider.ts) |
+| Variable Name         | Description                                   | Default Value                                   | Possible Values                                                                                    | Usage Location                                                                                                                                   |
+| --------------------- | --------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **JIRA_EMAIL**        | JIRA user email for authentication            | `undefined`                                     | Valid email addresses (e.g., `'admin@mycompany.com'`, `'jira-user@example.org'`)                   | [`src/common/ticketProvider/jiraProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/jiraProvider.ts) |
+| **JIRA_HOST**         | JIRA server hostname                          | `"https://define.JIRA_HOST.in.cicd.variables/"` | Valid JIRA server URLs (e.g., `'https://mycompany.atlassian.net'`, `'https://jira.mycompany.com'`) | [`src/common/ticketProvider/jiraProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/jiraProvider.ts) |
+| **JIRA_PAT**          | JIRA Personal Access Token for authentication | `undefined`                                     | Valid JIRA personal access tokens (e.g., `'ATATTXXXXXXXXXXXXXXXXXXXX'`)                            | [`src/common/ticketProvider/jiraProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/jiraProvider.ts) |
+| **JIRA_TICKET_REGEX** | Regular expression for JIRA ticket references | `"(?<=[^a-zA-Z0-9_-]                            | ^)([A-Za-z0-9]{2,10}-\\d{1,6})(?=[^a-zA-Z0-9_-]                                                    | $)"`                                                                                                                                             | Valid regular expressions (e.g., `'PROJ-\\d+'`, `'[A-Z]+-\\d{1,4}'`) | [`src/common/ticketProvider/jiraProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/jiraProvider.ts) |
+| **JIRA_TOKEN**        | JIRA API token for authentication             | `undefined`                                     | Valid JIRA API tokens (e.g., `'ATATT3xFfGF0T4JVXXXXXXXXXXXXXXXXXXXX'`)                             | [`src/common/ticketProvider/jiraProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/jiraProvider.ts) |
 
 ### Slack Integration
 
@@ -177,7 +177,7 @@ These variables integrate sfdx-hardis with external tools and platforms.
 |--------------------------------------|------------------------------------------------------|---------------|------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **SLACK_CHANNEL_ID**                 | Slack channel ID for notifications                   | `undefined`   | Valid Slack channel IDs (e.g., `'C1234567890'`, `'C0123456789'`) | [`src/common/notifProvider/slackProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/slackProvider.ts)                                                                                                                                   |
 | **SLACK_CHANNEL_ID_ERRORS_WARNINGS** | Slack channel ID for error and warning notifications | `undefined`   | Valid Slack channel IDs (e.g., `'C1234567890'`, `'C9876543210'`) | [`src/common/notifProvider/slackProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/slackProvider.ts)                                                                                                                                   |
-| **SLACK_CHANNEL_ID_{BRANCH}**        | Branch-specific Slack channel ID                     | `undefined`   | Valid Slack channel IDs (e.g., `'C1234567890'` for main branch)  | [`src/common/notifProvider/slackProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/slackProvider.ts)                                                                                                                                   |
+| **SLACK*CHANNEL_ID*{BRANCH}**        | Branch-specific Slack channel ID                     | `undefined`   | Valid Slack channel IDs (e.g., `'C1234567890'` for main branch)  | [`src/common/notifProvider/slackProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/slackProvider.ts)                                                                                                                                   |
 | **SLACK_TOKEN**                      | Slack API token for notifications                    | `undefined`   | Valid Slack bot tokens (e.g., `'xoxb-XXXXXXXXXXXXXXXXXXXXXXXX'`) | [`src/common/notifProvider/slackProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/slackProvider.ts), [`src/common/notifProvider/utils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/utils.ts) |
 
 ### AI Common variables
@@ -203,7 +203,7 @@ These variables integrate sfdx-hardis with external tools and platforms.
 | **LLM_MAX_TOKENS**             | Maximum tokens to use for LLM advisor requests                                 | `undefined` | Positive integer                                           | `.mega-linter.yml`, CI configs                                                        |
 | **LLM_TEMPERATURE**            | Sampling temperature for LLM advisor requests                                  | `undefined` | 0..1                                                       | `.mega-linter.yml`, CI configs                                                        |
 | **LLM_ADVISOR_WITH_METADATAS** | Opt-in: include Salesforce metadata file contents when calling the LLM advisor | `false`     | `'true'`, `'false'`                                        | `src/common/utils/deployTipJson.ts` (opt-in behavior; requires enabling in CI or env) |
-| **LLM_METADATA_SEARCH_PATHS** | Optional: comma-separated additional paths to search for metadata files    | `undefined` | Comma-separated paths (e.g., `config/,src/`)              | Used by metadata-aware AI flows to extend search roots (suggested usage)
+| **LLM_METADATA_SEARCH_PATHS**  | Optional: comma-separated additional paths to search for metadata files        | `undefined` | Comma-separated paths (e.g., `config/,src/`)               | Used by metadata-aware AI flows to extend search roots (suggested usage)              |
 
 ### Agentforce (Salesforce) integration
 
@@ -236,15 +236,20 @@ You can also define non-secret defaults (provider, model, temperature, etc.) in 
 
 These variables control the **coding agent auto-fix** feature, which uses AI coding agent CLIs (Claude, Codex, Gemini, Copilot) to automatically fix deployment errors and create Pull Requests. See [Coding Agent Auto-Fix documentation](salesforce-deployment-agent-autofix.md) for full setup instructions.
 
-| Variable Name                          | Description                                                                             | Default       | Possible Values                                    | Usage Location                                                                                                                                         |
-|----------------------------------------|-----------------------------------------------------------------------------------------|---------------|----------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **SFDX_HARDIS_CODING_AGENT_AUTO_FIX**  | Enable automatic fix of deployment errors using a coding agent CLI                      | `false`       | `'true'`, `'false'`                                | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
-| **SFDX_HARDIS_CODING_AGENT**           | Force a specific coding agent CLI instead of auto-detection                             | Auto-detected | `claude`, `codex-cli`, `gemini-cli`, `copilot-cli` | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
-| **SFDX_HARDIS_CODING_AGENT_MODEL**     | Override the model used by the coding agent CLI (e.g. `sonnet`, `o3`, `gemini-2.5-pro`) | Agent default | Model identifier supported by the chosen agent CLI | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
-| **SFDX_HARDIS_CODING_AGENT_MAX_TURNS** | Maximum number of agentic turns / iterations the coding agent CLI is allowed to perform | Agent default | Positive integer (e.g., `10`, `30`, `50`)          | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
-| **DEBUG_CODING_AGENT**                 | Show full coding agent output in logs (useful for debugging)                            | `false`       | `'true'`, `'false'`                                | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
+| Variable Name                                 | Description                                                                             | Default       | Possible Values                                    | Usage Location                                                                                                                                         |
+|-----------------------------------------------|-----------------------------------------------------------------------------------------|---------------|----------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **SFDX_HARDIS_CODING_AGENT_AUTO_FIX**         | Enable automatic fix of deployment errors using a coding agent CLI                      | `false`       | `'true'`, `'false'`                                | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
+| **SFDX_HARDIS_CODING_AGENT_GENERATE_REPORTS** | Enable coding-agent PPTX report generation in `hardis:org:monitor:all`                  | `false`       | `'true'`, `'false'`                                | [`src/commands/hardis/org/monitor/all.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/commands/hardis/org/monitor/all.ts)             |
+| **SFDX_HARDIS_CODING_AGENT**                  | **Required.** Coding agent CLI to use                                                   |               | `claude`, `codex-cli`, `gemini-cli`, `copilot-cli` | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
+| **SFDX_HARDIS_CODING_AGENT_MODEL**            | Override the model used by the coding agent CLI (e.g. `sonnet`, `o3`, `gemini-2.5-pro`) | Agent default | Model identifier supported by the chosen agent CLI | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
+| **SFDX_HARDIS_CODING_AGENT_MAX_TURNS**        | Maximum number of agentic turns / iterations the coding agent CLI is allowed to perform | Agent default | Positive integer (e.g., `10`, `30`, `50`)          | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
+| **DEBUG_CODING_AGENT**                        | Show full coding agent output in logs (useful for debugging)                            | `false`       | `'true'`, `'false'`                                | [`src/common/aiProvider/codingAgentProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/aiProvider/codingAgentProvider.ts) |
 
-All non-secret options can also be set in `.sfdx-hardis.yml` using camelCase keys: `codingAgentAutoFix`, `codingAgent`, `codingAgentModel`, `codingAgentMaxTurns`.
+All non-secret options can also be set in `.sfdx-hardis.yml` using camelCase keys: `codingAgentAutoFix`, `codingAgentGenerateReports`, `codingAgent`, `codingAgentModel`, `codingAgentMaxTurns`.
+
+!!! tip "Local mode"
+
+    When running outside CI/CD (locally), sfdx-hardis auto-detects installed coding agent CLIs **without requiring API key environment variables**. Agents use their own login (`claude login`, `gh auth login`, etc.).
 
 ### Codex (direct) variables
 
@@ -278,7 +283,7 @@ Project-wide defaults (e.g., preferred model) can be stored directly at the root
 |----------------------------------|------------------------------------------------------------|---------------|--------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **MS_TEAMS_WEBHOOK_URL**         | Microsoft Teams webhook URL for notifications (deprecated) | `undefined`   | Valid MS Teams webhook URLs (e.g., `'https://outlook.office.com/webhook/XXXXXXXXXXXX...'`) | [`src/common/notifProvider/utils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/utils.ts)                                                                                                                                                   |
 | **NOTIF_EMAIL_ADDRESS**          | Email address for notifications                            | `undefined`   | Valid email addresses (e.g., `'notifications@mycompany.com'`, `'alerts@example.org'`)      | [`src/common/notifProvider/emailProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/emailProvider.ts), [`src/common/notifProvider/utils.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/utils.ts) |
-| **NOTIF_EMAIL_ADDRESS_{BRANCH}** | Branch-specific email address for notifications            | `undefined`   | Valid email addresses (e.g., `'prod-alerts@mycompany.com'` for main branch)                | [`src/common/notifProvider/emailProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/emailProvider.ts)                                                                                                                                   |
+| **NOTIF*EMAIL_ADDRESS*{BRANCH}** | Branch-specific email address for notifications            | `undefined`   | Valid email addresses (e.g., `'prod-alerts@mycompany.com'` for main branch)                | [`src/common/notifProvider/emailProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/notifProvider/emailProvider.ts)                                                                                                                                   |
 
 ### Browser Automation
 

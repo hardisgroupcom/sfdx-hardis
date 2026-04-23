@@ -13,7 +13,7 @@ import Papa from 'papaparse';
 import ExcelJS from 'exceljs';
 
 // Project Specific Utilities
-import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from './index.js';
+import { getCurrentGitBranch, isAgentMode, isCI, isGitRepo, uxLog } from './index.js';
 import { bulkQuery, soqlQuery, bulkQueryByChunks } from './apiUtils.js';
 import { prompts } from './prompts.js';
 import { getApiVersion, getReportDirectory } from '../../config/index.js';
@@ -1521,7 +1521,7 @@ export async function generateCsvFile(
       uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn', { outputPath: c.bold(outputPath) }))));
     }
     result.csvFile = outputPath;
-    if (!WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket) {
+    if (!isAgentMode() && !WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket) {
       WebSocketClient.requestOpenFile(outputPath);
     }
     const csvFileTitle = options?.fileTitle ? `${options.fileTitle} (CSV)` : options?.csvFileTitle ?? "Report (CSV)";
@@ -1554,7 +1554,7 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
     WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
     result.xlsxFile = xslxFile;
-    if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+    if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
       try {
         uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));
         await open(xslxFile, { wait: false });
@@ -1593,7 +1593,7 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
     WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
     // result.xlsxFile = xslxFile;
-    if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+    if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
       try {
         uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));
         await open(xslxFile, { wait: false });

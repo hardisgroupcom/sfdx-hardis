@@ -54,7 +54,9 @@ The command's technical implementation involves extensive querying of Salesforce
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
 - **User Interaction:** Uses \`prompts\` for interactive confirmation before performing deletion operations.
 </details>
-`;
+
+
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
 
   public static examples = ['$ sf hardis:org:diagnose:unusedlicenses', '$ sf hardis:org:diagnose:unusedlicenses --fix'];
 
@@ -74,6 +76,10 @@ The command's technical implementation involves extensive querying of Salesforce
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
   public static requiresProject = false;
@@ -89,6 +95,7 @@ The command's technical implementation involves extensive querying of Salesforce
   protected static alwaysExcludeForActiveUsersPermissionSetLicenses = ['IdentityConnect'];
 
   protected debugMode = false;
+  protected agentMode = false;
   protected outputFile;
   protected outputFilesRes: any = {};
   protected permissionSetLicenseAssignmentsActive: any[] = [];
@@ -105,6 +112,7 @@ The command's technical implementation involves extensive querying of Salesforce
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DiagnoseUnusedLicenses);
+    this.agentMode = flags.agent === true;
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
 
@@ -388,7 +396,7 @@ The command's technical implementation involves extensive querying of Salesforce
   }
 
   private async managePermissionSetLicenseAssignmentsDeletion(conn) {
-    if (!isCI && this.unusedPermissionSetLicenseAssignments.length) {
+    if (!isCI && !this.agentMode && this.unusedPermissionSetLicenseAssignments.length) {
       const confirmRes = await prompts({
         type: 'select',
         message: t('doYouWantToDeleteUnusedPermission'),

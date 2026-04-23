@@ -62,7 +62,9 @@ The command's technical implementation involves:
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications (e.g., to Slack, MS Teams, Grafana) about the presence and count of inactive metadata, making it suitable for automated monitoring in CI/CD pipelines.
 - **Error Handling:** It includes basic error handling for file operations and ensures that the process continues even if some files cannot be read.
 </details>
-`;
+
+
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
 
   public static examples = ['$ sf hardis:lint:metadatastatus'];
   /* jscpd:ignore-start */
@@ -81,6 +83,10 @@ The command's technical implementation involves:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': optionalOrgFlagWithDeprecations,
   };

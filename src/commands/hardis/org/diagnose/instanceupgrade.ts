@@ -44,7 +44,9 @@ The command's technical implementation involves:
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including the instance name, upgrade date, and days remaining, along with relevant metrics for monitoring dashboards.
 - **User Feedback:** Provides clear messages to the user about the upgrade status and proximity.
 </details>
-`;
+
+
+Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
 
   public static examples = ['$ sf hardis:org:diagnose:instanceupgrade'];
 
@@ -59,6 +61,10 @@ The command's technical implementation involves:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };

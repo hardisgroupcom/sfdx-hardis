@@ -760,6 +760,40 @@
         </div>
     </div>
 </div>
+<div class="accordion" id="accordioncodingAgentGenerateReports">
+    <div class="card">
+        <div class="card-header" id="headingcodingAgentGenerateReports">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#codingAgentGenerateReports"
+                        aria-expanded="" aria-controls="codingAgentGenerateReports" onclick="setAnchor('#codingAgentGenerateReports')"><span class="property-name">codingAgentGenerateReports</span></button>
+            </h2>
+        </div>
+
+        <div id="codingAgentGenerateReports"
+             class="collapse property-definition-div" aria-labelledby="headingcodingAgentGenerateReports"
+             data-parent="#accordioncodingAgentGenerateReports">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#codingAgentGenerateReports" onclick="anchorLink('codingAgentGenerateReports')">codingAgentGenerateReports</a></div><h4>Enable coding agent monitoring reports</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Set to true to enable coding-agent PPTX report generation in hardis:org:monitor:all. Equivalent to SFDX<em>HARDIS</em>CODING<em>AGENT</em>GENERATE_REPORTS env var.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordioncodingAgent">
     <div class="card">
         <div class="card-header" id="headingcodingAgent">
@@ -782,7 +816,7 @@
             />
         </svg>
     <a href="#codingAgent" onclick="anchorLink('codingAgent')">codingAgent</a></div><h4>Coding agent</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
-<span class="description"><p>Force a specific coding agent CLI instead of auto-detection. Equivalent to SFDX<em>HARDIS</em>CODING_AGENT env var.</p>
+<span class="description"><p>Coding agent CLI to use for features that invoke coding agents (auto-fix, monitoring reports, etc.). Must be set to enable coding agent features. Locally, agents authenticate via their own login (e.g. claude login); in CI, provide the matching API key env var. Equivalent to SFDX<em>HARDIS</em>CODING_AGENT env var.</p>
 </span><div class="enum-value" id="codingAgent_enum">
             <h4>Must be one of:</h4>
             <ul class="list-group"><li class="list-group-item enum-item">"claude"</li><li class="list-group-item enum-item">"codex-cli"</li><li class="list-group-item enum-item">"gemini-cli"</li><li class="list-group-item enum-item">"copilot-cli"</li></ul>

@@ -249,6 +249,8 @@ If you have configured one of the AI providers above (LangChain, OpenAI, Codex),
 
 The API key configured for your AI provider (e.g. `LANGCHAIN_LLM_MODEL_API_KEY`) is automatically reused by the coding agent CLI, so no extra key configuration is needed.
 
+**Local mode:** When running outside CI/CD (on your local machine), sfdx-hardis will automatically detect installed coding agent CLIs and use them **without any API key environment variables**. Agents authenticate via their own login mechanisms (`claude login`, `gh auth login`, etc.).
+
 > **Use with caution:** This feature is in beta. AI coding agents can make mistakes — all proposed changes must be reviewed by an expert before merging.
 
 See [Coding Agent Auto-Fix](salesforce-deployment-agent-autofix.md) for full setup instructions.

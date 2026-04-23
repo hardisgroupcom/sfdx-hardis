@@ -2,6 +2,18 @@
 
 ## [beta] (master)
 
+- [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/)
+  - AI-powered monitoring summary: generates a consolidated executive summary from monitoring notifications when an AI provider is configured
+  - Weekly PPTX monitoring report (beta): on weekly runs, generates a PowerPoint report with a coding agent (Claude, Codex, Gemini, or Copilot) and attaches it to notifications
+  - New `--force-all` flag to force all checks including weekly ones (equivalent to `MONITORING_IGNORE_FREQUENCY=true`)
+  - Commands summary now includes execution duration per command
+  - Monitoring notification files and coding-agent prompts are kept in report folders for auditability and troubleshooting
+- Monitoring commands now run in formal non-interactive agent mode for automation scenarios
+- Coding agents
+  - `codingAgent` config property is now required (no auto-detection)
+  - Local use: when the selected coding agent is already authenticated (for example Claude via `claude login`), commands run with that local agent without requiring API key environment variables
+
+
 ## [7.9.1] 2026-04-21
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`

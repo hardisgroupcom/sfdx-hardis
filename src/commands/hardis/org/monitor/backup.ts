@@ -151,6 +151,10 @@ If Flow history doc always display a single state, you probably need to update y
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -185,6 +189,7 @@ If Flow history doc always display a single state, you probably need to update y
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(MonitorBackup);
+    const agentMode = flags.agent === true;
     this.full = flags.full || (process.env?.MONITORING_BACKUP_MODE_FULL === "true" ? true : false);
     this.maxByChunk = flags["max-by-chunk"] || 3000;
     this.startChunk = flags["start-chunk"] || 1;
@@ -332,7 +337,7 @@ If Flow history doc always display a single state, you probably need to update y
     });
 
     // Ask interactively only after backup is done and just before doc generation.
-    if (!isCI && !skipDocFlagProvided) {
+    if (!isCI && !agentMode && !skipDocFlagProvided) {
       const generateDocRes = await prompts({
         type: 'confirm',
         name: 'generateDoc',
@@ -344,7 +349,7 @@ If Flow history doc always display a single state, you probably need to update y
     }
 
     // Ask interactively if the user wants to rebuild the full documentation or just the diff.
-    if (!isCI && !this.skipDoc && !rebuildFullDocFlagProvided && process.env?.MONITORING_BACKUP_REBUILD_FULL_DOC == null) {
+    if (!isCI && !agentMode && !this.skipDoc && !rebuildFullDocFlagProvided && process.env?.MONITORING_BACKUP_REBUILD_FULL_DOC == null) {
       const rebuildFullDocRes = await prompts({
         type: 'confirm',
         name: 'rebuildFullDoc',

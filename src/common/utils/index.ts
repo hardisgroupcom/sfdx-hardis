@@ -29,6 +29,18 @@ let pluginsStdout: string | null = null;
 
 export const isCI = process.env.CI != null;
 
+let isAgentModeCache: boolean | null = null;
+
+export function isAgentMode(): boolean {
+  if (isAgentModeCache !== null) {
+    return isAgentModeCache;
+  }
+  const argv = (globalThis as any)?.processArgv || process.argv || [];
+  const agentMode = argv.some((arg: string) => arg === '--agent' || arg.startsWith('--agent='));
+  isAgentModeCache = agentMode;
+  return agentMode;
+}
+
 export function git(options: any = { output: false, displayCommand: true }): SimpleGit {
   const simpleGitInstance = simpleGit();
   // Hack to be able to display executed git command (and it still doesn't work...)
