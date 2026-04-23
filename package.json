@@ -78,6 +78,7 @@
   },
   "resolutions": {
     "axios": "1.15.0",
+    "uuid": "14.0.0",
     "basic-ftp": "5.3.0",
     "dompurify": "3.4.0",
     "form-data": "4.0.5",
