@@ -17,11 +17,11 @@ When a deployment fails, sfdx-hardis can automatically invoke a **coding agent C
 
 This feature works with the following coding agent CLIs:
 
-| Agent                  | CLI Package                                                                            | Auth mechanism                                               |
-|:-----------------------|:---------------------------------------------------------------------------------------|:-------------------------------------------------------------|
-| **Claude** (Anthropic) | [`@anthropic-ai/claude-code`](https://www.npmjs.com/package/@anthropic-ai/claude-code) | `ANTHROPIC_API_KEY` env var, or `claude login` locally                |
-| **Codex** (OpenAI)     | [`@openai/codex`](https://www.npmjs.com/package/@openai/codex)                         | `OPENAI_API_KEY` or `CODEX_API_KEY` env var, or local auth            |
-| **Gemini** (Google)    | [`@google/gemini-cli`](https://www.npmjs.com/package/@google/gemini-cli)               | `GEMINI_API_KEY` env var, or `gemini login` locally                   |
+| Agent                  | CLI Package                                                                            | Auth mechanism                                                                 |
+|:-----------------------|:---------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------|
+| **Claude** (Anthropic) | [`@anthropic-ai/claude-code`](https://www.npmjs.com/package/@anthropic-ai/claude-code) | `ANTHROPIC_API_KEY` env var, or `claude login` locally                         |
+| **Codex** (OpenAI)     | [`@openai/codex`](https://www.npmjs.com/package/@openai/codex)                         | `OPENAI_API_KEY` or `CODEX_API_KEY` env var, or local auth                     |
+| **Gemini** (Google)    | [`@google/gemini-cli`](https://www.npmjs.com/package/@google/gemini-cli)               | `GEMINI_API_KEY` env var, or `gemini login` locally                            |
 | **Copilot** (GitHub)   | [`@github/copilot`](https://www.npmjs.com/package/@github/copilot)                     | `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`, or `gh auth login` locally |
 
 ## How it works
@@ -107,7 +107,7 @@ You **must** specify which coding agent CLI to use. Set it via environment varia
 | Variable / Config key                                        | Description                                                                                               | Default       |
 |:-------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------|:--------------|
 | `SFDX_HARDIS_CODING_AGENT_AUTO_FIX` / `codingAgentAutoFix`   | Enable automatic fix of deployment errors using a coding agent                                            | `false`       |
-| `SFDX_HARDIS_CODING_AGENT` / `codingAgent`                   | **Required.** Coding agent CLI to use (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`)            |               |
+| `SFDX_HARDIS_CODING_AGENT` / `codingAgent`                   | **Required.** Coding agent CLI to use (`claude`, `codex-cli`, `gemini-cli`, `copilot-cli`)                |               |
 | `SFDX_HARDIS_CODING_AGENT_MODEL` / `codingAgentModel`        | Override the model used by the coding agent CLI (e.g. `claude-sonnet-4-20250514`, `o3`, `gemini-2.5-pro`) | Agent default |
 | `SFDX_HARDIS_CODING_AGENT_MAX_TURNS` / `codingAgentMaxTurns` | Maximum number of agentic turns / iterations the CLI is allowed to perform                                | Agent default |
 | `DEBUG_CODING_AGENT`                                         | Set to `true` to show full coding agent output in logs                                                    | `false`       |

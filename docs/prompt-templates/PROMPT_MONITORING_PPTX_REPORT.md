@@ -6,13 +6,13 @@ description: Prompt template for PROMPT_MONITORING_PPTX_REPORT
 # PROMPT_MONITORING_PPTX_REPORT
 
 ## Variables
-| Name | Description | Example |
-| :------|:-------------|:---------|
+| Name                   | Description                                                                   | Example                                                                                       |
+|:-----------------------|:------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------|
 | **NOTIFICATIONS_JSON** | JSON array of all monitoring notification messages collected during this run. | `[{"type":"ORG_LIMITS","severity":"warning","text":"Org limits are approaching thresholds"}]` |
-| **AI_SUMMARY** | AI-generated executive summary of the monitoring findings (markdown). | `The org is in good health overall, with a few warnings about approaching limits.` |
-| **ORG_URL** | The Salesforce org instance URL being monitored. | `https://mycompany.my.salesforce.com` |
-| **DATE** | The date of the monitoring run (YYYY-MM-DD). | `2026-04-22` |
-| **OUTPUT_FILE_PATH** | The absolute file path where the generated .pptx file must be written. | `/workspace/hardis-report/MonitoringReport_2026-04-22.pptx` |
+| **AI_SUMMARY**         | AI-generated executive summary of the monitoring findings (markdown).         | `The org is in good health overall, with a few warnings about approaching limits.`            |
+| **ORG_URL**            | The Salesforce org instance URL being monitored.                              | `https://mycompany.my.salesforce.com`                                                         |
+| **DATE**               | The date of the monitoring run (YYYY-MM-DD).                                  | `2026-04-22`                                                                                  |
+| **OUTPUT_FILE_PATH**   | The absolute file path where the generated .pptx file must be written.        | `/workspace/hardis-report/MonitoringReport_2026-04-22.pptx`                                   |
 
 ## Prompt
 
