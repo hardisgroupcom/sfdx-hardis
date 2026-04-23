@@ -21,7 +21,7 @@
     "@slack/types": "2.20.1",
     "@slack/web-api": "7.15.1",
     "@supercharge/promise-pool": "3.2.0",
-    "@xmldom/xmldom": "0.9.9",
+    "@xmldom/xmldom": "0.9.10",
     "axios": "1.15.0",
     "azure-devops-node-api": "14.1.0",
     "bitbucket": "2.12.0",
@@ -38,7 +38,7 @@
     "exceljs": "4.4.0",
     "extract-zip": "2.0.1",
     "farmhash": "5.0.1",
-    "fast-xml-parser": "5.5.10",
+    "fast-xml-parser": "5.7.0",
     "form-data": "4.0.5",
     "fs-extra": "11.3.3",
     "fs-readdir-recursive": "1.1.0",
@@ -79,10 +79,11 @@
   },
   "resolutions": {
     "axios": "1.15.0",
+    "uuid": "14.0.0",
     "basic-ftp": "5.3.0",
     "dompurify": "3.4.0",
     "form-data": "4.0.5",
-    "fast-xml-parser": "5.5.10",
+    "fast-xml-parser": "5.7.0",
     "lodash": "4.18.0",
     "lodash-es": "4.18.0",
     "picomatch": "4.0.4",
@@ -120,10 +121,12 @@
     "@types/which": "3.0.4",
     "@types/ws": "8.18.1",
     "@types/xml2js": "0.4.14",
+    "c8": "^11.0.0",
     "eslint-plugin-sf-plugin": "1.20.33",
     "oclif": "4.22.96",
     "tmp": "0.2.5",
     "ts-node": "10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "5.9.3"
   },
   "engines": {
@@ -222,7 +225,7 @@
     "prepack": "sf-prepack",
     "sync:grafana": "node scripts/sync-grafana.cjs",
     "test": "wireit",
-    "test:nuts": "nyc mocha \"**/*.nut.ts\" --slow 4500 --timeout 600000 --parallel",
+    "test:nuts": "c8 mocha \"**/*.nut.ts\" --slow 4500 --timeout 600000 --parallel",
     "test:only": "wireit",
     "version": "oclif readme"
   },
@@ -288,7 +291,7 @@
       ]
     },
     "test:only": {
-      "command": "node ./scripts/run-if-ci.mjs nyc mocha \"test/**/*.test.ts\"",
+      "command": "node ./scripts/run-if-ci.mjs c8 mocha \"test/**/*.test.ts\"",
       "env": {
         "FORCE_COLOR": "2"
       },
@@ -298,12 +301,12 @@
         "**/tsconfig.json",
         ".mocha*",
         "!*.nut.ts",
-        ".nycrc"
+        ".c8rc"
       ],
       "output": []
     },
     "test:command-reference": {
-      "command": "node --loader ts-node/esm --no-warnings=ExperimentalWarning \"./bin/dev.js\" commandreference:generate --erroronwarnings",
+      "command": "node --import tsx/esm --no-warnings=ExperimentalWarning \"./bin/dev.js\" commandreference:generate --erroronwarnings",
       "files": [
         "src/**/*.ts",
         "messages/**",
@@ -314,7 +317,7 @@
       ]
     },
     "test:deprecation-policy": {
-      "command": "node --loader ts-node/esm --no-warnings=ExperimentalWarning \"./bin/dev.js\" snapshot:compare",
+      "command": "node --import tsx/esm --no-warnings=ExperimentalWarning \"./bin/dev.js\" snapshot:compare",
       "files": [
         "src/**/*.ts"
       ],
@@ -324,7 +327,7 @@
       ]
     },
     "test:json-schema": {
-      "command": "node --loader ts-node/esm --no-warnings=ExperimentalWarning \"./bin/dev.js\" schema:compare",
+      "command": "node --import tsx/esm --no-warnings=ExperimentalWarning \"./bin/dev.js\" schema:compare",
       "files": [
         "src/**/*.ts",
         "schemas"

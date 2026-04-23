@@ -176,6 +176,13 @@ export function listMetadataTypes() {
         xmlName: 'AiEvaluationDefinition',
       },
       {
+        directoryName: 'aiResponseFormats',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'aiResponseFormat',
+        xmlName: 'AiResponseFormat',
+      },
+      {
         directoryName: 'aiScoringModelDefinitions',
         inFolder: false,
         metaFile: false,
@@ -194,6 +201,13 @@ export function listMetadataTypes() {
         parentXmlName: 'AIScoringModelDefinition',
         xmlTag: 'aiScoringModelDefVersions',
         key: 'fullName',
+      },
+      {
+        directoryName: 'aiSurfaces',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'aiSurface',
+        xmlName: 'AiSurface',
       },
       {
         directoryName: 'aiUsecaseDefinitions',
@@ -3015,6 +3029,20 @@ export function listMetadataTypes() {
         metaFile: false,
         suffix: 'platformEventSubscriberConfig',
         xmlName: 'PlatformEventSubscriberConfig',
+      },
+      {
+        directoryName: 'policyRuleDefinitions',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'policyRuleDefinition',
+        xmlName: 'PolicyRuleDefinition',
+      },
+      {
+        directoryName: 'policyRuleDefinitionSets',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'policyRuleDefinitionSet',
+        xmlName: 'PolicyRuleDefinitionSet',
       },
       {
         directoryName: 'portals',
