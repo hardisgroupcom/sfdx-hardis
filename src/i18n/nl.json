@@ -1389,6 +1389,7 @@
   "monitoringPptxRecommendations": "Aanbevelingen",
   "monitoringPptxReportFailed": "PowerPoint-rapport kon niet worden gegenereerd: {{message}}",
   "monitoringPptxReportGenerated": "PowerPoint-monitoringrapport gegenereerd: {{filePath}}",
+  "monitoringPptxReport": "PowerPoint-monitoringrapport: {{path}}",
   "monitoringPptxReportGenerating": "PowerPoint-monitoringrapport wordt gegenereerd...",
   "monitoringPptxRunningAgent": "Coding agent {{agent}} wordt uitgevoerd om het PowerPoint-rapport te genereren...",
   "monitoringPptxSlideSubtitle": "{{orgUrl}} — {{date}}",

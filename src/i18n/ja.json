@@ -1387,6 +1387,7 @@
   "monitoringPptxRecommendations": "推奨事項",
   "monitoringPptxReportFailed": "PowerPointレポートの生成に失敗しました: {{message}}",
   "monitoringPptxReportGenerated": "PowerPoint監視レポートが生成されました: {{filePath}}",
+  "monitoringPptxReport": "PowerPoint監視レポート: {{path}}",
   "monitoringPptxReportGenerating": "PowerPoint監視レポートを生成しています...",
   "monitoringPptxRunningAgent": "Coding agent {{agent}} を使用してPowerPointレポートを生成しています...",
   "monitoringPptxSlideSubtitle": "{{orgUrl}} — {{date}}",

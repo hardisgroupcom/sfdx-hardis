@@ -1388,6 +1388,7 @@
   "monitoringPptxRecommendations": "Empfehlungen",
   "monitoringPptxReportFailed": "PowerPoint-Bericht konnte nicht erstellt werden: {{message}}",
   "monitoringPptxReportGenerated": "PowerPoint-Monitoring-Bericht erstellt: {{filePath}}",
+  "monitoringPptxReport": "PowerPoint-Monitoring-Bericht: {{path}}",
   "monitoringPptxReportGenerating": "PowerPoint-Monitoring-Bericht wird erstellt...",
   "monitoringPptxRunningAgent": "Coding-Agent {{agent}} wird ausgeführt, um den PowerPoint-Bericht zu erstellen...",
   "monitoringPptxSlideSubtitle": "{{orgUrl}} — {{date}}",

@@ -1389,6 +1389,7 @@
   "monitoringPptxRecommendations": "Raccomandazioni",
   "monitoringPptxReportFailed": "Impossibile generare il report PowerPoint: {{message}}",
   "monitoringPptxReportGenerated": "Report PowerPoint di monitoraggio generato: {{filePath}}",
+  "monitoringPptxReport": "Report PowerPoint di monitoraggio: {{path}}",
   "monitoringPptxReportGenerating": "Generazione del report PowerPoint di monitoraggio...",
   "monitoringPptxRunningAgent": "Esecuzione del coding agent {{agent}} per generare il report PowerPoint...",
   "monitoringPptxSlideSubtitle": "{{orgUrl}} — {{date}}",

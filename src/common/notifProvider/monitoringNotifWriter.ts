@@ -11,6 +11,9 @@ import { t } from '../utils/i18n.js';
  */
 export async function writeMonitoringNotifFile(outputDir: string, notifMessage: NotifMessage): Promise<void> {
   try {
+    const csvsFoundFromXlsxFiles = notifMessage.attachedFiles?.filter(file => file.endsWith('.xlsx'))
+      .map(file => file.replace('.xlsx', '.csv').replace("/xls/", "/").replace("\\xls\\", "\\"))
+      .filter(file => fs.existsSync(file)) || [];
     await fs.ensureDir(outputDir);
     // Strip attachedFiles (binary paths) and logElements (verbose) to keep files small
     const sanitized = {
@@ -20,7 +23,7 @@ export async function writeMonitoringNotifFile(outputDir: string, notifMessage: 
       data: notifMessage.data,
       metrics: notifMessage.metrics,
       textDetails: notifMessage.attachments,
-      attachedFiles: notifMessage.attachedFiles?.filter(file => file.endsWith('csv') || file.endsWith('.log') || file.endsWith('.txt')) || [],
+      csvReports: csvsFoundFromXlsxFiles,
     };
     const fileName = `${notifMessage.type}_${Date.now()}.json`;
     await fs.writeJson(path.join(outputDir, fileName), sanitized, { spaces: 2 });
