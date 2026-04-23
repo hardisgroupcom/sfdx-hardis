@@ -87,6 +87,8 @@ The presentation MUST follow this exact structure:
 
 ## DATA
 
+You are allowed to read report data found in the files mentioned in the following variables.
+
 ### AI Summary:
 {{AI_SUMMARY}}
 
