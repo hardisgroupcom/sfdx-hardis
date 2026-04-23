@@ -1,6 +1,8 @@
 # Changelog
 
-## [beta] (master)
+## [beta] (main)
+
+## [7.10.0] 2026-04-24
 
 - [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/)
   - AI-powered monitoring summary: generates a consolidated executive summary from monitoring notifications when an AI provider is configured
