@@ -36,7 +36,7 @@ The command exists in 2 modes: filtered(default & recommended) and full.
 
 ## Filtered mode (default, better performances)
 
-Automatically skips metadatas from installed packages with namespace.  
+Automatically skips metadatas from installed packages with namespace.
 
 You can remove more metadata types from backup, especially in case you have too many metadatas and that provokes a crash, using:
 
@@ -45,6 +45,12 @@ You can remove more metadata types from backup, especially in case you have too 
   - Works with full wildcard (\`<members>*</members>\`) , named metadata (\`<members>Account.Name</members>\`) or partial wildcards names (\`<members>pi__*</members>\` , \`<members>*__dlm</members>\` , or \`<members>prefix*suffix</members>\`)
 
 - Environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`): that will be applied to all monitoring branches.
+
+## Data Cloud objects backup
+
+When the org contains Data Cloud objects (\`__dlm\` and \`__dll\` suffix on CustomObjects), they are backed up by default in a **separate retrieve call**.
+
+To skip Data Cloud objects backup, use config property \`monitoringBackupSkipDataCloud: true\` or environment variable \`MONITORING_BACKUP_SKIP_DATA_CLOUD=true\`.
 
 ## Full mode
 
@@ -102,7 +108,9 @@ If Flow history doc always display a single state, you probably need to update y
     '$ sf hardis:org:monitor:backup --full',
     '$ sf hardis:org:monitor:backup --full --exclude-namespaces',
     '$ sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters',
-    '$ sf hardis:org:monitor:backup --rebuild-full-doc'
+    '$ sf hardis:org:monitor:backup --rebuild-full-doc',
+    '$ sf hardis:org:monitor:backup --agent',
+    '$ FULL_ORG_MANIFEST_PATH=manifest/package-all-org-items.xml sf hardis:org:monitor:backup'
   ];
 
   public static flags: any = {
@@ -184,6 +192,72 @@ If Flow history doc always display a single state, you probably need to update y
   protected outputFile;
   protected outputFilesRes: any = {};
   protected debugMode = false;
+
+  protected static isDataCloudObjectName(objectName: string): boolean {
+    return objectName.endsWith('__dlm') || objectName.endsWith('__dll');
+  }
+
+  // Salesforce Metadata API includes dedicated Data Cloud metadata types
+  // that are not expressed as __dlm/__dll objects or fields.
+  protected static dataCloudMetadataTypes = new Set<string>([
+    'CustomerDataPlatformSettings',
+    'PartyDataModelSettings',
+    'DataPackageKitDefinition',
+    'DataPackageKitObject',
+    'DataSource',
+    'DataSourceBundleDefinition',
+    'DataSourceObject',
+    'DataSourceTenant',
+    'DataSrcDataModelFieldMap',
+    'DataStreamDefinition',
+    'DataStreamTemplate',
+  ]);
+
+  protected static isDataCloudMetadataType(metadataType: string): boolean {
+    if (MonitorBackup.dataCloudMetadataTypes.has(metadataType)) {
+      return true;
+    }
+    // Future-proofing for new Data Cloud metadata types with known naming families.
+    return /^(CustomerDataPlatform|PartyDataModel|DataPackageKit|DataSrcDataModel|DataSource|DataStream)/.test(metadataType);
+  }
+
+  protected static getObjectNameFromFieldMember(member: string): string {
+    const [objectName] = member.split('.');
+    return objectName || '';
+  }
+
+  private isManagedPackageNamespacedMember(member: string): boolean {
+    const namespaces = this.namespaces || [];
+    return namespaces.some((ns: string) => {
+      const nsPrefix = `${ns}__`;
+      return member.startsWith(nsPrefix) || member.includes(`.${nsPrefix}`);
+    });
+  }
+
+  private filterManagedPackageNamespacedDataCloudMetadata(metadata: {
+    objects: string[];
+    fields: string[];
+    metadataByType: Record<string, string[]>;
+  }): {
+    objects: string[];
+    fields: string[];
+    metadataByType: Record<string, string[]>;
+  } {
+    const filteredObjects = metadata.objects.filter((member: string) => !this.isManagedPackageNamespacedMember(member));
+    const filteredFields = metadata.fields.filter((member: string) => !this.isManagedPackageNamespacedMember(member));
+    const filteredMetadataByType: Record<string, string[]> = {};
+    for (const metadataType of Object.keys(metadata.metadataByType || {})) {
+      const members = metadata.metadataByType[metadataType] || [];
+      filteredMetadataByType[metadataType] = members.filter(
+        (member: string) => member === '*' || !this.isManagedPackageNamespacedMember(member)
+      );
+    }
+    return {
+      objects: filteredObjects,
+      fields: filteredFields,
+      metadataByType: filteredMetadataByType,
+    };
+  }
 
   /* jscpd:ignore-end */
 
@@ -419,6 +493,9 @@ If Flow history doc always display a single state, you probably need to update y
     // Build packageXml chunks
     const packageElements = await parsePackageXmlFile(packageXmlToExtract);
 
+    // Extract Data Cloud objects/fields (__dlm / __dll) so they are retrieved separately
+    const dataCloudMetadataToRetrieve = await this.extractDataCloudMetadataFromElements(packageElements);
+
     // Handle predefined chunks
     const predefinedChunkTypes = [
       { types: ["CustomLabel"], memberMode: "*" },
@@ -494,6 +571,9 @@ If Flow history doc always display a single state, you probably need to update y
       }
       await this.retrievePackageXml(packageXmlChunkFile, flags);
     }
+
+    // Retrieve Data Cloud objects/fields (__dlm / __dll) in a separate call after chunks
+    await this.handleDataCloudRetrieve(null, dataCloudMetadataToRetrieve, flags);
   }
 
   private manageAddCurrentPackageInChunks() {
@@ -518,6 +598,9 @@ If Flow history doc always display a single state, you probably need to update y
 
     // Retrieve sfdx sources in local git repo
     await this.retrievePackageXml(packageXmlBackUpItemsFile, flags);
+
+    // Retrieve Data Cloud objects/fields (__dlm / __dll) in a separate call
+    await this.handleDataCloudRetrieve(packageXmlFullFile, null, flags);
   }
 
   private async buildFilteredManifestsForRetrieve(packageXmlFullFile: string) {
@@ -551,6 +634,130 @@ If Flow history doc always display a single state, you probably need to update y
       await writePackageXmlFile(this.packageXmlToRemove, packageSkipItems);
     }
     return packageXmlBackUpItemsFile;
+  }
+
+  private async isDataCloudBackupExcluded(): Promise<boolean> {
+    if (process.env?.MONITORING_BACKUP_SKIP_DATA_CLOUD === 'true') {
+      return true;
+    }
+    const config = await getConfig('branch');
+    return config.monitoringBackupSkipDataCloud === true;
+  }
+
+  // For full mode: extract Data Cloud-related metadata from packageElements in place
+  private async extractDataCloudMetadataFromElements(
+    packageElements: any
+  ): Promise<{ objects: string[]; fields: string[]; metadataByType: Record<string, string[]> }> {
+    if (await this.isDataCloudBackupExcluded()) {
+      uxLog("log", this, c.grey(t('skippingDataCloudBackup')));
+      return { objects: [], fields: [], metadataByType: {} };
+    }
+    const customObjects: string[] = packageElements['CustomObject'] || [];
+    const customFields: string[] = packageElements['CustomField'] || [];
+    const dataCloudObjects = customObjects.filter((obj: string) =>
+      MonitorBackup.isDataCloudObjectName(obj) && !this.isManagedPackageNamespacedMember(obj)
+    );
+    const dataCloudFields = customFields.filter((fieldMember: string) =>
+      MonitorBackup.isDataCloudObjectName(MonitorBackup.getObjectNameFromFieldMember(fieldMember)) && !this.isManagedPackageNamespacedMember(fieldMember)
+    );
+    const dataCloudMetadataByType: Record<string, string[]> = {};
+    for (const metadataType of Object.keys(packageElements)) {
+      if (MonitorBackup.isDataCloudMetadataType(metadataType)) {
+        dataCloudMetadataByType[metadataType] = (packageElements[metadataType] || []).filter(
+          (member: string) => !this.isManagedPackageNamespacedMember(member)
+        );
+      }
+    }
+
+    if (dataCloudObjects.length === 0 && dataCloudFields.length === 0 && Object.keys(dataCloudMetadataByType).length === 0) {
+      return { objects: [], fields: [], metadataByType: {} };
+    }
+    packageElements['CustomObject'] = customObjects.filter((obj: string) => !MonitorBackup.isDataCloudObjectName(obj));
+    if (packageElements['CustomObject'].length === 0) {
+      delete packageElements['CustomObject'];
+    }
+    packageElements['CustomField'] = customFields.filter((fieldMember: string) =>
+      !MonitorBackup.isDataCloudObjectName(MonitorBackup.getObjectNameFromFieldMember(fieldMember))
+    );
+    if (packageElements['CustomField'].length === 0) {
+      delete packageElements['CustomField'];
+    }
+    for (const metadataType of Object.keys(dataCloudMetadataByType)) {
+      delete packageElements[metadataType];
+    }
+    return { objects: dataCloudObjects, fields: dataCloudFields, metadataByType: dataCloudMetadataByType };
+  }
+
+  // Orchestrate Data Cloud retrieve: for filtered mode reads from full manifest, for full mode uses already-extracted members
+  private async handleDataCloudRetrieve(
+    packageXmlFullFile: string | null,
+    dataCloudMetadata: { objects: string[]; fields: string[]; metadataByType: Record<string, string[]> } | null,
+    flags: any
+  ): Promise<void> {
+    if (await this.isDataCloudBackupExcluded()) {
+      return;
+    }
+    let metadata = dataCloudMetadata;
+    if (!metadata) {
+      // Filtered mode: read from the full manifest
+      const fullPackage = await parsePackageXmlFile(packageXmlFullFile!);
+      const customObjects: string[] = fullPackage['CustomObject'] || [];
+      const customFields: string[] = fullPackage['CustomField'] || [];
+      const metadataByType: Record<string, string[]> = {};
+      for (const metadataType of Object.keys(fullPackage)) {
+        if (MonitorBackup.isDataCloudMetadataType(metadataType)) {
+          metadataByType[metadataType] = fullPackage[metadataType] || [];
+        }
+      }
+      metadata = {
+        objects: customObjects.filter((obj: string) =>
+          MonitorBackup.isDataCloudObjectName(obj) && !this.isManagedPackageNamespacedMember(obj)
+        ),
+        fields: customFields.filter((fieldMember: string) =>
+          MonitorBackup.isDataCloudObjectName(MonitorBackup.getObjectNameFromFieldMember(fieldMember)) && !this.isManagedPackageNamespacedMember(fieldMember)
+        ),
+        metadataByType: Object.fromEntries(
+          Object.entries(metadataByType).map(([metadataType, members]) => [
+            metadataType,
+            members.filter((member: string) => !this.isManagedPackageNamespacedMember(member)),
+          ])
+        ),
+      };
+    }
+    metadata = this.filterManagedPackageNamespacedDataCloudMetadata(metadata);
+
+    const dedicatedMetadataCount = Object.values(metadata.metadataByType || {}).reduce(
+      (sum: number, members: string[]) => sum + (members?.length || 0),
+      0
+    );
+    if (metadata.objects.length === 0 && metadata.fields.length === 0 && dedicatedMetadataCount === 0) {
+      return;
+    }
+    uxLog(
+      "action",
+      this,
+      c.cyan(
+        t('backingUpDataCloudObjectsSeparately', {
+          count: metadata.objects.length + metadata.fields.length + dedicatedMetadataCount,
+        })
+      )
+    );
+    const dataCloudPackageXmlFile = 'manifest/package-backup-datacloud-items.xml';
+    const dataCloudPackageXmlContent: any = {};
+    if (metadata.objects.length > 0) {
+      dataCloudPackageXmlContent.CustomObject = metadata.objects;
+    }
+    if (metadata.fields.length > 0) {
+      dataCloudPackageXmlContent.CustomField = metadata.fields;
+    }
+    for (const metadataType of Object.keys(metadata.metadataByType || {})) {
+      const members = metadata.metadataByType[metadataType] || [];
+      if (members.length > 0) {
+        dataCloudPackageXmlContent[metadataType] = members;
+      }
+    }
+    await writePackageXmlFile(dataCloudPackageXmlFile, dataCloudPackageXmlContent);
+    await this.retrievePackageXml(dataCloudPackageXmlFile, flags);
   }
 
   private async retrievePackageXml(packageXmlBackUpItemsFile: string, flags: any) {

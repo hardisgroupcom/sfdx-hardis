@@ -1498,6 +1498,13 @@
       "title": "Merge target branches",
       "type": "array"
     },
+    "monitoringBackupSkipDataCloud": {
+      "$id": "#/properties/monitoringBackupSkipDataCloud",
+      "description": "Set to true to skip the backup of Data Cloud objects (__dlm and __dll CustomObjects) during hardis:org:monitor:backup. Can also be set via MONITORING_BACKUP_SKIP_DATA_CLOUD env variable.",
+      "title": "Skip Data Cloud objects backup",
+      "type": "boolean",
+      "default": false
+    },
     "monitoringCommands": {
       "$id": "#/properties/monitoringCommands",
       "description": "List of monitoring commands to run with command hardis:org:monitor:all",
