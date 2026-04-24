@@ -232,8 +232,8 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     this.confluenceClientId = getEnvVar('CONFLUENCE_CLIENT_ID') || null;
     this.confluenceClientSecret = getEnvVar('CONFLUENCE_CLIENT_SECRET') || null;
     this.confluenceParentPageId = (flags.confluenceParentPageId as string) || getLocalizedEnvVar('CONFLUENCE_PARENT_PAGE_ID') || null;
-    this.confluencePagePrefix = (flags.confluencePagePrefix as string) || getLocalizedEnvVar('CONFLUENCE_PAGE_PREFIX') || '[Doc] ';
-    this.confluencePageSuffix = (flags.confluencePageSuffix as string) || getLocalizedEnvVar('CONFLUENCE_PAGE_SUFFIX') || '';
+    this.confluencePagePrefix = (flags.confluencePagePrefix as string) ?? getLocalizedEnvVar('CONFLUENCE_PAGE_PREFIX') ?? '[Doc] ';
+    this.confluencePageSuffix = (flags.confluencePageSuffix as string) ?? getLocalizedEnvVar('CONFLUENCE_PAGE_SUFFIX') ?? '';
 
     if (!this.confluenceSpaceKey) {
       WebSocketClient.sendReportFileMessage(
@@ -708,7 +708,36 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     // Restore code block macros after paragraph processing.
     html = html.replace(/@@HARDIS_CODE_BLOCK_(\d+)@@/g, (_match, index) => codeBlockPlaceholders[parseInt(index, 10)] || '');
 
+    // Final XHTML sanitization. Confluence storage format is XHTML-strict — any malformed
+    // markup triggers "Content contains unsupported extensions and cannot be edited in
+    // Fabric editor" (HTTP 400). CDATA blocks are protected because their contents must
+    // stay raw (entity references are not expanded inside CDATA).
+    html = this.sanitizeConfluenceXhtml(html);
+
     return html;
+  }
+
+  private sanitizeConfluenceXhtml(html: string): string {
+    const cdataPlaceholders: string[] = [];
+    let out = html.replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, (match) => {
+      const placeholder = `@@HARDIS_CDATA_${cdataPlaceholders.length}@@`;
+      cdataPlaceholders.push(match);
+      return placeholder;
+    });
+
+    // Escape bare ampersands. Confluence storage format accepts HTML named entities
+    // (e.g. &mdash;, &nbsp;) in addition to the five XML ones, so we preserve any
+    // &name; / &#NN; / &#xHH; pattern and only escape ampersands not followed by one.
+    out = out.replace(/&(?![a-zA-Z][a-zA-Z0-9]*;|#\d+;|#x[0-9a-fA-F]+;)/g, '&amp;');
+
+    // Self-close void elements, matching the `<br />` / `<hr />` style used in the
+    // Confluence storage format docs.
+    out = out.replace(/<br\s*>/gi, '<br />');
+    out = out.replace(/<hr\s*>/gi, '<hr />');
+    out = out.replace(/<img(\s[^>]*?)?(?<!\/)>/gi, '<img$1 />');
+
+    out = out.replace(/@@HARDIS_CDATA_(\d+)@@/g, (_m, idx) => cdataPlaceholders[parseInt(idx, 10)] || '');
+    return out;
   }
 
   private wrapInParagraphIfNeeded(text: string): string {
