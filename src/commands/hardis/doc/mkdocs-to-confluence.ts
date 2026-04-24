@@ -625,8 +625,15 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
       return placeholder;
     });
 
-    // Convert inline code
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Convert inline code. Use placeholders so later passes (italic, bold) can't match
+    // `*` or `_` inside a code span and splice malformed tags across unrelated spans.
+    // Bodies are XML-escaped so `List<LogRequest>` doesn't leak raw angle brackets.
+    const inlineCodePlaceholders: string[] = [];
+    html = html.replace(/`([^`]+)`/g, (_m, code) => {
+      const placeholder = `@@HARDIS_INLINE_CODE_${inlineCodePlaceholders.length}@@`;
+      inlineCodePlaceholders.push(`<code>${this.escapeXml(code)}</code>`);
+      return placeholder;
+    });
 
     // Convert images: ![alt](path) → placeholder (will be replaced after attachment upload)
     html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, imgPath) => {
@@ -663,12 +670,15 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
       html = html.replace(regex, `<h${level}>$1</h${level}>`);
     }
 
-    // Convert bold
-    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    // Convert bold. Disallow newlines inside the span so a stray `**` can't match
+    // across unrelated paragraphs/list items.
+    html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
 
-    // Convert italic using *text* and _text_ variants.
+    // Convert italic using *text* and _text_ variants. Both variants forbid newlines
+    // inside the span — otherwise a leftover `*` on one line greedily pairs with a
+    // `*` many lines later and splices `<em>` across unrelated content.
     // For _text_, apply strict boundaries so Salesforce API names like Siren__c are preserved.
-    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
     html = html.replace(/(?<![A-Za-z0-9_])_([^_\n]+)_(?![A-Za-z0-9_])/g, '<em>$1</em>');
 
     // Convert lists (supports nested bullet and ordered lists)
@@ -707,6 +717,8 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
 
     // Restore code block macros after paragraph processing.
     html = html.replace(/@@HARDIS_CODE_BLOCK_(\d+)@@/g, (_match, index) => codeBlockPlaceholders[parseInt(index, 10)] || '');
+    // Restore inline code spans (kept as placeholders during markdown-to-HTML passes).
+    html = html.replace(/@@HARDIS_INLINE_CODE_(\d+)@@/g, (_match, index) => inlineCodePlaceholders[parseInt(index, 10)] || '');
 
     // Final XHTML sanitization. Confluence storage format is XHTML-strict — any malformed
     // markup triggers "Content contains unsupported extensions and cannot be edited in
@@ -736,6 +748,16 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
     out = out.replace(/<hr\s*>/gi, '<hr />');
     out = out.replace(/<img(\s[^>]*?)?(?<!\/)>/gi, '<img$1 />');
 
+    // Final guard: any `<...>` chunk that isn't a recognized storage-format tag
+    // (e.g. stray `<>` or `<SomeClass>` in prose) gets escaped so Fabric doesn't
+    // treat it as unknown markup.
+    const allowedTag = /^<\/?(?:h[1-6]|p|div|blockquote|hr|ul|ol|li|table|thead|tbody|tr|th|td|col|colgroup|caption|strong|em|code|a|br|img|span|b|i|u|sub|sup|s|del|ins|ac:[a-z-]+|ri:[a-z-]+)(?:\s[^>]*)?\/?>$/i;
+    out = out.replace(/<[^<>]*>/g, (m) =>
+      allowedTag.test(m) ? m : m.replace(/</g, '&lt;').replace(/>/g, '&gt;'),
+    );
+    // Escape any unpaired `<` left over (no matching `>`).
+    out = out.replace(/<(?![a-zA-Z!/])/g, '&lt;');
+
     out = out.replace(/@@HARDIS_CDATA_(\d+)@@/g, (_m, idx) => cdataPlaceholders[parseInt(idx, 10)] || '');
     return out;
   }
@@ -759,7 +781,7 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
       if (!/^\|[\s:|-]+\|$/.test(secondRow.trim())) return tableBlock;
 
       const parseRow = (row: string): string[] =>
-        row.split('|').slice(1, -1).map((cell) => cell.trim());
+        row.split('|').slice(1, -1).map((cell) => this.escapeCellBrackets(cell.trim()));
 
       const headerCells = parseRow(rows[0]);
       const dataRows = rows.slice(2);
@@ -780,6 +802,21 @@ The command orchestrates interactions with MkDocs configuration, Markdown conver
       table += '</tbody></table>';
       return '\n' + table + '\n';
     });
+  }
+
+  /**
+   * Escape stray angle brackets in a table cell while preserving inline tags that
+   * earlier conversion steps already emitted (`<code>`, links, `<ac:*>`, `<ri:*>`).
+   * Prevents cell content like `List<LogRequest>` from being parsed as a tag.
+   */
+  private escapeCellBrackets(cell: string): string {
+    const allowedTag = /^<\/?(?:code|strong|em|a|br|hr|img|ac:[a-z-]+|ri:[a-z-]+)(?:\s[^>]*)?\/?>$/i;
+    let out = cell.replace(/<[^<>]*>/g, (m) =>
+      allowedTag.test(m) ? m : m.replace(/</g, '&lt;').replace(/>/g, '&gt;'),
+    );
+    // Catch any unpaired `<` left behind (no matching `>` in the cell).
+    out = out.replace(/<(?![a-zA-Z!/])/g, '&lt;');
+    return out;
   }
 
   /**
