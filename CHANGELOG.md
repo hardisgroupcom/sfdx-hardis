@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)
+  - Feature: Data Cloud backup coverage has been expanded and made more reliable.
+  - Feature: Added an option to skip Data Cloud backup when needed.
+
 ## [7.10.0] 2026-04-24
 
 - [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/)
@@ -15,10 +19,10 @@
   - `codingAgent` config property is now required (no auto-detection)
   - Local use: when the selected coding agent is already authenticated (for example Claude via `claude login`), commands run with that local agent without requiring API key environment variables
 
-
 ## [7.9.1] 2026-04-21
 
 Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image `hardisgroupcom/sfdx-hardis@beta`
+
 - New command [hardis:project:skills:import](https://sfdx-hardis.cloudity.com/hardis/project/skills/import/) to import Claude Code skills, agents, and rules from a remote git repository
 - Implement Claude skills for sfdx-hardis repo
 
