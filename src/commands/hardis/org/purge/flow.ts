@@ -39,12 +39,28 @@ The command's technical implementation involves:
 - **Error Reporting:** Logs detailed error messages for failed deletions, including the specific reasons.
 - **Command-Line Execution:** Uses \`execSfdxJson\` to execute Salesforce CLI commands for querying Flow data.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:purge:flow --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- All interactive prompts and confirmations are skipped.
+- If \`--status\` is not provided, defaults to \`Obsolete\`.
+- If \`--name\` is not provided, all matching Flows are targeted.
+- Flow version and Flow Interview deletions proceed without confirmation.
 `;
 
   public static examples = [
     `$ sf hardis:org:purge:flow`,
     `$ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com --no-prompt --delete-flow-interviews`,
     `$ sf hardis:org:purge:flow --target-org nicolas.vuillamy@gmail.com --status "Obsolete,Draft,InvalidDraft" --name TestFlow`,
+    '$ sf hardis:org:purge:flow --agent',
   ];
 
   // public static args = [{name: 'file'}];
@@ -92,6 +108,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -112,10 +132,12 @@ The command's technical implementation involves:
   protected outputFilesToDelete: any = {};
   protected outputFilesDeleted: any = {};
   protected conn: any;
+  protected agentMode = false;
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgPurgeFlow);
+    this.agentMode = flags.agent === true;
     this.promptUser = flags.prompt === false ? false : true;
     this.nameFilter = flags.name || null;
     this.allowPurgeFailure = flags.allowpurgefailure === false ? false : true;
@@ -148,7 +170,7 @@ The command's technical implementation involves:
     await this.generateFlowsToDeleteReport();
 
     // Confirm deletion
-    if (this.promptUser && !isCI) {
+    if (this.promptUser && !isCI && !this.agentMode) {
       const confirmDelete = await prompts({
         type: 'confirm',
         name: 'value',
@@ -216,7 +238,7 @@ The command's technical implementation involves:
     }
     if (
       this.deletedErrors.length > 0 &&
-      (this.deleteFlowInterviews === true || !isCI) &&
+      (this.deleteFlowInterviews === true || (!isCI && !this.agentMode)) &&
       tryDeleteInterviews === true
     ) {
       await this.manageDeleteFlowInterviews(conn);
@@ -254,7 +276,7 @@ The command's technical implementation involves:
     }
     // Display flows & Prompt user if not in CI
     await this.displayFlowInterviewToDelete(flowInterviewsIds, conn);
-    if (!isCI && this.promptUser === true) {
+    if (!isCI && !this.agentMode && this.promptUser === true) {
       const confirmDelete = await prompts({
         type: 'confirm',
         name: 'value',
@@ -336,8 +358,8 @@ The command's technical implementation involves:
     if (flags.status) {
       // Input parameter used
       this.statusFilter = flags.status.split(',');
-    } else if (isCI || this.promptUser === false) {
-      // Obsolete by default for CI
+    } else if (isCI || this.agentMode || this.promptUser === false) {
+      // Obsolete by default for CI and agent mode
       this.statusFilter = ['Obsolete'];
     } else {
       // Query all flows definitions

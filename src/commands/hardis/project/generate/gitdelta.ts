@@ -9,6 +9,7 @@ import {
   ensureGitRepository,
   git,
   gitCheckOutRemote,
+  isCI,
   selectGitBranch,
   uxLog,
 } from '../../../../common/utils/index.js';
@@ -38,6 +39,19 @@ Key functionalities:
 - **\`destructiveChanges.xml\` Generation:** Creates a \`destructiveChanges.xml\` file that lists all metadata components that have been deleted between the specified commits.
 - **Temporary File Output:** The generated \`package.xml\` and \`destructiveChanges.xml\` files are placed in a temporary directory.
 
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:generate:gitdelta --agent --branch main --fromcommit abc123 --tocommit def456
+\`\`\`
+
+In agent mode:
+
+- All interactive commit selection prompts are skipped.
+- \`--fromcommit\` defaults to HEAD and \`--tocommit\` defaults to current local files (*) if not provided.
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -52,7 +66,10 @@ The command's technical implementation involves:
 </details>
 `;
 
-  public static examples = ['$ sf hardis:project:generate:gitdelta'];
+  public static examples = [
+    '$ sf hardis:project:generate:gitdelta',
+    '$ sf hardis:project:generate:gitdelta --agent --branch main --fromcommit abc123 --tocommit def456',
+  ];
 
   public static flags: any = {
     branch: Flags.string({
@@ -75,6 +92,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -86,9 +107,10 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(GenerateGitDelta);
+    const agentMode = flags.agent === true;
     let gitBranch = flags.branch || null;
     let fromCommit = flags.fromcommit || null;
-    let toCommit = flags.fromcommit || null;
+    let toCommit = flags.tocommit || null;
     this.debugMode = flags.debug || false;
     // Check git repo
     await ensureGitRepository();
@@ -117,45 +139,55 @@ The command's technical implementation involves:
     let selectedFirstCommitLabel = "";
     let selectedFirstCommitPos = 0;
     if (fromCommit === null) {
-      const headItem = {
-        title: t('choiceHead'),
-        description: `Current git HEAD`,
-        value: { hash: 'HEAD' },
-      };
-      const commitFromResp = await prompts({
-        type: 'select',
-        name: 'value',
-        message: t('pleaseSelectTheCommitThatYouWant'),
-        description: t('chooseStartingCommitForDeltaGeneration'),
-        placeholder: t('selectACommit'),
-        choices: [headItem, ...branchCommitsChoices],
-      });
-      fromCommit = commitFromResp.value.hash;
-      selectedFirstCommitLabel = commitFromResp.value.message;
-      selectedFirstCommitPos = commitFromResp.value.pos;
+      if (!isCI && !agentMode) {
+        const headItem = {
+          title: t('choiceHead'),
+          description: `Current git HEAD`,
+          value: { hash: 'HEAD' },
+        };
+        const commitFromResp = await prompts({
+          type: 'select',
+          name: 'value',
+          message: t('pleaseSelectTheCommitThatYouWant'),
+          description: t('chooseStartingCommitForDeltaGeneration'),
+          placeholder: t('selectACommit'),
+          choices: [headItem, ...branchCommitsChoices],
+        });
+        fromCommit = commitFromResp.value.hash;
+        selectedFirstCommitLabel = commitFromResp.value.message;
+        selectedFirstCommitPos = commitFromResp.value.pos;
+      } else {
+        // In agent/CI mode, default to HEAD
+        fromCommit = 'HEAD';
+      }
     }
 
     // Prompt toCommit
     if (toCommit === null) {
-      const currentItem = {
-        title: t('choiceCurrent'),
-        description: `Local files not committed yet`,
-        value: { hash: '*' },
-      };
-      const singleCommitChoice = {
-        title: t('choiceSingleCommit'),
-        description: `Only for ${selectedFirstCommitLabel}`,
-        value: branchCommitsChoices[selectedFirstCommitPos + 1].value
-      };
-      const commitToResp = await prompts({
-        type: 'select',
-        name: 'value',
-        message: t('pleaseSelectTheCommitHashThatYou'),
-        description: t('chooseEndingCommitForDeltaGeneration'),
-        placeholder: t('selectACommit'),
-        choices: [currentItem, singleCommitChoice, ...branchCommitsChoices],
-      });
-      toCommit = commitToResp.value.hash;
+      if (!isCI && !agentMode) {
+        const currentItem = {
+          title: t('choiceCurrent'),
+          description: `Local files not committed yet`,
+          value: { hash: '*' },
+        };
+        const singleCommitChoice = {
+          title: t('choiceSingleCommit'),
+          description: `Only for ${selectedFirstCommitLabel}`,
+          value: branchCommitsChoices[selectedFirstCommitPos + 1].value
+        };
+        const commitToResp = await prompts({
+          type: 'select',
+          name: 'value',
+          message: t('pleaseSelectTheCommitHashThatYou'),
+          description: t('chooseEndingCommitForDeltaGeneration'),
+          placeholder: t('selectACommit'),
+          choices: [currentItem, singleCommitChoice, ...branchCommitsChoices],
+        });
+        toCommit = commitToResp.value.hash;
+      } else {
+        // In agent/CI mode, default to current local files
+        toCommit = '*';
+      }
     }
 
     // Generate package.xml & destructiveChanges.xml using sfdx-git-delta

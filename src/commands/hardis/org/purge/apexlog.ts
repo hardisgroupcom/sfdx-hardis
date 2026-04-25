@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
 import * as path from 'path';
-import { execCommand, uxLog } from '../../../../common/utils/index.js';
+import { execCommand, isCI, uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
 
@@ -42,11 +42,25 @@ The command's technical implementation involves:
 - **File System Operations:** It uses \`fs-extra\` to create the temporary directory and manage the CSV file.
 - **Error Handling:** Includes error handling for the query and deletion operations.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:purge:apexlog --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- All interactive prompts and confirmations are skipped.
+- Apex log deletion proceeds without confirmation.
 `;
 
   public static examples = [
     `$ sf hardis:org:purge:apexlog`,
     `$ sf hardis:org:purge:apexlog --target-org nicolas.vuillamy@gmail.com`,
+    '$ sf hardis:org:purge:apexlog --agent',
   ];
 
   // public static args = [{name: 'file'}];
@@ -70,6 +84,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -80,6 +98,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(PurgeApexLogs);
+    const agentMode = flags.agent === true;
     const prompt = flags.prompt === false ? false : true;
     const debugMode = flags.debug || false;
 
@@ -103,7 +122,7 @@ The command's technical implementation involves:
     }
 
     // Prompt confirmation
-    if (prompt) {
+    if (prompt && !isCI && !agentMode) {
       const confirmRes = await prompts({
         type: 'confirm',
         name: 'value',

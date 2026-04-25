@@ -1,9 +1,9 @@
-import { Messages } from "@salesforce/core";
+import { Messages, SfError } from "@salesforce/core";
 import { Flags, requiredOrgFlagWithDeprecations, SfCommand } from "@salesforce/sf-plugins-core";
 import { AnyJson } from "@salesforce/ts-types";
 import { dataCloudSqlQuery, listAvailableDataCloudQueries, loadDataCloudQueryFromFile, saveDataCloudQueryToFile } from "../../../common/utils/dataCloudUtils.js";
 import { generateCsvFile, generateReportPath } from "../../../common/utils/filesUtils.js";
-import { uxLog } from "../../../common/utils/index.js";
+import { isCI, uxLog } from "../../../common/utils/index.js";
 import { prompts } from "../../../common/utils/prompts.js";
 import c from "chalk";
 import { t } from '../../../common/utils/i18n.js';
@@ -42,12 +42,25 @@ The command's technical implementation involves:
 - **File generation:** Uses \`generateReportPath\` to build the output path and \`generateCsvFile\` to produce CSV/XLSX exports with a \`DataCloud Sql Query Results\` title.
 - **CLI UX:** Employs \`prompts\` for interactive selection/input and \`uxLog\` for consistent colored logging with chalk.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:datacloud:sql-query --query "SELECT ssot__Name__c FROM ssot__Account__dlm LIMIT 10" --agent
+\`\`\`
+
+In agent mode:
+- The \`--query\` flag is **required** (no interactive prompt for query selection).
+- The save-query prompt is skipped.
 `;
 
   public static examples = [
     '$ sf hardis:datacloud:sql-query',
     '$ sf hardis:datacloud:sql-query -q "SELECT ssot__Name__c, ssot__CreatedDate__c FROM ssot__Account__dlm LIMIT 10"',
-    '$ sf hardis:datacloud:sql-query -q test'
+    '$ sf hardis:datacloud:sql-query -q test',
+    '$ sf hardis:datacloud:sql-query --query "SELECT ssot__Name__c FROM ssot__Account__dlm LIMIT 10" --agent',
   ];
 
   /* jscpd:ignore-start */
@@ -72,6 +85,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -85,6 +102,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DataCloudSqlQuery);
+    const agentMode = flags.agent === true;
     this.queryString = flags.query;
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
@@ -103,42 +121,48 @@ LIMIT 5000;
     }
 
     if (this.queryString === '' || this.queryString == null) {
-      const availableQueries = await listAvailableDataCloudQueries();
-      if (availableQueries.length > 0) {
-        const queryChoicePromptRes = await prompts({
-          type: 'select',
-          message: 'Please select a predefined Data Cloud SQL query or choose "Custom Query" to enter your own:',
-          description: t('availablePredefinedQueries'),
-          choices: [...availableQueries.map(q => ({ title: q, value: q })), { title: t('customQuery'), value: 'custom' }],
-        });
-        if (queryChoicePromptRes.value !== 'custom') {
-          this.queryString = await loadDataCloudQueryFromFile(queryChoicePromptRes.value);
+      if (!isCI && !agentMode) {
+        const availableQueries = await listAvailableDataCloudQueries();
+        if (availableQueries.length > 0) {
+          const queryChoicePromptRes = await prompts({
+            type: 'select',
+            message: 'Please select a predefined Data Cloud SQL query or choose "Custom Query" to enter your own:',
+            description: t('availablePredefinedQueries'),
+            choices: [...availableQueries.map(q => ({ title: q, value: q })), { title: t('customQuery'), value: 'custom' }],
+          });
+          if (queryChoicePromptRes.value !== 'custom') {
+            this.queryString = await loadDataCloudQueryFromFile(queryChoicePromptRes.value);
+          }
         }
       }
     }
     if (this.queryString === '' || this.queryString == null) {
-      const customQueryPromptRes = await prompts({
-        type: 'text',
-        message: t('pleaseEnterYourDataCloudSqlQuery'),
-        description: t('customDataCloudSqlQuery'),
-      });
-      this.queryString = customQueryPromptRes.value;
-      // Prompt user if he wants to save the query
-      const saveQueryPromptRes = await prompts({
-        type: 'confirm',
-        message: t('doYouWantToSaveThisQuery'),
-        description: t('saveDataCloudSqlQueryInLocalFiles'),
-        initial: false,
-      });
-      if (saveQueryPromptRes.value) {
-        const saveQueryNamePromptRes = await prompts({
+      if (!isCI && !agentMode) {
+        const customQueryPromptRes = await prompts({
           type: 'text',
-          message: t('enterNameForTheSavedQuery'),
-          description: t('nameOfDataCloudSqlQueryToSave'),
+          message: t('pleaseEnterYourDataCloudSqlQuery'),
+          description: t('customDataCloudSqlQuery'),
         });
-        if (saveQueryNamePromptRes.value) {
-          await saveDataCloudQueryToFile(saveQueryNamePromptRes.value.trim(), this.queryString);
+        this.queryString = customQueryPromptRes.value;
+        // Prompt user if he wants to save the query
+        const saveQueryPromptRes = await prompts({
+          type: 'confirm',
+          message: t('doYouWantToSaveThisQuery'),
+          description: t('saveDataCloudSqlQueryInLocalFiles'),
+          initial: false,
+        });
+        if (saveQueryPromptRes.value) {
+          const saveQueryNamePromptRes = await prompts({
+            type: 'text',
+            message: t('enterNameForTheSavedQuery'),
+            description: t('nameOfDataCloudSqlQueryToSave'),
+          });
+          if (saveQueryNamePromptRes.value) {
+            await saveDataCloudQueryToFile(saveQueryNamePromptRes.value.trim(), this.queryString);
+          }
         }
+      } else {
+        throw new SfError(t('queryFlagRequiredInAgentMode'));
       }
     }
 

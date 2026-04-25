@@ -6,7 +6,7 @@ import c from 'chalk';
 import fs from 'fs-extra';
 import { glob } from 'glob';
 import * as path from 'path';
-import { uxLog } from '../../../common/utils/index.js';
+import { isCI, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { appendPackageXmlFilesContent } from '../../../common/utils/xmlUtils.js';
@@ -46,15 +46,30 @@ The command's technical implementation involves:
 - **File System Operations:** It uses \`fs-extra\` to ensure the output directory exists and to write the merged \`package.xml\` file.
 - **WebSocket Communication:** It uses \`WebSocketClient.requestOpenFile\` to open the generated merged \`package.xml\` file in VS Code for immediate review.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all interactive prompts. In agent mode:
+
+- \`--packagexmls\`: Comma-separated list of package.xml files to merge. If omitted, all matching files from the folder/pattern are processed automatically.
+- \`--folder\` and \`--pattern\`: Used to discover files when \`--packagexmls\` is not provided.
+- \`--result\`: Output file name (default: \`manifest/package-merge.xml\`).
+
+All interactive file selection prompts are skipped.
 `;
 
   public static examples = [
     '$ sf hardis:package:mergexml',
     '$ sf hardis:package:mergexml --folder packages --pattern /**/*.xml --result myMergedPackage.xml',
     '$ sf hardis:package:mergexml --packagexmls "config/mypackage1.xml,config/mypackage2.xml,config/mypackage3.xml" --result myMergedPackage.xml',
+    '$ sf hardis:package:mergexml --agent',
   ];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     folder: Flags.string({
       char: 'f',
       default: 'manifest',
@@ -96,6 +111,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(MergePackageXml);
+    const agentMode = flags.agent === true;
     this.folder = flags.folder || './manifest';
     this.pattern = flags.pattern || '/**/*package*.xml';
     this.packageXmlFiles = flags.packagexmls ? flags.packagexmls.split(',') : [];
@@ -104,22 +120,27 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
     /* jscpd:ignore-end */
 
-    // If packagexmls are not provided, prompt user
+    // If packagexmls are not provided, prompt user or auto-select all matching files
     if (this.packageXmlFiles.length === 0) {
       const rootFolder = path.resolve(this.folder);
       const findPackageXmlPattern = rootFolder + this.pattern;
       const matchingFiles = await glob(findPackageXmlPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
-      const filesSelectRes = await prompts({
-        type: 'multiselect',
-        name: 'files',
-        message: t('pleaseSelectThePackageXmlFilesYou'),
-        description: t('chooseWhichPackageXmlFilesToCombine'),
-        choices: matchingFiles.map((file) => {
-          const relativeFile = path.relative(process.cwd(), file);
-          return { title: relativeFile, value: relativeFile };
-        }),
-      });
-      this.packageXmlFiles = filesSelectRes.files;
+      if (!isCI && !agentMode) {
+        const filesSelectRes = await prompts({
+          type: 'multiselect',
+          name: 'files',
+          message: t('pleaseSelectThePackageXmlFilesYou'),
+          description: t('chooseWhichPackageXmlFilesToCombine'),
+          choices: matchingFiles.map((file) => {
+            const relativeFile = path.relative(process.cwd(), file);
+            return { title: relativeFile, value: relativeFile };
+          }),
+        });
+        this.packageXmlFiles = filesSelectRes.files;
+      } else {
+        // In agent/CI mode, use all matching files
+        this.packageXmlFiles = matchingFiles.map((file) => path.relative(process.cwd(), file));
+      }
     }
 
     // Process merge of package.xml files

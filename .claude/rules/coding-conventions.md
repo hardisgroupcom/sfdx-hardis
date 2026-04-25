@@ -41,6 +41,7 @@
   - Declare it as: `agent: Flags.boolean({ default: false, description: 'Run in non-interactive mode for agents and automation' })`
   - Read it in `run()` as: `const agentMode = flags.agent === true;`
   - Gate all interactive `prompts()` calls behind `!isCI && !agentMode` so the command never blocks waiting for user input when running headlessly.
+  - When a prompt collects a value that cannot have a reasonable default, add a corresponding CLI flag so agents can pass the value explicitly (e.g., `--query` for a SOQL query that would otherwise be prompted).
   - Add `'$ sf hardis:<topic>:<action> --agent'` to the command `examples` array.
   - Add a `### Agent Mode` section to the command `description` explaining: required flags, defaults applied, and what is skipped. See the `documentation` skill for the exact template.
 

@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
@@ -64,9 +64,19 @@ The command's technical implementation involves:
 - **Interactive Prompts:** Uses \`selectFilesWorkspace\` to allow the user to choose a file export project, \`promptFilesExportConfiguration\` for customizing export options, and prompts for resume/restart choice when existing files are found.
 - **Error Handling:** Includes mechanisms to handle potential errors during the export process, such as network issues, API limits, and file validation failures. Each file is assigned a specific status (\`success\`, \`failed\`, \`skipped\`, \`invalid\`) for comprehensive tracking and troubleshooting.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all prompts. Typical usage:
+
+\`sf hardis:org:files:export --agent --path ./my-files-project --target-org myOrg\`
+
+- The \`--path\` flag is required in agent mode (no interactive workspace selection).
+- Default export configuration is used (no interactive config override prompt).
+- Resume/restart prompt is skipped; resume behavior follows the \`--resume\` flag (default: restart).
 `;
 
-  public static examples = ['$ sf hardis:org:files:export'];
+  public static examples = ['$ sf hardis:org:files:export', '$ sf hardis:org:files:export --agent --path ./my-files-project'];
 
   public static flags: any = {
     path: Flags.string({
@@ -92,6 +102,10 @@ The command's technical implementation involves:
       char: 'r',
       description: 'Resume previous export by checking existing files (default in CI)',
       default: false,
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -119,6 +133,7 @@ The command's technical implementation involves:
     const pollTimeout = flags.polltimeout;
     const startChunkNumber = flags.startchunknumber || 0;
     const resumeExport = flags.resume;
+    const agentMode = flags.agent === true;
     //const debugMode = flags.debug || false;
 
     const exportOptions: any = {
@@ -130,17 +145,22 @@ The command's technical implementation involves:
 
     // Identify files workspace if not defined
     if (filesPath == null) {
+      if (isCI || agentMode) {
+        throw new SfError(c.red('In agent/CI mode, --path flag is required to specify the files workspace.'));
+      }
       filesPath = await selectFilesWorkspace({ selectFilesLabel: 'Please select a files workspace to EXPORT' });
-      const exportConfigInitial: any = (await getFilesWorkspaceDetail(filesPath || '')) || {};
-      // Request to use defaut config or to override it for this run
-      const defaultConfigRes = await prompts({
-        type: 'confirm',
-        message: c.cyanBright(t('doYouWantToUseDefaultConfiguration') + exportConfigInitial.label + ' ?'),
-        description: t('useDefaultExportConfigDescription'),
-      });
-      if (defaultConfigRes.value !== true) {
-        const exportConfig = await promptFilesExportConfiguration(exportConfigInitial, true);
-        exportOptions.exportConfig = exportConfig;
+      if (!agentMode) {
+        const exportConfigInitial: any = (await getFilesWorkspaceDetail(filesPath || '')) || {};
+        // Request to use defaut config or to override it for this run
+        const defaultConfigRes = await prompts({
+          type: 'confirm',
+          message: c.cyanBright(t('doYouWantToUseDefaultConfiguration') + exportConfigInitial.label + ' ?'),
+          description: t('useDefaultExportConfigDescription'),
+        });
+        if (defaultConfigRes.value !== true) {
+          const exportConfig = await promptFilesExportConfiguration(exportConfigInitial, true);
+          exportOptions.exportConfig = exportConfig;
+        }
       }
     }
 
@@ -156,7 +176,7 @@ The command's technical implementation involves:
 
     // Check for existing files and prompt user if needed
     let finalResumeExport = resumeExport;
-    if (!isCI && !resumeExport) {
+    if (!isCI && !agentMode && !resumeExport) {
       // User didn't explicitly set --resume and we're not in CI
       const exportFolder = path.join(filesPath || '', 'export');
       if (fs.existsSync(exportFolder)) {

@@ -5,6 +5,7 @@
 - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)
   - Feature: Data Cloud backup coverage has been expanded and made more reliable.
   - Feature: Added an option to skip Data Cloud backup when needed.
+- Added `--agent` flag for non-interactive headless execution to 35 additional commands across org/purge, org/user, org/files, org/retrieve, org/community, org/diagnose, org/multi-org-query, project/clean, project/generate, project/fix, project/metadata, package, work, scratch, misc, datacloud, doc, and git categories. Commands skip all interactive prompts and use sensible defaults or require explicit flags when running in agent mode.
 
 ## [7.10.0] 2026-04-24
 

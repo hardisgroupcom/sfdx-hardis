@@ -3,7 +3,7 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { execCommand, getCurrentGitBranch, git, gitFetch, gitPull, uxLog } from '../../../common/utils/index.js';
+import { execCommand, getCurrentGitBranch, git, gitFetch, gitPull, isCI, uxLog } from '../../../common/utils/index.js';
 import { forceSourcePull, forceSourcePush } from '../../../common/utils/deployUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { getConfig } from '../../../config/index.js';
@@ -52,13 +52,27 @@ The command's technical implementation involves:
 - **Error Handling:** Includes robust error handling for Git operations (e.g., merge conflicts) and provides guidance to the user for resolution.
 - **Environment Variable Check:** Checks for an \`EXPERIMENTAL\` environment variable to gate access to this command, indicating it might not be fully stable.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all interactive prompts. The command will:
+
+- Skip the save confirmation prompt and proceed automatically.
+- Use the configured \`developmentBranch\` as the merge branch (no branch selection prompt).
+- Auto-proceed on merge conflicts instead of prompting (will fail if conflicts cannot be resolved automatically).
+
+Required flags: none beyond \`--agent\` (uses project defaults).
 `;
 
-  public static examples = ['$ sf hardis:work:refresh'];
+  public static examples = ['$ sf hardis:work:refresh', '$ sf hardis:work:refresh --agent'];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     nopull: Flags.boolean({
       char: 'n',
       default: false,
@@ -80,6 +94,7 @@ The command's technical implementation involves:
   public static requiresProject = true;
 
   protected debugMode = false;
+  protected agentMode = false;
   protected noPull = false;
   protected mergeBranch = null;
 
@@ -93,6 +108,7 @@ The command's technical implementation involves:
       return { outputString: msg };
     }
 
+    this.agentMode = flags.agent === true;
     this.noPull = flags.nopull || false;
     uxLog(
       "action",
@@ -100,47 +116,53 @@ The command's technical implementation involves:
       c.cyan(t('thisCommandWillRefreshGitBranchAndOrg'))
     );
     // Verify that the user saved his/her work before merging another branch
-    const savePromptRes = await prompts({
-      type: 'select',
-      message: c.cyanBright(t('sensitiveOperationDidYouRunWorkSave')),
-      name: 'value',
-      description: t('confirmSavedWorkBeforeSensitiveOperation'),
-      placeholder: t('selectAnOption'),
-      choices: [
-        {
-          title: t('yesSavedBeforeMerging'),
-          value: true,
-        },
-        { title: t('noWillSaveRightNow'), value: false },
-      ],
-    });
-    if (savePromptRes.value !== true) {
-      process.exit(0);
+    if (!isCI && !this.agentMode) {
+      const savePromptRes = await prompts({
+        type: 'select',
+        message: c.cyanBright(t('sensitiveOperationDidYouRunWorkSave')),
+        name: 'value',
+        description: t('confirmSavedWorkBeforeSensitiveOperation'),
+        placeholder: t('selectAnOption'),
+        choices: [
+          {
+            title: t('yesSavedBeforeMerging'),
+            value: true,
+          },
+          { title: t('noWillSaveRightNow'), value: false },
+        ],
+      });
+      if (savePromptRes.value !== true) {
+        process.exit(0);
+      }
     }
     // Select branch to merge
     const localBranch = await getCurrentGitBranch();
-    const branchSummary = await git().branch(['-r']);
-    const branchChoices = [
-      {
-        title: `${config.developmentBranch} (recommended)`,
-        value: config.developmentBranch,
-      },
-    ];
-    for (const branchName of Object.keys(branchSummary.branches)) {
-      const branchNameLocal = branchName.replace('origin/', '');
-      if (branchNameLocal !== config.developmentBranch) {
-        branchChoices.push({ title: branchNameLocal, value: branchNameLocal });
+    if (!isCI && !this.agentMode) {
+      const branchSummary = await git().branch(['-r']);
+      const branchChoices = [
+        {
+          title: `${config.developmentBranch} (recommended)`,
+          value: config.developmentBranch,
+        },
+      ];
+      for (const branchName of Object.keys(branchSummary.branches)) {
+        const branchNameLocal = branchName.replace('origin/', '');
+        if (branchNameLocal !== config.developmentBranch) {
+          branchChoices.push({ title: branchNameLocal, value: branchNameLocal });
+        }
       }
+      const branchRes = await prompts({
+        type: 'select',
+        message: t('pleaseSelectTheBranchThatYouWant', { localBranch: c.green(localBranch) }),
+        name: 'value',
+        description: t('chooseWhichBranchToMergeIntoCurrent'),
+        placeholder: t('selectABranchToMerge'),
+        choices: branchChoices,
+      });
+      this.mergeBranch = branchRes.value;
+    } else {
+      this.mergeBranch = config.developmentBranch;
     }
-    const branchRes = await prompts({
-      type: 'select',
-      message: t('pleaseSelectTheBranchThatYouWant', { localBranch: c.green(localBranch) }),
-      name: 'value',
-      description: t('chooseWhichBranchToMergeIntoCurrent'),
-      placeholder: t('selectABranchToMerge'),
-      choices: branchChoices,
-    });
-    this.mergeBranch = branchRes.value;
     // Run refresh of local branch
     try {
       return await this.runRefresh(localBranch, flags);
@@ -208,6 +230,9 @@ The command's technical implementation involves:
       uxLog("action", this, c.cyan(t('creatingMergeCommitOfWithin', { mergeBranch: c.green(this.mergeBranch), localBranch: c.green(localBranch) })));
       let mergeSummary = await git({ output: true }).merge([this.mergeBranch || '']);
       while (mergeSummary.failed) {
+        if (isCI || this.agentMode) {
+          throw new SfError(c.red(t('mergeConflictsPleaseResolve')));
+        }
         const mergeResult = await prompts({
           type: 'select',
           name: 'value',

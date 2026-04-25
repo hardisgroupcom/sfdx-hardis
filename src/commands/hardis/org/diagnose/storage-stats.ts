@@ -4,7 +4,7 @@ import { Connection, Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from 'fs-extra';
-import { uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import sortArray from 'sort-array';
@@ -76,6 +76,21 @@ The command's technical implementation involves:
 ![](${CONSTANTS.DOC_URL_ROOT}/assets/images/storage-usage-year-breakdown.png)
 
 ![](${CONSTANTS.DOC_URL_ROOT}/assets/images/storage-usage-total.png)
+
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:storage-stats --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, all interactive prompts are skipped with sensible defaults:
+- All filtered SObjects are selected for analysis
+- Breakdown field defaults to \`CreatedDate\` (override with \`--breakdown-field\`)
+- Date granularity defaults to \`year\`
+- No WHERE clause is applied (override with \`--where\`)
 `;
 
   public static examples = [
@@ -85,6 +100,7 @@ The command's technical implementation involves:
     '$ sf hardis:org:diagnose:storage-stats --where "CreatedDate = LAST_N_DAYS:365"',
     '$ sf hardis:org:diagnose:storage-stats -w "Status__c = \'Active\'"',
     '$ sf hardis:org:diagnose:storage-stats -b "LastModifiedDate" -w "IsDeleted = false"',
+    '$ sf hardis:org:diagnose:storage-stats --agent',
   ];
 
   public static flags: any = {
@@ -111,6 +127,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
 
@@ -132,6 +152,7 @@ The command's technical implementation involves:
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
     this.whereCondition = flags.where || '';
+    const agentMode = flags.agent === true;
     const conn: Connection = flags['target-org'].getConnection();
 
     // Querying storage limit
@@ -198,43 +219,56 @@ The command's technical implementation involves:
     }
 
     // Prompt user to select objects to analyze
-    const promptObjectsRes = await prompts({
-      type: 'multiselect',
-      message: t('selectTheSobjectsToAnalyzeForStorage'),
-      description: t('excludeObjectsYouDontWantToAnalyze'),
-      choices: sObjectsFiltered.map((obj: any) => ({ title: obj.name, value: obj.name })),
-      initial: sObjectsFiltered.map((obj: any) => obj), // all selected by default
-    });
-    const selectedObjects = promptObjectsRes.value.map((objName: string) => {
-      return sObjectsFiltered.find((obj: any) => obj.name === objName);
-    });
+    let selectedObjects: any[];
+    if (!isCI && !agentMode) {
+      const promptObjectsRes = await prompts({
+        type: 'multiselect',
+        message: t('selectTheSobjectsToAnalyzeForStorage'),
+        description: t('excludeObjectsYouDontWantToAnalyze'),
+        choices: sObjectsFiltered.map((obj: any) => ({ title: obj.name, value: obj.name })),
+        initial: sObjectsFiltered.map((obj: any) => obj), // all selected by default
+      });
+      selectedObjects = promptObjectsRes.value.map((objName: string) => {
+        return sObjectsFiltered.find((obj: any) => obj.name === objName);
+      });
+    } else {
+      // In CI or agent mode, select all filtered objects
+      selectedObjects = [...sObjectsFiltered];
+      uxLog("log", this, t('agentModeSelectingAllObjects', { count: selectedObjects.length }));
+    }
     uxLog("log", this, `${selectedObjects.length} SObjects selected for analysis.`);
 
     // Get breakdown field from flag or prompt user
     let breakdownField = flags['breakdown-field'];
 
     if (!breakdownField) {
-      // Prompt user for stats on CreatedDate or LastModifiedDate
-      const promptDateFieldRes = await prompts({
-        type: 'select',
-        message: t('selectTheDateFieldToUseFor'),
-        description: t('chooseBetweenCreatedDateOrLastModifiedDate'),
-        choices: [
-          { title: t('createdDate'), value: 'CreatedDate' },
-          { title: t('lastModifiedDate'), value: 'LastModifiedDate' },
-          { title: t('recordTypeIfApplicable'), value: 'RecordType.Name' },
-          { title: t('customWillExcludeObjectsWithoutField'), value: 'custom' }
-        ],
-      });
-      breakdownField = promptDateFieldRes.value;
-      if (breakdownField === 'custom') {
-        const promptFieldRes = await prompts({
-          type: 'text',
-          message: t('enterTheApiNameOfTheCustom'),
-          description: t('objectsWithoutThisFieldWillBeExcluded'),
-          placeholder: t('exDateField'),
+      if (!isCI && !agentMode) {
+        // Prompt user for stats on CreatedDate or LastModifiedDate
+        const promptDateFieldRes = await prompts({
+          type: 'select',
+          message: t('selectTheDateFieldToUseFor'),
+          description: t('chooseBetweenCreatedDateOrLastModifiedDate'),
+          choices: [
+            { title: t('createdDate'), value: 'CreatedDate' },
+            { title: t('lastModifiedDate'), value: 'LastModifiedDate' },
+            { title: t('recordTypeIfApplicable'), value: 'RecordType.Name' },
+            { title: t('customWillExcludeObjectsWithoutField'), value: 'custom' }
+          ],
         });
-        breakdownField = promptFieldRes.value;
+        breakdownField = promptDateFieldRes.value;
+        if (breakdownField === 'custom') {
+          const promptFieldRes = await prompts({
+            type: 'text',
+            message: t('enterTheApiNameOfTheCustom'),
+            description: t('objectsWithoutThisFieldWillBeExcluded'),
+            placeholder: t('exDateField'),
+          });
+          breakdownField = promptFieldRes.value;
+        }
+      } else {
+        // In CI or agent mode, default to CreatedDate
+        breakdownField = 'CreatedDate';
+        uxLog("log", this, t('agentModeDefaultBreakdownField', { field: breakdownField }));
       }
     }
 
@@ -253,29 +287,38 @@ The command's technical implementation involves:
 
     // Prompt for date granularity if the field is a date/datetime
     if (isDateFieldForGranularity) {
-      const promptGranularityRes = await prompts({
-        type: 'select',
-        message: t('selectTheBreakdownGranularityForTheDate'),
-        description: t('chooseHowToGroupStorageStatistics'),
-        choices: [
-          { title: t('byYear'), value: 'year' },
-          { title: t('byMonth'), value: 'month' },
-          { title: t('byDay'), value: 'day' }
-        ],
-      });
-      this.dateGranularity = promptGranularityRes.value;
+      if (!isCI && !agentMode) {
+        const promptGranularityRes = await prompts({
+          type: 'select',
+          message: t('selectTheBreakdownGranularityForTheDate'),
+          description: t('chooseHowToGroupStorageStatistics'),
+          choices: [
+            { title: t('byYear'), value: 'year' },
+            { title: t('byMonth'), value: 'month' },
+            { title: t('byDay'), value: 'day' }
+          ],
+        });
+        this.dateGranularity = promptGranularityRes.value;
+      } else {
+        // In CI or agent mode, default to year granularity
+        this.dateGranularity = 'year';
+        uxLog("log", this, t('agentModeDefaultGranularity', { granularity: this.dateGranularity }));
+      }
       uxLog("log", this, `Using ${c.cyan(this.dateGranularity)} granularity for date breakdown.`);
     }
 
     // Prompt for WHERE condition if not provided via flag
     if (!this.whereCondition) {
-      const promptWhereCondRes = await prompts({
-        type: 'text',
-        message: t('enterAnOptionalWhereConditionToFilter'),
-        description: t('youCanProvideOptionalWhereClauseForStorageStats'),
-        placeholder: t('exWhereConditionForStorageStats')
-      });
-      this.whereCondition = promptWhereCondRes.value || '';
+      if (!isCI && !agentMode) {
+        const promptWhereCondRes = await prompts({
+          type: 'text',
+          message: t('enterAnOptionalWhereConditionToFilter'),
+          description: t('youCanProvideOptionalWhereClauseForStorageStats'),
+          placeholder: t('exWhereConditionForStorageStats')
+        });
+        this.whereCondition = promptWhereCondRes.value || '';
+      }
+      // In CI or agent mode, leave whereCondition as empty string (no filter)
     }
 
     if (this.whereCondition) {

@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { glob } from 'glob';
 import sortArray from 'sort-array';
-import { uxLog } from '../../../../common/utils/index.js';
+import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { soqlQueryTooling } from '../../../../common/utils/apiUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { parseXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
@@ -45,12 +45,30 @@ The command's technical implementation involves:
 - **Array Sorting:** Employs the \`sort-array\` library to sort the \`tabVisibilities\` alphabetically by tab name.
 - **Logging:** Provides feedback to the user about which profiles have been updated and a summary of the changes.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:fix:profiletabs --agent
+\`\`\`
+
+In agent mode:
+
+- All available tabs are processed with \`DefaultOn\` visibility
+- All profiles found in the project are updated
+- All interactive prompts are skipped
 `;
 
 
-  public static examples = ['$ sf hardis:project:fix:profiletabs'];
+  public static examples = ['$ sf hardis:project:fix:profiletabs', '$ sf hardis:project:fix:profiletabs --agent'];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     path: Flags.string({
       char: 'p',
       default: process.cwd(),
@@ -76,6 +94,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(FixV53Flexipages);
+    const agentMode = flags.agent === true;
     this.pathToBrowse = flags.path || process.cwd();
     this.debugMode = flags.debug || false;
 
@@ -91,55 +110,75 @@ The command's technical implementation involves:
       };
     });
 
-    // Prompt tabs to add to Profiles
-    const promptTabsToAdd = await prompts([
-      {
-        type: 'multiselect',
-        name: 'tabs',
-        message: t('pleaseSelectTheTabsYouWantTo'),
-        description: t('chooseWhichTabsShouldBeConfiguredForProfiles'),
-        choices: choices,
-      },
-      {
-        type: 'select',
-        name: 'visibility',
-        message: t('pleaseSelectTheFlagYouWantThe'),
-        description: t('chooseVisibilitySettingForTabs'),
-        placeholder: t('selectVisibilityPlaceholder'),
-        choices: [
-          {
-            title: t('tabVisibilityVisibleDefaultOn'),
-            value: 'DefaultOn',
-          },
-          {
-            title: t('tabVisibilityHidden'),
-            value: 'Hidden',
-          },
-        ],
-      },
-    ]);
+    let tabsToUpdate: string[];
+    let visibility: string;
 
-    const tabsToUpdate = promptTabsToAdd.tabs;
-    const visibility = promptTabsToAdd.visibility;
+    if (!isCI && !agentMode) {
+      // Prompt tabs to add to Profiles
+      const promptTabsToAdd = await prompts([
+        {
+          type: 'multiselect',
+          name: 'tabs',
+          message: t('pleaseSelectTheTabsYouWantTo'),
+          description: t('chooseWhichTabsShouldBeConfiguredForProfiles'),
+          choices: choices,
+        },
+        {
+          type: 'select',
+          name: 'visibility',
+          message: t('pleaseSelectTheFlagYouWantThe'),
+          description: t('chooseVisibilitySettingForTabs'),
+          placeholder: t('selectVisibilityPlaceholder'),
+          choices: [
+            {
+              title: t('tabVisibilityVisibleDefaultOn'),
+              value: 'DefaultOn',
+            },
+            {
+              title: t('tabVisibilityHidden'),
+              value: 'Hidden',
+            },
+          ],
+        },
+      ]);
+
+      tabsToUpdate = promptTabsToAdd.tabs;
+      visibility = promptTabsToAdd.visibility;
+    } else {
+      // In agent mode, process all tabs with DefaultOn visibility
+      tabsToUpdate = choices.map((choice) => choice.value);
+      visibility = 'DefaultOn';
+      uxLog("log", this, c.grey(t('agentModeProcessingAllTabsWithDefaultOn', { count: tabsToUpdate.length })));
+    }
 
     // Prompt profiles to user
     const globPattern = this.pathToBrowse + `/**/*.profile-meta.xml`;
     const profileSourceFiles = await glob(globPattern, { cwd: this.pathToBrowse, ignore: GLOB_IGNORE_PATTERNS });
-    const promptProfilesToUpdate = await prompts({
-      type: 'multiselect',
-      name: 'profiles',
-      message: t('pleaseSelectProfilesToUpdateTabsVisibility', { tabs: tabsToUpdate.join(', '), visibility }),
-      description: t('chooseProfilesForTabVisibilityUpdates'),
-      choices: profileSourceFiles.map((profileFile) => {
-        return {
-          title: (profileFile.replace(/\\/g, '/').split('/').pop() || '').replace('.profile-meta.xml', ''),
-          value: profileFile,
-        };
-      }),
-    });
+
+    let profilesToUpdate: string[];
+
+    if (!isCI && !agentMode) {
+      const promptProfilesToUpdate = await prompts({
+        type: 'multiselect',
+        name: 'profiles',
+        message: t('pleaseSelectProfilesToUpdateTabsVisibility', { tabs: tabsToUpdate.join(', '), visibility }),
+        description: t('chooseProfilesForTabVisibilityUpdates'),
+        choices: profileSourceFiles.map((profileFile) => {
+          return {
+            title: (profileFile.replace(/\\/g, '/').split('/').pop() || '').replace('.profile-meta.xml', ''),
+            value: profileFile,
+          };
+        }),
+      });
+      profilesToUpdate = promptProfilesToUpdate.profiles;
+    } else {
+      // In agent mode, process all profiles
+      profilesToUpdate = profileSourceFiles;
+      uxLog("log", this, c.grey(t('agentModeProcessingAllProfiles', { count: profilesToUpdate.length })));
+    }
 
     // Apply updates on Profiles
-    for (const profileFile of promptProfilesToUpdate.profiles) {
+    for (const profileFile of profilesToUpdate) {
       const profile = await parseXmlFile(profileFile);
       let tabVisibilities = profile.Profile['tabVisibilities'] || [];
       for (const tabName of tabsToUpdate) {
@@ -179,9 +218,9 @@ The command's technical implementation involves:
     }
 
     // Summary
-    const msg = `Updated ${c.green(c.bold(promptProfilesToUpdate.profiles.length))} profiles.`;
+    const msg = `Updated ${c.green(c.bold(profilesToUpdate.length))} profiles.`;
     uxLog("action", this, c.cyan(msg));
     // Return an object to be displayed with --json
-    return { outputString: msg, updatedNumber: promptProfilesToUpdate.profiles.length };
+    return { outputString: msg, updatedNumber: profilesToUpdate.length };
   }
 }

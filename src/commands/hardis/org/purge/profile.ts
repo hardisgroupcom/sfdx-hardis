@@ -1,11 +1,11 @@
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { promptProfiles } from '../../../../common/utils/orgUtils.js';
 import { getReportDirectory } from '../../../../config/index.js';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
 import * as path from 'path';
-import { execCommand, filterPackageXml, uxLog } from '../../../../common/utils/index.js';
+import { execCommand, filterPackageXml, isCI, uxLog } from '../../../../common/utils/index.js';
 import c from 'chalk';
 import fs from 'fs';
 import { parsePackageXmlFile, parseXmlFile, writePackageXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
@@ -49,15 +49,36 @@ The command checks for uncommitted changes and will not run if the working tree 
 - **Retrieval & Deployment:** Uses the Salesforce CLI ('sf project retrieve' / 'sf project deploy') via 'execCommand' to retrieve metadata and deploy the updated profiles.
 - **Exit behavior:** Returns an object with 'orgId' and an 'outputString'. Errors are logged to the console and do not throw uncaught exceptions within the command.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:purge:profile --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- All interactive prompts and confirmations are skipped.
+- Uncommitted changes warning is skipped (proceeds anyway).
+- If a cached full org manifest exists, it is reused without prompting.
+- No namespace filtering is applied (all namespaces are kept).
+- Deployment of muted profiles proceeds without confirmation.
 `;
 
   public static examples = [
     `sf hardis:org:purge:profile`,
     `sf hardis:org:purge:profile --target-org my-org@example.com`,
+    '$ sf hardis:org:purge:profile --agent',
   ];
 
   /* jscpd:ignore-start */
   public static flags: any = {
+    profiles: Flags.string({
+      char: 'p',
+      description: 'Comma-separated list of profile API names to purge. Required in agent mode.',
+    }),
     outputfile: Flags.string({
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
@@ -72,6 +93,10 @@ The command checks for uncommitted changes and will not run if the working tree 
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -116,9 +141,11 @@ The command checks for uncommitted changes and will not run if the working tree 
   protected outputFile;
   protected outputFilesRes: any = {};
   protected allChanges: { profile: string; node: string; name: string; attribute: string; oldValue: any; newValue: any }[] = [];
+  protected agentMode = false;
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(OrgPurgeProfile);
+    this.agentMode = flags.agent === true;
     this.outputFile = flags.outputfile || null;
     const orgUsername = flags['target-org'].getUsername();
     const conn = flags['target-org'].getConnection();
@@ -133,14 +160,16 @@ The command checks for uncommitted changes and will not run if the working tree 
 
     // Check if user has uncommitted changes
     if (!await this.checkUncommittedChanges()) {
-      const confirmPromptRes = await prompts({
-        type: "confirm",
-        message: t('youHaveUncommittedChangesInYourGit'),
-        description: "It's recommended to commit, stash or discard your changes before proceeding.",
-      });
-      if (!confirmPromptRes.value === true) {
-        uxLog("error", this, c.blue(t('operationCancelledExitingWithoutChanges')));
-        return {};
+      if (!isCI && !this.agentMode) {
+        const confirmPromptRes = await prompts({
+          type: "confirm",
+          message: t('youHaveUncommittedChangesInYourGit'),
+          description: "It's recommended to commit, stash or discard your changes before proceeding.",
+        });
+        if (!confirmPromptRes.value === true) {
+          uxLog("error", this, c.blue(t('operationCancelledExitingWithoutChanges')));
+          return {};
+        }
       }
     }
 
@@ -149,7 +178,16 @@ The command checks for uncommitted changes and will not run if the working tree 
 
     await this.filterFullOrgPackageByNamespaces(packageFullOrgPath, packageFilteredPackagesPath);
 
-    const selectedProfiles = await promptProfiles(flags['target-org'].getConnection(), { multiselect: true, returnApiName: true });
+    let selectedProfiles: string[];
+    if (isCI || this.agentMode) {
+      const profilesFlag = flags.profiles;
+      if (!profilesFlag) {
+        throw new SfError(c.red('In agent/CI mode, --profiles flag is required (comma-separated profile API names).'));
+      }
+      selectedProfiles = profilesFlag.split(',').map((p: string) => p.trim());
+    } else {
+      selectedProfiles = await promptProfiles(flags['target-org'].getConnection(), { multiselect: true, returnApiName: true });
+    }
 
     uxLog("action", this, c.cyan(t('filteringFullOrgManifest')));
     await this.filterFullOrgPackageByRelevantMetadataTypes(packageFilteredPackagesPath, packageFilteredProfilePath, selectedProfiles);
@@ -181,15 +219,17 @@ The command checks for uncommitted changes and will not run if the working tree 
     this.outputFile = await generateReportPath('profile-muted-attributes', this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.allChanges, this.outputFile, { fileTitle: 'Profile muted attributes report' });
 
-    const promptDeployRes = await prompts({
-      type: "confirm",
-      message: t('doYouWantToDeployProfilesBack', { selectedProfiles }),
-      description: t('confirmDeployProfilesDescription'),
-      initial: true,
-    });
-    if (!promptDeployRes.value === true) {
-      uxLog("error", this, c.blue(t('deploymentCancelledByUser')));
-      return { orgId: flags['target-org'].getOrgId(), outputString: "Profile purge completed without deployment." };
+    if (!isCI && !this.agentMode) {
+      const promptDeployRes = await prompts({
+        type: "confirm",
+        message: t('doYouWantToDeployProfilesBack', { selectedProfiles }),
+        description: t('confirmDeployProfilesDescription'),
+        initial: true,
+      });
+      if (!promptDeployRes.value === true) {
+        uxLog("error", this, c.blue(t('deploymentCancelledByUser')));
+        return { orgId: flags['target-org'].getOrgId(), outputString: "Profile purge completed without deployment." };
+      }
     }
 
     uxLog("action", this, c.cyan(`Deploying muted profiles back to the org...`));
@@ -213,21 +253,25 @@ The command checks for uncommitted changes and will not run if the working tree 
     // Check if full org manifest already exists
     let useExistingManifest = false;
     if (fs.existsSync(packageFullOrgPath)) {
-      const promptResults = await prompts({
-        type: "select",
-        name: "useExistingManifest",
-        message: t('doYouWantToUseTheExisting'),
-        description: t('existingManifestFoundDescription'),
-        choices: [
-          {
-            title: t('useExistingManifestTitle'),
-            description: t('existingManifestCacheLocation', { path: path.relative(process.cwd(), packageFullOrgPath) }),
-            value: true
-          },
-          { title: t('generateNewManifestTitle'), value: false },
-        ],
-      });
-      useExistingManifest = promptResults.useExistingManifest;
+      if (!isCI && !this.agentMode) {
+        const promptResults = await prompts({
+          type: "select",
+          name: "useExistingManifest",
+          message: t('doYouWantToUseTheExisting'),
+          description: t('existingManifestFoundDescription'),
+          choices: [
+            {
+              title: t('useExistingManifestTitle'),
+              description: t('existingManifestCacheLocation', { path: path.relative(process.cwd(), packageFullOrgPath) }),
+              value: true
+            },
+            { title: t('generateNewManifestTitle'), value: false },
+          ],
+        });
+        useExistingManifest = promptResults.useExistingManifest;
+      } else {
+        useExistingManifest = true;
+      }
     }
     if (!useExistingManifest) {
       uxLog("action", this, c.cyan(`Generating full org manifest for profile retrieval...`));
@@ -520,17 +564,21 @@ The command checks for uncommitted changes and will not run if the working tree 
       }
     }
 
-    const selectedNamespacesPrompt = await prompts({
-      type: 'multiselect',
-      name: "namespaces",
-      message: t('selectTheNamespacesYouWantToIgnore'),
-      description: t('youWillNotDisableAccessToElementsRelatedToNamespaces'),
-      choices: namespaceOptions
-    });
+    let selectedNamespaces: string[] = [];
+    if (!isCI && !this.agentMode) {
+      const selectedNamespacesPrompt = await prompts({
+        type: 'multiselect',
+        name: "namespaces",
+        message: t('selectTheNamespacesYouWantToIgnore'),
+        description: t('youWillNotDisableAccessToElementsRelatedToNamespaces'),
+        choices: namespaceOptions
+      });
+      selectedNamespaces = selectedNamespacesPrompt.namespaces || [];
+    }
 
     uxLog("action", this, c.cyan(`Filtering full org manifest to remove unwanted namespaces...`));
     await filterPackageXml(packageFullOrgPath, packageFilteredPackagesPath, {
-      removeNamespaces: selectedNamespacesPrompt.namespaces,
+      removeNamespaces: selectedNamespaces,
       removeStandard: false
     });
   }

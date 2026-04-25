@@ -85,9 +85,22 @@ The command's technical implementation involves:
 - **Error Recovery:** Implements comprehensive error handling with scratch org cleanup, pool management, and detailed error messaging for troubleshooting.
 - **WebSocket Integration:** Provides real-time status updates and file reporting through WebSocket connections for VS Code extension integration.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:create --agent --target-dev-hub mydevhub@example.com
+\`\`\`
+
+In agent mode:
+
+- The scratch org reuse confirmation prompt is skipped and a new org is always created.
+- All other interactive prompts are skipped.
 `;
 
-  public static examples = ['$ sf hardis:scratch:create'];
+  public static examples = ['$ sf hardis:scratch:create', '$ sf hardis:scratch:create --agent'];
 
   // public static args = [{name: 'file'}];
 
@@ -100,6 +113,10 @@ The command's technical implementation involves:
     pool: Flags.boolean({
       default: false,
       description: 'Creates the scratch org for a scratch org pool',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -126,6 +143,7 @@ The command's technical implementation involves:
   /* jscpd:ignore-end */
 
   protected debugMode = false;
+  protected agentMode = false;
   protected pool = false;
   protected configInfo: any;
   protected devHubAlias: string;
@@ -148,6 +166,7 @@ The command's technical implementation involves:
     this.pool = flags.pool || false;
     this.debugMode = flags.debug || false;
     this.forceNew = flags.forcenew || false;
+    this.agentMode = flags.agent === true;
     elapseStart(`Create and initialize scratch org`);
     await this.initConfig();
     await this.createScratchOrg(flags);
@@ -240,7 +259,7 @@ The command's technical implementation involves:
       this.scratchOrgAlias = 'PO-' + Math.random().toString(36).substr(2, 2) + this.scratchOrgAlias;
     }
     // Verify that the user wants to resume scratch org creation
-    if (!isCI && this.scratchOrgAlias !== newScratchName && this.pool === false) {
+    if (!isCI && !this.agentMode && this.scratchOrgAlias !== newScratchName && this.pool === false) {
       const checkRes = await prompts({
         type: 'confirm',
         name: 'value',
@@ -270,8 +289,8 @@ The command's technical implementation involves:
 
     // If not found, prompt user email and store it in user config file
     if (this.userEmail == null) {
-      if (this.pool === true) {
-        throw new SfError(c.red('You need to define userEmail property in .sfdx-hardis.yml'));
+      if (this.pool === true || this.agentMode) {
+        throw new SfError(c.red('You need to define userEmail property in .sfdx-hardis.yml or set USER_EMAIL env var.'));
       }
       this.userEmail = await promptUserEmail();
     }

@@ -4,7 +4,7 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
-import { uxLog } from '../../../../common/utils/index.js';
+import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { managePackageConfig, promptOrg } from '../../../../common/utils/orgUtils.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -37,11 +37,23 @@ The command's technical implementation involves:
 - **Configuration Management:** If the user confirms, it calls \`managePackageConfig\` to update the project's configuration file (likely \`.sfdx-hardis.yml\`) with the new package information.
 - **User Feedback:** Provides clear messages to the user about the success of the package retrieval and configuration update.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all prompts. Typical usage:
+
+\`sf hardis:org:retrieve:packageconfig --agent --target-org myOrg\`
+
+- Configuration update confirmation prompt is skipped; the project configuration is updated automatically with the retrieved package list.
 `;
 
-  public static examples = ['$ sf hardis:org:retrieve:packageconfig', 'sf hardis:org:retrieve:packageconfig -u myOrg'];
+  public static examples = ['$ sf hardis:org:retrieve:packageconfig', 'sf hardis:org:retrieve:packageconfig -u myOrg', '$ sf hardis:org:retrieve:packageconfig --agent'];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -63,6 +75,7 @@ The command's technical implementation involves:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(RetrievePackageConfig);
+    const agentMode = flags.agent === true;
     let targetUsername = flags['target-org'].getUsername() || null;
 
     // Prompt for organization if not sent
@@ -87,14 +100,18 @@ The command's technical implementation involves:
     uxLog("action", this, c.cyan(t('successfullyRetrievedInstalledPackagesFromOrg', { installedPackages: installedPackages.length, targetUsername, packageNames })));
 
     // Store list in config
-    const updateConfigRes = await prompts({
-      type: 'confirm',
-      name: 'value',
-      message: c.cyanBright(t('doYouWantToUpdateYourProject')),
-      description: t('updateLocalProjectFilesWithInstalledPackages'),
-    });
-    if (updateConfigRes.value === true) {
+    if (isCI || agentMode) {
       await managePackageConfig(installedPackages, installedPackages, true);
+    } else {
+      const updateConfigRes = await prompts({
+        type: 'confirm',
+        name: 'value',
+        message: c.cyanBright(t('doYouWantToUpdateYourProject')),
+        description: t('updateLocalProjectFilesWithInstalledPackages'),
+      });
+      if (updateConfigRes.value === true) {
+        await managePackageConfig(installedPackages, installedPackages, true);
+      }
     }
 
     WebSocketClient.sendRefreshPipelineMessage();
