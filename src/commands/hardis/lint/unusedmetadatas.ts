@@ -58,8 +58,16 @@ The command's technical implementation involves:
 </details>
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
-  public static examples = ['$ sf hardis:lint:unusedmetadatas'];
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:lint:unusedmetadatas --agent
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
+  public static examples = ['$ sf hardis:lint:unusedmetadatas', '$ sf hardis:lint:unusedmetadatas --agent'];
   /* jscpd:ignore-start */
   public static flags: any = {
     debug: Flags.boolean({

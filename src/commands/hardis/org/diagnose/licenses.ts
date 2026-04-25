@@ -48,9 +48,17 @@ The command's technical implementation involves:
 </details>
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
 
-  public static examples = ['$ sf hardis:org:diagnose:licenses'];
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:licenses --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
+
+  public static examples = ['$ sf hardis:org:diagnose:licenses', '$ sf hardis:org:diagnose:licenses --agent'];
 
   //Comment default values to test the prompts
   public static flags: any = {

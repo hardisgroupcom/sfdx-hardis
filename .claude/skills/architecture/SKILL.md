@@ -44,6 +44,29 @@ docs/                  # Project documentation
 - Invoked as `sf hardis <topic> <action>`.
 - ESM module (`"type": "module"`).
 
+### Headless / Agent Mode
+
+When possible, every command should support a `--agent` boolean flag so it can be called non-interactively by AI agents and automation pipelines:
+
+```ts
+// Flag declaration
+agent: Flags.boolean({
+  default: false,
+  description: 'Run in non-interactive mode for agents and automation',
+}),
+
+// In run()
+const agentMode = flags.agent === true;
+
+// Guard every interactive prompt
+if (!isCI && !agentMode) {
+  const answer = await prompts({ ... });
+}
+```
+
+- Add `'$ sf hardis:<topic>:<action> --agent'` to the command `examples` array.
+- In agent mode the command must complete without blocking on any interactive prompt, applying sensible defaults instead.
+
 ## Provider Pattern (`src/common/`)
 
 External integrations use a root class + concrete implementations:

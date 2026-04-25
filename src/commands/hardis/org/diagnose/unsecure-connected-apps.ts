@@ -68,10 +68,23 @@ The command's technical implementation involves:
 </details>
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:unsecure-connected-apps --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- Phantom app OAuth token revocation prompt is skipped (no tokens are revoked automatically).
+- Stale token deletion prompt is skipped (no tokens are deleted automatically).
+- All other interactive prompts are skipped.`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:unsecure-connected-apps',
+    '$ sf hardis:org:diagnose:unsecure-connected-apps --agent',
   ];
 
   public static flags: any = {

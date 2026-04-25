@@ -54,8 +54,19 @@ Key functionalities:
 
 This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/) and can output Grafana, Slack and MsTeams Notifications.
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
-  public static examples = ['$ sf hardis:org:monitor:errors'];
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:monitor:errors --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- The number of days defaults to 1 when \`--days\` is not provided.
+- All interactive prompts are skipped.`;
+  public static examples = ['$ sf hardis:org:monitor:errors', '$ sf hardis:org:monitor:errors --agent'];
 
   public static flags: any = {
     days: Flags.integer({

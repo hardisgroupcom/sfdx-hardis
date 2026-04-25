@@ -37,6 +37,12 @@
 
 - Return `AnyJson` from `run()` method.
 - Static `description` must include `## Command Behavior` and `<details>Technical explanations</details>` sections.
+- **Headless / agent mode**: When possible, commands must support a `--agent` boolean flag so they can be called non-interactively by AI agents and automation pipelines.
+  - Declare it as: `agent: Flags.boolean({ default: false, description: 'Run in non-interactive mode for agents and automation' })`
+  - Read it in `run()` as: `const agentMode = flags.agent === true;`
+  - Gate all interactive `prompts()` calls behind `!isCI && !agentMode` so the command never blocks waiting for user input when running headlessly.
+  - Add `'$ sf hardis:<topic>:<action> --agent'` to the command `examples` array.
+  - Add a `### Agent Mode` section to the command `description` explaining: required flags, defaults applied, and what is skipped. See the `documentation` skill for the exact template.
 
 ## Code Duplication
 

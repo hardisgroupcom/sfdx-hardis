@@ -56,9 +56,17 @@ The command's technical implementation involves extensive querying of Salesforce
 </details>
 
 
-Supports non-interactive execution with \`--agent\` (uses default values and skips prompts).`;
+### Agent Mode
 
-  public static examples = ['$ sf hardis:org:diagnose:unusedlicenses', '$ sf hardis:org:diagnose:unusedlicenses --fix'];
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:unusedlicenses --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the bulk-delete confirmation prompt is skipped (no unused PSLAs are deleted automatically). Use \`--fix\` together with \`--agent\` to delete them without prompting.`;
+
+  public static examples = ['$ sf hardis:org:diagnose:unusedlicenses', '$ sf hardis:org:diagnose:unusedlicenses --fix', '$ sf hardis:org:diagnose:unusedlicenses --agent'];
 
   public static flags: any = {
     outputfile: Flags.string({
