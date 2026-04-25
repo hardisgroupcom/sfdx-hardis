@@ -41,23 +41,38 @@ The command's technical implementation involves:
 - **Environment Variable Check:** Checks for an `EXPERIMENTAL` environment variable to gate access to this command, indicating it might not be fully stable.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all interactive prompts. The command will:
+
+- Skip the save confirmation prompt and proceed automatically.
+- Use the configured `developmentBranch` as the merge branch (no branch selection prompt).
+- Auto-proceed on merge conflicts instead of prompting (will fail if conflicts cannot be resolved automatically).
+
+Required flags: none beyond `--agent` (uses project defaults).
+
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| nopull<br/>-n     | boolean | No scratch pull before save (careful if you use that!)        |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|nopull<br/>-n|boolean|No scratch pull before save (careful if you use that!)||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
 $ sf hardis:work:refresh
+```
+
+```shell
+$ sf hardis:work:refresh --agent
 ```
 
 

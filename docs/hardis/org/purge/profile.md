@@ -32,18 +32,36 @@ The command checks for uncommitted changes and will not run if the working tree 
 - **Exit behavior:** Returns an object with 'orgId' and an 'outputString'. Errors are logged to the console and do not throw uncaught exceptions within the command.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:purge:profile --agent --target-org myorg@example.com
+```
+
+In agent mode:
+
+- All interactive prompts and confirmations are skipped.
+- Uncommitted changes warning is skipped (proceeds anyway).
+- If a cached full org manifest exists, it is reused without prompting.
+- No namespace filtering is applied (all namespaces are kept).
+- Deployment of muted profiles proceeds without confirmation.
+
 
 ## Parameters
 
-| Name              |  Type   | Description                                                       | Default | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |         |          |         |
-| flags-dir         | option  | undefined                                                         |         |          |         |
-| json              | boolean | Format output as json.                                            |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required     |         |          |         |
-| target-org<br/>-o | option  | undefined                                                         |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|profiles<br/>-p|option|Comma-separated list of profile API names to purge. Required in agent mode.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
@@ -53,6 +71,10 @@ sf hardis:org:purge:profile
 
 ```shell
 sf hardis:org:purge:profile --target-org my-org@example.com
+```
+
+```shell
+$ sf hardis:org:purge:profile --agent
 ```
 
 

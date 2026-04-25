@@ -33,19 +33,30 @@ The command's technical implementation involves:
 </details>
 
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:multi-org-query --agent --query "SELECT Id,Username FROM User" --target-orgs org1@example.com org2@example.com
+```
+
+In agent mode, both `--query` (or `--query-template`) and `--target-orgs` flags are required. Interactive query builder and org selection prompts are skipped.
+
 ## Parameters
 
-| Name                  |  Type   | Description                                                       | Default | Required |          Options           |
-|:----------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:--------------------------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                   |         |          |                            |
-| flags-dir             | option  | undefined                                                         |         |          |                            |
-| json                  | boolean | Format output as json.                                            |         |          |                            |
-| outputfile<br/>-f     | option  | Force the path and name of output report file. Must end with .csv |         |          |                            |
-| query<br/>-q          | option  | SOQL Query to run on multiple orgs                                |         |          |                            |
-| query-template<br/>-t | option  | Use one of predefined SOQL Query templates                        |         |          | active-users<br/>all-users |
-| skipauth              | boolean | Skip authentication check when a default username is required     |         |          |                            |
-| target-orgs<br/>-x    | option  | List of org usernames or aliases.                                 |         |          |                            |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |                            |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|outputfile<br/>-f|option|Force the path and name of output report file. Must end with .csv||||
+|query<br/>-q|option|SOQL Query to run on multiple orgs||||
+|query-template<br/>-t|option|Use one of predefined SOQL Query templates|||active-users<br/>all-users|
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-orgs<br/>-x|option|List of org usernames or aliases.||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
@@ -63,6 +74,10 @@ $ sf hardis:org:multi-org-query --query "SELECT Id,Username FROM User" --target-
 
 ```shell
 $ sf hardis:org:multi-org-query --query-template active-users --target-orgs nico@cloudity.com nico@cloudity.com.preprod nico@cloudity.com.uat
+```
+
+```shell
+$ sf hardis:org:multi-org-query --agent --query "SELECT Id,Username FROM User" --target-orgs nico@cloudity.com
 ```
 
 

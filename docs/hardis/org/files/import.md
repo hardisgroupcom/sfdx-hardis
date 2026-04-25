@@ -30,24 +30,38 @@ The command's technical implementation involves:
 - **Error Handling:** Includes mechanisms to handle potential errors during the import process, such as API limits or file upload failures.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all prompts. Typical usage:
+
+`sf hardis:org:files:import --agent --path ./my-files-project --target-org myOrg`
+
+- Overwrite confirmation prompt is skipped; files are imported with overwrite enabled by default.
+- The `--path` flag is required in agent mode (no interactive workspace selection).
+
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| overwrite<br/>-f  | boolean | Override existing files (doubles the number of API calls)     |         |          |         |
-| path<br/>-p       | option  | Path to the file export project                               |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|overwrite<br/>-f|boolean|Override existing files (doubles the number of API calls)||||
+|path<br/>-p|option|Path to the file export project||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
 $ sf hardis:org:files:import
+```
+
+```shell
+$ sf hardis:org:files:import --agent --path ./my-files-project
 ```
 
 

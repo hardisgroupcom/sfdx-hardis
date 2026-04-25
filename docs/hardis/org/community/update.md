@@ -32,17 +32,27 @@ The command's technical implementation involves:
 - **Salesforce Connection:** Establishes a connection to the target Salesforce org using the `target-org` flag.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all prompts. Typical usage:
+
+`sf hardis:org:community:update --agent --name 'MyNetworkName' --status DownForMaintenance`
+
+- Confirmation prompt is skipped; the update proceeds immediately.
+- The `--name` and `--status` flags are required (same as normal mode).
+
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                  | Default | Required | Options |
-|:------------------|:-------:|:-----------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                              |         |          |         |
-| flags-dir         | option  | undefined                                                                    |         |          |         |
-| json              | boolean | Format output as json.                                                       |         |          |         |
-| name<br/>-n       | option  | List of Networks Names that you want to update, separated by comma           |         |          |         |
-| status<br/>-s     | option  | New status for the community, available values are: Live, DownForMaintenance |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                    |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|name<br/>-n|option|List of Networks Names that you want to update, separated by comma||||
+|status<br/>-s|option|New status for the community, available values are: Live, DownForMaintenance||||
+|target-org<br/>-o|option|undefined||||
 
 ## Examples
 
@@ -52,6 +62,10 @@ $ sf hardis:org:community:update --name 'MyNetworkName' --status DownForMaintena
 
 ```shell
 $ sf hardis:org:community:update --name 'MyNetworkName,MySecondNetworkName' --status Live
+```
+
+```shell
+$ sf hardis:org:community:update --agent --name 'MyNetworkName' --status DownForMaintenance
 ```
 
 

@@ -18,6 +18,19 @@ Key capabilities:
 - **Profile field access coverage:** Retrieves FieldPermissions to surface read/edit status per profile and field.
 - **Consolidated reporting:** Produces standalone CSVs plus an aggregated XLSX stored in the report directory.
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:clean:profiles-extract --agent --target-org myorg@example.com
+```
+
+In agent mode:
+
+- The interactive object selection prompt is skipped; all queryable objects with records are used.
+- The persona count prompt is skipped; defaults to 1 persona.
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -33,14 +46,15 @@ Key capabilities:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | The target Salesforce org to fetch SObjects from.             |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|The target Salesforce org to fetch SObjects from.||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
@@ -50,6 +64,10 @@ $ sf hardis:project:clean:profiles-extract
 
 ```shell
 $ sf hardis:project:clean:profiles-extract --target-org my-org
+```
+
+```shell
+$ sf hardis:project:clean:profiles-extract --agent --target-org my-org
 ```
 
 

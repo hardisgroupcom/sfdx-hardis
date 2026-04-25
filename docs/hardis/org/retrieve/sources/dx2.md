@@ -29,24 +29,38 @@ The command's technical implementation involves:
 - **User Feedback:** Provides clear messages to the user about the retrieval process and its success.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all prompts. Typical usage:
+
+`sf hardis:org:retrieve:sources:dx2 --agent --packagexml manifest/package.xml --target-org myOrg`
+
+- The `--packagexml` or `--template` flag is required in agent mode (no interactive prompt for package.xml path).
+- Org selection uses the `--target-org` flag value directly.
+
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| packagexml<br/>-x | option  | Path to package.xml file                                      |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| template<br/>-t   | option  | sfdx-hardis package.xml Template name. ex: wave               |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|packagexml<br/>-x|option|Path to package.xml file||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|template<br/>-t|option|sfdx-hardis package.xml Template name. ex: wave||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
 $ sf hardis:org:retrieve:sources:dx2
+```
+
+```shell
+$ sf hardis:org:retrieve:sources:dx2 --agent --packagexml manifest/package.xml
 ```
 
 

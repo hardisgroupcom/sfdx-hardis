@@ -31,20 +31,31 @@ The command's technical implementation involves:
 - **WebSocket Communication:** It uses `WebSocketClient.requestOpenFile` to open the generated merged `package.xml` file in VS Code for immediate review.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all interactive prompts. In agent mode:
+
+- `--packagexmls`: Comma-separated list of package.xml files to merge. If omitted, all matching files from the folder/pattern are processed automatically.
+- `--folder` and `--pattern`: Used to discover files when `--packagexmls` is not provided.
+- `--result`: Output file name (default: `manifest/package-merge.xml`).
+
+All interactive file selection prompts are skipped.
+
 
 ## Parameters
 
-| Name               |  Type   | Description                                                                                  |      Default      | Required | Options |
-|:-------------------|:-------:|:---------------------------------------------------------------------------------------------|:-----------------:|:--------:|:-------:|
-| debug              | boolean | debug                                                                                        |                   |          |         |
-| flags-dir          | option  | undefined                                                                                    |                   |          |         |
-| folder<br/>-f      | option  | Root folder                                                                                  |     manifest      |          |         |
-| json               | boolean | Format output as json.                                                                       |                   |          |         |
-| packagexmls<br/>-p | option  | Comma separated list of package.xml files to merge. Will be prompted to user if not provided |                   |          |         |
-| pattern<br/>-x     | option  | Name criteria to list package.xml files                                                      | /**/*package*.xml |          |         |
-| result<br/>-r      | option  | Result package.xml file name                                                                 |                   |          |         |
-| skipauth           | boolean | Skip authentication check when a default username is required                                |                   |          |         |
-| websocket          | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                    |                   |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug|boolean|debug||||
+|flags-dir|option|undefined||||
+|folder<br/>-f|option|Root folder|manifest|||
+|json|boolean|Format output as json.||||
+|packagexmls<br/>-p|option|Comma separated list of package.xml files to merge. Will be prompted to user if not provided||||
+|pattern<br/>-x|option|Name criteria to list package.xml files|/**/*package*.xml|||
+|result<br/>-r|option|Result package.xml file name||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
@@ -58,6 +69,10 @@ $ sf hardis:package:mergexml --folder packages --pattern /**/*.xml --result myMe
 
 ```shell
 $ sf hardis:package:mergexml --packagexmls "config/mypackage1.xml,config/mypackage2.xml,config/mypackage3.xml" --result myMergedPackage.xml
+```
+
+```shell
+$ sf hardis:package:mergexml --agent
 ```
 
 

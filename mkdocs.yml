@@ -408,6 +408,8 @@ nav:
           metadata:
             activate-decomposed: hardis/project/metadata/activate-decomposed.md
             findduplicates: hardis/project/metadata/findduplicates.md
+          skills:
+            import: hardis/project/skills/import.md
         deploy:
           quick: hardis/deploy/quick.md
           start: hardis/deploy/start.md

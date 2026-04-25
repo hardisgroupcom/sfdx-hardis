@@ -29,22 +29,40 @@ The command's technical implementation involves:
 - **User Feedback:** Provides clear messages to the user about the successful creation of the package, including its ID and the associated Dev Hub.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all interactive prompts. Required flags in agent mode:
+
+- `--name`: Package name (required).
+- `--path`: Package source code path (required).
+- `--type`: Package type, either `Managed` or `Unlocked` (default: `Unlocked`).
+
+All interactive prompts for package name, path, and type are skipped.
+
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                   | Default | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir             | option  | undefined                                                     |         |          |         |
-| json                  | boolean | Format output as json.                                        |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                     |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|name<br/>-n|option|Package name (required in agent mode)||||
+|path|option|Package source code path (required in agent mode)||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-dev-hub<br/>-v|option|undefined||||
+|type|option|Package type: Managed or Unlocked (default: Unlocked in agent mode)|||Managed<br/>Unlocked|
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
 $ sf hardis:package:create
+```
+
+```shell
+$ sf hardis:package:create --agent --name "My Package" --path "force-app" --type Unlocked
 ```
 
 

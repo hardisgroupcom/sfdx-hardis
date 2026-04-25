@@ -16,18 +16,31 @@ This command focuses on one or more sObjects and measures how many records popul
 - **Field Distributions:** Combine `--objects <singleObject>` with `--fields FieldA,FieldB` to group by those fields and list distinct values with their record counts and usage percentages.
 - **Reporting:** Generates CSV/XLSX reports and prints a summary table with per-field population rates.
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:doc:object-field-usage --objects Account,Contact --agent
+```
+
+In agent mode:
+- The `--objects` flag is **required** (no interactive prompt for object selection).
+- The API usage confirmation prompt is skipped (proceeds automatically).
+
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                                                                         | Default | Required | Options |
-|:------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| fields<br/>-f     | option  | Comma-separated API names of fields to analyze (requires exactly one --objects value)                                                               |         |          |         |
-| flags-dir         | option  | undefined                                                                                                                                           |         |          |         |
-| json              | boolean | Format output as json.                                                                                                                              |         |          |         |
-| objects<br/>-o    | option  | Comma-separated API names of the sObjects to analyze (e.g. Account,CustomObject__c). If omitted, an interactive prompt will list available objects. |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                                                                       |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                                                                           |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                           |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|fields<br/>-f|option|Comma-separated API names of fields to analyze (requires exactly one --objects value)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|objects<br/>-o|option|Comma-separated API names of the sObjects to analyze (e.g. Account,CustomObject__c). If omitted, an interactive prompt will list available objects.||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
@@ -45,6 +58,10 @@ $ sf hardis:doc:object-field-usage --target-org myOrgAlias --objects CustomObjec
 
 ```shell
 $ sf hardis:doc:object-field-usage --objects Account --fields SalesRegionAcct__c,Region__c
+```
+
+```shell
+$ sf hardis:doc:object-field-usage --objects Account,Contact --agent
 ```
 
 

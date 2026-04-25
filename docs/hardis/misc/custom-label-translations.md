@@ -14,6 +14,19 @@ This command streamlines the process of managing and isolating specific custom l
 - **Collaboration:** Sharing only the necessary translation files with translators, reducing complexity.
 - **Debugging:** Isolating translation issues for specific labels or components.
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:misc:custom-label-translations --label Label1,Label2 --agent
+sf hardis:misc:custom-label-translations --lwc MyComponent --agent
+```
+
+In agent mode:
+- Interactive selection prompts are skipped.
+- The `--label` or `--lwc` flag is **required** to specify which labels to extract.
+
 Key functionalities:
 
 - **Label Selection:** You can specify custom label names directly using the `--label` flag (comma-separated).
@@ -41,15 +54,16 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name         |  Type   | Description                                                   | Default | Required | Options |
-|:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
-| json         | boolean | Format output as json.                                        |         |          |         |
-| label<br/>-l | option  | Developer name(s) of the custom label(s), comma-separated     |         |          |         |
-| lwc<br/>-c   | option  | Developer name of the Lightning Web Component                 |         |          |         |
-| skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|label<br/>-l|option|Developer name(s) of the custom label(s), comma-separated||||
+|lwc<br/>-c|option|Developer name of the Lightning Web Component||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
@@ -63,6 +77,10 @@ $ sf hardis:misc:custom-label-translations --label Label1,Label2
 
 ```shell
 $ sf hardis:misc:custom-label-translations --lwc MyComponent
+```
+
+```shell
+$ sf hardis:misc:custom-label-translations --label Label1,Label2 --agent
 ```
 
 

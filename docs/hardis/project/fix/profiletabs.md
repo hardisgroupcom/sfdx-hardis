@@ -31,23 +31,42 @@ The command's technical implementation involves:
 - **Logging:** Provides feedback to the user about which profiles have been updated and a summary of the changes.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:project:fix:profiletabs --agent
+```
+
+In agent mode:
+
+- All available tabs are processed with `DefaultOn` visibility
+- All profiles found in the project are updated
+- All interactive prompts are skipped
+
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |      Default       | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:------------------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                    |          |         |
-| flags-dir         | option  | undefined                                                     |                    |          |         |
-| json              | boolean | Format output as json.                                        |                    |          |         |
-| path<br/>-p       | option  | Root folder                                                   | C:\git\sfdx-hardis |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                    |          |         |
-| target-org<br/>-o | option  | undefined                                                     |                    |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                    |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|json|boolean|Format output as json.||||
+|path<br/>-p|option|Root folder|C:\git\sfdx-hardis|||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
 ```shell
 $ sf hardis:project:fix:profiletabs
+```
+
+```shell
+$ sf hardis:project:fix:profiletabs --agent
 ```
 
 

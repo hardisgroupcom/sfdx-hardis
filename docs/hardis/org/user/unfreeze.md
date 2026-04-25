@@ -20,6 +20,20 @@ Key functionalities:
 - **Bulk Unfreezing:** Efficiently unfreezes multiple user logins using Salesforce's Bulk API.
 - **Reporting:** Generates CSV and XLSX reports of the users that are about to be unfrozen.
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:user:unfreeze --agent --includeprofiles 'Standard' --target-org my-user@myorg.com
+```
+
+In agent mode:
+
+- All interactive prompts and confirmations are skipped.
+- The unfreeze operation proceeds automatically for the matched users.
+- You must provide `--includeprofiles` or `--excludeprofiles` to specify which profiles to unfreeze (interactive profile selection is not available).
+
 <details markdown="1">
 <summary>Technical explanations</summary>
 
@@ -35,18 +49,19 @@ The command's technical implementation involves:
 
 ## Parameters
 
-| Name                   |  Type   | Description                                                         | Default | Required | Options |
-|:-----------------------|:-------:|:--------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d           | boolean | Activate debug mode (more logs)                                     |         |          |         |
-| excludeprofiles<br/>-e | option  | List of profiles that you want to NOT unfreeze, separated by commas |         |          |         |
-| flags-dir              | option  | undefined                                                           |         |          |         |
-| includeprofiles<br/>-p | option  | List of profiles that you want to unfreeze, separated by commas     |         |          |         |
-| json                   | boolean | Format output as json.                                              |         |          |         |
-| maxuserdisplay<br/>-m  | option  | Maximum users to display in logs                                    |   100   |          |         |
-| name<br/>-n            | option  | Filter according to Name criteria                                   |         |          |         |
-| skipauth               | boolean | Skip authentication check when a default username is required       |         |          |         |
-| target-org<br/>-o      | option  | undefined                                                           |         |          |         |
-| websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration           |         |          |         |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|excludeprofiles<br/>-e|option|List of profiles that you want to NOT unfreeze, separated by commas||||
+|flags-dir|option|undefined||||
+|includeprofiles<br/>-p|option|List of profiles that you want to unfreeze, separated by commas||||
+|json|boolean|Format output as json.||||
+|maxuserdisplay<br/>-m|option|Maximum users to display in logs|100|||
+|name<br/>-n|option|Filter according to Name criteria||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|target-org<br/>-o|option|undefined||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
@@ -64,6 +79,10 @@ $ sf hardis:org:user:unfreeze --includeprofiles 'Standard'
 
 ```shell
 $ sf hardis:org:user:unfreeze --excludeprofiles 'System Administrator,Some Other Profile'
+```
+
+```shell
+$ sf hardis:org:user:unfreeze --agent
 ```
 
 
