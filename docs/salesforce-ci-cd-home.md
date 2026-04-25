@@ -151,7 +151,11 @@ You can also contact us at [**Cloudity**](https://cloudity.com/). Our Profession
 - Change management to accelerate DevOps adoption in your organization
 
 <div style="text-align:center; margin:2rem 0;">
-  <a href="https://cloudity.com/#form" target="_blank" rel="noopener noreferrer" role="button" aria-label="Cloudity Professional Services"
+  <a href="https://cloudity.com/contact-us/" target="_blank" rel="noopener noreferrer">
+    <img src="../assets/images/cloudity-banner.png" alt="Cloudity" style="max-width:100%;" />
+  </a>
+  <br/>
+  <a href="https://cloudity.com/contact-us/" target="_blank" rel="noopener noreferrer" role="button" aria-label="Cloudity Professional Services"
      style="display:inline-block; padding:0.75rem 1.25rem; background:#0070d2; color:#ffffff; text-decoration:none; border-radius:0.25rem; font-weight:600;">
     Contact Cloudity Professional Services
   </a>

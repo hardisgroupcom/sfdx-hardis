@@ -38,7 +38,9 @@ It is free and Open-Source, and will allow you to simply:
 
 ![Productivity commands](https://sfdx-hardis.cloudity.com/assets/images/ProductivityCommands.png)
 
-If you need guidance about how to leverage sfdx-hardis to bring more value to your business, Cloudity's international multi-cloud teams of business experts and technical experts can help: [contact us](https://cloudity.com/#form) !
+If you need guidance about how to leverage sfdx-hardis to bring more value to your business, Cloudity's international multi-cloud teams of business experts and technical experts can help: [contact us](https://cloudity.com/contact-us/) !
+
+[![Cloudity](assets/images/cloudity-banner.png)](https://cloudity.com/contact-us/){target=blank}
 
 [_See online documentation for a better navigation_](https://sfdx-hardis.cloudity.com)
 

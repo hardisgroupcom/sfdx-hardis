@@ -26,7 +26,9 @@ Your subscription directly funds the continued development of sfdx-hardis, so ev
 
 ### Subscribe or get in touch
 
-[**Contact Cloudity Professional Services**](https://cloudity.com/#form){target=blank} to discuss plans and pricing.
+[![Cloudity](assets/images/cloudity-banner.png)](https://cloudity.com/contact-us/){target=blank}
+
+[**Contact Cloudity Professional Services**](https://cloudity.com/contact-us/){target=blank} to discuss plans and pricing.
 
 ---
 

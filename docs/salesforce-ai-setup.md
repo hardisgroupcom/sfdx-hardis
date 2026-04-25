@@ -21,7 +21,9 @@ See the [list of prompts used by sfdx-hardis](salesforce-ai-prompts.md) , and ho
 
 ## Main configuration
 
-> You're lost ? Contact [Cloudity](https://cloudity.com/#form), we can do it for you :)
+> You're lost ? Contact [Cloudity](https://cloudity.com/contact-us/), we can do it for you :)
+
+[![Cloudity](assets/images/cloudity-banner.png)](https://cloudity.com/contact-us/){target=blank}
 
 ### Common variables
 
